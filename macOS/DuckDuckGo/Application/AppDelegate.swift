@@ -95,6 +95,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     let faviconManager: FaviconManager
     let pinnedTabsManager = PinnedTabsManager()
+    let tabDragAndDropManager: TabDragAndDropManager
     let pinnedTabsManagerProvider: PinnedTabsManagerProvider
     private(set) var stateRestorationManager: AppStateRestorationManager!
     private var grammarFeaturesManager = GrammarFeaturesManager()
@@ -109,7 +110,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var autoClearHandler: AutoClearHandler!
     private(set) var autofillPixelReporter: AutofillPixelReporter?
 
-    private(set) var syncDataProviders: SyncDataProviders?
+    private(set) var syncDataProviders: SyncDataProvidersSource?
     private(set) var syncService: DDGSyncing?
     private var isSyncInProgressCancellable: AnyCancellable?
     private var syncFeatureFlagsCancellable: AnyCancellable?
@@ -133,6 +134,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
     let aboutPreferences: AboutPreferences
     let accessibilityPreferences: AccessibilityPreferences
+    let duckPlayer: DuckPlayer
 
     let database: Database!
     let bookmarkDatabase: BookmarkDatabase
@@ -160,6 +162,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         customizationModel: newTabPageCustomizationModel,
         bookmarkManager: bookmarkManager,
         faviconManager: faviconManager,
+        duckPlayerHistoryEntryTitleProvider: duckPlayer,
         activeRemoteMessageModel: activeRemoteMessageModel,
         historyCoordinator: historyCoordinator,
         contentBlocking: privacyFeatures.contentBlocking,
@@ -748,6 +751,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             windowControllersManager: windowControllersManager
         )
         accessibilityPreferences = AccessibilityPreferences()
+        duckPlayer = DuckPlayer(
+            preferencesPersistor: DuckPlayerPreferencesUserDefaultsPersistor(),
+            privacyConfigurationManager: privacyConfigurationManager,
+            internalUserDecider: internalUserDecider
+        )
         newTabPageCustomizationModel = NewTabPageCustomizationModel(themeManager: themeManager, appearancePreferences: appearancePreferences)
 
         fireCoordinator = FireCoordinator(tld: tld,
@@ -774,6 +782,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 startupPreferences: startupPreferences,
                 webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                 cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
+                duckPlayer: duckPlayer,
                 windowControllersManager: windowControllersManager,
                 bookmarkManager: bookmarkManager,
                 historyCoordinator: historyCoordinator,
@@ -801,6 +810,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             startupPreferences: startupPreferences,
             webTrackingProtectionPreferences: webTrackingProtectionPreferences,
             cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
+            duckPlayer: duckPlayer,
             windowControllersManager: windowControllersManager,
             bookmarkManager: bookmarkManager,
             historyCoordinator: historyCoordinator,
@@ -833,9 +843,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         let onboardingManager = onboardingContextualDialogsManager
+        let notificationPresenter = DefaultBrowserAndDockPromptNotificationPresenter(reportABrowserProblemPresenter: Self.openReportABrowserProblem)
         defaultBrowserAndDockPromptService = DefaultBrowserAndDockPromptService(featureFlagger: featureFlagger,
                                                                                 privacyConfigManager: privacyConfigurationManager,
                                                                                 keyValueStore: keyValueStore,
+                                                                                notificationPresenter: notificationPresenter,
                                                                                 isOnboardingCompletedProvider: { onboardingManager.state == .onboardingCompleted })
 
         if AppVersion.runType.requiresEnvironment {
@@ -952,6 +964,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             windowControllersManager: windowControllersManager
         )
 #endif
+
+        tabDragAndDropManager = TabDragAndDropManager()
 
         blackFridayCampaignProvider = DefaultBlackFridayCampaignProvider(
             privacyConfigurationManager: privacyConfigurationManager,
@@ -1396,7 +1410,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let environment = defaultEnvironment
 #endif
         let syncErrorHandler = SyncErrorHandler()
-        let syncDataProviders = SyncDataProviders(
+        let syncDataProviders = SyncDataProvidersSource(
             bookmarksDatabase: bookmarkDatabase.db,
             bookmarkManager: bookmarkManager,
             appearancePreferences: appearancePreferences,
@@ -1605,15 +1619,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 extension AppDelegate: UNUserNotificationCenterDelegate {
 
     func userNotificationCenter(_ center: UNUserNotificationCenter,
-                                willPresent notification: UNNotification,
-                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-        completionHandler(.banner)
+                                willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
+        return .banner
     }
 
     func userNotificationCenter(_ center: UNUserNotificationCenter,
-                                didReceive response: UNNotificationResponse,
-                                withCompletionHandler completionHandler: @escaping () -> Void) {
-        completionHandler()
+                                didReceive response: UNNotificationResponse) async {
+        if let notificationIdentifier = DefaultBrowserAndDockPromptNotificationIdentifier(rawValue: response.notification.request.identifier) {
+            await defaultBrowserAndDockPromptService.handleNotificationResponse(notificationIdentifier)
+        }
     }
 
 }
@@ -1631,6 +1645,7 @@ extension AppDelegate: UserScriptDependenciesProviding {
             customizationModel: newTabPageCustomizationModel,
             bookmarkManager: bookmarkManager,
             faviconManager: faviconManager,
+            duckPlayerHistoryEntryTitleProvider: duckPlayer,
             contentBlocking: contentBlocking,
             trackerDataManager: contentBlocking.trackerDataManager,
             activeRemoteMessageModel: activeRemoteMessageModel,

@@ -52,6 +52,8 @@ final class AIChatUserScript: NSObject, Subfeature {
         case fireButtonAction
         case newChatAction
         case promptInterruption
+        case openSettingsAction
+        case openHistoryAction
 
         var methodName: String {
             switch self {
@@ -63,6 +65,10 @@ final class AIChatUserScript: NSObject, Subfeature {
                 return "submitNewChatAction"
             case .promptInterruption:
                 return "submitPromptInterruption"
+            case .openSettingsAction:
+                return "openDuckAiSettings"
+            case .openHistoryAction:
+                return "openDuckAiHistory"
             }
         }
 
@@ -197,6 +203,21 @@ final class AIChatUserScript: NSObject, Subfeature {
     func submitPrompt(_ prompt: String) {
         let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true)
         push(.submitPrompt(promptPayload))
+    }
+    
+    /// Submits a start chat action to the web content, initiating a new AI Chat conversation.
+    func submitStartChatAction() {
+        push(.newChatAction)
+    }
+
+    /// Submits an open settings action to the web content, opening the AI Chat settings.
+    func submitOpenSettingsAction() {
+        push(.openSettingsAction)
+    }
+
+    /// Submits an open history action to the web content, opening the AI Chat history.
+    func submitOpenHistoryAction() {
+        push(.openHistoryAction)
     }
 
     // MARK: - Private Helper

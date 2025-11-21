@@ -303,8 +303,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .syncCreditCards,
              .unifiedURLPredictor,
              .forgetAllInSettings,
-             .vpnConnectionWidePixelMeasurement,
-             .showHideAIGeneratedImagesSection:
+             .vpnConnectionWidePixelMeasurement:
             true
         default:
             false
@@ -584,7 +583,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .vpnConnectionWidePixelMeasurement:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnConnectionWidePixelMeasurement))
         case .onboardingSearchExperience:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(AIChatSubfeature.onboardingSearchExperience))
         case .storeSerpSettings:
             return .remoteReleasable(.subfeature(SERPSubfeature.storeSerpSettings))
         case .showHideAIGeneratedImagesSection:

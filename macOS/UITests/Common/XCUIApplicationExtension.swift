@@ -59,6 +59,7 @@ extension XCUIApplication {
         static let preferencesMenuItem = "MainMenu.preferencesMenuItem"
         static let helpMenuItem = "Help"
         static let releaseNotesMenuItem = "Release Notes"
+        static let debugMenu = "Debug"
 
         static let settingsScrollView = "Settings.ScrollView"
         static let preferencesGeneralButton = "PreferencesSidebar.generalButton"
@@ -814,6 +815,10 @@ extension XCUIApplication {
 
     var bookmarkDialogBookmarkFolderDropdown: XCUIElement {
         popUpButtons[XCUIApplication.AccessibilityIdentifiers.addBookmarkFolderDropdown]
+    }
+
+    var debugMenu: XCUIElement {
+        menuBarItems[AccessibilityIdentifiers.debugMenu]
     }
 
 }

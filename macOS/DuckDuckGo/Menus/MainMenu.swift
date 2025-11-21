@@ -451,6 +451,7 @@ final class MainMenu: NSMenu {
     func buildDebugMenu(featureFlagger: FeatureFlagger, historyCoordinator: HistoryCoordinating) -> NSMenuItem? {
 #if DEBUG || REVIEW || ALPHA
         NSMenuItem(title: "Debug")
+            .withAccessibilityIdentifier("Debug")
             .submenu(setupDebugMenu(featureFlagger: featureFlagger, historyCoordinator: historyCoordinator))
 #else
         if internalUserDecider.isInternalUser {

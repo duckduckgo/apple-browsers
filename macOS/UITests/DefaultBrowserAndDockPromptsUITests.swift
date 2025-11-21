@@ -124,7 +124,6 @@ private extension XCUIApplication {
 
     /// Open Debug menu -> Default Browser and Dock Prompt submenu -> Simulate Fresh App Install
     func simulateFreshAppInstall() {
-        let debugMenu = menuBars.menuBarItems["Debug"]
         debugMenu.click()
 
         let defaultBrowserAndDockPromptSubmenu = menuItems["SAD/ATT Prompts"]
@@ -137,7 +136,6 @@ private extension XCUIApplication {
 
     /// Open Debug menu -> Default Browser and Dock Prompt submenu -> Override Current Date
     func overrideCurrentDate(with newDate: Date) {
-        let debugMenu = menuBars.menuBarItems["Debug"]
         debugMenu.click()
 
         let defaultBrowserAndDockPromptSubmenu = menuItems["SAD/ATT Prompts"]

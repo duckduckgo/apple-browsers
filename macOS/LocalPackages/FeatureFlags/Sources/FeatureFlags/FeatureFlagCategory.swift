@@ -24,6 +24,7 @@ public enum FeatureFlagCategory: String, CaseIterable, Comparable {
     case dbp = "Personal Information Removal"
     case osSupportWarnings = "OS Support Warnings"
     case other = "Other"
+    case subscription = "Subscription"
     case sync = "Sync"
     case updates = "Updates"
     case vpn = "VPN"
@@ -77,6 +78,18 @@ extension FeatureFlag: FeatureFlagCategorization {
         case .dbpEmailConfirmationDecoupling,
                 .dbpRemoteBrokerDelivery:
             return .dbp
+        case .privacyProAuthV2,
+                .privacyProFreeTrial,
+                .paidAIChat,
+                .supportsAlternateStripePaymentFlow,
+                .subscriptionPurchaseWidePixelMeasurement,
+                .subscriptionRestoreWidePixelMeasurement,
+                .authV2WideEventEnabled,
+                .vpnConnectionWidePixelMeasurement,
+                .blackFridayCampaign,
+                .tierMessagingEnabled,
+                .allowProTierPurchase:
+            return .subscription
         default:
             return .other
         }

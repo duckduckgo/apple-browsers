@@ -41,11 +41,14 @@ struct SERPSettingsView: View {
 
         case general
         case searchAssist
+        case hideAIGeneratedImages
 
         var url: URL {
             return switch self {
             case .searchAssist:
                 URL.embeddedSearchAssistSettings
+            case .hideAIGeneratedImages:
+                URL.embeddedHideAIGeneratedImagesSettings
             default:
                 URL.embeddedGeneralSERPSettings
             }

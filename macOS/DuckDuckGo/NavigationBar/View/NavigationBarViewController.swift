@@ -113,6 +113,7 @@ final class NavigationBarViewController: NSViewController {
     private let contentBlocking: ContentBlockingProtocol
     private let permissionManager: PermissionManagerProtocol
     private let vpnUpsellVisibilityManager: VPNUpsellVisibilityManager
+    private let sharedTextState: AddressBarSharedTextState
 
     private var subscriptionManager: SubscriptionAuthV1toV2Bridge {
         Application.appDelegate.subscriptionAuthV1toV2Bridge
@@ -232,6 +233,7 @@ final class NavigationBarViewController: NSViewController {
                        downloadsPreferences: DownloadsPreferences,
                        tabsPreferences: TabsPreferences,
                        accessibilityPreferences: AccessibilityPreferences,
+                       sharedTextState: AddressBarSharedTextState,
                        showTab: @escaping (Tab.TabContent) -> Void = { content in
                            Task { @MainActor in
                                Application.appDelegate.windowControllersManager.showTab(with: content)
@@ -267,6 +269,7 @@ final class NavigationBarViewController: NSViewController {
                 downloadsPreferences: downloadsPreferences,
                 tabsPreferences: tabsPreferences,
                 accessibilityPreferences: accessibilityPreferences,
+                sharedTextState: sharedTextState,
                 showTab: showTab
             )
         }!
@@ -300,6 +303,7 @@ final class NavigationBarViewController: NSViewController {
         downloadsPreferences: DownloadsPreferences,
         tabsPreferences: TabsPreferences,
         accessibilityPreferences: AccessibilityPreferences,
+        sharedTextState: AddressBarSharedTextState,
         showTab: @escaping (Tab.TabContent) -> Void
     ) {
 
@@ -341,6 +345,7 @@ final class NavigationBarViewController: NSViewController {
         self.downloadsPreferences = downloadsPreferences
         self.tabsPreferences = tabsPreferences
         self.accessibilityPreferences = accessibilityPreferences
+        self.sharedTextState = sharedTextState
         self.showTab = showTab
         self.vpnUpsellVisibilityManager = vpnUpsellVisibilityManager
         self.sessionRestorePromptCoordinator = sessionRestorePromptCoordinator
@@ -410,7 +415,8 @@ final class NavigationBarViewController: NSViewController {
                                                                       accessibilityPreferences: accessibilityPreferences,
                                                                       onboardingPixelReporter: onboardingPixelReporter,
                                                                       aiChatMenuConfig: aiChatMenuConfig,
-                                                                      aiChatSidebarPresenter: aiChatSidebarPresenter) else {
+                                                                      aiChatSidebarPresenter: aiChatSidebarPresenter,
+                                                                      sharedTextState: sharedTextState) else {
             fatalError("NavigationBarViewController: Failed to init AddressBarViewController")
         }
 

@@ -164,7 +164,7 @@ final class Fire: FireProtocol {
     let pinnedTabsManagerProvider: PinnedTabsManagerProviding
     let bookmarkManager: BookmarkManager
     let syncService: DDGSyncing?
-    let syncDataProviders: SyncDataProviders?
+    let syncDataProviders: SyncDataProvidersSource?
     let tabCleanupPreparer = TabCleanupPreparer()
     let secureVaultFactory: AutofillVaultFactory
     let tld: TLD
@@ -258,7 +258,7 @@ final class Fire: FireProtocol {
          tld: TLD,
          bookmarkManager: BookmarkManager? = nil,
          syncService: DDGSyncing? = nil,
-         syncDataProviders: SyncDataProviders? = nil,
+         syncDataProviders: SyncDataProvidersSource? = nil,
          secureVaultFactory: AutofillVaultFactory = AutofillSecureVaultFactory,
          getPrivacyStats: (() async -> PrivacyStatsCollecting)? = nil,
          getVisitedLinkStore: (() -> WKVisitedLinkStoreWrapper?)? = nil,

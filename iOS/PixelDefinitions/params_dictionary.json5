@@ -149,5 +149,88 @@
         "keyPattern": "feature\\.data\\.error\\.underlying_code[0-9]?",
         "type": "integer",
         "description": "Underlying error code (supports optional numeric index for nested errors)"
+    },
+    "dbpDataBroker": {
+        "key": "data_broker",
+        "type": "string",
+        "description": "URL of the data broker involved in the opt-out attempt or action"
+    },
+    "dbpParentBroker": {
+        "key": "parent",
+        "type": "string",
+        "description": "Parent data broker of the entity targeted by the opt-out attempt"
+    },
+    "dbpAttemptId": {
+        "key": "attempt_id",
+        "type": "string",
+        "description": "Client-generated identifier of the opt-out attempt"
+    },
+    "dbpBrokerVersion": {
+        "key": "broker_version",
+        "type": "string",
+        "description": "Version of the broker JSON file used for the flow"
+    },
+    "dbpStageDuration": {
+        "key": "duration",
+        "type": "integer",
+        "description": "Stage duration in milliseconds"
+    },
+    "dbpStageTries": {
+        "key": "tries",
+        "type": "string",
+        "description": "Number of tries it took to complete the stage"
+    },
+    "dbpActionId": {
+        "key": "action_id",
+        "type": "string",
+        "description": "Identifier of the broker action executed during the opt-out flow"
+    },
+    "dbpActionDuration": {
+        "key": "duration",
+        "type": "integer",
+        "description": "Duration of the broker action execution in milliseconds"
+    },
+    "dbpActionTries": {
+        "key": "tries",
+        "type": "integer",
+        "description": "Number of tries it took for the broker action to complete"
+    },
+    "dbpAttemptDuration": {
+        "key": "duration",
+        "type": "number",
+        "description": "Total duration of the opt-out attempt in milliseconds"
+    },
+    "dbpConfirmationAttemptNumber": {
+        "key": "attempt_number",
+        "type": "integer",
+        "description": "Confirmation attempt ordinal (1..3)"
+    },
+    "dbpFeatureDataBrokerVersion": {
+        "key": "feature.data.ext.data_broker_version",
+        "type": "string",
+        "description": "Version of the broker JSON file reported via wide pixels"
+    },
+    "vpnAuthVersion": {
+        "key": "authVersion",
+        "type": "string",
+        "description": "Version of the VPN authentication flow",
+        "enum": ["v1", "v2"]
+    },
+    "vpnSubscriptionActive": {
+        "key": "isSubscriptionActive",
+        "type": "string",
+        "description": "Whether the VPN subscription is active",
+        "enum": ["true", "false", "no_subscription"]
+    },
+    "vpnNotificationObjectClass": {
+        "key": "notificationObjectClass",
+        "type": "string",
+        "description": "Class name of the object that originated the subscription notification"
+    },
+    "vpnLatencyLocation": {
+        "key": "location",
+        "type": "string",
+        "description": "Location selection for the VPN latency test",
+        "enum": ["nearest", "custom"]
     }
 }

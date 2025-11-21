@@ -19,20 +19,22 @@
 import Cocoa
 import Combine
 
-final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpdateListening {
+final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpdateListening, NSTextViewDelegate {
 
     private let backgroundView = MouseBlockingBackgroundView()
     private let containerView = NSView()
     private let scrollView = NSScrollView()
     private let textView = NSTextView()
     private let omnibarController: AIChatOmnibarController
+    private let sharedTextState: AddressBarSharedTextState
     private var cancellables = Set<AnyCancellable>()
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
     private var appearanceCancellable: AnyCancellable?
 
-    init(omnibarController: AIChatOmnibarController, themeManager: ThemeManaging) {
+    init(omnibarController: AIChatOmnibarController, sharedTextState: AddressBarSharedTextState, themeManager: ThemeManaging) {
         self.omnibarController = omnibarController
+        self.sharedTextState = sharedTextState
         self.themeManager = themeManager
         super.init(nibName: nil, bundle: nil)
     }
@@ -97,6 +99,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         textView.allowsDocumentBackgroundColorChange = false
         textView.usesRuler = false
         textView.usesFontPanel = false
+        textView.delegate = self
 
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -147,6 +150,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
                 guard let self = self else { return }
                 if self.textView.string != newText {
                     self.textView.string = newText
+                    let textLength = newText.count
+                    self.textView.selectedRange = NSRange(location: textLength, length: 0)
                 }
             }
             .store(in: &cancellables)
@@ -154,6 +159,26 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
     @objc func textDidChange(_ notification: Notification) {
         omnibarController.updateText(textView.string)
+    }
+
+    // MARK: - NSTextViewDelegate
+
+    func textView(_ textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+        if commandSelector == #selector(insertNewline(_:)) || commandSelector == #selector(insertNewlineIgnoringFieldEditor(_:)) {
+            guard let event = NSApp.currentEvent else { return false }
+
+            let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+
+            if modifiers.contains(.option) || modifiers.contains(.shift) {
+                textView.insertNewlineIgnoringFieldEditor(nil)
+                return true
+            }
+
+            omnibarController.submit()
+            return true
+        }
+
+        return false
     }
 
     func startEventMonitoring() {

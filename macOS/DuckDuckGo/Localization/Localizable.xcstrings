@@ -24530,6 +24530,18 @@
         }
       }
     },
+    "duckai.show-search-and-duckai-toggle.label" : {
+      "comment" : "Label for showing Search/Duck.ai toggle when address bar is focused",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show Search and Duck.ai toggle when the address bar is focused"
+          }
+        }
+      }
+    },
     "duckai.show-shortcut-in-address-bar.label" : {
       "comment" : "Label for showing Duck.ai shortcut in address bar",
       "extractionState" : "extracted_with_value",

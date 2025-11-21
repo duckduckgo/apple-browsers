@@ -172,7 +172,7 @@
     },
     "dbpStageDuration": {
         "key": "duration",
-        "type": "string",
+        "type": "integer",
         "description": "Stage duration in milliseconds"
     },
     "dbpStageTries": {
@@ -187,7 +187,7 @@
     },
     "dbpActionDuration": {
         "key": "duration",
-        "type": "string",
+        "type": "integer",
         "description": "Duration of the broker action execution in milliseconds"
     },
     "dbpActionTries": {
@@ -197,7 +197,7 @@
     },
     "dbpAttemptDuration": {
         "key": "duration",
-        "type": "string",
+        "type": "number",
         "description": "Total duration of the opt-out attempt in milliseconds"
     },
     "dbpConfirmationAttemptNumber": {

@@ -499,6 +499,9 @@ final class MainViewController: NSViewController {
         } else {
             aiChatOmnibarContainerViewController.cleanup()
             aiChatOmnibarTextContainerViewController.cleanup()
+
+            /// Reset panel height to minimum to prevent size flash on next open
+            mainView.updateAIChatOmnibarContainerHeight(100, animated: false)
         }
     }
 

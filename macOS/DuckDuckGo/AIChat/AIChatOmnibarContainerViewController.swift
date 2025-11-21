@@ -196,12 +196,12 @@ final class AIChatOmnibarContainerViewController: NSViewController {
 
     private func observeWindowFrameChanges() {
         guard let window = view.window else { return }
-        
+
         windowFrameObserver = window.publisher(for: \.frame)
             .sink { [weak self] _ in
                 self?.layoutShadowView()
             }
-        
+
         viewBoundsObserver = view.publisher(for: \.bounds)
             .sink { [weak self] _ in
                 self?.layoutShadowView()

@@ -186,9 +186,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720037380
     case openFireWindowByDefault
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866619027311
-    case restoreSessionPrompt
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473926615
     case duckAISearchParameter
 
@@ -287,7 +284,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .updateSafariBookmarksImport,
                 .updateFirefoxBookmarksImport,
                 .supportsAlternateStripePaymentFlow,
-                .restoreSessionPrompt,
                 .refactorOfSyncPreferences,
                 .subscriptionPurchaseWidePixelMeasurement,
                 .subscriptionRestoreWidePixelMeasurement,
@@ -358,7 +354,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .newTabPageTabIDs,
                 .vpnToolbarUpsell,
                 .supportsAlternateStripePaymentFlow,
-                .restoreSessionPrompt,
                 .openFireWindowByDefault,
                 .duckAISearchParameter,
                 .refactorOfSyncPreferences,
@@ -514,8 +509,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
         case .openFireWindowByDefault:
             return .remoteReleasable(.feature(.openFireWindowByDefault))
-        case .restoreSessionPrompt:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.restoreSessionPrompt))
         case .duckAISearchParameter:
             return .enabled
         case .subscriptionPurchaseWidePixelMeasurement:

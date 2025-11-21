@@ -36,6 +36,26 @@ public final class CustomToggleControl: NSControl {
 
     // MARK: - Properties
 
+    /// The number of segments in the control (always 2 for this toggle)
+    public var segmentCount: Int { 2 }
+
+    /// The index of the selected segment (0 = left, 1 = right)
+    public var selectedSegment: Int {
+        get {
+            return _selectedSegment
+        }
+        set {
+            guard newValue >= 0 && newValue < segmentCount else { return }
+            if _selectedSegment != newValue {
+                _selectedSegment = newValue
+                animateSelection()
+                sendAction(action, to: target)
+            }
+        }
+    }
+
+    private var _selectedSegment: Int = 0
+
     public var leftImage: NSImage? {
         didSet { needsDisplay = true }
     }
@@ -54,15 +74,6 @@ public final class CustomToggleControl: NSControl {
 
     public var iconTintColor: NSColor = .labelColor {
         didSet { needsDisplay = true }
-    }
-
-    public var isRightSelected: Bool = false {
-        didSet {
-            if oldValue != isRightSelected {
-                animateSelection()
-                sendAction(action, to: target)
-            }
-        }
     }
 
     public var backgroundColor: NSColor = NSColor(white: 0.9, alpha: 1.0) {
@@ -103,6 +114,69 @@ public final class CustomToggleControl: NSControl {
     private var animationStartProgress: CGFloat = 0.0
     private var animationTargetProgress: CGFloat = 0.0
     private let animationDuration: CFTimeInterval = 0.15
+
+    // MARK: - Public API Methods
+
+    /// Sets the selection state for the specified segment
+    /// - Parameters:
+    ///   - selected: Whether the segment should be selected
+    ///   - segment: The index of the segment (0 = left, 1 = right)
+    public func setSelected(_ selected: Bool, forSegment segment: Int) {
+        guard segment >= 0 && segment < segmentCount else { return }
+        if selected {
+            selectedSegment = segment
+        }
+    }
+
+    /// Returns whether the specified segment is selected
+    /// - Parameter segment: The index of the segment (0 = left, 1 = right)
+    /// - Returns: true if the segment is selected, false otherwise
+    public func isSelected(forSegment segment: Int) -> Bool {
+        guard segment >= 0 && segment < segmentCount else { return false }
+        return selectedSegment == segment
+    }
+
+    /// Sets the image for the specified segment
+    /// - Parameters:
+    ///   - image: The image to display
+    ///   - segment: The index of the segment (0 = left, 1 = right)
+    public func setImage(_ image: NSImage?, forSegment segment: Int) {
+        guard segment >= 0 && segment < segmentCount else { return }
+        if segment == 0 {
+            leftImage = image
+        } else {
+            rightImage = image
+        }
+    }
+
+    /// Returns the image for the specified segment
+    /// - Parameter segment: The index of the segment (0 = left, 1 = right)
+    /// - Returns: The image for the segment, or nil if none is set
+    public func image(forSegment segment: Int) -> NSImage? {
+        guard segment >= 0 && segment < segmentCount else { return nil }
+        return segment == 0 ? leftImage : rightImage
+    }
+
+    /// Sets the selected image for the specified segment
+    /// - Parameters:
+    ///   - image: The image to display when selected
+    ///   - segment: The index of the segment (0 = left, 1 = right)
+    public func setSelectedImage(_ image: NSImage?, forSegment segment: Int) {
+        guard segment >= 0 && segment < segmentCount else { return }
+        if segment == 0 {
+            leftSelectedImage = image
+        } else {
+            rightSelectedImage = image
+        }
+    }
+
+    /// Returns the selected image for the specified segment
+    /// - Parameter segment: The index of the segment (0 = left, 1 = right)
+    /// - Returns: The selected image for the segment, or nil if none is set
+    public func selectedImage(forSegment segment: Int) -> NSImage? {
+        guard segment >= 0 && segment < segmentCount else { return nil }
+        return segment == 0 ? leftSelectedImage : rightSelectedImage
+    }
 
     // MARK: - Initialization
 
@@ -179,7 +253,9 @@ public final class CustomToggleControl: NSControl {
         innerBorderPath.stroke()
         context.restoreGState()
 
-        let isLeftSelected = !isRightSelected
+        let isLeftSelected = selectedSegment == 0
+        let isRightSelected = selectedSegment == 1
+        
         if let leftImg = (isLeftSelected && leftSelectedImage != nil) ? leftSelectedImage : leftImage {
             drawImage(leftImg, in: leftRect, alpha: 1.0)
         }
@@ -249,7 +325,7 @@ public final class CustomToggleControl: NSControl {
     // MARK: - Animation
 
     private func animateSelection() {
-        animationTargetProgress = isRightSelected ? 1.0 : 0.0
+        animationTargetProgress = selectedSegment == 1 ? 1.0 : 0.0
         animationStartProgress = selectionProgress
         animationStartTime = CACurrentMediaTime()
 
@@ -280,7 +356,7 @@ public final class CustomToggleControl: NSControl {
 
     public override func mouseDown(with event: NSEvent) {
         let location = convert(event.locationInWindow, from: nil)
-        isRightSelected = location.x > bounds.width / 2
+        selectedSegment = location.x > bounds.width / 2 ? 1 : 0
     }
 
     // MARK: - Keyboard Handling
@@ -291,11 +367,11 @@ public final class CustomToggleControl: NSControl {
     public override func keyDown(with event: NSEvent) {
         switch event.keyCode {
         case KeyCode.space, KeyCode.return:
-            isRightSelected.toggle()
+            selectedSegment = selectedSegment == 0 ? 1 : 0
         case KeyCode.leftArrow:
-            isRightSelected = false
+            selectedSegment = 0
         case KeyCode.rightArrow:
-            isRightSelected = true
+            selectedSegment = 1
         default:
             super.keyDown(with: event)
         }

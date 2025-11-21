@@ -895,7 +895,9 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu())
 #endif
             if AppVersion.runType.requiresEnvironment {
-                NSMenuItem(title: "SAD/ATT Prompts").submenu(DefaultBrowserAndDockPromptDebugMenu())
+                NSMenuItem(title: "SAD/ATT Prompts")
+                    .withAccessibilityIdentifier("DebugMenu.defaultBrowserAndDockPrompts")
+                    .submenu(DefaultBrowserAndDockPromptDebugMenu())
                 WinBackOfferDebugMenu(winbackOfferStore: Application.appDelegate.winbackOfferStore,
                                       keyValueStore: Application.appDelegate.keyValueStore)
             }

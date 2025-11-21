@@ -90,6 +90,7 @@ private extension DefaultBrowserAndDockPromptsUITests {
 
 private extension XCUIApplication {
     enum AccessibilityIdentifiers {
+        static let promptsDebugMenu = "DebugMenu.defaultBrowserAndDockPrompts"
         static let simulateFreshAppInstallMenuItem = "DefaultBrowserAndDockPromptDebugMenu.simulateFreshInstall"
         static let overrideCurrentDateMenuItem = "DefaultBrowserAndDockPromptDebugMenu.simulateCurrentDate"
         static let inactiveUserPrompt = "DefaultBrowserAndDockPrompts.inactiveUser"
@@ -97,12 +98,16 @@ private extension XCUIApplication {
         static let dismissButton = "DefaultBrowserAndDockPrompts.inactiveUser.dismissButton"
     }
 
+    var promptsDebugMenu: XCUIElement {
+        debugMenu.menuItems[AccessibilityIdentifiers.promptsDebugMenu]
+    }
+
     var simulateFreshAppInstallMenuItem: XCUIElement {
-        menuItems[AccessibilityIdentifiers.simulateFreshAppInstallMenuItem]
+        promptsDebugMenu.menuItems[AccessibilityIdentifiers.simulateFreshAppInstallMenuItem]
     }
 
     var overrideCurrentDateMenuItem: XCUIElement {
-        menuItems[AccessibilityIdentifiers.overrideCurrentDateMenuItem]
+        promptsDebugMenu.menuItems[AccessibilityIdentifiers.overrideCurrentDateMenuItem]
     }
 
     var inactiveUserPrompt: XCUIElement {
@@ -124,26 +129,12 @@ private extension XCUIApplication {
 
     /// Open Debug menu -> Default Browser and Dock Prompt submenu -> Simulate Fresh App Install
     func simulateFreshAppInstall() {
-        debugMenu.click()
-
-        let defaultBrowserAndDockPromptSubmenu = menuItems["SAD/ATT Prompts"]
-        XCTAssertTrue(defaultBrowserAndDockPromptSubmenu.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Default Browser and Dock Prompt submenu should exist")
-        defaultBrowserAndDockPromptSubmenu.hover()
-
-        XCTAssertTrue(simulateFreshAppInstallMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Simulate Fresh App Install menu item should exist")
-        simulateFreshAppInstallMenuItem.click()
+        selectPromptsDebugMenuItem(simulateFreshAppInstallMenuItem)
     }
 
     /// Open Debug menu -> Default Browser and Dock Prompt submenu -> Override Current Date
     func overrideCurrentDate(with newDate: Date) {
-        debugMenu.click()
-
-        let defaultBrowserAndDockPromptSubmenu = menuItems["SAD/ATT Prompts"]
-        XCTAssertTrue(defaultBrowserAndDockPromptSubmenu.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Default Browser and Dock Prompt submenu should exist")
-        defaultBrowserAndDockPromptSubmenu.hover()
-
-        XCTAssertTrue(overrideCurrentDateMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Override Current Date menu item should exist")
-        overrideCurrentDateMenuItem.click()
+        selectPromptsDebugMenuItem(overrideCurrentDateMenuItem)
 
         let datePicker = datePickers.firstMatch
         XCTAssertTrue(datePicker.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Date picker should exist")
@@ -158,6 +149,15 @@ private extension XCUIApplication {
         let dateString = String(format: "%02d/%02d/%04d", day, month, year)
         datePicker.typeText(dateString)
         datePicker.typeText("\r") // Enter to confirm
+    }
+
+    private func selectPromptsDebugMenuItem(_ menuItem: XCUIElement) {
+        debugMenu.click()
+        XCTAssertTrue(promptsDebugMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Default Browser and Dock Prompt submenu should exist")
+        promptsDebugMenu.hover()
+
+        XCTAssertTrue(menuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Override Current Date menu item should exist")
+        menuItem.click()
     }
 
 }

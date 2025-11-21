@@ -83,6 +83,7 @@ extension SpinnerView {
 
     func startAnimating() {
         cancelPendingRotationAnimationRemoval()
+        ensureGradientLayerIsVisible()
 
         if isAnimating {
             return
@@ -91,8 +92,6 @@ extension SpinnerView {
         let fadeInAnimation =  CASpringAnimation.buildFadeInAnimation(duration: SpinnerConstants.animationShortDuration)
         let rotationAnimation = CABasicAnimation.buildRotationAnimation(duration: SpinnerConstants.animationLongDuration)
 
-        gradientLayer.isHidden = false
-        gradientLayer.opacity = 1
         gradientLayer.colors = spinnerGradientColors.gradientColors(rendered: false)
 
         gradientLayer.add(fadeInAnimation, forKey: SpinnerConstants.fadeAnimationKey)
@@ -165,6 +164,15 @@ private extension SpinnerView {
 
     func refreshGradientColors() {
         spinnerGradientColors = SpinnerGradientColors(startColor: progressStartColor, finalColor: progressFinalColor)
+    }
+
+    func ensureGradientLayerIsVisible() {
+        guard gradientLayer.isHidden || gradientLayer.opacity < 1 else {
+            return
+        }
+
+        gradientLayer.isHidden = false
+        gradientLayer.opacity = 1
     }
 
     func cancelPendingRotationAnimationRemoval() {

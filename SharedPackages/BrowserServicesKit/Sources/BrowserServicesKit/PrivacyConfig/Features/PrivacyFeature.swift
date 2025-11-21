@@ -85,6 +85,7 @@ public enum PrivacyFeature: String {
     case dataImport
     case duckAiDataClearing
     case serp
+    case popupBlocking
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -530,4 +531,22 @@ public enum SERPSubfeature: String, PrivacySubfeature {
 
     /// Global switch to disable New Tab Page search box
     case storeSerpSettings
+}
+
+public enum PopupBlockingSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature {
+        .popupBlocking
+    }
+
+    /// Use extended user-initiated popup timeout (extends from 1s to 6s)
+    case extendedUserInitiatedPopupTimeout
+
+    /// Suppress empty or about: URL popups after permission approval
+    case suppressEmptyPopUpsOnApproval
+
+    /// Allow popups for current page after permission approval (until next navigation)
+    case allowPopupsForCurrentPage
+
+    /// Show popup permission button in inactive state when temporary allowance is active
+    case popupPermissionButtonPersistence
 }

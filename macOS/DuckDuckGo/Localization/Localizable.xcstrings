@@ -4517,7 +4517,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Handle Pop-ups For Me"
+            "value" : "Handle Pop-Ups For Me"
           }
         },
         "es" : {
@@ -4697,7 +4697,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Manage Cookie Pop-ups"
+            "value" : "Manage Cookie Pop-Ups"
           }
         },
         "es" : {
@@ -18313,7 +18313,7 @@
       }
     },
     "dashboard.popups.ask" : {
-      "comment" : "Make PopUp Windows always asked from user for current domain",
+      "comment" : "Make pop-up windows always request permission for the current domain",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -54439,7 +54439,7 @@
       }
     },
     "notification.badge.popuphidden" : {
-      "comment" : "Notification that appears when browser cosmetically hides a cookie popup",
+      "comment" : "Notification that appears when the browser cosmetically hides a cookie pop-up",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -54451,7 +54451,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Pop-up Hidden"
+            "value" : "Pop-Up Hidden"
           }
         },
         "es" : {
@@ -59924,7 +59924,7 @@
       }
     },
     "permission.authorization.popups.format" : {
-      "comment" : "Popover asking for domain %@ to open Popup Window",
+      "comment" : "Popover asking for domain %@ to open a pop-up window",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -59936,7 +59936,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Allow “%@“ to open PopUp Window?"
+            "value" : "Allow “%@” to open a pop-up window?"
           }
         },
         "es" : {
@@ -59984,7 +59984,7 @@
       }
     },
     "permission.authorization.popups.menu-header" : {
-      "comment" : "Popover asking for domain %@ to open Popup Window",
+      "comment" : "Popover asking for domain %@ to open pop-up windows",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -59996,7 +59996,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Allow “%@“ to open PopUp Windows?"
+            "value" : "Allow “%@” to open pop-up windows?"
           }
         },
         "es" : {
@@ -60703,8 +60703,68 @@
         }
       }
     },
+    "permission.popup.allow.popups.page" : {
+      "comment" : "Option to temporarily allow pop-ups for the current page during this visit until it reloads",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pop-ups für diesen Besuch erlauben"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Only allow pop-ups for this visit"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir ventanas emergentes durante esta visita"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autoriser les fenêtres contextuelles pour cette visite"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consenti popup per questa visita"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pop-ups voor dit bezoek toestaan"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zezwalaj na wyskakujące okienka podczas tej wizyty"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir pop-ups nesta visita"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить всплывающие окна для этого посещения"
+          }
+        }
+      }
+    },
     "permission.popup.blocked.popover" : {
-      "comment" : "Text of popver warning the user that the a pop-up as been blocked",
+      "comment" : "Text of popover warning the user that a pop-up has been blocked",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -60716,7 +60776,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Pop-up Blocked"
+            "value" : "Pop-Up Blocked"
           }
         },
         "es" : {
@@ -60824,127 +60884,348 @@
       }
     },
     "permission.popup.open.format" : {
-      "comment" : "Open %@ URL Pop-up",
+      "comment" : "Menu action to open the blocked pop-up at the specified URL",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@"
+            "value" : "„%@“ öffnen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%@"
+            "value" : "Open “%@”"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@"
+            "value" : "Abrir “%@”"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@"
+            "value" : "Ouvrir « %@ »"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@"
+            "value" : "Apri “%@”"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@"
+            "value" : "\"%@\" openen"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@"
+            "value" : "Otwórz „%@”"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@"
+            "value" : "Abrir “%@”"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@"
+            "value" : "Открыть «%@»"
           }
         }
       }
     },
     "permission.popup.title" : {
-      "comment" : "Title of a popup that has a list of blocked popups",
-      "extractionState" : "extracted_with_value",
+      "comment" : "Title showing number of blocked pop-ups",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Blockierte Pop-ups"
+            "value" : "%#@popups@ blockiert"
+          },
+          "substitutions" : {
+            "popups" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg Pop-up"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg Pop-ups"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Blocked Pop-ups"
+            "value" : "Blocked %#@popups@"
+          },
+          "substitutions" : {
+            "popups" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "new",
+                      "value" : "%arg pop-up"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "new",
+                      "value" : "%arg pop-ups"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ventanas emergentes bloqueadas"
+            "value" : "%#@popups@ bloqueadas"
+          },
+          "substitutions" : {
+            "popups" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg ventana emergente"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg ventanas emergentes"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fenêtres contextuelles bloquées"
+            "value" : "%#@popups@ bloquées"
+          },
+          "substitutions" : {
+            "popups" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg fenêtre contextuelle"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg fenêtres contextuelles"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Popup bloccati"
+            "value" : "%#@popups@ bloccati"
+          },
+          "substitutions" : {
+            "popups" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg popup"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg popup"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Geblokkeerde pop-ups"
+            "value" : "%#@popups@ geblokkeerd"
+          },
+          "substitutions" : {
+            "popups" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg pop-up"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg pop-ups"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zablokowane wyskakujące okienka"
+            "value" : "Zablokowane %#@popups@"
+          },
+          "substitutions" : {
+            "popups" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "few" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg wyskakujące okienka"
+                    }
+                  },
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg wyskakujących okienek"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg wyskakujące okienko"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg wyskakujących okienek"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pop-ups bloqueados"
+            "value" : "%#@popups@ bloqueados"
+          },
+          "substitutions" : {
+            "popups" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg pop-up"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg pop-ups"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Заблокированные всплывающие окна"
+            "value" : "Заблокировано %#@popups@"
+          },
+          "substitutions" : {
+            "popups" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "few" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg всплывающих окна"
+                    }
+                  },
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg всплывающих окон"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg всплывающее окно"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg всплывающих окон"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
     },
     "permission.popups" : {
-      "comment" : "Open Pop Up Windows permission access name",
+      "comment" : "Open pop-up windows permission access name",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {

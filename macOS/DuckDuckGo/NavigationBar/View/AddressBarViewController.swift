@@ -177,6 +177,7 @@ final class AddressBarViewController: NSViewController {
 
     private var cancellables = Set<AnyCancellable>()
     private var tabViewModelCancellables = Set<AnyCancellable>()
+    private var shadowWindowFrameObserver: AnyCancellable?
 
     /// save mouse-down position to handle same-place clicks outside of the Address Bar to remove first responder
     private var clickPoint: NSPoint?
@@ -701,12 +702,21 @@ final class AddressBarViewController: NSViewController {
     private func updateShadowViewPresence(_ isFirstResponder: Bool) {
         guard isFirstResponder, !isInPopUpWindow else {
             shadowView.removeFromSuperview()
+            shadowWindowFrameObserver?.cancel()
+            shadowWindowFrameObserver = nil
             return
         }
         if shadowView.superview == nil {
             updateShadowView(addressBarTextField.isSuggestionWindowVisible || isAIChatOmnibarVisible)
             view.window?.contentView?.addSubview(shadowView)
             layoutShadowView()
+
+            if let window = view.window {
+                shadowWindowFrameObserver = window.publisher(for: \.frame)
+                    .sink { [weak self] _ in
+                        self?.layoutShadowView()
+                    }
+            }
         }
     }
 
@@ -1061,12 +1071,17 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
             }
         } else {
             selectionState = .active
-            if sharedTextState.hasUserInteractedWithText {
+            let shouldRestoreFromSharedState = sharedTextState.hasUserInteractedWithText
+            if shouldRestoreFromSharedState {
                 addressBarTextField.restoreFromSharedState()
             }
 
             updateMode()
             addressBarTextField.makeMeFirstResponder()
+
+            if shouldRestoreFromSharedState {
+                addressBarTextField.setCursorPositionAfterRestore()
+            }
         }
 
         delegate?.addressBarViewControllerSearchModeToggleChanged(self, isAIChatMode: isAIChatMode)

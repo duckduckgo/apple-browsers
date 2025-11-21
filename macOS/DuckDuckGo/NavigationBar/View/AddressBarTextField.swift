@@ -1034,12 +1034,12 @@ extension AddressBarTextField: NSTextFieldDelegate {
 
         let textToRestore = sharedTextState.text.replacingOccurrences(of: "\n", with: " ")
         self.value = Value(stringValue: textToRestore, userTyped: true)
+    }
 
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self, let editor = self.currentEditor() as? NSTextView else { return }
-            let textLength = editor.string.count
-            editor.selectedRange = NSRange(location: textLength, length: 0)
-        }
+    func setCursorPositionAfterRestore() {
+        guard let editor = currentEditor() as? NSTextView else { return }
+        let textLength = editor.string.count
+        editor.selectedRange = NSRange(location: textLength, length: 0)
     }
 
     func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {

@@ -489,11 +489,11 @@ struct UserText {
 
     // MARK: - Fire dialog sites list sheet
     static let fireDialogSitesOverlayTitle = NSLocalizedString("fire.dialog.sites.overlay.title",
-                                                              value: "Site Details",
-                                                              comment: "Header of in-dialog overlay listing domains affected by deletion")
+                                                               value: "Site Details",
+                                                               comment: "Header of in-dialog overlay listing domains affected by deletion")
     static let fireDialogSitesOverlaySubtitle = NSLocalizedString("fire.dialog.sites.overlay.subtitle",
-                                                                 value: "These sites will be deleted.",
-                                                                 comment: "Subtitle above the list of domains in in-dialog overlay")
+                                                                  value: "These sites will be deleted.",
+                                                                  comment: "Subtitle above the list of domains in in-dialog overlay")
 
     // MARK: - Fire dialog single-entry contextual titles
     /// Title used when reusing the Fire dialog as a single entry point (from History, menu, etc.) with full-time range
@@ -555,38 +555,38 @@ struct UserText {
     static let webTrackingProtectionExplanation = NSLocalizedString("web.tracking.protection.explanation", value: "DuckDuckGo automatically blocks hidden trackers as you browse the web.", comment: "feature explanation in settings")
     static let webTrackingProtectionUpdatedDescription = NSLocalizedString("web.tracking.protection.updated.description", value: "The DuckDuckGo browser provides tracking protections, which are always active.", comment: "Updated feature description in settings")
     static let webTrackingProtectionAlwaysOn = NSLocalizedString("Always On", comment: "Web tracking protection Always on title")
-    
+
     // Tracking Protection Features
     static let trackingProtectionThirdPartyTrackersTitle = NSLocalizedString("tracking.protection.third.party.trackers.title", value: "Blocks 3rd-party trackers", comment: "Feature box title")
     static let trackingProtectionThirdPartyTrackersDescription = NSLocalizedString("tracking.protection.third.party.trackers.description", value: "Helps block 3rd-party cookies that track you from site to site by preventing 3rd-party trackers from loading in the first place.", comment: "Feature description")
-    
+
     static let trackingProtectionTargetedAdsTitle = NSLocalizedString("tracking.protection.targeted.ads.title", value: "Blocks targeted ads", comment: "Feature box title")
     static let trackingProtectionTargetedAdsDescription = NSLocalizedString("tracking.protection.targeted.ads.description", value: "Blocks invasive trackers before they load, effectively eliminating ads that rely on tracking.", comment: "Feature description")
-    
+
     static let trackingProtectionLinkTrackingTitle = NSLocalizedString("tracking.protection.link.tracking.title", value: "Blocks link tracking", comment: "Feature box title")
     static let trackingProtectionLinkTrackingDescription = NSLocalizedString("tracking.protection.link.tracking.description", value: "Removes tracking parameters in links to prevent 3rd parties from tracking your behavior across sites.", comment: "Feature box description")
-    
+
     static let trackingProtectionFingerprintingTitle = NSLocalizedString("tracking.protection.fingerprinting.title", value: "Prevents fingerprint tracking", comment: "Feature box title")
     static let trackingProtectionFingerprintingDescription = NSLocalizedString("tracking.protection.fingerprinting.description", value: "Helps stop tracking companies from obtaining unique identifiers about your browser and device, which they use to follow you around the web.", comment: "Feature box description")
-    
+
     static let trackingProtectionReferrerTitle = NSLocalizedString("tracking.protection.referrer.title", value: "Protects against referrer tracking", comment: "Feature box title")
     static let trackingProtectionReferrerDescription = NSLocalizedString("tracking.protection.referrer.description", value: "Helps block companies from identifying the last website you visited.", comment: "Feature box description")
-    
+
     static let trackingProtectionFirstPartyCookiesTitle = NSLocalizedString("tracking.protection.first.party.cookies.title", value: "Expires 1st-party cookies", comment: "Feature box title")
     static let trackingProtectionFirstPartyCookiesDescription = NSLocalizedString("tracking.protection.first.party.cookies.description", value: "Automatically expires 1st-party cookies after 30 days, ensuring sites can't track you indefinitely when you're logged out.", comment: "Feature box description")
-    
+
     static let trackingProtectionCNAMECloakingTitle = NSLocalizedString("tracking.protection.cname.cloaking.title", value: "Protects against DNS CNAME cloaking", comment: "Feature box title")
     static let trackingProtectionCNAMECloakingDescription = NSLocalizedString("tracking.protection.cname.cloaking.description", value: "Helps block 3rd-party trackers that try to disguise themselves within a website using DNS.", comment: "Feature box description")
-    
+
     static let trackingProtectionGoogleAMPTitle = NSLocalizedString("tracking.protection.google.amp.title", value: "Blocks Google's AMP Tracking", comment: "Feature box title")
     static let trackingProtectionGoogleAMPDescription = NSLocalizedString("tracking.protection.google.amp.description", value: "Replaces Google AMP links with the original publisher's site.", comment: "Feature box description")
-    
+
     static let trackingProtectionGoogleSignInTitle = NSLocalizedString("tracking.protection.google.sign.in.title", value: "Blocks Google's sign-in pop-ups", comment: "Feature box title")
     static let trackingProtectionGoogleSignInDescription = NSLocalizedString("tracking.protection.google.sign.in.description", value: "Blocks Google sign-in pop-ups on sites Google doesn't own.", comment: "Feature box description")
-    
+
     static let trackingProtectionFacebookTitle = NSLocalizedString("tracking.protection.facebook.title", value: "Facebook tracking protection", comment: "Feature box title")
     static let trackingProtectionFacebookDescription = NSLocalizedString("tracking.protection.facebook.description", value: "Disables tracking for Facebook content like Facebook comment widgets on non-Facebook sites.", comment: "Feature box description")
-    
+
     static let emailProtectionExplanation = NSLocalizedString("email.protection.explanation", value: "Block email trackers and hide your address without switching your email provider.", comment: "Email protection feature explanation in settings. The feature blocks email trackers and hides original email address.")
 
     // Misc
@@ -925,11 +925,11 @@ struct UserText {
                                                                        value: "Allow “%@“ to use your %@?",
                                                                        comment: "Popover asking for domain %@ to use camera/mic (%@)")
     static let popupWindowsPermissionAuthorizationFormat = NSLocalizedString("permission.authorization.popups.format",
-                                                                             value: "Allow “%@“ to open PopUp Window?",
-                                                                             comment: "Popover asking for domain %@ to open Popup Window")
+                                                                             value: "Allow “%@” to open a pop-up window?",
+                                                                             comment: "Popover asking for domain %@ to open a pop-up window")
     static let permissionMenuHeaderPopupWindowsFormat = NSLocalizedString("permission.authorization.popups.menu-header",
-                                                                          value: "Allow “%@“ to open PopUp Windows?",
-                                                                          comment: "Popover asking for domain %@ to open Popup Window")
+                                                                          value: "Allow “%@” to open pop-up windows?",
+                                                                          comment: "Popover asking for domain %@ to open pop-up windows")
     static let externalSchemePermissionAuthorizationFormat = NSLocalizedString("permission.authorization.externalScheme.format",
                                                                                value: "“%@” would like to open this link in %@",
                                                                                comment: "Popover asking for domain %@ to open link in External App (%@)")
@@ -943,7 +943,7 @@ struct UserText {
     static let permissionCamera = NSLocalizedString("permission.camera", value: "Camera", comment: "Camera input media device name")
     static let permissionCameraAndMicrophone = NSLocalizedString("permission.cameraAndmicrophone", value: "Camera and Microphone", comment: "camera and microphone input media devices name")
     static let permissionGeolocation = NSLocalizedString("permission.geolocation", value: "Location", comment: "User's Geolocation permission access name")
-    static let permissionPopups = NSLocalizedString("permission.popups", value: "Pop-ups", comment: "Open Pop Up Windows permission access name")
+    static let permissionPopups = NSLocalizedString("permission.popups", value: "Pop-ups", comment: "Open pop-up windows permission access name")
 
     static let permissionMuteFormat = NSLocalizedString("permission.mute", value: "Pause %@ use on “%@”", comment: "Temporarily pause input media device %@ access for %@2 website")
     static let permissionUnmuteFormat = NSLocalizedString("permission.unmute", value: "Resume %@ use on “%@”", comment: "Resume input media device %@ access for %@ website")
@@ -956,11 +956,19 @@ struct UserText {
     static let permissionGeolocationServicesDisabled = NSLocalizedString("permission.disabled.system", value: "System location services are disabled", comment: "Geolocation Services are disabled in System Preferences")
     static let permissionOpenSystemSettings = NSLocalizedString("permission.open.settings", value: "Open System Settings", comment: "Open System Settings (to re-enable permission for the App) (macOS 13 and above)")
 
-    static let permissionPopupTitle = NSLocalizedString("permission.popup.title", value: "Blocked Pop-ups", comment: "Title of a popup that has a list of blocked popups")
-    static let permissionPopupOpenFormat = NSLocalizedString("permission.popup.open.format", value: "%@", comment: "Open %@ URL Pop-up")
+    static func permissionPopupTitle(count: Int) -> String {
+        let format = NSLocalizedString("permission.popup.title", value: "Blocked %d pop-ups", comment: "Title showing number of blocked pop-ups")
+        return String.localizedStringWithFormat(format, count)
+    }
+    static let permissionPopupOpenFormat = NSLocalizedString("permission.popup.open.format",
+                                                             value: "Open “%@”",
+                                                             comment: "Menu action to open the blocked pop-up at the specified URL")
+    static let permissionPopupAllowPopupsForPage = NSLocalizedString("permission.popup.allow.popups.page",
+                                                                     value: "Only allow pop-ups for this visit",
+                                                                     comment: "Option to temporarily allow pop-ups for the current page during this visit until it reloads")
 
     static let permissionExternalSchemeOpenFormat = NSLocalizedString("permission.externalScheme.open.format", value: "Open %@", comment: "Open %@ App Name")
-    static let permissionPopupBlockedPopover = NSLocalizedString("permission.popup.blocked.popover", value: "Pop-up Blocked", comment: "Text of popver warning the user that the a pop-up as been blocked")
+    static let permissionPopupBlockedPopover = NSLocalizedString("permission.popup.blocked.popover", value: "Pop-Up Blocked", comment: "Text of popover warning the user that a pop-up has been blocked")
     static let permissionPopupLearnMoreLink = NSLocalizedString("permission.popup.learn-more.link", value: "Learn more about location services", comment: "Text of link that leads to web page with more informations about location services.")
     static let permissionPopupAllowButton = NSLocalizedString("permission.popup.allow.button", value: "Allow", comment: "Button that the user can use to authorise a web site to for, for example access location or camera and microphone etc.")
 
@@ -969,7 +977,7 @@ struct UserText {
     static let privacyDashboardPermissionAlwaysDeny = NSLocalizedString("dashboard.permission.deny", value: "Always deny", comment: "Privacy Dashboard: Website can never access input media device")
     static let permissionPopoverDenyButton = NSLocalizedString("permission.popover.deny", value: "Deny", comment: "Permission Popover: Deny Website input media device access")
 
-    static let privacyDashboardPopupsAlwaysAsk = NSLocalizedString("dashboard.popups.ask", value: "Notify", comment: "Make PopUp Windows always asked from user for current domain")
+    static let privacyDashboardPopupsAlwaysAsk = NSLocalizedString("dashboard.popups.ask", value: "Notify", comment: "Make pop-up windows always request permission for the current domain")
 
     static let settings = NSLocalizedString("settings", value: "Settings", comment: "Menu item for opening settings")
 
@@ -1237,8 +1245,8 @@ struct UserText {
 
     static func dataImportRequiresPasswordTitle(_ source: DataImport.Source) -> String {
         let localized = NSLocalizedString("import.data.requires-password.title",
-                                         value: "Enter Primary Password for %@",
-                                         comment: "Alert title text when the data import needs a password")
+                                          value: "Enter Primary Password for %@",
+                                          comment: "Alert title text when the data import needs a password")
         return String(format: localized, source.importSourceName)
     }
 
@@ -1391,7 +1399,7 @@ struct UserText {
     static let reopenLastClosedTab = NSLocalizedString("reopen.last.closed.tab", value: "Reopen Last Closed Tab", comment: "This string represents an action to reopen the last closed tab in the browser")
     static let reopenLastClosedWindow = NSLocalizedString("reopen.last.closed.window", value: "Reopen Last Closed Window", comment: "This string represents an action to reopen the last closed window in the browser")
     static let cookiePopupManagedNotification = NSLocalizedString("notification.badge.cookiesmanaged", value: "Cookies Managed", comment: "Notification that appears when browser automatically handle cookies")
-    static let cookiePopupHiddenNotification = NSLocalizedString("notification.badge.popuphidden", value: "Pop-up Hidden", comment: "Notification that appears when browser cosmetically hides a cookie popup")
+    static let cookiePopupHiddenNotification = NSLocalizedString("notification.badge.popuphidden", value: "Pop-Up Hidden", comment: "Notification that appears when the browser cosmetically hides a cookie pop-up")
 
     static let autoconsentModalTitle = NSLocalizedString("autoconsent.modal.title", value: "Looks like this site has a cookie pop-up 👇", comment: "Title for modal asking the user to auto manage cookies")
     static let autoconsentFromSetUpModalTitle = NSLocalizedString("autoconsent.from.setup.modal.title", value: "Want DuckDuckGo to handle cookie pop-ups?", comment: "Title for modal asking the user to auto manage cookies")
@@ -1399,8 +1407,8 @@ struct UserText {
     static let autoconsentModalBody = NSLocalizedString("autoconsent.modal.body", value: "Want me to handle these for you? I can try to minimize cookies, maximize privacy, and hide pop-ups like these.", comment: "Body for modal asking the user to auto manage cookies")
     static let autoconsentFromSetUpModalBody = NSLocalizedString("autoconsent.from.setup.modal.body", value: "When we detect cookie pop-ups on sites you visit, we can try to select the most private settings available and hide pop-ups like this.", comment: "Body for modal asking the user to auto manage cookies")
 
-    static let autoconsentModalConfirmButton = NSLocalizedString("autoconsent.modal.cta.confirm", value: "Manage Cookie Pop-ups", comment: "Confirm button for modal asking the user to auto manage cookies")
-    static let autoconsentFromSetUpModalConfirmButton = NSLocalizedString("autoconsent.from.setup.modal.cta.confirm", value: "Handle Pop-ups For Me", comment: "Confirm button for modal asking the user to auto manage cookies")
+    static let autoconsentModalConfirmButton = NSLocalizedString("autoconsent.modal.cta.confirm", value: "Manage Cookie Pop-Ups", comment: "Confirm button for modal asking the user to auto manage cookies")
+    static let autoconsentFromSetUpModalConfirmButton = NSLocalizedString("autoconsent.from.setup.modal.cta.confirm", value: "Handle Pop-Ups For Me", comment: "Confirm button for modal asking the user to auto manage cookies")
     static let autoconsentModalDenyButton = NSLocalizedString("autoconsent.modal.cta.deny", value: "No Thanks", comment: "Deny button for modal asking the user to auto manage cookies")
 
     static let recentlyVisitedMenuSection = NSLocalizedString("history.menu.recently.visited", value: "Recently Visited", comment: "Section header of the history menu")
@@ -1564,8 +1572,8 @@ struct UserText {
     }
 
     static let passwordManagerAutosaveButtonText = NSLocalizedString("autofill.popover.autosave.button.text",
-                                                                      value: "View",
-                                                                      comment: "Button to view the recently autosaved password")
+                                                                     value: "View",
+                                                                     comment: "Button to view the recently autosaved password")
 
     static let passwordManagerAutoPinnedPopoverText = NSLocalizedString("autofill.popover.passwords.auto-pinned.text", value: "Shortcut Added!", comment: "Text confirming the password manager has been pinned to the toolbar")
 
@@ -1573,8 +1581,8 @@ struct UserText {
                                                                           value: "Add passwords shortcut?",
                                                                           comment: "Text prompting user to pin the password manager shortcut to the toolbar")
     static let passwordManagerPinnedPromptPopoverButtonText = NSLocalizedString("autofill.popover.passwords.pin-prompt.button.text",
-                                                                     value: "Add Shortcut",
-                                                                     comment: "Button to pin the password manager shortcut to the toolbar")
+                                                                                value: "Add Shortcut",
+                                                                                comment: "Button to pin the password manager shortcut to the toolbar")
 
     static func openPasswordManagerButton(managerName: String) -> String {
         let localized = NSLocalizedString("autofill.popover.open-password-manager", value: "Open %@", comment: "Open password manager button")
@@ -1698,7 +1706,7 @@ struct UserText {
     static let fireproofCheckboxTitle = NSLocalizedString("fireproof.checkbox.title", value: "Ask to Fireproof websites when signing in", comment: "Fireproof settings checkbox title")
     static let fireproofExplanation = NSLocalizedString("fireproof.explanation", value: "When you Fireproof a site, cookies won't be erased and you'll stay signed in, even after using the Fire Button.", comment: "Fireproofing mechanism explanation")
     static let manageFireproofSites = NSLocalizedString("fireproof.manage-sites", value: "Manage Fireproof Sites…", comment: "Fireproof settings button caption")
-    
+
     static let autoClear = NSLocalizedString("auto.clear", value: "Auto-Clear", comment: "Header of a section in Settings. The setting configures clearing data automatically after quitting the app.")
     static let automaticallyClearData = NSLocalizedString("automatically.clear.data", value: "Automatically delete tabs and browsing data when DuckDuckGo quits", comment: "Label after the checkbox in Settings which configures clearing data automatically after quitting the app.")
     static let autoClearAIChatHistory = NSLocalizedString("automatically.clear.chats", value: "Delete Duck.ai chat history when DuckDuckGo quits", comment: "Label after the checkbox in Settings which configures clearing Duck.ai chat history automatically after quitting the app.")
@@ -1727,8 +1735,8 @@ struct UserText {
                                                        value: "Go to Startup Settings",
                                                        comment: "Button in Data Clearing Settings. It navigates user to Startup Settings.")
     static let fireWindowSessionRestoreWarning = NSLocalizedString("fire.window.session.restore.warning",
-                                                                  value: "Fire Windows won’t be restored with your session.",
-                                                                  comment: "Warning message explaining that session restoration is not available when using Fire Window")
+                                                                   value: "Fire Windows won’t be restored with your session.",
+                                                                   comment: "Warning message explaining that session restoration is not available when using Fire Window")
     static let fireAnimationSectionHeader = NSLocalizedString("fire.animation.section.setting", value: "Animation", comment: "Section header in Data Clearing related to the Fire Animation.")
     static let showFireAnimationToggleText = NSLocalizedString("fire.animation.toggle.value", value: "Show inferno animation when deleting data", comment: "Checkbox to toggle the fire animation to be on or off")
 

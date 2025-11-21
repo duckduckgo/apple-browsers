@@ -317,7 +317,7 @@ private extension NetworkProtectionIPCTunnelController {
         wideEvent.startFlow(data)
         data.overallDuration = WideEvent.MeasuredInterval.startingNow()
     }
-    
+
     func passthroughConnectionWideEventData() {
         guard isConnectionWideEventMeasurementEnabled, let data = self.connectionWideEventData else { return }
         vpnConnectionWideEventBrowserStartTime = data.browserStartDuration?.start

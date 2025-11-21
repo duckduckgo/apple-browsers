@@ -190,10 +190,6 @@ final class SettingsViewModel: ObservableObject {
         }
     }
 
-    var isMenuSheetPresentationFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(.browsingMenuSheetPresentation)
-    }
-
     var shouldShowNoMicrophonePermissionAlert: Bool = false
     @Published var shouldShowEmailAlert: Bool = false
 

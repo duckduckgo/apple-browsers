@@ -546,4 +546,7 @@ public enum PopupBlockingSubfeature: String, PrivacySubfeature {
 
     /// Allow popups for current page after permission approval (until next navigation)
     case allowPopupsForCurrentPage
+
+    /// Show popup permission button in inactive state when temporary allowance is active
+    case popupPermissionButtonPersistence
 }

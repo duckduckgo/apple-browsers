@@ -155,7 +155,7 @@ final class PermissionContextMenu: NSMenu {
             }
 
             // Check if we should group empty/about URLs
-            let shouldGroupEmptyUrls = featureFlagger.isFeatureOn(.suppressEmptyPopUpsOnApproval)
+            let shouldGroupEmptyUrls = featureFlagger.isFeatureOn(.popupBlocking) && featureFlagger.isFeatureOn(.suppressEmptyPopUpsOnApproval)
             let isEmptyUrl = query.url?.isEmpty ?? true || query.url?.navigationalScheme == .about
 
             if shouldGroupEmptyUrls && isEmptyUrl {
@@ -176,12 +176,14 @@ final class PermissionContextMenu: NSMenu {
             addSeparator(if: numberOfItems > 0)
             addItem(.persistenceHeaderItem(for: permission, on: domain))
 
+            let persistedValue = permissionManager.permission(forDomain: domain, permissionType: permission)
+
             // Add temporary "Allow for this page" option for pop-ups
-            if permission == .popups && featureFlagger.isFeatureOn(.allowPopupsForCurrentPage) {
-                addItem(.allowPopups(queries: emptyUrlPopupQueries, target: self, isChecked: hasTemporaryPopupAllowance))
+            if permission == .popups,
+               featureFlagger.isFeatureOn(.popupBlocking) && featureFlagger.isFeatureOn(.allowPopupsForCurrentPage) {
+                addItem(.allowPopups(queries: emptyUrlPopupQueries, target: self, isChecked: hasTemporaryPopupAllowance && persistedValue == .ask))
             }
 
-            let persistedValue = permissionManager.permission(forDomain: domain, permissionType: permission)
             // Don't check "Notify" if temporary pop-up allowance is active for this page
             let isNotifyChecked = (permission == .popups && hasTemporaryPopupAllowance) ? false : (persistedValue == .ask)
             addItem(.alwaysAsk(permission, on: domain, target: self, isChecked: isNotifyChecked))

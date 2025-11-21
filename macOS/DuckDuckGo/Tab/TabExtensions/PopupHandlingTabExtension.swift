@@ -44,8 +44,17 @@ final class PopupHandlingTabExtension {
     /// The last user interaction date based on mouseDown/keyDown events
     @MainActor private var lastUserInteractionDate: Date?
 
-    /// Tracks whether pop-ups were allowed by the user for the current page (until next navigation)
+    /// Whether pop-ups were allowed by the user for the current page (until next navigation)
     @MainActor private(set) var popupsTemporarilyAllowedForCurrentPage = false
+    /// Whether any pop-up was opened by the page for the current page (until next navigation)
+    /// Used to persist the pop-up button state in the navigation bar
+    @MainActor private(set) var popupWasOpenedForCurrentPage = false {
+        didSet {
+            popupOpenedSubject.send()
+        }
+    }
+    /// Notifies when a pop-up was opened
+    private let popupOpenedSubject = PassthroughSubject<Void, Never>()
 
     init(tabsPreferences: TabsPreferences,
          burnerMode: BurnerMode,
@@ -69,7 +78,8 @@ final class PopupHandlingTabExtension {
 
         interactionEventsPublisher
             .filter { event in
-                guard featureFlagger.isFeatureOn(.extendedUserInitiatedPopupTimeout) else { return false }
+                guard featureFlagger.isFeatureOn(.popupBlocking),
+                      featureFlagger.isFeatureOn(.extendedUserInitiatedPopupTimeout) else { return false }
 
                 switch event {
                 case .mouseDown, .keyDown: return true
@@ -181,7 +191,8 @@ final class PopupHandlingTabExtension {
             }
 
             // disable opening empty or about: URLs as they would be non-functional
-            if featureFlagger.isFeatureOn(.suppressEmptyPopUpsOnApproval),
+            if featureFlagger.isFeatureOn(.popupBlocking),
+               featureFlagger.isFeatureOn(.suppressEmptyPopUpsOnApproval),
                url?.isEmpty ?? true || url?.navigationalScheme == .about {
                 Logger.general.info("Suppressing pop-up: empty or about: URL")
                 self.popupsTemporarilyAllowedForCurrentPage = true
@@ -228,6 +239,9 @@ final class PopupHandlingTabExtension {
 
         presentTab(childTab, kind)
 
+        // Set flag to indicate that a pop-up was opened for the current page
+        popupWasOpenedForCurrentPage = true
+
         // WebKit automatically loads the request in the returned web view.
         return childTab.webView
     }
@@ -242,7 +256,8 @@ final class PopupHandlingTabExtension {
         // Check if pop-ups are already allowed for the current page:
         // Either for empty/about: URLs specifically with "Allow pop-ups" option selected,
         // OR for all URLs when allowPopupsForCurrentPage feature flag is enabled
-        if featureFlagger.isFeatureOn(.suppressEmptyPopUpsOnApproval),
+        if featureFlagger.isFeatureOn(.popupBlocking),
+           featureFlagger.isFeatureOn(.suppressEmptyPopUpsOnApproval),
            popupsTemporarilyAllowedForCurrentPage,
            url.isEmpty || url.navigationalScheme == .about || featureFlagger.isFeatureOn(.allowPopupsForCurrentPage) {
             return true
@@ -281,10 +296,10 @@ extension PopupHandlingTabExtension: NavigationResponder {
     @MainActor
     func willStart(_ navigation: Navigation) {
         // Clear pop-up allowance on any navigation
-        if featureFlagger.isFeatureOn(.allowPopupsForCurrentPage) {
-            popupsTemporarilyAllowedForCurrentPage = false
-        }
+        popupsTemporarilyAllowedForCurrentPage = false
+        popupWasOpenedForCurrentPage = false
     }
+
 }
 // MARK: Tab Extension protocol
 protocol PopupHandlingTabExtensionProtocol: AnyObject, NavigationResponder {
@@ -294,13 +309,23 @@ protocol PopupHandlingTabExtensionProtocol: AnyObject, NavigationResponder {
                        for navigationAction: WKNavigationAction,
                        windowFeatures: WKWindowFeatures) -> WKWebView?
 
+    /// Whether pop-ups were allowed by the user for the current page (until next navigation)
     @MainActor var popupsTemporarilyAllowedForCurrentPage: Bool { get }
+    /// Whether any pop-up was opened by the page for the current page (until next navigation)
+    @MainActor var popupWasOpenedForCurrentPage: Bool { get }
+    @MainActor var popupOpenedPublisher: AnyPublisher<Void, Never> { get }
+    /// Set temporary pop-up allowance (called when user selects "Allow pop-ups for this visit")
     @MainActor func setPopupAllowanceForCurrentPage()
+    /// Clear temporary pop-up allowance (called when user selects "Notify" or "Always allow" pop-up permission)
     @MainActor func clearPopupAllowanceForCurrentPage()
 }
 
 extension PopupHandlingTabExtension: TabExtension, PopupHandlingTabExtensionProtocol {
     func getPublicProtocol() -> PopupHandlingTabExtensionProtocol { self }
+
+    var popupOpenedPublisher: AnyPublisher<Void, Never> {
+        popupOpenedSubject.eraseToAnyPublisher()
+    }
 
     /// Set temporary pop-up allowance (called when user selects "Allow pop-ups for this visit")
     @MainActor func setPopupAllowanceForCurrentPage() {

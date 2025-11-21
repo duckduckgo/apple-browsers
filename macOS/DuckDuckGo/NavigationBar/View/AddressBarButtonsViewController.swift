@@ -508,6 +508,9 @@ final class AddressBarButtonsViewController: NSViewController {
         tabViewModel?.$usedPermissions.dropFirst().sink { [weak self] _ in
             self?.updatePermissionButtons()
         }.store(in: &permissionsCancellables)
+       tabViewModel?.tab.popupHandling?.popupOpenedPublisher.sink { [weak self] _ in
+           self?.updatePermissionButtons()
+       }.store(in: &permissionsCancellables)
         tabViewModel?.$permissionAuthorizationQuery.dropFirst().sink { [weak self] _ in
             self?.updatePermissionButtons()
         }.store(in: &permissionsCancellables)
@@ -592,9 +595,11 @@ final class AddressBarButtonsViewController: NSViewController {
         // Show pop-up button when there's a blocked pop-up (permission is requested)
         if tabViewModel.usedPermissions.popups?.isRequested == true {
             popupsButton.buttonState = tabViewModel.usedPermissions.popups
-        } else if featureFlagger.isFeatureOn(.allowPopupsForCurrentPage) {
-            // Keep button visible (as .inactive) when a pop-up was allowed, so user can still access the menu
-            popupsButton.buttonState = tabViewModel.usedPermissions.popups
+        } else if featureFlagger.isFeatureOn(.popupBlocking),
+                  featureFlagger.isFeatureOn(.popupPermissionButtonPersistence) {
+            let popupWasOpenedForCurrentPage = tabViewModel.tab.popupHandling?.popupWasOpenedForCurrentPage ?? false
+            // Keep button visible (as .inactive) when a pop-up was allowed or opened for the current page (always allowed)
+            popupsButton.buttonState = popupWasOpenedForCurrentPage ? .inactive : tabViewModel.usedPermissions.popups // .inactive or nil
         } else {
             popupsButton.buttonState = nil
         }
@@ -1538,10 +1543,16 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     @IBAction func popupsButtonAction(_ sender: NSButton) {
-        guard let tabViewModel,
-              let state = tabViewModel.usedPermissions.popups
-        else {
+        guard let tabViewModel else {
             Logger.general.error("Selected tab view model is nil or has no pop-up state")
+            return
+        }
+        guard let state = tabViewModel.usedPermissions.popups ?? {
+            // If popup permission button persistence feature flag is enabled and the popup was opened for the current page,
+            // return .inactive state for the pop-up button
+            if featureFlagger.isFeatureOn(.popupBlocking) && featureFlagger.isFeatureOn(.popupPermissionButtonPersistence),
+               tabViewModel.tab.popupHandling?.popupWasOpenedForCurrentPage ?? false { return .inactive } else { return nil }
+        }() else {
             return
         }
 

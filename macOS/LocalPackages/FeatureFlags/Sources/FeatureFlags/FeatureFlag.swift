@@ -291,6 +291,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// Allow all popups for current page after permission approval (until next navigation)
     case allowPopupsForCurrentPage
+
+    /// Show popup permission button in inactive state when temporary allowance is active
+    case popupPermissionButtonPersistence
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -317,7 +320,10 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .pinnedTabsViewRewrite,
                 .vpnConnectionWidePixelMeasurement,
                 .showHideAIGeneratedImagesSection,
-                .allowPopupsForCurrentPage:
+                .allowPopupsForCurrentPage,
+                .extendedUserInitiatedPopupTimeout,
+                .suppressEmptyPopUpsOnApproval,
+                .popupPermissionButtonPersistence:
             true
         default:
             false
@@ -410,7 +416,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .popupBlocking,
                 .extendedUserInitiatedPopupTimeout,
                 .suppressEmptyPopUpsOnApproval,
-                .allowPopupsForCurrentPage:
+                .allowPopupsForCurrentPage,
+                .popupPermissionButtonPersistence:
             return true
         case .sslCertificatesBypass,
                 .appendAtbToSerpQueries,
@@ -604,6 +611,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PopupBlockingSubfeature.suppressEmptyPopUpsOnApproval))
         case .allowPopupsForCurrentPage:
             return .remoteReleasable(.subfeature(PopupBlockingSubfeature.allowPopupsForCurrentPage))
+        case .popupPermissionButtonPersistence:
+            return .remoteReleasable(.subfeature(PopupBlockingSubfeature.popupPermissionButtonPersistence))
         }
     }
 }

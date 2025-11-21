@@ -30,6 +30,7 @@ import Persistence
 final class SubscriptionSettingsViewModelV2: ObservableObject {
 
     private let subscriptionManager: SubscriptionManagerV2
+    private let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     private var signOutObserver: Any?
 
     private var externalAllowedDomains = ["stripe.com"]
@@ -57,9 +58,9 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
         var faqViewModel: SubscriptionExternalLinkViewModel
         var learnMoreViewModel: SubscriptionExternalLinkViewModel
 
-        init(faqURL: URL, learnMoreURL: URL) {
-            self.faqViewModel = SubscriptionExternalLinkViewModel(url: faqURL)
-            self.learnMoreViewModel = SubscriptionExternalLinkViewModel(url: learnMoreURL)
+        init(faqURL: URL, learnMoreURL: URL, userScriptsDependencies: DefaultScriptSourceProvider.Dependencies) {
+            self.faqViewModel = SubscriptionExternalLinkViewModel(url: faqURL, userScriptsDependencies: userScriptsDependencies)
+            self.learnMoreViewModel = SubscriptionExternalLinkViewModel(url: learnMoreURL, userScriptsDependencies: userScriptsDependencies)
         }
     }
 
@@ -78,11 +79,13 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
 
     init(subscriptionManager: SubscriptionManagerV2 = AppDependencyProvider.shared.subscriptionManagerV2!,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         keyValueStorage: KeyValueStoring = SubscriptionSettingsStore()) {
+         keyValueStorage: KeyValueStoring = SubscriptionSettingsStore(),
+         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies) {
         self.subscriptionManager = subscriptionManager
+        self.userScriptsDependencies = userScriptsDependencies
         let subscriptionFAQURL = subscriptionManager.url(for: .faq)
         let learnMoreURL = subscriptionFAQURL.appendingPathComponent("adding-email")
-        self.state = State(faqURL: subscriptionFAQURL, learnMoreURL: learnMoreURL)
+        self.state = State(faqURL: subscriptionFAQURL, learnMoreURL: learnMoreURL, userScriptsDependencies: userScriptsDependencies)
         self.usesUnifiedFeedbackForm = subscriptionManager.isUserAuthenticated
         self.keyValueStorage = keyValueStorage
         let rebrandingMessageDismissed = keyValueStorage.object(forKey: bannerDismissedKey) as? Bool ?? false
@@ -324,7 +327,9 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
             if let existingModel = state.stripeViewModel {
                 existingModel.url = url
             } else {
-                let model = SubscriptionExternalLinkViewModel(url: url, allowedDomains: externalAllowedDomains)
+                let model = SubscriptionExternalLinkViewModel(url: url,
+                                                              allowedDomains: externalAllowedDomains,
+                                                              userScriptsDependencies: userScriptsDependencies)
                 Task { @MainActor in
                     self.state.stripeViewModel = model
                 }

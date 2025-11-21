@@ -21,6 +21,7 @@ import DesignResourcesKit
 
 final class SpinnerView: NSView {
 
+    private lazy var spinnerGradientColors = SpinnerGradientColors(startColor: progressStartColor, finalColor: progressFinalColor)
     private lazy var spinnerLayer: CAShapeLayer = buildSpinnerLayer()
     private lazy var gradientLayer: CAGradientLayer = {
         let layer = buildGradientLayer()
@@ -40,7 +41,13 @@ final class SpinnerView: NSView {
         }
     }
 
-    var lineColor: NSColor = NSColor(designSystemColor: .spinner) {
+    var progressStartColor: NSColor = NSColor(designSystemColor: .iconsTertiary) {
+        didSet {
+            refreshGradientColors()
+        }
+    }
+
+    var progressFinalColor: NSColor = NSColor(designSystemColor: .spinner) {
         didSet {
             refreshGradientColors()
         }
@@ -82,6 +89,8 @@ extension SpinnerView {
 
         gradientLayer.isHidden = false
         gradientLayer.opacity = 1
+        gradientLayer.colors = spinnerGradientColors.gradientColors(rendered: false)
+
         gradientLayer.add(fadeInAnimation, forKey: SpinnerConstants.fadeAnimationKey)
         gradientLayer.add(rotationAnimation, forKey: SpinnerConstants.rotationAnimationKey)
     }
@@ -102,6 +111,24 @@ extension SpinnerView {
         gradientLayer.add(fadeOutAnimation, forKey: SpinnerConstants.fadeAnimationKey)
 
         CATransaction.commit()
+    }
+
+    func refreshSpinnerColorsIfNeeded(rendered: Bool, animated: Bool = true) {
+        let currentColors = gradientLayer.colors as? [CGColor] ?? []
+        let targetColors = spinnerGradientColors.gradientColors(rendered: rendered)
+
+        guard currentColors != targetColors else {
+            return
+        }
+
+        gradientLayer.colors = targetColors
+
+        guard animated else {
+            return
+        }
+
+        let animation = CABasicAnimation.buildColorsAnimation(duration: SpinnerConstants.animationShortDuration, fromValue: currentColors, toValue: targetColors)
+        gradientLayer.add(animation, forKey: SpinnerConstants.colorsAnimationKey)
     }
 }
 
@@ -127,7 +154,7 @@ private extension SpinnerView {
     }
 
     func refreshGradientColors() {
-        gradientLayer.colors = buildGradientColors()
+        spinnerGradientColors = SpinnerGradientColors(startColor: progressStartColor, finalColor: progressFinalColor)
     }
 
     func removeRotationAnimationAndHide() {
@@ -141,21 +168,12 @@ private extension SpinnerView {
     func buildGradientLayer() -> CAGradientLayer {
         let gradient = CAGradientLayer()
         gradient.type = .conic
-        gradient.colors = buildGradientColors()
         gradient.locations = [0, 0.6, 1]
         gradient.startPoint = CGPoint(x: 0.5, y: 0.5)
         gradient.endPoint = CGPoint(x: 0.5, y: 0)
         gradient.frame = bounds
 
         return gradient
-    }
-
-    func buildGradientColors() -> [CGColor] {
-        [
-            lineColor.cgColor,
-            lineColor.withAlphaComponent(0.5).cgColor,
-            NSColor.clear.cgColor
-        ]
     }
 
     func buildSpinnerLayer() -> CAShapeLayer {
@@ -184,4 +202,22 @@ private enum SpinnerConstants {
     static let defaultLineLength: CGFloat = CGFloat.pi * 2 * 0.6
     static let rotationAnimationKey = "rotation"
     static let fadeAnimationKey = "fade"
+    static let colorsAnimationKey = "colors"
+}
+
+private struct SpinnerGradientColors {
+    let startColor: NSColor
+    let finalColor: NSColor
+
+    private func gradient(baseColor: NSColor) -> [CGColor] {
+        [
+            baseColor.cgColor,
+            baseColor.withAlphaComponent(0.5).cgColor,
+            NSColor.clear.cgColor
+        ]
+    }
+
+    func gradientColors(rendered: Bool) -> [CGColor] {
+        rendered ? gradient(baseColor: finalColor) : gradient(baseColor: startColor)
+    }
 }

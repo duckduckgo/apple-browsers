@@ -119,6 +119,7 @@ class MainViewController: UIViewController {
     let syncDataProviders: SyncDataProviders
     let syncPausedStateManager: any SyncPausedStateManaging
 
+    let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
 
     private let tutorialSettings: TutorialSettings
@@ -202,7 +203,6 @@ class MainViewController: UIViewController {
     var historyManager: HistoryManaging
     var viewCoordinator: MainViewCoordinator!
     let aiChatSettings: AIChatSettingsProvider
-    
 
     let customConfigurationURLProvider: CustomConfigurationURLProviding
     let experimentalAIChatManager: ExperimentalAIChatManager
@@ -260,6 +260,7 @@ class MainViewController: UIViewController {
         homePageConfiguration: HomePageConfiguration,
         syncService: DDGSyncing,
         syncDataProviders: SyncDataProviders,
+        userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
         contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
         appSettings: AppSettings,
         previewsSource: TabPreviewsSource,
@@ -303,6 +304,7 @@ class MainViewController: UIViewController {
         self.homePageConfiguration = homePageConfiguration
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
+        self.userScriptsDependencies = userScriptsDependencies
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.favoritesViewModel = FavoritesListViewModel(bookmarksDatabase: bookmarksDatabase, favoritesDisplayMode: appSettings.favoritesDisplayMode)
         self.bookmarksCachingSearch = BookmarksCachingSearch(bookmarksStore: CoreDataBookmarksSearchStore(bookmarksStore: bookmarksDatabase))
@@ -2667,19 +2669,44 @@ extension MainViewController: OmniBarDelegate {
             headerEntries = tab.buildBrowsingMenuHeaderContent()
         }
 
-        let controller = BrowsingMenuViewController.instantiate(headerEntries: headerEntries,
-                                                                menuEntries: menuEntries,
-                                                                daxDialogsManager: daxDialogsManager)
+        let sheetPresentation = featureFlagger.isFeatureOn(.browsingMenuSheetPresentation)
+        let controller: UIViewController
+        let presentationCompletion: () -> Void
 
-        controller.modalPresentationStyle = .custom
-        controller.onDismiss = {
-            self.viewCoordinator.menuToolbarButton.isEnabled = true
-        }
-        self.present(controller, animated: true) {
-            if self.canDisplayAddFavoriteVisualIndicator {
-                controller.highlightCell(atIndex: IndexPath(row: tab.favoriteEntryIndex, section: 0))
+        if sheetPresentation {
+            controller = BrowsingMenuSheetViewController(rootView: BrowsingMenuSheetView(headerItems: headerEntries, listItems: menuEntries, onDismiss: {
+                self.viewCoordinator.menuToolbarButton.isEnabled = true
+            }))
+            presentationCompletion = {
+                // TODO: Missing favorite entry highlight
+                // Wil be added in https://app.asana.com/1/137249556945/task/1212019161027836
             }
+
+            controller.modalPresentationStyle = .pageSheet
+            if let sheet = controller.sheetPresentationController {
+                sheet.detents = [.medium(), .large()]
+                sheet.prefersGrabberVisible = true
+                sheet.widthFollowsPreferredContentSizeWhenEdgeAttached = true
+            }
+        } else {
+            let browsingMenu: BrowsingMenuViewController =
+            BrowsingMenuViewController.instantiate(headerEntries: headerEntries,
+                                                                    menuEntries: menuEntries,
+                                                                    daxDialogsManager: daxDialogsManager)
+            browsingMenu.onDismiss = {
+                self.viewCoordinator.menuToolbarButton.isEnabled = true
+            }
+            controller = browsingMenu
+            presentationCompletion = {
+                if self.canDisplayAddFavoriteVisualIndicator {
+                    browsingMenu.highlightCell(atIndex: IndexPath(row: tab.favoriteEntryIndex, section: 0))
+                }
+            }
+
+            controller.modalPresentationStyle = .custom
         }
+
+        self.present(controller, animated: true, completion: presentationCompletion)
 
         tab.didLaunchBrowsingMenu()
 

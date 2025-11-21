@@ -74,7 +74,8 @@ struct Launching: LaunchingHandling {
         let autofillService = AutofillService()
 
         let contentBlockingService = ContentBlockingService(appSettings: appSettings,
-                                                            fireproofing: fireproofing)
+                                                            fireproofing: fireproofing,
+                                                            contentScopeExperimentsManager: contentScopeExperimentsManager)
 
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared, contentBlocking: contentBlockingService.common)
         let configurationService = RemoteConfigurationService()
@@ -145,7 +146,8 @@ struct Launching: LaunchingHandling {
                 experimentalAIChatManager: ExperimentalAIChatManager(),
                 defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter,
                 winBackOfferPresenter: winBackOfferService.presenter,
-                winBackOfferCoordinator: winBackOfferService.coordinator
+                winBackOfferCoordinator: winBackOfferService.coordinator,
+                userScriptsDependencies: contentBlockingService.userScriptsDependencies
             )
         )
 

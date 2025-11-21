@@ -109,7 +109,8 @@
             {
                 "key": "d",
                 "type": "string",
-                "description": "Error domain"
+                "description": "String constant representing an Apple-defined error domain (e.g., WebKitErrorDomain, NSURLErrorDomain) or VPN-specific error domain. Not free-form strings, but too large and frequently changing a set to enumerate",
+                "examples": ["WebKitErrorDomain", "NSURLErrorDomain", "SKErrorDomain"]
             },
             {
                 "key": "e",
@@ -119,7 +120,8 @@
             {
                 "key": "ud",
                 "type": "string",
-                "description": "Underlying error domain"
+                "description": "String constant representing an Apple-defined underlying error domain (e.g., WebKitErrorDomain, NSURLErrorDomain) or VPN-specific underlying error domain. Not free-form strings, but too large and frequently changing a set to enumerate",
+                "examples": ["WebKitErrorDomain", "NSURLErrorDomain", "SKErrorDomain"]
             },
             {
                 "key": "ue",
@@ -195,7 +197,8 @@
             {
                 "key": "d",
                 "type": "string",
-                "description": "Error domain"
+                "description": "String constant representing an Apple-defined error domain (e.g., WebKitErrorDomain, NSURLErrorDomain) or VPN-specific error domain. Not free-form strings, but too large and frequently changing a set to enumerate",
+                "examples": ["WebKitErrorDomain", "NSURLErrorDomain", "SKErrorDomain"]
             },
             {
                 "key": "e",
@@ -205,7 +208,8 @@
             {
                 "key": "ud",
                 "type": "string",
-                "description": "Underlying error domain"
+                "description": "String constant representing an Apple-defined underlying error domain (e.g., WebKitErrorDomain, NSURLErrorDomain) or VPN-specific underlying error domain. Not free-form strings, but too large and frequently changing a set to enumerate",
+                "examples": ["WebKitErrorDomain", "NSURLErrorDomain", "SKErrorDomain"]
             },
             {
                 "key": "ue",

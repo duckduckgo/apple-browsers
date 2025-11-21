@@ -408,7 +408,7 @@ final class AddressBarButtonsViewController: NSViewController {
             }
             assert(type(of: view.superview) == NSView?.self)
             guard let nextResponder = view.superview?.nextResponder as? DraggingDestinationView else {
-                assertionFailure("Expected DraggingDestinationView as next responder, got \(type(of: nextResponder))")
+                assertionFailure("Expected DraggingDestinationView as next responder, got \(view.superview?.nextResponder ??? "<nil>")")
                 return
             }
             customView.draggingDestinationView = nextResponder

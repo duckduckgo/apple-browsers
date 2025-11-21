@@ -2212,8 +2212,6 @@
 		7BDBAD212CBFF977000379B7 /* TipKitAppEventHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BDBAD112CBFF633000379B7 /* TipKitAppEventHandling.swift */; };
 		7BDBAD222CBFF97E000379B7 /* TipKitDebugOptionsUIActionHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BDBAD132CBFF633000379B7 /* TipKitDebugOptionsUIActionHandling.swift */; };
 		7BDBAD232CBFF97E000379B7 /* TipKitDebugOptionsUIActionHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BDBAD132CBFF633000379B7 /* TipKitDebugOptionsUIActionHandling.swift */; };
-		7BDEA18F2ECDBDFD005E90B3 /* Documentation.docc in Sources */ = {isa = PBXBuildFile; fileRef = 7B5C63C12ECC6A41007137F2 /* Documentation.docc */; };
-		7BDEA1902ECDBDFD005E90B3 /* Documentation.docc in Sources */ = {isa = PBXBuildFile; fileRef = 7B5C63C12ECC6A41007137F2 /* Documentation.docc */; };
 		7BE146072A6A83C700C313B8 /* NetworkProtectionDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE146062A6A83C700C313B8 /* NetworkProtectionDebugMenu.swift */; };
 		7BE146082A6A83C700C313B8 /* NetworkProtectionDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE146062A6A83C700C313B8 /* NetworkProtectionDebugMenu.swift */; };
 		7BE2073A2DCCC4230037394C /* DeveloperID.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 7BE207382DCCC4230037394C /* DeveloperID.xcstrings */; };
@@ -5045,7 +5043,6 @@
 		7B5A23672C468233007213AC /* ExcludedDomainsViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ExcludedDomainsViewController.swift; sourceTree = "<group>"; };
 		7B5A236E2C46A116007213AC /* ExcludedDomainsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcludedDomainsModel.swift; sourceTree = "<group>"; };
 		7B5A23742C46A4A8007213AC /* ExcludedDomains.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = ExcludedDomains.storyboard; sourceTree = "<group>"; };
-		7B5C63C12ECC6A41007137F2 /* Documentation.docc */ = {isa = PBXFileReference; lastKnownFileType = folder.documentationcatalog; path = Documentation.docc; sourceTree = "<group>"; };
 		7B60AFF92C511B65008E32A3 /* VPNUIActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNUIActionHandler.swift; sourceTree = "<group>"; };
 		7B60AFFC2C514260008E32A3 /* VPNURLEventHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNURLEventHandler.swift; sourceTree = "<group>"; };
 		7B60B0002C514541008E32A3 /* VPNUIActionHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNUIActionHandler.swift; sourceTree = "<group>"; };
@@ -9664,7 +9661,6 @@
 				4B723DEA26B0002B00E14D75 /* DataImport */,
 				3192EC862A4DCF0E001E97A5 /* DBP */,
 				4B379C1C27BDB7EA008A968E /* DeviceAuthentication */,
-				7B5C63C12ECC6A41007137F2 /* Documentation.docc */,
 				AA585D8B248FD31400E9A3E2 /* DuckDuckGo.entitlements */,
 				370AB88B2E2641C500BBBDE0 /* DuckDuckGoAlpha.entitlements */,
 				37D9BBA329376EE8000B99F9 /* DuckDuckGoAppStore.entitlements */,
@@ -13583,7 +13579,6 @@
 				1DF7989A2DBA2A23003148F3 /* AboutPanel.swift in Sources */,
 				7B4D8A222BDA857300852966 /* VPNOperationErrorRecorder.swift in Sources */,
 				560419452DD49BB600818414 /* PreferencesThreatProtectionView.swift in Sources */,
-				7BDEA1902ECDBDFD005E90B3 /* Documentation.docc in Sources */,
 				3706FAE3293F65D500E42796 /* ChromiumDataImporter.swift in Sources */,
 				BB4EC6952D9B5C8000660600 /* ThemeStyleProviding.swift in Sources */,
 				3706FAE6293F65D500E42796 /* BWNotRespondingAlert.swift in Sources */,
@@ -16422,7 +16417,6 @@
 				BB7BAAC22DDBB096004A5A58 /* AddressBarStyleProviding.swift in Sources */,
 				4BBDEE9228FC14760092FAA6 /* ConnectBitwardenView.swift in Sources */,
 				850E8DFB2A6FEC5E00691187 /* BookmarksBarAppearance.swift in Sources */,
-				7BDEA18F2ECDBDFD005E90B3 /* Documentation.docc in Sources */,
 				B64C84EB2692DD650048FEBE /* PermissionAuthorizationPopover.swift in Sources */,
 				85378D9E274E664C007C5CBF /* PopoverMessageViewController.swift in Sources */,
 				3767318E2C7F32E900EB097B /* SolidColorBackground.swift in Sources */,

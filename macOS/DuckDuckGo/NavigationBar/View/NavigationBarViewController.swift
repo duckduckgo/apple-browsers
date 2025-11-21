@@ -527,6 +527,8 @@ final class NavigationBarViewController: NSViewController {
      * > `force` parameter is only used by `HistoryDebugMenu`.
      */
     func presentHistoryViewOnboardingIfNeeded(force: Bool = false) {
+        guard !isInPopUpWindow else { return }
+
         let onboardingDecider = HistoryViewOnboardingDecider()
         guard force || onboardingDecider.shouldPresentOnboarding,
               !tabCollectionViewModel.isBurner,

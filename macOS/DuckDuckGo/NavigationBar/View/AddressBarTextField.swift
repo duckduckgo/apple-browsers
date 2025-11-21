@@ -70,6 +70,7 @@ final class AddressBarTextField: NSTextField {
     weak var searchPreferences: SearchPreferences?
     weak var tabsPreferences: TabsPreferences?
     weak var sharedTextState: AddressBarSharedTextState?
+    weak var customToggleControl: NSControl?
 
     private enum TextDidChangeEventType {
         case none
@@ -861,8 +862,7 @@ extension AddressBarTextField {
             var attributes: [NSAttributedString.Key: Any] {
                 return [
                     .font: NSFont.systemFont(ofSize: size, weight: .regular),
-                    .foregroundColor: NSColor.textColor,
-                    .kern: -0.16
+                    .foregroundColor: NSColor.textColor
                 ]
             }
 
@@ -1049,6 +1049,12 @@ extension AddressBarTextField: NSTextFieldDelegate {
             self.addressBarEnterPressed()
             return true
         } else if commandSelector == #selector(NSResponder.insertTab(_:)) {
+            if let customToggleControl = customToggleControl,
+               !customToggleControl.isHidden,
+               customToggleControl.isEnabled {
+                window?.makeFirstResponder(customToggleControl)
+                return true
+            }
             window?.makeFirstResponder(nextKeyView)
             return false
 

@@ -105,7 +105,7 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var trailingAIChatDivider: NSImageView!
     @IBOutlet weak var trailingStackViewTrailingViewConstraint: NSLayoutConstraint!
 
-    private var searchModeToggleControl: CustomToggleControl?
+    private(set) var searchModeToggleControl: CustomToggleControl?
     @IBOutlet weak var notificationAnimationView: NavigationBarBadgeAnimationView!
     @IBOutlet weak var bookmarkButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var bookmarkButtonHeightConstraint: NSLayoutConstraint!
@@ -1454,6 +1454,10 @@ final class AddressBarButtonsViewController: NSViewController {
 
         let isToggleFeatureEnabled = isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
         let shouldShowToggle = isToggleFeatureEnabled && aiChatSettings.showSearchAndDuckAIToggle
+
+        // Update key view chain when toggle visibility changes
+        updateKeyViewChainForToggle(shouldShowToggle: shouldShowToggle)
+
         searchModeToggleControl?.isHidden = !shouldShowToggle
 
         if isToggleFeatureEnabled {
@@ -1694,13 +1698,31 @@ final class AddressBarButtonsViewController: NSViewController {
         searchModeToggleControl?.isRightSelected = false
     }
 
+    private func updateKeyViewChainForToggle(shouldShowToggle: Bool) {
+        guard let addressBarViewController = parent as? AddressBarViewController,
+              let addressBarTextField = addressBarViewController.addressBarTextField,
+              let toggleControl = searchModeToggleControl else {
+            return
+        }
+
+        if shouldShowToggle {
+            if addressBarTextField.nextKeyView != toggleControl {
+                toggleControl.nextKeyView = addressBarTextField.nextKeyView
+                addressBarTextField.nextKeyView = toggleControl
+            }
+        } else {
+            if addressBarTextField.nextKeyView == toggleControl {
+                addressBarTextField.nextKeyView = toggleControl.nextKeyView
+            }
+        }
+    }
+
     private func applyThemeToToggleControl(_ toggleControl: CustomToggleControl) {
         toggleControl.backgroundColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
-        toggleControl.selectedBackgroundColor = .systemRed
-        toggleControl.focusedBackgroundColor = .systemRed
+        toggleControl.focusedBackgroundColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
         toggleControl.selectionColor = NSColor(designSystemColor: .controlsRaisedFillPrimary)
-        toggleControl.focusBorderColor = .systemBlue
-        toggleControl.outerBorderColor = .systemGreen
+        toggleControl.focusBorderColor = theme.colorsProvider.accentPrimaryColor
+        toggleControl.outerBorderColor = NSColor(designSystemColor: .accentAltPrimary)
         toggleControl.outerBorderWidth = 2.0
         toggleControl.selectionInnerBorderColor = NSColor(designSystemColor: .shadowSecondary)
 

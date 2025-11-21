@@ -121,7 +121,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let tabCrashAggregator = TabCrashAggregator()
     let windowControllersManager: WindowControllersManager
     let subscriptionNavigationCoordinator: SubscriptionNavigationCoordinator
-    let autoconsentDailyStats: AutoconsentDailyStatsManaging
 
     let appearancePreferences: AppearancePreferences
     let dataClearingPreferences: DataClearingPreferences
@@ -168,6 +167,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         contentBlocking: privacyFeatures.contentBlocking,
         fireproofDomains: fireproofDomains,
         privacyStats: privacyStats,
+        autoconsentStats: autoconsentStats,
+        cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
         freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator,
         tld: tld,
         fireCoordinator: fireCoordinator,
@@ -541,7 +542,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 #if DEBUG || REVIEW
         let defaultBrowserAndDockPromptDebugStore = DefaultBrowserAndDockPromptDebugStore()
-        let defaultBrowserAndDockPromptDateProvider: () -> Date = { defaultBrowserAndDockPromptDebugStore.simulatedTodayDate }
+        let defaultBrowserAndDockPromptDateProvider: () -> Date = { defaultBrowserAndDockPromptDebugStore.simulatedTodayDate ?? Date() }
 #else
         let defaultBrowserAndDockPromptDateProvider: () -> Date = Date.init
 #endif
@@ -703,7 +704,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             subscriptionManager: subscriptionAuthV1toV2Bridge
         )
         self.subscriptionNavigationCoordinator = subscriptionNavigationCoordinator
-        self.autoconsentDailyStats = AutoconsentDailyStats(keyValueStore: keyValueStore, featureFlagger: featureFlagger)
 
         themeManager = ThemeManager(appearancePreferences: appearancePreferences, internalUserDecider: internalUserDecider, featureFlagger: featureFlagger)
 
@@ -918,7 +918,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #else
         privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
 #endif
-        autoconsentStats = AutoconsentStats(keyValueStore: keyValueStore, featureFlagger: featureFlagger)
+        autoconsentStats = AutoconsentStats(keyValueStore: keyValueStore, isFeatureEnabled: { featureFlagger.isFeatureOn(.newTabPageAutoconsentStats) })
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger, eventTracker: ExperimentEventTracker(store: UserDefaults.appConfiguration))
 
 #if !APPSTORE
@@ -1203,7 +1203,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         fireDailyActiveUserPixels()
         fireDailyFireWindowConfigurationPixels()
 
-        autoconsentDailyStats.sendDailyPixelIfNeeded()
         fireAutoconsentDailyPixel()
 
         initializeSync()
@@ -1652,6 +1651,8 @@ extension AppDelegate: UserScriptDependenciesProviding {
             historyCoordinator: historyCoordinator,
             fireproofDomains: fireproofDomains,
             privacyStats: privacyStats,
+            autoconsentStats: autoconsentStats,
+            cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
             freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator,
             tld: tld,
             fire: { @MainActor in self.fireCoordinator.fireViewModel.fire },

@@ -18,6 +18,7 @@
 
 import Combine
 import PrivacyStats
+import AutoconsentStats
 import PersistenceTestingUtils
 import TrackerRadarKit
 import XCTest
@@ -60,6 +61,52 @@ final class CapturingPrivacyStats: PrivacyStatsCollecting {
     var handleAppTerminationCallCount: Int = 0
     var privacyStats: [String: Int64] = [:]
     var privacyStatsTotalCount: Int64 = 0
+}
+
+final class CapturingAutoconsentStats: AutoconsentStatsCollecting {
+
+    var statsUpdatePublisher: AnyPublisher<Void, Never> {
+        statsUpdateSubject.eraseToAnyPublisher()
+    }
+
+    let statsUpdateSubject = PassthroughSubject<Void, Never>()
+
+    func recordAutoconsentAction(clicksMade: Int64, timeSpent: TimeInterval) async {
+        recordAutoconsentActionCalls.append((clicksMade, timeSpent))
+    }
+
+    func fetchTotalCookiePopUpsBlocked() async -> Int64 {
+        fetchTotalCookiePopUpsBlockedCallCount += 1
+        return totalCookiePopUpsBlocked
+    }
+
+    func fetchAutoconsentDailyUsagePack() async -> AutoconsentDailyUsagePack {
+        fetchAutoconsentDailyUsagePackCallCount += 1
+        return AutoconsentDailyUsagePack(
+            totalCookiePopUpsBlocked: totalCookiePopUpsBlocked,
+            totalClicksMadeBlockingCookiePopUps: totalClicksMade,
+            totalTotalTimeSpentBlockingCookiePopUps: totalTimeSpent
+        )
+    }
+
+    func clearAutoconsentStats() async {
+        clearAutoconsentStatsCallCount += 1
+    }
+
+    func isEnabled() async -> Bool {
+        isEnabledCallCount += 1
+        return isEnabledValue
+    }
+
+    var recordAutoconsentActionCalls: [(clicksMade: Int64, timeSpent: TimeInterval)] = []
+    var clearAutoconsentStatsCallCount: Int = 0
+    var fetchTotalCookiePopUpsBlockedCallCount: Int = 0
+    var fetchAutoconsentDailyUsagePackCallCount: Int = 0
+    var isEnabledCallCount: Int = 0
+    var totalCookiePopUpsBlocked: Int64 = 0
+    var totalClicksMade: Int64 = 0
+    var totalTimeSpent: TimeInterval = 0
+    var isEnabledValue: Bool = true
 }
 
 final class MockPrivacyStatsTrackerDataProvider: PrivacyStatsTrackerDataProviding {

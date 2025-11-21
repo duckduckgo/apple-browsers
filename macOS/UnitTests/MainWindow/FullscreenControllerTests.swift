@@ -16,6 +16,10 @@
 //  limitations under the License.
 //
 
+import Combine
+import Common
+import History
+import HistoryView
 import SharedTestUtilities
 import XCTest
 
@@ -65,5 +69,97 @@ final class FullscreenControllerTests: XCTestCase {
         controller.manuallyExitFullscreen(window: window)
 
         XCTAssertFalse(window.styleMask.contains(.fullScreen))
+    }
+}
+
+final class MainViewControllerDefaultBrowserPromptTests: XCTestCase, MainViewControllerFactory {
+
+    @MainActor
+    func testDefaultBrowserPromptNotTriggeredInPopupWindow() {
+        let presenter = DefaultBrowserAndDockPromptPresentingMock()
+        let sut = makeMainViewController(isPopup: true, defaultBrowserPromptPresenter: presenter)
+
+        _ = sut.view
+        sut.windowDidBecomeKey()
+
+        XCTAssertEqual(presenter.tryToShowPromptCallCount, 0)
+    }
+
+    @MainActor
+    func testDefaultBrowserPromptShownInRegularWindow() {
+        let presenter = DefaultBrowserAndDockPromptPresentingMock()
+        let sut = makeMainViewController(isPopup: false, defaultBrowserPromptPresenter: presenter)
+
+        _ = sut.view
+        sut.windowDidBecomeKey()
+
+        XCTAssertEqual(presenter.tryToShowPromptCallCount, 1)
+    }
+
+}
+
+private final class DefaultBrowserAndDockPromptPresentingMock: DefaultBrowserAndDockPromptPresenting {
+
+    private let bannerSubject = PassthroughSubject<Void, Never>()
+    private(set) var tryToShowPromptCallCount = 0
+
+    var bannerDismissedPublisher: AnyPublisher<Void, Never> {
+        bannerSubject.eraseToAnyPublisher()
+    }
+
+    func tryToShowPrompt(popoverAnchorProvider: @escaping () -> NSView?,
+                         bannerViewHandler: @escaping (BannerMessageViewController) -> Void,
+                         inactiveUserModalWindowProvider: @escaping () -> NSWindow?) {
+        tryToShowPromptCallCount += 1
+    }
+}
+
+private final class WinBackOfferPromptPresentingMock: WinBackOfferPromptPresenting {
+    private(set) var tryToShowPromptCallCount = 0
+
+    func tryToShowPrompt(in window: NSWindow?) {
+        tryToShowPromptCallCount += 1
+    }
+}
+
+private protocol MainViewControllerFactory {}
+
+extension MainViewControllerFactory {
+
+    @MainActor
+    func makeMainViewController(isPopup: Bool,
+                                defaultBrowserPromptPresenter: DefaultBrowserAndDockPromptPresenting,
+                                winBackOfferPromptPresenter: WinBackOfferPromptPresenting = WinBackOfferPromptPresentingMock()) -> MainViewController {
+        let windowControllersManager = WindowControllersManagerMock()
+        let tabCollectionViewModel = TabCollectionViewModel(isPopup: isPopup, windowControllersManager: windowControllersManager)
+        let featureFlagger = MockFeatureFlagger()
+        let fireCoordinator = makeFireCoordinator(windowControllersManager: windowControllersManager, featureFlagger: featureFlagger)
+        let aiChatSidebarProvider = AIChatSidebarProvider(featureFlagger: featureFlagger)
+
+        return MainViewController(
+            tabCollectionViewModel: tabCollectionViewModel,
+            autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
+            aiChatSidebarProvider: aiChatSidebarProvider,
+            defaultBrowserAndDockPromptPresenting: defaultBrowserPromptPresenter,
+            fireCoordinator: fireCoordinator,
+            winBackOfferPromptPresenting: winBackOfferPromptPresenter
+        )
+    }
+
+    @MainActor
+    func makeFireCoordinator(windowControllersManager: WindowControllersManagerMock,
+                             featureFlagger: MockFeatureFlagger) -> FireCoordinator {
+        FireCoordinator(
+            tld: TLD(),
+            featureFlagger: featureFlagger,
+            historyCoordinating: HistoryCoordinatingMock(),
+            visualizeFireAnimationDecider: nil,
+            onboardingContextualDialogsManager: nil,
+            fireproofDomains: MockFireproofDomains(),
+            faviconManagement: FaviconManagerMock(),
+            windowControllersManager: windowControllersManager,
+            pixelFiring: nil,
+            historyProvider: MockHistoryViewDataProvider()
+        )
     }
 }

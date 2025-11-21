@@ -249,7 +249,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .unifiedURLPredictor,
              .forgetAllInSettings,
              .vpnConnectionWidePixelMeasurement,
-             .showHideAIGeneratedImagesSection:
+             .showHideAIGeneratedImagesSection,
+             .migrateKeychainAccessibility:
             true
         default:
             false
@@ -361,7 +362,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                .failsafeExamplePlatformSpecificSubfeature,
                .experimentalAddressBar,
                .aiChatKeepSession,
-               .aiFeaturesSettingsUpdate:
+               .aiFeaturesSettingsUpdate,
+               .migrateKeychainAccessibility:
             return false
         }
     }

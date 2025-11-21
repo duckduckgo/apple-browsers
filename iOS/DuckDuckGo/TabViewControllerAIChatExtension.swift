@@ -68,6 +68,6 @@ extension TabViewController: AITabController {
     /// Opens a new AI chat in a new tab.
     func openNewChatInNewTab() {
         let newChatURL = aiChatContentHandler.buildQueryURL(query: nil, autoSend: false, tools: nil)
-        delegate?.tab(self, didRequestNewTabForUrl:newChatURL, openedByPage: false, inheritingAttribution: nil)
+        delegate?.tab(self, didRequestNewTabForUrl: newChatURL, openedByPage: false, inheritingAttribution: nil)
     }
 }

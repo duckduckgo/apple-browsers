@@ -274,11 +274,11 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
     private func initializeInactiveUserModal(with type: DefaultBrowserAndDockPromptType) {
         let content = createInactiveUserModal(with: type)
         inactiveUserModal = NSWindow(contentViewController: content)
+            .withAccessibilityIdentifier("DefaultBrowserAndDockPrompts.inactiveUser")
     }
 
     private func showInactiveUserModal(positionedOver window: NSWindow) {
         guard let inactiveUserModal else { return }
-        inactiveUserModal.setAccessibilityIdentifier("DefaultBrowserAndDockPrompts.inactiveUser")
         window.beginSheet(inactiveUserModal)
     }
 

@@ -382,7 +382,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .standaloneMigration,
              .blackFridayCampaign,
              .tierMessagingEnabled,
-             .allowProTierPurchase:
+             .allowProTierPurchase,
              .browsingMenuSheetPresentation:
             return true
         case .showSettingsCompleteSetupSection:

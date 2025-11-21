@@ -862,8 +862,7 @@ extension AddressBarTextField {
             var attributes: [NSAttributedString.Key: Any] {
                 return [
                     .font: NSFont.systemFont(ofSize: size, weight: .regular),
-                    .foregroundColor: NSColor.textColor,
-                    .kern: -0.16
+                    .foregroundColor: NSColor.textColor
                 ]
             }
 

@@ -421,7 +421,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .blackFridayCampaign,
                 .newTabPageAutoconsentStats,
                 .tierMessagingEnabled,
-                .allowProTierPurchase:
+                .allowProTierPurchase,
                 .popupBlocking,
                 .extendedUserInitiatedPopupTimeout,
                 .suppressEmptyPopUpsOnApproval,

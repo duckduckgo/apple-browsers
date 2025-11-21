@@ -1684,7 +1684,7 @@ final class AddressBarButtonsViewController: NSViewController {
         toggleControl.focusedBackgroundColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
         toggleControl.selectionColor = NSColor(designSystemColor: .controlsRaisedFillPrimary)
         toggleControl.focusBorderColor = theme.colorsProvider.accentPrimaryColor
-        toggleControl.outerBorderColor = NSColor(designSystemColor: .accentAltPrimary)
+        toggleControl.outerBorderColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
         toggleControl.outerBorderWidth = 2.0
         toggleControl.selectionInnerBorderColor = NSColor(designSystemColor: .shadowSecondary)
 

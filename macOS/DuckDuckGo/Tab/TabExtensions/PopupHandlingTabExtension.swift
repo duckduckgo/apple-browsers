@@ -183,6 +183,7 @@ final class PopupHandlingTabExtension {
         Logger.general.debug("Requesting pop-up permission for \(String(describing: navigationAction))")
 
         // Pop-up permission is needed: firing an async PermissionAuthorizationQuery
+        var isCalledSynchronously = true
         permissionModel.request([.popups], forDomain: sourceSecurityOrigin.host, url: url).receive { [weak self] result in
             guard let self, case .success(true) = result else {
                 Logger.general.info("Pop-up permission denied")
@@ -190,9 +191,9 @@ final class PopupHandlingTabExtension {
                 return
             }
 
-            // disable opening empty or about: URLs as they would be non-functional
-            if featureFlagger.isFeatureOn(.popupBlocking),
-               featureFlagger.isFeatureOn(.suppressEmptyPopUpsOnApproval),
+            if !isCalledSynchronously,
+               // disable opening empty or about: URLs as they would be non-functional when returned asynchronously after user‘s permission
+               featureFlagger.isFeatureOn(.popupBlocking), featureFlagger.isFeatureOn(.suppressEmptyPopUpsOnApproval),
                url?.isEmpty ?? true || url?.navigationalScheme == .about {
                 Logger.general.info("Suppressing pop-up: empty or about: URL")
                 self.popupsTemporarilyAllowedForCurrentPage = true
@@ -206,6 +207,7 @@ final class PopupHandlingTabExtension {
             let webView = self.createChildWebView(from: webView, with: configuration, for: navigationAction, of: targetKind)
             completionHandler(webView)
         }
+        isCalledSynchronously = false
     }
 
     @MainActor

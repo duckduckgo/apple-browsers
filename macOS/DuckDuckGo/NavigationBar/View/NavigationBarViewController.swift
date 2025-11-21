@@ -39,7 +39,7 @@ final class NavigationBarViewController: NSViewController {
         static let maxDragDistanceToExpandHoveredFolder: CGFloat = 4
         static let dragOverFolderExpandDelay: TimeInterval = 0.3
     }
-    
+
 #if DEBUG
     /// Set to true to force downloads and password management buttons to always be visible in popup windows for testing
     private static var forceShowButtonsInPopup = false
@@ -768,7 +768,7 @@ final class NavigationBarViewController: NSViewController {
             return
         }
 #endif
-        
+
         if LocalPinningManager.shared.isPinned(.downloads) && !isInPopUpWindow {
             downloadsButton.isShown = true
             return
@@ -1171,11 +1171,11 @@ final class NavigationBarViewController: NSViewController {
         let navBarColor = currentTheme.colorsProvider.navigationBackgroundColor
         let blendedMouseOverColor = navBarColor.blended(withFraction: 0.4, of: currentTheme.colorsProvider.buttonMouseOverColor)
         let blendedMouseDownColor = navBarColor.blended(withFraction: 0.4, of: currentTheme.colorsProvider.buttonMouseDownColor)
-        
+
         downloadsButton.backgroundColor = navBarColor.withAlphaComponent(0.4)
         downloadsButton.mouseOverColor = blendedMouseOverColor
         downloadsButton.mouseDownColor = blendedMouseDownColor
-        
+
         passwordManagementButton.backgroundColor = navBarColor.withAlphaComponent(0.4)
         passwordManagementButton.mouseOverColor = blendedMouseOverColor
         passwordManagementButton.mouseDownColor = blendedMouseDownColor

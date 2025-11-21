@@ -399,7 +399,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
     override func viewWillAppear() {
         setupButtons()
-        
+
         // Store reference to DraggingDestinationView for popup window dragging
         if isInPopUpWindow {
             guard let customView = view as? AddressBarButtonsView else {
@@ -1899,11 +1899,11 @@ final class AddressBarButtonsViewController: NSViewController {
 /// to allow dragging the window when it's inactive
 final class AddressBarButtonsView: NSView {
     weak var draggingDestinationView: NSResponder?
-    
+
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
         return draggingDestinationView != nil
     }
-    
+
     override func mouseDown(with event: NSEvent) {
         if let draggingDestinationView {
             // Forward to DraggingDestinationView to allow dragging the popup window
@@ -1912,7 +1912,7 @@ final class AddressBarButtonsView: NSView {
             super.mouseDown(with: event)
         }
     }
-    
+
     override func mouseDragged(with event: NSEvent) {
         if let draggingDestinationView {
             draggingDestinationView.mouseDragged(with: event)
@@ -1920,7 +1920,7 @@ final class AddressBarButtonsView: NSView {
             super.mouseDragged(with: event)
         }
     }
-    
+
     override func mouseUp(with event: NSEvent) {
         if let draggingDestinationView {
             draggingDestinationView.mouseUp(with: event)

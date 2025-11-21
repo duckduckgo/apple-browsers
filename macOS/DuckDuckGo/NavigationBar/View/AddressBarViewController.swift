@@ -1061,12 +1061,17 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
             }
         } else {
             selectionState = .active
-            if sharedTextState.hasUserInteractedWithText {
+            let shouldRestoreFromSharedState = sharedTextState.hasUserInteractedWithText
+            if shouldRestoreFromSharedState {
                 addressBarTextField.restoreFromSharedState()
             }
 
             updateMode()
             addressBarTextField.makeMeFirstResponder()
+            
+            if shouldRestoreFromSharedState {
+                addressBarTextField.setCursorPositionAfterRestore()
+            }
         }
 
         delegate?.addressBarViewControllerSearchModeToggleChanged(self, isAIChatMode: isAIChatMode)

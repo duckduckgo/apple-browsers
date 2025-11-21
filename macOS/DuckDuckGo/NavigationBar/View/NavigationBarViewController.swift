@@ -640,7 +640,7 @@ final class NavigationBarViewController: NSViewController {
             return
         }
 #endif
-        if LocalPinningManager.shared.isPinned(.autofill) {
+        if LocalPinningManager.shared.isPinned(.autofill) && !isInPopUpWindow {
             passwordManagementButton.isHidden = false
         } else {
             passwordManagementButton.isShown = popovers.isPasswordManagementPopoverShown || isAutoFillAutosaveMessageVisible

@@ -142,7 +142,7 @@ public final class AMPCanonicalExtractor: NSObject {
             
             let params: [String: String] = [
                 "duration": String(duration),
-                "rounded_url_size": String(roundedCount)
+                "rounded_url_length": String(roundedCount)
             ]
 
             errorReporting?.fire(.ampKeywordDetectionPerformance, parameters: params)

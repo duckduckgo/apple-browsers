@@ -4,7 +4,19 @@
         "owners": ["jaceklyp"],
         "triggers": ["exception"],
         "suffixes": ["platform", "form_factor"],
-        "parameters": ["appVersion", "duration", "rounded_url_size"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "duration",
+                "description": "Time spent scanning the URL for AMP keywords",
+                "type": "number"
+            },
+            {
+                "key": "rounded_url_length",
+                "description": "Floors url length to a broad magnitude (e.g. 64→0, 1343→1000, 423435→400000)",
+                "type": "integer"
+            }
+        ],
         "expires": "2025-12-19"
     }
 }

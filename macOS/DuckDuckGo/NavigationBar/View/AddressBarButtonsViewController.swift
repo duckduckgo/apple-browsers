@@ -1697,8 +1697,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private func applyThemeToToggleControl(_ toggleControl: CustomToggleControl) {
         toggleControl.backgroundColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
-        toggleControl.selectedBackgroundColor = .systemRed
-        toggleControl.focusedBackgroundColor = theme.palette.accentAltPrimary
+        toggleControl.focusedBackgroundColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
         toggleControl.selectionColor = NSColor(designSystemColor: .controlsRaisedFillPrimary)
         toggleControl.focusBorderColor = theme.colorsProvider.accentPrimaryColor
         toggleControl.outerBorderColor = NSColor(designSystemColor: .accentAltPrimary)

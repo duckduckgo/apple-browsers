@@ -42,6 +42,7 @@ protocol TabBarViewModel {
     var crashIndicatorModel: TabCrashIndicatorModel { get }
     var isLoadingPublisher: AnyPublisher<(Bool, WKError?), Never> { get }
     var renderingProgressDidChangePublisher: PassthroughSubject<Void, Never> { get }
+    var loadedPageDOMPublisher: PassthroughSubject<Void, Never> { get }
 }
 
 extension TabViewModel: TabBarViewModel {
@@ -64,7 +65,11 @@ extension TabViewModel: TabBarViewModel {
             .combineLatest(tab.$error)
             .eraseToAnyPublisher()
     }
+
     var renderingProgressDidChangePublisher: PassthroughSubject<Void, Never> { tab.webViewRenderingProgressDidChangePublisher }
+    var loadedPageDOMPublisher: PassthroughSubject<Void, Never> {
+        tab.loadedPageDOMPublisher
+    }
 }
 
 protocol TabBarViewItemDelegate: AnyObject {
@@ -1021,6 +1026,12 @@ final class TabBarViewItem: NSCollectionViewItem {
                 }
                 .store(in: &cancellables)
 
+            tabViewModel.loadedPageDOMPublisher
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] in
+                    self?.stopSpinner()
+                }
+                .store(in: &cancellables)
         }
     }
 
@@ -1213,6 +1224,10 @@ final class TabBarViewItem: NSCollectionViewItem {
     private func refreshProgressColors(rendered: Bool) {
         let url = tabViewModel?.url
         cell.refreshProgressColors(rendered: rendered, url: url)
+    }
+
+    private func stopSpinner() {
+        cell.faviconView.stopSpinner()
     }
 
     private func updateAudioPlayState(_ audioState: WKWebView.AudioState) {
@@ -1623,6 +1638,7 @@ extension TabBarViewItem {
             let crashIndicatorModel: TabCrashIndicatorModel = TabCrashIndicatorModel()
             var canKillWebContentProcess: Bool = false
 
+            var loadedPageDOMPublisher = PassthroughSubject<Void, Never>()
             @Published var isLoading: Bool
             @Published var error: WKError?
             var isLoadingPublisher: AnyPublisher<(Bool, WKError?), Never> {

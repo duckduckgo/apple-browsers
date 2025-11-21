@@ -29,6 +29,8 @@ final class SpinnerView: NSView {
         return layer
     }()
 
+    private var mustRemoveRotationAnimation = false
+
     var lineLengthInDegrees: CGFloat = SpinnerConstants.defaultLineLength {
         didSet {
             refreshGradientBounds()
@@ -80,6 +82,8 @@ extension SpinnerView {
     }
 
     func startAnimating() {
+        cancelPendingRotationAnimationRemoval()
+
         if isAnimating {
             return
         }
@@ -96,14 +100,20 @@ extension SpinnerView {
     }
 
     func stopAnimating(animated: Bool = true) {
+        guard mustRemoveRotationAnimation == false else {
+            return
+        }
+
         guard isAnimating, animated else {
             removeRotationAnimationAndHide()
             return
         }
 
+        mustRemoveRotationAnimation = true
+
         CATransaction.begin()
         CATransaction.setCompletionBlock { [weak self] in
-            self?.removeRotationAnimationAndHide()
+            self?.removeRotationAnimationIfNeeded()
         }
 
         let fadeOutAnimation = CASpringAnimation.buildFadeOutAnimation(duration: SpinnerConstants.animationShortDuration)
@@ -155,6 +165,19 @@ private extension SpinnerView {
 
     func refreshGradientColors() {
         spinnerGradientColors = SpinnerGradientColors(startColor: progressStartColor, finalColor: progressFinalColor)
+    }
+
+    func cancelPendingRotationAnimationRemoval() {
+        mustRemoveRotationAnimation = false
+    }
+
+    func removeRotationAnimationIfNeeded() {
+        guard mustRemoveRotationAnimation else {
+            return
+        }
+
+        removeRotationAnimationAndHide()
+        mustRemoveRotationAnimation = false
     }
 
     func removeRotationAnimationAndHide() {

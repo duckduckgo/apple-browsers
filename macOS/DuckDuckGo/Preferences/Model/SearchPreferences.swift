@@ -33,7 +33,6 @@ struct SearchPreferencesUserDefaultsPersistor: SearchPreferencesPersistor {
 
 final class SearchPreferences: ObservableObject, PreferencesTabOpening {
 
-    static let shared = SearchPreferences()
     static let moreSearchSettingsURL = URL(string: "https://duckduckgo.com/settings?return=privateSearch")!
 
     @Published var showAutocompleteSuggestions: Bool {
@@ -44,22 +43,25 @@ final class SearchPreferences: ObservableObject, PreferencesTabOpening {
     }
 
     init(persistor: SearchPreferencesPersistor = SearchPreferencesUserDefaultsPersistor(),
-         windowControllersManager: WindowControllersManager = Application.appDelegate.windowControllersManager) {
+         windowControllersManager: WindowControllersManagerProtocol) {
         self.persistor = persistor
         self.windowControllersManager = windowControllersManager
         showAutocompleteSuggestions = persistor.showAutocompleteSuggestions
     }
 
     private var persistor: SearchPreferencesPersistor
-    private var windowControllersManager: WindowControllersManager
+    let windowControllersManager: WindowControllersManagerProtocol
 
     @MainActor func openMoreSearchSettings() {
-        windowControllersManager.show(url: Self.moreSearchSettingsURL, source: .ui, newTab: true)
+        windowControllersManager.show(url: Self.moreSearchSettingsURL, source: .ui, newTab: true, selected: true)
     }
 }
 
 protocol PreferencesTabOpening {
 
+    var windowControllersManager: WindowControllersManagerProtocol { get }
+
+    @MainActor
     func openNewTab(with url: URL)
 
 }
@@ -68,12 +70,12 @@ extension PreferencesTabOpening {
 
     @MainActor
     func openNewTab(with url: URL) {
-        Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
+        windowControllersManager.show(url: url, source: .ui, newTab: true, selected: true)
     }
 
     @MainActor
     func show(url: URL) {
-        Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: false)
+        windowControllersManager.show(url: url, source: .ui, newTab: false, selected: true)
     }
 
 }

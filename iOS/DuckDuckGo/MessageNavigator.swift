@@ -23,17 +23,18 @@ import DDGSync
 
 protocol MessageNavigator {
 
-    func navigateTo(_ target: NavigationTarget)
+    func navigateTo(_ target: NavigationTarget, presentationStyle: PresentationContext.Style)
 
 }
 
 protocol MessageNavigationDelegate: AnyObject {
 
-    func segueToSettingsAIChat(openedFromSERPSettingsButton: Bool, completion: (() -> Void)?)
-    func segueToSettings()
-    func segueToFeedback()
-    func segueToSettingsSync(with source: String?, pairingInfo: PairingInfo?)
-
+    func segueToSettingsAIChat(openedFromSERPSettingsButton: Bool, presentationStyle: PresentationContext.Style)
+    func segueToSettings(presentationStyle: PresentationContext.Style)
+    func segueToSettingsAppearance(presentationStyle: PresentationContext.Style)
+    func segueToFeedback(presentationStyle: PresentationContext.Style)
+    func segueToSettingsSync(with source: String?, pairingInfo: PairingInfo?, presentationStyle: PresentationContext.Style)
+    func segueToImportPasswords(presentationStyle: PresentationContext.Style)
 }
 
 class DefaultMessageNavigator: MessageNavigator {
@@ -44,18 +45,23 @@ class DefaultMessageNavigator: MessageNavigator {
         self.delegate = delegate
     }
 
-    func navigateTo(_ target: NavigationTarget) {
+    func navigateTo(_ target: NavigationTarget, presentationStyle: PresentationContext.Style) {
         assert(delegate != nil)
         switch target {
         case .duckAISettings:
             delegate?.segueToSettingsAIChat(openedFromSERPSettingsButton: false,
-                                            completion: nil)
+                                            presentationStyle: presentationStyle)
         case .settings:
-            delegate?.segueToSettings()
+            delegate?.segueToSettings(presentationStyle: presentationStyle)
         case .feedback:
-            delegate?.segueToFeedback()
+            delegate?.segueToFeedback(presentationStyle: presentationStyle)
         case .sync:
-            delegate?.segueToSettingsSync(with: nil, pairingInfo: nil)
+            delegate?.segueToSettingsSync(with: nil, pairingInfo: nil, presentationStyle: presentationStyle)
+        case .importPasswords:
+            delegate?.segueToImportPasswords(presentationStyle: presentationStyle)
+        case .appearance:
+            delegate?.segueToSettingsAppearance(presentationStyle: presentationStyle)
+
         }
     }
 

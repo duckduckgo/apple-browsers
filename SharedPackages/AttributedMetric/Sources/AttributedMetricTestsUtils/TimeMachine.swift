@@ -42,4 +42,6 @@ public class TimeMachine: DateProviding {
     public func now() -> Date {
         date
     }
+
+    public var debugDate: Date? // Not used here
 }

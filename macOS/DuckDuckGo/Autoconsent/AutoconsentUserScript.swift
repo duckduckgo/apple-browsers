@@ -23,6 +23,7 @@ import UserScript
 import PrivacyDashboard
 import PixelKit
 import os.log
+import Combine
 
 protocol AutoconsentUserScriptDelegate: AnyObject {
     func autoconsentUserScript(consentStatus: CookieConsentInfo)
@@ -47,18 +48,23 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     private var selfTestFrameInfo: WKFrameInfo?
 
     private var topUrl: URL?
-    private let preferences = CookiePopupProtectionPreferences.shared
+    private let preferences: CookiePopupProtectionPreferences
     private let management: AutoconsentManagement
 
     public var messageNames: [String] { MessageName.allCases.map(\.rawValue) }
     let source: String
     private let config: PrivacyConfiguration
-    private let statsManager: AutoconsentDailyStatsManaging
     weak var delegate: AutoconsentUserScriptDelegate?
 
+    // Publisher for cookie popup managed events
+    private let popupManagedSubject = PassthroughSubject<AutoconsentDoneMessage, Never>()
+    public var popupManagedPublisher: AnyPublisher<AutoconsentDoneMessage, Never> {
+        popupManagedSubject.eraseToAnyPublisher()
+    }
+
     init(config: PrivacyConfiguration,
-         statsManager: AutoconsentDailyStatsManaging,
-         management: AutoconsentManagement
+         management: AutoconsentManagement,
+         preferences: CookiePopupProtectionPreferences
     ) {
         Logger.autoconsent.debug("Initialising autoconsent userscript")
         do {
@@ -70,8 +76,8 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
             fatalError("Failed to load JS for AutoconsentUserScript: \(error.localizedDescription)")
         }
         self.config = config
-        self.statsManager = statsManager
         self.management = management
+        self.preferences = preferences
     }
 
     func userContentController(_ userContentController: WKUserContentController,
@@ -161,6 +167,8 @@ extension AutoconsentUserScript {
         let cmp: String // name of the Autoconsent rule that matched
         let url: String
         let isCosmetic: Bool
+        let duration: Double // time in milliseconds
+        let totalClicks: Int
     }
 
     struct AutoconsentReportState: Codable {
@@ -429,8 +437,7 @@ extension AutoconsentUserScript {
         refreshDashboardState(consentManaged: true, cosmetic: messageData.isCosmetic, optoutFailed: false, selftestFailed: nil)
         firePixel(pixel: messageData.isCosmetic ? .doneCosmetic : .done)
 
-        // Increment the popup managed counter for any popup handling
-        statsManager.incrementPopupCount()
+        popupManagedSubject.send(messageData)
 
         // Show animation only for first time on a domain
         if !management.sitesNotifiedCache.contains(host) {

@@ -45,6 +45,11 @@ final class AIChatUserScript: NSObject, Subfeature {
             rules.append(.exact(hostname: ddgDomain))
         }
 
+        /// Default rule for standalone DuckDuckGo AI Chat
+        if let duckAiDomain = URL.duckAi.host {
+            rules.append(.exact(hostname: duckAiDomain))
+        }
+
         /// Check if a custom hostname is provided in the URL settings
         /// Custom hostnames are used for debugging purposes
         if let customURLHostname = urlSettings.customURLHostname {
@@ -113,6 +118,14 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.reportMetric
         case .togglePageContextTelemetry:
             return handler.togglePageContextTelemetry
+        case .storeMigrationData:
+            return handler.storeMigrationData
+        case .getMigrationDataByIndex:
+            return handler.getMigrationDataByIndex
+        case .getMigrationInfo:
+            return handler.getMigrationInfo
+        case .clearMigrationData:
+            return handler.clearMigrationData
         default:
             return nil
         }

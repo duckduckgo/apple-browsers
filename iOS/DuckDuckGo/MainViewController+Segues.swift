@@ -31,11 +31,32 @@ import DataBrokerProtection_iOS
 
 extension MainViewController {
 
+    func segueToAppearanceSettings() {
+        launchSettings(completion: {
+            $0.triggerDeepLinkNavigation(to: .appearance)
+        }, deepLinkTarget: .appearance)
+    }
+
+    func segueToCustomizeAddressBarSettings() {
+        launchSettings(completion: {
+            $0.triggerDeepLinkNavigation(to: .customizeAddressBarButton)
+        }, deepLinkTarget: .customizeAddressBarButton)
+    }
+
+    func segueToCustomizeToolbarSettings() {
+        launchSettings(completion: {
+            $0.triggerDeepLinkNavigation(to: .customizeToolbarButton)
+        }, deepLinkTarget: .customizeToolbarButton)
+    }
+
     func segueToDaxOnboarding() {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
 
-        let controller = OnboardingIntroViewController(onboardingPixelReporter: contextualOnboardingPixelReporter, systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager, daxDialogsManager: daxDialogsManager)
+        let controller = OnboardingIntroViewController(
+            onboardingPixelReporter: contextualOnboardingPixelReporter,
+            systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
+            daxDialogsManager: daxDialogsManager)
         controller.delegate = self
         controller.modalPresentationStyle = .overFullScreen
         present(controller, animated: false)
@@ -116,7 +137,7 @@ extension MainViewController {
             PrivacyDashboardViewController(coder: coder,
                                            privacyInfo: privacyInfo,
                                            entryPoint: entryPoint,
-                                           privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
+                                           privacyConfigurationManager: self.privacyConfigurationManager,
                                            contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
                                            breakageAdditionalInfo: self.currentTab?.makeBreakageAdditionalInfo())
         }
@@ -204,25 +225,25 @@ extension MainViewController {
     func segueToDuckDuckGoSubscription() {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
-        launchSettings {
+        launchSettings(completion: {
             $0.triggerDeepLinkNavigation(to: .subscriptionFlow())
-        }
+        }, deepLinkTarget: .subscriptionFlow())
     }
 
     func segueToSubscriptionRestoreFlow() {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
-        launchSettings {
+        launchSettings(completion: {
             $0.triggerDeepLinkNavigation(to: .restoreFlow)
-        }
+        }, deepLinkTarget: .restoreFlow)
     }
 
     func segueToVPN() {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
-        launchSettings {
+        launchSettings(completion: {
             $0.triggerDeepLinkNavigation(to: .netP)
-        }
+        }, deepLinkTarget: .netP)
     }
 
     func segueToDebugSettings() {
@@ -319,7 +340,7 @@ extension MainViewController {
                                                             daxDialogsManager: daxDialogsManager,
                                                             dbpIOSPublicInterface: dbpIOSPublicInterface)
 
-        let aiChatSettings = AIChatSettings(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
+        let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
         let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings,
                                                         featureFlagger: featureFlagger)
 
@@ -340,6 +361,7 @@ extension MainViewController {
                                                   maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,
                                                   themeManager: themeManager,
                                                   experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger),
+                                                  privacyConfigurationManager: privacyConfigurationManager,
                                                   keyValueStore: keyValueStore,
                                                   systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                                                   runPrerequisitesDelegate: dbpIOSPublicInterface,
@@ -431,6 +453,17 @@ class SettingsUINavigationController: UINavigationController {
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         NotificationCenter.default.post(name: .settingsDidDisappear, object: nil)
+    }
+
+    override func pushViewController(_ viewController: UIViewController, animated: Bool) {
+        // Settings uses NavigationLink for deep linking, but because we don't use it within a NavigationStack, it talks
+        // to the hosting navigation controller. It offers no control over navigation animation, so this workaround
+        // disables animation any time a view controller is pushed while deep linking is being processed.
+        if let settingsHostingController = self.viewControllers.first as? SettingsHostingController, settingsHostingController.isDeepLinking {
+            super.pushViewController(viewController, animated: false)
+        } else {
+            super.pushViewController(viewController, animated: animated)
+        }
     }
 
 }

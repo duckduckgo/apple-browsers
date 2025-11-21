@@ -57,7 +57,7 @@ final class UserScripts: UserScriptsProvider {
     let aiChatUserScript: AIChatUserScript?
     let pageContextUserScript: PageContextUserScript?
     let subscriptionUserScript: SubscriptionUserScript?
-    let historyViewUserScript: HistoryViewUserScript?
+    let historyViewUserScript: HistoryViewUserScript
     let newTabPageUserScript: NewTabPageUserScript?
     let serpSettingsUserScript: SERPSettingsUserScript?
     let faviconScript = FaviconUserScript()
@@ -86,7 +86,7 @@ final class UserScripts: UserScriptsProvider {
         )
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider())
 
-        let isGPCEnabled = WebTrackingProtectionPreferences.shared.isGPCEnabled
+        let isGPCEnabled = sourceProvider.webTrackingProtectionPreferences.isGPCEnabled
         let privacyConfig = sourceProvider.privacyConfigurationManager.privacyConfig
         let sessionKey = sourceProvider.sessionKey ?? ""
         let messageSecret = sourceProvider.messageSecret ?? ""
@@ -112,8 +112,8 @@ final class UserScripts: UserScriptsProvider {
 
         autoconsentUserScript = AutoconsentUserScript(
             config: sourceProvider.privacyConfigurationManager.privacyConfig,
-            statsManager: NSApp.delegateTyped.autoconsentDailyStats,
-            management: sourceProvider.autoconsentManagement
+            management: sourceProvider.autoconsentManagement,
+            preferences: sourceProvider.cookiePopupProtectionPreferences
         )
 
         let lenguageCode = Locale.current.languageCode ?? "en"
@@ -122,13 +122,9 @@ final class UserScripts: UserScriptsProvider {
 
         onboardingUserScript = OnboardingUserScript(onboardingActionsManager: sourceProvider.onboardingActionsManager!)
 
-        if sourceProvider.featureFlagger.isFeatureOn(.historyView) {
-            let historyViewUserScript = HistoryViewUserScript()
-            sourceProvider.historyViewActionsManager?.registerUserScript(historyViewUserScript)
-            self.historyViewUserScript = historyViewUserScript
-        } else {
-            historyViewUserScript = nil
-        }
+        let historyViewUserScript = HistoryViewUserScript()
+        sourceProvider.historyViewActionsManager?.registerUserScript(historyViewUserScript)
+        self.historyViewUserScript = historyViewUserScript
 
         if sourceProvider.featureFlagger.isFeatureOn(.newTabPagePerTab) {
             assert(
@@ -150,9 +146,9 @@ final class UserScripts: UserScriptsProvider {
 
         specialPages = SpecialPagesUserScript()
 
-        if DuckPlayer.shared.isAvailable {
-            youtubeOverlayScript = YoutubeOverlayUserScript()
-            youtubePlayerUserScript = YoutubePlayerUserScript()
+        if sourceProvider.duckPlayer.isAvailable {
+            youtubeOverlayScript = YoutubeOverlayUserScript(duckPlayer: sourceProvider.duckPlayer)
+            youtubePlayerUserScript = YoutubePlayerUserScript(duckPlayer: sourceProvider.duckPlayer)
         } else {
             youtubeOverlayScript = nil
             youtubePlayerUserScript = nil
@@ -204,9 +200,7 @@ final class UserScripts: UserScriptsProvider {
                 specialPages.registerSubfeature(delegate: onboardingUserScript)
             }
 
-            if let historyViewUserScript {
-                specialPages.registerSubfeature(delegate: historyViewUserScript)
-            }
+            specialPages.registerSubfeature(delegate: historyViewUserScript)
 
             if let newTabPageUserScript {
                 specialPages.registerSubfeature(delegate: newTabPageUserScript)

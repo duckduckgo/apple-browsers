@@ -30,6 +30,7 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
     @Published var subscriptionDetails: String?
     @Published var subscriptionStatus: DuckDuckGoSubscription.Status = .unknown
     @Published private var hasActiveTrialOffer: Bool = false
+    private var subscriptionPlatform: DuckDuckGoSubscription.Platform?
 
     @Published var email: String?
     var hasEmail: Bool { !(email?.isEmpty ?? true) }
@@ -42,19 +43,21 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
 
     var expiredSubscriptionPurchaseButtonTitle: String {
         if winBackOfferVisibilityManager.isOfferAvailable {
-            return UserText.winBackCampaignLoggedInPreferencesCTA
+            UserText.winBackCampaignLoggedInPreferencesCTA
+        } else if blackFridayCampaignProvider.isCampaignEnabled {
+            UserText.blackFridayCampaignPreferencesCTA(discountPercent: blackFridayCampaignProvider.discountPercent)
         } else {
-            return UserText.viewPlansExpiredButtonTitle
+            UserText.viewPlansExpiredButtonTitle
         }
     }
 
-    private var subscriptionPlatform: DuckDuckGoSubscription.Platform?
     var currentPurchasePlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
 
     private let subscriptionManager: SubscriptionManagerV2
     private let keyValueStore: ThrowingKeyValueStoring
     private let rebrandingDismissedKey = "hasDismissedSubscriptionRebrandingMessage"
     private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
+    private let blackFridayCampaignProvider: BlackFridayCampaignProviding
     private let userEventHandler: (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void
     private var fetchSubscriptionDetailsTask: Task<(), Never>?
 
@@ -80,12 +83,14 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
                 subscriptionManager: SubscriptionManagerV2,
                 subscriptionStateUpdate: AnyPublisher<PreferencesSidebarSubscriptionState, Never>,
                 keyValueStore: ThrowingKeyValueStoring,
-                winBackOfferVisibilityManager: WinBackOfferVisibilityManaging) {
+                winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
+                blackFridayCampaignProvider: BlackFridayCampaignProviding) {
         self.subscriptionManager = subscriptionManager
         self.userEventHandler = userEventHandler
         self.keyValueStore = keyValueStore
         self.rebrandingMessageDismissed = (try? keyValueStore.object(forKey: rebrandingDismissedKey) as? Bool) ?? false
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
+        self.blackFridayCampaignProvider = blackFridayCampaignProvider
         Task {
             await self.updateSubscription(cachePolicy: .cacheFirst)
         }

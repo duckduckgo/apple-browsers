@@ -68,10 +68,12 @@ extension UIApplication {
 
     // MARK: app delegate helpers
 
+    @available(*, deprecated, message: "This method should not be used. Window is going to be part of SceneDelegate")
     func setWindow(_ window: UIWindow?) {
         (delegate as? AppDelegate)?.window = window
     }
 
+    @available(*, deprecated, message: "This method should not be used. Window is going to be part of SceneDelegate")
     var window: UIWindow? {
         delegate?.window ?? nil
     }

@@ -149,7 +149,8 @@ final class AppDependencyProvider: DependencyProvider {
 
         let keychainType = KeychainType.dataProtection(.named(subscriptionAppGroup))
         let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
-        let tokenStorageV2 = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager) { accessType, error in
+        let tokenStorageV2 = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager,
+                                                                userDefaults: subscriptionUserDefaults) { accessType, error in
 
             let parameters = [PixelParameters.subscriptionKeychainAccessType: accessType.rawValue,
                               PixelParameters.subscriptionKeychainError: error.localizedDescription,
@@ -298,7 +299,9 @@ final class AppDependencyProvider: DependencyProvider {
         networkProtectionTunnelController = NetworkProtectionTunnelController(tokenHandler: tokenHandler,
                                                                               featureFlagger: featureFlagger,
                                                                               persistentPixel: persistentPixel,
-                                                                              settings: vpnSettings)
+                                                                              settings: vpnSettings,
+                                                                              wideEvent: wideEvent
+        )
     }
 
 }

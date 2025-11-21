@@ -42,12 +42,21 @@ final class PreferencesViewController: NSViewController {
 
     init(
         syncService: DDGSyncing,
-        duckPlayer: DuckPlayer = DuckPlayer.shared,
+        duckPlayer: DuckPlayer,
         tabCollectionViewModel: TabCollectionViewModel,
         privacyConfigurationManager: PrivacyConfigurationManaging,
         aiChatRemoteSettings: AIChatRemoteSettingsProvider = AIChatRemoteSettings(),
         featureFlagger: FeatureFlagger,
         defaultBrowserPreferences: DefaultBrowserPreferences,
+        downloadsPreferences: DownloadsPreferences,
+        searchPreferences: SearchPreferences,
+        tabsPreferences: TabsPreferences,
+        webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
+        cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
+        aiChatPreferences: AIChatPreferences,
+        aboutPreferences: AboutPreferences,
+        accessibilityPreferences: AccessibilityPreferences,
+        duckPlayerPreferences: DuckPlayerPreferences,
         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     ) {
@@ -63,7 +72,15 @@ final class PreferencesViewController: NSViewController {
                                         includeAIChat: aiChatRemoteSettings.isAIChatEnabled,
                                         subscriptionManager: subscriptionManager,
                                         defaultBrowserPreferences: defaultBrowserPreferences,
-                                        aiFeaturesStatusProvider: AIChatPreferences.shared,
+                                        downloadsPreferences: downloadsPreferences,
+                                        searchPreferences: searchPreferences,
+                                        tabsPreferences: tabsPreferences,
+                                        webTrackingProtectionPreferences: webTrackingProtectionPreferences,
+                                        cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
+                                        aiChatPreferences: aiChatPreferences,
+                                        aboutPreferences: aboutPreferences,
+                                        accessibilityPreferences: accessibilityPreferences,
+                                        duckPlayerPreferences: duckPlayerPreferences,
                                         winBackOfferVisibilityManager: winBackOfferVisibilityManager)
         super.init(nibName: nil, bundle: nil)
     }

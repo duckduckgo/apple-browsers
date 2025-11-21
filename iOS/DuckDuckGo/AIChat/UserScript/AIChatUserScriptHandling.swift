@@ -23,7 +23,7 @@ import RemoteMessaging
 import AIChat
 import OSLog
 import WebKit
-
+import Common
 // MARK: - Response Types
 
 /// Response structure for openKeyboard request
@@ -53,6 +53,10 @@ protocol AIChatUserScriptHandling {
     func showChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable?
     func openKeyboard(params: Any, message: UserScriptMessage, webView: WKWebView?) async -> Encodable?
+    func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
+    func getMigrationDataByIndex(params: Any, message: UserScriptMessage) -> Encodable?
+    func getMigrationInfo(params: Any, message: UserScriptMessage) -> Encodable?
+    func clearMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -60,9 +64,13 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private var inputBoxHandler: (any AIChatInputBoxHandling)?
     private weak var metricReportingHandler: (any AIChatMetricReportingHandling)?
     private let experimentalAIChatManager: ExperimentalAIChatManager
+    private let migrationStore = AIChatMigrationStore()
+    private let aichatFullModeFeature: AIChatFullModeFeatureProviding
 
-    init(experimentalAIChatManager: ExperimentalAIChatManager) {
+    init(experimentalAIChatManager: ExperimentalAIChatManager,
+         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature()) {
         self.experimentalAIChatManager = experimentalAIChatManager
+        self.aichatFullModeFeature = aichatFullModeFeature
     }
 
     enum AIChatKeys {
@@ -104,7 +112,19 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable? {
-        AIChatNativeConfigValues.defaultValues
+        let defaults = AIChatNativeConfigValues.defaultValues
+        return AIChatNativeConfigValues(
+            isAIChatHandoffEnabled: defaults.isAIChatHandoffEnabled,
+            supportsClosingAIChat: defaults.supportsClosingAIChat,
+            supportsOpeningSettings: defaults.supportsOpeningSettings,
+            supportsNativePrompt: defaults.supportsNativePrompt,
+            supportsStandaloneMigration: experimentalAIChatManager.isStandaloneMigrationSupported,
+            supportsNativeChatInput: defaults.supportsNativeChatInput,
+            supportsURLChatIDRestoration: aichatFullModeFeature.isAvailable ? true : defaults.supportsURLChatIDRestoration,
+            supportsFullChatRestoration: defaults.supportsFullChatRestoration,
+            supportsPageContext: defaults.supportsPageContext,
+            appVersion: AppVersion.shared.versionAndBuildNumber
+        )
     }
 
     @MainActor
@@ -188,5 +208,32 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
                 }
             }
         }
+    }
+
+    func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable? {
+        guard let dict = params as? [String: Any] else {
+            return AIChatErrorResponse(reason: "invalid_params")
+        }
+        guard dict.keys.contains(AIChatMigrationParamKeys.serializedMigrationFile) else {
+            return AIChatErrorResponse(reason: "invalid_params")
+        }
+        let serialized = dict[AIChatMigrationParamKeys.serializedMigrationFile] as? String
+        return migrationStore.store(serialized)
+    }
+
+    func getMigrationDataByIndex(params: Any, message: UserScriptMessage) -> Encodable? {
+        guard let dict = params as? [String: Any] else {
+            return migrationStore.item(at: nil)
+        }
+        let index = dict[AIChatMigrationParamKeys.index] as? Int
+        return migrationStore.item(at: index)
+    }
+
+    func getMigrationInfo(params: Any, message: UserScriptMessage) -> Encodable? {
+        return migrationStore.info()
+    }
+
+    func clearMigrationData(params: Any, message: UserScriptMessage) -> Encodable? {
+        return migrationStore.clear()
     }
 }

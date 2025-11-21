@@ -166,7 +166,7 @@ struct DataImportView: View {
         @ObservedObject var viewModel: DataImportViewModel
 
         var body: some View {
-            HStack {
+            HStack(alignment: .center) {
                 viewModel.state.icon
                     .resizable()
                     .frame(width: 24, height: 24)
@@ -187,6 +187,7 @@ struct DataImportView: View {
                 }
                 .pickerStyle(.automatic)
                 .accentColor(Color(designSystemColor: .textSecondary))
+                .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 6)

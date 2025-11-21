@@ -25,7 +25,7 @@ final class SERPSettingsViewPageTests: XCTestCase {
 
     func testAppURLsAreConstructedCorrectly() {
         XCTAssertEqual(SERPSettingsView.Page.general.url.absoluteString, "https://duckduckgo.com/settings?ko=-1&embedded=1#general")
-        XCTAssertEqual(SERPSettingsView.Page.searchAssist.url.absoluteString, "https://duckduckgo.com/settings?ko=-1&embedded=1&highlight=kbe#aifeatures")
+        XCTAssertEqual(SERPSettingsView.Page.searchAssist.url.absoluteString, "https://duckduckgo.com/settings?ko=-1&embedded=1&hideduckai=1&highlight=kbe#aifeatures")
     }
 
 }

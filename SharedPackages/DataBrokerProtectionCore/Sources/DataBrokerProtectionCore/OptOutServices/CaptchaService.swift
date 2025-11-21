@@ -82,11 +82,15 @@ public protocol CaptchaServiceProtocol {
     ///
     /// - Parameters:
     ///   - captchaInfo: A struct that containers a `siteKey`, `url` and `type`
+    ///   - dataBrokerURL: Broker URL tied to the captcha interaction
+    ///   - dataBrokerVersion: Broker version tied to the captcha interaction
     ///   - pollingInterval: The time between each poll in seconds. Defaults to 1 second
     ///   - attemptId: Identifies the scan or the opt-out attempt
     ///   - shouldRunNextStep: A closure that defines if the retry should keep happening
     /// - Returns: `CaptchaTransactionId` an identifier so we can later use to fetch the resolved captcha information
     func submitCaptchaInformation(_ captchaInfo: GetCaptchaInfoResponse,
+                                  dataBrokerURL: String,
+                                  dataBrokerVersion: String,
                                   retries: Int,
                                   pollingInterval: TimeInterval,
                                   attemptId: UUID,
@@ -96,12 +100,16 @@ public protocol CaptchaServiceProtocol {
     ///
     /// - Parameters:
     ///   - transactionID: The transaction ID of the previous submitted captcha information
+    ///   - dataBrokerURL: Broker URL tied to the captcha interaction
+    ///   - dataBrokerVersion: Broker version tied to the captcha interaction
     ///   - retries: The number of retries until we timed out. Defaults to 100
     ///   - pollingInterval: The time between each poll in seconds. Defaults to 40 seconds
     ///   - attemptId: Identifies the scan or the opt-out attempt
     ///   - shouldRunNextStep: A closure that defines if the retry should keep happening
     /// - Returns: `CaptchaResolveData` a string containing the data to resolve the captcha
     func submitCaptchaToBeResolved(for transactionID: CaptchaTransactionId,
+                                   dataBrokerURL: String,
+                                   dataBrokerVersion: String,
                                    retries: Int,
                                    pollingInterval: TimeInterval,
                                    attemptId: UUID,
@@ -109,12 +117,32 @@ public protocol CaptchaServiceProtocol {
 }
 
 extension CaptchaServiceProtocol {
-    func submitCaptchaInformation(_ captchaInfo: GetCaptchaInfoResponse, attemptId: UUID, shouldRunNextStep: @escaping () -> Bool) async throws -> CaptchaTransactionId {
-        try await submitCaptchaInformation(captchaInfo, retries: 5, pollingInterval: 1, attemptId: attemptId, shouldRunNextStep: shouldRunNextStep)
+    func submitCaptchaInformation(_ captchaInfo: GetCaptchaInfoResponse,
+                                  dataBrokerURL: String,
+                                  dataBrokerVersion: String,
+                                  attemptId: UUID,
+                                  shouldRunNextStep: @escaping () -> Bool) async throws -> CaptchaTransactionId {
+        try await submitCaptchaInformation(captchaInfo,
+                                           dataBrokerURL: dataBrokerURL,
+                                           dataBrokerVersion: dataBrokerVersion,
+                                           retries: 5,
+                                           pollingInterval: 1,
+                                           attemptId: attemptId,
+                                           shouldRunNextStep: shouldRunNextStep)
     }
 
-    func submitCaptchaToBeResolved(for transactionID: CaptchaTransactionId, attemptId: UUID, shouldRunNextStep: @escaping () -> Bool) async throws -> CaptchaResolveData {
-        try await submitCaptchaToBeResolved(for: transactionID, retries: 100, pollingInterval: 40, attemptId: attemptId, shouldRunNextStep: shouldRunNextStep)
+    func submitCaptchaToBeResolved(for transactionID: CaptchaTransactionId,
+                                   dataBrokerURL: String,
+                                   dataBrokerVersion: String,
+                                   attemptId: UUID,
+                                   shouldRunNextStep: @escaping () -> Bool) async throws -> CaptchaResolveData {
+        try await submitCaptchaToBeResolved(for: transactionID,
+                                            dataBrokerURL: dataBrokerURL,
+                                            dataBrokerVersion: dataBrokerVersion,
+                                            retries: 100,
+                                            pollingInterval: 40,
+                                            attemptId: attemptId,
+                                            shouldRunNextStep: shouldRunNextStep)
     }
 }
 
@@ -139,11 +167,16 @@ public struct CaptchaService: CaptchaServiceProtocol {
     }
 
     public func submitCaptchaInformation(_ captchaInfo: GetCaptchaInfoResponse,
+                                         dataBrokerURL: String,
+                                         dataBrokerVersion: String,
                                          retries: Int = 5,
                                          pollingInterval: TimeInterval = 1,
                                          attemptId: UUID,
                                          shouldRunNextStep: @escaping () -> Bool) async throws -> CaptchaTransactionId {
-        guard let captchaSubmitResult = try? await submitCaptchaInformationRequest(captchaInfo, attemptId: attemptId) else {
+        guard let captchaSubmitResult = try? await submitCaptchaInformationRequest(captchaInfo,
+                                                                                   attemptId: attemptId,
+                                                                                   dataBrokerURL: dataBrokerURL,
+                                                                                   dataBrokerVersion: dataBrokerVersion) else {
             throw CaptchaServiceError.errorWhenSubmittingCaptcha
         }
 
@@ -164,6 +197,8 @@ public struct CaptchaService: CaptchaServiceProtocol {
             }
             try await Task.sleep(nanoseconds: UInt64(pollingInterval * 1000) * NSEC_PER_MSEC)
             return try await submitCaptchaInformation(captchaInfo,
+                                                      dataBrokerURL: dataBrokerURL,
+                                                      dataBrokerVersion: dataBrokerVersion,
                                                       retries: retries - 1,
                                                       pollingInterval: pollingInterval,
                                                       attemptId: attemptId,
@@ -175,7 +210,10 @@ public struct CaptchaService: CaptchaServiceProtocol {
         }
     }
 
-    private func submitCaptchaInformationRequest(_ captchaInfo: GetCaptchaInfoResponse, attemptId: UUID) async throws -> CaptchaTransaction {
+    private func submitCaptchaInformationRequest(_ captchaInfo: GetCaptchaInfoResponse,
+                                                 attemptId: UUID,
+                                                 dataBrokerURL: String,
+                                                 dataBrokerVersion: String) async throws -> CaptchaTransaction {
         var urlComponents = URLComponents(url: settings.endpointURL, resolvingAgainstBaseURL: true)
         urlComponents?.path += "\(Constants.endpointSubPath)/submit"
         urlComponents?.queryItems = [URLQueryItem(name: "attemptId", value: attemptId.uuidString)]
@@ -188,7 +226,9 @@ public struct CaptchaService: CaptchaServiceProtocol {
         var request = URLRequest(url: url)
 
         guard let authHeader = await authenticationManager.getAuthHeader() else {
-            servicePixel.fireEmptyAccessToken(callSite: .submitCaptchaInformationRequest)
+            servicePixel.fireEmptyAccessToken(callSite: .submitCaptchaInformationRequest,
+                                              dataBrokerURL: dataBrokerURL,
+                                              dataBrokerVersion: dataBrokerVersion)
             throw AuthenticationError.noAuthToken
         }
 
@@ -211,6 +251,8 @@ public struct CaptchaService: CaptchaServiceProtocol {
     }
 
     public func submitCaptchaToBeResolved(for transactionID: CaptchaTransactionId,
+                                          dataBrokerURL: String,
+                                          dataBrokerVersion: String,
                                           retries: Int = 100,
                                           pollingInterval: TimeInterval = 50,
                                           attemptId: UUID,
@@ -219,7 +261,10 @@ public struct CaptchaService: CaptchaServiceProtocol {
         let captchaResolveResult: CaptchaResult
 
         do {
-            captchaResolveResult = try await submitCaptchaToBeResolvedRequest(transactionID, attemptId: attemptId)
+            captchaResolveResult = try await submitCaptchaToBeResolvedRequest(transactionID,
+                                                                              attemptId: attemptId,
+                                                                              dataBrokerURL: dataBrokerURL,
+                                                                              dataBrokerVersion: dataBrokerVersion)
         } catch let error as AuthenticationError where error == .noAuthToken {
             throw AuthenticationError.noAuthToken
         } catch {
@@ -245,6 +290,8 @@ public struct CaptchaService: CaptchaServiceProtocol {
             }
             try await Task.sleep(nanoseconds: UInt64(pollingInterval * 1000) * NSEC_PER_MSEC)
             return try await submitCaptchaToBeResolved(for: transactionID,
+                                                       dataBrokerURL: dataBrokerURL,
+                                                       dataBrokerVersion: dataBrokerVersion,
                                                        retries: retries - 1,
                                                        pollingInterval: pollingInterval,
                                                        attemptId: attemptId,
@@ -258,7 +305,10 @@ public struct CaptchaService: CaptchaServiceProtocol {
         }
     }
 
-    private func submitCaptchaToBeResolvedRequest(_ transactionID: CaptchaTransactionId, attemptId: UUID) async throws -> CaptchaResult {
+    private func submitCaptchaToBeResolvedRequest(_ transactionID: CaptchaTransactionId,
+                                                  attemptId: UUID,
+                                                  dataBrokerURL: String,
+                                                  dataBrokerVersion: String) async throws -> CaptchaResult {
 
         var urlComponents = URLComponents(url: settings.endpointURL, resolvingAgainstBaseURL: true)
         urlComponents?.path += "\(Constants.endpointSubPath)/result"
@@ -274,7 +324,9 @@ public struct CaptchaService: CaptchaServiceProtocol {
 
         var request = URLRequest(url: url)
         guard let authHeader = await authenticationManager.getAuthHeader() else {
-            servicePixel.fireEmptyAccessToken(callSite: .submitCaptchaToBeResolvedRequest)
+            servicePixel.fireEmptyAccessToken(callSite: .submitCaptchaToBeResolvedRequest,
+                                              dataBrokerURL: dataBrokerURL,
+                                              dataBrokerVersion: dataBrokerVersion)
             throw AuthenticationError.noAuthToken
         }
 

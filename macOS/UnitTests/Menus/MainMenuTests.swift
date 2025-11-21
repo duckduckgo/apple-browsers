@@ -116,6 +116,7 @@ class MainMenuTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
+            recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
             dockCustomizer: dockCustomizer,
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
@@ -125,7 +126,7 @@ class MainMenuTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             isFireWindowDefault: false,
             configurationURLProvider: MockCustomURLProvider(),
-            contentScopePreferences: ContentScopePreferences()
+            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock())
         )
 
         sut.update()
@@ -145,6 +146,7 @@ class MainMenuTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
+            recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
             dockCustomizer: dockCustomizer,
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
@@ -153,7 +155,8 @@ class MainMenuTests: XCTestCase {
             appearancePreferences: appearancePreferences,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             isFireWindowDefault: false,
-            configurationURLProvider: MockCustomURLProvider()
+            configurationURLProvider: MockCustomURLProvider(),
+            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock())
         )
 
         sut.update()
@@ -173,6 +176,7 @@ class MainMenuTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
+            recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
             dockCustomizer: dockCustomizer,
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
@@ -181,7 +185,8 @@ class MainMenuTests: XCTestCase {
             appearancePreferences: appearancePreferences,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             isFireWindowDefault: false,
-            configurationURLProvider: MockCustomURLProvider()
+            configurationURLProvider: MockCustomURLProvider(),
+            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock())
         )
 
         sut.update()
@@ -204,6 +209,7 @@ class MainMenuTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
+            recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
             defaultBrowserPreferences: .init(defaultBrowserProvider: defaultBrowserProvider),
             aiChatMenuConfig: DummyAIChatConfig(),
@@ -212,7 +218,7 @@ class MainMenuTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             isFireWindowDefault: false,
             configurationURLProvider: MockCustomURLProvider(),
-            contentScopePreferences: ContentScopePreferences()
+            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock())
         )
 
         sut.update()
@@ -232,13 +238,16 @@ class MainMenuTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
+            recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
             defaultBrowserPreferences: .init(defaultBrowserProvider: defaultBrowserProvider),
             aiChatMenuConfig: DummyAIChatConfig(),
             internalUserDecider: MockInternalUserDecider(),
             appearancePreferences: appearancePreferences,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            isFireWindowDefault: false, configurationURLProvider: MockCustomURLProvider()
+            isFireWindowDefault: false,
+            configurationURLProvider: MockCustomURLProvider(),
+            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock())
         )
 
         sut.update()
@@ -258,6 +267,7 @@ class MainMenuTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
+            recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
             aiChatMenuConfig: DummyAIChatConfig(),
@@ -266,7 +276,7 @@ class MainMenuTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             isFireWindowDefault: false,
             configurationURLProvider: MockCustomURLProvider(),
-            contentScopePreferences: ContentScopePreferences()
+            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock())
         )
         let bookmarksMenu = try XCTUnwrap(sut.item(withTitle: UserText.bookmarks))
 
@@ -288,6 +298,7 @@ class MainMenuTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
+            recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
             aiChatMenuConfig: aiChatConfig,
@@ -296,7 +307,7 @@ class MainMenuTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             isFireWindowDefault: false,
             configurationURLProvider: MockCustomURLProvider(),
-            contentScopePreferences: ContentScopePreferences()
+            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock())
         )
 
         let fileMenu = try XCTUnwrap(sut.item(withTitle: UserText.mainMenuFile))
@@ -320,6 +331,7 @@ class MainMenuTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
+            recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
             aiChatMenuConfig: aiChatConfig,
@@ -328,7 +340,7 @@ class MainMenuTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             isFireWindowDefault: false,
             configurationURLProvider: MockCustomURLProvider(),
-            contentScopePreferences: ContentScopePreferences()
+            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock())
         )
 
         let fileMenu = try XCTUnwrap(sut.item(withTitle: UserText.mainMenuFile))
@@ -349,6 +361,7 @@ class MainMenuTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
+            recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
             aiChatMenuConfig: DummyAIChatConfig(),
@@ -357,7 +370,7 @@ class MainMenuTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             isFireWindowDefault: isFireWindowDefault,
             configurationURLProvider: MockCustomURLProvider(),
-            contentScopePreferences: ContentScopePreferences()
+            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock())
         )
 
         let fileMenu = try XCTUnwrap(sut.item(withTitle: UserText.mainMenuFile))
@@ -372,6 +385,7 @@ class MainMenuTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
+            recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
             aiChatMenuConfig: DummyAIChatConfig(),
@@ -380,7 +394,7 @@ class MainMenuTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             isFireWindowDefault: false,
             configurationURLProvider: MockCustomURLProvider(),
-            contentScopePreferences: ContentScopePreferences()
+            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock())
         )
 
         let fileMenu = try XCTUnwrap(sut.item(withTitle: UserText.mainMenuFile))
@@ -398,6 +412,7 @@ class MainMenuTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
+            recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
             aiChatMenuConfig: DummyAIChatConfig(),
@@ -406,7 +421,7 @@ class MainMenuTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             isFireWindowDefault: isFireWindowDefault,
             configurationURLProvider: MockCustomURLProvider(),
-            contentScopePreferences: ContentScopePreferences()
+            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock())
         )
 
         let fileMenu = try XCTUnwrap(sut.item(withTitle: UserText.mainMenuFile))
@@ -421,6 +436,7 @@ class MainMenuTests: XCTestCase {
             featureFlagger: MockFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
+            recentlyClosedCoordinator: RecentlyClosedCoordinatorMock(),
             faviconManager: FaviconManagerMock(),
             defaultBrowserPreferences: DefaultBrowserPreferences(defaultBrowserProvider: MockDefaultBrowserProvider()),
             aiChatMenuConfig: DummyAIChatConfig(),
@@ -429,7 +445,7 @@ class MainMenuTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             isFireWindowDefault: false,
             configurationURLProvider: MockCustomURLProvider(),
-            contentScopePreferences: ContentScopePreferences()
+            contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock())
         )
 
         let fileMenu = try XCTUnwrap(sut.item(withTitle: UserText.mainMenuFile))

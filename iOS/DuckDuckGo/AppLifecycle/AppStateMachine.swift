@@ -27,6 +27,7 @@ enum AppEvent {
     case didEnterBackground
     case willResignActive
     case willEnterForeground
+    case willConnectToWindow(window: UIWindow)
 
 }
 
@@ -41,6 +42,7 @@ enum AppState {
 
     case initializing(InitializingHandling)
     case launching(LaunchingHandling)
+    case connected(any ConnectedHandling)
     case foreground(ForegroundHandling)
     case background(BackgroundHandling)
     case terminating(TerminatingHandling)
@@ -52,6 +54,8 @@ enum AppState {
             return "initializing"
         case .launching:
             return "launching"
+        case .connected:
+            return "connected"
         case .foreground:
             return "foreground"
         case .background:
@@ -79,6 +83,14 @@ protocol LaunchingHandling {
 
     init() throws
 
+    func makeConnectedState(window: UIWindow, actionToHandle: AppAction?) -> any ConnectedHandling
+
+}
+
+@MainActor
+protocol ConnectedHandling {
+
+    associatedtype Dependencies
     func makeBackgroundState() -> any BackgroundHandling
     func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling
 
@@ -93,6 +105,7 @@ protocol ForegroundHandling {
     func handle(_ action: AppAction)
 
     func makeBackgroundState() -> any BackgroundHandling
+    func makeConnectedState(window: UIWindow, actionToHandle: AppAction?) -> any ConnectedHandling
 
 }
 
@@ -104,13 +117,34 @@ protocol BackgroundHandling {
     func didReturn()
 
     func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling
+    func makeConnectedState(window: UIWindow, actionToHandle: AppAction?) -> any ConnectedHandling
 
 }
 
 @MainActor
 protocol TerminatingHandling {
 
-    init(error: Error, application: UIApplication)
+    init(error: Error)
+    func alertAndTerminate(window: UIWindow)
+
+}
+
+@MainActor
+protocol TerminatingStateFactory {
+
+    func makeTerminatingState(error: Error) -> any TerminatingHandling
+
+}
+
+@MainActor
+struct DefaultTerminatingStateFactory: TerminatingStateFactory {
+
+    // swiftlint:disable:next unneeded_synthesized_initializer
+    nonisolated init() {}
+
+    func makeTerminatingState(error: Error) -> any TerminatingHandling {
+        Terminating(error: error)
+    }
 
 }
 
@@ -125,8 +159,11 @@ final class AppStateMachine {
     /// if the app is backgrounded before user authentication (iOS 18.0+).
     private(set) var actionToHandle: AppAction?
 
-    init(initialState: AppState) {
+    private let terminatingStateFactory: TerminatingStateFactory
+
+    init(initialState: AppState, terminatingStateFactory: TerminatingStateFactory = DefaultTerminatingStateFactory()) {
         self.currentState = initialState
+        self.terminatingStateFactory = terminatingStateFactory
     }
 
     func handle(_ event: AppEvent) {
@@ -135,12 +172,16 @@ final class AppStateMachine {
             respond(to: event, in: initializing)
         case .launching(let launching):
             respond(to: event, in: launching)
+        case .connected(let connected):
+            respond(to: event, in: connected)
         case .foreground(let foreground):
             respond(to: event, in: foreground)
         case .background(let background):
             respond(to: event, in: background)
-        case .terminating, .simulated:
-            break
+        case .terminating(let terminating):
+            respond(to: event, in: terminating)
+        case .simulated(let simulated):
+            respond(to: event, in: simulated)
         }
     }
 
@@ -160,33 +201,43 @@ final class AppStateMachine {
             do {
                 currentState = try .launching(initializing.makeLaunchingState())
             } catch {
-                currentState = .terminating(Terminating(error: error))
+                currentState = .terminating(terminatingStateFactory.makeTerminatingState(error: error))
             }
         }
     }
 
     private func respond(to event: AppEvent, in launching: LaunchingHandling) {
         switch event {
+        case .willConnectToWindow(let window):
+            let connected = launching.makeConnectedState(window: window,
+                                                         actionToHandle: actionToHandle)
+            currentState = .connected(connected)
+        default:
+            handleUnexpectedEvent(event, for: .launching(launching))
+        }
+    }
+
+    private func respond(to event: AppEvent, in connected: any ConnectedHandling) {
+        switch event {
         case .didBecomeActive:
-            let foreground = launching.makeForegroundState(actionToHandle: actionToHandle)
+            let foreground = connected.makeForegroundState(actionToHandle: actionToHandle)
             foreground.onTransition()
             foreground.didReturn()
             actionToHandle = nil
             currentState = .foreground(foreground)
         case .didEnterBackground:
-            let background = launching.makeBackgroundState()
+            let background = connected.makeBackgroundState()
             background.onTransition()
             background.didReturn()
             actionToHandle = nil
             currentState = .background(background)
         case .willEnterForeground:
-            // This event *shouldn’t* happen in the Launching state, but apparently, it does in some cases:
-            // https://developer.apple.com/forums/thread/769924
-            // We don’t support this transition and instead stay in Launching.
-            // From here, we can move to Foreground or Background, where resuming/suspension is handled properly.
+            // This is now fixed for scenes and is always called after the scene connects.
+            // However, we only transition to Foreground after didBecomeActive, since both events occur in sequence.
+            // We may revisit this if any UI glitches appear, as some work could potentially happen earlier in willEnterForeground.
             break
         default:
-            handleUnexpectedEvent(event, for: .launching(launching))
+            handleUnexpectedEvent(event, for: .connected(connected))
         }
     }
 
@@ -201,6 +252,10 @@ final class AppStateMachine {
             currentState = .background(background)
         case .willResignActive:
             foreground.willLeave()
+        case .willConnectToWindow(let window):
+            DailyPixel.fireDailyAndCount(pixel: .sceneDidDisconnectAndAttemptedToReconnect,
+                                         withAdditionalParameters: [PixelParameters.osVersion: UIDevice.current.systemVersion])
+            currentState = .connected(foreground.makeConnectedState(window: window, actionToHandle: actionToHandle))
         default:
             handleUnexpectedEvent(event, for: .foreground(foreground))
         }
@@ -219,8 +274,24 @@ final class AppStateMachine {
             actionToHandle = nil
         case .willEnterForeground:
             background.willLeave()
+        case .willConnectToWindow(let window):
+            DailyPixel.fireDailyAndCount(pixel: .sceneDidDisconnectAndAttemptedToReconnect,
+                                         withAdditionalParameters: [PixelParameters.osVersion: UIDevice.current.systemVersion])
+            currentState = .connected(background.makeConnectedState(window: window, actionToHandle: actionToHandle))
         default:
             handleUnexpectedEvent(event, for: .background(background))
+        }
+    }
+
+    private func respond(to event: AppEvent, in simulated: Simulated) {
+        if case .willConnectToWindow(let window) = event {
+            simulated.configure(window)
+        }
+    }
+
+    private func respond(to event: AppEvent, in terminating: TerminatingHandling) {
+        if case .willConnectToWindow(let window) = event {
+            terminating.alertAndTerminate(window: window)
         }
     }
 

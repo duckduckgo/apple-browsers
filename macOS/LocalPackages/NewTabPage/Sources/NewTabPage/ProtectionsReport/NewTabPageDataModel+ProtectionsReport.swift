@@ -22,6 +22,11 @@ extension NewTabPageDataModel {
 
     struct ProtectionsData: Encodable, Equatable {
         let totalCount: Int64
+        let totalCookiePopUpsBlocked: Int64?
+    }
+
+    struct ProtectionsDataLegacy: Encodable, Equatable {
+        let totalCount: Int64
     }
 
     struct ProtectionsConfig: Codable, Equatable {

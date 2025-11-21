@@ -63,16 +63,19 @@ final class AutofillTabExtension: TabExtension {
     private var passwordManagerCoordinator: PasswordManagerCoordinating = PasswordManagerCoordinator.shared
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let usageProvider: AutofillUsageProvider = AutofillUsageStore(standardUserDefaults: .standard, appGroupUserDefaults: nil)
+    private let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     private let isBurner: Bool
 
     @Published var autofillDataToSave: AutofillData?
 
     init(autofillUserScriptPublisher: some Publisher<WebsiteAutofillUserScript?, Never>,
          privacyConfigurationManager: PrivacyConfigurationManaging,
+         webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
          isBurner: Bool) {
         self.isBurner = isBurner
         self.privacyConfigurationManager = privacyConfigurationManager
         self.credentialsImportManager = AutofillCredentialsImportManager(isBurnerWindow: isBurner)
+        self.webTrackingProtectionPreferences = webTrackingProtectionPreferences
 
         autofillUserScriptCancellable = autofillUserScriptPublisher.sink { [weak self] autofillScript in
             guard let self, let autofillScript else { return }
@@ -125,11 +128,11 @@ extension AutofillTabExtension: SecureVaultManagerDelegate {
         // no-op on macOS
     }
 
-    func secureVaultManager(_: SecureVaultManager, promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard], withTrigger trigger: AutofillUserScript.GetTriggerType, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+    func secureVaultManager(_: SecureVaultManager, promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard], withTrigger trigger: AutofillUserScript.GetTriggerType, isMainFrame: Bool, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         // no-op on macOS
     }
 
-    func secureVaultManager(_: SecureVaultManager, didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType, withCreditCards creditCards: [SecureVaultModels.CreditCard], completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+    func secureVaultManager(_: SecureVaultManager, didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType, withCreditCards creditCards: [SecureVaultModels.CreditCard], isMainFrame: Bool, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         // no-op on macOS
     }
 
@@ -236,7 +239,7 @@ extension AutofillTabExtension: SecureVaultManagerDelegate {
             supportedFeatures.passwordGeneration = false
         }
 
-        return ContentScopeProperties(gpcEnabled: WebTrackingProtectionPreferences.shared.isGPCEnabled,
+        return ContentScopeProperties(gpcEnabled: webTrackingProtectionPreferences.isGPCEnabled,
                                       sessionKey: autofillScript?.sessionKey ?? "",
                                       messageSecret: autofillScript?.messageSecret ?? "",
                                       featureToggles: supportedFeatures)

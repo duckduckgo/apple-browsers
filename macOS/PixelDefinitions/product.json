@@ -2,7 +2,7 @@
     "agents": ["ddg_mac_desktop"],
     "target": {
         "key": "appVersion",
-        "version": "1.158.0"
+        "version": "1.164.0"
     },
     "forceLowerCase": false
 }

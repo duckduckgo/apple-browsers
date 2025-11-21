@@ -46,6 +46,9 @@ public struct AIChatRequestAuthorizationHandler: AIChatRequestAuthorizationHandl
             return true
         }
         if let url = navigationAction.request.url {
+            // Allow in-sheet navigation for:
+            // - DuckDuckGo Duck AI URLs (duckduckgo.com with chat params/bangs) plus special-case paths handled by isDuckAIURL
+            // - Non-main-frame requests
             if url.isDuckAIURL || navigationAction.targetFrame?.isMainFrame == false {
                 return true
             } else {

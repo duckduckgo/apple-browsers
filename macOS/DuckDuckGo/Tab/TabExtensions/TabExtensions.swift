@@ -25,6 +25,7 @@ import MaliciousSiteProtection
 import PrivacyDashboard
 import SpecialErrorPages
 import WebKit
+import AutoconsentStats
 
 /**
  Tab Extensions should conform to TabExtension protocol
@@ -71,6 +72,7 @@ protocol TabExtensionDependencies {
     var workspace: Workspace { get }
     var historyCoordinating: HistoryCoordinating { get }
     var downloadManager: FileDownloadManagerProtocol { get }
+    var downloadsPreferences: DownloadsPreferences { get }
     var cbaTimeReporter: ContentBlockingAssetsCompilationTimeReporter? { get }
     var duckPlayer: DuckPlayer { get }
     var certificateTrustEvaluator: CertificateTrustEvaluating { get }
@@ -83,6 +85,9 @@ protocol TabExtensionDependencies {
     var newTabPageShownPixelSender: NewTabPageShownPixelSender { get }
     var aiChatSidebarProvider: AIChatSidebarProviding { get }
     var tabCrashAggregator: TabCrashAggregator { get }
+    var tabsPreferences: TabsPreferences { get }
+    var webTrackingProtectionPreferences: WebTrackingProtectionPreferences { get }
+    var autoconsentStats: AutoconsentStatsCollecting { get }
 }
 
 // swiftlint:disable:next large_tuple
@@ -170,17 +175,23 @@ extension TabExtensionsBuilder {
         }
 
         add {
-            NavigationProtectionTabExtension(contentBlocking: dependencies.privacyFeatures.contentBlocking)
+            NavigationProtectionTabExtension(
+                contentBlocking: dependencies.privacyFeatures.contentBlocking,
+                webTrackingProtectionPreferences: dependencies.webTrackingProtectionPreferences
+            )
+
         }
 
         add {
             AutofillTabExtension(autofillUserScriptPublisher: userScripts.map(\.?.autofillScript),
                                  privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
+                                 webTrackingProtectionPreferences: dependencies.webTrackingProtectionPreferences,
                                  isBurner: args.isTabBurner)
         }
         add {
             ContextMenuManager(contextMenuScriptPublisher: userScripts.map(\.?.contextMenuScript),
                                contentPublisher: args.contentPublisher,
+                               tabsPreferences: dependencies.tabsPreferences,
                                isLoadedInSidebar: args.isTabLoadedInSidebar,
                                internalUserDecider: dependencies.featureFlagger.internalUserDecider,
                                aiChatMenuConfiguration: dependencies.aiChatMenuConfiguration,
@@ -193,8 +204,8 @@ extension TabExtensionsBuilder {
             FindInPageTabExtension()
         }
         add {
-            DownloadsTabExtension(downloadManager:
-                                    dependencies.downloadManager,
+            DownloadsTabExtension(downloadManager: dependencies.downloadManager,
+                                  downloadsPreferences: dependencies.downloadsPreferences,
                                   isBurner: args.isTabBurner)
         }
         add {
@@ -211,13 +222,20 @@ extension TabExtensionsBuilder {
                                    pixelSender: dependencies.newTabPageShownPixelSender)
         }
 
+        let autoconsentTabExtension = add {
+            AutoconsentTabExtension(scriptsPublisher: userScripts.compactMap { $0 },
+                                    autoconsentStats: dependencies.autoconsentStats,
+                                    featureFlagger: dependencies.featureFlagger)
+        }
+
         let isCapturingHistory = !args.isTabBurner && !args.isTabLoadedInSidebar
         add {
             HistoryTabExtension(isCapturingHistory: isCapturingHistory,
                                 historyCoordinating: dependencies.historyCoordinating,
                                 trackersPublisher: contentBlocking.trackersPublisher,
                                 urlPublisher: args.contentPublisher.map { content in content.isUrl ? content.urlForWebView : nil },
-                                titlePublisher: args.titlePublisher)
+                                titlePublisher: args.titlePublisher,
+                                popupManagedPublisher: autoconsentTabExtension.popupManagedPublisher)
         }
         add {
             PrivacyStatsTabExtension(
@@ -229,15 +247,16 @@ extension TabExtensionsBuilder {
             ExternalAppSchemeHandler(workspace: dependencies.workspace, permissionModel: args.permissionModel, contentPublisher: args.contentPublisher)
         }
         add {
-            NavigationHotkeyHandler(isTabPinned: args.isTabPinned, isBurner: args.isTabBurner)
+            NavigationHotkeyHandler(isTabPinned: args.isTabPinned, isBurner: args.isTabBurner, tabsPreferences: dependencies.tabsPreferences)
         }
 
-        let duckPlayerOnboardingDecider = DefaultDuckPlayerOnboardingDecider()
+        let duckPlayerOnboardingDecider = DefaultDuckPlayerOnboardingDecider(preferences: dependencies.duckPlayer.preferences)
         add {
             DuckPlayerTabExtension(duckPlayer: dependencies.duckPlayer,
                                    isBurner: args.isTabBurner,
                                    scriptsPublisher: userScripts.compactMap { $0 },
                                    webViewPublisher: args.webViewFuture,
+                                   tabsPreferences: dependencies.tabsPreferences,
                                    onboardingDecider: duckPlayerOnboardingDecider)
         }
 

@@ -52,7 +52,7 @@ extension DebugScreensViewModel {
                 try? d.keyValueStore.set(nil, forKey: SettingsViewModel.Constants.shouldCheckIfDefaultBrowserKey)
             }),
             .action(title: "Generate Diagnostic Report", { d in
-                guard let controller = UIApplication.shared.window?.rootViewController?.presentedViewController else { return }
+                guard let controller = UIApplication.shared.firstKeyWindow?.rootViewController?.presentedViewController else { return }
 
                 class Delegate: NSObject, DiagnosticReportDataSourceDelegate {
                     func dataGatheringStarted() {
@@ -73,6 +73,9 @@ extension DebugScreensViewModel {
             // MARK: SwiftUI Views
             .view(title: "AI Chat", { _ in
                 AIChatDebugView()
+            }),
+            .view(title: "Data Audit", { _ in
+                DataAuditDebugScreen()
             }),
             .view(title: "Feature Flags", { _ in
                 FeatureFlagsMenuView()
@@ -134,11 +137,13 @@ extension DebugScreensViewModel {
             .view(title: "Modal Prompt Coordination", { d in
                 ModalPromptCoordinationDebugView(keyValueStore: d.keyValueStore)
             }),
+            .view(title: "What's New", { d in
+                WhatsNewDebugView(keyValueStore: d.keyValueStore)
+            }),
 
             // MARK: Controllers
             .controller(title: "Image Cache", { d in
-                let storyboard = UIStoryboard(name: "Debug", bundle: nil)
-                return storyboard.instantiateViewController(identifier: "ImageCacheDebugViewController") { coder in
+                return self.debugStoryboard.instantiateViewController(identifier: "ImageCacheDebugViewController") { coder in
                     ImageCacheDebugViewController(coder: coder,
                                                   bookmarksDatabase: d.bookmarksDatabase,
                                                   tabsModel: d.tabManager.model,
@@ -146,8 +151,7 @@ extension DebugScreensViewModel {
                 }
             }),
             .controller(title: "Sync", { d in
-                let storyboard = UIStoryboard(name: "Debug", bundle: nil)
-                return storyboard.instantiateViewController(identifier: "SyncDebugViewController") { coder in
+                return self.debugStoryboard.instantiateViewController(identifier: "SyncDebugViewController") { coder in
                     SyncDebugViewController(coder: coder,
                                             sync: d.syncService,
                                             bookmarksDatabase: d.bookmarksDatabase)
@@ -157,20 +161,17 @@ extension DebugScreensViewModel {
                 return LogViewerViewController(dependencies: d)
             }),
             .controller(title: "Configuration Refresh Info", { _ in
-                let storyboard = UIStoryboard(name: "Debug", bundle: nil)
-                return storyboard.instantiateViewController(identifier: "ConfigurationDebugViewController") { coder in
+                return self.debugStoryboard.instantiateViewController(identifier: "ConfigurationDebugViewController") { coder in
                     ConfigurationDebugViewController(coder: coder)
                 }
             }),
             .controller(title: "VPN", { _ in
-                let storyboard = UIStoryboard(name: "Debug", bundle: nil)
-                return storyboard.instantiateViewController(identifier: "NetworkProtectionDebugViewController") { coder in
+                return self.debugStoryboard.instantiateViewController(identifier: "NetworkProtectionDebugViewController") { coder in
                     NetworkProtectionDebugViewController(coder: coder)
                 }
             }),
             AppDependencyProvider.shared.featureFlagger.isFeatureOn(.personalInformationRemoval) ? .controller(title: "PIR", { _ in
-                let storyboard = UIStoryboard(name: "Debug", bundle: nil)
-                return storyboard.instantiateViewController(identifier: "DataBrokerProtectionDebugViewController") { coder in
+                return self.debugStoryboard.instantiateViewController(identifier: "DataBrokerProtectionDebugViewController") { coder in
                     DataBrokerProtectionDebugViewController(coder: coder,
                                                             databaseDelegate: self.dependencies.databaseDelegate,
                                                             debuggingDelegate: self.dependencies.debuggingDelegate,
@@ -178,26 +179,22 @@ extension DebugScreensViewModel {
                 }
             }) : nil,
             .controller(title: "File Size Inspector", { _ in
-                let storyboard = UIStoryboard(name: "Debug", bundle: nil)
-                return storyboard.instantiateViewController(identifier: "FileSizeDebug") { coder in
+                return self.debugStoryboard.instantiateViewController(identifier: "FileSizeDebug") { coder in
                     FileSizeDebugViewController(coder: coder)
                 }
             }),
             .controller(title: "Cookies", { d in
-                let storyboard = UIStoryboard(name: "Debug", bundle: nil)
-                return storyboard.instantiateViewController(identifier: "CookieDebugViewController") { coder in
+                return self.debugStoryboard.instantiateViewController(identifier: "CookieDebugViewController") { coder in
                     CookieDebugViewController(coder: coder, fireproofing: d.fireproofing)
                 }
             }),
             .controller(title: "Keychain Items", { _ in
-                let storyboard = UIStoryboard(name: "Debug", bundle: nil)
-                return storyboard.instantiateViewController(identifier: "KeychainItemsDebugViewController") { coder in
+                return self.debugStoryboard.instantiateViewController(identifier: "KeychainItemsDebugViewController") { coder in
                     KeychainItemsDebugViewController(coder: coder)
                 }
             }),
             .controller(title: "Autofill", { d in
-                let storyboard = UIStoryboard(name: "Debug", bundle: nil)
-                let autofillDebugViewController = storyboard.instantiateViewController(identifier: "AutofillDebugViewController") { coder in
+                let autofillDebugViewController = self.debugStoryboard.instantiateViewController(identifier: "AutofillDebugViewController") { coder in
                     AutofillDebugViewController(coder: coder)
                 }
                 autofillDebugViewController.keyValueStore = d.keyValueStore
@@ -207,14 +204,12 @@ extension DebugScreensViewModel {
                 return LoggingDebugViewController()
             }),
             .controller(title: "Subscription", { _ in
-                let storyboard = UIStoryboard(name: "Debug", bundle: nil)
-                return storyboard.instantiateViewController(identifier: "SubscriptionDebugViewController") { coder in
+                return self.debugStoryboard.instantiateViewController(identifier: "SubscriptionDebugViewController") { coder in
                     SubscriptionDebugViewController(coder: coder)
                 }
             }),
             .controller(title: "Configuration URLs", { _ in
-                let storyboard = UIStoryboard(name: "Debug", bundle: nil)
-                return storyboard.instantiateViewController(identifier: "ConfigurationURLDebugViewController") { coder in
+                return self.debugStoryboard.instantiateViewController(identifier: "ConfigurationURLDebugViewController") { coder in
                     let viewController = ConfigurationURLDebugViewController(coder: coder)
                     viewController?.viewModel = self
                     return viewController
@@ -238,12 +233,17 @@ extension DebugScreensViewModel {
                 capturedController = onboardingController
                 return onboardingController
             }),
+            .controller(title: "Attributed Metrics", { _ in
+                return self.debugStoryboard.instantiateViewController(identifier: "AttributedMetricsDebugViewController") { coder in
+                    AttributedMetricsDebugViewController(coder: coder)
+                }
+            }),
         ].compactMap { $0 }
     }
     
     private func showNewAddressBarModal(_ dependencies: DebugScreen.Dependencies) {
-        guard let controller = UIApplication.shared.window?.rootViewController?.presentedViewController else { return }
-        
+        guard let controller = UIApplication.shared.firstKeyWindow?.rootViewController?.presentedViewController else { return }
+
         let pickerViewController = NewAddressBarPickerViewController(aiChatSettings: AIChatSettings())
         pickerViewController.modalPresentationStyle = .pageSheet
         pickerViewController.modalTransitionStyle = .coverVertical

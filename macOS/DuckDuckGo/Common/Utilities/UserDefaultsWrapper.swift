@@ -41,8 +41,6 @@ extension UserDefaults {
         case unprotectedDomains = "com.duckduckgo.contentblocker.unprotectedDomains"
         case contentBlockingRulesCache = "com.duckduckgo.contentblocker.rules.cache"
 
-        case defaultBrowserDismissed = "browser.default.dismissed"
-
         case spellingCheckEnabledOnce = "spelling.check.enabled.once"
         case grammarCheckEnabledOnce = "grammar.check.enabled.once"
 
@@ -187,6 +185,8 @@ extension UserDefaults {
         // or else KVO will just not work as of 2023-08-07
         case hadVPNEntitlements = "hadVPNEntitlements"
         case networkProtectionOnboardingStatusRawValue = "networkProtectionOnboardingStatusRawValue"
+        case vpnConnectionWideEventBrowserStartTime = "vpnConnectionWideEventBrowserStartTime"
+        case vpnConnectionWideEventOverallStartTime = "vpnConnectionWideEventOverallStartTime"
 
         // Updates
         case automaticUpdates = "updates.automatic"

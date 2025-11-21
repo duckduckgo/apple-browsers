@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AutoconsentStats
 import BrowserServicesKit
 import Combine
 import Common
@@ -27,7 +28,7 @@ import PixelKit
 import PrivacyStats
 import SharedTestUtilities
 import XCTest
-
+import RemoteMessagingTestsUtils
 @testable import DuckDuckGo_Privacy_Browser
 
 final class MockPrivacyStats: PrivacyStatsCollecting {
@@ -39,6 +40,22 @@ final class MockPrivacyStats: PrivacyStatsCollecting {
     func fetchPrivacyStatsTotalCount() async -> Int64 { 0 }
     func clearPrivacyStats() async {}
     func handleAppTermination() async {}
+}
+
+final class MockAutoconsentStats: AutoconsentStatsCollecting {
+    let statsUpdatePublisher: AnyPublisher<Void, Never> = Empty<Void, Never>().eraseToAnyPublisher()
+
+    func recordAutoconsentAction(clicksMade: Int64, timeSpent: TimeInterval) async {}
+    func fetchTotalCookiePopUpsBlocked() async -> Int64 { 0 }
+    func fetchAutoconsentDailyUsagePack() async -> AutoconsentDailyUsagePack {
+        AutoconsentDailyUsagePack(
+            totalCookiePopUpsBlocked: 0,
+            totalClicksMadeBlockingCookiePopUps: 0,
+            totalTotalTimeSpentBlockingCookiePopUps: 0
+        )
+    }
+    func clearAutoconsentStats() async {}
+    func isEnabled() async -> Bool { true }
 }
 
 final class NewTabPageCoordinatorTests: XCTestCase {
@@ -82,7 +99,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
 
         windowControllersManager = WindowControllersManagerMock()
 
-        tabsPreferences = TabsPreferences(persistor: MockTabsPreferencesPersistor())
+        tabsPreferences = TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock())
 
         featureFlagger = MockFeatureFlagger()
 
@@ -101,6 +118,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             customizationModel: customizationModel,
             bookmarkManager: MockBookmarkManager(),
             faviconManager: FaviconManagerMock(),
+            duckPlayerHistoryEntryTitleProvider: MockDuckPlayerHistoryEntryTitleProvider(),
             activeRemoteMessageModel: ActiveRemoteMessageModel(
                 remoteMessagingStore: MockRemoteMessagingStore(),
                 remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
@@ -111,6 +129,8 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             contentBlocking: ContentBlockingMock(),
             fireproofDomains: MockFireproofDomains(domains: []),
             privacyStats: MockPrivacyStats(),
+            autoconsentStats: MockAutoconsentStats(),
+            cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
             freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator(
                 freemiumDBPUserStateManager: MockFreemiumDBPUserStateManager(),
                 freemiumDBPFeature: MockFreemiumDBPFeature(),

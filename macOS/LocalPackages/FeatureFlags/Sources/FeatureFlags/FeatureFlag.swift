@@ -137,8 +137,7 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866617328244
     case aiChatKeepSession
 
-    /// Enables the omnibar toggle for AI Chat
-    /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1211652685709106
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212016242789291
     case aiChatOmnibarToggle
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866476152134

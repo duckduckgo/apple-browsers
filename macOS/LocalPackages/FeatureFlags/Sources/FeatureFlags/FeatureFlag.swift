@@ -274,7 +274,7 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1201141132935289/task/1210497696306780?focus=true
     case standaloneMigration
 
-    /// https://app.asana.com/1/137249556945/project/1163321984198618/task/1203578778040829?focus=true
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212014826835069?focus=true
     case newTabPageAutoconsentStats
 }
 

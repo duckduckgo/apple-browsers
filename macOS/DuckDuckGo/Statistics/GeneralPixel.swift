@@ -97,7 +97,6 @@ enum GeneralPixel: PixelKitEvent {
     case bitwardenPasswordSaved
 
     case ampBlockingRulesCompilationFailed
-    case ampKeywordDetectionPerformance
 
     case adClickAttributionDetected
     case adClickAttributionActive
@@ -713,8 +712,6 @@ enum GeneralPixel: PixelKitEvent {
 
         case .ampBlockingRulesCompilationFailed:
             return "m_mac_amp_rules_compilation_failed"
-        case .ampKeywordDetectionPerformance:
-            return "m_mac_amp_keyword_detection_performance"
 
         case .adClickAttributionDetected:
             return "m_mac_ad_click_detected"

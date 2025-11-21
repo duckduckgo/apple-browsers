@@ -22,6 +22,7 @@ import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 import BrowserServicesKit
 import UniformTypeIdentifiers
+import SharedTestUtilities
 
 final class DataImportViewModelTests: XCTestCase {
 

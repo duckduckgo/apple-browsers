@@ -2739,7 +2739,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     @objc func onMenuLongPressed() {
-        if featureFlagger.isFeatureOn(.debugMenu) || isDebugBuild {
+        if featureFlagger.internalUserDecider.isInternalUser || isDebugBuild {
             segueToDebugSettings()
         } else {
             segueToSettings()

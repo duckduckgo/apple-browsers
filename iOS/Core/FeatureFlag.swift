@@ -21,9 +21,6 @@ import Foundation
 import BrowserServicesKit
 
 public enum FeatureFlag: String {
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866466606715
-    case debugMenu
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866605041091
     case sync
 
@@ -380,8 +377,7 @@ extension FeatureFlag: FeatureFlagDescribing {
             } else {
                 return false
             }
-        case .debugMenu,
-               .sync,
+        case .sync,
                .autofillCredentialInjecting,
                .autofillCredentialsSaving,
                .autofillInlineIconCredentials,
@@ -421,8 +417,6 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var source: FeatureFlagSource {
         switch self {
-        case .debugMenu:
-            return .internalOnly()
         case .sync:
             return .remoteReleasable(.subfeature(SyncSubfeature.level0ShowSync))
         case .autofillCredentialInjecting:

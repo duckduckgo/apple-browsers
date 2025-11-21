@@ -72749,7 +72749,7 @@
       }
     },
     "preferences.cookie-pop-up-protection" : {
-      "comment" : "Title of the option to show the Cookie Pop-up Protection preferences",
+      "comment" : "Title of the option to show the Cookie Pop-Up Protection preferences",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {

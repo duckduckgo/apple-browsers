@@ -71,7 +71,7 @@ public final class DefaultPopupBlockingConfiguration: PopupBlockingConfiguration
         }
 
         // Validate threshold is positive, return default if not
-        if let threshold = threshold {
+        if let threshold {
             assertionHandler(threshold > 0, "userInitiatedPopupThreshold must be positive, got \(threshold)")
             guard threshold > 0 else {
                 return Defaults.userInitiatedPopupThreshold

@@ -130,8 +130,6 @@ final class PopupHandlingTabExtension {
             guard let self, let webView else {
                 return completionHandler(nil)
             }
-            // reset last user interaction date to block future pop-ups within the throttle window
-            self.lastUserInteractionDate = nil
             completionHandler(webView)
         }
 
@@ -176,6 +174,8 @@ final class PopupHandlingTabExtension {
 
         // action doesn't require pop-up permission as it's user-initiated
         if shouldAllowPopupBypassingPermissionRequest(for: navigationAction, windowFeatures: windowFeatures) {
+            // reset last user interaction date to block future pop-ups within the throttle window
+            self.lastUserInteractionDate = nil
             completionHandler(createChildWebView(from: webView, with: configuration, for: navigationAction, of: targetKind))
             return
         }
@@ -270,7 +270,7 @@ final class PopupHandlingTabExtension {
 
     @MainActor
     func isNavigationActionUserInitiated(_ navigationAction: WKNavigationAction) -> Bool {
-                let threshold = popupBlockingConfig.userInitiatedPopupThreshold
+        let threshold = popupBlockingConfig.userInitiatedPopupThreshold
         // Check if enhanced popup blocking is enabled and configured properly
         guard featureFlagger.isFeatureOn(.popupBlocking),
               featureFlagger.isFeatureOn(.extendedUserInitiatedPopupTimeout),

@@ -115,7 +115,31 @@ public final class CustomToggleControl: NSControl {
     private var animationTargetProgress: CGFloat = 0.0
     private let animationDuration: CFTimeInterval = 0.15
 
+    private var leftSegmentToolTip: String?
+    private var rightSegmentToolTip: String?
+
     // MARK: - Public API Methods
+
+    /// Sets the tooltip for the specified segment
+    /// - Parameters:
+    ///   - toolTip: The tooltip text to display
+    ///   - segment: The index of the segment (0 = left, 1 = right)
+    public func setToolTip(_ toolTip: String?, forSegment segment: Int) {
+        guard segment >= 0 && segment < segmentCount else { return }
+        if segment == 0 {
+            leftSegmentToolTip = toolTip
+        } else {
+            rightSegmentToolTip = toolTip
+        }
+    }
+
+    /// Returns the tooltip for the specified segment
+    /// - Parameter segment: The index of the segment (0 = left, 1 = right)
+    /// - Returns: The tooltip text for the segment, or nil if none is set
+    public func toolTip(forSegment segment: Int) -> String? {
+        guard segment >= 0 && segment < segmentCount else { return nil }
+        return segment == 0 ? leftSegmentToolTip : rightSegmentToolTip
+    }
 
     /// Sets the selection state for the specified segment
     /// - Parameters:
@@ -262,7 +286,7 @@ public final class CustomToggleControl: NSControl {
 
         let isLeftSelected = selectedSegment == 0
         let isRightSelected = selectedSegment == 1
-        
+
         if let leftImg = (isLeftSelected && leftSelectedImage != nil) ? leftSelectedImage : leftImage {
             drawImage(leftImg, in: leftRect, alpha: 1.0)
         }
@@ -364,6 +388,26 @@ public final class CustomToggleControl: NSControl {
     public override func mouseDown(with event: NSEvent) {
         let location = convert(event.locationInWindow, from: nil)
         selectedSegment = location.x > bounds.width / 2 ? 1 : 0
+    }
+
+    public override func mouseMoved(with event: NSEvent) {
+        super.mouseMoved(with: event)
+        updateToolTipForMouseLocation(event.locationInWindow)
+    }
+
+    public override func mouseEntered(with event: NSEvent) {
+        super.mouseEntered(with: event)
+        updateToolTipForMouseLocation(event.locationInWindow)
+    }
+
+    private func updateToolTipForMouseLocation(_ locationInWindow: NSPoint) {
+        let location = convert(locationInWindow, from: nil)
+        let segment = location.x > bounds.width / 2 ? 1 : 0
+        let newToolTip = segment == 0 ? leftSegmentToolTip : rightSegmentToolTip
+
+        if super.toolTip != newToolTip {
+            super.toolTip = newToolTip
+        }
     }
 
     // MARK: - Keyboard Handling

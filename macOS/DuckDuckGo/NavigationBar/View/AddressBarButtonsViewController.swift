@@ -1660,6 +1660,9 @@ final class AddressBarButtonsViewController: NSViewController {
         toggleControl.setSelectedImage(DesignSystemImages.Color.Size16.searchFindToggle, forSegment: 0)
         toggleControl.setSelectedImage(DesignSystemImages.Color.Size16.aiChatToggle, forSegment: 1)
 
+        toggleControl.setToolTip(UserText.aiChatSearchTheWebTooltip, forSegment: 0)
+        toggleControl.setToolTip(UserText.aiChatChatWithAITooltip, forSegment: 1)
+
         applyThemeToToggleControl(toggleControl)
 
         toggleControl.selectedSegment = 0

@@ -32,6 +32,9 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     var themeUpdateCancellable: AnyCancellable?
     private var appearanceCancellable: AnyCancellable?
     weak var customToggleControl: NSControl?
+    
+    // Height calculation callback
+    var heightDidChange: ((CGFloat) -> Void)?
 
     init(omnibarController: AIChatOmnibarController, sharedTextState: AddressBarSharedTextState, themeManager: ThemeManaging) {
         self.omnibarController = omnibarController
@@ -162,6 +165,31 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
     @objc func textDidChange(_ notification: Notification) {
         omnibarController.updateText(textView.string)
+        updatePanelHeight()
+    }
+
+    private func updatePanelHeight() {
+        let desiredHeight = calculateDesiredPanelHeight()
+        heightDidChange?(desiredHeight)
+    }
+
+    func calculateDesiredPanelHeight() -> CGFloat {
+        guard let layoutManager = textView.layoutManager,
+              let textContainer = textView.textContainer else {
+            return 100 // Fallback to minimum height
+        }
+        
+        // Force layout to ensure we have accurate measurements
+        layoutManager.ensureLayout(for: textContainer)
+        
+        // Get the actual height of the text content
+        let usedRect = layoutManager.usedRect(for: textContainer)
+        
+        // Add text container insets (top + bottom) and some padding for the panel
+        let textInsets = textView.textContainerInset
+        let totalHeight = usedRect.height + textInsets.height + textInsets.height + 20 // 20pt for additional padding
+        
+        return totalHeight
     }
 
     // MARK: - NSTextViewDelegate
@@ -203,6 +231,18 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
     func focusTextView() {
         view.window?.makeFirstResponder(textView)
+    }
+
+    func updateScrollingBehavior(maxHeight: CGFloat) {
+        let contentHeight = calculateDesiredPanelHeight()
+        let shouldScroll = contentHeight > maxHeight
+        
+        scrollView.hasVerticalScroller = shouldScroll
+        
+        if shouldScroll {
+            // Scroll to bottom when content exceeds visible area
+            textView.scrollToEndOfDocument(nil)
+        }
     }
 }
 

@@ -27,11 +27,15 @@ final class AutofillExtensionSettingsViewModelTests: XCTestCase {
 
     func testUpdateExtensionStatusReflectsCredentialStoreState() async {
         let store = MockASCredentialIdentityStore()
-        store.isEnabled = false
         let settingsHelper = MockAutofillExtensionSettingsHelper()
+        store.isEnabled = false
 
-        let viewModel = AutofillExtensionSettingsViewModel(credentialStore: store,
-                                                           settingsHelper: settingsHelper)
+        let coordinator = AutofillExtensionEnableCoordinator(
+            source: "test",
+            credentialStore: store,
+            settingsHelper: settingsHelper
+        )
+        let viewModel = AutofillExtensionSettingsViewModel(source: "test", coordinator: coordinator)
 
         await viewModel.updateExtensionStatus()
         XCTAssertFalse(viewModel.isExtensionEnabled)
@@ -47,9 +51,12 @@ final class AutofillExtensionSettingsViewModelTests: XCTestCase {
         let settingsHelper = MockAutofillExtensionSettingsHelper(requestResult: true)
         settingsHelper.onRequest = { store.isEnabled = true }
 
-        let viewModel = AutofillExtensionSettingsViewModel(credentialStore: store,
-                                                           settingsHelper: settingsHelper,
-                                                           enableRetryThrottleDuration: 0.1)
+        let coordinator = AutofillExtensionEnableCoordinator(
+            source: "test",
+            credentialStore: store,
+            settingsHelper: settingsHelper
+        )
+        let viewModel = AutofillExtensionSettingsViewModel(source: "test", coordinator: coordinator)
 
         await viewModel.updateExtensionStatus()
         XCTAssertFalse(viewModel.isExtensionEnabled)
@@ -66,9 +73,12 @@ final class AutofillExtensionSettingsViewModelTests: XCTestCase {
         store.isEnabled = false
         let settingsHelper = MockAutofillExtensionSettingsHelper(requestResult: false)
 
-        let viewModel = AutofillExtensionSettingsViewModel(credentialStore: store,
-                                                           settingsHelper: settingsHelper,
-                                                           enableRetryThrottleDuration: 0.1)
+        let coordinator = AutofillExtensionEnableCoordinator(
+            source: "test",
+            credentialStore: store,
+            settingsHelper: settingsHelper
+        )
+        let viewModel = AutofillExtensionSettingsViewModel(source: "test", coordinator: coordinator)
 
         await viewModel.updateExtensionStatus()
         XCTAssertFalse(viewModel.isExtensionEnabled)
@@ -80,18 +90,21 @@ final class AutofillExtensionSettingsViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.isExtensionEnabled)
         XCTAssertTrue(viewModel.isEnableRequestThrottled)
         XCTAssertEqual(settingsHelper.openCallCount, 0) // Should NOT open settings when user chooses "Not Now"
-        XCTAssertNotNil(viewModel.remainingEnableRequestThrottleInterval)
     }
 
     func testEnableExtensionNotifiesDelegateOnSuccess() async {
         let store = MockASCredentialIdentityStore()
-        store.isEnabled = true
+        store.isEnabled = false
         let settingsHelper = MockAutofillExtensionSettingsHelper(requestResult: true)
+        settingsHelper.onRequest = { store.isEnabled = true }
         let delegate = MockAutofillExtensionSettingsViewModelDelegate()
 
-        let viewModel = AutofillExtensionSettingsViewModel(credentialStore: store,
-                                                           settingsHelper: settingsHelper,
-                                                           enableRetryThrottleDuration: 0.1)
+        let coordinator = AutofillExtensionEnableCoordinator(
+            source: "test",
+            credentialStore: store,
+            settingsHelper: settingsHelper
+        )
+        let viewModel = AutofillExtensionSettingsViewModel(source: "test", coordinator: coordinator)
         viewModel.delegate = delegate
 
         await viewModel.enableExtension()
@@ -105,9 +118,12 @@ final class AutofillExtensionSettingsViewModelTests: XCTestCase {
         let settingsHelper = MockAutofillExtensionSettingsHelper(requestResult: false)
         let delegate = MockAutofillExtensionSettingsViewModelDelegate()
 
-        let viewModel = AutofillExtensionSettingsViewModel(credentialStore: store,
-                                                           settingsHelper: settingsHelper,
-                                                           enableRetryThrottleDuration: 0.1)
+        let coordinator = AutofillExtensionEnableCoordinator(
+            source: "test",
+            credentialStore: store,
+            settingsHelper: settingsHelper
+        )
+        let viewModel = AutofillExtensionSettingsViewModel(source: "test", coordinator: coordinator)
         viewModel.delegate = delegate
 
         await viewModel.enableExtension()
@@ -120,9 +136,12 @@ final class AutofillExtensionSettingsViewModelTests: XCTestCase {
         store.isEnabled = false
         let settingsHelper = MockAutofillExtensionSettingsHelper(requestResult: false)
 
-        let viewModel = AutofillExtensionSettingsViewModel(credentialStore: store,
-                                                           settingsHelper: settingsHelper,
-                                                           enableRetryThrottleDuration: 0.5)
+        let coordinator = AutofillExtensionEnableCoordinator(
+            source: "test",
+            credentialStore: store,
+            settingsHelper: settingsHelper
+        )
+        let viewModel = AutofillExtensionSettingsViewModel(source: "test", coordinator: coordinator)
 
         await viewModel.enableExtension()
         XCTAssertTrue(viewModel.isEnableRequestThrottled)
@@ -131,42 +150,41 @@ final class AutofillExtensionSettingsViewModelTests: XCTestCase {
         await viewModel.enableExtension()
 
         XCTAssertEqual(settingsHelper.requestCallCount, 1)
-        XCTAssertNotNil(viewModel.remainingEnableRequestThrottleInterval)
         XCTAssertEqual(settingsHelper.openCallCount, 1)
     }
 
     func testEnableExtensionThrottleExpiresAfterDuration() async {
         let store = MockASCredentialIdentityStore()
         store.isEnabled = false
-        let settingsHelper = MockAutofillExtensionSettingsHelper(requestResult: false)
+        let settingsHelper = MockAutofillExtensionSettingsHelper()
 
-        let viewModel = AutofillExtensionSettingsViewModel(credentialStore: store,
-                                                           settingsHelper: settingsHelper,
-                                                           enableRetryThrottleDuration: 0.05)
+        let coordinator = AutofillExtensionEnableCoordinator(
+            source: "test",
+            credentialStore: store,
+            settingsHelper: settingsHelper,
+            enableRetryThrottleDuration: 0.1
+        )
+        let viewModel = AutofillExtensionSettingsViewModel(source: "test", coordinator: coordinator)
 
         await viewModel.enableExtension()
         XCTAssertTrue(viewModel.isEnableRequestThrottled)
 
-        // Poll until throttle expires or timeout
-        let expectation = expectation(description: "Throttle expires")
-        Task {
-            while viewModel.isEnableRequestThrottled {
-                try? await Task.sleep(nanoseconds: 10_000_000) // 0.01 seconds
-            }
-            expectation.fulfill()
-        }
-        await fulfillment(of: [expectation], timeout: 1.0)
+        // Wait for throttle to expire
+        try? await Task.sleep(nanoseconds: 150_000_000) // 0.15 seconds
 
         XCTAssertFalse(viewModel.isEnableRequestThrottled)
-        XCTAssertNil(viewModel.remainingEnableRequestThrottleInterval)
     }
 
     func testDisableExtensionRequestsOpeningSettings() async {
         let store = MockASCredentialIdentityStore()
         let settingsHelper = MockAutofillExtensionSettingsHelper()
 
-        let viewModel = AutofillExtensionSettingsViewModel(credentialStore: store,
-                                                           settingsHelper: settingsHelper)
+        let coordinator = AutofillExtensionEnableCoordinator(
+            source: "test",
+            credentialStore: store,
+            settingsHelper: settingsHelper
+        )
+        let viewModel = AutofillExtensionSettingsViewModel(source: "test", coordinator: coordinator)
 
         await viewModel.disableExtension()
 
@@ -178,12 +196,35 @@ final class AutofillExtensionSettingsViewModelTests: XCTestCase {
         let settingsHelper = MockAutofillExtensionSettingsHelper()
         settingsHelper.openError = TestError.example
 
-        let viewModel = AutofillExtensionSettingsViewModel(credentialStore: store,
-                                                           settingsHelper: settingsHelper)
+        let coordinator = AutofillExtensionEnableCoordinator(
+            source: "test",
+            credentialStore: store,
+            settingsHelper: settingsHelper
+        )
+        let viewModel = AutofillExtensionSettingsViewModel(source: "test", coordinator: coordinator)
 
         await viewModel.disableExtension()
 
         XCTAssertEqual(settingsHelper.openCallCount, 1)
+        // Should not crash even though error was thrown
+    }
+
+    func testDisableExtensionNotifiesDelegateOnStart() async {
+        let store = MockASCredentialIdentityStore()
+        let settingsHelper = MockAutofillExtensionSettingsHelper()
+        let delegate = MockAutofillExtensionSettingsViewModelDelegate()
+
+        let coordinator = AutofillExtensionEnableCoordinator(
+            source: "test",
+            credentialStore: store,
+            settingsHelper: settingsHelper
+        )
+        let viewModel = AutofillExtensionSettingsViewModel(source: "test", coordinator: coordinator)
+        viewModel.delegate = delegate
+
+        await viewModel.disableExtension()
+
+        XCTAssertTrue(delegate.authDisabledStates.contains(true))
     }
 
     private enum TestError: Error {

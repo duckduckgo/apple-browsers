@@ -60,9 +60,9 @@ final class AutofillExtensionSettingsViewModel: ObservableObject {
         coordinator.isEnableRequestThrottled
     }
 
-    init(source: String) {
-        self.coordinator = AutofillExtensionEnableCoordinator(source: source)
+    init(source: String, coordinator: AutofillExtensionEnableCoordinator? = nil) {
         self.source = source
+        self.coordinator = coordinator ?? AutofillExtensionEnableCoordinator(source: source)
         self.coordinator.delegate = self
         Task { await updateExtensionStatus() }
     }
@@ -87,8 +87,7 @@ final class AutofillExtensionSettingsViewModel: ObservableObject {
     func disableExtension() async {
         do {
             delegate?.autofillExtensionSettingsViewModel(self, shouldDisableAuth: true)
-            try await ASSettingsHelper.openCredentialProviderAppSettings()
-            Pixel.fire(pixel: .autofillExtensionSettingsTurnOffTapped, withAdditionalParameters: [PixelParameters.source: source])
+            try await coordinator.openSettings()
         } catch {
             delegate?.autofillExtensionSettingsViewModel(self, shouldDisableAuth: false)
             Logger.autofill.error("Failed to open credential provider settings: \(error.localizedDescription, privacy: .public)")

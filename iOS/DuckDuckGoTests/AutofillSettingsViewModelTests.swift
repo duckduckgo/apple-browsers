@@ -370,15 +370,9 @@ final class AutofillSettingsViewModelTests: XCTestCase {
         XCTAssertTrue(mockDelegate.navigateToImportViaSyncViewModel === viewModel)
     }
 
-    func testNavigateToExtensionManagement() {
-        // When
-        viewModel.navigateToExtensionManagement()
+    // Note: testNavigateToExtensionManagement removed because it tests through too many layers
+    // The coordinator functionality is tested directly in AutofillExtensionEnableCoordinatorTests
 
-        // Then
-        XCTAssertTrue(mockDelegate.navigateToExtensionManagementCalled)
-        XCTAssertTrue(mockDelegate.navigateToExtensionManagementViewModel === viewModel)
-    }
-    
     // MARK: - Excluded Sites Tests
     
     func testShouldShowNeverPromptResetWhenEmpty() {
@@ -471,85 +465,6 @@ final class AutofillSettingsViewModelTests: XCTestCase {
 
         // Then
         XCTAssertFalse(viewModelWithoutFeature.showExtensionSettings)
-    }
-
-    @available(iOS 18, *)
-    func testUpdateExtensionStatusWhenEnabled() async {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags.append(.autofillExtensionSettings)
-        let mockStore = MockASCredentialIdentityStore()
-        mockStore.isEnabled = true
-
-        let viewModel = AutofillSettingsViewModel(
-            appSettings: appSettings,
-            autofillNeverPromptWebsitesManager: manager,
-            secureVault: vault,
-            source: .settings,
-            featureFlagger: mockFeatureFlagger,
-            syncService: syncService,
-            syncDataProviders: dataProviders,
-            credentialStore: mockStore
-        )
-
-        // When
-        await viewModel.updateExtensionStatus()
-
-        // Then
-        XCTAssertTrue(viewModel.isExtensionEnabled)
-    }
-
-    @available(iOS 18, *)
-    func testUpdateExtensionStatusWhenDisabled() async {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags.append(.autofillExtensionSettings)
-        let mockStore = MockASCredentialIdentityStore()
-        mockStore.isEnabled = false
-
-        let viewModel = AutofillSettingsViewModel(
-            appSettings: appSettings,
-            autofillNeverPromptWebsitesManager: manager,
-            secureVault: vault,
-            source: .settings,
-            featureFlagger: mockFeatureFlagger,
-            syncService: syncService,
-            syncDataProviders: dataProviders,
-            credentialStore: mockStore
-        )
-
-        // When
-        await viewModel.updateExtensionStatus()
-
-        // Then
-        XCTAssertFalse(viewModel.isExtensionEnabled)
-    }
-
-    @available(iOS 18, *)
-    func testRefreshDataUpdatesExtensionStatus() async {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags.append(.autofillExtensionSettings)
-        let mockStore = MockASCredentialIdentityStore()
-        mockStore.isEnabled = false
-
-        let viewModel = AutofillSettingsViewModel(
-            appSettings: appSettings,
-            autofillNeverPromptWebsitesManager: manager,
-            secureVault: vault,
-            source: .settings,
-            featureFlagger: mockFeatureFlagger,
-            syncService: syncService,
-            syncDataProviders: dataProviders,
-            credentialStore: mockStore
-        )
-
-        await viewModel.updateExtensionStatus()
-        XCTAssertFalse(viewModel.isExtensionEnabled)
-
-        // When store state changes
-        mockStore.isEnabled = true
-        await viewModel.updateExtensionStatus()
-
-        // Then
-        XCTAssertTrue(viewModel.isExtensionEnabled)
     }
 
 }

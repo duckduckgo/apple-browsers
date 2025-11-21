@@ -334,9 +334,12 @@ struct DataImportViewModel {
                 self.summary.append( .init(dataType, result) )
 
                 if case .archiveImport(let dataTypes, _) = screen,
-                   summary.first(where: { $0.value.isSuccess }) == nil {
+                    summary.first(where: { $0.value.isSuccess }) == nil {
                     nextScreen = .archiveImport(dataTypes: dataTypes, summary: summary)
-                } else if !(screen.isFileImport && screen.fileImportDataType == dataType), nextScreen == nil { // show file import screen when import fails or no bookmarks|passwords found
+                }
+
+                // show file import screen when import fails or no bookmarks|passwords found
+                if !((screen.isFileImport && screen.fileImportDataType == dataType) || screen.isArchiveImport), nextScreen == nil {
                     // switch to file import of the failed data type displaying successful import results
                     nextScreen = .fileImport(dataType: dataType, summary: summary)
                 }

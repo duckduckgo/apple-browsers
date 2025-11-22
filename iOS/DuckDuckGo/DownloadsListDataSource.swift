@@ -59,6 +59,15 @@ class DownloadsListDataSource {
         
         model.update(ongoingDownloads: ongoingDownloads,
                      completeDownloads: completeDownloads)
+
+        deleteDownloadsDirectoryIfNeeded(ongoingDownloads: ongoingDownloads,
+                                         completeDownloads: completeDownloads)
+    }
+    
+    private func deleteDownloadsDirectoryIfNeeded(ongoingDownloads: [Any], completeDownloads: [Any]) {
+        if ongoingDownloads.isEmpty && completeDownloads.isEmpty {
+            downloadManager.deleteDownloadsDirectoryIfEmpty()
+        }
     }
     
     func cancelDownloadWithIdentifier(_ identifier: String) {

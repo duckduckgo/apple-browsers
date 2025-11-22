@@ -115,6 +115,10 @@ class DownloadManager {
         unseenDownloadsAvailable = false
     }
 
+    func deleteDownloadsDirectoryIfEmpty() {
+        downloadsDirectoryHandler.deleteDownloadsDirectoryIfEmpty()
+    }
+    
     private func move(_ download: Download, toPath path: URL) {
         guard let location = download.location else { return }
         do {

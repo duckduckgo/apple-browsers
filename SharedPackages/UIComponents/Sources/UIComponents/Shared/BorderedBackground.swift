@@ -19,6 +19,8 @@
 import SwiftUI
 import DesignResourcesKit
 
+#if os(macOS)
+
 /// A view modifier that applies a rounded background with a border.
 ///
 /// This modifier applies:
@@ -30,7 +32,7 @@ public struct BorderedBackgroundModifier: ViewModifier {
     let borderColor: Color
     let cornerRadius: CGFloat
 
-    init(backgroundColor: Color = Color(designSystemColor: SharedDesignSystemColor.surfaceSecondary), borderColor: Color = Color(designSystemColor: SharedDesignSystemColor.lines), cornerRadius: CGFloat = 8) {
+    init(backgroundColor: Color = Color(designSystemColor: .surfaceSecondary), borderColor: Color = Color(designSystemColor: .lines), cornerRadius: CGFloat = 8) {
         self.backgroundColor = backgroundColor
         self.borderColor = borderColor
         self.cornerRadius = cornerRadius
@@ -57,7 +59,9 @@ public extension View {
     ///   - borderColor: The border color. Defaults to `.lines` design system color.
     ///   - cornerRadius: The corner radius for the rounded rectangle. Defaults to 8.
     /// - Returns: A view with the bordered background style applied.
-    func borderedBackground(color: Color = Color(designSystemColor: SharedDesignSystemColor.surfaceSecondary), borderColor: Color = Color(designSystemColor: SharedDesignSystemColor.lines), cornerRadius: CGFloat = 8) -> some View {
+    func borderedBackground(color: Color = Color(designSystemColor: .surfaceSecondary), borderColor: Color = Color(designSystemColor: .lines), cornerRadius: CGFloat = 8) -> some View {
         modifier(BorderedBackgroundModifier(backgroundColor: color, borderColor: borderColor, cornerRadius: cornerRadius))
     }
 }
+
+#endif

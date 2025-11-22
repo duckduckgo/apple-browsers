@@ -43,6 +43,7 @@ class DownloadManager {
          downloadsDirectoryHandler: DownloadsDirectoryHandling = DownloadsDirectoryHandler()) {
         self.notificationCenter = notificationCenter
         self.downloadsDirectoryHandler = downloadsDirectoryHandler
+        deleteDownloadsDirectoryIfEmpty()
     }
 
     func makeDownload(response: URLResponse,

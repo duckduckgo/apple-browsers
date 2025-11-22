@@ -39,6 +39,7 @@ struct DownloadTestsHelper {
     }
     
     func deleteFilesOnPath(_ url: URL) {
+        guard checkIfFileExists(url) else { return }
         do {
             let files = try FileManager.default.contentsOfDirectory(at: url,
                                                                     includingPropertiesForKeys: nil,

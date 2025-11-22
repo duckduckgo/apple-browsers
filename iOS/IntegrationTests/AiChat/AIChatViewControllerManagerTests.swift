@@ -453,6 +453,8 @@ private final class MockDownloadsDirectoryHandler: DownloadsDirectoryHandling {
 
     var downloadsDirectory: URL = URL(string: "/tmp/downloads")!
     func createDownloadsDirectoryIfNeeded() {}
+    
+    func deleteDownloadsDirectoryIfEmpty() {}
 }
 
 private final class MockAIChatViewControllerManagerDelegate: AIChatViewControllerManagerDelegate {

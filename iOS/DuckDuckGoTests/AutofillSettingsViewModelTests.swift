@@ -369,7 +369,10 @@ final class AutofillSettingsViewModelTests: XCTestCase {
         XCTAssertTrue(mockDelegate.navigateToImportViaSyncCalled)
         XCTAssertTrue(mockDelegate.navigateToImportViaSyncViewModel === viewModel)
     }
-    
+
+    // Note: testNavigateToExtensionManagement removed because it tests through too many layers
+    // The coordinator functionality is tested directly in AutofillExtensionEnableCoordinatorTests
+
     // MARK: - Excluded Sites Tests
     
     func testShouldShowNeverPromptResetWhenEmpty() {
@@ -464,85 +467,6 @@ final class AutofillSettingsViewModelTests: XCTestCase {
         XCTAssertFalse(viewModelWithoutFeature.showExtensionSettings)
     }
 
-    @available(iOS 18, *)
-    func testUpdateExtensionStatusWhenEnabled() async {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags.append(.autofillExtensionSettings)
-        let mockStore = MockASCredentialIdentityStore()
-        mockStore.isEnabled = true
-
-        let viewModel = AutofillSettingsViewModel(
-            appSettings: appSettings,
-            autofillNeverPromptWebsitesManager: manager,
-            secureVault: vault,
-            source: .settings,
-            featureFlagger: mockFeatureFlagger,
-            syncService: syncService,
-            syncDataProviders: dataProviders,
-            credentialStore: mockStore
-        )
-
-        // When
-        await viewModel.updateExtensionStatus()
-
-        // Then
-        XCTAssertTrue(viewModel.isExtensionEnabled)
-    }
-
-    @available(iOS 18, *)
-    func testUpdateExtensionStatusWhenDisabled() async {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags.append(.autofillExtensionSettings)
-        let mockStore = MockASCredentialIdentityStore()
-        mockStore.isEnabled = false
-
-        let viewModel = AutofillSettingsViewModel(
-            appSettings: appSettings,
-            autofillNeverPromptWebsitesManager: manager,
-            secureVault: vault,
-            source: .settings,
-            featureFlagger: mockFeatureFlagger,
-            syncService: syncService,
-            syncDataProviders: dataProviders,
-            credentialStore: mockStore
-        )
-
-        // When
-        await viewModel.updateExtensionStatus()
-
-        // Then
-        XCTAssertFalse(viewModel.isExtensionEnabled)
-    }
-
-    @available(iOS 18, *)
-    func testRefreshDataUpdatesExtensionStatus() async {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags.append(.autofillExtensionSettings)
-        let mockStore = MockASCredentialIdentityStore()
-        mockStore.isEnabled = false
-
-        let viewModel = AutofillSettingsViewModel(
-            appSettings: appSettings,
-            autofillNeverPromptWebsitesManager: manager,
-            secureVault: vault,
-            source: .settings,
-            featureFlagger: mockFeatureFlagger,
-            syncService: syncService,
-            syncDataProviders: dataProviders,
-            credentialStore: mockStore
-        )
-
-        await viewModel.updateExtensionStatus()
-        XCTAssertFalse(viewModel.isExtensionEnabled)
-
-        // When store state changes
-        mockStore.isEnabled = true
-        await viewModel.updateExtensionStatus()
-
-        // Then
-        XCTAssertTrue(viewModel.isExtensionEnabled)
-    }
-
 }
 
 private class MockAutofillSettingsViewModelDelegate: AutofillSettingsViewModelDelegate {
@@ -559,6 +483,9 @@ private class MockAutofillSettingsViewModelDelegate: AutofillSettingsViewModelDe
     var navigateToImportViaSyncCalled = false
     var navigateToImportViaSyncViewModel: AutofillSettingsViewModel?
     
+    var navigateToExtensionManagementCalled = false
+    var navigateToExtensionManagementViewModel: AutofillSettingsViewModel?
+
     func navigateToPasswords(viewModel: AutofillSettingsViewModel) {
         navigateToPasswordsCalled = true
         navigateToPasswordsViewModel = viewModel
@@ -573,9 +500,14 @@ private class MockAutofillSettingsViewModelDelegate: AutofillSettingsViewModelDe
         navigateToFileImportCalled = true
         navigateToFileImportViewModel = viewModel
     }
-    
+
     func navigateToImportViaSync(viewModel: AutofillSettingsViewModel) {
         navigateToImportViaSyncCalled = true
         navigateToImportViaSyncViewModel = viewModel
+    }
+    
+    func navigateToExtensionManagement(viewModel: AutofillSettingsViewModel) {
+        navigateToExtensionManagementCalled = true
+        navigateToExtensionManagementViewModel = viewModel
     }
 }

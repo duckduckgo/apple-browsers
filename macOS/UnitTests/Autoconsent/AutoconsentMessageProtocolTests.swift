@@ -39,7 +39,6 @@ class AutoconsentMessageProtocolTests: XCTestCase {
 
         userScript = AutoconsentUserScript(
             config: MockPrivacyConfiguration(),
-            statsManager: MockAutoconsentDailyStat(),
             management: AutoconsentManagement(),
             preferences: preferences
         )

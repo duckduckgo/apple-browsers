@@ -56,19 +56,22 @@ extension TabTitleView {
     /// avoid animating the Placeholder.
     ///
     func displayTitleIfNeeded(title: String, url: URL?, animated: Bool = true) {
-        if shouldSkipApplyingTitle(title: title, url: url) {
+        if mustSkipDisplayingTitle(title: title, url: url, previousURL: sourceURL) {
             return
         }
 
         let previousTitle = titleTextField.stringValue
+        let mustFadeInLatestTitle = mustAnimateNewTitleFadeIn(targetURL: url, previousURL: sourceURL)
+
         titleTextField.stringValue = title
+        previousTextField.stringValue = previousTitle
         sourceURL = url
 
-        guard animated, title != previousTitle, previousTitle.isEmpty == false else {
+        guard animated, mustAnimateTitleTransition(title: title, previousTitle: previousTitle) else {
             return
         }
 
-        transitionToLatestTitle(previousTitle: previousTitle)
+        transitionToLatestTitle(fadeInTitle: mustFadeInLatestTitle)
     }
 
     func reset() {
@@ -127,31 +130,46 @@ private extension TabTitleView {
 
 private extension TabTitleView {
 
-    func shouldSkipApplyingTitle(title: String, url: URL?) -> Bool {
-        sourceURL == url && url?.suggestedTitlePlaceholder == title
+    func mustSkipDisplayingTitle(title: String, url: URL?, previousURL: URL?) -> Bool {
+        previousURL?.host == url?.host && url?.suggestedTitlePlaceholder == title
     }
 
-    func transitionToLatestTitle(previousTitle: String) {
+    func mustAnimateTitleTransition(title: String, previousTitle: String) -> Bool {
+        title != previousTitle && previousTitle.isEmpty == false
+    }
+
+    func mustAnimateNewTitleFadeIn(targetURL: URL?, previousURL: URL?) -> Bool {
+        targetURL?.host?.dropSubdomain() != previousURL?.host?.dropSubdomain()
+    }
+}
+
+private extension TabTitleView {
+
+    func transitionToLatestTitle(fadeInTitle: Bool) {
         CATransaction.begin()
 
-        dismissPreviousTitle(previousTitle)
+        dismissPreviousTitle()
         presentCurrentTitle()
+
+        if fadeInTitle {
+            transitionTitleToAlpha(toAlpha: titleTextField.alphaValue, fromAlpha: 0)
+        }
 
         CATransaction.commit()
     }
 
-    func dismissPreviousTitle(_ previousTitle: String) {
+    func dismissPreviousTitle() {
         guard let previousTitleLayer = previousTextField.layer else {
             return
         }
 
+        let fromAlpha = Float(titleTextField.alphaValue)
         let animationGroup = CAAnimationGroup()
         animationGroup.animations = [
-            CASpringAnimation.buildFadeOutAnimation(duration: TitleAnimation.duration),
+            CASpringAnimation.buildFadeOutAnimation(duration: TitleAnimation.duration, fromAlpha: fromAlpha),
             CASpringAnimation.buildTranslationXAnimation(duration: TitleAnimation.duration, fromValue: TitleAnimation.slidingOutStartX, toValue: TitleAnimation.slidingOutLastX)
         ]
 
-        previousTextField.stringValue = previousTitle
         previousTitleLayer.opacity = 0
         previousTitleLayer.add(animationGroup, forKey: TitleAnimation.fadeAndSlideOutKey)
     }
@@ -161,20 +179,25 @@ private extension TabTitleView {
             return
         }
 
-        let animationGroup = CAAnimationGroup()
-        animationGroup.animations = [
-            CASpringAnimation.buildFadeInAnimation(duration: TitleAnimation.duration),
-            CASpringAnimation.buildTranslationXAnimation(duration: TitleAnimation.duration, fromValue: TitleAnimation.slidingInStartX, toValue: TitleAnimation.slidingInLastX)
-        ]
+        let slideAnimation = CASpringAnimation.buildTranslationXAnimation(duration: TitleAnimation.duration, fromValue: TitleAnimation.slidingInStartX, toValue: TitleAnimation.slidingInLastX)
+        titleLayer.add(slideAnimation, forKey: TitleAnimation.slideInKey)
+    }
 
-        titleLayer.add(animationGroup, forKey: TitleAnimation.slideInKey)
+    func transitionTitleToAlpha(toAlpha: CGFloat, fromAlpha: CGFloat) {
+        guard let titleLayer = titleTextField.layer else {
+            return
+        }
+
+        let animation = CASpringAnimation.buildFadeAnimation(duration: TitleAnimation.duration, fromValue: Float(fromAlpha), toValue: Float(toAlpha))
+        titleLayer.add(animation, forKey: TitleAnimation.alphaKey)
     }
 }
 
 private enum TitleAnimation {
     static let fadeAndSlideOutKey = "fadeOutAndSlide"
     static let slideInKey = "slideIn"
-    static let duration: TimeInterval = 0.15
+    static let alphaKey = "alpha"
+    static let duration: TimeInterval = 0.2
     static let slidingOutStartX = CGFloat(0)
     static let slidingOutLastX = CGFloat(-4)
     static let slidingInStartX = CGFloat(-4)

@@ -24,13 +24,14 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     private let backgroundView = MouseBlockingBackgroundView()
     private let containerView = NSView()
     private let scrollView = NSScrollView()
-    private let textView = NSTextView()
+    private let textView = FocusableTextView()
     private let omnibarController: AIChatOmnibarController
     private let sharedTextState: AddressBarSharedTextState
     private var cancellables = Set<AnyCancellable>()
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
     private var appearanceCancellable: AnyCancellable?
+    weak var customToggleControl: NSControl?
 
     init(omnibarController: AIChatOmnibarController, sharedTextState: AddressBarSharedTextState, themeManager: ThemeManaging) {
         self.omnibarController = omnibarController
@@ -104,7 +105,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
             backgroundView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -4),
             backgroundView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
             containerView.topAnchor.constraint(equalTo: backgroundView.topAnchor),
@@ -130,7 +131,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
         textView.drawsBackground = false
         textView.backgroundColor = .clear
-        textView.textColor = colorsProvider.addressBarTextFieldColor
+        textView.textColor = NSColor.textColor
         textView.font = .systemFont(ofSize: addressBarStyleProvider.defaultAddressBarFontSize, weight: .regular)
 
         textView.insertionPointColor = colorsProvider.addressBarTextFieldColor
@@ -150,8 +151,10 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
                 guard let self = self else { return }
                 if self.textView.string != newText {
                     self.textView.string = newText
-                    let textLength = newText.count
-                    self.textView.selectedRange = NSRange(location: textLength, length: 0)
+                    if self.view.window?.firstResponder == self.textView {
+                        let textLength = newText.count
+                        self.textView.selectedRange = NSRange(location: textLength, length: 0)
+                    }
                 }
             }
             .store(in: &cancellables)
@@ -176,6 +179,15 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
             omnibarController.submit()
             return true
+        } else if commandSelector == #selector(NSResponder.insertTab(_:)) {
+            if let customToggleControl = customToggleControl,
+               !customToggleControl.isHidden,
+               customToggleControl.isEnabled {
+                view.window?.makeFirstResponder(customToggleControl)
+                return true
+            }
+            return false
+
         }
 
         return false
@@ -191,5 +203,23 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
 
     func focusTextView() {
         view.window?.makeFirstResponder(textView)
+    }
+}
+
+/// Custom NSTextView that ensures it can always accept focus when clicked
+private final class FocusableTextView: NSTextView {
+    override func acceptsFirstMouse(for event: NSEvent?) -> Bool {
+        return true
+    }
+
+    override var acceptsFirstResponder: Bool {
+        return true
+    }
+
+    override func mouseDown(with event: NSEvent) {
+        if window?.firstResponder != self {
+            window?.makeFirstResponder(self)
+        }
+        super.mouseDown(with: event)
     }
 }

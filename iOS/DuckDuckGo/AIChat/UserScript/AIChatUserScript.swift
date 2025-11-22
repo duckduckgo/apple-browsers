@@ -66,9 +66,9 @@ final class AIChatUserScript: NSObject, Subfeature {
             case .promptInterruption:
                 return "submitPromptInterruption"
             case .openSettingsAction:
-                return "openDuckAiSettings"
+                return "submitOpenSettingsAction"
             case .openHistoryAction:
-                return "openDuckAiHistory"
+                return "submitOpenHistoryAction"
             }
         }
 

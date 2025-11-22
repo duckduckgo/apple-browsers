@@ -33,6 +33,9 @@ protocol AITabController {
     
     /// Submits an open history action to open the AI Chat history.
     func submitOpenHistoryAction()
+    
+    /// Opens a new AI chat in a new tab.
+    func openNewChatInNewTab()
 }
 
 // MARK: - AITabController
@@ -60,5 +63,11 @@ extension TabViewController: AITabController {
     /// Submits an open history action to open the AI Chat history.
     func submitOpenHistoryAction() {
         aiChatContentHandler.submitOpenHistoryAction()
+    }
+    
+    /// Opens a new AI chat in a new tab.
+    func openNewChatInNewTab() {
+        let newChatURL = aiChatContentHandler.buildQueryURL(query: nil, autoSend: false, tools: nil)
+        delegate?.tab(self, didRequestNewTabForUrl: newChatURL, openedByPage: false, inheritingAttribution: nil)
     }
 }

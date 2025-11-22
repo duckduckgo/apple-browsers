@@ -24,7 +24,7 @@ struct NewImportMoreInfoView: View {
 
     var body: some View {
         VStack(alignment: .center) {
-            Image(.chromiumImportKeychainInfo) // TODO: Localize this
+            Image(.chromiumImportKeychainInfo) // Requires localization
                 .popover(isPresented: $showPopover, arrowEdge: .bottom) {
                     if #available(macOS 12, *), let attr = try? AttributedString(markdown: UserText.importChromeAllowKeychainIntructions) {
                         Text(attr)

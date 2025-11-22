@@ -101,11 +101,15 @@ final class NewImportSummaryViewModel: ObservableObject {
         }.compactMap { dataType, result in
             Self.createSummaryItem(for: dataType, result: result)
         }
-        shouldShowFeedbackView = summary.reduce(into: false) { result, element in
+        
+        shouldShowFeedbackView = summary.contains { element in
             if case .failure = element.value {
-                result = true
+                return true
+            } else {
+                return false
             }
         }
+        
         shouldShowSuccessImage = !shouldShowFeedbackView
         updateShortcutsState()
     }

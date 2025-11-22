@@ -92,8 +92,7 @@ public enum DataImport {
         public let duplicateItems: [DataImportItem]
         public let failedItems: [DataImportItem]
 
-        // TEMPORARY: Count properties retained only for legacy compatibility
-        // TODO: Remove once legacy import system is removed
+        // TEMPORARY: Count properties retained only for legacy compatibility. Remove once legacy import system is removed!
         public let duplicate: Int
         public let failed: Int
 
@@ -115,8 +114,7 @@ public enum DataImport {
             self.failed = failedItems.count
         }
 
-        // TEMPORARY: Legacy initializer for count-based usage
-        // TODO: Remove once legacy import system is removed
+        // TEMPORARY: Legacy initializer for count-based usage. Remove once legacy import system is removed!
         public init(successful: Int,
                     duplicate: Int,
                     failed: Int) {

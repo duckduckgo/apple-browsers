@@ -774,7 +774,7 @@ extension DataImportViewModel {
 
         case .initiateImport, .continue:
             importButtonPressed()
-            
+
         case .selectFile:
             selectFile()
 

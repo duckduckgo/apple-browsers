@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import SwiftUI
 import Subscription
 import StoreKit
 import PixelKit
@@ -91,6 +92,7 @@ public final class SubscriptionDebugMenu: NSMenuItem {
             menu.addItem(.separator())
             menu.addItem(NSMenuItem(title: "Sync App Store AppleID Account (re- sign-in)", action: #selector(syncAppleIDAccount), target: self))
             menu.addItem(NSMenuItem(title: "Purchase Subscription from App Store", action: #selector(showPurchaseView), target: self))
+            menu.addItem(NSMenuItem(title: "Buy Available Subscriptions", action: #selector(showBuyProductionSubscriptions), target: self))
             menu.addItem(NSMenuItem(title: "Restore Subscription from App Store transaction", action: #selector(restorePurchases), target: self))
         }
 
@@ -627,6 +629,15 @@ public final class SubscriptionDebugMenu: NSMenuItem {
                                                                        storePurchaseManager: subscriptionManagerV2.storePurchaseManager())
                 await appStoreRestoreFlow.restoreAccountFromPastPurchase()
             }
+        }
+    }
+
+    @objc
+    func showBuyProductionSubscriptions(_ sender: Any?) {
+        if #available(macOS 12.0, *) {
+            let viewController = ProductionSubscriptionPurchaseViewController(subscriptionManager: subscriptionManagerV2)
+            viewController.title = "Buy Available Subscriptions"
+            currentViewController()?.presentAsSheet(viewController)
         }
     }
 

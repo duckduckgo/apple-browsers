@@ -37,6 +37,36 @@ extension DefaultBrowserAndDockPromptTypeDecider {
             self.daysSinceProvider = daysSinceProvider
         }
 
+        /// **ACTIVE USER TIMING RULES**
+        ///
+        /// Implements the timing logic for active users (popover → banner → repeat banner).
+        /// Called by `DefaultBrowserAndDockPromptTypeDecider.promptType()`.
+        ///
+        /// **Timing Sequence (default values):**
+        /// 1. **Popover** (first prompt):
+        ///    - Shown once after ≥14 days from install (`firstPopoverDelayDays`)
+        ///    - Condition: `!hasSeenPopover && daysSinceInstall >= 14`
+        ///
+        /// 2. **First Banner** (follow-up):
+        ///    - Shown ≥14 days after popover was seen (`bannerAfterPopoverDelayDays`)
+        ///    - Condition: `!hasSeenBanner && daysSincePopoverShown >= 14`
+        ///
+        /// 3. **Repeat Banner** (recurring):
+        ///    - Shown every ≥14 days after last banner (`bannerRepeatIntervalDays`)
+        ///    - Condition: `hasSeenBanner && daysSinceBannerShown >= 14`
+        ///    - Stops if user clicks "Never Ask Again" (checked in parent)
+        ///
+        /// **Feature Flag:**
+        /// - `FeatureFlag.scheduledSetDefaultBrowserAndAddToDockPrompts` must be enabled
+        ///
+        /// **Debug:**
+        /// - Use Debug menu → "SAD/ATT Prompts" → "Simulate Today's Date" to fast-forward time
+        /// - Use "Advance by 14 Days" to jump forward by the default delay interval
+        /// - See menu items for calculated dates: "Popover will show: [date]", "First Banner will show: [date]"
+        ///
+        /// **See also:**
+        /// - `DefaultBrowserAndDockPromptFeatureFlagger` - timing values and feature flags
+        /// - `DefaultBrowserAndDockPromptDebugMenu` - debug tools for testing
         func promptType() -> DefaultBrowserAndDockPromptPresentationType? {
             // If Feature is disabled return nil
             guard featureFlagger.isDefaultBrowserAndDockPromptForActiveUsersFeatureEnabled else { return nil }

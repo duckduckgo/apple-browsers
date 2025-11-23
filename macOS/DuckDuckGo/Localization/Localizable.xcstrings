@@ -4517,7 +4517,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Handle Pop-ups For Me"
+            "value" : "Handle Pop-Ups For Me"
           }
         },
         "es" : {
@@ -4697,7 +4697,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Manage Cookie Pop-ups"
+            "value" : "Manage Cookie Pop-Ups"
           }
         },
         "es" : {
@@ -18313,7 +18313,7 @@
       }
     },
     "dashboard.popups.ask" : {
-      "comment" : "Make PopUp Windows always asked from user for current domain",
+      "comment" : "Make pop-up windows always request permission for the current domain",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -24050,186 +24050,6 @@
         }
       }
     },
-    "duckai.hide-ai-generated-images-settings" : {
-      "comment" : "The section name in preferences for Hide AI-Generated Images Settings",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "KI-generierte Bilder ausblenden"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Hide AI-Generated Images"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ocultar imágenes generadas por IA"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Masquer les images générées par l'IA"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nascondi immagini generate dall'intelligenza artificiale"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Verberg door AI gegenereerde afbeeldingen"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ukryj obrazy wygenerowane przez sztuczną inteligencję"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ocultar imagens geradas por IA"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Скрыть изображения, созданные ИИ"
-          }
-        }
-      }
-    },
-    "duckai.hide-ai-generated-images-settings.description" : {
-      "comment" : "Description of the section in Settings",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Filtert KI-generierte Bilder aus den Bildsuchergebnissen heraus"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Filter out AI-generated images from image search results"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Filtra las imágenes generadas por IA de los resultados de búsqueda de imágenes"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Filtre les images générées par l'IA dans les résultats de recherche d'images"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Filtra le immagini generate dall'intelligenza artificiale dai risultati di ricerca di immagini"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Filtert door AI gegenereerde afbeeldingen uit de zoekresultaten van afbeeldingen"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Filtruje obrazy wygenerowane przez sztuczną inteligencję z wyników wyszukiwania obrazów"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Filtra as imagens geradas por IA dos resultados de pesquisa de imagens"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Фильтрует изображения, созданные ИИ, из результатов поиска изображений"
-          }
-        }
-      }
-    },
-    "duckai.search-ai-features-settings.link" : {
-      "comment" : "Button to open the Search AI Features Settings",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Such-KI-Funktionen öffnen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Open Search AI Features"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Abrir funciones de IA de búsqueda"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ouvrir les fonctionnalités d'IA de recherche"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apri le funzionalità di ricerca IA"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open AI-zoekfuncties"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Otwórz funkcje wyszukiwania AI"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Abrir funcionalidades de IA de pesquisa"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Открыть функции поиска с ИИ"
-          }
-        }
-      }
-    },
     "duckai.shortcuts.section.title" : {
       "comment" : "Section title for Duck.ai shortcuts settings",
       "extractionState" : "extracted_with_value",
@@ -24706,6 +24526,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Показывать вариант Duck.ai в поисковом поле на странице новой вкладки"
+          }
+        }
+      }
+    },
+    "duckai.show-search-and-duckai-toggle.label" : {
+      "comment" : "Label for showing Search/Duck.ai toggle when address bar is focused",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show Search and Duck.ai toggle when the address bar is focused"
           }
         }
       }
@@ -30049,6 +29881,19 @@
           }
         }
       }
+    },
+    "feedback.problem-subcategory.promotional-messages" : {
+      "comment" : "Problem subcategory for feedback related to promotional messages",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Promotional messages"
+          }
+        }
+      },
+      "shouldTranslate" : false
     },
     "feedback.problem-subcategory.site-asks-to-turn-off-ad-blocker" : {
       "comment" : "Problem subcategory for ad blocker detection messages",
@@ -54594,7 +54439,7 @@
       }
     },
     "notification.badge.popuphidden" : {
-      "comment" : "Notification that appears when browser cosmetically hides a cookie popup",
+      "comment" : "Notification that appears when the browser cosmetically hides a cookie pop-up",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -54606,7 +54451,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Pop-up Hidden"
+            "value" : "Pop-Up Hidden"
           }
         },
         "es" : {
@@ -60079,7 +59924,7 @@
       }
     },
     "permission.authorization.popups.format" : {
-      "comment" : "Popover asking for domain %@ to open Popup Window",
+      "comment" : "Popover asking for domain %@ to open a pop-up window",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -60091,7 +59936,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Allow “%@“ to open PopUp Window?"
+            "value" : "Allow “%@” to open a pop-up window?"
           }
         },
         "es" : {
@@ -60139,7 +59984,7 @@
       }
     },
     "permission.authorization.popups.menu-header" : {
-      "comment" : "Popover asking for domain %@ to open Popup Window",
+      "comment" : "Popover asking for domain %@ to open pop-up windows",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -60151,7 +59996,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Allow “%@“ to open PopUp Windows?"
+            "value" : "Allow “%@” to open pop-up windows?"
           }
         },
         "es" : {
@@ -60858,8 +60703,68 @@
         }
       }
     },
+    "permission.popup.allow.popups.page" : {
+      "comment" : "Option to temporarily allow pop-ups for the current page during this visit until it reloads",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pop-ups für diesen Besuch erlauben"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Only allow pop-ups for this visit"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir ventanas emergentes durante esta visita"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autoriser les fenêtres contextuelles pour cette visite"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consenti popup per questa visita"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pop-ups voor dit bezoek toestaan"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zezwalaj na wyskakujące okienka podczas tej wizyty"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir pop-ups nesta visita"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить всплывающие окна для этого посещения"
+          }
+        }
+      }
+    },
     "permission.popup.blocked.popover" : {
-      "comment" : "Text of popver warning the user that the a pop-up as been blocked",
+      "comment" : "Text of popover warning the user that a pop-up has been blocked",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -60871,7 +60776,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Pop-up Blocked"
+            "value" : "Pop-Up Blocked"
           }
         },
         "es" : {
@@ -60979,127 +60884,348 @@
       }
     },
     "permission.popup.open.format" : {
-      "comment" : "Open %@ URL Pop-up",
+      "comment" : "Menu action to open the blocked pop-up at the specified URL",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@"
+            "value" : "„%@“ öffnen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%@"
+            "value" : "Open “%@”"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@"
+            "value" : "Abrir “%@”"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@"
+            "value" : "Ouvrir « %@ »"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@"
+            "value" : "Apri “%@”"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@"
+            "value" : "\"%@\" openen"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@"
+            "value" : "Otwórz „%@”"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@"
+            "value" : "Abrir “%@”"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@"
+            "value" : "Открыть «%@»"
           }
         }
       }
     },
     "permission.popup.title" : {
-      "comment" : "Title of a popup that has a list of blocked popups",
-      "extractionState" : "extracted_with_value",
+      "comment" : "Title showing number of blocked pop-ups",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Blockierte Pop-ups"
+            "value" : "%#@popups@ blockiert"
+          },
+          "substitutions" : {
+            "popups" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg Pop-up"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg Pop-ups"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Blocked Pop-ups"
+            "value" : "Blocked %#@popups@"
+          },
+          "substitutions" : {
+            "popups" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "new",
+                      "value" : "%arg pop-up"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "new",
+                      "value" : "%arg pop-ups"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ventanas emergentes bloqueadas"
+            "value" : "%#@popups@ bloqueadas"
+          },
+          "substitutions" : {
+            "popups" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg ventana emergente"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg ventanas emergentes"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fenêtres contextuelles bloquées"
+            "value" : "%#@popups@ bloquées"
+          },
+          "substitutions" : {
+            "popups" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg fenêtre contextuelle"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg fenêtres contextuelles"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Popup bloccati"
+            "value" : "%#@popups@ bloccati"
+          },
+          "substitutions" : {
+            "popups" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg popup"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg popup"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Geblokkeerde pop-ups"
+            "value" : "%#@popups@ geblokkeerd"
+          },
+          "substitutions" : {
+            "popups" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg pop-up"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg pop-ups"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zablokowane wyskakujące okienka"
+            "value" : "Zablokowane %#@popups@"
+          },
+          "substitutions" : {
+            "popups" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "few" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg wyskakujące okienka"
+                    }
+                  },
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg wyskakujących okienek"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg wyskakujące okienko"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg wyskakujących okienek"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pop-ups bloqueados"
+            "value" : "%#@popups@ bloqueados"
+          },
+          "substitutions" : {
+            "popups" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg pop-up"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg pop-ups"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Заблокированные всплывающие окна"
+            "value" : "Заблокировано %#@popups@"
+          },
+          "substitutions" : {
+            "popups" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "few" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg всплывающих окна"
+                    }
+                  },
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg всплывающих окон"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg всплывающее окно"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg всплывающих окон"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
     },
     "permission.popups" : {
-      "comment" : "Open Pop Up Windows permission access name",
+      "comment" : "Open pop-up windows permission access name",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -78240,6 +78366,32 @@
           }
         }
       }
+    },
+    "sad.att.inactive-user.notification.body" : {
+      "comment" : "Subtitle of system notification asking the user why they dismissed a prompt with the 'No Thanks' button. The parameter %1$@ is the localized 'No Thanks' string.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "We’re always looking to improve. Can you tell us why you chose \"%1$@\"?"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "sad.att.inactive-user.notification.title" : {
+      "comment" : "Title of system notification asking the user for quick feedback after declining a prompt by clicking 'No Thanks'.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Got time for quick feedback?"
+          }
+        }
+      },
+      "shouldTranslate" : false
     },
     "sad.att.set-as-default.banner.message" : {
       "comment" : "Body of the banner view that invites users to set DuckDuckGo as their default browser",

@@ -58,6 +58,8 @@ Are you about to:
 - Write code? → Call doc_bot first
 - Explain something? → Call doc_bot first  
 - Search for info? → Call doc_bot first
+- Commit/push/create PR? → Call doc_bot first, follow PR template
+- Build/test? → Call doc_bot first for build commands
 - Literally anything? → Call doc_bot first
 
 ### FAILURE RECOVERY

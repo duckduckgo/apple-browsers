@@ -46,6 +46,9 @@ public protocol SubscriptionProduct {
     /// A Boolean value that indicates whether this is a Free Trial product.
     var isFreeTrialProduct: Bool { get }
 
+    /// A Boolean value that indicates whether this is a Pro tier product.
+    var isProTierProduct: Bool { get }
+
     /// Whether the user is eligible for an introductory offer.
     var isEligibleForFreeTrial: Bool { get }
 
@@ -100,6 +103,12 @@ public struct AppStoreSubscriptionProduct: SubscriptionProduct {
 
     /// User eligibility for free trial
     public var isEligibleForFreeTrial: Bool
+
+    /// A Boolean value indicating whether this product relates to a pro tier, based on id convention.
+    /// Ideally we would use the groupLevel parameter of the subscription but it's only available from macOS 13
+    /// and we cannot use it for the production products since we can't add them until last minute and one of the non pro product would be at group level 1
+    /// This is temporary for launch
+    public var isProTierProduct: Bool { product.id.hasSuffix(StoreSubscriptionConstants.proTierIdentifier) }
 
     /// Creates an AppStoreSubscriptionProduct with eligibility state
     /// - Parameters:

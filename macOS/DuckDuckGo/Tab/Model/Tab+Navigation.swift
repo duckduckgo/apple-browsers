@@ -107,6 +107,9 @@ extension Tab: NavigationResponder {
             // New Tab Page
             .weak(nullable: self.newTabPage),
 
+            // Popup Handling - track navigation to clear per-page popup allowances
+            .weak(nullable: self.popupHandling),
+
             // should be the last, for Unit Tests navigation events tracking
             .struct(nullable: testsClosureNavigationResponder)
             // !! don‘t add Tab Extensions here !!

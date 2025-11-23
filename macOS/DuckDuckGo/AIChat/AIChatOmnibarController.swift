@@ -32,15 +32,22 @@ final class AIChatOmnibarController {
     weak var delegate: AIChatOmnibarControllerDelegate?
     private let aiChatTabOpener: AIChatTabOpening
     private let promptHandler: AIChatPromptHandler
+    private let sharedTextState: AddressBarSharedTextState
+    private var cancellables = Set<AnyCancellable>()
+    private var isUpdatingFromSharedState = false
 
     // MARK: - Initialization
 
     init(
         aiChatTabOpener: AIChatTabOpening,
+        sharedTextState: AddressBarSharedTextState,
         promptHandler: AIChatPromptHandler = .shared
     ) {
         self.aiChatTabOpener = aiChatTabOpener
+        self.sharedTextState = sharedTextState
         self.promptHandler = promptHandler
+
+        subscribeToSharedTextState()
     }
 
     // MARK: - Public Methods
@@ -49,6 +56,24 @@ final class AIChatOmnibarController {
     /// - Parameter text: The new text value
     func updateText(_ text: String) {
         currentText = text
+        if !isUpdatingFromSharedState {
+            sharedTextState.updateText(text, markInteraction: true)
+        }
+    }
+
+    // MARK: - Private Methods
+
+    private func subscribeToSharedTextState() {
+        sharedTextState.$text
+            .sink { [weak self] newText in
+                guard let self = self else { return }
+                if self.currentText != newText && self.sharedTextState.hasUserInteractedWithText {
+                    self.isUpdatingFromSharedState = true
+                    self.currentText = newText
+                    self.isUpdatingFromSharedState = false
+                }
+            }
+            .store(in: &cancellables)
     }
 
     func submit() {

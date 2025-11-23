@@ -1471,6 +1471,10 @@ extension Pixel {
         case recreateTmpWebViewFallbackFailed
         case contentBlockingCompilationFailedMissingTmpDir
         case tmpDirStillMissingAfterRecreation
+
+        // MARK: - Dax Easter Egg
+        case daxEasterEggLogoDisplayed
+        case daxEasterEggLogoTapped
     }
 
 }
@@ -2876,6 +2880,9 @@ extension Pixel.Event {
         case .customizationToolbarStarted: return "m_customization_toolbar_started"
         case .customizationToolbarSelected: return "m_customization_toolbar_selected"
 
+        // MARK: - Dax Easter Egg
+        case .daxEasterEggLogoDisplayed: return "m_dax_easter_egg_logo_displayed"
+        case .daxEasterEggLogoTapped: return "m_dax_easter_egg_logo_tapped"
         }
     }
 }

@@ -21,8 +21,6 @@ import Common
 
 final class CrashReportReader {
 
-    static let vpnExtensionDisplayName = "com.duckduckgo.macos.vpn.network-extension"
-
     static func validBundleIdentifiers() -> [String] {
         return [
             Bundle.main.bundleIdentifier,

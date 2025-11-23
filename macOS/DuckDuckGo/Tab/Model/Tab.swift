@@ -674,6 +674,8 @@ protocol NewWindowPolicyDecisionMaker {
     }
     @Published private(set) var loadingProgress: Double = 0.0
 
+    let loadedPageDOMPublisher = PassthroughSubject<Void, Never>()
+
     /// an Interactive Dialog request (alert/open/save/print) made by a page to be published and presented asynchronously
     @Published
     var userInteractionDialog: UserDialog? {
@@ -1256,7 +1258,8 @@ extension Tab: UserContentControllerDelegate {
 extension Tab: PageObserverUserScriptDelegate {
 
     func pageDOMLoaded() {
-        self.delegate?.tabPageDOMLoaded(self)
+        loadedPageDOMPublisher.send()
+        delegate?.tabPageDOMLoaded(self)
     }
 
 }

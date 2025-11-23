@@ -33,7 +33,10 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     private let backgroundView = MouseBlockingBackgroundView()
     private let containerView = NSView()
     private let scrollView = NSScrollView()
-    private let textView = FocusableTextView()
+    private let textStorage = NSTextStorage()
+    private let layoutManager = NSLayoutManager()
+    private let textContainer = NSTextContainer()
+    private let textView: FocusableTextView
     private let dividerView = ColorView(frame: .zero)
     private let omnibarController: AIChatOmnibarController
     private let sharedTextState: AddressBarSharedTextState
@@ -48,6 +51,15 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         self.omnibarController = omnibarController
         self.sharedTextState = sharedTextState
         self.themeManager = themeManager
+
+        textStorage.addLayoutManager(layoutManager)
+        textContainer.widthTracksTextView = true
+        textContainer.heightTracksTextView = false
+        textContainer.containerSize = NSSize(width: 0, height: CGFloat.greatestFiniteMagnitude)
+        layoutManager.addTextContainer(textContainer)
+
+        textView = FocusableTextView(frame: .zero, textContainer: textContainer)
+
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -67,11 +79,12 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         setupTextViewDelegate()
         subscribeToThemeChanges()
         applyThemeStyle()
+
+        scrollView.documentView = textView
     }
 
     override func viewWillAppear() {
         super.viewWillAppear()
-        scrollView.documentView = textView
         subscribeToViewAppearanceChanges()
     }
 
@@ -117,8 +130,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         textView.isVerticallyResizable = true
         textView.isHorizontallyResizable = false
         textView.autoresizingMask = [.width]
-        textView.textContainer?.containerSize = NSSize(width: scrollView.contentSize.width, height: .greatestFiniteMagnitude)
-        textView.textContainer?.widthTracksTextView = true
+        textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
+        textView.minSize = NSSize(width: 0, height: 0)
 
         textView.isRichText = false
         textView.importsGraphics = false

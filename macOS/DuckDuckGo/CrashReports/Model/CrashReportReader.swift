@@ -23,23 +23,17 @@ final class CrashReportReader {
     static let vpnExtensionDisplayName = "com.duckduckgo.macos.vpn.network-extension"
 
     private let fileManager: FileManager
-    private let userDiagnosticReportsDirectory: URL
-    private let systemDiagnosticReportsDirectory: URL
     private let currentAppDisplayName: String?
     private let currentAppBundleIdentifier: String?
     private let vpnExtensionBundleIdentifier: String?
     private let dateProvider: () -> Date
 
     init(fileManager: FileManager = .default,
-         userDiagnosticReportsDirectory: URL = FileManager.userDiagnosticReports,
-         systemDiagnosticReportsDirectory: URL = FileManager.systemDiagnosticReports,
          currentAppDisplayName: String? = Bundle.main.displayName,
          currentAppBundleIdentifier: String? = Bundle.main.bundleIdentifier,
          vpnExtensionBundleIdentifier: String? = "com.duckduckgo.macos.vpn.network-extension",
          dateProvider: @escaping () -> Date = Date.init) {
         self.fileManager = fileManager
-        self.userDiagnosticReportsDirectory = userDiagnosticReportsDirectory
-        self.systemDiagnosticReportsDirectory = systemDiagnosticReportsDirectory
         self.currentAppDisplayName = currentAppDisplayName
         self.currentAppBundleIdentifier = currentAppBundleIdentifier
         self.vpnExtensionBundleIdentifier = vpnExtensionBundleIdentifier
@@ -50,14 +44,14 @@ final class CrashReportReader {
         var allPaths: [URL]
 
         do {
-            allPaths = try fileManager.contentsOfDirectory(at: userDiagnosticReportsDirectory, includingPropertiesForKeys: nil)
+            allPaths = try fileManager.contentsOfDirectory(at: FileManager.userDiagnosticReports, includingPropertiesForKeys: nil)
         } catch {
             assertionFailure("CrashReportReader: Can't read content of diagnostic reports \(error.localizedDescription)")
             return []
         }
 
         do {
-            let systemPaths = try fileManager.contentsOfDirectory(at: systemDiagnosticReportsDirectory, includingPropertiesForKeys: nil)
+            let systemPaths = try fileManager.contentsOfDirectory(at: FileManager.systemDiagnosticReports, includingPropertiesForKeys: nil)
             allPaths.append(contentsOf: systemPaths)
         } catch {
             assertionFailure("Failed to read system crash reports: \(error)")
@@ -107,15 +101,15 @@ final class CrashReportReader {
 
     private func crashReport(from url: URL) -> CrashReport? {
         switch url.pathExtension {
-        case LegacyCrashReport.fileExtension: return LegacyCrashReport(url: url)
-        case JSONCrashReport.fileExtension: return JSONCrashReport(url: url)
+        case LegacyCrashReport.fileExtension: return LegacyCrashReport(url: url, fileManager: fileManager)
+        case JSONCrashReport.fileExtension: return JSONCrashReport(url: url, fileManager: fileManager)
         default: return nil
         }
     }
 
 }
 
-fileprivate extension FileManager {
+extension FileManager {
 
     static let userDiagnosticReports: URL = {
         let homeDirectoryURL = FileManager.default.homeDirectoryForCurrentUser

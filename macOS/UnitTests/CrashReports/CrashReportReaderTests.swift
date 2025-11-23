@@ -21,9 +21,7 @@ import XCTest
 
 final class CrashReportReaderTests: XCTestCase {
 
-    private var temporaryDirectories: [URL] = []
-    private var userDirectory: URL!
-    private var systemDirectory: URL!
+    private var fileManager: MockFileManager!
     private let appDisplayName = "DuckDuckGo"
     private let appBundleIdentifier = "com.duckduckgo.macos"
     private let vpnIdentifier = "com.duckduckgo.macos.vpn.network-extension"
@@ -31,24 +29,20 @@ final class CrashReportReaderTests: XCTestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        userDirectory = try makeTemporaryDirectory()
-        systemDirectory = try makeTemporaryDirectory()
+        fileManager = MockFileManager()
     }
 
     override func tearDownWithError() throws {
-        temporaryDirectories.forEach { url in
-            try? FileManager.default.removeItem(at: url)
-        }
-        temporaryDirectories.removeAll()
+        fileManager = nil
         try super.tearDownWithError()
     }
 
     func testWhenFilesHaveUnsupportedExtensionsTheyAreIgnored() throws {
         let now = Date()
 
-        try writeReport(named: "DuckDuckGo-valid.ips", contents: sampleIPSReport(), in: userDirectory, creationDate: now.addingTimeInterval(-60))
-        try writeReport(named: "DuckDuckGo-legacy.crash", contents: sampleLegacyReport(), in: userDirectory, creationDate: now.addingTimeInterval(-60))
-        try writeReport(named: "DuckDuckGo-unexpected.txt", contents: "text", in: userDirectory, creationDate: now.addingTimeInterval(-60))
+        try writeReport(named: "DuckDuckGo-valid.ips", contents: sampleIPSReport(), in: FileManager.userDiagnosticReports, creationDate: now.addingTimeInterval(-60))
+        try writeReport(named: "DuckDuckGo-legacy.crash", contents: sampleLegacyReport(), in: FileManager.userDiagnosticReports, creationDate: now.addingTimeInterval(-60))
+        try writeReport(named: "DuckDuckGo-unexpected.txt", contents: "text", in: FileManager.userDiagnosticReports, creationDate: now.addingTimeInterval(-60))
 
         let reader = makeReader(now: now)
         let reports = reader.getCrashReports(since: now.addingTimeInterval(-120))
@@ -61,9 +55,9 @@ final class CrashReportReaderTests: XCTestCase {
     func testWhenFilesDoNotBelongToAppTheyAreFilteredOut() throws {
         let now = Date()
 
-        try writeReport(named: "DuckDuckGo-valid.ips", contents: sampleIPSReport(), in: userDirectory, creationDate: now.addingTimeInterval(-60))
-        try writeReport(named: "\(vpnIdentifier)-123.crash", contents: sampleLegacyReport(), in: userDirectory, creationDate: now.addingTimeInterval(-60))
-        try writeReport(named: "OtherApp.crash", contents: sampleLegacyReport(), in: userDirectory, creationDate: now.addingTimeInterval(-60))
+        try writeReport(named: "DuckDuckGo-valid.ips", contents: sampleIPSReport(), in: FileManager.userDiagnosticReports, creationDate: now.addingTimeInterval(-60))
+        try writeReport(named: "\(vpnIdentifier)-123.crash", contents: sampleLegacyReport(), in: FileManager.userDiagnosticReports, creationDate: now.addingTimeInterval(-60))
+        try writeReport(named: "OtherApp.crash", contents: sampleLegacyReport(), in: FileManager.userDiagnosticReports, creationDate: now.addingTimeInterval(-60))
 
         let reader = makeReader(now: now)
         let reports = reader.getCrashReports(since: now.addingTimeInterval(-120))
@@ -76,8 +70,8 @@ final class CrashReportReaderTests: XCTestCase {
         let now = Date()
         let lastCheck = now.addingTimeInterval(-120)
 
-        try writeReport(named: "DuckDuckGo-old.ips", contents: sampleIPSReport(), in: userDirectory, creationDate: now.addingTimeInterval(-3600))
-        try writeReport(named: "DuckDuckGo-new.ips", contents: sampleIPSReport(), in: userDirectory, creationDate: now.addingTimeInterval(-60))
+        try writeReport(named: "DuckDuckGo-old.ips", contents: sampleIPSReport(), in: FileManager.userDiagnosticReports, creationDate: now.addingTimeInterval(-3600))
+        try writeReport(named: "DuckDuckGo-new.ips", contents: sampleIPSReport(), in: FileManager.userDiagnosticReports, creationDate: now.addingTimeInterval(-60))
 
         let reader = makeReader(now: now)
         let reports = reader.getCrashReports(since: lastCheck)
@@ -89,8 +83,8 @@ final class CrashReportReaderTests: XCTestCase {
     func testReportsAreLoadedFromUserAndSystemDirectories() throws {
         let now = Date()
 
-        try writeReport(named: "DuckDuckGo-user.ips", contents: sampleIPSReport(), in: userDirectory, creationDate: now.addingTimeInterval(-60))
-        try writeReport(named: "DuckDuckGo-system.crash", contents: sampleLegacyReport(), in: systemDirectory, creationDate: now.addingTimeInterval(-60))
+        try writeReport(named: "DuckDuckGo-user.ips", contents: sampleIPSReport(), in: FileManager.userDiagnosticReports, creationDate: now.addingTimeInterval(-60))
+        try writeReport(named: "DuckDuckGo-system.crash", contents: sampleLegacyReport(), in: FileManager.systemDiagnosticReports, creationDate: now.addingTimeInterval(-60))
 
         let reader = makeReader(now: now)
         let reports = reader.getCrashReports(since: now.addingTimeInterval(-120))
@@ -102,8 +96,8 @@ final class CrashReportReaderTests: XCTestCase {
     func testWhenIPSBundleIDDoesNotMatchItIsFilteredOut() throws {
         let now = Date()
 
-        try writeReport(named: "DuckDuckGo-valid.ips", contents: sampleIPSReport(), in: userDirectory, creationDate: now.addingTimeInterval(-60))
-        try writeReport(named: "DuckDuckGo-other.ips", contents: sampleIPSReport(bundleID: "com.example.other"), in: userDirectory, creationDate: now.addingTimeInterval(-60))
+        try writeReport(named: "DuckDuckGo-valid.ips", contents: sampleIPSReport(), in: FileManager.userDiagnosticReports, creationDate: now.addingTimeInterval(-60))
+        try writeReport(named: "DuckDuckGo-other.ips", contents: sampleIPSReport(bundleID: "com.example.other"), in: FileManager.userDiagnosticReports, creationDate: now.addingTimeInterval(-60))
 
         let reader = makeReader(now: now)
         let reports = reader.getCrashReports(since: now.addingTimeInterval(-120))
@@ -115,7 +109,7 @@ final class CrashReportReaderTests: XCTestCase {
     func testWhenIPSBundleIDMatchesVpnExtensionItIsIncluded() throws {
         let now = Date()
 
-        try writeReport(named: "\(vpnIdentifier)-valid.ips", contents: sampleIPSReport(bundleID: vpnBundleIdentifier), in: userDirectory, creationDate: now.addingTimeInterval(-60))
+        try writeReport(named: "\(vpnIdentifier)-valid.ips", contents: sampleIPSReport(bundleID: vpnBundleIdentifier), in: FileManager.userDiagnosticReports, creationDate: now.addingTimeInterval(-60))
 
         let reader = makeReader(now: now)
         let reports = reader.getCrashReports(since: now.addingTimeInterval(-120))
@@ -127,8 +121,8 @@ final class CrashReportReaderTests: XCTestCase {
     func testWhenIPSBundleIDHasSuffixItIsFilteredOut() throws {
         let now = Date()
 
-        try writeReport(named: "DuckDuckGo-valid.ips", contents: sampleIPSReport(), in: userDirectory, creationDate: now.addingTimeInterval(-60))
-        try writeReport(named: "DuckDuckGo-suffixed.ips", contents: sampleIPSReport(bundleID: "\(appBundleIdentifier).debug"), in: userDirectory, creationDate: now.addingTimeInterval(-60))
+        try writeReport(named: "DuckDuckGo-valid.ips", contents: sampleIPSReport(), in: FileManager.userDiagnosticReports, creationDate: now.addingTimeInterval(-60))
+        try writeReport(named: "DuckDuckGo-suffixed.ips", contents: sampleIPSReport(bundleID: "\(appBundleIdentifier).debug"), in: FileManager.userDiagnosticReports, creationDate: now.addingTimeInterval(-60))
 
         let reader = makeReader(now: now)
         let reports = reader.getCrashReports(since: now.addingTimeInterval(-120))
@@ -139,23 +133,13 @@ final class CrashReportReaderTests: XCTestCase {
 
     // MARK: - Helpers
 
-    private func makeTemporaryDirectory() throws -> URL {
-        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        temporaryDirectories.append(directory)
-        return directory
-    }
-
     private func writeReport(named name: String, contents: String, in directory: URL, creationDate: Date) throws {
         let url = directory.appendingPathComponent(name)
-        try contents.write(to: url, atomically: true, encoding: .utf8)
-        try FileManager.default.setAttributes([.creationDate: creationDate], ofItemAtPath: url.path)
+        fileManager.registerFile(at: url, in: directory, contents: contents, creationDate: creationDate)
     }
 
     private func makeReader(now: Date) -> CrashReportReader {
-        return CrashReportReader(fileManager: FileManager.default,
-                                 userDiagnosticReportsDirectory: userDirectory,
-                                 systemDiagnosticReportsDirectory: systemDirectory,
+        return CrashReportReader(fileManager: fileManager,
                                  currentAppDisplayName: appDisplayName,
                                  currentAppBundleIdentifier: appBundleIdentifier,
                                  vpnExtensionBundleIdentifier: vpnBundleIdentifier,

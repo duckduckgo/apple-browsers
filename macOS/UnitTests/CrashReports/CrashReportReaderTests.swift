@@ -22,10 +22,11 @@ import XCTest
 final class CrashReportReaderTests: XCTestCase {
 
     private var fileManager: MockFileManager!
-    private let appDisplayName = "DuckDuckGo"
     private let appBundleIdentifier = "com.duckduckgo.macos"
-    private let vpnIdentifier = "com.duckduckgo.macos.vpn.network-extension"
     private let vpnBundleIdentifier = "com.duckduckgo.macos.vpn.network-extension"
+    private var validBundleIdentifiers: [String] {
+        [appBundleIdentifier, vpnBundleIdentifier]
+    }
 
     override func setUpWithError() throws {
         try super.setUpWithError()
@@ -56,14 +57,14 @@ final class CrashReportReaderTests: XCTestCase {
         let now = Date()
 
         try writeReport(named: "DuckDuckGo-valid.ips", contents: sampleIPSReport(), in: FileManager.userDiagnosticReports, creationDate: now.addingTimeInterval(-60))
-        try writeReport(named: "\(vpnIdentifier)-123.crash", contents: sampleLegacyReport(), in: FileManager.userDiagnosticReports, creationDate: now.addingTimeInterval(-60))
+        try writeReport(named: "\(vpnBundleIdentifier)-123.crash", contents: sampleLegacyReport(), in: FileManager.userDiagnosticReports, creationDate: now.addingTimeInterval(-60))
         try writeReport(named: "OtherApp.crash", contents: sampleLegacyReport(), in: FileManager.userDiagnosticReports, creationDate: now.addingTimeInterval(-60))
 
         let reader = makeReader(now: now)
         let reports = reader.getCrashReports(since: now.addingTimeInterval(-120))
 
         let returnedNames = Set(reports.map { $0.url.lastPathComponent })
-        XCTAssertEqual(returnedNames, ["DuckDuckGo-valid.ips", "\(vpnIdentifier)-123.crash"])
+        XCTAssertEqual(returnedNames, ["DuckDuckGo-valid.ips", "\(vpnBundleIdentifier)-123.crash"])
     }
 
     func testWhenReportIsOlderThanLastCheckItIsIgnored() throws {
@@ -109,7 +110,7 @@ final class CrashReportReaderTests: XCTestCase {
     func testWhenIPSBundleIDMatchesVpnExtensionItIsIncluded() throws {
         let now = Date()
 
-        try writeReport(named: "\(vpnIdentifier)-valid.ips", contents: sampleIPSReport(bundleID: vpnBundleIdentifier), in: FileManager.userDiagnosticReports, creationDate: now.addingTimeInterval(-60))
+        try writeReport(named: "\(vpnBundleIdentifier)-valid.ips", contents: sampleIPSReport(bundleID: vpnBundleIdentifier), in: FileManager.userDiagnosticReports, creationDate: now.addingTimeInterval(-60))
 
         let reader = makeReader(now: now)
         let reports = reader.getCrashReports(since: now.addingTimeInterval(-120))
@@ -139,10 +140,9 @@ final class CrashReportReaderTests: XCTestCase {
     }
 
     private func makeReader(now: Date) -> CrashReportReader {
+        let validBundleIDs = validBundleIdentifiers
         return CrashReportReader(fileManager: fileManager,
-                                 currentAppDisplayName: appDisplayName,
-                                 currentAppBundleIdentifier: appBundleIdentifier,
-                                 vpnExtensionBundleIdentifier: vpnBundleIdentifier,
+                                 validBundleIdentifierProvider: { validBundleIDs },
                                  dateProvider: { now })
     }
 
@@ -154,7 +154,7 @@ final class CrashReportReaderTests: XCTestCase {
     }
 
     private func sampleLegacyReport() -> String {
-        return "Process: \(appDisplayName) [123]"
+        return "Process: DuckDuckGo [123]"
     }
 
     private lazy var exampleCrashReportContents: String = {

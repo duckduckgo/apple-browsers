@@ -17,26 +17,31 @@
 //
 
 import Foundation
+import Common
 
 final class CrashReportReader {
 
     static let vpnExtensionDisplayName = "com.duckduckgo.macos.vpn.network-extension"
 
+    static func validBundleIdentifiers() -> [String] {
+        return [
+            Bundle.main.bundleIdentifier,
+            Bundle.main.vpnMenuAgentBundleId,
+            Bundle.main.vpnSystemExtensionBundleId,
+            Bundle.main.vpnProxyExtensionBundleId,
+            Bundle.main.dbpBackgroundAgentBundleId
+        ].compactMap(\.self)
+    }
+
     private let fileManager: FileManager
-    private let currentAppDisplayName: String?
-    private let currentAppBundleIdentifier: String?
-    private let vpnExtensionBundleIdentifier: String?
+    private let validBundleIdentifierProvider: () -> [String]
     private let dateProvider: () -> Date
 
     init(fileManager: FileManager = .default,
-         currentAppDisplayName: String? = Bundle.main.displayName,
-         currentAppBundleIdentifier: String? = Bundle.main.bundleIdentifier,
-         vpnExtensionBundleIdentifier: String? = "com.duckduckgo.macos.vpn.network-extension",
+         validBundleIdentifierProvider: @escaping () -> [String] = CrashReportReader.validBundleIdentifiers,
          dateProvider: @escaping () -> Date = Date.init) {
         self.fileManager = fileManager
-        self.currentAppDisplayName = currentAppDisplayName
-        self.currentAppBundleIdentifier = currentAppBundleIdentifier
-        self.vpnExtensionBundleIdentifier = vpnExtensionBundleIdentifier
+        self.validBundleIdentifierProvider = validBundleIdentifierProvider
         self.dateProvider = dateProvider
     }
 
@@ -72,10 +77,8 @@ final class CrashReportReader {
             return false
         }
 
-        let fileName = path.lastPathComponent
-        let hasAppPrefix = fileName.hasPrefix(currentAppDisplayName ?? "DuckDuckGo")
-        let hasVPNPrefix = fileName.hasPrefix(Self.vpnExtensionDisplayName)
-        return hasAppPrefix || hasVPNPrefix
+        let fileName = path.lastPathComponent.lowercased()
+        return fileName.contains("duckduckgo")
     }
 
     private func matchesBundleID(_ crashReport: CrashReport) -> Bool {
@@ -83,10 +86,7 @@ final class CrashReportReader {
             return true
         }
 
-        let allowedBundleIdentifiers = [currentAppBundleIdentifier, vpnExtensionBundleIdentifier].compactMap { $0 }
-        guard !allowedBundleIdentifiers.isEmpty else { return true }
-
-        return allowedBundleIdentifiers.contains(bundleID)
+        return validBundleIdentifierProvider().contains(bundleID)
     }
 
     private func isFile(at path: URL, newerThan lastCheckDate: Date) -> Bool {

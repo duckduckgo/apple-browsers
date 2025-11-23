@@ -980,6 +980,9 @@
 "Cohort: %@" = "Kohort: %@";
 
 /* No comment provided by engineer. */
+"Configuration" = "Konfigurasjon";
+
+/* No comment provided by engineer. */
 "Confirm" = "Bekreft";
 
 /* Button to continue the onboarding process */
@@ -2024,6 +2027,9 @@
 "keyCommandShowAllTabs" = "Vis alle faner";
 
 /* No comment provided by engineer. */
+"Last Processed: %@" = "Sist behandlet: %@";
+
+/* No comment provided by engineer. */
 "Loading brokers..." = "Laster mellomtjenere...";
 
 /* Summary text for the macOS browser waitlist */
@@ -2085,6 +2091,33 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Vertsnavn for meldingspolicy";
+
+/* No comment provided by engineer. */
+"Messages" = "Meldinger";
+
+/* The name of the Address Bar button when referenced in settings. */
+"mobile.customization.addressbar.button" = "Adresselinjeknapp";
+
+/* The title of the Address Bar button. */
+"mobile.customization.addressbar.title" = "Adressefelt";
+
+/* A title to indicate that if selected the current button will be hidden from the UI */
+"mobile.customization.option.none.long" = "Skjul denne knappen";
+
+/* Indicates that no button was selected to be shown in the specified location. */
+"mobile.customization.option.none.short" = "Ingen";
+
+/* The title of the section in settings containing the customizable buttons. */
+"mobile.customization.section.title" = "Tilpassbare knapper";
+
+/* The label for the toggle that hides and shows the reload button. */
+"mobile.customization.show.reload.button.title" = "Vis knappen for lasting på nytt";
+
+/* The name of the address bar button when referenced in settings. */
+"mobile.customization.toolbar.button" = "Verktøylinjeknapp";
+
+/* A label for the access point to customization of the Toolbar. */
+"mobile.customization.toolbar.title" = "Verktøylinje";
 
 /* Title for back button in navigation bar */
 "navbar.back-button.title" = "Tilbake";
@@ -2342,10 +2375,19 @@
 "new.address.bar.picker.title" = "Alternativ for adressefelt";
 
 /* No comment provided by engineer. */
+"No Logs" = "Ingen logger";
+
+/* No comment provided by engineer. */
+"No messages" = "Ingen meldinger";
+
+/* No comment provided by engineer. */
 "No results found" = "Ingen resultater ble funnet";
 
 /* No comment provided by engineer. */
 "OK" = "OK";
+
+/* Display title for Duck.ai in our address bar */
+"omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Informasjonskapsler administrert";
@@ -2409,6 +2451,21 @@
 
 /* The title of the onboarding dialog popup */
 "onboarding.highlights.intro.title" = "Heisann.\n\nKlar for en raskere nettleser som holder deg beskyttet?";
+
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.searchExperience.cta" = "Neste";
+
+/* The footer disclaimer text for the search experience onboarding screen. */
+"onboarding.highlights.searchExperience.footer" = "AI-funksjoner er private og valgfrie. Du kan gjøre endringer i Innstillinger > AI-funksjoner.";
+
+/* Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold). */
+"onboarding.highlights.searchExperience.footer.formatted" = "AI-funksjoner er private og valgfrie. Du kan gjøre endringer i %@";
+
+/* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
+"onboarding.highlights.searchExperience.footer.settings-path-bold" = "Innstillinger > AI-funksjoner.";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Vil du ha enklere tilgang til privat AI-chat?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Sett i gang!";
@@ -2506,12 +2563,6 @@
 /* Deactivate button */
 "pm.deactivate" = "Deaktiver";
 
-/* Label for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.label" = "E-postadresse (valgfritt)";
-
-/* Placeholder for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.placeholder" = "navn@e-post.com";
-
 /* Placeholder for the General Feedback step in the Privacy Pro feedback form */
 "ppro.feedback-form.general-feedback.placeholder" = "Gi oss gjerne en tilbakemelding …";
 
@@ -2545,8 +2596,11 @@
 /* Title for the category selection section in the Privacy Pro feedback form */
 "ppro.feedback-form.select-category.title" = "VELG EN KATEGORI";
 
-/* Text for the body of the PPro feedback form */
-"ppro.feedback-form.text-1" = "Har du funnet et problem som ikke er dekket i [hjelpesenteret](duck://)? Da vil vi svært gjerne høre om det.\n\nOppgi en e-postadresse hvis du vil at vi skal kontakte deg om dette problemet (det er ikke sikkert vi kan svare på alle henvendelser):";
+/* Support link text displayed beneath the feedback form description */
+"ppro.feedback-form.support.text" = "Trenger du hjelp? [Kontakt kundestøtte.](https://duckduckgo.com/subscription-support)";
+
+/* Intro text for the body of the PPro feedback form */
+"ppro.feedback-form.text-1" = "Har du funnet et problem som ikke er dekket i [hjelpesenteret](duck://)? Da vil vi svært gjerne høre om det.\n\nFortell oss hva som skjer:";
 
 /* Text for the body of the PPro feedback form */
 "ppro.feedback-form.text-2" = "I tillegg til detaljene ovenfor sender vi noe anonymisert informasjon sammen med tilbakemeldingen din:";
@@ -2696,6 +2750,9 @@
 "prompt.custom.url.scheme.title" = "Åpne i en annen app?";
 
 /* No comment provided by engineer. */
+"Recent Processing Logs" = "Nylige behandlingslogger";
+
+/* No comment provided by engineer. */
 "Relatives: %@" = "Slektninger: %@";
 
 /* No comment provided by engineer. */
@@ -2804,7 +2861,7 @@
 "settings.aifeatures.hide.ai.generated.images" = "Skjul AI-genererte bilder";
 
 /* Description of what the hide AI-generated images feature does */
-"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtrerer AI-genererte bilder fra bildesøkeresultater";
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtrerer ut AI-genererte bilder fra bildesøkresultater";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Alltid på";
@@ -3178,6 +3235,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "DuckDuckGo-nettleseren gir deg sporingsbeskyttelser, som alltid er aktive. [Finn ut mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* No comment provided by engineer. */
+"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Viser logger fra det siste minuttet for å prøve å diagnostisere problemer umiddelbart etter en oppdatering.";
+
 /* Description on a report broken site page. */
 "site.not.working.description" = "Velg alternativet som best beskriver problemet du opplevde.";
 
@@ -3210,6 +3270,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Hvilket nettsted fungerer ikke?";
+
+/* No comment provided by engineer. */
+"Status: Invalidated" = "Status: ugyldig";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Lagret vertsnavn: %@";
@@ -3598,6 +3661,9 @@
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
 
+/* No comment provided by engineer. */
+"Version: %@" = "Versjon: %@";
+
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Søk";
 
@@ -3859,18 +3925,6 @@
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "En melding fra %@:";
 
-/* CTA of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.cta" = "Se tilbudet";
-
-/* Dismiss of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.dismiss" = "Ikke nå";
-
-/* Message of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.text" = "Beskytt deg selv med vår VPN, private AI og mye mer. Abonner igjen i dag og spar 25 %.";
-
-/* Title of message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.title" = "Siste dag å spare 25 % på!";
-
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "SPAR 25 %";
 
@@ -3905,7 +3959,10 @@
 "win-back.campaign.subscription.settings.menu.title" = "Abonner igjen og spar 25 %";
 
 /* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
-"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Abonner igjen og spar 25 %";
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Abonner på nytt";
+
+/* Subtitle for resubscribe CTA for users eligible for the win-back offer. */
+"win-back.campaign.subscription.settings.page.resubscribe.subtitle" = "Beskytt deg selv med VPN, privat AI og mye mer.\nTidsbegrenset tilbud.";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Ser du etter Mac-versjonen?";

@@ -60,6 +60,7 @@ final class NewTabPageRecentActivityClientTests: XCTestCase {
                 favicon: .init(maxAvailableSize: 32, src: "duck://favicon/http%3A//example.com"),
                 favorite: false,
                 trackersFound: true,
+                cookiePopUpBlocked: false,
                 trackingStatus: .init(totalCount: 5, trackerCompanies: [.init(displayName: "Facebook")]),
                 history: [
                     .init(relativeTime: "Just now", title: "/index.html", url: "https://example.com/index.html"),
@@ -79,6 +80,82 @@ final class NewTabPageRecentActivityClientTests: XCTestCase {
         let data: NewTabPageDataModel.ActivityData = try await messageHelper.handleMessage(named: .getData)
         XCTAssertEqual(data, .init(activity: activityProvider.refreshActivityReturnValue))
         XCTAssertEqual(activityProvider.refreshActivityCallCount, 1)
+    }
+
+    func testThatGetDataIncludesCookiePopUpBlockedWhenTrue() async throws {
+        activityProvider.refreshActivityReturnValue = [
+            .init(
+                id: "abcd",
+                title: "Example.com",
+                url: "https://example.com",
+                etldPlusOne: "example.com",
+                favicon: .init(maxAvailableSize: 32, src: "duck://favicon/http%3A//example.com"),
+                favorite: false,
+                trackersFound: true,
+                cookiePopUpBlocked: true,
+                trackingStatus: .init(totalCount: 5, trackerCompanies: [.init(displayName: "Facebook")]),
+                history: [.init(relativeTime: "Just now", title: "/index.html", url: "https://example.com/index.html")]
+            )
+        ]
+
+        let data: NewTabPageDataModel.ActivityData = try await messageHelper.handleMessage(named: .getData)
+        XCTAssertEqual(data.activity.count, 1)
+        XCTAssertTrue(data.activity[0].cookiePopUpBlocked, "cookiePopUpBlocked should be true when cookie popup was blocked")
+    }
+
+    func testThatGetDataIncludesCookiePopUpBlockedWhenFalse() async throws {
+        activityProvider.refreshActivityReturnValue = [
+            .init(
+                id: "abcd",
+                title: "Example.com",
+                url: "https://example.com",
+                etldPlusOne: "example.com",
+                favicon: .init(maxAvailableSize: 32, src: "duck://favicon/http%3A//example.com"),
+                favorite: false,
+                trackersFound: false,
+                cookiePopUpBlocked: false,
+                trackingStatus: .init(totalCount: 0, trackerCompanies: []),
+                history: [.init(relativeTime: "Just now", title: "/index.html", url: "https://example.com/index.html")]
+            )
+        ]
+
+        let data: NewTabPageDataModel.ActivityData = try await messageHelper.handleMessage(named: .getData)
+        XCTAssertEqual(data.activity.count, 1)
+        XCTAssertFalse(data.activity[0].cookiePopUpBlocked, "cookiePopUpBlocked should be false when no cookie popup was blocked")
+    }
+
+    func testThatGetDataHandlesMultipleSitesWithDifferentCookiePopUpBlockedValues() async throws {
+        activityProvider.refreshActivityReturnValue = [
+            .init(
+                id: "site1",
+                title: "Site with blocked popup",
+                url: "https://example1.com",
+                etldPlusOne: "example1.com",
+                favicon: nil,
+                favorite: false,
+                trackersFound: true,
+                cookiePopUpBlocked: true,
+                trackingStatus: .init(totalCount: 3, trackerCompanies: []),
+                history: []
+            ),
+            .init(
+                id: "site2",
+                title: "Site without blocked popup",
+                url: "https://example2.com",
+                etldPlusOne: "example2.com",
+                favicon: nil,
+                favorite: true,
+                trackersFound: false,
+                cookiePopUpBlocked: false,
+                trackingStatus: .init(totalCount: 0, trackerCompanies: []),
+                history: []
+            )
+        ]
+
+        let data: NewTabPageDataModel.ActivityData = try await messageHelper.handleMessage(named: .getData)
+        XCTAssertEqual(data.activity.count, 2)
+        XCTAssertTrue(data.activity[0].cookiePopUpBlocked, "First site should have cookie popup blocked")
+        XCTAssertFalse(data.activity[1].cookiePopUpBlocked, "Second site should not have cookie popup blocked")
     }
 
     // MARK: - addFavorite

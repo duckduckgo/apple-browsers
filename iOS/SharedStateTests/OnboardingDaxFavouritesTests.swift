@@ -50,6 +50,7 @@ import Combine
         let db = CoreDataDatabase.bookmarksMock
         let bookmarkDatabaseCleaner = BookmarkDatabaseCleaner(bookmarkDatabase: db, errorEvents: nil)
         let dataProviders = SyncDataProviders(
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
             bookmarksDatabase: db,
             secureVaultFactory: AutofillSecureVaultFactory,
             secureVaultErrorReporter: SecureVaultReporter(),
@@ -78,13 +79,23 @@ import Combine
         let daxDialogsFactory = ExperimentContextualDaxDialogsFactory(contextualOnboardingLogic: contextualOnboardingLogicMock,
                                                                       contextualOnboardingPixelReporter: onboardingPixelReporter)
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
+        let mockConfigManager = MockPrivacyConfigurationManager()
+
+        let mockScriptDependencies = DefaultScriptSourceProvider.Dependencies(appSettings: AppSettingsMock(),
+                                                                              privacyConfigurationManager: mockConfigManager,
+                                                                              contentBlockingManager: ContentBlockerRulesManagerMock(),
+                                                                              fireproofing: fireproofing,
+                                                                              contentScopeExperimentsManager: MockContentScopeExperimentManager())
+
         let tabManager = TabManager(model: tabsModel,
                                     persistence: tabsPersistence,
                                     previewsSource: MockTabPreviewsSource(),
                                     interactionStateSource: interactionStateSource,
+                                    privacyConfigurationManager: mockConfigManager,
                                     bookmarksDatabase: db,
                                     historyManager: historyManager,
                                     syncService: syncService,
+                                    userScriptsDependencies: mockScriptDependencies,
                                     contentBlockingAssetsPublisher: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
                                     subscriptionDataReporter: subscriptionDataReporter,
                                     contextualOnboardingPresenter: contextualOnboardingPresenter,
@@ -104,12 +115,14 @@ import Combine
                                     aiChatSettings: MockAIChatSettingsProvider()
         )
         sut = MainViewController(
+            privacyConfigurationManager: mockConfigManager,
             bookmarksDatabase: db,
             bookmarksDatabaseCleaner: bookmarkDatabaseCleaner,
             historyManager: historyManager,
             homePageConfiguration: homePageConfiguration,
             syncService: syncService,
             syncDataProviders: dataProviders,
+            userScriptsDependencies: mockScriptDependencies,
             contentBlockingAssetsPublisher: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
             appSettings: AppSettingsMock(),
             previewsSource: MockTabPreviewsSource(),

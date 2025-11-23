@@ -27,6 +27,7 @@ public protocol HistoryCleaning {
 
 public final class HistoryCleaner: HistoryCleaning {
     private var continuation: CheckedContinuation<Result<Void, Error>, Never>?
+    private var navigationContinuation: CheckedContinuation<Result<Void, Error>, Never>?
     private var webView: WKWebView?
     private var coordinator: Coordinator?
     private let featureFlagger: FeatureFlagger
@@ -47,83 +48,139 @@ public final class HistoryCleaner: HistoryCleaning {
 
         return await withCheckedContinuation { continuation in
             self.continuation = continuation
-            self.launchHistoryCleaningWebView()
+            Task { @MainActor in
+                await self.processAllDomains()
+            }
         }
     }
 
-    // MARK: - Headless WebView
     @MainActor
-    private func launchHistoryCleaningWebView() {
+    private func processAllDomains() async {
         do {
-            let aiChatDataClearing = AIChatDataClearingUserScript()
+            try setupWebView()
+            for domain in URL.aiChatDomains {
+                let navigationResult = await launchHistoryCleaningWebView(requestURL: domain)
 
-            let features = ContentScopeFeatureToggles(emailProtection: false,
-                                                      emailProtectionIncontextSignup: false,
-                                                      credentialsAutofill: false,
-                                                      identitiesAutofill: false,
-                                                      creditCardsAutofill: false,
-                                                      credentialsSaving: false,
-                                                      passwordGeneration: false,
-                                                      inlineIconCredentials: false,
-                                                      thirdPartyCredentialsProvider: false,
-                                                      unknownUsernameCategorization: false,
-                                                      partialFormSaves: false,
-                                                      passwordVariantCategorization: false,
-                                                      inputFocusApi: false,
-                                                      autocompleteAttributeSupport: false)
-            let contentScopeProperties = ContentScopeProperties(gpcEnabled: false,
-                                                                sessionKey: UUID().uuidString,
-                                                                messageSecret: UUID().uuidString,
-                                                                isInternalUser: featureFlagger.internalUserDecider.isInternalUser,
-                                                                featureToggles: features)
-            let contentScope = try ContentScopeUserScript(privacyConfig,
-                                                          properties: contentScopeProperties,
-                                                          allowedNonisolatedFeatures: [aiChatDataClearing.featureName],
-                                                          privacyConfigurationJSONGenerator: nil)
-            contentScope.registerSubfeature(delegate: aiChatDataClearing)
+                guard case .success = navigationResult else {
+                    finish(result: navigationResult)
+                    return
+                }
 
-            let userContentController = WKUserContentController()
-            userContentController.addUserScript(contentScope.makeWKUserScriptSync())
-            userContentController.addHandler(contentScope)
+                let clearingResult = await executeClearingScript()
 
-            let configuration = WKWebViewConfiguration()
-            configuration.userContentController = userContentController
-            configuration.websiteDataStore = .default()
-
-            let webView = WKWebView(frame: .zero, configuration: configuration)
-            let coordinator = Coordinator(cleaner: self)
-            webView.navigationDelegate = coordinator
-
-            aiChatDataClearing.webView = webView
-            self.webView = webView
-            self.coordinator = coordinator
-            self.contentScopeUserScript = contentScope
-            self.aiChatDataClearingUserScript = aiChatDataClearing
-
-            if #available(iOS 15.0, macOS 12.0, *) {
-                webView.loadSimulatedRequest(URLRequest(url: URL.duckDuckGo), responseHTML: "")
-            } else {
-                webView.loadHTMLString("", baseURL: URL.duckDuckGo)
+                guard case .success = clearingResult else {
+                    finish(result: clearingResult)
+                    return
+                }
             }
+
+            finish(result: .success(()))
         } catch {
             finish(result: .failure(error))
         }
     }
+
+    // MARK: - WebView Setup
+
+    @MainActor
+    private func setupWebView() throws {
+        let aiChatDataClearing = AIChatDataClearingUserScript()
+
+        let features = ContentScopeFeatureToggles(
+            emailProtection: false,
+            emailProtectionIncontextSignup: false,
+            credentialsAutofill: false,
+            identitiesAutofill: false,
+            creditCardsAutofill: false,
+            credentialsSaving: false,
+            passwordGeneration: false,
+            inlineIconCredentials: false,
+            thirdPartyCredentialsProvider: false,
+            unknownUsernameCategorization: false,
+            partialFormSaves: false,
+            passwordVariantCategorization: false,
+            inputFocusApi: false,
+            autocompleteAttributeSupport: false
+        )
+
+        let contentScopeProperties = ContentScopeProperties(
+            gpcEnabled: false,
+            sessionKey: UUID().uuidString,
+            messageSecret: UUID().uuidString,
+            isInternalUser: featureFlagger.internalUserDecider.isInternalUser,
+            featureToggles: features
+        )
+
+        let contentScope = try ContentScopeUserScript(
+            privacyConfig,
+            properties: contentScopeProperties,
+            allowedNonisolatedFeatures: [aiChatDataClearing.featureName],
+            privacyConfigurationJSONGenerator: nil
+        )
+        contentScope.registerSubfeature(delegate: aiChatDataClearing)
+
+        let userContentController = WKUserContentController()
+        userContentController.addUserScript(contentScope.makeWKUserScriptSync())
+        userContentController.addHandler(contentScope)
+
+        let configuration = WKWebViewConfiguration()
+        configuration.userContentController = userContentController
+        configuration.websiteDataStore = .default()
+
+        let webView = WKWebView(frame: .zero, configuration: configuration)
+        let coordinator = Coordinator(cleaner: self)
+        webView.navigationDelegate = coordinator
+
+        aiChatDataClearing.webView = webView
+        self.webView = webView
+        self.coordinator = coordinator
+        self.contentScopeUserScript = contentScope
+        self.aiChatDataClearingUserScript = aiChatDataClearing
+    }
+
+    // MARK: - Domain Navigation
+
+    @MainActor
+    private func launchHistoryCleaningWebView(requestURL: URL) async -> Result<Void, Error> {
+        guard let webView = webView else {
+            return .failure(HistoryCleanerError.webViewNotInitialized)
+        }
+
+        return await withCheckedContinuation { continuation in
+            self.navigationContinuation = continuation
+
+            if #available(iOS 15.0, macOS 12.0, *) {
+                webView.loadSimulatedRequest(URLRequest(url: requestURL), responseHTML: "")
+            } else {
+                webView.loadHTMLString("", baseURL: requestURL)
+            }
+        }
+    }
+
+    @MainActor
+    private func completeNavigation(with result: Result<Void, Error>) {
+        navigationContinuation?.resume(returning: result)
+        navigationContinuation = nil
+    }
+
+    // MARK: - Script Execution
+
+    @MainActor
+    private func executeClearingScript() async -> Result<Void, Error> {
+        guard let script = aiChatDataClearingUserScript else {
+            return .failure(HistoryCleanerError.scriptNotInitialized)
+        }
+
+        return await script.clearAIChatDataAsync(timeout: 5)
+    }
+
+    // MARK: - Cleanup
 
     @MainActor
     private func finish(result: Result<Void, Error>) {
         tearDownClearingWebView()
         continuation?.resume(returning: result)
         continuation = nil
-    }
-
-    @MainActor
-    private func startClearing() {
-        Task { @MainActor [weak self] in
-            guard let self, let script = aiChatDataClearingUserScript else { return }
-            let result = await script.clearAIChatDataAsync(timeout: 5)
-            self.finish(result: result)
-        }
     }
 
     @MainActor
@@ -137,22 +194,33 @@ public final class HistoryCleaner: HistoryCleaning {
     }
 }
 
-// MARK: - Navigation Delegate Wrapper
+// MARK: - Errors
+extension HistoryCleaner {
+    enum HistoryCleanerError: Error {
+        case webViewNotInitialized
+        case scriptNotInitialized
+    }
+}
+
+// MARK: - Navigation Delegate
 extension HistoryCleaner {
     private final class Coordinator: NSObject, WKNavigationDelegate {
         weak var cleaner: HistoryCleaner?
-        init(cleaner: HistoryCleaner) { self.cleaner = cleaner }
+
+        init(cleaner: HistoryCleaner) {
+            self.cleaner = cleaner
+        }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            cleaner?.startClearing()
+            cleaner?.completeNavigation(with: .success(()))
         }
 
         func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
-            cleaner?.finish(result: .failure(error))
+            cleaner?.completeNavigation(with: .failure(error))
         }
 
         func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-            cleaner?.finish(result: .failure(error))
+            cleaner?.completeNavigation(with: .failure(error))
         }
     }
 }
@@ -180,6 +248,8 @@ extension WKUserContentController {
 }
 
 extension URL {
-    static let duckDuckGo = URL(string: "https://duckduckgo.com")!
-
+    static let aiChatDomains: [URL] = [
+        URL(string: "https://duckduckgo.com")!,
+        URL(string: "https://duck.ai")!
+    ]
 }

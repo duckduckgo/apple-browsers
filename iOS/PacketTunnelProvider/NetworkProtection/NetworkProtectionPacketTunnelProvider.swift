@@ -464,7 +464,8 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
             let keychainType: KeychainType = .dataProtection(.named(subscriptionAppGroup))
             let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
-            let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager) { accessType, error in
+            let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager,
+                                                                  userDefaults: UserDefaults.standard) { accessType, error in
                 let parameters = [PixelParameters.subscriptionKeychainAccessType: accessType.rawValue,
                                   PixelParameters.subscriptionKeychainError: error.localizedDescription,
                                   PixelParameters.source: KeychainErrorSource.vpn.rawValue,

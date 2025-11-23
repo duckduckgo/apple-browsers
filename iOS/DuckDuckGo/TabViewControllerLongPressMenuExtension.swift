@@ -104,11 +104,12 @@ extension TabViewController {
         let tab = Tab(link: Link(title: nil, url: url))
         let tabController = TabViewController.loadFromStoryboard(
             model: tab,
+            privacyConfigurationManager: privacyConfigurationManager,
             bookmarksDatabase: bookmarksDatabase,
             historyManager: historyManager,
             syncService: syncService,
+            userScriptsDependencies: userScriptsDependencies,
             contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
-            duckPlayer: duckPlayer,
             subscriptionDataReporter: subscriptionDataReporter,
             contextualOnboardingPresenter: contextualOnboardingPresenter,
             contextualOnboardingLogic: contextualOnboardingLogic,

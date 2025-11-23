@@ -46,9 +46,7 @@ struct SettingsAppearanceView: View {
     func navigateToSubPageIfNeeded() {
         deepLinkTarget = viewModel.deepLinkTarget
 
-        // This just needs to be longer than the deep link logic in the View Model which uses a timer 🙄
-        //  otherwise this immediately gets popped.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) {
+        DispatchQueue.main.async {
             switch deepLinkTarget {
             case .customizeToolbarButton:
                 showToolbarSettings = true
@@ -87,6 +85,15 @@ struct SettingsAppearanceView: View {
                 legacySettings()
             }
 
+            if viewModel.isInternalUser {
+                Section {
+                    SettingsCellView(label: "Sheet menu presentation",
+                                     accessory: .toggle(isOn: viewModel.showMenuInSheetBinding))
+                } footer: {
+                    Text(verbatim: "This setting is experimental and available only for internal users")
+                }
+            }
+
         }
         .applySettingsListModifiers(title: UserText.settingsAppearanceSection,
                                     displayMode: .inline,
@@ -113,7 +120,7 @@ struct SettingsAppearanceView: View {
             addressBarButtonSetting()
             toolbarButtonSetting()
         } header: {
-            Text(verbatim: "Customizable Buttons")
+            Text(UserText.mobileCustomizationSectionTitle)
         }
     }
 
@@ -127,17 +134,17 @@ struct SettingsAppearanceView: View {
     @ViewBuilder
     func addressBarButtonSetting() -> some View {
 
-        let destination = AddressBarCustomizationPickerView(isAIChatEnabled: viewModel.isAIChatEnabled, selectedAddressBarButton: viewModel.selectedAddressBarButton)
-            .applySettingsListModifiers(title: "",
-                                        displayMode: .inline,
-                                        viewModel: viewModel)
+        let destination = AddressBarCustomizationPickerView(isAIChatEnabled: viewModel.isAIChatEnabled,
+                                                            selectedAddressBarButton: viewModel.selectedAddressBarButton,
+                                                            mobileCustomization: viewModel.mobileCustomization)
+            .applySettingsListModifiers(title: "", displayMode: .inline, viewModel: viewModel)
 
         NavigationLink(destination: destination, isActive: $showAddressBarSettings) {
 
             if let image = viewModel.selectedAddressBarButton.wrappedValue.smallIcon {
-                SettingsCellView(label: "Address Bar", accessory: .custom(accessoryImage(image)))
+                SettingsCellView(label: UserText.mobileCustomizationAddressBarTitle, accessory: .custom(accessoryImage(image)))
             } else if viewModel.selectedAddressBarButton.wrappedValue == .none {
-                SettingsCellView(label: "Address Bar", accessory: .rightDetail("None"))
+                SettingsCellView(label: UserText.mobileCustomizationAddressBarTitle, accessory: .rightDetail(UserText.mobileCustomizationNoneOptionShort))
             } else {
                 FailedAssertionView("Unexpected state")
             }
@@ -149,18 +156,18 @@ struct SettingsAppearanceView: View {
 
     @ViewBuilder
     func toolbarButtonSetting() -> some View {
-        let destination = ToolbarCustomizationPickerView(isAIChatEnabled: viewModel.isAIChatEnabled, selectedToolbarButton: viewModel.selectedToolbarButton)
-            .applySettingsListModifiers(title: "",
-                                        displayMode: .inline,
-                                        viewModel: viewModel)
+        let destination = ToolbarCustomizationPickerView(isAIChatEnabled: viewModel.isAIChatEnabled,
+                                                         selectedToolbarButton: viewModel.selectedToolbarButton,
+                                                         mobileCustomization: viewModel.mobileCustomization)
+            .applySettingsListModifiers(title: "", displayMode: .inline, viewModel: viewModel)
 
         NavigationLink(destination: destination, isActive: $showToolbarSettings) {
 
             if let image = viewModel.selectedToolbarButton.wrappedValue.smallIcon {
-                SettingsCellView(label: "Toolbar", accessory: .custom(accessoryImage(image)))
+                SettingsCellView(label: UserText.mobileCustomizationToolbarTitle, accessory: .custom(accessoryImage(image)))
             } else {
                 FailedAssertionView("Expected image for selection")
-                SettingsCellView(label: "Toolbar", accessory: .rightDetail("None"))
+                SettingsCellView(label: UserText.mobileCustomizationToolbarTitle, accessory: .rightDetail(UserText.mobileCustomizationNoneOptionShort))
             }
         }
         .listRowBackground(Color(designSystemColor: .surface))
@@ -169,7 +176,7 @@ struct SettingsAppearanceView: View {
 
     @ViewBuilder
     func showReloadButtonSetting() -> some View {
-        SettingsCellView(label: "Show Reload Button",
+        SettingsCellView(label: UserText.mobileCustomizationShowReloadButtonToggleTitle,
                          accessory: .toggle(isOn: showReloadButton))
     }
 
@@ -198,7 +205,7 @@ struct SettingsAppearanceView: View {
     func addressBarPositionSetting() -> some View {
         if viewModel.state.addressBar.enabled {
             SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,
-                                   label: UserText.settingsAddressBar,
+                                   label: UserText.settingsAddressBarPosition,
                                    options: AddressBarPosition.allCases,
                                    selectedOption: viewModel.addressBarPositionBinding)
         }

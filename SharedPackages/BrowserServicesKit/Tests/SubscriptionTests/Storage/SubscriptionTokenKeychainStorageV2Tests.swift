@@ -28,15 +28,24 @@ final class SubscriptionTokenKeychainStorageV2Tests: XCTestCase {
     private var mockKeychain: KeychainOperationsMock!
     private var errorEvents: [(AccountKeychainAccessType, AccountKeychainAccessError)] = []
     private let errorEventsQueue = DispatchQueue(label: "test.error.events", attributes: .concurrent)
+    private var testUserDefaults: UserDefaults!
 
     override func setUp() {
         super.setUp()
         errorEvents = []
+
+        // Create unique UserDefaults per test for isolation
+        let suiteName = "SubscriptionTokenKeychainStorageV2Tests-\(UUID().uuidString)"
+        testUserDefaults = UserDefaults(suiteName: suiteName)!
+        testUserDefaults.removePersistentDomain(forName: suiteName)
+
         mockKeychain = KeychainOperationsMock()
         let keychainManager = KeychainManager(keychainOperations: mockKeychain,
                                               attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: .dataProtection(.unspecified)),
                                               pixelHandler: MockPixelHandler())
-        storage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager, errorEventsHandler: { [weak self] type, error in
+        storage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager,
+                                                     userDefaults: testUserDefaults,
+                                                     errorEventsHandler: { [weak self] type, error in
             self?.errorEventsQueue.async(flags: .barrier) {
                 self?.errorEvents.append((type, error))
             }
@@ -48,6 +57,7 @@ final class SubscriptionTokenKeychainStorageV2Tests: XCTestCase {
         storage = nil
         mockKeychain = nil
         errorEvents = []
+        testUserDefaults = nil
         super.tearDown()
     }
 
@@ -223,15 +233,25 @@ final class SubscriptionTokenKeychainStorageV2Tests: XCTestCase {
         let mockKeychain2 = KeychainOperationsMock()
         let mockKeychain3 = KeychainOperationsMock()
 
+        let userDefaults1 = UserDefaults(suiteName: "SubscriptionTokenKeychainStorageV2Tests-\(UUID().uuidString)")!
+        let userDefaults2 = UserDefaults(suiteName: "SubscriptionTokenKeychainStorageV2Tests-\(UUID().uuidString)")!
+        let userDefaults3 = UserDefaults(suiteName: "SubscriptionTokenKeychainStorageV2Tests-\(UUID().uuidString)")!
+
         let storage1 = SubscriptionTokenKeychainStorageV2(keychainManager: KeychainManager(keychainOperations: mockKeychain1,
                                                                                            attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: .dataProtection(.unspecified)),
-                                                                                           pixelHandler: MockPixelHandler()), errorEventsHandler: { _, _ in })
+                                                                                           pixelHandler: MockPixelHandler()),
+                                                          userDefaults: userDefaults1,
+                                                          errorEventsHandler: { _, _ in })
         let storage2 = SubscriptionTokenKeychainStorageV2(keychainManager: KeychainManager(keychainOperations: mockKeychain2,
                                                                                            attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: .dataProtection(.unspecified)),
-                                                                                           pixelHandler: MockPixelHandler()), errorEventsHandler: { _, _ in })
+                                                                                           pixelHandler: MockPixelHandler()),
+                                                          userDefaults: userDefaults2,
+                                                          errorEventsHandler: { _, _ in })
         let storage3 = SubscriptionTokenKeychainStorageV2(keychainManager: KeychainManager(keychainOperations: mockKeychain3,
                                                                                            attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: .dataProtection(.unspecified)),
-                                                                                           pixelHandler: MockPixelHandler()), errorEventsHandler: { _, _ in })
+                                                                                           pixelHandler: MockPixelHandler()),
+                                                          userDefaults: userDefaults3,
+                                                          errorEventsHandler: { _, _ in })
 
         let expectation = XCTestExpectation(description: "Multiple instances complete")
         expectation.expectedFulfillmentCount = 60
@@ -434,14 +454,17 @@ final class SubscriptionTokenKeychainStorageV2Tests: XCTestCase {
         var errorCount = 0
         let errorCountQueue = DispatchQueue(label: "test.error.count")
 
+        let errorHandlingUserDefaults = UserDefaults(suiteName: "SubscriptionTokenKeychainStorageV2Tests-\(UUID().uuidString)")!
+
         let storage = SubscriptionTokenKeychainStorageV2(keychainManager: KeychainManager(keychainOperations: mockKeychain,
                                                                                           attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: .dataProtection(.unspecified)),
-                                                                                          pixelHandler: MockPixelHandler()), errorEventsHandler: { _, _ in
+                                                                                          pixelHandler: MockPixelHandler()),
+                                                         userDefaults: errorHandlingUserDefaults,
+                                                         errorEventsHandler: { _, _ in
             errorCountQueue.sync {
                 errorCount += 1
             }
-        }
-        )
+        })
 
         // Make operations fail
         mockKeychain.shouldFailAdd = true

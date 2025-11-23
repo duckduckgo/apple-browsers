@@ -410,6 +410,190 @@ class HistoryCoordinatorTests: XCTestCase {
         await fulfillment(of: [removalExpectation], timeout: 1.0)
     }
 
+    // MARK: - Cookie Popup Blocked Tests
+
+    @MainActor
+    func testWhenCookiePopupBlockedIsCalled_ThenFlagIsSetAndAutoCommitted() async {
+        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
+
+        let url = URL(string: "https://example.com")!
+        historyCoordinator.addVisit(of: url)
+
+        // Reset save state after initial visit
+        historyStoringMock.saveCalled = false
+        historyStoringMock.savedHistoryEntries.removeAll()
+
+        let expectation = XCTestExpectation(description: "Changes auto-committed")
+        historyStoringMock.saveCompletion = {
+            expectation.fulfill()
+        }
+
+        historyCoordinator.cookiePopupBlocked(on: url)
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+
+        // Verify flag is set in memory
+        XCTAssertTrue(historyCoordinator.history!.first?.cookiePopupBlocked ?? false)
+        // Verify save was called
+        XCTAssertTrue(historyStoringMock.saveCalled)
+        XCTAssertTrue(historyStoringMock.savedHistoryEntries.last?.cookiePopupBlocked ?? false)
+    }
+
+    @MainActor
+    func testWhenCookiePopupBlockedIsCalledWithNonExistentURL_ThenNothingHappens() async {
+        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
+
+        let url = URL(string: "https://nonexistent.com")!
+
+        historyCoordinator.cookiePopupBlocked(on: url)
+
+        // Give time for any async operations
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        XCTAssertFalse(historyStoringMock.saveCalled)
+    }
+
+    @MainActor
+    func testWhenCookiePopupBlockedIsCalledBeforeHistoryLoaded_ThenItIsIgnored() {
+        let historyStoringMock = HistoryStoringMock()
+        historyStoringMock.cleanOldResult = nil
+        let historyCoordinator = HistoryCoordinator(historyStoring: historyStoringMock)
+
+        let url = URL(string: "https://example.com")!
+        historyCoordinator.cookiePopupBlocked(on: url)
+
+        XCTAssertFalse(historyStoringMock.saveCalled)
+    }
+
+    // MARK: - Reset Cookie Popup Blocked Tests
+
+    @MainActor
+    func testWhenResetCookiePopupBlockedIsCalled_ThenFlagsAreResetForMatchingDomains() async {
+        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
+
+        // Setup: Add visits and mark cookie popups as blocked
+        let url1 = URL(string: "https://example.com")!
+        let url2 = URL(string: "https://test.example.com")!
+        let url3 = URL(string: "https://other.com")!
+
+        historyCoordinator.addVisit(of: url1)
+        historyCoordinator.addVisit(of: url2)
+        historyCoordinator.addVisit(of: url3)
+
+        historyCoordinator.cookiePopupBlocked(on: url1)
+        historyCoordinator.cookiePopupBlocked(on: url2)
+        historyCoordinator.cookiePopupBlocked(on: url3)
+
+        // Wait for all saves to complete
+        try? await Task.sleep(nanoseconds: 200_000_000)
+
+        // Verify all are blocked
+        XCTAssertTrue(historyCoordinator.history!.first(where: { $0.url == url1 })?.cookiePopupBlocked ?? false)
+        XCTAssertTrue(historyCoordinator.history!.first(where: { $0.url == url2 })?.cookiePopupBlocked ?? false)
+        XCTAssertTrue(historyCoordinator.history!.first(where: { $0.url == url3 })?.cookiePopupBlocked ?? false)
+
+        // Reset: Clear flags for example.com domain
+        let resetExpectation = XCTestExpectation(description: "Flags reset")
+        historyCoordinator.resetCookiePopupBlocked(for: ["example.com"], tld: TLD()) {
+            resetExpectation.fulfill()
+        }
+
+        await fulfillment(of: [resetExpectation], timeout: 1.0)
+
+        // Verify: example.com and test.example.com should be reset, other.com should remain
+        let entry1 = historyCoordinator.history!.first(where: { $0.url == url1 })
+        let entry2 = historyCoordinator.history!.first(where: { $0.url == url2 })
+        let entry3 = historyCoordinator.history!.first(where: { $0.url == url3 })
+
+        XCTAssertFalse(entry1?.cookiePopupBlocked ?? true, "example.com should be reset")
+        XCTAssertFalse(entry2?.cookiePopupBlocked ?? true, "test.example.com should be reset")
+        XCTAssertTrue(entry3?.cookiePopupBlocked ?? false, "other.com should remain blocked")
+    }
+
+    @MainActor
+    func testWhenResetCookiePopupBlockedIsCalledWithEmptyDomains_ThenNoChanges() async {
+        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
+
+        let url = URL(string: "https://example.com")!
+        historyCoordinator.addVisit(of: url)
+        historyCoordinator.cookiePopupBlocked(on: url)
+
+        // Wait for save
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        let initialSaveCount = historyStoringMock.savedHistoryEntries.count
+
+        let resetExpectation = XCTestExpectation(description: "Reset called")
+        historyCoordinator.resetCookiePopupBlocked(for: [], tld: TLD()) {
+            resetExpectation.fulfill()
+        }
+
+        await fulfillment(of: [resetExpectation], timeout: 1.0)
+
+        // No additional saves should have occurred
+        XCTAssertEqual(historyStoringMock.savedHistoryEntries.count, initialSaveCount)
+
+        // Flag should still be set
+        XCTAssertTrue(historyCoordinator.history!.first?.cookiePopupBlocked ?? false)
+    }
+
+    @MainActor
+    func testWhenResetCookiePopupBlockedIsCalledBeforeHistoryLoaded_ThenItReturnsImmediately() {
+        let historyStoringMock = HistoryStoringMock()
+        historyStoringMock.cleanOldResult = nil
+        let historyCoordinator = HistoryCoordinator(historyStoring: historyStoringMock)
+
+        let completionExpectation = XCTestExpectation(description: "Completion called")
+        historyCoordinator.resetCookiePopupBlocked(for: ["example.com"], tld: TLD()) {
+            completionExpectation.fulfill()
+        }
+
+        wait(for: [completionExpectation], timeout: 0.1)
+        XCTAssertFalse(historyStoringMock.saveCalled)
+    }
+
+    @MainActor
+    func testWhenResetCookiePopupBlockedIsCalled_ThenOnlyMatchingDomainsAreAffected() async {
+        let (_, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
+
+        // Create various URLs to test eTLD+1 matching
+        let urls = [
+            URL(string: "https://example.com")!,
+            URL(string: "https://www.example.com")!,
+            URL(string: "https://subdomain.example.com")!,
+            URL(string: "https://another.com")!,
+            URL(string: "https://test.org")!
+        ]
+
+        // Add visits and block all
+        for url in urls {
+            historyCoordinator.addVisit(of: url)
+            historyCoordinator.cookiePopupBlocked(on: url)
+        }
+
+        // Wait for saves
+        try? await Task.sleep(nanoseconds: 200_000_000)
+
+        // Reset only example.com and test.org
+        let resetExpectation = XCTestExpectation(description: "Reset completed")
+        historyCoordinator.resetCookiePopupBlocked(for: ["example.com", "test.org"], tld: TLD()) {
+            resetExpectation.fulfill()
+        }
+
+        await fulfillment(of: [resetExpectation], timeout: 1.0)
+
+        // Verify results
+        let results = urls.map { url in
+            historyCoordinator.history!.first(where: { $0.url == url })?.cookiePopupBlocked ?? false
+        }
+
+        XCTAssertFalse(results[0], "example.com should be reset")
+        XCTAssertFalse(results[1], "www.example.com should be reset (same eTLD+1)")
+        XCTAssertFalse(results[2], "subdomain.example.com should be reset (same eTLD+1)")
+        XCTAssertTrue(results[3], "another.com should remain blocked")
+        XCTAssertFalse(results[4], "test.org should be reset")
+    }
+
 }
 
 fileprivate extension HistoryCoordinator {

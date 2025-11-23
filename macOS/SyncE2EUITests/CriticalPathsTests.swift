@@ -220,6 +220,12 @@ final class CriticalPathsTests: XCTestCase {
         // Add Login
         addLogin()
 
+        // Add Credit Card
+        addCreditCard()
+
+        // Add Identity
+        addIdentity()
+
         // Copy code to clipboard
         copyToClipboard(code: code)
 
@@ -264,6 +270,12 @@ final class CriticalPathsTests: XCTestCase {
 
         // Check Logins
         checkLogins()
+
+        // Check Credit Cards
+        checkCreditCards()
+
+        // Check Identities
+        checkIdentities()
 
         // Switch Unified Favorite back off
         app.typeKey(",", modifierFlags: [.command])
@@ -343,6 +355,56 @@ final class CriticalPathsTests: XCTestCase {
         bookmarksWindow.popovers.buttons["Save"].click()
     }
 
+    private func addCreditCard() {
+        let bookmarksWindow = app.windows["Bookmarks"]
+        bookmarksWindow.buttons["NavigationBarViewController.optionsButton"].click()
+        bookmarksWindow.menuItems["MoreOptionsMenu.autofill"].click()
+        let autofillPopover = bookmarksWindow.popovers
+        autofillPopover.buttons["add item"].click()
+        autofillPopover.menuItems["createNewCreditCard"].click()
+
+        let titleField = bookmarksWindow.popovers.textFields["Title TextField"]
+        titleField.click()
+        titleField.typeText("Test Credit Card")
+
+        let cardNumberField = bookmarksWindow.popovers.textFields["Card Number TextField"]
+        cardNumberField.click()
+        cardNumberField.typeText("4111111111111111")
+
+        let cardholderField = bookmarksWindow.popovers.textFields["Cardholder Name TextField"]
+        cardholderField.click()
+        cardholderField.typeText("Dax Duck")
+
+        let securityCodeField = bookmarksWindow.popovers.textFields["Security Code TextField"]
+        securityCodeField.click()
+        securityCodeField.typeText("123")
+
+        autofillPopover.buttons["Save"].click()
+    }
+
+    private func addIdentity() {
+        let bookmarksWindow = app.windows["Bookmarks"]
+        bookmarksWindow.buttons["NavigationBarViewController.optionsButton"].click()
+        bookmarksWindow.menuItems["MoreOptionsMenu.autofill"].click()
+        let autofillPopover = bookmarksWindow.popovers
+        autofillPopover.buttons["add item"].click()
+        autofillPopover.menuItems["createNewIdentity"].click()
+
+        let titleField = bookmarksWindow.popovers.textFields["Title TextField"]
+        titleField.click()
+        titleField.typeText("Home Address")
+
+        let firstNameField = bookmarksWindow.popovers.textFields["FirstName TextField"]
+        firstNameField.click()
+        firstNameField.typeText("Dax")
+
+        let lastNameField = bookmarksWindow.popovers.textFields["LastName TextField"]
+        lastNameField.click()
+        lastNameField.typeText("Ducky")
+
+        autofillPopover.buttons["Save"].click()
+    }
+
     private func checkFavoriteNonUnified() {
         app.typeKey("t", modifierFlags: [.command])
         let newTabPage = app.windows["New Tab"]
@@ -394,11 +456,42 @@ final class CriticalPathsTests: XCTestCase {
     private func checkLogins() {
         let currentWindow = app.windows.firstMatch
         app.buttons["NavigationBarViewController.optionsButton"].click()
-        app.menuItems["MoreOptionsMenu.autofill"].click()
+        let passwordsItem = app.menuItems["LoginsSubMenu.passwords"]
+        XCTAssertTrue(passwordsItem.waitForExistence(timeout: 5))
+        passwordsItem.click()
         let elementsQuery = currentWindow.popovers.scrollViews.otherElements
         elementsQuery.buttons["Dax Login, daxthetest"].click()
         elementsQuery.buttons["Github, githubusername"].click()
         elementsQuery.buttons["mywebsite.com, mywebsite"].click()
         elementsQuery.buttons["StackOverflow, stacker"].click()
+        app.typeKey(XCUIKeyboardKey.escape.rawValue, modifierFlags: [])
+    }
+
+    private func checkCreditCards() {
+        let currentWindow = app.windows.firstMatch
+        app.buttons["NavigationBarViewController.optionsButton"].click()
+        let creditCardsItem = app.menuItems["LoginsSubMenu.creditCards"]
+        XCTAssertTrue(creditCardsItem.waitForExistence(timeout: 5))
+        creditCardsItem.click()
+        let elementsQuery = currentWindow.popovers.scrollViews.otherElements
+        elementsQuery.buttons["Test Credit Card, Visa (1111)"].click()
+        elementsQuery.buttons["Credit card, MasterCard (1308)"].click()
+        elementsQuery.buttons["Debit card, Visa (4242)"].click()
+        app.typeKey(XCUIKeyboardKey.escape.rawValue, modifierFlags: [])
+    }
+
+    private func checkIdentities() {
+        let currentWindow = app.windows.firstMatch
+        app.buttons["NavigationBarViewController.optionsButton"].click()
+        let identitiesMenuItem = app.menuItems["LoginsSubMenu.identities"]
+        XCTAssertTrue(identitiesMenuItem.waitForExistence(timeout: 5))
+        identitiesMenuItem.click()
+
+        let elementsQuery = currentWindow.popovers.scrollViews.otherElements
+        elementsQuery.buttons["Company, Wile Coyote"].click()
+        elementsQuery.buttons["Junior, Ben Coyote"].click()
+        elementsQuery.buttons["Personal, Wile Coyote"].click()
+        elementsQuery.buttons["Home Address, Dax Ducky"].click()
+        app.typeKey(XCUIKeyboardKey.escape.rawValue, modifierFlags: [])
     }
 }

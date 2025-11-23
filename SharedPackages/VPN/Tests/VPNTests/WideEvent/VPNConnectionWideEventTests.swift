@@ -55,6 +55,7 @@ final class VPNConnectionWideEventTests: XCTestCase {
         XCTAssertEqual(parameters["feature.name"], "vpn-connection")
         XCTAssertEqual(parameters["feature.data.ext.extension_type"], "system")
         XCTAssertEqual(parameters["feature.data.ext.startup_method"], "manual_by_main_app")
+        XCTAssertEqual(parameters["feature.data.ext.is_setup"], "false")
 
         // Have all per step latencies
         XCTAssertEqual(parameters["feature.data.ext.latency_ms"], "10000")
@@ -99,6 +100,7 @@ final class VPNConnectionWideEventTests: XCTestCase {
         XCTAssertEqual(parameters["feature.name"], "vpn-connection")
         XCTAssertEqual(parameters["feature.data.ext.extension_type"], "app")
         XCTAssertEqual(parameters["feature.data.ext.startup_method"], "manual_by_main_app")
+        XCTAssertEqual(parameters["feature.data.ext.is_setup"], "false")
 
         // Have partial latencies
         XCTAssertEqual(parameters["feature.data.ext.controller_start_latency_ms"], "1000")
@@ -369,7 +371,7 @@ final class VPNConnectionWideEventTests: XCTestCase {
         let eventData = VPNConnectionWideEventData(
             extensionType: .app,
             startupMethod: .manualByMainApp,
-            contextData: WideEventContextData(name: "funnel_ios_appsettings")
+            contextData: WideEventContextData(name: "Text-Context")
         )
 
         // Create deep nested underlying errors

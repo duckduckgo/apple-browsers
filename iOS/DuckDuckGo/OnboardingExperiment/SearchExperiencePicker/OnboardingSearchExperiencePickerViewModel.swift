@@ -38,4 +38,8 @@ final class OnboardingSearchExperiencePickerViewModel: ObservableObject {
     init(searchExperienceProvider: OnboardingSearchExperienceProvider = OnboardingSearchExperience()) {
         self.searchExperienceProvider = searchExperienceProvider
     }
+    
+    func confirmChoice() {
+        searchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoice(enable: isSearchAndAIChatEnabled.wrappedValue)
+    }
 }

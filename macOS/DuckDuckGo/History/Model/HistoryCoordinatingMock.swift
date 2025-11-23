@@ -105,6 +105,23 @@ public final class HistoryCoordinatingMock: HistoryCoordinating, HistoryDataSour
         trackerFoundCalled = true
     }
 
+    public var cookiePopupBlockedCalled = false
+    public func cookiePopupBlocked(on: URL) {
+        cookiePopupBlockedCalled = true
+    }
+
+    public var resetCookiePopupBlockedCalled = false
+    public var resetCookiePopupBlockedDomains: Set<String>?
+    public var resetCookiePopupBlockedTLD: Common.TLD?
+    public func resetCookiePopupBlocked(for domains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor () -> Void) {
+        resetCookiePopupBlockedCalled = true
+        resetCookiePopupBlockedDomains = domains
+        resetCookiePopupBlockedTLD = tld
+        MainActor.assumeMainThread {
+            completion()
+        }
+    }
+
     public var removeUrlEntryCalled = false
     public func removeUrlEntry(_ url: URL, completion: (@MainActor ((any Error)?) -> Void)?) {
         removeUrlEntryCalled = true

@@ -53,7 +53,7 @@ struct TitleDisplayPolicyTests {
         #expect(policy.mustSkipDisplayingTitle(title: title, url: url, previousURL: previousURL) == false)
     }
 
-    // MARK: - Title Transitionss
+    // MARK: - Title Transitions
 
     @Test
     func testTitleTransitionAnimatesWhenTitleChanges() {

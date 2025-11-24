@@ -1056,44 +1056,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         // Then
         XCTAssertNil(result)
     }
-
-    // MARK: - Free Trials
-
-    func testGetSubscriptionOptions_FreeTrialOptionsAvailable_ReturnsFreeTrialOptions() async throws {
-        // Given
-        subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
-
-        let freeTrialOptions = SubscriptionOptions(
-            platform: .macos,
-            options: [SubscriptionOption(id: "free-trial-monthly-from-store-manager", cost: SubscriptionOptionCost(displayPrice: "0 USD", recurrence: "monthly"))],
-            features: [SubscriptionFeature(name: .networkProtection)]
-        )
-
-        storePurchaseManager.freeTrialSubscriptionOptionsResult = freeTrialOptions
-        storePurchaseManager.subscriptionOptionsResult = Constants.subscriptionOptions
-
-        // When
-        let result = try await feature.getSubscriptionOptions(params: Constants.mockParams, original: Constants.mockScriptMessage)
-
-        // Then
-        let subscriptionOptionsResult = try XCTUnwrap(result as? SubscriptionOptions)
-        XCTAssertEqual(subscriptionOptionsResult, freeTrialOptions)
-    }
-
-    func testGetSubscriptionOptions_FreeTrialReturnsNil_ReturnsRegularOptions() async throws {
-        // Given
-        subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
-
-        storePurchaseManager.freeTrialSubscriptionOptionsResult = nil
-        storePurchaseManager.subscriptionOptionsResult = Constants.subscriptionOptions
-
-        // When
-        let result = try await feature.getSubscriptionOptions(params: Constants.mockParams, original: Constants.mockScriptMessage)
-
-        // Then
-        let subscriptionOptionsResult = try XCTUnwrap(result as? SubscriptionOptions)
-        XCTAssertEqual(subscriptionOptionsResult, Constants.subscriptionOptions)
-    }
 }
 
 @available(macOS 12.0, *)

@@ -101,46 +101,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         broker = nil
     }
 
-    // MARK: - Free Trials
-
-    @MainActor
-    func testGetSubscriptionOptions_AndFreeTrialOptionsAvailable_ReturnsFreeTrialOptions() async throws {
-        // Given
-        mockSubscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
-
-        let freeTrialOptions = SubscriptionOptionsV2(
-            platform: .macos,
-            options: [SubscriptionOptionV2(id: "free-trial-monthly-from-store-manager", cost: SubscriptionOptionCost(displayPrice: "0 USD", recurrence: "monthly"))],
-            availableEntitlements: [.networkProtection]
-        )
-
-        mockStorePurchaseManager.freeTrialSubscriptionOptionsResult = freeTrialOptions
-        mockStorePurchaseManager.subscriptionOptionsResult = Constants.subscriptionOptions
-
-        // When
-        let result = try await sut.getSubscriptionOptions(params: Constants.mockParams, original: Constants.mockScriptMessage)
-
-        // Then
-        let subscriptionOptionsResult = try XCTUnwrap(result as? SubscriptionOptionsV2)
-        XCTAssertEqual(subscriptionOptionsResult, freeTrialOptions)
-    }
-
-    @MainActor
-    func testGetSubscriptionOptions_FreeTrialReturnsNil_ReturnsRegularOptions() async throws {
-        // Given
-        mockSubscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
-
-        mockStorePurchaseManager.freeTrialSubscriptionOptionsResult = nil
-        mockStorePurchaseManager.subscriptionOptionsResult = Constants.subscriptionOptions
-
-        // When
-        let result = try await sut.getSubscriptionOptions(params: Constants.mockParams, original: Constants.mockScriptMessage)
-
-        // Then
-        let subscriptionOptionsResult = try XCTUnwrap(result as? SubscriptionOptionsV2)
-        XCTAssertEqual(subscriptionOptionsResult, Constants.subscriptionOptions)
-    }
-
     func testGetFeatureConfig_WhenPaidAIChatEnabled_ReturnsCorrectConfig() async throws {
         // Given
         mockSubscriptionFeatureAvailability.isPaidAIChatEnabled = true

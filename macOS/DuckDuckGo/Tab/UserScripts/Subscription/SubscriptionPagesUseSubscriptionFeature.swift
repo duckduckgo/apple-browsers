@@ -183,7 +183,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         case .appStore:
             guard #available(macOS 12.0, *) else { break }
 
-            subscriptionOptions = await freeTrialSubscriptionOptions()
+            subscriptionOptions = await subscriptionManager.storePurchaseManager().subscriptionOptions()
         case .stripe:
             switch await stripePurchaseFlow.subscriptionOptions() {
             case .success(let stripeSubscriptionOptions):
@@ -570,18 +570,5 @@ private extension SubscriptionPagesUseSubscriptionFeature {
         if freemiumDBPUserStateManager.didActivate && freemiumDBPUserStateManager.upgradeToSubscriptionTimestamp == nil {
             freemiumDBPUserStateManager.upgradeToSubscriptionTimestamp = Date()
         }
-    }
-
-    /// Retrieves free trial subscription options for App Store.
-    ///
-    /// - Returns: A `SubscriptionOptions` object containing the relevant subscription options, or nil if unavailable.
-    ///   If free trial options are unavailable, falls back to standard subscription options.
-    ///   This fallback could occur if the Free Trial offer in AppStoreConnect had an end date in the past.
-    @available(macOS 12.0, *)
-    func freeTrialSubscriptionOptions() async -> SubscriptionOptions? {
-        guard let options = await subscriptionManager.storePurchaseManager().freeTrialSubscriptionOptions() else {
-            return await subscriptionManager.storePurchaseManager().subscriptionOptions()
-        }
-        return options
     }
 }

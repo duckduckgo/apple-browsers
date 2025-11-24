@@ -7,10 +7,28 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            "errorDomain",
-            "errorCode",
-            "underlyingErrorDomain",
-            "underlyingErrorCode",
+            {
+                "key": "d",
+                "type": "string",
+                "description": "String constant representing an Apple-defined error domain (e.g., WebKitErrorDomain, NSURLErrorDomain) or VPN-specific error domain. Not free-form strings, but too large and frequently changing a set to enumerate",
+                "examples": ["WebKitErrorDomain", "NSURLErrorDomain", "SKErrorDomain", "SUSparkleErrorDomain"]
+            },
+            {
+                "key": "e",
+                "type": "integer",
+                "description": "Error code"
+            },
+            {
+                "keyPattern": "^ud[0-9]$",
+                "type": "string",
+                "description": "String constant representing an Apple-defined underlying error domain (e.g., WebKitErrorDomain, NSURLErrorDomain) or VPN-specific underlying error domain. Not free-form strings, but too large and frequently changing a set to enumerate",
+                "examples": ["WebKitErrorDomain", "NSURLErrorDomain", "SKErrorDomain"]
+            },
+            {
+                "keyPattern": "^ue[0-9]$",
+                "type": "integer",
+                "description": "Underlying error code"
+            },
             {
                 "key": "reason",
                 "description": "The reason string provided by the Sparkle framework, e.g. \"The update is improperly signed and could not be validated.\"",

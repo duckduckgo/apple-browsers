@@ -8,23 +8,25 @@
         "parameters": [
             {
                 "key": "e",
-                "type": "string",
+                "type": "integer",
                 "description": "Error code"
             },
             {
                 "key": "d",
                 "type": "string",
-                "description": "Error domain"
+                "description": "String constant representing an Apple-defined error domain (e.g., WebKitErrorDomain, NSURLErrorDomain) or VPN-specific error domain. Not free-form strings, but too large and frequently changing a set to enumerate",
+                "examples": ["WebKitErrorDomain", "NSURLErrorDomain", "SKErrorDomain"]
             },
             {
-                "key": "ueX",
-                "type": "string",
-                "description": "Underlying error code (x is depth)"
+                "keyPattern": "^ue[0-9]$",
+                "type": "integer",
+                "description": "Underlying error code"
             },
             {
-                "key": "udX",
+                "keyPattern": "^ud[0-9]$",
                 "type": "string",
-                "description": "Underlying error domain (x is depth)"
+                "description": "String constant representing an Apple-defined underlying error domain (e.g., WebKitErrorDomain, NSURLErrorDomain) or VPN-specific underlying error domain. Not free-form strings, but too large and frequently changing a set to enumerate",
+                "examples": ["WebKitErrorDomain", "NSURLErrorDomain", "SKErrorDomain"]
             },
             "appVersion",
             "pixelSource"
@@ -35,6 +37,31 @@
         "owners": ["diegoreymendez"],
         "triggers": ["other"],
         "suffixes": ["legacy_daily_count"],
-        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "d",
+                "type": "string",
+                "description": "String constant representing an Apple-defined error domain (e.g., WebKitErrorDomain, NSURLErrorDomain) or VPN-specific error domain. Not free-form strings, but too large and frequently changing a set to enumerate",
+                "examples": ["WebKitErrorDomain", "NSURLErrorDomain", "SKErrorDomain"]
+            },
+            {
+                "key": "e",
+                "type": "integer",
+                "description": "Error code"
+            },
+            {
+                "keyPattern": "^ud[0-9]$",
+                "type": "string",
+                "description": "String constant representing an Apple-defined underlying error domain (e.g., WebKitErrorDomain, NSURLErrorDomain) or VPN-specific underlying error domain. Not free-form strings, but too large and frequently changing a set to enumerate",
+                "examples": ["WebKitErrorDomain", "NSURLErrorDomain", "SKErrorDomain"]
+            },
+            {
+                "keyPattern": "^ue[0-9]$",
+                "type": "integer",
+                "description": "Underlying error code"
+            }
+        ]
     }
 }

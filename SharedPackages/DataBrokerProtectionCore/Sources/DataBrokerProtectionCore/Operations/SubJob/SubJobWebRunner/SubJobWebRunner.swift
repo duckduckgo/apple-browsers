@@ -77,7 +77,12 @@ public extension SubJobWebRunning {
 
     func evaluateActionAndHaltIfNeeded(_ action: Action) async -> Bool {
         if !stageCalculator.isRetrying {
-            retriesCountOnError = 3
+            if let stepType = actionsHandler?.stepType,
+               stepType == .optOut {
+                retriesCountOnError = 1
+            } else {
+                retriesCountOnError = 0 // Default to zero because retrying is expensive and in most cases doesn't improve results
+            }
         }
 
         return false

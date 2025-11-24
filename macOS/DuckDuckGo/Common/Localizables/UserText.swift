@@ -1321,7 +1321,7 @@ struct UserText {
         return String(format: localized, source.importSourceName)
     }
 
-    static let importSummaryViewDetails = NSLocalizedString("import.summary.view.details", value: "View details", comment: "View more detailed information about a recent data import.")
+    static let importSummaryViewDetails = NSLocalizedString("import.summary.view.details", value: "Details...", comment: "View more detailed information about a recent data import.")
     static let importSummaryDetailsPasswordsTitle = NSLocalizedString("import.summary.details.passwords.title", value: "Password Import Details", comment: "Title for the passwords import summary details screen")
     static let importSummaryDetailsTotalPasswordsImported = NSLocalizedString("import.summary.details.total.passwords.imported", value: "Total Passwords Imported:", comment: "Title for the total number of passwords imported")
 

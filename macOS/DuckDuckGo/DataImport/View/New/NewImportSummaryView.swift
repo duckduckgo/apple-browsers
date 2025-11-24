@@ -103,15 +103,10 @@ struct NewImportSummaryView: View {
                 Spacer()
 
                 if item.type == .passwords {
-                    Button(action: {
+                    Button(UserText.importSummaryViewDetails) {
                         onShowDetail?(item.type)
-                    }) {
-                        Image(nsImage: DesignSystemImages.Glyphs.Size16.info)
-                            .frame(width: 16, height: 16)
-                            .padding(.leading, 12)
                     }
-                    .buttonStyle(PlainButtonStyle())
-                    .tooltip(UserText.importSummaryViewDetails)
+                    .buttonStyle(.bordered)
                 }
             }
         }

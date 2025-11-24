@@ -287,7 +287,7 @@
 "sync.with.another.device.footer" = "Verileriniz uçtan uca şifrelenir ve DuckDuckGo'nun şifreleme anahtarına erişimi yoktur.";
 
 /* Message for syncing with another device */
-"sync.with.another.device.message" = "Yer işaretlerini ve otomatik doldurma verilerini cihazlarınız arasında güvenli bir şekilde senkronize edin.";
+"sync.with.another.device.message" = "Yer imlerini ve parolaları cihazlarınız arasında güvenli bir şekilde senkronize edin.";
 
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Senkronizasyonu Başlat";

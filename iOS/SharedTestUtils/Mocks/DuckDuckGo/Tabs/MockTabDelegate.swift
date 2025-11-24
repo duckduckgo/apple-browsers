@@ -74,7 +74,7 @@ final class MockTabDelegate: TabDelegate {
 
     func tabDidRequestDownloads(tab: DuckDuckGo.TabViewController) {}
 
-    func tab(_ tab: DuckDuckGo.TabViewController, didRequestAutofillLogins account: BrowserServicesKit.SecureVaultModels.WebsiteAccount?, source: DuckDuckGo.AutofillSettingsSource) {}
+    func tab(_ tab: DuckDuckGo.TabViewController, didRequestAutofillLogins account: BrowserServicesKit.SecureVaultModels.WebsiteAccount?, source: DuckDuckGo.AutofillSettingsSource, extensionPromotionManager: (any DuckDuckGo.AutofillExtensionPromotionManaging)?) {}
 
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestDataImport source: DuckDuckGo.DataImportViewModel.ImportScreen, onFinished: @escaping () -> Void, onCancelled: @escaping () -> Void) {}
 

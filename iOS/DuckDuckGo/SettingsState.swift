@@ -89,6 +89,7 @@ struct SettingsState {
     var activeWebsiteCreditCard: SecureVaultModels.CreditCard?
     var autofillSource: AutofillSettingsSource?
     var showCreditCardManagement: Bool
+    var showSettingsScreen: AutofillSettingsDestination?
 
     // About properties
     var version: String

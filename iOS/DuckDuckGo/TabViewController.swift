@@ -147,6 +147,7 @@ class TabViewController: UIViewController {
     private lazy var autofillNeverPromptWebsitesManager = AppDependencyProvider.shared.autofillNeverPromptWebsitesManager
     private lazy var autofillWebsiteAccountMatcher = AutofillWebsiteAccountMatcher(autofillUrlMatcher: AutofillDomainNameUrlMatcher(),
                                                                                    tld: TabViewController.tld)
+    private(set) lazy var extensionPromotionManager: AutofillExtensionPromotionManaging = AutofillExtensionPromotionManager(keyValueStore: keyValueStore)
     private(set) var tabModel: Tab
     private(set) var privacyInfo: PrivacyInfo?
     private var previousPrivacyInfosByURL: [URL: PrivacyInfo] = [:]
@@ -210,6 +211,7 @@ class TabViewController: UIViewController {
     // Required to determine whether to show credit card prompt or keyboard accessory
     private var fillCreditCardsPromptIsPresenting: Bool = false
     private var shouldShowCreditCardPrompt: Bool = true
+    private var shouldShowAutofillExtensionPrompt: Bool = false
 
     private var cachedRuntimeConfigurationForDomain: [String: String?] = [:]
 
@@ -335,15 +337,17 @@ class TabViewController: UIViewController {
                                                       tld: AppDependencyProvider.shared.storageCache.tld)
     }()
 
-    private static let debugEvents = EventMapping<AMPProtectionDebugEvents> { event, _, _, onComplete in
+    private static let debugEvents = EventMapping<AMPProtectionDebugEvents> { event, _, params, onComplete in
         let domainEvent: Pixel.Event
         switch event {
         case .ampBlockingRulesCompilationFailed:
             domainEvent = .ampBlockingRulesCompilationFailed
-            Pixel.fire(pixel: domainEvent,
-                       withAdditionalParameters: [:],
-                       onComplete: onComplete)
+        case .ampKeywordDetectionPerformance:
+            domainEvent = .ampKeywordDetectionPerformance
         }
+        Pixel.fire(pixel: domainEvent,
+                   withAdditionalParameters: params ?? [:],
+                   onComplete: onComplete)
     }
     
     private lazy var linkProtection: LinkProtection = {
@@ -1867,11 +1871,17 @@ extension TabViewController: WKNavigationDelegate {
                                                     currentURL: url,
                                                     isAutofillEnabled: AutofillSettingStatus.isAutofillEnabledInSettings,
                                                     saveLoginPromptLastDismissed: saveLoginPromptLastDismissed,
-                                                    saveLoginPromptIsPresenting: saveLoginPromptIsPresenting) ?? false {
-
+                                                    saveLoginPromptIsPresenting: saveLoginPromptIsPresenting,
+                                                    shouldShowAutofillExtensionPrompt: shouldShowAutofillExtensionPrompt) ?? false {
+            if shouldShowAutofillExtensionPrompt {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                    self?.presentAutofillExtensionPrompt()
+                }
+            }
             detectedLoginURL = nil
             saveLoginPromptLastDismissed = nil
             saveLoginPromptIsPresenting = false
+            shouldShowAutofillExtensionPrompt = false
         }
     }
 
@@ -2332,7 +2342,7 @@ extension TabViewController: WKNavigationDelegate {
     }
     
     private func showLoginDetails(with account: SecureVaultModels.WebsiteAccount, source: AutofillSettingsSource) {
-        delegate?.tab(self, didRequestAutofillLogins: account, source: source)
+        delegate?.tab(self, didRequestAutofillLogins: account, source: source, extensionPromotionManager: extensionPromotionManager)
     }
     
     @objc private func dismissLoginDetails() {
@@ -3401,10 +3411,25 @@ extension TabViewController: SecureVaultManagerDelegate {
 
         var responseSent: Bool = false
 
-        let sendResponse: (SecureVaultModels.WebsiteAccount?) -> Void = { account in
+        let sendResponse: (SecureVaultModels.WebsiteAccount?) -> Void = { [weak self] account in
             guard !responseSent else { return }
             responseSent = true
             completionHandler(account)
+
+            if account != nil {
+                self?.extensionPromotionManager.shouldShowPromotion(for: .browser, totalCredentialsCount: nil, completion: { [weak self] shouldShow in
+                    if shouldShow {
+                        self?.shouldShowAutofillExtensionPrompt = true
+                        self?.detectedLoginURL = self?.webView.url
+                    } else {
+                        self?.shouldShowAutofillExtensionPrompt = false
+                        self?.detectedLoginURL = nil
+                    }
+                })
+            } else {
+                self?.shouldShowAutofillExtensionPrompt = false
+                self?.detectedLoginURL = nil
+            }
         }
 
         let autofillPromptViewController = AutofillLoginPromptViewController(accounts: accountMatches,
@@ -3490,6 +3515,37 @@ extension TabViewController: SecureVaultManagerDelegate {
         }
 
         self.present(promptViewController, animated: true, completion: nil)
+    }
+
+    func presentAutofillExtensionPrompt() {
+        guard let eTLDplus1 = storageCache.tld.eTLDplus1(url?.host), extensionPromotionManager.domainExtensionPromptLastShownOn != eTLDplus1 else {
+            return
+        }
+
+        // Ensure keyboard doesn't block prompt
+        dismissKeyboardIfPresent()
+
+        extensionPromotionManager.domainExtensionPromptLastShownOn = eTLDplus1
+
+        let promptViewController = AutofillExtensionPromptViewController(extensionPromotionManager: extensionPromotionManager) { [weak self] enableExtension in
+            if enableExtension {
+                guard let mainVC = self?.view.window?.rootViewController as? MainViewController else { return }
+                mainVC.segueToSettingsAutofillWith(account: nil, card: nil, showSettingsScreen: .extensionManagement, source: .extensionEnablePrompt)
+            }
+        }
+
+        if let presentationController = promptViewController.presentationController as? UISheetPresentationController {
+            if #available(iOS 16.0, *) {
+                presentationController.detents = [.custom(resolver: { _ in
+                    AutofillViews.loginPromptMinHeight
+                })]
+            } else {
+                presentationController.detents =  [.medium()]
+            }
+        }
+
+        self.present(promptViewController, animated: true, completion: nil)
+
     }
 
     // Used on macOS to request authentication for individual autofill items

@@ -24,34 +24,34 @@ import os.log
 import BrowserServicesKit
 
 struct DataImportViewModel {
-    
+
     typealias Source = DataImport.Source
     typealias BrowserProfileList = DataImport.BrowserProfileList
     typealias BrowserProfile = DataImport.BrowserProfile
     typealias DataType = DataImport.DataType
     typealias DataTypeSummary = DataImport.DataTypeSummary
-    
+
     @UserDefaultsWrapper(key: .homePageContinueSetUpImport, defaultValue: nil)
     var successfulImportHappened: Bool?
-    
+
     let availableImportSources: [DataImport.Source]
-    
+
     let selectableImportTypes: Set<DataType>
-    
+
     /// Browser to import data from
     let importSource: Source
     /// BrowserProfileList loader (factory method) - used
     private let loadProfiles: (ThirdPartyBrowser) -> BrowserProfileList
     /// Loaded BrowserProfileList
     let browserProfiles: BrowserProfileList?
-    
+
     typealias DataImporterFactory = @MainActor (Source, DataType?, URL, /* primaryPassword: */ String?) -> DataImporter
     /// Factory for a DataImporter for importSource
     private let dataImporterFactory: DataImporterFactory
-    
+
     /// Show a main password input dialog callback
     private let requestPrimaryPasswordCallback: @MainActor (Source) -> String?
-    
+
     /// Show Open Panel to choose CSV/HTML file
     private let openPanelCallback: @MainActor ([UTType]) -> URL?
 
@@ -60,11 +60,11 @@ struct DataImportViewModel {
     typealias ReportSenderFactory = () -> (DataImportReportModel) -> Void
     /// Factory for a DataImporter for importSource
     private let reportSenderFactory: ReportSenderFactory
-    
+
     private let onFinished: () -> Void
-    
+
     private let onCancelled: () -> Void
-    
+
     indirect enum Screen: Equatable {
         case sourceAndDataTypesPicker
         case profilePicker
@@ -72,19 +72,20 @@ struct DataImportViewModel {
         case fileImport(dataType: DataType, summary: DataImportSummary = [:])
         case archiveImport(dataTypes: Set<DataType>)
         case summary(DataImportSummary)
-        
+        case summaryDetail(DataImportSummary, DataImport.DataType)
+
         var isFileImport: Bool {
             if case .fileImport = self { true } else { false }
         }
-        
+
         var isArchiveImport: Bool {
             if case .archiveImport = self { true } else { false }
         }
-        
+
         var isProfilePicker: Bool {
             if case .profilePicker = self { true } else { false }
         }
-        
+
         var fileImportDataType: DataType? {
             switch self {
             case .fileImport(dataType: let dataType, summary: _):
@@ -96,18 +97,18 @@ struct DataImportViewModel {
     }
     /// Currently displayed screen
     private(set) var screen: Screen
-    
+
     /// selected Browser Profile (if any)
     var selectedProfile: BrowserProfile?
     /// selected Data Types to import (bookmarks/passwords)
     var selectedDataTypes: Set<DataType> = []
-    
+
     enum DataTypeSelection: Equatable {
         case all
         case single(DataType)
         case none
     }
-    
+
     var dataTypesSelection: DataTypeSelection {
         // Credit cards cannot be selected yet
         if selectedDataTypes.count == selectableImportTypes.count {
@@ -118,14 +119,14 @@ struct DataImportViewModel {
         }
         return .single(selectedDataType)
     }
-    
+
     /// data import concurrency Task launched in `initiateImport`
     /// used to cancel import and in `importProgress` to trace import progress and import completion
     private var importTask: DataImportTask?
-    
+
     /// Unique identifier for the current import task, used to trigger task observation in the view
     private(set) var importTaskId: UUID?
-    
+
     struct DataTypeImportResult: Equatable {
         let dataType: DataImport.DataType
         let result: DataImportResult<DataTypeSummary>
@@ -133,18 +134,18 @@ struct DataImportViewModel {
             self.dataType = dataType
             self.result = result
         }
-        
+
         static func == (lhs: DataTypeImportResult, rhs: DataTypeImportResult) -> Bool {
             lhs.dataType == rhs.dataType &&
             lhs.result.description == rhs.result.description
         }
     }
-    
+
     /// collected import summary for current import operation per selected import source
     private(set) var summary: [DataTypeImportResult]
-    
+
     var errors: [[DataType: any DataImportError]] = []
-    
+
     private var userReportText: String = ""
 
     var shouldHideProgressAndFooter: Bool {
@@ -166,7 +167,7 @@ struct DataImportViewModel {
     }
 
 #if DEBUG || REVIEW
-    
+
     // simulated test import failure
     struct TestImportError: DataImportError {
         enum OperationType: Int {
@@ -177,13 +178,13 @@ struct DataImportViewModel {
         var underlyingError: Error? { CocoaError(.fileReadUnknown) }
         var errorType: DataImport.ErrorType
     }
-    
+
     var testImportResults = [DataType: DataImportResult<DataTypeSummary>]()
-    
+
 #endif
-    
+
     let isPasswordManagerAutolockEnabled: Bool
-    
+
     init(importSource: Source? = nil,
          screen: Screen? = nil,
          availableImportSources: [DataImport.Source] = DataImport.Source.allCases.filter { $0.canImportData },
@@ -208,20 +209,20 @@ struct DataImportViewModel {
             return profiles?.defaultProfile != nil
         }
         let importSource = importSource ?? preferredImportSources.first(where: { availableImportSources.contains($0) }) ?? .csv
-        
+
         self.importSource = importSource
         self.loadProfiles = loadProfiles
         self.dataImporterFactory = dataImporterFactory
-        
+
         self.screen = screen ?? .sourceAndDataTypesPicker
-        
+
         self.browserProfiles = ThirdPartyBrowser.browser(for: importSource).map(loadProfiles)
         let selectedProfile = self.browserProfiles?.defaultProfile
         self.selectedProfile = selectedProfile
-        
+
         self.selectableImportTypes = importSource.supportedDataTypes.filter { selectedProfile?.hasValidProfileData(for: $0) ?? true }
         self.selectedDataTypes = selectableImportTypes
-        
+
         self.summary = summary
         self.isPasswordManagerAutolockEnabled = isPasswordManagerAutolockEnabled
         self.syncFeatureVisibility = syncFeatureVisibility
@@ -232,7 +233,7 @@ struct DataImportViewModel {
         self.onFinished = onFinished
         self.onCancelled = onCancelled
     }
-    
+
     /// Import button press (starts browser data import)
     @MainActor
     mutating func initiateImport(primaryPassword: String? = nil, fileURL: URL? = nil) {
@@ -432,9 +433,12 @@ struct DataImportViewModel {
     }
 
     mutating func goBack() {
-        // reset to initial screen
-        screen = .sourceAndDataTypesPicker
-        summary.removeAll()
+        if case .summaryDetail(let summary, let dataType) = screen {
+            screen = .summary(summary)
+        } else {
+            screen = .sourceAndDataTypesPicker
+            summary.removeAll()
+        }
     }
 
     func submitReport() {
@@ -579,6 +583,10 @@ extension DataImportViewModel {
         return nil
     }
 
+    mutating func showSummaryDetail(summary: DataImportSummary, type: DataType) {
+        self.screen = .summaryDetail(summary, type)
+    }
+
     func error(for dataType: DataType) -> (any DataImportError)? {
         if case .failure(let error) = summary.last(where: { $0.dataType == dataType })?.result {
             return error
@@ -661,12 +669,13 @@ extension DataImportViewModel {
         case submit
         case `continue`
         case sync
+        case close
 
         var isDisabled: Bool {
             switch self {
             case .initiateImport(disabled: let disabled):
                 return disabled
-            case .skip, .done, .cancel, .back, .submit, .continue, .selectFile, .sync:
+            case .skip, .done, .cancel, .back, .submit, .continue, .selectFile, .sync, .close:
                 return false
             }
         }
@@ -704,6 +713,8 @@ extension DataImportViewModel {
             case .show:
                 return .sync
             }
+        case .summaryDetail:
+            return nil
         }
     }
 
@@ -718,6 +729,8 @@ extension DataImportViewModel {
                 return summary.isEmpty ? .back : nil
             case .summary:
                 return .done
+            case .summaryDetail:
+                return .close
             }
         } else {
             return .cancel
@@ -756,7 +769,7 @@ extension DataImportViewModel {
     @MainActor
     mutating func performAction(for buttonType: ButtonType, dismiss: @escaping () -> Void) {
         switch buttonType {
-        case .back:
+        case .back, .close:
             goBack()
 
         case .initiateImport, .continue:
@@ -780,7 +793,6 @@ extension DataImportViewModel {
             self.dismiss(using: dismiss)
         case .sync:
             launchSync(using: dismiss)
-            break
         }
     }
 

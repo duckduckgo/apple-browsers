@@ -3676,6 +3676,8 @@
 		ED7478192E845D35008628A1 /* HangPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED7478172E845D35008628A1 /* HangPixel.swift */; };
 		EDCFFF822E9A61AB00ABD9F9 /* WatchdogSleepMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDCFFF812E9A61AB00ABD9F9 /* WatchdogSleepMonitor.swift */; };
 		EDCFFF832E9A61AB00ABD9F9 /* WatchdogSleepMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDCFFF812E9A61AB00ABD9F9 /* WatchdogSleepMonitor.swift */; };
+		EDD982B72EBB735E00FA281B /* DataImportSummaryDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDD982B62EBB735E00FA281B /* DataImportSummaryDetailView.swift */; };
+		EDD982B82EBB735E00FA281B /* DataImportSummaryDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDD982B62EBB735E00FA281B /* DataImportSummaryDetailView.swift */; };
 		EDDDAC2E2E8AC42B0033A783 /* WatchdogEventMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDDDAC2D2E8AC42B0033A783 /* WatchdogEventMapper.swift */; };
 		EDDDAC2F2E8AC42B0033A783 /* WatchdogEventMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDDDAC2D2E8AC42B0033A783 /* WatchdogEventMapper.swift */; };
 		EDF339172E8BFD110062E7C3 /* WatchdogEventMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EDF339142E8BFD110062E7C3 /* WatchdogEventMapperTests.swift */; };
@@ -5989,6 +5991,7 @@
 		ED4B8BD82E8C3FB100B9D9E9 /* MacWatchdogDiagnosticProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacWatchdogDiagnosticProviderTests.swift; sourceTree = "<group>"; };
 		ED7478172E845D35008628A1 /* HangPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HangPixel.swift; sourceTree = "<group>"; };
 		EDCFFF812E9A61AB00ABD9F9 /* WatchdogSleepMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchdogSleepMonitor.swift; sourceTree = "<group>"; };
+		EDD982B62EBB735E00FA281B /* DataImportSummaryDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportSummaryDetailView.swift; sourceTree = "<group>"; };
 		EDDDAC2D2E8AC42B0033A783 /* WatchdogEventMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchdogEventMapper.swift; sourceTree = "<group>"; };
 		EDF339132E8BFD110062E7C3 /* MockWatchdogDiagnosticProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockWatchdogDiagnosticProvider.swift; sourceTree = "<group>"; };
 		EDF339142E8BFD110062E7C3 /* WatchdogEventMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchdogEventMapperTests.swift; sourceTree = "<group>"; };
@@ -11592,6 +11595,7 @@
 			isa = PBXGroup;
 			children = (
 				EE4E15FB2EBCB983006D1C2D /* NewReportFeedbackView.swift */,
+				EDD982B62EBB735E00FA281B /* DataImportSummaryDetailView.swift */,
 				EE1886512EB3BA3F00A46272 /* NewImportSummaryView.swift */,
 				EE650D5D2EB112BD00B3D1D7 /* NewProfilePickerView.swift */,
 				EE72DCA92EAA7E9C0052661B /* Model */,
@@ -13419,6 +13423,7 @@
 				370270BD2C78B6D3002E44E4 /* NewTabBackgroundPixel.swift in Sources */,
 				BB7BA64C2D11FC170020B47E /* TabBarRemoteMessagePresenting.swift in Sources */,
 				370DB6E32D521D130055D988 /* NewTabPageConfigurationErrorHandler.swift in Sources */,
+				EDD982B72EBB735E00FA281B /* DataImportSummaryDetailView.swift in Sources */,
 				3706FAA3293F65D500E42796 /* CrashReportPromptViewController.swift in Sources */,
 				BD88A83F2C4F3E4300460A26 /* FeedbackCategoryProviding.swift in Sources */,
 				3706FAA4293F65D500E42796 /* ContextMenuManager.swift in Sources */,
@@ -16301,6 +16306,7 @@
 				B6A9E46B2614618A0067D1B9 /* OperatingSystemVersionExtension.swift in Sources */,
 				4BDFA4AE27BF19E500648192 /* ToggleableScrollView.swift in Sources */,
 				7B0A6DFC2D47CCDF00FDFDC2 /* ExcludedAppsViewController.swift in Sources */,
+				EDD982B82EBB735E00FA281B /* DataImportSummaryDetailView.swift in Sources */,
 				1D36F4242A3B85C50052B527 /* TabCleanupPreparer.swift in Sources */,
 				4B4D60DF2A0C875F00BCD287 /* NetworkProtectionOptionKeyExtension.swift in Sources */,
 				85AC3AEF25D5CE9800C7D2AA /* UserScripts.swift in Sources */,

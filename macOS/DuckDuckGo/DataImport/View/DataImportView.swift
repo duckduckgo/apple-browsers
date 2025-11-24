@@ -22,6 +22,7 @@ import BrowserServicesKit
 import PixelKit
 import DesignResourcesKitIcons
 import UniformTypeIdentifiers
+import SwiftUIExtensions
 
 @MainActor
 struct DataImportView: ModalView {
@@ -115,7 +116,16 @@ struct DataImportView: ModalView {
                     summary: summary,
                     sourceImage: model.importSource.importSourceImage ?? DesignSystemImages.Color.Size24.document,
                     reportModel: $model.reportModel
-                )
+                ) { type in
+                    model.showSummaryDetail(summary: summary, type: type)
+                }
+            case .summaryDetail(let summary, _):
+                // This view is currently only used for passwords
+                if let result = summary[.passwords] {
+                    DataImportSummaryDetailView(result: result)
+                } else {
+                    EmptyView()
+                }
             }
 
             // if import in progress…
@@ -360,6 +370,7 @@ extension DataImportViewModel.ButtonType {
         case .skip: .cancelAction
         case .cancel: .cancelAction
         case .back: .cancelAction
+        case .close: .cancelAction
         case .done: .cancelAction
         case .submit: .defaultAction
         case .continue: .defaultAction
@@ -398,6 +409,8 @@ extension DataImportViewModel.ButtonType {
             UserText.importDataSelectFileButtonTitle
         case .sync:
             UserText.importDataCompleteSyncButtonTitle
+        case .close:
+            UserText.close
         }
     }
 

@@ -1321,6 +1321,15 @@ struct UserText {
         return String(format: localized, source.importSourceName)
     }
 
+    static let importSummaryViewDetails = NSLocalizedString("import.summary.view.details", value: "Details...", comment: "View more detailed information about a recent data import.")
+    static let importSummaryDetailsPasswordsTitle = NSLocalizedString("import.summary.details.passwords.title", value: "Password Import Details", comment: "Title for the passwords import summary details screen")
+    static let importSummaryDetailsTotalPasswordsImported = NSLocalizedString("import.summary.details.total.passwords.imported", value: "Total Passwords Imported:", comment: "Title for the total number of passwords imported")
+
+    static let importSummaryDetailsFailedItemTitle = NSLocalizedString("import.summary.details.failed.item.title", value: "Title:", comment: "Label for Title of a failed item in the import summary details screen")
+    static let importSummaryDetailsFailedItemHost = NSLocalizedString("import.summary.details.failed.item.host", value: "Host:", comment: "Label for Host of a failed item in the import summary details screen")
+    static let importSummaryDetailsFailedItemUser = NSLocalizedString("import.summary.details.failed.item.user", value: "User:", comment: "Label for User of a failed item in the import summary details screen")
+    static let importSummaryDetailsFailedItemError = NSLocalizedString("import.summary.details.failed.item.error", value: "Error:", comment: "Label of Error of a failed item in the import summary details screen")
+
     static let importPasswordsManuallyTitle = NSLocalizedString("import.passwords.manually.title", value: "Import your passwords manually", comment: "Title for the option to manually import passwords")
     static let importBookmarksManuallyTitle = NSLocalizedString("import.bookmarks.manually.title", value: "Import your bookmarks manually", comment: "Title for the option to manually import bookmarks")
 

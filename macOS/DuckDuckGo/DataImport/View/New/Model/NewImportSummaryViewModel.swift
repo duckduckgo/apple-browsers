@@ -48,7 +48,7 @@ final class NewImportSummaryViewModel: ObservableObject {
     }
 
     struct SuccessItem: Identifiable, Equatable {
-        fileprivate var type: DataImport.DataType
+        var type: DataImport.DataType
         var id: String {
             type.rawValue
         }
@@ -101,11 +101,15 @@ final class NewImportSummaryViewModel: ObservableObject {
         }.compactMap { dataType, result in
             Self.createSummaryItem(for: dataType, result: result)
         }
-        shouldShowFeedbackView = summary.reduce(into: false) { result, element in
+
+        shouldShowFeedbackView = summary.contains { element in
             if case .failure = element.value {
-                result = true
+                return true
+            } else {
+                return false
             }
         }
+
         shouldShowSuccessImage = !shouldShowFeedbackView
         updateShortcutsState()
     }
@@ -183,8 +187,8 @@ final class NewImportSummaryViewModel: ObservableObject {
     }
 
     private static func primaryText(for dataType: DataImport.DataType, summary: DataImport.DataTypeSummary) -> String {
-        let total = summary.successful + summary.duplicate + summary.failed
-        let allImported = summary.duplicate == 0 && summary.failed == 0
+        let total = summary.successful + summary.duplicateItems.count + summary.failedItems.count
+        let allImported = summary.duplicateItems.isEmpty && summary.failedItems.isEmpty
 
         if allImported {
             switch dataType {
@@ -208,13 +212,13 @@ final class NewImportSummaryViewModel: ObservableObject {
     }
 
     private static func duplicateText(from summary: DataImport.DataTypeSummary) -> String? {
-        guard summary.duplicate > 0 else { return nil }
-        return UserText.importSummaryDuplicatesSkipped(summary.duplicate)
+        guard summary.duplicateItems.isEmpty == false else { return nil }
+        return UserText.importSummaryDuplicatesSkipped(summary.duplicateItems.count)
     }
 
     private static func failureText(from summary: DataImport.DataTypeSummary) -> String? {
-        guard summary.failed > 0 else { return nil }
-        return UserText.importSummaryFailedToImport(summary.failed)
+        guard summary.failedItems.isEmpty == false else { return nil }
+        return UserText.importSummaryFailedToImport(summary.failedItems.count)
     }
 
     private static func shortcutItem(for dataType: DataImport.DataType) -> ShortcutItem? {

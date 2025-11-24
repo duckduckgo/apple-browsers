@@ -211,8 +211,7 @@ final class MainCoordinator {
 
     private static func makeTextZoomCoordinator() -> TextZoomCoordinator {
         TextZoomCoordinator(appSettings: AppDependencyProvider.shared.appSettings,
-                            storage: TextZoomStorage(),
-                            featureFlagger: AppDependencyProvider.shared.featureFlagger)
+                            storage: TextZoomStorage()  )
     }
 
     private static func makeWebsiteDataManager(fireproofing: Fireproofing,

@@ -463,6 +463,51 @@
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Omogočite zaščito e-pošte Email Protection";
 
+/* Button title to dismiss the autofill extension activation view */
+"autofill.extension.activation.done.button.title" = "Končano";
+
+/* Title shown when the autofill extension activation succeeds */
+"autofill.extension.activation.title" = "Samodejno izpolnjevanje gesel je aktivirano.";
+
+/* Footer text describing what enabling the autofill extension does */
+"autofill.extension.footer" = "Gesla, shranjena v DuckDuckGo, uporabljajte v vseh aplikacijah v napravi.";
+
+/* Header text shown when the autofill extension is disabled */
+"autofill.extension.header.disabled" = "Samodejno izpolnjevanje v drugih aplikacijah";
+
+/* Header text shown when the autofill extension is enabled */
+"autofill.extension.header.enabled" = "Omogočeno je samodejno izpolnjevanje v drugih aplikacijah";
+
+/* Dismiss button title for the Autofill extension promotion */
+"autofill.extension.promo.button.dismiss.title" = "Nastavi pozneje v nastavitvah";
+
+/* CTA button title for the Autofill extension promotion */
+"autofill.extension.promo.button.title" = "Vklopi samodejno izpolnjevanje v drugih aplikacijah";
+
+/* Message for the Autofill extension promotion */
+"autofill.extension.promo.message" = "Uporabite DuckDuckGo za varno samodejno izpolnjevanje gesel za vse vaše aplikacije.";
+
+/* Title for the Autofill extension promotion */
+"autofill.extension.promo.title" = "Hitro se prijavite v aplikacije brez vnašanja gesel";
+
+/* Title for screen showing autofill extension settings */
+"autofill.extension.screen.title" = "Samodejno izpolnjevanje gesel v drugih aplikacijah";
+
+/* Status text when autofill extension is disabled */
+"autofill.extension.status.off" = "Vklopi";
+
+/* Status text when autofill extension is enabled */
+"autofill.extension.status.on" = "Vključeno";
+
+/* Title for autofill extension settings row */
+"autofill.extension.title" = "Samodejno izpolnjevanje v drugih aplikacijah";
+
+/* Button title that opens system settings to turn off the autofill extension */
+"autofill.extension.turn.off.button.title" = "Izklopi v sistemskih nastavitvah ...";
+
+/* Button title that triggers system prompt to turn on the autofill extension */
+"autofill.extension.turn.on.button.title" = "Vklopi ...";
+
 /* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
 "autofill.hide-card-cvv" = "Skrij CVV";
 
@@ -799,8 +844,8 @@
 /* Section header for the autofill settings screen */
 "autofill.settings.import-passwords.section-header" = "Uvozi gesla";
 
-/* Section header for the autofill settings screen */
-"autofill.settings.options.section-header" = "Možnosti";
+/* Section header for the autofill passwords options section of the settings screen */
+"autofill.settings.options.section-header" = "Možnosti gesel";
 
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Prijavite težavo s samodejnim izpolnjevanjem";

@@ -71,7 +71,8 @@ protocol TabDelegate: AnyObject {
 
     func tab(_ tab: TabViewController,
              didRequestAutofillLogins account: SecureVaultModels.WebsiteAccount?,
-             source: AutofillSettingsSource)
+             source: AutofillSettingsSource,
+             extensionPromotionManager: AutofillExtensionPromotionManaging?)
 
     func tab(_ tab: TabViewController,
              didRequestDataImport source: DataImportViewModel.ImportScreen,

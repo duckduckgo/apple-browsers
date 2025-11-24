@@ -20,6 +20,16 @@ import QuartzCore
 
 extension CABasicAnimation {
 
+    static func buildColorsAnimation(duration: TimeInterval, timingFunctionName: CAMediaTimingFunctionName = .easeInEaseOut, fromValue: [CGColor], toValue: [CGColor]) -> CABasicAnimation {
+        let keyPath = "colors"
+        let animation = CABasicAnimation(keyPath: keyPath)
+        animation.fromValue = fromValue
+        animation.toValue = toValue
+        animation.duration = duration
+        animation.timingFunction = CAMediaTimingFunction(name: timingFunctionName)
+        return animation
+    }
+
     static func buildRotationAnimation(duration: TimeInterval) -> CABasicAnimation {
         let keyPath = "transform.rotation.z"
         let animation = CABasicAnimation(keyPath: keyPath)

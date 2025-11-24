@@ -36,31 +36,6 @@ extension WKFrameInfo {
     }
 }
 
-final class MockWKNavigationAction: WKNavigationAction {
-    private let mockRequest: URLRequest
-    private let mockTargetFrame: WKFrameInfo?
-    private let mockSourceFrame: WKFrameInfo
-
-    init(request: URLRequest, targetFrame: WKFrameInfo?, sourceFrame: WKFrameInfo) {
-        self.mockRequest = request
-        self.mockTargetFrame = targetFrame
-        self.mockSourceFrame = sourceFrame
-        super.init()
-    }
-
-    override var request: URLRequest {
-        return mockRequest
-    }
-
-    override var targetFrame: WKFrameInfo? {
-        return mockTargetFrame
-    }
-
-    override var sourceFrame: WKFrameInfo {
-        return mockSourceFrame
-    }
-}
-
 @MainActor
 final class DuckPlayerTabExtensionTests: XCTestCase {
 
@@ -74,15 +49,18 @@ final class DuckPlayerTabExtensionTests: XCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
 
-        // Setup DuckPlayer with enabled mode
-        duckPlayer = DuckPlayer.mock(withMode: .enabled)
-
         // Setup preferences
-        let preferencesPersistor = DuckPlayerPreferencesPersistorMock(
-            duckPlayerMode: .enabled,
-            duckPlayerOpenInNewTab: false
+        let preferences = DuckPlayerPreferences(
+            persistor: DuckPlayerPreferencesPersistorMock(
+                duckPlayerMode: .enabled,
+                duckPlayerOpenInNewTab: false
+            ),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            internalUserDecider: MockInternalUserDecider()
         )
-        preferences = DuckPlayerPreferences(persistor: preferencesPersistor)
+
+        // Setup DuckPlayer with enabled mode
+        duckPlayer = DuckPlayer.mock(withPreferences: preferences)
 
         // Setup webView
         webView = WKWebView()
@@ -90,14 +68,13 @@ final class DuckPlayerTabExtensionTests: XCTestCase {
         // Setup tab extension
         let scriptsPublisher = PassthroughSubject<UserScripts, Never>()
         let webViewPublisher = PassthroughSubject<WKWebView, Never>()
-        let onboardingDecider = DefaultDuckPlayerOnboardingDecider()
+        let onboardingDecider = DefaultDuckPlayerOnboardingDecider(preferences: preferences)
 
         tabExtension = DuckPlayerTabExtension(
             duckPlayer: duckPlayer,
             isBurner: false,
             scriptsPublisher: scriptsPublisher.eraseToAnyPublisher(),
             webViewPublisher: webViewPublisher.eraseToAnyPublisher(),
-            preferences: preferences,
             tabsPreferences: TabsPreferences(persistor: MockTabsPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
             onboardingDecider: onboardingDecider
         )
@@ -118,7 +95,7 @@ final class DuckPlayerTabExtensionTests: XCTestCase {
 
     func testNavigatingWhenNavigatingFromDuckPlayerToSameVideo_DisablesDuckPlayerForNextVideo() async {
         // Setup
-        preferences.duckPlayerMode = .enabled
+        duckPlayer.preferences.duckPlayerMode = .enabled
 
         // Simulate navigating to DuckPlayer
         navigationAction = NavigationAction(

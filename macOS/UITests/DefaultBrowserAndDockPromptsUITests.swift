@@ -42,8 +42,8 @@ final class DefaultBrowserAndDockPromptsUITests: UITestCase {
         // Simulate conditions for user eligibility for the prompt:
         // 28 days after app install and 7 days of user inactivity
         app.simulateFreshAppInstall()
-        let promptEligibilityDate = Date().advanced(by: .days(28))
-        app.overrideCurrentDate(with: promptEligibilityDate)
+        app.advanceBy14Days()
+        app.advanceBy14Days()
 
         // Trigger the prompt
         triggerPrompt(app.inactiveUserPrompt)
@@ -59,8 +59,8 @@ final class DefaultBrowserAndDockPromptsUITests: UITestCase {
         // Simulate conditions for user eligibility for the prompt:
         // 28 days after app install and 7 days of user inactivity
         app.simulateFreshAppInstall()
-        let promptEligibilityDate = Date().advanced(by: .days(28))
-        app.overrideCurrentDate(with: promptEligibilityDate)
+        app.advanceBy14Days()
+        app.advanceBy14Days()
 
         // Trigger the prompt
         triggerPrompt(app.inactiveUserPrompt)
@@ -92,7 +92,7 @@ private extension XCUIApplication {
     enum AccessibilityIdentifiers {
         static let promptsDebugMenu = "DebugMenu.defaultBrowserAndDockPrompts"
         static let simulateFreshAppInstallMenuItem = "DefaultBrowserAndDockPromptDebugMenu.simulateFreshInstall"
-        static let overrideCurrentDateMenuItem = "DefaultBrowserAndDockPromptDebugMenu.simulateCurrentDate"
+        static let advanceBy14DaysMenuItem = "DefaultBrowserAndDockPromptDebugMenu.advanceBy14Days"
         static let inactiveUserPrompt = "DefaultBrowserAndDockPrompts.inactiveUser"
         static let confirmButton = "DefaultBrowserAndDockPrompts.inactiveUser.confirmButton"
         static let dismissButton = "DefaultBrowserAndDockPrompts.inactiveUser.dismissButton"
@@ -106,8 +106,8 @@ private extension XCUIApplication {
         promptsDebugMenu.menuItems[AccessibilityIdentifiers.simulateFreshAppInstallMenuItem]
     }
 
-    var overrideCurrentDateMenuItem: XCUIElement {
-        promptsDebugMenu.menuItems[AccessibilityIdentifiers.overrideCurrentDateMenuItem]
+    var advanceBy14DaysMenuItem: XCUIElement {
+        promptsDebugMenu.menuItems[AccessibilityIdentifiers.advanceBy14DaysMenuItem]
     }
 
     var inactiveUserPrompt: XCUIElement {
@@ -132,21 +132,8 @@ private extension XCUIApplication {
         selectMenuItem(simulateFreshAppInstallMenuItem)
     }
 
-    /// Open Debug menu -> Default Browser and Dock Prompt submenu -> Override Current Date
-    func overrideCurrentDate(with newDate: Date) {
-        selectMenuItem(overrideCurrentDateMenuItem)
-
-        let datePicker = datePickers.firstMatch
-        XCTAssertTrue(datePicker.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Date picker should exist")
-
-        let dateFormatter = DateFormatter()
-        dateFormatter.locale = Locale.current
-        dateFormatter.dateFormat = DateFormatter.dateFormat(fromTemplate: "MM/dd/yyyy", options: 0, locale: Locale.current)
-        let dateString = dateFormatter.string(from: newDate)
-
-        datePicker.click() // Ensure picker has focus
-        datePicker.typeText(dateString)
-        datePicker.typeText("\r") // Enter to confirm
+    func advanceBy14Days() {
+        selectMenuItem(advanceBy14DaysMenuItem)
     }
 
     private func selectMenuItem(_ menuItem: XCUIElement) {

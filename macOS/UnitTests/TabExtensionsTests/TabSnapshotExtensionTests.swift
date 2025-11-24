@@ -31,6 +31,7 @@ class TabSnapshotExtensionTests: XCTestCase {
     var mockTabSnapshotStore: MockTabSnapshotStore!
     var mockWebViewPublisher: PassthroughSubject<WKWebView, Never>!
     var mockContentPublisher: PassthroughSubject<Tab.TabContent, Never>!
+    var mockInteractionEventsPublisher: PassthroughSubject<WebViewInteractionEvent, Never>!
 
     override func setUp() {
         super.setUp()
@@ -39,6 +40,7 @@ class TabSnapshotExtensionTests: XCTestCase {
         mockTabSnapshotStore = MockTabSnapshotStore()
         mockWebViewPublisher = PassthroughSubject<WKWebView, Never>()
         mockContentPublisher = PassthroughSubject<Tab.TabContent, Never>()
+        mockInteractionEventsPublisher = PassthroughSubject<WebViewInteractionEvent, Never>()
 
         tabSnapshotExtension = TabSnapshotExtension(
             store: mockTabSnapshotStore,
@@ -46,6 +48,7 @@ class TabSnapshotExtensionTests: XCTestCase {
             viewSnapshotRenderer: mockViewSnapshotRenderer,
             webViewPublisher: mockWebViewPublisher.eraseToAnyPublisher(),
             contentPublisher: mockContentPublisher.eraseToAnyPublisher(),
+            interactionEventsPublisher: mockInteractionEventsPublisher.eraseToAnyPublisher(),
             isBurner: false)
     }
 
@@ -56,6 +59,7 @@ class TabSnapshotExtensionTests: XCTestCase {
         mockTabSnapshotStore = nil
         mockWebViewPublisher = nil
         mockContentPublisher = nil
+        mockInteractionEventsPublisher = nil
         super.tearDown()
     }
 
@@ -124,7 +128,7 @@ class TabSnapshotExtensionTests: XCTestCase {
 
         // Simulate user interaction with webView
         let event = NSEvent()
-        tabSnapshotExtension.webView(webView, keyDown: event)
+        mockInteractionEventsPublisher.send(.keyDown(event))
 
         // Simulate user unselected the tab and render the snapshot
         await tabSnapshotExtension.renderWebViewSnapshot()
@@ -145,7 +149,7 @@ class TabSnapshotExtensionTests: XCTestCase {
 
         // Simulate user interaction with webView
         let event = NSEvent()
-        tabSnapshotExtension.webView(webView, keyDown: event)
+        mockInteractionEventsPublisher.send(.keyDown(event))
 
         // Simulate user unselected the tab and render the snapshot
         await tabSnapshotExtension.renderWebViewSnapshot()
@@ -187,6 +191,7 @@ class TabSnapshotExtensionTests: XCTestCase {
             viewSnapshotRenderer: mockViewSnapshotRenderer,
             webViewPublisher: mockWebViewPublisher.eraseToAnyPublisher(),
             contentPublisher: mockContentPublisher.eraseToAnyPublisher(),
+            interactionEventsPublisher: mockInteractionEventsPublisher.eraseToAnyPublisher(),
             isBurner: true)
         let webView = WebView(frame: .zero, configuration: WKWebViewConfiguration())
         mockWebViewPublisher.send(webView)

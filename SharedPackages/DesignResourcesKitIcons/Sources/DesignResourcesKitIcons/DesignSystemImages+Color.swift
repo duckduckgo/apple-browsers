@@ -70,6 +70,7 @@ public extension DesignSystemImages {
             public static var globe: DesignSystemImage { .init(resource: .globeColor16) }
             public static var heart: DesignSystemImage { .init(resource: .heartColor16) }
             public static var heartGrey: DesignSystemImage { .init(resource: .heartGreyColor16) }
+            public static var hideAIGeneratedImages: DesignSystemImage { .init(resource: .imageAIBlocked16) }
             public static var history: DesignSystemImage { .init(resource: .historyColor16) }
             public static var home: DesignSystemImage { .init(resource: .homeColor16) }
             public static var hourglass: DesignSystemImage { .init(resource: .hourglassColor16) }

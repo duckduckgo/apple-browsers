@@ -81,6 +81,36 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
         bannerDismissedSubject.eraseToAnyPublisher()
     }
 
+    /// **PROMPT ORCHESTRATOR**
+    ///
+    /// Called from `MainViewController.showSetAsDefaultAndAddToDockIfNeeded()` when a window becomes key.
+    /// This is the main entry point for displaying any type of default browser/dock prompt.
+    ///
+    /// **Decision Flow:**
+    /// 1. Asks `coordinator.getPromptType()` to determine eligibility (returns nil if no prompt should show)
+    /// 2. Coordinator checks all conditions (see `DefaultBrowserAndDockPromptCoordinator.getPromptType()`)
+    /// 3. If eligible, displays the appropriate prompt type:
+    ///
+    /// **Prompt Types:**
+    /// - **`.active(.popover)`**: First-time prompt, shown once after 14 days (default) from install
+    ///   - Anchored to address bar or bookmarks bar
+    ///   - Dismissed after user interaction
+    ///   - Marks `popoverShownDate` in UserDefaults
+    ///
+    /// - **`.active(.banner)`**: Follow-up prompt, shown 14 days (default) after popover
+    ///   - Persistent bar at top of ALL windows
+    ///   - Can repeat every 14 days (default) if not permanently dismissed
+    ///   - Marks `bannerShownDate` and increments `bannerShownOccurrences`
+    ///
+    /// - **`.inactive`**: Re-engagement prompt for inactive users
+    ///   - Shown after 28 days (default) from install AND 7 days (default) of inactivity
+    ///   - Modal sheet over main window
+    ///   - Shown only once, marks `inactiveUserModalShownDate`
+    ///
+    /// **See also:**
+    /// - `DefaultBrowserAndDockPromptCoordinator.getPromptType()` - determines which prompt to show
+    /// - `DefaultBrowserAndDockPromptTypeDecider` - implements timing logic
+    /// - `getBanner()`, `showPopover()`, `showInactiveUserModal()` - create and display prompts
     func tryToShowPrompt(popoverAnchorProvider: @escaping () -> NSView?,
                          bannerViewHandler: @escaping (BannerMessageViewController) -> Void,
                          inactiveUserModalWindowProvider: @escaping () -> NSWindow?) {
@@ -117,6 +147,9 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
 
     // MARK: - Private
 
+    /// Monitors system status changes (default browser/dock status) while a prompt is shown.
+    /// If user sets default browser or adds to dock outside the prompt (e.g., via System Settings),
+    /// this automatically dismisses the prompt since it's no longer relevant.
     private func subscribeToStatusUpdates() {
         statusUpdateCancellable = statusUpdateNotifier
             .statusPublisher
@@ -125,6 +158,7 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
             .sink { [weak self] _ in
                 guard let self else { return }
 
+                // User changed status outside the prompt → record it and dismiss
                 if let currentShownPrompt {
                     self.coordinator.dismissAction(.statusUpdate(prompt: currentShownPrompt))
                 }
@@ -132,6 +166,7 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
                 dismissAllPrompts()
             }
 
+        // Poll every second to detect external status changes
         statusUpdateNotifier.startNotifyingStatus(interval: 1.0)
     }
 
@@ -153,11 +188,16 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
         showInactiveUserModal(positionedOver: window)
     }
 
+    /// Creates the banner view controller with three possible user actions.
+    /// Unlike popover, banner is NOT marked as shown until user interacts with it,
+    /// so it appears in all windows simultaneously.
     private func getBanner() -> BannerMessageViewController? {
+        // Check what we need to prompt about (default browser, dock, or both)
         guard let type = coordinator.evaluatePromptEligibility else {
             return nil
         }
 
+        // Get localized content based on prompt type
         let content = DefaultBrowserAndDockPromptContent.banner(type)
 
         /// We mark the banner as shown when it gets actioned (either dismiss or confirmation)
@@ -165,26 +205,34 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
         return BannerMessageViewController(
             message: content.message,
             image: content.icon,
+            // Primary button: "Make Default" or "Add to Dock" or both
             primaryAction: .init(
                 title: content.primaryButtonTitle,
                 action: {
+                    // Triggers system prompt and marks banner as shown
                     self.coordinator.confirmAction(for: .active(.banner))
                     self.dismissBanner()
                 }
             ),
+            // Secondary button: "Never Ask Again" (permanent dismissal)
             secondaryAction: .init(
                 title: content.secondaryButtonTitle,
                 action: {
+                    // Sets isBannerPermanentlyDismissed = true, stops all future banners
                     self.coordinator.dismissAction(.userInput(prompt: .active(.banner), shouldHidePermanently: true))
                     self.dismissBanner()
                 }
             ),
+            // Close button (X): Dismiss for now, can show again later
             closeAction: {
+                // Marks banner as shown but allows it to repeat after delay
                 self.coordinator.dismissAction(.userInput(prompt: .active(.banner), shouldHidePermanently: false))
                 self.dismissBanner()
             })
     }
 
+    /// Creates the popover view controller (first-time prompt, shown once).
+    /// Popover has only two actions: confirm or dismiss (no "Never Ask Again").
     private func createPopover(with type: DefaultBrowserAndDockPromptType) -> NSHostingController<DefaultBrowserAndDockPromptPopoverView> {
         let content = DefaultBrowserAndDockPromptContent.popover(type)
         let viewModel = DefaultBrowserAndDockPromptPopoverViewModel(
@@ -192,14 +240,18 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
             message: content.message,
             image: content.icon,
             buttonText: content.primaryButtonTitle,
+            // Primary button: "Make Default" or "Add to Dock" or both
             buttonAction: {
                 self.clearStatusUpdateData()
+                // Triggers system prompt, marks popover as shown (won't show again)
                 self.coordinator.confirmAction(for: .active(.popover))
                 self.popover?.close()
             },
             secondaryButtonText: content.secondaryButtonTitle,
+            // Secondary button: "Not Now" (dismiss, banner will follow later)
             secondaryButtonAction: {
                 self.clearStatusUpdateData()
+                // Marks popover as shown, banner sequence begins
                 self.coordinator.dismissAction(.userInput(prompt: .active(.popover), shouldHidePermanently: false))
                 self.popover?.close()
             })

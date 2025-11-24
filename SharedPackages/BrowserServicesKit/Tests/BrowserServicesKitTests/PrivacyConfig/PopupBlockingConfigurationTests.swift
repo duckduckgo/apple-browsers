@@ -214,6 +214,7 @@ final class PopupBlockingConfigurationTests: XCTestCase {
 
     // MARK: - Allowlist Tests
 
+    @MainActor
     func testWhenAllowlistIsProvided_ThenReturnsSet() {
         // GIVEN
         let config = """
@@ -244,6 +245,7 @@ final class PopupBlockingConfigurationTests: XCTestCase {
         XCTAssertEqual(popupConfig.allowlist, Set(["example.com", "test.org", "sample.net"]))
     }
 
+    @MainActor
     func testWhenAllowlistIsEmpty_ThenReturnsEmptySet() {
         // GIVEN
         let config = """
@@ -274,6 +276,7 @@ final class PopupBlockingConfigurationTests: XCTestCase {
         XCTAssertTrue(popupConfig.allowlist.isEmpty)
     }
 
+    @MainActor
     func testWhenAllowlistIsNotSet_ThenReturnsEmptySet() {
         // GIVEN
         let config = """

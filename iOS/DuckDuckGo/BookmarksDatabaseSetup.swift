@@ -64,6 +64,18 @@ struct BookmarksDatabaseSetup {
                     enhancedParams["app-group-marker-present"] = "true"
                 }
                 
+                // Check database and test file presence (temporary debugging)
+                if let appGroupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: BookmarksDatabase.Constants.bookmarksGroupID) {
+                    let dbFileURL = appGroupURL.appendingPathComponent("Bookmarks.sqlite")
+                    let testFileURL = appGroupURL.appendingPathComponent("app_group_test.txt")
+                    
+                    enhancedParams["db-file-exists"] = FileManager.default.fileExists(atPath: dbFileURL.path) ? "true" : "false"
+                    
+                    let testFileAccessible = FileManager.default.fileExists(atPath: testFileURL.path) && 
+                                           (try? String(contentsOf: testFileURL)) != nil
+                    enhancedParams["test-file-accessible"] = testFileAccessible ? "true" : "false"
+                }
+                
                 DailyPixel.fireDailyAndCount(pixel: .debugBookmarksStructureLost,
                                 withAdditionalParameters: enhancedParams)
             case .bookmarksStructureNotRecovered:

@@ -204,8 +204,18 @@
             },
             {
                 "key": "occurrence-count",
-                "description": "Number of times this structure lost event has occurred for this user (helps track if it's recurring)",
+                "description": "Number of times this structure lost event has occurred for this user (helps track if it's recurring). Capped at 5.",
                 "type": "integer"
+            },
+            {
+                "key": "db-file-exists",
+                "description": "Whether the main bookmarks database file exists in the App Group container",
+                "type": "boolean"
+            },
+            {
+                "key": "test-file-accessible",
+                "description": "Whether the App Group test file exists and is readable (validates App Group access)",
+                "type": "boolean"
             }
         ]
     },

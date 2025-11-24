@@ -100,11 +100,11 @@ struct DataImportView: ModalView {
                     selectFile: { model.selectFile() },
                     onFileDrop: { model.initiateImport(fileURL: $0) }
                 )
-            case .archiveImport:
+            case .archiveImport(_, let summary):
                 FileImportScreenView(
                     importSource: model.importSource,
                     kind: .archive,
-                    summary: nil,
+                    summary: summary,
                     isSelectFileButtonDisabled: model.isSelectFileButtonDisabled,
                     selectFile: { model.selectFile() },
                     onFileDrop: { model.initiateImport(fileURL: $0) }

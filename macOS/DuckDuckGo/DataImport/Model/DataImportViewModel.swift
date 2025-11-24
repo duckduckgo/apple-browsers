@@ -70,7 +70,7 @@ struct DataImportViewModel {
         case profilePicker
         case moreInfo
         case fileImport(dataType: DataType, summary: DataImportSummary = [:])
-        case archiveImport(dataTypes: Set<DataType>)
+        case archiveImport(dataTypes: Set<DataType>, summary: DataImportSummary? = nil)
         case summary(DataImportSummary)
         case summaryDetail(DataImportSummary, DataImport.DataType)
 
@@ -284,15 +284,15 @@ struct DataImportViewModel {
     }
 
     private var dataTypesForImport: Set<DataType> {
-        if case .archiveImport(let dataTypes) = screen {
+        if case .archiveImport(let dataTypes, _) = screen {
             return dataTypes
         }
         // are we handling file import or browser selected data types import?
         let dataType: DataType? = self.screen.fileImportDataType
         // either import only data type for file import
         let dataTypes = dataType.map { [$0] }
-            // or all the selected data types subtracting the ones that are already imported
-            ?? selectedDataTypes.subtracting(self.summary.filter { $0.result.isSuccess }.map(\.dataType))
+        // or all the selected data types subtracting the ones that are already imported
+        ?? selectedDataTypes.subtracting(self.summary.filter { $0.result.isSuccess }.map(\.dataType))
         return Set(dataTypes)
     }
 
@@ -319,9 +319,14 @@ struct DataImportViewModel {
             let sourceVersion = importSource.installedAppsMajorVersionDescription(selectedProfile: selectedProfile)
             switch result {
             case .success(let dataTypeSummary):
-                // if a data type can‘t be imported - switch to its file import displaying successful import results
-                if dataTypeSummary.isEmpty, !(screen.isFileImport && screen.fileImportDataType == dataType), nextScreen == nil {
-                    nextScreen = .fileImport(dataType: dataType, summary: summary)
+                if dataTypeSummary.isEmpty, nextScreen == nil {
+                    switch screen {
+                    case .archiveImport(let dataTypes, _):
+                        nextScreen = .archiveImport(dataTypes: dataTypes, summary: summary)
+                    default:
+                        // if a data type can‘t be imported - switch to its file import displaying successful import results
+                        nextScreen = .fileImport(dataType: dataType, summary: summary)
+                    }
                 }
 
                 PixelKit.fire(GeneralPixel.dataImportSucceeded(action: .init(dataType), source: importSource.pixelSourceParameterName, sourceVersion: sourceVersion), frequency: .dailyAndStandard)
@@ -329,9 +334,9 @@ struct DataImportViewModel {
                 // successful imports are appended above
                 self.summary.append( .init(dataType, result) )
 
-                if case .archiveImport(let dataTypes) = screen,
+                if case .archiveImport(let dataTypes, _) = screen,
                     summary.first(where: { $0.value.isSuccess }) == nil {
-                    nextScreen = .archiveImport(dataTypes: dataTypes)
+                    nextScreen = .archiveImport(dataTypes: dataTypes, summary: summary)
                 }
 
                 // show file import screen when import fails or no bookmarks|passwords found
@@ -363,14 +368,14 @@ struct DataImportViewModel {
         errors.append(summary)
         for error in summary.values {
             switch error {
-            // chromium user denied keychain prompt error
+                // chromium user denied keychain prompt error
             case let error as ChromiumLoginReader.ImportError where error.type == .userDeniedKeychainPrompt:
                 PixelKit.fire(GeneralPixel.passwordImportKeychainPromptDenied)
                 goBack()
                 // stay on the same screen
                 return true
 
-            // firefox passwords db is main-password protected: request password
+                // firefox passwords db is main-password protected: request password
             case let error as FirefoxLoginReader.ImportError where error.type == .requiresPrimaryPassword:
 
                 Logger.dataImportExport.debug("primary password required")
@@ -380,7 +385,7 @@ struct DataImportViewModel {
                 }
                 return true
 
-            // no file read permission error: user must grant permission
+                // no file read permission error: user must grant permission
             case let importError where (importError.underlyingError as? CocoaError)?.code == .fileReadNoPermission:
                 guard let error = importError.underlyingError as? CocoaError,
                       let url = error.filePath.map(URL.init(fileURLWithPath:)) ?? error.url else {
@@ -471,12 +476,12 @@ private func dataImporter(for source: DataImport.Source, fileDataType: DataImpor
     }
     return switch source {
     case .bookmarksHTML,
-         /* any */_ where fileDataType == .bookmarks:
+        /* any */_ where fileDataType == .bookmarks:
 
         BookmarkHTMLImporter(fileURL: url, bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager))
 
     case .onePassword8, .onePassword7, .bitwarden, .lastPass, .csv,
-         /* any */_ where fileDataType == .passwords:
+        /* any */_ where fileDataType == .passwords:
         CSVImporter(fileURL: url, loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()), defaultColumnPositions: .init(source: source), reporter: SecureVaultReporter.shared, tld: Application.appDelegate.tld)
 
     case .brave, .chrome, .chromium, .coccoc, .edge, .opera, .operaGX, .vivaldi:

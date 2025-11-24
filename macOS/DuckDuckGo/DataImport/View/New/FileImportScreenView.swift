@@ -18,6 +18,7 @@
 
 import SwiftUI
 import BrowserServicesKit
+import DesignResourcesKitIcons
 
 struct FileImportScreenView: View {
     let importSource: DataImport.Source
@@ -36,7 +37,7 @@ struct FileImportScreenView: View {
                         .frame(width: 48, height: 48)
                 }
 
-                if case .individual(let dataType) = kind, shouldShowErrorView(for: dataType) {
+                if case .individual(let dataType) = kind, hasError(in: summary, for: dataType) {
                     let formatText: () -> String = {
                         switch dataType {
                         case .bookmarks:
@@ -66,17 +67,34 @@ struct FileImportScreenView: View {
             .padding(.trailing, 20)
             .padding(.bottom, 20)
             .padding(.top, 20)
+
+            if case .archive = kind, hasError(in: summary) {
+                HStack {
+                    Image(nsImage: DesignSystemImages.Glyphs.Size16.exclamationRecolorable)
+                    Text(UserText.importCouldNotImportFile)
+                        .foregroundColor(Color(designSystemColor: .destructivePrimary))
+                }
+                .padding(.bottom, 20)
+            }
         }
     }
 
-    private func shouldShowErrorView(for dataType: DataImport.DataType) -> Bool {
-        switch summary?[dataType] {
-        case .success(let typeSummary) where typeSummary.successful == 0:
-            return true
-        case .failure:
-            return true
-        default:
-            return false
+    private func hasError(in summary: DataImportSummary?, for dataType: DataImport.DataType? = nil) -> Bool {
+        guard let summary else { return false }
+
+        if let dataType {
+            guard let result = summary[dataType] else { return false }
+            return !isSuccessful(result)
         }
+
+        // Archive flow: show error only if no data type imported any items
+        return !summary.values.contains(where: isSuccessful)
+    }
+
+    private func isSuccessful(_ result: DataImportResult<DataImport.DataTypeSummary>) -> Bool {
+        if case .success(let typeSummary) = result, typeSummary.successful > 0 {
+            return true
+        }
+        return false
     }
 }

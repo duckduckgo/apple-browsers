@@ -60,6 +60,7 @@ public protocol AutofillSecureVaultDelegate: AnyObject {
                             completionHandler: @escaping (SecureVaultModels.Identity?) -> Void)
     func autofillUserScriptDidRequestCreditCard(_: AutofillUserScript,
                                                 trigger: AutofillUserScript.GetTriggerType,
+                                                isMainFrame: Bool,
                                                 completionHandler: @escaping (SecureVaultModels.CreditCard?, RequestVaultDataAction) -> Void)
 
     func autofillUserScriptDidAskToUnlockCredentialsProvider(_: AutofillUserScript,
@@ -80,6 +81,7 @@ public protocol AutofillSecureVaultDelegate: AnyObject {
 
     func autofillUserScriptDidFocus(_: AutofillUserScript,
                                     mainType: AutofillUserScript.GetAutofillDataMainType,
+                                    isMainFrame: Bool,
                                     completionHandler: @escaping (SecureVaultModels.CreditCard?, RequestVaultDataAction) -> Void)
 
     func autofillUserScript(_: AutofillUserScript, didSendPixel pixel: AutofillUserScript.JSPixel)
@@ -619,7 +621,7 @@ extension AutofillUserScript {
             let messageType = request.mainType.rawValue
             registerReplyCallback(for: messageType, reply: replyHandler)
 
-            vaultDelegate?.autofillUserScriptDidRequestCreditCard(self, trigger: request.trigger) { [weak self] creditCard, action in
+            vaultDelegate?.autofillUserScriptDidRequestCreditCard(self, trigger: request.trigger, isMainFrame: message.isMainFrame) { [weak self] creditCard, action in
                 let response = RequestVaultCreditCardResponse.responseFromSecureVaultCreditCards(creditCard, action: action)
 
                 if let json = try? JSONEncoder().encode(response), let jsonString = String(data: json, encoding: .utf8) {
@@ -637,7 +639,7 @@ extension AutofillUserScript {
         let messageType = request.mainType.rawValue
         registerReplyCallback(for: messageType, reply: replyHandler)
 
-        vaultDelegate?.autofillUserScriptDidFocus(self, mainType: request.mainType) { [weak self] creditCard, action in
+        vaultDelegate?.autofillUserScriptDidFocus(self, mainType: request.mainType, isMainFrame: message.isMainFrame) { [weak self] creditCard, action in
             let response = RequestVaultCreditCardResponse.responseFromSecureVaultCreditCards(creditCard, action: action)
 
             if let json = try? JSONEncoder().encode(response), let jsonString = String(data: json, encoding: .utf8) {

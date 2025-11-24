@@ -159,14 +159,14 @@ enum Preferences {
                 case .autofill:
                     AutofillView(model: AutofillPreferencesModel())
                 case .accessibility:
-                    AccessibilityView(model: AccessibilityPreferences.shared)
+                    AccessibilityView(model: model.accessibilityPreferences)
                 case .duckPlayer:
-                    DuckPlayerView(model: .shared)
+                    DuckPlayerView(model: model.duckPlayerPreferences)
                 case .otherPlatforms:
                     // Opens a new tab
                     Spacer()
                 case .about:
-                    AboutView(model: AboutPreferences.shared)
+                    AboutView(model: model.aboutPreferences)
                 case .aiChat:
                     AIChatView(model: model.aiChatPreferences)
                 }
@@ -433,14 +433,14 @@ enum Preferences {
                 case .autofill:
                     AutofillView(model: AutofillPreferencesModel())
                 case .accessibility:
-                    AccessibilityView(model: AccessibilityPreferences.shared)
+                    AccessibilityView(model: model.accessibilityPreferences)
                 case .duckPlayer:
-                    DuckPlayerView(model: .shared)
+                    DuckPlayerView(model: model.duckPlayerPreferences)
                 case .otherPlatforms:
                     // Opens a new tab
                     Spacer()
                 case .about:
-                    AboutView(model: AboutPreferences.shared)
+                    AboutView(model: model.aboutPreferences)
                 case .aiChat:
                     AIChatView(model: model.aiChatPreferences)
                 }

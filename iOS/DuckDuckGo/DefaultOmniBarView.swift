@@ -486,7 +486,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         
         refreshButton.setImage(DesignSystemImages.Glyphs.Size24.reloadSmall, for: .normal)
 
-        aiChatLeftButton.setImage(DesignSystemImages.Glyphs.Size24.aiChatBack, for: .normal)
+        aiChatLeftButton.setImage(DesignSystemImages.Glyphs.Size24.aiChatHistory, for: .normal)
         aiChatLeftButton.isHidden = true
         DefaultOmniBarView.setUpCommonProperties(for: aiChatLeftButton)
 

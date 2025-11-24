@@ -51,37 +51,6 @@ extension NSAlert {
         return alert
     }
 
-    static func clearAllHistoryAndDataAlert() -> NSAlert {
-        let alert = NSAlert()
-        alert.messageText = UserText.clearAllDataQuestion
-        alert.informativeText = UserText.clearAllDataDescription
-        alert.alertStyle = .warning
-        alert.icon = .burnAlert
-        let clearButton = alert.addButton(withTitle: UserText.clear)
-        let cancelButton = alert.addButton(withTitle: UserText.cancel)
-        clearButton.setAccessibilityIdentifier("ClearAllHistoryAndDataAlert.clearButton")
-        cancelButton.setAccessibilityIdentifier("ClearAllHistoryAndDataAlert.cancelButton")
-        return alert
-    }
-
-    static func clearHistoryAndDataAlert(timeWindow: ClearTimeWindowHistoryMenuItem.HistoryTimeWindow) -> NSAlert {
-        let alert = NSAlert()
-        switch timeWindow {
-        case .other(date: let date):
-            let dateString = HistoryMenu.suffixFormatter.string(from: date)
-            alert.messageText = String(format: UserText.clearDataHeader, dateString)
-            alert.informativeText = UserText.clearDataDescription
-        case .today:
-            alert.messageText = String(format: UserText.clearDataTodayHeader)
-            alert.informativeText = UserText.clearDataTodayDescription
-        }
-        alert.alertStyle = .warning
-        alert.icon = .burnAlert
-        alert.addButton(withTitle: UserText.clear)
-        alert.addButton(withTitle: UserText.cancel)
-        return alert
-    }
-
     static func exportLoginsFailed() -> NSAlert {
         let alert = NSAlert()
         alert.messageText = UserText.exportLoginsFailedMessage

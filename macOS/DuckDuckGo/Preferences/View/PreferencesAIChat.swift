@@ -137,6 +137,12 @@ extension Preferences {
                             }
                         }
 
+                        if model.shouldShowSearchAndDuckAIToggleOption {
+                            ToggleMenuItem(UserText.aiChatShowSearchAndDuckAIToggleLabel,
+                                           isOn: $model.showSearchAndDuckAIToggle)
+                            .accessibilityIdentifier("Preferences.AIChat.showSearchAndDuckAIToggleToggle")
+                        }
+
                     } else {
                         ToggleMenuItem(UserText.aiChatShowInSearchBoxOnNewTabPageBarToggle,
                                        isOn: $model.showShortcutOnNewTabPage)
@@ -237,12 +243,13 @@ extension Preferences {
                     PreferencePaneSection {
                         VStack(alignment: .leading) {
                             TextAndImageMenuItemHeader(UserText.hideAIGeneratedImagesSettings,
-                                                       image: Image(nsImage: DesignSystemImages.Color.Size16.assist),
+                                                       image: Image(nsImage: DesignSystemImages.Color.Size16.hideAIGeneratedImages),
                                                        bottomPadding: 2)
 
                             TextMenuItemCaption(UserText.hideAIGeneratedImagesSettingsDescription)
                                 .padding(.bottom, 6)
                             Button {
+                                PixelKit.fire(GeneralPixel.hideAIGeneratedImagesButtonClicked, frequency: .dailyAndStandard)
                                 model.openSearchAssistSettings()
                             } label: {
                                 HStack {

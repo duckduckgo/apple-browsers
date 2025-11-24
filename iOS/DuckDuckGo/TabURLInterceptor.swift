@@ -42,10 +42,15 @@ final class TabURLInterceptorDefault: TabURLInterceptor {
     typealias CanPurchaseUpdater = () -> Bool
     private let canPurchase: CanPurchaseUpdater
     private let featureFlagger: FeatureFlagger
+    private let aichatFullModeFeature: AIChatFullModeFeatureProviding
 
-    init(featureFlagger: FeatureFlagger, canPurchase: @escaping CanPurchaseUpdater) {
+    init(featureFlagger: FeatureFlagger,
+         canPurchase: @escaping CanPurchaseUpdater,
+         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature()
+    ) {
         self.canPurchase = canPurchase
         self.featureFlagger = featureFlagger
+        self.aichatFullModeFeature = aichatFullModeFeature
     }
 
     static let interceptedURLs: [InterceptedURLInfo] = [
@@ -53,7 +58,7 @@ final class TabURLInterceptorDefault: TabURLInterceptor {
     ]
     
     func allowsNavigatingTo(url: URL) -> Bool {
-        if url.isDuckAIURL {
+        if url.isDuckAIURL && !aichatFullModeFeature.isAvailable {
             return handleURLInterception(interceptedURLType: .aiChat, interceptedURL: url)
         }
 

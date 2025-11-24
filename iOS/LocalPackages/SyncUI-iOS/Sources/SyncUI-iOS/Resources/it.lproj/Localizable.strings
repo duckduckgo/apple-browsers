@@ -287,7 +287,7 @@
 "sync.with.another.device.footer" = "I tuoi dati sono crittografati end-to-end e DuckDuckGo non ha accesso alla chiave di crittografia.";
 
 /* Message for syncing with another device */
-"sync.with.another.device.message" = "Sincronizza in modo sicuro segnalibri e dati di compilazione automatica tra i tuoi dispositivi.";
+"sync.with.another.device.message" = "Sincronizza in sicurezza i segnalibri e le password tra i tuoi dispositivi.";
 
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Inizia la sincronizzazione";

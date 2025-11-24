@@ -37,6 +37,35 @@ extension DefaultBrowserAndDockPromptTypeDecider {
             self.daysSinceInstallProvider = daysSinceInstallProvider
         }
 
+        /// **INACTIVE USER TIMING RULES**
+        ///
+        /// Implements the timing logic for inactive users (re-engagement modal).
+        /// Called by `DefaultBrowserAndDockPromptTypeDecider.promptType()` - checked BEFORE active user prompts.
+        ///
+        /// **Conditions (ALL must be true):**
+        /// 1. **Never seen before**: `!hasSeenInactiveUserModal` (shown only once, ever)
+        /// 2. **Inactive period**: User hasn't opened app for ≥7 days (default: `inactiveModalNumberOfInactiveDays`)
+        /// 3. **Install age**: App installed for ≥28 days (default: `inactiveModalNumberOfDaysSinceInstall`)
+        ///
+        /// **Inactivity Recording:**
+        /// - `DefaultBrowserAndDockPromptUserActivityManager` records activity on app launch
+        /// - Compares last activity date to current date
+        /// - See `DefaultBrowserAndDockPromptService.applicationDidBecomeActive()`
+        ///
+        /// **Feature Flag:**
+        /// - `FeatureFlag.scheduledDefaultBrowserAndDockPromptsInactiveUser` must be enabled
+        ///
+        /// **Priority:**
+        /// - This prompt has HIGHER priority than active user prompts (popover/banner)
+        /// - If conditions are met, this shows instead of popover/banner
+        ///
+        /// **Debug:**
+        /// - Use Debug menu → "SAD/ATT Prompts" → "Inactive User Modal will show: [date]" to see when eligible
+        /// - Simulating date alone won't trigger this - need actual inactivity period
+        ///
+        /// **See also:**
+        /// - `DefaultBrowserAndDockPromptUserActivityManager` - records recent app usage days
+        /// - `DefaultBrowserAndDockPromptFeatureFlagger` - timing values and feature flags
         func promptType() -> DefaultBrowserAndDockPromptPresentationType? {
             // If Feature is disabled return nil
             guard featureFlagger.isDefaultBrowserAndDockPromptForInactiveUsersFeatureEnabled else { return nil }

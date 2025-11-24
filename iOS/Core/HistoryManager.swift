@@ -116,6 +116,9 @@ class NullHistoryCoordinator: HistoryCoordinating {
     func trackerFound(on: URL) {
     }
 
+    func cookiePopupBlocked(on: URL) {
+    }
+
     func updateTitleIfNeeded(title: String, url: URL) {
     }
 
@@ -145,6 +148,10 @@ class NullHistoryCoordinator: HistoryCoordinating {
         DispatchQueue.main.asyncOrNow {
             completion()
         }
+    }
+
+    func resetCookiePopupBlocked(for domains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor () -> Void) {
+
     }
 
     func removeUrlEntry(_ url: URL, completion: (@MainActor ((any Error)?) -> Void)?) {

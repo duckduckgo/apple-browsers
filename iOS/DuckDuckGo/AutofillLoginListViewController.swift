@@ -136,7 +136,6 @@ final class AutofillLoginListViewController: UIViewController {
         return searchController
     }()
 
-
     private lazy var tableView: UITableView = {
         let tableView = UITableView(frame: .zero, style: .insetGrouped)
         tableView.delegate = self
@@ -153,6 +152,8 @@ final class AutofillLoginListViewController: UIViewController {
     // This is used to prevent the next Promo from being displayed immediately after one has been dismissed
     private var surveyPromptPresented: Bool = false
     private var importPromoPresented: Bool = false
+    private var syncPromoPresented: Bool = false
+    private var extensionPromoPresented: Bool = false
 
     private lazy var lockedViewBottomConstraint: NSLayoutConstraint = {
         NSLayoutConstraint(item: tableView,
@@ -191,13 +192,14 @@ final class AutofillLoginListViewController: UIViewController {
          source: AutofillSettingsSource,
          bookmarksDatabase: CoreDataDatabase,
          favoritesDisplayMode: FavoritesDisplayMode,
-         keyValueStore: ThrowingKeyValueStoring
+         keyValueStore: ThrowingKeyValueStoring,
+         extensionPromotionManager: AutofillExtensionPromotionManaging? = nil
     ) {
         let secureVault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
         if secureVault == nil {
             Logger.autofill.fault("Failed to make vault")
         }
-        self.viewModel = AutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: secureVault, currentTabUrl: currentTabUrl, currentTabUid: currentTabUid, syncService: syncService, keyValueStore: keyValueStore)
+        self.viewModel = AutofillLoginListViewModel(appSettings: appSettings, tld: tld, secureVault: secureVault, currentTabUrl: currentTabUrl, currentTabUid: currentTabUid, syncService: syncService, keyValueStore: keyValueStore, extensionPromotionManager: extensionPromotionManager)
         self.syncService = syncService
         self.selectedAccount = selectedAccount
         self.openSearch = openSearch
@@ -348,9 +350,13 @@ final class AutofillLoginListViewController: UIViewController {
 
     private func configureNotification() {
         addObserver(for: UIApplication.didBecomeActiveNotification, selector: #selector(appDidBecomeActiveCallback))
+        addObserversForResignActive()
+        addObserver(for: AutofillLoginListAuthenticator.Notifications.invalidateContext, selector: #selector(authenticatorInvalidateContext))
+    }
+
+    private func addObserversForResignActive() {
         addObserver(for: UIApplication.willResignActiveNotification, selector: #selector(appWillResignActiveCallback))
         addObserver(for: UIApplication.didEnterBackgroundNotification, selector: #selector(appWillResignActiveCallback))
-        addObserver(for: AutofillLoginListAuthenticator.Notifications.invalidateContext, selector: #selector(authenticatorInvalidateContext))
     }
 
     private func addObserver(for notification: Notification.Name, selector: Selector) {
@@ -445,6 +451,14 @@ final class AutofillLoginListViewController: UIViewController {
             dismiss(animated: true) {
                 mainVC.segueToSettingsSync(with: source)
             }
+        }
+    }
+
+    private func segueToExtensionManagement() {
+        if #available(iOS 18, *) {
+            let autofillExtensionSettingsViewController = AutofillExtensionSettingsViewController(source: .passwordsPromotion)
+            autofillExtensionSettingsViewController.delegate = self
+            navigationController?.pushViewController(autofillExtensionSettingsViewController, animated: true)
         }
     }
 
@@ -687,6 +701,7 @@ final class AutofillLoginListViewController: UIViewController {
         accountsCountLabel.sizeToFit()
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     private func updateTableHeaderView() {
         guard tableView.frame != .zero else {
             return
@@ -711,12 +726,30 @@ final class AutofillLoginListViewController: UIViewController {
         if viewModel.shouldShowSyncPromo(), !surveyPromptPresented, !importPromoPresented {
             if shouldUpdateHeaderView(for: .syncPromo(.passwords)) {
                 configureTableHeaderView(for: .syncPromo(.passwords))
+                syncPromoPresented = true
             }
             return
         }
 
-        // No header view is needed, clear the table header
-        clearTableHeaderView()
+        // Extension promo is lowest priority - only check if no other promos shown this session
+        if importPromoPresented || surveyPromptPresented || syncPromoPresented {
+            clearTableHeaderView()
+            return
+        }
+
+        viewModel.shouldShowExtensionPromo { [weak self] shouldShowExtensionPromo in
+            guard let self else { return }
+
+            if shouldShowExtensionPromo {
+                if self.shouldUpdateHeaderView(for: .extensionPromo) {
+                    self.configureTableHeaderView(for: .extensionPromo)
+                    self.extensionPromoPresented = true
+                }
+            } else {
+                // No extension promo needed, clear the table header if no other promos were shown
+                self.clearTableHeaderView()
+            }
+        }
     }
 
     private func shouldUpdateHeaderView(for type: AutofillHeaderViewFactory.ViewType) -> Bool {
@@ -743,6 +776,11 @@ final class AutofillLoginListViewController: UIViewController {
         case .importPromo:
             currentHeaderHostingController = headerViewFactory.makeHeaderView(for: .importPromo)
             if let hostingController = currentHeaderHostingController as? UIHostingController<ImportPromotionHeaderView> {
+                setupTableHeaderView(with: hostingController)
+            }
+        case .extensionPromo:
+            currentHeaderHostingController = headerViewFactory.makeHeaderView(for: .extensionPromo)
+            if let hostingController = currentHeaderHostingController as? UIHostingController<AutofillExtensionPromotionHeaderView> {
                 setupTableHeaderView(with: hostingController)
             }
         }
@@ -1123,6 +1161,9 @@ extension AutofillLoginListViewController: AutofillHeaderViewDelegate {
             Pixel.fire(.syncPromoConfirmed, withAdditionalParameters: ["source": touchpoint.rawValue])
         case .importPromo:
             segueToFileImport(source: DataImportViewModel.ImportScreen.promo)
+        case .extensionPromo:
+            segueToExtensionManagement()
+            Pixel.fire(pixel: .autofillExtensionPasswordsPromoConfirmed)
         }
     }
 
@@ -1138,6 +1179,23 @@ extension AutofillLoginListViewController: AutofillHeaderViewDelegate {
             viewModel.dismissSyncPromo()
         case .importPromo:
             viewModel.dismissImportPromo()
+        case .extensionPromo:
+            viewModel.dismissExtensionPromo()
+            Pixel.fire(pixel: .autofillExtensionPasswordsPromoDismissed)
+        }
+    }
+}
+
+@available(iOS 18, *)
+extension AutofillLoginListViewController: AutofillExtensionSettingsViewControllerDelegate {
+
+    func autofillExtensionSettingsViewController(_ controller: AutofillExtensionSettingsViewController, shouldDisableAuth: Bool) {
+        if shouldDisableAuth {
+            removeObserver(for: UIApplication.willResignActiveNotification)
+            removeObserver(for: UIApplication.didEnterBackgroundNotification)
+        } else {
+            addObserversForResignActive()
+            updateTableHeaderView()
         }
     }
 }

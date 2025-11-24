@@ -206,8 +206,6 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     @MainActor
     func testThatMoreOptionMenuHasTheExpectedItemsWhenFreemiumFeatureUnavailable() {
-        mockFeatureFlagger.enabledFeatureFlags = [.historyView]
-
         subscriptionManager.canPurchase = true
         subscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
         mockFreemiumDBPFeature.featureAvailable = false
@@ -255,8 +253,6 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     @MainActor
     func testThatMoreOptionMenuHasTheExpectedItemsWhenFreemiumFeatureAvailable() {
-        mockFeatureFlagger.enabledFeatureFlags = [.historyView]
-
         subscriptionManager.canPurchase = true
         subscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
         mockFreemiumDBPFeature.featureAvailable = true
@@ -580,6 +576,20 @@ final class MoreOptionsMenuTests: XCTestCase {
     @MainActor
     func testWhenTabIsDuckDuckGoThenFireproofSiteItemIsPresentAndDisabled() throws {
         let url = try XCTUnwrap("https://duckduckgo.com".url)
+        let tab = Tab(content: .url(url, source: .link))
+        tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(tabs: [tab]))
+        tabCollectionViewModel.select(at: .unpinned(0), forceChange: true)
+
+        setupMoreOptionsMenu()
+        moreOptionsMenu.update()
+
+        let fireproofingItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.fireproofSite })
+        XCTAssertFalse(fireproofingItem.isEnabled)
+    }
+
+    @MainActor
+    func testWhenTabIsDuckAiThenFireproofSiteItemIsPresentAndDisabled() throws {
+        let url = try XCTUnwrap("https://duck.ai".url)
         let tab = Tab(content: .url(url, source: .link))
         tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(tabs: [tab]))
         tabCollectionViewModel.select(at: .unpinned(0), forceChange: true)

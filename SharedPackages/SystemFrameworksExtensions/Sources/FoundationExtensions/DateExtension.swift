@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-@_exported import Foundation
+@_documentation(visibility: internal) @_exported import Foundation
 
 public extension Date {
    // Methods and types go here.

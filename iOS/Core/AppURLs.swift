@@ -43,7 +43,8 @@ public extension URL {
 
     static let settingsPath = "/settings"
     static let embeddedGeneralSERPSettings = URL(string: "\(base)\(settingsPath)?ko=-1&embedded=1#general")!
-    static let embeddedSearchAssistSettings =  URL(string: "\(base)\(settingsPath)?ko=-1&embedded=1&highlight=kbe#aifeatures")!
+    static let embeddedSearchAssistSettings =  URL(string: "\(base)\(settingsPath)?ko=-1&embedded=1&hideduckai=1&highlight=kbe#aifeatures")!
+    static let embeddedHideAIGeneratedImagesSettings =  URL(string: "\(base)\(settingsPath)?ko=-1&embedded=1&hideduckai=1&highlight=kbe#aifeatures")!
 
     static let searchSettings = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)\(settingsPath)"))!
     static let assistSettings = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)\(settingsPath)#aifeatures"))!

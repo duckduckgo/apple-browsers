@@ -289,6 +289,7 @@ private struct IssueDescriptionFormView: View {
             .multilineTextAlignment(.leading)
             .lineLimit(nil)
             .fixedSize(horizontal: false, vertical: true)
+            .tint(Color(designSystemColor: .accent))
             .environment(\.openURL, OpenURLAction { _ in
                 Task {
                     await viewModel.process(action: .reportFAQClick)

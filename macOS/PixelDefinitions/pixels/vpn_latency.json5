@@ -6,6 +6,7 @@
         "suffixes": ["legacy_daily_count"],
         "parameters": [
             "appVersion",
+            "vpnLatencyLocation",
             "pixelSource",
             {
                 "key": "location",
@@ -22,6 +23,7 @@
         "suffixes": ["legacy_daily_count"],
         "parameters": [
             "appVersion",
+            "vpnLatencyLocation",
             "pixelSource",
             {
                 "key": "location",
@@ -38,6 +40,7 @@
         "suffixes": ["legacy_daily_count"],
         "parameters": [
             "appVersion",
+            "vpnLatencyLocation",
             "pixelSource",
             {
                 "key": "location",
@@ -54,6 +57,7 @@
         "suffixes": ["legacy_daily_count"],
         "parameters": [
             "appVersion",
+            "vpnLatencyLocation",
             "pixelSource",
             {
                 "key": "location",
@@ -70,6 +74,7 @@
         "suffixes": ["legacy_daily_count"],
         "parameters": [
             "appVersion",
+            "vpnLatencyLocation",
             "pixelSource",
             {
                 "key": "location",

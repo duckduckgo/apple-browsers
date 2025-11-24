@@ -18,10 +18,11 @@
 #if DEBUG
 import Bookmarks
 import Foundation
+import AppKit
 
 final class MockThemeManager: ThemeManaging {
 
-    @Published var theme: ThemeStyleProviding = ThemeStyle.buildThemeStyle(themeName: .default)
+    @Published var theme: ThemeStyleProviding = ThemeStyle.buildThemeStyle(themeName: .default, featureFlagger: NSApp.delegateTyped.featureFlagger)
 
     var themePublisher: Published<any ThemeStyleProviding>.Publisher {
         $theme

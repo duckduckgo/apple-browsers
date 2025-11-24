@@ -287,7 +287,7 @@
 "sync.with.another.device.footer" = "Tavi dati tiek šifrēti no gala līdz galam, un DuckDuckGo nav piekļuves šifrēšanas atslēgai.";
 
 /* Message for syncing with another device */
-"sync.with.another.device.message" = "Droši sinhronizējiet grāmatzīmes un automātiski aizpildiet datus starp ierīcēm.";
+"sync.with.another.device.message" = "Droši sinhronizē grāmatzīmes un paroles starp ierīcēm.";
 
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Sinhronizācijas sākšana";

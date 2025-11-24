@@ -91,8 +91,10 @@ final class AIChatDataClearingUserScript: NSObject, Subfeature {
     private static func buildMessageOriginRules() -> [HostnameMatchingRule] {
         var rules: [HostnameMatchingRule] = []
 
-        if let ddgDomain = URL.duckDuckGo.host {
-            rules.append(.exact(hostname: ddgDomain))
+        URL.aiChatDomains.forEach { url in
+            if let host = url.host {
+                rules.append(.exact(hostname: host))
+            }
         }
 
         return rules

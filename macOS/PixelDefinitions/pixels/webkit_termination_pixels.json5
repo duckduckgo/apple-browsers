@@ -39,12 +39,12 @@
                 "examples": ["WebKitErrorDomain", "NSURLErrorDomain", "SKErrorDomain"]
             },
             {
-                "key": "ue",
+                "keyPattern": "^ue[0-9]$",
                 "type": "number",
                 "description": "Underlying error code"
             },
             {
-                "key": "ud",
+                "keyPattern": "^ud[0-9]$",
                 "type": "string",
                 "description": "String constant representing an Apple-defined underlying error domain (e.g., WebKitErrorDomain, NSURLErrorDomain) or VPN-specific underlying error domain. Not free-form strings, but too large and frequently changing a set to enumerate",
                 "examples": ["WebKitErrorDomain", "NSURLErrorDomain", "SKErrorDomain"]

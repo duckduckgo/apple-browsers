@@ -1713,8 +1713,15 @@ final class AddressBarButtonsViewController: NSViewController {
         toggleControl.backgroundColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
         toggleControl.focusedBackgroundColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
         toggleControl.selectionColor = NSColor(designSystemColor: .controlsRaisedFillPrimary)
-        toggleControl.focusBorderColor = theme.colorsProvider.accentPrimaryColor
-        toggleControl.outerBorderColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
+
+        if tabCollectionViewModel.isBurner {
+            toggleControl.focusBorderColor = NSColor.burnerAccent.withAlphaComponent(0.8)
+            toggleControl.outerBorderColor = NSColor.burnerAccent.withAlphaComponent(0.2)
+        } else {
+            toggleControl.focusBorderColor = theme.colorsProvider.accentPrimaryColor
+            toggleControl.outerBorderColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
+        }
+
         toggleControl.outerBorderWidth = 2.0
         toggleControl.selectionInnerBorderColor = NSColor(designSystemColor: .shadowSecondary)
 

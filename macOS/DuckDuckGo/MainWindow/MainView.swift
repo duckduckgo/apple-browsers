@@ -315,7 +315,7 @@ final class MainView: NSView {
 
     func updateAIChatOmnibarContainerHeight(_ height: CGFloat, animated: Bool) {
         let clampedHeight = max(Constants.aiChatOmnibarContainerMinHeight, min(height, calculateMaxAIChatOmnibarHeight()))
-        
+
         if animated {
             NSAnimationContext.runAnimationGroup { context in
                 context.duration = 0.2
@@ -331,11 +331,11 @@ final class MainView: NSView {
         guard let window = window else {
             return Constants.aiChatOmnibarContainerMinHeight
         }
-        
+
         // Calculate available height: window height - address bar height - padding
         let addressBarHeight = navigationBarContainerView.frame.height
         let availableHeight = window.frame.height - addressBarHeight - Constants.aiChatOmnibarContainerPadding
-        
+
         return max(Constants.aiChatOmnibarContainerMinHeight, availableHeight)
     }
 

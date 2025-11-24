@@ -29,7 +29,6 @@ import os.log
 import PerformanceTest
 import PixelKit
 import SwiftUI
-import UIComponents
 import VPN
 
 final class MainViewController: NSViewController {
@@ -981,7 +980,7 @@ extension MainViewController {
         // Handle Enter
         if event.keyCode == kVK_Return,
            navigationBarViewController.addressBarViewController?.addressBarTextField.isFirstResponder == true {
-            
+
             if (flags.contains(.shift) || flags.contains(.option)),
                featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
                let buttonsViewController = navigationBarViewController.addressBarViewController?.addressBarButtonsViewController {

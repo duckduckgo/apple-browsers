@@ -285,7 +285,7 @@ final class PopupHandlingTabExtension {
     /// Supports exact domain matches and wildcard eTLD+1 patterns (e.g., "*.example.com")
     private func isDomainInAllowlist(_ domain: String, allowlist: Set<String>) -> Bool {
         // Normalize: drop www prefix and lowercase for case-insensitive comparison
-        let normalizedDomain = domain.droppingWwwPrefix().lowercased()
+        let normalizedDomain = domain.lowercased().droppingWwwPrefix()
 
         // First, check for exact domain match
         if allowlist.contains(normalizedDomain) {

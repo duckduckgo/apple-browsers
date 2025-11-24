@@ -291,7 +291,7 @@ final class PopupHandlingTabExtension {
         if allowlist.contains(normalizedDomain) {
             return true
         }
-        
+
         // Then, check for wildcard eTLD+1 pattern match
         // Extract eTLD+1 from the domain and check if "*.etld+1" is in the allowlist
         if let domainETLDplus1 = tld.eTLDplus1(normalizedDomain) {
@@ -300,7 +300,7 @@ final class PopupHandlingTabExtension {
                 return true
             }
         }
-        
+
         return false
     }
 

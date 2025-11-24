@@ -24,7 +24,7 @@ public protocol PopupBlockingConfiguration {
     /// Set to 0 or negative to disable the timeout check entirely.
     /// Default: 6.0
     var userInitiatedPopupThreshold: TimeInterval { get }
-    
+
     /// Set of domains that are allowed to open popups without user permission.
     ///
     /// Supports two formats:
@@ -50,7 +50,7 @@ public final class DefaultPopupBlockingConfiguration: PopupBlockingConfiguration
     }
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
-    
+
     // Static cache for allowlist to avoid repeated array-to-set conversion
     // Shared across all instances and survives instance recreation
     @MainActor private static var cachedAllowlist: Set<String>?
@@ -98,21 +98,21 @@ public final class DefaultPopupBlockingConfiguration: PopupBlockingConfiguration
 
         return Defaults.userInitiatedPopupThreshold
     }
-    
+
     @MainActor public var allowlist: Set<String> {
         let currentIdentifier = privacyConfigurationManager.privacyConfig.identifier
-        
+
         // Check if cache is valid (config hasn't changed)
         if let cachedAllowlist = Self.cachedAllowlist,
            let cachedConfigIdentifier = Self.cachedConfigIdentifier,
            cachedConfigIdentifier == currentIdentifier {
             return cachedAllowlist
         }
-        
+
         // Cache miss or invalidated - rebuild from config
         let settings = privacyConfigurationManager.privacyConfig.settings(for: .popupBlocking)
         let allowlistSet: Set<String>
-        
+
         if let allowlistArray = settings[PopupBlockingConfigurationKeys.allowlist] as? [String] {
             allowlistSet = Set(allowlistArray)
         } else {
@@ -120,11 +120,11 @@ public final class DefaultPopupBlockingConfiguration: PopupBlockingConfiguration
                              "allowlist has unexpected type")
             allowlistSet = []
         }
-        
+
         // Update static cache
         Self.cachedAllowlist = allowlistSet
         Self.cachedConfigIdentifier = currentIdentifier
-        
+
         return allowlistSet
     }
 }

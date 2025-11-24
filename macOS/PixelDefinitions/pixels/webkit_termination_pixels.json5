@@ -27,28 +27,10 @@
                 "description": "Whether the URL of a crashed tab is a 'duck' scheme URL",
                 "type": "boolean"
             },
-            {
-                "key": "e",
-                "type": "number",
-                "description": "Error code"
-            },
-            {
-                "key": "d",
-                "type": "string",
-                "description": "String constant representing an Apple-defined error domain (e.g., WebKitErrorDomain, NSURLErrorDomain) or VPN-specific error domain. Not free-form strings, but too large and frequently changing a set to enumerate",
-                "examples": ["WebKitErrorDomain", "NSURLErrorDomain", "SKErrorDomain"]
-            },
-            {
-                "keyPattern": "^ue[0-9]$",
-                "type": "number",
-                "description": "Underlying error code"
-            },
-            {
-                "keyPattern": "^ud[0-9]$",
-                "type": "string",
-                "description": "String constant representing an Apple-defined underlying error domain (e.g., WebKitErrorDomain, NSURLErrorDomain) or VPN-specific underlying error domain. Not free-form strings, but too large and frequently changing a set to enumerate",
-                "examples": ["WebKitErrorDomain", "NSURLErrorDomain", "SKErrorDomain"]
-            }
+            "errorCode",
+            "errorDomain",
+            "underlyingErrorCode",
+            "underlyingErrorDomain"
         ]
     },
     "m_mac_webkit_did_terminate_non_recoverable_aggregated": {

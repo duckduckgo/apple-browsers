@@ -7,13 +7,7 @@
         "parameters": [
             "appVersion",
             "vpnLatencyLocation",
-            "pixelSource",
-            {
-                "key": "location",
-                "description": "Location setting selection",
-                "type": "string",
-                "enum": ["nearest", "custom"]
-            }
+            "pixelSource"
         ]
     },
     "m_mac_netp_ev_poor_latency": {
@@ -24,13 +18,7 @@
         "parameters": [
             "appVersion",
             "vpnLatencyLocation",
-            "pixelSource",
-            {
-                "key": "location",
-                "description": "Location setting selection",
-                "type": "string",
-                "enum": ["nearest", "custom"]
-            }
+            "pixelSource"
         ]
     },
     "m_mac_netp_ev_moderate_latency": {
@@ -41,13 +29,7 @@
         "parameters": [
             "appVersion",
             "vpnLatencyLocation",
-            "pixelSource",
-            {
-                "key": "location",
-                "description": "Location setting selection",
-                "type": "string",
-                "enum": ["nearest", "custom"]
-            }
+            "pixelSource"
         ]
     },
     "m_mac_netp_ev_good_latency": {
@@ -58,13 +40,7 @@
         "parameters": [
             "appVersion",
             "vpnLatencyLocation",
-            "pixelSource",
-            {
-                "key": "location",
-                "description": "Location setting selection",
-                "type": "string",
-                "enum": ["nearest", "custom"]
-            }
+            "pixelSource"
         ]
     },
     "m_mac_netp_ev_excellent_latency": {
@@ -75,13 +51,7 @@
         "parameters": [
             "appVersion",
             "vpnLatencyLocation",
-            "pixelSource",
-            {
-                "key": "location",
-                "description": "Location setting selection",
-                "type": "string",
-                "enum": ["nearest", "custom"]
-            }
+            "pixelSource"
         ]
     }
 }

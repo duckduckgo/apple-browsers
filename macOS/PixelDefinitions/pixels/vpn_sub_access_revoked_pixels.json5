@@ -6,30 +6,12 @@
         "triggers": ["other"],
         "suffixes": ["legacy_daily_count"],
         "parameters": [
-            {
-                "key": "e",
-                "type": "number",
-                "description": "Error code"
-            },
-            {
-                "key": "d",
-                "type": "string",
-                "description": "String constant representing an Apple-defined error domain (e.g., WebKitErrorDomain, NSURLErrorDomain) or VPN-specific error domain. Not free-form strings, but too large and frequently changing a set to enumerate",
-                "examples": ["WebKitErrorDomain", "NSURLErrorDomain", "SKErrorDomain"]
-            },
-            {
-                "keyPattern": "^ue[0-9]$",
-                "type": "number",
-                "description": "Underlying error code"
-            },
-            {
-                "keyPattern": "^ud[0-9]$",
-                "type": "string",
-                "description": "String constant representing an Apple-defined underlying error domain (e.g., WebKitErrorDomain, NSURLErrorDomain) or VPN-specific underlying error domain. Not free-form strings, but too large and frequently changing a set to enumerate",
-                "examples": ["WebKitErrorDomain", "NSURLErrorDomain", "SKErrorDomain"]
-            },
             "appVersion",
-            "pixelSource"
+            "pixelSource",
+            "errorCode",
+            "errorDomain",
+            "underlyingErrorCode",
+            "underlyingErrorDomain"
         ]
     },
     "m_mac_vpn_access_unmanaged_error": {
@@ -40,28 +22,10 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "d",
-                "type": "string",
-                "description": "String constant representing an Apple-defined error domain (e.g., WebKitErrorDomain, NSURLErrorDomain) or VPN-specific error domain. Not free-form strings, but too large and frequently changing a set to enumerate",
-                "examples": ["WebKitErrorDomain", "NSURLErrorDomain", "SKErrorDomain"]
-            },
-            {
-                "key": "e",
-                "type": "number",
-                "description": "Error code"
-            },
-            {
-                "keyPattern": "^ud[0-9]$",
-                "type": "string",
-                "description": "String constant representing an Apple-defined underlying error domain (e.g., WebKitErrorDomain, NSURLErrorDomain) or VPN-specific underlying error domain. Not free-form strings, but too large and frequently changing a set to enumerate",
-                "examples": ["WebKitErrorDomain", "NSURLErrorDomain", "SKErrorDomain"]
-            },
-            {
-                "keyPattern": "^ue[0-9]$",
-                "type": "number",
-                "description": "Underlying error code"
-            }
+            "errorDomain",
+            "errorCode",
+            "underlyingErrorDomain",
+            "underlyingErrorCode"
         ]
     }
 }

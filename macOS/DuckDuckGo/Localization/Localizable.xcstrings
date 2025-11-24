@@ -28322,6 +28322,18 @@
         }
       }
     },
+    "feedback.problem-category.other-feedback" : {
+      "comment" : "Problem category for other issues",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Other feedback"
+          }
+        }
+      }
+    },
     "feedback.problem-category.password-issues" : {
       "comment" : "Problem category for password-related problems",
       "extractionState" : "extracted_with_value",
@@ -28384,7 +28396,7 @@
     },
     "feedback.problem-category.something-else" : {
       "comment" : "Problem category for other issues",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

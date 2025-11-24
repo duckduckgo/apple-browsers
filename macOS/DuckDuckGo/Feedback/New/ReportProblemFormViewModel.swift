@@ -233,7 +233,7 @@ struct ProblemCategory: Identifiable, Hashable {
         ),
         ProblemCategory(
             id: somethingElseID,
-            text: UserText.problemCategorySomethingElse,
+            text: UserText.problemCategoryOtherFeedback,
             subcategories: [
                 SubCategory(id: "cant-complete-a-purchase", text: UserText.problemSubcategoryCantCompleteAPurchase),
                 SubCategory(id: "cant-restart-failed-downloads", text: UserText.problemSubcategoryCantRestartFailedDownloads),

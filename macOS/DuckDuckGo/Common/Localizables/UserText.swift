@@ -803,7 +803,7 @@ struct UserText {
     static let problemCategoryBrokenWebsite = NSLocalizedString("feedback.problem-category.broken-website", value: "Report broken website", comment: "Problem category for broken website reports")
     static let problemCategoryAdsIssues = NSLocalizedString("feedback.problem-category.ads-issues", value: "Ads causing issues", comment: "Problem category for advertising-related problems")
     static let problemCategoryPasswordIssues = NSLocalizedString("feedback.problem-category.password-issues", value: "Password issues", comment: "Problem category for password-related problems")
-    static let problemCategorySomethingElse = NSLocalizedString("feedback.problem-category.something-else", value: "Something else", comment: "Problem category for other issues")
+    static let problemCategoryOtherFeedback = NSLocalizedString("feedback.problem-category.other-feedback", value: "Other feedback", comment: "Problem category for other issues")
 
     // Problem subcategories - Performance
     static let problemSubcategoryBrowserStartsSlowly = NSLocalizedString("feedback.problem-subcategory.browser-starts-slowly", value: "Browser starts slowly", comment: "Problem subcategory for slow browser startup")

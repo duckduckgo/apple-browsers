@@ -30,7 +30,7 @@
     "errorCode": {
         "key": "e",
         "type": "number",
-        "description": "Error code"
+        "description": "NSError code"
     },
     "underlyingErrorCode": {
         "keyPattern": "^ue[0-9]?$",

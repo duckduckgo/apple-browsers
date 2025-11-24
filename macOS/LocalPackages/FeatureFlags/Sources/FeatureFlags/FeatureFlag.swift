@@ -246,9 +246,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866721275379
     case scheduledDefaultBrowserAndDockPromptsInactiveUser
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866478113546
-    case pinnedTabsViewRewrite
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866479296718
     case tabProgressIndicator
 
@@ -313,7 +310,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .fireDialogIndividualSitesLink,
                 .historyViewSitesSection,
                 .blurryAddressBarTahoeFix,
-                .pinnedTabsViewRewrite,
                 .vpnConnectionWidePixelMeasurement,
                 .allowPopupsForCurrentPage,
                 .extendedUserInitiatedPopupTimeout,
@@ -397,7 +393,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .storeSerpSettings,
                 .blurryAddressBarTahoeFix,
                 .dataImportNewExperience,
-                .pinnedTabsViewRewrite,
                 .tabProgressIndicator,
                 .attributedMetrics,
                 .vpnConnectionWidePixelMeasurement,
@@ -574,8 +569,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .scheduledDefaultBrowserAndDockPromptsInactiveUser:
             return .remoteDevelopment(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPromptsInactiveUser))
-        case .pinnedTabsViewRewrite:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.pinnedTabsViewRewrite))
         case .tabProgressIndicator:
             return .internalOnly()
         case .attributedMetrics:

@@ -43,9 +43,6 @@ public protocol SubscriptionProduct {
     /// The introductory offer associated with this subscription, if any.
     var introductoryOffer: SubscriptionProductIntroductoryOffer? { get }
 
-    /// A Boolean value that indicates whether this is a Free Trial product.
-    var isFreeTrialProduct: Bool { get }
-
     /// A Boolean value that indicates whether this is a Pro tier product.
     var isProTierProduct: Bool { get }
 

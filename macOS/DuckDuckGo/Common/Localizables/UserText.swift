@@ -1217,7 +1217,7 @@ struct UserText {
         String(format: NSLocalizedString("import.logins.select-csv-file.source", value: "Select %@ CSV File…", comment: "Button text for selecting a CSV file exported from (LastPass or Bitwarden or 1Password - %@)"), source.importSourceName)
     }
     static let importDataSelectFileButtonTitle = NSLocalizedString("import.data.select-file.button.title", value: "Select File…", comment: "Button text for selecting a file")
-    static let importDragAndDropFile = NSLocalizedString("import.drag-and-drop-file", value: "Drag & drop your file here", comment: "Drag-and-drop instruction for importing a file")
+    static let importDragAndDropFile = NSLocalizedString("import.drag-and-drop-file", value: "Drop your file here", comment: "Drag-and-drop instruction for importing a file")
 
     static func importNoDataBookmarksSubtitle(from source: DataImport.Source) -> String {
         String(format: NSLocalizedString("import.nodata.bookmarks.subtitle", value: "If you have %@ bookmarks, try importing them manually instead.", comment: "Data import error subtitle: suggestion to import Bookmarks manually by selecting a CSV or HTML file. The placeholder here represents the source browser, e.g Firefox."), source.importSourceName)

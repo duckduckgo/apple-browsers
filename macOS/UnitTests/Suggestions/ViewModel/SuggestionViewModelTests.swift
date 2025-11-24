@@ -217,6 +217,6 @@ final class SuggestionViewModelTests: XCTestCase {
 
 extension SuggestionViewModel {
     init(suggestion: Suggestion, userStringValue: String) {
-        self.init(isHomePage: false, suggestion: suggestion, userStringValue: userStringValue, themeManager: MockThemeManager())
+        self.init(isHomePage: false, suggestion: suggestion, userStringValue: userStringValue, themeManager: MockThemeManager(), featureFlagger: MockFeatureFlagger())
     }
 }

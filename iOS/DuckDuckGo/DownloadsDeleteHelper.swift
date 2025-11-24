@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import Combine
 import Core
 
 private enum Const {
@@ -35,6 +36,8 @@ typealias DeleteHandler = (_ result: DeleteResult) -> Void
 
 class DownloadsDeleteHelper {
     
+    private(set) var temporaryDirectoryURLs: CurrentValueSubject<[URL], Never> = .init([])
+    
     func deleteDownloads(atPaths filePaths: [String], completionHandler: DeleteHandler) {
         let fileURLsForRemoval = existingFileURLs(atPaths: filePaths)
         
@@ -49,6 +52,9 @@ class DownloadsDeleteHelper {
         }
         
         move(fileURLsForRemoval, to: undoDirectoryURL)
+        
+        // Add temporary directory to tracking
+        temporaryDirectoryURLs.value.append(undoDirectoryURL)
         
         let timer = makeTimerForRemovingDirectory(undoDirectoryURL)
         let undoHandler = makeUndoHandlerForMovingBackFiles(in: undoDirectoryURL,
@@ -81,13 +87,16 @@ class DownloadsDeleteHelper {
     }
     
     private func makeTimerForRemovingDirectory(_ directory: URL, withDelay delay: TimeInterval = Const.undoTimeoutInterval) -> Timer {
-        Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { _ in
+        Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
             try? FileManager.default.removeItem(at: directory)
+            
+            // Remove this directory from tracking
+            self?.temporaryDirectoryURLs.value.removeAll { $0 == directory }
         }
     }
     
     private func makeUndoHandlerForMovingBackFiles(in directory: URL, to destinationDirectory: URL, cancelling timer: Timer?) -> DeleteUndoHandler {
-        {
+        { [weak self] in
             timer?.invalidate()
             
             let filesToMoveURLs = (try? FileManager.default.contentsOfDirectory(at: directory,
@@ -100,6 +109,9 @@ class DownloadsDeleteHelper {
             }
             
             try? FileManager.default.removeItem(at: directory)
+            
+            // Remove this directory from tracking
+            self?.temporaryDirectoryURLs.value.removeAll { $0 == directory }
             
             Pixel.fire(pixel: .downloadsListDeleteUndo)
         }

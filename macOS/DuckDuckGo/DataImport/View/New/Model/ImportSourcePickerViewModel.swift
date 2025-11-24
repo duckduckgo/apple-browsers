@@ -150,7 +150,7 @@ private extension ImportSourcePickerViewModel {
             // No types available - this shouldn't happen!
             return UserText.importDataImportTypeTitleSelected
         }
-        
+
         if selectedImportTypes.count >= 2,
             selectedImportTypes.contains(.passwords),
             selectedImportTypes.contains(.bookmarks) {

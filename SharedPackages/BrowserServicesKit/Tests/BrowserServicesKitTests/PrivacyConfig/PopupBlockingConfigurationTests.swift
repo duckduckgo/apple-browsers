@@ -24,9 +24,12 @@ final class PopupBlockingConfigurationTests: XCTestCase {
     var mockEmbeddedData: MockEmbeddedDataProvider!
     var privacyConfigManager: PrivacyConfigurationManager!
 
+    @MainActor
     override func tearDown() {
         mockEmbeddedData = nil
         privacyConfigManager = nil
+        // Clear static cache to prevent test pollution
+        DefaultPopupBlockingConfiguration.clearCache()
         super.tearDown()
     }
 

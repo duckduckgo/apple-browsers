@@ -60,7 +60,7 @@ public final class DefaultPopupBlockingConfiguration: PopupBlockingConfiguration
     var assertionHandler: (Bool, String) -> Void = { condition, message in
         assert(condition, message)
     }
-    
+
     // For testing: clear the static cache to prevent test pollution
     @MainActor static func clearCache() {
         cachedAllowlist = nil

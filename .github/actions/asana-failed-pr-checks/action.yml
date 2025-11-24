@@ -4,27 +4,21 @@ inputs:
   asana-access-token:
     description: "Asana access token"
     required: true
-    type: string
   asana-section-id:
     description: "Asana project's section ID"
     required: true
-    type: string
   action:
     description: "Action to perform: choose between 'create-task' and 'close-task'"
     required: true
-    type: string
   commit-author:
     description: "Last commit author's GitHub handle"
     required: false
-    type: string
   pr-reviewers:
     description: "Comma-separated list of PR reviewers' GitHub handles"
     required: false
-    type: string
   github-token:
     description: "GitHub token"
     required: true
-    type: string
 runs:
   using: "composite"
   steps:

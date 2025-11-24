@@ -46271,6 +46271,78 @@
         }
       }
     },
+    "import.summary.details.failed.item.error" : {
+      "comment" : "Label of Error of a failed item in the import summary details screen",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Error:"
+          }
+        }
+      }
+    },
+    "import.summary.details.failed.item.host" : {
+      "comment" : "Label for Host of a failed item in the import summary details screen",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Host:"
+          }
+        }
+      }
+    },
+    "import.summary.details.failed.item.title" : {
+      "comment" : "Label for Title of a failed item in the import summary details screen",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Title:"
+          }
+        }
+      }
+    },
+    "import.summary.details.failed.item.user" : {
+      "comment" : "Label for User of a failed item in the import summary details screen",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "User:"
+          }
+        }
+      }
+    },
+    "import.summary.details.passwords.title" : {
+      "comment" : "Title for the passwords import summary details screen",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Password Import Details"
+          }
+        }
+      }
+    },
+    "import.summary.details.total.passwords.imported" : {
+      "comment" : "Title for the total number of passwords imported",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Total Passwords Imported:"
+          }
+        }
+      }
+    },
     "import.summary.duplicates.skipped" : {
       "comment" : "Summary text showing number of duplicate items that were skipped during import",
       "extractionState" : "extracted_with_value",
@@ -46363,6 +46435,18 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Report an issue"
+          }
+        }
+      }
+    },
+    "import.summary.view.details" : {
+      "comment" : "View more detailed information about a recent data import.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Details..."
           }
         }
       }

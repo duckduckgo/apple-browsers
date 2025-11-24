@@ -26,11 +26,13 @@ struct NewImportSummaryView: View {
     @StateObject private var viewModel: NewImportSummaryViewModel
     @Binding var reportModel: DataImportReportModel
     private let sourceImage: NSImage
+    let onShowDetail: ((DataImport.DataType) -> Void)?
 
-    init(summary: DataImportSummary, sourceImage: NSImage, reportModel: Binding<DataImportReportModel>) {
+    init(summary: DataImportSummary, sourceImage: NSImage, reportModel: Binding<DataImportReportModel>, onShowDetail: ((DataImport.DataType) -> Void)? = nil) {
         _viewModel = .init(wrappedValue: .init(summary: summary))
         _reportModel = reportModel
         self.sourceImage = sourceImage
+        self.onShowDetail = onShowDetail
     }
 
     var body: some View {
@@ -51,14 +53,7 @@ struct NewImportSummaryView: View {
                             NewImportErrorView(text: title)
                         }
                     }
-                    .background(
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .fill(Color(designSystemColor: .surfacePrimary))
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
-                            .strokeBorder(Color(.blackWhite10), lineWidth: 1)
-                    )
+                    .borderedBackground()
                 }
                 if viewModel.shouldShowFeedbackView {
                     NewReportFeedbackView(model: $reportModel)
@@ -89,22 +84,31 @@ struct NewImportSummaryView: View {
             Image(nsImage: item.image)
                 .frame(width: 16, height: 16)
                 .padding(.trailing, 14)
-            VStack(alignment: .leading) {
-                Text(item.primaryText)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.primary)
-                if let duplicateText = item.duplicateText {
-                    Text(duplicateText)
-                        .font(.system(size: 11))
-                        .foregroundColor(.secondary)
+            HStack(alignment: .top, spacing: 0) {
+                VStack(alignment: .leading) {
+                    Text(item.primaryText)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.primary)
+                    if let duplicateText = item.duplicateText {
+                        Text(duplicateText)
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                    }
+                    if let failureText = item.failureText {
+                        Text(failureText)
+                            .font(.system(size: 11))
+                            .foregroundColor(.secondary)
+                    }
                 }
-                if let failureText = item.failureText {
-                    Text(failureText)
-                        .font(.system(size: 11))
-                        .foregroundColor(.secondary)
+                Spacer()
+
+                if item.type == .passwords {
+                    Button(UserText.importSummaryViewDetails) {
+                        onShowDetail?(item.type)
+                    }
+                    .buttonStyle(.bordered)
                 }
             }
-            Spacer()
         }
         .padding(.top, 10)
         .padding(.bottom, 10)

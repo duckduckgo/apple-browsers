@@ -72,6 +72,7 @@ struct DataImportViewModel {
         case fileImport(dataType: DataType, summary: DataImportSummary = [:])
         case archiveImport(dataTypes: Set<DataType>, summary: DataImportSummary? = nil)
         case summary(DataImportSummary)
+        case summaryDetail(DataImportSummary, DataImport.DataType)
 
         var isFileImport: Bool {
             if case .fileImport = self { true } else { false }
@@ -437,9 +438,12 @@ struct DataImportViewModel {
     }
 
     mutating func goBack() {
-        // reset to initial screen
-        screen = .sourceAndDataTypesPicker
-        summary.removeAll()
+        if case .summaryDetail(let summary, let dataType) = screen {
+            screen = .summary(summary)
+        } else {
+            screen = .sourceAndDataTypesPicker
+            summary.removeAll()
+        }
     }
 
     func submitReport() {
@@ -584,6 +588,10 @@ extension DataImportViewModel {
         return nil
     }
 
+    mutating func showSummaryDetail(summary: DataImportSummary, type: DataType) {
+        self.screen = .summaryDetail(summary, type)
+    }
+
     func error(for dataType: DataType) -> (any DataImportError)? {
         if case .failure(let error) = summary.last(where: { $0.dataType == dataType })?.result {
             return error
@@ -666,12 +674,13 @@ extension DataImportViewModel {
         case submit
         case `continue`
         case sync
+        case close
 
         var isDisabled: Bool {
             switch self {
             case .initiateImport(disabled: let disabled):
                 return disabled
-            case .skip, .done, .cancel, .back, .submit, .continue, .selectFile, .sync:
+            case .skip, .done, .cancel, .back, .submit, .continue, .selectFile, .sync, .close:
                 return false
             }
         }
@@ -709,6 +718,8 @@ extension DataImportViewModel {
             case .show:
                 return .sync
             }
+        case .summaryDetail:
+            return nil
         }
     }
 
@@ -723,6 +734,8 @@ extension DataImportViewModel {
                 return summary.isEmpty ? .back : nil
             case .summary:
                 return .done
+            case .summaryDetail:
+                return .close
             }
         } else {
             return .cancel
@@ -761,7 +774,7 @@ extension DataImportViewModel {
     @MainActor
     mutating func performAction(for buttonType: ButtonType, dismiss: @escaping () -> Void) {
         switch buttonType {
-        case .back:
+        case .back, .close:
             goBack()
 
         case .initiateImport, .continue:
@@ -785,7 +798,6 @@ extension DataImportViewModel {
             self.dismiss(using: dismiss)
         case .sync:
             launchSync(using: dismiss)
-            break
         }
     }
 

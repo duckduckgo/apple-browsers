@@ -22,7 +22,7 @@ import Combine
 import Core
 
 private enum Const {
-    static let undoTimeoutInterval: TimeInterval = 3.0
+    static let defaultUndoTimeoutInterval: TimeInterval = 3.0
 }
 
 enum DownloadDeleteError: Error {
@@ -36,7 +36,12 @@ typealias DeleteHandler = (_ result: DeleteResult) -> Void
 
 class DownloadsDeleteHelper {
     
+    private var undoTimeoutInterval: TimeInterval
     private(set) var temporaryDirectoryURLs: CurrentValueSubject<[URL], Never> = .init([])
+    
+    init(undoTimeoutInterval: TimeInterval = Const.defaultUndoTimeoutInterval) {
+        self.undoTimeoutInterval = undoTimeoutInterval
+    }
     
     func deleteDownloads(atPaths filePaths: [String], completionHandler: DeleteHandler) {
         let fileURLsForRemoval = existingFileURLs(atPaths: filePaths)

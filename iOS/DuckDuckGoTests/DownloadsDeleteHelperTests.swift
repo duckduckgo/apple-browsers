@@ -28,7 +28,7 @@ class DownloadsDeleteHelperTests: XCTestCase {
     
     override func setUp() {
         super.setUp()
-        sut = DownloadsDeleteHelper()
+        sut = DownloadsDeleteHelper(undoTimeoutInterval: 0.5)
         
         // Create test directories
         testDirectory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
@@ -63,7 +63,7 @@ class DownloadsDeleteHelperTests: XCTestCase {
         let expectation = XCTestExpectation(description: "Delete completion")
         
         // When
-        sut.deleteDownloads(atPaths: [testFile.path]) { result in
+        sut.deleteDownloads(atPaths: [testFile.path]) { _ in
             expectation.fulfill()
         }
         
@@ -139,7 +139,7 @@ class DownloadsDeleteHelperTests: XCTestCase {
         wait(for: [deleteExpectation], timeout: 1.0)
         XCTAssertEqual(sut.temporaryDirectoryURLs.value.count, 1, "Should have one temporary directory before timeout")
         
-        // When - wait for timeout (3 seconds + buffer)
+        // When - wait for timeout (0.5 seconds + buffer)
         sut.temporaryDirectoryURLs
             .sink { urls in
                 if urls.isEmpty {
@@ -148,10 +148,9 @@ class DownloadsDeleteHelperTests: XCTestCase {
             }
             .store(in: &cancellables)
         
-        wait(for: [timeoutExpectation], timeout: 4.0)
+        wait(for: [timeoutExpectation], timeout: 1.0)
         
         // Then
         XCTAssertTrue(sut.temporaryDirectoryURLs.value.isEmpty, "temporaryDirectoryURLs should be empty after timeout")
     }
 }
-

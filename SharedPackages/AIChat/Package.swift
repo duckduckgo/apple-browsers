@@ -22,6 +22,7 @@ import PackageDescription
 
 let package = Package(
     name: "AIChat",
+    defaultLocalization: "en",
     platforms: [
         .iOS("15.0"),
         .macOS("11.4")

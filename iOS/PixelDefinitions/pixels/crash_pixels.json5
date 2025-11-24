@@ -201,6 +201,11 @@
                 "key": "app-group-marker-present",
                 "description": "Whether the app group access marker file exists (indicates previous successful access)",
                 "type": "boolean"
+            },
+            {
+                "key": "occurrence-count",
+                "description": "Number of times this structure lost event has occurred for this user (helps track if it's recurring)",
+                "type": "integer"
             }
         ]
     },

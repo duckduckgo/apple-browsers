@@ -60,7 +60,10 @@ final class PersistentStoresConfiguration {
 
     private func loadAndMigrateBookmarksDatabase(syncKeyValueStore: ThrowingKeyValueStoring, isBackground: Bool) throws {
         do {
-            let validator = BookmarksDatabaseSetup.makeValidator()
+            // Create a simple counter store with just atomic writes (no encryption for debugging data)
+            let appSupportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+            let counterStore = try KeyValueFileStore(location: appSupportDir, name: "BookmarksStructureLostCounter", writeOptions: [.atomic])
+            let validator = BookmarksDatabaseSetup.makeValidator(counterStore: counterStore)
             try BookmarksDatabaseSetup().loadStoreAndMigrate(bookmarksDatabase: bookmarksDatabase, validator: validator, isBackground: isBackground)
         } catch let error as BookmarksDatabaseError {
             throw TerminationError.bookmarksDatabase(error)

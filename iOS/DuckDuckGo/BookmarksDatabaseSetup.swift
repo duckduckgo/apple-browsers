@@ -37,11 +37,19 @@ struct BookmarksDatabaseSetup {
         self.migrationAssertion = migrationAssertion
     }
 
-    static func makeValidator() -> BookmarksStateValidator {
+    static func makeValidator(counterStore: ThrowingKeyValueStoring? = nil) -> BookmarksStateValidator {
         return BookmarksStateValidator(keyValueStore: UserDefaults.app) { validationError, additionalParams in
             switch validationError {
             case .bookmarksStructureLost:
                 var enhancedParams = additionalParams ?? [:]
+                
+                // Track frequency of structure lost events (temporary debugging, capped at 5 for privacy)
+                if let store = counterStore {
+                    let currentCount = (try? store.object(forKey: "bookmarks_structure_lost_count") as? Int) ?? 0
+                    let newCount = min(currentCount + 1, 5)
+                    try? store.set(newCount, forKey: "bookmarks_structure_lost_count")
+                    enhancedParams["occurrence-count"] = String(newCount)
+                }
                 
                 // Add app group access diagnostics to help identify the root cause
                 let appGroupStatus = AppGroupContainerValidator.checkAppGroupAccessStatus()

@@ -268,7 +268,7 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053
     case attributedMetrics
-    
+
     /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1211652685709099?focus=true
     case onboardingSearchExperience
 
@@ -292,6 +292,14 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211992061067315?focus=true
     case browsingMenuSheetPresentation
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1208824174611454?focus=true
+    case autofillExtensionSettings
+    case canPromoteAutofillExtensionInBrowser
+    case canPromoteAutofillExtensionInPasswordManagement
+
+    /// https://app.asana.com/1/137249556945/project/1201462886803403/task/1211326076710245?focus=true
+    case migrateKeychainAccessibility
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -312,7 +320,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .syncCreditCards,
              .unifiedURLPredictor,
              .forgetAllInSettings,
-             .vpnConnectionWidePixelMeasurement:
+             .vpnConnectionWidePixelMeasurement,
+             .migrateKeychainAccessibility:
             true
         default:
             false
@@ -347,8 +356,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .paidAIChat,
              .canInterceptSyncSetupUrls,
              .exchangeKeysToSyncWithAnotherDevice,
-             .canPromoteImportPasswordsInPasswordManagement,
-             .canPromoteImportPasswordsInBrowser,
              .setAsDefaultBrowserPiPVideoTutorial,
              .supportsAlternateStripePaymentFlow,
              .personalInformationRemoval,
@@ -362,7 +369,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .dbpRemoteBrokerDelivery,
              .subscriptionPurchaseWidePixelMeasurement,
              .showAIChatAddressBarChoiceScreen,
-             .newDeviceSyncPrompt,
              .subscriptionRestoreWidePixelMeasurement,
              .embeddedSERPSettings,
              .authV2WideEventEnabled,
@@ -383,7 +389,10 @@ extension FeatureFlag: FeatureFlagDescribing {
              .blackFridayCampaign,
              .tierMessagingEnabled,
              .allowProTierPurchase,
-             .browsingMenuSheetPresentation:
+             .browsingMenuSheetPresentation,
+             .autofillExtensionSettings,
+             .canPromoteAutofillExtensionInBrowser,
+             .canPromoteAutofillExtensionInPasswordManagement:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -425,7 +434,11 @@ extension FeatureFlag: FeatureFlagDescribing {
                .experimentalAddressBar,
                .aiChatKeepSession,
                .aiFeaturesSettingsUpdate,
-               .widgetReporting:
+               .widgetReporting,
+               .canPromoteImportPasswordsInBrowser,
+               .canPromoteImportPasswordsInPasswordManagement,
+               .newDeviceSyncPrompt,
+               .migrateKeychainAccessibility:
             return false
         }
     }
@@ -608,6 +621,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.allowProTierPurchase))
         case .browsingMenuSheetPresentation:
             return .disabled
+        case .autofillExtensionSettings:
+            return .remoteReleasable(.subfeature(AutofillSubfeature.autofillExtensionSettings))
+        case .canPromoteAutofillExtensionInBrowser:
+            return .remoteReleasable(.subfeature(AutofillSubfeature.canPromoteAutofillExtensionInBrowser))
+        case .canPromoteAutofillExtensionInPasswordManagement:
+            return .remoteReleasable(.subfeature(AutofillSubfeature.canPromoteAutofillExtensionInPasswordManagement))
+        case .migrateKeychainAccessibility:
+            return .remoteReleasable(.subfeature(AutofillSubfeature.migrateKeychainAccessibility))
         }
     }
 }

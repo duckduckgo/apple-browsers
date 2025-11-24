@@ -77592,55 +77592,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Füge DuckDuckGo zu deinem Dock hinzu, um schnell auf Schutzfunktionen zuzugreifen, die andere Browser nicht bieten."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Add DuckDuckGo to your dock for quick access to protections other browsers don't provide."
+            "value" : "Add DuckDuckGo to your Dock for quick access to protections other browsers don't provide."
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Añade DuckDuckGo a tu Dock para acceder rápidamente a protecciones que otros navegadores no proporcionan."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Ajoutez DuckDuckGo à votre Dock pour accéder rapidement aux protections que les autres navigateurs ne proposent pas."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Aggiungi DuckDuckGo al tuo dock per accedere rapidamente alle protezioni che altri browser non offrono."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Voeg DuckDuckGo toe aan je dock voor snelle toegang tot beveiligingen die andere browsers niet bieden."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Dodaj DuckDuckGo do Docka, aby uzyskać szybki dostęp do zabezpieczeń, których nie oferują inne przeglądarki."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Adiciona o DuckDuckGo à tua dock para acesso rápido às proteções que outros navegadores não oferecem."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Добавьте DuckDuckGo на док-панель для быстрого доступа к функциям защиты, которых нет в других браузерах."
           }
         }

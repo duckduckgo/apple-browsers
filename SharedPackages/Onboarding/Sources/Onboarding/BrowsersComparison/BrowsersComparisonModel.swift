@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import DesignResourcesKitIcons
 
 public struct BrowsersComparisonModel {
 
@@ -65,6 +66,15 @@ public struct BrowsersComparisonModel {
                 case .safari:
                     availability = .unavailable
                 }
+            #if os(macOS)
+            case .duckplayer:
+                switch browser {
+                case .ddg:
+                    availability = .available
+                case .safari:
+                    availability = .unavailable
+                }
+            #endif
             }
 
             return PrivacyFeature.BrowserSupport(browser: browser, availability: availability)
@@ -109,12 +119,15 @@ extension BrowsersComparisonModel.PrivacyFeature {
         let availability: Availability
     }
 
-    enum FeatureType: CaseIterable {
+    public enum FeatureType: CaseIterable {
         case privateSearch
         case blockThirdPartyTrackers
         case blockCookiePopups
         case blockCreepyAds
         case eraseBrowsingData
+        #if os(macOS)
+        case duckplayer
+        #endif
 
         var title: String {
             switch self {
@@ -128,6 +141,29 @@ extension BrowsersComparisonModel.PrivacyFeature {
                 UserText.BrowsersComparison.Features.creepyAds
             case .eraseBrowsingData:
                 UserText.BrowsersComparison.Features.eraseBrowsingData
+            #if os(macOS)
+            case .duckplayer:
+                UserText.BrowsersComparison.Features.duckplayer
+            #endif
+            }
+        }
+
+        var icon: DesignSystemImage {
+            switch self {
+            case .privateSearch:
+                DesignSystemImages.Color.Size24.findSearch
+            case .blockThirdPartyTrackers:
+                DesignSystemImages.Color.Size24.shield
+            case .blockCookiePopups:
+                DesignSystemImages.Color.Size24.cookieBlocked
+            case .blockCreepyAds:
+                DesignSystemImages.Color.Size24.adsBlocked
+            case .eraseBrowsingData:
+                DesignSystemImages.Color.Size24.fire
+            #if os(macOS)
+            case .duckplayer:
+                DesignSystemImages.Color.Size24.videoPlayer
+            #endif
             }
         }
     }

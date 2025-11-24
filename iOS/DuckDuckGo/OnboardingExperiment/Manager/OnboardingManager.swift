@@ -114,11 +114,7 @@ final class OnboardingManager {
     }
 
     private func iPadFlow() -> [OnboardingIntroStep] {
-        if featureFlagger.isFeatureOn(.onboardingSearchExperience) {
-            return iPadFlowWithSearchExperience
-        } else {
-            return iPadFlowWithoutSearchExperience
-        }
+        return iPadFlowWithoutSearchExperience
     }
 }
 

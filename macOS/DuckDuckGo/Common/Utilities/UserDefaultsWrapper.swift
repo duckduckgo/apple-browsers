@@ -50,8 +50,6 @@ public struct UserDefaultsWrapper<T> {
         case unprotectedDomains = "com.duckduckgo.contentblocker.unprotectedDomains"
         case contentBlockingRulesCache = "com.duckduckgo.contentblocker.rules.cache"
 
-        case defaultBrowserDismissed = "browser.default.dismissed"
-
         case spellingCheckEnabledOnce = "spelling.check.enabled.once"
         case grammarCheckEnabledOnce = "grammar.check.enabled.once"
 

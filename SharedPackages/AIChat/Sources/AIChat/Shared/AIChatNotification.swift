@@ -1,5 +1,5 @@
 //
-//  MockAutoconsentDailyStats.swift
+//  AIChatNotification.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,10 +17,7 @@
 //
 
 import Foundation
-@testable import DuckDuckGo_Privacy_Browser
 
-class MockAutoconsentDailyStat: AutoconsentDailyStatsManaging  {
-    func incrementPopupCount() {}
-
-    func sendDailyPixelIfNeeded() {}
+public extension NSNotification.Name {
+    static let aiChatUserDidSubmitPrompt: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.aiChat.userDidSubmitPrompt")
 }

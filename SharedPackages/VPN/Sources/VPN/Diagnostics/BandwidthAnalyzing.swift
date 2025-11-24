@@ -23,7 +23,7 @@ import Foundation
 /// This protocol defines the interface for monitoring network bandwidth usage
 /// and determining connection idle state.
 ///
-protocol BandwidthAnalyzing: Actor {
+public protocol BandwidthAnalyzing: Actor {
 
     /// Records a bandwidth measurement with the provided received and transmitted byte counts.
     ///

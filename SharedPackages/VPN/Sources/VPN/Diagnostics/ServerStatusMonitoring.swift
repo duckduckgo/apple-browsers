@@ -23,7 +23,7 @@ import Foundation
 /// This protocol defines the interface for monitoring VPN server status
 /// and detecting when server migration is required.
 ///
-protocol ServerStatusMonitoring: Actor {
+public protocol ServerStatusMonitoring: Actor {
 
     /// Indicates whether the monitor is currently running.
     var isStarted: Bool { get }

@@ -36,5 +36,10 @@
         "type": "string",
         "description": "Corresponding time bucket",
         "enum": ["0", "0.1", "0.5", "1", "5", "10", "20", "40", "more"]
+    },
+    "count": {
+        "type": "string",
+        "description": "Count pixel schedule type",
+        "enum": ["count"]
     }
 }

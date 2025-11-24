@@ -50,6 +50,7 @@ final class TabSnapshotExtension {
          viewSnapshotRenderer: ViewSnapshotRendering = ViewSnapshotRenderer(),
          webViewPublisher: some Publisher<WKWebView, Never>,
          contentPublisher: some Publisher<Tab.TabContent, Never>,
+         interactionEventsPublisher: some Publisher<WebViewInteractionEvent, Never>,
          isBurner: Bool) {
 
         self.store = store
@@ -59,11 +60,16 @@ final class TabSnapshotExtension {
 
         webViewPublisher.sink { [weak self] webView in
             self?.webView = webView as? WebView
-            self?.webView?.interactionEventsDelegate = self
         }.store(in: &cancellables)
 
         contentPublisher.sink { [weak self] tabContent in
             self?.tabContent = tabContent
+        }.store(in: &cancellables)
+
+        interactionEventsPublisher.sink { [weak self] event in
+            MainActor.assumeMainThread {
+                self?.handleInteractionEvent(event)
+            }
         }.store(in: &cancellables)
     }
 
@@ -71,7 +77,6 @@ final class TabSnapshotExtension {
         cancellables.forEach { $0.cancel() }
         cancellables.removeAll()
 
-        webView?.interactionEventsDelegate = nil
         webView = nil
 
         store.clearSnapshot(tabID: identifier)
@@ -211,22 +216,9 @@ final class TabSnapshotExtension {
         // Otherwise wait a bit to allow super-fast loading pages (e.g. localhost and special pages) get rendered in the webView
         url.navigationalScheme == .duck && url.host == URL.duckPlayerHost ? 1.0 : 0.1
     }
-}
 
-extension TabSnapshotExtension: WebViewInteractionEventsDelegate {
-
-    @MainActor(unsafe)
-    func webView(_ webView: WebView, mouseDown event: NSEvent) {
-        userDidInteractWithWebsite = true
-    }
-
-    @MainActor(unsafe)
-    func webView(_ webView: WebView, keyDown event: NSEvent) {
-        userDidInteractWithWebsite = true
-    }
-
-    @MainActor(unsafe)
-    func webView(_ webView: WebView, scrollWheel event: NSEvent) {
+    @MainActor
+    private func handleInteractionEvent(_ event: WebViewInteractionEvent) {
         userDidInteractWithWebsite = true
     }
 
@@ -238,7 +230,7 @@ extension TabSnapshotExtension: NSCodingExtension {
         static let tabSnapshotIdentifier = "TabSnapshotIdentifier"
     }
 
-    @MainActor
+    @preconcurrency @MainActor
     func awakeAfter(using decoder: NSCoder) {
         guard !didRestoreSnapshot else { return }
 
@@ -253,7 +245,7 @@ extension TabSnapshotExtension: NSCodingExtension {
         setIdentifier(identifier)
     }
 
-    @MainActor
+    @preconcurrency @MainActor
     func encode(using coder: NSCoder) {
         coder.encode(identifier.uuidString,
                      forKey: NSSecureCodingKeys.tabSnapshotIdentifier)

@@ -105,6 +105,7 @@ private struct DummyOmniBarState: OmniBarState, OmniBarLoadingBearerStateCreatin
     var onEnterPhoneState: OmniBarState { DummyOmniBarState() }
     var onEnterPadState: OmniBarState { DummyOmniBarState() }
     var onReloadState: OmniBarState { DummyOmniBarState() }
+    var onEnterAIChatState: OmniBarState { DummyOmniBarState() }
 
     init(dependencies: OmnibarDependencyProvider, isLoading: Bool) {
         self.init(isLoading: isLoading, dependencies: dependencies)

@@ -1690,6 +1690,15 @@ final class AddressBarButtonsViewController: NSViewController {
         searchModeToggleControl?.reset()
     }
 
+    func toggleSearchMode() {
+        guard let toggleControl = searchModeToggleControl,
+              !toggleControl.isHidden,
+              toggleControl.isEnabled else {
+            return
+        }
+        toggleControl.selectedSegment = toggleControl.selectedSegment == 0 ? 1 : 0
+    }
+
     private func updateKeyViewChainForToggle(shouldShowToggle: Bool) {
         guard let addressBarViewController = parent as? AddressBarViewController,
               let addressBarTextField = addressBarViewController.addressBarTextField,

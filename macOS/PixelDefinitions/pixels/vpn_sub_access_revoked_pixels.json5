@@ -26,7 +26,8 @@
                 "type": "string",
                 "description": "Underlying error domain (x is depth)"
             },
-            "appVersion"
+            "appVersion",
+            "pixelSource"
         ]
     },
     "m_mac_vpn_access_unmanaged_error": {
@@ -34,6 +35,6 @@
         "owners": ["diegoreymendez"],
         "triggers": ["other"],
         "suffixes": ["legacy_daily_count"],
-        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+        "parameters": ["appVersion", "pixelSource", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     }
 }

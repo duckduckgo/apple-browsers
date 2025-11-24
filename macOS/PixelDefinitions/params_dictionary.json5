@@ -104,9 +104,8 @@
     },
     "wideEventUnderlyingErrorCode": {
         "keyPattern": "feature\\.data\\.error\\.underlying_code[0-9]*",
-        "type": "string",
-        "description": "Underlying error code (supports optional numeric index for nested errors)",
-        "pattern": "^-?\\d+$"
+        "type": "integer",
+        "description": "Underlying error code (supports optional numeric index for nested errors)"
     },
     "duration": {
         "key": "duration",

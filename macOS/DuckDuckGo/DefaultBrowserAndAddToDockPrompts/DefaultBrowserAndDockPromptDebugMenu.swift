@@ -27,8 +27,8 @@ import AppKit
 /// 1. **"Override Today's Date…"**: Opens date picker to simulate any date (fast-forward time)
 /// 2. **"Advance by 14 Days"**: Quick jump forward by default delay interval
 /// 3. **"Simulate Fresh App Install"**: Resets prompts and sets install date to today
-/// 3. **"Reset Prompts And Today/Install Dates"**: Clear all prompt history and date overrides
-/// 4. **Status displays** (read-only):
+/// 4. **"Reset Prompts And Today/Install Dates"**: Clear all prompt history and date overrides
+/// 5. **Status displays** (read-only):
 ///    - Current simulated date (if overridden)
 ///    - When popover will show (or when it was shown)
 ///    - When first banner will show (or when it was shown)
@@ -155,7 +155,6 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
     /// - Resets all prompt state (see `resetPrompts()`)
     /// - Sets install date to today (overrides any previous install date)
     /// - Clears any simulated "today" date override
-    /// - Sets user activity to "active today"
     ///
     /// **Use cases:**
     /// - Start fresh testing from a known state
@@ -165,7 +164,7 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
         resetPrompts()
         debugStore.simulatedInstallDate = Date().startOfDay
         debugStore.simulatedTodayDate = nil
-        userActivityStore.save(.empty)
+        updateMenuItemsState()
     }
 
     /// **RESET ALL PROMPT STATE**

@@ -94,7 +94,10 @@
         "description": "Fires when failed to initialize key-value file store in Application Support directory",
         "owners": ["bwaresiak"],
         "triggers": ["exception"],
-        "suffixes": ["daily", "platform", "form_factor"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
         "parameters": ["appVersion"]
     },
     "m_debug_tabs_store_support_dir_access_error": {

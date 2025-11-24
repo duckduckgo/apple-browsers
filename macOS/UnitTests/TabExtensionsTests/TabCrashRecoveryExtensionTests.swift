@@ -161,8 +161,6 @@ final class TabCrashRecoveryExtensionTests: XCTestCase {
 
     @MainActor
     func testThatWebKitTerminationFiresPixel() async {
-        featureFlagger.enabledFeatureFlags = [.tabCrashRecovery]
-
         let expectation = expectation(description: "pixel fired")
         firePixelHandler = { _, _ in
             expectation.fulfill()
@@ -177,47 +175,8 @@ final class TabCrashRecoveryExtensionTests: XCTestCase {
         XCTAssertEqual(firePixelCallCount, 1)
     }
 
-    // MARK: Feature flag disabled
-
     @MainActor
-    func testWhenFeatureFlagIsDisabledAndUserIsInternalThenWebViewIsReloadedAndTabCrashErrorIsNotEmitted() async {
-        internalUserDeciderStore.isInternalUser = true
-        setUpRegularTab()
-
-        tabCrashRecoveryExtension.webContentProcessDidTerminate(with: nil)
-        XCTAssertEqual(webView.reloadCallsCount, 1)
-        XCTAssertEqual(tabCrashTypes, [])
-        XCTAssertEqual(tabCrashErrorPayloads.count, 0)
-    }
-
-    @MainActor
-    func testWhenFeatureFlagIsDisabledAndUserIsInternalAndtabCrashRecoveryIsEnabledThenWebViewIsNotReloadedAndTabCrashErrorIsEmitted() async {
-        featureFlagger.enabledFeatureFlags = [.tabCrashDebugging]
-        internalUserDeciderStore.isInternalUser = true
-        setUpRegularTab()
-
-        tabCrashRecoveryExtension.webContentProcessDidTerminate(with: nil)
-        XCTAssertEqual(webView.reloadCallsCount, 0)
-        XCTAssertEqual(tabCrashTypes, [])
-        XCTAssertEqual(tabCrashErrorPayloads.count, 1)
-    }
-
-    @MainActor
-    func testWhenFeatureFlagIsDisabledAndUserIsNotInternalThenWebViewIsNotReloadedAndTabCrashErrorIsEmitted() async {
-        internalUserDeciderStore.isInternalUser = false
-        setUpRegularTab()
-
-        tabCrashRecoveryExtension.webContentProcessDidTerminate(with: nil)
-        XCTAssertEqual(webView.reloadCallsCount, 0)
-        XCTAssertEqual(tabCrashTypes, [])
-        XCTAssertEqual(tabCrashErrorPayloads.count, 1)
-    }
-
-    // MARK: Feature flag enabled
-
-    @MainActor
-    func testWhenFeatureFlagIsEnabledThenWebViewIsReloadedAndTabCrashErrorIsNotEmitted() async {
-        featureFlagger.enabledFeatureFlags = [.tabCrashRecovery]
+    func testWhenWebKitTerminationOccursThenWebViewIsReloadedAndTabCrashErrorIsNotEmitted() async {
         setUpRegularTab()
 
         tabCrashRecoveryExtension.webContentProcessDidTerminate(with: nil)
@@ -227,8 +186,7 @@ final class TabCrashRecoveryExtensionTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenFeatureFlagIsEnabledAndIsCrashLoopThenWebViewIsNotReloadedAndTabCrashErrorIsEmitted() async {
-        featureFlagger.enabledFeatureFlags = [.tabCrashRecovery]
+    func testWhenWebKitTerminationOccursAndIsCrashLoopThenWebViewIsNotReloadedAndTabCrashErrorIsEmitted() async {
         crashLoopDetector.isCrashLoop = { _, _ in true }
         setUpRegularTab()
 
@@ -240,7 +198,6 @@ final class TabCrashRecoveryExtensionTests: XCTestCase {
 
     @MainActor
     func testThatLastCrashedAtIsRemembered() async {
-        featureFlagger.enabledFeatureFlags = [.tabCrashRecovery]
         crashLoopDetector.isCrashLoop = { _, _ in false }
         setUpRegularTab()
 
@@ -267,7 +224,6 @@ final class TabCrashRecoveryExtensionTests: XCTestCase {
                 expectation.fulfill()
             }
         }
-        featureFlagger.enabledFeatureFlags = [.tabCrashRecovery]
         crashLoopDetector.isCrashLoop = { _, _ in true }
         setUpRegularTab()
 

@@ -21,5 +21,6 @@ import Foundation
 public enum AMPProtectionDebugEvents {
 
     case ampBlockingRulesCompilationFailed
+    case ampKeywordDetectionPerformance
 
 }

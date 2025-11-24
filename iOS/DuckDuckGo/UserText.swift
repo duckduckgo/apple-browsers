@@ -56,6 +56,9 @@ public struct UserText {
     public static let actionPrint = NSLocalizedString("action.title.print", value: "Print", comment: "Print action in the menu header")
     public static let actionPrintSite = NSLocalizedString("action.title.print.site", value: "Print", comment: "Print action in the menu list")
     public static let actionOpenAIChat = NSLocalizedString("action.title.duckai", value: "Duck.ai", comment: "Open AI Chat action in the menu list")
+    public static let actionNewAIChat = NSLocalizedString("action.title.aiChat.new", value: "AI Chat", comment: "Start new AI Chat action in the menu list")
+    public static let actionAIChatHistory = NSLocalizedString("action.title.aiChat.history", value: "Duck.ai Chats", comment: "Open AI Chat history action in the menu list")
+    public static let actionAIChatSettings = NSLocalizedString("action.title.aiChat.settings", value: "Duck.ai Settings", comment: "Open AI Chat settings action in the menu list")
 
     public static let actionOpenBookmarks = NSLocalizedString("action.title.bookmarks", value: "Bookmarks", comment: "Button: Open bookmarks list")
     public static let actionOpenPasswords = NSLocalizedString("action.title.passwords", value: "Passwords", comment: "Button: Open passwords list")
@@ -849,7 +852,7 @@ public struct UserText {
 
     // MARK: Autofill
     public static let autofillSettingsViewSectionHeader = NSLocalizedString("autofill.settings.view.section-header", value: "View", comment: "Section header for the autofill settings screen")
-    public static let autofillSettingsOptionsSectionHeader = NSLocalizedString("autofill.settings.options.section-header", value: "Options", comment: "Section header for the autofill settings screen")
+    public static let autofillSettingsOptionsSectionHeader = NSLocalizedString("autofill.settings.options.section-header", value: "Password Options", comment: "Section header for the autofill passwords options section of the settings screen")
     public static let autofillSettingsAskToSaveAndAutofill = NSLocalizedString("autofill.settings.ask-to-save-and-autofill", value: "Ask to save and autofill", comment: "Title for the toggle that enables autofill")
     public static let autofillSettingsImportPasswordsSectionHeader = NSLocalizedString("autofill.settings.import-passwords.section-header", value: "Import Passwords", comment: "Section header for the autofill settings screen")
 
@@ -953,6 +956,17 @@ public struct UserText {
     public static let autofillLoginListSettingsFooter = NSLocalizedString("autofill.logins.list.settings.footer", value: "Passwords are encrypted. Nobody but you can see them, not even us.", comment: "Subtext under Autofill Settings briefly explaining security to alleviate user concerns.")
     public static let autofillLoginListSettingsPasswordsAndCardsFooter = NSLocalizedString("autofill.logins.list.settings.passwords.cards.footer", value: "Passwords and credit cards are encrypted. Nobody but you can see them, not even us.", comment: "Subtext under Autofill Settings briefly explaining security to alleviate user concerns.")
     public static let autofillLearnMoreLinkTitle = NSLocalizedString("autofill.learn.more.link.title", value: "[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)", comment: "A link that takes the user to the DuckDuckGo help pages explaining password managers")
+    public static let autofillExtensionTitle = NSLocalizedString("autofill.extension.title", value: "Autofill in Other Apps", comment: "Title for autofill extension settings row")
+    public static let autofillExtensionStatusOn = NSLocalizedString("autofill.extension.status.on", value: "On", comment: "Status text when autofill extension is enabled")
+    public static let autofillExtensionStatusOff = NSLocalizedString("autofill.extension.status.off", value: "Turn On", comment: "Status text when autofill extension is disabled")
+    public static let autofillExtensionScreenTitle = NSLocalizedString("autofill.extension.screen.title", value: "Autofill Passwords in Other Apps", comment: "Title for screen showing autofill extension settings")
+    public static let autofillExtensionTurnOffButtonTitle = NSLocalizedString("autofill.extension.turn.off.button.title", value: "Turn Off in System Settings...", comment: "Button title that opens system settings to turn off the autofill extension")
+    public static let autofillExtensionTurnOnButtonTitle = NSLocalizedString("autofill.extension.turn.on.button.title", value: "Turn On...", comment: "Button title that triggers system prompt to turn on the autofill extension")
+    public static let autofillExtensionHeaderEnabled = NSLocalizedString("autofill.extension.header.enabled", value: "Autofill in Other Apps Enabled", comment: "Header text shown when the autofill extension is enabled")
+    public static let autofillExtensionHeaderDisabled = NSLocalizedString("autofill.extension.header.disabled", value: "Autofill in Other Apps", comment: "Header text shown when the autofill extension is disabled")
+    public static let autofillExtensionFooter = NSLocalizedString("autofill.extension.footer", value: "Use passwords you saved in DuckDuckGo across all apps on your device.", comment: "Footer text describing what enabling the autofill extension does")
+    public static let autofillExtensionActivationTitle = NSLocalizedString("autofill.extension.activation.title", value: "Autofill passwords activated!", comment: "Title shown when the autofill extension activation succeeds")
+    public static let autofillExtensionActivationDoneButtonTitle = NSLocalizedString("autofill.extension.activation.done.button.title", value: "Done", comment: "Button title to dismiss the autofill extension activation view")
 
     public static let autofillResetNeverSavedActionTitle = NSLocalizedString("autofill.logins.list.never.saved.reset.action.title", value:"If you reset excluded sites, you will be prompted to save your password next time you sign in to any of these sites.", comment: "Alert title")
     public static let autofillResetNeverSavedActionConfirmButton = NSLocalizedString("autofill.logins.list.never.saved.reset.action.confirm", value: "Reset Excluded Sites", comment: "Confirm button to reset list of never saved sites")
@@ -1219,6 +1233,12 @@ public struct UserText {
     public static let importPasswordsPromoMessage =  NSLocalizedString("import.passwords.promo.message", value: "Quickly and securely transfer your passwords from another browser.", comment: "Message body for the Import Passwords Promotion banner")
     public static let importPasswordsPromoButtonTitle =  NSLocalizedString("import.passwords.promo.button.title", value: "Import Passwords", comment: "Title for button of the Import Passwords Promotion banner")
     public static let importPasswordsPromoDismissButtonTitle =  NSLocalizedString("import.passwords.promo.dismiss.button.title", value: "Don’t Ask Again", comment: "Title for button to dismiss the Import Passwords Promotion banner")
+
+    // Mark: Extension Promotion
+    public static let extensionPromotionTitle = NSLocalizedString("autofill.extension.promo.title", value: "Quickly sign in to your apps without typing passwords", comment: "Title for the Autofill extension promotion")
+    public static let extensionPromotionMessage = NSLocalizedString("autofill.extension.promo.message", value: "Use DuckDuckGo to securely autofill passwords for all your apps.", comment: "Message for the Autofill extension promotion")
+    public static let extensionPromotionButtonTitle = NSLocalizedString("autofill.extension.promo.button.title", value: "Turn On Autofill in Other Apps", comment: "CTA button title for the Autofill extension promotion")
+    public static let extensionPromotionButtonDismissTitle = NSLocalizedString("autofill.extension.promo.button.dismiss.title", value: "Set up Later in Settings", comment: "Dismiss button title for the Autofill extension promotion")
 
     static let preemptiveCrashTitle = NSLocalizedString("error.preemptive-crash.title", value: "App issue detected", comment: "Alert title")
     static let preemptiveCrashBody = NSLocalizedString("error.preemptive-crash.body", value: "Looks like there's an issue with the app and it needs to close. Please reopen to continue.", comment: "Alert message")
@@ -1861,7 +1881,6 @@ public struct UserText {
     public static let newAddressBarPickerNotNow = NSLocalizedString("new.address.bar.picker.not.now", value: "Not Now", comment: "Not now button for the new address bar picker")
     public static let newAddressBarPickerFooter = NSLocalizedString("new.address.bar.picker.footer", value: "Adjust in Settings > AI Features", comment: "Footer text for the new address bar picker")
     public static let settingsAIPickerSearchAndDuckAI = NSLocalizedString("settings.ai.experimental.picker.search_and_duckai", value: "Search & Duck.ai", comment: "Title for the 'Search & Duck.ai' option in the AI experimental picker")
-    public static let settingsAIPickerAddDuckAIShortcut = NSLocalizedString("settings.ai.experimental.picker.duckai_shortcut", value: "Add Duck.ai Shortcut", comment: "Title for the 'Add Duck.ai Shortcut' option in the AI experimental picker")
 
     public enum MaliciousSiteProtectionSettings {
         public static let header = NSLocalizedString("malicious-site-protection.settings.header", value: "Site Safety Warnings", comment: "Header text for Malicious Site Protection settings")
@@ -1914,45 +1933,9 @@ public struct UserText {
         }
 
         enum SearchExperience {
-            public static let title = NSLocalizedString("onboarding.highlights.searchExperience.title", value: "Want easier access to private AI Chat?", comment: "The title of the onboarding dialog popup to select the preferred search experience.")
-            public static let subtitle = NSLocalizedString("onboarding.highlights.searchExperience.subtitle", value: "Add a Duck.ai shortcut to new tabs and the address bar. Don't want this? Select Search Only.", comment: "The explanation of the onboarding dialog popup to select the preferred search experience.")
+            public static let title = NSLocalizedString("onboarding.highlights.searchExperience.title", value: "Want easy access to private AI chat?", comment: "The title of the onboarding dialog popup to select the preferred search experience.")
             public static let footer = NSLocalizedString("onboarding.highlights.searchExperience.footer", value: "AI features are private and optional. You can make changes in Settings > AI Features.", comment: "The footer disclaimer text for the search experience onboarding screen.")
             public static let cta = NSLocalizedString("onboarding.highlights.searchExperience.cta", value: "Next", comment: "The title of the CTA to progress to the next onboarding screen.")
-            
-            static func subtitleAttributed() -> NSAttributedString {
-                let duckAIShortcutBold = NSLocalizedString(
-                    "onboarding.highlights.searchExperience.subtitle.duckai-shortcut-bold",
-                    value: "Duck.ai shortcut",
-                    comment: "Bold text 'Duck.ai shortcut'. This will replace the first placeholder (%1$@) in the subtitle string."
-                )
-                
-                let searchOnlyBold = NSLocalizedString(
-                    "onboarding.highlights.searchExperience.subtitle.search-only-bold",
-                    value: "Search Only",
-                    comment: "Bold text 'Search Only'. This will replace the second placeholder (%2$@) in the subtitle string."
-                )
-                
-                let fullText = String(format: NSLocalizedString(
-                    "onboarding.highlights.searchExperience.subtitle.formatted",
-                    value: "Add a %1$@ to new tabs and the address bar. Don't want this? Select %2$@.",
-                    comment: "Full message with placeholders: %1$@ will be replaced with 'Duck.ai shortcut' (bold), %2$@ will be replaced with 'Search Only' (bold)."), duckAIShortcutBold, searchOnlyBold)
-                
-                let attributedString = NSMutableAttributedString(string: fullText)
-                
-                let boldAttributes: [NSAttributedString.Key: Any] = [
-                    .font: UIFont.daxBodyBold()
-                ]
-                
-                if let duckAIRange = fullText.range(of: duckAIShortcutBold) {
-                    attributedString.addAttributes(boldAttributes, range: NSRange(duckAIRange, in: fullText))
-                }
-                
-                if let searchOnlyRange = fullText.range(of: searchOnlyBold) {
-                    attributedString.addAttributes(boldAttributes, range: NSRange(searchOnlyRange, in: fullText))
-                }
-                
-                return attributedString
-            }
             
             static func footerAttributed() -> NSAttributedString {
                 let settingsPathBold = NSLocalizedString(

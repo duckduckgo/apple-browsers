@@ -1,7 +1,7 @@
 //
-//  SamplemacOSView.swift
+//  MockTunnelFileDescriptorProvider.swift
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,15 +16,17 @@
 //  limitations under the License.
 //
 
-import SwiftUI
+import Foundation
+@testable import VPN
 
-#if os(macOS)
-public struct SamplemacOSView: View {
+final class MockTunnelFileDescriptorProvider: TunnelFileDescriptorProviding {
+    var fileDescriptor: Int32?
 
-    public init() {}
+    init(fileDescriptor: Int32?) {
+        self.fileDescriptor = fileDescriptor
+    }
 
-    public var body: some View {
-        Text("Hello, macOS!")
+    func currentFileDescriptor() -> Int32? {
+        fileDescriptor
     }
 }
-#endif

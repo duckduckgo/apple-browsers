@@ -7,15 +7,16 @@
         "suffixes": ["form_factor", "first_daily_count"],
         "parameters": [
             {
-                "key": "authVersion",
+                "key": "vpnAuthVersion",
                 "type": "string",
                 "description": "Version of auth",
                 "enum": ["v1", "v2"]
             },
             {
-                "key": "isSubscriptionActive",
-                "type": "boolean",
-                "description": "Whether the subscription is active"
+                "key": "vpnSubscriptionActive",
+                "type": "string",
+                "description": "Whether the subscription is active",
+                "enum": ["true", "false", "no_subscription"]
             },
             "appVersion",
             "pixelSource"
@@ -28,15 +29,16 @@
         "suffixes": ["form_factor", "first_daily_count"],
         "parameters": [
             {
-                "key": "authVersion",
+                "key": "vpnAuthVersion",
                 "type": "string",
                 "description": "Version of auth",
                 "enum": ["v1", "v2"]
             },
             {
-                "key": "isSubscriptionActive",
-                "type": "boolean",
-                "description": "Whether the subscription is active"
+                "key": "vpnSubscriptionActive",
+                "type": "string",
+                "description": "Whether the subscription is active",
+                "enum": ["true", "false", "no_subscription"]
             },
             "appVersion",
             "pixelSource"
@@ -49,15 +51,16 @@
         "suffixes": ["form_factor", "first_daily_count"],
         "parameters": [
             {
-                "key": "authVersion",
+                "key": "vpnAuthVersion",
                 "type": "string",
                 "description": "Version of auth",
                 "enum": ["v1", "v2"]
             },
             {
-                "key": "isSubscriptionActive",
-                "type": "boolean",
-                "description": "Whether the subscription is active"
+                "key": "vpnSubscriptionActive",
+                "type": "string",
+                "description": "Whether the subscription is active",
+                "enum": ["true", "false", "no_subscription"]
             },
             "appVersion",
             "pixelSource"
@@ -70,15 +73,16 @@
         "suffixes": ["form_factor", "first_daily_count"],
         "parameters": [
             {
-                "key": "authVersion",
+                "key": "vpnAuthVersion",
                 "type": "string",
                 "description": "Version of auth",
                 "enum": ["v1", "v2"]
             },
             {
-                "key": "isSubscriptionActive",
-                "type": "boolean",
-                "description": "Whether the subscription is active"
+                "key": "vpnSubscriptionActive",
+                "type": "string",
+                "description": "Whether the subscription is active",
+                "enum": ["true", "false", "no_subscription"]
             },
             "appVersion",
             "pixelSource"
@@ -91,15 +95,38 @@
         "suffixes": ["form_factor", "daily"],
         "parameters": [
             {
-                "key": "authVersion",
+                "key": "vpnAuthVersion",
                 "type": "string",
                 "description": "Version of auth",
                 "enum": ["v1", "v2"]
             },
             {
-                "key": "isSubscriptionActive",
-                "type": "boolean",
-                "description": "Whether the subscription is active"
+                "key": "vpnSubscriptionActive",
+                "type": "string",
+                "description": "Whether the subscription is active",
+                "enum": ["true", "false", "no_subscription"]
+            },
+            {
+                "key": "d",
+                "type": "string",
+                "description": "String constant representing an Apple-defined error domain (e.g., WebKitErrorDomain, NSURLErrorDomain) or VPN-specific error domain. Not free-form strings, but too large and frequently changing a set to enumerate",
+                "examples": ["WebKitErrorDomain", "NSURLErrorDomain", "SKErrorDomain"]
+            },
+            {
+                "key": "e",
+                "type": "number",
+                "description": "Error code"
+            },
+            {
+                "key": "ud",
+                "type": "string",
+                "description": "String constant representing an Apple-defined underlying error domain (e.g., WebKitErrorDomain, NSURLErrorDomain) or VPN-specific underlying error domain. Not free-form strings, but too large and frequently changing a set to enumerate",
+                "examples": ["WebKitErrorDomain", "NSURLErrorDomain", "SKErrorDomain"]
+            },
+            {
+                "key": "ue",
+                "type": "number",
+                "description": "Underlying error code"
             },
             "appVersion",
             "pixelSource"
@@ -112,15 +139,16 @@
         "suffixes": ["form_factor", "first_daily_count"],
         "parameters": [
             {
-                "key": "authVersion",
+                "key": "vpnAuthVersion",
                 "type": "string",
                 "description": "Version of auth",
                 "enum": ["v1", "v2"]
             },
             {
-                "key": "isSubscriptionActive",
-                "type": "boolean",
-                "description": "Whether the subscription is active"
+                "key": "vpnSubscriptionActive",
+                "type": "string",
+                "description": "Whether the subscription is active",
+                "enum": ["true", "false", "no_subscription"]
             },
             "appVersion",
             "pixelSource"
@@ -133,15 +161,16 @@
         "suffixes": ["form_factor", "first_daily_count"],
         "parameters": [
             {
-                "key": "authVersion",
+                "key": "vpnAuthVersion",
                 "type": "string",
                 "description": "Version of auth",
                 "enum": ["v1", "v2"]
             },
             {
-                "key": "isSubscriptionActive",
-                "type": "boolean",
-                "description": "Whether the subscription is active"
+                "key": "vpnSubscriptionActive",
+                "type": "string",
+                "description": "Whether the subscription is active",
+                "enum": ["true", "false", "no_subscription"]
             },
             "appVersion",
             "pixelSource"
@@ -154,15 +183,38 @@
         "suffixes": ["form_factor", "daily"],
         "parameters": [
             {
-                "key": "authVersion",
+                "key": "vpnAuthVersion",
                 "type": "string",
                 "description": "Version of auth",
                 "enum": ["v1", "v2"]
             },
             {
-                "key": "isSubscriptionActive",
-                "type": "boolean",
-                "description": "Whether the subscription is active"
+                "key": "vpnSubscriptionActive",
+                "type": "string",
+                "description": "Whether the subscription is active",
+                "enum": ["true", "false", "no_subscription"]
+            },
+            {
+                "key": "d",
+                "type": "string",
+                "description": "String constant representing an Apple-defined error domain (e.g., WebKitErrorDomain, NSURLErrorDomain) or VPN-specific error domain. Not free-form strings, but too large and frequently changing a set to enumerate",
+                "examples": ["WebKitErrorDomain", "NSURLErrorDomain", "SKErrorDomain"]
+            },
+            {
+                "key": "e",
+                "type": "number",
+                "description": "Error code"
+            },
+            {
+                "key": "ud",
+                "type": "string",
+                "description": "String constant representing an Apple-defined underlying error domain (e.g., WebKitErrorDomain, NSURLErrorDomain) or VPN-specific underlying error domain. Not free-form strings, but too large and frequently changing a set to enumerate",
+                "examples": ["WebKitErrorDomain", "NSURLErrorDomain", "SKErrorDomain"]
+            },
+            {
+                "key": "ue",
+                "type": "number",
+                "description": "Underlying error code"
             },
             "appVersion",
             "pixelSource"

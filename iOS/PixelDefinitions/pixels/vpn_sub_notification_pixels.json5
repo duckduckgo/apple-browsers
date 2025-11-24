@@ -7,16 +7,16 @@
         "suffixes": ["form_factor", "first_daily_count"],
         "parameters": [
             {
-                "key": "authVersion",
+                "key": "vpnAuthVersion",
                 "type": "string",
                 "description": "Version of auth",
                 "enum": ["v1", "v2"]
             },
             {
-                "key": "isSubscriptionActive",
+                "key": "vpnSubscriptionActive",
                 "type": "string",
                 "description": "Whether the subscription is active",
-                "enum": ["true", "false"]
+                "enum": ["true", "false", "no_subscription"]
             },
             {
                 "key": "notificationObjectClass",
@@ -34,16 +34,16 @@
         "suffixes": ["form_factor", "first_daily_count"],
         "parameters": [
             {
-                "key": "authVersion",
+                "key": "vpnAuthVersion",
                 "type": "string",
                 "description": "Version of auth",
                 "enum": ["v1", "v2"]
             },
             {
-                "key": "isSubscriptionActive",
+                "key": "vpnSubscriptionActive",
                 "type": "string",
                 "description": "Whether the subscription is active",
-                "enum": ["true", "false"]
+                "enum": ["true", "false", "no_subscription"]
             },
             {
                 "key": "notificationObjectClass",
@@ -61,16 +61,16 @@
         "suffixes": ["form_factor", "first_daily_count"],
         "parameters": [
             {
-                "key": "authVersion",
+                "key": "vpnAuthVersion",
                 "type": "string",
                 "description": "Version of auth",
                 "enum": ["v1", "v2"]
             },
             {
-                "key": "isSubscriptionActive",
+                "key": "vpnSubscriptionActive",
                 "type": "string",
                 "description": "Whether the subscription is active",
-                "enum": ["true", "false"]
+                "enum": ["true", "false", "no_subscription"]
             },
             {
                 "key": "notificationObjectClass",
@@ -88,16 +88,16 @@
         "suffixes": ["form_factor", "first_daily_count"],
         "parameters": [
             {
-                "key": "authVersion",
+                "key": "vpnAuthVersion",
                 "type": "string",
                 "description": "Version of auth",
                 "enum": ["v1", "v2"]
             },
             {
-                "key": "isSubscriptionActive",
+                "key": "vpnSubscriptionActive",
                 "type": "string",
                 "description": "Whether the subscription is active",
-                "enum": ["true", "false"]
+                "enum": ["true", "false", "no_subscription"]
             },
             {
                 "key": "notificationObjectClass",

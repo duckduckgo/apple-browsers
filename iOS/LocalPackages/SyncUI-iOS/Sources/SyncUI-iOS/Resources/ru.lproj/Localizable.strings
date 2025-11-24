@@ -287,7 +287,7 @@
 "sync.with.another.device.footer" = "Ваши данные защищены сквозным шифрованием. У DuckDuckGo нет доступа к ключу шифрования.";
 
 /* Message for syncing with another device */
-"sync.with.another.device.message" = "Безопасная синхронизация закладок и данных автозаполнения между устройствами.";
+"sync.with.another.device.message" = "Безопасная синхронизация закладок и паролей на ваших устройствах.";
 
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Начало синхронизации";

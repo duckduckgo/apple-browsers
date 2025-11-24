@@ -23,6 +23,7 @@ import Combine
 enum StoreSubscriptionConstants {
     /// The Free Trial identifer included as part of a Subscription identifier, used to indicate that the subscription includes a free trial.
     static let freeTrialIdentifer = "freetrial"
+    static let proTierIdentifier = "pro"
 }
 
 protocol StoreSubscriptionConfiguration {
@@ -44,11 +45,15 @@ final class DefaultStoreSubscriptionConfiguration: StoreSubscriptionConfiguratio
                   identifiersByRegion: [.usa: ["ddg.privacy.pro.monthly.renews.us",
                                                "ddg.privacy.pro.yearly.renews.us",
                                                "ddg.privacy.pro.monthly.renews.us.\(StoreSubscriptionConstants.freeTrialIdentifer)",
-                                               "ddg.privacy.pro.yearly.renews.us.\(StoreSubscriptionConstants.freeTrialIdentifer)"],
+                                               "ddg.privacy.pro.yearly.renews.us.\(StoreSubscriptionConstants.freeTrialIdentifer)",
+                                               "ddg.subscription.monthly.renews.us.\(StoreSubscriptionConstants.freeTrialIdentifer).\(StoreSubscriptionConstants.proTierIdentifier)",
+                                               "ddg.subscription.yearly.renews.us.\(StoreSubscriptionConstants.freeTrialIdentifer).\(StoreSubscriptionConstants.proTierIdentifier)"],
                                         .restOfWorld: ["ddg.privacy.pro.monthly.renews.row",
                                                        "ddg.privacy.pro.yearly.renews.row",
                                                        "ddg.privacy.pro.monthly.renews.row.\(StoreSubscriptionConstants.freeTrialIdentifer)",
-                                                       "ddg.privacy.pro.yearly.renews.row.\(StoreSubscriptionConstants.freeTrialIdentifer)"]]),
+                                                       "ddg.privacy.pro.yearly.renews.row.\(StoreSubscriptionConstants.freeTrialIdentifer)",
+                                                       "ddg.subscription.monthly.renews.row.\(StoreSubscriptionConstants.freeTrialIdentifer).\(StoreSubscriptionConstants.proTierIdentifier)",
+                                                       "ddg.subscription.yearly.renews.row.\(StoreSubscriptionConstants.freeTrialIdentifer).\(StoreSubscriptionConstants.proTierIdentifier)"]]),
             // iOS debug Alpha build
             .init(name: "DuckDuckGo Alpha",
                   appIdentifier: "com.duckduckgo.mobile.ios.alpha",
@@ -56,11 +61,15 @@ final class DefaultStoreSubscriptionConfiguration: StoreSubscriptionConfiguratio
                   identifiersByRegion: [.usa: ["ios.subscription.1month",
                                                "ios.subscription.1year",
                                                "ios.subscription.1month.\(StoreSubscriptionConstants.freeTrialIdentifer).dev",
-                                               "ios.subscription.1year.\(StoreSubscriptionConstants.freeTrialIdentifer).dev"],
+                                               "ios.subscription.1year.\(StoreSubscriptionConstants.freeTrialIdentifer).dev",
+                                               "ios.subscription.1month.\(StoreSubscriptionConstants.freeTrialIdentifer).dev.\(StoreSubscriptionConstants.proTierIdentifier)",
+                                               "ios.subscription.1year.\(StoreSubscriptionConstants.freeTrialIdentifer).dev.\(StoreSubscriptionConstants.proTierIdentifier)"],
                                         .restOfWorld: ["ios.subscription.1month.row",
                                                        "ios.subscription.1year.row",
                                                        "ios.subscription.1month.row.\(StoreSubscriptionConstants.freeTrialIdentifer).dev",
-                                                       "ios.subscription.1year.row.\(StoreSubscriptionConstants.freeTrialIdentifer).dev"]]),
+                                                       "ios.subscription.1year.row.\(StoreSubscriptionConstants.freeTrialIdentifer).dev",
+                                                       "ios.subscription.1month.row.\(StoreSubscriptionConstants.freeTrialIdentifer).dev.\(StoreSubscriptionConstants.proTierIdentifier)",
+                                                       "ios.subscription.1year.row.\(StoreSubscriptionConstants.freeTrialIdentifer).dev.\(StoreSubscriptionConstants.proTierIdentifier)"]]),
             // macOS debug build
             .init(name: "IAP debug - DDG for macOS",
                   appIdentifier: "com.duckduckgo.macos.browser.debug",
@@ -68,11 +77,15 @@ final class DefaultStoreSubscriptionConfiguration: StoreSubscriptionConfiguratio
                   identifiersByRegion: [.usa: ["subscription.1month",
                                                "subscription.1year",
                                                "subscription.1month.\(StoreSubscriptionConstants.freeTrialIdentifer)",
-                                               "subscription.1year.\(StoreSubscriptionConstants.freeTrialIdentifer)"],
+                                               "subscription.1year.\(StoreSubscriptionConstants.freeTrialIdentifer)",
+                                               "subscription.1month.\(StoreSubscriptionConstants.freeTrialIdentifer).\(StoreSubscriptionConstants.proTierIdentifier)",
+                                               "subscription.1year.\(StoreSubscriptionConstants.freeTrialIdentifer).\(StoreSubscriptionConstants.proTierIdentifier)"],
                                         .restOfWorld: ["subscription.1month.row",
                                                        "subscription.1year.row",
                                                        "subscription.1month.row.\(StoreSubscriptionConstants.freeTrialIdentifer)",
-                                                       "subscription.1year.row.\(StoreSubscriptionConstants.freeTrialIdentifer)"]]),
+                                                       "subscription.1year.row.\(StoreSubscriptionConstants.freeTrialIdentifer)",
+                                                       "subscription.1month.row.\(StoreSubscriptionConstants.freeTrialIdentifer).\(StoreSubscriptionConstants.proTierIdentifier)",
+                                                       "subscription.1year.row.\(StoreSubscriptionConstants.freeTrialIdentifer).\(StoreSubscriptionConstants.proTierIdentifier)"]]),
             // macOS review build
             .init(name: "IAP review - DDG for macOS",
                   appIdentifier: "com.duckduckgo.macos.browser.review",
@@ -80,11 +93,15 @@ final class DefaultStoreSubscriptionConfiguration: StoreSubscriptionConfiguratio
                   identifiersByRegion: [.usa: ["review.subscription.1month",
                                                "review.subscription.1year",
                                                "review.subscription.1month.\(StoreSubscriptionConstants.freeTrialIdentifer)",
-                                               "review.subscription.1year.\(StoreSubscriptionConstants.freeTrialIdentifer)"],
+                                               "review.subscription.1year.\(StoreSubscriptionConstants.freeTrialIdentifer)",
+                                               "review.subscription.1month.\(StoreSubscriptionConstants.freeTrialIdentifer).\(StoreSubscriptionConstants.proTierIdentifier)",
+                                               "review.subscription.1year.\(StoreSubscriptionConstants.freeTrialIdentifer).\(StoreSubscriptionConstants.proTierIdentifier)"],
                                         .restOfWorld: ["review.subscription.1month.row",
                                                        "review.subscription.1year.row",
                                                        "review.subscription.1month.row.\(StoreSubscriptionConstants.freeTrialIdentifer)",
-                                                       "review.subscription.1year.row.\(StoreSubscriptionConstants.freeTrialIdentifer)"]]),
+                                                       "review.subscription.1year.row.\(StoreSubscriptionConstants.freeTrialIdentifer)",
+                                                       "review.subscription.1month.row.\(StoreSubscriptionConstants.freeTrialIdentifer).\(StoreSubscriptionConstants.proTierIdentifier)",
+                                                       "review.subscription.1year.row.\(StoreSubscriptionConstants.freeTrialIdentifer).\(StoreSubscriptionConstants.proTierIdentifier)"]]),
 
             // macOS TestFlight build
             .init(name: "DuckDuckGo Sandbox Review",
@@ -93,11 +110,15 @@ final class DefaultStoreSubscriptionConfiguration: StoreSubscriptionConfiguratio
                   identifiersByRegion: [.usa: ["tf.sandbox.subscription.1month",
                                                "tf.sandbox.subscription.1year",
                                                "tf.sandbox.subscription.1month.\(StoreSubscriptionConstants.freeTrialIdentifer)",
-                                               "tf.sandbox.subscription.1year.\(StoreSubscriptionConstants.freeTrialIdentifer)"],
+                                               "tf.sandbox.subscription.1year.\(StoreSubscriptionConstants.freeTrialIdentifer)",
+                                               "tf.sandbox.subscription.1month.\(StoreSubscriptionConstants.freeTrialIdentifer).\(StoreSubscriptionConstants.proTierIdentifier)",
+                                               "tf.sandbox.subscription.1year.\(StoreSubscriptionConstants.freeTrialIdentifer).\(StoreSubscriptionConstants.proTierIdentifier)"],
                                         .restOfWorld: ["tf.sandbox.subscription.1month.row",
                                                        "tf.sandbox.subscription.1year.row",
                                                        "tf.sandbox.subscription.1month.row.\(StoreSubscriptionConstants.freeTrialIdentifer)",
-                                                       "tf.sandbox.subscription.1year.row.\(StoreSubscriptionConstants.freeTrialIdentifer)"]])
+                                                       "tf.sandbox.subscription.1year.row.\(StoreSubscriptionConstants.freeTrialIdentifer)",
+                                                       "tf.sandbox.subscription.1month.row.\(StoreSubscriptionConstants.freeTrialIdentifer).\(StoreSubscriptionConstants.proTierIdentifier)",
+                                                       "tf.sandbox.subscription.1year.row.\(StoreSubscriptionConstants.freeTrialIdentifer).\(StoreSubscriptionConstants.proTierIdentifier)"]])
         ])
     }
 

@@ -23,7 +23,7 @@ import RemoteMessaging
 import AIChat
 import OSLog
 import WebKit
-
+import Common
 // MARK: - Response Types
 
 /// Response structure for openKeyboard request
@@ -65,9 +65,12 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private weak var metricReportingHandler: (any AIChatMetricReportingHandling)?
     private let experimentalAIChatManager: ExperimentalAIChatManager
     private let migrationStore = AIChatMigrationStore()
+    private let aichatFullModeFeature: AIChatFullModeFeatureProviding
 
-    init(experimentalAIChatManager: ExperimentalAIChatManager) {
+    init(experimentalAIChatManager: ExperimentalAIChatManager,
+         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature()) {
         self.experimentalAIChatManager = experimentalAIChatManager
+        self.aichatFullModeFeature = aichatFullModeFeature
     }
 
     enum AIChatKeys {
@@ -117,9 +120,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsNativePrompt: defaults.supportsNativePrompt,
             supportsStandaloneMigration: experimentalAIChatManager.isStandaloneMigrationSupported,
             supportsNativeChatInput: defaults.supportsNativeChatInput,
-            supportsURLChatIDRestoration: defaults.supportsURLChatIDRestoration,
+            supportsURLChatIDRestoration: aichatFullModeFeature.isAvailable ? true : defaults.supportsURLChatIDRestoration,
             supportsFullChatRestoration: defaults.supportsFullChatRestoration,
-            supportsPageContext: defaults.supportsPageContext
+            supportsPageContext: defaults.supportsPageContext,
+            appVersion: AppVersion.shared.versionAndBuildNumber
         )
     }
 

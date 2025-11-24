@@ -101,9 +101,9 @@ private struct IdentificationView: View {
                     .padding(.bottom, 20)
             }
 
-            EditableIdentityField(textFieldValue: $model.firstName, title: UserText.pmFirstName)
-            EditableIdentityField(textFieldValue: $model.middleName, title: UserText.pmMiddleName)
-            EditableIdentityField(textFieldValue: $model.lastName, title: UserText.pmLastName)
+            EditableIdentityField(textFieldValue: $model.firstName, title: UserText.pmFirstName, accessibilityIdentifier: "FirstName TextField")
+            EditableIdentityField(textFieldValue: $model.middleName, title: UserText.pmMiddleName, accessibilityIdentifier: "MiddleName TextField")
+            EditableIdentityField(textFieldValue: $model.lastName, title: UserText.pmLastName, accessibilityIdentifier: "LastName TextField")
 
             if model.isInEditMode {
                 Text("Birthday", comment: "Title of the section of the Identities manager where the user can add/modify a date of birth")
@@ -225,11 +225,11 @@ private struct AddressView: View {
                     .padding(.bottom, 20)
             }
 
-            EditableIdentityField(textFieldValue: $model.addressStreet, title: UserText.pmAddress1)
-            EditableIdentityField(textFieldValue: $model.addressStreet2, title: UserText.pmAddress2)
-            EditableIdentityField(textFieldValue: $model.addressCity, title: UserText.pmAddressCity)
-            EditableIdentityField(textFieldValue: $model.addressProvince, title: UserText.pmAddressProvince)
-            EditableIdentityField(textFieldValue: $model.addressPostalCode, title: UserText.pmAddressPostalCode)
+            EditableIdentityField(textFieldValue: $model.addressStreet, title: UserText.pmAddress1, accessibilityIdentifier: "AddressStreet TextField")
+            EditableIdentityField(textFieldValue: $model.addressStreet2, title: UserText.pmAddress2, accessibilityIdentifier: "AddressStreet2 TextField")
+            EditableIdentityField(textFieldValue: $model.addressCity, title: UserText.pmAddressCity, accessibilityIdentifier: "AddressCity TextField")
+            EditableIdentityField(textFieldValue: $model.addressProvince, title: UserText.pmAddressProvince, accessibilityIdentifier: "AddressProvince TextField")
+            EditableIdentityField(textFieldValue: $model.addressPostalCode, title: UserText.pmAddressPostalCode, accessibilityIdentifier: "AddressPostalCode TextField")
 
             if model.isInEditMode {
                 Text("Country", comment: "Title of the section of the Identities manager where the user can add/modify a country (US,UK, Italy etc...)")
@@ -279,8 +279,8 @@ private struct ContactInfoView: View {
                     .padding(.bottom, 20)
             }
 
-            EditableIdentityField(textFieldValue: $model.homePhone, title: UserText.pmPhoneNumber)
-            EditableIdentityField(textFieldValue: $model.emailAddress, title: UserText.pmEmailAddress)
+            EditableIdentityField(textFieldValue: $model.homePhone, title: UserText.pmPhoneNumber, accessibilityIdentifier: "PhoneNumber TextField")
+            EditableIdentityField(textFieldValue: $model.emailAddress, title: UserText.pmEmailAddress, accessibilityIdentifier: "EmailAddress TextField")
         }
 
     }
@@ -304,6 +304,7 @@ private struct HeaderView: View {
 
                 TextField("", text: $model.title)
                     .font(.title)
+                    .accessibility(identifier: "Title TextField")
 
             } else {
 
@@ -372,6 +373,7 @@ private struct EditableIdentityField: View {
     @Binding var textFieldValue: String
 
     let title: String
+    let accessibilityIdentifier: String
 
     var body: some View {
         // Only show fields if the model is either editing or has data to show
@@ -388,6 +390,7 @@ private struct EditableIdentityField: View {
                     TextField("", text: $textFieldValue)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                         .padding(.bottom, interItemSpacing)
+                        .accessibility(identifier: accessibilityIdentifier)
 
                 } else {
 

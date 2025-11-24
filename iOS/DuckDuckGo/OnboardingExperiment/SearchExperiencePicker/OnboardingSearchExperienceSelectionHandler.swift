@@ -48,6 +48,7 @@ final class OnboardingSearchExperienceSelectionHandler {
         guard featureFlagger.isFeatureOn(.onboardingSearchExperience) else { return }
         guard !daxDialogs.isEnabled else { return }
         guard !onboardingSearchExperienceProvider.didApplyOnboardingChoiceSettings else { return }
+        guard onboardingSearchExperienceProvider.didMakeChoiceDuringOnboarding else { return }
 
         aiChatSettings.enableAIChatSearchInputUserSettings(enable: onboardingSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding)
         onboardingSearchExperienceProvider.didApplyOnboardingChoiceSettings = true

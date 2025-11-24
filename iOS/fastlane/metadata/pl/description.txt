@@ -1,28 +1,28 @@
-W DuckDuckGo wierzymy, że najlepszym sposobem ochrony Twoich danych osobowych przed hakerami, oszustami i firmami naruszającymi prywatność jest zapobieganie ich gromadzeniu. Dlatego miliony ludzi wybierają DuckDuckGo zamiast Chrome i innych przeglądarek  na potrzeby wyszukiwania i przeglądania online. Nasza wbudowana wyszukiwarka jest jak Google, ale nigdy nie śledzi Twoich wyszukiwań. Nasze zabezpieczenia przeglądania, takie jak blokowanie mechanizmów śledzących i blokowanie plików cookie, pomagają powstrzymać inne firmy przed gromadzeniem Twoich danych. Nasza przeglądarka jest bezpłatna — zarabiamy na reklamach szanujących prywatność, a nie na wykorzystywaniu Twoich danych. Odzyskaj kontrolę nad swoimi danymi osobowymi dzięki przeglądarce zaprojektowanej do ochrony danych, a nie ich gromadzenia. 
+W DuckDuckGo wierzymy, że najlepszym sposobem ochrony Twoich danych osobowych przed hakerami, oszustami i firmami naruszającymi prywatność jest uniemożliwienie ich gromadzenia. Dlatego miliony ludzi wybierają darmową przeglądarkę DuckDuckGo zamiast Chrome i innych przeglądarek. Nasza wbudowana wyszukiwarka jest jak Google, ale nigdy nie śledzi Twoich wyszukiwań. Zabezpieczenia przeglądania pomagają powstrzymać inne firmy przed gromadzeniem Twoich danych. Opcjonalne zintegrowane funkcje AI, takie jak Search Assist i Duck.ai, są prywatne i nigdy nie używają Twoich danych do trenowania AI. Odzyskaj kontrolę nad swoimi danymi osobowymi dzięki przeglądarce zaprojektowanej do ochrony danych, a nie ich gromadzenia. 
 
-NAJWAŻNIEJSZE FUNKCJE
-Domyślna ochrona wyszukiwania: DuckDuckGo Search jest zintegrowana, więc możesz łatwo przeszukiwać sieć, nie narażając się na śledzenie. 
-
-Chroń historię przeglądania: nasza ochrona przed ładowaniem mechanizmów śledzących innych firm Tracker Loading Protection blokuje większość mechanizmów śledzących przed ich załadowaniem, znacznie przewyższając domyślne ustawienia większości popularnych przeglądarek. 
-
-Zabezpiecz adres e-mail (opcjonalnie): użyj funkcji ochrony poczty Email Protection, aby zablokować większość mechanizmów śledzących wiadomości e-mail i ukryć swój obecny adres e-mail za pomocą adresów @duck.com.  
-
-Oglądaj filmy na YouTube bez ukierunkowanych reklam: Duck Player chroni Cię przed ukierunkowanymi reklamami i plikami cookie dzięki interfejsowi, który nie rozprasza uwagi i zawiera najbardziej rygorystyczne ustawienia prywatności YouTube dla osadzonych filmów.
-
-Automatyczne wymuszanie szyfrowania: chroń dane przed szpiegami z sieci Wi-Fi i sieci przewodowej wymuszając w wielu witrynach korzystanie z połączenia HTTPS. 
-
-Błyskawicznie wyczyść karty i dane przeglądania za pomocą przycisku Fire Button.
-
-Wyeliminuj wyskakujące okienka dotyczące plików cookie i automatycznie ustaw preferencje, aby zminimalizować liczbę plików cookie i zmaksymalizować prywatność.
-
-Oraz wiele innych zabezpieczeń niedostępnych w większości przeglądarek, nawet w trybie przeglądania prywatnego, w tym ochronę przed śledzeniem linków, funkcję kontroli prywatności Global Privacy Control (GPC) i nie tylko.
-
-Nie musisz czekać na odzyskanie kontroli nad danymi osobowymi! Dołącz do milionów użytkowników DuckDuckGo, aby zapewnić ochronę codziennego wyszukiwania, przeglądania i wysyłania wiadomości e-mail w Internecie. 
-
-Więcej informacji na temat naszej bezpłatnej ochrony przed śledzeniem można znaleźć na stronie https://help.duckduckgo.com/privacy/web-tracking-protections
-
+NAJWAŻNIEJSZE FUNKCJE 
+DuckDuckGo Search jest wbudowana, więc można łatwo przeszukiwać sieć, nie narażając się na śledzenie.  
+Nasza dostarczana przez firmę zewnętrzną funkcja Tracker Loading Protection blokuje większość mechanizmów śledzących przed ich załadowaniem, znacznie przewyższając ustawienia domyślne popularnych przeglądarek.  
+Duck.ai umożliwia prowadzenie prywatnych rozmów z modelami AI innych firm, anonimizowanych przez nas i nigdy nieużywanych do trenowania AI.
+Skorzystaj z funkcji Email Protection, aby zablokować większość mechanizmów śledzących wiadomości e-mail i ukryć swój obecny adres e-mail za pomocą adresów @duck.com.   
+Duck Player chroni Cię przed ukierunkowanymi reklamami i plikami cookie na YouTube dzięki interfejsowi, który nie rozprasza uwagi i zawiera najbardziej rygorystyczne ustawienia prywatności YouTube dla osadzonych filmów. 
+Zablokuj firmom możliwość łączenia informacji o Twojej przeglądarce i urządzeniu. 
+Synchronizuj zaszyfrowane zakładki i hasła między urządzeniami. 
+Błyskawicznie wyczyść karty i dane przeglądania za pomocą przycisku Fire Button. 
+Automatycznie usuwaj wyskakujące okienka plików cookie.
+Oraz wiele innych zabezpieczeń niedostępnych w większości przeglądarek. 
+ 
+Subskrypcja DuckDuckGo
+Subskrybenci otrzymują następujące korzyści: 
+• Nasz VPN: zabezpieczenie połączenia nawet na 5 urządzeniach. 
+• Dostęp do zaawansowanych modeli AI w Duck.ai: prywatne rozmowy z modelami AI stworzonymi do skomplikowanych zadań.
+• Funkcja usuwania danych osobowych, Personal Information Removal: wyszukiwanie własnych danych osobowych w witrynach, które je przechowują i sprzedają, oraz ich usuwanie.
+• Funkcja przywracania tożsamości po kradzieży, Identity Theft Restoration: w przypadku kradzieży tożsamości, pomagamy ją przywrócić.
+ 
+Ceny i warunki subskrypcji DuckDuckGo   
+Opłata będzie automatycznie pobierana z Twojego konta Apple, dopóki nie anulujesz subskrypcji, co możesz zrobić w ustawieniach aplikacji. Możesz podać adres e-mail na potrzeby aktywowania subskrypcji na innych urządzeniach, a my użyjemy tego adresu tylko w celu zweryfikowania Twojej subskrypcji. Aby zapoznać się z warunkami korzystania z usługi i polityką prywatności, odwiedź stronę https://duckduckgo.com/pro/privacy-terms 
+Więcej informacji na temat naszej bezpłatnej ochrony przed śledzeniem można znaleźć na stronie https://help.duckduckgo.com/privacy/web-tracking-protections 
 Polityka prywatności: https://duckduckgo.com/privacy/ 
-
-Warunki korzystania z usługi: https://duckduckgo.com/terms
-
-Uwaga dotycząca ochrony przed mechanizmami śledzącymi innych firm i reklamami w wyszukiwarce: chociaż istnieją pewne ograniczenia dotyczące kliknięć reklam w wyszukiwarce, przeglądanie reklam w wyszukiwarce DuckDuckGo jest anonimowe. Dowiedz się więcej tutaj https://help.duckduckgo.com/privacy/web-tracking-protections
+Warunki korzystania z usługi: https://duckduckgo.com/terms 
+Uwaga dotycząca ochrony przed mechanizmami śledzącymi innych firm i reklamami w wyszukiwarce: chociaż istnieją pewne ograniczenia dotyczące kliknięć reklam w wyszukiwarce, przeglądanie reklam w wyszukiwarce DuckDuckGo jest anonimowe. Więcej informacji można znaleźć na stronie https://help.duckduckgo.com/privacy/web-tracking-protections
+ 

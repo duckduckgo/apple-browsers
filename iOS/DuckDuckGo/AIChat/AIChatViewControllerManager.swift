@@ -440,6 +440,12 @@ extension AIChatViewControllerManager: AIChatUserScriptDelegate {
     }
 
     func aiChatUserScript(_ userScript: AIChatUserScript, didReceiveMetric metric: AIChatMetric) {
+
+        if metric.metricName == .userDidSubmitPrompt
+            || metric.metricName == .userDidSubmitFirstPrompt {
+            NotificationCenter.default.post(name: .aiChatUserDidSubmitPrompt, object: nil)
+        }
+
         pixelMetricHandler?.firePixelWithMetric(metric)
     }
 }

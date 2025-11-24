@@ -2337,7 +2337,7 @@ extension Pixel.Event {
         case .syncFailedToInitFileStore: return "m_debug_sync_failed_to_init_file_store"
         case .syncFailedToMigrateToFileStore: return "m_debug_sync_failed_to_migrate_to_file_store"
         case .syncFailedToLoadAccount: return "m_d_sync_failed_to_load_account2"
-        case .syncFailedToSetupEngine: return "m_d_sync_failed_to_setup_engine"
+        case .syncFailedToSetupEngine: return "m_d_sync_failed_to_setup_engine2"
         case .syncBookmarksObjectLimitExceededDaily: return "m_sync_bookmarks_object_limit_exceeded_daily"
         case .syncCredentialsObjectLimitExceededDaily: return "m_sync_credentials_object_limit_exceeded_daily"
         case .syncCreditCardsObjectLimitExceededDaily: return "m_sync_credit_cards_object_limit_exceeded_daily"

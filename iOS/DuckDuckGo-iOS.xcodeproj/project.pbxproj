@@ -1626,6 +1626,7 @@
 		C1A1AEDC2EBCF97400D49A2F /* AutofillExtensionPromptViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A1AEDA2EBCF97400D49A2F /* AutofillExtensionPromptViewController.swift */; };
 		C1A1AEDD2EBCF97400D49A2F /* AutofillExtensionPromptViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A1AEDB2EBCF97400D49A2F /* AutofillExtensionPromptViewModel.swift */; };
 		C1A1AEDE2EBCF97400D49A2F /* AutofillExtensionPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A1AED92EBCF97400D49A2F /* AutofillExtensionPromptView.swift */; };
+		C1A74BB02EC2618D00870321 /* AutofillServiceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A74BAF2EC2618D00870321 /* AutofillServiceTests.swift */; };
 		C1AAECBD2E699F740016B82E /* SessionStateMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AAECBC2E699F740016B82E /* SessionStateMetrics.swift */; };
 		C1AAECBF2E69A1CC0016B82E /* SessionStateMetricsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AAECBE2E69A1CC0016B82E /* SessionStateMetricsTests.swift */; };
 		C1AD33282DBAD18E003B80A4 /* CreditCardPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AD33242DBAD18E003B80A4 /* CreditCardPromptView.swift */; };
@@ -3960,6 +3961,7 @@
 		C1A1AED92EBCF97400D49A2F /* AutofillExtensionPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillExtensionPromptView.swift; sourceTree = "<group>"; };
 		C1A1AEDA2EBCF97400D49A2F /* AutofillExtensionPromptViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillExtensionPromptViewController.swift; sourceTree = "<group>"; };
 		C1A1AEDB2EBCF97400D49A2F /* AutofillExtensionPromptViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillExtensionPromptViewModel.swift; sourceTree = "<group>"; };
+		C1A74BAF2EC2618D00870321 /* AutofillServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillServiceTests.swift; sourceTree = "<group>"; };
 		C1AAECBC2E699F740016B82E /* SessionStateMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStateMetrics.swift; sourceTree = "<group>"; };
 		C1AAECBE2E69A1CC0016B82E /* SessionStateMetricsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionStateMetricsTests.swift; sourceTree = "<group>"; };
 		C1AD33242DBAD18E003B80A4 /* CreditCardPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreditCardPromptView.swift; sourceTree = "<group>"; };
@@ -5536,6 +5538,7 @@
 				CB3B4D552D649DC8006DAD63 /* AutoClearServiceTests.swift */,
 				CB3B4D532D648C44006DAD63 /* AuthenticationServiceTests.swift */,
 				9F387DF42EA8BED0006861F8 /* ModalPromptCoordinationServiceTests.swift */,
+				C1A74BAF2EC2618D00870321 /* AutofillServiceTests.swift */,
 			);
 			path = AppServices;
 			sourceTree = "<group>";
@@ -11799,6 +11802,7 @@
 				4B27FBB52C927435007E21A7 /* PersistentPixelTests.swift in Sources */,
 				987130C7294AAB9F00AB05E0 /* MenuBookmarksViewModelTests.swift in Sources */,
 				9FFDA83D2DFA8F6F007923F7 /* MockAudioSessionManager.swift in Sources */,
+				C1A74BB02EC2618D00870321 /* AutofillServiceTests.swift in Sources */,
 				9FE7CD672E14F03B006691AB /* DefaultBrowserPromptPixelHandlerTests.swift in Sources */,
 				858650D32469BFAD00C36F8A /* DaxDialogTests.swift in Sources */,
 				C111F9512DC3CC2D00FABCA8 /* SaveCreditCardViewModelTests.swift in Sources */,

@@ -297,6 +297,9 @@ public enum FeatureFlag: String {
     case autofillExtensionSettings
     case canPromoteAutofillExtensionInBrowser
     case canPromoteAutofillExtensionInPasswordManagement
+
+    /// https://app.asana.com/1/137249556945/project/1201462886803403/task/1211326076710245?focus=true
+    case migrateKeychainAccessibility
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -317,7 +320,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .syncCreditCards,
              .unifiedURLPredictor,
              .forgetAllInSettings,
-             .vpnConnectionWidePixelMeasurement:
+             .vpnConnectionWidePixelMeasurement,
+             .migrateKeychainAccessibility:
             true
         default:
             false
@@ -433,7 +437,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                .widgetReporting,
                .canPromoteImportPasswordsInBrowser,
                .canPromoteImportPasswordsInPasswordManagement,
-               .newDeviceSyncPrompt:
+               .newDeviceSyncPrompt,
+               .migrateKeychainAccessibility:
             return false
         }
     }
@@ -622,6 +627,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AutofillSubfeature.canPromoteAutofillExtensionInBrowser))
         case .canPromoteAutofillExtensionInPasswordManagement:
             return .remoteReleasable(.subfeature(AutofillSubfeature.canPromoteAutofillExtensionInPasswordManagement))
+        case .migrateKeychainAccessibility:
+            return .remoteReleasable(.subfeature(AutofillSubfeature.migrateKeychainAccessibility))
         }
     }
 }

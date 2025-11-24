@@ -37,8 +37,8 @@ final class DefaultBrowserAndDockPromptService {
 
 #if DEBUG || REVIEW
         let defaultBrowserAndDockPromptDebugStore = DefaultBrowserAndDockPromptDebugStore()
-        let defaultBrowserAndDockPromptDateProvider: () -> Date = { defaultBrowserAndDockPromptDebugStore.simulatedTodayDate }
-        let defaultBrowserAndDockInstallDateProvider: () -> Date? = { defaultBrowserAndDockPromptDebugStore.simulatedInstallDate }
+        let defaultBrowserAndDockPromptDateProvider: () -> Date = { defaultBrowserAndDockPromptDebugStore.simulatedTodayDate ?? Date() }
+        let defaultBrowserAndDockInstallDateProvider: () -> Date? = { defaultBrowserAndDockPromptDebugStore.installDate }
 #else
         let defaultBrowserAndDockPromptDateProvider: () -> Date = Date.init
         let defaultBrowserAndDockInstallDateProvider: () -> Date? = { LocalStatisticsStore().installDate }

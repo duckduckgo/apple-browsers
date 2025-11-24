@@ -268,7 +268,7 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053
     case attributedMetrics
-    
+
     /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1211652685709099?focus=true
     case onboardingSearchExperience
 
@@ -283,6 +283,20 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1201141132935289/task/1210497696306780?focus=true
     case standaloneMigration
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211998610726855?focus=true
+    case tierMessagingEnabled
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211998614203542?focus=true
+    case allowProTierPurchase
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211992061067315?focus=true
+    case browsingMenuSheetPresentation
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1208824174611454?focus=true
+    case autofillExtensionSettings
+    case canPromoteAutofillExtensionInBrowser
+    case canPromoteAutofillExtensionInPasswordManagement
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -303,8 +317,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .syncCreditCards,
              .unifiedURLPredictor,
              .forgetAllInSettings,
-             .vpnConnectionWidePixelMeasurement,
-             .showHideAIGeneratedImagesSection:
+             .vpnConnectionWidePixelMeasurement:
             true
         default:
             false
@@ -339,8 +352,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .paidAIChat,
              .canInterceptSyncSetupUrls,
              .exchangeKeysToSyncWithAnotherDevice,
-             .canPromoteImportPasswordsInPasswordManagement,
-             .canPromoteImportPasswordsInBrowser,
              .setAsDefaultBrowserPiPVideoTutorial,
              .supportsAlternateStripePaymentFlow,
              .personalInformationRemoval,
@@ -354,7 +365,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .dbpRemoteBrokerDelivery,
              .subscriptionPurchaseWidePixelMeasurement,
              .showAIChatAddressBarChoiceScreen,
-             .newDeviceSyncPrompt,
              .subscriptionRestoreWidePixelMeasurement,
              .embeddedSERPSettings,
              .authV2WideEventEnabled,
@@ -372,7 +382,13 @@ extension FeatureFlag: FeatureFlagDescribing {
              .storeSerpSettings,
              .showHideAIGeneratedImagesSection,
              .standaloneMigration,
-             .blackFridayCampaign:
+             .blackFridayCampaign,
+             .tierMessagingEnabled,
+             .allowProTierPurchase,
+             .browsingMenuSheetPresentation,
+             .autofillExtensionSettings,
+             .canPromoteAutofillExtensionInBrowser,
+             .canPromoteAutofillExtensionInPasswordManagement:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -414,7 +430,10 @@ extension FeatureFlag: FeatureFlagDescribing {
                .experimentalAddressBar,
                .aiChatKeepSession,
                .aiFeaturesSettingsUpdate,
-               .widgetReporting:
+               .widgetReporting,
+               .canPromoteImportPasswordsInBrowser,
+               .canPromoteImportPasswordsInPasswordManagement,
+               .newDeviceSyncPrompt:
             return false
         }
     }
@@ -584,13 +603,25 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .vpnConnectionWidePixelMeasurement:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnConnectionWidePixelMeasurement))
         case .onboardingSearchExperience:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(AIChatSubfeature.onboardingSearchExperience))
         case .storeSerpSettings:
             return .remoteReleasable(.subfeature(SERPSubfeature.storeSerpSettings))
         case .showHideAIGeneratedImagesSection:
             return .remoteReleasable(.subfeature(AIChatSubfeature.showHideAiGeneratedImages))
         case .standaloneMigration:
             return .remoteReleasable(.subfeature(AIChatSubfeature.standaloneMigration))
+        case .tierMessagingEnabled:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.tierMessagingEnabled))
+        case .allowProTierPurchase:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.allowProTierPurchase))
+        case .browsingMenuSheetPresentation:
+            return .disabled
+        case .autofillExtensionSettings:
+            return .remoteReleasable(.subfeature(AutofillSubfeature.autofillExtensionSettings))
+        case .canPromoteAutofillExtensionInBrowser:
+            return .remoteReleasable(.subfeature(AutofillSubfeature.canPromoteAutofillExtensionInBrowser))
+        case .canPromoteAutofillExtensionInPasswordManagement:
+            return .remoteReleasable(.subfeature(AutofillSubfeature.canPromoteAutofillExtensionInPasswordManagement))
         }
     }
 }

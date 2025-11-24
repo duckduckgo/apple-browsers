@@ -287,7 +287,7 @@
 "sync.with.another.device.footer" = "Tvoji su podaci šifrirani od početka do kraja, a DuckDuckGo nema pristup ključu za šifriranje.";
 
 /* Message for syncing with another device */
-"sync.with.another.device.message" = "Sigurno sinkroniziraj oznake i podatke za automatsko popunjavanje između svojih uređaja.";
+"sync.with.another.device.message" = "Sigurno sinkroniziraj oznake i lozinke između svojih uređaja.";
 
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Započni sinkronizaciju";

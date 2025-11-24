@@ -26,6 +26,9 @@ protocol AIChatUserScriptProviding: AnyObject {
     var delegate: AIChatUserScriptDelegate? { get set }
     var webView: WKWebView? { get set }
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling)
+    func submitStartChatAction()
+    func submitOpenSettingsAction()
+    func submitOpenHistoryAction()
 }
 
 extension AIChatUserScript: AIChatUserScriptProviding { }
@@ -52,6 +55,15 @@ protocol AIChatContentHandling {
 
     /// Builds a query URL with optional prompt, auto-submit, and RAG tools.
     func buildQueryURL(query: String?, autoSend: Bool, tools: [AIChatRAGTool]?) -> URL
+    
+    /// Submits a start chat action to initiate a new AI Chat conversation.
+    func submitStartChatAction()
+    
+    /// Submits an open settings action to open the AI Chat settings.
+    func submitOpenSettingsAction()
+    
+    /// Submits an open history action to open the AI Chat history.
+    func submitOpenHistoryAction()
 }
 
 final class AIChatContentHandler: AIChatContentHandling {
@@ -60,6 +72,7 @@ final class AIChatContentHandler: AIChatContentHandling {
     private let aiChatSettings: AIChatSettingsProvider
     private var payloadHandler: AIChatPayloadHandler
     private let pixelMetricHandler: (any AIChatPixelMetricHandling)?
+    private var userScript: AIChatUserScriptProviding?
     
     // MARK: - Public API
     
@@ -75,9 +88,10 @@ final class AIChatContentHandler: AIChatContentHandling {
     
     /// Configures the user script and WebView for AIChat interaction.
     func setup(with userScript: AIChatUserScriptProviding, webView: WKWebView) {
-        userScript.delegate = self
-        userScript.setPayloadHandler(payloadHandler)
-        userScript.webView = webView
+        self.userScript = userScript
+        self.userScript?.delegate = self
+        self.userScript?.setPayloadHandler(payloadHandler)
+        self.userScript?.webView = webView
     }
     
     /// Sets the initial payload data for the AIChat session.
@@ -113,6 +127,21 @@ final class AIChatContentHandler: AIChatContentHandling {
 
         components.queryItems = queryItems
         return components.url ?? aiChatSettings.aiChatURL
+    }
+    
+    /// Submits a start chat action to initiate a new AI Chat conversation.
+    func submitStartChatAction() {
+        userScript?.submitStartChatAction()
+    }
+
+    /// Submits an open settings action to open the AI Chat settings.
+    func submitOpenSettingsAction() {
+        userScript?.submitOpenSettingsAction()
+    }
+
+    /// Submits an open history action to open the AI Chat history.
+    func submitOpenHistoryAction() {
+        userScript?.submitOpenHistoryAction()
     }
 }
 

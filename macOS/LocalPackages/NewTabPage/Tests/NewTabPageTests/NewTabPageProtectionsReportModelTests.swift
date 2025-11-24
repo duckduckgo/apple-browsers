@@ -34,9 +34,11 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
         privacyStats = CapturingPrivacyStats()
         settingsPersistor = MockNewTabPageProtectionsReportSettingsPersistor()
         model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
+                                                 autoconsentStats: CapturingAutoconsentStats(),
                                                  settingsPersistor: settingsPersistor,
                                                  burnAnimationSettingChanges: Just(true).eraseToAnyPublisher(),
-                                                 showBurnAnimation: true)
+                                                 showBurnAnimation: true,
+                                                 isAutoconsentEnabled: { true })
     }
 
     // MARK: - Initialization Tests
@@ -52,9 +54,11 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
         settingsPersistor.activeFeed = .activity
 
         model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
+                                                 autoconsentStats: CapturingAutoconsentStats(),
                                                  settingsPersistor: settingsPersistor,
                                                  burnAnimationSettingChanges: Just(true).eraseToAnyPublisher(),
-                                                 showBurnAnimation: true)
+                                                 showBurnAnimation: true,
+                                                 isAutoconsentEnabled: { true })
 
         XCTAssertFalse(model.isViewExpanded)
         XCTAssertEqual(model.activeFeed, .activity)
@@ -164,9 +168,11 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
 
     func testWhenInitializedWithShowBurnAnimationFalseThenShouldShowBurnAnimationIsFalse() {
         model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
+                                                 autoconsentStats: CapturingAutoconsentStats(),
                                                  settingsPersistor: settingsPersistor,
                                                  burnAnimationSettingChanges: Just(false).eraseToAnyPublisher(),
-                                                 showBurnAnimation: false)
+                                                 showBurnAnimation: false,
+                                                 isAutoconsentEnabled: { true })
         XCTAssertFalse(model.shouldShowBurnAnimation)
     }
 
@@ -175,9 +181,11 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
         let burnAnimationSubject = PassthroughSubject<Bool, Never>()
         model = NewTabPageProtectionsReportModel(
             privacyStats: privacyStats,
+            autoconsentStats: CapturingAutoconsentStats(),
             settingsPersistor: settingsPersistor,
             burnAnimationSettingChanges: burnAnimationSubject.eraseToAnyPublisher(),
-            showBurnAnimation: false
+            showBurnAnimation: false,
+            isAutoconsentEnabled: { true }
         )
 
         try makeShouldShowBurnAnimationStream()
@@ -190,9 +198,11 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
     func testWhenBurnAnimationSettingChangesToFalseThenShouldShowBurnAnimationIsFalse() async throws {
         let burnAnimationSubject = PassthroughSubject<Bool, Never>()
         model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
+                                                 autoconsentStats: CapturingAutoconsentStats(),
                                                  settingsPersistor: settingsPersistor,
                                                  burnAnimationSettingChanges: burnAnimationSubject.eraseToAnyPublisher(),
-                                                 showBurnAnimation: true)
+                                                 showBurnAnimation: true,
+                                                 isAutoconsentEnabled: { true })
 
         XCTAssertTrue(model.shouldShowBurnAnimation)
 
@@ -206,9 +216,11 @@ final class NewTabPageProtectionsReportModelTests: XCTestCase {
     func testWhenBurnAnimationSettingChangesMultipleTimesThenShouldShowBurnAnimationFollowsChanges() async throws {
         let burnAnimationSubject = PassthroughSubject<Bool, Never>()
         model = NewTabPageProtectionsReportModel(privacyStats: privacyStats,
+                                                 autoconsentStats: CapturingAutoconsentStats(),
                                                  settingsPersistor: settingsPersistor,
                                                  burnAnimationSettingChanges: burnAnimationSubject.eraseToAnyPublisher(),
-                                                 showBurnAnimation: true)
+                                                 showBurnAnimation: true,
+                                                 isAutoconsentEnabled: { true })
 
         try makeShouldShowBurnAnimationStream()
 

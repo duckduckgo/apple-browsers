@@ -45,6 +45,7 @@ protocol ScriptSourceProviding {
     var currentCohorts: [ContentScopeExperimentData]? { get }
     var webTrackingProtectionPreferences: WebTrackingProtectionPreferences { get }
     var cookiePopupProtectionPreferences: CookiePopupProtectionPreferences { get }
+    var duckPlayer: DuckPlayer { get }
     func buildAutofillSource() -> AutofillUserScriptSourceProvider
 
 }
@@ -57,6 +58,7 @@ protocol ScriptSourceProviding {
         privacyConfigurationManager: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
         webTrackingProtectionPreferences: Application.appDelegate.webTrackingProtectionPreferences,
         cookiePopupProtectionPreferences: Application.appDelegate.cookiePopupProtectionPreferences,
+        duckPlayer: Application.appDelegate.duckPlayer,
         contentBlockingManager: Application.appDelegate.privacyFeatures.contentBlocking.contentBlockingManager,
         trackerDataManager: Application.appDelegate.privacyFeatures.contentBlocking.trackerDataManager,
         experimentManager: Application.appDelegate.contentScopeExperimentsManager,
@@ -93,6 +95,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     let trackerDataManager: TrackerDataManager
     let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
+    let duckPlayer: DuckPlayer
     let tld: TLD
     let experimentManager: ContentScopeExperimentsManaging
     let bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling
@@ -105,6 +108,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          privacyConfigurationManager: PrivacyConfigurationManaging,
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
          cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
+         duckPlayer: DuckPlayer,
          contentBlockingManager: ContentBlockerRulesManagerProtocol,
          trackerDataManager: TrackerDataManager,
          experimentManager: ContentScopeExperimentsManaging,
@@ -126,6 +130,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.webTrackingProtectionPreferences = webTrackingProtectionPreferences
         self.cookiePopupProtectionPreferences = cookiePopupProtectionPreferences
+        self.duckPlayer = duckPlayer
         self.contentBlockingManager = contentBlockingManager
         self.trackerDataManager = trackerDataManager
         self.experimentManager = experimentManager

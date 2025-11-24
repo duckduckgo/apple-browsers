@@ -226,6 +226,47 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertEqual(promptItems?.count, 1)
         XCTAssertEqual(promptItems?.first?.value, secondQuery)
     }
+    
+    // MARK: - Submit Actions
+
+    func testSubmitStartChatActionCallsUserScript() throws {
+        // Given
+        let mockUserScript = MockAIChatUserScript()
+        let mockWebView = WKWebView()
+        handler.setup(with: mockUserScript, webView: mockWebView)
+
+        // When
+        handler.submitStartChatAction()
+
+        // Then
+        XCTAssertEqual(mockUserScript.submitStartChatActionCallCount, 1)
+    }
+
+    func testSubmitOpenSettingsActionCallsUserScript() throws {
+        // Given
+        let mockUserScript = MockAIChatUserScript()
+        let mockWebView = WKWebView()
+        handler.setup(with: mockUserScript, webView: mockWebView)
+
+        // When
+        handler.submitOpenSettingsAction()
+
+        // Then
+        XCTAssertEqual(mockUserScript.submitOpenSettingsActionCallCount, 1)
+    }
+    
+    func testSubmitOpenHistoryActionCallsUserScript() throws {
+        // Given
+        let mockUserScript = MockAIChatUserScript()
+        let mockWebView = WKWebView()
+        handler.setup(with: mockUserScript, webView: mockWebView)
+
+        // When
+        handler.submitOpenHistoryAction()
+
+        // Then
+        XCTAssertEqual(mockUserScript.submitOpenHistoryActionCallCount, 1)
+    }
 }
 
 // MARK: - Mocks
@@ -248,8 +289,23 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
     var delegateSet = false
     var webViewSet = false
     var payloadHandlerSet = false
+    var submitStartChatActionCallCount = 0
+    var submitOpenSettingsActionCallCount = 0
+    var submitOpenHistoryActionCallCount = 0
 
     func setPayloadHandler(_ payloadHandler: any AIChat.AIChatConsumableDataHandling) {
         payloadHandlerSet = true
+    }
+
+    func submitStartChatAction() {
+        submitStartChatActionCallCount += 1
+    }
+
+    func submitOpenSettingsAction() {
+        submitOpenSettingsActionCallCount += 1
+    }
+
+    func submitOpenHistoryAction() {
+        submitOpenHistoryActionCallCount += 1
     }
 }

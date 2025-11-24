@@ -25,7 +25,7 @@ import Persistence
 import PixelKit
 import SyncDataProviders
 
-final class SyncDataProviders: DataProvidersSource {
+final class SyncDataProvidersSource: DataProvidersSource {
     public let bookmarksAdapter: SyncBookmarksAdapter
     public let credentialsAdapter: SyncCredentialsAdapter
     public let creditCardsAdapter: SyncCreditCardsAdapter?

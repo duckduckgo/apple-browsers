@@ -287,7 +287,7 @@
 "sync.with.another.device.footer" = "Tietosi on salattu päästä päähän, eikä DuckDuckGolla ole hallussaan salausavainta.";
 
 /* Message for syncing with another device */
-"sync.with.another.device.message" = "Synkronoi kirjanmerkit ja automaattisen täytön tiedot turvallisesti laitteittesi välillä.";
+"sync.with.another.device.message" = "Synkronoi kirjanmerkit ja salasanat turvallisesti laitteittesi välillä.";
 
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Aloita synkronointi";

@@ -74,7 +74,7 @@ final class MockTabDelegate: TabDelegate {
 
     func tabDidRequestDownloads(tab: DuckDuckGo.TabViewController) {}
 
-    func tab(_ tab: DuckDuckGo.TabViewController, didRequestAutofillLogins account: BrowserServicesKit.SecureVaultModels.WebsiteAccount?, source: DuckDuckGo.AutofillSettingsSource) {}
+    func tab(_ tab: DuckDuckGo.TabViewController, didRequestAutofillLogins account: BrowserServicesKit.SecureVaultModels.WebsiteAccount?, source: DuckDuckGo.AutofillSettingsSource, extensionPromotionManager: (any DuckDuckGo.AutofillExtensionPromotionManaging)?) {}
 
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestDataImport source: DuckDuckGo.DataImportViewModel.ImportScreen, onFinished: @escaping () -> Void, onCancelled: @escaping () -> Void) {}
 
@@ -152,8 +152,8 @@ extension TabViewController {
             bookmarksDatabase: CoreDataDatabase.bookmarksMock,
             historyManager: MockHistoryManager(historyCoordinator: MockHistoryCoordinator(), isEnabledByUser: true, historyFeatureEnabled: true),
             syncService: MockDDGSyncing(authState: .active, isSyncInProgress: false),
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             contentBlockingAssetsPublisher: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
-            duckPlayer: MockDuckPlayer(settings: MockDuckPlayerSettings(appSettings: AppSettingsMock(), privacyConfigManager: PrivacyConfigurationManagerMock(), featureFlagger: MockDuckPlayerFeatureFlagger(), internalUserDecider: MockInternalUserDecider()), featureFlagger: featureFlagger),
             subscriptionDataReporter: MockSubscriptionDataReporter(),
             contextualOnboardingPresenter: contextualOnboardingPresenter,
             contextualOnboardingLogic: contextualOnboardingLogic,

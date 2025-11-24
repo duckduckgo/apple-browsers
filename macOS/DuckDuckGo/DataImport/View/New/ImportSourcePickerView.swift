@@ -26,17 +26,24 @@ import AppKit
 struct ImportSourcePickerView: View {
     @StateObject private var viewModel: ImportSourcePickerViewModel
 
+    let selectedImportTypes: [DataImport.DataType]
+    let selectableImportTypes: [DataImport.DataType]
+
     init(availableSources: [DataImport.Source],
          selectedSource: DataImport.Source,
          selectedImportTypes: [DataImport.DataType],
+         selectableImportTypes: [DataImport.DataType],
          shouldShowSyncFeature: Bool,
          onSourceSelected: @escaping (DataImport.Source) -> Void,
          onTypeSelected: @escaping (DataImport.DataType, Bool) -> Void,
          onSyncSelected: @escaping () -> Void) {
+        self.selectedImportTypes = selectedImportTypes
+        self.selectableImportTypes = selectableImportTypes
         _viewModel = StateObject(wrappedValue: ImportSourcePickerViewModel(
             availableSources: availableSources,
             selectedSource: selectedSource,
             selectedImportTypes: selectedImportTypes,
+            selectableImportTypes: selectableImportTypes,
             shouldShowSyncButton: shouldShowSyncFeature,
             onSourceSelected: onSourceSelected,
             onTypeSelected: onTypeSelected,
@@ -114,6 +121,12 @@ struct ImportSourcePickerView: View {
         }
         .padding(.horizontal, 20)
         .padding(.bottom, 20)
+        .onChange(of: selectableImportTypes) { newValue in
+            viewModel.updateSelectableImportTypes(newValue)
+        }
+        .onChange(of: selectedImportTypes) { newValue in
+            viewModel.updateSelectedImportTypes(newValue)
+        }
     }
 }
 

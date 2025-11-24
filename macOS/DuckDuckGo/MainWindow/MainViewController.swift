@@ -1006,7 +1006,7 @@ extension MainViewController {
             return false
         }
 
-        if (flags.contains(.shift) || flags.contains(.option)),
+        if flags.contains(.shift) || flags.contains(.option),
            featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
            let buttonsViewController = navigationBarViewController.addressBarViewController?.addressBarButtonsViewController {
             buttonsViewController.toggleSearchMode()

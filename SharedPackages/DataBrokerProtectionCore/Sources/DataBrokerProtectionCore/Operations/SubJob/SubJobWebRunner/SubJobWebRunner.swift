@@ -366,6 +366,7 @@ public extension SubJobWebRunning {
 
         if let currentAction = self.actionsHandler?.currentAction() {
             decrementRetriesCountOnError()
+            Logger.dataBrokerProtection.log("Retrying current action")
             await runNextAction(currentAction)
         } else {
             resetRetriesCount()

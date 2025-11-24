@@ -18,6 +18,7 @@
 
 import Testing
 import Foundation
+import AppKit
 @testable import DuckDuckGo_Privacy_Browser
 
 struct LoadingIndicatorPolicyTests {
@@ -71,10 +72,47 @@ struct LoadingIndicatorPolicyTests {
         let result = policy.shouldShowLoadingIndicator(isLoading: isLoading, url: searchURL, error: error)
         #expect(result == false)
     }
+
+    // MARK: - Favicon Crossfade Tests
+
+    @Test
+    func testFaviconCrossfadesWhenPlaceholderIsDisplayedAndNewFaviconIsAvailable() {
+        let result = policy.shouldCrossfadeFavicon(newFavicon: .demoNetworkImage, oldFavicon: nil, displaysPlaceholder: true)
+        #expect(result)
+    }
+
+    @Test
+    func testFaviconCrossfadesWhenOldFaviconExistsAndNewFaviconIsDifferent() {
+        let result = policy.shouldCrossfadeFavicon(newFavicon: .demoBonjourImage, oldFavicon: .demoNetworkImage, displaysPlaceholder: false)
+        #expect(result)
+    }
+
+    @Test
+    func testFaviconDoesNotCrossfadeWhenOldFaviconExistsAndNewFaviconIsTheSame() {
+        let result = policy.shouldCrossfadeFavicon(newFavicon: .demoNetworkImage, oldFavicon: .demoNetworkImage, displaysPlaceholder: false)
+        #expect(result == false)
+    }
+
+    @Test
+    func testFaviconDoesNotCrossfadeWhenNothingIsSet() {
+        let result = policy.shouldCrossfadeFavicon(newFavicon: nil, oldFavicon: nil, displaysPlaceholder: false)
+        #expect(result == false)
+    }
 }
 
 private extension NSError {
     static var testingError: NSError {
         NSError(domain: "test", code: 42, userInfo: nil)
+    }
+}
+
+private extension NSImage {
+
+    static var demoBonjourImage: NSImage? {
+        NSImage(named: NSImage.bonjourName)
+    }
+
+    static var demoNetworkImage: NSImage? {
+        NSImage(named: NSImage.networkName)
     }
 }

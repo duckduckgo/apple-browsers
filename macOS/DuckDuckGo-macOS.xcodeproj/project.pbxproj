@@ -2846,6 +2846,12 @@
 		B5DE8DAA2EBE292F005C5EF4 /* SpinnerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5DE8DA82EBE292F005C5EF4 /* SpinnerView.swift */; };
 		B5E197EB2E8C645500C447CC /* ThemeManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5E197E92E8C645500C447CC /* ThemeManagerTests.swift */; };
 		B5E197EC2E8C646700C447CC /* ThemeManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5E197E92E8C645500C447CC /* ThemeManagerTests.swift */; };
+		B5E7B6C02ED4A52E00094EDF /* TitleDisplayPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5E7B6BF2ED4A52C00094EDF /* TitleDisplayPolicy.swift */; };
+		B5E7B6C12ED4A52E00094EDF /* TitleDisplayPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5E7B6BF2ED4A52C00094EDF /* TitleDisplayPolicy.swift */; };
+		B5E7B6C52ED4A79500094EDF /* TitleDisplayPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5E7B6C42ED4A79500094EDF /* TitleDisplayPolicyTests.swift */; };
+		B5E7B6C62ED4A79500094EDF /* TitleDisplayPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5E7B6C42ED4A79500094EDF /* TitleDisplayPolicyTests.swift */; };
+		B5E7B6CA2ED4A7A800094EDF /* LoadingIndicatorPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5E7B6C82ED4A7A800094EDF /* LoadingIndicatorPolicyTests.swift */; };
+		B5E7B6CB2ED4A7A800094EDF /* LoadingIndicatorPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5E7B6C82ED4A7A800094EDF /* LoadingIndicatorPolicyTests.swift */; };
 		B5F7BDC92EBD1D9D00ECE33A /* TabFaviconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B574243A2EBA8CDF002E5460 /* TabFaviconView.swift */; };
 		B5F7BDCA2EBD1D9D00ECE33A /* TabFaviconView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B574243A2EBA8CDF002E5460 /* TabFaviconView.swift */; };
 		B602E7CF2A93A5FF00F12201 /* WKBackForwardListExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B602E7CE2A93A5FF00F12201 /* WKBackForwardListExtension.swift */; };
@@ -5528,6 +5534,9 @@
 		B5CBB60A2EC4F80A006C3F54 /* TabTitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabTitleView.swift; sourceTree = "<group>"; };
 		B5DE8DA82EBE292F005C5EF4 /* SpinnerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpinnerView.swift; sourceTree = "<group>"; };
 		B5E197E92E8C645500C447CC /* ThemeManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManagerTests.swift; sourceTree = "<group>"; };
+		B5E7B6BF2ED4A52C00094EDF /* TitleDisplayPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitleDisplayPolicy.swift; sourceTree = "<group>"; };
+		B5E7B6C42ED4A79500094EDF /* TitleDisplayPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitleDisplayPolicyTests.swift; sourceTree = "<group>"; };
+		B5E7B6C82ED4A7A800094EDF /* LoadingIndicatorPolicyTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadingIndicatorPolicyTests.swift; sourceTree = "<group>"; };
 		B602E7CE2A93A5FF00F12201 /* WKBackForwardListExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WKBackForwardListExtension.swift; sourceTree = "<group>"; };
 		B602E8152A1E2570006D261F /* URL+NetworkProtection.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "URL+NetworkProtection.swift"; sourceTree = "<group>"; };
 		B602E81C2A1E25B0006D261F /* NEOnDemandRuleExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NEOnDemandRuleExtension.swift; sourceTree = "<group>"; };
@@ -10442,6 +10451,7 @@
 		AAC9C01224CAFBB700AD1325 /* TabBar */ = {
 			isa = PBXGroup;
 			children = (
+				B5E7B6C32ED4A77E00094EDF /* Tools */,
 				5601FECB29B7971600068905 /* View */,
 				AAC9C01A24CB592E00AD1325 /* ViewModel */,
 				AAC9C01324CAFBBE00AD1325 /* Model */,
@@ -10713,6 +10723,7 @@
 			isa = PBXGroup;
 			children = (
 				B520EBE02EC4D66A00D286E4 /* LoadingIndicatorPolicy.swift */,
+				B5E7B6BF2ED4A52C00094EDF /* TitleDisplayPolicy.swift */,
 			);
 			path = Tools;
 			sourceTree = "<group>";
@@ -10724,6 +10735,15 @@
 				B53D46B02E9D9710000D59F7 /* ThemeUpdateListeningTests.swift */,
 			);
 			path = VisualRefresh;
+			sourceTree = "<group>";
+		};
+		B5E7B6C32ED4A77E00094EDF /* Tools */ = {
+			isa = PBXGroup;
+			children = (
+				B5E7B6C82ED4A7A800094EDF /* LoadingIndicatorPolicyTests.swift */,
+				B5E7B6C42ED4A79500094EDF /* TitleDisplayPolicyTests.swift */,
+			);
+			path = Tools;
 			sourceTree = "<group>";
 		};
 		B6040859274B8C5200680351 /* UnprotectedDomains */ = {
@@ -13630,6 +13650,7 @@
 				3706FAF5293F65D500E42796 /* SafariVersionReader.swift in Sources */,
 				EE4624E52E69DB53001CD9E6 /* FeatureFlagger+Sync.swift in Sources */,
 				3706FAF6293F65D500E42796 /* LoginFaviconView.swift in Sources */,
+				B5E7B6C02ED4A52E00094EDF /* TitleDisplayPolicy.swift in Sources */,
 				31BFDB6E2ECA423900ADFABD /* MouseBlockingBackgroundView.swift in Sources */,
 				F1B33DF72BAD970E001128B3 /* SubscriptionErrorReporter.swift in Sources */,
 				1D9297C02C1B062900A38521 /* ApplicationUpdateDetector.swift in Sources */,
@@ -14637,6 +14658,7 @@
 				84A37DED2DAFB68A009E0A68 /* URLDragPreviewProviderTests.swift in Sources */,
 				3706FE0D293F661700E42796 /* MainMenuTests.swift in Sources */,
 				3706FE0E293F661700E42796 /* FirefoxDataImporterTests.swift in Sources */,
+				B5E7B6CB2ED4A7A800094EDF /* LoadingIndicatorPolicyTests.swift in Sources */,
 				3706FE0F293F661700E42796 /* CSVLoginExporterTests.swift in Sources */,
 				1D9FDEC12B9B5FEA0040B78C /* AccessibilityPreferencesTests.swift in Sources */,
 				3706FE11293F661700E42796 /* URLSuggestedFilenameTests.swift in Sources */,
@@ -14770,6 +14792,7 @@
 				B6619F042B17123200CD9186 /* DataImportViewModelTests.swift in Sources */,
 				1D8C2FE62B70F4C4005E4BBD /* TabSnapshotExtensionTests.swift in Sources */,
 				3706FE40293F661700E42796 /* BWResponseTests.swift in Sources */,
+				B5E7B6C52ED4A79500094EDF /* TitleDisplayPolicyTests.swift in Sources */,
 				377D7BC12D0AC7E000ADFD06 /* NewTabPageNextStepsCardsProviderTests.swift in Sources */,
 				BB1062C82E3D009B006DBB99 /* MockVPNUpsellPopoverPresenter.swift in Sources */,
 				986189E72A7CFB3E001B4519 /* LocalBookmarkStoreSavingTests.swift in Sources */,
@@ -15842,6 +15865,7 @@
 				4B9579212AC687170062CA31 /* HardwareModel.swift in Sources */,
 				37ADC3EE2DF031890001CA03 /* MoreOptionsMenuPixel.swift in Sources */,
 				B6080BC52B21E78100B418EF /* DataImportErrorView.swift in Sources */,
+				B5E7B6C12ED4A52E00094EDF /* TitleDisplayPolicy.swift in Sources */,
 				37CDFC252D7874C500CBB429 /* HistoryViewDataProviderPixelHandler.swift in Sources */,
 				371209212C232E3F003ADF3D /* RemoteMessagingClient.swift in Sources */,
 				B69A14F22B4D6FE800B9417D /* AddBookmarkFolderPopoverViewModel.swift in Sources */,
@@ -16774,6 +16798,7 @@
 				1D8C2FF02B70F751005E4BBD /* MockTabSnapshotStore.swift in Sources */,
 				9F0660782BECC81C00B8EEF1 /* PixelCapturedParameters.swift in Sources */,
 				1D3B1AC429378953006F4388 /* BWResponseTests.swift in Sources */,
+				B5E7B6CA2ED4A7A800094EDF /* LoadingIndicatorPolicyTests.swift in Sources */,
 				1D3B1AC22936B816006F4388 /* BWMessageIdGeneratorTests.swift in Sources */,
 				B6C2C9F62760B659005B7F0A /* TestDataModel.xcdatamodeld in Sources */,
 				1DA6D1022A1FFA3700540406 /* HTTPCookieTests.swift in Sources */,
@@ -16787,6 +16812,7 @@
 				8477AF2A2EBB3F0E00849EA5 /* AttributedMetricOriginFileProviderTests.swift in Sources */,
 				4BA1A6FE258C5C1300F6F690 /* EncryptedValueTransformerTests.swift in Sources */,
 				85F69B3C25EDE81F00978E59 /* URLExtensionTests.swift in Sources */,
+				B5E7B6C62ED4A79500094EDF /* TitleDisplayPolicyTests.swift in Sources */,
 				4B9292BA2667103100AD2C21 /* BookmarkNodePathTests.swift in Sources */,
 				562532A02BC069180034D316 /* ZoomPopoverViewModelTests.swift in Sources */,
 				4B9292C02667103100AD2C21 /* BookmarkManagedObjectTests.swift in Sources */,

@@ -282,24 +282,32 @@ final class PopupHandlingTabExtension {
     }
 
     /// Checks if a domain matches any entry in the allowlist
-    /// Supports exact domain matches and wildcard eTLD+1 patterns (e.g., "*.example.com")
+    /// If "x.example.com" is in the allowlist, it will match "x.example.com" and any subdomain like "sub.x.example.com"
     private func isDomainInAllowlist(_ domain: String, allowlist: Set<String>) -> Bool {
         // Normalize: drop www prefix and lowercase for case-insensitive comparison
         let normalizedDomain = domain.lowercased().droppingWwwPrefix()
 
-        // First, check for exact domain match
-        if allowlist.contains(normalizedDomain) {
-            return true
+        // Get eTLD+1 for the domain to know when to stop stripping components
+        guard let domainETLDplus1 = tld.eTLDplus1(normalizedDomain) else {
+            return false
         }
 
-        // Then, check for wildcard eTLD+1 pattern match
-        // Extract eTLD+1 from the domain and check if "*.etld+1" is in the allowlist
-        if let domainETLDplus1 = tld.eTLDplus1(normalizedDomain) {
-            let wildcardPattern = "*.\(domainETLDplus1)"
-            if allowlist.contains(wildcardPattern) {
+        // Check the normalized domain and all parent domains up to eTLD+1
+        var currentDomain = normalizedDomain
+        repeat {
+            // Check if current domain is in allowlist
+            if allowlist.contains(currentDomain) {
                 return true
             }
-        }
+
+            // Strip the first component to get parent domain
+            if currentDomain.count > domainETLDplus1.count,
+               let dotIndex = currentDomain.firstIndex(of: ".") {
+                currentDomain = String(currentDomain[currentDomain.index(after: dotIndex)...])
+            } else {
+                break
+            }
+        } while true
 
         return false
     }

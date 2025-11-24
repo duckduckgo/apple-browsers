@@ -30,28 +30,28 @@ struct LoadingIndicatorPolicyTests {
         URL(string: "https://subdomain.example.com/path")!
     ])
     func testLoadingIndicatorIsShownWhenThereAreNoErrorsAndTheURLIsValidHypertextSchema(url: URL) {
-        let result = policy.shouldShowLoadingIndicator(url: url, isLoading: true, error: nil)
+        let result = policy.shouldShowLoadingIndicator(isLoading: true, url: url, error: nil)
         #expect(result)
     }
 
     @Test
     func testLoadingIndicatorIsNotShownWhenURLIsNilEvenIfOtherConditionsAreMet() {
-        let result = policy.shouldShowLoadingIndicator(url: nil, isLoading: true, error: nil)
+        let result = policy.shouldShowLoadingIndicator(isLoading: true, url: nil, error: nil)
         #expect(result == false)
     }
 
     @Test
     func testLoadingIndicatorIsNotShownWhenThereAreErrors() {
-        let resultWhenLoading = policy.shouldShowLoadingIndicator(url: .appStore, isLoading: true, error: NSError.testingError)
+        let resultWhenLoading = policy.shouldShowLoadingIndicator(isLoading: true, url: .appStore, error: NSError.testingError)
         #expect(resultWhenLoading == false)
 
-        let resultWhenNotLoading = policy.shouldShowLoadingIndicator(url: .appStore, isLoading: false, error: NSError.testingError)
+        let resultWhenNotLoading = policy.shouldShowLoadingIndicator(isLoading: false, url: .appStore, error: NSError.testingError)
         #expect(resultWhenNotLoading == false)
     }
 
     @Test(arguments: [URL.newtab, URL.welcome, URL.settings, URL.bookmarks, URL.history])
     func testLoadingIndicatorIsNotShownForDuckSchemaURLs(url: URL) async throws {
-        let result = policy.shouldShowLoadingIndicator(url: url, isLoading: true, error: nil)
+        let result = policy.shouldShowLoadingIndicator(isLoading: true, url: url, error: nil)
         #expect(result == false)
         #expect(url.isDuckURLScheme)
     }
@@ -61,14 +61,14 @@ struct LoadingIndicatorPolicyTests {
         URL(string: "ftp://example.com")!,
     ])
     func testLoadingIndicatorIsNotShownForNonHypertextSchemes(url: URL) {
-        let result = policy.shouldShowLoadingIndicator(url: url, isLoading: true, error: nil)
+        let result = policy.shouldShowLoadingIndicator(isLoading: true, url: url, error: nil)
         #expect(result == false)
     }
 
     @Test(arguments: [(true, nil), (true, NSError.testingError), (false, nil), (false, NSError.testingError)])
     func testLoadingIndicatorIsNotShownForDuckSearchEvenIfOtherConditionsAreMet(isLoading: Bool, error: NSError?) async throws {
         let searchURL = URL.makeSearchUrl(from: "yosemite")
-        let result = policy.shouldShowLoadingIndicator(url: searchURL, isLoading: isLoading, error: error)
+        let result = policy.shouldShowLoadingIndicator(isLoading: isLoading, url: searchURL, error: error)
         #expect(result == false)
     }
 }

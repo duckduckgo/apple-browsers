@@ -485,6 +485,21 @@ extension Pixel {
         case autofillExtensionPasswordSelected
         case autofillExtensionPasswordsSearch
 
+        case autofillExtensionPasswordsPromoDisplayed
+        case autofillExtensionPasswordsPromoConfirmed
+        case autofillExtensionPasswordsPromoDismissed
+        case autofillExtensionInlinePromoDisplayed
+        case autofillExtensionInlinePromoConfirmed
+        case autofillExtensionInlinePromoDismissed
+        case autofillExtensionInlinePromoDismissedPermanently
+
+        case autofillExtensionSettingsTurnOnTapped
+        case autofillExtensionSettingsTurnOffTapped
+        case autofillExtensionSettingsTurnOnSuccess
+        case autofillExtensionSettingsTurnOnThrottled
+        case autofillExtensionSettingsTurnOnCancelled
+        case autofillExtensionSettingsTurnOnFailed
+
         case autofillJSPixelFired(_ pixel: AutofillUserScript.JSPixel)
         
         case secureVaultError
@@ -1897,6 +1912,21 @@ extension Pixel.Event {
         case .autofillExtensionPasswordSelected: return "autofill_extension_password_selected"
         case .autofillExtensionPasswordsSearch: return "autofill_extension_passwords_search"
 
+        case .autofillExtensionPasswordsPromoDisplayed: return "autofill_extension_passwords_promo_displayed"
+        case .autofillExtensionPasswordsPromoConfirmed: return "autofill_extension_passwords_promo_confirmed"
+        case .autofillExtensionPasswordsPromoDismissed: return "autofill_extension_passwords_promo_dismissed"
+        case .autofillExtensionInlinePromoDisplayed: return "autofill_extension_inline_promo_displayed"
+        case .autofillExtensionInlinePromoConfirmed: return "autofill_extension_inline_promo_confirmed"
+        case .autofillExtensionInlinePromoDismissed: return "autofill_extension_inline_promo_dismissed"
+        case .autofillExtensionInlinePromoDismissedPermanently: return "autofill_extension_inline_promo_dismissed_permanently"
+
+        case .autofillExtensionSettingsTurnOnTapped: return "autofill_extension_settings_turn_on_tapped"
+        case .autofillExtensionSettingsTurnOffTapped: return "autofill_extension_settings_turn_off_tapped"
+        case .autofillExtensionSettingsTurnOnSuccess: return "autofill_extension_settings_turn_on_success"
+        case .autofillExtensionSettingsTurnOnThrottled: return "autofill_extension_settings_turn_on_throttled"
+        case .autofillExtensionSettingsTurnOnCancelled: return "autofill_extension_settings_turn_on_cancelled"
+        case .autofillExtensionSettingsTurnOnFailed: return "autofill_extension_settings_turn_on_failed"
+
         case .autofillJSPixelFired(let pixel):
             return "m_ios_\(pixel.pixelName)"
 
@@ -2307,7 +2337,7 @@ extension Pixel.Event {
         case .syncFailedToInitFileStore: return "m_debug_sync_failed_to_init_file_store"
         case .syncFailedToMigrateToFileStore: return "m_debug_sync_failed_to_migrate_to_file_store"
         case .syncFailedToLoadAccount: return "m_d_sync_failed_to_load_account2"
-        case .syncFailedToSetupEngine: return "m_d_sync_failed_to_setup_engine"
+        case .syncFailedToSetupEngine: return "m_d_sync_failed_to_setup_engine2"
         case .syncBookmarksObjectLimitExceededDaily: return "m_sync_bookmarks_object_limit_exceeded_daily"
         case .syncCredentialsObjectLimitExceededDaily: return "m_sync_credentials_object_limit_exceeded_daily"
         case .syncCreditCardsObjectLimitExceededDaily: return "m_sync_credit_cards_object_limit_exceeded_daily"

@@ -59,7 +59,7 @@
             },
             {
                 "keyPattern": "^ue[0-9]$",
-                "type": "integer",
+                "type": "number",
                 "description": "Underlying error code"
             }
         ]

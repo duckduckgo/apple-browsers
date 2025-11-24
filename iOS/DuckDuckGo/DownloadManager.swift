@@ -24,7 +24,7 @@ import WebKit
 import UniformTypeIdentifiers
 import os.log
 
-protocol DownloadManagerProtocol {
+protocol DownloadManaging {
     var downloadList: Set<Download> { get }
     var downloadsDirectoryFiles: [URL] { get }
     func cancelDownload(_ download: Download)
@@ -35,7 +35,7 @@ protocol DownloadManagerProtocol {
     func stopMonitoringDownloadsDirectoryChanges()
 }
 
-class DownloadManager: DownloadManagerProtocol {
+class DownloadManager: DownloadManaging {
 
     struct UserInfoKeys {
         static let download = "com.duckduckgo.com.userInfoKey.download"

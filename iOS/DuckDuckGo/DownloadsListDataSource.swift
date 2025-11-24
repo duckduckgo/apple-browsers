@@ -24,12 +24,12 @@ class DownloadsListDataSource {
     
     @Published var model: DownloadsListModel
     
-    private var downloadManager: DownloadManagerProtocol
+    private var downloadManager: DownloadManaging
     private var deleteDownloadsHelper = DownloadsDeleteHelper()
     
     private var bag: Set<AnyCancellable> = []
     
-    init(downloadManager: DownloadManagerProtocol = AppDependencyProvider.shared.downloadManager) {
+    init(downloadManager: DownloadManaging = AppDependencyProvider.shared.downloadManager) {
         self.downloadManager = downloadManager
         model = DownloadsListModel(ongoingDownloads: downloadManager.downloadList.filter { !$0.temporary }.map { AnyDownloadListRepresentable($0) },
                                    completeDownloads: downloadManager.downloadsDirectoryFiles.map { AnyDownloadListRepresentable($0) })

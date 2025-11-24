@@ -20,7 +20,7 @@
 import Foundation
 @testable import DuckDuckGo
 
-class SpyDownloadManager: DownloadManagerProtocol {
+class SpyDownloadManager: DownloadManaging {
     var downloadList: Set<Download> = []
     var downloadsDirectoryFiles: [URL] = []
     var deleteDownloadsDirectoryIfEmptyCallCount = 0

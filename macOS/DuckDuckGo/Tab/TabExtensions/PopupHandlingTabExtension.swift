@@ -37,6 +37,7 @@ final class PopupHandlingTabExtension {
     private let newWindowPolicyDecisionMakers: () -> [NewWindowPolicyDecisionMaker]?
     private let featureFlagger: FeatureFlagger
     private let popupBlockingConfig: PopupBlockingConfiguration
+    private let tld: TLD
     private let dateProvider: () -> Date
 
     private var cancellables = Set<AnyCancellable>()
@@ -64,6 +65,7 @@ final class PopupHandlingTabExtension {
          newWindowPolicyDecisionMakers: @escaping () -> [NewWindowPolicyDecisionMaker]?,
          featureFlagger: FeatureFlagger,
          popupBlockingConfig: PopupBlockingConfiguration,
+         tld: TLD,
          dateProvider: @escaping () -> Date = Date.init,
          interactionEventsPublisher: some Publisher<WebViewInteractionEvent, Never>) {
         self.tabsPreferences = tabsPreferences
@@ -74,6 +76,7 @@ final class PopupHandlingTabExtension {
         self.newWindowPolicyDecisionMakers = newWindowPolicyDecisionMakers
         self.featureFlagger = featureFlagger
         self.popupBlockingConfig = popupBlockingConfig
+        self.tld = tld
         self.dateProvider = dateProvider
 
         interactionEventsPublisher
@@ -249,6 +252,16 @@ final class PopupHandlingTabExtension {
     }
 
     @MainActor internal func shouldAllowPopupBypassingPermissionRequest(for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> Bool {
+        // Check if the source domain is in the allowlist
+        if let sourceFrame = navigationAction.safeSourceFrame {
+            let allowlist = popupBlockingConfig.allowlist
+            let sourceHost = sourceFrame.securityOrigin.host
+            if isDomainInAllowlist(sourceHost, allowlist: allowlist) {
+                Logger.general.debug("Pop-up allowed: source domain \(sourceHost) is in allowlist")
+                return true
+            }
+        }
+
         // Check if the pop-up is user-initiated (clicked link, etc.)
         if isNavigationActionUserInitiated(navigationAction) {
             return true
@@ -265,6 +278,29 @@ final class PopupHandlingTabExtension {
             return true
         }
 
+        return false
+    }
+
+    /// Checks if a domain matches any entry in the allowlist
+    /// Supports exact domain matches and wildcard eTLD+1 patterns (e.g., "*.example.com")
+    private func isDomainInAllowlist(_ domain: String, allowlist: Set<String>) -> Bool {
+        // Normalize: drop www prefix and lowercase for case-insensitive comparison
+        let normalizedDomain = domain.droppingWwwPrefix().lowercased()
+
+        // First, check for exact domain match
+        if allowlist.contains(normalizedDomain) {
+            return true
+        }
+        
+        // Then, check for wildcard eTLD+1 pattern match
+        // Extract eTLD+1 from the domain and check if "*.etld+1" is in the allowlist
+        if let domainETLDplus1 = tld.eTLDplus1(normalizedDomain) {
+            let wildcardPattern = "*.\(domainETLDplus1)"
+            if allowlist.contains(wildcardPattern) {
+                return true
+            }
+        }
+        
         return false
     }
 

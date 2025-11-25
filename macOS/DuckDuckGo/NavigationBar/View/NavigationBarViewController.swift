@@ -1321,7 +1321,7 @@ final class NavigationBarViewController: NSViewController {
     // MARK: - Actions
 
     override func mouseDown(with event: NSEvent) {
-        if let menu = view.menu, NSEvent.isContextClick(event) {
+        if let menu = view.menu, event.isContextClick {
             NSMenu.popUpContextMenu(menu, with: event, for: view)
             return
         }

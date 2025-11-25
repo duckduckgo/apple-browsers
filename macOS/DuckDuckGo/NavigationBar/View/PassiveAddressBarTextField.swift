@@ -152,7 +152,7 @@ final class PassiveAddressBarTextFieldEditor: NSTextView {
     override var isSelectable: Bool {
         get {
             // allow context menu but don‘t show beam cursor in pop ups
-            return passiveAddressBar?.isSelectable ?? false || NSApp.currentEvent?.type == .rightMouseDown
+            return passiveAddressBar?.isSelectable ?? false || NSApp.currentEvent?.isContextClick ?? false
         }
         set {
             super.isSelectable = newValue

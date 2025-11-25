@@ -71,7 +71,7 @@ final class DataBrokerJobTests: XCTestCase {
         XCTAssertFalse(mockActionsHandler.didCallNextAction)
     }
 
-    func testWhenScan_thenWillNotRetry() async throws {
+    func testWhenScan_thenWillRetryOnce() async throws {
         // Given
         let sut = optOutJob
         let mockActionsHandler = MockActionsHandler(stepType: .scan)
@@ -83,7 +83,7 @@ final class DataBrokerJobTests: XCTestCase {
         _ = await sut.evaluateActionAndHaltIfNeeded(action)
 
         // Then
-        XCTAssertEqual(sut.retriesCountOnError, 0)
+        XCTAssertEqual(sut.retriesCountOnError, 1)
     }
 
     func testWhenOptOut_thenWillRetryOnce() async throws {

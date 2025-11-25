@@ -574,14 +574,17 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         mockFreemiumDBPUserStateManager.didActivate = false
 
         var startScheduledScansCalled = false
+        let startScheduledScansCalledExpectation = XCTestExpectation(description: "Start scheduled scans called")
         mockQueueManager.startScheduledAllOperationsIfPermittedCalledCompletion = {
             startScheduledScansCalled = true
+            startScheduledScansCalledExpectation.fulfill()
         }
 
         // When
         await sut.appLaunched()
 
         // Then
+        await fulfillment(of: [startScheduledScansCalledExpectation], timeout: .seconds(5))
         XCTAssertTrue(startScheduledScansCalled)
     }
 
@@ -607,14 +610,17 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         mockFreemiumDBPUserStateManager.didActivate = true
 
         var startScheduledScansCalled = false
+        let startScheduledScansCalledExpectation = XCTestExpectation(description: "Start scheduled scans called")
         mockQueueManager.startScheduledScanOperationsIfPermittedCalledCompletion = {
             startScheduledScansCalled = true
+            startScheduledScansCalledExpectation.fulfill()
         }
 
         // When
         await sut.appLaunched()
 
         // Then
+        await fulfillment(of: [startScheduledScansCalledExpectation], timeout: .seconds(5))
         XCTAssertTrue(startScheduledScansCalled)
     }
 

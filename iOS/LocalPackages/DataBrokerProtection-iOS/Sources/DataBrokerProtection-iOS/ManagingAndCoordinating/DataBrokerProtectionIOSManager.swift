@@ -52,7 +52,7 @@ public class DBPIOSInterface {
 
     public protocol AppLifecycleEventsDelegate: AnyObject {
         func appDidEnterBackground()
-        func appDidBecomeActive()
+        func appDidBecomeActive() async
     }
 
     public protocol BackgroundTaskInformationDelegate: AnyObject {
@@ -234,12 +234,10 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
         scheduleBGProcessingTask()
     }
 
-    public func appDidBecomeActive() {
-        Task {
-            guard await authenticationManager.isUserAuthenticated else { return }
-            fireMonitoringPixels()
-            await checkForEmailConfirmationData()
-        }
+    public func appDidBecomeActive() async {
+        guard await authenticationManager.isUserAuthenticated else { return }
+        fireMonitoringPixels()
+        await checkForEmailConfirmationData()
     }
 
     func fireMonitoringPixels() {

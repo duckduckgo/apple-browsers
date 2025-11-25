@@ -366,9 +366,10 @@ extension Dictionary where Key == String, Value == String {
 
     private func underlyingErrorParameters(for nsError: NSError, level: Int = 0) -> [String: String] {
         if let underlyingError = nsError.userInfo[NSUnderlyingErrorKey] as? NSError {
-            let errorCodeParameterName = PixelParameters.underlyingErrorCode + (level == 0 ? "" : String(level + 1))
-            let errorDomainParameterName = PixelParameters.underlyingErrorDomain + (level == 0 ? "" : String(level + 1))
-            let errorDescriptionParameterName = PixelParameters.underlyingErrorDescription + (level == 0 ? "" : String(level + 1))
+            let levelString = (level == 0 ? "" : String(level + 1))
+            let errorCodeParameterName = PixelParameters.underlyingErrorCode + levelString
+            let errorDomainParameterName = PixelParameters.underlyingErrorDomain + levelString
+            let errorDescriptionParameterName = PixelParameters.underlyingErrorDescription + levelString
 
             let currentUnderlyingErrorParameters = [
                 errorCodeParameterName: "\(underlyingError.code)",

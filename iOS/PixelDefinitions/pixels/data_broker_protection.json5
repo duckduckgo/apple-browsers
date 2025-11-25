@@ -851,13 +851,14 @@
         "description": "Fired when a scan or opt-out action fails while processing a data broker.",
         "owners": ["quanganhdo"],
         "triggers": ["other"],
-        "suffixes": ["daily", "count"],
+        "suffixes": ["legacy_daily_count", "count"],
         "parameters": [
             "appVersion",
             "pixelSource",
             "dbpDataBroker",
             "dbpBrokerVersion",
             "errorDomain",
+            "errorCode",
             {
                 "key": "actionID",
                 "description": "The unique identifier of the action that failed",

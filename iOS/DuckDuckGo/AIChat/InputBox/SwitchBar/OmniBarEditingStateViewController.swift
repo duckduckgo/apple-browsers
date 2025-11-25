@@ -475,7 +475,14 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         let isHorizontallyCompactLayoutEnabled = requiresHorizontallyCompactLayout(for: view.bounds.size)
 
         let isHomeDaxVisible = !shouldDisplaySuggestionTray && !shouldDisplayFavoritesOverlay && !isHorizontallyCompactLayoutEnabled
-        let isAIDaxVisible = !shouldDisplaySuggestionTray && !isHorizontallyCompactLayoutEnabled
+
+        let isAIDaxVisible: Bool
+        if SwipeContainerManager.tryFadeout {
+            // For fadeout mode, always show Dax logo on AI Chat screen (ignoring suggestion tray)
+            isAIDaxVisible = !isHorizontallyCompactLayoutEnabled
+        } else {
+            isAIDaxVisible = !shouldDisplaySuggestionTray && !isHorizontallyCompactLayoutEnabled
+        }
 
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
     }
@@ -523,6 +530,11 @@ extension OmniBarEditingStateViewController: FadeoutContainerViewControllerDeleg
         switchBarVC.updateScrollProgress(progress)
 
         daxLogoManager.updateSwipeProgress(progress)
+    }
+
+    func fadeoutContainerViewControllerIsShowingSuggestions(_ controller: FadeoutContainerViewController) -> Bool {
+        // Returns true when showing autocomplete suggestions (not just favorites)
+        return suggestionTrayManager?.shouldDisplaySuggestionTray ?? false
     }
 }
 

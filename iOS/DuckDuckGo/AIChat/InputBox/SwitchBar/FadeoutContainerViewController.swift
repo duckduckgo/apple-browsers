@@ -24,6 +24,7 @@ import Combine
 protocol FadeoutContainerViewControllerDelegate: AnyObject {
     func fadeoutContainerViewController(_ controller: FadeoutContainerViewController, didTransitionToMode mode: TextEntryMode)
     func fadeoutContainerViewController(_ controller: FadeoutContainerViewController, didUpdateTransitionProgress progress: CGFloat)
+    func fadeoutContainerViewControllerIsShowingSuggestions(_ controller: FadeoutContainerViewController) -> Bool
 }
 
 final class FadeoutContainerViewController: UIViewController {
@@ -161,8 +162,20 @@ final class FadeoutContainerViewController: UIViewController {
         // Update progress immediately so the toggle moves right away
         updateTransitionProgress(targetProgress)
 
+        // When switching to Duck.ai and showing suggestions, hide search immediately (no fade)
+        // This improves the animation when suggestions are visible
+        let isShowingSuggestions = delegate?.fadeoutContainerViewControllerIsShowingSuggestions(self) ?? false
+        let shouldHideSearchImmediately = !isSearchMode && isShowingSuggestions
+
+        if shouldHideSearchImmediately {
+            // Hide search page immediately without animation
+            searchPageContainer.alpha = 0.0
+        }
+
         let animations = {
-            self.searchPageContainer.alpha = isSearchMode ? 1.0 : 0.0
+            if !shouldHideSearchImmediately {
+                self.searchPageContainer.alpha = isSearchMode ? 1.0 : 0.0
+            }
             self.chatPageContainer.alpha = isSearchMode ? 0.0 : 1.0
         }
 

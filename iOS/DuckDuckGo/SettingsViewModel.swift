@@ -727,7 +727,7 @@ extension SettingsViewModel {
             appThemeStyle: appSettings.currentThemeStyle,
             appIcon: AppIconManager.shared.appIcon,
             fireButtonAnimation: appSettings.currentFireButtonAnimation,
-            textZoom: SettingsState.TextZoom(enabled: textZoomCoordinator.isEnabled, level: appSettings.defaultTextZoomLevel),
+            textZoom: SettingsState.TextZoom(level: appSettings.defaultTextZoomLevel),
             addressBar: SettingsState.AddressBar(enabled: !isPad, position: appSettings.currentAddressBarPosition),
             showsFullURL: appSettings.showFullSiteAddress,
             isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
@@ -1300,7 +1300,7 @@ extension SettingsViewModel {
                                                                   object: nil,
                                                                   queue: .main, using: { [weak self] _ in
             guard let self = self else { return }
-            self.state.textZoom = SettingsState.TextZoom(enabled: true, level: self.appSettings.defaultTextZoomLevel)
+            self.state.textZoom = SettingsState.TextZoom(level: self.appSettings.defaultTextZoomLevel)
         })
 
         if #available(iOS 18.2, *) {

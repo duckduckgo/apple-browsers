@@ -2079,6 +2079,42 @@
         }
       }
     },
+    "aichat.chat-with-ai.tooltip" : {
+      "comment" : "Tooltip for the chat with AI segment in the toggle control",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Chat with AI"
+          }
+        }
+      }
+    },
+    "aichat.search-the-web.tooltip" : {
+      "comment" : "Tooltip for the search the web segment in the toggle control",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search the Web"
+          }
+        }
+      }
+    },
+    "aichat.send-button.tooltip" : {
+      "comment" : "Tooltip for the send button in AI chat omnibar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Send"
+          }
+        }
+      }
+    },
     "aichat.sidebar.close-button.tooltip" : {
       "comment" : "Tooltip for button to close the sidebar with the duck.ai chat",
       "extractionState" : "extracted_with_value",

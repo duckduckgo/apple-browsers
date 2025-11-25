@@ -108,9 +108,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866468784743
     case autocompleteTabs
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711501880
-    case textZoom
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711151217
     case adAttributionReporting
 
@@ -341,8 +338,7 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var supportsLocalOverriding: Bool {
         switch self {
-        case .textZoom,
-             .privacyProAuthV2,
+        case .privacyProAuthV2,
              .scamSiteProtection,
              .maliciousSiteProtection,
              .autocompleteAttributeSupport,
@@ -505,8 +501,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.autofillSurveys))
         case .autocompleteTabs:
             return .remoteReleasable(.feature(.autocompleteTabs))
-        case .textZoom:
-            return .remoteReleasable(.feature(.textZoom))
         case .adAttributionReporting:
             return .remoteReleasable(.feature(.adAttributionReporting))
         case .dbpRemoteBrokerDelivery:

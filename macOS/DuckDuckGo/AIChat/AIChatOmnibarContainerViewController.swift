@@ -144,6 +144,7 @@ final class AIChatOmnibarContainerViewController: NSViewController {
         submitButton.image = DesignSystemImages.Glyphs.Size12.arrowRight
         submitButton.imagePosition = .imageOnly
         submitButton.isHidden = true  // Initially hidden until text is entered
+        submitButton.toolTip = UserText.aiChatSendButtonTooltip
         containerView.addSubview(submitButton)
 
         NSLayoutConstraint.activate([

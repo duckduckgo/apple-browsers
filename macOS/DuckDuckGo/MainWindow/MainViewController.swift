@@ -329,8 +329,7 @@ final class MainViewController: NSViewController {
         mainView.setupAIChatOmnibarTextContainerConstraints(addressBarStack: navigationBarViewController.addressBarStack)
         mainView.setupAIChatOmnibarContainerConstraints(addressBarStack: navigationBarViewController.addressBarStack)
 
-        // Wire the custom toggle control reference to the AI Chat text container for TAB key navigation
-        wireToggleReferenceToAIChatTextContainer()
+        wireAIChatOmnibarUpdates()
     }
 
     override func viewWillAppear() {
@@ -439,6 +438,8 @@ final class MainViewController: NSViewController {
     }
 
     deinit {
+        NotificationCenter.default.removeObserver(self, name: NSWindow.didResizeNotification, object: nil)
+
 #if DEBUG
 
         // Check that TabCollectionViewModel deallocates
@@ -487,9 +488,21 @@ final class MainViewController: NSViewController {
             aiChatOmnibarContainerViewController.startEventMonitoring()
             aiChatOmnibarTextContainerViewController.startEventMonitoring()
             aiChatOmnibarTextContainerViewController.focusTextView()
+
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                let desiredHeight = self.aiChatOmnibarTextContainerViewController.calculateDesiredPanelHeight()
+                self.mainView.updateAIChatOmnibarContainerHeight(desiredHeight, animated: false)
+
+                let maxHeight = self.mainView.calculateMaxAIChatOmnibarHeight()
+                self.aiChatOmnibarTextContainerViewController.updateScrollingBehavior(maxHeight: maxHeight)
+            }
         } else {
             aiChatOmnibarContainerViewController.cleanup()
             aiChatOmnibarTextContainerViewController.cleanup()
+
+            /// Reset panel height to minimum to prevent size flash on next open
+            mainView.updateAIChatOmnibarContainerHeight(100, animated: false)
         }
     }
 
@@ -497,6 +510,60 @@ final class MainViewController: NSViewController {
         /// This enables TAB key navigation from AI Chat mode to the toggle
         if let searchModeToggleControl = navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.searchModeToggleControl {
             aiChatOmnibarTextContainerViewController.customToggleControl = searchModeToggleControl
+        }
+    }
+
+    private func wireAIChatOmnibarHeightUpdates() {
+        aiChatOmnibarTextContainerViewController.heightDidChange = { [weak self] desiredHeight in
+            guard let self = self else { return }
+
+            self.mainView.updateAIChatOmnibarContainerHeight(desiredHeight, animated: true)
+
+            let maxHeight = self.mainView.calculateMaxAIChatOmnibarHeight()
+            self.aiChatOmnibarTextContainerViewController.updateScrollingBehavior(maxHeight: maxHeight)
+        }
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(windowDidResize),
+            name: NSWindow.didResizeNotification,
+            object: view.window
+        )
+    }
+
+    private func wireAIChatOmnibarUpdates() {
+        wireToggleReferenceToAIChatTextContainer()
+        wireAIChatOmnibarHeightUpdates()
+        wireAIChatOmnibarHitTesting()
+    }
+
+    @objc private func windowDidResize() {
+        guard mainView.isAIChatOmnibarContainerShown else { return }
+
+        let currentHeight = mainView.aiChatOmnibarContainerView.frame.height
+        mainView.updateAIChatOmnibarContainerHeight(currentHeight, animated: false)
+
+        let maxHeight = mainView.calculateMaxAIChatOmnibarHeight()
+        aiChatOmnibarTextContainerViewController.updateScrollingBehavior(maxHeight: maxHeight)
+    }
+
+    private func wireAIChatOmnibarHitTesting() {
+        navigationBarViewController.addressBarViewController?.isPointInAIChatOmnibar = { [weak self] locationInWindow in
+            guard let self = self else { return false }
+            guard self.mainView.isAIChatOmnibarContainerShown else { return false }
+
+            let containerFrame = self.mainView.aiChatOmnibarContainerView.frame
+            let pointInMainView = self.mainView.convert(locationInWindow, from: nil)
+            if containerFrame.contains(pointInMainView) {
+                return true
+            }
+
+            let textContainerFrame = self.mainView.aiChatOmnibarTextContainerView.frame
+            if textContainerFrame.contains(pointInMainView) {
+                return true
+            }
+
+            return false
         }
     }
 

@@ -226,7 +226,8 @@ final class AddressBarViewController: NSViewController {
                 isUrlIgnored: { _ in false }
             ),
             searchPreferences: searchPreferences,
-            themeManager: themeManager
+            themeManager: themeManager,
+            featureFlagger: featureFlagger
         )
         self.isBurner = burnerMode.isBurner
         self.onboardingPixelReporter = onboardingPixelReporter

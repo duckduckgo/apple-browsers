@@ -114,10 +114,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     // Import Firefox's bookmarks and new tab shortcuts to better match Firefox's behavior
     case updateFirefoxBookmarksImport
 
-    /// Displays a restore session prompt after the app closes unexpectedly
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1208994157946492?focus=true
-    case restoreSessionPrompt
-
     /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
     case willSoonDropBigSurSupport
 

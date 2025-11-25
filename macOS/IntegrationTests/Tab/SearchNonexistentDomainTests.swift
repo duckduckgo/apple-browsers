@@ -249,7 +249,7 @@ final class SearchNonexistentDomainTests: XCTestCase {
             isBurner: false,
             suggestionContainer: suggestionContainer,
             searchPreferences: SearchPreferences(persistor: MockSearchPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
-            themeManager: MockThemeManager()
+            themeManager: MockThemeManager(), featureFlagger: MockFeatureFlagger()
         )
 
         suggestionContainer.getSuggestions(for: enteredString)

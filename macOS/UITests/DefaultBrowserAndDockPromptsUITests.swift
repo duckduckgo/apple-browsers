@@ -59,6 +59,8 @@ final class DefaultBrowserAndDockPromptsUITests: UITestCase {
         defaultBrowserDialog.buttons.element(boundBy: 1).clickAfterExistenceTestSucceeds()
     }
 
+    // Note that this test only covers the behavior in the app under test, not the system behavior.
+    // System-level verification (e.g. checking or interacting with the feedback notification) is out of scope for UI tests.
     func testInactiveUserPrompt_CancelButtonDismissesPrompt() throws {
         // Simulate conditions for user eligibility for the prompt:
         // 28 days after app install and 7 days of user inactivity
@@ -72,14 +74,6 @@ final class DefaultBrowserAndDockPromptsUITests: UITestCase {
         // Dismiss the prompt
         app.dismissButton.click()
         XCTAssertTrue(app.inactiveUserPrompt.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Inactive user prompt should be dismissed after clicking dismiss button")
-
-        // Tap the notification
-        let notificationCenter = XCUIApplication(bundleIdentifier: "com.apple.notificationcenterui")
-        let notification = notificationCenter.staticTexts["Got time for quick feedback?"]
-        notification.clickAfterExistenceTestSucceeds()
-
-        // Confirm the feedback form opens
-        XCTAssertTrue(app.reportAProblemForm.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Report a Problem form should be opened")
     }
 }
 

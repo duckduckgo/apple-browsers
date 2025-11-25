@@ -37,8 +37,8 @@ final class DefaultBrowserAndDockPromptsUITests: UITestCase {
     }
 
     // Note that this test only covers the behavior in the app under test, not the system behavior.
-    // System-level verification (e.g. checking if the system alert is shown for setting the default browser,
-    // if the app is added to the dock, or if the app is set as default browser) is out of scope for UI tests.
+    // System-level verification (e.g. checking if the app is added to the dock,
+    // or if the app is set as default browser) is out of scope for UI tests.
     func testInactiveUserPrompt_ConfirmButtonDismissesPrompt() throws {
         // Simulate conditions for user eligibility for the prompt:
         // 28 days after app install and 7 days of user inactivity
@@ -52,10 +52,13 @@ final class DefaultBrowserAndDockPromptsUITests: UITestCase {
         // Confirm the prompt
         app.confirmButton.click()
         XCTAssertTrue(app.inactiveUserPrompt.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Inactive user prompt should be dismissed after clicking confirm button")
+
+        // Dismiss the default browser dialog to prevent interference with other tests
+        let coreServicesUIAgent = XCUIApplication(bundleIdentifier: "com.apple.coreservices.uiagent")
+        let defaultBrowserDialog = coreServicesUIAgent.dialogs.firstMatch
+        defaultBrowserDialog.buttons.element(boundBy: 1).clickAfterExistenceTestSucceeds()
     }
 
-    // Note that this test only covers the behavior in the app under test, not the system behavior.
-    // System-level verification (e.g. checking or interacting with the feedback notification) is out of scope for UI tests.
     func testInactiveUserPrompt_CancelButtonDismissesPrompt() throws {
         // Simulate conditions for user eligibility for the prompt:
         // 28 days after app install and 7 days of user inactivity
@@ -69,6 +72,14 @@ final class DefaultBrowserAndDockPromptsUITests: UITestCase {
         // Dismiss the prompt
         app.dismissButton.click()
         XCTAssertTrue(app.inactiveUserPrompt.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Inactive user prompt should be dismissed after clicking dismiss button")
+
+        // Tap the notification
+        let notificationCenter = XCUIApplication(bundleIdentifier: "com.apple.notificationcenterui")
+        let notification = notificationCenter.staticTexts["Got time for quick feedback?"]
+        notification.clickAfterExistenceTestSucceeds()
+
+        // Confirm the feedback form opens
+        XCTAssertTrue(app.reportAProblemForm.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Report a Problem form should be opened")
     }
 }
 
@@ -114,6 +125,10 @@ private extension XCUIApplication {
     var dismissButton: XCUIElement {
         inactiveUserPrompt.buttons[AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.dismissButton]
     }
+
+    var reportAProblemForm: XCUIElement {
+        sheets[AccessibilityIdentifiers.Feedback.reportAProblem]
+    }
 }
 
 // MARK: - Helper Methods
@@ -122,16 +137,11 @@ private extension XCUIApplication {
 
     /// Open Debug menu -> Default Browser and Dock Prompt submenu -> Simulate Fresh App Install
     func simulateFreshAppInstall() {
-        selectMenuItem(simulateFreshAppInstallMenuItem)
+        simulateFreshAppInstallMenuItem.clickAfterExistenceTestSucceeds()
     }
 
     func advanceBy14Days() {
-        selectMenuItem(advanceBy14DaysMenuItem)
-    }
-
-    private func selectMenuItem(_ menuItem: XCUIElement) {
-        XCTAssertTrue(menuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Menu item \(menuItem.identifier) should exist")
-        menuItem.click()
+        advanceBy14DaysMenuItem.clickAfterExistenceTestSucceeds()
     }
 
 }

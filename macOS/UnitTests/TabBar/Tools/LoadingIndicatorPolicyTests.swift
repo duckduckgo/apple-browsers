@@ -21,6 +21,7 @@ import Foundation
 import AppKit
 @testable import DuckDuckGo_Privacy_Browser
 
+@Suite("LoadingIndicatorPolicy Tests", .serialized)
 struct LoadingIndicatorPolicyTests {
 
     private let policy = DefaultLoadingIndicatorPolicy()

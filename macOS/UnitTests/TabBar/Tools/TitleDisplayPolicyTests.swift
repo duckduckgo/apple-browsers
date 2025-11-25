@@ -20,6 +20,7 @@ import Testing
 import Foundation
 @testable import DuckDuckGo_Privacy_Browser
 
+@Suite("TitleDisplayPolicy Tests", .serialized)
 struct TitleDisplayPolicyTests {
 
     private let policy = DefaultTitleDisplayPolicy()

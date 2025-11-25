@@ -40,7 +40,7 @@ public struct PixelParameters {
 
     static let errorCode = "e"
     static let errorDomain = "d"
-    static let errorDescription = "de"
+    static let errorDescription = "ed"
     static let errorCount = "c"
     static let underlyingErrorCode = "ue"
     static let underlyingErrorDomain = "ud"

@@ -30,7 +30,7 @@ public extension PixelKit {
 
         public static let errorCode = "e"
         public static let errorDomain = "d"
-        public static let errorDescription = "de"
+        public static let errorDescription = "ed"
         public static let errorCount = "c"
         public static let errorSource = "error_source"
         public static let sourceBrowserVersion = "source_browser_version"

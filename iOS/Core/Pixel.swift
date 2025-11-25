@@ -44,6 +44,7 @@ public struct PixelParameters {
     static let errorCount = "c"
     static let underlyingErrorCode = "ue"
     static let underlyingErrorDomain = "ud"
+    static let underlyingErrorDescription = "ued"
 
     static let coreDataErrorCode = "coreDataCode"
     static let coreDataErrorDomain = "coreDataDomain"
@@ -367,10 +368,12 @@ extension Dictionary where Key == String, Value == String {
         if let underlyingError = nsError.userInfo[NSUnderlyingErrorKey] as? NSError {
             let errorCodeParameterName = PixelParameters.underlyingErrorCode + (level == 0 ? "" : String(level + 1))
             let errorDomainParameterName = PixelParameters.underlyingErrorDomain + (level == 0 ? "" : String(level + 1))
+            let errorDescriptionParameterName = PixelParameters.underlyingErrorDescription + (level == 0 ? "" : String(level + 1))
 
             let currentUnderlyingErrorParameters = [
                 errorCodeParameterName: "\(underlyingError.code)",
-                errorDomainParameterName: underlyingError.domain
+                errorDomainParameterName: underlyingError.domain,
+                errorDescriptionParameterName: underlyingError.description
             ]
 
             let additionalParameters = underlyingErrorParameters(for: underlyingError, level: level + 1)

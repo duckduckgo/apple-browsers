@@ -145,7 +145,7 @@
     "dbpDataBroker": {
         "key": "data_broker",
         "type": "string",
-        "description": "URL of the data broker involved in the opt-out attempt or action"
+        "description": "Name of the data broker involved in the opt-out attempt or action"
     },
     "dbpParentBroker": {
         "key": "parent",

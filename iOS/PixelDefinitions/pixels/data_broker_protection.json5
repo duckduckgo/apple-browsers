@@ -526,7 +526,7 @@
             },
             {
                 "key": "data_broker",
-                "description": "The URL of the data broker that this action was operating on (unknown when not available)",
+                "description": "The name of the data broker that this action was operating on (unknown when not available)",
                 "type": "string"
             },
             {
@@ -682,7 +682,7 @@
             {
                 "key": "feature.data.ext.data_broker",
                 "type": "string",
-                "description": "The URL of the data broker associated with this opt-out submission"
+                "description": "The name of the data broker associated with this opt-out submission"
             },
             "dbpFeatureDataBrokerVersion",
             {
@@ -720,7 +720,7 @@
             {
                 "key": "feature.data.ext.data_broker",
                 "type": "string",
-                "description": "The URL of the data broker associated with this scan"
+                "description": "The name of the data broker associated with this scan"
             },
             "dbpFeatureDataBrokerVersion",
             {
@@ -769,7 +769,7 @@
             {
                 "key": "feature.data.ext.data_broker",
                 "type": "string",
-                "description": "The URL of the data broker associated with this confirmation flow"
+                "description": "The name of the data broker associated with this confirmation flow"
             },
             "dbpFeatureDataBrokerVersion",
             {

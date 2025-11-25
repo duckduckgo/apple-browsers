@@ -202,7 +202,7 @@ struct LegacyDataImportView: ModalView {
                     .disabled(model.isImportSourcePickerDisabled)
                 }
 
-                LegacyDataImportTypePicker(viewModel: $model, isDataTypePickerExpanded: isDataTypePickerExpanded, canOpenTypePicker: model.canOpenImportTypesPanel)
+                LegacyDataImportTypePicker(viewModel: $model, isDataTypePickerExpanded: isDataTypePickerExpanded)
                     .disabled(model.isImportSourcePickerDisabled)
                 .padding(.top, 8)
             }

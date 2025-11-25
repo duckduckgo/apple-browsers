@@ -23,18 +23,36 @@ import UIKit
 
 /// Manages the horizontal swipe container with pagination between search and AI chat modes
 final class SwipeContainerManager: NSObject {
-    
+
+    static let tryFadeout = true
+
     // MARK: - Properties
 
     private let switchBarHandler: SwitchBarHandling
 
-    var searchPageContainer: UIView { swipeContainerViewController.searchPageContainer }
+    var searchPageContainer: UIView {
+        if SwipeContainerManager.tryFadeout {
+            return fadeoutContainerViewController.searchPageContainer
+        } else {
+            return swipeContainerViewController.searchPageContainer
+        }
+    }
 
-    lazy var swipeContainerViewController = SwipeContainerViewController(switchBarHandler: switchBarHandler)
+    private lazy var swipeContainerViewController = SwipeContainerViewController(switchBarHandler: switchBarHandler)
+    private lazy var fadeoutContainerViewController = FadeoutContainerViewController(switchBarHandler: switchBarHandler)
+
+    var containerViewController: UIViewController {
+        SwipeContainerManager.tryFadeout ? fadeoutContainerViewController : swipeContainerViewController
+    }
 
     var delegate: SwipeContainerViewControllerDelegate? {
         get { swipeContainerViewController.delegate }
         set { swipeContainerViewController.delegate = newValue }
+    }
+
+    var fadeoutDelegate: FadeoutContainerViewControllerDelegate? {
+        get { fadeoutContainerViewController.delegate }
+        set { fadeoutContainerViewController.delegate = newValue }
     }
 
     // MARK: - Initialization
@@ -49,31 +67,31 @@ final class SwipeContainerManager: NSObject {
 
     /// Installs the swipe container in the provided parent view
     func installInViewController(_ parentController: UIViewController, asSubviewOf view: UIView, barView: UIView, isTopBarPosition: Bool) {
-        parentController.addChild(swipeContainerViewController)
+        parentController.addChild(containerViewController)
 
-        view.insertSubview(swipeContainerViewController.view, belowSubview: barView)
+        view.insertSubview(containerViewController.view, belowSubview: barView)
 
-        swipeContainerViewController.view.translatesAutoresizingMaskIntoConstraints = false
+        containerViewController.view.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
-            swipeContainerViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            swipeContainerViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+            containerViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            containerViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
 
         if isTopBarPosition {
-            swipeContainerViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+            containerViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
             // Allow scroll to flow under
-            swipeContainerViewController.view.topAnchor.constraint(equalTo: barView.bottomAnchor,
-                                                                   constant: -Metrics.contentUnderflowOffset).isActive = true
+            containerViewController.view.topAnchor.constraint(equalTo: barView.bottomAnchor,
+                                                              constant: -Metrics.contentUnderflowOffset).isActive = true
 
             // Compensate for the underflow + margin
-            swipeContainerViewController.additionalSafeAreaInsets.top = Metrics.contentMargin + Metrics.contentUnderflowOffset
+            containerViewController.additionalSafeAreaInsets.top = Metrics.contentMargin + Metrics.contentUnderflowOffset
         } else {
-            swipeContainerViewController.view.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
-            swipeContainerViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
+            containerViewController.view.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
+            containerViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor).isActive = true
         }
 
-        swipeContainerViewController.didMove(toParent: parentController)
+        containerViewController.didMove(toParent: parentController)
     }
 
     private struct Metrics {

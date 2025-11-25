@@ -94,6 +94,7 @@ final class SwipeContainerViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .removeDuplicates()
             .sink { [weak self] _ in
+                guard self?.swipeScrollView != nil else { return }
                 self?.updateScrollViewPosition(animated: true)
             }
             .store(in: &cancellables)

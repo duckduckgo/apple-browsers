@@ -268,17 +268,18 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         let manager = SwipeContainerManager(switchBarHandler: switchBarHandler)
         manager.installInViewController(self, asSubviewOf: contentContainerView, barView: switchBarVC.view, isTopBarPosition: isUsingTopBarPosition)
         manager.delegate = self
+        manager.fadeoutDelegate = self
         swipeContainerManager = manager
     }
 
     private func installSuggestionsTray() {
         guard let dependencies = suggestionTrayDependencies,
-              let swipeContainerViewController = swipeContainerManager?.swipeContainerViewController,
-              let searchContainer = swipeContainerViewController.searchPageContainer else { return }
+              let containerViewController = swipeContainerManager?.containerViewController,
+              let searchContainer = swipeContainerManager?.searchPageContainer else { return }
 
         let manager = SuggestionTrayManager(switchBarHandler: switchBarHandler, dependencies: dependencies)
         manager.delegate = self
-        manager.installInContainerView(searchContainer, parentViewController: swipeContainerViewController)
+        manager.installInContainerView(searchContainer, parentViewController: containerViewController)
         suggestionTrayManager = manager
     }
 
@@ -368,11 +369,11 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     private func updateSwipeContainerSafeArea() {
         if isUsingTopBarPosition {
-            swipeContainerManager?.swipeContainerViewController.additionalSafeAreaInsets.bottom = 0
+            swipeContainerManager?.containerViewController.additionalSafeAreaInsets.bottom = 0
         } else {
             switchBarVC.view.layoutIfNeeded()
             let barHeigthAboveSafeArea = switchBarVC.view.bounds.height - switchBarVC.view.safeAreaInsets.bottom
-            swipeContainerManager?.swipeContainerViewController.additionalSafeAreaInsets.bottom = barHeigthAboveSafeArea
+            swipeContainerManager?.containerViewController.additionalSafeAreaInsets.bottom = barHeigthAboveSafeArea
         }
     }
 
@@ -503,6 +504,22 @@ extension OmniBarEditingStateViewController: SwipeContainerViewControllerDelegat
 
     func swipeContainerViewController(_ controller: SwipeContainerViewController, didUpdateScrollProgress progress: CGFloat) {
         // Forward the scroll progress to the switch bar to animate the toggle
+        switchBarVC.updateScrollProgress(progress)
+
+        daxLogoManager.updateSwipeProgress(progress)
+    }
+}
+
+// MARK: - FadeoutContainerViewControllerDelegate
+
+extension OmniBarEditingStateViewController: FadeoutContainerViewControllerDelegate {
+
+    func fadeoutContainerViewController(_ controller: FadeoutContainerViewController, didTransitionToMode mode: TextEntryMode) {
+        switchBarHandler.setToggleState(mode)
+    }
+
+    func fadeoutContainerViewController(_ controller: FadeoutContainerViewController, didUpdateTransitionProgress progress: CGFloat) {
+        // Forward the transition progress to the switch bar to animate the toggle
         switchBarVC.updateScrollProgress(progress)
 
         daxLogoManager.updateSwipeProgress(progress)

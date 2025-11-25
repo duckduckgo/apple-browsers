@@ -70,9 +70,14 @@ extension DataImport {
 
                 return preferredProfile
             }
+
+            // Safari supports manual file import and doesn't require profile directory access
+            if browser.isSafari {
+                return validImportableProfiles.first ?? profiles.first
+            }
+            
             return validImportableProfiles.first
         }
-
     }
 
     struct BrowserProfile: Comparable {
@@ -160,11 +165,16 @@ extension DataImport {
         func hasValidProfileData(for type: DataType) -> Bool {
             let validateProfileDataResult = validateProfileData()
 
+            // Safari supports manual file import and doesn't require profile directory access
+            let canBypassValidation = browser.isSafari && validateProfileDataResult == nil
+
             switch type {
             case .passwords:
+                if canBypassValidation { return true }
                 if case .available = validateProfileDataResult?.logins { return true }
                 return false
             case .bookmarks:
+                if canBypassValidation { return true }
                 if case .available = validateProfileDataResult?.bookmarks { return true }
                 return false
             case .creditCards:

@@ -52,6 +52,13 @@ final class SuggestionContainerViewModel {
         suggestionContainer.result?.count ?? 0
     }
 
+    /// Returns whether the search cell should be shown in the suggestions list
+    var shouldShowSearchCell: Bool {
+        guard featureFlagger.isFeatureOn(.aiChatOmnibarToggle) else { return false }
+        guard let userStringValue, !userStringValue.isEmpty else { return false }
+        return true
+    }
+
     @Published private(set) var selectionIndex: Int? {
         didSet { updateSelectedSuggestionViewModel() }
     }

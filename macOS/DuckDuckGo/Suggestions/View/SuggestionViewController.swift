@@ -49,6 +49,16 @@ final class SuggestionViewController: NSViewController {
     private let suggestionContainerViewModel: SuggestionContainerViewModel
     private let isBurner: Bool
 
+    /// Returns whether the search cell should be shown (delegates to view model)
+    private var shouldShowSearchCell: Bool {
+        suggestionContainerViewModel.shouldShowSearchCell
+    }
+
+    /// The number of extra rows added before the suggestion results (currently just the search cell)
+    private var numberOfPrefixRows: Int {
+        shouldShowSearchCell ? 1 : 0
+    }
+
     required init?(coder: NSCoder) {
         fatalError("SuggestionViewController: Bad initializer")
     }
@@ -171,14 +181,15 @@ final class SuggestionViewController: NSViewController {
             selectedRowCache = nil
         }
 
-        guard suggestionContainerViewModel.numberOfSuggestions > 0 else {
+        let totalRows = suggestionContainerViewModel.numberOfSuggestions + numberOfPrefixRows
+        guard totalRows > 0 else {
             closeWindow()
             tableView.reloadData()
             return
         }
 
         // Remove the second reload that causes visual glitch in the beginning of typing
-        if suggestionContainerViewModel.suggestionContainer.result != nil {
+        if suggestionContainerViewModel.suggestionContainer.result != nil || shouldShowSearchCell {
             updateHeight()
             tableView.reloadData()
 
@@ -192,29 +203,48 @@ final class SuggestionViewController: NSViewController {
     }
 
     private func selectRow(at index: Int?) {
-        if tableView.selectedRow == index {
-            if let index, let cell = tableView.view(atColumn: 0, row: index, makeIfNecessary: false) as? SuggestionTableCellView {
+        // Convert viewModel index to tableView row (accounting for search cell)
+        let tableRow: Int? = {
+            guard let index else { return nil }
+            return index + numberOfPrefixRows
+        }()
+
+        if tableView.selectedRow == tableRow {
+            if let tableRow, let cell = tableView.view(atColumn: 0, row: tableRow, makeIfNecessary: false) as? SuggestionTableCellView {
                 // Show the delete button if necessary
                 cell.updateDeleteImageViewVisibility()
             }
             return
         }
 
-        guard let index = index,
-              index >= 0,
+        guard let tableRow,
+              tableRow >= 0,
               suggestionContainerViewModel.numberOfSuggestions != 0,
-              index < suggestionContainerViewModel.numberOfSuggestions else {
+              tableRow < suggestionContainerViewModel.numberOfSuggestions + numberOfPrefixRows else {
             self.clearSelection()
             return
         }
 
-        tableView.selectRowIndexes(IndexSet(integer: index), byExtendingSelection: false)
+        tableView.selectRowIndexes(IndexSet(integer: tableRow), byExtendingSelection: false)
     }
 
     private func selectRow(at point: NSPoint) {
         let flippedPoint = view.convert(point, to: tableView)
-        let row = tableView.row(at: flippedPoint)
-        selectRow(at: row)
+        let tableRow = tableView.row(at: flippedPoint)
+
+        // Convert tableView row to viewModel index, accounting for search cell
+        let viewModelIndex: Int?
+        if tableRow < 0 {
+            viewModelIndex = nil
+        } else if shouldShowSearchCell && tableRow == 0 {
+            // Search cell selected - select the tableView row directly but no viewModel index
+            tableView.selectRowIndexes(IndexSet(integer: tableRow), byExtendingSelection: false)
+            return
+        } else {
+            viewModelIndex = tableRow - numberOfPrefixRows
+        }
+
+        selectRow(at: viewModelIndex)
     }
 
     private func clearSelection() {
@@ -230,7 +260,8 @@ final class SuggestionViewController: NSViewController {
     }
 
     private func updateHeight() {
-        guard suggestionContainerViewModel.numberOfSuggestions > 0 else {
+        let totalRows = suggestionContainerViewModel.numberOfSuggestions + numberOfPrefixRows
+        guard totalRows > 0 else {
             tableViewHeightConstraint.constant = 0
             return
         }
@@ -239,11 +270,11 @@ final class SuggestionViewController: NSViewController {
         let barStyleProvider = themeManager.theme.addressBarStyleProvider
 
         if barStyleProvider.shouldLeaveBottomPaddingInSuggestions {
-            tableViewHeightConstraint.constant = CGFloat(suggestionContainerViewModel.numberOfSuggestions) * rowHeight
+            tableViewHeightConstraint.constant = CGFloat(totalRows) * rowHeight
                 + (tableView.enclosingScrollView?.contentInsets.top ?? 0)
                 + (tableView.enclosingScrollView?.contentInsets.bottom ?? 0)
         } else {
-            tableViewHeightConstraint.constant = CGFloat(suggestionContainerViewModel.numberOfSuggestions) * rowHeight
+            tableViewHeightConstraint.constant = CGFloat(totalRows) * rowHeight
                 + (tableView.enclosingScrollView?.contentInsets.top ?? 0)
         }
     }
@@ -267,7 +298,13 @@ final class SuggestionViewController: NSViewController {
             return
         }
 
-        selectedRowCache = tableView.selectedRow
+        // Cache the viewModel index (not the tableView row)
+        let tableRow = tableView.selectedRow
+        if tableRow >= numberOfPrefixRows {
+            selectedRowCache = tableRow - numberOfPrefixRows
+        } else {
+            selectedRowCache = nil
+        }
 
         NSApp.delegateTyped.historyCoordinator.removeUrlEntry(url) { [weak self] error in
             guard let self = self, error == nil else {
@@ -303,7 +340,7 @@ extension SuggestionViewController: ThemeUpdateListening {
 extension SuggestionViewController: NSTableViewDataSource {
 
     func numberOfRows(in tableView: NSTableView) -> Int {
-        return suggestionContainerViewModel.numberOfSuggestions
+        return suggestionContainerViewModel.numberOfSuggestions + numberOfPrefixRows
     }
 
 }
@@ -314,7 +351,17 @@ extension SuggestionViewController: NSTableViewDelegate {
         let cell = tableView.makeView(withIdentifier: SuggestionTableCellView.identifier, owner: self) as? SuggestionTableCellView ?? SuggestionTableCellView()
         cell.theme = themeManager.theme
 
-        guard let suggestionViewModel = suggestionContainerViewModel.suggestionViewModel(at: row) else {
+        // Show search cell as the first row
+        if shouldShowSearchCell && row == 0 {
+            let userText = suggestionContainerViewModel.userStringValue ?? ""
+            let searchIcon = themeManager.theme.iconsProvider.suggestionsIconsProvider.phraseEntryIcon
+            cell.display(userText: userText, style: .search, icon: searchIcon, isBurner: self.isBurner)
+            return cell
+        }
+
+        // Adjust row index to account for the search cell
+        let suggestionIndex = row - numberOfPrefixRows
+        guard let suggestionViewModel = suggestionContainerViewModel.suggestionViewModel(at: suggestionIndex) else {
             assertionFailure("SuggestionViewController: Failed to get suggestion")
             return nil
         }
@@ -342,8 +389,16 @@ extension SuggestionViewController: NSTableViewDelegate {
             return
         }
 
-        if suggestionContainerViewModel.selectionIndex != tableView.selectedRow {
-            suggestionContainerViewModel.select(at: tableView.selectedRow)
+        // Convert tableView row to viewModel index (accounting for search cell)
+        let suggestionIndex = tableView.selectedRow - numberOfPrefixRows
+
+        // If search cell is selected (row 0 when showing search cell), don't update viewModel selection
+        if shouldShowSearchCell && tableView.selectedRow == 0 {
+            return
+        }
+
+        if suggestionContainerViewModel.selectionIndex != suggestionIndex {
+            suggestionContainerViewModel.select(at: suggestionIndex)
         }
     }
 

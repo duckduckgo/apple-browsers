@@ -25,6 +25,12 @@ final class SuggestionTableCellView: NSTableCellView {
 
     static let identifier = NSUserInterfaceItemIdentifier("SuggestionTableCellView")
 
+    enum CellStyle {
+        case `default`
+        case aiChat
+        case search
+    }
+
     private enum Constants {
         static let textColor: NSColor = .suggestionText
         static let suffixColor: NSColor = .addressBarSuffix
@@ -54,6 +60,7 @@ final class SuggestionTableCellView: NSTableCellView {
 
     var theme: ThemeStyleProviding?
     var suggestion: Suggestion?
+    private(set) var cellStyle: CellStyle = .default
 
     static let switchToTabAttributedString: NSAttributedString = {
         let text = UserText.switchToTab
@@ -66,6 +73,18 @@ final class SuggestionTableCellView: NSTableCellView {
     }()
     private static let switchToTabTextWidth: CGFloat = switchToTabAttributedString.size().width
     private static let switchToTabBoxWidth: CGFloat = switchToTabTextWidth + Constants.switchToTabExtraSpace
+
+    static let searchTheWebAttributedString: NSAttributedString = {
+        let text = UserText.searchTheWeb
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 11, weight: .regular),
+            .kern: 0.06,
+        ]
+
+        return NSAttributedString(string: text, attributes: attributes)
+    }()
+    private static let searchTheWebTextWidth: CGFloat = searchTheWebAttributedString.size().width
+    private static let searchTheWebBoxWidth: CGFloat = searchTheWebTextWidth + Constants.switchToTabExtraSpace
 
     override func awakeFromNib() {
         suffixTextField.textColor = Constants.suffixColor
@@ -90,6 +109,7 @@ final class SuggestionTableCellView: NSTableCellView {
     var isBurner: Bool = false
 
     func display(_ suggestionViewModel: SuggestionViewModel, isBurner: Bool) {
+        self.cellStyle = .default
         self.isBurner = isBurner
         self.suggestion = suggestionViewModel.suggestion
 
@@ -104,10 +124,48 @@ final class SuggestionTableCellView: NSTableCellView {
         if case .openTab = suggestionViewModel.suggestion,
            frame.size.width > 272 {
             switchToTabBox.isHidden = false
+            switchToTabLabel.attributedStringValue = Self.switchToTabAttributedString
+            switchToTabArrowView.isHidden = false
         } else {
             switchToTabBox.isHidden = true
         }
 
+        updateTextField()
+    }
+
+    /// Displays the cell in a specific style with user-typed text
+    /// - Parameters:
+    ///   - userText: The text the user is typing in the address bar
+    ///   - style: The cell style to use (.search or .aiChat)
+    ///   - icon: Optional icon to display
+    ///   - isBurner: Whether this is a burner window
+    func display(userText: String, style: CellStyle, icon: NSImage?, isBurner: Bool) {
+        self.cellStyle = style
+        self.isBurner = isBurner
+        self.suggestion = nil
+
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 13),
+            .foregroundColor: Constants.textColor
+        ]
+        attributedString = NSAttributedString(string: userText, attributes: attributes)
+        iconImageView.image = icon
+
+        switch style {
+        case .search:
+            suffixTextField.stringValue = " – DuckDuckGo"
+            switchToTabBox.isHidden = frame.size.width <= 272
+            switchToTabLabel.attributedStringValue = Self.searchTheWebAttributedString
+            switchToTabArrowView.isHidden = true
+        case .aiChat:
+            suffixTextField.stringValue = ""
+            switchToTabBox.isHidden = true
+        case .default:
+            suffixTextField.stringValue = ""
+            switchToTabBox.isHidden = true
+        }
+
+        setRemoveButtonHidden(true)
         updateTextField()
     }
 
@@ -169,6 +227,8 @@ final class SuggestionTableCellView: NSTableCellView {
             switchToTabBoxTrailingConstraint.isActive = false
             suffixTrailingConstraint.constant = Constants.trailingSpace
         } else {
+            let boxWidth = cellStyle == .search ? Self.searchTheWebBoxWidth : Self.switchToTabBoxWidth
+
             var textWidth = attributedString?.boundingRect(with: bounds.size).width ?? 0
             if textWidth < bounds.width {
                 textWidth += suffixTextField.attributedStringValue.boundingRect(with: bounds.size).width
@@ -176,18 +236,18 @@ final class SuggestionTableCellView: NSTableCellView {
             if textField!.frame.minX
                 + textWidth
                 + Constants.switchToTabSuffixPadding
-                + Self.switchToTabBoxWidth
+                + boxWidth
                 + Constants.trailingSpace > bounds.width {
 
-                // when cropping title+suffix to fit the Switch to Tab box
+                // when cropping title+suffix to fit the trailing box
                 // tie the box to the right boundary
                 switchToTabBoxLeadingConstraint.isActive = false
                 switchToTabBoxTrailingConstraint.isActive = true
-                // crop title+suffix to fit the Switch to Tab box
-                suffixTrailingConstraint.constant = Self.switchToTabBoxWidth + Constants.trailingSpace + Constants.switchToTabSuffixPadding
+                // crop title+suffix to fit the trailing box
+                suffixTrailingConstraint.constant = boxWidth + Constants.trailingSpace + Constants.switchToTabSuffixPadding
             } else {
                 switchToTabBoxTrailingConstraint.isActive = false
-                // we can fit everything: align Switch to Tab box left edge after the suffix
+                // we can fit everything: align trailing box left edge after the suffix
                 switchToTabBoxLeadingConstraint.constant = textField!.frame.minX + textWidth + Constants.switchToTabSuffixPadding
                 switchToTabBoxLeadingConstraint.isActive = true
                 suffixTrailingConstraint.constant = Constants.trailingSpace

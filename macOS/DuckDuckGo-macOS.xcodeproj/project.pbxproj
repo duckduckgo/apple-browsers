@@ -3648,6 +3648,7 @@
 		CCAED3B92EBA00E900C7368E /* DefaultBrowserAndDockPromptTypeDeciding.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAED3B22EBA00E900C7368E /* DefaultBrowserAndDockPromptTypeDeciding.swift */; };
 		CCB36B132E56383500DBFE3A /* UserScriptError+Pixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCB36B122E56382E00DBFE3A /* UserScriptError+Pixel.swift */; };
 		CCB36B142E56383500DBFE3A /* UserScriptError+Pixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCB36B122E56382E00DBFE3A /* UserScriptError+Pixel.swift */; };
+		CCC403462ED5E00400381DBB /* Utilities in Frameworks */ = {isa = PBXBuildFile; productRef = CCC403452ED5E00400381DBB /* Utilities */; };
 		CCC87D6D2E1412D70091344D /* ChromiumTopSitesReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCC87D6C2E1412D00091344D /* ChromiumTopSitesReader.swift */; };
 		CCC87D6E2E1412D70091344D /* ChromiumTopSitesReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCC87D6C2E1412D00091344D /* ChromiumTopSitesReader.swift */; };
 		CCC87D732E1429570091344D /* ChromiumTopSitesReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCC87D722E1429570091344D /* ChromiumTopSitesReaderTests.swift */; };
@@ -6410,6 +6411,7 @@
 				9D9DE57F2C63B64F00D20B15 /* AppKitExtensions in Frameworks */,
 				B64E42872B908501006C1346 /* SnapshotTesting in Frameworks */,
 				845F57352E98036F00C7F78A /* SharedTestUtilities in Frameworks */,
+				CCC403462ED5E00400381DBB /* Utilities in Frameworks */,
 				84AA551A2E3256BA009FCC70 /* Common in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -12224,6 +12226,7 @@
 				9D9DE57E2C63B64F00D20B15 /* AppKitExtensions */,
 				84AA55192E3256BA009FCC70 /* Common */,
 				845F57342E98036F00C7F78A /* SharedTestUtilities */,
+				CCC403452ED5E00400381DBB /* Utilities */,
 			);
 			productName = "UI Tests";
 			productReference = 7B4CE8DA26F02108009134B1 /* UI Tests.xctest */;
@@ -19406,6 +19409,10 @@
 		CC55B23C2E82BF4D0032E8BD /* BrowserServicesKitTestsUtils */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = BrowserServicesKitTestsUtils;
+		};
+		CCC403452ED5E00400381DBB /* Utilities */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = Utilities;
 		};
 		D65D0F9E2E7239680075A784 /* NetworkQualityMonitor */ = {
 			isa = XCSwiftPackageProductDependency;

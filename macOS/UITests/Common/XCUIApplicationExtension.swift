@@ -17,6 +17,7 @@
 //
 
 import XCTest
+import Utilities
 
 // Enum to represent bookmark modes
 enum BookmarkMode {
@@ -59,7 +60,6 @@ extension XCUIApplication {
         static let preferencesMenuItem = "MainMenu.preferencesMenuItem"
         static let helpMenuItem = "Help"
         static let releaseNotesMenuItem = "Release Notes"
-        static let debugMenu = "Debug"
 
         static let settingsScrollView = "Settings.ScrollView"
         static let preferencesGeneralButton = "PreferencesSidebar.generalButton"
@@ -818,7 +818,7 @@ extension XCUIApplication {
     }
 
     var debugMenu: XCUIElement {
-        menuBarItems[AccessibilityIdentifiers.debugMenu]
+        menuBarItems[Utilities.AccessibilityIdentifiers.debugMenu]
     }
 
 }

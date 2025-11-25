@@ -17,6 +17,7 @@
 //
 
 import XCTest
+import Utilities
 
 final class DefaultBrowserAndDockPromptsUITests: UITestCase {
 
@@ -89,37 +90,29 @@ private extension DefaultBrowserAndDockPromptsUITests {
 // MARK: - Helper Identifiers
 
 private extension XCUIApplication {
-    enum AccessibilityIdentifiers {
-        static let promptsDebugMenu = "DebugMenu.defaultBrowserAndDockPrompts"
-        static let simulateFreshAppInstallMenuItem = "DefaultBrowserAndDockPromptDebugMenu.simulateFreshInstall"
-        static let advanceBy14DaysMenuItem = "DefaultBrowserAndDockPromptDebugMenu.advanceBy14Days"
-        static let inactiveUserPrompt = "DefaultBrowserAndDockPrompts.inactiveUser"
-        static let confirmButton = "DefaultBrowserAndDockPrompts.inactiveUser.confirmButton"
-        static let dismissButton = "DefaultBrowserAndDockPrompts.inactiveUser.dismissButton"
-    }
 
     var promptsDebugMenu: XCUIElement {
-        debugMenu.menuItems[AccessibilityIdentifiers.promptsDebugMenu]
+        debugMenu.menuItems[AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.promptsDebugMenu]
     }
 
     var simulateFreshAppInstallMenuItem: XCUIElement {
-        promptsDebugMenu.menuItems[AccessibilityIdentifiers.simulateFreshAppInstallMenuItem]
+        promptsDebugMenu.menuItems[AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.simulateFreshAppInstallMenuItem]
     }
 
     var advanceBy14DaysMenuItem: XCUIElement {
-        promptsDebugMenu.menuItems[AccessibilityIdentifiers.advanceBy14DaysMenuItem]
+        promptsDebugMenu.menuItems[AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.advanceBy14DaysMenuItem]
     }
 
     var inactiveUserPrompt: XCUIElement {
-        sheets[AccessibilityIdentifiers.inactiveUserPrompt]
+        sheets[AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.inactiveUserPrompt]
     }
 
     var confirmButton: XCUIElement {
-        inactiveUserPrompt.buttons[AccessibilityIdentifiers.confirmButton]
+        inactiveUserPrompt.buttons[AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.confirmButton]
     }
 
     var dismissButton: XCUIElement {
-        inactiveUserPrompt.buttons[AccessibilityIdentifiers.dismissButton]
+        inactiveUserPrompt.buttons[AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.dismissButton]
     }
 }
 

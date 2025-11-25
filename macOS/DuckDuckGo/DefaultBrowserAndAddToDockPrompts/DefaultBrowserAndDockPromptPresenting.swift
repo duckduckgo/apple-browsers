@@ -20,6 +20,7 @@ import SwiftUIExtensions
 import Combine
 import BrowserServicesKit
 import FeatureFlags
+import Utilities
 
 protocol DefaultBrowserAndDockPromptPresenting {
     /// Publisher to let know the banner was dismissed.
@@ -326,7 +327,7 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
     private func initializeInactiveUserModal(with type: DefaultBrowserAndDockPromptType) {
         let content = createInactiveUserModal(with: type)
         inactiveUserModal = NSWindow(contentViewController: content)
-            .withAccessibilityIdentifier("DefaultBrowserAndDockPrompts.inactiveUser")
+            .withAccessibilityIdentifier(AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.inactiveUserPrompt)
     }
 
     private func showInactiveUserModal(positionedOver window: NSWindow) {

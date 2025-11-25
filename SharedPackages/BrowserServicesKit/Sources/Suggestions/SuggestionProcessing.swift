@@ -57,24 +57,13 @@ struct SuggestionProcessing {
         guard !lowerQuery.isEmpty else { return .empty }
 
         // STEP 1: Get DDG suggestions from the Suggestions API result
-        let duckDuckGoSuggestionResults = duckDuckGoSuggestions(from: apiResult, isUrlIgnored: isUrlIgnored) ?? []
+        let duckDuckGoSuggestions = duckDuckGoSuggestions(from: apiResult, isUrlIgnored: isUrlIgnored) ?? []
 
         // STEP 2: filter DDG suggestions that point to a website
-        let duckDuckGoDomainSuggestions = duckDuckGoSuggestionResults.compactMap { suggestion -> (suggestion: ScoredSuggestion, kinds: Set<ScoredSuggestion.Kind>)? in
+        let duckDuckGoDomainSuggestions = duckDuckGoSuggestions.compactMap { suggestion -> (suggestion: ScoredSuggestion, kinds: Set<ScoredSuggestion.Kind>)? in
             guard case .website(let url) = suggestion else { return nil }
             return (ScoredSuggestion(kind: .website, url: url, title: url.absoluteString), [.website])
         }
-
-        // SETP 2a - on mobile we only want the first x suggestions from the API, but don't count websites in that
-        let duckDuckGoSuggestions = platform == .mobile ?
-            Array(duckDuckGoSuggestionResults
-                .filter {
-                    if case .website = $0 { return false }
-                    return true
-                }
-                .prefix(Self.maximumNumberOfDuckDuckGoSuggestionsOnMobile))
-            // On desktop, keep the previous functionality
-            : duckDuckGoSuggestionResults
 
         // STEP 3: Get best ordered matches from history, bookmarks, open tabs and internal pages (Settings, Bookmarks…)
         let allHistoryAndBookmarkAndOpenTabSuggestions = [
@@ -130,17 +119,25 @@ struct SuggestionProcessing {
             .compactMap { Suggestion($0.suggestion) }
 
         // STEP 11: Filter out website suggestions already present in Top Hits
-        let duckDuckGoPhrasesAndDomainSuggestions = duckDuckGoSuggestions.filter {
+        let duckDuckGoPhrasesAndDomainSuggestions = Array(duckDuckGoSuggestions.filter {
             !topHits.contains($0)
         }
-            .prefix(Self.maximumNumberOfSuggestions - (topHits.count + historyAndBookmarksAndOpenTabs.count))
+            .prefix(Self.maximumNumberOfSuggestions - (topHits.count + historyAndBookmarksAndOpenTabs.count)))
 
         // STEP 12: Return final ordered suggestions
         return SuggestionResult(
             topHits: topHits,
-            duckduckgoSuggestions: Array(duckDuckGoPhrasesAndDomainSuggestions),
+            duckduckgoSuggestions: limitSuggestionsToDisplay(duckDuckGoPhrasesAndDomainSuggestions),
             localSuggestions: historyAndBookmarksAndOpenTabs
         )
+    }
+
+    private func limitSuggestionsToDisplay(_ suggestions: [Suggestion]) -> [Suggestion] {
+        guard platform == .mobile else {
+            return suggestions
+        }
+
+        return Array(suggestions.prefix(Self.maximumNumberOfDuckDuckGoSuggestionsOnMobile))
     }
 
     /// Generates a list of phrase and website suggestions from the given API result filtering out the ignored URLs.

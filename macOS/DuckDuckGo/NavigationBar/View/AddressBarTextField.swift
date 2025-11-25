@@ -217,8 +217,9 @@ final class AddressBarTextField: NSTextField {
             let barStyleProvider = themeManager.theme.addressBarStyleProvider
             let newTabFontSize = barStyleProvider.newTabOrHomePageAddressBarFontSize
             let defaultFontSize = barStyleProvider.defaultAddressBarFontSize
+            let hideSuffix = Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
 
-            if let attributedString = value.toAttributedString(size: isHomePage ? newTabFontSize : defaultFontSize, isBurner: isBurner) {
+            if let attributedString = value.toAttributedString(size: isHomePage ? newTabFontSize : defaultFontSize, isBurner: isBurner, hideSuffix: hideSuffix) {
                 self.attributedStringValue = attributedString
             } else {
                 self.stringValue = value.string
@@ -858,7 +859,7 @@ extension AddressBarTextField {
             self.suggestion != nil
         }
 
-        func toAttributedString(size: CGFloat, isBurner: Bool) -> NSAttributedString? {
+        func toAttributedString(size: CGFloat, isBurner: Bool, hideSuffix: Bool = false) -> NSAttributedString? {
             var attributes: [NSAttributedString.Key: Any] {
                 return [
                     .font: NSFont.systemFont(ofSize: size, weight: .regular),
@@ -866,7 +867,7 @@ extension AddressBarTextField {
                 ]
             }
 
-            guard let suffix else { return nil }
+            guard let suffix, !hideSuffix else { return nil }
 
             let attributedString = NSMutableAttributedString(string: self.string, attributes: attributes)
             attributedString.append(suffix.toAttributedString(size: size, isBurner: isBurner))
@@ -1004,7 +1005,7 @@ extension AddressBarTextField: NSTextFieldDelegate {
         // don't blink and keep the Suggestion displayed
         if case .userAppendingTextToTheEnd = currentTextDidChangeEvent,
            let suggestion = autocompleteSuggestionBeingTypedOverByUser(with: stringValueWithoutSuffix) {
-            self.value = .suggestion(SuggestionViewModel(isHomePage: isHomePage, suggestion: suggestion.suggestion, userStringValue: stringValueWithoutSuffix, themeManager: themeManager))
+            self.value = .suggestion(SuggestionViewModel(isHomePage: isHomePage, suggestion: suggestion.suggestion, userStringValue: stringValueWithoutSuffix, themeManager: themeManager, featureFlagger: Application.appDelegate.featureFlagger))
 
         } else {
             suggestionContainerViewModel?.clearSelection()

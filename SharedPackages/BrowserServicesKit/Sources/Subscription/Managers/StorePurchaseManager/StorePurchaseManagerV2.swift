@@ -117,6 +117,11 @@ public protocol StorePurchaseManagerV2 {
     ///           or `nil` if no options are available or cannot be fetched.
     func subscriptionOptions() async -> SubscriptionOptionsV2?
 
+    /// Returns the available subscription tier options.
+    /// - Returns: A `SubscriptionTierOptions` object containing the available subscription tier plans and pricing,
+    ///           or `nil` if no options are available or cannot be fetched.
+    func subscriptionTierOptions(includeProTier: Bool) async -> SubscriptionTierOptions?
+
     var purchasedProductIDs: [String] { get }
     var purchaseQueue: [String] { get }
     var areProductsAvailable: Bool { get }
@@ -222,6 +227,11 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
         let ids = products.map(\.self.id)
         Logger.subscriptionStorePurchaseManager.debug("Returning SubscriptionOptions for products: \(ids)")
         return await subscriptionOptions(for: products)
+    }
+
+    public func subscriptionTierOptions(includeProTier: Bool) async -> SubscriptionTierOptions? {
+        // To be implemented in a follow up PR
+        return nil
     }
 
     @MainActor

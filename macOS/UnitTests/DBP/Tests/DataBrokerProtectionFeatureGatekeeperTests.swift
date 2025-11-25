@@ -168,6 +168,8 @@ private class MockFeatureAvailability: SubscriptionFeatureAvailability {
 
     var isSubscriptionPurchaseAllowed: Bool { mockSubscriptionPurchaseAllowed }
     var isPaidAIChatEnabled = false
+    var isTierMessagingEnabled = false
+    var isProTierPurchaseEnabled = false
     var isSupportsAlternateStripePaymentFlowEnabled = false
     var isSubscriptionPurchaseWidePixelMeasurementEnabled: Bool = false
     var isSubscriptionRestoreWidePixelMeasurementEnabled: Bool = false
@@ -176,6 +178,8 @@ private class MockFeatureAvailability: SubscriptionFeatureAvailability {
         mockFeatureAvailable = false
         mockSubscriptionPurchaseAllowed = false
         isPaidAIChatEnabled = false
+        isTierMessagingEnabled = false
+        isProTierPurchaseEnabled = false
         isSupportsAlternateStripePaymentFlowEnabled = false
         isSubscriptionPurchaseWidePixelMeasurementEnabled = false
         isSubscriptionRestoreWidePixelMeasurementEnabled = false

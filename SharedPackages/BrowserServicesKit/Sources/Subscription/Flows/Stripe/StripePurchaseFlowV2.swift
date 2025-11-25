@@ -66,6 +66,7 @@ public protocol StripePurchaseFlowV2 {
     typealias PrepareResult = (purchaseUpdate: PurchaseUpdate, accountCreationDuration: WideEvent.MeasuredInterval?)
 
     func subscriptionOptions() async -> Result<SubscriptionOptionsV2, StripePurchaseFlowError>
+    func subscriptionTierOptions() async -> Result<SubscriptionTierOptions, StripePurchaseFlowError>
     func prepareSubscriptionPurchase(emailAccessToken: String?) async -> Result<PrepareResult, StripePurchaseFlowError>
     func completeSubscriptionPurchase() async
 }
@@ -109,6 +110,11 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
         return .success(SubscriptionOptionsV2(platform: SubscriptionPlatformName.stripe,
                                               options: options,
                                               availableEntitlements: features))
+    }
+
+    public func subscriptionTierOptions() async -> Result<SubscriptionTierOptions, StripePurchaseFlowError> {
+        // To be implemented in a follow up PR
+        return .failure(.noProductsFound)
     }
 
     public func prepareSubscriptionPurchase(emailAccessToken: String?) async -> Result<PrepareResult, StripePurchaseFlowError> {

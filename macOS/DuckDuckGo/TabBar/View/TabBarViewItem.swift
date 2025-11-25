@@ -905,11 +905,11 @@ final class TabBarViewItem: NSCollectionViewItem {
     private var lastKnownIndexPath: IndexPath?
 
     @objc fileprivate func closeButtonAction(_ sender: Any) {
-        // due to async nature of NSCollectionView views removal
-        // leaving window._lastLeftHit set to the button will prevent
-        // continuous clicks on the Close button
-        // this should be removed when the Tab Bar is redone without NSCollectionView
-        (sender as? NSButton)?.window?.evilHackToClearLastLeftHitInWindow()
+        // If the close button is clicked multiple times, we need to reset the click count to 1
+        // for the next incoming mouse event of the given type to consequently close tabs.
+        // https://app.asana.com/1/137249556945/project/1177771139624306/task/1202049975066624?focus=true
+        // https://app.asana.com/1/137249556945/project/1201048563534612/task/1209477403052191?focus=true
+        (NSApp as? Application)?.shouldResetClickCountForNextEventOfType = NSApp.currentEvent?.type
 
         guard let indexPath = self.collectionView?.indexPath(for: self) else {
             // doubleclick event arrived at point when we're already removed
@@ -1476,6 +1476,11 @@ extension TabBarViewItem: MouseClickViewDelegate {
         // close on middle-click
         guard case .middle = otherMouseDownEvent.button else { return }
 
+        // If the middle button is clicked multiple times, we need to reset the click count to 1
+        // for the next incoming mouse event of the given type to consequently close tabs.
+        // https://app.asana.com/1/137249556945/project/1177771139624306/task/1202049975066624?focus=true
+        // https://app.asana.com/1/137249556945/project/1201048563534612/task/1209477403052191?focus=true
+        (NSApp as? Application)?.shouldResetClickCountForNextEventOfType = otherMouseDownEvent.type
         guard let indexPath = self.collectionView?.indexPath(for: self) else {
             // doubleclick event arrived at point when we're already removed
             // pass the closeButton action to the next TabBarViewItem

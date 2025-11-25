@@ -171,10 +171,7 @@ final class PassiveAddressBarTextFieldEditor: NSTextView {
             return
         }
 
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(stringToCopy, forType: .string)
-
-        if let url = url {
+        if let url {
             NSPasteboard.general.copy(url, withString: stringToCopy)
         } else {
             NSPasteboard.general.copy(stringToCopy)

@@ -75,7 +75,7 @@ extension DataImport {
             if browser.isSafari {
                 return validImportableProfiles.first ?? profiles.first
             }
-            
+
             return validImportableProfiles.first
         }
     }

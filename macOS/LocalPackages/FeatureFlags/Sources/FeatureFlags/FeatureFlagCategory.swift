@@ -81,7 +81,6 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .dbpRemoteBrokerDelivery:
             return .dbp
         case .privacyProAuthV2,
-                .privacyProFreeTrial,
                 .paidAIChat,
                 .supportsAlternateStripePaymentFlow,
                 .subscriptionPurchaseWidePixelMeasurement,

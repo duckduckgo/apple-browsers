@@ -110,9 +110,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866613117546
     case canScanUrlBasedSyncSetupBarcodes
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866610505232
-    case privacyProFreeTrial
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866617269950
     case paidAIChat
 
@@ -362,7 +359,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .paidAIChat,
                 .exchangeKeysToSyncWithAnotherDevice,
                 .canScanUrlBasedSyncSetupBarcodes,
-                .privacyProFreeTrial,
                 .removeWWWInCanonicalizationInThreatProtection,
                 .osSupportForceUnsupportedMessage,
                 .osSupportForceWillSoonDropSupportMessage,
@@ -498,8 +494,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
         case .canScanUrlBasedSyncSetupBarcodes:
             return .remoteReleasable(.subfeature(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
-        case .privacyProFreeTrial:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrial))
         case .paidAIChat:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.paidAIChat))
         case .removeWWWInCanonicalizationInThreatProtection:

@@ -112,7 +112,7 @@ private extension TabTitleView {
 
     func setupTextFields() {
         titleTextField.textColor = .labelColor
-        previousTextField.textColor = .labelColor//.withAlphaComponent(0.6)
+        previousTextField.textColor = .labelColor
     }
 
     func buildTitleTextField() -> NSTextField {

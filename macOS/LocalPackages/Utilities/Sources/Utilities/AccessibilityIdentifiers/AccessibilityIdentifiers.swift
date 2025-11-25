@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-
 public enum AccessibilityIdentifiers {
     public static let debugMenu = "MainMenu.Debug"
 }

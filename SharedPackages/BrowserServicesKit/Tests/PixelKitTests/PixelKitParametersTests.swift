@@ -61,7 +61,7 @@ final class PixelKitParametersTests: XCTestCase {
             code: 1,
             userInfo: [
                 NSUnderlyingErrorKey: underlyingError2 as NSError,
-                NSLocalizedDescriptionKey: "underlyingError3"
+                NSLocalizedDescriptionKey: "underlyingError"
             ])
 
         fire(TestEvent.errorEvent(error: topLevelError),

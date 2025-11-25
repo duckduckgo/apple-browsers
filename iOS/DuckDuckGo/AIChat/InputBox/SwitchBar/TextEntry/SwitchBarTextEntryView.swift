@@ -29,6 +29,7 @@ class SwitchBarTextEntryView: UIView {
         static let maxHeight: CGFloat = 120
         static let minHeight: CGFloat = 44
         static let minHeightAIChat: CGFloat = 68
+        static let minHeightBottomBar: CGFloat = 96
         static let fontSize: CGFloat = 16
 
         // Text container insets
@@ -59,8 +60,22 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private var currentMinHeight: CGFloat {
-        let useIncreasedMinHeight = SwipeContainerManager.tryFadeout && currentMode == .aiChat
-        return useIncreasedMinHeight ? Constants.minHeightAIChat : Constants.minHeight
+        guard SwipeContainerManager.tryFadeout else {
+            return Constants.minHeight
+        }
+
+        // Bottom bar position: use increased height for both modes
+        if AppDependencyProvider.shared.appSettings.currentAddressBarPosition.isBottom {
+            return Constants.minHeightBottomBar
+        }
+
+        // Top bar position: use increased height only for AI Chat mode
+        return currentMode == .aiChat ? Constants.minHeightAIChat : Constants.minHeight
+    }
+
+    /// Returns true when using bottom bar with increased height (tryFadeout mode)
+    private var isUsingBottomBarIncreasedHeight: Bool {
+        SwipeContainerManager.tryFadeout && AppDependencyProvider.shared.appSettings.currentAddressBarPosition.isBottom
     }
 
     private var cancellables = Set<AnyCancellable>()
@@ -313,8 +328,21 @@ class SwitchBarTextEntryView: UIView {
         } else if isExpandable {
             let contentHeight = getCurrentContentHeight()
             let contentExceedsMaxHeight = contentHeight > Constants.maxHeight
-            
-            let newHeight = max(currentMinHeight, min(Constants.maxHeight, contentHeight))
+
+            // For bottom bar with increased height: don't expand until text requires multiple lines
+            // This ensures the field stays at 96pt for single-line text
+            let newHeight: CGFloat
+            if isUsingBottomBarIncreasedHeight {
+                let singleLineHeight = requiredHeightForSingleLineContent()
+                let textRequiresMultipleLines = contentHeight > singleLineHeight + 1
+                if textRequiresMultipleLines {
+                    newHeight = max(currentMinHeight, min(Constants.maxHeight, contentHeight))
+                } else {
+                    newHeight = currentMinHeight
+                }
+            } else {
+                newHeight = max(currentMinHeight, min(Constants.maxHeight, contentHeight))
+            }
 
             heightConstraint?.constant = newHeight
 

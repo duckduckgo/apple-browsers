@@ -31,6 +31,11 @@ class SwitchBarTextEntryViewController: UIViewController {
 
     let buttonsContainerView = UIView()
 
+    /// Returns true when using bottom bar with overlay layout (tryFadeout mode)
+    private var isUsingOverlayButtonsLayout: Bool {
+        SwipeContainerManager.tryFadeout && AppDependencyProvider.shared.appSettings.currentAddressBarPosition.isBottom
+    }
+
     var textHeightChangePublisher: AnyPublisher<Void, Never> {
         textEntryView.textHeightChangeSubject.eraseToAnyPublisher()
     }
@@ -120,14 +125,31 @@ class SwitchBarTextEntryViewController: UIViewController {
             textEntryView.topAnchor.constraint(equalTo: containerView.topAnchor),
             textEntryView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
             textEntryView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-
-            buttonsContainerView.topAnchor.constraint(equalTo: textEntryView.bottomAnchor),
-            buttonsContainerView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
-            buttonsContainerView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
-            buttonsContainerView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
-            // Suggest 0, but allow to grow based on the content
-            buttonsContainerView.heightAnchor.constraint(equalToConstant: 0).withPriority(.defaultLow)
         ])
+
+        if isUsingOverlayButtonsLayout {
+            // Overlay layout: buttonsContainerView overlays bottom part of textEntryView
+            // This keeps total height at 96pt even with the search button visible
+            NSLayoutConstraint.activate([
+                textEntryView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
+
+                buttonsContainerView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
+                buttonsContainerView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+                buttonsContainerView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+                // Suggest 0, but allow to grow based on the content
+                buttonsContainerView.heightAnchor.constraint(equalToConstant: 0).withPriority(.defaultLow)
+            ])
+        } else {
+            // Stacked layout: buttonsContainerView is below textEntryView
+            NSLayoutConstraint.activate([
+                buttonsContainerView.topAnchor.constraint(equalTo: textEntryView.bottomAnchor),
+                buttonsContainerView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
+                buttonsContainerView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+                buttonsContainerView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor),
+                // Suggest 0, but allow to grow based on the content
+                buttonsContainerView.heightAnchor.constraint(equalToConstant: 0).withPriority(.defaultLow)
+            ])
+        }
     }
 
     private func setupPasteAndGo() {

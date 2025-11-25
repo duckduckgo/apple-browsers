@@ -145,6 +145,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Pinned Tabs AppKit Rewrite Feature Flag
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1209949983074592?focus=true
     case pinnedTabsViewRewrite
+
+    /// Hang reporting feature flag
+    case newPermissionView
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {

@@ -523,13 +523,13 @@ final class AddressBarButtonsViewController: NSViewController {
         permissionsCancellables.removeAll(keepingCapacity: true)
 
         tabViewModel?.$usedPermissions.dropFirst().sink { [weak self] _ in
-            self?.updatePermissionButtons()
+            self?.updateLegacyPermissionButtons()
         }.store(in: &permissionsCancellables)
         tabViewModel?.tab.popupHandling?.popupOpenedPublisher.sink { [weak self] _ in
-            self?.updatePermissionButtons()
+            self?.updateLegacyPermissionButtons()
         }.store(in: &permissionsCancellables)
         tabViewModel?.$permissionAuthorizationQuery.dropFirst().sink { [weak self] _ in
-            self?.updatePermissionButtons()
+            self?.updateLegacyPermissionButtons()
         }.store(in: &permissionsCancellables)
     }
 
@@ -590,10 +590,15 @@ final class AddressBarButtonsViewController: NSViewController {
             .store(in: &cancellables)
     }
 
-    private func updatePermissionButtons() {
+    private func updateLegacyPermissionButtons() {
         // Prevent crash if Combine subscriptions outlive view lifecycle
         guard isViewLoaded else { return }
         guard let tabViewModel else { return }
+
+        guard !featureFlagger.isFeatureOn(.newPermissionView) else {
+            permissionButtons.isShown = false
+            return
+        }
 
         // Show permission buttons when there's a requested permission on NTP even if address bar is focused,
         // since NTP has the address bar focused by default
@@ -1492,7 +1497,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
         updateImageButton()
         updatePrivacyDashboardButton()
-        updatePermissionButtons()
+        updateLegacyPermissionButtons()
         updateBookmarkButtonVisibility()
         updateZoomButtonVisibility()
         if !isToggleFeatureEnabled {
@@ -1816,7 +1821,7 @@ final class AddressBarButtonsViewController: NSViewController {
                 trackerAnimationView?.isHidden = true
                 guard let self else { return }
                 updatePrivacyEntryPointIcon()
-                updatePermissionButtons()
+                updateLegacyPermissionButtons()
                 // If badge animation is not queueued check if we should animate the privacy shield
                 if buttonsBadgeAnimator.queuedAnimation == nil {
                     playPrivacyInfoHighlightAnimationIfNecessary()
@@ -1827,7 +1832,7 @@ final class AddressBarButtonsViewController: NSViewController {
         }
 
         updatePrivacyEntryPointIcon()
-        updatePermissionButtons()
+        updateLegacyPermissionButtons()
     }
 
     private func stopAnimations(trackerAnimations: Bool = true,

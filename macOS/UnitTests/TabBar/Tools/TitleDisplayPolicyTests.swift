@@ -16,84 +16,74 @@
 //  limitations under the License.
 //
 
-import Testing
+import XCTest
 import Foundation
 @testable import DuckDuckGo_Privacy_Browser
 
-@Suite("TitleDisplayPolicy Tests", .serialized)
-struct TitleDisplayPolicyTests {
+final class TitleDisplayPolicyTests: XCTestCase {
 
     private let policy = DefaultTitleDisplayPolicy()
 
     // MARK: - Skipping Display Title
 
-    @Test
     func testTitleIsSkippedWhenPreviousAndCurrentHostMatchAndLatestTitleIsPlaceholder() {
         let url = URL(string: "https://www.example.com/page")
         let previousURL = URL(string: "https://www.example.com/")
         let title = "example.com"
 
-        #expect(policy.mustSkipDisplayingTitle(title: title, url: url, previousURL: previousURL) == true)
+        XCTAssertTrue(policy.mustSkipDisplayingTitle(title: title, url: url, previousURL: previousURL) == true)
     }
 
-    @Test
     func testTitleIsNotSkippedWhenHostDiffers() {
         let url = URL(string: "https://example.com/page")
         let previousURL = URL(string: "https://different.com/")
         let title = "example.com"
 
-        #expect(policy.mustSkipDisplayingTitle(title: title, url: url, previousURL: previousURL) == false)
+        XCTAssertTrue(policy.mustSkipDisplayingTitle(title: title, url: url, previousURL: previousURL) == false)
     }
 
-    @Test
     func testTitleIsNotSkippedWhenLatestTitleIsNotPlaceholder() {
         let url = URL(string: "https://www.example.com/page")
         let previousURL = URL(string: "https://www.example.com/")
         let title = "Custom Page Title"
 
-        #expect(policy.mustSkipDisplayingTitle(title: title, url: url, previousURL: previousURL) == false)
+        XCTAssertTrue(policy.mustSkipDisplayingTitle(title: title, url: url, previousURL: previousURL) == false)
     }
 
     // MARK: - Title Transitions
 
-    @Test
     func testTitleTransitionAnimatesWhenTitleChanges() {
-        #expect(policy.mustAnimateTitleTransition(title: "New Title", previousTitle: "Old Title") == true)
+        XCTAssertTrue(policy.mustAnimateTitleTransition(title: "New Title", previousTitle: "Old Title") == true)
     }
 
-    @Test
     func testTitleTransitionDoesNotAnimateWhenIsTheSame() {
-        #expect(policy.mustAnimateTitleTransition(title: "Same Title", previousTitle: "Same Title") == false)
+        XCTAssertTrue(policy.mustAnimateTitleTransition(title: "Same Title", previousTitle: "Same Title") == false)
     }
 
-    @Test
     func testTitleTransitionDoesNotAnimateWhenPreviousTitleWasEmpty() {
-        #expect(policy.mustAnimateTitleTransition(title: "New Title", previousTitle: "") == false)
+        XCTAssertTrue(policy.mustAnimateTitleTransition(title: "New Title", previousTitle: "") == false)
     }
 
     // MARK: - New Title Fade In
 
-    @Test
     func testTitleAnimatesFadeInWhenDomainDiffers() {
         let targetURL = URL(string: "https://example.com/page")
         let previousURL = URL(string: "https://different.com/page")
 
-        #expect(policy.mustAnimateNewTitleFadeIn(targetURL: targetURL, previousURL: previousURL) == true)
+        XCTAssertTrue(policy.mustAnimateNewTitleFadeIn(targetURL: targetURL, previousURL: previousURL) == true)
     }
 
-    @Test
     func testTitleDoesNotAnimateFadeInDomainMatches() {
         let targetURL = URL(string: "https://example.com/page1")
         let previousURL = URL(string: "https://example.com/page2")
 
-        #expect(policy.mustAnimateNewTitleFadeIn(targetURL: targetURL, previousURL: previousURL) == false)
+        XCTAssertTrue(policy.mustAnimateNewTitleFadeIn(targetURL: targetURL, previousURL: previousURL) == false)
     }
 
-    @Test
     func testTitleDoesNotAnimateFadeInWhenSameDomainDifferentSubdomains() {
         let targetURL = URL(string: "https://www.example.com/page")
         let previousURL = URL(string: "https://blog.example.com/page")
 
-        #expect(policy.mustAnimateNewTitleFadeIn(targetURL: targetURL, previousURL: previousURL) == false)
+        XCTAssertTrue(policy.mustAnimateNewTitleFadeIn(targetURL: targetURL, previousURL: previousURL) == false)
     }
 }

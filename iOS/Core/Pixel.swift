@@ -357,6 +357,7 @@ extension Dictionary where Key == String, Value == String {
 
         self[PixelParameters.errorCode] = "\(nsError.code)"
         self[PixelParameters.errorDomain] = nsError.domain
+        self[PixelParameters.errorDescription] = nsError.description
 
         let underlyingErrorParameters = underlyingErrorParameters(for: error as NSError)
         self.merge(underlyingErrorParameters) { first, _ in first }

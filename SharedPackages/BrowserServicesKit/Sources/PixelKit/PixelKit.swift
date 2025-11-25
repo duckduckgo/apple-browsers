@@ -724,6 +724,7 @@ internal extension Dictionary where Key == String, Value == String {
         var params = [String: String]()
         params[PixelKit.Parameters.errorCode] = "\(error.code)"
         params[PixelKit.Parameters.errorDomain] = error.domain
+        params[PixelKit.Parameters.errorDescription] = error.description
 
         let underlyingErrorParameters = self.underlyingErrorParameters(for: error)
         params.merge(underlyingErrorParameters) { first, _ in

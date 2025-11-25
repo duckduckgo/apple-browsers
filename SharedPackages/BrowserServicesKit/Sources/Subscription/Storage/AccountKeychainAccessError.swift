@@ -19,7 +19,7 @@
 import Foundation
 import Common
 
-public enum AccountKeychainAccessError: Error, LocalizedError {
+public enum AccountKeychainAccessError: DDGError {
     case failedToDecodeKeychainData
     case failedToDecodeKeychainValueAsData
     case failedToDecodeKeychainDataAsString
@@ -29,7 +29,7 @@ public enum AccountKeychainAccessError: Error, LocalizedError {
     case keychainLookupFailure(OSStatus)
     case expectedTokenNotFound
 
-    public var errorDescription: String? {
+    public var description: String {
         switch self {
         case .failedToDecodeKeychainData: return "failedToDecodeKeychainData"
         case .failedToDecodeKeychainValueAsData: return "failedToDecodeKeychainValueAsData"
@@ -42,7 +42,18 @@ public enum AccountKeychainAccessError: Error, LocalizedError {
         }
     }
 
-    public var localizedDescription: String {
-        errorDescription ?? "Unknown"
+    public static var errorDomain: String { "com.duckduckgo.subscription.AccountKeychainAccessError" }
+
+    public var errorCode: Int {
+        switch self {
+        case .failedToDecodeKeychainData: 8500
+        case .failedToDecodeKeychainValueAsData: 8501
+        case .failedToDecodeKeychainDataAsString: 8502
+        case .failedToEncodeKeychainData: 8503
+        case .keychainSaveFailure: 8504
+        case .keychainDeleteFailure: 8505
+        case .keychainLookupFailure: 8506
+        case .expectedTokenNotFound: 8507
+        }
     }
 }

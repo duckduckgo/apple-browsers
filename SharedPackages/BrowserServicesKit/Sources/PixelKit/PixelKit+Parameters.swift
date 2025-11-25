@@ -30,11 +30,13 @@ public extension PixelKit {
 
         public static let errorCode = "e"
         public static let errorDomain = "d"
+        public static let errorDescription = "de"
         public static let errorCount = "c"
         public static let errorSource = "error_source"
         public static let sourceBrowserVersion = "source_browser_version"
         public static let underlyingErrorCode = "ue"
         public static let underlyingErrorDomain = "ud"
+        public static let underlyingErrorDescription = "ued"
         public static let underlyingErrorSQLiteCode = "sqlrc"
         public static let underlyingErrorSQLiteExtendedCode = "sqlerc"
 
@@ -135,10 +137,12 @@ public extension Error {
         if let underlyingError = nsError.userInfo[NSUnderlyingErrorKey] as? NSError {
             let errorCodeParameterName = PixelKit.Parameters.underlyingErrorCode + (level == 0 ? "" : String(level + 1))
             let errorDomainParameterName = PixelKit.Parameters.underlyingErrorDomain + (level == 0 ? "" : String(level + 1))
+            let errorDescriptionParameterName = PixelKit.Parameters.underlyingErrorDescription + (level == 0 ? "" : String(level + 1))
 
             let currentUnderlyingErrorParameters = [
                 errorCodeParameterName: "\(underlyingError.code)",
-                errorDomainParameterName: underlyingError.domain
+                errorDomainParameterName: underlyingError.domain,
+                errorDescriptionParameterName: underlyingError.description
             ]
 
             // Check if the underlying error has an underlying error of its own

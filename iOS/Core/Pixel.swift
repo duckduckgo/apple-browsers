@@ -58,7 +58,6 @@ public struct PixelParameters {
     public static let widgetLarge = "wl"
     public static let widgetError = "we"
     public static let widgetErrorCode = "ec"
-    public static let widgetErrorDomain = "ed"
     public static let widgetUnavailable = "wx"
 
     static let removeCookiesTimedOut = "rc"

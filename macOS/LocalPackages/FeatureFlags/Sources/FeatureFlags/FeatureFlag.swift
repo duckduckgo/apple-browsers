@@ -326,7 +326,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .blurryAddressBarTahoeFix,
                 .pinnedTabsViewRewrite,
                 .vpnConnectionWidePixelMeasurement,
-                .showHideAIGeneratedImagesSection,
                 .allowPopupsForCurrentPage,
                 .extendedUserInitiatedPopupTimeout,
                 .suppressEmptyPopUpsOnApproval,

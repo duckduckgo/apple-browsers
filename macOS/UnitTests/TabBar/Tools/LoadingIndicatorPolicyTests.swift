@@ -16,88 +16,91 @@
 //  limitations under the License.
 //
 
-import Testing
+import XCTest
 import Foundation
 import AppKit
 @testable import DuckDuckGo_Privacy_Browser
 
-@Suite("LoadingIndicatorPolicy Tests", .serialized)
-struct LoadingIndicatorPolicyTests {
+final class LoadingIndicatorPolicyTests: XCTestCase {
 
     private let policy = DefaultLoadingIndicatorPolicy()
 
-    @Test(arguments: [
-        URL(string: "https://example.com")!,
-        URL(string: "http://example.com")!,
-        URL(string: "https://subdomain.example.com/path")!
-    ])
-    func testLoadingIndicatorIsShownWhenThereAreNoErrorsAndTheURLIsValidHypertextSchema(url: URL) {
-        let result = policy.shouldShowLoadingIndicator(isLoading: true, url: url, error: nil)
-        #expect(result)
+    func testLoadingIndicatorIsShownWhenThereAreNoErrorsAndTheURLIsValidHypertextSchema() {
+        let testingURLs = [
+            URL(string: "https://example.com")!,
+            URL(string: "http://example.com")!,
+            URL(string: "https://subdomain.example.com/path")
+        ]
+
+        for url in testingURLs {
+            let result = policy.shouldShowLoadingIndicator(isLoading: true, url: url, error: nil)
+            XCTAssertTrue(result)
+        }
     }
 
-    @Test
     func testLoadingIndicatorIsNotShownWhenURLIsNilEvenIfOtherConditionsAreMet() {
         let result = policy.shouldShowLoadingIndicator(isLoading: true, url: nil, error: nil)
-        #expect(result == false)
+        XCTAssertFalse(result)
     }
 
-    @Test
     func testLoadingIndicatorIsNotShownWhenThereAreErrors() {
         let resultWhenLoading = policy.shouldShowLoadingIndicator(isLoading: true, url: .appStore, error: NSError.testingError)
-        #expect(resultWhenLoading == false)
+        XCTAssertFalse(resultWhenLoading)
 
         let resultWhenNotLoading = policy.shouldShowLoadingIndicator(isLoading: false, url: .appStore, error: NSError.testingError)
-        #expect(resultWhenNotLoading == false)
+        XCTAssertFalse(resultWhenNotLoading)
     }
 
-    @Test(arguments: [URL.newtab, URL.welcome, URL.settings, URL.bookmarks, URL.history])
-    func testLoadingIndicatorIsNotShownForDuckSchemaURLs(url: URL) async throws {
-        let result = policy.shouldShowLoadingIndicator(isLoading: true, url: url, error: nil)
-        #expect(result == false)
-        #expect(url.isDuckURLScheme)
+    func testLoadingIndicatorIsNotShownForDuckSchemaURLs() async throws {
+        for url in [URL.newtab, URL.welcome, URL.settings, URL.bookmarks, URL.history] {
+            let result = policy.shouldShowLoadingIndicator(isLoading: true, url: url, error: nil)
+            XCTAssertTrue(url.isDuckURLScheme)
+            XCTAssertFalse(result)
+        }
     }
 
-    @Test(arguments: [
-        URL(string: "file:///path/to/file.html")!,
-        URL(string: "ftp://example.com")!,
-    ])
-    func testLoadingIndicatorIsNotShownForNonHypertextSchemes(url: URL) {
-        let result = policy.shouldShowLoadingIndicator(isLoading: true, url: url, error: nil)
-        #expect(result == false)
+    func testLoadingIndicatorIsNotShownForNonHypertextSchemes() {
+        let testingURLs = [
+            URL(string: "file:///path/to/file.html")!,
+            URL(string: "ftp://example.com")!
+        ]
+
+        for url in testingURLs {
+            let result = policy.shouldShowLoadingIndicator(isLoading: true, url: url, error: nil)
+            XCTAssertFalse(result)
+        }
     }
 
-    @Test(arguments: [(true, nil), (true, NSError.testingError), (false, nil), (false, NSError.testingError)])
     func testLoadingIndicatorIsNotShownForDuckSearchEvenIfOtherConditionsAreMet(isLoading: Bool, error: NSError?) async throws {
-        let searchURL = URL.makeSearchUrl(from: "yosemite")
-        let result = policy.shouldShowLoadingIndicator(isLoading: isLoading, url: searchURL, error: error)
-        #expect(result == false)
+        let sampleParameters: [(isLoading: Bool, error: NSError?)] = [(true, nil), (true, NSError.testingError), (false, nil), (false, NSError.testingError)]
+
+        for (isLoading, error) in sampleParameters {
+            let searchURL = URL.makeSearchUrl(from: "yosemite")
+            let result = policy.shouldShowLoadingIndicator(isLoading: isLoading, url: searchURL, error: error)
+            XCTAssertFalse(result)
+        }
     }
 
     // MARK: - Favicon Crossfade Tests
 
-    @Test
     func testFaviconCrossfadesWhenPlaceholderIsDisplayedAndNewFaviconIsAvailable() {
         let result = policy.shouldCrossfadeFavicon(newFavicon: .demoNetworkImage, oldFavicon: nil, displaysPlaceholder: true)
-        #expect(result)
+        XCTAssertTrue(result)
     }
 
-    @Test
     func testFaviconCrossfadesWhenOldFaviconExistsAndNewFaviconIsDifferent() {
         let result = policy.shouldCrossfadeFavicon(newFavicon: .demoBonjourImage, oldFavicon: .demoNetworkImage, displaysPlaceholder: false)
-        #expect(result)
+        XCTAssertTrue(result)
     }
 
-    @Test
     func testFaviconDoesNotCrossfadeWhenOldFaviconExistsAndNewFaviconIsTheSame() {
         let result = policy.shouldCrossfadeFavicon(newFavicon: .demoNetworkImage, oldFavicon: .demoNetworkImage, displaysPlaceholder: false)
-        #expect(result == false)
+        XCTAssertTrue(result == false)
     }
 
-    @Test
     func testFaviconDoesNotCrossfadeWhenNothingIsSet() {
         let result = policy.shouldCrossfadeFavicon(newFavicon: nil, oldFavicon: nil, displaysPlaceholder: false)
-        #expect(result == false)
+        XCTAssertTrue(result == false)
     }
 }
 

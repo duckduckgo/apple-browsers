@@ -298,6 +298,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Show popup permission button in inactive state when temporary allowance is active
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212017701300919?focus=true
     case popupPermissionButtonPersistence
+
+    /// New permission management view
+    /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1211985993948718?focus=true
+    case newPermissionView
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -421,7 +425,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .extendedUserInitiatedPopupTimeout,
                 .suppressEmptyPopUpsOnApproval,
                 .allowPopupsForCurrentPage,
-                .popupPermissionButtonPersistence:
+                .popupPermissionButtonPersistence,
+                .newPermissionView:
             return true
         case .sslCertificatesBypass,
                 .appendAtbToSerpQueries,
@@ -616,7 +621,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PopupBlockingSubfeature.allowPopupsForCurrentPage))
         case .popupPermissionButtonPersistence:
             return .remoteReleasable(.subfeature(PopupBlockingSubfeature.popupPermissionButtonPersistence))
+        case .newPermissionView:
+            return .internalOnly()
         }
+
     }
 }
 

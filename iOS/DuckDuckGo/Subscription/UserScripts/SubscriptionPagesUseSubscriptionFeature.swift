@@ -258,7 +258,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     func getSubscriptionOptions(params: Any, original: WKScriptMessage) async -> Encodable? {
         resetSubscriptionFlow()
 
-        let subscriptionOptions = await freeTrialSubscriptionOptions()
+        let subscriptionOptions = await subscriptionManager.storePurchaseManager().subscriptionOptions()
 
         if let subscriptionOptions {
             if subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed {
@@ -555,22 +555,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     }
 }
 
-private extension DefaultSubscriptionPagesUseSubscriptionFeature {
-    /// Retrieves free trial subscription options.
-    ///
-    /// - Returns: A `SubscriptionOptions` object containing the relevant subscription options.
-    func freeTrialSubscriptionOptions() async -> SubscriptionOptions? {
-        guard let subscriptionOptions = await subscriptionManager.storePurchaseManager().freeTrialSubscriptionOptions() else {
-            /*
-             Fallback to standard subscription options if nil.
-             This could occur if the Free Trial offer in AppStoreConnect had an end date in the past.
-             */
-            return await subscriptionManager.storePurchaseManager().subscriptionOptions()
-        }
-        return subscriptionOptions
-    }
-}
-
 final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesUseSubscriptionFeature {
 
     private let subscriptionAttributionOrigin: String?
@@ -756,7 +740,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
     func getSubscriptionOptions(params: Any, original: WKScriptMessage) async -> Encodable? {
         resetSubscriptionFlow()
 
-        let subscriptionOptions = await freeTrialSubscriptionOptions()
+        let subscriptionOptions = await subscriptionManager.storePurchaseManager().subscriptionOptions()
 
         if let subscriptionOptions {
             if subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed {
@@ -1094,22 +1078,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         onSetSubscription = nil
         onActivateSubscription = nil
         onBackToSettings = nil
-    }
-}
-
-private extension DefaultSubscriptionPagesUseSubscriptionFeatureV2 {
-    /// Retrieves free trial subscription options.
-    ///
-    /// - Returns: A `SubscriptionOptions` object containing the relevant subscription options.
-    func freeTrialSubscriptionOptions() async -> SubscriptionOptionsV2? {
-        guard let subscriptionOptions = await subscriptionManager.storePurchaseManager().freeTrialSubscriptionOptions() else {
-            /*
-             Fallback to standard subscription options if nil.
-             This could occur if the Free Trial offer in AppStoreConnect had an end date in the past.
-             */
-            return await subscriptionManager.storePurchaseManager().subscriptionOptions()
-        }
-        return subscriptionOptions
     }
 }
 

@@ -33,6 +33,8 @@ final class NavigationProtectionTabExtension {
         switch event {
         case .ampBlockingRulesCompilationFailed:
             PixelKit.fire(GeneralPixel.ampBlockingRulesCompilationFailed)
+        case .ampKeywordDetectionPerformance:
+            break
         }
     }
 

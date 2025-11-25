@@ -31,7 +31,7 @@ final class PassiveAddressBarTextField: NSTextField {
     private(set) weak var tabViewModel: TabViewModel?
     private var tabViewModelCancellable: AnyCancellable?
 
-    var visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
+    var theme: ThemeStyleProviding = NSApp.delegateTyped.themeManager.theme
 
     override var acceptsFirstResponder: Bool { false }
 
@@ -57,7 +57,7 @@ final class PassiveAddressBarTextField: NSTextField {
         drawsBackground = false
         focusRingType = .none
         usesSingleLineMode = true
-        textColor = visualStyle.colorsProvider.textPrimaryColor
+        textColor = theme.colorsProvider.textPrimaryColor
     }
 
     private func subscribeToSelectedTabViewModel() {

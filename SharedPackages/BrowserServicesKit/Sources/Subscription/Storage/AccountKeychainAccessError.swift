@@ -46,14 +46,14 @@ public enum AccountKeychainAccessError: DDGError {
 
     public var errorCode: Int {
         switch self {
-        case .failedToDecodeKeychainData: 8500
-        case .failedToDecodeKeychainValueAsData: 8501
-        case .failedToDecodeKeychainDataAsString: 8502
-        case .failedToEncodeKeychainData: 8503
-        case .keychainSaveFailure: 8504
-        case .keychainDeleteFailure: 8505
-        case .keychainLookupFailure: 8506
-        case .expectedTokenNotFound: 8507
+        case .failedToDecodeKeychainData: 12400
+        case .failedToDecodeKeychainValueAsData: 12401
+        case .failedToDecodeKeychainDataAsString: 12402
+        case .failedToEncodeKeychainData: 12403
+        case .keychainSaveFailure: 12404
+        case .keychainDeleteFailure: 12405
+        case .keychainLookupFailure: 12406
+        case .expectedTokenNotFound: 12407
         }
     }
 }

@@ -94,7 +94,7 @@ final class FadeoutContainerViewController: UIViewController {
 
     private func createContainerViews() {
         searchPageContainer = UIView()
-        searchPageContainer.backgroundColor = .yellow
+//        searchPageContainer.backgroundColor = .yellow
         searchPageContainer.translatesAutoresizingMaskIntoConstraints = false
 
         chatPageContainer = UIView()

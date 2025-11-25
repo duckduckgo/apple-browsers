@@ -50,9 +50,17 @@ final class URLEventHandler {
         )
     }
 
-    func applicationDidFinishLaunching() {
-        if !urlsToOpen.isEmpty {
+    struct AppDidFinishLaunchingResult {
+        var urlsToOpen: Int = 0
 
+        var willOpenWindows: Bool {
+            urlsToOpen > 0
+        }
+    }
+    func applicationDidFinishLaunching() -> AppDidFinishLaunchingResult {
+        var result = AppDidFinishLaunchingResult()
+        if !urlsToOpen.isEmpty {
+            result.urlsToOpen = urlsToOpen.count
             for url in urlsToOpen {
                 DispatchQueue.main.async {
                     self.handler(url)
@@ -63,6 +71,7 @@ final class URLEventHandler {
         }
 
         didFinishLaunching = true
+        return result
     }
 
     @objc func handleUrlEvent(event: NSAppleEventDescriptor, reply: NSAppleEventDescriptor) {

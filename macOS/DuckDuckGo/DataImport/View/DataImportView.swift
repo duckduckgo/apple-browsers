@@ -71,6 +71,7 @@ struct DataImportView: ModalView {
                     availableSources: model.availableImportSources,
                     selectedSource: model.importSource,
                     selectedImportTypes: Array(model.selectedDataTypes),
+                    selectableImportTypes: Array(model.selectableImportTypes),
                     shouldShowSyncFeature: syncFeatureVisibility.shouldShowSyncFeature,
                     onSourceSelected: { source in
                         model.update(with: source)

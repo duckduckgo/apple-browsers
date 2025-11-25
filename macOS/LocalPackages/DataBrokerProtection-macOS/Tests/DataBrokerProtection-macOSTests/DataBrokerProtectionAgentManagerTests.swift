@@ -641,7 +641,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         mockFreemiumDBPUserStateManager.didActivate = false
 
         // When
-        sut.fireMonitoringPixels()
+        await sut.fireMonitoringPixels()
 
         // Then
         XCTAssertNotNil(mockSharedPixelsHandler.lastFiredEvent)
@@ -670,7 +670,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         mockFreemiumDBPUserStateManager.didActivate = false
 
         // When
-        sut.fireMonitoringPixels()
+        await sut.fireMonitoringPixels()
 
         // Then
         XCTAssertNil(mockSharedPixelsHandler.lastFiredEvent)

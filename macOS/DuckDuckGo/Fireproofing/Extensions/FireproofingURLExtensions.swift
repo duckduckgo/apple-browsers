@@ -25,6 +25,7 @@ private typealias URLPatterns = [String: [NSRegularExpression]]
 extension URL {
 
     static let duckduckgoDomain = "duckduckgo.com"
+    static let duckAiDomain = "duck.ai"
 
     private static let loginPattern = regex("login|sign-in|signin|session")
 
@@ -53,6 +54,6 @@ extension URL {
 
     var canFireproof: Bool {
         guard let host = self.host, self.navigationalScheme?.isHypertextScheme == true else { return false }
-        return (host != Self.duckduckgoDomain)
+        return (host != Self.duckduckgoDomain && host != Self.duckAiDomain)
     }
 }

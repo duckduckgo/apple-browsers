@@ -32,7 +32,10 @@ final class SyncPromoManager: SyncPromoManaging {
 
     enum Touchpoint: String {
         case bookmarks
+        case autofill
         case passwords
+        case creditCards
+        case identities
     }
 
     public struct SyncPromoManagerNotifications {
@@ -44,6 +47,9 @@ final class SyncPromoManager: SyncPromoManaging {
         public static let syncPromoSourceKey = "source"
         public static let syncPromoBookmarksSource = "promotion_bookmarks"
         public static let syncPromoPasswordsSource = "promotion_passwords"
+        public static let syncPromoAutofillSource = "promotion_autofill"
+        public static let syncPromoCreditCardsSource = "promotion_creditcards"
+        public static let syncPromoIdentitiesSource = "promotion_identities"
     }
 
     private let syncService: DDGSyncing?
@@ -75,8 +81,26 @@ final class SyncPromoManager: SyncPromoManaging {
                syncPromoBookmarksDismissed == nil {
                 return true
             }
-        case .passwords:
+        case .passwords, .autofill:
             if privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncPromotionSubfeature.passwords),
+               privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.level0ShowSync),
+               autofillPrefs.passwordManager == .duckduckgo,
+               syncService.authState == .inactive,
+               syncPromoPasswordsDismissed == nil {
+                return true
+            }
+        case .creditCards:
+            if privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncPromotionSubfeature.passwords),
+               privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncCreditCards),
+               privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.level0ShowSync),
+               autofillPrefs.passwordManager == .duckduckgo,
+               syncService.authState == .inactive,
+               syncPromoPasswordsDismissed == nil {
+                return true
+            }
+        case .identities:
+            if privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncPromotionSubfeature.passwords),
+               privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.syncIdentities),
                privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(SyncSubfeature.level0ShowSync),
                autofillPrefs.passwordManager == .duckduckgo,
                syncService.authState == .inactive,
@@ -97,6 +121,12 @@ final class SyncPromoManager: SyncPromoManaging {
             source = Constants.syncPromoBookmarksSource
         case .passwords:
             source = Constants.syncPromoPasswordsSource
+        case .autofill:
+            source = Constants.syncPromoAutofillSource
+        case .creditCards:
+            source = Constants.syncPromoCreditCardsSource
+        case .identities:
+            source = Constants.syncPromoIdentitiesSource
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [self] in
@@ -111,7 +141,7 @@ final class SyncPromoManager: SyncPromoManaging {
         case .bookmarks:
             syncPromoBookmarksDismissed = Date()
             NotificationCenter.default.post(name: SyncPromoManagerNotifications.didDismissPromo, object: nil)
-        case .passwords:
+        default:
             syncPromoPasswordsDismissed = Date()
         }
     }

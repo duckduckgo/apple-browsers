@@ -8,11 +8,6 @@ inputs:
   platform:
     description: "The platform of the release (ios or macos)"
     required: true
-    type: choice
-    options:
-      - ios
-      - macos
-    default: "ios"
 
 runs:
   using: "composite"

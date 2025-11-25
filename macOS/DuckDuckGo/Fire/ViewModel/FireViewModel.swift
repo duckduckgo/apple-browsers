@@ -21,6 +21,7 @@ import Common
 import BrowserServicesKit
 import FeatureFlags
 import WebKit
+import History
 
 extension Fire.BurningData {
     /**
@@ -39,14 +40,27 @@ extension Fire.BurningData {
 
 final class FireViewModel {
 
-    let fire: Fire
+    let fire: FireProtocol
 
-    @Published var isAnimationPlaying = false
+    @Published private(set) var isAnimationPlaying = false
+
+    func setAnimationPlaying(_ isAnimationPlaying: Bool, isFireWindow: Bool) {
+        guard self.isAnimationPlaying != isAnimationPlaying else { return }
+        self.isAnimationPlaying = isAnimationPlaying
+
+        if !isFireWindow {
+            if isAnimationPlaying {
+                fire.fireAnimationDidStart()
+            } else {
+                fire.fireAnimationDidFinish()
+            }
+        }
+    }
 
     /// Publisher that emits true if burning animation or burning process is in progress
     var isFirePresentationInProgress: AnyPublisher<Bool, Never> {
         Publishers
-            .CombineLatest($isAnimationPlaying.removeDuplicates(), fire.$burningData.removeDuplicates())
+            .CombineLatest($isAnimationPlaying.removeDuplicates(), fire.burningDataPublisher.removeDuplicates())
             .map { (isAnimationPlaying, burningData) in
                 let shouldDisplayDialog = isAnimationPlaying || burningData != nil
                 if burningData?.shouldDelayShowingDialog(decider: self.fire.visualizeFireAnimationDecider) == true {
@@ -59,13 +73,17 @@ final class FireViewModel {
     }
 
     @MainActor
-    init(fire: Fire) {
+    init(fire: FireProtocol) {
         self.fire = fire
     }
 
     @MainActor
     init(tld: TLD, visualizeFireAnimationDecider: VisualizeFireSettingsDecider) {
         fire = Fire(tld: tld, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
+    }
+
+    var isBurning: Bool {
+        return fire.burningData != nil
     }
 
 }

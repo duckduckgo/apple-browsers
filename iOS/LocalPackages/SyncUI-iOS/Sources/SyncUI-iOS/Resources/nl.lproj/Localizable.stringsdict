@@ -38,5 +38,23 @@
 			<string>Je wachtwoord voor %2$@ kan niet worden gesynchroniseerd omdat een van de velden de tekenlimiet overschrijdt.</string>
 		</dict>
 	</dict>
+	<key>creditcards.invalid.objects.present.description</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@cards@</string>
+		<key>cards</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Je creditcard %2$@ en 1 andere kaart kunnen niet worden gesynchroniseerd omdat sommige velden de tekenlimiet overschrijden.</string>
+			<key>other</key>
+			<string>Je creditcard %2$@ en %1$d andere kaarten kunnen niet worden gesynchroniseerd omdat sommige velden de tekenlimiet overschrijden.</string>
+			<key>zero</key>
+			<string>Je creditcard %2$@ kan niet worden gesynchroniseerd omdat een van de velden de tekenlimiet overschrijdt.</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

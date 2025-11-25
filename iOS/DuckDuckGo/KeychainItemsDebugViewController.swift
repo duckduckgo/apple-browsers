@@ -30,7 +30,7 @@ private struct KeychainItem {
     let valueData: Data?
     let creationDate: Any?
     let modificationDate: Any?
-    
+    let accessible: String?
     var value: String? {
         guard let valueData = valueData else { return nil }
         return String(data: valueData, encoding: .utf8)
@@ -41,6 +41,7 @@ private struct KeychainItem {
         Service: \(service ?? "nil")
         Account: \(account ?? "nil")
         Access Group: \(accessGroup ?? "nil")
+        Accessible: \(KeychainItem.describeAccessible(accessible) ?? "nil")
         Value as String: \(value ?? "nil")
         Value data: \(String(describing: valueData))
         Creation date: \(String(describing: creationDate))
@@ -116,12 +117,54 @@ private enum SecClass: CaseIterable {
                          accessGroup: $0[kSecAttrAccessGroup as String] as? String,
                          valueData: $0[kSecValueData as String] as? Data,
                          creationDate: $0[kSecAttrCreationDate as String, default: "no creation"],
-                         modificationDate: $0[kSecAttrModificationDate as String, default: "no modification"])
+                         modificationDate: $0[kSecAttrModificationDate as String, default: "no modification"],
+                         accessible: KeychainItem.castAccessible($0[kSecAttrAccessible as String]))
         }
     }
 }
 
+private extension KeychainItem {
+    private static let accessibleDescriptions: [String: String] = [
+        kSecAttrAccessibleAfterFirstUnlock as String: "kSecAttrAccessibleAfterFirstUnlock",
+        kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly as String: "kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly",
+        kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly as String: "kSecAttrAccessibleWhenPasscodeSetThisDeviceOnly",
+        kSecAttrAccessibleWhenUnlocked as String: "kSecAttrAccessibleWhenUnlocked",
+        kSecAttrAccessibleWhenUnlockedThisDeviceOnly as String: "kSecAttrAccessibleWhenUnlockedThisDeviceOnly"
+    ]
+
+    static func castAccessible(_ value: Any?) -> String? {
+        switch value {
+        case let string as String:
+            return string
+        case let cfString as CFString:
+            return cfString as String
+        default:
+            return nil
+        }
+    }
+
+    static func describeAccessible(_ value: String?) -> String? {
+        guard let value else { return nil }
+        return accessibleDescriptions[value] ?? value
+    }
+}
+
 class KeychainItemsDebugViewController: UITableViewController {
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupNavigationBar()
+    }
+
+    private func setupNavigationBar() {
+        navigationItem.rightBarButtonItem = UIBarButtonItem(
+            title: "Delete All",
+            style: .plain,
+            target: self,
+            action: #selector(deleteAllButtonTapped)
+        )
+        navigationItem.rightBarButtonItem?.tintColor = .systemRed
+    }
 
     override func numberOfSections(in tableView: UITableView) -> Int {
         return SecClass.allCases.count
@@ -144,4 +187,39 @@ class KeychainItemsDebugViewController: UITableViewController {
         return cell
     }
 
+    @objc private func deleteAllButtonTapped() {
+        let alert = UIAlertController(
+            title: "Delete All Keychain Items",
+            message: "Are you sure you want to delete all keychain items? This action cannot be undone.",
+            preferredStyle: .alert
+        )
+
+        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel))
+        alert.addAction(UIAlertAction(title: "Delete All", style: .destructive) { [weak self] _ in
+            self?.deleteAllKeychainItems()
+        })
+
+        present(alert, animated: true)
+    }
+
+    private func deleteAllKeychainItems() {
+        var deletedCount = 0
+
+        for secClass in SecClass.allCases {
+            let query: [String: Any] = [
+                kSecClass as String: secClass.secClassCFString
+            ]
+
+            let status = SecItemDelete(query as CFDictionary)
+            if status == errSecSuccess {
+                deletedCount += 1
+            }
+        }
+
+        tableView.reloadData()
+
+        let resultAlert = UIAlertController(title: "Deletion Complete", message: "Deleted items from keychain.", preferredStyle: .alert)
+        resultAlert.addAction(UIAlertAction(title: "OK", style: .default))
+        present(resultAlert, animated: true)
+    }
 }

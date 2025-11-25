@@ -94,6 +94,86 @@ struct AIChatNativePromptTests {
         #expect(NSDictionary(dictionary: jsonDict).isEqual(to: expected))
     }
 
+    @Test
+    func decodingTranslation() throws {
+        let json = """
+            {
+                "platform": "\(Platform.name)",
+                "tool": "translation",
+                "translation": {
+                    "text": "This is a sample text to translate",
+                    "sourceURL": "https://example.com",
+                    "sourceTitle": "Example Page",
+                    "sourceTLD": ".com",
+                    "sourceLanguage": "en-US",
+                    "targetLanguage": "es-ES"
+                }
+            }
+            """
+
+        let prompt = try decodePrompt(from: json)
+        let expectedURL = URL(string: "https://example.com")
+        #expect(prompt == AIChatNativePrompt.translationPrompt("This is a sample text to translate", url: expectedURL, title: "Example Page", sourceTLD: ".com", sourceLanguage: "en-US", targetLanguage: "es-ES"))
+    }
+
+    @Test
+    func encodingTranslation() throws {
+        let expectedURL = URL(string: "https://example.com")
+        let prompt = AIChatNativePrompt.translationPrompt("This is a sample text to translate", url: expectedURL, title: "Example Page", sourceTLD: ".com", sourceLanguage: "en-US", targetLanguage: "es-ES")
+        let jsonDict = try encodePrompt(prompt)
+
+        let expected: [String: Any] = [
+            "platform": Platform.name,
+            "tool": "translation",
+            "translation": [
+                "text": "This is a sample text to translate",
+                "sourceURL": "https://example.com",
+                "sourceTitle": "Example Page",
+                "sourceTLD": ".com",
+                "sourceLanguage": "en-US",
+                "targetLanguage": "es-ES"
+            ]
+        ]
+
+        #expect(NSDictionary(dictionary: jsonDict).isEqual(to: expected))
+    }
+
+    @Test
+    func decodingTranslationWithMinimalFields() throws {
+        let json = """
+            {
+                "platform": "\(Platform.name)",
+                "tool": "translation",
+                "translation": {
+                    "text": "Hello world",
+                    "targetLanguage": "fr-FR"
+                }
+            }
+            """
+
+        let prompt = try decodePrompt(from: json)
+        #expect(prompt == AIChatNativePrompt.translationPrompt("Hello world", url: nil, title: nil, sourceTLD: nil, sourceLanguage: nil, targetLanguage: "fr-FR"))
+    }
+
+    @Test
+    func encodingTranslationWithMinimalFields() throws {
+        let prompt = AIChatNativePrompt.translationPrompt("Hello world", url: nil, title: nil, sourceTLD: nil, sourceLanguage: nil, targetLanguage: "fr-FR")
+        let jsonDict = try encodePrompt(prompt)
+
+        let expected: [String: Any] = [
+            "platform": Platform.name,
+            "tool": "translation",
+            "translation": [
+                "text": "Hello world",
+                "sourceLanguage": nil,
+                "sourceTLD": nil,
+                "targetLanguage": "fr-FR"
+            ]
+        ]
+
+        #expect(NSDictionary(dictionary: jsonDict).isEqual(to: expected))
+    }
+
     // MARK: - Helpers
 
     private func decodePrompt(from json: String) throws -> AIChatNativePrompt {

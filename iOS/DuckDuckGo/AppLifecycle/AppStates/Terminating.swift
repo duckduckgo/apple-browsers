@@ -32,7 +32,7 @@ enum TerminationError: Error {
 }
 
 
-private enum TerminationReason {
+enum TerminationReason {
 
     case insufficientDiskSpace
     case unrecoverableState
@@ -57,14 +57,12 @@ private enum TerminationMode {
 ///
 struct Terminating: TerminatingHandling {
 
-    private let application: UIApplication
+    private let application: UIApplication = .shared
+    private let mode: TerminationMode
 
-    init(error: Error, application: UIApplication = UIApplication.shared) {
+    init(error: Error) {
         Logger.lifecycle.info("Terminating: \(#function)")
 
-        self.application = application
-
-        let mode: TerminationMode
         let pixel: Pixel.Event
         var errorToReport: Error?
         var additionalParams: [String: String] = [:]
@@ -144,7 +142,6 @@ struct Terminating: TerminatingHandling {
                 pixel = .bookmarksCouldNotLoadDatabase
             }
             
-            recordBookmarkDatabaseError(error: bookmarkError, underlyingError: underlyingError)
             errorToReport = underlyingError
             mode = underlyingError.isDiskFull ? .afterAlert(reason: .insufficientDiskSpace) : .immediately(debugMessage: debugMessage)
         case .historyDatabase(let error):
@@ -174,11 +171,20 @@ struct Terminating: TerminatingHandling {
             Thread.sleep(forTimeInterval: 1)
             fatalError(message)
         case .afterAlert(let reason):
-            alertAndTerminate(with: reason)
+            if !Bundle.main.supportsScenes {
+                let window = UIWindow(frame: UIScreen.main.bounds)
+                window.backgroundColor = .white
+                window.makeKeyAndVisible()
+                UIApplication.shared.setWindow(window)
+                alertAndTerminate(window: window)
+            }
         }
     }
 
-    private func alertAndTerminate(with reason: TerminationReason) {
+    func alertAndTerminate(window: UIWindow) {
+        guard case .afterAlert(let reason) = mode else {
+            return
+        }
         let alertController: UIAlertController
         switch reason {
         case .insufficientDiskSpace:
@@ -187,22 +193,12 @@ struct Terminating: TerminatingHandling {
             alertController = CriticalAlerts.makePreemptiveCrashAlert()
         }
 
-        let window = UIWindow.makeBlank()
-        application.setWindow(window)
-        window.rootViewController?.present(alertController, animated: true, completion: nil)
-    }
+        let rootViewController = UIViewController()
+        rootViewController.view.backgroundColor = .white
+        window.rootViewController = rootViewController
+        window.makeKeyAndVisible()
 
-    // MARK: - Error Tracking
-
-    private func recordBookmarkDatabaseError(error: BookmarksDatabaseError, underlyingError: Error) {
-        let errorInfo: [String: Any] = [
-            "timestamp": Date(),
-            "bookmarkError": error.name,
-            "domain": (underlyingError as NSError).domain,
-            "code": (underlyingError as NSError).code
-        ]
-
-        UserDefaults.app.set(errorInfo, forKey: "BookmarksValidator.lastBookmarkError")
+        rootViewController.present(alertController, animated: true, completion: nil)
     }
 
 }

@@ -45,13 +45,14 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         self.actionHandler = actionHandler
         super.init()
 
-        Publishers.Merge(
+        Publishers.Merge3(
             configProvider.isAIChatShortcutEnabledPublisher,
-            configProvider.isAIChatSettingVisiblePublisher
+            configProvider.isAIChatSettingVisiblePublisher,
+            configProvider.showCustomizePopoverPublisher
         )
         .sink { [weak self] _ in
             Task { @MainActor in
-                self?.notifyAIChatShortcutUpdated()
+                self?.notifyConfigUpdated()
             }
         }
         .store(in: &cancellables)
@@ -70,10 +71,16 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
 
     @MainActor
     private func getConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        NewTabPageDataModel.OmnibarConfig(
+        // Count the number of popover presentations
+        if configProvider.showCustomizePopover {
+            configProvider.customizePopoverPresentationCount += 1
+        }
+
+        return NewTabPageDataModel.OmnibarConfig(
             mode: configProvider.mode,
             enableAi: configProvider.isAIChatShortcutEnabled,
-            showAiSetting: configProvider.isAIChatSettingVisible
+            showAiSetting: configProvider.isAIChatSettingVisible,
+            showCustomizePopover: configProvider.showCustomizePopover
         )
     }
 
@@ -84,15 +91,19 @@ public final class NewTabPageOmnibarClient: NewTabPageUserScriptClient {
         }
         configProvider.mode = config.mode
         configProvider.isAIChatShortcutEnabled = config.enableAi
+        if let showCustomizePopover = config.showCustomizePopover {
+            configProvider.showCustomizePopover = showCustomizePopover
+        }
         return nil
     }
 
     @MainActor
-    private func notifyAIChatShortcutUpdated() {
+    private func notifyConfigUpdated() {
         let config = NewTabPageDataModel.OmnibarConfig(
             mode: configProvider.mode,
             enableAi: configProvider.isAIChatShortcutEnabled,
-            showAiSetting: configProvider.isAIChatSettingVisible
+            showAiSetting: configProvider.isAIChatSettingVisible,
+            showCustomizePopover: configProvider.showCustomizePopover
         )
         pushMessage(named: MessageName.onConfigUpdate.rawValue, params: config)
     }

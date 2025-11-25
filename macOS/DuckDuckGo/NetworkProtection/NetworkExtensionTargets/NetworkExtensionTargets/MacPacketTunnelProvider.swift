@@ -16,15 +16,15 @@
 //  limitations under the License.
 //
 
-import Foundation
 import Combine
 import Common
-import VPN
+import Foundation
 import NetworkExtension
 import Networking
+import os.log
 import PixelKit
 import Subscription
-import os.log
+import VPN
 import WireGuard
 
 final class MacPacketTunnelProvider: PacketTunnelProvider {
@@ -120,6 +120,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
     }
 
     private let notificationCenter: NetworkProtectionNotificationCenter = DistributedNotificationCenter.default()
+    private let wideEvent: WideEventManaging = WideEvent()
 
     // MARK: - PacketTunnelProvider.Event reporting
 
@@ -373,6 +374,18 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                 NetworkProtectionPixelEvent.networkProtectionTunnelStartAttemptOnDemandWithoutAccessToken,
                 frequency: .legacyDailyAndCount,
                 includeAppVersionParameter: true)
+        case .adapterEndTemporaryShutdownStateAttemptFailure(let error):
+            PixelKit.fire(NetworkProtectionPixelEvent.networkProtectionAdapterEndTemporaryShutdownStateAttemptFailure(error),
+                          frequency: PixelKit.Frequency.dailyAndCount,
+                          includeAppVersionParameter: true)
+        case .adapterEndTemporaryShutdownStateRecoverySuccess:
+            PixelKit.fire(NetworkProtectionPixelEvent.networkProtectionAdapterEndTemporaryShutdownStateRecoverySuccess,
+                          frequency: PixelKit.Frequency.dailyAndCount,
+                          includeAppVersionParameter: true)
+        case .adapterEndTemporaryShutdownStateRecoveryFailure(let error):
+            PixelKit.fire(NetworkProtectionPixelEvent.networkProtectionAdapterEndTemporaryShutdownStateRecoveryFailure(error),
+                          frequency: PixelKit.Frequency.dailyAndCount,
+                          includeAppVersionParameter: true)
         }
     }
 
@@ -465,7 +478,8 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                                                                  errorEventsHandler: debugEvents)
         let authClient = DefaultOAuthClient(tokensStorage: tokenStoreV2,
                                             legacyTokenStorage: nil,
-                                            authService: authService)
+                                            authService: authService,
+                                            refreshEventMapping: AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: self.wideEvent, isFeatureEnabled: { true }))
 
         let subscriptionEndpointServiceV2 = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent()),
                                                                                  baseURL: subscriptionEnvironment.serviceEnvironment.url)
@@ -475,7 +489,9 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                                                                subscriptionEndpointService: subscriptionEndpointServiceV2,
                                                                subscriptionEnvironment: subscriptionEnvironment,
                                                                pixelHandler: pixelHandler,
-                                                               initForPurchase: false)
+                                                               initForPurchase: false,
+                                                               wideEvent: self.wideEvent,
+                                                               isAuthV2WideEventEnabled: { return subscriptionEnvironment.serviceEnvironment == .production })
 
         let entitlementsCheck: (() async -> Result<Bool, Error>) = {
             Logger.networkProtection.log("Subscription Entitlements check...")
@@ -699,6 +715,8 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         source = "vpnAppExtension"
 #endif
 
+        let userAgent = UserAgent.duckDuckGoUserAgent()
+
         PixelKit.setUp(dryRun: dryRun,
                        appVersion: AppVersion.shared.versionNumber,
                        source: source,
@@ -706,7 +724,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                        defaults: .netP) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in
 
             let url = URL.pixelUrl(forPixelNamed: pixelName)
-            let apiHeaders = APIRequest.Headers(additionalHeaders: headers)
+            let apiHeaders = APIRequest.Headers(userAgent: userAgent, additionalHeaders: headers)
             let configuration = APIRequest.Configuration(url: url, method: .get, queryParameters: parameters, headers: apiHeaders)
             let request = APIRequest(configuration: configuration)
 
@@ -718,7 +736,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
 }
 
-final class DefaultWireGuardInterface: WireGuardInterface {
+final class DefaultWireGuardInterface: WireGuardGoInterface {
     func turnOn(settings: UnsafePointer<CChar>, handle: Int32) -> Int32 {
         wgTurnOn(settings, handle)
     }
@@ -758,7 +776,7 @@ extension MacPacketTunnelProvider: AccountManagerKeychainAccessDelegate {
             return
         }
 
-        PixelKit.fire(PrivacyProErrorPixel.privacyProKeychainAccessError(accessType: accessType,
+        PixelKit.fire(SubscriptionErrorPixel.subscriptionKeychainAccessError(accessType: accessType,
                                                                          accessError: expectedError,
                                                                          source: KeychainErrorSource.vpn,
                                                                          authVersion: KeychainErrorAuthVersion.v1),

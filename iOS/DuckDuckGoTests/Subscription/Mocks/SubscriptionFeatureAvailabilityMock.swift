@@ -30,6 +30,7 @@ public final class SubscriptionFeatureAvailabilityMock: SubscriptionFeatureAvail
     public var isPaidAIChatEnabled: Bool = true
     public var isSupportsAlternateStripePaymentFlowEnabled: Bool = false
     public var isSubscriptionPurchaseWidePixelMeasurementEnabled: Bool = true
+    public var isSubscriptionRestoreWidePixelMeasurementEnabled: Bool = false
 
     public init(isSubscriptionPurchaseAllowed: Bool) {
         self.isSubscriptionPurchaseAllowed = isSubscriptionPurchaseAllowed

@@ -39,6 +39,9 @@ final class ContentScopeExperimentsEndToEndTests: UITestCase {
         XCTAssertTrue(textField.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Custom config alert did not appear.")
         textField.typeURL(configURL, pressingEnter: false)
         app.typeKey(.return, modifierFlags: [])
+        let configUpdateComplete = app.staticTexts["Configuration Update Complete"]
+        XCTAssertTrue(configUpdateComplete.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Custom config alert did not appear.")
+        app.typeKey(.return, modifierFlags: [])
 
         // Step 2: Load test page
         let testPageUrl = URL(string: "https://privacy-test-pages.site/content-scope-scripts/infra/pages/conditional-matching-experiments.html")!

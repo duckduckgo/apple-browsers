@@ -28,13 +28,14 @@ extension WindowsManager {
             throw coder.error ?? NSError(domain: "WindowsManagerStateRestoration", code: -1, userInfo: nil)
         }
 
-        TabsPreferences.shared.migratePinnedTabsSettingIfNecessary(state.applicationPinnedTabs)
+        Application.appDelegate.tabsPreferences.migratePinnedTabsSettingIfNecessary(state.applicationPinnedTabs)
         if let pinnedTabsCollection = state.applicationPinnedTabs {
             Application.appDelegate.windowControllersManager.restorePinnedTabs(pinnedTabsCollection)
         }
 
         if let aiChatSidebarsByTab = state.aiChatSidebarsByTab {
-            Application.appDelegate.aiChatSidebarProvider.restoreState(aiChatSidebarsByTab)
+            let presentedSidebars = aiChatSidebarsByTab.filter { (_, value) in value.isPresented }
+            Application.appDelegate.aiChatSidebarProvider.restoreState(presentedSidebars)
         }
 
         if includeWindows {
@@ -70,7 +71,7 @@ extension WindowsManager {
 
         let pinnedTabsManager = (window.windowController as? MainWindowController)?.mainViewController.tabCollectionViewModel.pinnedTabsManager
         if let pinnedTabs = item.pinnedTabs, let pinnedTabsManager, pinnedTabsManager !== Application.appDelegate.pinnedTabsManager {
-            pinnedTabsManager.setUp(with: pinnedTabs)
+            pinnedTabsManager.setUp(movingTabsFrom: pinnedTabs)
         }
     }
 
@@ -88,7 +89,7 @@ extension WindowControllersManager {
     }
 
     func restorePinnedTabs(_ collection: TabCollection) {
-        Application.appDelegate.pinnedTabsManager.setUp(with: collection)
+        Application.appDelegate.pinnedTabsManager.setUp(movingTabsFrom: collection)
     }
 
 }

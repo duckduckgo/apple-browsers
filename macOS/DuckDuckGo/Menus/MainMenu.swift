@@ -100,7 +100,9 @@ final class MainMenu: NSMenu {
     let customConfigurationUrlMenuItem = NSMenuItem(title: "Last Update Time", action: nil)
     let configurationDateAndTimeMenuItem = NSMenuItem(title: "Configuration URL", action: nil)
     let autofillDebugScriptMenuItem = NSMenuItem(title: "Autofill Debug Script", action: #selector(MainMenu.toggleAutofillScriptDebugSettingsAction))
+    let contentScopeDebugStateMenuItem = NSMenuItem(title: "Content Scope Scripts Debug State", action: #selector(MainMenu.toggleContentScopeStateDebugSettingsAction))
     let toggleWatchdogMenuItem = NSMenuItem(title: "Toggle Hang Watchdog", action: #selector(MainViewController.toggleWatchdog))
+    let toggleWatchdogCrashMenuItem = NSMenuItem(title: "Crash on timeout", action: #selector(MainViewController.toggleWatchdogCrash))
 
     // MARK: Help
 
@@ -124,6 +126,14 @@ final class MainMenu: NSMenu {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let appVersion: AppVersion
     private let configurationURLProvider: CustomConfigurationURLProviding
+    private let contentScopePreferences: ContentScopePreferences
+
+    private lazy var webExtensionsMenuItem: NSMenuItem? = {
+        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
+            return NSMenuItem(title: "Web Extensions").submenu(WebExtensionsDebugMenu(webExtensionManager: webExtensionManager))
+        }
+        return nil
+    }()
 
     // MARK: - Initialization
 
@@ -131,16 +141,18 @@ final class MainMenu: NSMenu {
     init(featureFlagger: FeatureFlagger,
          bookmarkManager: BookmarkManager,
          historyCoordinator: HistoryCoordinating & HistoryGroupingDataSource,
+         recentlyClosedCoordinator: RecentlyClosedCoordinating,
          faviconManager: FaviconManagement,
          dockCustomizer: DockCustomization = DockCustomizer(),
-         defaultBrowserPreferences: DefaultBrowserPreferences = .shared,
+         defaultBrowserPreferences: DefaultBrowserPreferences,
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
          internalUserDecider: InternalUserDecider,
          appearancePreferences: AppearancePreferences,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          appVersion: AppVersion = .shared,
          isFireWindowDefault: Bool,
-         configurationURLProvider: CustomConfigurationURLProviding) {
+         configurationURLProvider: CustomConfigurationURLProviding,
+         contentScopePreferences: ContentScopePreferences) {
 
         self.featureFlagger = featureFlagger
         self.internalUserDecider = internalUserDecider
@@ -150,8 +162,9 @@ final class MainMenu: NSMenu {
         self.dockCustomizer = dockCustomizer
         self.defaultBrowserPreferences = defaultBrowserPreferences
         self.aiChatMenuConfig = aiChatMenuConfig
-        self.historyMenu = HistoryMenu(historyGroupingDataSource: historyCoordinator, featureFlagger: featureFlagger)
+        self.historyMenu = HistoryMenu(historyGroupingDataSource: historyCoordinator, recentlyClosedCoordinator: recentlyClosedCoordinator, featureFlagger: featureFlagger)
         self.configurationURLProvider = configurationURLProvider
+        self.contentScopePreferences = contentScopePreferences
         super.init(title: UserText.duckDuckGo)
 
         buildItems {
@@ -440,7 +453,7 @@ final class MainMenu: NSMenu {
         NSMenuItem(title: "Debug")
             .submenu(setupDebugMenu(featureFlagger: featureFlagger, historyCoordinator: historyCoordinator))
 #else
-        if featureFlagger.isFeatureOn(.debugMenu) {
+        if internalUserDecider.isInternalUser {
             NSMenuItem(title: "Debug")
                 .submenu(setupDebugMenu(featureFlagger: featureFlagger, historyCoordinator: historyCoordinator))
         } else {
@@ -493,8 +506,19 @@ final class MainMenu: NSMenu {
         updateInternalUserItem()
         updateRemoteConfigurationInfo()
         updateAutofillDebugScriptMenuItem()
+        updateContentScopeDebugStateMenuItem()
         updateShowToolbarsOnFullScreenMenuItem()
-        updateWatchdogMenuItem()
+        updateWatchdogMenuItems()
+        updateWebExtensionsMenuItem()
+    }
+
+    private func updateWebExtensionsMenuItem() {
+        if let webExtensionsMenuItem,
+           webExtensionsMenuItem.parent == nil,
+           let debugMenuItem = items.first(where: { item in item.title == Self.debugMenuTitle }),
+           let debugSubmenu = debugMenuItem.submenu {
+            debugSubmenu.insertItem(webExtensionsMenuItem, at: max(0, debugSubmenu.items.count - 3))
+        }
     }
 
     private func updateAppAboutDDGMenuItem() {
@@ -549,12 +573,38 @@ final class MainMenu: NSMenu {
     }
 
     var aiChatCancellable: AnyCancellable?
+    var privacyConfigCancellable: AnyCancellable?
+    var featureFlagCancellable: AnyCancellable?
     private func subscribeToAIChatPreferences(aiChatMenuConfig: AIChatMenuVisibilityConfigurable) {
         aiChatCancellable = aiChatMenuConfig.valuesChangedPublisher
             .receive(on: DispatchQueue.main)
             .sink(receiveValue: { [weak self] in
                 self?.setupAIChatMenu()
             })
+
+        // Required to support toggle of .aiChatImprovements feature flag, to be removed after release
+        privacyConfigCancellable = privacyConfigurationManager.updatesPublisher
+            .receive(on: DispatchQueue.main)
+            .sink(receiveValue: { [weak self] in
+                guard let self else { return }
+
+                let isAIChatMenuHidden = self.aiChatMenu.isHidden
+                let shouldHideAIChatMenu = !aiChatMenuConfig.shouldDisplayApplicationMenuShortcut
+
+                if isAIChatMenuHidden != shouldHideAIChatMenu {
+                    self.setupAIChatMenu()
+                }
+            })
+
+        guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
+            return
+        }
+
+        featureFlagCancellable = overridesHandler.flagDidChangePublisher
+            .filter { $0.0 == .aiChatImprovements }
+            .sink { [weak self] _ in
+                self?.setupAIChatMenu()
+            }
     }
 
     // Nested recursing functions cause body length
@@ -678,9 +728,11 @@ final class MainMenu: NSMenu {
 
     let internalUserItem = NSMenuItem(title: "Set Internal User State", action: #selector(AppDelegate.internalUserState))
 
+    static let debugMenuTitle = "Debug"
+
     @MainActor
     private func setupDebugMenu(featureFlagger: FeatureFlagger, historyCoordinator: HistoryCoordinating) -> NSMenu {
-        let debugMenu = NSMenu(title: "Debug") {
+        let debugMenu = NSMenu(title: Self.debugMenuTitle) {
             NSMenuItem(title: "Feature Flag Overrides")
                 .submenu(FeatureFlagOverridesMenu(featureFlagOverrides: featureFlagger))
             NSMenuItem(title: "Open Vanilla Browser", action: #selector(MainViewController.openVanillaBrowser)).withAccessibilityIdentifier("MainMenu.openVanillaBrowser")
@@ -692,14 +744,20 @@ final class MainMenu: NSMenu {
             }
             NSMenuItem(title: "History")
                 .submenu(HistoryDebugMenu(historyCoordinator: historyCoordinator, featureFlagger: featureFlagger))
+            NSMenuItem(title: "Performance Tests") {
+                NSMenuItem(title: "Test Network Quality", action: #selector(MainViewController.testNetworkQuality))
+                    .withAccessibilityIdentifier("MainMenu.testNetworkQuality")
+                NSMenuItem(title: "Test Site Performance (DDG vs Safari)", action: #selector(MainViewController.testCurrentSitePerformance))
+                    .withAccessibilityIdentifier("MainMenu.testCurrentSitePerformance")
+            }
             NSMenuItem(title: "Content Scopes Experiment") {
                 NSMenuItem(title: "Show Active Experiments", action: #selector(AppDelegate.showContentScopeExperiments))
             }
             NSMenuItem(title: "Reset Data") {
-                NSMenuItem(title: "Reset Default Browser Prompt", action: #selector(AppDelegate.resetDefaultBrowserPrompt))
                 NSMenuItem(title: "Reset Default Grammar Checks", action: #selector(AppDelegate.resetDefaultGrammarChecks))
                 NSMenuItem(title: "Reset Autofill Data", action: #selector(AppDelegate.resetSecureVaultData)).withAccessibilityIdentifier("MainMenu.resetSecureVaultData")
                 NSMenuItem(title: "Reset Bookmarks", action: #selector(AppDelegate.resetBookmarks)).withAccessibilityIdentifier("MainMenu.resetBookmarks")
+                NSMenuItem(title: "Reset Fireproof Sites", action: #selector(AppDelegate.resetFireproofSites))
                 NSMenuItem(title: "Reset Pinned Tabs", action: #selector(AppDelegate.resetPinnedTabs))
                 NSMenuItem(title: "Reset New Tab Page Customizations", action: #selector(AppDelegate.resetNewTabPageCustomization))
                 NSMenuItem(title: "Reset YouTube Overlay Interactions", action: #selector(AppDelegate.resetDuckPlayerOverlayInteractions))
@@ -744,7 +802,7 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Reset configuration to default", action: #selector(AppDelegate.resetPrivacyConfigurationToDefault))
             }
             NSMenuItem(title: "Remote Messaging Framework")
-                .submenu(RemoteMessagingDebugMenu())
+                .submenu(RemoteMessagingDebugMenu(configurationURLProvider: configurationURLProvider))
             NSMenuItem(title: "User Scripts") {
                 NSMenuItem(title: "Remove user scripts from selected tab", action: #selector(MainViewController.removeUserScripts))
             }
@@ -762,6 +820,9 @@ final class MainMenu: NSMenu {
                     .submenu(NetworkProtectionDebugMenu())
             }
 
+            NSMenuItem(title: "AppStore Updates")
+                .submenu(AppStoreUpdatesDebugMenu())
+
             if #available(macOS 13.5, *) {
                 NSMenuItem(title: "Autofill") {
                     NSMenuItem(title: "View all Credentials", action: #selector(MainViewController.showAllCredentials)).withAccessibilityIdentifier("MainMenu.showAllCredentials")
@@ -772,14 +833,22 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "fatalError", action: #selector(AppDelegate.triggerFatalError))
                 NSMenuItem(title: "NSException", action: #selector(MainViewController.crashOnException))
                 NSMenuItem(title: "C++ exception", action: #selector(AppDelegate.crashOnCxxException))
+                if featureFlagger.isFeatureOn(.tabCrashDebugging) {
+                    NSMenuItem(title: "Crash All Tabs", action: #selector(MainViewController.crashAllTabs))
+                }
             }
 
             NSMenuItem(title: "Hang Debugging") {
                 toggleWatchdogMenuItem
-                NSMenuItem(
-                    title: "Simulate 15 Second Hang",
-                    action: #selector(MainViewController.simulate15SecondHang)
-                )
+                toggleWatchdogCrashMenuItem
+                NSMenuItem(title: "Simulate hang") {
+                    NSMenuItem(title: "0.5 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 0.5)
+                    NSMenuItem(title: "2 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 2.0)
+                    NSMenuItem(title: "3.5 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 3.5)
+                    NSMenuItem(title: "5 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 5.0)
+                    NSMenuItem(title: "10 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 10.0)
+                    NSMenuItem(title: "15 seconds", action: #selector(MainViewController.simulateUIHang), representedObject: 15.0)
+                }
             }
 
             let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
@@ -810,7 +879,8 @@ final class MainMenu: NSMenu {
                                   subscriptionManagerV1: Application.appDelegate.subscriptionManagerV1,
                                   subscriptionManagerV2: Application.appDelegate.subscriptionManagerV2,
                                   subscriptionUserDefaults: subscriptionUserDefaults,
-                                  isAuthV2Enabled: Application.appDelegate.isUsingAuthV2)
+                                  isAuthV2Enabled: Application.appDelegate.isUsingAuthV2,
+                                  wideEvent: Application.appDelegate.wideEvent)
 
             NSMenuItem(title: "TipKit") {
                 NSMenuItem(title: "Reset", action: #selector(AppDelegate.resetTipKit))
@@ -819,15 +889,13 @@ final class MainMenu: NSMenu {
 
             NSMenuItem(title: "Logging").submenu(setupLoggingMenu())
             NSMenuItem(title: "AI Chat").submenu(AIChatDebugMenu())
+#if SPARKLE
             NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu())
+#endif
             if AppVersion.runType.requiresEnvironment {
-                NSMenuItem(title: "SAD/ATT Prompts").submenu(DefaultBrowserAndDockPromptDebugMenu())
-            }
-
-            if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
-                NSMenuItem.separator()
-                NSMenuItem(title: "Web Extensions").submenu(WebExtensionsDebugMenu(webExtensionManager: webExtensionManager))
-                NSMenuItem.separator()
+                NSMenuItem(title: "SAD/ATT Prompts (Default Browser/Add to Dock)").submenu(DefaultBrowserAndDockPromptDebugMenu())
+                WinBackOfferDebugMenu(winbackOfferStore: Application.appDelegate.winbackOfferStore,
+                                      keyValueStore: Application.appDelegate.keyValueStore)
             }
         }
 
@@ -844,6 +912,8 @@ final class MainMenu: NSMenu {
         let menu = NSMenu(title: "")
         menu.addItem(autofillDebugScriptMenuItem
             .targetting(self))
+        menu.addItem(contentScopeDebugStateMenuItem
+            .targetting(self))
         menu.addItem(.separator())
         let exportLogsMenuItem = NSMenuItem(title: "Export Logs…", action: #selector(MainViewController.exportLogs))
         menu.addItem(exportLogsMenuItem)
@@ -857,16 +927,26 @@ final class MainMenu: NSMenu {
     }
 
     private func updateInternalUserItem() {
-        internalUserItem.title = NSApp.delegateTyped.internalUserDecider.isInternalUser ? "Remove Internal User State" : "Set Internal User State"
+        internalUserItem.title = internalUserDecider.isInternalUser ? "Remove Internal User State" : "Set Internal User State"
     }
 
     private func updateAutofillDebugScriptMenuItem() {
         autofillDebugScriptMenuItem.state = AutofillPreferences().debugScriptEnabled ? .on : .off
     }
 
+    private func updateContentScopeDebugStateMenuItem() {
+        contentScopeDebugStateMenuItem.state = contentScopePreferences.isDebugStateEnabled ? .on : .off
+    }
+
     @MainActor
-    private func updateWatchdogMenuItem() {
-        toggleWatchdogMenuItem.state = MainViewController.watchdog.isRunning ? .on : .off
+    private func updateWatchdogMenuItems() {
+       Task {
+            let isRunning = NSApp.delegateTyped.watchdog.isRunning
+            let crashOnTimeout = await NSApp.delegateTyped.watchdog.crashOnTimeout
+
+            toggleWatchdogMenuItem.state = isRunning ? .on : .off
+            toggleWatchdogCrashMenuItem.state = crashOnTimeout ? .on : .off
+       }
     }
 
     private func updateRemoteConfigurationInfo() {
@@ -886,6 +966,11 @@ final class MainMenu: NSMenu {
         AutofillPreferences().debugScriptEnabled = !AutofillPreferences().debugScriptEnabled
         NotificationCenter.default.post(name: .autofillScriptDebugSettingsDidChange, object: nil)
         updateAutofillDebugScriptMenuItem()
+    }
+
+    @objc private func toggleContentScopeStateDebugSettingsAction(_ sender: NSMenuItem) {
+        contentScopePreferences.isDebugStateEnabled = !contentScopePreferences.isDebugStateEnabled
+        updateContentScopeDebugStateMenuItem()
     }
 
     @MainActor

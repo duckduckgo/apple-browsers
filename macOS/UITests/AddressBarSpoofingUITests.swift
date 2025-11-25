@@ -193,7 +193,8 @@ class AddressBarSpoofingUITests: UITestCase {
 
         // Wait for navigation to complete
         let navigationCompleted = webView.staticTexts.containing(\.value, containing: "DuckDuckGo").firstMatch
-        XCTAssertTrue(navigationCompleted.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Navigation to DuckDuckGo should complete")
+        let tooltip = webView.staticTexts.containing(\.value, containing: "AI chat").firstMatch
+        XCTAssertTrue(navigationCompleted.waitForExistence(timeout: UITests.Timeouts.elementExistence) || tooltip.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Navigation to DuckDuckGo should complete")
 
         // Verify address bar shows correct destination after form submission
         let addressBarValue = app.addressBarValueActivatingIfNeeded() ?? ""

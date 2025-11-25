@@ -29,7 +29,7 @@ protocol OmniBarState: CustomStringConvertible {
     var showBackButton: Bool { get }
     var showForwardButton: Bool { get }
     var showBookmarksButton: Bool { get }
-    var showAccessoryButton: Bool { get }
+    var showAIChatButton: Bool { get }
 
     var clearTextOnStart: Bool { get }
     var allowsTrackersAnimation: Bool { get }
@@ -39,12 +39,15 @@ protocol OmniBarState: CustomStringConvertible {
     var showBackground: Bool { get }
     var showClear: Bool { get }
     var showRefresh: Bool { get }
-    var showShare: Bool { get }
+    var showCustomizableButton: Bool { get }
     var showMenu: Bool { get }
     var showSettings: Bool { get }
     var showVoiceSearch: Bool { get }
     var showAbort: Bool { get }
     var showDismiss: Bool { get } // < button inside the address bar
+    var showAIChatFullModeBranding: Bool { get } // Unique omnibar view displayed with in full duck.ai mode
+    
+    var allowCustomization: Bool  { get } // If the state allows customization
 
     var onEditingStoppedState: OmniBarState { get }
     var onEditingSuspendedState: OmniBarState { get }
@@ -56,6 +59,7 @@ protocol OmniBarState: CustomStringConvertible {
     var onEnterPhoneState: OmniBarState { get }
     var onEnterPadState: OmniBarState { get }
     var onReloadState: OmniBarState { get }
+    var onEnterAIChatState: OmniBarState { get }
 
     var dependencies: OmnibarDependencyProvider { get }
     var isLoading: Bool { get }
@@ -89,6 +93,11 @@ extension OmniBarState {
                                                     dependencies: dependencies,
                                                     isLoading: isLoading)
     }
+    
+    // Default to false
+    var showAIChatFullModeBranding: Bool { false }
+    
+    var allowCustomization: Bool  { true }
 }
 
 protocol OmniBarLoadingBearerStateCreating {

@@ -57,7 +57,7 @@ protocol DependencyProvider {
     var serverInfoObserver: ConnectionServerInfoObserver { get }
     var vpnSettings: VPNSettings { get }
     var persistentPixel: PersistentPixelFiring { get }
-    var widePixel: WidePixelManaging { get }
+    var wideEvent: WideEventManaging { get }
 
     // Subscription
     var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge { get }
@@ -111,15 +111,9 @@ final class AppDependencyProvider: DependencyProvider {
     let vpnSettings = VPNSettings(defaults: .networkProtectionGroupDefaults)
     let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
     let persistentPixel: PersistentPixelFiring = PersistentPixel()
-    let widePixel: WidePixelManaging = WidePixel()
+    let wideEvent: WideEventManaging = WideEvent()
 
     private init() {
-#if DEBUG
-        // Workaround for Xcode 26 crash: https://developer.apple.com/forums/thread/787365?answerId=846043022#846043022
-        // This is a known issue in Xcode 26 betas 1 and 2, if the issue is fixed in beta 3 onward then this can be removed
-        nw_tls_create_options()
-#endif
-
         let featureFlaggerOverrides = FeatureFlagLocalOverrides(keyValueStore: UserDefaults(suiteName: FeatureFlag.localOverrideStoreName)!,
                                                                 actionHandler: FeatureFlagOverridesPublishingHandler<FeatureFlag>()
         )
@@ -155,13 +149,14 @@ final class AppDependencyProvider: DependencyProvider {
 
         let keychainType = KeychainType.dataProtection(.named(subscriptionAppGroup))
         let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
-        let tokenStorageV2 = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager) { accessType, error in
+        let tokenStorageV2 = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager,
+                                                                userDefaults: subscriptionUserDefaults) { accessType, error in
 
-            let parameters = [PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
-                              PixelParameters.privacyProKeychainError: error.localizedDescription,
+            let parameters = [PixelParameters.subscriptionKeychainAccessType: accessType.rawValue,
+                              PixelParameters.subscriptionKeychainError: error.localizedDescription,
                               PixelParameters.source: KeychainErrorSource.browser.rawValue,
                               PixelParameters.authVersion: KeychainErrorAuthVersion.v2.rawValue]
-            DailyPixel.fireDailyAndCount(pixel: .privacyProKeychainAccessError,
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionKeychainAccessError,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
                                          withAdditionalParameters: parameters)
         }
@@ -171,9 +166,18 @@ final class AppDependencyProvider: DependencyProvider {
         let authService = DefaultOAuthService(baseURL: authEnvironment.url,
                                               apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent))
         let legacyAccountStorage = SubscriptionTokenKeychainStorage(keychainType: .dataProtection(.named(subscriptionAppGroup)))
+        let refreshEventMapper = AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: wideEvent, isFeatureEnabled: {
+#if DEBUG
+            return featureFlagger.isFeatureOn(.authV2WideEventEnabled) // Allow the refresh event when using staging in debug mode, for easier testing
+#else
+            return featureFlagger.isFeatureOn(.authV2WideEventEnabled) && authEnvironment == .production
+#endif
+        })
+
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorageV2,
                                             legacyTokenStorage: legacyAccountStorage,
-                                            authService: authService)
+                                            authService: authService,
+                                            refreshEventMapping: refreshEventMapper)
         let isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
         subscriptionAuthMigrator = AuthMigrator(oAuthClient: authClient,
                                                 pixelHandler: pixelHandler,
@@ -295,7 +299,9 @@ final class AppDependencyProvider: DependencyProvider {
         networkProtectionTunnelController = NetworkProtectionTunnelController(tokenHandler: tokenHandler,
                                                                               featureFlagger: featureFlagger,
                                                                               persistentPixel: persistentPixel,
-                                                                              settings: vpnSettings)
+                                                                              settings: vpnSettings,
+                                                                              wideEvent: wideEvent
+        )
     }
 
 }

@@ -28,12 +28,12 @@ import AIChat
 protocol WindowControllersManagerProtocol: AnyObject {
 
     var stateChanged: AnyPublisher<Void, Never> { get }
+    var tabsChanged: AnyPublisher<Void, Never> { get }
 
     var mainWindowControllers: [MainWindowController] { get }
     var selectedTab: Tab? { get }
     var allTabCollectionViewModels: [TabCollectionViewModel] { get }
 
-    var lastKeyMainWindowController: MainWindowController? { get }
     var pinnedTabsManagerProvider: PinnedTabsManagerProviding { get }
 
     var didRegisterWindowController: PassthroughSubject<(MainWindowController), Never> { get }
@@ -60,12 +60,10 @@ protocol WindowControllersManagerProtocol: AnyObject {
     func open(_ url: URL, source: Tab.TabContent.URLSource, target window: NSWindow?, event: NSEvent?)
     func showTab(with content: Tab.TabContent)
     func openTab(_ tab: Tab, afterParentTab parentTab: Tab, selected: Bool)
-
-    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior)
-    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior, hasPrompt: Bool)
 }
 
 extension WindowControllersManagerProtocol {
+
     @discardableResult
     func openNewWindow(with tabCollectionViewModel: TabCollectionViewModel? = nil,
                        burnerMode: BurnerMode = .regular,
@@ -76,9 +74,26 @@ extension WindowControllersManagerProtocol {
                        lazyLoadTabs: Bool = false) -> NSWindow? {
         openNewWindow(with: tabCollectionViewModel, burnerMode: burnerMode, droppingPoint: droppingPoint, contentSize: contentSize, showWindow: showWindow, popUp: popUp, lazyLoadTabs: lazyLoadTabs, isMiniaturized: false, isMaximized: false, isFullscreen: false)
     }
+
     func show(url: URL?, source: Tab.TabContent.URLSource, newTab: Bool, selected: Bool?) {
         show(url: url, tabId: nil, source: source, newTab: newTab, selected: selected)
     }
+
+    var lastKeyMainWindowController: MainWindowController? {
+        return lastKeyMainWindowController(where: { _ in true })
+    }
+
+    func lastKeyMainWindowController(where predicate: (MainWindowController) -> Bool) -> MainWindowController? {
+        return withoutActuallyEscaping(predicate) { predicate in
+            mainWindowControllers.lazy
+                .filter { windowController in
+                    !(windowController.window?.isPopUpWindow ?? true) && predicate(windowController)
+                }.max {
+                    $0.lastWindowDidBecomeKeyTimestamp < $1.lastWindowDidBecomeKeyTimestamp
+                }
+        }
+    }
+
 }
 
 @MainActor
@@ -103,25 +118,21 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
      */
     @Published private(set) var isInInitialState: Bool = true
     @Published private(set) var mainWindowControllers = [MainWindowController]()
+
+    /// `TabsPreferences` reference is needed to compute `shouldSwitchToNewTabWhenOpened`.
+    weak var tabsPreferences: TabsPreferences?
+
     var pinnedTabsManagerProvider: PinnedTabsManagerProviding
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private let internalUserDecider: InternalUserDecider
     private let featureFlagger: FeatureFlagger
-
-    weak var lastKeyMainWindowController: MainWindowController? {
-        didSet {
-            if lastKeyMainWindowController != oldValue {
-                didChangeKeyWindowController.send(lastKeyMainWindowController)
-            }
-        }
-    }
 
     /// find Main Window Controller being currently interacted with even when ⌘-clicked in background
     func mainWindowController(for sourceWindow: NSWindow?) -> MainWindowController? {
         guard let sourceWindow else { return nil }
 
         // go up from the clicked window (popover or Bookmarks Bar Menu) to find the root target Main Window
-        for window in sequence(first: sourceWindow, next: \.parent) {
+        for window in sequence(first: sourceWindow, next: { $0.parent ?? $0.sheetParent }) {
             if let windowController = window.windowController as? MainWindowController {
                 return windowController
             }
@@ -199,35 +210,6 @@ extension WindowControllersManager {
         showTab(with: .bookmarks)
     }
 
-    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior = .currentTab) {
-        openAIChat(url, with: linkOpenBehavior, hasPrompt: false)
-    }
-
-    /// Opens an AI chat URL in the application.
-    ///
-    /// - Parameters:
-    ///   - url: The AI chat URL to open.
-    ///   - linkOpenBehavior: Specifies where to open the URL. Defaults to `.currentTab`.
-    ///   - hasPrompt: If `true` and the current tab is an AI chat, reloads the tab. Ignored if `target` is `.newTabSelected`
-    ///                or `.newTabUnselected`.
-    func openAIChat(_ url: URL, with linkOpenBehavior: LinkOpenBehavior = .currentTab, hasPrompt: Bool) {
-
-        let tabCollectionViewModel = mainWindowController?.mainViewController.tabCollectionViewModel
-
-        switch linkOpenBehavior {
-        case .currentTab:
-            if let currentURL = tabCollectionViewModel?.selectedTab?.url, currentURL.isDuckAIURL {
-                if hasPrompt {
-                    tabCollectionViewModel?.selectedTab?.reload()
-                }
-            } else {
-                show(url: url, source: .ui, newTab: false)
-            }
-        default:
-            open(url, with: linkOpenBehavior, source: .ui, target: nil)
-        }
-    }
-
     func showPreferencesTab(withSelectedPane pane: PreferencePaneIdentifier? = nil) {
         showTab(with: .settings(pane: pane))
     }
@@ -258,7 +240,7 @@ extension WindowControllersManager {
 
         // For pinned tabs or popup windows, force new tab by disallowing current tab
         let canOpenLinkInCurrentTab = !(isPinnedTab || isPopUpWindow)
-        let switchToNewTabWhenOpened = TabsPreferences.shared.switchToNewTabWhenOpened
+        let switchToNewTabWhenOpened = shouldSwitchToNewTabWhenOpened
 
         let behavior = LinkOpenBehavior(
             event: event,
@@ -303,7 +285,7 @@ extension WindowControllersManager {
     ///   - newTab: A Boolean value indicating whether to create a new tab instead of reusing an existing one.
     ///             The default is `false`.
     ///   - selected: An optional Boolean value that determines whether the new tab should be selected (active) or opened in the background.
-    ///               If `nil`, the new tab activation setting value will be followed (`TabsPreferences.shared.switchToNewTabWhenOpened`).
+    ///               If `nil`, the new tab activation setting value will be followed (`TabsPreferences.switchToNewTabWhenOpened`).
     ///               The default is `true`.
     func show(url: URL?, tabId: String? = nil, source: Tab.TabContent.URLSource, newTab: Bool = false, selected: Bool? = true) {
         let nonPopupMainWindowControllers = mainWindowControllers.filter { $0.window?.isPopUpWindow == false }
@@ -332,13 +314,13 @@ extension WindowControllersManager {
                     // close the window if no more non-pinned tabs are open
                     if tabCollectionViewModel.tabs.isEmpty, let window = windowController.window, window.isVisible,
                        mainWindowController?.mainViewController.tabCollectionViewModel.selectedTabIndex?.isPinnedTab != true {
-                        window.performClose(nil)
+                        window.close()
                     }
                 }
                 return
             }
 
-            let selected = selected ?? TabsPreferences.shared.switchToNewTabWhenOpened
+            let selected = selected ?? shouldSwitchToNewTabWhenOpened
             show(url: url, in: windowController, source: source, newTab: newTab, selected: selected)
             return
         }
@@ -349,6 +331,14 @@ extension WindowControllersManager {
         } else {
             WindowsManager.openNewWindow() // Use default behavior which respects user preference
         }
+    }
+
+    var shouldSwitchToNewTabWhenOpened: Bool {
+        guard let tabsPreferences else {
+            assertionFailure("tabsPreferences must not be nil")
+            return false
+        }
+        return tabsPreferences.switchToNewTabWhenOpened
     }
 
     private func switchToOpenTab(withId tabId: String?, url: URL, preferring mainWindowController: MainWindowController) -> Bool {
@@ -468,7 +458,7 @@ extension WindowControllersManager {
         windowController.mainViewController.navigationBarViewController.showNetworkProtectionStatus()
     }
 
-    /// Shows the non-privacy pro feedback modal
+    /// Shows the non-subscription feedback modal
     func showFeedbackModal(preselectedFormOption: FeedbackViewController.FormOption? = nil) {
         if internalUserDecider.isInternalUser {
             showTab(with: .url(.internalFeedbackForm, source: .ui))
@@ -477,7 +467,7 @@ extension WindowControllersManager {
         }
     }
 
-    /// Shows the Privacy Pro feedback modal
+    /// Shows the Subscription feedback modal
     func showShareFeedbackModal(source: UnifiedFeedbackSource = .default) {
         let feedbackFormViewController = UnifiedFeedbackFormViewController(source: source, featureFlagger: featureFlagger)
         let feedbackFormWindowController = feedbackFormViewController.wrappedInWindowController()

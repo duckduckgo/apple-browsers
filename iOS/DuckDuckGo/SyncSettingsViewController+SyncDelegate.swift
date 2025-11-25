@@ -32,7 +32,11 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     var syncCredentialsPausedTitle: String? {
         UserText.syncLimitExceededTitle
     }
-    
+
+    var syncCreditCardsPausedTitle: String? {
+        UserText.syncLimitExceededTitle
+    }
+
     var syncPausedTitle: String? {
         guard let error = getErrorType(from: syncPausedStateManager.currentSyncAllPausedError) else { return nil }
         switch error {
@@ -52,7 +56,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         case .bookmarksCountLimitExceeded, .bookmarksRequestSizeLimitExceeded:
             return UserText.bookmarksLimitExceededDescription
         case .badRequestBookmarks:
-            return UserText.badRequestErrorDescription
+            return UserText.badRequestErrorDescriptionBookmarks
         default:
             assertionFailure("Sync Bookmarks Paused error should be one of those listed")
             return nil
@@ -64,14 +68,27 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         switch error {
         case .credentialsCountLimitExceeded, .credentialsRequestSizeLimitExceeded:
             return UserText.credentialsLimitExceededDescription
-        case .badRequestBookmarks:
-            return UserText.badRequestErrorDescription
+        case .badRequestCredentials:
+            return UserText.badRequestErrorDescriptionPasswords
         default:
             assertionFailure("Sync Bookmarks Paused error should be one of those listed")
             return nil
         }
     }
-    
+
+    var syncCreditCardsPausedDescription: String? {
+        guard let error = getErrorType(from: syncPausedStateManager.currentSyncCreditCardsPausedError) else { return nil }
+        switch error {
+        case .creditCardsCountLimitExceeded, .creditCardsRequestSizeLimitExceeded:
+            return UserText.creditCardsLimitExceededDescription
+        case .badRequestCreditCards:
+            return UserText.badRequestErrorDescriptionCreditCards
+        default:
+            assertionFailure("Sync Credit Cards Paused error should be one of those listed")
+            return nil
+        }
+    }
+
     var syncPausedDescription: String? {
         guard let error = getErrorType(from: syncPausedStateManager.currentSyncAllPausedError) else { return nil }
         switch error {
@@ -91,6 +108,10 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     
     var syncCredentialsPausedButtonTitle: String? {
         UserText.bookmarksLimitExceededAction
+    }
+
+    var syncCreditCardsPausedButtonTitle: String? {
+        UserText.creditCardsLimitExceededAction
     }
 
     func authenticateUser() async throws {
@@ -114,6 +135,13 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         guard let mainVC = view.window?.rootViewController as? MainViewController else { return }
         dismiss(animated: true)
         mainVC.launchAutofillLogins(source: .sync)
+    }
+
+    func launchAutofillCreditCardsViewController() {
+        guard let mainVC = view.window?.rootViewController as? MainViewController else { return }
+        dismiss(animated: true) {
+            mainVC.segueToSettingsAutofillWith(account: nil, card: nil, showCardManagement: true, source: .sync)
+        }
     }
 
     func launchBookmarksViewController() {
@@ -401,7 +429,8 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         navigationController?.present(navController, animated: true) {
             self.checkCameraPermission(model: model)
             if let onPresentPixelInfo {
-                Pixel.fire(onPresentPixelInfo.pixel, withAdditionalParameters: [PixelParameters.source: onPresentPixelInfo.source.rawValue])
+                let pixelSource = self.source ?? onPresentPixelInfo.source.rawValue
+                Pixel.fire(onPresentPixelInfo.pixel, withAdditionalParameters: [PixelParameters.source: pixelSource])
             }
         }
     }

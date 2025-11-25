@@ -25,6 +25,7 @@ public struct HistoryEvent: Identifiable, Sendable {
         case error(error: DataBrokerProtectionError)
         case optOutStarted
         case optOutRequested
+        case optOutSubmittedAndAwaitingEmailConfirmation
         case optOutConfirmed
         case scanStarted
         case reAppearence
@@ -74,6 +75,24 @@ public struct HistoryEvent: Identifiable, Sendable {
     func isMatchesFoundEvent() -> Bool {
         switch type {
         case .matchesFound:
+            return true
+        default:
+            return false
+        }
+    }
+
+    func isOptOutClearEvent() -> Bool {
+        switch type {
+        case .optOutConfirmed, .matchRemovedByUser:
+            return true
+        default:
+            return false
+        }
+    }
+
+    func isScanSuccessEvent() -> Bool {
+        switch type {
+        case .matchesFound, .noMatchFound:
             return true
         default:
             return false

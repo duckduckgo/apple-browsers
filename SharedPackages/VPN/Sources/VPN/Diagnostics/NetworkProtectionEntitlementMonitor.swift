@@ -19,7 +19,7 @@
 import Foundation
 import os.log
 
-public actor NetworkProtectionEntitlementMonitor {
+public actor NetworkProtectionEntitlementMonitor: EntitlementMonitoring {
     public enum Result {
         case validEntitlement
         case invalidEntitlement
@@ -34,7 +34,7 @@ public actor NetworkProtectionEntitlementMonitor {
         }
     }
 
-    var isStarted: Bool {
+    public var isStarted: Bool {
         task?.isCancelled == false
     }
 

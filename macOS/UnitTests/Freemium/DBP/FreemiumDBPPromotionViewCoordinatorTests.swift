@@ -16,13 +16,15 @@
 //  limitations under the License.
 //
 
-import XCTest
-import Freemium
-@testable import DuckDuckGo_Privacy_Browser
 import Combine
 import Common
 import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
+import Freemium
+import SharedTestUtilities
+import XCTest
+
+@testable import DuckDuckGo_Privacy_Browser
 
 final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
 
@@ -33,6 +35,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
     private let notificationCenter: NotificationCenter = .default
     private var mockPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler!
     private var cancellables: Set<AnyCancellable> = []
+    private var contextualOnboardingSubject: PassthroughSubject<Bool, Never>!
 
     override func setUpWithError() throws {
         mockUserStateManager = MockFreemiumDBPUserStateManager()
@@ -40,13 +43,15 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         mockFeature.featureAvailable = true
         mockPresenter = MockFreemiumDBPPresenter()
         mockPixelHandler = MockDataBrokerProtectionFreemiumPixelHandler()
+        contextualOnboardingSubject = PassthroughSubject<Bool, Never>()
 
         sut = FreemiumDBPPromotionViewCoordinator(
             freemiumDBPUserStateManager: mockUserStateManager,
             freemiumDBPFeature: mockFeature,
             freemiumDBPPresenter: mockPresenter,
             notificationCenter: notificationCenter,
-            dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler
+            dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
+            contextualOnboardingPublisher: contextualOnboardingSubject.eraseToAnyPublisher()
         )
     }
 
@@ -61,6 +66,7 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         mockPresenter = nil
         mockPixelHandler = nil
         cancellables = []
+        contextualOnboardingSubject = nil
     }
 
     func testInitialPromotionVisibility_whenFeatureIsAvailable_andNotDismissed() {
@@ -72,7 +78,8 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         sut = FreemiumDBPPromotionViewCoordinator(
             freemiumDBPUserStateManager: mockUserStateManager,
             freemiumDBPFeature: mockFeature,
-            freemiumDBPPresenter: mockPresenter
+            freemiumDBPPresenter: mockPresenter,
+            contextualOnboardingPublisher: contextualOnboardingSubject.eraseToAnyPublisher()
         )
 
         // Then
@@ -88,7 +95,8 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         sut = FreemiumDBPPromotionViewCoordinator(
             freemiumDBPUserStateManager: mockUserStateManager,
             freemiumDBPFeature: mockFeature,
-            freemiumDBPPresenter: mockPresenter
+            freemiumDBPPresenter: mockPresenter,
+            contextualOnboardingPublisher: contextualOnboardingSubject.eraseToAnyPublisher()
         )
 
         // Then
@@ -269,7 +277,8 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         sut = FreemiumDBPPromotionViewCoordinator(
             freemiumDBPUserStateManager: mockUserStateManager,
             freemiumDBPFeature: mockFeature,
-            freemiumDBPPresenter: mockPresenter
+            freemiumDBPPresenter: mockPresenter,
+            contextualOnboardingPublisher: contextualOnboardingSubject.eraseToAnyPublisher()
         )
         XCTAssertFalse(sut.isHomePagePromotionVisible)
 
@@ -298,7 +307,8 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         sut = FreemiumDBPPromotionViewCoordinator(
             freemiumDBPUserStateManager: mockUserStateManager,
             freemiumDBPFeature: mockFeature,
-            freemiumDBPPresenter: mockPresenter
+            freemiumDBPPresenter: mockPresenter,
+            contextualOnboardingPublisher: contextualOnboardingSubject.eraseToAnyPublisher()
         )
         XCTAssertTrue(sut.isHomePagePromotionVisible)
 
@@ -327,7 +337,8 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         sut = FreemiumDBPPromotionViewCoordinator(
             freemiumDBPUserStateManager: mockUserStateManager,
             freemiumDBPFeature: mockFeature,
-            freemiumDBPPresenter: mockPresenter
+            freemiumDBPPresenter: mockPresenter,
+            contextualOnboardingPublisher: contextualOnboardingSubject.eraseToAnyPublisher()
         )
         XCTAssertFalse(sut.isHomePagePromotionVisible)
 
@@ -356,7 +367,8 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
         sut = FreemiumDBPPromotionViewCoordinator(
             freemiumDBPUserStateManager: mockUserStateManager,
             freemiumDBPFeature: mockFeature,
-            freemiumDBPPresenter: mockPresenter
+            freemiumDBPPresenter: mockPresenter,
+            contextualOnboardingPublisher: contextualOnboardingSubject.eraseToAnyPublisher()
         )
         XCTAssertFalse(sut.isHomePagePromotionVisible)
 
@@ -375,6 +387,62 @@ final class FreemiumDBPPromotionViewCoordinatorTests: XCTestCase {
 
         // Then
         XCTAssertFalse(sut.isHomePagePromotionVisible)
+    }
+
+    func testViewModelRefreshes_whenContextualOnboardingCompletes() async throws {
+        // Given
+        mockUserStateManager.didDismissHomePagePromotion = false
+        mockFeature.featureAvailable = true
+        sut = FreemiumDBPPromotionViewCoordinator(
+            freemiumDBPUserStateManager: mockUserStateManager,
+            freemiumDBPFeature: mockFeature,
+            freemiumDBPPresenter: mockPresenter,
+            notificationCenter: notificationCenter,
+            dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
+            contextualOnboardingPublisher: contextualOnboardingSubject.eraseToAnyPublisher()
+        )
+
+        // When
+        let viewModel = try await waitForViewModelUpdate {
+            self.contextualOnboardingSubject.send(true)
+        }
+
+        // Then
+        XCTAssertNotNil(viewModel)
+    }
+
+    func testViewModelDoesNotRefresh_whenContextualOnboardingEmitsFalse() async throws {
+        // Given
+        mockUserStateManager.didDismissHomePagePromotion = false
+        mockFeature.featureAvailable = true
+        sut = FreemiumDBPPromotionViewCoordinator(
+            freemiumDBPUserStateManager: mockUserStateManager,
+            freemiumDBPFeature: mockFeature,
+            freemiumDBPPresenter: mockPresenter,
+            notificationCenter: notificationCenter,
+            dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
+            contextualOnboardingPublisher: contextualOnboardingSubject.eraseToAnyPublisher()
+        )
+
+        // Wait for initial setup to complete
+        try await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+
+        let currentViewModel = sut.viewModel
+        let expectation = XCTestExpectation(description: "viewModel should not update")
+        expectation.isInverted = true
+
+        // When
+        sut.$viewModel.dropFirst().sink { _ in
+            expectation.fulfill()
+        }
+        .store(in: &cancellables)
+
+        contextualOnboardingSubject.send(false)
+
+        await fulfillment(of: [expectation], timeout: 0.5)
+
+        // Then
+        XCTAssertEqual(sut.viewModel?.title, currentViewModel?.title)
     }
 
     // MARK: - Helpers

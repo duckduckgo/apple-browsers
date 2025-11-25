@@ -34,6 +34,8 @@ final class SpecialErrorPageNavigationHandlerIntegrationTests {
 
     @MainActor
     init() {
+        WKNavigationResponse.swizzleDealloc()
+
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.enabledFeatureFlags = [.sslCertificatesBypass, .maliciousSiteProtection]
         webView = MockSpecialErrorWebView(frame: CGRect(), configuration: .nonPersistent())
@@ -69,6 +71,10 @@ final class SpecialErrorPageNavigationHandlerIntegrationTests {
             sslErrorPageNavigationHandler: sslErrorPageNavigationHandler,
             maliciousSiteProtectionNavigationHandler: maliciousSiteProtectionNavigationHandler
         )
+    }
+
+    deinit {
+        WKNavigationResponse.restoreDealloc()
     }
 
     // MARK: - SSL

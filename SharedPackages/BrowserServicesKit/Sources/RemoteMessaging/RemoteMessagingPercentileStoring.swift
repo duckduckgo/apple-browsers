@@ -20,7 +20,7 @@ import Foundation
 import Persistence
 
 public protocol RemoteMessagingPercentileStoring {
-    func percentile(forMessageId: String) -> Float
+    func percentile(forEntityId: String) -> Float
 }
 
 public class RemoteMessagingPercentileUserDefaultsStore: RemoteMessagingPercentileStoring {
@@ -35,14 +35,14 @@ public class RemoteMessagingPercentileUserDefaultsStore: RemoteMessagingPercenti
         self.keyValueStore = keyValueStore
     }
 
-    public func percentile(forMessageId messageID: String) -> Float {
+    public func percentile(forEntityId entityID: String) -> Float {
         var percentileMapping = (keyValueStore.object(forKey: Constants.remoteMessagingPercentileMapping) as? [String: Float]) ?? [:]
 
-        if let percentile = percentileMapping[messageID] {
+        if let percentile = percentileMapping[entityID] {
             return percentile
         } else {
             let newPercentile = Float.random(in: 0...1)
-            percentileMapping[messageID] = newPercentile
+            percentileMapping[entityID] = newPercentile
             keyValueStore.set(percentileMapping, forKey: Constants.remoteMessagingPercentileMapping)
 
             return newPercentile

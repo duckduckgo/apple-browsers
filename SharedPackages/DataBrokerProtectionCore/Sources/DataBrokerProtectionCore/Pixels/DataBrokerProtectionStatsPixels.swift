@@ -22,21 +22,12 @@ import BrowserServicesKit
 import PixelKit
 
 public protocol DataBrokerProtectionStatsPixelsRepository {
-
     var customStatsPixelsLastSentTimestamp: Date? { get set }
-
-    func markStatsWeeklyPixelDate()
-    func markStatsMonthlyPixelDate()
-
-    func getLatestStatsWeeklyPixelDate() -> Date?
-    func getLatestStatsMonthlyPixelDate() -> Date?
 }
 
 public final class DataBrokerProtectionStatsPixelsUserDefaults: DataBrokerProtectionStatsPixelsRepository {
 
     enum Consts {
-        static let weeklyPixelKey = "macos.browser.data-broker-protection.statsWeeklyPixelKey"
-        static let monthlyPixelKey = "macos.browser.data-broker-protection.statsMonthlyPixelKey"
         static let customStatsPixelKey = "macos.browser.data-broker-protection.customStatsPixelKey"
     }
 
@@ -53,90 +44,6 @@ public final class DataBrokerProtectionStatsPixelsUserDefaults: DataBrokerProtec
 
     public init(userDefaults: UserDefaults = .standard) {
         self.userDefaults = userDefaults
-    }
-
-    public func markStatsWeeklyPixelDate() {
-        userDefaults.set(Date(), forKey: Consts.weeklyPixelKey)
-    }
-
-    public func markStatsMonthlyPixelDate() {
-        userDefaults.set(Date(), forKey: Consts.monthlyPixelKey)
-    }
-
-    public func getLatestStatsWeeklyPixelDate() -> Date? {
-        userDefaults.object(forKey: Consts.weeklyPixelKey) as? Date
-    }
-
-    public func getLatestStatsMonthlyPixelDate() -> Date? {
-        userDefaults.object(forKey: Consts.monthlyPixelKey) as? Date
-    }
-}
-
-struct StatsByBroker {
-    let dataBrokerURL: String
-    let numberOfProfilesFound: Int
-    let numberOfOptOutsInProgress: Int
-    let numberOfSuccessfulOptOuts: Int
-    let numberOfFailureOptOuts: Int
-    let numberOfNewMatchesFound: Int
-    let numberOfReAppereances: Int
-    let numberOfHiddenFound: Int
-    let durationOfFirstOptOut: Int
-
-    var toWeeklyPixel: DataBrokerProtectionSharedPixels {
-        return .dataBrokerMetricsWeeklyStats(dataBrokerURL: dataBrokerURL,
-                                             profilesFound: numberOfProfilesFound,
-                                             optOutsInProgress: numberOfOptOutsInProgress,
-                                             successfulOptOuts: numberOfSuccessfulOptOuts,
-                                             failedOptOuts: numberOfFailureOptOuts,
-                                             durationOfFirstOptOut: durationOfFirstOptOut,
-                                             numberOfNewRecordsFound: numberOfNewMatchesFound,
-                                             numberOfReappereances: numberOfReAppereances,
-                                             numberOfHiddenFound: numberOfHiddenFound)
-    }
-
-    var toMonthlyPixel: DataBrokerProtectionSharedPixels {
-        return .dataBrokerMetricsMonthlyStats(dataBrokerURL: dataBrokerURL,
-                                              profilesFound: numberOfProfilesFound,
-                                              optOutsInProgress: numberOfOptOutsInProgress,
-                                              successfulOptOuts: numberOfSuccessfulOptOuts,
-                                              failedOptOuts: numberOfFailureOptOuts,
-                                              durationOfFirstOptOut: durationOfFirstOptOut,
-                                              numberOfNewRecordsFound: numberOfNewMatchesFound,
-                                              numberOfReappereances: numberOfReAppereances)
-    }
-}
-
-extension Array where Element == StatsByBroker {
-
-    func toWeeklyPixel(durationOfFirstOptOut: Int) -> DataBrokerProtectionSharedPixels {
-        let numberOfGlobalProfilesFound = map { $0.numberOfProfilesFound }.reduce(0, +)
-        let numberOfGlobalOptOutsInProgress = map { $0.numberOfOptOutsInProgress }.reduce(0, +)
-        let numberOfGlobalSuccessfulOptOuts = map { $0.numberOfSuccessfulOptOuts }.reduce(0, +)
-        let numberOfGlobalFailureOptOuts = map { $0.numberOfFailureOptOuts }.reduce(0, +)
-        let numberOfGlobalNewMatchesFound = map { $0.numberOfNewMatchesFound }.reduce(0, +)
-
-        return .globalMetricsWeeklyStats(profilesFound: numberOfGlobalProfilesFound,
-                                         optOutsInProgress: numberOfGlobalOptOutsInProgress,
-                                         successfulOptOuts: numberOfGlobalSuccessfulOptOuts,
-                                         failedOptOuts: numberOfGlobalFailureOptOuts,
-                                         durationOfFirstOptOut: durationOfFirstOptOut,
-                                         numberOfNewRecordsFound: numberOfGlobalNewMatchesFound)
-    }
-
-    func toMonthlyPixel(durationOfFirstOptOut: Int) -> DataBrokerProtectionSharedPixels {
-        let numberOfGlobalProfilesFound = map { $0.numberOfProfilesFound }.reduce(0, +)
-        let numberOfGlobalOptOutsInProgress = map { $0.numberOfOptOutsInProgress }.reduce(0, +)
-        let numberOfGlobalSuccessfulOptOuts = map { $0.numberOfSuccessfulOptOuts }.reduce(0, +)
-        let numberOfGlobalFailureOptOuts = map { $0.numberOfFailureOptOuts }.reduce(0, +)
-        let numberOfGlobalNewMatchesFound = map { $0.numberOfNewMatchesFound }.reduce(0, +)
-
-        return .globalMetricsMonthlyStats(profilesFound: numberOfGlobalProfilesFound,
-                                          optOutsInProgress: numberOfGlobalOptOutsInProgress,
-                                          successfulOptOuts: numberOfGlobalSuccessfulOptOuts,
-                                          failedOptOuts: numberOfGlobalFailureOptOuts,
-                                          durationOfFirstOptOut: durationOfFirstOptOut,
-                                          numberOfNewRecordsFound: numberOfGlobalNewMatchesFound)
     }
 }
 
@@ -190,7 +97,6 @@ public final class DataBrokerProtectionStatsPixels: StatsPixels {
     private var repository: DataBrokerProtectionStatsPixelsRepository
     private let customStatsPixelsTrigger: CustomStatsPixelsTrigger
     private let customOptOutStatsProvider: DataBrokerProtectionCustomOptOutStatsProvider
-    private let calendar = Calendar.current
 
     public init(database: DataBrokerProtectionRepository,
                 handler: EventMapping<DataBrokerProtectionSharedPixels>,
@@ -207,22 +113,6 @@ public final class DataBrokerProtectionStatsPixels: StatsPixels {
     public func tryToFireStatsPixels() {
         guard let brokerProfileQueryData = try? database.fetchAllBrokerProfileQueryData(shouldFilterRemovedBrokers: true) else {
             return
-        }
-
-        let dateOfFirstScan = dateOfFirstScan(brokerProfileQueryData)
-
-        if shouldFireWeeklyStats(dateOfFirstScan: dateOfFirstScan) {
-            firePixels(for: brokerProfileQueryData,
-                       frequency: .weekly,
-                       dateSinceLastSubmission: repository.getLatestStatsWeeklyPixelDate())
-            repository.markStatsWeeklyPixelDate()
-        }
-
-        if shouldFireMonthlyStats(dateOfFirstScan: dateOfFirstScan) {
-            firePixels(for: brokerProfileQueryData,
-                       frequency: .monthly,
-                       dateSinceLastSubmission: repository.getLatestStatsMonthlyPixelDate())
-            repository.markStatsMonthlyPixelDate()
         }
 
         fireRegularIntervalConfirmationPixelsForSubmittedOptOuts(for: brokerProfileQueryData)
@@ -246,233 +136,9 @@ public final class DataBrokerProtectionStatsPixels: StatsPixels {
         repository.customStatsPixelsLastSentTimestamp = Date.nowMinus(hours: 24)
     }
 
-    /// internal for testing purposes
-    func calculateByBroker(_ broker: DataBroker, data: [BrokerProfileQueryData], dateSinceLastSubmission: Date? = nil) -> StatsByBroker {
-        let mirrorSitesSize = broker.mirrorSites.filter { !$0.wasRemoved() }.count
-        var numberOfProfilesFound = 0 // Number of unique matching profiles found since the beginning.
-        var numberOfOptOutsInProgress = 0 // Number of opt-outs in progress since the beginning.
-        var numberOfSuccessfulOptOuts = 0 // Number of successfull opt-outs since the beginning
-        var numberOfReAppearences = 0 // Number of records that were removed and came back
-        var numberOfHiddenFound = 0 // Number of records that were manually removed from dashboard
-
-        for query in data {
-            for optOutData in query.optOutJobData {
-                if broker.performsOptOutWithinParent() {
-                    // Path when the broker is a child site.
-                    numberOfProfilesFound += 1
-                    if optOutData.historyEvents.contains(where: { $0.type == .optOutConfirmed }) {
-                        numberOfSuccessfulOptOuts += 1
-                    } else {
-                        numberOfOptOutsInProgress += 1
-                    }
-                } else {
-                    // Path when the broker is a parent site.
-                    // If we requested the opt-out successfully but we didn't remove it yet, it means it is in progress
-                    numberOfProfilesFound += 1 + mirrorSitesSize
-
-                    if optOutData.historyEvents.contains(where: { $0.type == .optOutRequested }) && optOutData.extractedProfile.removedDate == nil {
-                        numberOfOptOutsInProgress += 1 + mirrorSitesSize
-                    } else if optOutData.extractedProfile.removedDate != nil { // If it the removed date is not nil, it means we removed it.
-                        numberOfSuccessfulOptOuts += 1 + mirrorSitesSize
-                    }
-                }
-            }
-
-            numberOfReAppearences += calculateNumberOfProfileReAppereances(query.scanJobData) + mirrorSitesSize
-            numberOfHiddenFound += calculateNumberOfHiddenProfiles(query.optOutJobData) * (1 + mirrorSitesSize)
-        }
-
-        let numberOfFailureOptOuts = numberOfProfilesFound - numberOfOptOutsInProgress - numberOfSuccessfulOptOuts
-        let numberOfNewMatchesFound = calculateNumberOfNewMatchesFound(data)
-        let durationOfFirstOptOut = calculateDurationOfFirstOptOut(data, from: dateSinceLastSubmission)
-
-        return StatsByBroker(dataBrokerURL: broker.url,
-                             numberOfProfilesFound: numberOfProfilesFound,
-                             numberOfOptOutsInProgress: numberOfOptOutsInProgress,
-                             numberOfSuccessfulOptOuts: numberOfSuccessfulOptOuts,
-                             numberOfFailureOptOuts: numberOfFailureOptOuts,
-                             numberOfNewMatchesFound: numberOfNewMatchesFound,
-                             numberOfReAppereances: numberOfReAppearences,
-                             numberOfHiddenFound: numberOfHiddenFound,
-                             durationOfFirstOptOut: durationOfFirstOptOut)
-    }
-
-    /// Calculates number of new matches found on scans that were not initial scans.
-    ///
-    /// internal for testing purposes
-    func calculateNumberOfNewMatchesFound(_ brokerProfileQueryData: [BrokerProfileQueryData]) -> Int {
-        var numberOfNewMatches = 0
-
-        let brokerProfileQueryDataWithAMatch = brokerProfileQueryData.filter { !$0.extractedProfiles.isEmpty }
-        let profileQueriesGroupedByBroker = Dictionary(grouping: brokerProfileQueryDataWithAMatch, by: { $0.dataBroker })
-
-        profileQueriesGroupedByBroker.forEach { (key: DataBroker, value: [BrokerProfileQueryData]) in
-            let mirrorSitesCount = key.mirrorSites.filter { !$0.wasRemoved() }.count
-
-            for query in value {
-                let matchesFoundEvents = query.scanJobData.historyEvents
-                    .filter { $0.isMatchEvent() }
-                    .sorted { $0.date < $1.date }
-
-                matchesFoundEvents.enumerated().forEach { index, element in
-                    if index > 0 && index < matchesFoundEvents.count - 1 {
-                        let nextElement = matchesFoundEvents[index + 1]
-                        numberOfNewMatches += max(nextElement.matchesFound() - element.matchesFound(), 0)
-                    }
-                }
-
-                if numberOfNewMatches > 0 {
-                    numberOfNewMatches += mirrorSitesCount
-                }
-            }
-        }
-
-        return numberOfNewMatches
-    }
-
-    /// Calculate the difference in days since the first scan and the first submitted opt-out for the list of brokerProfileQueryData.
-    /// The scan and the opt-out do not need to be for the same record.
-    /// If an opt-out wasn't submitted yet, we return 0.
-    ///
-    /// internal for testing purposes
-    func calculateDurationOfFirstOptOut(_ brokerProfileQueryData: [BrokerProfileQueryData], from: Date? = nil) -> Int {
-        guard let dateOfFirstScan = dateOfFirstScan(brokerProfileQueryData),
-              let dateOfFirstSubmittedOptOut = dateOfFirstSubmittedOptOut(brokerProfileQueryData) else {
-            return 0
-        }
-
-        if dateOfFirstScan > dateOfFirstSubmittedOptOut {
-            return 0
-        }
-
-        guard let differenceInDays = DataBrokerProtectionSharedPixelsUtilities.numberOfDaysFrom(startDate: dateOfFirstScan, endDate: dateOfFirstSubmittedOptOut) else {
-            return 0
-        }
-
-        // If the difference in days is in hours, return 1.
-        if differenceInDays == 0 {
-            return 1
-        }
-
-        return differenceInDays
-    }
 }
 
 private extension DataBrokerProtectionStatsPixels {
-
-    /// Calculates the number of profile reappearances
-    /// - Parameter scan: Scan Job Data
-    /// - Returns: Count of reappearances
-    func calculateNumberOfProfileReAppereances(_ scan: ScanJobData) -> Int {
-        return scan.historyEvents.filter { $0.type == .reAppearence }.count
-    }
-
-    func calculateNumberOfHiddenProfiles(_ optOuts: [OptOutJobData]) -> Int {
-        optOuts.reduce(0) { count, optOut in
-            count + (optOut.historyEvents.doesBelongToUserRemovedRecord ? 1 : 0)
-        }
-    }
-
-    /// Returns the date of the first scan since the beginning if not from Date is provided
-    func dateOfFirstScan(_ brokerProfileQueryData: [BrokerProfileQueryData], from: Date? = nil) -> Date? {
-        let allScanOperations = brokerProfileQueryData.map { $0.scanJobData }
-        let allScanHistoryEvents = allScanOperations.flatMap { $0.historyEvents }
-        let scanStartedEventsSortedByDate = allScanHistoryEvents
-            .filter { $0.type == .scanStarted }
-            .sorted { $0.date < $1.date }
-
-        if let from = from {
-            return scanStartedEventsSortedByDate.filter { from < $0.date }.first?.date
-        } else {
-            return scanStartedEventsSortedByDate.first?.date
-        }
-    }
-
-    /// Returns the date of the first sumbitted opt-out. If no from date is provided, we return it from the beginning.
-    func dateOfFirstSubmittedOptOut(_ brokerProfileQueryData: [BrokerProfileQueryData], from: Date? = nil) -> Date? {
-        let firstOptOutSubmittedEvent = brokerProfileQueryData
-            .flatMap { $0.optOutJobData }
-            .flatMap { $0.historyEvents }
-            .filter { $0.type == .optOutRequested }
-            .sorted { $0.date < $1.date }
-
-        if let from = from {
-            return firstOptOutSubmittedEvent.filter { from < $0.date }.first?.date
-        } else {
-            return firstOptOutSubmittedEvent.first?.date
-        }
-    }
-
-    func shouldFireWeeklyStats(dateOfFirstScan: Date?) -> Bool {
-        // If no initial scan was done yet, we do not want to fire the pixel.
-        guard let dateOfFirstScan = dateOfFirstScan else {
-            return false
-        }
-
-        if let lastWeeklyUpdateDate = repository.getLatestStatsWeeklyPixelDate() {
-            // If the last weekly was set we need to compare the date with it.
-            return DataBrokerProtectionSharedPixelsUtilities.shouldWeFirePixel(startDate: lastWeeklyUpdateDate, endDate: Date(), daysDifference: .weekly)
-        } else {
-            // If the weekly update date was never set we need to check the first scan date.
-            return DataBrokerProtectionSharedPixelsUtilities.shouldWeFirePixel(startDate: dateOfFirstScan, endDate: Date(), daysDifference: .weekly)
-        }
-    }
-
-    func shouldFireMonthlyStats(dateOfFirstScan: Date?) -> Bool {
-        // If no initial scan was done yet, we do not want to fire the pixel.
-        guard let dateOfFirstScan = dateOfFirstScan else {
-            return false
-        }
-
-        if let lastMonthlyUpdateDate = repository.getLatestStatsMonthlyPixelDate() {
-            // If the last monthly was set we need to compare the date with it.
-            return DataBrokerProtectionSharedPixelsUtilities.shouldWeFirePixel(startDate: lastMonthlyUpdateDate, endDate: Date(), daysDifference: .monthly)
-        } else {
-            // If the monthly update date was never set we need to check the first scan date.
-            return DataBrokerProtectionSharedPixelsUtilities.shouldWeFirePixel(startDate: dateOfFirstScan, endDate: Date(), daysDifference: .monthly)
-        }
-    }
-
-    func firePixels(for brokerProfileQueryData: [BrokerProfileQueryData], frequency: Frequency, dateSinceLastSubmission: Date? = nil) {
-        let statsByBroker = calculateStatsByBroker(brokerProfileQueryData, dateSinceLastSubmission: dateSinceLastSubmission)
-
-        fireGlobalStats(statsByBroker, brokerProfileQueryData: brokerProfileQueryData, frequency: frequency)
-        fireStatsByBroker(statsByBroker, frequency: frequency)
-    }
-
-    func calculateStatsByBroker(_ brokerProfileQueryData: [BrokerProfileQueryData], dateSinceLastSubmission: Date? = nil) -> [StatsByBroker] {
-        let profileQueriesGroupedByBroker = Dictionary(grouping: brokerProfileQueryData, by: { $0.dataBroker })
-        let statsByBroker = profileQueriesGroupedByBroker.map { (key: DataBroker, value: [BrokerProfileQueryData]) in
-            calculateByBroker(key, data: value, dateSinceLastSubmission: dateSinceLastSubmission)
-        }
-
-        return statsByBroker
-    }
-
-    func fireGlobalStats(_ stats: [StatsByBroker], brokerProfileQueryData: [BrokerProfileQueryData], frequency: Frequency) {
-        // The duration for the global stats is calculated not taking into the account the broker. That's why we do not use one from the stats.
-        let durationOfFirstOptOut = calculateDurationOfFirstOptOut(brokerProfileQueryData)
-
-        switch frequency {
-        case .weekly:
-            handler.fire(stats.toWeeklyPixel(durationOfFirstOptOut: durationOfFirstOptOut))
-        case .monthly:
-            handler.fire(stats.toMonthlyPixel(durationOfFirstOptOut: durationOfFirstOptOut))
-        default: ()
-        }
-    }
-
-    func fireStatsByBroker(_ stats: [StatsByBroker], frequency: Frequency) {
-        for stat in stats {
-            switch frequency {
-            case .weekly:
-                handler.fire(stat.toWeeklyPixel)
-            case .monthly:
-                handler.fire(stat.toMonthlyPixel)
-            default: ()
-            }
-        }
-    }
 
     func fireCustomDataBrokerStatsPixels(customOptOutStats: CustomOptOutStats) {
         Task {
@@ -485,7 +151,7 @@ private extension DataBrokerProtectionStatsPixels {
     }
 
     func pixel(for dataBrokerStat: CustomIndividualDataBrokerStat) -> DataBrokerProtectionSharedPixels {
-        .customDataBrokerStatsOptoutSubmit(dataBrokerName: dataBrokerStat.dataBrokerName,
+        .customDataBrokerStatsOptoutSubmit(dataBrokerURL: dataBrokerStat.dataBrokerURL,
                                            optOutSubmitSuccessRate: dataBrokerStat.optoutSubmitSuccessRate)
     }
 
@@ -540,20 +206,26 @@ extension DataBrokerProtectionStatsPixels {
             return hasEnoughTimePassedToFirePixel && !optOutJob.twentyOneDaysConfirmationPixelFired
         }
 
-        let brokerIDsToNames = brokerProfileQueryData.reduce(into: [Int64: String]()) {
+        let fortyTwoDayOldPlusOptOutsThatHaveNotFiredPixel = successfullySubmittedOptOuts.filter { optOutJob in
+            guard let submittedSuccessfullyDate = optOutJob.submittedSuccessfullyDate else { return false }
+            let hasEnoughTimePassedToFirePixel = submittedSuccessfullyDate.hasBeenExceededByNumberOfDays(42)
+            return hasEnoughTimePassedToFirePixel && !optOutJob.fortyTwoDaysConfirmationPixelFired
+        }
+
+        let brokerIDsToURLs = brokerProfileQueryData.reduce(into: [Int64: String]()) {
             // Really the ID should never be zero
-            $0[$1.dataBroker.id ?? -1] = $1.dataBroker.name
+            $0[$1.dataBroker.id ?? -1] = $1.dataBroker.url
         }
 
         // Now fire the pixels and update the DB
         for optOutJob in sevenDayOldPlusOptOutsThatHaveNotFiredPixel {
-            let brokerName = brokerIDsToNames[optOutJob.brokerId] ?? ""
+            let brokerURL = brokerIDsToURLs[optOutJob.brokerId] ?? ""
             let isOptOutConfirmed = optOutJob.extractedProfile.removedDate != nil
 
             if isOptOutConfirmed {
-                handler.fire(.optOutJobAt7DaysConfirmed(dataBroker: brokerName))
+                handler.fire(.optOutJobAt7DaysConfirmed(dataBroker: brokerURL))
             } else {
-                handler.fire(.optOutJobAt7DaysUnconfirmed(dataBroker: brokerName))
+                handler.fire(.optOutJobAt7DaysUnconfirmed(dataBroker: brokerURL))
             }
 
             guard let extractedProfileID = optOutJob.extractedProfile.id else { continue }
@@ -564,13 +236,13 @@ extension DataBrokerProtectionStatsPixels {
         }
 
         for optOutJob in fourteenDayOldPlusOptOutsThatHaveNotFiredPixel {
-            let brokerName = brokerIDsToNames[optOutJob.brokerId] ?? ""
+            let brokerURL = brokerIDsToURLs[optOutJob.brokerId] ?? ""
             let isOptOutConfirmed = optOutJob.extractedProfile.removedDate != nil
 
             if isOptOutConfirmed {
-                handler.fire(.optOutJobAt14DaysConfirmed(dataBroker: brokerName))
+                handler.fire(.optOutJobAt14DaysConfirmed(dataBroker: brokerURL))
             } else {
-                handler.fire(.optOutJobAt14DaysUnconfirmed(dataBroker: brokerName))
+                handler.fire(.optOutJobAt14DaysUnconfirmed(dataBroker: brokerURL))
             }
 
             guard let extractedProfileID = optOutJob.extractedProfile.id else { continue }
@@ -581,13 +253,13 @@ extension DataBrokerProtectionStatsPixels {
         }
 
         for optOutJob in twentyOneDayOldPlusOptOutsThatHaveNotFiredPixel {
-            let brokerName = brokerIDsToNames[optOutJob.brokerId] ?? ""
+            let brokerURL = brokerIDsToURLs[optOutJob.brokerId] ?? ""
             let isOptOutConfirmed = optOutJob.extractedProfile.removedDate != nil
 
             if isOptOutConfirmed {
-                handler.fire(.optOutJobAt21DaysConfirmed(dataBroker: brokerName))
+                handler.fire(.optOutJobAt21DaysConfirmed(dataBroker: brokerURL))
             } else {
-                handler.fire(.optOutJobAt21DaysUnconfirmed(dataBroker: brokerName))
+                handler.fire(.optOutJobAt21DaysUnconfirmed(dataBroker: brokerURL))
             }
 
             guard let extractedProfileID = optOutJob.extractedProfile.id else { continue }
@@ -595,6 +267,23 @@ extension DataBrokerProtectionStatsPixels {
                                                                     forBrokerId: optOutJob.brokerId,
                                                                     profileQueryId: optOutJob.profileQueryId,
                                                                     extractedProfileId: extractedProfileID)
+        }
+
+        for optOutJob in fortyTwoDayOldPlusOptOutsThatHaveNotFiredPixel {
+            let brokerURL = brokerIDsToURLs[optOutJob.brokerId] ?? ""
+            let isOptOutConfirmed = optOutJob.extractedProfile.removedDate != nil
+
+            if isOptOutConfirmed {
+                handler.fire(.optOutJobAt42DaysConfirmed(dataBroker: brokerURL))
+            } else {
+                handler.fire(.optOutJobAt42DaysUnconfirmed(dataBroker: brokerURL))
+            }
+
+            guard let extractedProfileID = optOutJob.extractedProfile.id else { continue }
+            try? database.updateFortyTwoDaysConfirmationPixelFired(true,
+                                                                   forBrokerId: optOutJob.brokerId,
+                                                                   profileQueryId: optOutJob.profileQueryId,
+                                                                   extractedProfileId: extractedProfileID)
         }
     }
 }

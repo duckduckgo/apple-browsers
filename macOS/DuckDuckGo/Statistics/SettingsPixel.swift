@@ -94,6 +94,9 @@ enum SettingsPixel: PixelKitEvent {
      */
     case dataClearingSettingToggled
 
+    case syncAppIconWithThemeTurnedOn
+    case syncAppIconWithThemeTurnedOff
+
     // MARK: -
 
     var name: String {
@@ -116,7 +119,7 @@ enum SettingsPixel: PixelKitEvent {
             case .aiChat:
                 assertionFailure("This pixel is not in use and AIChatPixel.aiChatSettingsDisplayed should be used instead")
                 return "settings_duck_ai_opened"
-            case .privacyPro: return "settings_privacy_pro_opened"
+            case .subscription: return "settings_privacy_pro_opened"
             case .vpn: return "settings_vpn_opened"
             case .personalInformationRemoval: return "settings_pir_opened"
             case .identityTheftRestoration: return "settings_itr_opened"
@@ -130,6 +133,8 @@ enum SettingsPixel: PixelKitEvent {
         case .themeSettingChanged: return "settings_theme_changed_u"
         case .websiteZoomSettingChanged: return "settings_zoom_changed_u"
         case .dataClearingSettingToggled: return "settings_auto_clear_toggled_u"
+        case .syncAppIconWithThemeTurnedOn: return "settings_sync_app_icon_with_theme_turned_on"
+        case .syncAppIconWithThemeTurnedOff: return "settings_sync_app_icon_with_theme_turned_off"
         }
     }
 

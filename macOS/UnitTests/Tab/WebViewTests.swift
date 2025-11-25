@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import SharedTestUtilities
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -140,10 +141,11 @@ final class WebViewTests: XCTestCase {
 
     @MainActor
     func testThatResetZoomLevelResetsZoom() {
-        let tabVM = TabViewModel(tab: Tab(content: .none))
+        let accessibilityPreferences = AccessibilityPreferences()
+        let tabVM = TabViewModel(tab: Tab(content: .none), accessibilityPreferences: accessibilityPreferences)
         let randomZoomLevel = DefaultZoomValue.percent300
         // Select Default zoom
-        AccessibilityPreferences.shared.defaultPageZoom = randomZoomLevel
+        accessibilityPreferences.defaultPageZoom = randomZoomLevel
 
         // Zooming out
         tabVM.tab.webView.zoomOut()
@@ -156,7 +158,7 @@ final class WebViewTests: XCTestCase {
         XCTAssertEqual(tabVM.tab.webView.zoomLevel, randomZoomLevel)
 
         // Set new default zoom
-        AccessibilityPreferences.shared.defaultPageZoom = .percent75
+        accessibilityPreferences.defaultPageZoom = .percent75
         XCTAssertEqual(tabVM.tab.webView.zoomLevel, .percent75)
     }
 

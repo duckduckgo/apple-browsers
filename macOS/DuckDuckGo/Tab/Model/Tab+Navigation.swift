@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Combine
 import Common
 import Foundation
@@ -45,7 +46,7 @@ extension Tab: NavigationResponder {
             .weak(nullable: self.aiChat),
 
             .weak(nullable: self.navigationHotkeyHandler),
-            .strong(NavigationPixelNavigationResponder()),
+            .strong(NavigationPixelNavigationResponder(featureFlagger: featureFlagger)),
             .weak(nullable: self.brokenSiteInfo),
             .weak(nullable: self.tabCrashRecovery),
 
@@ -54,6 +55,9 @@ extension Tab: NavigationResponder {
             .weak(nullable: self.searchForNonexistentDomains),
 
             .weak(self),
+
+            // browsing history
+            .weak(nullable: self.history),
 
             // Duck Player overlay navigations handling
             .weak(nullable: self.duckPlayer),
@@ -86,9 +90,6 @@ extension Tab: NavigationResponder {
 
             .weak(nullable: self.downloads),
 
-            // browsing history
-            .weak(nullable: self.history),
-
             // Find In Page
             .weak(nullable: self.findInPage),
 
@@ -105,6 +106,9 @@ extension Tab: NavigationResponder {
 
             // New Tab Page
             .weak(nullable: self.newTabPage),
+
+            // Popup Handling - track navigation to clear per-page popup allowances
+            .weak(nullable: self.popupHandling),
 
             // should be the last, for Unit Tests navigation events tracking
             .struct(nullable: testsClosureNavigationResponder)
@@ -125,7 +129,7 @@ extension Tab: NavigationResponder {
 
     var redirectNavigationResponder: RedirectNavigationResponder {
         let subscriptionManager = Application.appDelegate.subscriptionAuthV1toV2Bridge
-        let redirectManager = PrivacyProSubscriptionRedirectManager(subscriptionManager: subscriptionManager,
+        let redirectManager = SubscriptionRedirectManager(subscriptionManager: subscriptionManager,
                                                                     baseURL: subscriptionManager.url(for: .baseURL))
         return RedirectNavigationResponder(redirectManager: redirectManager)
     }

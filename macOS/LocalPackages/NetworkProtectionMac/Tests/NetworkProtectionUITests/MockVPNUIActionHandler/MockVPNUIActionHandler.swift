@@ -36,7 +36,7 @@ public final class MockVPNUIActionHandler: VPNUIActionHandling {
         // placeholder
     }
 
-    public func showPrivacyPro() async {
+    public func showSubscription() async {
         // placeholder
     }
 

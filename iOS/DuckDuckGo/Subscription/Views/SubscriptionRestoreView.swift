@@ -136,11 +136,11 @@ struct SubscriptionRestoreView: View {
 
     private var addViaEmailView: some View {
         RoundedCardView(title: UserText.subscriptionActivateViaEmailTitle,
-                        description: UserText.subscriptionActivateViaEmailDescription(isRebrandingOn: viewModel.isRebrandingOn),
+                        description: UserText.subscriptionActivateViaEmailDescription,
                         image: Image(uiImage: DesignSystemImages.Glyphs.Size16.email),
                         buttonTitle: UserText.subscriptionActivateViaEmailButton,
                         buttonAction: {
-            DailyPixel.fireDailyAndCount(pixel: .privacyProRestorePurchaseEmailStart,
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionRestorePurchaseEmailStart,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
             viewModel.showActivationFlow(true)
         })
@@ -172,7 +172,7 @@ struct SubscriptionRestoreView: View {
     private var headerView: some View {
         VStack(spacing: Constants.headerItemSpacing) {
             Image(Constants.heroImage)
-            Text(UserText.subscriptionActivateHeaderTitle(isRebrandingOn: viewModel.isRebrandingOn))
+            Text(UserText.subscriptionActivateHeaderTitle)
                 .daxTitle1()
                 .multilineTextAlignment(.center)
                 .foregroundColor(Color(designSystemColor: .textPrimary))

@@ -21,8 +21,23 @@ import Foundation
 import BrowserServicesKit
 import RemoteMessaging
 import AIChat
+import OSLog
+import WebKit
+import Common
+// MARK: - Response Types
 
-protocol AIChatMetricReportingHandling {
+/// Response structure for openKeyboard request
+struct OpenKeyboardResponse: Encodable {
+    let success: Bool
+    let error: String?
+
+    init(success: Bool, error: String? = nil) {
+        self.success = success
+        self.error = error
+    }
+}
+
+protocol AIChatMetricReportingHandling: AnyObject {
     func didReportMetric(_ metric: AIChatMetric)
 }
 
@@ -37,16 +52,25 @@ protocol AIChatUserScriptHandling {
     func hideChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func showChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable?
+    func openKeyboard(params: Any, message: UserScriptMessage, webView: WKWebView?) async -> Encodable?
+    func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
+    func getMigrationDataByIndex(params: Any, message: UserScriptMessage) -> Encodable?
+    func getMigrationInfo(params: Any, message: UserScriptMessage) -> Encodable?
+    func clearMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private var payloadHandler: (any AIChatConsumableDataHandling)?
     private var inputBoxHandler: (any AIChatInputBoxHandling)?
-    private var metricReportingHandler: (any AIChatMetricReportingHandling)?
+    private weak var metricReportingHandler: (any AIChatMetricReportingHandling)?
     private let experimentalAIChatManager: ExperimentalAIChatManager
+    private let migrationStore = AIChatMigrationStore()
+    private let aichatFullModeFeature: AIChatFullModeFeatureProviding
 
-    init(experimentalAIChatManager: ExperimentalAIChatManager) {
+    init(experimentalAIChatManager: ExperimentalAIChatManager,
+         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature()) {
         self.experimentalAIChatManager = experimentalAIChatManager
+        self.aichatFullModeFeature = aichatFullModeFeature
     }
 
     enum AIChatKeys {
@@ -81,14 +105,26 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
                 let metric = try decoder.decode(AIChatMetric.self, from: jsonData)
                 metricReportingHandler?.didReportMetric(metric)
             } catch {
-                print("Failed to decode JSON: \(error)")
+                Logger.aiChat.debug("Failed to decode metric JSON in AIChatUserScript: \(error)")
             }
         }
         return nil
     }
 
     public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable? {
-        AIChatNativeConfigValues.defaultValues
+        let defaults = AIChatNativeConfigValues.defaultValues
+        return AIChatNativeConfigValues(
+            isAIChatHandoffEnabled: defaults.isAIChatHandoffEnabled,
+            supportsClosingAIChat: defaults.supportsClosingAIChat,
+            supportsOpeningSettings: defaults.supportsOpeningSettings,
+            supportsNativePrompt: defaults.supportsNativePrompt,
+            supportsStandaloneMigration: experimentalAIChatManager.isStandaloneMigrationSupported,
+            supportsNativeChatInput: defaults.supportsNativeChatInput,
+            supportsURLChatIDRestoration: aichatFullModeFeature.isAvailable ? true : defaults.supportsURLChatIDRestoration,
+            supportsFullChatRestoration: defaults.supportsFullChatRestoration,
+            supportsPageContext: defaults.supportsPageContext,
+            appVersion: AppVersion.shared.versionAndBuildNumber
+        )
     }
 
     @MainActor
@@ -129,5 +165,75 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func setMetricReportingHandler(_ metricHandler: (any AIChatMetricReportingHandling)?) {
         self.metricReportingHandler = metricHandler
+    }
+
+    // Workaround for WKWebView: see https://app.asana.com/1/137249556945/task/1211361207345641/comment/1211365575147531?focus=true
+    func openKeyboard(params: Any, message: UserScriptMessage, webView: WKWebView?) async -> Encodable? {
+        guard let paramsDict = params as? [String: Any] else {
+            Logger.aiChat.error("Invalid params format for openKeyboard")
+            return OpenKeyboardResponse(success: false, error: "Invalid parameters format")
+        }
+        guard let cssSelector = paramsDict["selector"] as? String, !cssSelector.isEmpty else {
+            Logger.aiChat.error("Missing or empty CSS selector for openKeyboard")
+            return OpenKeyboardResponse(success: false, error: "Missing or empty CSS selector")
+        }
+
+        guard let webView = webView else {
+            Logger.aiChat.error("WebView not available for openKeyboard")
+            return OpenKeyboardResponse(success: false, error: "WebView not available")
+        }
+
+        return await withCheckedContinuation { continuation in
+            DispatchQueue.main.async {
+                let javascript = """
+                (function() {
+                    try {
+                        const element = document.querySelector('\(cssSelector)');
+                        element?.focus?.();
+                        return true;
+                    } catch (error) {
+                        console.error('Error focusing element:', error);
+                        return false;
+                    }
+                })();
+                """
+
+                webView.evaluateJavaScript(javascript) { _, error in
+                    if let error = error {
+                        Logger.aiChat.error("Failed to execute openKeyboard JavaScript: \(error.localizedDescription)")
+                        continuation.resume(returning: OpenKeyboardResponse(success: false, error: "JavaScript execution failed"))
+                    } else {
+                        continuation.resume(returning: OpenKeyboardResponse(success: true))
+                    }
+                }
+            }
+        }
+    }
+
+    func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable? {
+        guard let dict = params as? [String: Any] else {
+            return AIChatErrorResponse(reason: "invalid_params")
+        }
+        guard dict.keys.contains(AIChatMigrationParamKeys.serializedMigrationFile) else {
+            return AIChatErrorResponse(reason: "invalid_params")
+        }
+        let serialized = dict[AIChatMigrationParamKeys.serializedMigrationFile] as? String
+        return migrationStore.store(serialized)
+    }
+
+    func getMigrationDataByIndex(params: Any, message: UserScriptMessage) -> Encodable? {
+        guard let dict = params as? [String: Any] else {
+            return migrationStore.item(at: nil)
+        }
+        let index = dict[AIChatMigrationParamKeys.index] as? Int
+        return migrationStore.item(at: index)
+    }
+
+    func getMigrationInfo(params: Any, message: UserScriptMessage) -> Encodable? {
+        return migrationStore.info()
+    }
+
+    func clearMigrationData(params: Any, message: UserScriptMessage) -> Encodable? {
+        return migrationStore.clear()
     }
 }

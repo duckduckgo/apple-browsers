@@ -27,7 +27,7 @@ struct SmallOmniBarState {
         let showBackButton = false
         let showForwardButton = false
         let showBookmarksButton = false
-        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
+        var showAIChatButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = true
         let allowsTrackersAnimation = false
         let showPrivacyIcon = false
@@ -35,7 +35,7 @@ struct SmallOmniBarState {
         let showClear = false
         let showAbort = false
         let showRefresh = false
-        let showShare = false
+        let showCustomizableButton = false
         let showMenu = false
         let showSettings = false
         let showCancel = false
@@ -50,6 +50,7 @@ struct SmallOmniBarState {
         var onEnterPadState: OmniBarState { return LargeOmniBarState.HomeEmptyEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onEnterPhoneState: OmniBarState { return self }
         var onReloadState: OmniBarState { return HomeEmptyEditingState(dependencies: dependencies, isLoading: isLoading) }
+        var onEnterAIChatState: OmniBarState { AIChatModeState(dependencies: dependencies, isLoading: isLoading) }
         var showSearchLoupe: Bool { dependencies.shouldShowSearchLoupeIfPossible }
         var showVoiceSearch: Bool { dependencies.voiceSearchHelper.isVoiceSearchEnabled }
 
@@ -64,7 +65,7 @@ struct SmallOmniBarState {
         let showBackButton = false
         let showForwardButton = false
         let showBookmarksButton = false
-        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
+        var showAIChatButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = false
         let allowsTrackersAnimation = false
         let showPrivacyIcon = false
@@ -72,7 +73,7 @@ struct SmallOmniBarState {
         let showClear = true
         let showAbort = false
         let showRefresh = false
-        let showShare = false
+        let showCustomizableButton = false
         let showMenu = false
         let showSettings = false
         let showCancel = false
@@ -88,6 +89,7 @@ struct SmallOmniBarState {
         var onEnterPadState: OmniBarState { return LargeOmniBarState.HomeTextEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onEnterPhoneState: OmniBarState { return self }
         var onReloadState: OmniBarState { return HomeTextEditingState(dependencies: dependencies, isLoading: isLoading) }
+        var onEnterAIChatState: OmniBarState { AIChatModeState(dependencies: dependencies, isLoading: isLoading) }
         var showSearchLoupe: Bool { dependencies.shouldShowSearchLoupeIfPossible }
 
         let isBrowsing = false
@@ -101,7 +103,7 @@ struct SmallOmniBarState {
         let showBackButton = false
         let showForwardButton = false
         let showBookmarksButton = false
-        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
+        var showAIChatButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = true
         let allowsTrackersAnimation = false
         let showSearchLoupe = true
@@ -110,7 +112,7 @@ struct SmallOmniBarState {
         let showClear = false
         let showAbort = false
         let showRefresh = false
-        let showShare = false
+        let showCustomizableButton = false
         let showMenu = false
         let showSettings = false
         let showDismiss = false
@@ -125,7 +127,8 @@ struct SmallOmniBarState {
         var onEnterPadState: OmniBarState { return LargeOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onEnterPhoneState: OmniBarState { return self }
         var onReloadState: OmniBarState { return HomeNonEditingState(dependencies: dependencies, isLoading: isLoading) }
-
+        var onEnterAIChatState: OmniBarState { AIChatModeState(dependencies: dependencies, isLoading: isLoading) }
+        
         var showVoiceSearch: Bool { dependencies.voiceSearchHelper.isVoiceSearchEnabled }
         let isBrowsing = false
 
@@ -138,7 +141,7 @@ struct SmallOmniBarState {
         let showBackButton = false
         let showForwardButton = false
         let showBookmarksButton = false
-        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
+        var showAIChatButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = true
         let allowsTrackersAnimation = false
         let showPrivacyIcon = false
@@ -146,7 +149,7 @@ struct SmallOmniBarState {
         let showClear = false
         let showAbort = false
         let showRefresh = false
-        let showShare = false
+        let showCustomizableButton = false
         let showMenu = false
         let showSettings = false
         let showCancel = false
@@ -162,7 +165,8 @@ struct SmallOmniBarState {
         var onEnterPhoneState: OmniBarState { return self }
         var onReloadState: OmniBarState { return BrowsingEmptyEditingState(dependencies: dependencies, isLoading: isLoading) }
         var showSearchLoupe: Bool { dependencies.shouldShowSearchLoupeIfPossible }
-
+        var onEnterAIChatState: OmniBarState { AIChatModeState(dependencies: dependencies, isLoading: isLoading) }
+        
         let isBrowsing = true
 
         var showVoiceSearch: Bool { dependencies.voiceSearchHelper.isVoiceSearchEnabled }
@@ -176,7 +180,7 @@ struct SmallOmniBarState {
         let showBackButton = false
         let showForwardButton = false
         let showBookmarksButton = false
-        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
+        var showAIChatButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = false
         let allowsTrackersAnimation = false
         let showPrivacyIcon = false
@@ -184,7 +188,7 @@ struct SmallOmniBarState {
         let showClear = true
         let showAbort = false
         let showRefresh = false
-        let showShare = false
+        let showCustomizableButton = false
         let showMenu = false
         let showSettings = false
         let showCancel = false
@@ -200,6 +204,8 @@ struct SmallOmniBarState {
         var onEnterPadState: OmniBarState { return LargeOmniBarState.BrowsingTextEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onEnterPhoneState: OmniBarState { return self }
         var onReloadState: OmniBarState { return BrowsingTextEditingState(dependencies: dependencies, isLoading: isLoading) }
+        var onEnterAIChatState: OmniBarState { AIChatModeState(dependencies: dependencies, isLoading: isLoading) }
+        
         var showSearchLoupe: Bool { dependencies.shouldShowSearchLoupeIfPossible }
 
         let isBrowsing = true
@@ -214,7 +220,7 @@ struct SmallOmniBarState {
         let showBackButton = false
         let showForwardButton = false
         let showBookmarksButton = false
-        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
+        var showAIChatButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = false
         let allowsTrackersAnimation = true
         let showSearchLoupe = false
@@ -223,7 +229,12 @@ struct SmallOmniBarState {
         let showClear = false
         var showAbort: Bool { isLoading }
         var showRefresh: Bool { return !isLoading && dependencies.isRefreshButtonEnabled }
-        let showShare: Bool = true
+        var showCustomizableButton: Bool {
+            guard dependencies.mobileCustomization.state.isEnabled else {
+                return true
+            }
+            return dependencies.mobileCustomization.state.currentAddressBarButton != .none
+        }
         let showMenu = false
         let showSettings = false
         let showCancel = false
@@ -239,7 +250,8 @@ struct SmallOmniBarState {
         var onEnterPadState: OmniBarState { return LargeOmniBarState.BrowsingNonEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onEnterPhoneState: OmniBarState { return self }
         var onReloadState: OmniBarState { return BrowsingNonEditingState(dependencies: dependencies, isLoading: isLoading) }
-
+        var onEnterAIChatState: OmniBarState { AIChatModeState(dependencies: dependencies, isLoading: isLoading) }
+        
         let isBrowsing = true
 
         let dependencies: OmnibarDependencyProvider
@@ -251,7 +263,7 @@ struct SmallOmniBarState {
         let showBackButton = false
         let showForwardButton = false
         let showBookmarksButton = false
-        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
+        var showAIChatButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = false
         let allowsTrackersAnimation = false
         let showPrivacyIcon = false
@@ -259,7 +271,7 @@ struct SmallOmniBarState {
         let showClear = true
         let showAbort = false
         let showRefresh = false
-        let showShare = false
+        let showCustomizableButton = false
         let showMenu = false
         let showSettings = false
         let showDismiss = true
@@ -274,6 +286,8 @@ struct SmallOmniBarState {
         var onEnterPadState: OmniBarState { return LargeOmniBarState.BrowsingTextEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onEnterPhoneState: OmniBarState { return self }
         var onReloadState: OmniBarState { return BrowsingTextEditingStartedState(dependencies: dependencies, isLoading: isLoading) }
+        var onEnterAIChatState: OmniBarState { AIChatModeState(dependencies: dependencies, isLoading: isLoading) }
+
         var showSearchLoupe: Bool { dependencies.shouldShowSearchLoupeIfPossible }
         var showVoiceSearch: Bool { dependencies.voiceSearchHelper.isVoiceSearchEnabled }
 
@@ -281,6 +295,54 @@ struct SmallOmniBarState {
 
         let dependencies: OmnibarDependencyProvider
         let isLoading: Bool
+    }
+    
+    /// OmniBarState used when a displaying AI Chat in 'full mode' (i.e in a tab)
+    struct AIChatModeState: OmniBarState, OmniBarLoadingBearerStateCreating {
+        var hasLargeWidth = false
+        let showBackButton = false
+        let showForwardButton = false
+        let showBookmarksButton = false
+        let showAIChatButton = false
+        let clearTextOnStart = false
+        let allowsTrackersAnimation = false
+        let showSearchLoupe = false
+        let showPrivacyIcon = false
+        let showBackground = false
+        let showClear = false
+        let showAbort = false
+        let showRefresh = false
+        let showCustomizableButton = false
+        let showMenu = false
+        let showSettings = false
+        let showCancel = false
+        let showDismiss = false
+        let showVoiceSearch = false
+        let isBrowsing = false
+        let showAIChatFullModeBranding = true
+        
+        var allowCustomization = false
+
+        var name: String { "Phone" + Type.name(self) }
+
+        var onEditingStartedState: any OmniBarState { HomeEmptyEditingState(dependencies: dependencies, isLoading: isLoading) }
+        var onEditingStoppedState: any OmniBarState { self }
+        var onTextClearedState: any OmniBarState { HomeEmptyEditingState(dependencies: dependencies, isLoading: isLoading) }
+        var onTextEnteredState: any OmniBarState { HomeTextEditingState(dependencies: dependencies, isLoading: isLoading) }
+        var onBrowsingStartedState: any OmniBarState { BrowsingNonEditingState(dependencies: dependencies, isLoading: isLoading) }
+        var onBrowsingStoppedState: any OmniBarState { HomeNonEditingState(dependencies: dependencies, isLoading: isLoading) }
+        var onEnterPadState: any OmniBarState { self }
+        var onEnterPhoneState: any OmniBarState { self }
+        var onReloadState: any OmniBarState { self }
+        var onEnterAIChatState: OmniBarState { self }
+
+        let dependencies: OmnibarDependencyProvider
+        let isLoading: Bool
+        
+        init(dependencies: any OmnibarDependencyProvider, isLoading: Bool) {
+            self.dependencies = dependencies
+            self.isLoading = isLoading
+        }
     }
 }
 
@@ -294,9 +356,6 @@ extension OmnibarDependencyProvider {
     }
     
     var isRefreshButtonEnabled: Bool {
-        guard featureFlagger.isFeatureOn(.refreshButtonPosition) else {
-            return true
-        }
         return appSettings.currentRefreshButtonPosition.isEnabledForAddressBar
     }
 }

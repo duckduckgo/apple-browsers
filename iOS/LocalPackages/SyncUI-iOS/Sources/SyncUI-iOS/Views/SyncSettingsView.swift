@@ -67,6 +67,10 @@ public struct SyncSettingsView: View {
                         syncPaused(for: .credentials)
                             .listRowBackground(Color(designSystemColor: .surface))
                     }
+                    if $model.isSyncCreditCardsPaused.wrappedValue {
+                        syncPaused(for: .creditCards)
+                            .listRowBackground(Color(designSystemColor: .surface))
+                    }
 
                     if !model.invalidBookmarksTitles.isEmpty {
                         syncHasInvalidItems(for: .bookmarks)
@@ -75,6 +79,11 @@ public struct SyncSettingsView: View {
 
                     if !model.invalidCredentialsTitles.isEmpty {
                         syncHasInvalidItems(for: .credentials)
+                            .listRowBackground(Color(designSystemColor: .surface))
+                    }
+
+                    if !model.invalidCreditCardsTitles.isEmpty {
+                        syncHasInvalidItems(for: .creditCards)
                             .listRowBackground(Color(designSystemColor: .surface))
                     }
 

@@ -23,6 +23,7 @@ import TrackerRadarKit
 import BrowserServicesKit
 import Common
 import PrivacyDashboard
+import Combine
 
 protocol EntityProviding {
     
@@ -39,6 +40,10 @@ protocol ContextualDaxDialogDisabling {
     func disableContextualDaxDialogs()
 }
 
+protocol ContextualDaxDialogStatusProvider {
+    var hasSeenOnboarding: Bool { get }
+}
+
 protocol ContextualOnboardingLogic {
     var shouldShowPrivacyButtonPulse: Bool { get }
     var shouldShowFireButtonPulse: Bool { get }
@@ -47,6 +52,7 @@ protocol ContextualOnboardingLogic {
     var isShowingSearchSuggestions: Bool { get }
     var isShowingSitesSuggestions: Bool { get }
     var isAddFavoriteFlow: Bool { get }
+    var isDismissedPublisher: PassthroughSubject<Bool, Never> { get }
 
     func setTryAnonymousSearchMessageSeen()
     func setSearchMessageSeen()
@@ -74,14 +80,14 @@ protocol ContextualOnboardingLogic {
     func overrideShownFlagFor(_ spec: DaxDialogs.BrowsingSpec, flag: Bool)
 }
 
-typealias DaxDialogsManaging = ContextualOnboardingLogic & PrivacyProPromotionCoordinating & NewTabDialogSpecProvider & ContextualDaxDialogDisabling
+typealias DaxDialogsManaging = ContextualOnboardingLogic & SubscriptionPromotionCoordinating & NewTabDialogSpecProvider & ContextualDaxDialogDisabling & ContextualDaxDialogStatusProvider
 
-protocol PrivacyProPromotionCoordinating {
-    /// Indicates whether the Privacy Pro promotion dialog is currently being displayed
-    var isShowingPrivacyProPromotion: Bool { get }
-    
-    /// Indicates whether the user has seen the Privacy Pro promotion dialog
-    var privacyProPromotionDialogSeen: Bool { get set }
+protocol SubscriptionPromotionCoordinating {
+    /// Indicates whether the Subscription promotion dialog is currently being displayed
+    var isShowingSubscriptionPromotion: Bool { get }
+
+    /// Indicates whether the user has seen the Subscription promotion dialog
+    var subscriptionPromotionDialogSeen: Bool { get set }
 }
 
 extension ContentBlockerRulesManager: EntityProviding {
@@ -92,7 +98,7 @@ extension ContentBlockerRulesManager: EntityProviding {
     
 }
 
-final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
+final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic, ContextualDaxDialogStatusProvider {
     
     struct MajorTrackers {
         
@@ -108,7 +114,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
         case subsequent
         case final
         case addFavorite
-        case privacyProPromotion
+        case subscriptionPromotion
     }
     
     func overrideShownFlagFor(_ spec: BrowsingSpec, flag: Bool) {
@@ -218,20 +224,23 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
 
     private var currentHomeSpec: HomeScreenSpec?
 
-    private let onboardingPrivacyProPromotionHelper: OnboardingPrivacyProPromotionHelping
+    private let onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping
+    
+    public let isDismissedPublisher: PassthroughSubject<Bool, Never>
 
     /// Use singleton accessor, this is only accessible for tests
     init(settings: DaxDialogsSettings = DefaultDaxDialogsSettings(),
          entityProviding: EntityProviding,
          variantManager: VariantManager = DefaultVariantManager(),
          launchOptionsHandler: LaunchOptionsHandler = LaunchOptionsHandler(),
-         onboardingPrivacyProPromotionHelper: OnboardingPrivacyProPromotionHelping = OnboardingPrivacyProPromotionHelper()
+         onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping = OnboardingSubscriptionPromotionHelper()
     ) {
         self.settings = settings
         self.entityProviding = entityProviding
         self.variantManager = variantManager
         self.launchOptionsHandler = launchOptionsHandler
-        self.onboardingPrivacyProPromotionHelper = onboardingPrivacyProPromotionHelper
+        self.onboardingSubscriptionPromotionHelper = onboardingSubscriptionPromotionHelper
+        self.isDismissedPublisher = PassthroughSubject<Bool, Never>()
     }
 
     private var firstBrowsingMessageSeen: Bool {
@@ -266,6 +275,10 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
     private var shouldDisplayFinalContextualBrowsingDialog: Bool {
         !finalDaxDialogSeen &&
         visitedSiteAndFireButtonSeen
+    }
+
+    var hasSeenOnboarding: Bool {
+        !isEnabled
     }
 
     var isShowingSearchSuggestions: Bool {
@@ -311,11 +324,13 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
     func dismiss() {
         settings.isDismissed = true
         // Reset last shown dialog as we don't have to show it anymore.
+        isDismissedPublisher.send(true)
         clearOnboardingBrowsingData()
     }
     
     func primeForUse() {
         settings.isDismissed = false
+        isDismissedPublisher.send(false)
     }
 
     func enableAddFavoriteFlow() {
@@ -506,11 +521,11 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
 
         guard isEnabled else { return nil }
 
-        // If the user has already seen the end of journey dialog we want to check if the user is eligible to purchase Privacy Pro and if so, display an additional Privacy Pro promotion dialog.
+        // If the user has already seen the end of journey dialog we want to check if the user is eligible to purchase Subscription and if so, display an additional Subscription promotion dialog.
         guard !finalDaxDialogSeen else {
 
-            if onboardingPrivacyProPromotionHelper.shouldDisplay && !privacyProPromotionDialogSeen {
-                return .privacyProPromotion
+            if onboardingSubscriptionPromotionHelper.shouldDisplay && !subscriptionPromotionDialogSeen {
+                return .subscriptionPromotion
             }
 
             return nil
@@ -631,18 +646,18 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
     }
 }
 
-extension DaxDialogs: PrivacyProPromotionCoordinating {
+extension DaxDialogs: SubscriptionPromotionCoordinating {
     
-    var isShowingPrivacyProPromotion: Bool {
-        currentHomeSpec == .privacyProPromotion
+    var isShowingSubscriptionPromotion: Bool {
+        currentHomeSpec == .subscriptionPromotion
     }
 
-    var privacyProPromotionDialogSeen: Bool {
+    var subscriptionPromotionDialogSeen: Bool {
         get {
-            settings.privacyProPromotionDialogShown
+            settings.subscriptionPromotionDialogShown
         }
         set {
-            settings.privacyProPromotionDialogShown = newValue
+            settings.subscriptionPromotionDialogShown = newValue
         }
     }
 }
@@ -686,7 +701,7 @@ private extension ViewHighlighter {
 
 }
 
-#if canImport(XCTest)
+#if DEBUG
 extension DaxDialogs {
 
     func setLastVisitedURL(_ url: URL?) {

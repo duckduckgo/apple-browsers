@@ -1,7 +1,7 @@
 {
   "name": "backgroundcheck.run",
   "url": "backgroundcheck.run",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "addedDatetime": 1677736800000,
   "optOutUrl": "https://backgroundcheck.run/ng/control/privacy",
   "steps": [
@@ -58,6 +58,17 @@
           "id": "fa29793c-3f85-4f01-a5fe-4ffcc26c197c"
         },
         {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//h1[contains(text(), 'Opt Out')]",
+              "parent": ".container"
+            }
+          ],
+          "id": "df2eb20b-1ecb-45b6-8c53-9ee1354e918b"
+        },
+        {
           "actionType": "fillForm",
           "selector": ".ahm",
           "elements": [
@@ -75,6 +86,17 @@
             }
           ],
           "id": "71be571c-ce0c-43cb-afad-ae6547d44726"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//input[@name='cf-turnstile-response' and @value and @value != '']",
+              "parent": "//form[@id='privacynew']"
+            }
+          ],
+          "id": "ed8a7fc7-ba2b-4b27-9c85-94442d0dd2da"
         },
         {
           "actionType": "click",

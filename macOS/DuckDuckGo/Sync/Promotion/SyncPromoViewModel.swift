@@ -31,16 +31,17 @@ struct SyncPromoViewModel {
             UserText.syncPromoBookmarksTitle
         case .passwords:
             UserText.syncPromoPasswordsTitle
+        case .autofill:
+            UserText.syncPromoAutofillTitle
+        case .creditCards:
+            UserText.syncPromoCreditCardsTitle
+        case .identities:
+            UserText.syncPromoIdentitiesTitle
         }
     }
 
     var subtitle: String {
-        switch touchpointType {
-        case .bookmarks:
-            UserText.syncPromoBookmarksMessage
-        case .passwords:
-            UserText.syncPromoPasswordsMessage
-        }
+        UserText.syncPromoMessage
     }
 
     var image: String {
@@ -52,14 +53,14 @@ struct SyncPromoViewModel {
 
     var primaryButtonTitle: String {
         switch touchpointType {
-        case .bookmarks, .passwords:
+        default:
             UserText.syncPromoConfirmAction
         }
     }
 
     var secondaryButtonTitle: String {
         switch touchpointType {
-        case .bookmarks, .passwords:
+        default:
             UserText.syncPromoDismissAction
         }
     }

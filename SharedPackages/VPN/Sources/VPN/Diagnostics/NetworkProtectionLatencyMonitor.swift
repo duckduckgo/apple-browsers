@@ -21,7 +21,7 @@ import Network
 import os.log
 import Combine
 
-public actor NetworkProtectionLatencyMonitor {
+public actor NetworkProtectionLatencyMonitor: LatencyMonitoring {
     public enum ConnectionQuality: String {
         case terrible
         case poor
@@ -69,7 +69,7 @@ public actor NetworkProtectionLatencyMonitor {
         }
     }
 
-    var isStarted: Bool {
+    public var isStarted: Bool {
         task?.isCancelled == false
     }
 
@@ -77,7 +77,7 @@ public actor NetworkProtectionLatencyMonitor {
 
     // MARK: - Init & deinit
 
-    init() {
+    public init() {
         Logger.networkProtectionMemory.debug("[+] \(String(describing: self), privacy: .public)")
     }
 

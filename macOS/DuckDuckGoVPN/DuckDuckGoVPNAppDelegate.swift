@@ -36,7 +36,6 @@ import Subscription
 import SwiftUI
 import VPNAppLauncher
 import VPNAppState
-import VPNExtensionManagement
 
 @objc(Application)
 final class DuckDuckGoVPNApplication: NSApplication {
@@ -112,6 +111,8 @@ final class DuckDuckGoVPNApplication: NSApplication {
         pixelSource = "vpnAgentAppStore"
 #endif
 
+        let userAgent = UserAgent.duckDuckGoUserAgent()
+
         PixelKit.setUp(dryRun: dryRun,
                        appVersion: AppVersion.shared.versionNumber,
                        source: pixelSource,
@@ -119,7 +120,7 @@ final class DuckDuckGoVPNApplication: NSApplication {
                        defaults: .netP) { (pixelName: String, headers: [String: String], parameters: [String: String], _, _, onComplete: @escaping PixelKit.CompletionBlock) in
 
             let url = URL.pixelUrl(forPixelNamed: pixelName)
-            let apiHeaders = APIRequest.Headers(additionalHeaders: headers) // workaround - Pixel class should really handle APIRequest.Headers by itself
+            let apiHeaders = APIRequest.Headers(userAgent: userAgent, additionalHeaders: headers)
             let configuration = APIRequest.Configuration(url: url, method: .get, queryParameters: parameters, headers: apiHeaders)
             let request = APIRequest(configuration: configuration)
 
@@ -154,6 +155,8 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         ),
         experimentManager: nil,
         for: FeatureFlag.self)
+    private let wideEventVPNAppStorageSuiteName: String = "com.duckduckgo.vpn.wideEvent"
+    private lazy var wideEvent = WideEvent(storage: WideEventUserDefaultsStorage(userDefaults: UserDefaults(suiteName: wideEventVPNAppStorageSuiteName) ?? .standard))
 
     public init(accountManager: any AccountManager,
                 subscriptionManagerV2: any SubscriptionManagerV2,
@@ -273,6 +276,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         featureFlagger: featureFlagger,
         settings: tunnelSettings,
         defaults: userDefaults,
+        wideEvent: wideEvent,
         accessTokenStorage: accessTokenStorage,
         subscriptionManagerV2: subscriptionManagerV2,
         vpnAppState: vpnAppState)
@@ -301,6 +305,13 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private lazy var statusReporter: NetworkProtectionStatusReporter = {
+        let vpnEnabledObserver = VPNEnabledObserverThroughSession(
+            tunnelSessionProvider: tunnelController,
+            extensionResolver: tunnelController.extensionResolver,
+            platformSnoozeTimingStore: NetworkProtectionSnoozeTimingStore(userDefaults: .netP),
+            platformNotificationCenter: NSWorkspace.shared.notificationCenter,
+            platformDidWakeNotification: NSWorkspace.didWakeNotification)
+
         let errorObserver = ConnectionErrorObserverThroughSession(
             tunnelSessionProvider: tunnelController,
             platformNotificationCenter: NSWorkspace.shared.notificationCenter,
@@ -317,6 +328,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
             platformDidWakeNotification: NSWorkspace.didWakeNotification)
 
         return DefaultNetworkProtectionStatusReporter(
+            vpnEnabledObserver: vpnEnabledObserver,
             statusObserver: statusObserver,
             serverInfoObserver: serverInfoObserver,
             connectionErrorObserver: errorObserver,
@@ -610,7 +622,7 @@ extension DuckDuckGoVPNAppDelegate: AccountManagerKeychainAccessDelegate {
             return
         }
 
-        PixelKit.fire(PrivacyProErrorPixel.privacyProKeychainAccessError(accessType: accessType,
+        PixelKit.fire(SubscriptionErrorPixel.subscriptionKeychainAccessError(accessType: accessType,
                                                                          accessError: expectedError,
                                                                          source: KeychainErrorSource.vpn,
                                                                          authVersion: KeychainErrorAuthVersion.v1),

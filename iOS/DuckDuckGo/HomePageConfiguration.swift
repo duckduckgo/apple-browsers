@@ -30,20 +30,20 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
     // MARK: - Messages
     
     private var homeMessageStorage: HomeMessageStorage
-    private var remoteMessagingClient: RemoteMessagingClient
-    private let privacyProDataReporter: PrivacyProDataReporting
+    private var remoteMessagingStore: RemoteMessagingStoring
+    private let subscriptionDataReporter: SubscriptionDataReporting
     private let isStillOnboarding: () -> Bool
 
     var homeMessages: [HomeMessage] = []
 
     init(variantManager: VariantManager? = nil,
-         remoteMessagingClient: RemoteMessagingClient,
-         privacyProDataReporter: PrivacyProDataReporting,
+         remoteMessagingStore: RemoteMessagingStoring,
+         subscriptionDataReporter: SubscriptionDataReporting,
          isStillOnboarding: @escaping () -> Bool
     ) {
         homeMessageStorage = HomeMessageStorage(variantManager: variantManager)
-        self.remoteMessagingClient = remoteMessagingClient
-        self.privacyProDataReporter = privacyProDataReporter
+        self.remoteMessagingStore = remoteMessagingStore
+        self.subscriptionDataReporter = subscriptionDataReporter
         self.isStillOnboarding = isStillOnboarding
         homeMessages = buildHomeMessages()
     }
@@ -68,8 +68,8 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
     }
 
     private func remoteMessageToShow() -> HomeMessage? {
-        guard let remoteMessageToPresent = remoteMessagingClient.store.fetchScheduledRemoteMessage() else { return nil }
-        Logger.remoteMessaging.info("Remote message to show: \(remoteMessageToPresent.id)")
+        guard let remoteMessageToPresent = remoteMessagingStore.fetchScheduledRemoteMessage(surfaces: .newTabPage) else { return nil }
+        Logger.remoteMessaging.info("Remote message to show: \(remoteMessageToPresent.id, privacy: .public)")
         return .remoteMessage(remoteMessage: remoteMessageToPresent)
     }
 
@@ -78,7 +78,7 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
         switch homeMessage {
         case .remoteMessage(let remoteMessage):
             Logger.remoteMessaging.info("Home message dismissed: \(remoteMessage.id)")
-            await remoteMessagingClient.store.dismissRemoteMessage(withID: remoteMessage.id)
+            await remoteMessagingStore.dismissRemoteMessage(withID: remoteMessage.id)
             if let index = homeMessages.firstIndex(of: homeMessage) {
                 homeMessages.remove(at: index)
             }
@@ -91,20 +91,20 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
     func didAppear(_ homeMessage: HomeMessage) {
         switch homeMessage {
         case .remoteMessage(let remoteMessage):
-            Logger.remoteMessaging.info("Remote message shown: \(remoteMessage.id)")
+            Logger.remoteMessaging.info("Remote message shown: \(remoteMessage.id, privacy: .public)")
             if remoteMessage.isMetricsEnabled {
                 Pixel.fire(pixel: .remoteMessageShown,
                            withAdditionalParameters: additionalParameters(for: remoteMessage.id))
             }
 
-            if !remoteMessagingClient.store.hasShownRemoteMessage(withID: remoteMessage.id) {
-                Logger.remoteMessaging.info("Remote message shown for first time: \(remoteMessage.id)")
+            if !remoteMessagingStore.hasShownRemoteMessage(withID: remoteMessage.id) {
+                Logger.remoteMessaging.info("Remote message shown for first time: \(remoteMessage.id, privacy: .public)")
                 if remoteMessage.isMetricsEnabled {
                     Pixel.fire(pixel: .remoteMessageShownUnique,
                                withAdditionalParameters: additionalParameters(for: remoteMessage.id))
                 }
                 Task {
-                    await remoteMessagingClient.store.updateRemoteMessage(withID: remoteMessage.id, asShown: true)
+                    await remoteMessagingStore.updateRemoteMessage(withID: remoteMessage.id, asShown: true)
                 }
             }
 
@@ -115,7 +115,7 @@ final class HomePageConfiguration: HomePageMessagesConfiguration {
     }
 
     private func additionalParameters(for messageID: String) -> [String: String] {
-        privacyProDataReporter.mergeRandomizedParameters(for: .messageID(messageID),
+        subscriptionDataReporter.mergeRandomizedParameters(for: .messageID(messageID),
                                                          with: [PixelParameters.message: "\(messageID)"])
     }
 }

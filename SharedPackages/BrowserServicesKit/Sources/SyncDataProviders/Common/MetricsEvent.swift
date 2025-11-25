@@ -22,5 +22,4 @@ import Foundation
 public enum MetricsEvent {
     case overrideEmailProtectionSettings
     case localTimestampResolutionTriggered(feature: Feature)
-    case syncAttemptedToDeleteRoot(rootUUID: String)
 }

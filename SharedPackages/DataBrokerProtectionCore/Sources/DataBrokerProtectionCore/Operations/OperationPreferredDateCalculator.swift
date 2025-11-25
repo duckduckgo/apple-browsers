@@ -54,7 +54,7 @@ struct OperationPreferredDateCalculator {
             return currentPreferredRunDate
         case .optOutRequested:
             return Date().addingTimeInterval(schedulingConfig.confirmOptOutScan.hoursToSeconds)
-        case .matchRemovedByUser:
+        case .matchRemovedByUser, .optOutSubmittedAndAwaitingEmailConfirmation:
             return nil
         }
     }
@@ -91,6 +91,8 @@ struct OperationPreferredDateCalculator {
             // to prevent repeated scheduling of those former child broker opt-out jobs.
             // https://app.asana.com/0/0/1208832818650310/f
             return date.now.addingTimeInterval(schedulingConfig.hoursUntilNextOptOutAttempt.hoursToSeconds)
+        case .optOutSubmittedAndAwaitingEmailConfirmation:
+            return date.now.addingTimeInterval(schedulingConfig.hoursUntilNextAttemptForOptOutWithEmailConfirmation.hoursToSeconds)
         }
     }
 

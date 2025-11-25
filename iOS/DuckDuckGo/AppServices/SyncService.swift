@@ -39,7 +39,7 @@ final class SyncService {
     }
 
     init(bookmarksDatabase: CoreDataDatabase,
-         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+         privacyConfigurationManager: PrivacyConfigurationManaging,
          keyValueStore: ThrowingKeyValueStoring,
          application: UIApplication = UIApplication.shared) {
         self.application = application
@@ -59,13 +59,15 @@ final class SyncService {
         syncErrorHandler = SyncErrorHandler()
 
         syncDataProviders = SyncDataProviders(
+            privacyConfigurationManager: privacyConfigurationManager,
             bookmarksDatabase: bookmarksDatabase,
             secureVaultErrorReporter: SecureVaultReporter(),
             settingHandlers: [FavoritesDisplayModeSyncHandler()],
             favoritesDisplayModeStorage: FavoritesDisplayModeStorage(),
             syncErrorHandler: syncErrorHandler,
             faviconStoring: Favicons.shared,
-            tld: AppDependencyProvider.shared.storageCache.tld
+            tld: AppDependencyProvider.shared.storageCache.tld,
+            featureFlagger: AppDependencyProvider.shared.featureFlagger
         )
 
         sync = DDGSync(

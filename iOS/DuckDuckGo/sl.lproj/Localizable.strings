@@ -68,10 +68,13 @@
 "action.title.enable.protection" = "Omogoči zaščito zasebnosti";
 
 /* No comment provided by engineer. */
-"action.title.forgetAll" = "Zapri zavihke in izbriši podatke";
+"action.title.forgetAll" = "Počisti zavihke in podatke";
 
 /* Confirmation message */
 "action.title.forgetAllDone" = "Zavihki in podatki so izbrisani";
+
+/* Fire button title when AI chat clearing is enabled */
+"action.title.forgetAllWithAIChat" = "Počisti zavihke, podatke in klepete Duck.ai";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Odpri v ozadju";
@@ -133,6 +136,9 @@
 /* New tab menu item opening a new tab */
 "action.title.tab.new" = "Nov zavihek";
 
+/* VPN menu item */
+"action.title.vpn" = "VPN";
+
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Spodaj";
 
@@ -183,6 +189,15 @@
 
 /* Title for alert shown when sync credentials paused for too many items */
 "alert.sync-credentials-paused-title" = "Sinhronizacija gesla je zaustavljena";
+
+/* Description for alert shown when sync error occurs because of bad credit cards data */
+"alert.sync-credit-cards-bad-data-error-description" = "Nekatere kreditne kartice imajo napačno obliko zapisa ali so predolge in niso bile sinhronizirane.";
+
+/* Description for alert shown when sync credit cards paused for too many items */
+"alert.sync-credit-cards-paused-description" = "Dosegli ste največje število kreditnih kartic. Nekaj kreditnih kartic izbrišite, če želite nadaljevati sinhronizacijo.";
+
+/* Title for alert shown when sync credit cards paused for too many items */
+"alert.sync-credit-cards-paused-title" = "Sinhronizacija kreditnih kartic je začasno zaustavljena";
 
 /* Title for sync error alert */
 "alert.sync-error" = "Napaka pri sinhronizaciji in varnostnem kopiranju";
@@ -447,6 +462,51 @@
 
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Omogočite zaščito e-pošte Email Protection";
+
+/* Button title to dismiss the autofill extension activation view */
+"autofill.extension.activation.done.button.title" = "Končano";
+
+/* Title shown when the autofill extension activation succeeds */
+"autofill.extension.activation.title" = "Samodejno izpolnjevanje gesel je aktivirano.";
+
+/* Footer text describing what enabling the autofill extension does */
+"autofill.extension.footer" = "Gesla, shranjena v DuckDuckGo, uporabljajte v vseh aplikacijah v napravi.";
+
+/* Header text shown when the autofill extension is disabled */
+"autofill.extension.header.disabled" = "Samodejno izpolnjevanje v drugih aplikacijah";
+
+/* Header text shown when the autofill extension is enabled */
+"autofill.extension.header.enabled" = "Omogočeno je samodejno izpolnjevanje v drugih aplikacijah";
+
+/* Dismiss button title for the Autofill extension promotion */
+"autofill.extension.promo.button.dismiss.title" = "Nastavi pozneje v nastavitvah";
+
+/* CTA button title for the Autofill extension promotion */
+"autofill.extension.promo.button.title" = "Vklopi samodejno izpolnjevanje v drugih aplikacijah";
+
+/* Message for the Autofill extension promotion */
+"autofill.extension.promo.message" = "Uporabite DuckDuckGo za varno samodejno izpolnjevanje gesel za vse vaše aplikacije.";
+
+/* Title for the Autofill extension promotion */
+"autofill.extension.promo.title" = "Hitro se prijavite v aplikacije brez vnašanja gesel";
+
+/* Title for screen showing autofill extension settings */
+"autofill.extension.screen.title" = "Samodejno izpolnjevanje gesel v drugih aplikacijah";
+
+/* Status text when autofill extension is disabled */
+"autofill.extension.status.off" = "Vklopi";
+
+/* Status text when autofill extension is enabled */
+"autofill.extension.status.on" = "Vključeno";
+
+/* Title for autofill extension settings row */
+"autofill.extension.title" = "Samodejno izpolnjevanje v drugih aplikacijah";
+
+/* Button title that opens system settings to turn off the autofill extension */
+"autofill.extension.turn.off.button.title" = "Izklopi v sistemskih nastavitvah ...";
+
+/* Button title that triggers system prompt to turn on the autofill extension */
+"autofill.extension.turn.on.button.title" = "Vklopi ...";
 
 /* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
 "autofill.hide-card-cvv" = "Skrij CVV";
@@ -784,8 +844,8 @@
 /* Section header for the autofill settings screen */
 "autofill.settings.import-passwords.section-header" = "Uvozi gesla";
 
-/* Section header for the autofill settings screen */
-"autofill.settings.options.section-header" = "Možnosti";
+/* Section header for the autofill passwords options section of the settings screen */
+"autofill.settings.options.section-header" = "Možnosti gesel";
 
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Prijavite težavo s samodejnim izpolnjevanjem";
@@ -963,6 +1023,9 @@
 
 /* No comment provided by engineer. */
 "Cohort: %@" = "Kohorta: %@";
+
+/* No comment provided by engineer. */
+"Configuration" = "Konfiguracija";
 
 /* No comment provided by engineer. */
 "Confirm" = "Potrdi";
@@ -1311,6 +1374,18 @@
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "Funkcije umetne inteligence DuckDuckGo so zasebne in neobvezne. Vaši podatki se ne uporabljajo za usposabljanje umetne inteligence.";
+
+/* Description text explaining what the 'Ask Follow-up Questions' toggle does */
+"duckai.settings.allowFollowUpQuestions.section.description" = "Prikaži gumbe in povezave Duck.ai v rezultatih iskanja DuckDuckGo.";
+
+/* Title for section that groups settings related to search results */
+"duckai.settings.allowFollowUpQuestions.section.title" = "Bližnjice iskanja";
+
+/* Toggle text to enable/disable Duck.ai to ask follow-up questions */
+"duckai.settings.allowFollowUpQuestions.toggle" = "Postavite nadaljnja vprašanja";
+
+/* Title for section that groups shortcuts related to browser */
+"duckai.settings.browserShortcuts.section.title" = "Bližnjice za brskalnik";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Naslovna vrstica";
@@ -1709,7 +1784,7 @@
 "feedback.form.submit" = "Potrdi";
 
 /* Title of the feedback form */
-"feedback.form.title" = "Pomagajte izboljšati Privacy Pro";
+"feedback.form.title" = "Pomagajte izboljšati naročnino DuckDuckGo";
 
 /* Category for Duck.ai feedback */
 "feedback.general.category.ai-chat" = "Duck.ai";
@@ -1918,6 +1993,9 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Uvozite gesla v DuckDuckGo";
 
+/* Placeholder text for the duck.ai input field */
+"input.field.placeholder.duckai" = "Vprašaj zasebno";
+
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "VPN morate omogočiti v aplikaciji DuckDuckGo.";
 
@@ -1994,6 +2072,9 @@
 "keyCommandShowAllTabs" = "Prikaži vse zavihke";
 
 /* No comment provided by engineer. */
+"Last Processed: %@" = "Zadnja obdelava: %@";
+
+/* No comment provided by engineer. */
 "Loading brokers..." = "Nalaganje posrednikov ...";
 
 /* Summary text for the macOS browser waitlist */
@@ -2055,6 +2136,33 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Ime gostitelja pravilnika za sporočila";
+
+/* No comment provided by engineer. */
+"Messages" = "Sporočila";
+
+/* The name of the Address Bar button when referenced in settings. */
+"mobile.customization.addressbar.button" = "Gumb naslovne vrstice";
+
+/* The title of the Address Bar button. */
+"mobile.customization.addressbar.title" = "Naslovna vrstica";
+
+/* A title to indicate that if selected the current button will be hidden from the UI */
+"mobile.customization.option.none.long" = "Skrij ta gumb";
+
+/* Indicates that no button was selected to be shown in the specified location. */
+"mobile.customization.option.none.short" = "Brez";
+
+/* The title of the section in settings containing the customizable buttons. */
+"mobile.customization.section.title" = "Prilagodljivi gumbi";
+
+/* The label for the toggle that hides and shows the reload button. */
+"mobile.customization.show.reload.button.title" = "Prikaži gumb za ponovno nalaganje";
+
+/* The name of the address bar button when referenced in settings. */
+"mobile.customization.toolbar.button" = "Gumb orodne vrstice";
+
+/* A label for the access point to customization of the Toolbar. */
+"mobile.customization.toolbar.title" = "Orodna vrstica";
 
 /* Title for back button in navigation bar */
 "navbar.back-button.title" = "Nazaj";
@@ -2290,11 +2398,41 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Bližnjice";
 
+/* Confirm button for the new address bar picker */
+"new.address.bar.picker.confirm" = "Potrdi";
+
+/* Footer text for the new address bar picker */
+"new.address.bar.picker.footer" = "Prilagodite v nastavitvah > Funkcije UI";
+
+/* Not now button for the new address bar picker */
+"new.address.bar.picker.not.now" = "Ne zdaj";
+
+/* Option for search and AI in the new address bar picker */
+"new.address.bar.picker.search.and.ai" = "Iskanje in Duck.ai";
+
+/* Option for search only in the new address bar picker */
+"new.address.bar.picker.search.only" = "Samo iskanje";
+
+/* Headline for the new address bar picker modal */
+"new.address.bar.picker.subheadline.private" = "Želite lažji dostop do zasebnega klepeta z umetno inteligenco?";
+
+/* Title for the new address bar picker modal */
+"new.address.bar.picker.title" = "Možnost naslovne vrstice";
+
+/* No comment provided by engineer. */
+"No Logs" = "Ni dnevnikov";
+
+/* No comment provided by engineer. */
+"No messages" = "Ni sporočil";
+
 /* No comment provided by engineer. */
 "No results found" = "Ni rezultatov";
 
 /* No comment provided by engineer. */
 "OK" = "V REDU";
+
+/* Display title for Duck.ai in our address bar */
+"omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Upravljani piškotki";
@@ -2307,9 +2445,6 @@
 
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Izberite brskalnik";
-
-/* Message to highlight browser capability of private searches */
-"onboarding.browsers.features.privateSearch.title" = "Privzeto išče zasebno";
 
 /* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
 "onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo je na voljo tudi z %1$@, ki vključuje omrežje %2$@ in %3$@.";
@@ -2353,18 +2488,6 @@
 /* The title of the onboarding dialog popup to select the preferred App icon. */
 "onboarding.highlights.appIconSelection.title" = "Katera barva mi najbolje pristaja?";
 
-/* Message to highlight how the browser allows you to block cookie pop-ups */
-"onboarding.highlights.browsers.features.cookiePopups.title" = "Blokirajte pojavna okna za piškotke";
-
-/* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Blokiranje ciljnih oglasov";
-
-/* Message to highlight browser capability of swiftly erase browsing data */
-"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Izbriši podatke o brskanju z enim gumbom";
-
-/* Message to highlight browser capability of blocking 3rd-party trackers */
-"onboarding.highlights.browsers.features.trackerBlocker.title" = "Blokirajte sledilnike tretjih oseb";
-
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Zaščite so aktivirane!";
 
@@ -2373,6 +2496,21 @@
 
 /* The title of the onboarding dialog popup */
 "onboarding.highlights.intro.title" = "Pozdravljeni!\n\nSte pripravljeni na hitrejši brskalnik, ki vas zaščiti?";
+
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.searchExperience.cta" = "Naslednji";
+
+/* The footer disclaimer text for the search experience onboarding screen. */
+"onboarding.highlights.searchExperience.footer" = "Funkcije umetne inteligence so zasebne in izbirne. Spremembe lahko opravite v Nastavitvah > Funkcije UI.";
+
+/* Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold). */
+"onboarding.highlights.searchExperience.footer.formatted" = "Funkcije umetne inteligence so zasebne in izbirne. Spremembe lahko opravite v %@";
+
+/* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
+"onboarding.highlights.searchExperience.footer.settings-path-bold" = "Nastavitvah > Funkcije UI.";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Želite lažji dostop do zasebnega klepeta z umetno inteligenco?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Pa začnimo!";
@@ -2470,12 +2608,6 @@
 /* Deactivate button */
 "pm.deactivate" = "Deaktiviraj";
 
-/* Label for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.label" = "E-naslov (neobvezno)";
-
-/* Placeholder for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.placeholder" = "ime@email.com";
-
 /* Placeholder for the General Feedback step in the Privacy Pro feedback form */
 "ppro.feedback-form.general-feedback.placeholder" = "Pošljite nam povratne informacije ...";
 
@@ -2509,8 +2641,11 @@
 /* Title for the category selection section in the Privacy Pro feedback form */
 "ppro.feedback-form.select-category.title" = "IZBERITE KATEGORIJO";
 
-/* Text for the body of the PPro feedback form */
-"ppro.feedback-form.text-1" = "Ste našli težavo, ki ni obravnavana v našem [središču za pomoč](duck://)? Vsekakor želimo vedeti o tem.\n\nNavedite e-poštni naslov, če želite, da vas kontaktiramo glede te težave (morda ne bomo mogli odgovoriti na vse težave):";
+/* Support link text displayed beneath the feedback form description */
+"ppro.feedback-form.support.text" = "Potrebujete pomoč? [Obrnite se na podporo.](https://duckduckgo.com/subscription-support)";
+
+/* Intro text for the body of the PPro feedback form */
+"ppro.feedback-form.text-1" = "Ste našli težavo, ki ni obravnavana v našem [središču za pomoč](duck://)? Vsekakor želimo vedeti o tem.\n\nPovejte nam, kaj se dogaja:";
 
 /* Text for the body of the PPro feedback form */
 "ppro.feedback-form.text-2" = "Poleg zgoraj vnesenih podatkov pošljemo nekaj anonimnih informacij z vašimi povratnimi informacijami:";
@@ -2554,11 +2689,11 @@
 /* Caption of the option to show the Threat Protection preferences */
 "preferences.threat-protection.caption" = "Izboljšana zaščita DuckDuckGo prestreže pogoste grožnje in obenem skrbi za varnost vaše povezave.\n[Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
-/* Description of incorrectly formatted data error when syncing. */
-"prefrences.sync.bad-request.description" = "Nekateri zaznamki ali gesla so napačno oblikovani ali predolgi in niso bili sinhronizirani.";
+/* Description of incorrectly formatted bookmarks data error when syncing. */
+"prefrences.sync.bookmarks-bad-request.description" = "Nekateri zaznamki so napačno oblikovani ali predolgi in niso bili sinhronizirani.";
 
 /* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
-"prefrences.sync.bookmarks-limit-exceeded-action" = "Upravljanje zaznamkov";
+"prefrences.sync.bookmarks-limit-exceeded-action" = "Upravljanje zaznamkov …";
 
 /* Description for sync bookmarks limits exceeded warning */
 "prefrences.sync.bookmarks-limit-exceeded-description" = "Dosegli ste največje število zaznamkov. Izbrišite jih nekaj, če želite nadaljevati sinhronizacijo.";
@@ -2569,11 +2704,23 @@
 /* Description for sync credentials limits exceeded warning */
 "prefrences.sync.credentials-limit-exceeded-description" = "Dosegli ste največje število gesel. Izbrišite jih nekaj, če želite nadaljevati sinhronizacijo.";
 
+/* Description of incorrectly formatted credit card data error when syncing. */
+"prefrences.sync.credit-cards-bad-request.description" = "Nekatere kreditne kartice imajo napačno obliko zapisa ali so predolge in niso bile sinhronizirane.";
+
+/* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
+"prefrences.sync.credit-cards-limit-exceeded-action" = "Upravljaj kreditne kartice…";
+
+/* Description for sync credit cards limits exceeded warning */
+"prefrences.sync.credit-cards-limit-exceeded-description" = "Dosegli ste največje število kreditnih kartic. Nekaj jih izbrišite, če želite nadaljevati sinhronizacijo.";
+
 /* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Sinhronizacija je naletela na napako. Poskusite onemogočiti sinhronizacijo v tej napravi in nato znova vzpostavite povezavo z drugo napravo ali obnovitveno kodo.";
 
 /* Title for sync limits exceeded warning */
 "prefrences.sync.limit-exceeded-title" = "Sinhronizacija je začasno zaustavljena";
+
+/* Description of incorrectly formatted password data error when syncing. */
+"prefrences.sync.passwords-bad-request.description" = "Nekatera gesla so napačno oblikovana ali predolga in niso bila sinhronizirana.";
 
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Sinhronizacija in varnostno kopiranje sta začasno nedostopna.";
@@ -2648,6 +2795,9 @@
 "prompt.custom.url.scheme.title" = "Odpri v drugi aplikaciji?";
 
 /* No comment provided by engineer. */
+"Recent Processing Logs" = "Nedavni dnevniki obdelave";
+
+/* No comment provided by engineer. */
 "Relatives: %@" = "Sorodniki: %@";
 
 /* No comment provided by engineer. */
@@ -2664,9 +2814,6 @@
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Poišči ali vnesi naslov";
-
-/* Placeholder text for the search input field when searching Duck.ai */
-"search.input.field.placeholder.search.duckai" = "Vprašajte Duck.ai";
 
 /* Search input toggle button title for asking AI Chat */
 "search.input.toggle.aichat.button.title" = "Duck.ai";
@@ -2704,9 +2851,6 @@
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Več o";
 
-/* About page subscription sentence: deprecated */
-"settings.about.subscription.sentence.deprecated" = "Poleg tega ponujamo tudi [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), naročniško storitev tri v enem, integrirano v naš brskalnik. Naročniki na Privacy Pro dobijo še večjo zaščito zasebnosti s hitrim in preprostim omrežjem [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), ki pomaga zaščititi vašo spletno dejavnost, storitev, ki najde in odstrani vaše osebne podatke s spletnih mest za iskanje ljudi, in storitev, ki obnovi vašo identiteto, če je ukradena.";
-
 /* About page subscription sentence: rebranding + AI chat */
 "settings.about.subscription.sentence.rebranding.ai" = "Poleg tega ponujamo tudi [naročnino DuckDuckGo],(ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) integrirano v naš brskalnik. Naročniki dobijo še večjo zaščito zasebnosti s hitrim in preprostim omrežjem [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), ki pomaga zaščititi vašo spletno dejavnost, dostop do naprednih modelov umetne inteligence v naši zasebni storitvi klepetanja z umetno inteligenco Duck.ai, storitev, ki najde in odstrani vaše osebne podatke s spletnih mest za iskanje ljudi, in storitev, ki obnovi vašo identiteto, če je ukradena.";
 
@@ -2734,20 +2878,14 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Prikaži polni naslov spletnega mesta";
 
-/* Caption indicating the default option in the AI experimental picker */
-"settings.ai.experimental.picker.default" = "(privzeto)";
-
-/* Caption indicating the experimental option in the AI experimental picker */
-"settings.ai.experimental.picker.experimental" = "(Poskusno)";
-
-/* Footer under the AI experimental picker, descriptive sentence without link */
-"settings.ai.experimental.picker.footer" = "Preizkusite našo eksperimentalno možnost, da vprašate Duck.ai neposredno iz naslovne vrstice.";
-
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Iskanje in Duck.ai";
 
 /* Title for the 'Search Only' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_only" = "Samo iskanje";
+
+/* Footer under the AI picker, descriptive sentence without link */
+"settings.ai.new.picker.footer" = "Preizkusite novo možnost preklopa med iskanjem in Duck.ai v naslovni vrstici.";
 
 /* Top level settings for managing AI Chat shortcuts */
 "settings.aichat.manage.shortcuts" = "Upravljanje bližnjic Duck.ai";
@@ -2764,6 +2902,12 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Nastavitve modula Search Assist";
 
+/* Title of hide AI-generated images settings link */
+"settings.aifeatures.hide.ai.generated.images" = "Skrij slike, ki jih ustvari umetna inteligenca";
+
+/* Description of what the hide AI-generated images feature does */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Iz rezultatov iskanja slik odstrani slike, ki jih je ustvarila umetna inteligenca";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Vedno vklopljeno";
 
@@ -2778,6 +2922,12 @@
 
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Onemogoči, da preprečiš samodejno odpiranje povezav v drugih nameščenih aplikacijah.";
+
+/* Autoclear action option to clear tabs and data */
+"settings.autoclear.tabs.and.data" = "Počisti zavihke in podatke";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Počisti zavihke, podatke in klepete Duck.ai";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Predlogi za iskanje";
@@ -2800,6 +2950,12 @@
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Povratne informacije o brskalniku";
 
+/* Settings screen footer text explaining that Fire Button also clears AI chat history */
+"settings.clear.aichat.history.footer" = "Fire Button bo izbrisal tudi zgodovino Duck.ai, vključno s pripetimi klepeti.";
+
+/* Settings screen cell text for clearing AI chat history */
+"settings.clear.aichat.history.title" = "Počisti klepete Duck.ai";
+
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Samodejno počisti podatke";
 
@@ -2818,6 +2974,12 @@
 /* Settings title for the customize section */
 "settings.customize" = "Prilagodi";
 
+/* Clear data button explanation */
+"settings.data.clear.forget.all.duck.ai.footnote" = "Počisti vse zavihke, klepete Duck.ai in podatke za vsa spletna mesta, ki jih niste zaščitili s funkcijo Fireproof.";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.footnote" = "Počisti vse zavihke in podatke za vsa spletna mesta, ki jih niste zaščitili s funkcijo Fireproof.";
+
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Počiščenje podatkov";
 
@@ -2831,7 +2993,7 @@
 "settings.duckduckgo.on.other.platforms" = "DuckDuckGo na drugih platformah";
 
 /* Subscription expired tittle message */
-"settings.duckduckgo.subscription.expired.title" = "Vaša naročnina na Privacy Pro je potekla";
+"settings.duckduckgo.subscription.expired.title" = "Vaša naročnina na DuckDuckGo je potekla";
 
 /* Explanation in Settings how the email protection feature works */
 "settings.email.protection.explanation" = "Blokirajte sledilnike e-pošte in skrijte svoj naslov, ne da bi vam bilo treba zamenjati ponudnika e-pošte.\n[Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)";
@@ -2920,9 +3082,6 @@
 /* Label describing a feature which is turned on */
 "settings.on" = "Vključeno";
 
-/* Product name for the subscription bundle */
-"settings.ppro" = "Privacy Pro";
-
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Pravilnik o zasebnosti in pogoji storitve";
 
@@ -2992,23 +3151,14 @@
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Imam naročnino";
 
-/* Subscription expired tittle message */
-"settings.subscription.expired.title" = "Vaša naročnina na Privacy Pro je potekla";
-
 /* Settings cell for Subscription Feedback */
 "settings.subscription.feedback" = "Naročnina DuckDuckGo";
-
-/* Settings cell for Subscription Feedback */
-"settings.subscription.feedback.deprecated" = "Privacy Pro";
 
 /* Identity theft restoration cell subtitle for privacy pro */
 "settings.subscription.ITR.subtitle" = "Če vam ukradejo identiteto, vam jo bomo pomagali povrniti.";
 
 /* Identity theft restoration cell title for privacy pro */
 "settings.subscription.ITR.title" = "Identity Theft Restoration (Obnovitev v primeru kraje identitete)";
-
-/* Get Privacy Pro button text for privacy pro */
-"settings.subscription.learn.more" = "Pridobite Privacy Pro";
 
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Nastavitve naročnine";
@@ -3027,9 +3177,6 @@
 
 /* Try DuckDuckGo Subscription Free button text */
 "settings.subscription.try.free.button" = "Poskusite brezplačno";
-
-/* Try Privacy Pro Free button text for privacy pro */
-"settings.subscription.try.free.no.ai.chat" = "Preizkusite Privacy Pro brezplačno";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -3133,6 +3280,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "Brskalnik DuckDuckGo nudi zaščito pred sledenjem, ki je vedno aktivna. [Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* No comment provided by engineer. */
+"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Prikaže dnevnike iz zadnje minute, da pomaga diagnosticirati težave takoj po osvežitvi.";
+
 /* Description on a report broken site page. */
 "site.not.working.description" = "Izberite možnost, ki najbolje opisuje težavo, na katero ste naleteli.";
 
@@ -3167,6 +3317,9 @@
 "siteFeedback.urlPlaceholder" = "Katera spletna stran je poškodovana?";
 
 /* No comment provided by engineer. */
+"Status: Invalidated" = "Status: Neveljaven";
+
+/* No comment provided by engineer. */
 "Stored Hostname: %@" = "Shranjeno ime gostitelja: %@";
 
 /* No comment provided by engineer. */
@@ -3180,9 +3333,6 @@
 
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Urejanje e-naslova";
-
-/* Header title for the subscription activation view */
-"subscription.activate.header.title" = "V to napravo dodajte svojo naročnino na Privacy Pro";
 
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Prekliči";
@@ -3202,9 +3352,6 @@
 /* Button title for starting the process of adding subscription via email address */
 "subscription.activate.via.email.button" = "Začni";
 
-/* Description for adding subscription via email address */
-"subscription.activate.via.email.description" = "Uporabite e-poštni naslov, da v to napravo dodate Privacy Pro.";
-
 /* Title for adding subscription via email address */
 "subscription.activate.via.email.title" = "Dodaj prek e-poštnega naslova";
 
@@ -3216,15 +3363,6 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "Dodajte e-naslov";
-
-/* Header for section for activating subscription on other devices */
-"subscription.add.to.devices.header" = "Dodajte Privacy Pro v druge naprave";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.add.to.devices.no.email.footer" = "Dodajte Privacy Pro v svoje druge naprave prek storitve Apple ID ali z uporabo e-poštnega naslova. **[Več o tem](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.add.to.devices.with.email.footer" = "Uporabite ta e-naslov za dodajanje naročnine v drugih napravah v aplikaciji DuckDuckGo. Pojdite v Nastavitve > Privacy Pro > Imam naročnino. **[Več o tem](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Text for the manage billing page */
 "subscription.billing.google.text" = "Vaša naročnina je bila kupljena v trgovini Google Play. Če želite podaljšati naročnino, odprite nastavitve naročnine v trgovini Google Play v napravi, v kateri ste prijavljeni v isti račun Google, kot ste ga uporabili za prvotni nakup naročnine.";
@@ -3247,8 +3385,17 @@
 /* Caption of the Duck.ai settings (do not modify link) */
 "subscription.duck.ai.caption" = "Zasebno klepetajte z modeli umetne inteligence, na voljo ekskluzivno za naročnike.\n[Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)";
 
+/* Instruction to configure ai settings in AI Features settings */
+"subscription.duck.ai.configure.duck.ai.footer" = "Konfigurirajte Duck.ai v nastavitvah funkcij umetne inteligence.";
+
+/* Title of the setting page action to open AI features settings */
+"subscription.duck.ai.enable.ai.features" = "Omogočite v nastavitvah funkcij umetne inteligence";
+
 /* Title of the setting page action to open Duck.ai */
 "subscription.duck.ai.open" = "Odprite Duck.ai";
+
+/* Title of the setting item action to open AI Features Settings */
+"subscription.duck.ai.open.ai.features.settings" = "Upravljajte v nastavitvah funkcij umetne inteligence";
 
 /* Title of the setting page of Duck.ai */
 "subscription.duck.ai.title" = "Duck.ai";
@@ -3264,9 +3411,6 @@
 
 /* FAQ Button */
 "subscription.faq" = "Pogosta vprašanja in podpora";
-
-/* FAQ Description */
-"subscription.faq.description" = "Poiščite odgovore na pogosta vprašanja ali stopite v stik s podporo za naročnino Privacy Pro na naših straneh za pomoč.";
 
 /* Share Feedback Button */
 "subscription.feedback" = "Delite povratne informacije";
@@ -3301,14 +3445,11 @@
 /* View plans button text */
 "subscription.notFound.view.plans" = "Oglejte si načrte";
 
-/* Hero Text for Personal information removal */
-"subscription.pir.hero" = "Aktivirajte Privacy Pro na namizju, da nastavite Personal Information Removal";
-
-/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Privacy Pro>, and the second, the menu entry. i.e. <I have a Subscription> */
+/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Subscribe to DuckDuckGo>, and the second, the menu entry. i.e. <I have a Subscription> */
 "subscription.pir.heroText" = "V brskalniku DuckDuckGo za namizje pojdite na %1$@ in kliknite %2$@, da začnete.";
 
-/* Settings references a menu in the Desktop app, Privacy Pro, references our product name */
-"subscription.pir.heroTextLocation" = "Nastavitve > Privacy Pro";
+/* Settings references a menu in the Desktop app, Subscribe to DuckDuckGo, references our product name */
+"subscription.pir.heroTextLocation" = "Nastavitve > Naročite se na DuckDuckGo";
 
 /* Menu item for enabling Personal Information Removal on Desktop */
 "subscription.pir.heroTextMenyEntry" = "Imam naročnino";
@@ -3333,9 +3474,6 @@
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Odstrani iz te naprave";
-
-/* Remove from device confirmation dialog text */
-"subscription.remove.from.device.text" = "V tej napravi ne boste mogli več dostopati do naročnine Privacy Pro. S tem ne boste preklicali naročnine, ki bo ostala aktivna v drugih napravah.";
 
 /* Remove from device confirmation dialog title */
 "subscription.remove.from.device.title" = "Želite odstraniti iz te naprave?";
@@ -3409,9 +3547,6 @@
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Vaša letna naročnina se bo obnovila dne %@.";
 
-/* Navigation bar Title for subscriptions */
-"subscription.title" = "Privacy Pro";
-
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Brezplačni preizkus je aktiven";
 
@@ -3447,6 +3582,36 @@
 
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Sinhronizirajte in varnostno kopirajte svoja gesla";
+
+/* Button title to start backup */
+"sync.recovery.alternative.prompt.backup.button" = "Sinhronizacija in varnostno kopiranje te naprave";
+
+/* Footer for the sync recovery prompt */
+"sync.recovery.alternative.prompt.footer" = "Če shranite obnovitveno kodo, boste v prihodnje lahko zlahka obnovili svoja gesla.";
+
+/* Message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message" = "Sinhronizirana gesla lahko obnovite le, če imate dostop do druge naprave ali če uporabite obnovitveno kodo, ki je na voljo v sklopu nastavitve funkcije Sinhronizacija in varnostno kopiranje.";
+
+/* Learn more link after the message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message.link" = "[Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
+
+/* Button title to start sync QR scan */
+"sync.recovery.alternative.prompt.sync.button" = "Skeniranje obnovitvene kode";
+
+/* Title for the sync recovery prompt describing how to use Sync recovery code to restore passwords */
+"sync.recovery.alternative.prompt.title" = "Ali druga naprava ni na voljo? Skenirajte svojo obnovitveno kodo.";
+
+/* Button title to show alternatives */
+"sync.recovery.prompt.continue.button" = "Ali nimate druge naprave?";
+
+/* Message for the sync recovery prompt */
+"sync.recovery.prompt.message" = "Gesla DuckDuckGo se ne prenesejo s storitvijo iCloud, ker so šifrirana v vaši napravi. Vse ostalo je že tukaj.";
+
+/* Button title to sync with another device */
+"sync.recovery.prompt.sync.button" = "Sinhronizacija z drugo napravo";
+
+/* Title for the sync recovery prompt, replacing %@ with the device type (e.g. iPhone, iPad) */
+"sync.recovery.prompt.title" = "Ali ste v novi napravi %@? Sinhronizirajmo vaša gesla.";
 
 /* Caption for a button to remove device from Sync */
 "sync.remove-device.action" = "Odstrani";
@@ -3540,6 +3705,9 @@
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
+
+/* No comment provided by engineer. */
+"Version: %@" = "Različica: %@";
 
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Iskanje";
@@ -3801,6 +3969,45 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Sporočilo od %@:";
+
+/* Text for the badge displayed on the Subscription menu item during the win-back campaign */
+"win-back.campaign.menu.badge.text" = "PRIHRANITE 25 %";
+
+/* CTA of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.cta" = "Oglejte si ponudbo";
+
+/* Dismiss of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.dismiss" = "Ne zdaj";
+
+/* Message of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.message" = "Ostanite zaščiteni z našim omrežjem VPN, zasebno umetno inteligenco in drugimi storitvami. Znova se naročite še danes in prihranite 25 %.";
+
+/* Subtitle of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.subtitle" = "Samo za omejen čas";
+
+/* Title of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.title" = "Pogrešamo vas!\nPrihranite 25 %.";
+
+/* CTA of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.cta" = "Oglejte si ponudbo";
+
+/* Button for using existing subscription during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.existing.subscription.button" = "Imam naročnino";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.logged-out.subtitle" = "Časovno omejena ponudba!";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.subtitle" = "Ostanite zaščiteni z našim omrežjem VPN, zasebno umetno inteligenco in drugimi storitvami. Ponovno se naročite še danes in prihranite 25 %.Časovno omejena ponudba.";
+
+/* Title of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.title" = "Znova se naročite in prihranite 25 %";
+
+/* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Ponovno naročanje";
+
+/* Subtitle for resubscribe CTA for users eligible for the win-back offer. */
+"win-back.campaign.subscription.settings.page.resubscribe.subtitle" = "Ostanite zaščiteni z našim omrežjem VPN, zasebno umetno inteligenco in drugimi storitvami.\nČasovno omejena ponudba.";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Iščete različico za računalnike Mac?";

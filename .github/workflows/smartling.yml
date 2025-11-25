@@ -1,0 +1,244 @@
+name: Smartling
+
+on:
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: "Platform"
+        type: choice
+        required: true
+        default: 'iOS'
+        options:
+           - iOS
+           - macOS
+      action:
+        description: "Action"
+        type: choice
+        required: true
+        default: 'upload'
+        options:
+           - upload
+           - approve
+           - status
+           - download
+      job-id:
+        description: "Smartling job ID"
+        required: false
+        type: string
+  pull_request:
+    types: [labeled]
+
+jobs:
+  smartling:
+    # Only run for Smartling-specific label triggers
+    if: |
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event_name == 'pull_request' && (github.event.label.name == 'start ios translation' || github.event.label.name == 'start macos translation' || github.event.label.name == 'authorize translation' || github.event.label.name == 'download translations' || github.event.label.name == 'check translation status'))
+    runs-on: macos-15
+    name: Smartling translation job
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GITHUB_REPOSITORY: ${{ github.repository }}
+
+    steps:
+
+      - name: Determine trigger and parameters
+        id: params
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          LABEL_NAME: ${{ github.event.label.name }}
+          HEAD_REF: ${{ github.head_ref }}
+          REF_NAME: ${{ github.ref_name }}
+          INPUT_PLATFORM: ${{ github.event.inputs.platform }}
+          INPUT_ACTION: ${{ github.event.inputs.action }}
+          INPUT_JOB_ID: ${{ github.event.inputs['job-id'] }}
+        run: |
+          if [[ "$EVENT_NAME" == "pull_request" ]]; then
+            # Label trigger
+            if [[ "$LABEL_NAME" == "start ios translation" ]]; then
+              echo "platform=iOS" >> $GITHUB_OUTPUT
+              echo "action=upload" >> $GITHUB_OUTPUT
+            elif [[ "$LABEL_NAME" == "start macos translation" ]]; then
+              echo "platform=macOS" >> $GITHUB_OUTPUT
+              echo "action=upload" >> $GITHUB_OUTPUT
+            elif [[ "$LABEL_NAME" == "authorize translation" ]]; then
+              # Will be set from comment parsing
+              echo "action=approve" >> $GITHUB_OUTPUT
+              echo "needs_comment_parsing=true" >> $GITHUB_OUTPUT
+            elif [[ "$LABEL_NAME" == "download translations" ]]; then
+              # Will be set from comment parsing
+              echo "action=download" >> $GITHUB_OUTPUT
+              echo "needs_comment_parsing=true" >> $GITHUB_OUTPUT
+            elif [[ "$LABEL_NAME" == "check translation status" ]]; then
+              # Will be set from comment parsing
+              echo "action=check_status" >> $GITHUB_OUTPUT
+              echo "needs_comment_parsing=true" >> $GITHUB_OUTPUT
+            fi
+            echo "is_pr_trigger=true" >> $GITHUB_OUTPUT
+            echo "branch=$HEAD_REF" >> $GITHUB_OUTPUT
+          else
+            # Manual workflow dispatch
+            echo "platform=$INPUT_PLATFORM" >> $GITHUB_OUTPUT
+            echo "action=$INPUT_ACTION" >> $GITHUB_OUTPUT
+            echo "job_id=$INPUT_JOB_ID" >> $GITHUB_OUTPUT
+            echo "is_pr_trigger=false" >> $GITHUB_OUTPUT
+            echo "branch=$REF_NAME" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Assert not main or release branch
+        run: |
+          BRANCH="${{ steps.params.outputs.branch }}"
+          if [[ "$BRANCH" == "main" ]] || [[ "$BRANCH" == release/* ]]; then
+            echo "🚫 Smartling workflow should not run on main or release branches"
+            echo "This workflow is for feature branches only"
+            exit 1
+          fi
+          echo "✅ Running on branch: $BRANCH"
+
+      - name: Check out the code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          ref: ${{ steps.params.outputs.branch }}
+          persist-credentials: true
+
+      - name: Parse job details from PR comments
+        if: steps.params.outputs.needs_comment_parsing == 'true'
+        id: parse_comment
+        run: |
+          ./scripts/smartling/pr_comment_parser.sh "${{ github.event.pull_request.number }}"
+
+      - name: Resolve environment vars
+        run: |
+          echo "ACTION=${{ steps.params.outputs.action }}" >> $GITHUB_ENV
+          echo "IS_PR_TRIGGER=${{ steps.params.outputs.is_pr_trigger }}" >> $GITHUB_ENV
+          echo "PLATFORM=${{ steps.params.outputs.platform || steps.parse_comment.outputs.platform }}" >> $GITHUB_ENV
+          echo "JOB_ID=${{ steps.params.outputs.job_id || steps.parse_comment.outputs.job_id }}" >> $GITHUB_ENV
+          echo "BRANCH=${{ steps.params.outputs.branch }}" >> $GITHUB_ENV
+          echo "WORKFLOW_URL=${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}" >> $GITHUB_ENV
+
+      - name: Set Smartling credentials
+        if: ${{ env.PLATFORM == 'iOS' || env.PLATFORM == 'macOS' }}
+        run: |
+          case "$PLATFORM" in
+            iOS)
+              echo "SMARTLING_USER_ID=${{ secrets.IOS_SMARTLING_USER_ID }}" >> $GITHUB_ENV
+              echo "SMARTLING_USER_SECRET=${{ secrets.IOS_SMARTLING_USER_SECRET }}" >> $GITHUB_ENV
+              echo "SMARTLING_PROJECT_ID=${{ vars.IOS_SMARTLING_PROJECT_ID }}" >> $GITHUB_ENV
+              ;;
+            macOS)
+              echo "SMARTLING_USER_ID=${{ secrets.MACOS_SMARTLING_USER_ID }}" >> $GITHUB_ENV
+              echo "SMARTLING_USER_SECRET=${{ secrets.MACOS_SMARTLING_USER_SECRET }}" >> $GITHUB_ENV
+              echo "SMARTLING_PROJECT_ID=${{ vars.MACOS_SMARTLING_PROJECT_ID }}" >> $GITHUB_ENV
+              ;;
+          esac
+
+      - name: Select Xcode
+        uses: ./.github/actions/select-xcode-version
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          pip install aiohttp
+
+      - name: Install xmlstarlet (required for macOS export)
+        if: ${{ env.PLATFORM == 'macOS' && env.ACTION == 'upload' }}
+        run: |
+          brew install xmlstarlet
+
+      - name: Export
+        id: export
+        if: ${{ env.ACTION == 'upload' }}
+        run: |
+          set -e -o pipefail
+          ./${PLATFORM}/scripts/loc_export.sh | xcbeautify
+
+      - name: Upload to Smartling
+        if: ${{ env.ACTION == 'upload' }}
+        id: upload
+        run: |
+          ./scripts/smartling/smartling_upload.sh "$PLATFORM" "$BRANCH"
+          cat upload_message.txt >> $GITHUB_STEP_SUMMARY
+
+      - name: Check Status
+        if: ${{ env.ACTION == 'status' }}
+        run: |
+          ./scripts/smartling/smartling_status.sh "$JOB_ID" "$PLATFORM"
+          cat status_message.txt >> $GITHUB_STEP_SUMMARY
+
+      - name: Approve Job
+        if: ${{ env.ACTION == 'approve' }}
+        id: approve
+        run: |
+          ./scripts/smartling/smartling_approve.sh "$JOB_ID" "$PLATFORM"
+          cat approve_message.txt >> $GITHUB_STEP_SUMMARY
+
+      - name: Download from Smartling
+        if: ${{ env.ACTION == 'download' }}
+        id: download
+        run: |
+          ./scripts/smartling/smartling_download.sh "$JOB_ID" "$PLATFORM"
+          cat download_message.txt >> $GITHUB_STEP_SUMMARY
+
+      - name: Check Status and Update Labels
+        if: ${{ env.ACTION == 'check_status' }}
+        id: check_status
+        run: |
+          ./scripts/smartling/smartling_status_check.sh "$JOB_ID" "$PLATFORM"
+          cat check_status_message.txt >> $GITHUB_STEP_SUMMARY
+
+      # PR-specific steps (comments and labels)
+      - name: Post PR comment
+        if: ${{ env.IS_PR_TRIGGER == 'true' }}
+        run: |
+          ACTION="$ACTION"
+          MESSAGE_FILE="${ACTION}_message.txt"
+          PLATFORM="$PLATFORM"
+          JOB_ID="${{ steps.upload.outputs.job_id || env.JOB_ID }}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+
+          if [ -f "$MESSAGE_FILE" ]; then
+            ./scripts/smartling/pr_comment_poster.sh "$PR_NUMBER" "$MESSAGE_FILE" "$PLATFORM" "$JOB_ID" "$ACTION"
+          fi
+
+      - name: Update PR labels after upload
+        if: ${{ env.IS_PR_TRIGGER == 'true' && env.ACTION == 'upload' }}
+        run: |
+          STATUS="${{ steps.upload.outputs.upload_success == 'true' && 'success' || 'failed' }}"
+          TRIGGER_LABEL="${{ github.event.label.name }}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+
+          ./scripts/smartling/pr_label_manager.sh after_upload "$PR_NUMBER" "$STATUS" "$TRIGGER_LABEL"
+
+      - name: Update PR labels after approval
+        if: ${{ env.IS_PR_TRIGGER == 'true' && env.ACTION == 'approve' }}
+        run: |
+          STATUS="${{ steps.approve.outputs.approve_success == 'true' && 'success' || 'failed' }}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+
+          ./scripts/smartling/pr_label_manager.sh after_approve "$PR_NUMBER" "$STATUS"
+
+      - name: Update PR labels after download
+        if: ${{ env.IS_PR_TRIGGER == 'true' && env.ACTION == 'download' }}
+        run: |
+          RESULT="${{ steps.download.outputs.download_result }}"
+          STATUS="${RESULT:-failed}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+
+          ./scripts/smartling/pr_label_manager.sh after_download "$PR_NUMBER" "$STATUS"
+
+      - name: Update PR labels after status check
+        if: ${{ env.IS_PR_TRIGGER == 'true' && env.ACTION == 'check_status' }}
+        run: |
+          STATUS="${{ steps.check_status.outputs.status_result }}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+
+          ./scripts/smartling/pr_label_manager.sh check_status "$PR_NUMBER" "$STATUS"

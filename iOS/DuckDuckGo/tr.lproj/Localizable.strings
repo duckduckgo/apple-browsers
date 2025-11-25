@@ -68,10 +68,13 @@
 "action.title.enable.protection" = "Gizlilik Korumasını Etkinleştir";
 
 /* No comment provided by engineer. */
-"action.title.forgetAll" = "Sekmeleri Kapat ve Verileri Temizle";
+"action.title.forgetAll" = "Sekmeleri ve Verileri Temizle";
 
 /* Confirmation message */
 "action.title.forgetAllDone" = "Sekmeler ve veriler temizlendi";
+
+/* Fire button title when AI chat clearing is enabled */
+"action.title.forgetAllWithAIChat" = "Sekmeleri, Verileri ve Duck.ai Sohbetlerini Temizle";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Arka Planda Aç";
@@ -133,6 +136,9 @@
 /* New tab menu item opening a new tab */
 "action.title.tab.new" = "Yeni Sekme";
 
+/* VPN menu item */
+"action.title.vpn" = "VPN";
+
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Alt";
 
@@ -183,6 +189,15 @@
 
 /* Title for alert shown when sync credentials paused for too many items */
 "alert.sync-credentials-paused-title" = "Şifre Senkronizasyonu Duraklatıldı";
+
+/* Description for alert shown when sync error occurs because of bad credit cards data */
+"alert.sync-credit-cards-bad-data-error-description" = "Bazı kredi kartları yanlış biçimlendirilmiş veya çok uzun ve senkronize edilmedi.";
+
+/* Description for alert shown when sync credit cards paused for too many items */
+"alert.sync-credit-cards-paused-description" = "Maksimum kredi kartı sayısına ulaştınız. Senkronizasyona devam etmek için lütfen bazı kredi kartlarını silin.";
+
+/* Title for alert shown when sync credit cards paused for too many items */
+"alert.sync-credit-cards-paused-title" = "Kredi Kartı Senkronizasyonu Durduruldu";
 
 /* Title for sync error alert */
 "alert.sync-error" = "Senkronizasyon ve Yedekleme Hatası";
@@ -447,6 +462,51 @@
 
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Email Protection'ı Etkinleştir";
+
+/* Button title to dismiss the autofill extension activation view */
+"autofill.extension.activation.done.button.title" = "Bitti";
+
+/* Title shown when the autofill extension activation succeeds */
+"autofill.extension.activation.title" = "Şifreleri otomatik doldurma etkinleştirildi!";
+
+/* Footer text describing what enabling the autofill extension does */
+"autofill.extension.footer" = "DuckDuckGo'da kaydettiğiniz şifreleri cihazınızdaki tüm uygulamalarda kullanın.";
+
+/* Header text shown when the autofill extension is disabled */
+"autofill.extension.header.disabled" = "Diğer Uygulamalarda Otomatik Doldurma";
+
+/* Header text shown when the autofill extension is enabled */
+"autofill.extension.header.enabled" = "Diğer Uygulamalarda Otomatik Doldurma Etkinleştirildi";
+
+/* Dismiss button title for the Autofill extension promotion */
+"autofill.extension.promo.button.dismiss.title" = "Ayarlar'da Daha Sonra'yı ayarlayın";
+
+/* CTA button title for the Autofill extension promotion */
+"autofill.extension.promo.button.title" = "Diğer Uygulamalarda Otomatik Doldurmayı Etkinleştir";
+
+/* Message for the Autofill extension promotion */
+"autofill.extension.promo.message" = "Tüm uygulamalarda şifreleri güvenli bir şekilde otomatik doldurmak için DuckDuckGo'yu kullanın.";
+
+/* Title for the Autofill extension promotion */
+"autofill.extension.promo.title" = "Şifre yazmadan uygulamalarınızda hızlıca oturum açın";
+
+/* Title for screen showing autofill extension settings */
+"autofill.extension.screen.title" = "Diğer Uygulamalarda Şifreleri Otomatik Doldur";
+
+/* Status text when autofill extension is disabled */
+"autofill.extension.status.off" = "Aç";
+
+/* Status text when autofill extension is enabled */
+"autofill.extension.status.on" = "Açık";
+
+/* Title for autofill extension settings row */
+"autofill.extension.title" = "Diğer Uygulamalarda Otomatik Doldurma";
+
+/* Button title that opens system settings to turn off the autofill extension */
+"autofill.extension.turn.off.button.title" = "Sistem Ayarları'ndan Kapat...";
+
+/* Button title that triggers system prompt to turn on the autofill extension */
+"autofill.extension.turn.on.button.title" = "Aç...";
 
 /* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
 "autofill.hide-card-cvv" = "CVV'yi gizle";
@@ -784,8 +844,8 @@
 /* Section header for the autofill settings screen */
 "autofill.settings.import-passwords.section-header" = "Şifreleri İçe Aktar";
 
-/* Section header for the autofill settings screen */
-"autofill.settings.options.section-header" = "Seçenekler";
+/* Section header for the autofill passwords options section of the settings screen */
+"autofill.settings.options.section-header" = "Şifre Seçenekleri";
 
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Otomatik Doldurmayla ilgili bir sorunu bildirin";
@@ -963,6 +1023,9 @@
 
 /* No comment provided by engineer. */
 "Cohort: %@" = "Grup: %@";
+
+/* No comment provided by engineer. */
+"Configuration" = "Yapılandırma";
 
 /* No comment provided by engineer. */
 "Confirm" = "Onayla";
@@ -1311,6 +1374,18 @@
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo AI özellikleri gizli ve isteğe bağlıdır. Verileriniz yapay zekayı eğitmek için kullanılmaz.";
+
+/* Description text explaining what the 'Ask Follow-up Questions' toggle does */
+"duckai.settings.allowFollowUpQuestions.section.description" = "DuckDuckGo arama sonuçlarında Duck.ai düğmelerini ve bağlantılarını göster.";
+
+/* Title for section that groups settings related to search results */
+"duckai.settings.allowFollowUpQuestions.section.title" = "Arama Kısayolları";
+
+/* Toggle text to enable/disable Duck.ai to ask follow-up questions */
+"duckai.settings.allowFollowUpQuestions.toggle" = "Takip Soruları Sorun";
+
+/* Title for section that groups shortcuts related to browser */
+"duckai.settings.browserShortcuts.section.title" = "Tarayıcı kısayolları";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Adres Çubuğu";
@@ -1709,7 +1784,7 @@
 "feedback.form.submit" = "Gönder";
 
 /* Title of the feedback form */
-"feedback.form.title" = "Privacy Pro'nun İyileştirilmesine Yardımcı Olun";
+"feedback.form.title" = "DuckDuckGo Aboneliğini Geliştirmeye Yardımcı Olun";
 
 /* Category for Duck.ai feedback */
 "feedback.general.category.ai-chat" = "Duck.ai";
@@ -1918,6 +1993,9 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Şifrelerinizi DuckDuckGo'ya aktarın";
 
+/* Placeholder text for the duck.ai input field */
+"input.field.placeholder.duckai" = "Özel olarak sor";
+
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "VPN'i DuckDuckGo Uygulamasından etkinleştirmeniz gerekir.";
 
@@ -1994,6 +2072,9 @@
 "keyCommandShowAllTabs" = "Tüm Sekmeleri Göster";
 
 /* No comment provided by engineer. */
+"Last Processed: %@" = "Son İşlenme: %@";
+
+/* No comment provided by engineer. */
 "Loading brokers..." = "Brokerlar yükleniyor...";
 
 /* Summary text for the macOS browser waitlist */
@@ -2055,6 +2136,33 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Mesaj politikası ana bilgisayar adı";
+
+/* No comment provided by engineer. */
+"Messages" = "Mesajlar";
+
+/* The name of the Address Bar button when referenced in settings. */
+"mobile.customization.addressbar.button" = "Adres Çubuğu Düğmesi";
+
+/* The title of the Address Bar button. */
+"mobile.customization.addressbar.title" = "Adres Çubuğu";
+
+/* A title to indicate that if selected the current button will be hidden from the UI */
+"mobile.customization.option.none.long" = "Bu Düğmeyi Gizle";
+
+/* Indicates that no button was selected to be shown in the specified location. */
+"mobile.customization.option.none.short" = "Yok";
+
+/* The title of the section in settings containing the customizable buttons. */
+"mobile.customization.section.title" = "Özelleştirilebilir Düğmeler";
+
+/* The label for the toggle that hides and shows the reload button. */
+"mobile.customization.show.reload.button.title" = "Yeniden Yükle Düğmesini Göster";
+
+/* The name of the address bar button when referenced in settings. */
+"mobile.customization.toolbar.button" = "Araç Çubuğu Düğmesi";
+
+/* A label for the access point to customization of the Toolbar. */
+"mobile.customization.toolbar.title" = "Araç Çubuğu";
 
 /* Title for back button in navigation bar */
 "navbar.back-button.title" = "Geri";
@@ -2290,11 +2398,41 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Kısayollar";
 
+/* Confirm button for the new address bar picker */
+"new.address.bar.picker.confirm" = "Onayla";
+
+/* Footer text for the new address bar picker */
+"new.address.bar.picker.footer" = "Ayarlar > AI Özellikleri bölümünden ayarlarınızı değiştirebilirsiniz";
+
+/* Not now button for the new address bar picker */
+"new.address.bar.picker.not.now" = "Şimdi Değil";
+
+/* Option for search and AI in the new address bar picker */
+"new.address.bar.picker.search.and.ai" = "Arama ve Duck.ai";
+
+/* Option for search only in the new address bar picker */
+"new.address.bar.picker.search.only" = "Yalnızca Arama";
+
+/* Headline for the new address bar picker modal */
+"new.address.bar.picker.subheadline.private" = "Gizli AI sohbetine daha kolay erişmek ister misiniz?";
+
+/* Title for the new address bar picker modal */
+"new.address.bar.picker.title" = "Adres çubuğu seçeneği";
+
+/* No comment provided by engineer. */
+"No Logs" = "Günlük Yok";
+
+/* No comment provided by engineer. */
+"No messages" = "Mesaj yok";
+
 /* No comment provided by engineer. */
 "No results found" = "Sonuç bulunamadı";
 
 /* No comment provided by engineer. */
 "OK" = "Tamam";
+
+/* Display title for Duck.ai in our address bar */
+"omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Yönetilen Çerezler";
@@ -2307,9 +2445,6 @@
 
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Tarayıcınızı Seçin";
-
-/* Message to highlight browser capability of private searches */
-"onboarding.browsers.features.privateSearch.title" = "Varsayılan olarak gizli arama yapın";
 
 /* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
 "onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo ayrıca %2$@ ve %3$@ ile kullanılabilen bir %1$@ özelliğine de sahiptir.";
@@ -2353,18 +2488,6 @@
 /* The title of the onboarding dialog popup to select the preferred App icon. */
 "onboarding.highlights.appIconSelection.title" = "Bana hangi renk daha çok yakışıyor?";
 
-/* Message to highlight how the browser allows you to block cookie pop-ups */
-"onboarding.highlights.browsers.features.cookiePopups.title" = "Çerez açılır pencerelerini engelle";
-
-/* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Hedefli reklamları engelleyin";
-
-/* Message to highlight browser capability of swiftly erase browsing data */
-"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Tarama verilerini tek bir düğmeyle silin";
-
-/* Message to highlight browser capability of blocking 3rd-party trackers */
-"onboarding.highlights.browsers.features.trackerBlocker.title" = "Üçüncü taraf izleyicileri engelleyin";
-
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Korumalar etkinleştirildi!";
 
@@ -2373,6 +2496,21 @@
 
 /* The title of the onboarding dialog popup */
 "onboarding.highlights.intro.title" = "Merhaba.\n\nSizi koruyan daha hızlı bir tarayıcıya hazır mısınız?";
+
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.searchExperience.cta" = "Sonraki";
+
+/* The footer disclaimer text for the search experience onboarding screen. */
+"onboarding.highlights.searchExperience.footer" = "Yapay zeka özellikleri gizli ve isteğe bağlıdır. Ayarlar > AI Özellikleri'nden değişiklik yapabilirsiniz.";
+
+/* Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold). */
+"onboarding.highlights.searchExperience.footer.formatted" = "Yapay zekâ özellikleri gizli ve isteğe bağlıdır. %@'nden değişiklik yapabilirsiniz";
+
+/* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
+"onboarding.highlights.searchExperience.footer.settings-path-bold" = "Ayarlar > AI Özellikleri";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Gizli AI sohbetine daha kolay erişmek ister misiniz?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Hadi Başlayalım!";
@@ -2470,12 +2608,6 @@
 /* Deactivate button */
 "pm.deactivate" = "Devre dışı bırak";
 
-/* Label for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.label" = "E-posta (isteğe bağlı)";
-
-/* Placeholder for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.placeholder" = "name@email.com";
-
 /* Placeholder for the General Feedback step in the Privacy Pro feedback form */
 "ppro.feedback-form.general-feedback.placeholder" = "Lütfen bize geri bildirimlerinizi iletin…";
 
@@ -2509,8 +2641,11 @@
 /* Title for the category selection section in the Privacy Pro feedback form */
 "ppro.feedback-form.select-category.title" = "BİR KATEGORİ SEÇİN";
 
-/* Text for the body of the PPro feedback form */
-"ppro.feedback-form.text-1" = "Yardım merkezimizde ([help center](duck://)) ele alınmayan bir sorun mu buldunuz? Ne olduğunu kesinlikle öğrenmek isteriz.\n\nBu sorunla ilgili olarak sizinle iletişime geçmemizi istiyorsanız bir e-posta adresi sağlayın (tüm sorunlara yanıt veremeyebiliriz):";
+/* Support link text displayed beneath the feedback form description */
+"ppro.feedback-form.support.text" = "Yardıma mı ihtiyacınız var? [Destek ekibiyle iletişime geçin.](https://duckduckgo.com/subscription-support)";
+
+/* Intro text for the body of the PPro feedback form */
+"ppro.feedback-form.text-1" = "[Yardım merkezimizde](duck://)) ele alınmayan bir sorun mu buldunuz? Ne olduğunu kesinlikle öğrenmek isteriz.\n\nBize neler olduğunu anlatın:";
 
 /* Text for the body of the PPro feedback form */
 "ppro.feedback-form.text-2" = "Yukarıda girilen bilgilere ek olarak, geri bildiriminizle birlikte bazı anonimleştirilmiş bilgiler gönderiyoruz:";
@@ -2554,11 +2689,11 @@
 /* Caption of the option to show the Threat Protection preferences */
 "preferences.threat-protection.caption" = "DuckDuckGo'nun gelişmiş korumaları, bağlantıyı güvende tutarken yaygın tehditleri durdurur.\n[Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
-/* Description of incorrectly formatted data error when syncing. */
-"prefrences.sync.bad-request.description" = "Bazı yer işaretleri veya parolalar yanlış veya çok uzun biçimlendirilmiş ve senkronize edilmemiş.";
+/* Description of incorrectly formatted bookmarks data error when syncing. */
+"prefrences.sync.bookmarks-bad-request.description" = "Bazı yer işaretleri yanlış biçimlendirilmiş veya çok uzun olduğu için senkronize edilmedi.";
 
 /* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
-"prefrences.sync.bookmarks-limit-exceeded-action" = "Yer İmlerini Yönet";
+"prefrences.sync.bookmarks-limit-exceeded-action" = "Yer İşaretlerini Yönet…";
 
 /* Description for sync bookmarks limits exceeded warning */
 "prefrences.sync.bookmarks-limit-exceeded-description" = "Maksimum yer işareti sayısına ulaştınız. Lütfen senkronizasyona devam etmek için bazılarını silin.";
@@ -2569,11 +2704,23 @@
 /* Description for sync credentials limits exceeded warning */
 "prefrences.sync.credentials-limit-exceeded-description" = "Maksimum şifre sayısına ulaştınız. Lütfen senkronizasyona devam etmek için bazılarını silin.";
 
+/* Description of incorrectly formatted credit card data error when syncing. */
+"prefrences.sync.credit-cards-bad-request.description" = "Bazı kredi kartları yanlış biçimlendirilmiş veya çok uzun ve senkronize edilmedi.";
+
+/* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
+"prefrences.sync.credit-cards-limit-exceeded-action" = "Kredi kartlarını yönetin…";
+
+/* Description for sync credit cards limits exceeded warning */
+"prefrences.sync.credit-cards-limit-exceeded-description" = "Maksimum kredi kartı sayısına ulaştınız. Senkronizasyona devam etmek için lütfen bazılarını silin.";
+
 /* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Senkronizasyon bir hatayla karşılaştı. Bu cihazda senkronizasyonu devre dışı bırakmayı deneyin ve ardından başka bir cihaz veya kurtarma kodunuzu kullanarak yeniden bağlanın.";
 
 /* Title for sync limits exceeded warning */
 "prefrences.sync.limit-exceeded-title" = "Senkronizasyon Duraklatıldı";
+
+/* Description of incorrectly formatted password data error when syncing. */
+"prefrences.sync.passwords-bad-request.description" = "Bazı şifreler yanlış biçimlendirilmiş veya çok uzun olduğu için senkronize edilmedi.";
 
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Senkronizasyon ve Yedekleme geçici olarak kullanılamıyor.";
@@ -2648,6 +2795,9 @@
 "prompt.custom.url.scheme.title" = "Başka Bir Uygulamada Açılsın mı?";
 
 /* No comment provided by engineer. */
+"Recent Processing Logs" = "Son İşlem Günlükleri";
+
+/* No comment provided by engineer. */
 "Relatives: %@" = "Akrabalar: %@";
 
 /* No comment provided by engineer. */
@@ -2664,9 +2814,6 @@
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Adres ara veya gir";
-
-/* Placeholder text for the search input field when searching Duck.ai */
-"search.input.field.placeholder.search.duckai" = "Duck.ai'a sor";
 
 /* Search input toggle button title for asking AI Chat */
 "search.input.toggle.aichat.button.title" = "Duck.ai";
@@ -2704,9 +2851,6 @@
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Hakkında";
 
-/* About page subscription sentence: deprecated */
-"settings.about.subscription.sentence.deprecated" = "Buna ek olarak, tarayıcımıza entegre edilmiş üçü bir arada abonelik hizmeti [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)'yu da sunuyoruz. Privacy Pro aboneleri, internetteki etkinliğinizin güvenliğini sağlayan hızlı ve basit bir [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), kişisel bilgilerinizi kişi bulma sitelerinden bulup kaldırma hizmeti ve çalınması durumunda kimliğinizi geri yükleme özelliği ile daha fazla gizlilik koruması elde eder.";
-
 /* About page subscription sentence: rebranding + AI chat */
 "settings.about.subscription.sentence.rebranding.ai" = "Ayrıca, tarayıcımıza entegre edilmiş bir [DuckDuckGo aboneliği](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) de sunuyoruz. Aboneler, internetteki etkinliklerinin güvenliğini sağlayan hızlı ve basit bir [VPN] (ddgQuickLink: //duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), yapay zekâ sohbet hizmetimiz Duck.ai'daki gelişmiş yapay zekâ modellerine erişim, kişisel bilgilerinizi kişi bulma sitelerinden bulan ve kaldıran ve çalınması durumunda kimliğinizi geri yükleyen bir hizmet ile daha fazla gizlilik koruması elde eder.";
 
@@ -2734,20 +2878,14 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Tam Site Adresini Göster";
 
-/* Caption indicating the default option in the AI experimental picker */
-"settings.ai.experimental.picker.default" = "(Varsayılan)";
-
-/* Caption indicating the experimental option in the AI experimental picker */
-"settings.ai.experimental.picker.experimental" = "(Deneysel)";
-
-/* Footer under the AI experimental picker, descriptive sentence without link */
-"settings.ai.experimental.picker.footer" = "Adres Çubuğundan Duck.ai'a doğrudan soru sormanızı sağlayan deneysel seçeneğimizi deneyin.";
-
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Arama ve Duck.ai";
 
 /* Title for the 'Search Only' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_only" = "Yalnızca Arama";
+
+/* Footer under the AI picker, descriptive sentence without link */
+"settings.ai.new.picker.footer" = "Adres Çubuğunda arama ve Duck.ai arasında geçiş yapmanızı sağlayan yeni seçeneği deneyin.";
 
 /* Top level settings for managing AI Chat shortcuts */
 "settings.aichat.manage.shortcuts" = "Duck.ai Kısayollarını Yönet";
@@ -2764,6 +2902,12 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Search Assist Ayarları";
 
+/* Title of hide AI-generated images settings link */
+"settings.aifeatures.hide.ai.generated.images" = "Yapay Zeka Tarafından Oluşturulan Görselleri Gizle";
+
+/* Description of what the hide AI-generated images feature does */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Görsel arama sonuçlarından yapay zeka tarafından üretilmiş görselleri filtreler";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Her Zaman Açık";
 
@@ -2778,6 +2922,12 @@
 
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Bağlantıların yüklenmiş olan diğer uygulamalarda otomatik olarak açılmasını önlemek için devre dışı bırakın.";
+
+/* Autoclear action option to clear tabs and data */
+"settings.autoclear.tabs.and.data" = "Sekmeleri ve Verileri Temizle";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Sekmeleri, Verileri ve Duck.ai Sohbetlerini Temizle";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Arama Önerileri";
@@ -2800,6 +2950,12 @@
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Tarayıcı Geri Bildirimi";
 
+/* Settings screen footer text explaining that Fire Button also clears AI chat history */
+"settings.clear.aichat.history.footer" = "Fire Button, sabitlenmiş sohbetler dahil olmak üzere Duck.ai geçmişini de silecektir.";
+
+/* Settings screen cell text for clearing AI chat history */
+"settings.clear.aichat.history.title" = "Duck.ai Sohbetlerini Temizle";
+
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Verileri Otomatik Olarak Temizle";
 
@@ -2818,6 +2974,12 @@
 /* Settings title for the customize section */
 "settings.customize" = "Özelleştir";
 
+/* Clear data button explanation */
+"settings.data.clear.forget.all.duck.ai.footnote" = "Tüm sekmeleri, Duck.ai sohbetlerini ve fireproof uygulanmayan sitelere ait verileri temizler.";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.footnote" = "Tüm sekmeleri ve fireproof uygulanmayan sitelere ait verileri temizler.";
+
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Veri Temizleme";
 
@@ -2831,7 +2993,7 @@
 "settings.duckduckgo.on.other.platforms" = "Diğer Platformlarda DuckDuckGo";
 
 /* Subscription expired tittle message */
-"settings.duckduckgo.subscription.expired.title" = "Privacy Pro aboneliğiniz sona erdi";
+"settings.duckduckgo.subscription.expired.title" = "DuckDuckGo aboneliğinizin süresi doldu";
 
 /* Explanation in Settings how the email protection feature works */
 "settings.email.protection.explanation" = "E-posta sağlayıcınızı değiştirmeden e-posta izleyicileri engelleyin ve adresinizi gizleyin.\n[Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)";
@@ -2920,9 +3082,6 @@
 /* Label describing a feature which is turned on */
 "settings.on" = "Açık";
 
-/* Product name for the subscription bundle */
-"settings.ppro" = "Privacy Pro";
-
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Gizlilik Politikası ve Hizmet Şartları";
 
@@ -2992,23 +3151,14 @@
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Aboneliğim Var";
 
-/* Subscription expired tittle message */
-"settings.subscription.expired.title" = "Privacy Pro aboneliğiniz sona erdi";
-
 /* Settings cell for Subscription Feedback */
 "settings.subscription.feedback" = "DuckDuckGo Aboneliği";
-
-/* Settings cell for Subscription Feedback */
-"settings.subscription.feedback.deprecated" = "Privacy Pro";
 
 /* Identity theft restoration cell subtitle for privacy pro */
 "settings.subscription.ITR.subtitle" = "Kimliğiniz çalınırsa kurtarmanıza yardımcı olacağız";
 
 /* Identity theft restoration cell title for privacy pro */
 "settings.subscription.ITR.title" = "Identity Theft Restoration";
-
-/* Get Privacy Pro button text for privacy pro */
-"settings.subscription.learn.more" = "Privacy Pro'yu Al";
 
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Abonelik Ayarları";
@@ -3027,9 +3177,6 @@
 
 /* Try DuckDuckGo Subscription Free button text */
 "settings.subscription.try.free.button" = "Ücretsiz Deneyin";
-
-/* Try Privacy Pro Free button text for privacy pro */
-"settings.subscription.try.free.no.ai.chat" = "Privacy Pro'yu Ücretsiz Deneyin";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -3133,6 +3280,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "DuckDuckGo tarayıcısı, her zaman etkin olan izleme korumaları sunar. [Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* No comment provided by engineer. */
+"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Yenilemeden hemen sonra sorunları teşhis etmeye yardımcı olmak için son bir dakikanın günlüklerini gösterir.";
+
 /* Description on a report broken site page. */
 "site.not.working.description" = "Karşılaştığınız sorunu en iyi tanımlayan seçeneği seçin.";
 
@@ -3167,6 +3317,9 @@
 "siteFeedback.urlPlaceholder" = "Hangi web sitesi hatalı?";
 
 /* No comment provided by engineer. */
+"Status: Invalidated" = "Durum: Geçersiz kılındı";
+
+/* No comment provided by engineer. */
 "Stored Hostname: %@" = "Depolanan Ana Bilgisayar Adı: %@";
 
 /* No comment provided by engineer. */
@@ -3180,9 +3333,6 @@
 
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "E-postayı Düzenle";
-
-/* Header title for the subscription activation view */
-"subscription.activate.header.title" = "Privacy Pro aboneliğinizi bu cihaza ekleyin";
 
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "İptal";
@@ -3202,9 +3352,6 @@
 /* Button title for starting the process of adding subscription via email address */
 "subscription.activate.via.email.button" = "Başlayın";
 
-/* Description for adding subscription via email address */
-"subscription.activate.via.email.description" = "Bu cihaza Privacy Pro eklemek için bir e-posta adresi kullanın.";
-
 /* Title for adding subscription via email address */
 "subscription.activate.via.email.title" = "E-posta Adresiyle ekle";
 
@@ -3216,15 +3363,6 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "E-posta Ekle";
-
-/* Header for section for activating subscription on other devices */
-"subscription.add.to.devices.header" = "Privacy Pro'yu Diğer Cihazlara Ekleyin";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.add.to.devices.no.email.footer" = "Privacy Pro'yu diğer cihazlarınıza Apple ID aracılığıyla veya bir e-posta adresi bağlayarak ekleyin. **[Daha fazla bilgi edinin](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.add.to.devices.with.email.footer" = "Aboneliğinizi DuckDuckGo uygulamasındaki diğer cihazlarınıza eklemek için bu e-postayı kullanın. Ayarlar > Privacy Pro > Aboneliğim Var'a gidin. **[Daha fazla bilgi edinin](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Text for the manage billing page */
 "subscription.billing.google.text" = "Aboneliğiniz Google Play Store üzerinden satın alınmış. Aboneliğinizi yenilemek için lütfen ilk olarak aboneliğinizi satın alırken kullandığınız Google Hesabında oturum açılmış bir cihazda Google Play Store abonelik ayarlarını açın.";
@@ -3247,8 +3385,17 @@
 /* Caption of the Duck.ai settings (do not modify link) */
 "subscription.duck.ai.caption" = "Abonelere özel yapay zeka modelleriyle gizlice sohbet edin.\n[Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)";
 
+/* Instruction to configure ai settings in AI Features settings */
+"subscription.duck.ai.configure.duck.ai.footer" = "AI Özellikleri ayarlarından Duck.ai'ı yapılandırın.";
+
+/* Title of the setting page action to open AI features settings */
+"subscription.duck.ai.enable.ai.features" = "AI Özellikleri Ayarlarında etkinleştir";
+
 /* Title of the setting page action to open Duck.ai */
 "subscription.duck.ai.open" = "Duck.ai'ı aç";
+
+/* Title of the setting item action to open AI Features Settings */
+"subscription.duck.ai.open.ai.features.settings" = "AI Özellikleri Ayarlarında Yönet";
 
 /* Title of the setting page of Duck.ai */
 "subscription.duck.ai.title" = "Duck.ai";
@@ -3264,9 +3411,6 @@
 
 /* FAQ Button */
 "subscription.faq" = "SSS ve Destek";
-
-/* FAQ Description */
-"subscription.faq.description" = "Yardım sayfalarımızdan sıkça sorulan soruların yanıtlarını alabilir veya Privacy Pro destek ekibiyle iletişime geçebilirsiniz.";
 
 /* Share Feedback Button */
 "subscription.feedback" = "Geri Bildirim Paylaş";
@@ -3301,14 +3445,11 @@
 /* View plans button text */
 "subscription.notFound.view.plans" = "Planları Görüntüle";
 
-/* Hero Text for Personal information removal */
-"subscription.pir.hero" = "Personal Information Removal kurulumu için masaüstünde Privacy Pro'yu etkinleştirin";
-
-/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Privacy Pro>, and the second, the menu entry. i.e. <I have a Subscription> */
+/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Subscribe to DuckDuckGo>, and the second, the menu entry. i.e. <I have a Subscription> */
 "subscription.pir.heroText" = "Masaüstü için DuckDuckGo tarayıcısında %1$@ adresine gidin ve başlamak için %2$@ seçeneğine tıklayın.";
 
-/* Settings references a menu in the Desktop app, Privacy Pro, references our product name */
-"subscription.pir.heroTextLocation" = "Ayarlar > Privacy Pro";
+/* Settings references a menu in the Desktop app, Subscribe to DuckDuckGo, references our product name */
+"subscription.pir.heroTextLocation" = "Ayarlar > DuckDuckGo'ya abone ol";
 
 /* Menu item for enabling Personal Information Removal on Desktop */
 "subscription.pir.heroTextMenyEntry" = "Aboneliğim Var";
@@ -3333,9 +3474,6 @@
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Bu Cihazdan Kaldır";
-
-/* Remove from device confirmation dialog text */
-"subscription.remove.from.device.text" = "Privacy Pro aboneliğinize artık bu cihaz üzerinden erişemeyeceksiniz. Bu, aboneliğinizi iptal etmez ve abonelik diğer cihazlarınızda aktif kalır.";
 
 /* Remove from device confirmation dialog title */
 "subscription.remove.from.device.title" = "Bu cihazdan kaldırılsın mı?";
@@ -3409,9 +3547,6 @@
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Yıllık aboneliğiniz %@ tarihinde yenilenecek.";
 
-/* Navigation bar Title for subscriptions */
-"subscription.title" = "Privacy Pro";
-
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Ücretsiz Deneme Süresi Aktif";
 
@@ -3447,6 +3582,36 @@
 
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Şifrelerinizi Senkronize Edin ve Yedekleyin";
+
+/* Button title to start backup */
+"sync.recovery.alternative.prompt.backup.button" = "Bu Cihazı Sync & Backup";
+
+/* Footer for the sync recovery prompt */
+"sync.recovery.alternative.prompt.footer" = "Kurtarma Kodunuzu kaydetmek, gelecekte parolalarınızı kolayca geri yükleyebilmenizi sağlayabilir.";
+
+/* Message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message" = "Senkronize edilmiş parolalar yalnızca başka bir cihaza erişiminiz varsa veya Sync & Backup kurulumunda sağlanan Kurtarma Kodu kullanılarak geri yüklenebilir.";
+
+/* Learn more link after the message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message.link" = "[Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
+
+/* Button title to start sync QR scan */
+"sync.recovery.alternative.prompt.sync.button" = "Kurtarma Kodunu Tara";
+
+/* Title for the sync recovery prompt describing how to use Sync recovery code to restore passwords */
+"sync.recovery.alternative.prompt.title" = "Başka bir cihaz kullanılamıyor mu? Kurtarma Kodunuzu tarayın.";
+
+/* Button title to show alternatives */
+"sync.recovery.prompt.continue.button" = "Başka Cihazınız Yok mu?";
+
+/* Message for the sync recovery prompt */
+"sync.recovery.prompt.message" = "DuckDuckGo parolaları cihazınızda şifrelendiğinden, iCloud ile aktarılmaz. Geri kalan her şey zaten burada.";
+
+/* Button title to sync with another device */
+"sync.recovery.prompt.sync.button" = "Başka Bir Cihazla Senkronize Et";
+
+/* Title for the sync recovery prompt, replacing %@ with the device type (e.g. iPhone, iPad) */
+"sync.recovery.prompt.title" = "Yeni bir %@? Parolalarınızı senkronize edelim.";
 
 /* Caption for a button to remove device from Sync */
 "sync.remove-device.action" = "Kaldır";
@@ -3540,6 +3705,9 @@
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
+
+/* No comment provided by engineer. */
+"Version: %@" = "Sürüm: %@";
 
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Ara";
@@ -3801,6 +3969,45 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "%@ size bir mesaj gönderdi:";
+
+/* Text for the badge displayed on the Subscription menu item during the win-back campaign */
+"win-back.campaign.menu.badge.text" = "%25 TASARRUF EDİN";
+
+/* CTA of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.cta" = "Teklifi Gör";
+
+/* Dismiss of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.dismiss" = "Şimdi Değil";
+
+/* Message of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.message" = "VPN, özel yapay zekâ ve daha fazlasıyla güvende kalın. Bugün yeniden abone olup %25 tasarruf edin.";
+
+/* Subtitle of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.subtitle" = "Sadece sınırlı bir süre için";
+
+/* Title of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.title" = "Geri dönmenizi istiyoruz!\n%25 indirim kazanın.";
+
+/* CTA of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.cta" = "Teklifi Gör";
+
+/* Button for using existing subscription during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.existing.subscription.button" = "Aboneliğim Var";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.logged-out.subtitle" = "Sınırlı bir süre için!";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.subtitle" = "VPN, özel yapay zeka ve daha fazlasıyla güvende kalın. Bugün yeniden abone olup %25 tasarruf edin.Sınırlı bir süre için.";
+
+/* Title of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.title" = "Yeniden abone olup %25 tasarruf edin";
+
+/* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Yeniden abone ol";
+
+/* Subtitle for resubscribe CTA for users eligible for the win-back offer. */
+"win-back.campaign.subscription.settings.page.resubscribe.subtitle" = "VPN, özel yapay zekâ ve daha fazlasıyla güvende kalın.\nSınırlı bir süre için.";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Mac Sürümünü mü arıyorsunuz?";

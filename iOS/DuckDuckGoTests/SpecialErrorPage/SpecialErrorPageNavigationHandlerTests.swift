@@ -24,7 +24,7 @@ import MaliciousSiteProtection
 @testable import DuckDuckGo
 
 @Suite("Special Error Pages - SpecialErrorPageNavigationHandler Unit Tests", .serialized)
-struct SpecialErrorPageNavigationHandlerTests {
+final class SpecialErrorPageNavigationHandlerTests {
     private var sut: SpecialErrorPageNavigationHandler!
     private var webView: MockSpecialErrorWebView!
     private var sslErrorPageNavigationHandler: MockSSLErrorPageNavigationHandler!
@@ -32,6 +32,8 @@ struct SpecialErrorPageNavigationHandlerTests {
 
     @MainActor
     init() {
+        WKNavigationResponse.swizzleDealloc()
+
         let featureFlagger = MockFeatureFlagger()
         featureFlagger.enabledFeatureFlags = [.sslCertificatesBypass]
         webView = MockSpecialErrorWebView(frame: CGRect(), configuration: .nonPersistent())
@@ -41,6 +43,12 @@ struct SpecialErrorPageNavigationHandlerTests {
             sslErrorPageNavigationHandler: sslErrorPageNavigationHandler,
             maliciousSiteProtectionNavigationHandler: maliciousSiteProtectionNavigationHandler
         )
+    }
+
+    deinit {
+        // Avoid restoring dealloc here, because the test crashes anyway - this will be removed once the issue
+        // is fixed on the Xcode side:
+        // WKNavigationResponse.restoreDealloc()
     }
 
     @MainActor

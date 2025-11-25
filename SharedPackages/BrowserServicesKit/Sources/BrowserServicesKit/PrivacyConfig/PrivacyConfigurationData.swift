@@ -364,7 +364,12 @@ public struct PrivacyConfigurationData {
 // MARK: Encoding Functions
 extension PrivacyConfigurationData {
     /// Returns a dictionary representation of the configuration.
-    public func toJSONDictionary() -> [String: Any] {
+    ///
+    /// - Parameters:
+    ///   - excludeFeatures: defines a list of keys from the `features` sub-object
+    ///                      that will be skipped and not present in the resulting dictionary.
+    ///
+    public func toJSONDictionary(excludeFeatures: [String] = []) -> [String: Any] {
         var json = [String: Any]()
 
         if let version = self.version {
@@ -374,10 +379,10 @@ extension PrivacyConfigurationData {
         json[CodingKeys.unprotectedTemporary.rawValue] = self.unprotectedTemporary.map { $0.toJSONDictionary() }
 
         var featuresDict = [String: Any]()
-        if let allowlistJSON = trackerAllowlist.toTrackerAllowListJSONDictionary() {
+        if !excludeFeatures.contains(CodingKeys.trackerAllowlist.rawValue), let allowlistJSON = trackerAllowlist.toTrackerAllowListJSONDictionary() {
             featuresDict[CodingKeys.trackerAllowlist.rawValue] = allowlistJSON
         }
-        for (key, feature) in features {
+        for (key, feature) in features where !excludeFeatures.contains(key) {
             if let featureJSON = feature.toJSONDictionary() {
                 featuresDict[key] = featureJSON
             }
@@ -388,8 +393,13 @@ extension PrivacyConfigurationData {
     }
 
     /// Returns the JSON Data representation.
-    public func toJSONData() throws -> Data {
-        let jsonDict = self.toJSONDictionary()
+    ///
+    /// - Parameters:
+    ///   - excludeFeatures: defines a list of keys from the `features` sub-object
+    ///                      that will be skipped and not present in the resulting dictionary.
+    ///
+    public func toJSONData(excludeFeatures: [String] = []) throws -> Data {
+        let jsonDict = self.toJSONDictionary(excludeFeatures: excludeFeatures)
         return try JSONSerialization.data(withJSONObject: jsonDict, options: [])
     }
 }

@@ -1,6 +1,6 @@
-# Privacy Pro Subscription
+# Subscription
 
-The `Subscription` module in `BrowserServicesKit` provides the core subscription infrastructure shared between iOS and macOS DuckDuckGo applications. It handles authentication, purchase flows, entitlement management, and API communication for Privacy Pro features.
+The `Subscription` module in `BrowserServicesKit` provides the core subscription infrastructure shared between iOS and macOS DuckDuckGo applications. It handles authentication, purchase flows, entitlement management, and API communication for Subscription features.
 
 ## Table of Contents
 - [Overview](#overview)
@@ -19,7 +19,7 @@ The `Subscription` module in `BrowserServicesKit` provides the core subscription
 
 ## Overview
 
-Privacy Pro Subscription is a subscription service that provides enhanced privacy features for DuckDuckGo users. This module manages the entire subscription lifecycle, from initial purchase through authentication and entitlement verification.
+DuckDuckGo Subscription is a subscription service that provides enhanced privacy features for DuckDuckGo users. This module manages the entire subscription lifecycle, from initial purchase through authentication and entitlement verification.
 
 The `SubscriptionManagerV2` protocol and the `DefaultSubscriptionManagerV2` implementation serve as the framework's entry point, handling all business logic.
 
@@ -30,7 +30,7 @@ Most of the functionalities are documented in the code. Please check `protocol S
 ## Core Responsibilities
 
 - **Purchase Management**: Handle new subscriptions, restore existing ones, and process cancellations
-- **Entitlement Verification**: Manage and verify user access to Privacy Pro features
+- **Entitlement Verification**: Manage and verify user access to Subscription features
 - **Authentication**: Manage the complete lifecycle of subscription authentication tokens
 - **API Communication**: Handle all subscription-related API interactions
 
@@ -205,5 +205,5 @@ do {
 
 ## Additional Resources
 
-- **AOR**: [Apple Privacy Pro Accounts AOR](https://app.asana.com/1/137249556945/project/1209882303470922/list/1209882470267442)
+- **AOR**: [Apple Subscription Accounts AOR](https://app.asana.com/1/137249556945/project/1209882303470922/list/1209882470267442)
 - **Authentication Details**: [Networking/Auth README](./../Networking/Auth/README.md)

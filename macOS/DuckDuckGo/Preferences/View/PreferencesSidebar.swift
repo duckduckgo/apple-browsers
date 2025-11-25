@@ -24,11 +24,10 @@ extension Preferences {
 
     struct SidebarSectionHeader: View {
         let section: PreferencesSectionIdentifier
-        let isSubscriptionRebrandingOn: Bool
 
         var body: some View {
             Group {
-                if let name = section.displayName(isSubscriptionRebrandingOn: isSubscriptionRebrandingOn) {
+                if let name = section.displayName {
                     Text(name)
                         .padding(.horizontal, 16)
                         .padding(.bottom, 3)
@@ -46,8 +45,9 @@ extension Preferences {
         let isEnabled: Bool
         let action: () -> Void
         let settingsIconProvider: SettingsIconsProviding
-        let isSubscriptionRebrandingOn: Bool
         let isNew: Bool
+        var themeManager: ThemeManager
+        let shouldShowWinBackCampaignBadge: Bool
         @ObservedObject var protectionStatus: PrivacyProtectionStatus
 
         init(pane: PreferencePaneIdentifier,
@@ -55,8 +55,9 @@ extension Preferences {
              isEnabled: Bool = true,
              status: PrivacyProtectionStatus?,
              settingsIconProvider: SettingsIconsProviding,
-             isSubscriptionRebrandingOn: Bool,
              isNew: Bool = false,
+             themeManager: ThemeManager,
+             shouldShowWinBackCampaignBadge: Bool = false,
              action: @escaping () -> Void) {
             self.pane = pane
             self.isSelected = isSelected
@@ -64,26 +65,31 @@ extension Preferences {
             self.action = action
             self.protectionStatus = status ?? PrivacyProtectionStatus()
             self.settingsIconProvider = settingsIconProvider
-            self.isSubscriptionRebrandingOn = isSubscriptionRebrandingOn
             self.isNew = isNew
+            self.themeManager = themeManager
+            self.shouldShowWinBackCampaignBadge = shouldShowWinBackCampaignBadge
         }
 
         var body: some View {
             Button(action: action) {
                 HStack(alignment: .center, spacing: 6) {
-                    Image(nsImage: pane.preferenceIconName(for: settingsIconProvider, isSubscriptionRebrandingOn: isSubscriptionRebrandingOn))
+                    Image(nsImage: pane.preferenceIconName(for: settingsIconProvider))
                         .frame(width: 16, height: 16)
                         .if(!isEnabled) {
                             $0.grayscale(1.0).opacity(0.5)
                         }
 
-                    Text(pane.displayName(isSubscriptionRebrandingOn: isSubscriptionRebrandingOn)).font(PreferencesUI_macOS.Const.Fonts.sideBarItem)
+                    Text(pane.displayName).font(PreferencesUI_macOS.Const.Fonts.sideBarItem)
                         .if(!isEnabled) {
                             $0.opacity(0.5)
                         }
 
                     if isNew {
                         NewBadgeView()
+                    }
+
+                    if shouldShowWinBackCampaignBadge {
+                        WinBackCampaignBadgeView()
                     }
 
                     Spacer()
@@ -97,7 +103,7 @@ extension Preferences {
                 .lineLimit(1)
                 .truncationMode(.tail)
             }
-            .buttonStyle(SidebarItemButtonStyle(isSelected: isSelected))
+            .buttonStyle(SidebarItemButtonStyle(isSelected: isSelected, theme: themeManager.theme))
             .accessibilityIdentifier("PreferencesSidebar.\(pane.id.rawValue)Button")
             .disabled(!isEnabled)
         }
@@ -106,6 +112,18 @@ extension Preferences {
     struct NewBadgeView: View {
         var body: some View {
             Text(UserText.newBadge.uppercased())
+                .font(.system(size: 11, weight: .bold))
+                .padding(.horizontal, 8)
+                .padding(.vertical, 2)
+                .background(Color(designSystemColor: .alertYellow))
+                .foregroundColor(.black)
+                .cornerRadius(4)
+        }
+    }
+
+    struct WinBackCampaignBadgeView: View {
+        var body: some View {
+            Text(UserText.winBackCampaignMenuBadgeText.uppercased())
                 .font(.system(size: 11, weight: .bold))
                 .padding(.horizontal, 8)
                 .padding(.vertical, 2)
@@ -145,6 +163,7 @@ extension Preferences {
     }
 
     struct Sidebar: View {
+        @EnvironmentObject var themeManager: ThemeManager
         @EnvironmentObject var model: PreferencesSidebarModel
 
         var body: some View {
@@ -155,7 +174,7 @@ extension Preferences {
                 ScrollView {
                     VStack(spacing: 0) {
                         ForEach(model.sections) { section in
-                            SidebarSectionHeader(section: section.id, isSubscriptionRebrandingOn: model.isSubscriptionRebrandingEnabled)
+                            SidebarSectionHeader(section: section.id)
                             sidebarSection(section, settingsIconProvider: model.settingsIconProvider)
                         }
                     }.padding(.bottom, 16)
@@ -178,8 +197,9 @@ extension Preferences {
                                 isEnabled: model.isSidebarItemEnabled(for: pane),
                                 status: model.protectionStatus(for: pane),
                                 settingsIconProvider: settingsIconProvider,
-                                isSubscriptionRebrandingOn: model.isSubscriptionRebrandingEnabled,
                                 isNew: model.isPaneNew(pane: pane),
+                                themeManager: themeManager,
+                                shouldShowWinBackCampaignBadge: model.shouldShowWinBackCampaignBadge(pane: pane),
                                 action: {
                                     model.selectPane(pane)
                                 })
@@ -195,17 +215,22 @@ extension Preferences {
     private struct SidebarItemButtonStyle: ButtonStyle {
 
         let isSelected: Bool
+        let theme: ThemeStyleProviding
 
         @State private var isHovered: Bool = false
+
+        private var colorsProvider: ColorsProviding {
+            theme.colorsProvider
+        }
 
         func makeBody(configuration: Self.Configuration) -> some View {
 
             let bgColor: Color = {
                 if isSelected {
-                    return .rowHover
+                    return Color(colorsProvider.buttonMouseDownColor)
                 }
                 if isHovered {
-                    return .buttonMouseOver
+                    return Color(colorsProvider.buttonMouseOverColor)
                 }
                 return Color(NSColor.clear.withAlphaComponent(0.001))
             }()

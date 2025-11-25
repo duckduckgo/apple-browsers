@@ -67,6 +67,7 @@ public protocol AutofillDatabaseProvider: SecureStorageDatabaseProvider {
 
     // MARK: - Sync Support
     func inTransaction(_ block: @escaping (Database) throws -> Void) throws
+    func updateSyncTimestamp(in database: Database, tableName: String, objectId: Int64, timestamp: Date?) throws
 
     @discardableResult
     func storeWebsiteCredentials(_ credentials: SecureVaultModels.WebsiteCredentials, in database: Database) throws -> Int64
@@ -78,7 +79,18 @@ public protocol AutofillDatabaseProvider: SecureStorageDatabaseProvider {
     func syncableCredentialsForAccountId(_ accountId: Int64, in database: Database) throws -> SecureVaultModels.SyncableCredentials?
     func storeSyncableCredentials(_ syncableCredentials: SecureVaultModels.SyncableCredentials, in database: Database) throws
     func deleteSyncableCredentials(_ syncableCredentials: SecureVaultModels.SyncableCredentials, in database: Database) throws
-    func updateSyncTimestamp(in database: Database, tableName: String, objectId: Int64, timestamp: Date?) throws
+
+    func modifiedSyncableCreditCards() throws -> [SecureVaultModels.SyncableCreditCard]
+    func modifiedSyncableCreditCards(before date: Date) throws -> [SecureVaultModels.SyncableCreditCard]
+    func syncableCreditCardsForSyncIds(_ syncIds: any Sequence<String>, in database: Database) throws -> [SecureVaultModels.SyncableCreditCard]
+    func storeSyncableCreditCard(_ syncableCreditCard: SecureVaultModels.SyncableCreditCard, in database: Database) throws
+    func deleteSyncableCreditCard(_ syncableCreditCard: SecureVaultModels.SyncableCreditCard, in database: Database) throws
+
+    func modifiedSyncableIdentities() throws -> [SecureVaultModels.SyncableIdentity]
+    func modifiedSyncableIdentities(before date: Date) throws -> [SecureVaultModels.SyncableIdentity]
+    func syncableIdentitiesForSyncIds(_ syncIds: any Sequence<String>, in database: Database) throws -> [SecureVaultModels.SyncableIdentity]
+    func storeSyncableIdentity(_ syncableIdentity: SecureVaultModels.SyncableIdentity, in database: Database) throws
+    func deleteSyncableIdentity(_ syncableIdentity: SecureVaultModels.SyncableIdentity, in database: Database) throws
 }
 
 public final class DefaultAutofillDatabaseProvider: GRDBSecureStorageDatabaseProvider, AutofillDatabaseProvider {
@@ -128,6 +140,7 @@ public final class DefaultAutofillDatabaseProvider: GRDBSecureStorageDatabasePro
                 migrator.registerMigration("v11", migrate: Self.migrateV11(database:))
                 migrator.registerMigration("v12", migrate: Self.migrateV12(database:))
                 migrator.registerMigration("v13", migrate: Self.migrateV13(database:))
+                migrator.registerMigration("v14", migrate: Self.migrateV14(database:))
             }
         }
     }
@@ -614,28 +627,97 @@ public final class DefaultAutofillDatabaseProvider: GRDBSecureStorageDatabasePro
         }
     }
 
-    public func deleteIdentityForIdentityId(_ identityId: Int64) throws {
-        try db.write {
-            try $0.execute(sql: """
-                DELETE FROM
-                    \(SecureVaultModels.Identity.databaseTableName)
-                WHERE
-                    \(SecureVaultModels.Identity.Columns.id.name) = ?
-                """, arguments: [identityId])
+    public func storeSyncableIdentity(_ syncableIdentity: SecureVaultModels.SyncableIdentity, in database: Database) throws {
+        assert(database.isInsideTransaction)
+
+        guard var identity = syncableIdentity.identity else {
+            assertionFailure("Nil identity passed to \(#function)")
+            return
+        }
+
+        do {
+            var updatedSyncableIdentity = syncableIdentity
+            if let savedIdentity = try identity.saveAndFetch(database) {
+                identity = savedIdentity
+                updatedSyncableIdentity.identity = savedIdentity
+            }
+            try updatedSyncableIdentity.metadata.save(database)
+        } catch let error as DatabaseError {
+            throw SecureStorageError.databaseError(cause: error)
         }
     }
 
-    func updateIdentity(_ identity: SecureVaultModels.Identity, usingId id: Int64) throws {
+    public func deleteIdentityForIdentityId(_ identityId: Int64) throws {
         try db.write {
-            try identity.update($0)
+            try deleteIdentityFor(identityId: identityId, in: $0)
+        }
+    }
+
+    public func deleteSyncableIdentity(_ syncableIdentity: SecureVaultModels.SyncableIdentity, in database: Database) throws {
+        assert(database.isInsideTransaction)
+
+        if let identityId = syncableIdentity.metadata.objectId {
+            try deleteIdentityFor(identityId: identityId, in: database)
+        }
+        try syncableIdentity.metadata.delete(database)
+    }
+
+    func deleteIdentityFor(identityId: Int64, in database: Database) throws {
+        assert(database.isInsideTransaction)
+
+        try updateSyncTimestamp(in: database, tableName: SecureVaultModels.SyncableIdentitiesRecord.databaseTableName, objectId: identityId)
+        try database.execute(sql: """
+            DELETE FROM
+                \(SecureVaultModels.Identity.databaseTableName)
+            WHERE
+                \(SecureVaultModels.Identity.Columns.id.name) = ?
+            """, arguments: [identityId])
+    }
+
+    func updateIdentity(_ identity: SecureVaultModels.Identity, usingId id: Int64) throws {
+        try db.write { database in
+            try identity.update(database)
+
+            try updateSyncTimestamp(in: database,
+                                   tableName: SecureVaultModels.SyncableIdentitiesRecord.databaseTableName,
+                                   objectId: id,
+                                   timestamp: Date())
         }
     }
 
     func insertIdentity(_ identity: SecureVaultModels.Identity) throws -> Int64 {
-        try db.write {
-            try identity.insert($0)
-            return $0.lastInsertedRowID
+        try db.write { database in
+            try identity.insert(database)
+            let id = database.lastInsertedRowID
+
+            try SecureVaultModels.SyncableIdentitiesRecord(objectId: id, lastModified: Date()).insert(database)
+
+            return id
         }
+    }
+
+    public func modifiedSyncableIdentities() throws -> [SecureVaultModels.SyncableIdentity] {
+        try db.read { database in
+            try SecureVaultModels.SyncableIdentity.query
+                .filter(SecureVaultModels.SyncableIdentitiesRecord.Columns.lastModified != nil)
+                .fetchAll(database)
+        }
+    }
+
+    public func modifiedSyncableIdentities(before date: Date) throws -> [SecureVaultModels.SyncableIdentity] {
+        try db.read { database in
+            try SecureVaultModels.SyncableIdentity.query
+                .filter(SecureVaultModels.SyncableIdentitiesRecord.Columns.lastModified < date)
+                .fetchAll(database)
+        }
+    }
+
+    public func syncableIdentitiesForSyncIds(_ syncIds: any Sequence<String>, in database: Database) throws -> [SecureVaultModels.SyncableIdentity] {
+        assert(database.isInsideTransaction)
+
+        return try SecureVaultModels.SyncableIdentity.query
+            .filter(syncIds.contains(SecureVaultModels.SyncableIdentitiesRecord.Columns.uuid))
+            .fetchAll(database)
     }
 
     // MARK: Credit Cards
@@ -676,28 +758,99 @@ public final class DefaultAutofillDatabaseProvider: GRDBSecureStorageDatabasePro
         }
     }
 
-    public func deleteCreditCardForCreditCardId(_ cardId: Int64) throws {
-        try db.write {
-            try $0.execute(sql: """
-                DELETE FROM
-                    \(SecureVaultModels.CreditCard.databaseTableName)
-                WHERE
-                    \(SecureVaultModels.CreditCard.Columns.id.name) = ?
-                """, arguments: [cardId])
+    public func storeSyncableCreditCard(_ syncableCreditCard: SecureVaultModels.SyncableCreditCard, in database: Database) throws {
+        assert(database.isInsideTransaction)
+
+        guard var creditCard = syncableCreditCard.creditCard else {
+            assertionFailure("Nil credit card passed to \(#function)")
+            return
+        }
+
+        do {
+            var updatedSyncableCreditCard = syncableCreditCard
+            if let savedCreditCard = try creditCard.saveAndFetch(database) {
+                creditCard = savedCreditCard
+                updatedSyncableCreditCard.creditCard = savedCreditCard
+            }
+            try updatedSyncableCreditCard.metadata.save(database)
+        } catch let error as DatabaseError {
+            throw SecureStorageError.databaseError(cause: error)
         }
     }
 
-    func updateCreditCard(_ creditCard: SecureVaultModels.CreditCard) throws {
+    public func deleteSyncableCreditCard(_ syncableCreditCard: SecureVaultModels.SyncableCreditCard, in database: Database) throws {
+        assert(database.isInsideTransaction)
+
+        if let cardId = syncableCreditCard.metadata.objectId {
+            try deleteCreditCardForCreditCardId(cardId, in: database)
+        }
+        try syncableCreditCard.metadata.delete(database)
+    }
+
+    public func deleteCreditCardForCreditCardId(_ cardId: Int64) throws {
         try db.write {
-            try creditCard.update($0)
+            try deleteCreditCardForCreditCardId(cardId, in: $0)
+        }
+    }
+
+    private func deleteCreditCardForCreditCardId(_ cardId: Int64, in database: Database) throws {
+        assert(database.isInsideTransaction)
+
+        try updateSyncTimestamp(in: database, tableName: SecureVaultModels.SyncableCreditCardsRecord.databaseTableName, objectId: cardId)
+        try database.execute(sql: """
+           DELETE FROM
+               \(SecureVaultModels.CreditCard.databaseTableName)
+           WHERE
+               \(SecureVaultModels.CreditCard.Columns.id.name) = ?
+           """, arguments: [cardId])
+    }
+
+    func updateCreditCard(_ creditCard: SecureVaultModels.CreditCard) throws {
+        try db.write { database in
+            try creditCard.update(database)
+
+            if let cardId = creditCard.id {
+                try updateSyncTimestamp(in: database,
+                                       tableName: SecureVaultModels.SyncableCreditCardsRecord.databaseTableName,
+                                       objectId: cardId,
+                                       timestamp: Date())
+            }
         }
     }
 
     func insertCreditCard(_ creditCard: SecureVaultModels.CreditCard) throws -> Int64 {
-        try db.write {
-            try creditCard.insert($0)
-            return $0.lastInsertedRowID
+        try db.write { database in
+            try creditCard.insert(database)
+            let id = database.lastInsertedRowID
+
+            try SecureVaultModels.SyncableCreditCardsRecord(objectId: id, lastModified: Date()).insert(database)
+
+            return id
         }
+    }
+
+    public func modifiedSyncableCreditCards() throws -> [SecureVaultModels.SyncableCreditCard] {
+        try db.read { database in
+            try SecureVaultModels.SyncableCreditCard.query
+                .filter(SecureVaultModels.SyncableCreditCardsRecord.Columns.lastModified != nil)
+                .fetchAll(database)
+        }
+    }
+
+    public func modifiedSyncableCreditCards(before date: Date) throws -> [SecureVaultModels.SyncableCreditCard] {
+        try db.read { database in
+            try SecureVaultModels.SyncableCreditCard.query
+                .filter(SecureVaultModels.SyncableCreditCardsRecord.Columns.lastModified < date)
+                .fetchAll(database)
+        }
+    }
+
+    public func syncableCreditCardsForSyncIds(_ syncIds: any Sequence<String>, in database: Database) throws -> [SecureVaultModels.SyncableCreditCard] {
+        assert(database.isInsideTransaction)
+
+        return try SecureVaultModels.SyncableCreditCard.query
+            .filter(syncIds.contains(SecureVaultModels.SyncableCreditCardsRecord.Columns.uuid))
+            .fetchAll(database)
     }
 
     // MARK: - Sync
@@ -1113,6 +1266,98 @@ extension DefaultAutofillDatabaseProvider {
         }
     }
 
+    static func migrateV14(database: Database) throws {
+        typealias CreditCard = SecureVaultModels.CreditCard
+        typealias SyncableCreditCardsRecord = SecureVaultModels.SyncableCreditCardsRecord
+
+        try database.create(table: SyncableCreditCardsRecord.databaseTableName) {
+            $0.autoIncrementedPrimaryKey(SyncableCreditCardsRecord.Columns.id.name)
+            $0.column(SyncableCreditCardsRecord.Columns.uuid.name, .text)
+            $0.column(SyncableCreditCardsRecord.Columns.lastModified.name, .date)
+            $0.column(SyncableCreditCardsRecord.Columns.objectId.name, .integer)
+            $0.foreignKey(
+                [SyncableCreditCardsRecord.Columns.objectId.name],
+                references: SecureVaultModels.CreditCard.databaseTableName,
+                onDelete: .setNull
+            )
+        }
+
+        try database.create(
+            index: [SyncableCreditCardsRecord.databaseTableName, SyncableCreditCardsRecord.Columns.uuid.name].joined(separator: "_"),
+            on: SyncableCreditCardsRecord.databaseTableName,
+            columns: [SyncableCreditCardsRecord.Columns.uuid.name],
+            ifNotExists: false
+        )
+
+        try database.create(
+            index: [SyncableCreditCardsRecord.databaseTableName, SyncableCreditCardsRecord.Columns.objectId.name].joined(separator: "_"),
+            on: SyncableCreditCardsRecord.databaseTableName,
+            columns: [SyncableCreditCardsRecord.Columns.objectId.name],
+            unique: true,
+            ifNotExists: false
+        )
+
+        let rows = try Row.fetchCursor(database, sql: "SELECT \(CreditCard.Columns.id) FROM \(CreditCard.databaseTableName)")
+
+        while let row = try rows.next() {
+            let creditCardId: Int64 = row[CreditCard.Columns.id]
+            try database.execute(sql: """
+                INSERT INTO
+                    \(SyncableCreditCardsRecord.databaseTableName)
+                (
+                    \(SyncableCreditCardsRecord.Columns.uuid.name),
+                    \(SyncableCreditCardsRecord.Columns.objectId.name)
+                )
+                VALUES (?, ?)
+            """, arguments: [UUID().uuidString, creditCardId])
+        }
+
+        typealias Identity = SecureVaultModels.Identity
+        typealias SyncableIdentitiesRecord = SecureVaultModels.SyncableIdentitiesRecord
+
+        try database.create(table: SyncableIdentitiesRecord.databaseTableName) {
+            $0.autoIncrementedPrimaryKey(SyncableIdentitiesRecord.Columns.id.name)
+            $0.column(SyncableIdentitiesRecord.Columns.uuid.name, .text)
+            $0.column(SyncableIdentitiesRecord.Columns.lastModified.name, .date)
+            $0.column(SyncableIdentitiesRecord.Columns.objectId.name, .integer)
+            $0.foreignKey(
+                [SyncableIdentitiesRecord.Columns.objectId.name],
+                references: SecureVaultModels.Identity.databaseTableName,
+                onDelete: .setNull
+            )
+        }
+
+        try database.create(
+            index: [SyncableIdentitiesRecord.databaseTableName, SyncableIdentitiesRecord.Columns.uuid.name].joined(separator: "_"),
+            on: SyncableIdentitiesRecord.databaseTableName,
+            columns: [SyncableIdentitiesRecord.Columns.uuid.name],
+            ifNotExists: false
+        )
+
+        try database.create(
+            index: [SyncableIdentitiesRecord.databaseTableName, SyncableIdentitiesRecord.Columns.objectId.name].joined(separator: "_"),
+            on: SyncableIdentitiesRecord.databaseTableName,
+            columns: [SyncableIdentitiesRecord.Columns.objectId.name],
+            unique: true,
+            ifNotExists: false
+        )
+
+        let rowsIdentities = try Row.fetchCursor(database, sql: "SELECT \(Identity.Columns.id) FROM \(Identity.databaseTableName)")
+
+        while let row = try rowsIdentities.next() {
+            let identityId: Int64 = row[Identity.Columns.id]
+            try database.execute(sql: """
+                INSERT INTO
+                    \(SyncableIdentitiesRecord.databaseTableName)
+                (
+                    \(SyncableIdentitiesRecord.Columns.uuid.name),
+                    \(SyncableIdentitiesRecord.Columns.objectId.name)
+                )
+                VALUES (?, ?)
+            """, arguments: [UUID().uuidString, identityId])
+        }
+    }
+
     // Refresh password comparison hashes
     static private func updatePasswordHashes(database: Database) throws {
         let accountRows = try Row.fetchCursor(database, sql: "SELECT * FROM \(SecureVaultModels.WebsiteAccount.databaseTableName)")
@@ -1278,7 +1523,7 @@ extension SecureVaultModels.NeverPromptWebsites: PersistableRecord, FetchableRec
 
 extension SecureVaultModels.CreditCard: PersistableRecord, FetchableRecord {
 
-    enum Columns: String, ColumnExpression {
+    public enum Columns: String, ColumnExpression {
         case id
         case title
         case created
@@ -1361,7 +1606,7 @@ extension SecureVaultModels.Note: PersistableRecord, FetchableRecord {
 
 extension SecureVaultModels.Identity: PersistableRecord, FetchableRecord {
 
-    enum Columns: String, ColumnExpression {
+    public enum Columns: String, ColumnExpression {
         case id
         case title
         case created

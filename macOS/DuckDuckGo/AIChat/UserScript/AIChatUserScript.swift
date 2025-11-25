@@ -45,6 +45,11 @@ final class AIChatUserScript: NSObject, Subfeature {
             rules.append(.exact(hostname: ddgDomain))
         }
 
+        /// Default rule for standalone DuckDuckGo AI Chat
+        if let duckAiDomain = URL.duckAi.host {
+            rules.append(.exact(hostname: duckAiDomain))
+        }
+
         /// Check if a custom hostname is provided in the URL settings
         /// Custom hostnames are used for debugging purposes
         if let customURLHostname = urlSettings.customURLHostname {
@@ -63,7 +68,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         handler.pageContextPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] pageContext in
-                self?.submitPageContext(pageContext)
+                self?.submitAIChatPageContext(pageContext)
             }
             .store(in: &cancellables)
     }
@@ -75,12 +80,12 @@ final class AIChatUserScript: NSObject, Subfeature {
         broker?.push(method: AIChatUserScriptMessages.submitAIChatNativePrompt.rawValue, params: prompt, for: self, into: webView)
     }
 
-    private func submitPageContext(_ pageContextData: AIChatPageContextData?) {
+    private func submitAIChatPageContext(_ pageContextData: AIChatPageContextData?) {
         guard let webView else {
             return
         }
-        let params = PageContextPayload(serializedPageData: pageContextData)
-        broker?.push(method: AIChatUserScriptMessages.submitPageContext.rawValue, params: params, for: self, into: webView)
+        let response = PageContextResponse(pageContext: pageContextData)
+        broker?.push(method: AIChatUserScriptMessages.submitAIChatPageContext.rawValue, params: response, for: self, into: webView)
     }
 
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
@@ -105,10 +110,22 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.removeChat
         case .openSummarizationSourceLink:
             return handler.openSummarizationSourceLink
-        case .getPageContext:
-            return handler.getPageContext
+        case .openTranslationSourceLink:
+            return handler.openTranslationSourceLink
+        case .getAIChatPageContext:
+            return handler.getAIChatPageContext
+        case .reportMetric:
+            return handler.reportMetric
         case .togglePageContextTelemetry:
             return handler.togglePageContextTelemetry
+        case .storeMigrationData:
+            return handler.storeMigrationData
+        case .getMigrationDataByIndex:
+            return handler.getMigrationDataByIndex
+        case .getMigrationInfo:
+            return handler.getMigrationInfo
+        case .clearMigrationData:
+            return handler.clearMigrationData
         default:
             return nil
         }

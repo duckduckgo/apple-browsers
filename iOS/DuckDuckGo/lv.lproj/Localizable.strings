@@ -68,10 +68,13 @@
 "action.title.enable.protection" = "Iespējot privātuma aizsardzību";
 
 /* No comment provided by engineer. */
-"action.title.forgetAll" = "Aizvērt cilnes un notīrīt datus";
+"action.title.forgetAll" = "Notīrīt cilnes un datus";
 
 /* Confirmation message */
 "action.title.forgetAllDone" = "Cilnes un dati ir notīrīti";
+
+/* Fire button title when AI chat clearing is enabled */
+"action.title.forgetAllWithAIChat" = "Notīrīt cilnes, datus un Duck.ai tērzēšanas sarunas";
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Atvērt fonā";
@@ -133,6 +136,9 @@
 /* New tab menu item opening a new tab */
 "action.title.tab.new" = "Jauna cilne";
 
+/* VPN menu item */
+"action.title.vpn" = "VPN";
+
 /* Settings label for bottom position for the address bar */
 "address.bar.bottom" = "Apakšā";
 
@@ -183,6 +189,15 @@
 
 /* Title for alert shown when sync credentials paused for too many items */
 "alert.sync-credentials-paused-title" = "Paroļu sinhronizācija ir apturēta";
+
+/* Description for alert shown when sync error occurs because of bad credit cards data */
+"alert.sync-credit-cards-bad-data-error-description" = "\"Dažas kredītkartes ir formatētas nepareizi vai pārāk garas un netika sinhronizētas.\"";
+
+/* Description for alert shown when sync credit cards paused for too many items */
+"alert.sync-credit-cards-paused-description" = "Tu esi sasniedzis maksimālo kredītkaršu skaitu. Lūdzu, izdzēs dažas kredītkartes, lai atsāktu sinhronizāciju.";
+
+/* Title for alert shown when sync credit cards paused for too many items */
+"alert.sync-credit-cards-paused-title" = "Kredītkaršu sinhronizācija ir apturēta";
 
 /* Title for sync error alert */
 "alert.sync-error" = "Sinhronizācijas un dublēšanas kļūda";
@@ -447,6 +462,51 @@
 
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Iespējo e-pasta aizsardzību";
+
+/* Button title to dismiss the autofill extension activation view */
+"autofill.extension.activation.done.button.title" = "Gatavs";
+
+/* Title shown when the autofill extension activation succeeds */
+"autofill.extension.activation.title" = "Paroļu automātiskā aizpildīšana ir aktivizēta!";
+
+/* Footer text describing what enabling the autofill extension does */
+"autofill.extension.footer" = "Izmanto DuckDuckGo saglabātās paroles visās ierīces lietotnēs.";
+
+/* Header text shown when the autofill extension is disabled */
+"autofill.extension.header.disabled" = "Automātiskā aizpildīšana citās lietotnēs";
+
+/* Header text shown when the autofill extension is enabled */
+"autofill.extension.header.enabled" = "Automātiskā aizpildīšana citās lietotnēs ir iespējota";
+
+/* Dismiss button title for the Autofill extension promotion */
+"autofill.extension.promo.button.dismiss.title" = "Iestatīt vēlāk sadaļā Iestatījumi";
+
+/* CTA button title for the Autofill extension promotion */
+"autofill.extension.promo.button.title" = "Ieslēdz automātisko aizpildīšanu citās lietotnēs";
+
+/* Message for the Autofill extension promotion */
+"autofill.extension.promo.message" = "Izmanto DuckDuckGo, lai droši automātiski aizpildītu paroles visām savām lietotnēm.";
+
+/* Title for the Autofill extension promotion */
+"autofill.extension.promo.title" = "Ātri pieraksties savās lietotnēs, neievadot paroles";
+
+/* Title for screen showing autofill extension settings */
+"autofill.extension.screen.title" = "Paroļu automātiskā aizpildīšana citās lietotnēs";
+
+/* Status text when autofill extension is disabled */
+"autofill.extension.status.off" = "Ieslēgt";
+
+/* Status text when autofill extension is enabled */
+"autofill.extension.status.on" = "Ieslēgts";
+
+/* Title for autofill extension settings row */
+"autofill.extension.title" = "Automātiskā aizpildīšana citās lietotnēs";
+
+/* Button title that opens system settings to turn off the autofill extension */
+"autofill.extension.turn.off.button.title" = "Izslēdz sistēmas iestatījumos...";
+
+/* Button title that triggers system prompt to turn on the autofill extension */
+"autofill.extension.turn.on.button.title" = "Ieslēdz...";
 
 /* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
 "autofill.hide-card-cvv" = "Paslēpt CVV";
@@ -784,8 +844,8 @@
 /* Section header for the autofill settings screen */
 "autofill.settings.import-passwords.section-header" = "Importēt paroles";
 
-/* Section header for the autofill settings screen */
-"autofill.settings.options.section-header" = "Opcijas";
+/* Section header for the autofill passwords options section of the settings screen */
+"autofill.settings.options.section-header" = "Paroles iestatījumi";
 
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Ziņot par problēmu ar automātisko aizpildīšanu";
@@ -963,6 +1023,9 @@
 
 /* No comment provided by engineer. */
 "Cohort: %@" = "Kohorta: %@";
+
+/* No comment provided by engineer. */
+"Configuration" = "Konfigurācija";
 
 /* No comment provided by engineer. */
 "Confirm" = "Apstiprināt";
@@ -1311,6 +1374,18 @@
 
 /* AI features settings explanation */
 "duckai.preferences.text.markdown" = "DuckDuckGo MI funkcijas ir privātas un nav obligātas. Tavi dati netiek izmantoti mākslīgā intelekta apmācībai.";
+
+/* Description text explaining what the 'Ask Follow-up Questions' toggle does */
+"duckai.settings.allowFollowUpQuestions.section.description" = "Rādīt Duck.ai pogas un saites DuckDuckGo meklēšanas rezultātos.";
+
+/* Title for section that groups settings related to search results */
+"duckai.settings.allowFollowUpQuestions.section.title" = "Meklēšanas saīsnes";
+
+/* Toggle text to enable/disable Duck.ai to ask follow-up questions */
+"duckai.settings.allowFollowUpQuestions.toggle" = "Uzdot papildjautājumus";
+
+/* Title for section that groups shortcuts related to browser */
+"duckai.settings.browserShortcuts.section.title" = "Pārlūkprogrammas īsinājumtaustiņi";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
 "duckai.settings.enable.address-bar-toggle" = "Adreses josla";
@@ -1709,7 +1784,7 @@
 "feedback.form.submit" = "Iesniegt";
 
 /* Title of the feedback form */
-"feedback.form.title" = "Palīdzi uzlabot Privacy Pro";
+"feedback.form.title" = "Palīdzi uzlabot DuckDuckGo abonementu";
 
 /* Category for Duck.ai feedback */
 "feedback.general.category.ai-chat" = "Duck.ai";
@@ -1918,6 +1993,9 @@
 /* Title for the Import Passwords Promotion banner */
 "import.passwords.promo.title" = "Importēt savas paroles DuckDuckGo";
 
+/* Placeholder text for the duck.ai input field */
+"input.field.placeholder.duckai" = "Pajautāt privāti";
+
 /* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
 "intent.vpn.needs.to.be.enabled.from.app" = "Tev ir jāiespējo VPN DuckDuckGo lietotnē.";
 
@@ -1994,6 +2072,9 @@
 "keyCommandShowAllTabs" = "Rādīt visas cilnes";
 
 /* No comment provided by engineer. */
+"Last Processed: %@" = "Pēdējo reizi apstrādāts: %@";
+
+/* No comment provided by engineer. */
 "Loading brokers..." = "Ielādē starpniekus..";
 
 /* Summary text for the macOS browser waitlist */
@@ -2055,6 +2136,33 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Ziņojumu politikas resursdatora nosaukums";
+
+/* No comment provided by engineer. */
+"Messages" = "Ziņojumi";
+
+/* The name of the Address Bar button when referenced in settings. */
+"mobile.customization.addressbar.button" = "Adreses joslas poga";
+
+/* The title of the Address Bar button. */
+"mobile.customization.addressbar.title" = "Adreses josla";
+
+/* A title to indicate that if selected the current button will be hidden from the UI */
+"mobile.customization.option.none.long" = "Paslēpt šo pogu";
+
+/* Indicates that no button was selected to be shown in the specified location. */
+"mobile.customization.option.none.short" = "Nav";
+
+/* The title of the section in settings containing the customizable buttons. */
+"mobile.customization.section.title" = "Pielāgojamas pogas";
+
+/* The label for the toggle that hides and shows the reload button. */
+"mobile.customization.show.reload.button.title" = "Parādīt pārlādēšanas pogu";
+
+/* The name of the address bar button when referenced in settings. */
+"mobile.customization.toolbar.button" = "Rīkjoslas poga";
+
+/* A label for the access point to customization of the Toolbar. */
+"mobile.customization.toolbar.title" = "Rīkjosla";
 
 /* Title for back button in navigation bar */
 "navbar.back-button.title" = "Atpakaļ";
@@ -2290,11 +2398,41 @@
 /* Section header for the shortcuts section in VPN settings. */
 "network.protection.vpn.shortcuts.section.header" = "Saīsnes";
 
+/* Confirm button for the new address bar picker */
+"new.address.bar.picker.confirm" = "Apstiprināt";
+
+/* Footer text for the new address bar picker */
+"new.address.bar.picker.footer" = "Pielāgo iestatījumos > MI funkcijas";
+
+/* Not now button for the new address bar picker */
+"new.address.bar.picker.not.now" = "Ne tagad";
+
+/* Option for search and AI in the new address bar picker */
+"new.address.bar.picker.search.and.ai" = "Meklēšana & Duck.ai";
+
+/* Option for search only in the new address bar picker */
+"new.address.bar.picker.search.only" = "Meklēt tikai";
+
+/* Headline for the new address bar picker modal */
+"new.address.bar.picker.subheadline.private" = "Vēlies vieglāk piekļūt privātai MI tērzēšanai?";
+
+/* Title for the new address bar picker modal */
+"new.address.bar.picker.title" = "Adreses joslas opcija";
+
+/* No comment provided by engineer. */
+"No Logs" = "Nav žurnālu";
+
+/* No comment provided by engineer. */
+"No messages" = "Nav ziņojumu";
+
 /* No comment provided by engineer. */
 "No results found" = "Nav atrasti rezultāti";
 
 /* No comment provided by engineer. */
 "OK" = "Labi";
+
+/* Display title for Duck.ai in our address bar */
+"omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Pārvaldītie sīkfaili";
@@ -2307,9 +2445,6 @@
 
 /* Button to change the default browser */
 "onboarding.browsers.cta" = "Izvēlies pārlūku";
-
-/* Message to highlight browser capability of private searches */
-"onboarding.browsers.features.privateSearch.title" = "Meklē privāti pēc noklusējuma";
 
 /* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
 "onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGo ir arī %1$@, kas pieejams ar %2$@ un %3$@.";
@@ -2353,18 +2488,6 @@
 /* The title of the onboarding dialog popup to select the preferred App icon. */
 "onboarding.highlights.appIconSelection.title" = "Kura krāsa man ir vispiemērotākā?";
 
-/* Message to highlight how the browser allows you to block cookie pop-ups */
-"onboarding.highlights.browsers.features.cookiePopups.title" = "Bloķē sīkfailu uznirstošos logus";
-
-/* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Bloķē mērķtiecīgas reklāmas";
-
-/* Message to highlight browser capability of swiftly erase browsing data */
-"onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Dzēst pārlūkošanas datus ar vienu pogu";
-
-/* Message to highlight browser capability of blocking 3rd-party trackers */
-"onboarding.highlights.browsers.features.trackerBlocker.title" = "Bloķē trešo pušu izsekotājus";
-
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
 "onboarding.highlights.browsers.title" = "Aizsardzība ir aktivizēta!";
 
@@ -2373,6 +2496,21 @@
 
 /* The title of the onboarding dialog popup */
 "onboarding.highlights.intro.title" = "Sveiki!\n\nVai esi gatavs ātrākai pārlūkprogrammai, kas tevi aizsargā?";
+
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.searchExperience.cta" = "Nākamais";
+
+/* The footer disclaimer text for the search experience onboarding screen. */
+"onboarding.highlights.searchExperience.footer" = "MI funkcijas ir privātas un nav obligātas. Tu vari veikt izmaiņas sadaļā Iestatījumi > MI funkcijas.";
+
+/* Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold). */
+"onboarding.highlights.searchExperience.footer.formatted" = "MI funkcijas ir privātas un nav obligātas. Tu vari veikt izmaiņas %@";
+
+/* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
+"onboarding.highlights.searchExperience.footer.settings-path-bold" = "Iestatījumi > MI funkcijas.";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Vēlies vieglāk piekļūt privātai MI tērzēšanai?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Aiziet!";
@@ -2470,12 +2608,6 @@
 /* Deactivate button */
 "pm.deactivate" = "Deaktivizēt";
 
-/* Label for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.label" = "E-pasta adrese (neobligāti)";
-
-/* Placeholder for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.placeholder" = "vards@email.com";
-
 /* Placeholder for the General Feedback step in the Privacy Pro feedback form */
 "ppro.feedback-form.general-feedback.placeholder" = "Lūdzu, sniedz atsauksmes…";
 
@@ -2509,8 +2641,11 @@
 /* Title for the category selection section in the Privacy Pro feedback form */
 "ppro.feedback-form.select-category.title" = "ATLASĪT KATEGORIJU";
 
-/* Text for the body of the PPro feedback form */
-"ppro.feedback-form.text-1" = "Vai atradi problēmu, kas nav aplūkota mūsu [palīdzības centrā](duck://)? Mēs noteikti gribam par to uzzināt.Norādi savu e-pasta adresi, ja vēlies, lai mēs ar tevi sazināmies par šo problēmu (iespējams, nevarēsim reaģēt uz visām problēmām):";
+/* Support link text displayed beneath the feedback form description */
+"ppro.feedback-form.support.text" = "Vai vajadzīga palīdzība? [Sazinies ar atbalsta dienestu.](https://duckduckgo.com/subscription-support)";
+
+/* Intro text for the body of the PPro feedback form */
+"ppro.feedback-form.text-1" = "Vai atradi problēmu, kas nav aplūkota mūsu [palīdzības centrā](duck://)? Mēs noteikti gribam par to uzzināt.Pastāsti, kas notiek:";
 
 /* Text for the body of the PPro feedback form */
 "ppro.feedback-form.text-2" = "Papildus iepriekš ievadītajai informācijai mēs kopā ar tavām atsauksmēm nosūtām anonimizētu informāciju:";
@@ -2554,11 +2689,11 @@
 /* Caption of the option to show the Threat Protection preferences */
 "preferences.threat-protection.caption" = "DuckDuckGo uzlabotā aizsardzība novērš izplatītākos draudus, vienlaikus nodrošinot drošu savienojumu.\n[Uzzināt vairāk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
-/* Description of incorrectly formatted data error when syncing. */
-"prefrences.sync.bad-request.description" = "Dažas grāmatzīmes vai paroles ir formatētas nepareizi vai pārāk garas un netika sinhronizētas.";
+/* Description of incorrectly formatted bookmarks data error when syncing. */
+"prefrences.sync.bookmarks-bad-request.description" = "Dažas grāmatzīmes ir formatētas nepareizi vai pārāk garas un netika sinhronizētas.";
 
 /* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
-"prefrences.sync.bookmarks-limit-exceeded-action" = "Pārvaldīt grāmatzīmes";
+"prefrences.sync.bookmarks-limit-exceeded-action" = "Pārvaldīt grāmatzīmes…";
 
 /* Description for sync bookmarks limits exceeded warning */
 "prefrences.sync.bookmarks-limit-exceeded-description" = "Tu esi sasniedzis maksimālo grāmatzīmju skaitu. Lūdzu, izdzēs dažas, lai atsāktu sinhronizāciju.";
@@ -2569,11 +2704,23 @@
 /* Description for sync credentials limits exceeded warning */
 "prefrences.sync.credentials-limit-exceeded-description" = "Tu esi sasniedzis maksimālo paroļu skaitu. Lūdzu, izdzēs dažas, lai atsāktu sinhronizāciju.";
 
+/* Description of incorrectly formatted credit card data error when syncing. */
+"prefrences.sync.credit-cards-bad-request.description" = "Dažas kredītkartes tiek formatētas nepareizi vai pārāk ilgi, un tās netika sinhronizētas.";
+
+/* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
+"prefrences.sync.credit-cards-limit-exceeded-action" = "Pārvaldīt kredītkartes…";
+
+/* Description for sync credit cards limits exceeded warning */
+"prefrences.sync.credit-cards-limit-exceeded-description" = "Tu esi sasniedzis maksimālo kredītkaršu skaitu. Lūdzu, izdzēs dažas, lai atsāktu sinhronizāciju.";
+
 /* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Sinhronizācijā radās kļūda. Mēģini atspējot sinhronizāciju šajā ierīcē un pēc tam atkārtoti izveido savienojumu, izmantojot citu ierīci vai atgūšanas kodu.";
 
 /* Title for sync limits exceeded warning */
 "prefrences.sync.limit-exceeded-title" = "Sinhronizācija pārtraukta";
+
+/* Description of incorrectly formatted password data error when syncing. */
+"prefrences.sync.passwords-bad-request.description" = "Dažas paroles ir formatētas nepareizi vai pārāk garas un netika sinhronizētas.";
 
 /* Description of too many requests error when syncing. */
 "prefrences.sync.too-many-requests.description" = "Sync & Backup uz laiku nav pieejams.";
@@ -2648,6 +2795,9 @@
 "prompt.custom.url.scheme.title" = "Vai atvērt citā lietotnē?";
 
 /* No comment provided by engineer. */
+"Recent Processing Logs" = "Jaunākie apstrādes žurnāli";
+
+/* No comment provided by engineer. */
 "Relatives: %@" = "Radinieki: %@";
 
 /* No comment provided by engineer. */
@@ -2664,9 +2814,6 @@
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Meklē vai ievadi adresi";
-
-/* Placeholder text for the search input field when searching Duck.ai */
-"search.input.field.placeholder.search.duckai" = "Pajautā Duck.ai";
 
 /* Search input toggle button title for asking AI Chat */
 "search.input.toggle.aichat.button.title" = "Duck.ai";
@@ -2704,9 +2851,6 @@
 /* Settings section title for About DuckDuckGo */
 "settings.about.section" = "Par";
 
-/* About page subscription sentence: deprecated */
-"settings.about.subscription.sentence.deprecated" = "Turklāt mēs piedāvājam arī [Privacy Pro](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/), mūsu trīs vienā abonēšanas pakalpojumu, kas ir integrēts mūsu pārlūkprogrammā. Privacy Pro abonenti saņem vēl lielāku privātuma aizsardzību ar ātru un vienkāršu [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), kas palīdz pasargāt tavas darbības tiešsaistē, pakalpojumu, kas atrod un izdzēš tavu personisko informāciju no cilvēku meklētāju vietnēm, un pakalpojumu, kas atjauno tavu identitāti, ja tā tiek nozagta.";
-
 /* About page subscription sentence: rebranding + AI chat */
 "settings.about.subscription.sentence.rebranding.ai" = "Papildus tam mēs piedāvājam arī [DuckDuckGo abonementu](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/) integrēts mūsu pārlūkprogrammā. Abonenti saņem vēl lielāku privātuma aizsardzību ar ātru un vienkāršu [VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/), kas palīdz pasargāt tavas darbības tiešsaistē un sniedz piekļuvi uzlabotiem MI modeļiem mūsu privātajā MI tērzēšanas pakalpojumā Duck.ai, un pakalpojumam, kas atrod un izdzēš tavu personisko informāciju no personu meklēšanas vietnēm, un pakalpojumam, kas atjauno tavu identitāti, ja tā tiek nozagta.";
 
@@ -2734,20 +2878,14 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Rādīt pilnu vietnes adresi";
 
-/* Caption indicating the default option in the AI experimental picker */
-"settings.ai.experimental.picker.default" = "(Noklusējuma)";
-
-/* Caption indicating the experimental option in the AI experimental picker */
-"settings.ai.experimental.picker.experimental" = "(Eksperimentāls)";
-
-/* Footer under the AI experimental picker, descriptive sentence without link */
-"settings.ai.experimental.picker.footer" = "Izmēģini mūsu eksperimentālo iespēju jautāt Duck.ai tieši no adreses joslas.";
-
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Meklēšana & Duck.ai";
 
 /* Title for the 'Search Only' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_only" = "Meklēt tikai";
+
+/* Footer under the AI picker, descriptive sentence without link */
+"settings.ai.new.picker.footer" = "Izmēģini jauno iespēju pārslēgties starp meklēšanu un Duck.ai adrešu joslā.";
 
 /* Top level settings for managing AI Chat shortcuts */
 "settings.aichat.manage.shortcuts" = "Pārvaldīt Duck.ai īsceļus";
@@ -2764,6 +2902,12 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Meklēšanas Assist iestatījumi";
 
+/* Title of hide AI-generated images settings link */
+"settings.aifeatures.hide.ai.generated.images" = "Paslēpt MI ģenerētus attēlus";
+
+/* Description of what the hide AI-generated images feature does */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtrē MI radītus attēlus no attēlu meklēšanas rezultātiem";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Vienmēr ieslēgts";
 
@@ -2778,6 +2922,12 @@
 
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Atspējo, lai novērstu saišu automātisku atvēršanu citās instalētajās lietotnēs.";
+
+/* Autoclear action option to clear tabs and data */
+"settings.autoclear.tabs.and.data" = "Notīrīt cilnes un datus";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Notīrīt cilnes, datus un Duck.ai tērzēšanu";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Meklēšanas ieteikumi";
@@ -2800,6 +2950,12 @@
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Atsauksmes par pārlūkprogrammu";
 
+/* Settings screen footer text explaining that Fire Button also clears AI chat history */
+"settings.clear.aichat.history.footer" = "Fire Button izdzēsīs arī Duck.ai vēsturi, ieskaitot piespraustās tērzēšanas.";
+
+/* Settings screen cell text for clearing AI chat history */
+"settings.clear.aichat.history.title" = "Notīrīt Duck.ai tērzēšanas sarunas";
+
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Automātiski notīrīt datus";
 
@@ -2818,6 +2974,12 @@
 /* Settings title for the customize section */
 "settings.customize" = "Pielāgošana";
 
+/* Clear data button explanation */
+"settings.data.clear.forget.all.duck.ai.footnote" = "Notīra visas cilnes, Duck.ai tērzēšanas sarunas un datus par visām vietnēm, kurās neesi iestatījis Fireproof.";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.footnote" = "Notīra visas cilnes un datus par visām vietnēm, kuras neesi iestatījis Fireproof.";
+
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Datu notīrīšana";
 
@@ -2831,7 +2993,7 @@
 "settings.duckduckgo.on.other.platforms" = "DuckDuckGo citās platformās";
 
 /* Subscription expired tittle message */
-"settings.duckduckgo.subscription.expired.title" = "Tavs Privacy Pro abonements ir beidzies";
+"settings.duckduckgo.subscription.expired.title" = "Tavs DuckDuckGo abonements ir beidzies.";
 
 /* Explanation in Settings how the email protection feature works */
 "settings.email.protection.explanation" = "Bloķē e-pasta izsekotājus un paslēp savu adresi, nemainot e-pasta pakalpojumu sniedzēju.\n[Uzzini vairāk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)";
@@ -2920,9 +3082,6 @@
 /* Label describing a feature which is turned on */
 "settings.on" = "Ieslēgts";
 
-/* Product name for the subscription bundle */
-"settings.ppro" = "Privacy Pro";
-
 /* Title for Link in the Footer of Privacy Pro section */
 "settings.ppro.footer" = "Privātuma politika un Pakalpojumu sniegšanas noteikumi";
 
@@ -2992,23 +3151,14 @@
 /* I have a Subscription button text for privacy pro */
 "settings.subscription.existing.subscription" = "Man ir abonements";
 
-/* Subscription expired tittle message */
-"settings.subscription.expired.title" = "Tavs Privacy Pro abonements ir beidzies";
-
 /* Settings cell for Subscription Feedback */
 "settings.subscription.feedback" = "DuckDuckGo abonements";
-
-/* Settings cell for Subscription Feedback */
-"settings.subscription.feedback.deprecated" = "Privacy Pro";
 
 /* Identity theft restoration cell subtitle for privacy pro */
 "settings.subscription.ITR.subtitle" = "Ja tava identitāte tiks nozagta, mēs palīdzēsim to atjaunot";
 
 /* Identity theft restoration cell title for privacy pro */
 "settings.subscription.ITR.title" = "Identity Theft Restoration";
-
-/* Get Privacy Pro button text for privacy pro */
-"settings.subscription.learn.more" = "Iegūsti Privacy Pro";
 
 /* Subscription Settings button text for privacy pro */
 "settings.subscription.manage" = "Abonementa iestatījumi";
@@ -3027,9 +3177,6 @@
 
 /* Try DuckDuckGo Subscription Free button text */
 "settings.subscription.try.free.button" = "Izmēģini bez maksas";
-
-/* Try Privacy Pro Free button text for privacy pro */
-"settings.subscription.try.free.no.ai.chat" = "Izmēģināt Privacy Pro bez maksas";
 
 /* VPN cell title for privacy pro */
 "settings.subscription.VPN.title" = "VPN";
@@ -3133,6 +3280,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "DuckDuckGo pārlūkprogramma nodrošina izsekošanas aizsardzības, kas vienmēr ir aktīvas. [Uzzini vairāk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* No comment provided by engineer. */
+"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Rāda žurnālus no pēdējās minūtes, lai palīdzētu diagnosticēt problēmas uzreiz pēc atsvaidzināšanas.";
+
 /* Description on a report broken site page. */
 "site.not.working.description" = "Izvēlies atbilstošāko problēmas raksturojumu.";
 
@@ -3167,6 +3317,9 @@
 "siteFeedback.urlPlaceholder" = "Kura vietne ir bojāta?";
 
 /* No comment provided by engineer. */
+"Status: Invalidated" = "Statuss: nederīgs";
+
+/* No comment provided by engineer. */
 "Stored Hostname: %@" = "Saglabātais resursdatora nosaukums: %@";
 
 /* No comment provided by engineer. */
@@ -3180,9 +3333,6 @@
 
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Rediģēt e-pasta adresi";
-
-/* Header title for the subscription activation view */
-"subscription.activate.header.title" = "Pievieno šai ierīcei savu Privacy Pro abonementu";
 
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Atcelt";
@@ -3202,9 +3352,6 @@
 /* Button title for starting the process of adding subscription via email address */
 "subscription.activate.via.email.button" = "Sākt darbu";
 
-/* Description for adding subscription via email address */
-"subscription.activate.via.email.description" = "Izmanto e-pasta adresi, lai pievienotu Privacy Pro šai ierīcei.";
-
 /* Title for adding subscription via email address */
 "subscription.activate.via.email.title" = "Pievienot, izmantojot e-pasta adresi";
 
@@ -3216,15 +3363,6 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "Pievienot e-pasta adresi";
-
-/* Header for section for activating subscription on other devices */
-"subscription.add.to.devices.header" = "Pievieno Privacy Pro citām ierīcēm";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.add.to.devices.no.email.footer" = "Pievieno Privacy Pro citām ierīcēm ar Apple ID vai piesaistot e-pasta adresi. **[Uzzināt vairāk](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.add.to.devices.with.email.footer" = "Izmanto šo e-pasta adresi, lai pievienotu abonementu citām ierīcēm DuckDuckGo lietotnē. Dodies uz sadaļu \"Iestatījumi\" > Privacy Pro > \"Man ir abonements\". **[Uzzināt vairāk](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Text for the manage billing page */
 "subscription.billing.google.text" = "Tavs abonements tika iegādāts Google Play veikalā. Lai atjaunotu abonementu, lūdzu, atver Google Play veikala abonēšanas iestatījumus ierīcē, kas ir pierakstījusies tajā pašā Google kontā, kurā sākotnēji iegādājies abonementu.";
@@ -3247,8 +3385,17 @@
 /* Caption of the Duck.ai settings (do not modify link) */
 "subscription.duck.ai.caption" = "Privāti tērzē ar abonentiem ekskluzīviem mākslīgā intelekta modeļiem.\n[Uzziniet vairāk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)";
 
+/* Instruction to configure ai settings in AI Features settings */
+"subscription.duck.ai.configure.duck.ai.footer" = "Konfigurē Duck.ai MI funkciju iestatījumos.";
+
+/* Title of the setting page action to open AI features settings */
+"subscription.duck.ai.enable.ai.features" = "Ieslēgt MI funkciju iestatījumos";
+
 /* Title of the setting page action to open Duck.ai */
 "subscription.duck.ai.open" = "Atver Duck.ai";
+
+/* Title of the setting item action to open AI Features Settings */
+"subscription.duck.ai.open.ai.features.settings" = "Pārvaldīt MI funkciju iestatījumos";
 
 /* Title of the setting page of Duck.ai */
 "subscription.duck.ai.title" = "Duck.ai";
@@ -3264,9 +3411,6 @@
 
 /* FAQ Button */
 "subscription.faq" = "Bieži uzdotie jautājumi un atbalsts";
-
-/* FAQ Description */
-"subscription.faq.description" = "Saņem atbildes uz bieži uzdotiem jautājumiem vai sazinies ar Privacy Pro atbalsta dienestu mūsu palīdzības lapās.";
 
 /* Share Feedback Button */
 "subscription.feedback" = "Kopīgot atsauksmi";
@@ -3301,14 +3445,11 @@
 /* View plans button text */
 "subscription.notFound.view.plans" = "Skatīt plānus";
 
-/* Hero Text for Personal information removal */
-"subscription.pir.hero" = "Aktivizē Privacy Pro datorā, lai iestatītu Personal Information Removal";
-
-/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Privacy Pro>, and the second, the menu entry. i.e. <I have a Subscription> */
+/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Subscribe to DuckDuckGo>, and the second, the menu entry. i.e. <I have a Subscription> */
 "subscription.pir.heroText" = "DuckDuckGo pārlūkprogrammā galddatoram dodies uz %1$@ un noklikšķini uz %2$@, lai sāktu.";
 
-/* Settings references a menu in the Desktop app, Privacy Pro, references our product name */
-"subscription.pir.heroTextLocation" = "Iestatījumi > Privacy Pro";
+/* Settings references a menu in the Desktop app, Subscribe to DuckDuckGo, references our product name */
+"subscription.pir.heroTextLocation" = "Iestatījumi > Abonēt DuckDuckGo";
 
 /* Menu item for enabling Personal Information Removal on Desktop */
 "subscription.pir.heroTextMenyEntry" = "Man ir abonements";
@@ -3333,9 +3474,6 @@
 
 /* Remove from this device button */
 "subscription.remove.from.device.button" = "Noņemt no šīs ierīces";
-
-/* Remove from device confirmation dialog text */
-"subscription.remove.from.device.text" = "Šajā ierīcē vairs nevarēsi piekļūt savam Privacy Pro abonementam. Tas neatcels tavu abonementu, un tas paliks aktīvs citās tavās ierīcēs.";
 
 /* Remove from device confirmation dialog title */
 "subscription.remove.from.device.title" = "Vai noņemt no šīs ierīces?";
@@ -3409,9 +3547,6 @@
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Tavs gada abonements atjaunojas %@.";
 
-/* Navigation bar Title for subscriptions */
-"subscription.title" = "Privacy Pro";
-
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Bezmaksas izmēģinājuma periods ir aktīvs";
 
@@ -3447,6 +3582,36 @@
 
 /* Title for the Sync Promotion banner */
 "sync.promo.passwords.title" = "Sinhronizē un dublē savas paroles";
+
+/* Button title to start backup */
+"sync.recovery.alternative.prompt.backup.button" = "Sync & Backup šo ierīci";
+
+/* Footer for the sync recovery prompt */
+"sync.recovery.alternative.prompt.footer" = "Atjaunošanas koda saglabāšana var nodrošināt, ka nākotnē varēsiet viegli atjaunot paroles.";
+
+/* Message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message" = "Sinhronizētas paroles var atjaunot tikai tad, ja tev ir piekļuve citai ierīcei vai izmantojot atkopšanas kodu, kas ir daļa no Sync & Backup iestatīšanas.";
+
+/* Learn more link after the message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message.link" = "[Uzzini vairāk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
+
+/* Button title to start sync QR scan */
+"sync.recovery.alternative.prompt.sync.button" = "Skenēt atkopšanas kodu";
+
+/* Title for the sync recovery prompt describing how to use Sync recovery code to restore passwords */
+"sync.recovery.alternative.prompt.title" = "Vai cita ierīce nav pieejama? Skenē savu atkopšanas kodu.";
+
+/* Button title to show alternatives */
+"sync.recovery.prompt.continue.button" = "Vai tev nav citas ierīces?";
+
+/* Message for the sync recovery prompt */
+"sync.recovery.prompt.message" = "DuckDuckGo paroles netiek pārsūtītas ar iCloud, jo tās ir šifrētas tavā ierīcē. Viss pārējais jau ir šeit.";
+
+/* Button title to sync with another device */
+"sync.recovery.prompt.sync.button" = "Sinhronizēt ar citu ierīci";
+
+/* Title for the sync recovery prompt, replacing %@ with the device type (e.g. iPhone, iPad) */
+"sync.recovery.prompt.title" = "Uz jauna %@? Sinhronizēsim tavas paroles.";
 
 /* Caption for a button to remove device from Sync */
 "sync.remove-device.action" = "Noņemt";
@@ -3540,6 +3705,9 @@
 
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
+
+/* No comment provided by engineer. */
+"Version: %@" = "Versija: %@";
 
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Meklēt";
@@ -3801,6 +3969,45 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Ziņojums no %@:";
+
+/* Text for the badge displayed on the Subscription menu item during the win-back campaign */
+"win-back.campaign.menu.badge.text" = "IETAUPI 25%";
+
+/* CTA of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.cta" = "Apskatīt piedāvājumu";
+
+/* Dismiss of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.dismiss" = "Ne tagad";
+
+/* Message of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.message" = "Paliec aizsargāts ar mūsu VPN, privāto MI un citiem risinājumiem. Atjauno abonementu šodien un ietaupi 25%.";
+
+/* Subtitle of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.subtitle" = "Tikai ierobežotu laiku";
+
+/* Title of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.title" = "Mēs vēlamies tevi atpakaļ!\nSaņem 25% atlaidi.";
+
+/* CTA of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.cta" = "Apskatīt piedāvājumu";
+
+/* Button for using existing subscription during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.existing.subscription.button" = "Man ir abonements";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.logged-out.subtitle" = "Ierobežota laika piedāvājums!";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.subtitle" = "Paliec aizsargāts ar mūsu VPN, privāto MI un citiem risinājumiem. Abonē vēlreiz jau šodien un ietaupi 25%.\nIerobežota laika piedāvājums.";
+
+/* Title of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.title" = "Atjauno abonementu un ietaupi 25%";
+
+/* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Atkārtoti abonēt";
+
+/* Subtitle for resubscribe CTA for users eligible for the win-back offer. */
+"win-back.campaign.subscription.settings.page.resubscribe.subtitle" = "Paliec aizsargāts ar mūsu VPN, privāto MI un citiem risinājumiem.\nIerobežota laika piedāvājums.";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Vai meklē Mac versiju?";

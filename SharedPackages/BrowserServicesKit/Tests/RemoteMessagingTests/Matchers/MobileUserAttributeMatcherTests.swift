@@ -26,6 +26,7 @@ import XCTest
 class MobileUserAttributeMatcherTests: XCTestCase {
 
     var mockStatisticsStore: MockStatisticsStore!
+    var mockFeatureDiscovery: MockFeatureDiscovery!
     var manager: MockVariantManager!
     var emailManager: EmailManager!
     var matcher: MobileUserAttributeMatcher!
@@ -41,6 +42,8 @@ class MobileUserAttributeMatcherTests: XCTestCase {
         mockStatisticsStore.appRetentionAtb = "v105-44"
         mockStatisticsStore.searchRetentionAtb = "v105-88"
         mockStatisticsStore.installDate = dateYesterday
+
+        mockFeatureDiscovery = MockFeatureDiscovery()
 
         manager = MockVariantManager(isSupportedReturns: true,
                                          currentVariant: MockVariant(name: "zo", weight: 44, isIncluded: { return true }, features: [.dummy]))
@@ -101,6 +104,7 @@ class MobileUserAttributeMatcherTests: XCTestCase {
     private func setUpUserAttributeMatcher(dismissedMessageIds: [String] = [], isSyncEnabled: Bool = false) {
         matcher = MobileUserAttributeMatcher(
             statisticsStore: mockStatisticsStore,
+            featureDiscovery: mockFeatureDiscovery,
             variantManager: manager,
             emailManager: emailManager,
             bookmarksCount: 44,
@@ -108,20 +112,22 @@ class MobileUserAttributeMatcherTests: XCTestCase {
             appTheme: "default",
             isWidgetInstalled: true,
             daysSinceNetPEnabled: 3,
-            isPrivacyProEligibleUser: true,
-            isPrivacyProSubscriber: true,
-            privacyProDaysSinceSubscribed: 5,
-            privacyProDaysUntilExpiry: 25,
-            privacyProPurchasePlatform: "apple",
-            isPrivacyProSubscriptionActive: true,
-            isPrivacyProSubscriptionExpiring: false,
-            isPrivacyProSubscriptionExpired: false,
+            isSubscriptionEligibleUser: true,
+            isDuckDuckGoSubscriber: true,
+            subscriptionDaysSinceSubscribed: 5,
+            subscriptionDaysUntilExpiry: 25,
+            subscriptionPurchasePlatform: "apple",
+            isSubscriptionActive: true,
+            isSubscriptionExpiring: false,
+            isSubscriptionExpired: false,
+            subscriptionFreeTrialActive: false,
             isDuckPlayerOnboarded: false,
             isDuckPlayerEnabled: false,
             dismissedMessageIds: dismissedMessageIds,
             shownMessageIds: [],
             enabledFeatureFlags: [],
-            isSyncEnabled: isSyncEnabled
+            isSyncEnabled: isSyncEnabled,
+            shouldShowWinBackOfferUrgencyMessage: false
         )
     }
 }

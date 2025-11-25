@@ -70,41 +70,14 @@ final class AutofillPreferencesModel: ObservableObject {
 
             persistor.passwordManager = passwordManager
 
-            if #available(macOS 15.4, *), NSApp.delegateTyped.webExtensionManager != nil {
-                // New logic with web extensions support
-
-                // Handle cleanup from previous value
-                switch oldValue {
-                case .duckduckgo:
-                    showSyncPromo = false
-                case .bitwarden:
-                    PasswordManagerCoordinator.shared.setEnabled(false)
-                case .bitwardenExtension:
-                    uninstallBitwardenExtension()
-                }
-
-                // Handle setup for new value
-                switch passwordManager {
-                case .bitwarden:
-                    PasswordManagerCoordinator.shared.setEnabled(true)
-                    presentBitwardenSetupFlow()
-
-                case .bitwardenExtension:
-                    installBitwardenExtensionIfNeeded()
-
-                case .duckduckgo:
-                    setShouldShowSyncPromo()
-                }
+            // Original logic (preserved ad-verbatim)
+            let enabled = passwordManager == .bitwarden
+            PasswordManagerCoordinator.shared.setEnabled(enabled)
+            if enabled {
+                presentBitwardenSetupFlow()
+                showSyncPromo = false
             } else {
-                // Original logic (preserved ad-verbatim)
-                let enabled = passwordManager == .bitwarden
-                PasswordManagerCoordinator.shared.setEnabled(enabled)
-                if enabled {
-                    presentBitwardenSetupFlow()
-                    showSyncPromo = false
-                } else {
-                    setShouldShowSyncPromo()
-                }
+                setShouldShowSyncPromo()
             }
         }
     }
@@ -160,33 +133,6 @@ final class AutofillPreferencesModel: ObservableObject {
     }
 
     @MainActor
-    private func installBitwardenExtensionIfNeeded() {
-        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
-            let bitwardenExtensionPath = WebExtensionIdentifier.bitwarden.defaultPath
-
-            // Only install if not already installed
-            if !webExtensionManager.webExtensionPaths.contains(bitwardenExtensionPath) {
-                Task {
-                    await webExtensionManager.installExtension(path: bitwardenExtensionPath)
-                }
-            }
-        }
-    }
-
-    @MainActor
-    private func uninstallBitwardenExtension() {
-        if #available(macOS 15.4, *), let webExtensionManager = NSApp.delegateTyped.webExtensionManager {
-            let bitwardenExtensionPath = WebExtensionIdentifier.bitwarden.defaultPath
-
-            if webExtensionManager.webExtensionPaths.contains(bitwardenExtensionPath) {
-                Task {
-                    try? webExtensionManager.uninstallExtension(path: bitwardenExtensionPath)
-                }
-            }
-        }
-    }
-
-    @MainActor
     func showAutofillPopover(_ selectedCategory: SecureVaultSorting.Category = .allItems, source: PasswordManagementSource) {
         guard let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else { return }
         let navigationViewController = parentWindowController.mainViewController.navigationBarViewController
@@ -229,12 +175,12 @@ final class AutofillPreferencesModel: ObservableObject {
     private let bitwardenInstallationService: BWInstallationService
     private let neverPromptWebsitesManager: AutofillNeverPromptWebsitesManager
     private lazy var syncPromoManager: SyncPromoManaging = SyncPromoManager()
-    lazy var syncPromoViewModel: SyncPromoViewModel = SyncPromoViewModel(touchpointType: .passwords,
+    lazy var syncPromoViewModel: SyncPromoViewModel = SyncPromoViewModel(touchpointType: .autofill,
                                                                          primaryButtonAction: { [weak self] in
-        self?.syncPromoManager.goToSyncSettings(for: .passwords)
+        self?.syncPromoManager.goToSyncSettings(for: .autofill)
     },
                                                                          dismissButtonAction: { [weak self] in
-        self?.syncPromoManager.dismissPromoFor(.passwords)
+        self?.syncPromoManager.dismissPromoFor(.autofill)
         self?.showSyncPromo = false
     })
 

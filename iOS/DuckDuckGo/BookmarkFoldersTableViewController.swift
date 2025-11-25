@@ -288,7 +288,7 @@ class FavoriteCell: UITableViewCell {
     override func awakeFromNib() {
         super.awakeFromNib()
         backgroundColor = UIColor(designSystemColor: .surface)
-        iconImageView.image = DesignSystemImages.Color.Size24.folder
+        iconImageView.image = DesignSystemImages.Color.Size24.favorite
         iconImageView.tintColor = UIColor(designSystemColor: .icons)
         label.textColor = UIColor(designSystemColor: .textPrimary)
     }

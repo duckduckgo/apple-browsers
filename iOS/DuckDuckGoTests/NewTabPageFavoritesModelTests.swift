@@ -26,12 +26,6 @@ import Bookmarks
 final class NewTabPageFavoritesModelTests: XCTestCase {
     private let favoriteDataSource = MockNewTabPageFavoriteDataSource()
 
-    override func setUpWithError() throws {
-        throw XCTSkip("Potentially flaky")
-
-        try super.setUpWithError()
-    }
-
     override func tearDown() {
         PixelFiringMock.tearDown()
     }
@@ -50,6 +44,15 @@ final class NewTabPageFavoritesModelTests: XCTestCase {
 
         XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.favoriteLaunchedNTP.name)
         XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.favoriteLaunchedNTPDaily.name)
+    }
+
+    func testFiresPixelsOnFavoriteSelectedInFocussedState() {
+        let sut = createSUT(isFocussedState: true)
+
+        sut.favoriteSelected(Favorite(id: "", title: "", domain: "", urlObject: URL(string: "https://foo.bar")))
+
+        XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.favoriteLaunchedWebsite.name)
+        XCTAssertNil(PixelFiringMock.lastDailyPixelInfo?.pixelName)
     }
 
     func testFiresPixelOnFavoriteDeleted() {
@@ -74,8 +77,9 @@ final class NewTabPageFavoritesModelTests: XCTestCase {
         XCTAssertEqual(PixelFiringMock.lastPixelName, Pixel.Event.homeScreenEditFavorite.name)
     }
 
-    private func createSUT() -> FavoritesViewModel {
-        FavoritesViewModel(favoriteDataSource: favoriteDataSource,
+    private func createSUT(isFocussedState: Bool = false) -> FavoritesViewModel {
+        FavoritesViewModel(isFocussedState: isFocussedState,
+                           favoriteDataSource: favoriteDataSource,
                            faviconLoader: MockFavoritesFaviconLoading(),
                            faviconsCache: MockFavoritesFaviconCaching(),
                            pixelFiring: PixelFiringMock.self,

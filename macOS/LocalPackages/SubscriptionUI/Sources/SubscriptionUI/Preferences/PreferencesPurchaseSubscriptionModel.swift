@@ -32,31 +32,79 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
     var currentPurchasePlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
 
     lazy var sheetModel = SubscriptionAccessViewModel(actionHandlers: sheetActionHandler,
-                                                      purchasePlatform: subscriptionManager.currentEnvironment.purchasePlatform,
-                                                      isRebrandingOn: { [weak self] in self?.featureFlagger.isFeatureOn(.subscriptionRebranding) ?? false })
+                                                      purchasePlatform: subscriptionManager.currentEnvironment.purchasePlatform)
 
     var shouldDirectlyLaunchActivationFlow: Bool {
         subscriptionManager.currentEnvironment.purchasePlatform == .stripe
+    }
+
+    var shouldDisplayWinBackOffer: Bool {
+        winBackOfferVisibilityManager.isOfferAvailable
+    }
+
+    var shouldDisplayBlackFridayCampaign: Bool {
+        blackFridayCampaignProvider.isCampaignEnabled
+    }
+
+    var blackFridayDiscountPercent: Int {
+        blackFridayCampaignProvider.discountPercent
+    }
+
+    // MARK: - Purchase Section UI Properties
+
+    var purchaseSectionHeader: String {
+        if shouldDisplayWinBackOffer {
+            return UserText.winBackCampaignLoggedOutPreferencesTitle
+        } else {
+            return UserText.preferencesSubscriptionInactiveHeader(isPaidAIChatEnabled: isPaidAIChatEnabled)
+        }
+    }
+
+    var purchaseSectionCaption: String {
+        if shouldDisplayWinBackOffer {
+            return UserText.winBackCampaignLoggedInPreferencesMessage
+        } else {
+            return UserText.preferencesSubscriptionInactiveCaption(region: subscriptionStorefrontRegion, isPaidAIChatEnabled: isPaidAIChatEnabled)
+        }
+    }
+
+    var purchaseButtonTitle: String {
+        if shouldDisplayWinBackOffer {
+            return UserText.winBackCampaignLoggedOutPreferencesCTA
+        } else if shouldDisplayBlackFridayCampaign {
+            return UserText.blackFridayCampaignPreferencesCTA(discountPercent: blackFridayDiscountPercent)
+        } else if isUserEligibleForFreeTrial {
+            return UserText.purchaseFreeTrialButton
+        } else {
+            return UserText.purchaseButton
+        }
     }
 
     private let subscriptionManager: SubscriptionAuthV1toV2Bridge
     private let userEventHandler: (PreferencesPurchaseSubscriptionModel.UserEvent) -> Void
     private let sheetActionHandler: SubscriptionAccessActionHandlers
     private let featureFlagger: FeatureFlagger
+    private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
+    private let blackFridayCampaignProvider: BlackFridayCampaignProviding
 
     public enum UserEvent {
         case didClickIHaveASubscription,
-             openURL(SubscriptionURL)
+             openURL(SubscriptionURL),
+             openWinBackOfferLandingPage
     }
 
     public init(subscriptionManager: SubscriptionAuthV1toV2Bridge,
                 featureFlagger: FeatureFlagger,
+                winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
                 userEventHandler: @escaping (PreferencesPurchaseSubscriptionModel.UserEvent) -> Void,
-                sheetActionHandler: SubscriptionAccessActionHandlers) {
+                sheetActionHandler: SubscriptionAccessActionHandlers,
+                blackFridayCampaignProvider: BlackFridayCampaignProviding) {
         self.subscriptionManager = subscriptionManager
         self.userEventHandler = userEventHandler
         self.sheetActionHandler = sheetActionHandler
         self.featureFlagger = featureFlagger
+        self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
+        self.blackFridayCampaignProvider = blackFridayCampaignProvider
         self.subscriptionStorefrontRegion = currentStorefrontRegion()
 
         updateFreeTrialEligibility()
@@ -70,7 +118,11 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
 
     @MainActor
     func purchaseAction() {
-        userEventHandler(.openURL(.purchase))
+        if winBackOfferVisibilityManager.isOfferAvailable {
+            userEventHandler(.openWinBackOfferLandingPage)
+        } else {
+            userEventHandler(.openURL(.purchase))
+        }
     }
 
     @MainActor
@@ -92,13 +144,9 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
         featureFlagger.isFeatureOn(.paidAIChat) && subscriptionManager is DefaultSubscriptionManagerV2
     }
 
-    var isSubscriptionRebrandingEnabled: Bool {
-        featureFlagger.isFeatureOn(.subscriptionRebranding)
-    }
-
     /// Updates the user's eligibility for a free trial based on feature flag status and subscription manager checks.
     ///
-    /// This method checks if the Privacy Pro free trial feature flag is enabled. If the flag is active,
+    /// This method checks if the Subscription free trial feature flag is enabled. If the flag is active,
     /// it queries the subscription manager to determine if the user is eligible for a free trial.
     /// If the feature flag is disabled, the user is marked as ineligible for the free trial.
     ///

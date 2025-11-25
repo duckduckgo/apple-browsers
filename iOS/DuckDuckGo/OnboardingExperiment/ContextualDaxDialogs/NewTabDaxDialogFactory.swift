@@ -23,7 +23,7 @@ import Onboarding
 import Subscription
 import Common
 
-typealias DaxDialogsFlowCoordinator = ContextualOnboardingLogic & PrivacyProPromotionCoordinating
+typealias DaxDialogsFlowCoordinator = ContextualOnboardingLogic & SubscriptionPromotionCoordinating
 
 protocol NewTabDaxDialogProvider {
     associatedtype DaxDialog: View
@@ -44,18 +44,18 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
     private var delegate: OnboardingNavigationDelegate?
     private var daxDialogsFlowCoordinator: DaxDialogsFlowCoordinator
     private let onboardingPixelReporter: OnboardingPixelReporting
-    private let onboardingPrivacyProPromotionHelper: OnboardingPrivacyProPromotionHelping
+    private let onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping
 
     init(
         delegate: OnboardingNavigationDelegate?,
         daxDialogsFlowCoordinator: DaxDialogsFlowCoordinator,
         onboardingPixelReporter: OnboardingPixelReporting,
-        onboardingPrivacyProPromotionHelper: OnboardingPrivacyProPromotionHelping = OnboardingPrivacyProPromotionHelper()
+        onboardingSubscriptionPromotionHelper: OnboardingSubscriptionPromotionHelping = OnboardingSubscriptionPromotionHelper()
     ) {
         self.delegate = delegate
         self.daxDialogsFlowCoordinator = daxDialogsFlowCoordinator
         self.onboardingPixelReporter = onboardingPixelReporter
-        self.onboardingPrivacyProPromotionHelper = onboardingPrivacyProPromotionHelper
+        self.onboardingSubscriptionPromotionHelper = onboardingSubscriptionPromotionHelper
     }
 
     @ViewBuilder
@@ -69,9 +69,9 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
             createSubsequentDialog(onManualDismiss: onManualDismiss)
         case .final:
             createFinalDialog(onCompletion: onCompletion, onManualDismiss: onManualDismiss)
-        case .privacyProPromotion:
+        case .subscriptionPromotion:
             // Re-use same dismiss closure as dismissing the final dialog will set onboarding completed true
-            createPrivacyProPromoDialog(proceedButtonText: onboardingPrivacyProPromotionHelper.proceedButtonText, onDismiss: onCompletion)
+            createSubscriptionPromoDialog(proceedButtonText: onboardingSubscriptionPromotionHelper.proceedButtonText, onDismiss: onCompletion)
         }
     }
 
@@ -160,18 +160,18 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
 }
 
 private extension NewTabDaxDialogFactory {
-    private func createPrivacyProPromoDialog(proceedButtonText: String, onDismiss: @escaping (_ activateSearch: Bool) -> Void) -> some View {
+    private func createSubscriptionPromoDialog(proceedButtonText: String, onDismiss: @escaping (_ activateSearch: Bool) -> Void) -> some View {
 
         return FadeInView {
-            PrivacyProPromotionView(
+            SubscriptionPromotionView(
                 title: UserText.SubscriptionPromotionOnboarding.Promo.title,
                 // This is temporary and will be removed after rebranding is launched
                 message: AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) ?  UserText.SubscriptionPromotionOnboarding.Promo.message() : UserText.SubscriptionPromotionOnboarding.Promo.messageDeprecated(),
                 proceedText: proceedButtonText,
                 dismissText: UserText.SubscriptionPromotionOnboarding.Buttons.skip,
                 proceedAction: { [weak self] in
-                    self?.onboardingPrivacyProPromotionHelper.fireTapPixel()
-                    let urlComponents = self?.onboardingPrivacyProPromotionHelper.redirectURLComponents()
+                    self?.onboardingSubscriptionPromotionHelper.fireTapPixel()
+                    let urlComponents = self?.onboardingSubscriptionPromotionHelper.redirectURLComponents()
                     NotificationCenter.default.post(
                         name: .settingsDeepLinkNotification,
                         object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(redirectURLComponents: urlComponents),
@@ -180,8 +180,8 @@ private extension NewTabDaxDialogFactory {
                     onDismiss(false)
                 },
                 onManualDismiss: { [weak self] in
-                    self?.onboardingPrivacyProPromotionHelper.fireDismissPixel()
-                    self?.onboardingPixelReporter.measurePrivacyPromoDialogNewTabDismissButtonTapped()
+                    self?.onboardingSubscriptionPromotionHelper.fireDismissPixel()
+                    self?.onboardingPixelReporter.measureSubscriptionDialogNewTabDismissButtonTapped()
                     onDismiss(true)
                 }
             )
@@ -189,8 +189,8 @@ private extension NewTabDaxDialogFactory {
         }
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
         .onFirstAppear { [weak self] in
-            self?.onboardingPrivacyProPromotionHelper.fireImpressionPixel()
-            self?.daxDialogsFlowCoordinator.privacyProPromotionDialogSeen = true
+            self?.onboardingSubscriptionPromotionHelper.fireImpressionPixel()
+            self?.daxDialogsFlowCoordinator.subscriptionPromotionDialogSeen = true
         }
     }
 }

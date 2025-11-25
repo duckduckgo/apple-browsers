@@ -27,9 +27,30 @@ import PixelKit
 import Suggestions
 
 protocol SuggestionContainerProtocol {
-
+    @MainActor
     func getSuggestions(for query: String, useCachedData: Bool, completion: ((SuggestionResult?) -> Void)?)
+}
 
+struct SuggestionLoadingDecider {
+    let featureFlagger: FeatureFlagger
+
+    func shouldLoadSuggestions(for input: String) -> Bool {
+        // We want to always load suggestions, except for when the user has typed a URL that looks "complete".
+        // We define this as a URL with a path equal to a single slash (root URL).
+        // Skip suggestions when all of the following are true:
+        // * input can be converted to a URL
+        // * input starts with http[s]
+        // * converted URL is root (no path)
+        // * the user typed the trailing "/"
+        guard let url = URL.makeURL(fromSuggestionPhrase: input, useUnifiedLogic: featureFlagger.isFeatureOn(.unifiedURLPredictor)) else {
+            return true
+        }
+
+        if URL.NavigationalScheme.hypertextSchemes.contains(where: { input.hasPrefix($0.rawValue) }), url.isRoot, input.last == "/" {
+            return false
+        }
+        return true
+    }
 }
 
 final class SuggestionContainer: SuggestionContainerProtocol {
@@ -42,6 +63,7 @@ final class SuggestionContainer: SuggestionContainerProtocol {
     private let openTabsProvider: OpenTabsProvider
 
     protocol HistoryProvider {
+        @MainActor
         func history(for suggestionLoading: SuggestionLoading) -> [HistorySuggestion]
     }
     private let historyProvider: HistoryProvider
@@ -82,13 +104,19 @@ final class SuggestionContainer: SuggestionContainerProtocol {
         self.bookmarkProvider = bookmarkProvider
         self.historyProvider = historyProvider
         self.startupPreferences = startupPreferences ?? NSApp.delegateTyped.startupPreferences
-        self.featureFlagger = featureFlagger ?? NSApp.delegateTyped.featureFlagger
-        self.loading = suggestionLoading ?? SuggestionLoader(urlFactory: URL.makeURL(fromSuggestionPhrase:), isUrlIgnored: isUrlIgnored)
+        let effectiveFeatureFlagger = featureFlagger ?? NSApp.delegateTyped.featureFlagger
+        self.featureFlagger = effectiveFeatureFlagger
+        let suggestionLoadingDecider = SuggestionLoadingDecider(featureFlagger: effectiveFeatureFlagger)
+        self.loading = suggestionLoading ?? SuggestionLoader(
+            shouldLoadSuggestionsForUserInput: suggestionLoadingDecider.shouldLoadSuggestions(for:),
+            isUrlIgnored: isUrlIgnored
+        )
         self.urlSession = urlSession ?? URLSession(configuration: .ephemeral)
         self.burnerMode = burnerMode
         self.windowControllersManager = windowControllersManager
     }
 
+    @MainActor
     func getSuggestions(for query: String, useCachedData: Bool = false, completion: ((SuggestionResult?) -> Void)? = nil) {
         latestQuery = query
 
@@ -156,6 +184,7 @@ struct OpenTab: BrowserTab, Hashable {
 }
 
 extension HistoryCoordinator: SuggestionContainer.HistoryProvider {
+    @MainActor
     func history(for suggestionLoading: SuggestionLoading) -> [HistorySuggestion] {
         history ?? []
     }
@@ -174,6 +203,7 @@ extension SuggestionContainer: SuggestionLoadingDataSource {
         return .desktop
     }
 
+    @MainActor
     func history(for suggestionLoading: SuggestionLoading) -> [HistorySuggestion] {
         return historyProvider.history(for: suggestionLoading)
     }

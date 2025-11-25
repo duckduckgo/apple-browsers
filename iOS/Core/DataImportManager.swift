@@ -184,8 +184,8 @@ public final class DataImportManager: DataImportManaging {
                     tld: tld)
     }
 
-    private func createJSONImporter(url: URL? = nil, jsonContent: String? = nil) -> SafariPaymentCardsImporter {
-        SafariPaymentCardsImporter(fileURL: url, jsonContent: jsonContent, creditCardImporter: creditCardImporter, vault: vault)
+    private func createJSONImporter(jsonContent: String? = nil) -> SafariPaymentCardsImporter {
+        SafariPaymentCardsImporter(fileURL: nil, jsonContent: jsonContent, creditCardImporter: creditCardImporter, vault: vault)
     }
 
     private func cleanupImporters() {
@@ -247,4 +247,10 @@ public final class DataImportManager: DataImportManaging {
         return summary
     }
 
+}
+
+extension DataImport.DataTypeSummary {
+    public init(_ bookmarksImportSummary: BookmarksImportSummary) {
+        self.init(successful: bookmarksImportSummary.successful, duplicate: bookmarksImportSummary.duplicates, failed: bookmarksImportSummary.failed)
+    }
 }

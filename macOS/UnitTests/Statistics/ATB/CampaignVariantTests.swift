@@ -73,5 +73,6 @@ class CampaignVariantTests: XCTestCase, StatisticsStore {
     var waitlistUnlocked: Bool = false
     var autoLockEnabled: Bool = false
     var autoLockThreshold: String?
+    var duckAIRetentionAtb: String?
 
 }

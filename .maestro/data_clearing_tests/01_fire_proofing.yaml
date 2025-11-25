@@ -38,16 +38,14 @@ tags:
 - assertVisible: "setcookie.net is now Fireproof"
 
 # Fire Button - twice, just to be sure
-- tapOn: "Close Tabs and Clear Data"
-- tapOn:
-    id: "alert.forget-data.confirm"
+- runFlow:
+    file: ../shared/use_firebutton.yaml
 - assertVisible: "Cancel"
 - tapOn: "Cancel"
 - assertVisible:
     id: "searchEntry"
-- tapOn: "Close Tabs and Clear Data"
-- tapOn:
-    id: "alert.forget-data.confirm"
+- runFlow:
+    file: ../shared/use_firebutton.yaml
 
 # Validate Cookie was retained
 - tapOn: 
@@ -61,9 +59,8 @@ tags:
 - tapOn: "Remove Fireproofing"
 
 # Fire Button
-- tapOn: "Close Tabs and Clear Data"
-- tapOn:
-    id: "alert.forget-data.confirm"
+- runFlow:
+    file: ../shared/use_firebutton.yaml
 
 # Validate Cookie was removed
 - tapOn: 

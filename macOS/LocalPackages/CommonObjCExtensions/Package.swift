@@ -1,4 +1,4 @@
-// swift-tools-version: 5.8
+// swift-tools-version: 5.9
 // The swift-tools-version declares the minimum version of Swift required to build this package.
 //
 //  Package.swift
@@ -19,6 +19,7 @@
 //
 
 import PackageDescription
+ import Foundation
 
 let package = Package(
     name: "CommonObjCExtensions",
@@ -53,11 +54,14 @@ let package = Package(
             dependencies: [],
             sources: [
                 "NSException+Catch.m",
-                "NSObject+performSelector.m",
+                "NSObject+valueForIvar.m",
             ],
             publicHeadersPath: "include",
             cSettings: [
                 .headerSearchPath("include"),
+                // disable code coverage for the ObjC target due to a known SPM linking issue:
+                // https://forums.swift.org/t/undefined-symbols-llvm-profile-runtime-when-building-a-package-with-code-coverage-turned-on/49701
+                .unsafeFlags(["-fno-profile-instr-generate", "-fno-coverage-mapping"]),
             ]
         )
     ]

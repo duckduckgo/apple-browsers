@@ -32,7 +32,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
     var mockFeatureFlagger: MockFeatureFlagger!
     var mockDefaultBrowserProvider: MockDefaultBrowserProvider!
     fileprivate var mockPersistor: MockVPNUpsellUserDefaultsPersistor!
-    var firedPixels: [PrivacyProPixel] = []
+    var firedPixels: [SubscriptionPixel] = []
 
     var cancellables: Set<AnyCancellable>!
 
@@ -107,7 +107,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         // When
         sut = createUpsellManager(isFirstLaunch: false, isNewUser: true) { [weak self] pixel in
             self?.firedPixels.append(pixel)
-            if pixel.name == PrivacyProPixel.privacyProToolbarButtonShown.name {
+            if pixel.name == SubscriptionPixel.subscriptionToolbarButtonShown.name {
                 expectation.fulfill()
             }
         }
@@ -116,7 +116,7 @@ final class VPNUpsellVisibilityManagerTests: XCTestCase {
         wait(for: [expectation], timeout: 1.0)
         XCTAssertEqual(sut.state, .visible)
         XCTAssertEqual(firedPixels.count, 1)
-        XCTAssertEqual(firedPixels.first?.name, PrivacyProPixel.privacyProToolbarButtonShown.name)
+        XCTAssertEqual(firedPixels.first?.name, SubscriptionPixel.subscriptionToolbarButtonShown.name)
     }
 
     // MARK: - Manual Unpinning Tests
@@ -435,7 +435,7 @@ extension VPNUpsellVisibilityManagerTests {
         isFirstLaunch: Bool,
         isNewUser: Bool,
         autoDismissDays: Int = 7,
-        pixelHandler: @escaping (PrivacyProPixel) -> Void = { _ in }
+        pixelHandler: @escaping (SubscriptionPixel) -> Void = { _ in }
     ) -> VPNUpsellVisibilityManager {
         let manager = VPNUpsellVisibilityManager(
             isFirstLaunch: isFirstLaunch,

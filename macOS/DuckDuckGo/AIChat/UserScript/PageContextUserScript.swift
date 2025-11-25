@@ -24,8 +24,12 @@ import OSLog
 import UserScript
 import WebKit
 
-struct PageContextPayload: Codable {
-    let serializedPageData: AIChatPageContextData?
+struct PageContextCollectionPayload: Codable {
+    let serializedPageData: String?
+}
+
+struct PageContextResponse: Codable {
+    let pageContext: AIChatPageContextData?
 }
 
 final class PageContextUserScript: NSObject, Subfeature {
@@ -73,10 +77,15 @@ final class PageContextUserScript: NSObject, Subfeature {
 
     /// Receives collected page context
     private func collectionResult(params: Any, message: UserScriptMessage) async -> Encodable? {
-        guard let payload: PageContextPayload = DecodableHelper.decode(from: params) else {
+        guard let payload: PageContextCollectionPayload = DecodableHelper.decode(from: params),
+              let jsonString = payload.serializedPageData,
+              let jsonData = jsonString.data(using: .utf8) else {
             return nil
         }
-        collectionResultSubject.send(payload.serializedPageData)
+
+        let pageContextData: AIChatPageContextData? = DecodableHelper.decode(jsonData: jsonData)
+        collectionResultSubject.send(pageContextData)
+
         return nil
     }
 }

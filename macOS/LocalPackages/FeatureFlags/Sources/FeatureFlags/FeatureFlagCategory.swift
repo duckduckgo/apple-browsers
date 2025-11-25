@@ -21,8 +21,11 @@ import BrowserServicesKit
 
 public enum FeatureFlagCategory: String, CaseIterable, Comparable {
     case duckAI = "Duck.ai"
+    case dbp = "Personal Information Removal"
     case osSupportWarnings = "OS Support Warnings"
     case other = "Other"
+    case subscription = "Subscription"
+    case popupBlocking = "Popup Blocking"
     case sync = "Sync"
     case updates = "Updates"
     case vpn = "VPN"
@@ -45,14 +48,20 @@ public protocol FeatureFlagCategorization {
 extension FeatureFlag: FeatureFlagCategorization {
     public var category: FeatureFlagCategory {
         switch self {
-        case .aiChatGlobalSwitch,
-                .aiChatSidebar,
+        case .aiChatSidebar,
                 .aiChatTextSummarization,
+                .aiChatTextTranslation,
                 .aiChatPageContext,
-                .duckAISearchParameter:
+                .duckAISearchParameter,
+                .aiChatImprovements,
+                .aiChatKeepSession,
+                .aiChatDataClearing,
+                .aiChatOmnibarToggle,
+                .standaloneMigration:
             return .duckAI
         case .osSupportForceUnsupportedMessage,
-                .osSupportForceWillSoonDropSupportMessage:
+                .osSupportForceWillSoonDropSupportMessage,
+                .willSoonDropBigSurSupport:
             return .osSupportWarnings
         case .syncSeamlessAccountSwitching,
                 .syncSetupBarcodeIsUrlBased,
@@ -60,12 +69,35 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .exchangeKeysToSyncWithAnotherDevice:
             return .sync
         case .updatesWontAutomaticallyRestartApp,
-                .autoUpdateInDEBUG:
+                .autoUpdateInDEBUG,
+                .appStoreUpdateFlow:
             return .updates
         case .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,
-                .vpnToolbarUpsell:
+                .vpnToolbarUpsell,
+                .winBackOffer:
             return .vpn
+        case .dbpEmailConfirmationDecoupling,
+                .dbpRemoteBrokerDelivery:
+            return .dbp
+        case .privacyProAuthV2,
+                .privacyProFreeTrial,
+                .paidAIChat,
+                .supportsAlternateStripePaymentFlow,
+                .subscriptionPurchaseWidePixelMeasurement,
+                .subscriptionRestoreWidePixelMeasurement,
+                .authV2WideEventEnabled,
+                .vpnConnectionWidePixelMeasurement,
+                .blackFridayCampaign,
+                .tierMessagingEnabled,
+                .allowProTierPurchase:
+            return .subscription
+        case .popupBlocking,
+                .extendedUserInitiatedPopupTimeout,
+                .suppressEmptyPopUpsOnApproval,
+                .allowPopupsForCurrentPage,
+                .popupPermissionButtonPersistence:
+            return .popupBlocking
         default:
             return .other
         }

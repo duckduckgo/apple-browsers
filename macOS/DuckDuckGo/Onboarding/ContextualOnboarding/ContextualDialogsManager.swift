@@ -180,7 +180,7 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
         guard state != .onboardingCompleted else { return nil }
         // If onboarding hasn't started, mark it as ongoing.
         if state == .notStarted { state = .ongoing }
-        // If a highFive has already been seen, conclude onboarding (it's just for extra safety).
+        // If a highFive has already been seen, conclude onboarding.
         if hasSeen(.highFive) {
             state = .onboardingCompleted
             return nil
@@ -204,10 +204,6 @@ public class ContextualDialogsManager: ObservableObject, ContextualOnboardingDia
             selectedDialog = nil
         }
 
-        // If highFive is the selected dialog, end onboarding.
-        if let dialog = selectedDialog, dialog == .highFive {
-            state = .onboardingCompleted
-        }
         // Mark the dialog as seen.
         if let dialog = selectedDialog { markSeen(dialog) }
 

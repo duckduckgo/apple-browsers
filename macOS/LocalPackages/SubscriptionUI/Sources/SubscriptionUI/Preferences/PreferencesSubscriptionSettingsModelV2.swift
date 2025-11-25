@@ -28,26 +28,36 @@ import Persistence
 public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
 
     @Published var subscriptionDetails: String?
-    @Published var subscriptionStatus: PrivacyProSubscription.Status = .unknown
+    @Published var subscriptionStatus: DuckDuckGoSubscription.Status = .unknown
     @Published private var hasActiveTrialOffer: Bool = false
+    private var subscriptionPlatform: DuckDuckGoSubscription.Platform?
 
     @Published var email: String?
     var hasEmail: Bool { !(email?.isEmpty ?? true) }
 
-    private var isRebrandingOn: () -> Bool
     @Published private(set) var rebrandingMessageDismissed: Bool = false
 
     public var showRebrandingMessage: Bool {
-        return isRebrandingOn() && !rebrandingMessageDismissed
+        return !rebrandingMessageDismissed
     }
 
-    private var subscriptionPlatform: PrivacyProSubscription.Platform?
+    var expiredSubscriptionPurchaseButtonTitle: String {
+        if winBackOfferVisibilityManager.isOfferAvailable {
+            UserText.winBackCampaignLoggedInPreferencesCTA
+        } else if blackFridayCampaignProvider.isCampaignEnabled {
+            UserText.blackFridayCampaignPreferencesCTA(discountPercent: blackFridayCampaignProvider.discountPercent)
+        } else {
+            UserText.viewPlansExpiredButtonTitle
+        }
+    }
+
     var currentPurchasePlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
 
     private let subscriptionManager: SubscriptionManagerV2
     private let keyValueStore: ThrowingKeyValueStoring
     private let rebrandingDismissedKey = "hasDismissedSubscriptionRebrandingMessage"
-
+    private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
+    private let blackFridayCampaignProvider: BlackFridayCampaignProviding
     private let userEventHandler: (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void
     private var fetchSubscriptionDetailsTask: Task<(), Never>?
 
@@ -65,20 +75,22 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
              didClickManageEmail,
              didOpenSubscriptionSettings,
              didClickChangePlanOrBilling,
-             didClickRemoveSubscription
+             didClickRemoveSubscription,
+             openWinBackOfferLandingPage
     }
 
     public init(userEventHandler: @escaping (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void,
                 subscriptionManager: SubscriptionManagerV2,
                 subscriptionStateUpdate: AnyPublisher<PreferencesSidebarSubscriptionState, Never>,
                 keyValueStore: ThrowingKeyValueStoring,
-                isRebrandingOn: @escaping () -> Bool) {
+                winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
+                blackFridayCampaignProvider: BlackFridayCampaignProviding) {
         self.subscriptionManager = subscriptionManager
         self.userEventHandler = userEventHandler
         self.keyValueStore = keyValueStore
-        self.isRebrandingOn = isRebrandingOn
         self.rebrandingMessageDismissed = (try? keyValueStore.object(forKey: rebrandingDismissedKey) as? Bool) ?? false
-
+        self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
+        self.blackFridayCampaignProvider = blackFridayCampaignProvider
         Task {
             await self.updateSubscription(cachePolicy: .cacheFirst)
         }
@@ -142,7 +154,11 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
 
     @MainActor
     func purchaseAction() {
-        userEventHandler(.openURL(.purchase))
+        if winBackOfferVisibilityManager.isOfferAvailable {
+            userEventHandler(.openWinBackOfferLandingPage)
+        } else {
+            userEventHandler(.openURL(.purchase))
+        }
     }
 
     enum ChangePlanOrBillingAction {
@@ -309,7 +325,7 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
     }
 
     @MainActor
-    func updateDescription(for subscription: PrivacyProSubscription) {
+    func updateDescription(for subscription: DuckDuckGoSubscription) {
         let hasActiveTrialOffer = subscription.hasActiveTrialOffer
         let status = subscription.status
         let period = subscription.billingPeriod
@@ -324,7 +340,7 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
             }
 
         case .expired, .inactive:
-            self.subscriptionDetails = UserText.preferencesSubscriptionExpiredCaption(isRebrandingOn: isRebrandingOn(), formattedDate: formattedDate)
+            self.subscriptionDetails = UserText.preferencesSubscriptionExpiredCaption(formattedDate: formattedDate)
         default:
             if hasActiveTrialOffer {
                 self.subscriptionDetails = UserText.preferencesTrialSubscriptionExpiringCaption(formattedDate: formattedDate)

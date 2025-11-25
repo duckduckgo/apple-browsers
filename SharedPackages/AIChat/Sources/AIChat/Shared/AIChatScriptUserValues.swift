@@ -77,6 +77,9 @@ public struct AIChatNativeConfigValues: Codable {
     public let supportsNativeChatInput: Bool
     public let supportsURLChatIDRestoration: Bool
     public let supportsFullChatRestoration: Bool
+    public let supportsPageContext: Bool
+    public let supportsStandaloneMigration: Bool
+    public let appVersion: String
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
@@ -84,9 +87,12 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsClosingAIChat: true,
                                         supportsOpeningSettings: true,
                                         supportsNativePrompt: false,
+                                        supportsStandaloneMigration: false,
                                         supportsNativeChatInput: false,
                                         supportsURLChatIDRestoration: false,
-                                        supportsFullChatRestoration: false)
+                                        supportsFullChatRestoration: false,
+                                        supportsPageContext: false,
+                                        appVersion: "")
 #endif
 
 #if os(macOS)
@@ -94,9 +100,12 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsClosingAIChat: true,
                                         supportsOpeningSettings: true,
                                         supportsNativePrompt: true,
+                                        supportsStandaloneMigration: false,
                                         supportsNativeChatInput: false,
                                         supportsURLChatIDRestoration: false,
-                                        supportsFullChatRestoration: false)
+                                        supportsFullChatRestoration: false,
+                                        supportsPageContext: false,
+                                        appVersion: "")
 #endif
     }
 
@@ -104,9 +113,12 @@ public struct AIChatNativeConfigValues: Codable {
                 supportsClosingAIChat: Bool,
                 supportsOpeningSettings: Bool,
                 supportsNativePrompt: Bool,
+                supportsStandaloneMigration: Bool,
                 supportsNativeChatInput: Bool,
                 supportsURLChatIDRestoration: Bool,
-                supportsFullChatRestoration: Bool) {
+                supportsFullChatRestoration: Bool,
+                supportsPageContext: Bool,
+                appVersion: String) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = Platform.name
         self.supportsClosingAIChat = supportsClosingAIChat
@@ -115,6 +127,9 @@ public struct AIChatNativeConfigValues: Codable {
         self.supportsNativeChatInput = supportsNativeChatInput
         self.supportsURLChatIDRestoration = supportsURLChatIDRestoration
         self.supportsFullChatRestoration = supportsFullChatRestoration
+        self.supportsPageContext = supportsPageContext
+        self.supportsStandaloneMigration = supportsStandaloneMigration
+        self.appVersion = appVersion
     }
 }
 
@@ -125,6 +140,8 @@ public struct AIChatNativePrompt: Codable, Equatable {
     public enum Tool: Equatable {
         case query(Query)
         case summary(TextSummary)
+        case translation(Translation)
+
     }
 
     public struct Query: Codable, Equatable {
@@ -142,11 +159,47 @@ public struct AIChatNativePrompt: Codable, Equatable {
         public let sourceTitle: String?
     }
 
+    public struct Translation: Codable, Equatable {
+        public static let tool = "translation"
+
+        public let text: String
+        public let sourceURL: String?
+        public let sourceTitle: String?
+        public let sourceTLD: String?
+        public let sourceLanguage: String?
+        public let targetLanguage: String
+
+        private enum CodingKeys: String, CodingKey {
+            case text, sourceURL, sourceTitle, sourceTLD, sourceLanguage, targetLanguage
+        }
+
+        public func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(text, forKey: .text)
+            try container.encodeIfPresent(sourceURL, forKey: .sourceURL)
+            try container.encodeIfPresent(sourceTitle, forKey: .sourceTitle)
+            if let sourceTLD {
+                try container.encodeIfPresent(sourceTLD, forKey: .sourceTLD)
+            } else {
+                // sourceTLD requires to be passed explicitly as nil if lacks value
+                try container.encodeNil(forKey: .sourceTLD)
+            }
+            if let sourceLanguage {
+                try container.encodeIfPresent(sourceLanguage, forKey: .sourceLanguage)
+            } else {
+                // sourceLanguage requires to be passed explicitly as nil if lacks value
+                try container.encodeNil(forKey: .sourceLanguage)
+            }
+            try container.encode(targetLanguage, forKey: .targetLanguage)
+        }
+    }
+
     private enum CodingKeys: String, CodingKey {
         case platform
         case tool
         case query
         case summary
+        case translation
     }
 
     public init(platform: String, tool: Tool?) {
@@ -168,6 +221,9 @@ public struct AIChatNativePrompt: Codable, Equatable {
         case TextSummary.tool:
             let summary = try container.decode(TextSummary.self, forKey: .summary)
             tool = .summary(summary)
+        case Translation.tool:
+            let translation = try container.decode(Translation.self, forKey: .translation)
+            tool = .translation(translation)
         default:
             tool = nil
         }
@@ -185,6 +241,9 @@ public struct AIChatNativePrompt: Codable, Equatable {
         case .summary(let summary):
             try container.encode(TextSummary.tool, forKey: .tool)
             try container.encode(summary, forKey: .summary)
+        case .translation(let translation):
+            try container.encode(Translation.tool, forKey: .tool)
+            try container.encode(translation, forKey: .translation)
         case .none:
             try container.encodeNil(forKey: .tool)
         }
@@ -197,6 +256,18 @@ public struct AIChatNativePrompt: Codable, Equatable {
     public static func summaryPrompt(_ text: String, url: URL?, title: String?) -> AIChatNativePrompt {
         AIChatNativePrompt(platform: Platform.name, tool: .summary(.init(text: text, sourceURL: url?.absoluteString, sourceTitle: title)))
     }
+
+    public static func translationPrompt(_ text: String, url: URL?, title: String?, sourceTLD: String?, sourceLanguage: String?, targetLanguage: String) -> AIChatNativePrompt {
+
+        let translation = AIChatNativePrompt.Tool.translation(.init(text: text,
+                                                                    sourceURL: url?.absoluteString,
+                                                                    sourceTitle: title,
+                                                                    sourceTLD: sourceTLD,
+                                                                    sourceLanguage: sourceLanguage,
+                                                                    targetLanguage: targetLanguage))
+
+        return AIChatNativePrompt(platform: Platform.name, tool: translation)
+      }
 }
 
 enum Platform {

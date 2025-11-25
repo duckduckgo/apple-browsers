@@ -45,45 +45,34 @@ final public class HistoryStore: HistoryStoring {
     }
 
     enum HistoryStoreError: Error {
-        case storeDeallocated
         case savingFailed
     }
 
-    public func removeEntries(_ entries: [HistoryEntry]) -> Future<Void, Error> {
-        return Future { [weak self] promise in
-            self?.context.perform {
-                guard let self = self else {
-                    promise(.failure(HistoryStoreError.storeDeallocated))
-                    return
-                }
-
+    public func removeEntries(_ entries: some Sequence<HistoryEntry>) async throws {
+        try await withCheckedThrowingContinuation { continuation in
+            context.perform {
                 let identifiers = entries.map { $0.identifier }
                 switch self.remove(identifiers, context: self.context) {
                 case .failure(let error):
                     self.context.reset()
-                    promise(.failure(error))
+                    continuation.resume(throwing: error)
                 case .success:
-                    promise(.success(()))
+                    continuation.resume(returning: ())
                 }
             }
-        }
+        } as Void
     }
 
-    public func cleanOld(until date: Date) -> Future<BrowsingHistory, Error> {
-        return Future { [weak self] promise in
-            self?.context.perform {
-                guard let self = self else {
-                    promise(.failure(HistoryStoreError.storeDeallocated))
-                    return
-                }
-
+    public func cleanOld(until date: Date) async throws -> BrowsingHistory {
+        try await withCheckedThrowingContinuation { continuation in
+            context.perform {
                 switch self.clean(self.context, until: date) {
                 case .failure(let error):
                     self.context.reset()
-                    promise(.failure(error))
+                    continuation.resume(throwing: error)
                 case .success:
                     let reloadResult = self.reload(self.context)
-                    promise(reloadResult)
+                    continuation.resume(with: reloadResult)
                 }
             }
         }
@@ -169,14 +158,9 @@ final public class HistoryStore: HistoryStoring {
         }
     }
 
-    public func save(entry: HistoryEntry) -> Future<[(id: Visit.ID, date: Date)], Error> {
-        return Future { [weak self] promise in
-            self?.context.perform { [weak self] in
-                guard let self = self else {
-                    promise(.failure(HistoryStoreError.storeDeallocated))
-                    return
-                }
-
+    public func save(entry: HistoryEntry) async throws -> [(id: Visit.ID, date: Date)] {
+        try await withCheckedThrowingContinuation { continuation in
+            context.perform {
                 // Check for existence
                 let fetchRequest = BrowsingHistoryEntryManagedObject.fetchRequest()
                 fetchRequest.returnsObjectsAsFaults = false
@@ -186,8 +170,8 @@ final public class HistoryStore: HistoryStoring {
                 do {
                     fetchedObjects = try self.context.fetch(fetchRequest)
                 } catch {
-                    eventMapper.fire(.saveFailed, error: error)
-                    promise(.failure(error))
+                    self.eventMapper.fire(.saveFailed, error: error)
+                    continuation.resume(throwing: error)
                     return
                 }
 
@@ -202,7 +186,7 @@ final public class HistoryStore: HistoryStoring {
                     // Add new
                     let insertedObject = NSEntityDescription.insertNewObject(forEntityName: BrowsingHistoryEntryManagedObject.entityName, into: self.context)
                     guard let historyEntryMO = insertedObject as? BrowsingHistoryEntryManagedObject else {
-                        promise(.failure(HistoryStoreError.savingFailed))
+                        continuation.resume(throwing: HistoryStoreError.savingFailed)
                         return
                     }
                     historyEntryMO.update(with: entry, afterInsertion: true)
@@ -214,16 +198,16 @@ final public class HistoryStore: HistoryStoring {
                                                            context: self.context)
                 switch insertionResult {
                 case .failure(let error):
-                    eventMapper.fire(.saveFailed, error: error)
-                    context.reset()
-                    promise(.failure(error))
+                    self.eventMapper.fire(.saveFailed, error: error)
+                    self.context.reset()
+                    continuation.resume(throwing: error)
                 case .success(let visitMOs):
                     do {
                         try self.context.save()
                     } catch {
-                        eventMapper.fire(.saveFailed, error: error)
-                        context.reset()
-                        promise(.failure(HistoryStoreError.savingFailed))
+                        self.eventMapper.fire(.saveFailed, error: error)
+                        self.context.reset()
+                        continuation.resume(throwing: HistoryStoreError.savingFailed)
                         return
                     }
 
@@ -234,7 +218,7 @@ final public class HistoryStore: HistoryStoring {
                             return nil
                         }
                     }
-                    promise(.success(result))
+                    continuation.resume(returning: result)
                 }
             }
         }
@@ -279,28 +263,23 @@ final public class HistoryStore: HistoryStoring {
         return .success(visitMO)
     }
 
-    public func removeVisits(_ visits: [Visit]) -> Future<Void, Error> {
-        return Future { [weak self] promise in
-            self?.context.perform {
-                guard let self = self else {
-                    promise(.failure(HistoryStoreError.storeDeallocated))
-                    return
-                }
-
+    public func removeVisits(_ visits: some Sequence<Visit>) async throws {
+        try await withCheckedThrowingContinuation { continuation in
+            context.perform {
                 switch self.remove(visits, context: self.context) {
                 case .failure(let error):
                     self.context.reset()
-                    promise(.failure(error))
+                    continuation.resume(throwing: error)
                 case .success:
-                    promise(.success(()))
+                    continuation.resume(returning: ())
                 }
             }
-        }
+        } as Void
     }
 
-    private func remove(_ visits: [Visit], context: NSManagedObjectContext) -> Result<Void, Error> {
+    private func remove(_ visits: some Sequence<Visit>, context: NSManagedObjectContext) -> Result<Void, Error> {
         // To avoid long predicate, execute multiple times
-        let chunkedVisits = visits.chunked(into: 100)
+        let chunkedVisits = visits.chunkedSequence(into: 100)
 
         for visits in chunkedVisits {
             let deleteRequest = PageVisitManagedObject.fetchRequest()
@@ -378,7 +357,8 @@ fileprivate extension HistoryEntry {
                   visits: visits,
                   numberOfTrackersBlocked: Int(numberOfTrackersBlocked),
                   blockedTrackingEntities: Set<String>(blockedTrackingEntities.components(separatedBy: "|")),
-                  trackersFound: historyEntryMO.trackersFound)
+                  trackersFound: historyEntryMO.trackersFound,
+                  cookiePopupBlocked: historyEntryMO.cookiePopupBlocked)
 
         visits.forEach { visit in
             visit.historyEntry = self
@@ -408,6 +388,7 @@ fileprivate extension BrowsingHistoryEntryManagedObject {
         numberOfTrackersBlocked = Int64(entry.numberOfTrackersBlocked)
         blockedTrackingEntities = entry.blockedTrackingEntities.isEmpty ? "" : entry.blockedTrackingEntities.joined(separator: "|")
         trackersFound = entry.trackersFound
+        cookiePopupBlocked = entry.cookiePopupBlocked
     }
 
 }

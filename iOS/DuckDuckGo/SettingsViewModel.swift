@@ -32,8 +32,15 @@ import VPN
 import AIChat
 import DataBrokerProtection_iOS
 import SystemSettingsPiPTutorial
+import SERPSettings
 
 final class SettingsViewModel: ObservableObject {
+
+    /// There's an improved picker cell being rolled out with the feature flag below.
+    /// Once it has passed a ship review we'll move to the improved one.
+    var useImprovedPicker: Bool {
+        featureFlagger.isFeatureOn(.mobileCustomization)
+    }
 
     // Dependencies
     private(set) lazy var appSettings = AppDependencyProvider.shared.appSettings
@@ -46,9 +53,10 @@ final class SettingsViewModel: ObservableObject {
     private let syncPausedStateManager: any SyncPausedStateManaging
     var emailManager: EmailManager { EmailManager() }
     private let historyManager: HistoryManaging
-    let privacyProDataReporter: PrivacyProDataReporting?
+    let subscriptionDataReporter: SubscriptionDataReporting?
     let textZoomCoordinator: TextZoomCoordinating
     let aiChatSettings: AIChatSettingsProvider
+    let serpSettings: SERPSettingsProviding
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
     let themeManager: ThemeManaging
     var experimentalAIChatManager: ExperimentalAIChatManager
@@ -58,6 +66,9 @@ final class SettingsViewModel: ObservableObject {
     private let urlOpener: URLOpener
     private weak var runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
     var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
+    weak var autoClearActionDelegate: SettingsAutoClearActionDelegate?
+    let mobileCustomization: MobileCustomization
+    let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
 
     // Subscription Dependencies
     let isAuthV2Enabled: Bool
@@ -67,7 +78,15 @@ final class SettingsViewModel: ObservableObject {
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private var subscriptionSignOutObserver: Any?
     var duckPlayerContingencyHandler: DuckPlayerContingencyHandler {
-        DefaultDuckPlayerContingencyHandler(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
+        DefaultDuckPlayerContingencyHandler(privacyConfigurationManager: privacyConfigurationManager)
+    }
+    var blackFridayCampaignProvider: BlackFridayCampaignProviding {
+        DefaultBlackFridayCampaignProvider(
+            privacyConfigurationManager: privacyConfigurationManager,
+            isFeatureEnabled: { [weak featureFlagger] in
+                featureFlagger?.isFeatureOn(.blackFridayCampaign) ?? false
+            }
+        )
     }
 
     private enum UserDefaultsCacheKey: String, UserDefaultsCacheKeyStore {
@@ -76,6 +95,9 @@ final class SettingsViewModel: ObservableObject {
     // Used to cache the lasts subscription state for up to a week
     private let subscriptionStateCache = UserDefaultsCache<SettingsState.Subscription>(key: UserDefaultsCacheKey.subscriptionState,
                                                                          settings: UserDefaultsCacheSettings(defaultExpirationInterval: .days(7)))
+    // Win-back offer
+    let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
+    
     // Properties
     private lazy var isPad = UIDevice.current.userInterfaceIdiom == .pad
     private var cancellables = Set<AnyCancellable>()
@@ -88,6 +110,7 @@ final class SettingsViewModel: ObservableObject {
     // Subscription Free Trials
     private let subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping
 
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let keyValueStore: ThrowingKeyValueStoring
     private let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
 
@@ -111,13 +134,17 @@ final class SettingsViewModel: ObservableObject {
         case networkProtection
     }
 
+    // When true, indicates the AI Features settings was opened from the SERP settings button
+    // This affects UI: shows Done button and hides Search Assist link
+    var openedFromSERPSettingsButton: Bool = false
+
+    var isForgetAllInSettingsEnabled: Bool {
+        featureFlagger.isFeatureOn(.forgetAllInSettings)
+    }
+
     // Indicates if the Paid AI Chat feature flag is enabled for the current user/session.
     var isPaidAIChatEnabled: Bool {
         featureFlagger.isFeatureOn(.paidAIChat)
-    }
-
-    var isSubscriptionRebrandingEnabled: Bool {
-        featureFlagger.isFeatureOn(.subscriptionRebranding)
     }
 
     var isPIREnabled: Bool {
@@ -133,9 +160,35 @@ final class SettingsViewModel: ObservableObject {
     var isUpdatedAIFeaturesSettingsEnabled: Bool {
         featureFlagger.isFeatureOn(.aiFeaturesSettingsUpdate)
     }
-    
-    var isRefreshButtonPositionEnabled: Bool {
-        featureFlagger.isFeatureOn(.refreshButtonPosition)
+
+    var embedSERPSettings: Bool {
+        featureFlagger.isFeatureOn(.embeddedSERPSettings)
+    }
+
+    var isDuckAiDataClearingEnabled: Bool {
+        featureFlagger.isFeatureOn(.duckAiDataClearing)
+    }
+
+    var shouldShowHideAIGeneratedImagesSection: Bool {
+        featureFlagger.isFeatureOn(.showHideAIGeneratedImagesSection)
+    }
+
+    var isBlackFridayCampaignEnabled: Bool {
+        blackFridayCampaignProvider.isCampaignEnabled
+    }
+
+    var blackFridayDiscountPercent: Int {
+        blackFridayCampaignProvider.discountPercent
+    }
+
+    var purchaseButtonText: String {
+        if isBlackFridayCampaignEnabled {
+            return UserText.blackFridayCampaignViewPlansCTA(discountPercent: blackFridayDiscountPercent)
+        } else if state.subscription.isEligibleForTrialOffer {
+            return UserText.trySubscriptionButton
+        } else {
+            return UserText.getSubscriptionButton
+        }
     }
 
     var shouldShowNoMicrophonePermissionAlert: Bool = false
@@ -156,6 +209,32 @@ final class SettingsViewModel: ObservableObject {
     @Published private(set) var deepLinkTarget: SettingsDeepLinkSection?
 
     // MARK: Bindings
+
+    var selectedToolbarButton: Binding<MobileCustomization.Button> {
+        Binding<MobileCustomization.Button>(
+            get: {
+                self.state.mobileCustomization.currentToolbarButton
+            },
+            set: {
+                guard $0 != self.state.mobileCustomization.currentToolbarButton else { return }
+                self.state.mobileCustomization.currentToolbarButton = $0
+                self.mobileCustomization.persist(self.state.mobileCustomization)
+            }
+        )
+    }
+
+    var selectedAddressBarButton: Binding<MobileCustomization.Button> {
+        Binding<MobileCustomization.Button>(
+            get: {
+                self.state.mobileCustomization.currentAddressBarButton
+            },
+            set: {
+                guard $0 != self.state.mobileCustomization.currentAddressBarButton else { return }
+                self.state.mobileCustomization.currentAddressBarButton = $0
+                self.mobileCustomization.persist(self.state.mobileCustomization)
+            }
+        )
+    }
 
     var themeStyleBinding: Binding<ThemeStyle> {
         Binding<ThemeStyle>(
@@ -210,6 +289,22 @@ final class SettingsViewModel: ObservableObject {
                 Pixel.fire(pixel: $0 == .addressBar ? .settingsRefreshButtonPositionAddressBar : .settingsRefreshButtonPositionMenu)
                 self.appSettings.currentRefreshButtonPosition = $0
                 self.state.refreshButtonPosition = $0
+            }
+        )
+    }
+
+    var showMenuInSheetBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: {
+                self.state.showMenuInSheet
+            },
+            set: {
+                if let overrides = self.featureFlagger.localOverrides,
+                    overrides.override(for: FeatureFlag.browsingMenuSheetPresentation) != $0 {
+
+                    overrides.toggleOverride(for: FeatureFlag.browsingMenuSheetPresentation)
+                    self.state.showMenuInSheet = $0
+                }
             }
         )
     }
@@ -499,6 +594,22 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
+    var autoClearAIChatHistoryBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: {
+                if self.featureFlagger.isFeatureOn(.duckAiDataClearing) {
+                    return self.state.autoClearAIChatHistory
+                } else {
+                    return false
+                }
+            },
+            set: {
+                self.appSettings.autoClearAIChatHistory = $0
+                self.state.autoClearAIChatHistory = $0
+            }
+        )
+    }
+
     var cookiePopUpProtectionStatus: StatusIndicator {
         return appSettings.autoconsentEnabled ? .on : .off
     }
@@ -520,6 +631,11 @@ final class SettingsViewModel: ObservableObject {
         state.subscription.subscriptionFeatures.contains(Entitlement.ProductName.paidAIChat)
     }
 
+    // Indicates if AI features are generally enabled
+    var isAIChatEnabled: Bool {
+        aiChatSettings.isAIChatEnabled
+    }
+
     // MARK: Default Init
     init(state: SettingsState? = nil,
          legacyViewProvider: SettingsLegacyViewProvider,
@@ -529,13 +645,13 @@ final class SettingsViewModel: ObservableObject {
          subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
          voiceSearchHelper: VoiceSearchHelperProtocol,
-         variantManager: VariantManager = AppDependencyProvider.shared.variantManager,
          deepLink: SettingsDeepLinkSection? = nil,
          historyManager: HistoryManaging,
          syncPausedStateManager: any SyncPausedStateManaging,
-         privacyProDataReporter: PrivacyProDataReporting,
+         subscriptionDataReporter: SubscriptionDataReporting,
          textZoomCoordinator: TextZoomCoordinating,
          aiChatSettings: AIChatSettingsProvider,
+         serpSettings: SERPSettingsProviding,
          maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
          themeManager: ThemeManaging = ThemeManager.shared,
          experimentalAIChatManager: ExperimentalAIChatManager,
@@ -544,10 +660,14 @@ final class SettingsViewModel: ObservableObject {
          featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
          subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper(),
          urlOpener: URLOpener = UIApplication.shared,
+         privacyConfigurationManager: PrivacyConfigurationManaging,
          keyValueStore: ThrowingKeyValueStoring,
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?,
-         dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
+         dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
+         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
+         mobileCustomization: MobileCustomization,
+         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     ) {
 
         self.state = SettingsState.defaults
@@ -561,9 +681,10 @@ final class SettingsViewModel: ObservableObject {
         self.deepLinkTarget = deepLink
         self.historyManager = historyManager
         self.syncPausedStateManager = syncPausedStateManager
-        self.privacyProDataReporter = privacyProDataReporter
+        self.subscriptionDataReporter = subscriptionDataReporter
         self.textZoomCoordinator = textZoomCoordinator
         self.aiChatSettings = aiChatSettings
+        self.serpSettings = serpSettings
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
         self.themeManager = themeManager
         self.experimentalAIChatManager = experimentalAIChatManager
@@ -572,10 +693,14 @@ final class SettingsViewModel: ObservableObject {
         self.featureDiscovery = featureDiscovery
         self.subscriptionFreeTrialsHelper = subscriptionFreeTrialsHelper
         self.urlOpener = urlOpener
+        self.privacyConfigurationManager = privacyConfigurationManager
         self.keyValueStore = keyValueStore
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.runPrerequisitesDelegate = runPrerequisitesDelegate
         self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
+        self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
+        self.mobileCustomization = mobileCustomization
+        self.userScriptsDependencies = userScriptsDependencies
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
     }
@@ -607,9 +732,12 @@ extension SettingsViewModel {
             showsFullURL: appSettings.showFullSiteAddress,
             isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
             refreshButtonPosition: appSettings.currentRefreshButtonPosition,
+            mobileCustomization: mobileCustomization.state,
+            showMenuInSheet: featureFlagger.isFeatureOn(.browsingMenuSheetPresentation),
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
             autoclearDataEnabled: AutoClearSettingsModel(settings: appSettings) != nil,
+            autoClearAIChatHistory: appSettings.autoClearAIChatHistory,
             applicationLock: privacyStore.authenticationEnabled,
             autocomplete: appSettings.autocomplete,
             recentlyVisitedSites: appSettings.recentlyVisitedSites,
@@ -834,10 +962,11 @@ extension SettingsViewModel {
         updateCompleteSetupSectionVisiblity()
     }
 
-    @MainActor func shouldPresentAutofillViewWith(accountDetails: SecureVaultModels.WebsiteAccount?, card: SecureVaultModels.CreditCard?, showCreditCardManagement: Bool, source: AutofillSettingsSource? = nil) {
+    @MainActor func shouldPresentAutofillViewWith(accountDetails: SecureVaultModels.WebsiteAccount?, card: SecureVaultModels.CreditCard?, showCreditCardManagement: Bool, showSettingsScreen: AutofillSettingsDestination? = nil, source: AutofillSettingsSource? = nil) {
         state.activeWebsiteAccount = accountDetails
         state.activeWebsiteCreditCard = card
         state.showCreditCardManagement = showCreditCardManagement
+        state.showSettingsScreen = showSettingsScreen
         state.autofillSource = source
         
         presentLegacyView(.autofill)
@@ -881,7 +1010,11 @@ extension SettingsViewModel {
     func openAIChat() {
         urlOpener.open(AppDeepLinkSchemes.openAIChat.url)
     }
-    
+
+    func openAIFeaturesSettings() {
+        triggerDeepLinkNavigation(to: .aiChat)
+    }
+
     func openWebTrackingProtectionLearnMore() {
         urlOpener.open(URL.webTrackingProtection)
     }
@@ -942,6 +1075,7 @@ extension SettingsViewModel {
                                                                 selectedCard: state.activeWebsiteCreditCard,
                                                                 showPasswordManagement: false,
                                                                 showCreditCardManagement: state.showCreditCardManagement,
+                                                                showSettingsScreen: state.showSettingsScreen,
                                                                 source: state.autofillSource))
 
         case .gpc:
@@ -986,6 +1120,7 @@ extension SettingsViewModel: DataImportViewControllerDelegate {
                                                             selectedCard: nil,
                                                             showPasswordManagement: true,
                                                             showCreditCardManagement: false,
+                                                            showSettingsScreen: nil,
                                                             source: state.autofillSource))
     }
 }
@@ -1004,6 +1139,9 @@ extension SettingsViewModel {
         case aiChat
         case privateSearch
         case subscriptionSettings
+        case customizeToolbarButton
+        case customizeAddressBarButton
+        case appearance
         // Add other cases as needed
 
         var id: String {
@@ -1017,6 +1155,9 @@ extension SettingsViewModel {
             case .aiChat: return "aiChat"
             case .privateSearch: return "privateSearch"
             case .subscriptionSettings: return "subscriptionSettings"
+            case .customizeToolbarButton: return "customizeToolbarButton"
+            case .customizeAddressBarButton: return "customizeAddressButton"
+            case .appearance: return "appearance"
             // Ensure all cases are covered
             }
         }
@@ -1025,7 +1166,7 @@ extension SettingsViewModel {
         // Default to .sheet, specify .push where needed
         var type: DeepLinkType {
             switch self {
-            case .netP, .dbp, .itr, .subscriptionFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings:
+            case .netP, .dbp, .itr, .subscriptionFlow, .restoreFlow, .duckPlayer, .aiChat, .privateSearch, .subscriptionSettings, .customizeToolbarButton, .customizeAddressBarButton, .appearance:
                 return .navigationLink
             }
         }
@@ -1082,6 +1223,7 @@ extension SettingsViewModel {
             updatedSubscription.isActiveTrialOffer = false
 
             updatedSubscription.isEligibleForTrialOffer = await isUserEligibleForTrialOffer()
+            updatedSubscription.isWinBackEligible = winBackOfferVisibilityManager.isOfferAvailable
 
             state.subscription = updatedSubscription
             // Sync cache
@@ -1095,6 +1237,7 @@ extension SettingsViewModel {
             updatedSubscription.hasSubscription = true
             updatedSubscription.hasActiveSubscription = subscription.isActive
             updatedSubscription.isActiveTrialOffer = subscription.hasActiveTrialOffer
+            updatedSubscription.isWinBackEligible = winBackOfferVisibilityManager.isOfferAvailable
 
             // Check entitlements and update state
             var currentEntitlements: [Entitlement.ProductName] = []
@@ -1119,10 +1262,12 @@ extension SettingsViewModel {
             updatedSubscription.entitlements = []
             updatedSubscription.platform = .unknown
             updatedSubscription.isActiveTrialOffer = false
+            updatedSubscription.isWinBackEligible = winBackOfferVisibilityManager.isOfferAvailable
 
-            DailyPixel.fireDailyAndCount(pixel: .settingsPrivacyProAccountWithNoSubscriptionFound)
+            DailyPixel.fireDailyAndCount(pixel: .settingsSubscriptionAccountWithNoSubscriptionFound)
         } catch {
             Logger.subscription.error("Failed to fetch Subscription: \(error, privacy: .public)")
+            updatedSubscription.isWinBackEligible = winBackOfferVisibilityManager.isOfferAvailable
         }
 
         // Apply all updates at once
@@ -1168,6 +1313,10 @@ extension SettingsViewModel {
         }
     }
 
+    func forgetAll() {
+        autoClearActionDelegate?.performDataClearing()
+    }
+
     func restoreAccountPurchase() async {
         if !isAuthV2Enabled {
             await restoreAccountPurchaseV1()
@@ -1207,17 +1356,17 @@ extension SettingsViewModel {
 
             switch restoreFlowError {
             case .missingAccountOrTransactions:
-                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorMissingAccountOrTransactions)
+                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorMissingAccountOrTransactions)
             case .pastTransactionAuthenticationError:
-                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorPastTransactionAuthenticationError)
+                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorPastTransactionAuthenticationError)
             case .failedToObtainAccessToken:
-                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorFailedToObtainAccessToken)
+                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorFailedToObtainAccessToken)
             case .failedToFetchAccountDetails:
-                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorFailedToFetchAccountDetails)
+                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorFailedToFetchAccountDetails)
             case .failedToFetchSubscriptionDetails:
-                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorFailedToFetchSubscriptionDetails)
+                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorFailedToFetchSubscriptionDetails)
             case .subscriptionExpired:
-                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorSubscriptionExpired)
+                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorSubscriptionExpired)
             }
         }
     }
@@ -1253,17 +1402,17 @@ extension SettingsViewModel {
 
             switch restoreFlowError {
             case .missingAccountOrTransactions:
-                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorMissingAccountOrTransactions)
+                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorMissingAccountOrTransactions)
             case .pastTransactionAuthenticationError:
-                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorPastTransactionAuthenticationError)
+                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorPastTransactionAuthenticationError)
             case .failedToObtainAccessToken:
-                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorFailedToObtainAccessToken)
+                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorFailedToObtainAccessToken)
             case .failedToFetchAccountDetails:
-                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorFailedToFetchAccountDetails)
+                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorFailedToFetchAccountDetails)
             case .failedToFetchSubscriptionDetails:
-                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorFailedToFetchSubscriptionDetails)
+                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorFailedToFetchSubscriptionDetails)
             case .subscriptionExpired:
-                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorSubscriptionExpired)
+                DailyPixel.fireDailyAndCount(pixel: .subscriptionActivatingRestoreErrorSubscriptionExpired)
             }
         }
     }

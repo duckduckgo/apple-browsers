@@ -42,7 +42,7 @@ public protocol SubscriptionAuthV1toV2Bridge: SubscriptionTokenProvider, Subscri
     var canPurchase: Bool { get }
     /// Publisher that emits a boolean value indicating whether the user can purchase.
     var canPurchasePublisher: AnyPublisher<Bool, Never> { get }
-    @discardableResult func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription
+    @discardableResult func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> DuckDuckGoSubscription
     func isSubscriptionPresent() -> Bool
     func url(for type: SubscriptionURL) -> URL
     var email: String? { get }
@@ -84,7 +84,7 @@ extension DefaultSubscriptionManager: SubscriptionAuthV1toV2Bridge {
         accountManager.signOut(skipNotification: !notifyUI, userInitiated: userInitiated)
     }
 
-    public func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription {
+    public func getSubscription(cachePolicy: SubscriptionCachePolicy) async throws -> DuckDuckGoSubscription {
         if let accessToken = accountManager.accessToken {
             let subscriptionResult = await subscriptionEndpointService.getSubscription(accessToken: accessToken, cachePolicy: cachePolicy.apiCachePolicy)
             if case let .success(subscription) = subscriptionResult {

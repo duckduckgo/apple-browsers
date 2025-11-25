@@ -37,12 +37,22 @@ class HistoryCoordinatorTests: XCTestCase {
         try? FileManager.default.removeItem(at: location)
     }
 
-    func testWhenHistoryCoordinatorIsInitialized_ThenHistoryIsCleanedAndLoadedFromTheStore() {
-        let (historyStoringMock, _) = HistoryCoordinator.aHistoryCoordinator
+    @MainActor
+    func testWhenHistoryCoordinatorIsInitialized_ThenHistoryIsCleanedAndLoadedFromTheStore() async {
+        let historyStoringMock = HistoryStoringMock()
+        historyStoringMock.cleanOldResult = .success(BrowsingHistory())
+        let historyCoordinator = HistoryCoordinator(historyStoring: historyStoringMock)
 
+        let expectation = XCTestExpectation(description: "History loaded")
+        historyCoordinator.loadHistory {
+            expectation.fulfill()
+        }
+
+        await fulfillment(of: [expectation], timeout: 1.0)
         XCTAssert(historyStoringMock.cleanOldCalled)
     }
 
+    @MainActor
     func testWhenAddVisitIsCalledBeforeHistoryIsLoadedFromStorage_ThenVisitIsIgnored() {
         let historyStoringMock = HistoryStoringMock()
         historyStoringMock.cleanOldResult = nil
@@ -54,8 +64,9 @@ class HistoryCoordinatorTests: XCTestCase {
         XCTAssertFalse(historyStoringMock.saveCalled)
     }
 
-    func testWhenAddVisitIsCalledAndUrlIsNotPartOfHistoryYet_ThenNewHistoryEntryIsAdded() {
-        let (historyStoringMock, historyCoordinator) = HistoryCoordinator.aHistoryCoordinator
+    @MainActor
+    func testWhenAddVisitIsCalledAndUrlIsNotPartOfHistoryYet_ThenNewHistoryEntryIsAdded() async {
+        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
 
         let url = URL.duckDuckGo
         historyCoordinator.addVisit(of: url)
@@ -64,12 +75,19 @@ class HistoryCoordinatorTests: XCTestCase {
             entry.url == url
         }))
 
-        historyCoordinator.commitChanges(url: url)
+        let expectation = XCTestExpectation(description: "Changes committed")
+        historyStoringMock.saveCompletion = {
+            expectation.fulfill()
+        }
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+
         XCTAssert(historyStoringMock.saveCalled)
     }
 
-    func testWhenAddVisitIsCalledAndUrlIsAlreadyPartOfHistory_ThenNoEntryIsAdded() {
-        let (historyStoringMock, historyCoordinator) = HistoryCoordinator.aHistoryCoordinator
+    @MainActor
+    func testWhenAddVisitIsCalledAndUrlIsAlreadyPartOfHistory_ThenNoEntryIsAdded() async {
+        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
 
         let url = URL.duckDuckGo
         historyCoordinator.addVisit(of: url)
@@ -81,12 +99,19 @@ class HistoryCoordinatorTests: XCTestCase {
             entry.url == url
         }))
 
-        historyCoordinator.commitChanges(url: url)
+        let expectation = XCTestExpectation(description: "Changes committed")
+        historyStoringMock.saveCompletion = {
+            expectation.fulfill()
+        }
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+
         XCTAssert(historyStoringMock.saveCalled)
     }
 
-    func testWhenVisitIsAdded_ThenTitleIsNil() {
-        let (_, historyCoordinator) = HistoryCoordinator.aHistoryCoordinator
+    @MainActor
+    func testWhenVisitIsAdded_ThenTitleIsNil() async {
+        let (_, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
 
         let url = URL.duckDuckGo
         historyCoordinator.addVisit(of: url)
@@ -94,8 +119,9 @@ class HistoryCoordinatorTests: XCTestCase {
         XCTAssertNil(historyCoordinator.history!.first?.title)
     }
 
-    func testUpdateTitleIfNeeded() {
-        let (historyStoringMock, historyCoordinator) = HistoryCoordinator.aHistoryCoordinator
+    @MainActor
+    func testUpdateTitleIfNeeded() async {
+        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
 
         let url = URL.duckDuckGo
         historyCoordinator.addVisit(of: url)
@@ -110,13 +136,20 @@ class HistoryCoordinatorTests: XCTestCase {
 
         historyCoordinator.updateTitleIfNeeded(title: title2, url: url)
 
-        historyCoordinator.commitChanges(url: url)
+        let expectation = XCTestExpectation(description: "Changes committed")
+        historyStoringMock.saveCompletion = {
+            expectation.fulfill()
+        }
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+
         XCTAssert(historyStoringMock.saveCalled)
     }
 
-    func testWhenHistoryIsBurning_ThenHistoryIsCleanedIncludingFireproofDomains() {
-        let burnAllFinished = expectation(description: "Burn All Finished")
-        let (historyStoringMock, historyCoordinator) = HistoryCoordinator.aHistoryCoordinator
+    @MainActor
+    func testWhenHistoryIsBurning_ThenHistoryIsCleanedIncludingFireproofDomains() async {
+        let burnAllFinished = XCTestExpectation(description: "Burn All Finished")
+        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
 
         let url1 = URL(string: "https://duckduckgo.com")!
         historyCoordinator.addVisit(of: url1)
@@ -143,11 +176,12 @@ class HistoryCoordinatorTests: XCTestCase {
             burnAllFinished.fulfill()
         }
 
-        waitForExpectations(timeout: 2.0)
+        await fulfillment(of: [burnAllFinished], timeout: 2.0)
     }
 
-    func testWhenBurningVisits_removesHistoryWhenVisitsCountHitsZero() {
-        let (historyStoringMock, historyCoordinator) = HistoryCoordinator.aHistoryCoordinator
+    @MainActor
+    func testWhenBurningVisits_removesHistoryWhenVisitsCountHitsZero() async {
+        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
         historyStoringMock.removeEntriesResult = .success(())
         historyStoringMock.removeVisitsResult = .success(())
 
@@ -158,17 +192,18 @@ class HistoryCoordinatorTests: XCTestCase {
 
         let visitsToBurn = Array(historyCoordinator.history!.first!.visits)
 
-        let waiter = expectation(description: "Wait")
+        let waiter = XCTestExpectation(description: "Wait")
         historyCoordinator.burnVisits(visitsToBurn) {
             waiter.fulfill()
             XCTAssertEqual(historyStoringMock.removeEntriesArray.count, 1)
             XCTAssertEqual(historyStoringMock.removeEntriesArray.first!.url, url1)
         }
-        waitForExpectations(timeout: 1.0)
+        await fulfillment(of: [waiter], timeout: 1.0)
     }
 
-    func testWhenBurningVisits_removesVisitsFromTheStore() {
-        let (historyStoringMock, historyCoordinator) = HistoryCoordinator.aHistoryCoordinator
+    @MainActor
+    func testWhenBurningVisits_removesVisitsFromTheStore() async {
+        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
         historyStoringMock.removeEntriesResult = .success(())
         historyStoringMock.removeVisitsResult = .success(())
 
@@ -179,14 +214,15 @@ class HistoryCoordinatorTests: XCTestCase {
 
         let visitsToBurn = Array(historyCoordinator.history!.first!.visits)
 
-        let waiter = expectation(description: "Wait")
+        let waiter = XCTestExpectation(description: "Wait")
         historyCoordinator.burnVisits(visitsToBurn) {
             waiter.fulfill()
             XCTAssertEqual(historyStoringMock.removeVisitsArray.count, 3)
         }
-        waitForExpectations(timeout: 1.0)
+        await fulfillment(of: [waiter], timeout: 1.0)
     }
 
+    @MainActor
     func testWhenBurningVisits_DoesntDeleteHistoryBeforeVisits() {
         // Needs real store to catch assertion which can be raised by improper call ordering in the coordinator
         guard let context = loadDatabase(name: "Any")?.makeContext(concurrencyType: .privateQueueConcurrencyType) else {
@@ -218,9 +254,10 @@ class HistoryCoordinatorTests: XCTestCase {
         waitForExpectations(timeout: 1.0)
     }
 
-    func testWhenHistoryIsBurningDomains_ThenHistoryIsCleanedForDomainsAndRemovedUrlsReturnedInCallback() {
-        let burnAllFinished = expectation(description: "Burn All Finished")
-        let (historyStoringMock, historyCoordinator) = HistoryCoordinator.aHistoryCoordinator
+    @MainActor
+    func testWhenHistoryIsBurningDomains_ThenHistoryIsCleanedForDomainsAndRemovedUrlsReturnedInCallback() async {
+        let burnAllFinished = XCTestExpectation(description: "Burn All Finished")
+        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
 
         let url0 = URL(string: "https://tobekept.com")!
         historyCoordinator.addVisit(of: url0)
@@ -252,24 +289,33 @@ class HistoryCoordinatorTests: XCTestCase {
             burnAllFinished.fulfill()
         }
 
-        waitForExpectations(timeout: 2.0)
+        await fulfillment(of: [burnAllFinished], timeout: 2.0)
     }
 
-    func testWhenUrlIsMarkedAsFailedToLoad_ThenFailedToLoadFlagIsStored() {
-        let (historyStoringMock, historyCoordinator) = HistoryCoordinator.aHistoryCoordinator
+    @MainActor
+    func testWhenUrlIsMarkedAsFailedToLoad_ThenFailedToLoadFlagIsStored() async {
+        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
 
         let url = URL(string: "https://duckduckgo.com")!
         historyCoordinator.addVisit(of: url)
 
         historyCoordinator.markFailedToLoadUrl(url)
+
+        let expectation = XCTestExpectation(description: "Changes committed")
+        historyStoringMock.saveCompletion = {
+            expectation.fulfill()
+        }
         historyCoordinator.commitChanges(url: url)
+
+        await fulfillment(of: [expectation], timeout: 1.0)
 
         XCTAssertEqual(url, historyStoringMock.savedHistoryEntries.last?.url)
         XCTAssert(historyStoringMock.savedHistoryEntries.last?.failedToLoad ?? false)
     }
 
-    func testWhenUrlIsMarkedAsFailedToLoadAndItIsVisitedAgain_ThenFailedToLoadFlagIsSetToFalse() {
-        let (historyStoringMock, historyCoordinator) = HistoryCoordinator.aHistoryCoordinator
+    @MainActor
+    func testWhenUrlIsMarkedAsFailedToLoadAndItIsVisitedAgain_ThenFailedToLoadFlagIsSetToFalse() async {
+        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
 
         let url = URL(string: "https://duckduckgo.com")!
         historyCoordinator.addVisit(of: url)
@@ -278,13 +324,20 @@ class HistoryCoordinatorTests: XCTestCase {
 
         historyCoordinator.addVisit(of: url)
 
-        historyCoordinator.commitChanges(url: url)
+        let expectation = XCTestExpectation(description: "Changes committed")
+        historyStoringMock.saveCompletion = {
+            expectation.fulfill()
+        }
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+
         XCTAssertEqual(url, historyStoringMock.savedHistoryEntries.last?.url)
         XCTAssertFalse(historyStoringMock.savedHistoryEntries.last?.failedToLoad ?? true)
     }
 
-    func testWhenUrlHasNoTitle_ThenFetchingTitleReturnsNil() {
-        let (_, historyCoordinator) = HistoryCoordinator.aHistoryCoordinator
+    @MainActor
+    func testWhenUrlHasNoTitle_ThenFetchingTitleReturnsNil() async {
+        let (_, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
 
         let url = URL.duckDuckGo
         historyCoordinator.addVisit(of: url)
@@ -294,8 +347,9 @@ class HistoryCoordinatorTests: XCTestCase {
         XCTAssertNil(title)
     }
 
-    func testWhenUrlHasTitle_ThenTitleIsReturned() {
-        let (_, historyCoordinator) = HistoryCoordinator.aHistoryCoordinator
+    @MainActor
+    func testWhenUrlHasTitle_ThenTitleIsReturned() async {
+        let (_, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
 
         let url = URL.duckDuckGo
         let title = "DuckDuckGo"
@@ -307,6 +361,7 @@ class HistoryCoordinatorTests: XCTestCase {
         XCTAssertEqual(title, fetchedTitle)
     }
 
+    @MainActor
     func loadDatabase(name: String) -> CoreDataDatabase? {
         guard let model = CoreDataDatabase.loadModel(from: bundle, named: "BrowsingHistory") else {
             return nil
@@ -316,21 +371,22 @@ class HistoryCoordinatorTests: XCTestCase {
         return bookmarksDatabase
     }
 
-    func testWhenRemoveUrlEntryCalledWithExistingUrl_ThenEntryIsRemovedAndNoError() {
-        let (historyStoringMock, historyCoordinator) = HistoryCoordinator.aHistoryCoordinator
+    @MainActor
+    func testWhenRemoveUrlEntryCalledWithExistingUrl_ThenEntryIsRemovedAndNoError() async {
+        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
 
         let url = URL(string: "https://duckduckgo.com")!
         historyCoordinator.addVisit(of: url)
 
         XCTAssertTrue(historyCoordinator.history!.contains(where: { $0.url == url }))
 
-        let removalExpectation = expectation(description: "Entry removed without error")
+        let removalExpectation = XCTestExpectation(description: "Entry removed without error")
         historyCoordinator.removeUrlEntry(url) { error in
             XCTAssertNil(error, "Expected no error when removing an existing URL entry")
             removalExpectation.fulfill()
         }
 
-        waitForExpectations(timeout: 1.0)
+        await fulfillment(of: [removalExpectation], timeout: 1.0)
 
         XCTAssertFalse(historyCoordinator.history!.contains(where: { $0.url == url }))
         XCTAssertTrue(historyStoringMock.removeEntriesCalled, "Expected removeEntries to be called")
@@ -338,33 +394,223 @@ class HistoryCoordinatorTests: XCTestCase {
         XCTAssertEqual(historyStoringMock.removeEntriesArray.first?.url, url)
     }
 
-    func testWhenRemoveUrlEntryCalledWithNonExistingUrl_ThenEntryRemovalFailsWithNotAvailableError() {
-        let (_, historyCoordinator) = HistoryCoordinator.aHistoryCoordinator
+    @MainActor
+    func testWhenRemoveUrlEntryCalledWithNonExistingUrl_ThenEntryRemovalFailsWithNotAvailableError() async {
+        let (_, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
 
         let nonExistentUrl = URL(string: "https://nonexistent.com")!
 
-        let removalExpectation = expectation(description: "Entry removal fails with notAvailable error")
+        let removalExpectation = XCTestExpectation(description: "Entry removal fails with notAvailable error")
         historyCoordinator.removeUrlEntry(nonExistentUrl) { error in
             XCTAssertNotNil(error, "Expected an error when removing a non-existent URL entry")
             XCTAssertEqual(error as? HistoryCoordinator.EntryRemovalError, .notAvailable, "Expected notAvailable error")
             removalExpectation.fulfill()
         }
 
-        waitForExpectations(timeout: 1.0)
+        await fulfillment(of: [removalExpectation], timeout: 1.0)
+    }
+
+    // MARK: - Cookie Popup Blocked Tests
+
+    @MainActor
+    func testWhenCookiePopupBlockedIsCalled_ThenFlagIsSetAndAutoCommitted() async {
+        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
+
+        let url = URL(string: "https://example.com")!
+        historyCoordinator.addVisit(of: url)
+
+        // Reset save state after initial visit
+        historyStoringMock.saveCalled = false
+        historyStoringMock.savedHistoryEntries.removeAll()
+
+        let expectation = XCTestExpectation(description: "Changes auto-committed")
+        historyStoringMock.saveCompletion = {
+            expectation.fulfill()
+        }
+
+        historyCoordinator.cookiePopupBlocked(on: url)
+
+        await fulfillment(of: [expectation], timeout: 1.0)
+
+        // Verify flag is set in memory
+        XCTAssertTrue(historyCoordinator.history!.first?.cookiePopupBlocked ?? false)
+        // Verify save was called
+        XCTAssertTrue(historyStoringMock.saveCalled)
+        XCTAssertTrue(historyStoringMock.savedHistoryEntries.last?.cookiePopupBlocked ?? false)
+    }
+
+    @MainActor
+    func testWhenCookiePopupBlockedIsCalledWithNonExistentURL_ThenNothingHappens() async {
+        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
+
+        let url = URL(string: "https://nonexistent.com")!
+
+        historyCoordinator.cookiePopupBlocked(on: url)
+
+        // Give time for any async operations
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        XCTAssertFalse(historyStoringMock.saveCalled)
+    }
+
+    @MainActor
+    func testWhenCookiePopupBlockedIsCalledBeforeHistoryLoaded_ThenItIsIgnored() {
+        let historyStoringMock = HistoryStoringMock()
+        historyStoringMock.cleanOldResult = nil
+        let historyCoordinator = HistoryCoordinator(historyStoring: historyStoringMock)
+
+        let url = URL(string: "https://example.com")!
+        historyCoordinator.cookiePopupBlocked(on: url)
+
+        XCTAssertFalse(historyStoringMock.saveCalled)
+    }
+
+    // MARK: - Reset Cookie Popup Blocked Tests
+
+    @MainActor
+    func testWhenResetCookiePopupBlockedIsCalled_ThenFlagsAreResetForMatchingDomains() async {
+        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
+
+        // Setup: Add visits and mark cookie popups as blocked
+        let url1 = URL(string: "https://example.com")!
+        let url2 = URL(string: "https://test.example.com")!
+        let url3 = URL(string: "https://other.com")!
+
+        historyCoordinator.addVisit(of: url1)
+        historyCoordinator.addVisit(of: url2)
+        historyCoordinator.addVisit(of: url3)
+
+        historyCoordinator.cookiePopupBlocked(on: url1)
+        historyCoordinator.cookiePopupBlocked(on: url2)
+        historyCoordinator.cookiePopupBlocked(on: url3)
+
+        // Wait for all saves to complete
+        try? await Task.sleep(nanoseconds: 200_000_000)
+
+        // Verify all are blocked
+        XCTAssertTrue(historyCoordinator.history!.first(where: { $0.url == url1 })?.cookiePopupBlocked ?? false)
+        XCTAssertTrue(historyCoordinator.history!.first(where: { $0.url == url2 })?.cookiePopupBlocked ?? false)
+        XCTAssertTrue(historyCoordinator.history!.first(where: { $0.url == url3 })?.cookiePopupBlocked ?? false)
+
+        // Reset: Clear flags for example.com domain
+        let resetExpectation = XCTestExpectation(description: "Flags reset")
+        historyCoordinator.resetCookiePopupBlocked(for: ["example.com"], tld: TLD()) {
+            resetExpectation.fulfill()
+        }
+
+        await fulfillment(of: [resetExpectation], timeout: 1.0)
+
+        // Verify: example.com and test.example.com should be reset, other.com should remain
+        let entry1 = historyCoordinator.history!.first(where: { $0.url == url1 })
+        let entry2 = historyCoordinator.history!.first(where: { $0.url == url2 })
+        let entry3 = historyCoordinator.history!.first(where: { $0.url == url3 })
+
+        XCTAssertFalse(entry1?.cookiePopupBlocked ?? true, "example.com should be reset")
+        XCTAssertFalse(entry2?.cookiePopupBlocked ?? true, "test.example.com should be reset")
+        XCTAssertTrue(entry3?.cookiePopupBlocked ?? false, "other.com should remain blocked")
+    }
+
+    @MainActor
+    func testWhenResetCookiePopupBlockedIsCalledWithEmptyDomains_ThenNoChanges() async {
+        let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
+
+        let url = URL(string: "https://example.com")!
+        historyCoordinator.addVisit(of: url)
+        historyCoordinator.cookiePopupBlocked(on: url)
+
+        // Wait for save
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        let initialSaveCount = historyStoringMock.savedHistoryEntries.count
+
+        let resetExpectation = XCTestExpectation(description: "Reset called")
+        historyCoordinator.resetCookiePopupBlocked(for: [], tld: TLD()) {
+            resetExpectation.fulfill()
+        }
+
+        await fulfillment(of: [resetExpectation], timeout: 1.0)
+
+        // No additional saves should have occurred
+        XCTAssertEqual(historyStoringMock.savedHistoryEntries.count, initialSaveCount)
+
+        // Flag should still be set
+        XCTAssertTrue(historyCoordinator.history!.first?.cookiePopupBlocked ?? false)
+    }
+
+    @MainActor
+    func testWhenResetCookiePopupBlockedIsCalledBeforeHistoryLoaded_ThenItReturnsImmediately() {
+        let historyStoringMock = HistoryStoringMock()
+        historyStoringMock.cleanOldResult = nil
+        let historyCoordinator = HistoryCoordinator(historyStoring: historyStoringMock)
+
+        let completionExpectation = XCTestExpectation(description: "Completion called")
+        historyCoordinator.resetCookiePopupBlocked(for: ["example.com"], tld: TLD()) {
+            completionExpectation.fulfill()
+        }
+
+        wait(for: [completionExpectation], timeout: 0.1)
+        XCTAssertFalse(historyStoringMock.saveCalled)
+    }
+
+    @MainActor
+    func testWhenResetCookiePopupBlockedIsCalled_ThenOnlyMatchingDomainsAreAffected() async {
+        let (_, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
+
+        // Create various URLs to test eTLD+1 matching
+        let urls = [
+            URL(string: "https://example.com")!,
+            URL(string: "https://www.example.com")!,
+            URL(string: "https://subdomain.example.com")!,
+            URL(string: "https://another.com")!,
+            URL(string: "https://test.org")!
+        ]
+
+        // Add visits and block all
+        for url in urls {
+            historyCoordinator.addVisit(of: url)
+            historyCoordinator.cookiePopupBlocked(on: url)
+        }
+
+        // Wait for saves
+        try? await Task.sleep(nanoseconds: 200_000_000)
+
+        // Reset only example.com and test.org
+        let resetExpectation = XCTestExpectation(description: "Reset completed")
+        historyCoordinator.resetCookiePopupBlocked(for: ["example.com", "test.org"], tld: TLD()) {
+            resetExpectation.fulfill()
+        }
+
+        await fulfillment(of: [resetExpectation], timeout: 1.0)
+
+        // Verify results
+        let results = urls.map { url in
+            historyCoordinator.history!.first(where: { $0.url == url })?.cookiePopupBlocked ?? false
+        }
+
+        XCTAssertFalse(results[0], "example.com should be reset")
+        XCTAssertFalse(results[1], "www.example.com should be reset (same eTLD+1)")
+        XCTAssertFalse(results[2], "subdomain.example.com should be reset (same eTLD+1)")
+        XCTAssertTrue(results[3], "another.com should remain blocked")
+        XCTAssertFalse(results[4], "test.org should be reset")
     }
 
 }
 
 fileprivate extension HistoryCoordinator {
 
-    static var aHistoryCoordinator: (HistoryStoringMock, HistoryCoordinator) {
+    @MainActor
+    static func aHistoryCoordinator() async -> (HistoryStoringMock, HistoryCoordinator) {
         let historyStoringMock = HistoryStoringMock()
         historyStoringMock.cleanOldResult = .success(BrowsingHistory())
         historyStoringMock.removeEntriesResult = .success(())
         let historyCoordinator = HistoryCoordinator(historyStoring: historyStoringMock)
-        historyCoordinator.loadHistory { }
 
-        return (historyStoringMock, historyCoordinator)
+        // Use a continuation to wait for async loading
+        return await withCheckedContinuation { continuation in
+            historyCoordinator.loadHistory {
+                continuation.resume(returning: (historyStoringMock, historyCoordinator))
+            }
+        }
     }
 
 }
@@ -377,15 +623,15 @@ final class HistoryStoringMock: HistoryStoring {
 
     var cleanOldCalled = false
     var cleanOldResult: Result<BrowsingHistory, Error>?
-    func cleanOld(until date: Date) -> Future<BrowsingHistory, Error> {
+    func cleanOld(until date: Date) async throws -> BrowsingHistory {
         cleanOldCalled = true
-        return Future { [weak self] promise in
-            guard let cleanOldResult = self?.cleanOldResult else {
-                promise(.failure(HistoryStoringMockError.defaultError))
-                return
-            }
-
-            promise(cleanOldResult)
+        switch cleanOldResult {
+        case .success(let history):
+            return history
+        case .failure(let error):
+            throw error
+        case .none:
+            throw HistoryStoringMockError.defaultError
         }
     }
 
@@ -396,47 +642,50 @@ final class HistoryStoringMock: HistoryStoring {
     var removeEntriesCalled = false
     var removeEntriesArray = [HistoryEntry]()
     var removeEntriesResult: Result<Void, Error>?
-    func removeEntries(_ entries: [HistoryEntry]) -> Future<Void, Error> {
+    func removeEntries(_ entries: some Sequence<History.HistoryEntry>) async throws {
         removeEntriesCalled = true
-        removeEntriesArray = entries
-        return Future { [weak self] promise in
-            guard let removeEntriesResult = self?.removeEntriesResult else {
-                promise(.failure(HistoryStoringMockError.defaultError))
-                return
-            }
-            promise(removeEntriesResult)
+        removeEntriesArray = Array(entries)
+        switch removeEntriesResult {
+        case .success:
+            return
+        case .failure(let error):
+            throw error
+        case .none:
+            throw HistoryStoringMockError.defaultError
         }
     }
 
     var removeVisitsCalled = false
     var removeVisitsArray = [Visit]()
     var removeVisitsResult: Result<Void, Error>?
-    func removeVisits(_ visits: [Visit]) -> Future<Void, Error> {
+    func removeVisits(_ visits: some Sequence<History.Visit>) async throws {
         removeVisitsCalled = true
-        removeVisitsArray = visits
-        return Future { [weak self] promise in
-            guard let removeVisitsResult = self?.removeVisitsResult else {
-                promise(.failure(HistoryStoringMockError.defaultError))
-                return
-            }
-            promise(removeVisitsResult)
+        removeVisitsArray = Array(visits)
+        switch removeVisitsResult {
+        case .success:
+            return
+        case .failure(let error):
+            throw error
+        case .none:
+            throw HistoryStoringMockError.defaultError
         }
     }
 
     var saveCalled = false
     var savedHistoryEntries = [HistoryEntry]()
-    func save(entry: HistoryEntry) -> Future<[(id: Visit.ID, date: Date)], Error> {
-        saveCalled = true
-        savedHistoryEntries.append(entry)
-        for visit in entry.visits {
-            // swiftlint:disable:next legacy_random
-            visit.identifier = URL(string: "x-coredata://FBEAB2C4-8C32-4F3F-B34F-B79F293CDADD/VisitManagedObject/\(arc4random())")
+    var saveCompletion: (() -> Void)?
+    func save(entry: HistoryEntry) async throws -> [(id: Visit.ID, date: Date)] {
+        await MainActor.run {
+            saveCalled = true
+            savedHistoryEntries.append(entry)
+            for visit in entry.visits {
+                // swiftlint:disable:next legacy_random
+                visit.identifier = URL(string: "x-coredata://FBEAB2C4-8C32-4F3F-B34F-B79F293CDADD/VisitManagedObject/\(arc4random())")
+            }
+            saveCompletion?()
         }
 
-        return Future { promise in
-            let result = entry.visits.map { ($0.identifier!, $0.date) }
-            promise(.success(result))
-        }
+        return entry.visits.map { ($0.identifier!, $0.date) }
     }
 
 }

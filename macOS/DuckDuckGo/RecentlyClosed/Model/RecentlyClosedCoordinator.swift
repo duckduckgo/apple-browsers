@@ -25,31 +25,43 @@ protocol RecentlyClosedCoordinating: AnyObject {
 
     var cache: [RecentlyClosedCacheItem] { get }
 
+    /// Reopens `cacheItem`.
+    ///
+    /// If `nil` is provided, reopens the most recent item in `cache`.
+    /// If `cache` is empty, does nothing (this shouldn't happen in the wild).
+    ///
     func reopenItem(_ cacheItem: RecentlyClosedCacheItem?)
-    func burnCache(baseDomains: Set<String>?, tld: TLD)
 
+    func burnCache(baseDomains: Set<String>?, tld: TLD)
+}
+
+extension RecentlyClosedCoordinating {
+    /// Reopens the most recent item in `cache`.
+    ///
+    /// If `cache` is empty, does nothing (this shouldn't happen in the wild).
+    ///
+    func reopenItem() {
+        reopenItem(nil)
+    }
+
+    var canReopenRecentlyClosedTab: Bool {
+        return !cache.isEmpty
+    }
 }
 
 @MainActor
 final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
 
-    static let shared = RecentlyClosedCoordinator(windowControllerManager: Application.appDelegate.windowControllersManager,
-                                                  pinnedTabsManagerProvider: Application.appDelegate.pinnedTabsManagerProvider)
-
-    var windowControllerManager: WindowControllersManagerProtocol
+    var windowControllersManager: WindowControllersManagerProtocol
     let pinnedTabsManagerProvider: PinnedTabsManagerProviding
 
-    init(windowControllerManager: WindowControllersManagerProtocol, pinnedTabsManagerProvider: PinnedTabsManagerProviding) {
-        self.windowControllerManager = windowControllerManager
+    init(windowControllersManager: WindowControllersManagerProtocol, pinnedTabsManagerProvider: PinnedTabsManagerProviding) {
+        self.windowControllersManager = windowControllersManager
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
 
         guard AppVersion.runType.requiresEnvironment else { return }
         subscribeToWindowControllersManager()
         subscribeToPinnedTabsSettingChanged()
-    }
-
-    var canReopenRecentlyClosedTab: Bool {
-        return !cache.isEmpty
     }
 
     // MARK: - Subscriptions
@@ -62,12 +74,12 @@ final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
     private func subscribeToWindowControllersManager() {
         subscribeToCurrentPinnedTabCollections()
 
-        mainVCDidRegisterCancellable = windowControllerManager.didRegisterWindowController
+        mainVCDidRegisterCancellable = windowControllersManager.didRegisterWindowController
             .sink(receiveValue: { [weak self] mainWindowController in
                 self?.subscribeToTabCollection(of: mainWindowController)
                 self?.subscribeToCurrentPinnedTabCollections()
             })
-        mainVCDidUnregisterCancellable = windowControllerManager.didUnregisterWindowController
+        mainVCDidUnregisterCancellable = windowControllersManager.didUnregisterWindowController
             .sink(receiveValue: { [weak self] mainWindowController in
                 self?.cacheWindowContent(mainWindowController: mainWindowController)
                 self?.subscribeToCurrentPinnedTabCollections()

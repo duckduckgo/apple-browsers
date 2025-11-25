@@ -48,6 +48,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
     let configMatcherProvider: RemoteMessagingConfigMatcherProviding
     let store: RemoteMessagingStoring
     let remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding
+    let remoteMessagingSurfacesProvider: RemoteMessagingSurfacesProviding
 
     convenience init(
         bookmarksDatabase: CoreDataDatabase,
@@ -58,16 +59,19 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         notificationCenter: NotificationCenter = .default,
         errorEvents: EventMapping<RemoteMessagingStoreError>?,
         remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding,
+        remoteMessagingSurfacesProvider: RemoteMessagingSurfacesProviding,
         duckPlayerStorage: DuckPlayerStorage,
         configurationURLProvider: ConfigurationURLProviding,
-        syncService: DDGSyncing
+        syncService: DDGSyncing,
+        winBackOfferService: WinBackOfferService
     ) {
         let provider = RemoteMessagingConfigMatcherProvider(
             bookmarksDatabase: bookmarksDatabase,
             appSettings: appSettings,
             internalUserDecider: internalUserDecider,
             duckPlayerStorage: duckPlayerStorage,
-            syncService: syncService
+            syncService: syncService,
+            winBackOfferService: winBackOfferService
         )
         let configFetcher = RemoteMessagingConfigFetcher(
             configurationFetcher: ConfigurationFetcher(store: configurationStore, urlSession: .session(), configurationURLProvider: configurationURLProvider, eventMapping: nil),
@@ -83,7 +87,8 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
             configMatcherProvider: provider,
             configFetcher: configFetcher,
             store: remoteMessagingStore,
-            remoteMessagingAvailabilityProvider: remoteMessagingAvailabilityProvider
+            remoteMessagingAvailabilityProvider: remoteMessagingAvailabilityProvider,
+            remoteMessagingSurfacesProvider: remoteMessagingSurfacesProvider
         )
     }
 
@@ -91,12 +96,14 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         configMatcherProvider: RemoteMessagingConfigMatcherProviding,
         configFetcher: RemoteMessagingConfigFetching,
         store: RemoteMessagingStoring,
-        remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding
+        remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding,
+        remoteMessagingSurfacesProvider: RemoteMessagingSurfacesProviding
     ) {
         self.configMatcherProvider = configMatcherProvider
         self.configFetcher = configFetcher
         self.store = store
         self.remoteMessagingAvailabilityProvider = remoteMessagingAvailabilityProvider
+        self.remoteMessagingSurfacesProvider = remoteMessagingSurfacesProvider
     }
 
     @UserDefaultsWrapper(key: .lastRemoteMessagingRefreshDate, defaultValue: .distantPast)
@@ -115,6 +122,7 @@ extension RemoteMessagingClient {
         let provider = configMatcherProvider
         let fetcher = configFetcher
         let remoteMessagingAvailabilityProvider = remoteMessagingAvailabilityProvider
+        let remoteMessagingSurfacesProvider = remoteMessagingSurfacesProvider
         let store = store
 
         BGTaskScheduler.shared.register(forTaskWithIdentifier: Constants.backgroundRefreshTaskIdentifier, using: nil) { task in
@@ -127,7 +135,8 @@ extension RemoteMessagingClient {
                 configMatcherProvider: provider,
                 configFetcher: fetcher,
                 store: store,
-                remoteMessagingAvailabilityProvider: remoteMessagingAvailabilityProvider
+                remoteMessagingAvailabilityProvider: remoteMessagingAvailabilityProvider,
+                remoteMessagingSurfacesProvider: remoteMessagingSurfacesProvider
             )
             Self.backgroundRefreshTaskHandler(bgTask: task, client: client)
         }

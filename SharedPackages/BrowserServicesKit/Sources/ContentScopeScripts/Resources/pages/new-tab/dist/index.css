@@ -154,6 +154,8 @@ body {
   user-select: none;
   -webkit-user-select: none;
   cursor: default;
+  -webkit-backdrop-filter: blur(0px);
+  backdrop-filter: blur(0px);
 }
 :root[data-fatal-error] body {
   user-select: auto;
@@ -1150,14 +1152,15 @@ body:not([data-platform-name]) .Button_button:active {
   cursor: not-allowed;
   background-color: var(--color-white-at-6);
 }
+[data-platform-name=windows] .Button_button.Button_accent,
 [data-platform-name=windows] .Button_button.Button_accentBrand {
   background-color: var(--ddg-color-primary);
   color: var(--color-white);
 }
-[data-platform-name=windows] .Button_button.Button_accentBrand:hover {
+:is([data-platform-name=windows] .Button_button.Button_accent, [data-platform-name=windows] .Button_button.Button_accentBrand):hover {
   background-color: var(--color-blue-60);
 }
-[data-platform-name=windows] .Button_button.Button_accentBrand:active {
+:is([data-platform-name=windows] .Button_button.Button_accent, [data-platform-name=windows] .Button_button.Button_accentBrand):active {
   background-color: var(--color-blue-70);
 }
 [data-theme=dark] :is([data-platform-name=windows] .Button_button) {
@@ -1180,17 +1183,18 @@ body:not([data-platform-name]) .Button_button:active {
 [data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_standard:disabled:hover {
   background-color: var(--color-white-at-12);
 }
+[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accent,
 [data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accentBrand {
   color: var(--color-black-at-84);
   background-color: var(--color-blue-20);
 }
-[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accentBrand:hover {
+:is([data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accent, [data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accentBrand):hover {
   background-color: var(--color-blue-30);
 }
-[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accentBrand:active {
+:is([data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accent, [data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accentBrand):active {
   background-color: var(--color-blue-40);
 }
-[data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accentBrand:disabled {
+:is([data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accent, [data-theme=dark] :is([data-platform-name=windows] .Button_button).Button_accentBrand):disabled {
   background-color: var(--color-white-at-36);
   color: var(--color-black-at-84);
 }
@@ -1248,77 +1252,6 @@ body:not([data-platform-name]) .Button_button:active {
 [data-theme=dark] .DismissButton_btn:disabled:hover {
   cursor: not-allowed;
   background-color: var(--color-white-at-12);
-}
-
-/* pages/new-tab/app/freemium-pir-banner/components/FreemiumPIRBanner.module.css */
-.FreemiumPIRBanner_root {
-  background-color: var(--ntp-surface-background-color);
-  -webkit-backdrop-filter: blur(48px);
-  backdrop-filter: blur(48px);
-  border: 1px solid var(--ntp-surface-border-color);
-  padding: calc(14 * var(--px-in-rem)) var(--sp-8) calc(14 * var(--px-in-rem)) var(--sp-4);
-  border-radius: var(--border-radius-lg);
-  position: relative;
-  display: flex;
-  justify-content: flex-start;
-  align-items: flex-start;
-  font-family:
-    system-ui,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    Roboto;
-  color: var(--ntp-text-normal);
-  width: 100%;
-  animation: FreemiumPIRBanner_animate-fade .2s cubic-bezier(0.55, 0.055, 0.666, 0.19);
-  margin-bottom: var(--ntp-gap);
-}
-.FreemiumPIRBanner_root.FreemiumPIRBanner_icon {
-  padding-left: var(--sp-2);
-}
-.FreemiumPIRBanner_iconBlock {
-  margin-right: var(--sp-2);
-  width: 3rem;
-  min-width: 3rem;
-}
-.FreemiumPIRBanner_content {
-  flex-grow: 1;
-  height: 100%;
-  align-self: center;
-}
-.FreemiumPIRBanner_title {
-  font-size: var(--body-font-size);
-  font-weight: var(--title-2-font-weight);
-  line-height: normal;
-  margin-bottom: var(--sp-1);
-}
-.FreemiumPIRBanner_description {
-  font-size: var(--body-font-size);
-  line-height: var(--body-line-height);
-}
-.FreemiumPIRBanner_btnBlock {
-  margin-left: var(--sp-3);
-  align-self: center;
-}
-.FreemiumPIRBanner_btnRow {
-  margin-top: var(--sp-3);
-  display: flex;
-  flex-wrap: wrap;
-  gap: calc(10 * var(--px-in-rem));
-}
-.FreemiumPIRBanner_dismissBtn {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-}
-@keyframes FreemiumPIRBanner_animate-fade {
-  0% {
-    opacity: 0;
-    scale: 0.98;
-  }
-  100% {
-    opacity: 1;
-    scale: 1;
-  }
 }
 
 /* pages/new-tab/app/next-steps/components/NextSteps.module.css */
@@ -1510,6 +1443,7 @@ body:not([data-platform-name]) .Button_button:active {
   border: none;
   box-sizing: content-box;
   color: var(--ntp-text-primary);
+  line-height: 16px;
   max-height: 10lh;
   padding: var(--sp-3) var(--sp-3) 0;
   resize: none;
@@ -1586,12 +1520,6 @@ body:not([data-platform-name]) .Button_button:active {
   gap: 10px;
   padding-bottom: var(--sp-15);
 }
-[data-theme=light] .Omnibar_root {
-  --omnibar-translucent-background-color: rgba(255, 255, 255, 0.54);
-}
-[data-theme=dark] .Omnibar_root {
-  --omnibar-translucent-background-color: rgba(0, 0, 0, 0.3);
-}
 .Omnibar_logo {
   margin-bottom: var(--sp-4);
   width: 164px;
@@ -1617,10 +1545,24 @@ body:not([data-platform-name]) .Button_button:active {
   margin: 3px;
   outline: 1px solid var(--ntp-controls-raised-backdrop);
 }
-body:not([data-background-kind=default]) .Omnibar_popup {
+[data-background-kind=color] [data-theme=light] .Omnibar_popup,
+[data-background-kind=gradient] [data-theme=light] .Omnibar_popup,
+[data-background-kind=userImage] [data-theme=light] .Omnibar_popup {
   -webkit-backdrop-filter: blur(48px);
   backdrop-filter: blur(48px);
-  background: var(--omnibar-translucent-background-color);
+  background: rgba(255, 255, 255, 0.54);
+}
+[data-background-kind=color] [data-theme=dark] .Omnibar_popup,
+[data-background-kind=gradient] [data-theme=dark] .Omnibar_popup {
+  -webkit-backdrop-filter: blur(48px);
+  backdrop-filter: blur(48px);
+  background: rgba(255, 255, 255, 0.12);
+  outline: 1px solid rgba(0, 0, 0, 0.12);
+}
+[data-background-kind=userImage] [data-theme=dark] .Omnibar_popup {
+  -webkit-backdrop-filter: blur(48px);
+  backdrop-filter: blur(48px);
+  background: rgba(0, 0, 0, 0.3);
 }
 .Omnibar_root:has(input:focus, textarea:focus) .Omnibar_popup {
   box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.1), 0 20px 40px 0 rgba(0, 0, 0, 0.08);
@@ -1726,6 +1668,9 @@ body:not([data-background-kind=default]) .Omnibar_popup {
 }
 [data-entry-point=omnibar]:has([role=listbox]) .SearchForm_closeButton {
   visibility: visible;
+}
+[data-platform=windows] .SearchForm_input {
+  line-height: normal;
 }
 
 /* pages/new-tab/app/omnibar/components/SuggestionsList.module.css */
@@ -1948,6 +1893,7 @@ body:not([data-background-kind=default]) .TabSwitcher_tabSwitcher {
   color: var(--ntp-accent-primary);
   cursor: pointer;
   padding: 0;
+  transform: translateZ(0);
 }
 .Popover_description button:hover {
   color: var(--ntp-accent-secondary);
@@ -2550,6 +2496,97 @@ body:not([data-background-kind=default]) .TabSwitcher_tabSwitcher {
   }
 }
 
+/* pages/new-tab/app/freemium-pir-banner/components/FreemiumPIRBanner.module.css */
+.FreemiumPIRBanner_root {
+  background-color: var(--ntp-surface-background-color);
+  -webkit-backdrop-filter: blur(48px);
+  backdrop-filter: blur(48px);
+  border: 1px solid var(--ntp-surface-border-color);
+  padding: calc(14 * var(--px-in-rem)) var(--sp-8) calc(14 * var(--px-in-rem)) var(--sp-4);
+  border-radius: var(--border-radius-lg);
+  position: relative;
+  display: flex;
+  justify-content: flex-start;
+  align-items: flex-start;
+  font-family:
+    system-ui,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto;
+  color: var(--ntp-text-normal);
+  width: 100%;
+  animation: FreemiumPIRBanner_animate-fade .2s cubic-bezier(0.55, 0.055, 0.666, 0.19);
+  margin-bottom: var(--ntp-gap);
+}
+.FreemiumPIRBanner_root.FreemiumPIRBanner_icon {
+  padding-left: var(--sp-2);
+}
+.FreemiumPIRBanner_iconBlock {
+  margin-right: var(--sp-2);
+  width: 3rem;
+  min-width: 3rem;
+}
+.FreemiumPIRBanner_content {
+  flex-grow: 1;
+  height: 100%;
+  align-self: center;
+}
+.FreemiumPIRBanner_title {
+  font-size: var(--body-font-size);
+  font-weight: var(--title-2-font-weight);
+  line-height: normal;
+  margin-bottom: var(--sp-1);
+}
+.FreemiumPIRBanner_description {
+  font-size: var(--body-font-size);
+  line-height: var(--body-line-height);
+}
+.FreemiumPIRBanner_btnBlock {
+  margin-left: var(--sp-3);
+  align-self: center;
+}
+.FreemiumPIRBanner_btnRow {
+  margin-top: var(--sp-3);
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(10 * var(--px-in-rem));
+}
+.FreemiumPIRBanner_dismissBtn {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+}
+@keyframes FreemiumPIRBanner_animate-fade {
+  0% {
+    opacity: 0;
+    scale: 0.98;
+  }
+  100% {
+    opacity: 1;
+    scale: 1;
+  }
+}
+
+/* pages/new-tab/app/subscription-winback-banner/components/SubscriptionWinBackBanner.module.css */
+.SubscriptionWinBackBanner_root {
+}
+.SubscriptionWinBackBanner_iconBlock {
+}
+.SubscriptionWinBackBanner_content {
+}
+.SubscriptionWinBackBanner_title {
+}
+.SubscriptionWinBackBanner_description {
+}
+.SubscriptionWinBackBanner_btnBlock {
+}
+.SubscriptionWinBackBanner_btnRow {
+}
+.SubscriptionWinBackBanner_dismissBtn {
+}
+.SubscriptionWinBackBanner_icon {
+}
+
 /* pages/new-tab/app/update-notification/components/UpdateNotification.module.css */
 .UpdateNotification_pulled {
   margin-top: calc(-40 * var(--px-in-rem));
@@ -2788,11 +2825,9 @@ body:not([data-background-kind=default]) .TabSwitcher_tabSwitcher {
 }
 @keyframes CustomizerDrawerInner_fade-in {
   0% {
-    opacity: 0;
     visibility: hidden;
   }
   100% {
-    opacity: 1;
     visibility: visible;
   }
 }

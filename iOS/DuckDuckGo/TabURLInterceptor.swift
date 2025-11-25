@@ -24,7 +24,7 @@ import Subscription
 import AIChat
 
 enum InterceptedURLType: String {
-    case privacyPro
+    case subscription
     case aiChat
 }
 
@@ -42,19 +42,24 @@ final class TabURLInterceptorDefault: TabURLInterceptor {
     typealias CanPurchaseUpdater = () -> Bool
     private let canPurchase: CanPurchaseUpdater
     private let featureFlagger: FeatureFlagger
+    private let aichatFullModeFeature: AIChatFullModeFeatureProviding
 
-    init(featureFlagger: FeatureFlagger, canPurchase: @escaping CanPurchaseUpdater) {
+    init(featureFlagger: FeatureFlagger,
+         canPurchase: @escaping CanPurchaseUpdater,
+         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature()
+    ) {
         self.canPurchase = canPurchase
         self.featureFlagger = featureFlagger
+        self.aichatFullModeFeature = aichatFullModeFeature
     }
 
     static let interceptedURLs: [InterceptedURLInfo] = [
-        InterceptedURLInfo(id: .privacyPro, path: "/pro")
+        InterceptedURLInfo(id: .subscription, path: "/pro")
     ]
     
     func allowsNavigatingTo(url: URL) -> Bool {
-        if url.isDuckAIURL {
-            return handleURLInterception(interceptedURLType: .aiChat)
+        if url.isDuckAIURL && !aichatFullModeFeature.isAvailable {
+            return handleURLInterception(interceptedURLType: .aiChat, interceptedURL: url)
         }
 
         guard url.isPart(ofDomain: "duckduckgo.com") || (url.isPart(ofDomain: "duck.co") && featureFlagger.internalUserDecider.isInternalUser),
@@ -86,10 +91,10 @@ extension TabURLInterceptorDefault {
         return URLComponents(string: "\(URL.URLProtocol.https.scheme)\(noScheme)")
     }
 
-    private func handleURLInterception(interceptedURLType: InterceptedURLType, interceptedURLComponents: URLComponents? = nil) -> Bool {
+    private func handleURLInterception(interceptedURLType: InterceptedURLType, interceptedURLComponents: URLComponents? = nil, interceptedURL: URL? = nil) -> Bool {
         switch interceptedURLType {
-            // Opens the Privacy Pro Subscription Purchase page (if user can purchase)
-        case .privacyPro:
+            // Opens the DuckDuckGo Subscription Purchase page (if user can purchase)
+        case .subscription:
             if canPurchase() {
                 // We pass `interceptedURLComponents` to properly resolve final purchase URL
                 // and to capture `origin` query parameter as it is needed for the Pixel to track subscription attributions
@@ -100,17 +105,22 @@ extension TabURLInterceptorDefault {
                 }
 
                 NotificationCenter.default.post(
-                    name: .urlInterceptPrivacyPro,
+                    name: .urlInterceptSubscription,
                     object: nil,
                     userInfo: userInfo
                 )
                 return false
             }
         case .aiChat:
+            var userInfo: [AnyHashable: Any]?
+            if let url = interceptedURL {
+                userInfo = [TabURLInterceptorParameter.interceptedURL: url]
+            }
+
             NotificationCenter.default.post(
                 name: .urlInterceptAIChat,
                 object: nil,
-                userInfo: nil
+                userInfo: userInfo
             )
             return false
         }
@@ -119,10 +129,11 @@ extension TabURLInterceptorDefault {
 }
 
 extension NSNotification.Name {
-    static let urlInterceptPrivacyPro: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.notification.urlInterceptPrivacyPro")
+    static let urlInterceptSubscription: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.notification.urlInterceptSubscription")
     static let urlInterceptAIChat: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.notification.urlInterceptAIChat")
 }
 
 public enum TabURLInterceptorParameter {
     public static let interceptedURLComponents = "interceptedURLComponents"
+    public static let interceptedURL = "interceptedURL"
 }

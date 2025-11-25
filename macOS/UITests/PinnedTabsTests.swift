@@ -20,11 +20,14 @@ import XCTest
 
 class PinnedTabsTests: UITestCase {
     private static let failureObserver = TestFailureObserver()
+    var featureFlags: [String: Bool] {
+        [:]
+    }
 
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
-        app = XCUIApplication.setUp()
+        app = XCUIApplication.setUp(featureFlags: featureFlags)
 
         app.openNewWindow()
     }
@@ -44,6 +47,36 @@ class PinnedTabsTests: UITestCase {
         assertWindowTwoHasNoPinnedTabsFromWindowsOne()
         app.terminate()
         assertPinnedTabsRestoredState()
+    }
+
+    func testSettingsCanBePinned() {
+        app.openSettings()
+        pinCurrentPage()
+        assertCurrentPageCanBeUnpinned()
+    }
+
+    func testBookmarksCanBePinned() {
+        app.openBookmarksManager()
+        pinCurrentPage()
+        assertCurrentPageCanBeUnpinned()
+    }
+
+    func testHistoryCanBePinned() {
+        app.openHistory()
+        pinCurrentPage()
+        assertCurrentPageCanBeUnpinned()
+    }
+
+    func testNewTabPageCanBePinned() {
+        app.openNewTab()
+        pinCurrentPage()
+        assertCurrentPageCanBeUnpinned()
+    }
+
+    func testReleaseNotesCannotBePinned() {
+        app.openHelp()
+        app.openReleaseNotes()
+        assertCurrentPageCannotBePinned()
     }
 
     // MARK: - Utilities
@@ -74,11 +107,15 @@ class PinnedTabsTests: UITestCase {
     private func pinsPageOne() {
         app.typeKey("[", modifierFlags: [.command, .shift])
         app.typeKey("[", modifierFlags: [.command, .shift])
-        app.menuItems["Pin Tab"].tap()
+        pinCurrentPage()
     }
 
     private func pinsPageTwo() {
         app.typeKey("]", modifierFlags: [.command, .shift])
+        pinCurrentPage()
+    }
+
+    private func pinCurrentPage() {
         app.menuItems["Pin Tab"].tap()
     }
 
@@ -138,7 +175,7 @@ class PinnedTabsTests: UITestCase {
     }
 
     private func assertPinnedTabsRestoredState() {
-        let newApp = XCUIApplication.setUp()
+        let newApp = XCUIApplication.setUp(featureFlags: featureFlags)
         XCTAssertTrue(
             newApp.windows.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "App window didn't become available in a reasonable timeframe."
@@ -151,6 +188,22 @@ class PinnedTabsTests: UITestCase {
         /// Goes to Page #1 to check the state
         newApp.typeKey("]", modifierFlags: [.command, .shift])
         XCTAssertTrue(newApp.staticTexts["Sample text for Page #1"].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+    }
+
+    private func assertCurrentPageCanBeUnpinned() {
+        XCTAssertTrue(
+            app.menuItems["Unpin Tab"].waitForExistence(timeout: UITests.Timeouts.elementExistence)
+        )
+    }
+
+    private func assertCurrentPageCannotBePinned() {
+        let pinItem = app.menuItems["Pin Tab"]
+
+        XCTAssertTrue(
+            pinItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Pin Tab menu item didn't become available in a reasonable timeframe."
+        )
+        XCTAssertFalse(pinItem.isHittable)
     }
 
     private func waitForSite(pageTitle: String) {

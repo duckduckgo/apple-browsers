@@ -17,9 +17,9 @@
 //
 
 import AppKit
-import Foundation
 import AppKitExtensions
 import Common
+import Foundation
 
 extension UserDefaults {
     /// The app group's shared UserDefaults
@@ -50,13 +50,12 @@ public struct UserDefaultsWrapper<T> {
         case unprotectedDomains = "com.duckduckgo.contentblocker.unprotectedDomains"
         case contentBlockingRulesCache = "com.duckduckgo.contentblocker.rules.cache"
 
-        case defaultBrowserDismissed = "browser.default.dismissed"
-
         case spellingCheckEnabledOnce = "spelling.check.enabled.once"
         case grammarCheckEnabledOnce = "grammar.check.enabled.once"
 
         case loginDetectionEnabled = "fireproofing.login-detection-enabled"
         case autoClearEnabled = "preferences.auto-clear-enabled"
+        case autoClearAIChatHistoryEnabled = "preferences.auto-clear-ai-chat-history-enabled"
         case warnBeforeClearingEnabled = "preferences.warn-before-clearing-enabled"
         case fireAnimationEnabled = "preferences.fire-animation-enabled"
         case gpcEnabled = "preferences.gpc-enabled"
@@ -78,6 +77,7 @@ public struct UserDefaultsWrapper<T> {
         case askToSavePaymentMethods = "preferences.ask-to-save.payment-methods"
         case autolockLocksFormFilling = "preferences.lock-autofill-form-fill"
         case autofillDebugScriptEnabled = "preferences.enable-autofill-debug-script"
+        case contentScopeDebugStateEnabled = "preferences.enable-content-scope-debug-state"
 
         case saveAsPreferredFileType = "saveAs.selected.filetype"
 
@@ -92,8 +92,10 @@ public struct UserDefaultsWrapper<T> {
         case launchToCustomHomePage = "preferences.startup.launch-to-custom-home-page"
         case customHomePageURL = "preferences.startup.customHomePageURL"
         case openFireWindowByDefault = "preferences.startup.open-fire-window-by-default"
-        case currentThemeName = "com.duckduckgo.macos.currentThemeNameKey"
+        case themeAppearance = "com.duckduckgo.macos.currentThemeNameKey"
+        case themeName = "preferences.appearance.theme-name"
         case showFullURL = "preferences.appearance.show-full-url"
+        case syncAppIconWithTheme = "preferences.appearance.sync-app-icon-with-theme"
         case showAutocompleteSuggestions = "preferences.appearance.show-autocomplete-suggestions"
         case preferNewTabsToWindows = "preferences.tabs.prefer-new-tabs-to-windows"
         case switchToNewTabWhenOpened = "preferences.tabs.switch-to-new-tab-when-opened"
@@ -192,12 +194,15 @@ public struct UserDefaultsWrapper<T> {
         // or else KVO will just not work as of 2023-08-07
         case hadVPNEntitlements = "hadVPNEntitlements"
         case networkProtectionOnboardingStatusRawValue = "networkProtectionOnboardingStatusRawValue"
+        case vpnConnectionWideEventBrowserStartTime = "vpnConnectionWideEventBrowserStartTime"
+        case vpnConnectionWideEventOverallStartTime = "vpnConnectionWideEventOverallStartTime"
 
         // Updates
         case automaticUpdates = "updates.automatic"
         case pendingUpdateShown = "pending.update.shown"
         case pendingUpdateSince = "pending.update.since"
         case updateValidityStartDate = "update.validity.start.date"
+        case lastSuccessfulUpdateDate = "updates.last.successful.date"
 
         // Experiments
         case pixelExperimentInstalled = "pixel.experiment.installed"
@@ -209,6 +214,12 @@ public struct UserDefaultsWrapper<T> {
         // Updates
         case previousAppVersion = "previous.app.version"
         case previousBuild = "previous.build"
+        case pendingUpdateSourceVersion = "pending.update.source.version"
+        case pendingUpdateSourceBuild = "pending.update.source.build"
+        case pendingUpdateExpectedVersion = "pending.update.expected.version"
+        case pendingUpdateExpectedBuild = "pending.update.expected.build"
+        case pendingUpdateInitiationType = "pending.update.initiation.type"
+        case pendingUpdateConfiguration = "pending.update.configuration"
 
         // Sync
 
@@ -216,9 +227,13 @@ public struct UserDefaultsWrapper<T> {
         case favoritesDisplayMode = "sync.favorites-display-mode"
         case syncBookmarksPaused = "sync.bookmarks-paused"
         case syncCredentialsPaused = "sync.credentials-paused"
+        case syncCreditCardsPaused = "sync.credit-cards-paused"
+        case syncIdentitiesPaused = "sync.identities-paused"
         case syncIsPaused = "sync.paused"
         case syncBookmarksPausedErrorDisplayed = "sync.bookmarks-paused-error-displayed"
         case syncCredentialsPausedErrorDisplayed = "sync.credentials-paused-error-displayed"
+        case syncCreditCardsPausedErrorDisplayed = "sync.credit-cards-paused-error-displayed"
+        case syncIdentitiesPausedErrorDisplayed = "sync.identities-paused-error-displayed"
         case syncInvalidLoginPausedErrorDisplayed = "sync.invalid-login-paused-error-displayed"
         case syncIsFaviconsFetcherEnabled = "sync.is-favicons-fetcher-enabled"
         case syncIsEligibleForFaviconsFetcherOnboarding = "sync.is-eligible-for-favicons-fetcher-onboarding"
@@ -231,6 +246,8 @@ public struct UserDefaultsWrapper<T> {
         case syncCurrentAllPausedError = "sync.current-all-paused-error"
         case syncCurrentBookmarksPausedError = "sync.current-bookmarks-paused-error"
         case syncCurrentCredentialsPausedError = "sync.current-credentials-paused-error"
+        case syncCurrentCreditCardsPausedError = "sync.current-credit-cards-paused-error"
+        case syncCurrentIdentitiesPausedError = "sync.current-identities-paused-error"
         case syncPromoBookmarksDismissed = "sync.promotion-bookmarks-dismissed"
         case syncPromoPasswordsDismissed = "sync.promotion-passwords-dismissed"
 
@@ -252,6 +269,9 @@ public struct UserDefaultsWrapper<T> {
 
         // SAD/ATT Debug
         case debugSetDefaultAndAddToDockPromptCurrentDateKey = "com.duckduckgo.ios.debug.setDefaultAndAddToDockPromptCurrentDate"
+
+        // Win-back Offer Debug
+        case debugWinBackOfferSimulatedTodayDate = "com.duckduckgo.debug.winBackOfferSimulatedTodayDate"
     }
 
     enum RemovedKeys: String, CaseIterable {

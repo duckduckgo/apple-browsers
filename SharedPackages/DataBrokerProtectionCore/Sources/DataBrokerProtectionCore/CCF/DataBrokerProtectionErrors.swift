@@ -92,6 +92,45 @@ extension DataBrokerProtectionError {
     }
 }
 
+extension DataBrokerProtectionError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .malformedURL:
+            return "Malformed URL"
+        case .noActionFound:
+            return "No action found"
+        case .actionFailed(let actionID, let message):
+            return "Action failed: [\(actionID)] \(message)"
+        case .parsingErrorObjectFailed:
+            return "Parsing error object failed"
+        case .unknown(let message):
+            return message
+        case .unrecoverableError:
+            return "Unrecoverable error"
+        case .noOptOutStep:
+            return "No opt-out step available"
+        case .captchaServiceError(let captchaError):
+            return "Captcha service error: \(captchaError.localizedDescription)"
+        case .emailError(let emailError?):
+            return "Email service error: \(emailError.localizedDescription)"
+        case .emailError(nil):
+            return "Email error"
+        case .cancelled:
+            return "Cancelled"
+        case .solvingCaptchaWithCallbackError:
+            return "Solving captcha with callback failed"
+        case .cantCalculatePreferredRunDate:
+            return "Unable to calculate preferred run date"
+        case .httpError(let code):
+            return "HTTP \(code)"
+        case .dataNotInDatabase:
+            return "Data not in database"
+        case .jobTimeout:
+            return "Job timed out"
+        }
+    }
+}
+
 extension DataBrokerProtectionError: CustomNSError {
     public var errorCode: Int {
         switch self {

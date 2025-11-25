@@ -28,20 +28,17 @@ final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
     let featureFlagger: FeatureFlagger
     let faviconManager: FaviconManagement
     let isNTPSpecialPageSupported: Bool
-    let isHistorySpecialPageSupported: Bool
     let userBackgroundImagesManager: UserBackgroundImagesManaging?
 
     init(
         featureFlagger: FeatureFlagger,
         faviconManager: FaviconManagement = NSApp.delegateTyped.faviconManager,
         isNTPSpecialPageSupported: Bool = false,
-        isHistorySpecialPageSupported: Bool = false,
         userBackgroundImagesManager: UserBackgroundImagesManaging? = NSApp.delegateTyped.newTabPageCustomizationModel.customImagesManager
     ) {
         self.featureFlagger = featureFlagger
         self.faviconManager = faviconManager
         self.isNTPSpecialPageSupported = isNTPSpecialPageSupported
-        self.isHistorySpecialPageSupported = isHistorySpecialPageSupported
         self.userBackgroundImagesManager = userBackgroundImagesManager
     }
 
@@ -70,7 +67,7 @@ final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
             default:
                 handleSpecialPages(urlSchemeTask: urlSchemeTask)
             }
-        case .history where isHistorySpecialPageSupported && featureFlagger.isFeatureOn(.historyView):
+        case .history:
             switch requestURL.type {
             case .favicon:
                 handleFavicon(urlSchemeTask: urlSchemeTask)
@@ -363,12 +360,6 @@ private extension DuckURLSchemeHandler {
 
         let error = MaliciousSiteError(threat: threatKind, failingUrl: failingUrl)
         urlSchemeTask.didFailWithError(error)
-    }
-}
-
-extension URL {
-    var isHistory: Bool {
-        return isDuckURLScheme && host == "history"
     }
 }
 

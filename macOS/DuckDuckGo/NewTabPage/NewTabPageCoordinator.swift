@@ -26,6 +26,7 @@ import NewTabPage
 import Persistence
 import PixelKit
 import PrivacyStats
+import AutoconsentStats
 import Suggestions
 
 typealias HistoryProviderCoordinating = HistoryCoordinating & SuggestionContainer.HistoryProvider
@@ -40,11 +41,14 @@ final class NewTabPageCoordinator {
         customizationModel: NewTabPageCustomizationModel,
         bookmarkManager: BookmarkManager & URLFavoriteStatusProviding & RecentActivityFavoritesHandling,
         faviconManager: FaviconManagement,
+        duckPlayerHistoryEntryTitleProvider: DuckPlayerHistoryEntryTitleProviding,
         activeRemoteMessageModel: ActiveRemoteMessageModel,
         historyCoordinator: HistoryProviderCoordinating,
         contentBlocking: ContentBlockingProtocol,
         fireproofDomains: URLFireproofStatusProviding,
         privacyStats: PrivacyStatsCollecting,
+        autoconsentStats: AutoconsentStatsCollecting,
+        cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
         freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator,
         tld: TLD,
         fireCoordinator: FireCoordinator,
@@ -53,20 +57,23 @@ final class NewTabPageCoordinator {
         notificationCenter: NotificationCenter = .default,
         visualizeFireAnimationDecider: VisualizeFireSettingsDecider,
         featureFlagger: FeatureFlagger,
-        windowControllersManager: WindowControllersManagerProtocol,
+        windowControllersManager: WindowControllersManagerProtocol & AIChatTabManaging,
         tabsPreferences: TabsPreferences,
         newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
+        winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator,
         fireDailyPixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .legacyDaily) }
     ) {
 
         let settingsMigrator = NewTabPageProtectionsReportSettingsMigrator(legacyKeyValueStore: legacyKeyValueStore)
         let protectionsReportModel = NewTabPageProtectionsReportModel(
             privacyStats: privacyStats,
+            autoconsentStats: autoconsentStats,
             keyValueStore: keyValueStore,
             burnAnimationSettingChanges: visualizeFireAnimationDecider.shouldShowFireAnimationPublisher,
             showBurnAnimation: visualizeFireAnimationDecider.shouldShowFireAnimation,
+            isAutoconsentEnabled: { cookiePopupProtectionPreferences.isAutoconsentEnabled },
             getLegacyIsViewExpandedSetting: settingsMigrator.isViewExpanded,
-            getLegacyActiveFeedSetting: settingsMigrator.activeFeed,
+            getLegacyActiveFeedSetting: settingsMigrator.activeFeed
         )
 
         actionsManager = NewTabPageActionsManager(
@@ -74,12 +81,14 @@ final class NewTabPageCoordinator {
             customizationModel: customizationModel,
             bookmarkManager: bookmarkManager,
             faviconManager: faviconManager,
+            duckPlayerHistoryEntryTitleProvider: duckPlayerHistoryEntryTitleProvider,
             contentBlocking: contentBlocking,
             trackerDataManager: contentBlocking.trackerDataManager,
             activeRemoteMessageModel: activeRemoteMessageModel,
             historyCoordinator: historyCoordinator,
             fireproofDomains: fireproofDomains,
             privacyStats: privacyStats,
+            autoconsentStats: autoconsentStats,
             protectionsReportModel: protectionsReportModel,
             freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator,
             tld: tld,
@@ -88,7 +97,8 @@ final class NewTabPageCoordinator {
             featureFlagger: featureFlagger,
             windowControllersManager: windowControllersManager,
             tabsPreferences: tabsPreferences,
-            newTabPageAIChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider
+            newTabPageAIChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider,
+            winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator
         )
         newTabPageShownPixelSender = NewTabPageShownPixelSender(
             appearancePreferences: appearancePreferences,

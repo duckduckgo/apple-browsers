@@ -19,7 +19,6 @@
 import BrowserServicesKit
 import Common
 import Foundation
-import Subscription
 
 public protocol VPNActivationDateProviding {
     func daysSinceActivation() -> Int?
@@ -30,18 +29,18 @@ public struct DefaultRemoteMessagingSurveyURLBuilder: RemoteMessagingSurveyActio
 
     private let statisticsStore: StatisticsStore
     private let vpnActivationDateStore: VPNActivationDateProviding
-    private let subscription: PrivacyProSubscription?
+    private let subscriptionDataProvider: SubscriptionSurveyDataProviding?
     private let localeIdentifier: String
     private let autofillUsageStore: AutofillUsageStore?
 
     public init(statisticsStore: StatisticsStore,
                 vpnActivationDateStore: VPNActivationDateProviding,
-                subscription: PrivacyProSubscription?,
+                subscriptionDataProvider: SubscriptionSurveyDataProviding?,
                 localeIdentifier: String = Locale.current.identifier,
                 autofillUsageStore: AutofillUsageStore?) {
         self.statisticsStore = statisticsStore
         self.vpnActivationDateStore = vpnActivationDateStore
-        self.subscription = subscription
+        self.subscriptionDataProvider = subscriptionDataProvider
         self.localeIdentifier = localeIdentifier
         self.autofillUsageStore = autofillUsageStore
     }
@@ -85,26 +84,26 @@ public struct DefaultRemoteMessagingSurveyURLBuilder: RemoteMessagingSurveyActio
             case .locale:
                 let formattedLocale = LocaleMatchingAttribute.localeIdentifierAsJsonFormat(localeIdentifier)
                 queryItems.append(URLQueryItem(name: parameter.rawValue, value: formattedLocale))
-            case .privacyProStatus:
-                if let privacyProStatusSurveyParameter = subscription?.privacyProStatusSurveyParameter {
-                    queryItems.append(URLQueryItem(name: parameter.rawValue, value: privacyProStatusSurveyParameter))
+            case .subscriptionStatus:
+                if let status = subscriptionDataProvider?.subscriptionStatus {
+                    queryItems.append(URLQueryItem(name: parameter.rawValue, value: status))
                 }
-            case .privacyProPlatform:
-                if let privacyProPlatformSurveyParameter = subscription?.privacyProPlatformSurveyParameter {
-                    queryItems.append(URLQueryItem(name: parameter.rawValue, value: privacyProPlatformSurveyParameter))
+            case .subscriptionPlatform:
+                if let platform = subscriptionDataProvider?.subscriptionPlatform {
+                    queryItems.append(URLQueryItem(name: parameter.rawValue, value: platform))
                 }
-            case .privacyProBilling:
-                if let privacyProBillingSurveyParameter = subscription?.privacyProBillingSurveyParameter {
-                    queryItems.append(URLQueryItem(name: parameter.rawValue, value: privacyProBillingSurveyParameter))
+            case .subscriptionBilling:
+                if let billing = subscriptionDataProvider?.subscriptionBilling {
+                    queryItems.append(URLQueryItem(name: parameter.rawValue, value: billing))
                 }
 
-            case .privacyProDaysSincePurchase:
-                if let startDate = subscription?.startedAt,
+            case .subscriptionDaysSincePurchase:
+                if let startDate = subscriptionDataProvider?.subscriptionStartDate,
                    let daysSincePurchase = Calendar.current.numberOfDaysBetween(startDate, and: Date()) {
                     queryItems.append(URLQueryItem(name: parameter.rawValue, value: String(describing: daysSincePurchase)))
                 }
-            case .privacyProDaysUntilExpiry:
-                if let expiryDate = subscription?.expiresOrRenewsAt,
+            case .subscriptionDaysUntilExpiry:
+                if let expiryDate = subscriptionDataProvider?.subscriptionExpiryDate,
                    let daysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: expiryDate) {
                     queryItems.append(URLQueryItem(name: parameter.rawValue, value: String(describing: daysUntilExpiry)))
                 }
@@ -175,48 +174,5 @@ public struct DefaultRemoteMessagingSurveyURLBuilder: RemoteMessagingSurveyActio
         ]
 
         return comps.url?.absoluteString ?? urlString
-    }
-}
-
-extension PrivacyProSubscription {
-    var privacyProStatusSurveyParameter: String {
-        switch status {
-        case .autoRenewable:
-            return "auto_renewable"
-        case .notAutoRenewable:
-            return "not_auto_renewable"
-        case .gracePeriod:
-            return "grace_period"
-        case .inactive:
-            return "inactive"
-        case .expired:
-            return "expired"
-        case .unknown:
-            return "unknown"
-        }
-    }
-
-    var privacyProPlatformSurveyParameter: String {
-        switch platform {
-        case .apple:
-            return "apple"
-        case .google:
-            return "google"
-        case .stripe:
-            return "stripe"
-        case .unknown:
-            return "unknown"
-        }
-    }
-
-    var privacyProBillingSurveyParameter: String {
-        switch billingPeriod {
-        case .monthly:
-            return "monthly"
-        case .yearly:
-            return "yearly"
-        case .unknown:
-            return "unknown"
-        }
     }
 }

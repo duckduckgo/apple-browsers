@@ -47,6 +47,14 @@ extension MainViewController: SyncAlertsPresenting {
             showSyncPausedAlert(
                 title: UserText.syncBookmarkPausedAlertTitle,
                 informative: UserText.syncBadCredentialsRequestAlertDescription)
+        case .creditCardsCountLimitExceeded, .creditCardsRequestSizeLimitExceeded:
+            showSyncPausedAlert(
+                title: UserText.syncCreditCardsPausedAlertTitle,
+                informative: UserText.syncCreditCardsPausedAlertDescription)
+        case .badRequestCreditCards:
+            showSyncPausedAlert(
+                title: UserText.syncCreditCardsPausedAlertTitle,
+                informative: UserText.syncBadCreditCardsRequestAlertDescription)
         }
     }
     

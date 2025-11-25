@@ -27,11 +27,14 @@ import PixelKit
 final class NavigationProtectionTabExtension {
 
     private let contentBlocking: AnyContentBlocking
+    private let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
 
     private static let debugEvents = EventMapping<AMPProtectionDebugEvents> { event, _, _, _ in
         switch event {
         case .ampBlockingRulesCompilationFailed:
             PixelKit.fire(GeneralPixel.ampBlockingRulesCompilationFailed)
+        case .ampKeywordDetectionPerformance:
+            break
         }
     }
 
@@ -47,9 +50,9 @@ final class NavigationProtectionTabExtension {
                          tld: contentBlocking.tld)
     }()
 
-    init(contentBlocking: AnyContentBlocking) {
+    init(contentBlocking: AnyContentBlocking, webTrackingProtectionPreferences: WebTrackingProtectionPreferences) {
         self.contentBlocking = contentBlocking
-
+        self.webTrackingProtectionPreferences = webTrackingProtectionPreferences
     }
 
     private func resetNavigation() {
@@ -116,7 +119,7 @@ extension NavigationProtectionTabExtension: NavigationResponder {
             request = newRequest
         }
 
-        let isGPCEnabled = WebTrackingProtectionPreferences.shared.isGPCEnabled
+        let isGPCEnabled = webTrackingProtectionPreferences.isGPCEnabled
         if let newRequest = GPCRequestFactory().requestForGPC(basedOn: request,
                                                               config: contentBlocking.privacyConfigurationManager.privacyConfig,
                                                               gpcEnabled: isGPCEnabled) {

@@ -24,10 +24,14 @@ extension WindowControllersManager: URLOpening {
     func openInNewTab(_ urls: [URL], sourceWindow: NSWindow?) {
         guard let mainWindowController = mainWindowController(for: sourceWindow), !urls.isEmpty else { return }
 
-        let tabs = urls.map { Tab(content: .url($0, source: .historyEntry), shouldLoadInBackground: true) }
+        let tabs = urls.map {
+            Tab(content: .url($0, source: .historyEntry),
+                shouldLoadInBackground: true,
+                burnerMode: mainWindowController.mainViewController.tabCollectionViewModel.burnerMode)
+        }
 
         let tabCollectionViewModel = mainWindowController.mainViewController.tabCollectionViewModel
-        tabCollectionViewModel.append(tabs: tabs, andSelect: TabsPreferences.shared.switchToNewTabWhenOpened)
+        tabCollectionViewModel.append(tabs: tabs, andSelect: shouldSwitchToNewTabWhenOpened)
     }
 
     func openInNewWindow(_ urls: [URL], sourceWindow: NSWindow?) {

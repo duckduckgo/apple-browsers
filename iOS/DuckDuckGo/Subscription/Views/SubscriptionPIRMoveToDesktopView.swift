@@ -84,7 +84,7 @@ struct SubscriptionPIRMoveToDesktopView: View {
                 .aspectRatio(contentMode: .fill)
                 .padding(.top, Constants.generalSpacing)
             VStack {
-                Text(UserText.subscriptionPIRHeroText(isRebrandingOn: viewModel.isSubscriptionRebrandingOn))
+                Text(UserText.subscriptionPIRHeroText)
                    .daxTitle2()
                    .multilineTextAlignment(.center)
                    .padding(.horizontal, Constants.generalSpacing*2)

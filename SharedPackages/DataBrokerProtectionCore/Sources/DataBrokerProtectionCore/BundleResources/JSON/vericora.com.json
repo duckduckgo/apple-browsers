@@ -1,7 +1,7 @@
 {
   "name": "Vericora",
   "url": "vericora.com",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "addedDatetime": 1677736800000,
   "optOutUrl": "https://vericora.com/ng/control/privacy",
   "steps": [
@@ -67,6 +67,17 @@
           "id": "db351d7c-3ca0-4af4-9aed-b2f8fba15622"
         },
         {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//h1[contains(text(), 'Opt Out')]",
+              "parent": ".container"
+            }
+          ],
+          "id": "ee27fecb-0eec-4d9e-800e-d7dd9d96d02c"
+        },
+        {
           "actionType": "fillForm",
           "selector": ".ahm",
           "elements": [
@@ -86,14 +97,15 @@
           "id": "c26a1a7c-46c5-4a10-a9d3-ff0660e15e32"
         },
         {
-          "actionType": "getCaptchaInfo",
-          "selector": ".g-recaptcha",
-          "id": "09599d30-8953-477a-bb70-8042baa20cb5"
-        },
-        {
-          "actionType": "solveCaptcha",
-          "selector": ".g-recaptcha",
-          "id": "a2af0d54-7170-4181-908b-669bf4dfbcea"
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//input[@name='cf_captcha_token' and @value and @value != '']",
+              "parent": "//form[@id='form-contact']"
+            }
+          ],
+          "id": "4e4898e2-a7e2-4ff3-b34c-79ce002ee371"
         },
         {
           "actionType": "click",

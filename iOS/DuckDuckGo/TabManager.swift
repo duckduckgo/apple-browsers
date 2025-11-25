@@ -26,6 +26,8 @@ import Persistence
 import History
 import Subscription
 import os.log
+import AIChat
+import Combine
 
 class TabManager {
 
@@ -34,13 +36,15 @@ class TabManager {
 
     private var tabControllerCache = [TabViewController]()
 
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let bookmarksDatabase: CoreDataDatabase
     private let historyManager: HistoryManaging
     private let syncService: DDGSyncing
+    private let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
+    private let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     private var previewsSource: TabPreviewsSource
     private let interactionStateSource: TabInteractionStateSource?
-    private var duckPlayer: DuckPlayerControlling
-    private var privacyProDataReporter: PrivacyProDataReporting
+    private var subscriptionDataReporter: SubscriptionDataReporting
     private let contextualOnboardingPresenter: ContextualOnboardingPresenting
     private let contextualOnboardingLogic: ContextualOnboardingLogic
     private let onboardingPixelReporter: OnboardingPixelReporting
@@ -55,8 +59,10 @@ class TabManager {
     private let featureDiscovery: FeatureDiscovery
     private let keyValueStore: ThrowingKeyValueStoring
     private let daxDialogsManager: DaxDialogsManaging
+    private let aiChatSettings: AIChatSettingsProvider
 
     weak var delegate: TabDelegate?
+    weak var aiChatContentDelegate: AIChatContentHandlingDelegate?
 
     @UserDefaultsWrapper(key: .faviconTabsCacheNeedsCleanup, defaultValue: true)
     var tabsCacheNeedsCleanup: Bool
@@ -66,11 +72,13 @@ class TabManager {
          persistence: TabsModelPersisting,
          previewsSource: TabPreviewsSource,
          interactionStateSource: TabInteractionStateSource?,
+         privacyConfigurationManager: PrivacyConfigurationManaging,
          bookmarksDatabase: CoreDataDatabase,
          historyManager: HistoryManaging,
          syncService: DDGSyncing,
-         duckPlayer: DuckPlayer = DuckPlayer(),
-         privacyProDataReporter: PrivacyProDataReporting,
+         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
+         contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
+         subscriptionDataReporter: SubscriptionDataReporting,
          contextualOnboardingPresenter: ContextualOnboardingPresenting,
          contextualOnboardingLogic: ContextualOnboardingLogic,
          onboardingPixelReporter: OnboardingPixelReporting,
@@ -84,17 +92,20 @@ class TabManager {
          maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
          featureDiscovery: FeatureDiscovery,
          keyValueStore: ThrowingKeyValueStoring,
-         daxDialogsManager: DaxDialogsManaging
+         daxDialogsManager: DaxDialogsManaging,
+         aiChatSettings: AIChatSettingsProvider
     ) {
         self.model = model
         self.persistence = persistence
         self.previewsSource = previewsSource
         self.interactionStateSource = interactionStateSource
+        self.privacyConfigurationManager = privacyConfigurationManager
         self.bookmarksDatabase = bookmarksDatabase
         self.historyManager = historyManager
         self.syncService = syncService
-        self.duckPlayer = duckPlayer
-        self.privacyProDataReporter = privacyProDataReporter
+        self.userScriptsDependencies = userScriptsDependencies
+        self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
+        self.subscriptionDataReporter = subscriptionDataReporter
         self.contextualOnboardingPresenter = contextualOnboardingPresenter
         self.contextualOnboardingLogic = contextualOnboardingLogic
         self.onboardingPixelReporter = onboardingPixelReporter
@@ -109,6 +120,7 @@ class TabManager {
         self.featureDiscovery = featureDiscovery
         self.keyValueStore = keyValueStore
         self.daxDialogsManager = daxDialogsManager
+        self.aiChatSettings = aiChatSettings
         registerForNotifications()
     }
 
@@ -132,11 +144,13 @@ class TabManager {
         )
 
         let controller = TabViewController.loadFromStoryboard(model: tab,
+                                                              privacyConfigurationManager: privacyConfigurationManager,
                                                               bookmarksDatabase: bookmarksDatabase,
                                                               historyManager: historyManager,
                                                               syncService: syncService,
-                                                              duckPlayer: duckPlayer,
-                                                              privacyProDataReporter: privacyProDataReporter,
+                                                              userScriptsDependencies: userScriptsDependencies,
+                                                              contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
+                                                              subscriptionDataReporter: subscriptionDataReporter,
                                                               contextualOnboardingPresenter: contextualOnboardingPresenter,
                                                               contextualOnboardingLogic: contextualOnboardingLogic,
                                                               onboardingPixelReporter: onboardingPixelReporter,
@@ -149,13 +163,14 @@ class TabManager {
                                                               specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
                                                               featureDiscovery: featureDiscovery,
                                                               keyValueStore: keyValueStore,
-                                                              daxDialogsManager: daxDialogsManager)
+                                                              daxDialogsManager: daxDialogsManager, aiChatSettings: aiChatSettings)
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
                                  interactionStateData: interactionState,
                                  andLoadRequest: url == nil ? nil : URLRequest.userInitiated(url!),
                                  consumeCookies: !model.hasActiveTabs)
         controller.delegate = delegate
+        controller.aiChatContentHandlingDelegate = aiChatContentDelegate
         controller.loadViewIfNeeded()
         return controller
     }
@@ -226,11 +241,13 @@ class TabManager {
         )
 
         let controller = TabViewController.loadFromStoryboard(model: tab,
+                                                              privacyConfigurationManager: privacyConfigurationManager,
                                                               bookmarksDatabase: bookmarksDatabase,
                                                               historyManager: historyManager,
                                                               syncService: syncService,
-                                                              duckPlayer: duckPlayer,
-                                                              privacyProDataReporter: privacyProDataReporter,
+                                                              userScriptsDependencies: userScriptsDependencies,
+                                                              contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
+                                                              subscriptionDataReporter: subscriptionDataReporter,
                                                               contextualOnboardingPresenter: contextualOnboardingPresenter,
                                                               contextualOnboardingLogic: contextualOnboardingLogic,
                                                               onboardingPixelReporter: onboardingPixelReporter,
@@ -243,7 +260,8 @@ class TabManager {
                                                               specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
                                                               featureDiscovery: featureDiscovery,
                                                               keyValueStore: keyValueStore,
-                                                              daxDialogsManager: daxDialogsManager)
+                                                              daxDialogsManager: daxDialogsManager,
+                                                              aiChatSettings: aiChatSettings)
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
                                  consumeCookies: !model.hasActiveTabs,

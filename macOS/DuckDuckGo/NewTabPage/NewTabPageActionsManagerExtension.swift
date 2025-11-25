@@ -18,6 +18,7 @@
 
 import AIChat
 import AppKit
+import AutoconsentStats
 import BrowserServicesKit
 import Common
 import History
@@ -34,31 +35,36 @@ extension NewTabPageActionsManager {
         customizationModel: NewTabPageCustomizationModel,
         bookmarkManager: BookmarkManager & URLFavoriteStatusProviding & RecentActivityFavoritesHandling,
         faviconManager: FaviconManagement,
-        duckPlayerHistoryEntryTitleProvider: DuckPlayerHistoryEntryTitleProviding = DuckPlayer.shared,
+        duckPlayerHistoryEntryTitleProvider: DuckPlayerHistoryEntryTitleProviding,
         contentBlocking: ContentBlockingProtocol,
         trackerDataManager: TrackerDataManager,
         activeRemoteMessageModel: ActiveRemoteMessageModel,
         historyCoordinator: HistoryProviderCoordinating,
         fireproofDomains: URLFireproofStatusProviding,
         privacyStats: PrivacyStatsCollecting,
+        autoconsentStats: AutoconsentStatsCollecting,
+        cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
         freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator,
         tld: TLD,
-        fire: @escaping () async -> Fire,
+        fire: @escaping () async -> FireProtocol,
         keyValueStore: ThrowingKeyValueStoring,
         legacyKeyValueStore: KeyValueStoring = UserDefaultsWrapper<Any>.sharedDefaults,
         featureFlagger: FeatureFlagger,
-        windowControllersManager: WindowControllersManagerProtocol,
+        windowControllersManager: WindowControllersManagerProtocol & AIChatTabManaging,
         tabsPreferences: TabsPreferences,
-        newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding
+        newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
+        winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator
     ) {
         let settingsMigrator = NewTabPageProtectionsReportSettingsMigrator(legacyKeyValueStore: legacyKeyValueStore)
         let protectionsReportModel = NewTabPageProtectionsReportModel(
             privacyStats: privacyStats,
+            autoconsentStats: autoconsentStats,
             keyValueStore: keyValueStore,
             burnAnimationSettingChanges: visualizeFireAnimationDecider.shouldShowFireAnimationPublisher,
             showBurnAnimation: visualizeFireAnimationDecider.shouldShowFireAnimation,
+            isAutoconsentEnabled: { cookiePopupProtectionPreferences.isAutoconsentEnabled },
             getLegacyIsViewExpandedSetting: settingsMigrator.isViewExpanded,
-            getLegacyActiveFeedSetting: settingsMigrator.activeFeed,
+            getLegacyActiveFeedSetting: settingsMigrator.activeFeed
         )
 
         self.init(
@@ -66,12 +72,14 @@ extension NewTabPageActionsManager {
             customizationModel: customizationModel,
             bookmarkManager: bookmarkManager,
             faviconManager: faviconManager,
+            duckPlayerHistoryEntryTitleProvider: duckPlayerHistoryEntryTitleProvider,
             contentBlocking: contentBlocking,
             trackerDataManager: trackerDataManager,
             activeRemoteMessageModel: activeRemoteMessageModel,
             historyCoordinator: historyCoordinator,
             fireproofDomains: fireproofDomains,
             privacyStats: privacyStats,
+            autoconsentStats: autoconsentStats,
             protectionsReportModel: protectionsReportModel,
             freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator,
             tld: tld,
@@ -80,7 +88,8 @@ extension NewTabPageActionsManager {
             featureFlagger: featureFlagger,
             windowControllersManager: windowControllersManager,
             tabsPreferences: tabsPreferences,
-            newTabPageAIChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider
+            newTabPageAIChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider,
+            winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator
         )
     }
 
@@ -90,22 +99,24 @@ extension NewTabPageActionsManager {
         customizationModel: NewTabPageCustomizationModel,
         bookmarkManager: BookmarkManager & URLFavoriteStatusProviding & RecentActivityFavoritesHandling,
         faviconManager: FaviconManagement,
-        duckPlayerHistoryEntryTitleProvider: DuckPlayerHistoryEntryTitleProviding = DuckPlayer.shared,
+        duckPlayerHistoryEntryTitleProvider: DuckPlayerHistoryEntryTitleProviding,
         contentBlocking: ContentBlockingProtocol,
         trackerDataManager: TrackerDataManager,
         activeRemoteMessageModel: ActiveRemoteMessageModel,
         historyCoordinator: HistoryProviderCoordinating,
         fireproofDomains: URLFireproofStatusProviding,
         privacyStats: PrivacyStatsCollecting,
+        autoconsentStats: AutoconsentStatsCollecting,
         protectionsReportModel: NewTabPageProtectionsReportModel,
         freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator,
         tld: TLD,
-        fire: @escaping () async -> Fire,
+        fire: @escaping () async -> FireProtocol,
         keyValueStore: ThrowingKeyValueStoring,
         featureFlagger: FeatureFlagger,
-        windowControllersManager: WindowControllersManagerProtocol,
+        windowControllersManager: WindowControllersManagerProtocol  & AIChatTabManaging,
         tabsPreferences: TabsPreferences,
-        newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding
+        newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
+        winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator
     ) {
         let availabilityProvider = NewTabPageSectionsAvailabilityProvider(featureFlagger: featureFlagger)
         let favoritesPublisher = bookmarkManager.listPublisher.map({ $0?.favoriteBookmarks ?? [] }).eraseToAnyPublisher()
@@ -118,6 +129,7 @@ extension NewTabPageActionsManager {
 
         let customizationProvider = NewTabPageCustomizationProvider(customizationModel: customizationModel, appearancePreferences: appearancePreferences)
         let freemiumDBPBannerProvider = NewTabPageFreemiumDBPBannerProvider(model: freemiumDBPPromotionViewCoordinator)
+        let winBackOfferBannerProvider = NewTabPageWinBackOfferBannerProvider(model: winBackOfferPromotionViewCoordinator)
 
         let privacyStatsModel = NewTabPagePrivacyStatsModel(
             visibilityProvider: protectionsReportModel,
@@ -155,6 +167,10 @@ extension NewTabPageActionsManager {
             keyValueStore: keyValueStore,
             aiChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider
         )
+        let stateProvider = NewTabPageStateProvider(
+            windowControllersManager: windowControllersManager,
+            featureFlagger: featureFlagger
+        )
 
         self.init(scriptClients: [
             NewTabPageConfigurationClient(
@@ -163,7 +179,8 @@ extension NewTabPageActionsManager {
                 omnibarConfigProvider: omnibarConfigProvider,
                 customBackgroundProvider: customizationProvider,
                 linkOpener: NewTabPageLinkOpener(),
-                eventMapper: NewTabPageConfigurationErrorHandler()
+                eventMapper: NewTabPageConfigurationErrorHandler(),
+                stateProvider: stateProvider
             ),
             NewTabPageCustomBackgroundClient(model: customizationProvider),
             NewTabPageRMFClient(remoteMessageProvider: activeRemoteMessageModel),
@@ -184,7 +201,8 @@ extension NewTabPageActionsManager {
             NewTabPageRecentActivityClient(model: recentActivityModel),
             NewTabPageOmnibarClient(configProvider: omnibarConfigProvider,
                                     suggestionsProvider: suggestionsProvider,
-                                    actionHandler: omnibarActionHandler)
+                                    actionHandler: omnibarActionHandler),
+            NewTabPageWinBackOfferClient(provider: winBackOfferBannerProvider)
         ])
     }
 }

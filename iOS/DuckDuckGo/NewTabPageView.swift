@@ -23,17 +23,25 @@ import RemoteMessaging
 
 struct NewTabPageView: View {
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
+    @Environment(\.isLandscapeOrientation) var isLandscapeOrientation
 
     @ObservedObject private var viewModel: NewTabPageViewModel
     @ObservedObject private var messagesModel: NewTabPageMessagesModel
     @ObservedObject private var favoritesViewModel: FavoritesViewModel
 
-    init(viewModel: NewTabPageViewModel,
+    let narrowLayoutInLandscape: Bool
+    let dismissKeyboardOnScroll: Bool
+
+    init(narrowLayoutInLandscape: Bool = false,
+         dismissKeyboardOnScroll: Bool = true,
+         viewModel: NewTabPageViewModel,
          messagesModel: NewTabPageMessagesModel,
          favoritesViewModel: FavoritesViewModel) {
         self.viewModel = viewModel
         self.messagesModel = messagesModel
         self.favoritesViewModel = favoritesViewModel
+        self.narrowLayoutInLandscape = narrowLayoutInLandscape
+        self.dismissKeyboardOnScroll = dismissKeyboardOnScroll
 
         self.messagesModel.load()
     }
@@ -83,13 +91,18 @@ private extension NewTabPageView {
                     FavoritesView(model: favoritesViewModel)
                         .fixedSize(horizontal: false, vertical: true)
                 }
-                .padding(sectionsViewPadding(in: proxy))
+                .padding(.vertical, sectionsViewPadding(in: proxy))
+                .padding(.horizontal, sectionsViewHorizontalPadding(in: proxy))
                 .background(Color(designSystemColor: .background))
             }
-            .withScrollKeyboardDismiss()
+            .if(dismissKeyboardOnScroll, transform: {
+                $0.withScrollKeyboardDismiss()
+            })
         }
-        // Prevent recreating geomery reader when keyboard is shown/hidden.
-        .ignoresSafeArea(.keyboard)
+        .if(dismissKeyboardOnScroll, transform: {
+            // Prevent recreating geometry reader when keyboard is shown/hidden.
+            $0.ignoresSafeArea(.keyboard)
+        })
     }
 
     @ViewBuilder
@@ -118,6 +131,14 @@ private extension NewTabPageView {
         }
     }
 
+    private func sectionsViewHorizontalPadding(in geometry: GeometryProxy) -> CGFloat {
+        if UIDevice.current.userInterfaceIdiom == .phone, isLandscapeOrientation, narrowLayoutInLandscape {
+            return Metrics.increasedHorizontalPadding + Metrics.regularPadding
+        } else {
+            return geometry.frame(in: .local).width > Metrics.verySmallScreenWidth ? Metrics.regularPadding : Metrics.smallPadding
+        }
+    }
+
     private func sectionsViewPadding(in geometry: GeometryProxy) -> CGFloat {
         geometry.frame(in: .local).width > Metrics.verySmallScreenWidth ? Metrics.regularPadding : Metrics.smallPadding
     }
@@ -138,6 +159,7 @@ private struct Metrics {
 
     static let smallPadding = 12.0
     static let regularPadding = 24.0
+    static let increasedHorizontalPadding = 108.0
     static let sectionSpacing = 32.0
     static let nonGridSectionTopPadding = -8.0
     static let updatedNonGridSectionHorizontalPadding = -8.0
@@ -157,7 +179,7 @@ private struct Metrics {
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
             ),
-            navigator: DefaultMessageNavigator(delegate: nil)
+            messageActionHandler: RemoteMessagingActionHandler()
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )
@@ -172,6 +194,7 @@ private struct Metrics {
                     HomeMessage.remoteMessage(
                         remoteMessage: RemoteMessageModel(
                             id: "0",
+                            surfaces: .newTabPage,
                             content: .small(titleText: "Title", descriptionText: "Description"),
                             matchingRules: [],
                             exclusionRules: [],
@@ -180,7 +203,7 @@ private struct Metrics {
                     )
                 ]
             ),
-            navigator: DefaultMessageNavigator(delegate: nil)
+            messageActionHandler: RemoteMessagingActionHandler()
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )
@@ -193,7 +216,7 @@ private struct Metrics {
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
             ),
-            navigator: DefaultMessageNavigator(delegate: nil)
+            messageActionHandler: RemoteMessagingActionHandler()
         ),
         favoritesViewModel: FavoritesPreviewModel(favorites: [])
     )
@@ -206,7 +229,7 @@ private struct Metrics {
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
             ),
-            navigator: DefaultMessageNavigator(delegate: nil)
+            messageActionHandler: RemoteMessagingActionHandler()
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )

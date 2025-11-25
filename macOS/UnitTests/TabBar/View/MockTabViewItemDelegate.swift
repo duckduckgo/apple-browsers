@@ -31,6 +31,7 @@ class MockTabViewItemDelegate: TabBarViewItemDelegate {
     var hasItemsToTheRight = false
     var audioState: WKWebView.AudioState?
     var isTabBarItemAlreadyBookmarked = false
+    var shouldHideSeparator = false
 
     private(set) var tabBarViewItemWillOpenContextMenuCalled = false
     private(set) var tabBarViewItemBookmarkThisPageActionCalled = false
@@ -63,6 +64,10 @@ class MockTabViewItemDelegate: TabBarViewItemDelegate {
 
     func tabBarViewItemCloseToTheRightAction(_ tabBarViewItem: DuckDuckGo_Privacy_Browser.TabBarViewItem) {
 
+    }
+
+    func tabBarViewItemShouldHideSeparator(_: DuckDuckGo_Privacy_Browser.TabBarViewItem) -> Bool {
+        shouldHideSeparator
     }
 
     func tabBarViewItemCanBeDuplicated(_ tabBarViewItem: DuckDuckGo_Privacy_Browser.TabBarViewItem) -> Bool {
@@ -134,6 +139,14 @@ class MockTabViewItemDelegate: TabBarViewItemDelegate {
     }
 
     func tabBarViewItemCrashAction(_: DuckDuckGo_Privacy_Browser.TabBarViewItem) {
+
+    }
+
+    func tabBarViewItemCrashMultipleTimesAction(_: DuckDuckGo_Privacy_Browser.TabBarViewItem) {
+
+    }
+
+    func tabBarViewItemCrashMultiProcessAction(_: DuckDuckGo_Privacy_Browser.TabBarViewItem) {
 
     }
 

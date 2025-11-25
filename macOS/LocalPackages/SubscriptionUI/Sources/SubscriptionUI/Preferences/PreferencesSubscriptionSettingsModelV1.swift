@@ -27,13 +27,23 @@ import os.log
 public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
 
     @Published var subscriptionDetails: String?
-    @Published var subscriptionStatus: PrivacyProSubscription.Status?
+    @Published var subscriptionStatus: DuckDuckGoSubscription.Status?
     @Published private var hasActiveTrialOffer: Bool = false
 
     @Published var email: String?
     var hasEmail: Bool { !(email?.isEmpty ?? true) }
 
-    private var subscriptionPlatform: PrivacyProSubscription.Platform?
+    var expiredSubscriptionPurchaseButtonTitle: String {
+        if winBackOfferVisibilityManager.isOfferAvailable {
+            UserText.winBackCampaignLoggedInPreferencesCTA
+        } else if blackFridayCampaignProvider.isCampaignEnabled {
+            UserText.blackFridayCampaignPreferencesCTA(discountPercent: blackFridayCampaignProvider.discountPercent)
+        } else {
+            UserText.viewPlansExpiredButtonTitle
+        }
+    }
+
+    private var subscriptionPlatform: DuckDuckGoSubscription.Platform?
     var currentPurchasePlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
 
     private let subscriptionManager: SubscriptionManager
@@ -41,7 +51,9 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
         subscriptionManager.accountManager
     }
     private let userEventHandler: (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void
+    private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     private var fetchSubscriptionDetailsTask: Task<(), Never>?
+    private let blackFridayCampaignProvider: BlackFridayCampaignProviding
 
     private var subscriptionChangeObserver: Any?
 
@@ -51,9 +63,13 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
 
     public init(userEventHandler: @escaping (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void,
                 subscriptionManager: SubscriptionManager,
-                subscriptionStateUpdate: AnyPublisher<PreferencesSidebarSubscriptionState, Never>) {
+                winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
+                subscriptionStateUpdate: AnyPublisher<PreferencesSidebarSubscriptionState, Never>,
+                blackFridayCampaignProvider: BlackFridayCampaignProviding) {
         self.subscriptionManager = subscriptionManager
         self.userEventHandler = userEventHandler
+        self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
+        self.blackFridayCampaignProvider = blackFridayCampaignProvider
 
         Task {
             await self.updateSubscription(cachePolicy: .returnCacheDataElseLoad)
@@ -111,7 +127,11 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
 
     @MainActor
     func purchaseAction() {
-        userEventHandler(.openURL(.purchase))
+        if winBackOfferVisibilityManager.isOfferAvailable {
+
+        } else {
+            userEventHandler(.openURL(.purchase))
+        }
     }
 
     enum ChangePlanOrBillingAction {
@@ -309,7 +329,7 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
     }
 
     @MainActor
-    func updateDescription(for subscription: PrivacyProSubscription) {
+    func updateDescription(for subscription: DuckDuckGoSubscription) {
 
         let hasActiveTrialOffer = subscription.hasActiveTrialOffer
         let status = subscription.status
@@ -325,7 +345,7 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
             }
 
         case .expired, .inactive:
-            self.subscriptionDetails = UserText.preferencesSubscriptionExpiredCaption(isRebrandingOn: false, formattedDate: formattedDate)
+            self.subscriptionDetails = UserText.preferencesSubscriptionExpiredCaption(formattedDate: formattedDate)
         default:
             if hasActiveTrialOffer {
                 self.subscriptionDetails = UserText.preferencesTrialSubscriptionExpiringCaption(formattedDate: formattedDate)

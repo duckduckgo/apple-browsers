@@ -26,7 +26,7 @@ struct SessionRestorePromptView: View {
     }
 
     @ObservedObject var model: SessionRestorePromptViewModel
-    @Environment(\.dismiss) var dismiss
+    var dismiss: () -> Void
 
     var body: some View {
         VStack(spacing: 0) {
@@ -60,6 +60,7 @@ struct SessionRestorePromptView: View {
                         .frame(height: 28)
                 }
                 .buttonStyle(StandardButtonStyle())
+                .accessibilityIdentifier("session.restore.prompt.reject")
 
                 Button {
                     model.restoreSession()
@@ -71,6 +72,7 @@ struct SessionRestorePromptView: View {
                         .frame(height: 28)
                 }
                 .buttonStyle(DefaultActionButtonStyle(enabled: true))
+                .accessibilityIdentifier("session.restore.prompt.accept")
             }
         }
         .multilineTextAlignment(.center)

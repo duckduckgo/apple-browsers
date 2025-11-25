@@ -43,6 +43,9 @@ import os.log
 import Navigation
 import Subscription
 import WKAbstractions
+import SERPSettings
+import AIChat
+import PixelKit
 
 class TabViewController: UIViewController {
 
@@ -107,6 +110,14 @@ class TabViewController: UIViewController {
     }
     
     weak var delegate: TabDelegate?
+    var aiChatContentHandlingDelegate: AIChatContentHandlingDelegate? {
+        get {
+            aiChatContentHandler.delegate
+        }
+        set {
+            aiChatContentHandler.delegate = newValue
+        }
+    }
     weak var chromeDelegate: BrowserChromeDelegate?
 
     var findInPage: FindInPage? {
@@ -127,6 +138,8 @@ class TabViewController: UIViewController {
     private var storageCache: StorageCache = AppDependencyProvider.shared.storageCache
     let appSettings: AppSettings
 
+    let privacyConfigurationManager: PrivacyConfigurationManaging
+
     var featureFlagger: FeatureFlagger
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     private lazy var internalUserDecider = AppDependencyProvider.shared.internalUserDecider
@@ -134,6 +147,7 @@ class TabViewController: UIViewController {
     private lazy var autofillNeverPromptWebsitesManager = AppDependencyProvider.shared.autofillNeverPromptWebsitesManager
     private lazy var autofillWebsiteAccountMatcher = AutofillWebsiteAccountMatcher(autofillUrlMatcher: AutofillDomainNameUrlMatcher(),
                                                                                    tld: TabViewController.tld)
+    private(set) lazy var extensionPromotionManager: AutofillExtensionPromotionManaging = AutofillExtensionPromotionManager(keyValueStore: keyValueStore)
     private(set) var tabModel: Tab
     private(set) var privacyInfo: PrivacyInfo?
     private var previousPrivacyInfosByURL: [URL: PrivacyInfo] = [:]
@@ -157,6 +171,7 @@ class TabViewController: UIViewController {
     public var inferredOpenerContext: BrokenSiteReport.OpenerContext?
     private var refreshCountSinceLoad: Int = 0
     private var performanceMetrics: PerformanceMetricsSubfeature?
+    private var breakageReportingSubfeature: BreakageReportingSubfeature?
 
     private var detectedLoginURL: URL?
     private var fireproofingWorker: FireproofingWorking?
@@ -180,7 +195,7 @@ class TabViewController: UIViewController {
         return false
     }
 
-    let privacyProDataReporter: PrivacyProDataReporting
+    let subscriptionDataReporter: SubscriptionDataReporting
 
     // Required to know when to disable autofill, see SaveLoginViewModel / SaveCreditCardViewModel for details
     // Stored in memory on TabViewController for privacy reasons
@@ -189,12 +204,14 @@ class TabViewController: UIViewController {
     // Required to allow grace period between authentication prompts when autofilling credit cards
     // where forms are split into multiple iframes, requiring multiple prompts
     private var domainFillCreditCardPromptLastShownOn: String?
+    private var domainFillCreditCardPixelLastFiredFor: String?
     // Required to prevent fireproof prompt presenting before autofill save login prompt
     private var saveLoginPromptLastDismissed: Date?
     private var saveLoginPromptIsPresenting: Bool = false
     // Required to determine whether to show credit card prompt or keyboard accessory
     private var fillCreditCardsPromptIsPresenting: Bool = false
     private var shouldShowCreditCardPrompt: Bool = true
+    private var shouldShowAutofillExtensionPrompt: Bool = false
 
     private var cachedRuntimeConfigurationForDomain: [String: String?] = [:]
 
@@ -229,6 +246,9 @@ class TabViewController: UIViewController {
     private let certificateTrustEvaluator: CertificateTrustEvaluating
     var storedSpecialErrorPageUserScript: SpecialErrorPageUserScript?
     let syncService: DDGSyncing
+
+    let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
+    let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
 
     private let daxDialogsDebouncer = Debouncer(mode: .common)
     var pullToRefreshViewAdapter: PullToRefreshViewAdapter?
@@ -317,26 +337,28 @@ class TabViewController: UIViewController {
                                                       tld: AppDependencyProvider.shared.storageCache.tld)
     }()
 
-    private static let debugEvents = EventMapping<AMPProtectionDebugEvents> { event, _, _, onComplete in
+    private static let debugEvents = EventMapping<AMPProtectionDebugEvents> { event, _, params, onComplete in
         let domainEvent: Pixel.Event
         switch event {
         case .ampBlockingRulesCompilationFailed:
             domainEvent = .ampBlockingRulesCompilationFailed
-            Pixel.fire(pixel: domainEvent,
-                       withAdditionalParameters: [:],
-                       onComplete: onComplete)
+        case .ampKeywordDetectionPerformance:
+            domainEvent = .ampKeywordDetectionPerformance
         }
+        Pixel.fire(pixel: domainEvent,
+                   withAdditionalParameters: params ?? [:],
+                   onComplete: onComplete)
     }
     
     private lazy var linkProtection: LinkProtection = {
-        LinkProtection(privacyManager: ContentBlocking.shared.privacyConfigurationManager,
+        LinkProtection(privacyManager: privacyConfigurationManager,
                        contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
                        errorReporting: Self.debugEvents)
 
     }()
     
     private lazy var referrerTrimming: ReferrerTrimming = {
-        ReferrerTrimming(privacyManager: ContentBlocking.shared.privacyConfigurationManager,
+        ReferrerTrimming(privacyManager: privacyConfigurationManager,
                          contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
                          tld: AppDependencyProvider.shared.storageCache.tld)
     }()
@@ -362,12 +384,14 @@ class TabViewController: UIViewController {
     private var lastRenderedURL: URL?
 
     static func loadFromStoryboard(model: Tab,
+                                   privacyConfigurationManager: PrivacyConfigurationManaging,
                                    appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
                                    bookmarksDatabase: CoreDataDatabase,
                                    historyManager: HistoryManaging,
                                    syncService: DDGSyncing,
-                                   duckPlayer: DuckPlayerControlling?,
-                                   privacyProDataReporter: PrivacyProDataReporting,
+                                   userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
+                                   contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
+                                   subscriptionDataReporter: SubscriptionDataReporting,
                                    contextualOnboardingPresenter: ContextualOnboardingPresenting,
                                    contextualOnboardingLogic: ContextualOnboardingLogic,
                                    onboardingPixelReporter: OnboardingCustomInteractionPixelReporting,
@@ -380,17 +404,20 @@ class TabViewController: UIViewController {
                                    specialErrorPageNavigationHandler: SpecialErrorPageManaging,
                                    featureDiscovery: FeatureDiscovery,
                                    keyValueStore: ThrowingKeyValueStoring,
-                                   daxDialogsManager: DaxDialogsManaging) -> TabViewController {
+                                   daxDialogsManager: DaxDialogsManaging,
+                                   aiChatSettings: AIChatSettingsProvider) -> TabViewController {
         let storyboard = UIStoryboard(name: "Tab", bundle: nil)
         let controller = storyboard.instantiateViewController(identifier: "TabViewController", creator: { coder in
             TabViewController(coder: coder,
                               tabModel: model,
+                              privacyConfigurationManager: privacyConfigurationManager,
                               appSettings: appSettings,
                               bookmarksDatabase: bookmarksDatabase,
                               historyManager: historyManager,
                               syncService: syncService,
-                              duckPlayer: duckPlayer,
-                              privacyProDataReporter: privacyProDataReporter,
+                              userScriptsDependencies: userScriptsDependencies,
+                              contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
+                              subscriptionDataReporter: subscriptionDataReporter,
                               contextualOnboardingPresenter: contextualOnboardingPresenter,
                               contextualOnboardingLogic: contextualOnboardingLogic,
                               onboardingPixelReporter: onboardingPixelReporter,
@@ -403,7 +430,8 @@ class TabViewController: UIViewController {
                               specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
                               featureDiscovery: featureDiscovery,
                               keyValueStore: keyValueStore,
-                              daxDialogsManager: daxDialogsManager
+                              daxDialogsManager: daxDialogsManager,
+                              aiChatSettings: aiChatSettings
             )
         })
         return controller
@@ -416,11 +444,11 @@ class TabViewController: UIViewController {
 
     let historyManager: HistoryManaging
     let historyCapture: HistoryCapture
-    weak var duckPlayer: DuckPlayerControlling?
     private lazy var duckPlayerNavigationHandler: DuckPlayerNavigationHandling = {
         let duckPlayer = DuckPlayer(settings: DuckPlayerSettingsDefault(),
-                                   featureFlagger: AppDependencyProvider.shared.featureFlagger)
-        
+                                    featureFlagger: AppDependencyProvider.shared.featureFlagger,
+                                    userScriptsDependencies: userScriptsDependencies)
+
         if duckPlayer.settings.nativeUI {
             let handler = NativeDuckPlayerNavigationHandler(duckPlayer: duckPlayer,
                                          appSettings: appSettings,
@@ -449,16 +477,21 @@ class TabViewController: UIViewController {
     let featureDiscovery: FeatureDiscovery
     let keyValueStore: ThrowingKeyValueStoring
     let daxDialogsManager: DaxDialogsManaging
+    let aiChatSettings: AIChatSettingsProvider
+    
+    private(set) var aiChatContentHandler: AIChatContentHandling
 
     required init?(coder aDecoder: NSCoder,
                    tabModel: Tab,
+                   privacyConfigurationManager: PrivacyConfigurationManaging,
                    appSettings: AppSettings,
                    bookmarksDatabase: CoreDataDatabase,
                    historyManager: HistoryManaging,
                    syncService: DDGSyncing,
+                   userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
+                   contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
                    certificateTrustEvaluator: CertificateTrustEvaluating = CertificateTrustEvaluator(),
-                   duckPlayer: DuckPlayerControlling?,
-                   privacyProDataReporter: PrivacyProDataReporting,
+                   subscriptionDataReporter: SubscriptionDataReporting,
                    contextualOnboardingPresenter: ContextualOnboardingPresenting,
                    contextualOnboardingLogic: ContextualOnboardingLogic,
                    onboardingPixelReporter: OnboardingCustomInteractionPixelReporting,
@@ -473,17 +506,20 @@ class TabViewController: UIViewController {
                    featureDiscovery: FeatureDiscovery,
                    keyValueStore: ThrowingKeyValueStoring,
                    daxDialogsManager: DaxDialogsManaging,
-                   adClickExternalOpenDetector: AdClickExternalOpenDetector = AdClickExternalOpenDetector()) {
+                   adClickExternalOpenDetector: AdClickExternalOpenDetector = AdClickExternalOpenDetector(),
+                   aiChatSettings: AIChatSettingsProvider) {
 
         self.tabModel = tabModel
+        self.privacyConfigurationManager = privacyConfigurationManager
         self.appSettings = appSettings
         self.bookmarksDatabase = bookmarksDatabase
         self.historyManager = historyManager
         self.historyCapture = HistoryCapture(historyManager: historyManager)
         self.syncService = syncService
+        self.userScriptsDependencies = userScriptsDependencies
+        self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.certificateTrustEvaluator = certificateTrustEvaluator
-        self.duckPlayer = duckPlayer
-        self.privacyProDataReporter = privacyProDataReporter
+        self.subscriptionDataReporter = subscriptionDataReporter
         self.contextualOnboardingPresenter = contextualOnboardingPresenter
         self.contextualOnboardingLogic = contextualOnboardingLogic
         self.onboardingPixelReporter = onboardingPixelReporter
@@ -501,6 +537,9 @@ class TabViewController: UIViewController {
         self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {
             return AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.canPurchase
         }
+        
+        self.aiChatSettings = aiChatSettings
+        self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings)
 
         super.init(coder: aDecoder)
         
@@ -531,6 +570,7 @@ class TabViewController: UIViewController {
         initAttributionLogic()
         decorate()
         addTextZoomObserver()
+
         subscribeToEmailProtectionSignOutNotification()
         registerForDownloadsNotifications()
         registerForAddressBarLocationNotifications()
@@ -680,7 +720,8 @@ class TabViewController: UIViewController {
                        customWebView: ((WKWebViewConfiguration) -> WKWebView)? = nil) {
         instrumentation.willPrepareWebView()
 
-        let userContentController = UserContentController()
+        let userContentController = UserContentController(assetsPublisher: contentBlockingAssetsPublisher,
+                                                          privacyConfigurationManager: privacyConfigurationManager)
         configuration.userContentController = userContentController
         userContentController.delegate = self
 
@@ -968,23 +1009,23 @@ class TabViewController: UIViewController {
         load(url: url.applyingSearchHeaderParams())
     }
     
-        private func shouldReissueSearch(for url: URL) -> Bool {
+    private func shouldReissueSearch(for url: URL) -> Bool {
         guard url.isDuckDuckGoSearch else { return false }
         
         var shouldReissue = !url.hasCorrectMobileStatsParams || !url.hasCorrectSearchHeaderParams
-        
+
         // Only check DuckAI params if the feature flag is enabled
         if featureFlagger.isFeatureOn(.duckAISearchParameter) {
             let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
             shouldReissue = shouldReissue || !url.hasCorrectDuckAIParams(isDuckAIEnabled: isAIChatEnabled)
         }
-        
         return shouldReissue
     }
     
     private func reissueSearchWithRequiredParams(for url: URL) {
         var mobileSearch = url.applyingStatsParams()
-        
+
+        // If it's enabled, don't evaluate shouldReissue
         if featureFlagger.isFeatureOn(.duckAISearchParameter) {
             let isAIChatEnabled = delegate?.isAIChatEnabled ?? true
             mobileSearch = mobileSearch.applyingDuckAIParams(isAIChatEnabled: isAIChatEnabled)
@@ -1123,7 +1164,7 @@ class TabViewController: UIViewController {
         return PrivacyDashboardViewController(coder: coder,
                                        privacyInfo: privacyInfo,
                                        entryPoint: .dashboard,
-                                       privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
+                                       privacyConfigurationManager: privacyConfigurationManager,
                                        contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
                                               breakageAdditionalInfo: makeBreakageAdditionalInfo())
     }
@@ -1227,7 +1268,7 @@ class TabViewController: UIViewController {
     }
     
     private func makeProtectionStatus(for host: String) -> ProtectionStatus {
-        let config = ContentBlocking.shared.privacyConfigurationManager.privacyConfig
+        let config = privacyConfigurationManager.privacyConfig
         
         let isTempUnprotected = config.isTempUnprotected(domain: host)
         let isAllowlisted = config.isUserUnprotected(domain: host)
@@ -1325,7 +1366,8 @@ class TabViewController: UIViewController {
                                                                      openerContext: inferredOpenerContext,
                                                                      vpnOn: netPConnected,
                                                                      userRefreshCount: refreshCountSinceLoad,
-                                                                     performanceMetrics: performanceMetrics)
+                                                                     performanceMetrics: performanceMetrics,
+                                                                     breakageReportingSubfeature: breakageReportingSubfeature)
     }
 
     public func print() {
@@ -1650,7 +1692,7 @@ extension TabViewController: WKNavigationDelegate {
             completion(image)
         }
     }
-    
+
     private func updatePreview() {
         preparePreview { image in
             if let image = image {
@@ -1752,7 +1794,7 @@ extension TabViewController: WKNavigationDelegate {
         /// Never show onboarding Dax on Youtube or DuckPlayer, unless DuckPlayer is disabled
         guard let url = link?.url,
               !url.isDuckPlayer,
-              !(url.isYoutube && duckPlayer?.settings.mode != .disabled) else {
+              !(url.isYoutube && duckPlayerNavigationHandler.duckPlayer.settings.mode != .disabled) else {
             scheduleTrackerNetworksAnimation(collapsing: true)
             return
         }
@@ -1829,11 +1871,17 @@ extension TabViewController: WKNavigationDelegate {
                                                     currentURL: url,
                                                     isAutofillEnabled: AutofillSettingStatus.isAutofillEnabledInSettings,
                                                     saveLoginPromptLastDismissed: saveLoginPromptLastDismissed,
-                                                    saveLoginPromptIsPresenting: saveLoginPromptIsPresenting) ?? false {
-
+                                                    saveLoginPromptIsPresenting: saveLoginPromptIsPresenting,
+                                                    shouldShowAutofillExtensionPrompt: shouldShowAutofillExtensionPrompt) ?? false {
+            if shouldShowAutofillExtensionPrompt {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+                    self?.presentAutofillExtensionPrompt()
+                }
+            }
             detectedLoginURL = nil
             saveLoginPromptLastDismissed = nil
             saveLoginPromptIsPresenting = false
+            shouldShowAutofillExtensionPrompt = false
         }
     }
 
@@ -1918,7 +1966,7 @@ extension TabViewController: WKNavigationDelegate {
     }
     
     private func requestForDoNotSell(basedOn incomingRequest: URLRequest) -> URLRequest? {
-        let config = ContentBlocking.shared.privacyConfigurationManager.privacyConfig
+        let config = privacyConfigurationManager.privacyConfig
         guard var request = GPCRequestFactory().requestForGPC(basedOn: incomingRequest,
                                                               config: config,
                                                               gpcEnabled: appSettings.sendDoNotSell) else {
@@ -2045,6 +2093,7 @@ extension TabViewController: WKNavigationDelegate {
                decision != .cancel,
                navigationAction.isTargetingMainFrame() {
                 if url.isDuckDuckGoSearch {
+                    NotificationCenter.default.post(name: .userDidPerformDDGSearch, object: self)
                     let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - search",
                                                                         application: UIApplication.shared)
                     StatisticsLoader.shared.refreshSearchRetentionAtb {
@@ -2052,7 +2101,7 @@ extension TabViewController: WKNavigationDelegate {
                             backgroundAssertion.release()
                         }
                     }
-                    privacyProDataReporter.saveSearchCount()
+                    subscriptionDataReporter.saveSearchCount()
                 }
 
                 self.delegate?.closeFindInPage(tab: self)
@@ -2070,7 +2119,7 @@ extension TabViewController: WKNavigationDelegate {
     private func shouldWaitUntilContentBlockingIsLoaded(_ completion: @Sendable @escaping @MainActor () -> Void) -> Bool {
         // Ensure Content Blocking Assets (WKContentRuleList&UserScripts) are installed
         if userContentController.contentBlockingAssetsInstalled
-            || !ContentBlocking.shared.privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .contentBlocking) {
+            || !privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .contentBlocking) {
 
             rulesCompilationMonitor.reportNavigationDidNotWaitForRules()
             return false
@@ -2213,7 +2262,7 @@ extension TabViewController: WKNavigationDelegate {
             userAgentManager.update(webView: webView, isDesktop: tabModel.isDesktop, url: url)
         }
 
-        if !ContentBlocking.shared.privacyConfigurationManager.privacyConfig.isProtected(domain: url.host) {
+        if !privacyConfigurationManager.privacyConfig.isProtected(domain: url.host) {
             completion(allowPolicy)
             return
         }
@@ -2293,7 +2342,7 @@ extension TabViewController: WKNavigationDelegate {
     }
     
     private func showLoginDetails(with account: SecureVaultModels.WebsiteAccount, source: AutofillSettingsSource) {
-        delegate?.tab(self, didRequestAutofillLogins: account, source: source)
+        delegate?.tab(self, didRequestAutofillLogins: account, source: source, extensionPromotionManager: extensionPromotionManager)
     }
     
     @objc private func dismissLoginDetails() {
@@ -2822,7 +2871,10 @@ extension TabViewController: UserContentControllerDelegate {
         userScripts.autoconsentUserScript.delegate = self
         userScripts.contentScopeUserScript.delegate = self
         userScripts.serpSettingsUserScript.delegate = self
+        userScripts.serpSettingsUserScript.setStore(keyValueStore)
         userScripts.serpSettingsUserScript.webView = webView
+        
+        aiChatContentHandler.setup(with: userScripts.aiChatUserScript, webView: webView)
         
         // Setup DaxEasterEgg handler only for DuckDuckGo search pages
         if daxEasterEggHandler == nil, let url = webView.url, url.isDuckDuckGoSearch {
@@ -2834,7 +2886,7 @@ extension TabViewController: UserContentControllerDelegate {
         specialErrorPageNavigationHandler.setUserScript(userScripts.specialErrorPageUserScript)
 
         // Setup DuckPlayer Scripts if not using native UI
-        if (duckPlayer?.settings.nativeUI) != nil {
+        if duckPlayerNavigationHandler.duckPlayer.settings.nativeUI == false {
             userScripts.duckPlayer = duckPlayerNavigationHandler.duckPlayer
             userScripts.youtubeOverlayScript?.webView = webView
             userScripts.youtubePlayerUserScript?.webView = webView
@@ -2842,6 +2894,9 @@ extension TabViewController: UserContentControllerDelegate {
         
         performanceMetrics = PerformanceMetricsSubfeature(targetWebview: webView)
         userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: performanceMetrics!)
+        
+        breakageReportingSubfeature = BreakageReportingSubfeature(targetWebview: webView)
+        userScripts.contentScopeUserScriptIsolated.registerSubfeature(delegate: breakageReportingSubfeature!)
 
         adClickAttributionLogic.onRulesChanged(latestRules: ContentBlocking.shared.contentBlockingManager.currentRules)
         
@@ -2952,7 +3007,7 @@ extension TabViewController: AdClickAttributionLogicDelegate {
                           forVendor vendor: String?) {
         let attributedTempListName = AdClickAttributionRulesProvider.Constants.attributedTempRuleListName
 
-        guard ContentBlocking.shared.privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .contentBlocking)
+        guard privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .contentBlocking)
         else {
             userContentController.removeLocalContentRuleList(withIdentifier: attributedTempListName)
             contentBlockerUserScript?.currentAdClickAttributionVendor = nil
@@ -3172,6 +3227,7 @@ extension TabViewController: SecureVaultManagerDelegate {
     func secureVaultManager(_: SecureVaultManager,
                             promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard],
                             withTrigger trigger: AutofillUserScript.GetTriggerType,
+                            isMainFrame: Bool,
                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         guard isCreditCardAutofillEnabled() else {
             completionHandler(nil)
@@ -3184,7 +3240,7 @@ extension TabViewController: SecureVaultManagerDelegate {
             return
         }
 
-        promptToFill(withCreditCards: creditCards) { card in
+        promptToFill(withCreditCards: creditCards, isMainFrame: isMainFrame) { card in
             completionHandler(card)
         }
     }
@@ -3192,6 +3248,7 @@ extension TabViewController: SecureVaultManagerDelegate {
     func secureVaultManager(_: SecureVaultManager,
                             didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType,
                             withCreditCards creditCards: [SecureVaultModels.CreditCard],
+                            isMainFrame: Bool,
                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         guard isCreditCardAutofillEnabled(), mainType == .creditCards else {
             completionHandler(nil)
@@ -3199,12 +3256,12 @@ extension TabViewController: SecureVaultManagerDelegate {
             return
         }
 
-        promptToFill(withCreditCards: creditCards) { card in
+        promptToFill(withCreditCards: creditCards, isMainFrame: isMainFrame) { card in
             completionHandler(card)
         }
     }
 
-    private func promptToFill(withCreditCards creditCards: [SecureVaultModels.CreditCard], completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+    private func promptToFill(withCreditCards creditCards: [SecureVaultModels.CreditCard], isMainFrame: Bool, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         if domainFillCreditCardPromptLastShownOn != url?.host {
             AppDependencyProvider.shared.autofillLoginSession.endSession()
             self.domainFillCreditCardPromptLastShownOn = self.url?.host
@@ -3225,14 +3282,33 @@ extension TabViewController: SecureVaultManagerDelegate {
 
                 if creditCard != nil {
                     NotificationCenter.default.post(name: .autofillFillEvent, object: nil)
+                    self?.fireCreditCardFramePixels(isMainFrame: isMainFrame)
                 }
             }
             shouldShowCreditCardPrompt = false
             autofillCreditCardAccessoryView?.updateCreditCards(creditCards)
         } else {
-            addCreditCardInputAccessoryView(creditCards: creditCards) { card in
+            addCreditCardInputAccessoryView(creditCards: creditCards) { [weak self] card in
                 completionHandler(card)
+
+                if card != nil {
+                    self?.fireCreditCardFramePixels(isMainFrame: isMainFrame)
+                }
             }
+        }
+    }
+
+    private func fireCreditCardFramePixels(isMainFrame: Bool) {
+        guard domainFillCreditCardPixelLastFiredFor != url?.host else {
+            return
+        }
+
+        domainFillCreditCardPixelLastFiredFor = url?.host
+
+        if isMainFrame {
+            Pixel.fire(pixel: .autofillCardsAutofilledInMainframe)
+        } else {
+            Pixel.fire(pixel: .autofillCardsAutofilledInIframe)
         }
     }
 
@@ -3335,10 +3411,25 @@ extension TabViewController: SecureVaultManagerDelegate {
 
         var responseSent: Bool = false
 
-        let sendResponse: (SecureVaultModels.WebsiteAccount?) -> Void = { account in
+        let sendResponse: (SecureVaultModels.WebsiteAccount?) -> Void = { [weak self] account in
             guard !responseSent else { return }
             responseSent = true
             completionHandler(account)
+
+            if account != nil {
+                self?.extensionPromotionManager.shouldShowPromotion(for: .browser, totalCredentialsCount: nil, completion: { [weak self] shouldShow in
+                    if shouldShow {
+                        self?.shouldShowAutofillExtensionPrompt = true
+                        self?.detectedLoginURL = self?.webView.url
+                    } else {
+                        self?.shouldShowAutofillExtensionPrompt = false
+                        self?.detectedLoginURL = nil
+                    }
+                })
+            } else {
+                self?.shouldShowAutofillExtensionPrompt = false
+                self?.detectedLoginURL = nil
+            }
         }
 
         let autofillPromptViewController = AutofillLoginPromptViewController(accounts: accountMatches,
@@ -3426,6 +3517,37 @@ extension TabViewController: SecureVaultManagerDelegate {
         self.present(promptViewController, animated: true, completion: nil)
     }
 
+    func presentAutofillExtensionPrompt() {
+        guard let eTLDplus1 = storageCache.tld.eTLDplus1(url?.host), extensionPromotionManager.domainExtensionPromptLastShownOn != eTLDplus1 else {
+            return
+        }
+
+        // Ensure keyboard doesn't block prompt
+        dismissKeyboardIfPresent()
+
+        extensionPromotionManager.domainExtensionPromptLastShownOn = eTLDplus1
+
+        let promptViewController = AutofillExtensionPromptViewController(extensionPromotionManager: extensionPromotionManager) { [weak self] enableExtension in
+            if enableExtension {
+                guard let mainVC = self?.view.window?.rootViewController as? MainViewController else { return }
+                mainVC.segueToSettingsAutofillWith(account: nil, card: nil, showSettingsScreen: .extensionManagement, source: .extensionEnablePrompt)
+            }
+        }
+
+        if let presentationController = promptViewController.presentationController as? UISheetPresentationController {
+            if #available(iOS 16.0, *) {
+                presentationController.detents = [.custom(resolver: { _ in
+                    AutofillViews.loginPromptMinHeight
+                })]
+            } else {
+                presentationController.detents =  [.medium()]
+            }
+        }
+
+        self.present(promptViewController, animated: true, completion: nil)
+
+    }
+
     // Used on macOS to request authentication for individual autofill items
     func secureVaultManager(_: BrowserServicesKit.SecureVaultManager,
                             isAuthenticatedFor type: BrowserServicesKit.AutofillType,
@@ -3458,14 +3580,21 @@ extension TabViewController: SecureVaultManagerDelegate {
             return
         }
 
-        let runtimeConfiguration =
-                DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
-                                                                         properties: buildContentScopePropertiesForDomain(domain))
-                                                                .build()
-                                                                .buildRuntimeConfigResponse()
+        do {
+            let runtimeConfiguration =
+            try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfigurationManager,
+                                                      properties: buildContentScopePropertiesForDomain(domain))
+            .build()
+            .buildRuntimeConfigResponse()
 
-        cachedRuntimeConfigurationForDomain = [domain: runtimeConfiguration]
-        completionHandler(runtimeConfiguration)
+            cachedRuntimeConfigurationForDomain = [domain: runtimeConfiguration]
+            completionHandler(runtimeConfiguration)
+        } catch {
+            if let error = error as? UserScriptError {
+                error.fireLoadJSFailedPixelIfNeeded()
+            }
+            fatalError("Failed to build DefaultAutofillSourceProvider: \(error.localizedDescription)")
+        }
     }
 
     private func buildContentScopePropertiesForDomain(_ domain: String) -> ContentScopeProperties {
@@ -3591,6 +3720,7 @@ extension TabViewController: SaveCreditCardViewControllerDelegate {
             guard let self = self else { return }
             self.delegate?.tab(self, didRequestSettingsToCreditCards: card, source: .viewSavedCreditCardPrompt)
         })
+        syncService.scheduler.notifyDataChanged()
     }
     
     func saveCreditCardViewControllerConfirmKeepUsing(_ viewController: SaveCreditCardViewController) {
@@ -3653,16 +3783,6 @@ extension WKWebView {
 
     func load(_ url: URL, in frame: WKFrameInfo?) {
         evaluateJavaScript("window.location.href='" + url.absoluteString + "'", in: frame, in: .page)
-    }
-
-}
-
-extension UserContentController {
-
-    @MainActor
-    public convenience init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager) {
-        self.init(assetsPublisher: ContentBlocking.shared.contentBlockingUpdating.userContentBlockingAssets,
-                  privacyConfigurationManager: privacyConfigurationManager)
     }
 
 }
@@ -3832,20 +3952,13 @@ extension TabViewController {
 
 extension TabViewController: SERPSettingsUserScriptDelegate {
 
-    func serpSettingsUserScriptDidRequestToOpenPrivacySettings(_ userScript: SERPSettingsUserScript) {
-        guard let mainVC = parent as? MainViewController else { return }
-        mainVC.segueToSettingsPrivateSearch {
-            mainVC.closeTab(self.tabModel)
-            mainVC.showBars()
-        }
-    }
-    
-    func serpSettingsUserScriptDidRequestToOpenDuckAISettings(_ userScript: SERPSettingsUserScript) {
-        guard let mainVC = parent as? MainViewController else { return }
-        mainVC.segueToSettingsAIChat {
-            mainVC.closeTab(self.tabModel)
-            mainVC.showBars()
-        }
+    func serpSettingsUserScriptDidRequestToCloseTab(_ userScript: SERPSettingsUserScript) {
+        // macOS Only
     }
 
+    func serpSettingsUserScriptDidRequestToOpenAIFeaturesSettings(_ userScript: SERPSettingsUserScript) {
+        PixelKit.fire(SERPSettingsPixel.openDuckAIButtonClick, frequency: .dailyAndStandard)
+        guard let mainVC = parent as? MainViewController else { return }
+        mainVC.segueToSettingsAIChat(openedFromSERPSettingsButton: true)
+    }
 }

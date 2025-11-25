@@ -25,7 +25,14 @@ import FindInPageIOSJSSupport
 public class FindInPageUserScript: NSObject, UserScript {
 
     public lazy var source: String = {
-        return Self.loadJS("findinpage", from: FindInPageIOSJSSupport.bundle)
+        do {
+            return try Self.loadJS("findinpage", from: FindInPageIOSJSSupport.bundle)
+        } catch {
+            if let error = error as? UserScriptError {
+                error.fireLoadJSFailedPixelIfNeeded()
+            }
+            fatalError("Failed to load JS for FindInPageUserScript: \(error.localizedDescription)")
+        }
     }()
     
     public var injectionTime: WKUserScriptInjectionTime = .atDocumentStart

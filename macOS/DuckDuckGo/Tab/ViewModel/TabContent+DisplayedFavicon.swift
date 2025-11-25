@@ -31,14 +31,12 @@ extension TabContent {
     ///   - actualFavicon: The actual favicon loaded from the webpage (if any)
     ///   - isBurner: Whether this is a burner tab (affects newtab favicon)
     ///   - featureFlagger: Feature flag provider for checking enabled features
-    ///   - visualStyle: Visual style provider for checking new/old style
     /// - Returns: The NSImage to display as the favicon, or nil if no favicon should be shown
     func displayedFavicon(
         error: Error? = nil,
         actualFavicon: NSImage? = nil,
         isBurner: Bool = false,
-        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-        visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle
+        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger
     ) -> NSImage? {
 
         // Handle error states first
@@ -64,7 +62,7 @@ extension TabContent {
             return .bookmarksFolder
 
         case .history:
-            return featureFlagger.isFeatureOn(.historyView) ? .historyFavicon : nil
+            return .historyFavicon
 
         case .subscription:
             return .privacyPro
@@ -81,7 +79,7 @@ extension TabContent {
         case .url(let url, _, _):
             // Handle special URL types
             if url.isHistory {
-                return featureFlagger.isFeatureOn(.historyView) ? .historyFavicon : nil
+                return .historyFavicon
             } else if url.isDuckPlayer {
                 return .duckPlayerSettings
             } else if url.isDuckAIURL {

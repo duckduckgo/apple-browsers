@@ -61,6 +61,8 @@ public class AdClickAttributionDetection {
         guard attributionFeature.isEnabled,
               let url = url, attributionFeature.isMatchingAttributionFormat(url) else { return }
 
+        NotificationCenter.default.post(name: .userDidSelectDDGAD, object: nil)
+
         Logger.contentBlocking.debug("Starting Attribution detection for \(url.host ?? "nil")")
 
         var vendorDomain: String?

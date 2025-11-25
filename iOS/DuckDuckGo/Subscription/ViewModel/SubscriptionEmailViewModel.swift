@@ -24,10 +24,12 @@ import Core
 import Subscription
 import BrowserServicesKit
 import DataBrokerProtection_iOS
+import PixelKit
 
 final class SubscriptionEmailViewModel: ObservableObject {
     
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     weak var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
     let userScript: SubscriptionPagesUserScript
     let subFeature: any SubscriptionPagesUseSubscriptionFeature
@@ -84,19 +86,27 @@ final class SubscriptionEmailViewModel: ObservableObject {
 
     private let urlOpener: URLOpener
     private let featureFlagger: FeatureFlagger
+    
+    // Wide Pixel
+    private let wideEvent: WideEventManaging
+    private var restoreWideEventData: SubscriptionRestoreWideEventData?
 
     init(isInternalUser: Bool = false,
          userScript: SubscriptionPagesUserScript,
+         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          subFeature: any SubscriptionPagesUseSubscriptionFeature,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge,
          urlOpener: URLOpener = UIApplication.shared,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         wideEvent: WideEventManaging = AppDependencyProvider.shared.wideEvent,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) {
         self.userScript = userScript
+        self.userScriptsDependencies = userScriptsDependencies
         self.subFeature = subFeature
         self.subscriptionManager = subscriptionManager
         self.urlOpener = urlOpener
         self.featureFlagger = featureFlagger
+        self.wideEvent = wideEvent
         self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
         let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .baseURL),
                                                                              isInternalUser: isInternalUser)
@@ -105,7 +115,7 @@ final class SubscriptionEmailViewModel: ObservableObject {
                                                           subFeature: subFeature,
                                                           settings: AsyncHeadlessWebViewSettings(bounces: false,
                                                                                                  allowedDomains: allowedDomains,
-                                                                                                 contentBlocking: false))
+                                                                                                 userScriptsDependencies: nil))
     }
 
     func setEmailFlowMode(_ flow: EmailViewFlow) {
@@ -158,6 +168,7 @@ final class SubscriptionEmailViewModel: ObservableObject {
         // Load the URL unless the user has activated a subscription or is on the welcome page
         if !isCurrentURL(matching: .welcome) && !isCurrentURL(matching: .activationFlowSuccess){
             self.webViewModel.navigationCoordinator.navigateTo(url: url)
+            setupSubscriptionRestoreWideEventData()
         }
     }
     
@@ -165,9 +176,9 @@ final class SubscriptionEmailViewModel: ObservableObject {
         
         // Feature Callback
         subFeature.onSetSubscription = {
-            DailyPixel.fireDailyAndCount(pixel: .privacyProRestorePurchaseEmailSuccess,
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionRestorePurchaseEmailSuccess,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
-            UniquePixel.fire(pixel: .privacyProSubscriptionActivated)
+            UniquePixel.fire(pixel: .subscriptionActivated)
             DispatchQueue.main.async {
                 self.state.subscriptionActive = true
             }
@@ -187,16 +198,16 @@ final class SubscriptionEmailViewModel: ObservableObject {
             DispatchQueue.main.async {
                 switch feature {
                 case .networkProtection:
-                    UniquePixel.fire(pixel: .privacyProWelcomeVPN)
+                    UniquePixel.fire(pixel: .subscriptionWelcomeVPN)
                     self.state.selectedFeature = .netP
                 case .dataBrokerProtection:
-                    UniquePixel.fire(pixel: .privacyProWelcomePersonalInformationRemoval)
+                    UniquePixel.fire(pixel: .subscriptionWelcomePersonalInformationRemoval)
                     self.state.selectedFeature = .dbp
                 case .identityTheftRestoration, .identityTheftRestorationGlobal:
-                    UniquePixel.fire(pixel: .privacyProWelcomeIdentityRestoration)
+                    UniquePixel.fire(pixel: .subscriptionWelcomeIdentityRestoration)
                     self.state.selectedFeature = .itr
                 case .paidAIChat:
-                    UniquePixel.fire(pixel: .privacyProWelcomeAIChat)
+                    UniquePixel.fire(pixel: .subscriptionWelcomeAIChat)
                     self.urlOpener.open(AppDeepLinkSchemes.openAIChat.url)
                 case .unknown:
                     break
@@ -231,6 +242,10 @@ final class SubscriptionEmailViewModel: ObservableObject {
             .sink { [weak self] _ in
                 if self?.isCurrentURL(matching: .welcome) ?? false {
                     self?.state.viewTitle = UserText.subscriptionTitle
+                }
+                if self?.featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) ?? false, let data = self?.restoreWideEventData, let currentURL = self?.webViewModel.url, let emailRestoreURL = SubscriptionRestoreWideEventData.EmailAddressRestoreURL.from(currentURL) {
+                    data.emailAddressRestoreLastURL = emailRestoreURL
+                    self?.wideEvent.updateFlow(data)
                 }
             }
         
@@ -267,6 +282,20 @@ final class SubscriptionEmailViewModel: ObservableObject {
             state.transactionError = .generalError
         }
         state.isPresentingInactiveError = true
+    }
+    
+    private func setupSubscriptionRestoreWideEventData() {
+        guard featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) && state.currentFlow == .restoreFlow else { return }
+        let data = SubscriptionRestoreWideEventData(
+            restorePlatform: .emailAddress,
+            contextData: WideEventContextData(name: SubscriptionRestoreFunnelOrigin.appSettings.rawValue)
+        )
+        self.restoreWideEventData = data
+        if let subFeatureV2 = subFeature as? DefaultSubscriptionPagesUseSubscriptionFeatureV2 {
+            subFeatureV2.subscriptionRestoreEmailAddressWideEventData = data
+        }
+        data.emailAddressRestoreDuration = WideEvent.MeasuredInterval.startingNow()
+        wideEvent.startFlow(data)
     }
     
     func dismissView() {

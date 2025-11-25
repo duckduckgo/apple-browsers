@@ -296,6 +296,18 @@
     "title" : "Vastgemaakt aan de taakbalk!",
     "note" : "Button text after clicking on the Next Steps card for adding DDG app to OS dock"
   },
+  "nextSteps_subscription_title" : {
+    "title" : "Ontgrendel premium functies",
+    "note" : "Title of the Next Steps card for unlocking your free trial of DuckDuckGo subscription"
+  },
+  "nextSteps_subscription_summary" : {
+    "title" : "Probeer een gratis proefversie van ons abonnement met VPN en 3 andere geavanceerde functies.",
+    "note" : "Summary of the Next Steps card about the DuckDuckGo subscription"
+  },
+  "nextSteps_subscription_actionText" : {
+    "title" : "Probeer Gratis",
+    "note" : "Button text of the Next Steps card for trying the DuckDuckGo subscription"
+  },
   "favorites_show_less" : {
     "title" : "Minder weergeven",
     "note" : "Button label to display fewer items"

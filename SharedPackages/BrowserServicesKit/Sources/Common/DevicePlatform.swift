@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import Foundation
-import SwiftUI
+#if os(iOS)
+import UIKit
+#endif
 
 public enum DevicePlatform: String {
     public static var isMac: Bool {

@@ -65,6 +65,9 @@ public class ImageSegmentedPickerViewModel: ObservableObject {
     @Published public var selectedItem: ImageSegmentedPickerItem
     let configuration: ImageSegmentedPickerConfiguration
     @Published public var scrollProgress: CGFloat?
+    /// If true, `scrollProgress` is expected to be driven by an external ScrollView and we avoid implicit animations.
+    /// If false, we animate transitions when `scrollProgress` changes (e.g., programmatic selection changes).
+    @Published public var isScrollProgressDriven: Bool
 
     /// Creates a new ViewModel for the image segmented picker.
     ///
@@ -77,12 +80,14 @@ public class ImageSegmentedPickerViewModel: ObservableObject {
         items: [ImageSegmentedPickerItem],
         selectedItem: ImageSegmentedPickerItem,
         configuration: ImageSegmentedPickerConfiguration = ImageSegmentedPickerConfiguration(),
-        scrollProgress: CGFloat? = nil
+        scrollProgress: CGFloat? = nil,
+        isScrollProgressDriven: Bool = true
     ) {
         self.items = items
         self.selectedItem = selectedItem
         self.configuration = configuration
         self.scrollProgress = scrollProgress
+        self.isScrollProgressDriven = isScrollProgressDriven
     }
 
     /// Updates the selected item.
@@ -181,9 +186,15 @@ public struct ImageSegmentedPickerView: View {
                     currentOffset = calculateCurrentOffset(geometry: geo)
                 }
             }
+            // Selection changes are reflected via scrollProgress when provided by the host.
             .onChange(of: viewModel.scrollProgress) { _ in
-                if viewModel.scrollProgress != nil {
+                guard viewModel.scrollProgress != nil else { return }
+                if viewModel.isScrollProgressDriven {
                     currentOffset = calculateCurrentOffset(geometry: geo)
+                } else {
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.9, blendDuration: 0.1)) {
+                        currentOffset = calculateCurrentOffset(geometry: geo)
+                    }
                 }
             }
         }

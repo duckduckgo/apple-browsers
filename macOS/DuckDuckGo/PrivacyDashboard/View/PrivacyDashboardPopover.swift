@@ -37,26 +37,51 @@ final class PrivacyDashboardPopover: NSPopover {
         (contentViewController as? PrivacyDashboardViewController)!
     }
 
-    init(entryPoint: PrivacyDashboardEntryPoint = .dashboard, contentBlocking: ContentBlockingProtocol, permissionManager: PermissionManagerProtocol) {
+    init(
+        entryPoint: PrivacyDashboardEntryPoint = .dashboard,
+        contentBlocking: ContentBlockingProtocol,
+        permissionManager: PermissionManagerProtocol,
+        webTrackingProtectionPreferences: WebTrackingProtectionPreferences
+    ) {
         super.init()
 #if DEBUG
         self.behavior = .semitransient
 #else
         self.behavior = .transient
 #endif
-        setupContentController(entryPoint: entryPoint, contentBlocking: contentBlocking, permissionManager: permissionManager)
+
+        self.backgroundColor = .privacyDashboardBackground
+        setupContentController(
+            entryPoint: entryPoint,
+            contentBlocking: contentBlocking,
+            permissionManager: permissionManager,
+            webTrackingProtectionPreferences: webTrackingProtectionPreferences
+        )
     }
 
     required init?(coder: NSCoder) {
         fatalError("\(Self.self): Bad initializer")
     }
 
+    deinit {
+#if DEBUG
+        // Check that our content view controller deallocates
+        contentViewController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
+    }
+
     private func setupContentController(
         entryPoint: PrivacyDashboardEntryPoint,
         contentBlocking: ContentBlockingProtocol,
-        permissionManager: PermissionManagerProtocol
+        permissionManager: PermissionManagerProtocol,
+        webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     ) {
-        let controller = PrivacyDashboardViewController(entryPoint: entryPoint, contentBlocking: contentBlocking, permissionManager: permissionManager)
+        let controller = PrivacyDashboardViewController(
+            entryPoint: entryPoint,
+            contentBlocking: contentBlocking,
+            permissionManager: permissionManager,
+            webTrackingProtectionPreferences: webTrackingProtectionPreferences
+        )
         controller.sizeDelegate = self
         contentViewController = controller
     }

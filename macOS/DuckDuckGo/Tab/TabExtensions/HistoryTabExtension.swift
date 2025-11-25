@@ -23,12 +23,14 @@ import Foundation
 import History
 import Navigation
 import WebKit
+import BrowserServicesKit
 
 final class HistoryTabExtension: NSObject {
 
     private let historyCoordinating: HistoryCoordinating
     private let isCapturingHistory: Bool
 
+    @MainActor
     private(set) var localHistory: [Visit] {
         get {
             loadRestoredLocalHistoryIfNeeded()
@@ -50,7 +52,9 @@ final class HistoryTabExtension: NSObject {
     private var url: URL? {
         willSet {
             guard let oldValue = url else { return }
-            historyCoordinating.commitChanges(url: oldValue)
+            MainActor.assumeMainThread {
+                historyCoordinating.commitChanges(url: oldValue)
+            }
         }
         didSet {
             visitState = .expected
@@ -67,7 +71,8 @@ final class HistoryTabExtension: NSObject {
          historyCoordinating: HistoryCoordinating,
          trackersPublisher: some Publisher<DetectedTracker, Never>,
          urlPublisher: some Publisher<URL?, Never>,
-         titlePublisher: some Publisher<String?, Never>) {
+         titlePublisher: some Publisher<String?, Never>,
+         popupManagedPublisher: AnyPublisher<AutoconsentUserScript.AutoconsentDoneMessage, Never>) {
 
         self.historyCoordinating = historyCoordinating
         self.isCapturingHistory = isCapturingHistory
@@ -77,13 +82,15 @@ final class HistoryTabExtension: NSObject {
             guard let self,
                   let url = URL(string: tracker.request.pageUrl) else { return }
 
-            switch tracker.type {
-            case .tracker:
-                self.historyCoordinating.addDetectedTracker(tracker.request, on: url)
-            case .trackerWithSurrogate:
-                self.historyCoordinating.addDetectedTracker(tracker.request, on: url)
-            case .thirdPartyRequest:
-                break
+            MainActor.assumeMainThread {
+                switch tracker.type {
+                case .tracker:
+                    self.historyCoordinating.addDetectedTracker(tracker.request, on: url)
+                case .trackerWithSurrogate:
+                    self.historyCoordinating.addDetectedTracker(tracker.request, on: url)
+                case .thirdPartyRequest:
+                    break
+                }
             }
         }.store(in: &cancellables)
 
@@ -95,9 +102,18 @@ final class HistoryTabExtension: NSObject {
             .sink { [weak self] title in
                 guard let self,
                       let title else { return }
-                self.updateVisitTitle(title)
+                MainActor.assumeMainThread {
+                    self.updateVisitTitle(title)
+                }
             }
             .store(in: &cancellables)
+
+        popupManagedPublisher.sink { [weak self] event in
+            guard let self else { return }
+            MainActor.assumeMainThread {
+                self.handlePopupManaged(event)
+            }
+        }.store(in: &cancellables)
 
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(applicationWillTerminate(_:)),
@@ -105,6 +121,7 @@ final class HistoryTabExtension: NSObject {
                                                object: nil)
     }
 
+    @MainActor
     private func addVisit() {
         guard isCapturingHistory else { return }
 
@@ -122,6 +139,7 @@ final class HistoryTabExtension: NSObject {
         self.visitState = .added
     }
 
+    @MainActor
     private func updateVisitTitle(_ title: String) {
         guard isCapturingHistory else { return }
 
@@ -129,13 +147,24 @@ final class HistoryTabExtension: NSObject {
         historyCoordinating.updateTitleIfNeeded(title: title, url: url)
     }
 
+    @MainActor
+    private func handlePopupManaged(_ message: AutoconsentUserScript.AutoconsentDoneMessage) {
+        guard isCapturingHistory else { return }
+
+        guard let url else { return }
+        historyCoordinating.cookiePopupBlocked(on: url)
+    }
+
     private func commitBeforeClosing() {
         guard isCapturingHistory else { return }
 
         guard let url else { return }
-        historyCoordinating.commitChanges(url: url)
+        DispatchQueue.main.asyncOrNow { [historyCoordinating] in
+            historyCoordinating.commitChanges(url: url)
+        }
     }
 
+    @MainActor
     private func loadRestoredLocalHistoryIfNeeded() {
         if !localHistoryIDs.isEmpty {
             let storedLocalHistory = localHistoryIDs.compactMap { id in
@@ -145,6 +174,18 @@ final class HistoryTabExtension: NSObject {
             }
             localHistoryIDs = []
             _localHistory.append(contentsOf: storedLocalHistory)
+        }
+    }
+
+    @MainActor
+    func clearNavigationHistory(keepingCurrent: Bool) {
+        var indicesToRemove = localHistory.indices
+        if keepingCurrent,
+           let lastVisit = localHistory.last, lastVisit.historyEntry?.url == self.url {
+            indicesToRemove.removeLast()
+        }
+        if !indicesToRemove.isEmpty {
+            localHistory.removeSubrange(indicesToRemove)
         }
     }
 
@@ -169,14 +210,17 @@ extension HistoryTabExtension: NSCodingExtension {
     }
 
     func encode(using coder: NSCoder) {
-        let ids = localHistory.compactMap { $0.identifier }
-        coder.encode(ids, forKey: NSSecureCodingKeys.visitedDomains)
+        MainActor.assumeMainThread {
+            let ids = localHistory.compactMap { $0.identifier }
+            coder.encode(ids, forKey: NSSecureCodingKeys.visitedDomains)
+        }
     }
 
 }
 
 extension HistoryCoordinating {
 
+    @MainActor
     func addDetectedTracker(_ tracker: DetectedRequest, on url: URL) {
         trackerFound(on: url)
 
@@ -189,6 +233,26 @@ extension HistoryCoordinating {
 }
 
 extension HistoryTabExtension: NavigationResponder {
+
+    func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
+        let unknownSource = !navigationAction.sourceFrame.url.isDuckURLScheme && !navigationAction.sourceFrame.url.isEmpty
+        let isSpecialURL = navigationAction.url.isHistory || navigationAction.url.isNTP
+        let isAllowedNavigationType: Bool = {
+            switch navigationAction.navigationType {
+            case .backForward, .custom:
+                return true
+            default:
+                return false
+            }
+        }()
+        let shouldBeCancelled = !isAllowedNavigationType && isSpecialURL && unknownSource
+
+        if shouldBeCancelled {
+            return .cancel
+        }
+
+        return .next
+    }
 
     @MainActor
     func didCommit(_ navigation: Navigation) {
@@ -228,6 +292,7 @@ extension HistoryTabExtension: NavigationResponder {
 
 protocol HistoryExtensionProtocol: AnyObject, NavigationResponder {
     var localHistory: [Visit] { get }
+    func clearNavigationHistory(keepingCurrent: Bool)
 }
 
 extension HistoryTabExtension: HistoryExtensionProtocol, TabExtension {

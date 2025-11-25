@@ -51,35 +51,6 @@ extension NSAlert {
         return alert
     }
 
-    static func clearAllHistoryAndDataAlert() -> NSAlert {
-        let alert = NSAlert()
-        alert.messageText = UserText.clearAllDataQuestion
-        alert.informativeText = UserText.clearAllDataDescription
-        alert.alertStyle = .warning
-        alert.icon = .burnAlert
-        let clearButton = alert.addButton(withTitle: UserText.clear)
-        let cancelButton = alert.addButton(withTitle: UserText.cancel)
-        clearButton.setAccessibilityIdentifier("ClearAllHistoryAndDataAlert.clearButton")
-        cancelButton.setAccessibilityIdentifier("ClearAllHistoryAndDataAlert.cancelButton")
-        return alert
-    }
-
-    static func clearHistoryAndDataAlert(dateString: String?) -> NSAlert {
-        let alert = NSAlert()
-        if let dateString = dateString {
-            alert.messageText = String(format: UserText.clearDataHeader, dateString)
-            alert.informativeText = UserText.clearDataDescription
-        } else {
-            alert.messageText = String(format: UserText.clearDataTodayHeader)
-            alert.informativeText = UserText.clearDataTodayDescription
-        }
-        alert.alertStyle = .warning
-        alert.icon = .burnAlert
-        alert.addButton(withTitle: UserText.clear)
-        alert.addButton(withTitle: UserText.cancel)
-        return alert
-    }
-
     static func exportLoginsFailed() -> NSAlert {
         let alert = NSAlert()
         alert.messageText = UserText.exportLoginsFailedMessage
@@ -238,9 +209,9 @@ extension NSAlert {
         return alert
     }
 
-    static func autoClearAlert() -> NSAlert {
+    static func autoClearAlert(clearChats: Bool) -> NSAlert {
         let alert = NSAlert()
-        alert.messageText = UserText.warnBeforeQuitDialogHeader
+        alert.messageText = UserText.warnBeforeQuitDialogHeader(clearChats)
         alert.alertStyle = .warning
         alert.icon = .burnAlert
         alert.addButton(withTitle: UserText.clearAndQuit)
@@ -276,6 +247,26 @@ extension NSAlert {
         alert.addButton(withTitle: UserText.close)
         return alert
     }
+
+    /// Creates a prompt for adding a new Fireproof domain, returning the configured alert and the bound text field.
+    /// Caller can run it as a sheet or modally and read the domain from the returned text field.
+    static func fireproofAddDomainPrompt() -> (alert: NSAlert, textField: NSTextField) {
+        let alert = NSAlert()
+        alert.messageText = UserText.fireproofAddTitle
+        alert.alertStyle = .informational
+        alert.addButton(withTitle: UserText.fireproofAddButton)
+        alert.addButton(withTitle: UserText.cancel)
+
+        let textField = NSTextField(frame: NSRect(x: 0, y: 0, width: 300, height: 24))
+        textField.maximumNumberOfLines = 1
+        textField.lineBreakMode = .byTruncatingTail
+        textField.placeholderString = "example.com"
+        alert.accessoryView = textField
+        alert.window.initialFirstResponder = textField
+        return (alert, textField)
+    }
+
+    // Intentionally no presenting helper: callers own sheet presentation and validation
 
     @discardableResult
     func runModal() async -> NSApplication.ModalResponse {

@@ -10,10 +10,9 @@ name: 05_sync_data_check
 #            The test is split in two different flow to accomodate 
 #            for Maestro CI max execution time. 
 
-# Set up 
 - runFlow: 
     file: ../shared/setup.yaml
-
+    
 #  Copy Recovery Code
 - tapOn: Browsing menu
 - tapOn: Settings
@@ -49,9 +48,19 @@ name: 05_sync_data_check
 - runFlow:
     file: ../shared/sync_verify_unified_favorites.yaml
 
+# Ensure the keyboard is dismissed before continuing
+- tapOn:
+    id: "Browser.OmniBar.Button.Dismiss"
+
 # Verify logins
 - tapOn: Browsing menu
 - tapOn: Settings
 - runFlow:
     file: ../shared/sync_verify_logins.yaml
 
+# Verify credit cards
+- tapOn: Done
+- tapOn: Browsing menu
+- tapOn: Settings
+- runFlow:
+    file: ../shared/sync_verify_credit_cards.yaml

@@ -133,4 +133,30 @@ public final class AIChatPageContextHandler: AIChatConsumableDataHandling {
     }
 }
 
-public typealias AIChatPageContextData = String
+public struct AIChatPageContextData: Codable {
+    public let title: String
+    public let favicon: [PageContextFavicon]
+    public let url: String
+    public let content: String
+    public let truncated: Bool
+    public let fullContentLength: Int
+
+    public init(title: String, favicon: [PageContextFavicon], url: String, content: String, truncated: Bool, fullContentLength: Int) {
+        self.title = title
+        self.favicon = favicon
+        self.url = url
+        self.content = content
+        self.truncated = truncated
+        self.fullContentLength = fullContentLength
+    }
+
+    public struct PageContextFavicon: Codable {
+        public let href: String
+        public let rel: String
+
+        public init(href: String, rel: String) {
+            self.href = href
+            self.rel = rel
+        }
+    }
+}

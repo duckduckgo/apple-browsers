@@ -22,11 +22,11 @@ import Common
 import Foundation
 import Subscription
 
-protocol SubscriptionRedirectManager: AnyObject {
+protocol SubscriptionRedirectManaging: AnyObject {
     func redirectURL(for url: URL) -> URL?
 }
 
-final class PrivacyProSubscriptionRedirectManager: SubscriptionRedirectManager {
+final class SubscriptionRedirectManager: SubscriptionRedirectManaging {
 
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let baseURL: URL
@@ -48,9 +48,9 @@ final class PrivacyProSubscriptionRedirectManager: SubscriptionRedirectManager {
               (url.isPart(ofDomain: "duck.co") && featureFlagger.internalUserDecider.isInternalUser)
         else { return nil }
 
-        if url.pathComponents == URL.privacyPro.pathComponents {
-            let shouldHidePrivacyProDueToNoProducts = subscriptionManager.currentEnvironment.purchasePlatform == .appStore && subscriptionManager.canPurchase == false
-            let isPurchasePageRedirectActive = !shouldHidePrivacyProDueToNoProducts
+        if url.pathComponents == URL.subscription.pathComponents {
+            let shouldHideSubscriptionDueToNoProducts = subscriptionManager.currentEnvironment.purchasePlatform == .appStore && subscriptionManager.canPurchase == false
+            let isPurchasePageRedirectActive = !shouldHideSubscriptionDueToNoProducts
 
             // Redirect the `/pro` URL to `/subscriptions` URL. If there are any query items in the original URL it appends to the `/subscriptions` URL.
             if isPurchasePageRedirectActive,

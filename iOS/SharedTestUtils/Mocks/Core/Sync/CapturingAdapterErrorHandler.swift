@@ -26,6 +26,8 @@ class CapturingAdapterErrorHandler: SyncErrorHandling {
     var handleCredentialErrorCalled = false
     var syncBookmarksSuccededCalled = false
     var handleSettingsErrorCalled = false
+    var handleCreditCardErrorCalled = false
+    var syncCreditCardsSuccededCalled = false
     var capturedError: Error?
 
     func handleSettingsError(_ error: Error) {
@@ -43,11 +45,20 @@ class CapturingAdapterErrorHandler: SyncErrorHandling {
         capturedError = error
     }
 
+    func handleCreditCardsError(_ error: Error) {
+        handleCreditCardErrorCalled = true
+        capturedError = error
+    }
+
     func syncBookmarksSucceded() {
         syncBookmarksSuccededCalled = true
     }
 
     func syncCredentialsSucceded() {
         syncCredentialsSuccededCalled = true
+    }
+
+    func syncCreditCardsSucceded() {
+        syncCreditCardsSuccededCalled = true
     }
 }

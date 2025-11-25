@@ -35,7 +35,7 @@
 "connect.with.server.sheet.button" = "Activer Synchronisation et sauvegarde";
 
 /* Connect With Server Sheet - Description Part 1 */
-"connect.with.server.sheet.description.part1" = "Cela crée une sauvegarde cryptée de vos signets et mots de passe sur le serveur sécurisé de DuckDuckGo, qui peut être synchronisée avec vos autres appareils.";
+"connect.with.server.sheet.description.part1" = "Cela crée une sauvegarde cryptée de vos signets et données de saisie automatique sur le serveur sécurisé de DuckDuckGo, qui peut être synchronisée avec vos autres appareils.";
 
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "La clé de chiffrement n'est stockée que sur votre appareil ; DuckDuckGo ne peut pas y accéder.";
@@ -53,7 +53,13 @@
 "credentials.invalid.objects.present.description" = "credentials.invalid.objects.present.description";
 
 /* Alert title for invalid logins being filtered out of synced data */
-"credentials.invalid.objects.present.title" = "Certaines connexions ne sont pas synchronisées à cause de la longueur excessive du contenu de certains champs.";
+"credentials.invalid.objects.present.title" = "Certains mots de passe ne se synchronisent pas à cause de la longueur excessive du contenu de certains champs.";
+
+/* Do not translate - stringsdict entry */
+"creditcards.invalid.objects.present.description" = "creditcards.invalid.objects.present.description";
+
+/* Alert title for invalid credit cards being filtered out of synced data */
+"creditCards.invalid.objects.present.title" = "Certaines cartes bancaires ne se synchronisent pas à cause de la longueur excessive du contenu de certains champs.";
 
 /* Delete Server Data - Button */
 "delete.server.data" = "Désactiver et supprimer les données du serveur…";
@@ -130,8 +136,11 @@
 /* Button title for sync credentials limits exceeded warning to go to manage passwords */
 "prefrences.sync.credentials-limit-exceeded-action" = "Gérer les mots de passe…";
 
+/* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
+"prefrences.sync.credit-cards-limit-exceeded-action" = "Gérez les cartes bancaires…";
+
 /* Preparing To Sync Sheet - Description */
-"preparing.to.sync.sheet.description" = "Vos signets et mots de passe sont en cours de préparation pour la synchronisation. Cela ne devrait prendre qu'un instant.";
+"preparing.to.sync.sheet.description" = "Vos signets et données de saisie automatique sont en cours de préparation pour la synchronisation. Cela ne devrait prendre qu'un instant.";
 
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Connexion…";
@@ -254,7 +263,7 @@
 "sync.get.other.devices.screen.title" = "Installer DuckDuckGo";
 
 /* Message included when sharing a url via the system share sheet */
-"sync.get.other.devices.share.link.message" = "Installez le navigateur DuckDuckGo sur vos appareils pour commencer à synchroniser en toute sécurité vos signets et vos mots de passe :";
+"sync.get.other.devices.share.link.message" = "Installez le navigateur DuckDuckGo sur vos appareils pour commencer à synchroniser en toute sécurité vos signets et vos données de saisie automatique :";
 
 /* Sync Menu Path */
 "sync.menu.path" = "Réglages > Synchronisation et sauvegarde > Synchroniser avec un autre appareil";

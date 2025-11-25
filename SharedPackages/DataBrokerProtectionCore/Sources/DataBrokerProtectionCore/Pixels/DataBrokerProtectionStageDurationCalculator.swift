@@ -31,6 +31,8 @@ public enum Stage: String {
     case submit
     case emailReceive = "email-receive"
     case emailConfirm = "email-confirm"
+    case emailConfirmHalted = "email-confirm-halted"
+    case emailConfirmDecoupled = "email-confirm-decoupled"
     case validate
     case other
     case fillForm = "fill-form"
@@ -63,11 +65,11 @@ public protocol StageDurationCalculator {
     func fireScanStarted()
 #endif
     func fireScanSuccess(matchesFound: Int)
-    func fireScanFailed()
+    func fireScanNoResults()
     func fireScanError(error: Error)
     func setStage(_ stage: Stage)
     func setEmailPattern(_ emailPattern: String?)
-    func setLastActionId(_ actionID: String)
+    func setLastAction(_ action: Action)
     func resetTries()
     func incrementTries()
 }
@@ -82,11 +84,13 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     let isImmediateOperation: Bool
     let handler: EventMapping<DataBrokerProtectionSharedPixels>
     let attemptId: UUID
-    let dataBroker: String
+    let dataBrokerURL: String
     let dataBrokerVersion: String
     let startTime: Date
+    let parentURL: String?
     var lastStateTime: Date
     private(set) var actionID: String?
+    private(set) var actionType: String?
     private(set) var stage: Stage = .other
     private(set) var emailPattern: String?
     private(set) var tries = 1
@@ -95,19 +99,21 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
 
     init(attemptId: UUID = UUID(),
          startTime: Date = Date(),
-         dataBroker: String,
+         dataBrokerURL: String,
          dataBrokerVersion: String,
          handler: EventMapping<DataBrokerProtectionSharedPixels>,
          isImmediateOperation: Bool = false,
+         parentURL: String? = nil,
          vpnConnectionState: String,
          vpnBypassStatus: String) {
         self.attemptId = attemptId
         self.startTime = startTime
         self.lastStateTime = startTime
-        self.dataBroker = dataBroker
+        self.dataBrokerURL = dataBrokerURL
         self.dataBrokerVersion = dataBrokerVersion
         self.handler = handler
         self.isImmediateOperation = isImmediateOperation
+        self.parentURL = parentURL
         self.vpnConnectionState = vpnConnectionState
         self.vpnBypassStatus = vpnBypassStatus
     }
@@ -129,145 +135,189 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
 
     func fireOptOutStart() {
         setStage(.start)
-        handler.fire(.optOutStart(dataBroker: dataBroker, attemptId: attemptId))
+        handler.fire(.optOutStart(dataBroker: dataBrokerURL,
+                                  attemptId: attemptId,
+                                  parent: parentURL ?? ""))
     }
 
     func fireOptOutEmailGenerate() {
-        handler.fire(.optOutEmailGenerate(dataBroker: dataBroker,
+        let duration = durationSinceLastStage()
+        handler.fire(.optOutEmailGenerate(dataBroker: dataBrokerURL,
                                           attemptId: attemptId,
-                                          duration: durationSinceLastStage(),
+                                          duration: duration,
                                           dataBrokerVersion: dataBrokerVersion,
                                           tries: tries,
+                                          parent: parentURL ?? "",
                                           actionId: actionID ?? ""))
     }
 
     func fireOptOutCaptchaParse() {
-        handler.fire(.optOutCaptchaParse(dataBroker: dataBroker,
+        let duration = durationSinceLastStage()
+        handler.fire(.optOutCaptchaParse(dataBroker: dataBrokerURL,
                                          attemptId: attemptId,
-                                         duration: durationSinceLastStage(),
+                                         duration: duration,
                                          dataBrokerVersion: dataBrokerVersion,
                                          tries: tries,
+                                         parent: parentURL ?? "",
                                          actionId: actionID ?? ""))
     }
 
     func fireOptOutCaptchaSend() {
-        handler.fire(.optOutCaptchaSend(dataBroker: dataBroker,
+        let duration = durationSinceLastStage()
+        handler.fire(.optOutCaptchaSend(dataBroker: dataBrokerURL,
                                         attemptId: attemptId,
-                                        duration: durationSinceLastStage(),
+                                        duration: duration,
                                         dataBrokerVersion: dataBrokerVersion,
                                         tries: tries,
+                                        parent: parentURL ?? "",
                                         actionId: actionID ?? ""))
     }
 
     func fireOptOutCaptchaSolve() {
-        handler.fire(.optOutCaptchaSolve(dataBroker: dataBroker,
+        let duration = durationSinceLastStage()
+        handler.fire(.optOutCaptchaSolve(dataBroker: dataBrokerURL,
                                          attemptId: attemptId,
-                                         duration: durationSinceLastStage(),
+                                         duration: duration,
                                          dataBrokerVersion: dataBrokerVersion,
                                          tries: tries,
+                                         parent: parentURL ?? "",
                                          actionId: actionID ?? ""))
     }
 
     func fireOptOutSubmit() {
         setStage(.submit)
-        handler.fire(.optOutSubmit(dataBroker: dataBroker,
+        let duration = durationSinceLastStage()
+        handler.fire(.optOutSubmit(dataBroker: dataBrokerURL,
                                    attemptId: attemptId,
-                                   duration: durationSinceLastStage(),
+                                   duration: duration,
                                    dataBrokerVersion: dataBrokerVersion,
                                    tries: tries,
+                                   parent: parentURL ?? "",
                                    actionId: actionID ?? ""))
     }
 
     func fireOptOutEmailReceive() {
-        handler.fire(.optOutEmailReceive(dataBroker: dataBroker,
+        let duration = durationSinceLastStage()
+        handler.fire(.optOutEmailReceive(dataBroker: dataBrokerURL,
                                          attemptId: attemptId,
-                                         duration: durationSinceLastStage(),
+                                         duration: duration,
                                          dataBrokerVersion: dataBrokerVersion,
                                          tries: tries,
+                                         parent: parentURL ?? "",
                                          actionId: actionID ?? ""))
     }
 
     func fireOptOutEmailConfirm() {
-        handler.fire(.optOutEmailConfirm(dataBroker: dataBroker,
+        let duration = durationSinceLastStage()
+        handler.fire(.optOutEmailConfirm(dataBroker: dataBrokerURL,
                                          attemptId: attemptId,
-                                         duration: durationSinceLastStage(),
+                                         duration: duration,
                                          dataBrokerVersion: dataBrokerVersion,
                                          tries: tries,
+                                         parent: parentURL ?? "",
                                          actionId: actionID ?? ""))
     }
 
     func fireOptOutValidate() {
         setStage(.validate)
-        handler.fire(.optOutValidate(dataBroker: dataBroker,
+        let duration = durationSinceLastStage()
+        handler.fire(.optOutValidate(dataBroker: dataBrokerURL,
                                      attemptId: attemptId,
-                                     duration: durationSinceLastStage(),
+                                     duration: duration,
                                      dataBrokerVersion: dataBrokerVersion,
                                      tries: tries,
+                                     parent: parentURL ?? "",
                                      actionId: actionID ?? ""))
     }
 
     func fireOptOutFillForm() {
-        handler.fire(.optOutFillForm(dataBroker: dataBroker,
+        let duration = durationSinceLastStage()
+        handler.fire(.optOutFillForm(dataBroker: dataBrokerURL,
                                      attemptId: attemptId,
-                                     duration: durationSinceLastStage(),
+                                     duration: duration,
                                      dataBrokerVersion: dataBrokerVersion,
                                      tries: tries,
+                                     parent: parentURL ?? "",
                                      actionId: actionID ?? ""))
     }
 
     func fireOptOutSubmitSuccess(tries: Int) {
-        handler.fire(.optOutSubmitSuccess(dataBroker: dataBroker,
+        let totalDuration = durationSinceStartTime()
+        handler.fire(.optOutSubmitSuccess(dataBroker: dataBrokerURL,
                                           attemptId: attemptId,
-                                          duration: durationSinceStartTime(),
+                                          duration: totalDuration,
                                           tries: tries,
+                                          parent: parentURL ?? "",
                                           emailPattern: emailPattern,
                                           vpnConnectionState: vpnConnectionState,
                                           vpnBypassStatus: vpnBypassStatus))
     }
 
     func fireOptOutFailure(tries: Int) {
-        handler.fire(.optOutFailure(dataBroker: dataBroker,
+        handler.fire(.optOutFailure(dataBroker: dataBrokerURL,
                                     dataBrokerVersion: dataBrokerVersion,
                                     attemptId: attemptId,
                                     duration: durationSinceStartTime(),
+                                    parent: parentURL ?? "",
                                     stage: stage.rawValue,
                                     tries: tries,
                                     emailPattern: emailPattern,
-                                    actionID: actionID,
+                                    actionId: actionID ?? "unknown",
+                                    actionType: actionType ?? "unknown",
                                     vpnConnectionState: vpnConnectionState,
                                     vpnBypassStatus: vpnBypassStatus))
     }
 
     func fireOptOutConditionFound() {
-        handler.fire(.optOutConditionFound(dataBroker: dataBroker,
+        let duration = durationSinceLastStage()
+        handler.fire(.optOutConditionFound(dataBroker: dataBrokerURL,
                                            attemptId: attemptId,
-                                           duration: durationSinceLastStage(),
+                                           duration: duration,
                                            dataBrokerVersion: dataBrokerVersion,
                                            tries: tries,
+                                           parent: parentURL ?? "",
                                            actionId: actionID ?? ""))
     }
 
     func fireOptOutConditionNotFound() {
-        handler.fire(.optOutConditionNotFound(dataBroker: dataBroker,
+        let duration = durationSinceLastStage()
+        handler.fire(.optOutConditionNotFound(dataBroker: dataBrokerURL,
                                               attemptId: attemptId,
-                                              duration: durationSinceLastStage(),
+                                              duration: duration,
                                               dataBrokerVersion: dataBrokerVersion,
                                               tries: tries,
+                                              parent: parentURL ?? "",
                                               actionId: actionID ?? ""))
     }
 
 #if os(iOS)
     func fireScanStarted() {
-        handler.fire(.scanStarted(dataBroker: dataBroker))
+        handler.fire(.scanStarted(dataBroker: dataBrokerURL))
     }
 #endif
 
     func fireScanSuccess(matchesFound: Int) {
-        handler.fire(.scanSuccess(dataBroker: dataBroker, matchesFound: matchesFound, duration: durationSinceStartTime(), tries: 1, isImmediateOperation: isImmediateOperation, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
+        handler.fire(.scanSuccess(dataBroker: dataBrokerURL,
+                                  matchesFound: matchesFound,
+                                  duration: durationSinceStartTime(),
+                                  tries: 1,
+                                  isImmediateOperation: isImmediateOperation,
+                                  vpnConnectionState: vpnConnectionState,
+                                  vpnBypassStatus: vpnBypassStatus,
+                                  parent: parentURL ?? ""))
     }
 
-    func fireScanFailed() {
-        handler.fire(.scanFailed(dataBroker: dataBroker, dataBrokerVersion: dataBrokerVersion, duration: durationSinceStartTime(), tries: 1, isImmediateOperation: isImmediateOperation, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
+    func fireScanNoResults() {
+        handler.fire(.scanNoResults(dataBroker: dataBrokerURL,
+                                    dataBrokerVersion: dataBrokerVersion,
+                                    duration: durationSinceStartTime(),
+                                    tries: 1,
+                                    isImmediateOperation: isImmediateOperation,
+                                    vpnConnectionState: vpnConnectionState,
+                                    vpnBypassStatus: vpnBypassStatus,
+                                    parent: parentURL ?? "",
+                                    actionID: actionID ?? "unknown",
+                                    actionType: actionType ?? "unknown"))
     }
 
     func fireScanError(error: Error) {
@@ -278,7 +328,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
             case .httpError(let httpCode):
                 if httpCode < 500 {
                     if httpCode == 404 {
-                        fireScanFailed()
+                        fireScanNoResults()
                         return
                     } else {
                         errorCategory = .clientError(httpCode: httpCode)
@@ -301,14 +351,17 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
 
         handler.fire(
             .scanError(
-                dataBroker: dataBroker,
+                dataBroker: dataBrokerURL,
                 dataBrokerVersion: dataBrokerVersion,
                 duration: durationSinceStartTime(),
                 category: errorCategory.toString,
                 details: error.localizedDescription,
                 isImmediateOperation: isImmediateOperation,
                 vpnConnectionState: vpnConnectionState,
-                vpnBypassStatus: vpnBypassStatus
+                vpnBypassStatus: vpnBypassStatus,
+                parent: parentURL ?? "",
+                actionId: actionID ?? "unknown",
+                actionType: actionType ?? "unknown"
             )
         )
     }
@@ -325,8 +378,9 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         self.emailPattern = emailPattern
     }
 
-    func setLastActionId(_ actionID: String) {
-        self.actionID = actionID
+    func setLastAction(_ action: Action) {
+        self.actionID = action.id
+        self.actionType = action.actionType.rawValue
     }
 
     func resetTries() {

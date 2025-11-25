@@ -30,8 +30,12 @@ enum GeneralPixel: PixelKitEvent {
     case crashReportCRCIDMissing
     case compileRulesWait(onboardingShown: OnboardingShown, waitTime: CompileRulesWaitTime, result: WaitResult)
     case launch
-    case dailyActiveUser(isDefault: Bool, isAddedToDock: Bool?)
-    case dailyFireWindowConfiguration(startupFireWindow: Bool, openFireWindowByDefault: Bool, fireAnimationEnabled: Bool)
+    case dailyActiveUser
+    case dailyDefaultBrowser(isDefault: Bool)
+    case dailyAddedToDock(isAddedToDock: Bool)
+    case dailyFireWindowConfigurationStartupFireWindowEnabled(startupFireWindow: Bool)
+    case dailyFireWindowConfigurationOpenFireWindowByDefaultEnabled(openFireWindowByDefault: Bool)
+    case dailyFireWindowConfigurationFireAnimationEnabled(fireAnimationEnabled: Bool)
 
     case navigation(NavigationKind)
     case navigationToExternalURL
@@ -200,13 +204,21 @@ enum GeneralPixel: PixelKitEvent {
     case syncLocalTimestampResolutionTriggered(Feature)
     case syncBookmarksObjectLimitExceededDaily
     case syncCredentialsObjectLimitExceededDaily
+    case syncCreditCardsObjectLimitExceededDaily
+    case syncIdentitiesObjectLimitExceededDaily
     case syncBookmarksRequestSizeLimitExceededDaily
     case syncCredentialsRequestSizeLimitExceededDaily
+    case syncCreditCardsRequestSizeLimitExceededDaily
+    case syncIdentitiesRequestSizeLimitExceededDaily
     case syncBookmarksTooManyRequestsDaily
     case syncCredentialsTooManyRequestsDaily
+    case syncCreditCardsTooManyRequestsDaily
+    case syncIdentitiesTooManyRequestsDaily
     case syncSettingsTooManyRequestsDaily
     case syncBookmarksValidationErrorDaily
     case syncCredentialsValidationErrorDaily
+    case syncCreditCardsValidationErrorDaily
+    case syncIdentitiesValidationErrorDaily
     case syncSettingsValidationErrorDaily
     case syncDebugWasDisabledUnexpectedly
 
@@ -254,6 +266,14 @@ enum GeneralPixel: PixelKitEvent {
     case userAddedToDockFromMoreOptionsMenu
     case userAddedToDockFromDefaultBrowserSection
     case serpAddedToDock
+
+    // SERP Settings
+    // See macOS/PixelDefinitions/pixels/serp_settings_pixels.json5
+    case serpSettingsSerializationFailed
+    case serpSettingsKeyValueStoreReadError
+    case serpSettingsKeyValueStoreWriteError
+    case hideAIGeneratedImagesButtonClicked
+    case openDuckAIButtonClick
 
     case protectionToggledOffBreakageReport
     case debugBreakageExperiment
@@ -324,8 +344,6 @@ enum GeneralPixel: PixelKitEvent {
 
     // MARK: - Debug
 
-    case assertionFailure(message: String, file: StaticString, line: UInt)
-
     case keyValueFileStoreInitError
     case dbContainerInitializationError(error: Error)
     case dbInitializationError(error: Error)
@@ -338,13 +356,12 @@ enum GeneralPixel: PixelKitEvent {
 
     case configurationFetchError(error: Error)
 
-    case trackerDataParseFailed
-    case trackerDataReloadFailed
-    case trackerDataCouldNotBeLoaded
+    case couldNotLoadConfiguration(configuration: Configuration)
+    case couldNotParseConfiguration(configuration: Configuration)
 
-    case privacyConfigurationParseFailed
+    case trackerDataReloadFailed
+
     case privacyConfigurationReloadFailed
-    case privacyConfigurationCouldNotBeLoaded
 
     case configurationFileCoordinatorError
 
@@ -406,6 +423,7 @@ enum GeneralPixel: PixelKitEvent {
     case userViewedWebKitTerminationErrorPage
     case webKitTerminationLoop
     case webKitTerminationIndicatorClicked
+    case webKitDidTerminateNonRecoverableAggregated
 
     case removedInvalidBookmarkManagedObjects
 
@@ -430,6 +448,7 @@ enum GeneralPixel: PixelKitEvent {
     case updaterDidFindUpdate
     case updaterDidDownloadUpdate
     case updaterDidRunUpdate
+    case updaterAttemptToRestartWithoutResumeBlock
     case releaseNotesEmpty
 
     case faviconDecryptionFailedUnique
@@ -466,6 +485,12 @@ enum GeneralPixel: PixelKitEvent {
     case syncCredentialsProviderInitializationFailed
     case syncCredentialsFailed
     case syncCredentialsPatchCompressionFailed
+    case syncCreditCardsProviderInitializationFailed
+    case syncCreditCardsFailed
+    case syncCreditCardsPatchCompressionFailed
+    case syncIdentitiesProviderInitializationFailed
+    case syncIdentitiesFailed
+    case syncIdentitiesPatchCompressionFailed
     case syncSettingsFailed
     case syncSettingsMetadataUpdateFailed
     case syncSettingsPatchCompressionFailed
@@ -493,6 +518,10 @@ enum GeneralPixel: PixelKitEvent {
 
     case credentialsDatabaseCleanupFailed
     case credentialsCleanupAttemptedWhileSyncWasEnabled
+    case creditCardsCleanupError
+    case creditCardsCleanupAttemptedWhileSyncWasEnabled
+    case identitiesCleanupError
+    case identitiesCleanupAttemptedWhileSyncWasEnabled
 
     case invalidPayload(Configuration) // BSK>Configuration
 
@@ -509,10 +538,6 @@ enum GeneralPixel: PixelKitEvent {
 
     case compilationFailed
 
-    // MARK: error page shown
-    case errorPageShownOther
-    case errorPageShownWebkitTermination
-
     // Broken site prompt
 
     case pageRefreshThreeTimesWithin20Seconds
@@ -521,6 +546,16 @@ enum GeneralPixel: PixelKitEvent {
 
     // Enhanced statistics
     case usageSegments
+
+    // UserScript
+    /**
+     * Event Trigger: BrowserServicesKit.UserScript.loadJS fails to load the contents of a JS file.
+     *
+     * Anomaly Investigation:
+     * - App crashes after this pixel is fired.
+     * - Useful for investigating the underlying error causing the failure.
+     */
+    case userScriptLoadJSFailed(jsFile: String, error: Error)
 
     var name: String {
         switch self {
@@ -549,8 +584,20 @@ enum GeneralPixel: PixelKitEvent {
         case .dailyActiveUser:
             return  "m_mac_daily_active_user"
 
-        case .dailyFireWindowConfiguration:
-            return "m_mac_fire_window_configuration"
+        case .dailyDefaultBrowser(isDefault: let isDefault):
+            return  "m_mac_\(isDefault ? "default" : "non-default")-browser"
+
+        case .dailyAddedToDock(isAddedToDock: let isAddedToDock):
+            return  "m_mac_\(isAddedToDock ? "added" : "not-added")-to-dock"
+
+        case .dailyFireWindowConfigurationStartupFireWindowEnabled(startupFireWindow: let startupFireWindow):
+            return "m_mac_fire_window_configuration_startup-fire-window_\(startupFireWindow ? "enabled" : "disabled")"
+
+        case .dailyFireWindowConfigurationOpenFireWindowByDefaultEnabled(openFireWindowByDefault: let openFireWindowByDefault):
+            return "m_mac_fire_window_configuration_open-fire-window-by-default_\(openFireWindowByDefault ? "enabled" : "disabled")"
+
+        case .dailyFireWindowConfigurationFireAnimationEnabled(fireAnimationEnabled: let fireAnimationEnabled):
+            return "m_mac_fire_window_configuration_fire-animation_\(fireAnimationEnabled ? "enabled" : "disabled")"
 
         case .navigation:
             return "m_mac_navigation"
@@ -831,13 +878,21 @@ enum GeneralPixel: PixelKitEvent {
             return "m_mac_sync_\(feature.name)_local_timestamp_resolution_triggered"
         case .syncBookmarksObjectLimitExceededDaily: return "m_mac_sync_bookmarks_object_limit_exceeded_daily"
         case .syncCredentialsObjectLimitExceededDaily: return "m_mac_sync_credentials_object_limit_exceeded_daily"
+        case .syncCreditCardsObjectLimitExceededDaily: return "m_mac_sync_credit_cards_object_limit_exceeded_daily"
+        case .syncIdentitiesObjectLimitExceededDaily: return "m_mac_sync_identities_object_limit_exceeded_daily"
         case .syncBookmarksRequestSizeLimitExceededDaily: return "m_mac_sync_bookmarks_request_size_limit_exceeded_daily"
         case .syncCredentialsRequestSizeLimitExceededDaily: return "m_mac_sync_credentials_request_size_limit_exceeded_daily"
+        case .syncCreditCardsRequestSizeLimitExceededDaily: return "m_mac_sync_credit_cards_request_size_limit_exceeded_daily"
+        case .syncIdentitiesRequestSizeLimitExceededDaily: return "m_mac_sync_identities_request_size_limit_exceeded_daily"
         case .syncBookmarksTooManyRequestsDaily: return "m_mac_sync_bookmarks_too_many_requests_daily"
         case .syncCredentialsTooManyRequestsDaily: return "m_mac_sync_credentials_too_many_requests_daily"
+        case .syncCreditCardsTooManyRequestsDaily: return "m_mac_sync_credit_cards_too_many_requests_daily"
+        case .syncIdentitiesTooManyRequestsDaily: return "m_mac_sync_identities_too_many_requests_daily"
         case .syncSettingsTooManyRequestsDaily: return "m_mac_sync_settings_too_many_requests_daily"
         case .syncBookmarksValidationErrorDaily: return "m_mac_sync_bookmarks_validation_error_daily"
         case .syncCredentialsValidationErrorDaily: return "m_mac_sync_credentials_validation_error_daily"
+        case .syncCreditCardsValidationErrorDaily: return "m_mac_sync_credit_cards_validation_error_daily"
+        case .syncIdentitiesValidationErrorDaily: return "m_mac_sync_identities_validation_error_daily"
         case .syncSettingsValidationErrorDaily: return "m_mac_sync_settings_validation_error_daily"
         case .syncDebugWasDisabledUnexpectedly: return "m_mac_sync_was_disabled_unexpectedly"
 
@@ -898,6 +953,12 @@ enum GeneralPixel: PixelKitEvent {
         case .userAddedToDockFromDefaultBrowserSection: return "m_mac_user_added_to_dock_from_default_browser_section"
         case .serpAddedToDock: return "m_mac_serp_added_to_dock"
 
+        case .serpSettingsSerializationFailed: return "m_mac_serp_settings_serialization_failed"
+        case .serpSettingsKeyValueStoreReadError: return "m_mac_serp_settings_keyvalue_store_read_error"
+        case .serpSettingsKeyValueStoreWriteError: return "m_mac_serp_settings_keyvalue_store_write_error"
+        case .hideAIGeneratedImagesButtonClicked: return "m_mac_aichat_hide_ai_generated_images_button_clicked"
+        case .openDuckAIButtonClick: return "m_mac_serp_settings_open_duck_ai_button_click"
+
         case .protectionToggledOffBreakageReport: return "m_mac_protection-toggled-off-breakage-report"
         case .debugBreakageExperiment: return "m_mac_debug_breakage_experiment_u"
 
@@ -927,9 +988,6 @@ enum GeneralPixel: PixelKitEvent {
         case .developerToolsOpened: return "m_mac_dev_tools_opened"
 
             // DEBUG
-        case .assertionFailure:
-            return "assertion_failure"
-
         case .keyValueFileStoreInitError:
             return "key_value_file_store_init_error"
         case .dbContainerInitializationError:
@@ -951,19 +1009,17 @@ enum GeneralPixel: PixelKitEvent {
         case .configurationFetchError:
             return "cfgfetch"
 
-        case .trackerDataParseFailed:
-            return "tracker_data_parse_failed"
+        case .couldNotLoadConfiguration(let configuration):
+            return "\(configuration)_load_failed".lowercased()
+
+        case .couldNotParseConfiguration(let configuration):
+            return "\(configuration)_parse_failed".lowercased()
+
         case .trackerDataReloadFailed:
             return "tds_r"
-        case .trackerDataCouldNotBeLoaded:
-            return "tracker_data_could_not_be_loaded"
 
-        case .privacyConfigurationParseFailed:
-            return "pcf_p"
         case .privacyConfigurationReloadFailed:
             return "pcf_r"
-        case .privacyConfigurationCouldNotBeLoaded:
-            return "pcf_l"
 
         case .configurationFileCoordinatorError:
             return "configuration_file_coordinator_error"
@@ -1091,6 +1147,9 @@ enum GeneralPixel: PixelKitEvent {
         /// Event trigger: User clicked WebKit process crash indicator icon
         case .webKitTerminationIndicatorClicked:
             return "webkit_termination_indicator_clicked"
+        /// Event trigger: Aggregated WebKit process crashes (burst detection)
+        case .webKitDidTerminateNonRecoverableAggregated:
+            return "webkit_did_terminate_non_recoverable_aggregated"
 
         case .removedInvalidBookmarkManagedObjects:
             return "removed_invalid_bookmark_managed_objects"
@@ -1136,6 +1195,8 @@ enum GeneralPixel: PixelKitEvent {
             return "updater_did_download_update"
         case .updaterDidRunUpdate:
             return "updater_did_run_update"
+        case .updaterAttemptToRestartWithoutResumeBlock:
+            return "updater_attempt_to_restart_without_resume_block"
         case .releaseNotesEmpty:
             return "m_mac_release_notes_empty"
 
@@ -1170,6 +1231,12 @@ enum GeneralPixel: PixelKitEvent {
         case .syncCredentialsProviderInitializationFailed: return "sync_credentials_provider_initialization_failed"
         case .syncCredentialsFailed: return "sync_credentials_failed"
         case .syncCredentialsPatchCompressionFailed: return "sync_credentials_patch_compression_failed"
+        case .syncCreditCardsProviderInitializationFailed: return "sync_credit_cards_provider_initialization_failed"
+        case .syncCreditCardsFailed: return "sync_credit_cards_failed"
+        case .syncCreditCardsPatchCompressionFailed: return "sync_credit_cards_patch_compression_failed"
+        case .syncIdentitiesProviderInitializationFailed: return "sync_identities_provider_initialization_failed"
+        case .syncIdentitiesFailed: return "sync_identities_failed"
+        case .syncIdentitiesPatchCompressionFailed: return "sync_identities_patch_compression_failed"
         case .syncSettingsFailed: return "sync_settings_failed"
         case .syncSettingsMetadataUpdateFailed: return "sync_settings_metadata_update_failed"
         case .syncSettingsPatchCompressionFailed: return "sync_settings_patch_compression_failed"
@@ -1197,6 +1264,10 @@ enum GeneralPixel: PixelKitEvent {
 
         case .credentialsDatabaseCleanupFailed: return "credentials_database_cleanup_failed"
         case .credentialsCleanupAttemptedWhileSyncWasEnabled: return "credentials_cleanup_attempted_while_sync_was_enabled"
+        case .creditCardsCleanupError: return "credit_cards_cleanup_error"
+        case .creditCardsCleanupAttemptedWhileSyncWasEnabled: return "credit_cards_cleanup_attempted_while_sync_was_enabled"
+        case .identitiesCleanupError: return "identities_cleanup_error"
+        case .identitiesCleanupAttemptedWhileSyncWasEnabled: return "identities_cleanup_attempted_while_sync_was_enabled"
 
         case .invalidPayload(let configuration): return "m_d_\(configuration.rawValue)_invalid_payload".lowercased()
 
@@ -1220,9 +1291,6 @@ enum GeneralPixel: PixelKitEvent {
         case .bookmarksSearchExecuted: return "m_mac_search_bookmarks_executed"
         case .bookmarksSearchResultClicked: return "m_mac_search_result_clicked"
 
-        case .errorPageShownOther: return "m_mac_errorpageshown_other"
-        case .errorPageShownWebkitTermination: return "m_mac_errorpageshown_webkittermination"
-
             // Broken site prompt
         case .pageRefreshThreeTimesWithin20Seconds: return "m_mac_reload-three-times-within-20-seconds"
         case .siteNotWorkingShown: return "m_mac_site-not-working_shown"
@@ -1231,6 +1299,8 @@ enum GeneralPixel: PixelKitEvent {
             // Enhanced statistics
         case .usageSegments: return "retention_segments"
 
+            // UserScript
+        case .userScriptLoadJSFailed: return "m_mac_debug_user_script_load_js_failed"
         }
     }
 
@@ -1238,23 +1308,6 @@ enum GeneralPixel: PixelKitEvent {
         switch self {
         case .loginItemUpdateError(let loginItemBundleID, let action, let buildType, let osVersion):
             return ["loginItemBundleID": loginItemBundleID, "action": action, "buildType": buildType, "macosVersion": osVersion]
-
-        case .dailyActiveUser(let isDefault, let isAddedToDock):
-            var params = [String: String]()
-            params["default_browser"] = isDefault ? "1" : "0"
-
-            if let isAddedToDock = isAddedToDock {
-                params["dock"] = isAddedToDock ? "1" : "0"
-            }
-
-            return params
-
-        case .dailyFireWindowConfiguration(let startupFireWindow, let openFireWindowByDefault, let fireAnimationEnabled):
-            return [
-                "startup_fire_window": startupFireWindow ? "true" : "false",
-                "open_fire_window_by_default": openFireWindowByDefault ? "true" : "false",
-                "fire_animation_enabled": fireAnimationEnabled ? "true" : "false"
-            ]
 
         case .navigation(let kind):
             return ["kind": kind.description]
@@ -1403,6 +1456,12 @@ enum GeneralPixel: PixelKitEvent {
 
         case .updaterAborted(let reason):
             return ["reason": reason]
+
+        case let .userScriptLoadJSFailed(jsFile, error):
+            var params = error.pixelParameters
+            params[PixelKit.Parameters.jsFile] = jsFile
+            return params
+
         default: return nil
         }
     }

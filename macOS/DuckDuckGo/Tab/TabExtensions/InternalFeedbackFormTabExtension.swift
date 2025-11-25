@@ -23,6 +23,7 @@ import Navigation
 import Foundation
 import UserScript
 import WebKit
+import PixelKit
 
 /**
  * This is a wrapper class for a hardcoded script evaluated on the Internal Feedback Form page.
@@ -54,11 +55,18 @@ final class InternalFeedbackFormUserScript: NSObject, UserScript {
         distributionType.append(" Alpha")
 #endif
 
-        source = Self.loadJS("internal-feedback-autofiller", from: .main, withReplacements: [
-            "%OS_VERSION%": ProcessInfo.processInfo.operatingSystemVersion.description,
-            "%APP_VERSION%": "\(appVersionModel.versionLabelShort) (\(distributionType))"
-        ])
-        super.init()
+        do {
+            source = try Self.loadJS("internal-feedback-autofiller", from: .main, withReplacements: [
+                "%OS_VERSION%": ProcessInfo.processInfo.operatingSystemVersion.description,
+                "%APP_VERSION%": "\(appVersionModel.versionLabelShort) (\(distributionType))"
+            ])
+            super.init()
+        } catch {
+            if let error = error as? UserScriptError {
+                error.fireLoadJSFailedPixelIfNeeded()
+            }
+            fatalError("Failed to load JS for InternalFeedbackFormUserScript: \(error)")
+        }
     }
 }
 

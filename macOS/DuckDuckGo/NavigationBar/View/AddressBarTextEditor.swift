@@ -156,7 +156,7 @@ final class AddressBarTextEditor: NSTextView {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(selectedText, forType: .string)
 
-        if let url = URL(trimmedAddressBarString: selectedText.trimmingWhitespace()) {
+        if let url = URL(trimmedAddressBarString: selectedText.trimmingWhitespace(), useUnifiedLogic: Application.appDelegate.featureFlagger.isFeatureOn(.unifiedURLPredictor)) {
             NSPasteboard.general.copy(url, withString: selectedText)
         } else {
             NSPasteboard.general.copy(selectedText)
@@ -475,7 +475,7 @@ final class AddressBarTextEditor: NSTextView {
         // allow dragging domain name without the scheme, dropping the "://" part if no scheme is selected
         guard let draggedString = session.draggingPasteboard.string(forType: .string)?
             .trimmingWhitespace().dropping(prefix: ":").dropping(prefix: "/").dropping(prefix: "/"),
-              var draggedUrl = URL(trimmedAddressBarString: draggedString),
+              var draggedUrl = URL(trimmedAddressBarString: draggedString, useUnifiedLogic: Application.appDelegate.featureFlagger.isFeatureOn(.unifiedURLPredictor)),
               let navigationalScheme = draggedUrl.navigationalScheme, // `URL(trimmedAddressBarString:)` will add missing scheme if needed
               URL.NavigationalScheme.navigationalSchemes.contains(navigationalScheme) || draggedUrl.scheme == currentUrl?.scheme else {
             // otherwise fallback to regular text dragging
@@ -484,7 +484,7 @@ final class AddressBarTextEditor: NSTextView {
         // if dragging e.g. "duckduckgo.com" part of currently active "https://duckduckgo.com",
         // replace the "http" scheme automatically added by `URL(trimmedAddressBarString:)` with current scheme ("https" in our case)
         if let currentUrl, let scheme = currentUrl.scheme, !scheme.isEmpty, // currently loaded website url scheme
-           let editedUrl = URL(trimmedAddressBarString: self.string.trimmingWhitespace()),
+           let editedUrl = URL(trimmedAddressBarString: self.string.trimmingWhitespace(), useUnifiedLogic: Application.appDelegate.featureFlagger.isFeatureOn(.unifiedURLPredictor)),
            editedUrl.scheme == currentUrl.scheme, editedUrl.host == currentUrl.host, // actual edited url‘s scheme+host should match currently loaded url
            draggedUrl.scheme != scheme { // non-matching url would mean URL(trimmedAddressBarString:) has added the scheme
 

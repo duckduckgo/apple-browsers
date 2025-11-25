@@ -21,6 +21,7 @@ import Foundation
 import struct UIKit.UIKeyModifierFlags
 import WebKit
 import BrowserServicesKit
+import BrowserServicesKitTestsUtils
 import PrivacyDashboard
 import Core
 import Persistence
@@ -30,6 +31,7 @@ import SpecialErrorPages
 import MaliciousSiteProtection
 import PersistenceTestingUtils
 @testable import DuckDuckGo
+import Combine
 
 // swiftlint:disable force_try
 
@@ -72,7 +74,7 @@ final class MockTabDelegate: TabDelegate {
 
     func tabDidRequestDownloads(tab: DuckDuckGo.TabViewController) {}
 
-    func tab(_ tab: DuckDuckGo.TabViewController, didRequestAutofillLogins account: BrowserServicesKit.SecureVaultModels.WebsiteAccount?, source: DuckDuckGo.AutofillSettingsSource) {}
+    func tab(_ tab: DuckDuckGo.TabViewController, didRequestAutofillLogins account: BrowserServicesKit.SecureVaultModels.WebsiteAccount?, source: DuckDuckGo.AutofillSettingsSource, extensionPromotionManager: (any DuckDuckGo.AutofillExtensionPromotionManaging)?) {}
 
     func tab(_ tab: DuckDuckGo.TabViewController, didRequestDataImport source: DuckDuckGo.DataImportViewModel.ImportScreen, onFinished: @escaping () -> Void, onCancelled: @escaping () -> Void) {}
 
@@ -86,6 +88,9 @@ final class MockTabDelegate: TabDelegate {
 
     func tabDidRequestSettingsToCreditCardManagement(_ tab: TabViewController,
                                                      source: AutofillSettingsSource) {}
+
+
+    func tabDidRequestSettingsToVPN(_ tab: DuckDuckGo.TabViewController) {}
 
     func tabDidRequestFindInPage(tab: DuckDuckGo.TabViewController) {}
 
@@ -142,12 +147,14 @@ extension TabViewController {
     ) -> TabViewController {
         let tab = TabViewController.loadFromStoryboard(
             model: .init(link: Link(title: nil, url: .ddg)),
+            privacyConfigurationManager: PrivacyConfigurationManagerMock(),
             appSettings: AppSettingsMock(),
             bookmarksDatabase: CoreDataDatabase.bookmarksMock,
             historyManager: MockHistoryManager(historyCoordinator: MockHistoryCoordinator(), isEnabledByUser: true, historyFeatureEnabled: true),
             syncService: MockDDGSyncing(authState: .active, isSyncInProgress: false),
-            duckPlayer: MockDuckPlayer(settings: MockDuckPlayerSettings(appSettings: AppSettingsMock(), privacyConfigManager: PrivacyConfigurationManagerMock(), featureFlagger: MockDuckPlayerFeatureFlagger(), internalUserDecider: MockInternalUserDecider()), featureFlagger: featureFlagger),
-            privacyProDataReporter: MockPrivacyProDataReporter(),
+            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
+            contentBlockingAssetsPublisher: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
+            subscriptionDataReporter: MockSubscriptionDataReporter(),
             contextualOnboardingPresenter: contextualOnboardingPresenter,
             contextualOnboardingLogic: contextualOnboardingLogic,
             onboardingPixelReporter: contextualOnboardingPixelReporter,
@@ -160,9 +167,10 @@ extension TabViewController {
             specialErrorPageNavigationHandler: DummySpecialErrorPageNavigationHandler(),
             featureDiscovery: MockFeatureDiscovery(),
             keyValueStore: try! MockKeyValueFileStore(),
-            daxDialogsManager: DummyDaxDialogsManager()
+            daxDialogsManager: DummyDaxDialogsManager(),
+            aiChatSettings: MockAIChatSettingsProvider()
         )
-        tab.attachWebView(configuration: .nonPersistent(), andLoadRequest: nil, consumeCookies: false, customWebView: customWebView)
+        tab.attachWebView(configuration: WKWebViewConfiguration.nonPersistent(), andLoadRequest: nil as URLRequest?, consumeCookies: false, customWebView: customWebView)
         return tab
     }
 

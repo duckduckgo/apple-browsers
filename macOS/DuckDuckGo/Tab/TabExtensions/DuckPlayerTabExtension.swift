@@ -37,14 +37,14 @@ final class DuckPlayerTabExtension {
     private var cancellables = Set<AnyCancellable>()
     private var youtubePlayerCancellables = Set<AnyCancellable>()
     private var shouldOpenInNewTab: Bool  {
-        preferences.isOpenInNewTabSettingsAvailable &&
-        preferences.duckPlayerOpenInNewTab &&
-        preferences.duckPlayerMode != .disabled
+        duckPlayer.preferences.isOpenInNewTabSettingsAvailable &&
+        duckPlayer.preferences.duckPlayerOpenInNewTab &&
+        duckPlayer.preferences.duckPlayerMode != .disabled
     }
     private var shouldOpenDuckPlayerDirectly: Bool {
-        preferences.duckPlayerMode == .enabled
+        duckPlayer.preferences.duckPlayerMode == .enabled
     }
-    private let preferences: DuckPlayerPreferences
+    private let tabsPreferences: TabsPreferences
 
     private weak var webView: WKWebView? {
         didSet {
@@ -66,12 +66,12 @@ final class DuckPlayerTabExtension {
          isBurner: Bool,
          scriptsPublisher: some Publisher<some YoutubeScriptsProvider, Never>,
          webViewPublisher: some Publisher<WKWebView, Never>,
-         preferences: DuckPlayerPreferences = .shared,
+         tabsPreferences: TabsPreferences,
          onboardingDecider: DuckPlayerOnboardingDecider,
          duckPlayerOverlayPixels: DuckPlayerOverlayPixelFiring = DuckPlayerOverlayUsagePixels()) {
         self.duckPlayer = duckPlayer
         self.isBurner = isBurner
-        self.preferences = preferences
+        self.tabsPreferences = tabsPreferences
         self.onboardingDecider = onboardingDecider
         self.duckPlayerOverlayUsagePixels = duckPlayerOverlayPixels
 
@@ -169,7 +169,7 @@ final class DuckPlayerTabExtension {
     }
 
     private func setupPlayerModeObserver() {
-        duckPlayerModeCancellable = preferences.$duckPlayerMode
+        duckPlayerModeCancellable = duckPlayer.preferences.$duckPlayerMode
             .sink { [weak self] mode in
                 self?.duckPlayerOverlayUsagePixels.duckPlayerMode = mode
         }
@@ -186,7 +186,7 @@ extension DuckPlayerTabExtension: YoutubeOverlayUserScriptDelegate {
         }
 
         let linkOpenBehavior = LinkOpenBehavior(event: NSApp.currentEvent,
-                                                switchToNewTabWhenOpenedPreference: TabsPreferences.shared.switchToNewTabWhenOpened,
+                                                switchToNewTabWhenOpenedPreference: tabsPreferences.switchToNewTabWhenOpened,
                                                 canOpenLinkInCurrentTab: !(shouldOpenInNewTab || webView.window is PopUpWindow),
                                                 shouldSelectNewTab: true) // select new tab by default; ⌘-click modifies the selection state
         switch linkOpenBehavior {
@@ -314,7 +314,7 @@ extension DuckPlayerTabExtension: NavigationResponder {
 
         // “Watch in YouTube” selected
         if let videoID = navigationAction.url.youtubeVideoID {
-            if didUserSelectWatchInYoutubeFromDuckPlayer(navigationAction, preferences: preferences, videoID: videoID) {
+            if didUserSelectWatchInYoutubeFromDuckPlayer(navigationAction, preferences: duckPlayer.preferences, videoID: videoID) {
             duckPlayer.setNextVideoToOpenOnYoutube()
                 PixelKit.fire(GeneralPixel.duckPlayerWatchOnYoutube)
                 return .next
@@ -441,9 +441,9 @@ extension DuckPlayerTabExtension: NavigationResponder {
             return
         }
         if navigation.url.isDuckPlayer {
-            let setting = preferences.duckPlayerMode == .enabled ? "always" : "default"
-            let newTabSettings = preferences.duckPlayerOpenInNewTab ? "true" : "false"
-            let autoplay = preferences.duckPlayerAutoplay ? "true" : "false"
+            let setting = duckPlayer.preferences.duckPlayerMode == .enabled ? "always" : "default"
+            let newTabSettings = duckPlayer.preferences.duckPlayerOpenInNewTab ? "true" : "false"
+            let autoplay = duckPlayer.preferences.duckPlayerAutoplay ? "true" : "false"
 
             let params = ["setting": setting,
                           "newtab": newTabSettings,

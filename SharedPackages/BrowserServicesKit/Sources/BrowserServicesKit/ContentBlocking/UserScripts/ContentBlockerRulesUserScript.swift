@@ -54,7 +54,7 @@ public class DefaultContentBlockerUserScriptConfig: ContentBlockerUserScriptConf
                 trackerData: TrackerData?, // This should be non-optional
                 ctlTrackerData: TrackerData?,
                 tld: TLD,
-                trackerDataManager: TrackerDataManager? = nil) {
+                trackerDataManager: TrackerDataManager? = nil) throws {
 
         if trackerData == nil {
             // Fallback to embedded
@@ -67,7 +67,7 @@ public class DefaultContentBlockerUserScriptConfig: ContentBlockerUserScriptConf
         self.ctlTrackerData = ctlTrackerData
         self.tld = tld
 
-        source = ContentBlockerRulesUserScript.generateSource(privacyConfiguration: privacyConfiguration)
+        source = try ContentBlockerRulesUserScript.generateSource(privacyConfiguration: privacyConfiguration)
     }
 
 }
@@ -207,12 +207,12 @@ open class ContentBlockerRulesUserScript: NSObject, UserScript {
         return requestDomain == websiteDomain
     }
 
-    public static func generateSource(privacyConfiguration: PrivacyConfiguration) -> String {
+    public static func generateSource(privacyConfiguration: PrivacyConfiguration) throws -> String {
         let remoteUnprotectedDomains = (privacyConfiguration.tempUnprotectedDomains.joined(separator: "\n"))
             + "\n"
             + (privacyConfiguration.exceptionsList(forFeature: .contentBlocking).joined(separator: "\n"))
 
-        return ContentBlockerRulesUserScript.loadJS("contentblockerrules", from: Bundle.module, withReplacements: [
+        return try ContentBlockerRulesUserScript.loadJS("contentblockerrules", from: Bundle.module, withReplacements: [
             "$TEMP_UNPROTECTED_DOMAINS$": remoteUnprotectedDomains,
             "$USER_UNPROTECTED_DOMAINS$": privacyConfiguration.userUnprotectedDomains.joined(separator: "\n"),
             "$TRACKER_ALLOWLIST_ENTRIES$": TrackerAllowlistInjection.prepareForInjection(allowlist: privacyConfiguration.trackerAllowlist.entries)

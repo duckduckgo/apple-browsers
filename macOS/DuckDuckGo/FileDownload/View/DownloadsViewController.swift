@@ -44,15 +44,20 @@ final class DownloadsViewController: NSViewController {
 
     private let separator = NSBox()
     private let viewModel: DownloadListViewModel
-    private let visualStyle: VisualStyleProviding
+    private let preferences: DownloadsPreferences
     private var downloadsCancellable: AnyCancellable?
     private var errorBannerCancellable: AnyCancellable?
     private var errorBannerHostingView: NSHostingView<DownloadsErrorBannerView>?
 
+    let themeManager: ThemeManaging
+    var themeUpdateCancellable: AnyCancellable?
+
     init(viewModel: DownloadListViewModel,
-         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
+         preferences: DownloadsPreferences,
+         themeManager: ThemeManager = NSApp.delegateTyped.themeManager) {
         self.viewModel = viewModel
-        self.visualStyle = visualStyle
+        self.preferences = preferences
+        self.themeManager = themeManager
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -61,7 +66,9 @@ final class DownloadsViewController: NSViewController {
     }
 
     override func loadView() {
-        view = ColorView(frame: .zero, backgroundColor: visualStyle.colorsProvider.bookmarksPanelBackgroundColor)
+        let colorsProvider = themeManager.theme.colorsProvider
+
+        view = ColorView(frame: .zero, backgroundColor: colorsProvider.bookmarksPanelBackgroundColor)
 
         view.addSubview(titleLabel)
         view.addSubview(openDownloadsFolderButton)
@@ -211,6 +218,7 @@ final class DownloadsViewController: NSViewController {
 
         preferredContentSize = Self.preferredContentSize
         setupDragAndDrop()
+        subscribeToThemeChanges()
     }
 
     override func viewWillAppear() {
@@ -313,13 +321,12 @@ final class DownloadsViewController: NSViewController {
     // MARK: User Actions
 
     @objc func openDownloadsFolderAction(_ sender: Any) {
-        let prefs = DownloadsPreferences.shared
         let downloads = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0]
         var url: URL?
         var itemToSelect: URL?
 
-        if prefs.alwaysRequestDownloadLocation {
-            url = prefs.lastUsedCustomDownloadLocation
+        if preferences.alwaysRequestDownloadLocation {
+            url = preferences.lastUsedCustomDownloadLocation
 
             // reveal the last completed download
             if let lastDownloaded = viewModel.items.first/* last added */(where: {
@@ -337,7 +344,7 @@ final class DownloadsViewController: NSViewController {
 
         } else {
             // open preferred downlod location
-            url = prefs.effectiveDownloadLocation
+            url = preferences.effectiveDownloadLocation
         }
 
         let folder = url ?? downloads
@@ -420,7 +427,18 @@ final class DownloadsViewController: NSViewController {
         tableView.setDraggingSourceOperationMask(NSDragOperation.none, forLocal: true)
         tableView.setDraggingSourceOperationMask(NSDragOperation.move, forLocal: false)
     }
+}
 
+extension DownloadsViewController: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        guard let contentView = view as? ColorView else {
+            assertionFailure()
+            return
+        }
+
+        contentView.backgroundColor = theme.colorsProvider.bookmarksPanelBackgroundColor
+    }
 }
 
 extension DownloadsViewController: NSMenuDelegate {
@@ -588,7 +606,15 @@ struct DownloadsErrorBannerView: View {
     store.fetchBlock = { completion in
         completion(.success(previewDownloadListItems))
     }
-    let viewModel = DownloadListViewModel(fireWindowSession: nil, coordinator: DownloadListCoordinator(store: store))
-    return DownloadsViewController(viewModel: viewModel)
+    let downloadsPreferences = DownloadsPreferences(persistor: DownloadsPreferencesUserDefaultsPersistor())
+    let viewModel = DownloadListViewModel(
+        fireWindowSession: nil,
+        coordinator: DownloadListCoordinator(
+            store: store,
+            downloadManager: FileDownloadManager(preferences: downloadsPreferences),
+            windowControllersManager: WindowControllersManagerMock()
+        )
+    )
+    return DownloadsViewController(viewModel: viewModel, preferences: downloadsPreferences)
 }() }
 #endif

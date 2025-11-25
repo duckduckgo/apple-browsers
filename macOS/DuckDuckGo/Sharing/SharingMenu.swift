@@ -64,7 +64,7 @@ final class SharingMenu: NSMenu {
 
         // Apply DuckPlayer handling to delegate data if it contains a URL
         if let url = delegateData.items.first(where: { $0 is URL }) as? URL {
-            let duckPlayerData = DuckPlayer.shared.sharingData(for: delegateData.title, url: url) ?? (delegateData.title, url)
+            let duckPlayerData = NSApp.delegateTyped.duckPlayer.sharingData(for: delegateData.title, url: url) ?? (delegateData.title, url)
             return (duckPlayerData.title, [duckPlayerData.url])
         }
         return delegateData

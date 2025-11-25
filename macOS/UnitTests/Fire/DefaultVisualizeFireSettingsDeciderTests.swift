@@ -17,7 +17,9 @@
 //
 
 import Common
+import SharedTestUtilities
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class DefaultVisualizeFireSettingsDeciderTests: XCTestCase {
@@ -36,7 +38,8 @@ final class DefaultVisualizeFireSettingsDeciderTests: XCTestCase {
             faviconManager: FaviconManagerMock(),
             windowControllersManager: WindowControllersManagerMock(),
             featureFlagger: featureFlagger,
-            pixelFiring: nil
+            pixelFiring: nil,
+            aiChatHistoryCleaner: MockAIChatHistoryCleaner()
         )
 
         let sut = DefaultVisualizeFireSettingsDecider(featureFlagger: featureFlagger, dataClearingPreferences: dataClearingPreferences)
@@ -58,7 +61,8 @@ final class DefaultVisualizeFireSettingsDeciderTests: XCTestCase {
             faviconManager: FaviconManagerMock(),
             windowControllersManager: WindowControllersManagerMock(),
             featureFlagger: featureFlagger,
-            pixelFiring: nil
+            pixelFiring: nil,
+            aiChatHistoryCleaner: MockAIChatHistoryCleaner()
         )
 
         let sut = DefaultVisualizeFireSettingsDecider(featureFlagger: featureFlagger, dataClearingPreferences: dataClearingPreferences)
@@ -79,7 +83,8 @@ final class DefaultVisualizeFireSettingsDeciderTests: XCTestCase {
             faviconManager: FaviconManagerMock(),
             windowControllersManager: WindowControllersManagerMock(),
             featureFlagger: featureFlagger,
-            pixelFiring: nil
+            pixelFiring: nil,
+            aiChatHistoryCleaner: MockAIChatHistoryCleaner()
         )
 
         let sut = DefaultVisualizeFireSettingsDecider(featureFlagger: featureFlagger, dataClearingPreferences: dataClearingPreferences)
@@ -101,7 +106,8 @@ final class DefaultVisualizeFireSettingsDeciderTests: XCTestCase {
             faviconManager: FaviconManagerMock(),
             windowControllersManager: WindowControllersManagerMock(),
             featureFlagger: featureFlagger,
-            pixelFiring: nil
+            pixelFiring: nil,
+            aiChatHistoryCleaner: MockAIChatHistoryCleaner()
         )
 
         let sut = DefaultVisualizeFireSettingsDecider(featureFlagger: featureFlagger, dataClearingPreferences: dataClearingPreferences)
@@ -123,7 +129,8 @@ final class DefaultVisualizeFireSettingsDeciderTests: XCTestCase {
             faviconManager: FaviconManagerMock(),
             windowControllersManager: WindowControllersManagerMock(),
             featureFlagger: featureFlagger,
-            pixelFiring: nil
+            pixelFiring: nil,
+            aiChatHistoryCleaner: MockAIChatHistoryCleaner()
         )
 
         let sut = DefaultVisualizeFireSettingsDecider(featureFlagger: featureFlagger, dataClearingPreferences: dataClearingPreferences)
@@ -145,7 +152,8 @@ final class DefaultVisualizeFireSettingsDeciderTests: XCTestCase {
             faviconManager: FaviconManagerMock(),
             windowControllersManager: WindowControllersManagerMock(),
             featureFlagger: featureFlagger,
-            pixelFiring: nil
+            pixelFiring: nil,
+            aiChatHistoryCleaner: MockAIChatHistoryCleaner()
         )
 
         let sut = DefaultVisualizeFireSettingsDecider(featureFlagger: featureFlagger, dataClearingPreferences: dataClearingPreferences)

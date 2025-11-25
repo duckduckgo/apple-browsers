@@ -37,6 +37,22 @@ public protocol NewTabPageSectionsVisibilityProviding: AnyObject {
     var isProtectionsReportVisiblePublisher: AnyPublisher<Bool, Never> { get }
 }
 
+public protocol NewTabPageStateProviding: AnyObject {
+    @MainActor
+    func getState() -> [WindowNewTabPageStateData]?
+    var stateChangedPublisher: AnyPublisher<Void, Never> { get }
+}
+
+public struct WindowNewTabPageStateData {
+    let tabs: NewTabPageDataModel.Tabs
+    let webView: WKWebView
+
+    public init(tabs: NewTabPageDataModel.Tabs, webView: WKWebView) {
+        self.tabs = tabs
+        self.webView = webView
+    }
+}
+
 public protocol NewTabPageLinkOpening {
     func openLink(_ target: NewTabPageDataModel.OpenAction.Target) async
 }
@@ -55,6 +71,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
     private let contextMenuPresenter: NewTabPageContextMenuPresenting
     private let linkOpener: NewTabPageLinkOpening
     private let eventMapper: EventMapping<NewTabPageConfigurationEvent>?
+    private let stateProvider: NewTabPageStateProviding
 
     public init(
         sectionsAvailabilityProvider: NewTabPageSectionsAvailabilityProviding,
@@ -63,7 +80,8 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         customBackgroundProvider: NewTabPageCustomBackgroundProviding,
         contextMenuPresenter: NewTabPageContextMenuPresenting = DefaultNewTabPageContextMenuPresenter(),
         linkOpener: NewTabPageLinkOpening,
-        eventMapper: EventMapping<NewTabPageConfigurationEvent>?
+        eventMapper: EventMapping<NewTabPageConfigurationEvent>?,
+        stateProvider: NewTabPageStateProviding
     ) {
         self.sectionsAvailabilityProvider = sectionsAvailabilityProvider
         self.sectionsVisibilityProvider = sectionsVisibilityProvider
@@ -72,6 +90,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         self.contextMenuPresenter = contextMenuPresenter
         self.linkOpener = linkOpener
         self.eventMapper = eventMapper
+        self.stateProvider = stateProvider
         super.init()
 
         Publishers.Merge3(
@@ -84,6 +103,16 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
                 self?.notifyWidgetConfigsDidChange()
             }
             .store(in: &cancellables)
+
+        stateProvider.stateChangedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                Task { @MainActor in
+                    self.notifyTabStateDidChange()
+                }
+            }
+            .store(in: &cancellables)
     }
 
     enum MessageName: String, CaseIterable {
@@ -94,6 +123,7 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         case reportPageException
         case widgetsSetConfig = "widgets_setConfig"
         case widgetsOnConfigUpdated = "widgets_onConfigUpdated"
+        case tabsOnDataUpdate = "tabs_onDataUpdate"
     }
 
     public override func registerMessageHandlers(for userScript: NewTabPageUserScript) {
@@ -111,13 +141,14 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         var widgets: [NewTabPageDataModel.NewTabPageConfiguration.Widget] = [
             .init(id: .rmf),
             .init(id: .freemiumPIRBanner),
+            .init(id: .subscriptionWinBackBanner),
             .init(id: .nextSteps),
             .init(id: .favorites),
             .init(id: .protections)
         ]
 
         if sectionsAvailabilityProvider.isOmnibarAvailable {
-            widgets.insert(.init(id: .omnibar), at: 2)
+            widgets.insert(.init(id: .omnibar), at: 3)
         }
 
         return widgets
@@ -139,6 +170,18 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
     private func notifyWidgetConfigsDidChange() {
         let widgetConfigs = fetchWidgetConfigs()
         pushMessage(named: MessageName.widgetsOnConfigUpdated.rawValue, params: widgetConfigs)
+    }
+
+    @MainActor
+    private func notifyTabStateDidChange() {
+        guard let states = stateProvider.getState() else { return }
+        for state in states {
+            pushMessage(
+                named: MessageName.tabsOnDataUpdate.rawValue,
+                params: state.tabs,
+                to: state.webView
+            )
+        }
     }
 
     private func makeShowDuckAIMenuItem() -> NSMenuItem {
@@ -239,6 +282,10 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
         let widgets = fetchWidgets()
         let widgetConfigs = fetchWidgetConfigs()
         let customizerData = customBackgroundProvider.customizerData
+        let tabs = stateProvider
+            .getState()?
+            .first(where: { $0.webView === original.webView })?
+            .tabs
         let config = NewTabPageDataModel.NewTabPageConfiguration(
             widgets: widgets,
             widgetConfigs: widgetConfigs,
@@ -246,7 +293,8 @@ public final class NewTabPageConfigurationClient: NewTabPageUserScriptClient {
             locale: Bundle.main.preferredLocalizations.first ?? "en",
             platform: .init(name: "macos"),
             settings: .init(customizerDrawer: .init(state: .enabled)),
-            customizer: customizerData
+            customizer: customizerData,
+            tabs: tabs
         )
         return config
     }

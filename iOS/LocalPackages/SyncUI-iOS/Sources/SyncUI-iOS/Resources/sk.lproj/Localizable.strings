@@ -35,7 +35,7 @@
 "connect.with.server.sheet.button" = "Zapnite synchronizáciu a zálohovanie";
 
 /* Connect With Server Sheet - Description Part 1 */
-"connect.with.server.sheet.description.part1" = "Vytvorí sa tak šifrovaná záloha vašich záložiek a hesiel na zabezpečenom serveri DuckDuckGo, ktorú môžete synchronizovať s ostatnými zariadeniami.";
+"connect.with.server.sheet.description.part1" = "Vytvorí sa tak šifrovaná záloha tvojich záložiek a údajov automatického dopĺňania na zabezpečenom serveri DuckDuckGo, ktorú môžeš synchronizovať s ostatnými zariadeniami.";
 
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "Šifrovací kľúč je uložený iba vo vašom zariadení - DuckDuckGo k nemu nemá prístup.";
@@ -53,7 +53,13 @@
 "credentials.invalid.objects.present.description" = "credentials.invalid.objects.present.description";
 
 /* Alert title for invalid logins being filtered out of synced data */
-"credentials.invalid.objects.present.title" = "Niektoré prihlásenia sa nesynchronizujú kvôli príliš dlhému obsahu v určitých poliach.";
+"credentials.invalid.objects.present.title" = "Niektoré heslá sa nesynchronizujú kvôli príliš dlhému obsahu v určitých poliach.";
+
+/* Do not translate - stringsdict entry */
+"creditcards.invalid.objects.present.description" = "creditcards.invalid.objects.present.description";
+
+/* Alert title for invalid credit cards being filtered out of synced data */
+"creditCards.invalid.objects.present.title" = "Niektoré kreditné karty sa nesynchronizujú kvôli príliš dlhému obsahu v určitých poliach.";
 
 /* Delete Server Data - Button */
 "delete.server.data" = "Vypnúť a zmazať údaje servera...";
@@ -130,8 +136,11 @@
 /* Button title for sync credentials limits exceeded warning to go to manage passwords */
 "prefrences.sync.credentials-limit-exceeded-action" = "Spravovať heslá…";
 
+/* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
+"prefrences.sync.credit-cards-limit-exceeded-action" = "Spravovať kreditné karty…";
+
 /* Preparing To Sync Sheet - Description */
-"preparing.to.sync.sheet.description" = "Vaše záložky a heslá sa pripravujú na synchronizáciu. Malo by to trvať len chvíľu.";
+"preparing.to.sync.sheet.description" = "Tvoje záložky a údaje automatického vypĺňania sa pripravujú na synchronizáciu. Malo by to trvať len chvíľu.";
 
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Pripája sa...";
@@ -254,7 +263,7 @@
 "sync.get.other.devices.screen.title" = "Získajte DuckDuckGo";
 
 /* Message included when sharing a url via the system share sheet */
-"sync.get.other.devices.share.link.message" = "Nainštalujte si do svojich zariadení prehliadač DuckDuckGo a začnite bezpečne synchronizovať svoje záložky a heslá:";
+"sync.get.other.devices.share.link.message" = "Nainštaluj si prehliadač DuckDuckGo do svojich zariadení a začni bezpečne synchronizovať svoje záložky a údaje automatického vyplňovania:";
 
 /* Sync Menu Path */
 "sync.menu.path" = "Nastavenia > Synchronizácia a zálohovanie > Synchronizácia s iným zariadením";

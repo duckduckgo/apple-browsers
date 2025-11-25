@@ -35,7 +35,7 @@
 "connect.with.server.sheet.button" = "Vklopite sinhronizacijo in varnostno kopiranje";
 
 /* Connect With Server Sheet - Description Part 1 */
-"connect.with.server.sheet.description.part1" = "S tem ustvarite šifrirano varnostno kopijo zaznamkov in gesel v varnem strežniku DuckDuckGo, ki jo lahko sinhronizirate z drugimi napravami.";
+"connect.with.server.sheet.description.part1" = "S tem ustvarite šifrirano varnostno kopijo zaznamkov in podatkov za samodejno izpolnjevanje v varnem strežniku DuckDuckGo, ki jo lahko sinhronizirate z drugimi napravami.";
 
 /* Connect With Server Sheet - Description Part 2 */
 "connect.with.server.sheet.description.part2" = "Šifrirni ključ je shranjen samo v vaši napravi, DuckDuckGo ne more dostopati do njega.";
@@ -53,7 +53,13 @@
 "credentials.invalid.objects.present.description" = "credentials.invalid.objects.present.description";
 
 /* Alert title for invalid logins being filtered out of synced data */
-"credentials.invalid.objects.present.title" = "Nekatere prijave se ne sinhronizirajo zaradi predolge vsebine v nekaterih poljih.";
+"credentials.invalid.objects.present.title" = "Nekatera gesla se ne sinhronizirajo zaradi predolge vsebine v nekaterih poljih.";
+
+/* Do not translate - stringsdict entry */
+"creditcards.invalid.objects.present.description" = "creditcards.invalid.objects.present.description";
+
+/* Alert title for invalid credit cards being filtered out of synced data */
+"creditCards.invalid.objects.present.title" = "Nekatere kreditne kartice se ne sinhronizirajo zaradi predolge vsebine v nekaterih poljih.";
 
 /* Delete Server Data - Button */
 "delete.server.data" = "Izklopi in izbriši podatke strežnika ...";
@@ -130,8 +136,11 @@
 /* Button title for sync credentials limits exceeded warning to go to manage passwords */
 "prefrences.sync.credentials-limit-exceeded-action" = "Upravljanje gesel…";
 
+/* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
+"prefrences.sync.credit-cards-limit-exceeded-action" = "Upravljaj kreditne kartice…";
+
 /* Preparing To Sync Sheet - Description */
-"preparing.to.sync.sheet.description" = "Vaše zaznamke in gesla pripravljamo za sinhronizacijo. To bo trajalo le trenutek.";
+"preparing.to.sync.sheet.description" = "Vaši zaznamki in podatki za samodejno izpolnjevanje se pripravljajo za sinhronizacijo. To bo trajalo le trenutek.";
 
 /* Preparing To Sync Sheet - Footer */
 "preparing.to.sync.sheet.footer" = "Povezovanje ...";
@@ -254,7 +263,7 @@
 "sync.get.other.devices.screen.title" = "Prenos brskalnika DuckDuckGo";
 
 /* Message included when sharing a url via the system share sheet */
-"sync.get.other.devices.share.link.message" = "Namestite brskalnik DuckDuckGo v svojih napravah in začnite varno sinhronizirati zaznamke in gesla:";
+"sync.get.other.devices.share.link.message" = "Namestite brskalnik DuckDuckGo v svojih napravah in začnite varno sinhronizirati zaznamke in podatke za samodejno izpolnjevanje:";
 
 /* Sync Menu Path */
 "sync.menu.path" = "Nastavitve > Sinhronizacija in varnostno kopiranje > Sinhronizacija z drugo napravo";

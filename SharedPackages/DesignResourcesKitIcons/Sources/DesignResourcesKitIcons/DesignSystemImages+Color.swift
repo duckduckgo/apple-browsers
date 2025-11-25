@@ -23,6 +23,7 @@ public extension DesignSystemImages {
             public static var addToDock: DesignSystemImage { .init(resource: .addToDockColor16) }
             public static var adsBlocked: DesignSystemImage { .init(resource: .adsBlockedColor16) }
             public static var aiChat: DesignSystemImage { .init(resource: .aiChatColor16) }
+            public static var aiChatToggle: DesignSystemImage { .init(resource: .aiChatToggleColor16) }
             public static var aiChatGradient: DesignSystemImage { .init(resource: .aiChatColorGradient16) }
             public static var aiGeneral: DesignSystemImage { .init(resource: .aiGeneralColor16) }
             public static var appearance: DesignSystemImage { .init(resource: .appearanceColor16) }
@@ -69,6 +70,7 @@ public extension DesignSystemImages {
             public static var globe: DesignSystemImage { .init(resource: .globeColor16) }
             public static var heart: DesignSystemImage { .init(resource: .heartColor16) }
             public static var heartGrey: DesignSystemImage { .init(resource: .heartGreyColor16) }
+            public static var hideAIGeneratedImages: DesignSystemImage { .init(resource: .imageAIBlocked16) }
             public static var history: DesignSystemImage { .init(resource: .historyColor16) }
             public static var home: DesignSystemImage { .init(resource: .homeColor16) }
             public static var hourglass: DesignSystemImage { .init(resource: .hourglassColor16) }
@@ -81,7 +83,6 @@ public extension DesignSystemImages {
             public static var lock: DesignSystemImage { .init(resource: .lockColor16) }
             public static var privacyCheck: DesignSystemImage { .init(resource: .privacyCheckColor16) }
             public static var privacyCheckGray: DesignSystemImage { .init(resource: .privacyCheckGrayColor16) }
-            public static var privacyPro: DesignSystemImage { .init(resource: .privacyProColor16) }
             public static var profile: DesignSystemImage { .init(resource: .profileColor16) }
             public static var radar: DesignSystemImage { .init(resource: .radarColor16) }
             public static var releaseNotes: DesignSystemImage { .init(resource: .releaseNotesColor16) }
@@ -95,6 +96,7 @@ public extension DesignSystemImages {
             public static var shopping: DesignSystemImage { .init(resource: .shoppingColor16) }
             public static var siri: DesignSystemImage { .init(resource: .siriColor16) }
             public static var sync: DesignSystemImage { .init(resource: .syncColor16) }
+            public static var subscription: DesignSystemImage { .init(resource: .privacyProColor16) }
             public static var survey: DesignSystemImage { .init(resource: .surveyColor16) }
             public static var tabsRecentlyClosed: DesignSystemImage { .init(resource: .tabsReccentlyClosedColor16) }
             public static var thumbsDown: DesignSystemImage { .init(resource: .thumbsDownColor16) }
@@ -104,6 +106,7 @@ public extension DesignSystemImages {
             public static var videoPlayer: DesignSystemImage { .init(resource: .videoPlayerColor16) }
             public static var vpn: DesignSystemImage { .init(resource: .vpnColor16) }
             public static var vpnGray: DesignSystemImage { .init(resource: .vpnGrayColor16) }
+            public static var searchFindToggle: DesignSystemImage { .init(resource: .searchFindToggleColor16) }
         }
 
         public enum Size24 {
@@ -177,7 +180,6 @@ public extension DesignSystemImages {
             public static var platformWindows: DesignSystemImage { .init(resource: .platformWindowsColor24) }
             public static var privacyCheck: DesignSystemImage { .init(resource: .privacyCheckColor24) }
             public static var privacyCheckGreyscale: DesignSystemImage { .init(resource: .privacyCheckGreyscaleColor24) }
-            public static var privacyPro: DesignSystemImage { .init(resource: .privacyProColor24) }
             public static var profile: DesignSystemImage { .init(resource: .profileColor24) }
             public static var rocket: DesignSystemImage { .init(resource: .rocketColor24) }
             public static var sessionRestore: DesignSystemImage { .init(resource: .sessionRestoreColor24) }
@@ -189,11 +191,20 @@ public extension DesignSystemImages {
             public static var shopping: DesignSystemImage { .init(resource: .shoppingColor24) }
             public static var shoppingDownload: DesignSystemImage { .init(resource: .shoppingDownloadColor24) }
             public static var siri: DesignSystemImage { .init(resource: .siriColor24) }
+            public static var subscription: DesignSystemImage { .init(resource: .privacyProColor24) }
             public static var sync: DesignSystemImage { .init(resource: .syncColor24) }
             public static var sync1: DesignSystemImage { .init(resource: .syncColor241) }
             public static var videoPlayer: DesignSystemImage { .init(resource: .videoPlayerColor24) }
             public static var vpn: DesignSystemImage { .init(resource: .vpnColor24) }
             public static var vpnGrayscale: DesignSystemImage { .init(resource: .vpnGrayscaleColor24) }
+        }
+
+        public enum Size32 {
+            public static var duckDuckGo: DesignSystemImage { .init(resource: .duckDuckGoColor32) }
+        }
+
+        public enum Size72 {
+            public static var fire: DesignSystemImage { .init(resource: .fireColor72) }
         }
     }
 }

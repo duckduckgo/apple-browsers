@@ -63,24 +63,6 @@ final class MockKeyboardPresenter: KeyboardPresenting {
 
 }
 
-final class MockLaunchSourceManager: LaunchSourceManaging {
-    
-    var source: LaunchSource = .standard
-    var setSourceCallCount = 0
-    var lastSetSource: LaunchSource?
-    
-    func setSource(_ source: LaunchSource) {
-        self.source = source
-        self.lastSetSource = source
-        setSourceCallCount += 1
-    }
-
-    func handleAppAction(_ appAction: LaunchAction) {
-        
-    }
-
-}
-
 @MainActor
 final class LaunchActionHandlerTests {
 

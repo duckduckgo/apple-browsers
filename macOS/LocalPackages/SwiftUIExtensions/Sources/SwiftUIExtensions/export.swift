@@ -16,4 +16,4 @@
 //  limitations under the License.
 //
 
-@_exported import SwiftUI
+@_documentation(visibility: internal) @_exported import SwiftUI

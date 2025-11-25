@@ -126,9 +126,9 @@ class PinnedTabsManagerTests: XCTestCase {
         let tabC = Tab("https://c.com")
         let collection = TabCollection(tabs: [tabA, tabB, tabC])
 
-        manager.setUp(with: collection)
+        manager.setUp(movingTabsFrom: collection)
 
-        XCTAssertEqual(collection.tabs, manager.tabCollection.tabs)
+        XCTAssertEqual([tabA, tabB, tabC], manager.tabCollection.tabs)
     }
 }
 

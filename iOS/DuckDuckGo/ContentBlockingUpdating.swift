@@ -23,10 +23,6 @@ import Core
 import Combine
 import WebKit
 
-extension ContentBlocking {
-    var contentBlockingUpdating: ContentBlockingUpdating { .shared }
-}
-
 protocol ContentBlockerRulesManagerProtocol: CompiledRuleListsSource {
     var updatesPublisher: AnyPublisher<ContentBlockerRulesManager.UpdateEvent, Never> { get }
 }
@@ -37,7 +33,6 @@ extension ContentBlockerRulesIdentifier.Difference {
 }
 
 public final class ContentBlockingUpdating {
-    static let shared = ContentBlockingUpdating()
 
     private typealias Update = ContentBlockerRulesManager.UpdateEvent
     struct NewContent: UserContentControllerNewContent {
@@ -55,16 +50,10 @@ public final class ContentBlockingUpdating {
 
     private(set) var userContentBlockingAssets: AnyPublisher<NewContent, Never>!
 
-    init(appSettings: AppSettings = AppUserDefaults(),
-         contentBlockerRulesManager: ContentBlockerRulesManagerProtocol = ContentBlocking.shared.contentBlockingManager,
-         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
-         fireproofing: Fireproofing = UserDefaultsFireproofing.xshared) {
+    init(userScriptsDependencies: DefaultScriptSourceProvider.Dependencies) {
 
         let makeValue: (Update) -> NewContent = { rulesUpdate in
-            let sourceProvider = DefaultScriptSourceProvider(appSettings: appSettings,
-                                                             privacyConfigurationManager: privacyConfigurationManager,
-                                                             contentBlockingManager: contentBlockerRulesManager,
-                                                             fireproofing: fireproofing)
+            let sourceProvider = DefaultScriptSourceProvider(dependencies: userScriptsDependencies)
             return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider)
         }
 
@@ -81,7 +70,7 @@ public final class ContentBlockingUpdating {
         }
 
         // 1. Collect updates from ContentBlockerRulesManager and generate UserScripts based on its output
-        cancellable = contentBlockerRulesManager.updatesPublisher
+        cancellable = userScriptsDependencies.contentBlockingManager.updatesPublisher
             // regenerate UserScripts on:
             // prefs changes notifications with initially published value for combineLatest to work.
             // Not all of these will trigger Tab reload,
@@ -93,6 +82,7 @@ public final class ContentBlockingUpdating {
             .combineLatest(onNotificationWithInitial(ConfigurationManager.didUpdateTrackerDependencies)
                 .receive(on: DispatchQueue.main), combine)
             .combineLatest(onNotificationWithInitial(AppUserDefaults.Notifications.autofillDebugScriptToggled), combine)
+            .combineLatest(onNotificationWithInitial(AppUserDefaults.Notifications.contentScopeDebugStateToggled), combine)
             // DefaultScriptSourceProvider instance should be created once per rules/config change and fed into UserScripts initialization
             .map(makeValue)
             .assign(to: \.bufferedValue, onWeaklyHeld: self) // buffer latest update value

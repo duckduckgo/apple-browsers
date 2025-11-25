@@ -106,6 +106,7 @@ class QuerySubmittedTests: XCTestCase {
 }
 
 final class MockOmniBarDelegate: OmniBarDelegate {
+
     var query: String = ""
     var suggestion: Suggestion?
     var wasOnOmniQuerySubmittedCalled = false
@@ -154,7 +155,7 @@ final class MockOmniBarDelegate: OmniBarDelegate {
         return .dismissed
     }
 
-    func onClearPressed() {
+    func onClearTextPressed() {
     }
 
     func onEnterPressed() {
@@ -180,5 +181,8 @@ final class MockOmniBarDelegate: OmniBarDelegate {
 
     func onDidEndEditing() { }
 
-    func onSharePressed() { }
+    func onCustomizableButtonPressed() { }
+
+    func onEditFavorite(_ favorite: Bookmarks.BookmarkEntity) {}
+
 }

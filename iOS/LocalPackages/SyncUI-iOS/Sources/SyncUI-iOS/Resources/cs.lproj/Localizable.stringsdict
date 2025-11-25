@@ -46,5 +46,27 @@
 			<string>Vaše heslo pro %2$@ nelze synchronizovat, protože jedno z jeho polí překračuje maximální počet znaků.</string>
 		</dict>
 	</dict>
+	<key>creditcards.invalid.objects.present.description</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@cards@</string>
+		<key>cards</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>Your credit card %2$@ and %1$d other cards can't sync because some of their fields exceed the character limit.</string>
+			<key>many</key>
+			<string>Your credit card %2$@ and %1$d other cards can't sync because some of their fields exceed the character limit.</string>
+			<key>one</key>
+			<string>Tvoji platební kartu %2$@ a 1 další kartu nelze synchronizovat, protože některá jejich pole překračují maximální počet znaků.</string>
+			<key>other</key>
+			<string>Tvoji platební kartu %2$@ a další karty (%1$d) nelze synchronizovat, protože některá jejich pole překračují maximální počet znaků.</string>
+			<key>zero</key>
+			<string>Tvoji platební kartu %2$@ nelze synchronizovat, protože jedno z jejích polí překračuje maximální počet znaků.</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

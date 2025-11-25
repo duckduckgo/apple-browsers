@@ -44,6 +44,12 @@ protocol AIChatMenuVisibilityConfigurable {
     var shouldDisplayAddressBarShortcut: Bool { get }
 
     /// This property validates user settings to determine if the shortcut
+    /// should be presented to the user when typing.
+    ///
+    /// - Returns: `true` if the address bar shortcut when typing should be displayed; otherwise, `false`.
+    var shouldDisplayAddressBarShortcutWhenTyping: Bool { get }
+
+    /// This property validates user settings to determine if the shortcut
     /// should be presented to the user.
     ///
     /// - Returns: `true` if the application menu shortcut should be displayed; otherwise, `false`.
@@ -59,11 +65,30 @@ protocol AIChatMenuVisibilityConfigurable {
     /// - Returns: `true` if AI Chat should open in the sidebar; otherwise, `false`.
     var shouldAutomaticallySendPageContext: Bool { get }
 
+    /// This property is used for telemetry.
+    ///
+    /// - Returns: The value of `shouldAutomaticallySendPageContext` if the feature flag is enabled, otherwise it returns `nil`.
+    var shouldAutomaticallySendPageContextTelemetryValue: Bool? { get }
+
     /// This property validates user settings to determine if the text summarization
     /// feature should be presented to the user.
     ///
     /// - Returns: `true` if the text summarization menu action should be displayed; otherwise, `false`.
     var shouldDisplaySummarizationMenuItem: Bool { get }
+
+    /// This property validates user settings to determine if the text translation
+    /// feature should be presented to the user.
+    ///
+    /// - Returns: `true` if the text translation menu action should be displayed; otherwise, `false`.
+    var shouldDisplayTranslationMenuItem: Bool { get }
+
+    /// Determines whether the updated AI Chat settings UI should be displayed.
+    ///
+    /// This property is temporary and used for gating the release of the setting updates.
+    /// It will be removed once the updated settings are fully rolled out.
+    ///
+    /// - Returns: `true` if the updated settings UI should be shown; otherwise, `false`.
+    var shouldShowSettingsImprovements: Bool { get }
 
     /// A publisher that emits a value when either the `shouldDisplayApplicationMenuShortcut`  settings, backed by storage, are changed.
     ///
@@ -92,11 +117,7 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
         let isAIChatEnabledRemotely = remoteSettings.isAIChatEnabled
         let isAIChatEnabledLocally = storage.isAIFeaturesEnabled
 
-        if featureFlagger.isFeatureOn(.aiChatGlobalSwitch) {
-            return isAIChatEnabledRemotely && isAIChatEnabledLocally
-        } else {
-            return isAIChatEnabledRemotely
-        }
+        return isAIChatEnabledRemotely && isAIChatEnabledLocally
     }
 
     var shouldDisplayNewTabPageShortcut: Bool {
@@ -107,12 +128,32 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
         shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatTextSummarization) && shouldDisplayApplicationMenuShortcut
     }
 
+    var shouldDisplayTranslationMenuItem: Bool {
+        shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatTextTranslation) && shouldDisplayApplicationMenuShortcut
+    }
+
     var shouldDisplayApplicationMenuShortcut: Bool {
-        shouldDisplayAnyAIChatFeature && storage.showShortcutInApplicationMenu
+        // Improvements remove the setting toggle for menus.
+        // Note: To be removed after release with all related to showShortcutInApplicationMenu (logic, storage etc.)
+        if shouldShowSettingsImprovements {
+            return shouldDisplayAnyAIChatFeature
+        }
+
+        return shouldDisplayAnyAIChatFeature && storage.showShortcutInApplicationMenu
     }
 
     var shouldDisplayAddressBarShortcut: Bool {
         shouldDisplayAnyAIChatFeature && storage.showShortcutInAddressBar
+    }
+
+    var shouldDisplayAddressBarShortcutWhenTyping: Bool {
+        // Improvements introduce this as a separate setting.
+        // Note: To be removed after release with all related to showShortcutInApplicationMenu (logic, storage etc.)
+        guard shouldShowSettingsImprovements else {
+            return shouldDisplayAddressBarShortcut
+        }
+
+        return shouldDisplayAnyAIChatFeature && storage.showShortcutInAddressBarWhenTyping
     }
 
     var shouldOpenAIChatInSidebar: Bool {
@@ -121,6 +162,17 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
 
     var shouldAutomaticallySendPageContext: Bool {
         shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatPageContext) && storage.shouldAutomaticallySendPageContext
+    }
+
+    var shouldAutomaticallySendPageContextTelemetryValue: Bool? {
+        guard featureFlagger.isFeatureOn(.aiChatPageContext) else {
+            return nil
+        }
+        return shouldAutomaticallySendPageContext
+    }
+
+    var shouldShowSettingsImprovements: Bool {
+        featureFlagger.isFeatureOn(.aiChatImprovements)
     }
 
     init(storage: AIChatPreferencesStorage, remoteSettings: AIChatRemoteSettingsProvider, featureFlagger: FeatureFlagger) {
@@ -132,13 +184,15 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
     }
 
     private func subscribeToValuesChanged() {
-        Publishers.Merge6(
+        Publishers.Merge8(
             storage.isAIFeaturesEnabledPublisher.removeDuplicates(),
             storage.showShortcutOnNewTabPagePublisher.removeDuplicates(),
             storage.showShortcutInApplicationMenuPublisher.removeDuplicates(),
             storage.showShortcutInAddressBarPublisher.removeDuplicates(),
+            storage.showShortcutInAddressBarWhenTypingPublisher.removeDuplicates(),
             storage.openAIChatInSidebarPublisher.removeDuplicates(),
-            storage.shouldAutomaticallySendPageContextPublisher.removeDuplicates()
+            storage.shouldAutomaticallySendPageContextPublisher.removeDuplicates(),
+            storage.showSearchAndDuckAITogglePublisher.removeDuplicates()
         )
         .sink { [weak self] _ in
             self?.valuesChangedPublisher.send()

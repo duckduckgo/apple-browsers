@@ -22,6 +22,7 @@ import Subscription
 import Common
 import BrowserServicesKit
 import DataBrokerProtection_iOS
+import PixelKit
 
 enum SubscriptionContainerViewFactory {
 
@@ -29,7 +30,8 @@ enum SubscriptionContainerViewFactory {
                                   navigationCoordinator: SubscriptionNavigationCoordinator,
                                   subscriptionManager: SubscriptionManager,
                                   subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
-                                  privacyProDataReporter: PrivacyProDataReporting?,
+                                  subscriptionDataReporter: SubscriptionDataReporting?,
+                                  userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
                                   tld: TLD,
                                   internalUserDecider: InternalUserDecider,
                                   dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) -> some View {
@@ -58,13 +60,14 @@ enum SubscriptionContainerViewFactory {
             redirectPurchaseURL: redirectPurchaseURL,
             isInternalUser: internalUserDecider.isInternalUser,
             userScript: SubscriptionPagesUserScript(),
+            userScriptsDependencies: userScriptsDependencies,
             subFeature: DefaultSubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
                                                                        subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                                        subscriptionAttributionOrigin: origin,
                                                                        appStorePurchaseFlow: appStorePurchaseFlow,
                                                                        appStoreRestoreFlow: appStoreRestoreFlow,
                                                                        appStoreAccountManagementFlow: appStoreAccountManagementFlow,
-                                                                       privacyProDataReporter: privacyProDataReporter),
+                                                                       subscriptionDataReporter: subscriptionDataReporter),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider
         )
         viewModel.email.setEmailFlowMode(.restoreFlow)
@@ -75,6 +78,7 @@ enum SubscriptionContainerViewFactory {
     static func makeRestoreFlow(navigationCoordinator: SubscriptionNavigationCoordinator,
                                 subscriptionManager: SubscriptionManager,
                                 subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
+                                userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
                                 internalUserDecider: InternalUserDecider,
                                 dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) -> some View {
         let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(accountManager: subscriptionManager.accountManager,
@@ -94,6 +98,7 @@ enum SubscriptionContainerViewFactory {
             subscriptionManager: subscriptionManager,
             isInternalUser: internalUserDecider.isInternalUser,
             userScript: SubscriptionPagesUserScript(),
+            userScriptsDependencies: userScriptsDependencies,
             subFeature: DefaultSubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
                                                                        subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                                        subscriptionAttributionOrigin: nil,
@@ -110,6 +115,7 @@ enum SubscriptionContainerViewFactory {
     static func makeEmailFlow(navigationCoordinator: SubscriptionNavigationCoordinator,
                               subscriptionManager: SubscriptionManager,
                               subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
+                              userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
                               internalUserDecider: InternalUserDecider,
                               emailFlow: SubscriptionEmailViewModel.EmailViewFlow = .activationFlow,
                               dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
@@ -130,6 +136,7 @@ enum SubscriptionContainerViewFactory {
             subscriptionManager: subscriptionManager,
             isInternalUser: internalUserDecider.isInternalUser,
             userScript: SubscriptionPagesUserScript(),
+            userScriptsDependencies: userScriptsDependencies,
             subFeature: DefaultSubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
                                                                        subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                                        subscriptionAttributionOrigin: nil,
@@ -152,16 +159,20 @@ enum SubscriptionContainerViewFactory {
                                     navigationCoordinator: SubscriptionNavigationCoordinator,
                                     subscriptionManager: SubscriptionManagerV2,
                                     subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
-                                    privacyProDataReporter: PrivacyProDataReporting?,
+                                    subscriptionDataReporter: SubscriptionDataReporting?,
+                                    userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
                                     tld: TLD,
                                     internalUserDecider: InternalUserDecider,
-                                    dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) -> some View {
+                                    dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
+                                    wideEvent: WideEventManaging) -> some View {
 
         let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager,
                                                                storePurchaseManager: subscriptionManager.storePurchaseManager())
         let appStorePurchaseFlow = DefaultAppStorePurchaseFlowV2(subscriptionManager: subscriptionManager,
                                                                  storePurchaseManager: subscriptionManager.storePurchaseManager(),
-                                                                 appStoreRestoreFlow: appStoreRestoreFlow)
+                                                                 appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                 wideEvent: wideEvent,
+                                                                 isSubscriptionRestoreWidePixelMeasurementEnabled: subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled)
 
         let redirectPurchaseURL: URL? = {
             guard let redirectURLComponents else { return nil }
@@ -176,13 +187,15 @@ enum SubscriptionContainerViewFactory {
             redirectPurchaseURL: redirectPurchaseURL,
             isInternalUser: internalUserDecider.isInternalUser,
             userScript: SubscriptionPagesUserScript(),
+            userScriptsDependencies: userScriptsDependencies,
             subFeature: DefaultSubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
                                                                          subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                                          subscriptionAttributionOrigin: origin,
                                                                          appStorePurchaseFlow: appStorePurchaseFlow,
                                                                          appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                         privacyProDataReporter: privacyProDataReporter,
-                                                                         internalUserDecider: internalUserDecider),
+                                                                         subscriptionDataReporter: subscriptionDataReporter,
+                                                                         internalUserDecider: internalUserDecider,
+                                                                         wideEvent: wideEvent),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider
         )
         viewModel.email.setEmailFlowMode(.restoreFlow)
@@ -194,22 +207,28 @@ enum SubscriptionContainerViewFactory {
     static func makeRestoreFlowV2(navigationCoordinator: SubscriptionNavigationCoordinator,
                                   subscriptionManager: SubscriptionManagerV2,
                                   subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
+                                  userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
                                   internalUserDecider: InternalUserDecider,
+                                  wideEvent: WideEventManaging,
                                   dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) -> some View {
         let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager,
                                                                storePurchaseManager: subscriptionManager.storePurchaseManager())
         let appStorePurchaseFlow = DefaultAppStorePurchaseFlowV2(subscriptionManager: subscriptionManager,
                                                                  storePurchaseManager: subscriptionManager.storePurchaseManager(),
-                                                                 appStoreRestoreFlow: appStoreRestoreFlow)
+                                                                 appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                 wideEvent: wideEvent,
+                                                                 isSubscriptionRestoreWidePixelMeasurementEnabled: subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled)
         let subscriptionPagesUseSubscriptionFeature = DefaultSubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
                                                                                                        subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                                                                        subscriptionAttributionOrigin: nil,
                                                                                                        appStorePurchaseFlow: appStorePurchaseFlow,
                                                                                                        appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                                                       internalUserDecider: internalUserDecider)
+                                                                                                       internalUserDecider: internalUserDecider,
+                                                                                                       wideEvent: wideEvent)
         let viewModel = SubscriptionContainerViewModel(subscriptionManager: subscriptionManager,
                                                        isInternalUser: internalUserDecider.isInternalUser,
                                                        userScript: SubscriptionPagesUserScript(),
+                                                       userScriptsDependencies: userScriptsDependencies,
                                                        subFeature: subscriptionPagesUseSubscriptionFeature,
                                                        dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider)
         viewModel.email.setEmailFlowMode(.restoreFlow)
@@ -220,25 +239,31 @@ enum SubscriptionContainerViewFactory {
     static func makeEmailFlowV2(navigationCoordinator: SubscriptionNavigationCoordinator,
                                 subscriptionManager: SubscriptionManagerV2,
                                 subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
+                                userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
                                 internalUserDecider: InternalUserDecider,
                                 emailFlow: SubscriptionEmailViewModel.EmailViewFlow = .activationFlow,
                                 dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
+                                wideEvent: WideEventManaging,
                                 onDisappear: @escaping () -> Void) -> some View {
         let appStoreRestoreFlow: AppStoreRestoreFlowV2 = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager,
                                                                                       storePurchaseManager: subscriptionManager.storePurchaseManager())
         let appStorePurchaseFlow = DefaultAppStorePurchaseFlowV2(subscriptionManager: subscriptionManager,
                                                                  storePurchaseManager: subscriptionManager.storePurchaseManager(),
-                                                                 appStoreRestoreFlow: appStoreRestoreFlow)
+                                                                 appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                 wideEvent: wideEvent,
+                                                                 isSubscriptionRestoreWidePixelMeasurementEnabled: subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled)
         let viewModel = SubscriptionContainerViewModel(
             subscriptionManager: subscriptionManager,
             isInternalUser: internalUserDecider.isInternalUser,
             userScript: SubscriptionPagesUserScript(),
+            userScriptsDependencies: userScriptsDependencies,
             subFeature: DefaultSubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
                                                                          subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                                          subscriptionAttributionOrigin: nil,
                                                                          appStorePurchaseFlow: appStorePurchaseFlow,
                                                                          appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                         internalUserDecider: internalUserDecider),
+                                                                         internalUserDecider: internalUserDecider,
+                                                                         wideEvent: wideEvent),
             dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider
         )
 

@@ -43,12 +43,13 @@ final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
         .userDidSubmitFirstPrompt: .aiChatMetricStartNewConversation,
         .userDidOpenHistory: .aiChatMetricOpenHistory,
         .userDidSelectFirstHistoryItem: .aiChatMetricOpenMostRecentHistoryChat,
-        .userDidCreateNewChat: .aiChatMetricStartNewConversationButtonClicked
+        .userDidCreateNewChat: .aiChatMetricStartNewConversationButtonClicked,
+        .userDidTapKeyboardReturnKey: .aiChatMetricDuckAIKeyboardReturnPressed
     ]
 
     // MARK: - Initialization
 
-    init(timeElapsedInMinutes: Int?, pixelFiring: PixelFiring.Type = Pixel.self) {
+    init(timeElapsedInMinutes: Int? = nil, pixelFiring: PixelFiring.Type = Pixel.self) {
         self.timeElapsedInMinutes = timeElapsedInMinutes
         self.pixelFiring = pixelFiring
     }
@@ -65,7 +66,11 @@ final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
             return
         }
 
-        let parameters = timestampParameters ?? [:]
+        var parameters: [String: String] = [:]
+        if metric.shouldIncludeTimestampParameters {
+            parameters = timestampParameters ?? [:]
+        }
+        
         pixelFiring.fire(event, withAdditionalParameters: parameters)
     }
 

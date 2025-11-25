@@ -20,6 +20,7 @@
 import XCTest
 import Foundation
 import PrivacyDashboard
+import Combine
 @testable import DuckDuckGo
 
 final class ContextualOnboardingPresenterMock: ContextualOnboardingPresenting {
@@ -37,7 +38,7 @@ final class ContextualOnboardingPresenterMock: ContextualOnboardingPresenting {
     }
 }
 
-final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, PrivacyProPromotionCoordinating, ContextualDaxDialogDisabling {
+final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, SubscriptionPromotionCoordinating, ContextualDaxDialogDisabling {
     
     var expectation: XCTestExpectation?
     private(set) var didCallSetTryAnonymousSearchMessageSeen = false
@@ -56,9 +57,10 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, PrivacyPro
     var shouldShowPrivacyButtonPulse: Bool = false
     var isShowingSearchSuggestions: Bool = false
     var isShowingSitesSuggestions: Bool = false
-    var isShowingPrivacyProPromotion: Bool = false
+    var isShowingSubscriptionPromotion: Bool = false
     var shouldShowFireButtonPulse: Bool = false
     var isAddFavoriteFlow: Bool = false
+    var isDismissedPublisher = PassthroughSubject<Bool, Never>()
 
     func setTryAnonymousSearchMessageSeen() {
         didCallSetTryAnonymousSearchMessageSeen = true
@@ -97,7 +99,7 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, PrivacyPro
         didCallClearedBrowserData = true
     }
 
-    var privacyProPromotionDialogSeen: Bool = false
+    var subscriptionPromotionDialogSeen: Bool = false
 
     func disableContextualDaxDialogs() {
         didCallDisableDaxDialogs = true
@@ -134,6 +136,8 @@ final class ContextualOnboardingLogicMock: ContextualOnboardingLogic, PrivacyPro
 
 // Use to fill parameter list in injection.
 class DummyDaxDialogsManager: DaxDialogsManaging {
+    var hasSeenOnboarding: Bool = false
+
     var isShowingFireDialog: Bool = false
 
     var shouldShowPrivacyButtonPulse: Bool = false
@@ -146,9 +150,11 @@ class DummyDaxDialogsManager: DaxDialogsManaging {
 
     var isAddFavoriteFlow: Bool = false
 
-    var isShowingPrivacyProPromotion: Bool = false
+    var isShowingSubscriptionPromotion: Bool = false
 
-    var privacyProPromotionDialogSeen: Bool = false
+    var subscriptionPromotionDialogSeen: Bool = false
+
+    var isDismissedPublisher = PassthroughSubject<Bool, Never>()
 
     func setTryAnonymousSearchMessageSeen() { }
 

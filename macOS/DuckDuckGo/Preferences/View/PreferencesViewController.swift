@@ -42,12 +42,23 @@ final class PreferencesViewController: NSViewController {
 
     init(
         syncService: DDGSyncing,
-        duckPlayer: DuckPlayer = DuckPlayer.shared,
+        duckPlayer: DuckPlayer,
         tabCollectionViewModel: TabCollectionViewModel,
         privacyConfigurationManager: PrivacyConfigurationManaging,
         aiChatRemoteSettings: AIChatRemoteSettingsProvider = AIChatRemoteSettings(),
-        subscriptionManager: any SubscriptionAuthV1toV2Bridge = Application.appDelegate.subscriptionAuthV1toV2Bridge,
-        featureFlagger: FeatureFlagger
+        featureFlagger: FeatureFlagger,
+        defaultBrowserPreferences: DefaultBrowserPreferences,
+        downloadsPreferences: DownloadsPreferences,
+        searchPreferences: SearchPreferences,
+        tabsPreferences: TabsPreferences,
+        webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
+        cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
+        aiChatPreferences: AIChatPreferences,
+        aboutPreferences: AboutPreferences,
+        accessibilityPreferences: AccessibilityPreferences,
+        duckPlayerPreferences: DuckPlayerPreferences,
+        subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+        winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     ) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -59,7 +70,18 @@ final class PreferencesViewController: NSViewController {
                                         vpnGatekeeper: DefaultVPNFeatureGatekeeper(subscriptionManager: subscriptionManager),
                                         includeDuckPlayer: duckPlayer.shouldDisplayPreferencesSideBar,
                                         includeAIChat: aiChatRemoteSettings.isAIChatEnabled,
-                                        subscriptionManager: subscriptionManager)
+                                        subscriptionManager: subscriptionManager,
+                                        defaultBrowserPreferences: defaultBrowserPreferences,
+                                        downloadsPreferences: downloadsPreferences,
+                                        searchPreferences: searchPreferences,
+                                        tabsPreferences: tabsPreferences,
+                                        webTrackingProtectionPreferences: webTrackingProtectionPreferences,
+                                        cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
+                                        aiChatPreferences: aiChatPreferences,
+                                        aboutPreferences: aboutPreferences,
+                                        accessibilityPreferences: accessibilityPreferences,
+                                        duckPlayerPreferences: duckPlayerPreferences,
+                                        winBackOfferVisibilityManager: winBackOfferVisibilityManager)
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -85,7 +107,8 @@ final class PreferencesViewController: NSViewController {
                                                       subscriptionManager: Application.appDelegate.subscriptionManagerV2!,
                                                       subscriptionUIHandler: Application.appDelegate.subscriptionUIHandler,
                                                       featureFlagger: featureFlagger,
-                                                      aiChatURLSettings: aiChatRemoteSettings)
+                                                      aiChatURLSettings: aiChatRemoteSettings,
+                                                      wideEvent: Application.appDelegate.wideEvent)
             let host = NSHostingView(rootView: prefRootView)
             view.addAndLayout(host)
         }

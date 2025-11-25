@@ -24,20 +24,25 @@ import SwiftUI
 import DesignResourcesKit
 import Core
 
+///
+/// Setting for AsyncHeadlessWebView
+///
+/// Provide `userScriptsDependencies` if WebView is supposed to block trackers, otherwise pass nil
+///
 struct AsyncHeadlessWebViewSettings {
     let bounces: Bool
     let javascriptEnabled: Bool
     let allowedDomains: [String]?
-    let contentBlocking: Bool
-    
+    let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies?
+
     init(bounces: Bool = true,
          javascriptEnabled: Bool = true,
          allowedDomains: [String]? = nil,
-         contentBlocking: Bool = true) {
+         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies?) {
         self.bounces = bounces
         self.javascriptEnabled = javascriptEnabled
         self.allowedDomains = allowedDomains
-        self.contentBlocking = contentBlocking
+        self.userScriptsDependencies = userScriptsDependencies
     }
 
     internal static func makeAllowedDomains(baseURL: URL, isInternalUser: Bool) -> [String] {

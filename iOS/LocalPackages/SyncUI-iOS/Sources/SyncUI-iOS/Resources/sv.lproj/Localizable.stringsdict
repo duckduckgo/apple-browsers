@@ -38,5 +38,23 @@
 			<string>Ditt lösenord för %2$@ kan inte synkroniseras eftersom ett av dess fält överskrider teckengränsen.</string>
 		</dict>
 	</dict>
+	<key>creditcards.invalid.objects.present.description</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@cards@</string>
+		<key>cards</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Ditt kreditkort %2$@ och 1 annat kort kan inte synkroniseras eftersom vissa av deras fält överskrider teckengränsen.</string>
+			<key>other</key>
+			<string>Ditt kreditkort %2$@ och %1$d andra kort kan inte synkroniseras eftersom vissa av deras fält överskrider teckengränsen.</string>
+			<key>zero</key>
+			<string>Ditt kreditkort för %2$@ kan inte synkroniseras eftersom ett av dess fält överskrider teckengränsen.</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

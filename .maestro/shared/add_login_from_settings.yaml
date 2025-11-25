@@ -6,11 +6,14 @@ appId: com.duckduckgo.mobile.ios
 - tapOn: Passwords & Autofill
 - tapOn: Passwords
 - tapOn: Add 24
-- tapOn: Title
+- tapOn:
+    id: Field_PasswordName
 - inputText: My Personal Website
-- tapOn: username@example.com
+- tapOn:
+    id: Field_Username
 - inputText: me@mypersonalwebsite.com
-- tapOn: example.com
+- tapOn:
+    id: Field_Address
 - inputText: mypersonalwebsite.com
 - tapOn: Save
 - tapOn: Passwords

@@ -81,13 +81,15 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
          pinningManager: PinningManager = LocalPinningManager.shared,
          vpnGatekeeper: VPNFeatureGatekeeper = DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge),
          statusReporter: NetworkProtectionStatusReporter,
-         iconProvider: IconProvider,
+         themeManager: ThemeManaging,
          vpnUpsellVisibilityManager: VPNUpsellVisibilityManager) {
+
+        let iconsProvider = themeManager.theme.iconsProvider
 
         self.popoverManager = popoverManager
         self.vpnGatekeeper = vpnGatekeeper
         self.networkProtectionStatusReporter = statusReporter
-        self.iconPublisher = NetworkProtectionIconPublisher(statusReporter: networkProtectionStatusReporter, iconProvider: iconProvider)
+        self.iconPublisher = NetworkProtectionIconPublisher(statusReporter: networkProtectionStatusReporter, iconProvider: iconsProvider.vpnNavigationIconsProvider)
         self.pinningManager = pinningManager
         self.shortcutTitle = pinningManager.shortcutTitle(for: .networkProtection)
         self.vpnUpsellVisibilityManager = vpnUpsellVisibilityManager
@@ -118,52 +120,55 @@ final class NetworkProtectionNavBarButtonModel: NSObject, ObservableObject {
     }
 
     private func setupStatusSubscription() {
-        networkProtectionStatusReporter.statusObserver.publisher.sink { [weak self] status in
-            guard let self = self else {
-                return
-            }
+        networkProtectionStatusReporter.statusObserver.publisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] status in
+                guard let self else { return }
 
-            Task { @MainActor in
-                self.status = status
-                self.updateVisibility()
-            }
-        }.store(in: &cancellables)
+                MainActor.assumeMainThread {
+                    self.status = status
+                    self.updateVisibility()
+                }
+            }.store(in: &cancellables)
     }
 
     private func setupInterruptionSubscription() {
-        networkProtectionStatusReporter.connectivityIssuesObserver.publisher.sink { [weak self] isHavingConnectivityIssues in
-            guard let self = self else {
-                return
-            }
+        networkProtectionStatusReporter.connectivityIssuesObserver.publisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] isHavingConnectivityIssues in
+                guard let self else { return }
 
-            Task { @MainActor in
-                self.isHavingConnectivityIssues = isHavingConnectivityIssues
-                self.updateVisibility()
+                MainActor.assumeMainThread {
+                    self.isHavingConnectivityIssues = isHavingConnectivityIssues
+                    self.updateVisibility()
+                }
             }
-        }.store(in: &cancellables)
+            .store(in: &cancellables)
     }
 
     private func setupUpsellSubscription() {
-        vpnUpsellVisibilityManager.$state.sink { [weak self] state in
-            guard let self = self else {
-                return
-            }
+        vpnUpsellVisibilityManager.$state
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] state in
+                guard let self else { return }
 
-            Task { @MainActor in
-                self.shouldShowUpsell = state == .visible
-                self.updateVisibility()
+                MainActor.assumeMainThread {
+                    self.shouldShowUpsell = state == .visible
+                    self.updateVisibility()
+                }
             }
-        }.store(in: &cancellables)
+            .store(in: &cancellables)
 
-        vpnUpsellVisibilityManager.$shouldShowNotificationDot.sink { [weak self] shouldShowNotificationDot in
-            guard let self = self else {
-                return
-            }
+        vpnUpsellVisibilityManager.$shouldShowNotificationDot
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] shouldShowNotificationDot in
+                guard let self else { return }
 
-            Task { @MainActor in
-                self.shouldShowNotificationDot = shouldShowNotificationDot
+                MainActor.assumeMainThread {
+                    self.shouldShowNotificationDot = shouldShowNotificationDot
+                }
             }
-        }.store(in: &cancellables)
+            .store(in: &cancellables)
     }
 
     @MainActor

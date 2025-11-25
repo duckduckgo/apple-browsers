@@ -35,14 +35,14 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
     private var mockStorePurchaseManager: StorePurchaseManagerMockV2!
     private var subscriptionManagerV2: SubscriptionManagerMockV2!
-    private var subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandler!
+    private var subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandling!
     private var mockUIHandler: SubscriptionUIHandlerMock!
     private var mockSubscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock!
     private var mockFreemiumDBPUserStateManager: MockFreemiumDBPUserStateManager!
     private var mockPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler!
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockNotificationCenter: NotificationCenter!
-    private var mockWidePixel: WidePixelMock!
+    private var mockWideEvent: WideEventMock!
     private var broker: UserScriptMessageBroker!
 
     private struct Constants {
@@ -65,7 +65,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         subscriptionManagerV2 = SubscriptionManagerMockV2()
         subscriptionManagerV2.resultStorePurchaseManager = mockStorePurchaseManager
         subscriptionManagerV2.resultURL = URL(string: "https://duckduckgo.com/subscription/feature")!
-        subscriptionSuccessPixelHandler = PrivacyProSubscriptionAttributionPixelHandler()
+        subscriptionSuccessPixelHandler = SubscriptionAttributionPixelHandler()
         let mockStripePurchaseFlowV2 = StripePurchaseFlowMockV2(subscriptionOptionsResult: .failure(.noProductsFound), prepareSubscriptionPurchaseResult: .failure(.noProductsFound))
         mockUIHandler = SubscriptionUIHandlerMock { _ in }
         mockSubscriptionFeatureAvailability = SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true,
@@ -74,7 +74,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         mockPixelHandler = MockDataBrokerProtectionFreemiumPixelHandler()
         mockFeatureFlagger = MockFeatureFlagger()
         mockNotificationCenter = NotificationCenter()
-        mockWidePixel = WidePixelMock()
+        mockWideEvent = WideEventMock()
 
         sut = SubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManagerV2,
                                                         subscriptionSuccessPixelHandler: subscriptionSuccessPixelHandler,
@@ -86,7 +86,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
                                                         dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
                                                         featureFlagger: mockFeatureFlagger,
                                                         aiChatURL: URL.duckDuckGo,
-                                                        widePixel: mockWidePixel)
+                                                        wideEvent: mockWideEvent)
         sut.with(broker: broker)
     }
 
@@ -98,7 +98,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         mockStorePurchaseManager = nil
         mockSubscriptionFeatureAvailability = nil
         mockUIHandler = nil
-        mockWidePixel = nil
+        mockWideEvent = nil
         subscriptionManagerV2 = nil
         subscriptionSuccessPixelHandler = nil
         sut = nil
@@ -413,7 +413,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     }
 
     @MainActor
-    func testAppStoreSuccess_EmitsWidePixelWithContext() async throws {
+    func testAppStoreSuccess_EmitsWideEventWithContext() async throws {
         let originURL = URL(string: "https://duckduckgo.com/subscriptions?origin=funnel_appsettings_macos")!
         let webView = MockURLWebView(url: originURL)
         let message = MockWKScriptMessage(name: "subscriptionSelected", body: [:], webView: webView)
@@ -424,9 +424,9 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
         _ = try await sut.subscriptionSelected(params: ["id": "yearly"], original: message)
 
-        XCTAssertEqual(mockWidePixel.started.count, 1)
-        XCTAssertEqual(mockWidePixel.completions.count, 1)
-        let started = try XCTUnwrap(mockWidePixel.started.first as? SubscriptionPurchaseWidePixelData)
+        XCTAssertEqual(mockWideEvent.started.count, 1)
+        XCTAssertEqual(mockWideEvent.completions.count, 1)
+        let started = try XCTUnwrap(mockWideEvent.started.first as? SubscriptionPurchaseWideEventData)
         XCTAssertEqual(started.contextData.name, "funnel_appsettings_macos")
     }
 

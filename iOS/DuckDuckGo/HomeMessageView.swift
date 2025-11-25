@@ -25,26 +25,9 @@ import Core
 
 struct HomeMessageView: View {
 
-    struct ShareItem: Identifiable {
-        var id: String {
-            value
-        }
-
-        var item: Any {
-            if let url = URL(string: value), let title = title {
-                return TitledURLActivityItem(url, title)
-            } else {
-                return value
-            }
-        }
-
-        let value: String
-        let title: String?
-    }
-
     let viewModel: HomeMessageViewModel
 
-    @State var activityItem: ShareItem?
+    @State var activityItem: TitleValueShareItem?
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -146,10 +129,7 @@ struct HomeMessageView: View {
         ForEach(viewModel.buttons, id: \.title) { buttonModel in
             Button {
                 Task { @MainActor in
-                    await buttonModel.action()
-                    if case .share(let value, let title) = buttonModel.actionStyle {
-                        activityItem = ShareItem(value: value, title: title)
-                    }
+                    await buttonModel.action(self)
                 }
             } label: {
                 HStack {
@@ -232,6 +212,20 @@ struct ActivityViewPresentationModifier: ViewModifier {
 
 }
 
+extension HomeMessageView: RemoteMessagingPresenter {
+
+    @MainActor
+    func presentActivitySheet(value: String, title: String?) async {
+        activityItem = TitleValueShareItem(value: value, title: title)
+    }
+
+    @MainActor
+    func presentEmbeddedWebView(url: URL) async {
+        assertionFailure("Action defined as part of https://app.asana.com/1/137249556945/project/1206329551987282/task/1211135151986316. Not implemented yet for Home Messages")
+    }
+
+}
+
 private extension Color {
     static let button = Color(designSystemColor: .buttonsPrimaryDefault)
     static let primaryButtonText = Color(designSystemColor: .buttonsPrimaryText)
@@ -290,22 +284,22 @@ private enum Const {
 
 struct HomeMessageView_Previews: PreviewProvider {
 
-    static let small: RemoteMessageModelType =
+    static let small: HomeSupportedMessageDisplayType =
         .small(titleText: "Small", descriptionText: "Description")
 
-    static let critical: RemoteMessageModelType =
+    static let critical: HomeSupportedMessageDisplayType =
         .medium(titleText: "Critical",
                 descriptionText: "Description text",
                 placeholder: .criticalUpdate)
 
-    static let bigSingle: RemoteMessageModelType =
+    static let bigSingle: HomeSupportedMessageDisplayType =
         .bigSingleAction(titleText: "Big Single",
                          descriptionText: "This is a description",
                          placeholder: .ddgAnnounce,
                          primaryActionText: "Primary",
                          primaryAction: .dismiss)
 
-    static let bigTwo: RemoteMessageModelType =
+    static let bigTwo: HomeSupportedMessageDisplayType =
         .bigTwoAction(titleText: "Big Two",
                       descriptionText: "This is a <b>big</b> two style",
                       placeholder: .macComputer,
@@ -314,7 +308,7 @@ struct HomeMessageView_Previews: PreviewProvider {
                       secondaryActionText: "Dismiss",
                       secondaryAction: .dismiss)
 
-    static let promo: RemoteMessageModelType =
+    static let promo: HomeSupportedMessageDisplayType =
         .promoSingleAction(titleText: "Promotional",
                            descriptionText: "Description <b>with bold</b> to make a statement.",
                            placeholder: .newForMacAndWindows,
@@ -326,31 +320,31 @@ struct HomeMessageView_Previews: PreviewProvider {
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Small",
                                                             sendPixels: false,
                                                             modelType: small,
-                                                            navigator: DefaultMessageNavigator(delegate: nil),
+                                                            messageActionHandler: RemoteMessagingActionHandler(),
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Critical",
                                                             sendPixels: false,
                                                             modelType: critical,
-                                                            navigator: DefaultMessageNavigator(delegate: nil),
+                                                            messageActionHandler: RemoteMessagingActionHandler(),
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Big Single",
                                                             sendPixels: false,
                                                             modelType: bigSingle,
-                                                            navigator: DefaultMessageNavigator(delegate: nil),
+                                                            messageActionHandler: RemoteMessagingActionHandler(),
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Big Two",
                                                             sendPixels: false,
                                                             modelType: bigTwo,
-                                                            navigator: DefaultMessageNavigator(delegate: nil),
+                                                            messageActionHandler: RemoteMessagingActionHandler(),
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Promo",
                                                             sendPixels: false,
                                                             modelType: promo,
-                                                            navigator: DefaultMessageNavigator(delegate: nil),
+                                                            messageActionHandler: RemoteMessagingActionHandler(),
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
         }
         .frame(height: 200)
@@ -359,7 +353,7 @@ struct HomeMessageView_Previews: PreviewProvider {
     }
 
     struct PreviewNavigator: MessageNavigator {
-        func navigateTo(_ target: RemoteMessaging.NavigationTarget) {
+        func navigateTo(_ target: RemoteMessaging.NavigationTarget, presentationStyle: PresentationContext.Style) {
             // no-op
         }
     }

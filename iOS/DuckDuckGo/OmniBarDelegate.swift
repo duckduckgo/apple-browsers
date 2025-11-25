@@ -45,9 +45,9 @@ protocol OmniBarDelegate: AnyObject {
     
     func onSettingsPressed()
 
-    func onSettingsLongPressed()
+    func onMenuLongPressed()
 
-    func onClearPressed()
+    func onClearTextPressed()
 
     func onAbortPressed()
 
@@ -57,15 +57,22 @@ protocol OmniBarDelegate: AnyObject {
 
     func onRefreshPressed()
 
-    func onSharePressed()
+    func onCustomizableButtonPressed()
 
     func onBackPressed()
     
     func onForwardPressed()
     
-    func onAccessoryPressed(accessoryType: OmniBarAccessoryType)
+    func onAIChatPressed()
 
-    func onAccessoryLongPressed(accessoryType: OmniBarAccessoryType)
+    /// Called when the AI Chat left button is tapped
+    func onAIChatLeftButtonPressed()
+
+    /// Called when the AI Chat right button is tapped
+    func onAIChatRightButtonPressed()
+
+    /// Called when the AI Chat full mode omnibar branding area is tapped.
+    func onAIChatBrandingPressed()
 
     func onTextFieldWillBeginEditing(_ omniBar: OmniBarView, tapped: Bool)
 
@@ -86,6 +93,7 @@ protocol OmniBarDelegate: AnyObject {
     func onPromptSubmitted(_ query: String, tools: [AIChatRAGTool]?)
 
     func onSelectFavorite(_ favorite: BookmarkEntity)
+    func onEditFavorite(_ favorite: BookmarkEntity)
 
     func didRequestCurrentURL() -> URL?
 
@@ -115,10 +123,6 @@ extension OmniBarDelegate {
         
     }
 
-    func onAccessoryLongPressed(accessoryType: OmniBarAccessoryType) {
-
-    }
-
     func onBookmarksPressed() {
         
     }
@@ -127,7 +131,7 @@ extension OmniBarDelegate {
         
     }
 
-    func onSettingsLongPressed() {
+    func onMenuLongPressed() {
 
     }
 
@@ -139,7 +143,16 @@ extension OmniBarDelegate {
     
     }
 
-    func onAccessoryPressed(accessoryType: OmniBarAccessoryType) {
+    func onAIChatPressed() {
+    }
+
+    func onAIChatLeftButtonPressed() {
+    }
+
+    func onAIChatRightButtonPressed() {
+    }
+
+    func onAIChatBrandingPressed() {
     }
 
     func onBackPressed() {

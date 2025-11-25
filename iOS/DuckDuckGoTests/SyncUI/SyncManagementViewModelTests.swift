@@ -27,12 +27,15 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
     fileprivate var monitor = Monitor<SyncManagementViewModelDelegate>()
     var syncBookmarksPausedTitle: String? = "syncBookmarksPausedTitle"
     var syncCredentialsPausedTitle: String? = "syncCredentialsPausedTitle"
+    var syncCreditCardsPausedTitle: String? = "syncCreditCardsPausedTitle"
     var syncPausedTitle: String? = "syncPausedTitle"
     var syncBookmarksPausedDescription: String? = "syncBookmarksPausedDescription"
     var syncCredentialsPausedDescription: String? = "syncCredentialsPausedDescription"
+    var syncCreditCardsPausedDescription: String? = "syncCreditCardsPausedDescription"
     var syncPausedDescription: String? = "syncPausedDescription"
     var syncBookmarksPausedButtonTitle: String? = "syncBookmarksPausedButtonTitle"
     var syncCredentialsPausedButtonTitle: String? = "syncCredentialsPausedButtonTitle"
+    var syncCreditCardsPausedButtonTitle: String? = "syncCreditCardsPausedButtonTitle"
 
     lazy var model: SyncSettingsViewModel = {
         let model = SyncSettingsViewModel(isOnDevEnvironment: { false }, switchToProdEnvironment: {})
@@ -55,12 +58,15 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
     func testViewModelReturnsExpectedStrings() {
         XCTAssertEqual(model.syncBookmarksPausedTitle, syncBookmarksPausedTitle)
         XCTAssertEqual(model.syncCredentialsPausedTitle, syncCredentialsPausedTitle)
+        XCTAssertEqual(model.syncCreditCardsPausedTitle, syncCreditCardsPausedTitle)
         XCTAssertEqual(model.syncPausedTitle, syncPausedTitle)
         XCTAssertEqual(model.syncBookmarksPausedDescription, syncBookmarksPausedDescription)
         XCTAssertEqual(model.syncCredentialsPausedDescription, syncCredentialsPausedDescription)
+        XCTAssertEqual(model.syncCreditCardsPausedDescription, syncCreditCardsPausedDescription)
         XCTAssertEqual(model.syncPausedDescription, syncPausedDescription)
         XCTAssertEqual(model.syncBookmarksPausedButtonTitle, syncBookmarksPausedButtonTitle)
         XCTAssertEqual(model.syncCredentialsPausedButtonTitle, syncCredentialsPausedButtonTitle)
+        XCTAssertEqual(model.syncCreditCardsPausedButtonTitle, syncCreditCardsPausedButtonTitle)
     }
 
     func testWhenSingleDeviceSetUpPressed_ThenManagerBecomesBusy_AndAccounCreationRequested() {
@@ -235,6 +241,10 @@ class SyncManagementViewModelTests: XCTestCase, SyncManagementViewModelDelegate 
     }
 
     func launchAutofillViewController() {
+        monitor.incrementCalls(function: #function.cleaningFunctionName())
+    }
+
+    func launchAutofillCreditCardsViewController() {
         monitor.incrementCalls(function: #function.cleaningFunctionName())
     }
 

@@ -78,7 +78,7 @@ struct DataImportTypePicker: View {
     @ViewBuilder
     private var pickerBody: some View {
         VStack(alignment: .leading) {
-            ForEach(DataImport.DataType.allCases, id: \.self) { dataType in
+            ForEach(viewModel.selectableImportTypes.sorted(by: { $0.rawValue < $1.rawValue }), id: \.self) { dataType in
                 // display all types for a browser disabling unavailable options
                 if viewModel.importSource.isBrowser
                     // display only supported types for a non-browser

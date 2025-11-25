@@ -19,15 +19,15 @@
 import Foundation
 
 public enum SubscriptionFeatureFlags {
-    case usePrivacyProUSARegionOverride
-    case usePrivacyProROWRegionOverride
+    case useSubscriptionUSARegionOverride
+    case useSubscriptionROWRegionOverride
 }
 
 public extension SubscriptionFeatureFlags {
 
     var defaultState: Bool {
         switch self {
-        case .usePrivacyProUSARegionOverride, .usePrivacyProROWRegionOverride:
+        case .useSubscriptionUSARegionOverride, .useSubscriptionROWRegionOverride:
             return false
         }
     }

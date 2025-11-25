@@ -23,6 +23,11 @@ import Common
 import Foundation
 import PixelKit
 import UserScript
+import OSLog
+
+protocol AIChatMetricReportingHandling {
+    func didReportMetric(_ metric: AIChatMetric, completion: (() -> Void)?)
+}
 
 protocol AIChatUserScriptHandling {
     @MainActor func openAIChatSettings(params: Any, message: UserScriptMessage) async -> Encodable?
@@ -35,48 +40,62 @@ protocol AIChatUserScriptHandling {
     func restoreChat(params: Any, message: UserScriptMessage) -> Encodable?
     func removeChat(params: Any, message: UserScriptMessage) -> Encodable?
     @MainActor func openSummarizationSourceLink(params: Any, message: UserScriptMessage) async -> Encodable?
+    @MainActor func openTranslationSourceLink(params: Any, message: UserScriptMessage) async -> Encodable?
     var aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never> { get }
 
-    func getPageContext(params: Any, message: UserScriptMessage) -> Encodable?
+    func getAIChatPageContext(params: Any, message: UserScriptMessage) -> Encodable?
     var pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never> { get }
     var pageContextRequestedPublisher: AnyPublisher<Void, Never> { get }
+    var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never> { get }
 
     var messageHandling: AIChatMessageHandling { get }
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt)
-    func submitPageContext(_ pageContext: AIChatPageContextData?)
+    func submitAIChatPageContext(_ pageContext: AIChatPageContextData?)
 
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable?
+    func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable?
+    func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
+    func getMigrationDataByIndex(params: Any, message: UserScriptMessage) -> Encodable?
+    func getMigrationInfo(params: Any, message: UserScriptMessage) -> Encodable?
+    func clearMigrationData(params: Any, message: UserScriptMessage) -> Encodable?
 }
 
-struct AIChatUserScriptHandler: AIChatUserScriptHandling {
+final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     public let messageHandling: AIChatMessageHandling
     public let aiChatNativePromptPublisher: AnyPublisher<AIChatNativePrompt, Never>
     public let pageContextPublisher: AnyPublisher<AIChatPageContextData?, Never>
     public let pageContextRequestedPublisher: AnyPublisher<Void, Never>
+    public let chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never>
 
     private let aiChatNativePromptSubject = PassthroughSubject<AIChatNativePrompt, Never>()
     private let pageContextSubject = PassthroughSubject<AIChatPageContextData?, Never>()
     private let pageContextRequestedSubject = PassthroughSubject<Void, Never>()
+    private let chatRestorationDataSubject = PassthroughSubject<AIChatRestorationData?, Never>()
     private let storage: AIChatPreferencesStorage
     private let windowControllersManager: WindowControllersManagerProtocol
     private let notificationCenter: NotificationCenter
     private let pixelFiring: PixelFiring?
+    private let statisticsLoader: StatisticsLoader?
+    private let migrationStore = AIChatMigrationStore()
 
     init(
         storage: AIChatPreferencesStorage,
         messageHandling: AIChatMessageHandling = AIChatMessageHandler(),
         windowControllersManager: WindowControllersManagerProtocol,
         pixelFiring: PixelFiring?,
+        statisticsLoader: StatisticsLoader?,
         notificationCenter: NotificationCenter = .default
     ) {
         self.storage = storage
         self.messageHandling = messageHandling
         self.windowControllersManager = windowControllersManager
         self.pixelFiring = pixelFiring
+        self.statisticsLoader = statisticsLoader
         self.notificationCenter = notificationCenter
         self.aiChatNativePromptPublisher = aiChatNativePromptSubject.eraseToAnyPublisher()
         self.pageContextPublisher = pageContextSubject.eraseToAnyPublisher()
         self.pageContextRequestedPublisher = pageContextRequestedSubject.eraseToAnyPublisher()
+        self.chatRestorationDataPublisher = chatRestorationDataSubject.eraseToAnyPublisher()
     }
 
     enum AIChatKeys {
@@ -94,7 +113,13 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable? {
-        await windowControllersManager.mainWindowController?.mainViewController.closeTab(nil)
+        let isSidebar = await message.messageWebView?.url?.hasAIChatSidebarPlacementParameter == true
+
+        if isSidebar {
+            await windowControllersManager.mainWindowController?.mainViewController.aiChatSidebarPresenter.collapseSidebar(withAnimation: true)
+        } else {
+            await windowControllersManager.mainWindowController?.mainViewController.closeTab(nil)
+        }
         return nil
     }
 
@@ -102,16 +127,18 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
         messageHandling.getDataForMessageType(.nativePrompt)
     }
 
-    func getPageContext(params: Any, message: any UserScriptMessage) -> Encodable? {
+    func getAIChatPageContext(params: Any, message: any UserScriptMessage) -> Encodable? {
         guard let payload: GetPageContext = DecodableHelper.decode(from: params) else {
             return nil
         }
 
-        let data = messageHandling.getDataForMessageType(.pageContext) as? PageContextPayload
-        if data?.serializedPageData == nil, payload.explicitConsent {
+        let pageContext = messageHandling.getDataForMessageType(.pageContext) as? AIChatPageContextData
+
+        if pageContext == nil, payload.reason == "userAction" {
             pageContextRequestedSubject.send()
         }
-        return data
+
+        return PageContextResponse(pageContext: pageContext)
     }
 
     @MainActor
@@ -135,6 +162,7 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
         else { return nil }
 
         messageHandling.setData(data, forMessageType: .chatRestorationData)
+        chatRestorationDataSubject.send(data)
         return nil
     }
 
@@ -147,6 +175,7 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     public func removeChat(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
         messageHandling.setData(nil, forMessageType: .chatRestorationData)
+        chatRestorationDataSubject.send(nil)
         return nil
     }
 
@@ -166,12 +195,43 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
+    @MainActor func openTranslationSourceLink(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
+        guard let openLinkParams: OpenLink = DecodableHelper.decode(from: params), let url = openLinkParams.url.url
+        else { return nil }
+
+        let isSidebar = message.messageWebView?.url?.hasAIChatSidebarPlacementParameter == true
+
+        switch openLinkParams.target {
+        case .sameTab where isSidebar == false: // for same tab outside of sidebar we force opening new tab to keep the AI chat tab
+            windowControllersManager.show(url: url, source: .switchToOpenTab, newTab: true, selected: true)
+        default:
+            windowControllersManager.open(url, source: .link, target: nil, event: NSApp.currentEvent)
+        }
+        pixelFiring?.fire(AIChatPixel.aiChatTranslationSourceLinkClicked, frequency: .dailyAndStandard)
+        return nil
+    }
+
     func submitAIChatNativePrompt(_ prompt: AIChatNativePrompt) {
         aiChatNativePromptSubject.send(prompt)
     }
 
-    func submitPageContext(_ pageContext: AIChatPageContextData?) {
+    func submitAIChatPageContext(_ pageContext: AIChatPageContextData?) {
         pageContextSubject.send(pageContext)
+    }
+
+    func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable? {
+        if let paramsDict = params as? [String: Any],
+           let jsonData = try? JSONSerialization.data(withJSONObject: paramsDict, options: []) {
+
+            let decoder = JSONDecoder()
+            do {
+                let metric = try decoder.decode(AIChatMetric.self, from: jsonData)
+                didReportMetric(metric, completion: nil)
+            } catch {
+                Logger.aiChat.debug("Failed to decode metric JSON in AIChatUserScript: \(error)")
+            }
+        }
+        return nil
     }
 
     func togglePageContextTelemetry(params: Any, message: UserScriptMessage) -> Encodable? {
@@ -186,6 +246,33 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
         }()
         pixelFiring?.fire(pixel, frequency: .dailyAndStandard)
         return nil
+    }
+
+    func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable? {
+        guard let dict = params as? [String: Any] else {
+            return AIChatErrorResponse(reason: "invalid_params")
+        }
+        guard dict.keys.contains(AIChatMigrationParamKeys.serializedMigrationFile) else {
+            return AIChatErrorResponse(reason: "invalid_params")
+        }
+        let serialized = dict[AIChatMigrationParamKeys.serializedMigrationFile] as? String
+        return migrationStore.store(serialized)
+    }
+
+    func getMigrationDataByIndex(params: Any, message: UserScriptMessage) -> Encodable? {
+        guard let dict = params as? [String: Any] else {
+            return migrationStore.item(at: nil)
+        }
+        let index = dict[AIChatMigrationParamKeys.index] as? Int
+        return migrationStore.item(at: index)
+    }
+
+    func getMigrationInfo(params: Any, message: UserScriptMessage) -> Encodable? {
+        return migrationStore.info()
+    }
+
+    func clearMigrationData(params: Any, message: UserScriptMessage) -> Encodable? {
+        return migrationStore.clear()
     }
 }
 
@@ -207,10 +294,35 @@ extension AIChatUserScriptHandler {
     }
 
     struct GetPageContext: Codable, Equatable {
-        let explicitConsent: Bool
+        let reason: String
     }
 
     struct TogglePageContextTelemetry: Codable, Equatable {
         let enabled: Bool
     }
+}
+
+extension AIChatUserScriptHandler: AIChatMetricReportingHandling {
+
+    func didReportMetric(_ metric: AIChatMetric, completion: (() -> Void)? = nil) {
+        switch metric.metricName {
+        case .userDidSubmitFirstPrompt, .userDidSubmitPrompt:
+
+            notificationCenter.post(name: .aiChatUserDidSubmitPrompt, object: nil)
+
+            DispatchQueue.main.async { [self] in
+                refreshAtbs(completion: completion)
+            }
+        default:
+            completion?()
+            return
+        }
+    }
+
+    private func refreshAtbs(completion: (() -> Void)? = nil) {
+        statisticsLoader?.refreshRetentionAtbOnDuckAiPromptSubmition {
+            completion?()
+        }
+    }
+
 }

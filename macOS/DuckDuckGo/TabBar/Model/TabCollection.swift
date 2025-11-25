@@ -36,6 +36,15 @@ final class TabCollection: NSObject {
         self.tabs = tabs
     }
 
+    deinit {
+#if DEBUG
+        // Check that all tabs deallocate
+        for tab in tabs {
+            tab.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        }
+#endif
+    }
+
     func append(tab: Tab) {
         // Enforce single-tab popup: ignore attempts to add more than one tab
         if isPopup, !tabs.isEmpty {
@@ -100,6 +109,11 @@ final class TabCollection: NSObject {
     func removeAll(andAppend tab: Tab? = nil) {
         tabsWillClose(range: 0..<tabs.count)
         tabs = tab.map { [$0] } ?? []
+    }
+
+    /// Clears tabViewModels and tabCollection after the tabs were moved to another collection
+    func clearAfterMerge() {
+        tabs.removeAll()
     }
 
     func removeTabs(before index: Int) {

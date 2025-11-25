@@ -25,9 +25,11 @@ class CapturingSyncPausedStateManager: SyncPausedStateManaging {
     var currentSyncAllPausedError: String?
 
     var currentSyncBookmarksPausedError: String?
-    
+
     var currentSyncCredentialsPausedError: String?
-    
+
+    var currentSyncCreditCardsPausedError: String?
+
     var isSyncPausedChangedPublisher = PassthroughSubject<Void, Never>()
     var syncDidTurnOffCalled = false
 
@@ -36,6 +38,8 @@ class CapturingSyncPausedStateManager: SyncPausedStateManaging {
     var isSyncBookmarksPaused: Bool = false
 
     var isSyncCredentialsPaused: Bool = false
+
+    var isSyncCreditCardsPaused: Bool = false
 
     var syncPausedChangedPublisher: AnyPublisher<Void, Never> {
         isSyncPausedChangedPublisher.eraseToAnyPublisher()

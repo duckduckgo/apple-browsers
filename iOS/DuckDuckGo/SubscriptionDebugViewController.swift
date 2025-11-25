@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import SwiftUI
 
 import Subscription
 import Core
@@ -46,7 +47,7 @@ final class SubscriptionDebugViewController: UITableViewController {
     }
 
     // swiftlint:disable:next force_cast
-    private let reporter = (UIApplication.shared.delegate as! AppDelegate).debugPrivacyProDataReporter as! PrivacyProDataReporter
+    private let reporter = (UIApplication.shared.delegate as! AppDelegate).debugSubscriptionDataReporter as! SubscriptionDataReporter
 
     private let titles = [
         Sections.authorization: "Authentication",
@@ -84,6 +85,7 @@ final class SubscriptionDebugViewController: UITableViewController {
 
     enum AppStoreRows: Int, CaseIterable {
         case syncAppStoreAccount
+        case buyProductionSubscriptions
     }
 
     enum EnvironmentRows: Int, CaseIterable {
@@ -174,6 +176,9 @@ final class SubscriptionDebugViewController: UITableViewController {
             switch AppStoreRows(rawValue: indexPath.row) {
             case .syncAppStoreAccount:
                 cell.textLabel?.text = "Sync App Store Account"
+            case .buyProductionSubscriptions:
+                cell.textLabel?.text = "Buy Production Subscriptions"
+                cell.accessoryType = .disclosureIndicator
             case .none:
                 break
             }
@@ -303,6 +308,7 @@ final class SubscriptionDebugViewController: UITableViewController {
         case .appstore:
             switch AppStoreRows(rawValue: indexPath.row) {
             case .syncAppStoreAccount: syncAppleIDAccount()
+            case .buyProductionSubscriptions: showBuyProductionSubscriptions()
             default: break
             }
         case .api:
@@ -740,6 +746,11 @@ final class SubscriptionDebugViewController: UITableViewController {
             self.storefrontCountryCode = storefront?.countryCode ?? "nil"
             self.tableView.reloadData()
         }
+    }
+
+    private func showBuyProductionSubscriptions() {
+        let hostingController = UIHostingController(rootView: ProductionSubscriptionPurchaseDebugView())
+        navigationController?.pushViewController(hostingController, animated: true)
     }
 }
 

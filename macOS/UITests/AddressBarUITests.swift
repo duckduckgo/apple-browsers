@@ -320,18 +320,18 @@ class AddressBarUITests: UITestCase {
     func testAddressBar_WhitespaceInput_TrimsCorrectly() throws {
         // Type URL with leading/trailing whitespace
         app.activateAddressBar()
-        addressBarTextField.typeText("  example.com  ")
+        addressBarTextField.typeText("  privacy-test-pages.site  ")
         addressBarTextField.typeKey(.enter, modifierFlags: [])
 
         // Should navigate to example.com (whitespace trimmed).
         let exampleContent = webView.staticTexts
-            .containing(\.value, containing: "Example Domain")
+            .containing(\.value, containing: "Privacy Test Pages")
             .firstMatch
         XCTAssertTrue(exampleContent.waitForExistence(timeout: UITests.Timeouts.localTestServer))
 
         let currentValue = app.addressBarValueActivatingIfNeeded() ?? ""
 
-        XCTAssertEqual(currentValue, "https://example.com/")
+        XCTAssertEqual(currentValue, "http://privacy-test-pages.site/")
     }
 
     func testAddressBar_SpecialCharacters_HandledCorrectly() throws {
@@ -344,7 +344,7 @@ class AddressBarUITests: UITestCase {
         XCTAssertTrue(helloWorldResult.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Should show Hello, world! result")
 
         let searchURL = app.addressBarValueActivatingIfNeeded() ?? ""
-        XCTAssertTrue(searchURL.hasPrefix("https://duckduckgo.com/?q=hello+world&"), "URL should be a DuckDuckGo search")
+        XCTAssertTrue(searchURL.hasPrefix("https://duckduckgo.com/?q=hello+world&"), "1: URL should be a DuckDuckGo search, got “\(searchURL)”")
 
         // Test email-like input
         app.openNewTab()
@@ -356,7 +356,7 @@ class AddressBarUITests: UITestCase {
         XCTAssertTrue(emailResult.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Should show search results for email")
 
         let emailURL = app.addressBarValueActivatingIfNeeded() ?? ""
-        XCTAssertTrue(emailURL.hasPrefix("https://duckduckgo.com/?q=test%40example.com&"), "URL should be a DuckDuckGo search")
+        XCTAssertTrue(emailURL.hasPrefix("https://duckduckgo.com/?q=test%40example.com&"), "2: URL should be a DuckDuckGo search, got “\(emailURL)”")
 
         // Test file protocol (should fail)
         app.openNewTab()

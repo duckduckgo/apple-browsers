@@ -28,7 +28,8 @@ final class AppearancePreferencesTests: XCTestCase {
         var model = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(
                 showFullURL: false,
-                currentThemeName: ThemeName.systemDefault.rawValue,
+                themeAppearance: ThemeAppearance.systemDefault.rawValue,
+                themeName: ThemeName.default.rawValue,
                 favoritesDisplayMode: FavoritesDisplayMode.displayNative(.desktop).description,
                 isContinueSetUpVisible: true,
                 isFavoriteVisible: true,
@@ -43,7 +44,8 @@ final class AppearancePreferencesTests: XCTestCase {
         )
 
         XCTAssertEqual(model.showFullURL, false)
-        XCTAssertEqual(model.currentThemeName, ThemeName.systemDefault)
+        XCTAssertEqual(model.themeAppearance, ThemeAppearance.systemDefault)
+        XCTAssertEqual(model.themeName, ThemeName.default)
         XCTAssertEqual(model.favoritesDisplayMode, .displayNative(.desktop))
         XCTAssertEqual(model.isFavoriteVisible, true)
         XCTAssertEqual(model.isProtectionsReportVisible, true)
@@ -52,11 +54,13 @@ final class AppearancePreferencesTests: XCTestCase {
         XCTAssertEqual(model.homePageCustomBackground, .gradient(.gradient01))
         XCTAssertTrue(model.centerAlignedBookmarksBarBool)
         XCTAssertFalse(model.showTabsAndBookmarksBarOnFullScreen)
+        XCTAssertFalse(model.syncAppIconWithTheme)
 
         model = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(
                 showFullURL: true,
-                currentThemeName: ThemeName.light.rawValue,
+                themeAppearance: ThemeAppearance.light.rawValue,
+                themeName: ThemeName.green.rawValue,
                 favoritesDisplayMode: FavoritesDisplayMode.displayUnified(native: .desktop).description,
                 isContinueSetUpVisible: false,
                 isFavoriteVisible: false,
@@ -65,13 +69,15 @@ final class AppearancePreferencesTests: XCTestCase {
                 homeButtonPosition: .left,
                 homePageCustomBackground: CustomBackground.gradient(.gradient05).description,
                 centerAlignedBookmarksBar: false,
-                showTabsAndBookmarksBarOnFullScreen: true
+                showTabsAndBookmarksBarOnFullScreen: true,
+                syncAppIconWithTheme: true
             ),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             featureFlagger: MockFeatureFlagger()
         )
         XCTAssertEqual(model.showFullURL, true)
-        XCTAssertEqual(model.currentThemeName, ThemeName.light)
+        XCTAssertEqual(model.themeAppearance, ThemeAppearance.light)
+        XCTAssertEqual(model.themeName, ThemeName.green)
         XCTAssertEqual(model.favoritesDisplayMode, .displayUnified(native: .desktop))
         XCTAssertEqual(model.isFavoriteVisible, false)
         XCTAssertEqual(model.isProtectionsReportVisible, false)
@@ -80,40 +86,55 @@ final class AppearancePreferencesTests: XCTestCase {
         XCTAssertEqual(model.homePageCustomBackground, .gradient(.gradient05))
         XCTAssertFalse(model.centerAlignedBookmarksBarBool)
         XCTAssertTrue(model.showTabsAndBookmarksBarOnFullScreen)
+        XCTAssertTrue(model.syncAppIconWithTheme)
     }
 
-    func testWhenInitializedWithGarbageThenThemeIsSetToSystemDefault() throws {
+    func testWhenInitializedWithGarbageThenThemeAppearanceIsSetToSystemDefault() throws {
         let model = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(
-                currentThemeName: "garbage"
+                themeAppearance: "garbage",
+                themeName: "garbage"
             ),
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             featureFlagger: MockFeatureFlagger()
         )
 
-        XCTAssertEqual(model.currentThemeName, ThemeName.systemDefault)
+        XCTAssertEqual(model.themeAppearance, ThemeAppearance.systemDefault)
+        XCTAssertEqual(model.themeName, ThemeName.default)
     }
 
-    func testThemeNameReturnsCorrectAppearanceObject() throws {
-        XCTAssertEqual(ThemeName.systemDefault.appearance, nil)
-        XCTAssertEqual(ThemeName.light.appearance, NSAppearance(named: .aqua))
-        XCTAssertEqual(ThemeName.dark.appearance, NSAppearance(named: .darkAqua))
+    func testWhenInitializedWithGarbageThenThemeNameIsSetToSystemDefault() throws {
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(
+                themeName: "garbage"
+            ),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: MockFeatureFlagger()
+        )
+
+        XCTAssertEqual(model.themeName, ThemeName.default)
     }
 
-    func testWhenThemeNameIsUpdatedThenApplicationAppearanceIsUpdated() throws {
+    func testThemeAppearanceReturnsCorrectAppearanceObject() throws {
+        XCTAssertEqual(ThemeAppearance.systemDefault.appearance, nil)
+        XCTAssertEqual(ThemeAppearance.light.appearance, NSAppearance(named: .aqua))
+        XCTAssertEqual(ThemeAppearance.dark.appearance, NSAppearance(named: .darkAqua))
+    }
+
+    func testWhenThemeAppearanceIsUpdatedThenApplicationAppearanceIsUpdated() throws {
         let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(), privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger())
 
-        model.currentThemeName = ThemeName.systemDefault
-        XCTAssertEqual(NSApp.appearance?.name, ThemeName.systemDefault.appearance?.name)
+        model.themeAppearance = ThemeAppearance.systemDefault
+        XCTAssertEqual(NSApp.appearance?.name, ThemeAppearance.systemDefault.appearance?.name)
 
-        model.currentThemeName = ThemeName.light
-        XCTAssertEqual(NSApp.appearance?.name, ThemeName.light.appearance?.name)
+        model.themeAppearance = ThemeAppearance.light
+        XCTAssertEqual(NSApp.appearance?.name, ThemeAppearance.light.appearance?.name)
 
-        model.currentThemeName = ThemeName.dark
-        XCTAssertEqual(NSApp.appearance?.name, ThemeName.dark.appearance?.name)
+        model.themeAppearance = ThemeAppearance.dark
+        XCTAssertEqual(NSApp.appearance?.name, ThemeAppearance.dark.appearance?.name)
 
-        model.currentThemeName = ThemeName.systemDefault
-        XCTAssertEqual(NSApp.appearance?.name, ThemeName.systemDefault.appearance?.name)
+        model.themeAppearance = ThemeAppearance.systemDefault
+        XCTAssertEqual(NSApp.appearance?.name, ThemeAppearance.systemDefault.appearance?.name)
     }
 
     func testWhenNewTabPreferencesAreUpdatedThenPersistedValuesAreUpdated() throws {
@@ -125,6 +146,8 @@ final class AppearancePreferencesTests: XCTestCase {
         XCTAssertEqual(model.isProtectionsReportVisible, true)
         model.isContinueSetUpVisible = true
         XCTAssertEqual(model.isContinueSetUpVisible, true)
+        model.syncAppIconWithTheme = true
+        XCTAssertEqual(model.syncAppIconWithTheme, true)
 
         model.isFavoriteVisible = false
         XCTAssertEqual(model.isFavoriteVisible, false)
@@ -132,6 +155,8 @@ final class AppearancePreferencesTests: XCTestCase {
         XCTAssertEqual(model.isProtectionsReportVisible, false)
         model.isContinueSetUpVisible = false
         XCTAssertEqual(model.isContinueSetUpVisible, false)
+        model.syncAppIconWithTheme = false
+        XCTAssertEqual(model.syncAppIconWithTheme, false)
     }
 
     func testPersisterReturnsValuesFromDisk() throws {
@@ -146,10 +171,13 @@ final class AppearancePreferencesTests: XCTestCase {
         persister1.isProtectionsReportVisible = true
         persister2.isContinueSetUpVisible = false
         persister1.isContinueSetUpVisible = true
+        persister2.syncAppIconWithTheme = false
+        persister1.syncAppIconWithTheme = true
 
         XCTAssertTrue(persister2.isFavoriteVisible)
         XCTAssertTrue(persister2.isProtectionsReportVisible)
         XCTAssertTrue(persister2.isContinueSetUpVisible)
+        XCTAssertTrue(persister2.syncAppIconWithTheme)
     }
 
     func testContinueSetUpIsNotDismissedAfterSeveralDemonstrationsWithinSeveralDays() {
@@ -238,10 +266,10 @@ final class AppearancePreferencesTests: XCTestCase {
             featureFlagger: MockFeatureFlagger()
         )
 
-        model.currentThemeName = ThemeName.systemDefault
-        model.currentThemeName = ThemeName.light
-        model.currentThemeName = ThemeName.dark
-        model.currentThemeName = ThemeName.systemDefault
+        model.themeAppearance = ThemeAppearance.systemDefault
+        model.themeAppearance = ThemeAppearance.light
+        model.themeAppearance = ThemeAppearance.dark
+        model.themeAppearance = ThemeAppearance.systemDefault
 
         pixelFiringMock.expectedFireCalls = [
             .init(pixel: SettingsPixel.themeSettingChanged, frequency: .uniqueByName),
@@ -268,6 +296,26 @@ final class AppearancePreferencesTests: XCTestCase {
         pixelFiringMock.expectedFireCalls = [
             .init(pixel: SettingsPixel.showFullURLSettingToggled, frequency: .uniqueByName),
             .init(pixel: SettingsPixel.showFullURLSettingToggled, frequency: .uniqueByName)
+        ]
+
+        pixelFiringMock.verifyExpectations()
+    }
+
+    func testWhenSyncAppIconWithThemeIsUpdatedThenPixelIsFired() {
+        let pixelFiringMock = PixelKitMock()
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            pixelFiring: pixelFiringMock,
+            featureFlagger: MockFeatureFlagger()
+        )
+
+        model.syncAppIconWithTheme = true
+        model.syncAppIconWithTheme = false
+
+        pixelFiringMock.expectedFireCalls = [
+            .init(pixel: SettingsPixel.syncAppIconWithThemeTurnedOn, frequency: .dailyAndCount),
+            .init(pixel: SettingsPixel.syncAppIconWithThemeTurnedOff, frequency: .dailyAndCount)
         ]
 
         pixelFiringMock.verifyExpectations()

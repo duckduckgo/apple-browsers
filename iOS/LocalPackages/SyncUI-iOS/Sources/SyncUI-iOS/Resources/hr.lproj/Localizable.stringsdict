@@ -42,5 +42,25 @@
 			<string>Vaša lozinka za %2$@ ne može se sinkronizirati jer jedno od njezinih polja premašuje ograničenje znakova.</string>
 		</dict>
 	</dict>
+	<key>creditcards.invalid.objects.present.description</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@cards@</string>
+		<key>cards</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>few</key>
+			<string>Your credit card %2$@ and %1$d other cards can't sync because some of their fields exceed the character limit.</string>
+			<key>one</key>
+			<string>Tvoja kreditna kartica %2$@ i 1 druga kartica ne mogu se sinkronizirati jer neka njihova polja premašuju ograničenje broja znakova.</string>
+			<key>other</key>
+			<string>Tvoja kreditna kartica %2$@ i %1$d drugih kartica ne mogu se sinkronizirati jer neka njihova polja premašuju ograničenje broja znakova.</string>
+			<key>zero</key>
+			<string>Tvoja kreditna kartica %2$@ ne može se sinkronizirati jer jedno od njezinih polja premašuje ograničenje broja znakova.</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

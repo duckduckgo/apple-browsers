@@ -23,6 +23,7 @@ import UserScript
 import PrivacyDashboard
 import PixelKit
 import os.log
+import Combine
 
 protocol AutoconsentUserScriptDelegate: AnyObject {
     func autoconsentUserScript(consentStatus: CookieConsentInfo)
@@ -47,18 +48,36 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     private var selfTestFrameInfo: WKFrameInfo?
 
     private var topUrl: URL?
-    private let preferences = CookiePopupProtectionPreferences.shared
-    private let management = AutoconsentManagement.shared
+    private let preferences: CookiePopupProtectionPreferences
+    private let management: AutoconsentManagement
 
     public var messageNames: [String] { MessageName.allCases.map(\.rawValue) }
     let source: String
     private let config: PrivacyConfiguration
     weak var delegate: AutoconsentUserScriptDelegate?
 
-    init(scriptSource: ScriptSourceProviding, config: PrivacyConfiguration) {
+    // Publisher for cookie popup managed events
+    private let popupManagedSubject = PassthroughSubject<AutoconsentDoneMessage, Never>()
+    public var popupManagedPublisher: AnyPublisher<AutoconsentDoneMessage, Never> {
+        popupManagedSubject.eraseToAnyPublisher()
+    }
+
+    init(config: PrivacyConfiguration,
+         management: AutoconsentManagement,
+         preferences: CookiePopupProtectionPreferences
+    ) {
         Logger.autoconsent.debug("Initialising autoconsent userscript")
-        source = Self.loadJS("autoconsent-bundle", from: .main, withReplacements: [:])
+        do {
+            source = try Self.loadJS("autoconsent-bundle", from: .main, withReplacements: [:])
+        } catch {
+            if let error = error as? UserScriptError {
+                error.fireLoadJSFailedPixelIfNeeded()
+            }
+            fatalError("Failed to load JS for AutoconsentUserScript: \(error.localizedDescription)")
+        }
         self.config = config
+        self.management = management
+        self.preferences = preferences
     }
 
     func userContentController(_ userContentController: WKUserContentController,
@@ -148,6 +167,8 @@ extension AutoconsentUserScript {
         let cmp: String // name of the Autoconsent rule that matched
         let url: String
         let isCosmetic: Bool
+        let duration: Double // time in milliseconds
+        let totalClicks: Int
     }
 
     struct AutoconsentReportState: Codable {
@@ -416,7 +437,9 @@ extension AutoconsentUserScript {
         refreshDashboardState(consentManaged: true, cosmetic: messageData.isCosmetic, optoutFailed: false, selftestFailed: nil)
         firePixel(pixel: messageData.isCosmetic ? .doneCosmetic : .done)
 
-        // trigger popup once per domain
+        popupManagedSubject.send(messageData)
+
+        // Show animation only for first time on a domain
         if !management.sitesNotifiedCache.contains(host) {
             management.sitesNotifiedCache.insert(host)
             if messageData.cmp != Constants.filterListCmpName { // filterlist animation should have been triggered already (see handlePopupFound)

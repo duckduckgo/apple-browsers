@@ -52,6 +52,7 @@ final class SyncErrorHandlerTests: XCTestCase {
         let handler = SyncErrorHandler()
         XCTAssertFalse(handler.isSyncBookmarksPaused)
         XCTAssertFalse(handler.isSyncCredentialsPaused)
+        XCTAssertFalse(handler.isSyncCreditCardsPaused)
         XCTAssertFalse(handler.isSyncPaused)
     }
 
@@ -83,6 +84,20 @@ final class SyncErrorHandlerTests: XCTestCase {
         XCTAssertTrue(handler.isSyncCredentialsPaused)
     }
 
+    func test_WhenIsSyncCreditCardsPaused_ThenSyncPausedChangedPublisherIsTriggered() async {
+        let expectation = XCTestExpectation(description: "syncPausedChangedPublisher")
+        handler.syncPausedChangedPublisher
+            .sink { _ in
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        handler.handleCreditCardsError(SyncError.unexpectedStatusCode(409))
+
+        await self.fulfillment(of: [expectation], timeout: 4.0)
+        XCTAssertTrue(handler.isSyncCreditCardsPaused)
+    }
+
     func test_WhenIsSyncPaused_ThenSyncPausedChangedPublisherIsTriggered() async {
         let expectation = XCTestExpectation(description: "syncPausedChangedPublisher")
 
@@ -105,6 +120,7 @@ final class SyncErrorHandlerTests: XCTestCase {
 
         XCTAssertTrue(handler.isSyncBookmarksPaused)
         XCTAssertFalse(handler.isSyncCredentialsPaused)
+        XCTAssertFalse(handler.isSyncCreditCardsPaused)
         XCTAssertFalse(handler.isSyncPaused)
     }
 
@@ -115,6 +131,18 @@ final class SyncErrorHandlerTests: XCTestCase {
 
         XCTAssertFalse(handler.isSyncBookmarksPaused)
         XCTAssertTrue(handler.isSyncCredentialsPaused)
+        XCTAssertFalse(handler.isSyncCreditCardsPaused)
+        XCTAssertFalse(handler.isSyncPaused)
+    }
+
+    func test_WhenHandleCreditCardsError409_ThenIsSyncCreditCardsPausedIsUpdatedToTrue() async {
+        let error = SyncError.unexpectedStatusCode(409)
+
+        handler.handleCreditCardsError(error)
+
+        XCTAssertFalse(handler.isSyncBookmarksPaused)
+        XCTAssertFalse(handler.isSyncCredentialsPaused)
+        XCTAssertTrue(handler.isSyncCreditCardsPaused)
         XCTAssertFalse(handler.isSyncPaused)
     }
 
@@ -125,6 +153,7 @@ final class SyncErrorHandlerTests: XCTestCase {
 
         XCTAssertTrue(handler.isSyncBookmarksPaused)
         XCTAssertFalse(handler.isSyncCredentialsPaused)
+        XCTAssertFalse(handler.isSyncCreditCardsPaused)
         XCTAssertFalse(handler.isSyncPaused)
     }
 
@@ -135,6 +164,18 @@ final class SyncErrorHandlerTests: XCTestCase {
 
         XCTAssertFalse(handler.isSyncBookmarksPaused)
         XCTAssertTrue(handler.isSyncCredentialsPaused)
+        XCTAssertFalse(handler.isSyncCreditCardsPaused)
+        XCTAssertFalse(handler.isSyncPaused)
+    }
+
+    func test_WhenHandleCreditCardsError413_ThenIsSyncCreditCardsPausedIsUpdatedToTrue() async {
+        let error = SyncError.unexpectedStatusCode(413)
+
+        handler.handleCreditCardsError(error)
+
+        XCTAssertFalse(handler.isSyncBookmarksPaused)
+        XCTAssertFalse(handler.isSyncCredentialsPaused)
+        XCTAssertTrue(handler.isSyncCreditCardsPaused)
         XCTAssertFalse(handler.isSyncPaused)
     }
 
@@ -145,6 +186,7 @@ final class SyncErrorHandlerTests: XCTestCase {
 
         XCTAssertFalse(handler.isSyncBookmarksPaused)
         XCTAssertFalse(handler.isSyncCredentialsPaused)
+        XCTAssertFalse(handler.isSyncCreditCardsPaused)
         XCTAssertTrue(handler.isSyncPaused)
     }
 
@@ -155,6 +197,18 @@ final class SyncErrorHandlerTests: XCTestCase {
 
         XCTAssertFalse(handler.isSyncBookmarksPaused)
         XCTAssertFalse(handler.isSyncCredentialsPaused)
+        XCTAssertFalse(handler.isSyncCreditCardsPaused)
+        XCTAssertTrue(handler.isSyncPaused)
+    }
+
+    func test_WhenHandleCreditCardsError401_ThenIsSyncIsPausedIsUpdatedToTrue() async {
+        let error = SyncError.unexpectedStatusCode(401)
+
+        handler.handleCreditCardsError(error)
+
+        XCTAssertFalse(handler.isSyncBookmarksPaused)
+        XCTAssertFalse(handler.isSyncCredentialsPaused)
+        XCTAssertFalse(handler.isSyncCreditCardsPaused)
         XCTAssertTrue(handler.isSyncPaused)
     }
 
@@ -165,6 +219,7 @@ final class SyncErrorHandlerTests: XCTestCase {
 
         XCTAssertFalse(handler.isSyncBookmarksPaused)
         XCTAssertFalse(handler.isSyncCredentialsPaused)
+        XCTAssertFalse(handler.isSyncCreditCardsPaused)
         XCTAssertTrue(handler.isSyncPaused)
     }
 
@@ -175,6 +230,18 @@ final class SyncErrorHandlerTests: XCTestCase {
 
         XCTAssertFalse(handler.isSyncBookmarksPaused)
         XCTAssertFalse(handler.isSyncCredentialsPaused)
+        XCTAssertFalse(handler.isSyncCreditCardsPaused)
+        XCTAssertTrue(handler.isSyncPaused)
+    }
+
+    func test_WhenHandleCreditCardsError418_ThenIsSyncIsPausedIsUpdatedToTrue() async {
+        let error = SyncError.unexpectedStatusCode(418)
+
+        handler.handleCreditCardsError(error)
+
+        XCTAssertFalse(handler.isSyncBookmarksPaused)
+        XCTAssertFalse(handler.isSyncCredentialsPaused)
+        XCTAssertFalse(handler.isSyncCreditCardsPaused)
         XCTAssertTrue(handler.isSyncPaused)
     }
 
@@ -185,6 +252,7 @@ final class SyncErrorHandlerTests: XCTestCase {
 
         XCTAssertFalse(handler.isSyncBookmarksPaused)
         XCTAssertFalse(handler.isSyncCredentialsPaused)
+        XCTAssertFalse(handler.isSyncCreditCardsPaused)
         XCTAssertTrue(handler.isSyncPaused)
     }
 
@@ -195,6 +263,18 @@ final class SyncErrorHandlerTests: XCTestCase {
 
         XCTAssertFalse(handler.isSyncBookmarksPaused)
         XCTAssertFalse(handler.isSyncCredentialsPaused)
+        XCTAssertFalse(handler.isSyncCreditCardsPaused)
+        XCTAssertTrue(handler.isSyncPaused)
+    }
+
+    func test_WhenHandleCreditCardsError429_ThenIsSyncIsPausedIsUpdatedToTrue() async {
+        let error = SyncError.unexpectedStatusCode(429)
+
+        handler.handleCreditCardsError(error)
+
+        XCTAssertFalse(handler.isSyncBookmarksPaused)
+        XCTAssertFalse(handler.isSyncCredentialsPaused)
+        XCTAssertFalse(handler.isSyncCreditCardsPaused)
         XCTAssertTrue(handler.isSyncPaused)
     }
 
@@ -205,6 +285,7 @@ final class SyncErrorHandlerTests: XCTestCase {
 
         XCTAssertTrue(handler.isSyncBookmarksPaused)
         XCTAssertFalse(handler.isSyncCredentialsPaused)
+        XCTAssertFalse(handler.isSyncCreditCardsPaused)
         XCTAssertFalse(handler.isSyncPaused)
     }
 
@@ -215,6 +296,18 @@ final class SyncErrorHandlerTests: XCTestCase {
 
         XCTAssertFalse(handler.isSyncBookmarksPaused)
         XCTAssertTrue(handler.isSyncCredentialsPaused)
+        XCTAssertFalse(handler.isSyncCreditCardsPaused)
+        XCTAssertFalse(handler.isSyncPaused)
+    }
+
+    func test_WhenHandleCreditCardsError400_ThenIsSyncIsPausedIsUpdatedToTrue() async {
+        let error = SyncError.unexpectedStatusCode(400)
+
+        handler.handleCreditCardsError(error)
+
+        XCTAssertFalse(handler.isSyncBookmarksPaused)
+        XCTAssertFalse(handler.isSyncCredentialsPaused)
+        XCTAssertTrue(handler.isSyncCreditCardsPaused)
         XCTAssertFalse(handler.isSyncPaused)
     }
 
@@ -227,18 +320,33 @@ final class SyncErrorHandlerTests: XCTestCase {
 
         XCTAssertTrue(handler.isSyncBookmarksPaused)
         XCTAssertFalse(handler.isSyncCredentialsPaused)
+        XCTAssertFalse(handler.isSyncCreditCardsPaused)
         XCTAssertFalse(handler.isSyncPaused)
     }
 
     func test_WhenHandleCredentialError409_AndHandlerIsReinitialised_ThenErrorIsStillPresent() async {
         let error = SyncError.unexpectedStatusCode(409)
-        
+
         handler.handleCredentialError(error)
 
         handler = SyncErrorHandler()
 
         XCTAssertFalse(handler.isSyncBookmarksPaused)
         XCTAssertTrue(handler.isSyncCredentialsPaused)
+        XCTAssertFalse(handler.isSyncCreditCardsPaused)
+        XCTAssertFalse(handler.isSyncPaused)
+    }
+
+    func test_WhenHandleCreditCardsError409_AndHandlerIsReinitialised_ThenErrorIsStillPresent() async {
+        let error = SyncError.unexpectedStatusCode(409)
+
+        handler.handleCreditCardsError(error)
+
+        handler = SyncErrorHandler()
+
+        XCTAssertFalse(handler.isSyncBookmarksPaused)
+        XCTAssertFalse(handler.isSyncCredentialsPaused)
+        XCTAssertTrue(handler.isSyncCreditCardsPaused)
         XCTAssertFalse(handler.isSyncPaused)
     }
 
@@ -251,6 +359,20 @@ final class SyncErrorHandlerTests: XCTestCase {
 
         XCTAssertFalse(handler.isSyncBookmarksPaused)
         XCTAssertFalse(handler.isSyncCredentialsPaused)
+        XCTAssertFalse(handler.isSyncCreditCardsPaused)
+        XCTAssertTrue(handler.isSyncPaused)
+    }
+
+    func test_WhenHandleCreditCardsError429_AndHandlerIsReinitialised_ThenErrorIsStillPresent() async {
+        let error = SyncError.unexpectedStatusCode(429)
+
+        handler.handleCreditCardsError(error)
+
+        handler = SyncErrorHandler()
+
+        XCTAssertFalse(handler.isSyncBookmarksPaused)
+        XCTAssertFalse(handler.isSyncCredentialsPaused)
+        XCTAssertFalse(handler.isSyncCreditCardsPaused)
         XCTAssertTrue(handler.isSyncPaused)
     }
 
@@ -274,8 +396,19 @@ final class SyncErrorHandlerTests: XCTestCase {
         XCTAssertTrue(abs(timeDifference) <= 10)
     }
 
+    func test_whenCreditCardsSucced_ThenDateSaved() async {
+        handler.syncCreditCardsSucceded()
+        let actualTime =  handler.lastSyncSuccessTime
+        let currentTime = Date()
+        let timeDifference = currentTime.timeIntervalSince(actualTime ?? Date(timeIntervalSince1970: 0))
+
+        XCTAssertNotNil(actualTime)
+        XCTAssertTrue(abs(timeDifference) <= 10)
+    }
+
     func test_whenSyncTurnedOff_errorsAreReset() async {
         handler.handleCredentialError(_:)(SyncError.unexpectedStatusCode(409))
+        handler.handleCreditCardsError(_:)(SyncError.unexpectedStatusCode(409))
         handler.handleBookmarkError(_:)(SyncError.unexpectedStatusCode(409))
         handler.handleBookmarkError(_:)(SyncError.unexpectedStatusCode(401))
 
@@ -283,11 +416,13 @@ final class SyncErrorHandlerTests: XCTestCase {
 
         XCTAssertFalse(handler.isSyncBookmarksPaused)
         XCTAssertFalse(handler.isSyncCredentialsPaused)
+        XCTAssertFalse(handler.isSyncCreditCardsPaused)
         XCTAssertFalse(handler.isSyncPaused)
 
         XCTAssertNil(handler.lastSyncSuccessTime)
         XCTAssertFalse(handler.didShowBookmarksSyncPausedError)
         XCTAssertFalse(handler.didShowCredentialsSyncPausedError)
+        XCTAssertFalse(handler.didShowCreditCardsSyncPausedError)
         XCTAssertFalse(handler.didShowInvalidLoginSyncPausedError)
         XCTAssertNil(handler.lastErrorNotificationTime)
         XCTAssertEqual(handler.nonActionableErrorCount, 0)

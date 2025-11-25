@@ -19,6 +19,7 @@
 
 import Foundation
 import SetDefaultBrowserCore
+import UIKit
 
 @MainActor
 public enum DefaultBrowserPromptFactory {
@@ -34,7 +35,6 @@ public enum DefaultBrowserPromptFactory {
         checkDefaultBrowserDebugEventMapper: any DefaultBrowserPromptEventMapping<DefaultBrowserManagerDebugEvent>,
         promptUserInteractionEventMapper: any DefaultBrowserPromptEventMapping<DefaultBrowserPromptEvent>,
         uiProvider: any DefaultBrowserPromptUIProviding,
-        isOnboardingCompletedProvider: @escaping () -> Bool,
         installDateProvider: @escaping () -> Date?,
         currentDateProvider: @escaping () -> Date
     ) -> DefaultBrowserPromptPresenting {
@@ -46,8 +46,8 @@ public enum DefaultBrowserPromptFactory {
 
         let defaultBrowserManager = DefaultBrowserManager(
             defaultBrowserInfoStore: checkDefaultBrowserContextStorage,
-            defaultBrowserEventMapper: checkDefaultBrowserDebugEventMapper
-        )
+            defaultBrowserEventMapper: checkDefaultBrowserDebugEventMapper,
+            defaultBrowserChecker: SystemCheckDefaultBrowserService(application: UIApplication.shared))
 
         let promptTypeDecider = DefaultBrowserPromptTypeDecider(
             featureFlagger: featureFlagger,
@@ -60,7 +60,6 @@ public enum DefaultBrowserPromptFactory {
         )
 
         let coordinator = DefaultBrowserPromptCoordinator(
-            isOnboardingCompleted: isOnboardingCompletedProvider,
             promptStore: promptActivityStore,
             userActivityManager: userActivityManager,
             promptTypeDecider: promptTypeDecider,

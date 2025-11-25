@@ -233,7 +233,7 @@ final class BrokerProfileJobTests: XCTestCase {
                 ScanJobData.mock(historyEvents: [HistoryEvent.mock(type: .noMatchFound)], preferredRunDate: now.addingTimeInterval(-200)), // Maintenance
                 ScanJobData.mock(historyEvents: [], preferredRunDate: nil), // Initial scan
                 ScanJobData.mock(historyEvents: [HistoryEvent.mock(type: .error(error: DataBrokerProtectionError.unknown("Test error")))], preferredRunDate: now.addingTimeInterval(200)), // Retry
-                ScanJobData.mock(historyEvents: [], preferredRunDate: now), // Initial scan
+                ScanJobData.mock(historyEvents: [], preferredRunDate: now) // Initial scan
             ]
 
             let sorted = jobs.sorted(by: BrokerJobDataComparators.byPriorityForBackgroundTask)
@@ -274,4 +274,97 @@ final class BrokerProfileJobTests: XCTestCase {
             XCTAssertEqual((sorted[11] as? ScanJobData)?.scanType(), .other)
             XCTAssertNil(sorted[11].preferredRunDate)
         }
+
+    func testExcludingOptOutsWithEmailConfirmationBeingHalted() {
+        let now = Date()
+        let brokerId: Int64 = 1
+        let profileQueryId: Int64 = 1
+        let extractedProfile = ExtractedProfile.mockWithoutRemovedDate
+
+        let mockDataBroker = DataBroker.mock(withId: brokerId)
+        let mockProfileQuery = ProfileQuery.mock
+
+        let optOutWithEmailConfirmationHalted1 = OptOutJobData(
+            brokerId: brokerId,
+            profileQueryId: profileQueryId,
+            createdDate: now,
+            preferredRunDate: now,
+            historyEvents: [
+                HistoryEvent.mock(type: .optOutStarted, date: now.addingTimeInterval(-100)),
+                HistoryEvent.mock(type: .optOutSubmittedAndAwaitingEmailConfirmation, date: now)
+            ],
+            attemptCount: 0,
+            extractedProfile: extractedProfile
+        )
+
+        let optOutWithEmailConfirmationHalted2 = OptOutJobData(
+            brokerId: brokerId,
+            profileQueryId: profileQueryId,
+            createdDate: now,
+            preferredRunDate: now,
+            historyEvents: [
+                HistoryEvent.mock(type: .optOutSubmittedAndAwaitingEmailConfirmation, date: now.addingTimeInterval(-50))
+            ],
+            attemptCount: 0,
+            extractedProfile: extractedProfile
+        )
+
+        let optOutWithoutEmailConfirmationHalted1 = OptOutJobData(
+            brokerId: brokerId,
+            profileQueryId: profileQueryId,
+            createdDate: now,
+            preferredRunDate: now,
+            historyEvents: [
+                HistoryEvent.mock(type: .optOutRequested, date: now)
+            ],
+            attemptCount: 0,
+            extractedProfile: extractedProfile
+        )
+
+        let optOutWithoutEmailConfirmationHalted2 = OptOutJobData(
+            brokerId: brokerId,
+            profileQueryId: profileQueryId,
+            createdDate: now,
+            preferredRunDate: now,
+            historyEvents: [
+                HistoryEvent.mock(type: .optOutSubmittedAndAwaitingEmailConfirmation, date: now.addingTimeInterval(-100)),
+                HistoryEvent.mock(type: .optOutRequested, date: now)
+            ],
+            attemptCount: 0,
+            extractedProfile: extractedProfile
+        )
+
+        let brokerProfileQueryData1 = BrokerProfileQueryData(
+            dataBroker: mockDataBroker,
+            profileQuery: mockProfileQuery,
+            scanJobData: ScanJobData.mock(withBrokerId: brokerId),
+            optOutJobData: [optOutWithEmailConfirmationHalted1, optOutWithEmailConfirmationHalted2]
+        )
+
+        let brokerProfileQueryData2 = BrokerProfileQueryData(
+            dataBroker: mockDataBroker,
+            profileQuery: mockProfileQuery,
+            scanJobData: ScanJobData.mock(withBrokerId: brokerId),
+            optOutJobData: [optOutWithoutEmailConfirmationHalted1, optOutWithoutEmailConfirmationHalted2]
+        )
+
+        let allBrokerProfileQueryData = [brokerProfileQueryData1, brokerProfileQueryData2]
+
+        let eligibleJobs = BrokerProfileJob.sortedEligibleJobs(
+            brokerProfileQueriesData: allBrokerProfileQueryData,
+            jobType: .optOut,
+            priorityDate: nil
+        )
+
+        let optOutJobs = eligibleJobs.compactMap { $0 as? OptOutJobData }
+
+        XCTAssertEqual(optOutJobs.count, 2, "Should only have 2 opt-out jobs after filtering")
+
+        XCTAssertTrue(optOutJobs.allSatisfy { job in
+            if let latestEvent = job.historyEvents.last {
+                return latestEvent.type != .optOutSubmittedAndAwaitingEmailConfirmation
+            }
+            return true
+        }, "All remaining jobs should not have optOutSubmittedAndAwaitingEmailConfirmation as their latest event")
+    }
 }

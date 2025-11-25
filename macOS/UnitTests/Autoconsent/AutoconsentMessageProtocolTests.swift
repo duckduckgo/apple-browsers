@@ -18,6 +18,8 @@
 
 import BrowserServicesKit
 import Common
+import History
+import HistoryView
 import PersistenceTestingUtils
 import WebKit
 import XCTest
@@ -32,42 +34,14 @@ class AutoconsentMessageProtocolTests: XCTestCase {
     override func setUp() async throws{
         try await super.setUp()
 
-        let appearancePreferences = AppearancePreferences(
-            keyValueStore: try MockKeyValueFileStore(),
-            privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
-        )
-        let startupPreferences = StartupPreferences(
-            persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
-            appearancePreferences: appearancePreferences,
-        )
+        let preferences = CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock())
+        preferences.isAutoconsentEnabled = true
 
         userScript = AutoconsentUserScript(
-            scriptSource: ScriptSourceProvider(configStorage: MockConfigurationStore(),
-                                               privacyConfigurationManager: MockPrivacyConfigurationManager(),
-                                               webTrackingProtectionPreferences: WebTrackingProtectionPreferences.shared, // mock
-                                               contentBlockingManager: ContentBlockerRulesManagerMock(),
-                                               trackerDataManager: TrackerDataManager(etag: ConfigurationStore().loadEtag(for: .trackerDataSet),
-                                                                                      data: ConfigurationStore().loadData(for: .trackerDataSet),
-                                                                                      embeddedDataProvider: AppTrackerDataSetProvider(),
-                                                                                      errorReporting: nil),
-                                               experimentManager: MockContentScopeExperimentManager(),
-                                               tld: Application.appDelegate.tld,
-                                               featureFlagger: Application.appDelegate.featureFlagger,
-                                               onboardingNavigationDelegate: CapturingOnboardingNavigation(),
-                                               appearancePreferences: appearancePreferences,
-                                               startupPreferences: startupPreferences,
-                                               windowControllersManager: WindowControllersManagerMock(),
-                                               bookmarkManager: MockBookmarkManager(),
-                                               historyCoordinator: CapturingHistoryDataSource(),
-                                               fireproofDomains: MockFireproofDomains(domains: []),
-                                               fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld),
-                                               newTabPageActionsManager: nil
-                                              ),
-            config: MockPrivacyConfiguration()
+            config: MockPrivacyConfiguration(),
+            management: AutoconsentManagement(),
+            preferences: preferences
         )
-
-        CookiePopupProtectionPreferences.shared.isAutoconsentEnabled = true
     }
 
     override func tearDown() {

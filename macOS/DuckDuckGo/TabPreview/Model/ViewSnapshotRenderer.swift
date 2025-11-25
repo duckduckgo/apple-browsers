@@ -24,13 +24,13 @@ import os.log
 protocol ViewSnapshotRendering {
 
     @MainActor
-    func renderSnapshot(view: NSView) async -> NSImage?
+    func renderSnapshot(view: @escaping () -> NSView?) async -> NSImage?
 
 }
 
 final class ViewSnapshotRenderer: ViewSnapshotRendering {
 
-    func renderSnapshot(view: NSView) async -> NSImage? {
+    func renderSnapshot(view: @escaping () -> NSView?) async -> NSImage? {
         await withCheckedContinuation { continuation in
             renderSnapshot(view: view) { image in
                 continuation.resume(returning: image)
@@ -38,8 +38,11 @@ final class ViewSnapshotRenderer: ViewSnapshotRendering {
         }
     }
 
-    func renderSnapshot(view: NSView, completion: @escaping (NSImage?) -> Void) {
-        let originalBounds = view.bounds
+    func renderSnapshot(view: @escaping () -> NSView?, completion: @escaping (NSImage?) -> Void) {
+        guard let originalBounds = view()?.bounds else {
+            completion(nil)
+            return
+        }
 
         Logger.tabSnapshots.debug("Native snapshot rendering started")
         DispatchQueue.global(qos: .userInitiated).async {
@@ -59,7 +62,7 @@ final class ViewSnapshotRenderer: ViewSnapshotRendering {
         }
     }
 
-    private func createResizedImage(from view: NSView, with bounds: CGRect) -> NSImage? {
+    private func createResizedImage(from view: @escaping () -> NSView?, with bounds: CGRect) -> NSImage? {
         let originalSize = bounds.size
         let targetWidth = CGFloat(TabPreviewWindowController.width)
         let targetHeight = originalSize.height * (targetWidth / originalSize.width)
@@ -88,7 +91,7 @@ final class ViewSnapshotRenderer: ViewSnapshotRendering {
             bitsPerPixel: 0)
     }
 
-    private func renderView(_ view: NSView, to bitmapRep: NSBitmapImageRep, size: CGSize) {
+    private func renderView(_ view: @escaping () -> NSView?, to bitmapRep: NSBitmapImageRep, size: CGSize) {
         NSGraphicsContext.saveGraphicsState()
         defer { NSGraphicsContext.restoreGraphicsState() }
 
@@ -98,7 +101,7 @@ final class ViewSnapshotRenderer: ViewSnapshotRendering {
                 assert(Thread.isMainThread)
                 context.cgContext.translateBy(x: 0, y: size.height)
                 context.cgContext.scaleBy(x: 1.0, y: -1.0)
-                view.layer?.render(in: context.cgContext)
+                view()?.layer?.render(in: context.cgContext)
             }
         }
     }

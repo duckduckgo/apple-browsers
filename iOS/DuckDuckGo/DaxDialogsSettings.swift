@@ -48,7 +48,7 @@ protocol DaxDialogsSettings: AnyObject {
 
     var browsingFinalDialogShown: Bool { get set }
 
-    var privacyProPromotionDialogShown: Bool { get set }
+    var subscriptionPromotionDialogShown: Bool { get set }
 }
 
 class DefaultDaxDialogsSettings: DaxDialogsSettings {
@@ -92,6 +92,6 @@ class DefaultDaxDialogsSettings: DaxDialogsSettings {
     @UserDefaultsWrapper(key: .daxBrowsingFinalDialogShown, defaultValue: false)
     var browsingFinalDialogShown: Bool
 
-    @UserDefaultsWrapper(key: .daxPrivacyProPromotionDialogShown, defaultValue: false)
-    var privacyProPromotionDialogShown: Bool
+    @UserDefaultsWrapper(key: .daxSubscriptionPromotionDialogShown, defaultValue: false)
+    var subscriptionPromotionDialogShown: Bool
 }

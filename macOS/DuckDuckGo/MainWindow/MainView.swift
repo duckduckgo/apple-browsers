@@ -33,6 +33,8 @@ final class MainView: NSView {
         static let findInPageContainerTopOffset: CGFloat = -4
         static let fireContainerHeight: CGFloat = 32
         static let bannerHeight: CGFloat = 48
+        static let aiChatOmnibarContainerMinHeight: CGFloat = 100
+        static let aiChatOmnibarContainerPadding: CGFloat = 50
     }
 
     let tabBarContainerView = NSView()
@@ -42,6 +44,9 @@ final class MainView: NSView {
     let bookmarksBarContainerView = NSView()
     let bannerContainerView = NSView()
     let fireContainerView = NSView()
+    let aiChatOmnibarContainerView: NSView = .init()
+    let aiChatOmnibarTextContainerView: NSView = .init()
+
     let divider = ColorView(frame: .zero, backgroundColor: .separatorColor)
 
     private var navigationBarTopConstraint: NSLayoutConstraint!
@@ -51,6 +56,9 @@ final class MainView: NSView {
     private var tabBarHeightConstraint: NSLayoutConstraint!
     private var bannerTopConstraint: NSLayoutConstraint!
     private var bannerHeightConstraint: NSLayoutConstraint!
+    private var aiChatOmnibarContainerWidthConstraint: NSLayoutConstraint!
+    private var aiChatOmnibarContainerHeightConstraint: NSLayoutConstraint!
+    private var aiChatOmnibarTextContainerBottomConstraint: NSLayoutConstraint!
 
     @Published var isMouseAboveWebView: Bool = false
 
@@ -61,9 +69,11 @@ final class MainView: NSView {
             tabBarContainerView,
             divider,
             bookmarksBarContainerView,
-            navigationBarContainerView,
             webContainerView,
             bannerContainerView,
+            navigationBarContainerView,
+            aiChatOmnibarContainerView,
+            aiChatOmnibarTextContainerView,
             findInPageContainerView,
             fireContainerView
         ] {
@@ -137,6 +147,21 @@ final class MainView: NSView {
             fireContainerView.leadingAnchor.constraint(equalTo: leadingAnchor),
             fireContainerView.trailingAnchor.constraint(equalTo: trailingAnchor),
         ])
+
+        aiChatOmnibarContainerWidthConstraint = aiChatOmnibarContainerView.widthAnchor.constraint(lessThanOrEqualToConstant: 832)
+        aiChatOmnibarContainerHeightConstraint = aiChatOmnibarContainerView.heightAnchor.constraint(equalToConstant: Constants.aiChatOmnibarContainerMinHeight)
+        NSLayoutConstraint.activate([
+            aiChatOmnibarContainerView.topAnchor.constraint(equalTo: navigationBarContainerView.bottomAnchor, constant: -16),
+            aiChatOmnibarContainerView.centerXAnchor.constraint(equalTo: navigationBarContainerView.centerXAnchor),
+            aiChatOmnibarContainerHeightConstraint,
+            aiChatOmnibarContainerWidthConstraint,
+        ])
+
+        aiChatOmnibarTextContainerBottomConstraint = aiChatOmnibarTextContainerView.bottomAnchor.constraint(equalTo: aiChatOmnibarContainerView.bottomAnchor)
+        aiChatOmnibarTextContainerBottomConstraint.isActive = true
+
+        aiChatOmnibarContainerView.isHidden = true
+        aiChatOmnibarTextContainerView.isHidden = true
     }
 
     private typealias CFWebServicesCopyProviderInfoType = @convention(c) (CFString, UnsafeRawPointer?) -> NSDictionary?
@@ -205,10 +230,10 @@ final class MainView: NSView {
         }
 
         menu.insertItem(NSMenuItem(title: UserText.mainMenuFileSaveAs, action: #selector(MainViewController.saveAs), representedObject: hudView)
-                            .withAccessibilityIdentifier("PDFContextMenu.saveAs"),
+            .withAccessibilityIdentifier("PDFContextMenu.saveAs"),
                         at: insertionIdx)
         menu.insertItem(NSMenuItem(title: UserText.printMenuItem, action: #selector(MainViewController.printWebView), representedObject: hudView)
-                            .withAccessibilityIdentifier("PDFContextMenu.print"),
+            .withAccessibilityIdentifier("PDFContextMenu.print"),
                         at: insertionIdx)
     }
 
@@ -257,6 +282,63 @@ final class MainView: NSView {
         tabBarHeightConstraint?.constant = newValue ? Constants.tabBarHeight : 0
         navigationBarTopConstraint?.constant = newValue ? Constants.tabBarHeight : 0
     }
+
+    var isAIChatOmnibarContainerShown: Bool {
+        get {
+            !aiChatOmnibarContainerView.isHidden
+        }
+        set {
+            aiChatOmnibarContainerView.isHidden = !newValue
+            aiChatOmnibarTextContainerView.isHidden = !newValue
+        }
+    }
+
+    func setupAIChatOmnibarTextContainerConstraints(addressBarStack: NSView) {
+        aiChatOmnibarTextContainerView.translatesAutoresizingMaskIntoConstraints = false
+
+        NSLayoutConstraint.activate([
+            aiChatOmnibarTextContainerView.topAnchor.constraint(equalTo: addressBarStack.topAnchor, constant: 5),
+            aiChatOmnibarTextContainerView.leadingAnchor.constraint(equalTo: addressBarStack.leadingAnchor, constant: 10),
+            aiChatOmnibarTextContainerView.trailingAnchor.constraint(equalTo: addressBarStack.trailingAnchor, constant: -78),
+        ])
+
+        aiChatOmnibarTextContainerBottomConstraint.constant = -5
+    }
+
+    func setupAIChatOmnibarContainerConstraints(addressBarStack: NSView) {
+        aiChatOmnibarContainerWidthConstraint.isActive = false
+        NSLayoutConstraint.activate([
+            aiChatOmnibarContainerView.leadingAnchor.constraint(equalTo: addressBarStack.leadingAnchor),
+            aiChatOmnibarContainerView.trailingAnchor.constraint(equalTo: addressBarStack.trailingAnchor),
+        ])
+    }
+
+    func updateAIChatOmnibarContainerHeight(_ height: CGFloat, animated: Bool) {
+        let clampedHeight = max(Constants.aiChatOmnibarContainerMinHeight, min(height, calculateMaxAIChatOmnibarHeight()))
+
+        if animated {
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = 0.2
+                context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+                aiChatOmnibarContainerHeightConstraint.animator().constant = clampedHeight
+            }
+        } else {
+            aiChatOmnibarContainerHeightConstraint.constant = clampedHeight
+        }
+    }
+
+    func calculateMaxAIChatOmnibarHeight() -> CGFloat {
+        guard let window = window else {
+            return Constants.aiChatOmnibarContainerMinHeight
+        }
+
+        // Calculate available height: window height - address bar height - padding
+        let addressBarHeight = navigationBarContainerView.frame.height
+        let availableHeight = window.frame.height - addressBarHeight - Constants.aiChatOmnibarContainerPadding
+
+        return max(Constants.aiChatOmnibarContainerMinHeight, availableHeight)
+    }
+
     // MARK: - NSDraggingDestination
 
     override func draggingEntered(_ draggingInfo: NSDraggingInfo) -> NSDragOperation {

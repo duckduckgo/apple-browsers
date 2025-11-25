@@ -45,7 +45,7 @@ public struct ContentScopeExperimentData: Encodable, Equatable {
 
 public final class ContentScopeProperties: Encodable {
     public let globalPrivacyControlValue: Bool
-    public let debug: Bool = false
+    public let debug: Bool
     public let sessionKey: String
     public let messageSecret: String
     public let languageCode: String
@@ -57,12 +57,14 @@ public final class ContentScopeProperties: Encodable {
                 sessionKey: String,
                 messageSecret: String,
                 isInternalUser: Bool = false,
+                debug: Bool = false,
                 featureToggles: ContentScopeFeatureToggles,
                 currentCohorts: [ContentScopeExperimentData] = []) {
         self.globalPrivacyControlValue = gpcEnabled
+        self.debug = debug
         self.sessionKey = sessionKey
         self.messageSecret = messageSecret
-        self.platform = ContentScopePlatform(isInternal: isInternalUser)
+        self.platform = ContentScopePlatform(isInternal: isInternalUser, version: AppVersion.shared.versionNumber)
         languageCode = Locale.current.languageCode ?? "en"
         features = [
             "autofill": ContentScopeFeature(featureToggles: featureToggles)
@@ -185,9 +187,11 @@ public struct ContentScopePlatform: Encodable {
     #endif
 
     let `internal`: Bool
+    let version: String
 
-    init(isInternal: Bool = false) {
+    init(isInternal: Bool = false, version: String = "") {
         self.internal = isInternal
+        self.version = version
     }
 }
 
@@ -209,7 +213,7 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
                 isIsolated: Bool = false,
                 allowedNonisolatedFeatures: [String] = [],
                 privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?
-    ) {
+    ) throws {
         self.isIsolated = isIsolated
         self.allowedNonisolatedFeatures = allowedNonisolatedFeatures
         let contextName = self.isIsolated ? MessageName.contentScopeScriptsIsolated.rawValue : MessageName.contentScopeScripts.rawValue
@@ -218,12 +222,12 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
 
         messageNames = [contextName]
 
-        source = ContentScopeUserScript.generateSource(
-                privacyConfigManager,
-                properties: properties,
-                isolated: isIsolated,
-                config: broker.messagingConfig(),
-                privacyConfigurationJSONGenerator: privacyConfigurationJSONGenerator
+        source = try ContentScopeUserScript.generateSource(
+            privacyConfigManager,
+            properties: properties,
+            isolated: isIsolated,
+            config: broker.messagingConfig(),
+            privacyConfigurationJSONGenerator: privacyConfigurationJSONGenerator
         )
     }
 
@@ -232,7 +236,7 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
                                       isolated: Bool,
                                       config: WebkitMessagingConfig,
                                       privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?
-    ) -> String {
+    ) throws -> String {
         let privacyConfigJsonData = privacyConfigurationJSONGenerator?.privacyConfiguration ?? privacyConfigurationManager.currentConfig
         guard let privacyConfigJson = String(data: privacyConfigJsonData, encoding: .utf8),
               let userUnprotectedDomains = try? JSONEncoder().encode(privacyConfigurationManager.privacyConfig.userUnprotectedDomains),
@@ -247,7 +251,7 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
 
         let jsInclude = isolated ? "contentScopeIsolated" : "contentScope"
 
-        return loadJS(jsInclude, from: ContentScopeScripts.Bundle, withReplacements: [
+        return try loadJS(jsInclude, from: ContentScopeScripts.Bundle, withReplacements: [
             "$CONTENT_SCOPE$": privacyConfigJson,
             "$USER_UNPROTECTED_DOMAINS$": userUnprotectedDomainsString,
             "$USER_PREFERENCES$": jsonPropertiesString,

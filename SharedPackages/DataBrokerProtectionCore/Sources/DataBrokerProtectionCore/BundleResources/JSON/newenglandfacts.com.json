@@ -1,7 +1,7 @@
 {
   "name": "New England Facts",
   "url": "newenglandfacts.com",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "addedDatetime": 1703052000000,
   "optOutUrl": "https://newenglandfacts.com/ng/control/privacy",
   "steps": [
@@ -68,6 +68,17 @@
           "id": "08332622-1749-4bdc-97d0-2366fef87522"
         },
         {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//h1[contains(text(), 'Opt Out')]",
+              "parent": ".container"
+            }
+          ],
+          "id": "8a9a6d89-831a-419f-b118-18ff86039906"
+        },
+        {
           "actionType": "fillForm",
           "selector": ".ahm",
           "elements": [
@@ -85,6 +96,17 @@
             }
           ],
           "id": "e3fdaaf0-70a5-4b7b-afa8-18306276f13a"
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": "//input[@name='cf-turnstile-response' and @value and @value != '']",
+              "parent": "//form[@id='privacy']"
+            }
+          ],
+          "id": "a362de34-09ae-49b9-a89e-9012fb249bee"
         },
         {
           "actionType": "click",

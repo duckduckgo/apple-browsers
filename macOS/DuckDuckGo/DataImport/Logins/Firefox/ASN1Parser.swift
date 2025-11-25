@@ -237,3 +237,36 @@ enum ASN1Parser {
         return nodes
     }
 }
+
+// MARK: - OID Utilities
+
+extension ASN1Parser {
+    /// OID constants for encryption algorithms used by Firefox
+    enum OID {
+        /// 3DES-CBC encryption: 1.2.840.113549.3.7
+        static let tripleDesCBC = Data([0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x03, 0x07])
+
+        /// AES-256-CBC encryption: 2.16.840.1.101.3.4.1.42
+        static let aes256CBC = Data([0x60, 0x86, 0x48, 0x01, 0x65, 0x03, 0x04, 0x01, 0x2A])
+    }
+
+    /// Extracts the OID from an ASN.1 structure, if present
+    /// - Parameter node: ASN.1 node to search
+    /// - Returns: The OID data, or nil if not found
+    static func extractOID(from node: Node) -> Data? {
+        switch node {
+        case .objectIdentifier(let data):
+            return data
+        case .sequence(let nodes):
+            // Recursively search sequence nodes
+            for subnode in nodes {
+                if let oid = extractOID(from: subnode) {
+                    return oid
+                }
+            }
+            return nil
+        default:
+            return nil
+        }
+    }
+}

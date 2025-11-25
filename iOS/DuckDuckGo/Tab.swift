@@ -18,6 +18,13 @@
 //
 
 import Core
+import AIChat
+
+/// Type representing the type of tab, e.g. `web` or `aiChat`
+enum TabType {
+    case web
+    case aiChat
+}
 
 protocol TabObserver: AnyObject {
  
@@ -38,6 +45,7 @@ public class Tab: NSObject, NSCoding {
         static let desktop = "desktop"
         static let lastViewedDate = "lastViewedDate"
         static let daxEasterEggLogoURL = "daxEasterEggLogoURL"
+        static let type = "type"
     }
 
     private var observersHolder = [WeaklyHeldTabObserver]()
@@ -72,11 +80,24 @@ public class Tab: NSObject, NSCoding {
         }
     }
     
+    /// Returns true if the tab is a `aiChat` tab
+    var isAITab: Bool {
+        type == .aiChat
+    }
+    
     /// URL of the Dax Easter Egg logo for this tab, displayed in the privacy icon and used for full-screen presentation.
     var daxEasterEggLogoURL: String? {
         didSet {
             Logger.daxEasterEgg.debug("Tab model - Setting logo URL: \(self.daxEasterEggLogoURL ?? "nil") for tab [\(self.uid)]")
         }
+    }
+
+    /// Type of tab: web or AI Chat, derived from the current URL
+    private var type: TabType {
+        if let link, link.url.isDuckAIURL {
+            return .aiChat
+        }
+        return .web
     }
 
     public init(uid: String? = nil,
@@ -100,7 +121,7 @@ public class Tab: NSObject, NSCoding {
         let desktop = decoder.containsValue(forKey: NSCodingKeys.desktop) ? decoder.decodeBool(forKey: NSCodingKeys.desktop) : false
         let lastViewedDate = decoder.containsValue(forKey: NSCodingKeys.lastViewedDate) ? decoder.decodeObject(forKey: NSCodingKeys.lastViewedDate) as? Date : nil
         let daxEasterEggLogoURL = decoder.decodeObject(forKey: NSCodingKeys.daxEasterEggLogoURL) as? String
-        
+
         Logger.daxEasterEgg.debug("Tab decode - Restoring logo URL: \(daxEasterEggLogoURL ?? "nil") for tab [\(uid ?? "no-uid")]")
         
         self.init(uid: uid, link: link, viewed: viewed, desktop: desktop, lastViewedDate: lastViewedDate, daxEasterEggLogoURL: daxEasterEggLogoURL)
@@ -115,6 +136,7 @@ public class Tab: NSObject, NSCoding {
         coder.encode(isDesktop, forKey: NSCodingKeys.desktop)
         coder.encode(lastViewedDate, forKey: NSCodingKeys.lastViewedDate)
         coder.encode(daxEasterEggLogoURL, forKey: NSCodingKeys.daxEasterEggLogoURL)
+        // Note: type is not encoded as it's now a computed property based on the link URL
     }
 
     public override func isEqual(_ other: Any?) -> Bool {

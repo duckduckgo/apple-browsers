@@ -22,7 +22,6 @@ import Foundation
 
 protocol NewTabPageControllerDelegate: AnyObject {
     func newTabPageDidSelectFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity)
-    func newTabPageDidDeleteFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity)
     func newTabPageDidEditFavorite(_ controller: NewTabPageViewController, favorite: BookmarkEntity)
     func newTabPageDidRequestFaviconsFetcherOnboarding(_ controller: NewTabPageViewController)
 }

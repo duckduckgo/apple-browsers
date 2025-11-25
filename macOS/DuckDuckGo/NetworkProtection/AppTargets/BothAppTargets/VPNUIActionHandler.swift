@@ -50,12 +50,12 @@ final class VPNUIActionHandler {
     }
 
     func askUserToReportIssues(withDomain domain: String) async {
-        let parentWindow = await windowControllerManager.lastKeyMainWindowController?.window
+        let parentWindow = await windowControllersManager.lastKeyMainWindowController?.window
         await ReportSiteIssuesPresenter(userDefaults: .netP).show(withDomain: domain, in: parentWindow)
     }
 
     @MainActor
-    private var windowControllerManager: WindowControllersManager {
+    private var windowControllersManager: WindowControllersManager {
         Application.appDelegate.windowControllersManager
     }
 }
@@ -87,14 +87,14 @@ extension VPNUIActionHandler: VPNUIActionHandling {
         await vpnURLEventHandler.showLocations()
     }
 
-    func showPrivacyPro() async {
-        await vpnURLEventHandler.showPrivacyPro()
+    func showSubscription() async {
+        await vpnURLEventHandler.showSubscription()
     }
 
     @MainActor
     func willStopVPN() async -> Bool {
         guard vpnAppState.isUsingSystemExtension && !vpnAppState.dontAskAgainExclusionSuggestion,
-              let parentWindow = windowControllerManager.lastKeyMainWindowController?.window else {
+              let parentWindow = windowControllersManager.lastKeyMainWindowController?.window else {
             return true
         }
 
@@ -126,8 +126,8 @@ extension VPNUIActionHandler: VPNUIActionHandling {
             Application.appDelegate.windowControllersManager.showVPNAppExclusions(addApp: true)
             return false
         case .excludeWebsite:
-            let domain = windowControllerManager.activeDomain ?? ""
-            windowControllerManager.showVPNDomainExclusions(domain: domain)
+            let domain = windowControllersManager.activeDomain ?? ""
+            windowControllersManager.showVPNDomainExclusions(domain: domain)
             return false
         }
     }

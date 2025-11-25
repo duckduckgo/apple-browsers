@@ -17,8 +17,10 @@
 //
 
 import AppKit
+import SwiftUI
 import Subscription
 import StoreKit
+import PixelKit
 
 public final class SubscriptionDebugMenu: NSMenuItem {
 
@@ -42,6 +44,7 @@ public final class SubscriptionDebugMenu: NSMenuItem {
 
     let subscriptionUserDefaults: UserDefaults
     let isAuthV2Enabled: Bool
+    let wideEvent: WideEventManaging
 
     required init(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
@@ -56,7 +59,8 @@ public final class SubscriptionDebugMenu: NSMenuItem {
                 subscriptionManagerV1: (any SubscriptionManager)?,
                 subscriptionManagerV2: (any SubscriptionManagerV2)?,
                 subscriptionUserDefaults: UserDefaults,
-                isAuthV2Enabled: Bool) {
+                isAuthV2Enabled: Bool,
+                wideEvent: WideEventManaging) {
         self.currentEnvironment = currentEnvironment
         self.updateServiceEnvironment = updateServiceEnvironment
         self.updatePurchasingPlatform = updatePurchasingPlatform
@@ -68,6 +72,7 @@ public final class SubscriptionDebugMenu: NSMenuItem {
         self.subscriptionManagerV2 = subscriptionManagerV2
         self.subscriptionUserDefaults = subscriptionUserDefaults
         self.isAuthV2Enabled = isAuthV2Enabled
+        self.wideEvent = wideEvent
         super.init(title: "Subscription", action: nil, keyEquivalent: "")
         self.submenu = makeSubmenu()
     }
@@ -87,6 +92,7 @@ public final class SubscriptionDebugMenu: NSMenuItem {
             menu.addItem(.separator())
             menu.addItem(NSMenuItem(title: "Sync App Store AppleID Account (re- sign-in)", action: #selector(syncAppleIDAccount), target: self))
             menu.addItem(NSMenuItem(title: "Purchase Subscription from App Store", action: #selector(showPurchaseView), target: self))
+            menu.addItem(NSMenuItem(title: "Buy Available Subscriptions", action: #selector(showBuyProductionSubscriptions), target: self))
             menu.addItem(NSMenuItem(title: "Restore Subscription from App Store transaction", action: #selector(restorePurchases), target: self))
         }
 
@@ -447,10 +453,11 @@ public final class SubscriptionDebugMenu: NSMenuItem {
     @IBAction func showPurchaseViewV2(_ sender: Any?) {
         if #available(macOS 12.0, *) {
             let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManagerV2,
-                                                                 storePurchaseManager: subscriptionManagerV2.storePurchaseManager())
+                                                                   storePurchaseManager: subscriptionManagerV2.storePurchaseManager())
             let appStorePurchaseFlow = DefaultAppStorePurchaseFlowV2(subscriptionManager: subscriptionManagerV2,
-                                                                   storePurchaseManager: subscriptionManagerV2.storePurchaseManager(),
-                                                                   appStoreRestoreFlow: appStoreRestoreFlow)
+                                                                     storePurchaseManager: subscriptionManagerV2.storePurchaseManager(),
+                                                                     appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                     wideEvent: wideEvent)
             // swiftlint:disable:next force_cast
             let vc = DebugPurchaseViewControllerV2(storePurchaseManager: subscriptionManagerV2.storePurchaseManager() as! DefaultStorePurchaseManagerV2,
                                                    appStorePurchaseFlow: appStorePurchaseFlow)
@@ -622,6 +629,15 @@ public final class SubscriptionDebugMenu: NSMenuItem {
                                                                        storePurchaseManager: subscriptionManagerV2.storePurchaseManager())
                 await appStoreRestoreFlow.restoreAccountFromPastPurchase()
             }
+        }
+    }
+
+    @objc
+    func showBuyProductionSubscriptions(_ sender: Any?) {
+        if #available(macOS 12.0, *) {
+            let viewController = ProductionSubscriptionPurchaseViewController(subscriptionManager: subscriptionManagerV2)
+            viewController.title = "Buy Available Subscriptions"
+            currentViewController()?.presentAsSheet(viewController)
         }
     }
 

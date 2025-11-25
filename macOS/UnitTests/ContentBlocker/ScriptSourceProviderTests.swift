@@ -18,8 +18,12 @@
 
 import BrowserServicesKit
 import Common
+import History
+import HistoryView
 import PersistenceTestingUtils
+import SharedTestUtilities
 import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 final class ScriptSourceProviderTests: XCTestCase {
@@ -46,40 +50,49 @@ final class ScriptSourceProviderTests: XCTestCase {
 
         experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
 
+        let featureFlagger = MockFeatureFlagger()
+        let privacyConfigurationManager = MockPrivacyConfigurationManager()
         let appearancePreferences = AppearancePreferences(
             keyValueStore: try MockKeyValueFileStore(),
-            privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            featureFlagger: MockFeatureFlagger()
+            privacyConfigurationManager: privacyConfigurationManager,
+            featureFlagger: featureFlagger
         )
-        let dataClearingPreferences = DataClearingPreferences(
-            persistor: MockFireButtonPreferencesPersistor(),
-            fireproofDomains: MockFireproofDomains(domains: []),
-            faviconManager: FaviconManagerMock(),
-            windowControllersManager: WindowControllersManagerMock(),
-            featureFlagger: MockFeatureFlagger()
-        )
+        let windowControllersManager = WindowControllersManagerMock()
         let startupPreferences = StartupPreferences(
             persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
+            windowControllersManager: windowControllersManager,
             appearancePreferences: appearancePreferences
         )
-
+        let fireCoordinator = FireCoordinator(tld: TLD(),
+                                              featureFlagger: Application.appDelegate.featureFlagger,
+                                              historyCoordinating: HistoryCoordinatingMock(),
+                                              visualizeFireAnimationDecider: nil,
+                                              onboardingContextualDialogsManager: nil,
+                                              fireproofDomains: MockFireproofDomains(),
+                                              faviconManagement: FaviconManagerMock(),
+                                              windowControllersManager: windowControllersManager,
+                                              pixelFiring: nil,
+                                              historyProvider: MockHistoryViewDataProvider())
         let sourceProvider = ScriptSourceProvider(
             configStorage: MockConfigurationStore(),
-            privacyConfigurationManager: MockPrivacyConfigurationManaging(),
-            webTrackingProtectionPreferences: WebTrackingProtectionPreferences(),
+            privacyConfigurationManager: privacyConfigurationManager,
+            webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
+            cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
+            duckPlayer: DuckPlayer(preferencesPersistor: DuckPlayerPreferencesPersistorMock(), privacyConfigurationManager: privacyConfigurationManager, internalUserDecider: featureFlagger.internalUserDecider),
             contentBlockingManager: MockContentBlockerRulesManagerProtocol(),
             trackerDataManager: TrackerDataManager(etag: nil, data: Data(), embeddedDataProvider: MockEmbeddedDataProvider()),
             experimentManager: experimentManager,
             tld: Application.appDelegate.tld,
-            featureFlagger: MockFeatureFlagger(),
+            featureFlagger: featureFlagger,
             onboardingNavigationDelegate: CapturingOnboardingNavigation(),
             appearancePreferences: appearancePreferences,
             startupPreferences: startupPreferences,
-            windowControllersManager: WindowControllersManagerMock(),
+            windowControllersManager: windowControllersManager,
             bookmarkManager: MockBookmarkManager(),
             historyCoordinator: HistoryCoordinatingMock(),
             fireproofDomains: MockFireproofDomains(domains: []),
-            fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld),
+            fireCoordinator: fireCoordinator,
+            autoconsentManagement: AutoconsentManagement(),
             newTabPageActionsManager: nil
         )
 

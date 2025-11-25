@@ -37,6 +37,7 @@ public protocol DataBrokerProtectionDatabaseMigrationsProvider {
     static var v7Migrations: (inout DatabaseMigrator) throws -> Void { get }
     static var v8Migrations: (inout DatabaseMigrator) throws -> Void { get }
     static var v9Migrations: (inout DatabaseMigrator) throws -> Void { get }
+    static var v10Migrations: (inout DatabaseMigrator) throws -> Void { get }
 }
 
 public final class DefaultDataBrokerProtectionDatabaseMigrationsProvider: DataBrokerProtectionDatabaseMigrationsProvider {
@@ -107,6 +108,19 @@ public final class DefaultDataBrokerProtectionDatabaseMigrationsProvider: DataBr
         migrator.registerMigration("v7", migrate: migrateV7(database:))
         migrator.registerMigration("v8", migrate: migrateV8(database:))
         migrator.registerMigration("v9", migrate: migrateV9(database:))
+    }
+
+    public static var v10Migrations: (inout DatabaseMigrator) throws -> Void = { migrator in
+        migrator.registerMigration("v1", migrate: migrateV1(database:))
+        migrator.registerMigration("v2", migrate: migrateV2(database:))
+        migrator.registerMigration("v3", migrate: migrateV3(database:))
+        migrator.registerMigration("v4", migrate: migrateV4(database:))
+        migrator.registerMigration("v5", migrate: migrateV5(database:))
+        migrator.registerMigration("v6", migrate: migrateV6(database:))
+        migrator.registerMigration("v7", migrate: migrateV7(database:))
+        migrator.registerMigration("v8", migrate: migrateV8(database:))
+        migrator.registerMigration("v9", migrate: migrateV9(database:))
+        migrator.registerMigration("v10", migrate: migrateV10(database:))
     }
 
     static func migrateV1(database: Database) throws {
@@ -390,6 +404,12 @@ public final class DefaultDataBrokerProtectionDatabaseMigrationsProvider: DataBr
             $0.column(OptOutEmailConfirmationDB.Columns.emailConfirmationAttemptCount.name, .integer).notNull().defaults(to: 0)
         }
 
+    }
+
+    static func migrateV10(database: Database) throws {
+        try database.alter(table: OptOutDB.databaseTableName) {
+            $0.add(column: OptOutDB.Columns.fortyTwoDaysConfirmationPixelFired.name, .boolean).notNull().defaults(to: false)
+        }
     }
 
     private static func deleteOrphanedRecords(database: Database) throws {

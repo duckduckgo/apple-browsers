@@ -36,6 +36,10 @@ struct DataImportErrorView: View {
                 Text("We were unable to import passwords directly from \(source.importSourceName).",
                      comment: "Message when data import fails from a browser. %@ - a browser name")
                 .bold()
+            case .creditCards:
+                EmptyView().onAppear {
+                    assertionFailure("Unexpected .creditCards here — handled elsewhere.")
+                } // We don't import credit cards directly yet
             }
 
             Text("Let’s try doing it manually. It won’t take long.",

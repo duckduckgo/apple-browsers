@@ -21,6 +21,7 @@ import UIKit
 import PrivacyDashboard
 import Core
 import Kingfisher
+import DesignResourcesKitIcons
 
 class OmniBarViewController: UIViewController, OmniBar {
 
@@ -59,6 +60,9 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     // MARK: - Animation
 
+    var isUsingUnifiedPredictor: Bool {
+        dependencies.featureFlagger.isFeatureOn(.unifiedURLPredictor)
+    }
     var dismissButtonAnimator: UIViewPropertyAnimator?
     private var privacyIconAndTrackersAnimator = PrivacyIconAndTrackersAnimator()
     private var notificationAnimator = OmniBarNotificationAnimator()
@@ -67,7 +71,7 @@ class OmniBarViewController: UIViewController, OmniBar {
     // MARK: - Constraints
 
     private var trailingConstraintValueForSmallWidth: CGFloat {
-        if state.showAccessoryButton || state.showSettings {
+        if state.showAIChatButton || state.showSettings {
             return 14
         } else {
             return 4
@@ -113,10 +117,10 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.settingsButton.isPointerInteractionEnabled = true
         barView.cancelButton.isPointerInteractionEnabled = true
         barView.bookmarksButton.isPointerInteractionEnabled = true
-        barView.accessoryButton.isPointerInteractionEnabled = true
+        barView.aiChatButton.isPointerInteractionEnabled = true
         barView.menuButton.isPointerInteractionEnabled = true
         barView.refreshButton.isPointerInteractionEnabled = true
-        barView.shareButton.isPointerInteractionEnabled = true
+        barView.customizableButton.isPointerInteractionEnabled = true
         barView.clearButton.isPointerInteractionEnabled = true
     }
 
@@ -186,8 +190,8 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.onRefreshPressed = { [weak self] in
             self?.onRefreshPressed()
         }
-        barView.onSharePressed = { [weak self] in
-            self?.onSharePressed()
+        barView.onCustomizableButtonPressed = { [weak self] in
+            self?.onCustomizableButtonPressed()
         }
         barView.onBackPressed = { [weak self] in
             self?.onBackPressed()
@@ -198,17 +202,20 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.onBookmarksPressed = { [weak self] in
             self?.onBookmarksPressed()
         }
-        barView.onAccessoryPressed = { [weak self] in
-            self?.onAccessoryPressed()
+        barView.onAIChatPressed = { [weak self] in
+            self?.onAIChatPressed()
         }
         barView.onDismissPressed = { [weak self] in
             self?.onDismissPressed()
         }
-        barView.onSettingsLongPress = { [weak self] in
-            self?.onSettingsLongPress()
+        barView.onAIChatLeftButtonPressed = { [weak self] in
+            self?.onAIChatLeftButtonPressed()
         }
-        barView.onAccessoryLongPress = { [weak self] in
-            self?.onAccessoryLongPress()
+        barView.onAIChatRightButtonPressed = { [weak self] in
+            self?.onAIChatRightButtonPressed()
+        }
+        barView.onAIChatBrandingPressed = { [weak self] in
+            self?.onAIChatBrandingPressed()
         }
     }
 
@@ -312,12 +319,6 @@ class OmniBarViewController: UIViewController, OmniBar {
         textField.selectedTextRange = textField.textRange(from: fromPosition, to: textField.endOfDocument)
     }
 
-    func updateAccessoryType(_ type: OmniBarAccessoryType) {
-        DispatchQueue.main.async {
-            self.barView.accessoryType = type
-        }
-    }
-
     func showOrScheduleCookiesManagedNotification(isCosmetic: Bool) {
         let type: OmniBarNotificationType = isCosmetic ? .cookiePopupHidden : .cookiePopupManaged
 
@@ -385,6 +386,10 @@ class OmniBarViewController: UIViewController, OmniBar {
         if barView.privacyInfoContainer.delegate == nil {
             barView.privacyInfoContainer.delegate = self
         }
+    }
+
+    func refreshCustomizableButton() {
+        applyCustomization()
     }
 
     func hidePrivacyIcon() {
@@ -464,14 +469,34 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.isSettingsButtonHidden = !state.showSettings
         barView.isCancelButtonHidden = !state.showCancel
         barView.isRefreshButtonHidden = !state.showRefresh
-        barView.isShareButtonHidden = !state.showShare
+        barView.isCustomizableButtonHidden = !state.showCustomizableButton
         barView.isVoiceSearchButtonHidden = !state.showVoiceSearch
         barView.isAbortButtonHidden = !state.showAbort
         barView.isBackButtonHidden = !state.showBackButton
         barView.isForwardButtonHidden = !state.showForwardButton
         barView.isBookmarksButtonHidden = !state.showBookmarksButton
-        barView.isAccessoryButtonHidden = !state.showAccessoryButton
+        barView.isAIChatButtonHidden = !state.showAIChatButton
 
+        applyCustomization()
+
+        let shouldShowAIChat = state.showAIChatFullModeBranding
+        barView.isFullAIChatHidden = !shouldShowAIChat
+    }
+
+    private func applyCustomization() {
+        // Some states (e.g. `AIChatModeState`) do not support customization, i.e we should not show the customizable button
+        guard state.allowCustomization else { return }
+        
+        let state = dependencies.mobileCustomization.state
+        guard state.isEnabled else {
+            barView.customizableButton.setImage(DesignSystemImages.Glyphs.Size24.shareApple, for: .normal)
+            barView.isCustomizableButtonHidden = false
+            return
+        }
+
+        let largeIcon = dependencies.mobileCustomization.largeIconForButton(state.currentAddressBarButton)
+        barView.customizableButton.setImage(largeIcon, for: .normal)
+        barView.isCustomizableButtonHidden = largeIcon == nil
     }
 
     func onQuerySubmitted() {
@@ -485,7 +510,7 @@ class OmniBarViewController: UIViewController, OmniBar {
 
             DailyPixel.fireDailyAndCount(pixel: .aiChatLegacyOmnibarQuerySubmitted)
             
-            if let url = URL(trimmedAddressBarString: query), url.isValid {
+            if let url = URL(trimmedAddressBarString: query, useUnifiedLogic: isUsingUnifiedPredictor), url.isValid(usingUnifiedLogic: isUsingUnifiedPredictor) {
                 omniDelegate?.onOmniQuerySubmitted(url.absoluteString)
             } else {
                 omniDelegate?.onOmniQuerySubmitted(query)
@@ -588,7 +613,7 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     private func onClearButtonPressed() {
-        omniDelegate?.onClearPressed()
+        omniDelegate?.onClearTextPressed()
         refreshState(state.onTextClearedState)
     }
 
@@ -622,8 +647,8 @@ class OmniBarViewController: UIViewController, OmniBar {
         omniDelegate?.onRefreshPressed()
     }
 
-    private func onSharePressed() {
-        omniDelegate?.onSharePressed()
+    private func onCustomizableButtonPressed() {
+        omniDelegate?.onCustomizableButtonPressed()
     }
 
     private func onBackPressed() {
@@ -640,8 +665,8 @@ class OmniBarViewController: UIViewController, OmniBar {
         omniDelegate?.onBookmarksPressed()
     }
 
-    private func onAccessoryPressed() {
-        omniDelegate?.onAccessoryPressed(accessoryType: barView.accessoryType)
+    private func onAIChatPressed() {
+        omniDelegate?.onAIChatPressed()
     }
 
     private func onDismissPressed() {
@@ -650,12 +675,16 @@ class OmniBarViewController: UIViewController, OmniBar {
         refreshState(state.onEditingStoppedState)
     }
 
-    private func onSettingsLongPress() {
-        omniDelegate?.onSettingsLongPressed()
+    private func onAIChatLeftButtonPressed() {
+        omniDelegate?.onAIChatLeftButtonPressed()
     }
 
-    private func onAccessoryLongPress() {
-        omniDelegate?.onAccessoryLongPressed(accessoryType: barView.accessoryType)
+    private func onAIChatRightButtonPressed() {
+        omniDelegate?.onAIChatRightButtonPressed()
+    }
+
+    private func onAIChatBrandingPressed() {
+        omniDelegate?.onAIChatBrandingPressed()
     }
 }
 
@@ -673,7 +702,7 @@ extension OmniBarViewController: UITextFieldDelegate {
     }
 
     @objc func textFieldDidBeginEditing(_ textField: UITextField) {
-        DailyPixel.fire(pixel: .aiChatLegacyOmnibarShown)
+        DailyPixel.fireDailyAndCount(pixel: .aiChatLegacyOmnibarShown)
         
         DispatchQueue.main.async {
             let highlightText = self.omniDelegate?.onTextFieldDidBeginEditing(self.barView) ?? true
@@ -710,6 +739,14 @@ extension OmniBarViewController: UITextFieldDelegate {
     }
 }
 
+extension OmniBarViewController {
+
+    /// Enters AI Chat full mode, showing AI Chat-specific UI in the omnibar
+    func enterAIChatMode() {
+        refreshState(state.onEnterAIChatState)
+    }
+}
+
 // MARK: - Theming
 
 extension OmniBarViewController {
@@ -717,7 +754,7 @@ extension OmniBarViewController {
     private func decorate() {
         privacyIconAndTrackersAnimator.resetImageProvider()
 
-        if let url = textField.text.flatMap({ URL(trimmedAddressBarString: $0.trimmingWhitespace()) }) {
+        if let url = textField.text.flatMap({ URL(trimmedAddressBarString: $0.trimmingWhitespace(), useUnifiedLogic: isUsingUnifiedPredictor) }) {
             textField.attributedText = AddressDisplayHelper.addressForDisplay(url: url, showsFullURL: textField.isEditing)
         }
     }

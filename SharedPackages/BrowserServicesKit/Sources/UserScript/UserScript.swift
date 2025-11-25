@@ -61,19 +61,21 @@ extension UserScript {
         return Self.getContentWorld(requiresRunInPageContentWorld)
     }
 
-    public static func loadJS(_ jsFile: String, from bundle: Bundle, withReplacements replacements: [String: String] = [:]) -> String {
+    public static func loadJS(_ jsFile: String, from bundle: Bundle, withReplacements replacements: [String: String] = [:]) throws -> String {
 
         let path = bundle.path(forResource: jsFile, ofType: "js")!
 
-        guard var js = try? String(contentsOfFile: path) else {
-            fatalError("Failed to load JavaScript \(jsFile) from \(path)")
-        }
+        do {
+            var js = try String(contentsOfFile: path)
 
-        for (key, value) in replacements {
-            js = js.replacingOccurrences(of: key, with: value, options: .literal)
-        }
+            for (key, value) in replacements {
+                js = js.replacingOccurrences(of: key, with: value, options: .literal)
+            }
 
-        return js
+            return js
+        } catch {
+            throw UserScriptError.failedToLoadJS(jsFile: jsFile, error: error)
+        }
     }
 
     fileprivate nonisolated static func prepareScriptSource(from source: String) -> String {
@@ -133,4 +135,8 @@ extension StaticUserScript {
                                 forMainFrameOnly: forMainFrameOnly).wkUserScript
     }
 
+}
+
+public enum UserScriptError: Error {
+    case failedToLoadJS(jsFile: String, error: Error)
 }

@@ -25,6 +25,7 @@ import Combine
 import os.log
 import FeatureFlags
 import PixelKit
+import enum UserScript.UserScriptError
 
 struct ExtractedAddress: Codable {
     let state: String
@@ -82,7 +83,7 @@ struct AlertUI {
     }
 
     static func from(error: DataBrokerProtectionError) -> AlertUI {
-        AlertUI(title: error.title, description: error.description)
+        AlertUI(title: error.title, description: error.localizedDescription)
     }
 }
 
@@ -150,8 +151,10 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     let brokers: [DataBroker]
 
     private let emailService: EmailService
+    private let emailConfirmationDataService: EmailConfirmationDataServiceProvider
     private let captchaService: CaptchaService
     private let privacyConfigManager: PrivacyConfigurationManaging
+    private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let fakePixelHandler: EventMapping<DataBrokerProtectionSharedPixels> = EventMapping { event, _, _, _ in
         print(event)
     }
@@ -226,10 +229,23 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
         let pixelKit = PixelKit.shared!
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
+        self.pixelHandler = sharedPixelsHandler
         let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler, privacyConfigManager: privacyConfigurationManager)
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
         let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
         let vault = try! vaultFactory.makeVault(reporter: reporter)
+
+        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: DataBrokerDebugFlagFakeBroker(), pixelHandler: sharedPixelsHandler, vault: vault, localBrokerService: MockLocalBrokerJSONService())
+
+        let emailServiceV1 = EmailServiceV1(authenticationManager: authenticationManager,
+                                           settings: dbpSettings,
+                                           servicePixel: backendServicePixels)
+        self.emailConfirmationDataService = EmailConfirmationDataService(database: database,
+                                                                     emailServiceV0: emailService,
+                                                                     emailServiceV1: emailServiceV1,
+                                                                     featureFlagger: featureFlagger,
+                                                                     pixelHandler: sharedPixelsHandler)
+
         self.brokers = try! vault.fetchAllBrokers()
     }
 
@@ -247,7 +263,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     let debugScanJob = DebugScanJob(privacyConfig: self.privacyConfigManager,
                                                     prefs: self.contentScopeProperties,
                                                     context: queryData,
-                                                    emailService: self.emailService,
+                                                    emailConfirmationDataService: self.emailConfirmationDataService,
                                                     captchaService: self.captchaService,
                                                     featureFlagger: self.featureFlagger) {
                         true
@@ -301,7 +317,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
             if dbpError.is404 {
                 return createRowFor(matched: false, result: result, error: "404 - No results")
             } else {
-                return createRowFor(matched: false, result: result, error: "\(dbpError.title)-\(dbpError.description)")
+                return createRowFor(matched: false, result: result, error: "\(dbpError.title)-\(dbpError.localizedDescription)")
             }
         } else {
             return createRowFor(matched: false, result: result, error: error.localizedDescription)
@@ -311,7 +327,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     private func append(_ result: DebugScanReturnValue) -> String {
         var resultsText = ""
 
-        if let meta = result.meta{
+        if let meta = result.meta {
             do {
                 let jsonData = try JSONSerialization.data(withJSONObject: meta, options: [])
                 let decoder = JSONDecoder()
@@ -414,7 +430,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                 privacyConfig: self.privacyConfigManager,
                                 prefs: self.contentScopeProperties,
                                 context: query,
-                                emailService: self.emailService,
+                                emailConfirmationDataService: self.emailConfirmationDataService,
                                 captchaService: self.captchaService,
                                 featureFlagger: self.featureFlagger,
                                 stageDurationCalculator: FakeStageDurationCalculator(),
@@ -432,6 +448,10 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                                 }
                             }
                             group.leave()
+                        } catch let UserScriptError.failedToLoadJS(jsFile, error) {
+                            pixelHandler.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
+                            try await Task.sleep(interval: 1.0) // give time for the pixel to be sent
+                            fatalError("Failed to load JS file \(jsFile): \(error.localizedDescription)")
                         } catch {
                             self.error = error
                             group.leave()
@@ -468,12 +488,13 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     privacyConfig: self.privacyConfigManager,
                     prefs: self.contentScopeProperties,
                     context: brokerProfileQueryData,
-                    emailService: self.emailService,
+                    emailConfirmationDataService: self.emailConfirmationDataService,
                     captchaService: self.captchaService,
                     featureFlagger: self.featureFlagger,
                     stageCalculator: FakeStageDurationCalculator(),
                     pixelHandler: fakePixelHandler,
                     executionConfig: .init(),
+                    actionsHandlerMode: .optOut,
                     shouldRunNextStep: { true }
                 )
 
@@ -486,6 +507,10 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
                     self.alert = AlertUI(title: "Success!", description: "We finished the opt out process for the selected profile.")
                 }
 
+            } catch let UserScriptError.failedToLoadJS(jsFile, error) {
+                pixelHandler.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
+                try await Task.sleep(interval: 1.0) // give time for the pixel to be sent
+                fatalError("Failed to load JS file \(jsFile): \(error.localizedDescription)")
             } catch {
                 showAlert(for: error)
             }
@@ -621,7 +646,7 @@ final class FakeStageDurationCalculator: StageDurationCalculator {
     func fireScanSuccess(matchesFound: Int) {
     }
 
-    func fireScanFailed() {
+    func fireScanNoResults() {
     }
 
     func fireScanError(error: Error) {
@@ -630,7 +655,7 @@ final class FakeStageDurationCalculator: StageDurationCalculator {
     func setStage(_ stage: Stage) {
     }
 
-    func setLastActionId(_ actionID: String) {
+    func setLastAction(_ action: Action) {
     }
 
     func fireOptOutConditionFound() {
@@ -740,3 +765,8 @@ extension ScrapedData {
     }
 }
 // swiftlint:enable force_try
+
+private struct MockLocalBrokerJSONService: LocalBrokerJSONServiceProvider {
+    func bundledBrokers() throws -> [DataBroker]? { [] }
+    func checkForUpdates() async throws {}
+}

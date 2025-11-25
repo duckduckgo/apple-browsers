@@ -31,5 +31,5 @@ enum UserText {
     static let newTabPageContextMenuFavorites = NSLocalizedString("newtabpage.context.menu.favorites", value: "Favorites", comment: "Context menu item to manage Favorites section on the New Tab Page")
     static let newTabPageContextMenuProtectionsReport = NSLocalizedString("newtabpage.context.menu.protections.report", value: "Protections Report", comment: "Context menu item to manage Protections Report section on the New Tab Page")
     static let newTabPageContextMenuShowDuckAI = NSLocalizedString("newtabpage.context.menu.show.duckai", value: "Show Duck.ai in Search Box", comment: "Context menu item to manage Duck.ai on the New Tab Page")
-    static let newTabPageContextMenuOpenDuckAISettings = NSLocalizedString("newtabpage.context.menu.open.duckai.settings", value: "Open Duck.ai Settings", comment: "Context menu item to open Duck.ai Settings from the New Tab Page")
+    static let newTabPageContextMenuOpenDuckAISettings = NSLocalizedString("newtabpage.context.menu.open.duckai.settings", value: "Open AI Settings", comment: "Context menu item to open AI Settings from the New Tab Page")
 }

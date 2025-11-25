@@ -47,12 +47,13 @@ let package = Package(
         .library(name: "BrokenSitePrompt", targets: ["BrokenSitePrompt"]),
         .library(name: "PageRefreshMonitor", targets: ["PageRefreshMonitor"]),
         .library(name: "PrivacyStats", targets: ["PrivacyStats"]),
+        .library(name: "AutoconsentStats", targets: ["AutoconsentStats"]),
         .library(name: "SharedObjCTestsUtils", targets: ["SharedObjCTestsUtils"]),
         .library(name: "ContentScopeScripts", targets: ["ContentScopeScripts"]),
         .library(name: "WKAbstractions", targets: ["WKAbstractions"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "18.3.0"),
+        .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "18.4.0"),
         .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "3.0.1"),
         .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.7.0"),
         .package(url: "https://github.com/gumob/PunycodeSwift.git", exact: "3.0.0"),
@@ -61,6 +62,7 @@ let package = Package(
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.4"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.0.6"),
+        .package(path: "../URLPredictor"),
     ],
     targets: [
         .binaryTarget(
@@ -103,6 +105,9 @@ let package = Package(
             dependencies: [
                 "BrowserServicesKit",
                 "WKAbstractions",
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
             ]
         ),
         .target(
@@ -118,14 +123,16 @@ let package = Package(
             name: "PersistenceTestingUtils",
             dependencies: [
                 "Persistence"
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
             ]
         ),
         .target(
             name: "Bookmarks",
             dependencies: [
-                "BrowserServicesKit",
+                "Common",
                 "Persistence",
-                "Common"
             ],
             resources: [
                 .process("BookmarksModel.xcdatamodeld")
@@ -220,9 +227,7 @@ let package = Package(
             name: "Common",
             dependencies: [
                 .product(name: "Punycode", package: "PunycodeSwift"),
-            ],
-            resources: [
-                .process("TLD/tlds.json")
+                .product(name: "URLPredictor", package: "URLPredictor"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -235,6 +240,9 @@ let package = Package(
                 .process("Resources/contentScope.js"),
                 .process("Resources/contentScopeIsolated.js"),
                 .copy("Resources/pages"),
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
             ]
         ),
         .target(
@@ -259,6 +267,7 @@ let package = Package(
                 .define("_MAIN_FRAME_NAVIGATION_ENABLED", .when(platforms: [.macOS])),
                 .define("_FRAME_HANDLE_ENABLED", .when(platforms: [.macOS])),
                 .define("PRIVATE_NAVIGATION_DID_FINISH_CALLBACKS_ENABLED", .when(platforms: [.macOS])),
+                .define("PRIVATE_NAVIGATION_PERFORMANCE_ENABLED", .when(platforms: [.macOS])),
                 .define("TERMINATE_WITH_REASON_ENABLED", .when(platforms: [.macOS])),
                 .define("_WEBPAGE_PREFS_CUSTOM_HEADERS_ENABLED", .when(platforms: [.macOS])),
                 .define("_SESSION_STATE_WITH_FILTER_ENABLED", .when(platforms: [.macOS])),
@@ -283,7 +292,8 @@ let package = Package(
                 "Persistence",
                 "BrowserServicesKit",
                 "MaliciousSiteProtection",
-                .product(name: "PrivacyDashboardResources", package: "privacy-dashboard")
+                .product(name: "PrivacyDashboardResources", package: "privacy-dashboard"),
+                "Navigation",
             ],
             path: "Sources/PrivacyDashboard",
             swiftSettings: [
@@ -324,8 +334,7 @@ let package = Package(
                 "Configuration",
                 "BrowserServicesKit",
                 "Networking",
-                "Persistence",
-                "Subscription"
+                "Persistence"
             ],
             resources: [
                 .process("CoreData/RemoteMessaging.xcdatamodeld")
@@ -379,7 +388,9 @@ let package = Package(
                 "Common",
                 "Networking",
                 "UserScript",
-                "PixelKit"
+                "PixelKit",
+                "Persistence",
+                "SecureStorage"
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -483,6 +494,16 @@ let package = Package(
             ],
             resources: [
                 .process("PrivacyStats.xcdatamodeld")
+            ],
+            swiftSettings: [
+                .define("DEBUG", .when(configuration: .debug))
+            ]
+        ),
+        .target(
+            name: "AutoconsentStats",
+            dependencies: [
+                "Common",
+                "Persistence",
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -623,6 +644,7 @@ let package = Package(
                 .define("_MAIN_FRAME_NAVIGATION_ENABLED", .when(platforms: [.macOS])),
                 .define("_FRAME_HANDLE_ENABLED", .when(platforms: [.macOS])),
                 .define("PRIVATE_NAVIGATION_DID_FINISH_CALLBACKS_ENABLED", .when(platforms: [.macOS])),
+                .define("PRIVATE_NAVIGATION_PERFORMANCE_ENABLED", .when(platforms: [.macOS])),
                 .define("TERMINATE_WITH_REASON_ENABLED", .when(platforms: [.macOS])),
                 .define("_WEBPAGE_PREFS_CUSTOM_HEADERS_ENABLED", .when(platforms: [.macOS])),
                 .define("_SESSION_STATE_WITH_FILTER_ENABLED", .when(platforms: [.macOS])),
@@ -661,6 +683,16 @@ let package = Package(
                 .copy("Resources/remote-messaging-config-metrics.json"),
                 .copy("Resources/remote-messaging-config-unsupported-items.json"),
                 .copy("Resources/remote-messaging-config.json"),
+                .copy("Resources/remote-messaging-config-surfaces-default-values.json"),
+                .copy("Resources/remote-messaging-config-surfaces-supported-values.json"),
+                .copy("Resources/remote-messaging-config-surfaces-unsupported-values.json"),
+                .copy("Resources/remote-messaging-config-surfaces-mixed-supported-and-unsupported-values.json"),
+                .copy("Resources/remote-messaging-config-cards-list-items-with-rules.json"),
+                .copy("Resources/remote-messaging-config-cards-list-items.json"),
+                .copy("Resources/remote-messaging-config-placeholders.json"),
+                .copy("Resources/Database_V1.sqlite"),
+                .copy("Resources/Database_V1.sqlite-shm"),
+                .copy("Resources/Database_V1.sqlite-wal"),
             ]
         ),
         .testTarget(
@@ -702,10 +734,12 @@ let package = Package(
             name: "SubscriptionTests",
             dependencies: [
                 "PixelKit",
+                "PixelKitTestingUtilities",
                 "SharedObjCTestsUtils",
                 "Subscription",
                 "SubscriptionTestingUtilities",
                 "NetworkingTestingUtils",
+                "PersistenceTestingUtils",
             ]
         ),
         .testTarget(
@@ -773,6 +807,14 @@ let package = Package(
             dependencies: [
                 "SharedObjCTestsUtils",
                 "PrivacyStats",
+            ]
+        ),
+        .testTarget(
+            name: "AutoconsentStatsTests",
+            dependencies: [
+                "SharedObjCTestsUtils",
+                "AutoconsentStats",
+                "PersistenceTestingUtils",
             ]
         ),
     ],

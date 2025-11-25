@@ -58,11 +58,11 @@ extension DefaultSubscriptionManager {
             }
 
             switch feature {
-            case .usePrivacyProUSARegionOverride:
+            case .useSubscriptionUSARegionOverride:
                 return (featureFlagger.internalUserDecider.isInternalUser &&
                         subscriptionEnvironment.serviceEnvironment == .staging &&
                         subscriptionUserDefaults.storefrontRegionOverride == .usa)
-            case .usePrivacyProROWRegionOverride:
+            case .useSubscriptionROWRegionOverride:
                 return (featureFlagger.internalUserDecider.isInternalUser &&
                         subscriptionEnvironment.serviceEnvironment == .staging &&
                         subscriptionUserDefaults.storefrontRegionOverride == .restOfWorld)
@@ -95,7 +95,8 @@ extension DefaultSubscriptionManager {
         // Auth V2 cleanup in case of rollback
         let pixelHandler: SubscriptionPixelHandling = SubscriptionPixelHandler(source: pixelHandlingSource)
         let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
-        let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager) { _, error in
+        let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager,
+                                                              userDefaults: subscriptionUserDefaults) { _, error in
             Logger.subscription.error("Failed to remove AuthV2 token container : \(error.localizedDescription, privacy: .public)")
         }
         try? tokenStorage.saveTokenContainer(nil)
@@ -112,7 +113,7 @@ extension DefaultSubscriptionManager: @retroactive AccountManagerKeychainAccessD
             return
         }
 
-        PixelKit.fire(PrivacyProErrorPixel.privacyProKeychainAccessError(accessType: accessType,
+        PixelKit.fire(SubscriptionErrorPixel.subscriptionKeychainAccessError(accessType: accessType,
                                                                          accessError: expectedError,
                                                                          source: KeychainErrorSource.shared,
                                                                          authVersion: KeychainErrorAuthVersion.v1),
@@ -134,16 +135,27 @@ extension DefaultSubscriptionManagerV2 {
         let keychainManager = KeychainManager(attributes: SubscriptionTokenKeychainStorageV2.defaultAttributes(keychainType: keychainType), pixelHandler: pixelHandler)
         let authService = DefaultOAuthService(baseURL: environment.authEnvironment.url,
                                               apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent()))
-        let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager) { accessType, error in
-            PixelKit.fire(PrivacyProErrorPixel.privacyProKeychainAccessError(accessType: accessType,
+        let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainManager: keychainManager,
+                                                              userDefaults: userDefaults) { accessType, error in
+            PixelKit.fire(SubscriptionErrorPixel.subscriptionKeychainAccessError(accessType: accessType,
                                                                              accessError: error,
                                                                              source: KeychainErrorSource.shared,
                                                                              authVersion: KeychainErrorAuthVersion.v2),
                           frequency: .legacyDailyAndCount)
         }
+
+        let wideEvent: WideEventManaging = WideEvent()
+        let authRefreshEventMapping = AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: wideEvent, isFeatureEnabled: {
+#if DEBUG
+            return (featureFlagger?.isFeatureOn(.authV2WideEventEnabled) ?? false) // Allow the refresh event when using staging in debug mode, for easier testing
+#else
+            return (featureFlagger?.isFeatureOn(.authV2WideEventEnabled) ?? false) && environment.serviceEnvironment == .production
+#endif
+        })
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                             legacyTokenStorage: nil, // Can't migrate
-                                            authService: authService)
+                                            authService: authService,
+                                            refreshEventMapping: authRefreshEventMapping)
         var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent())
         let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiServiceForSubscription,
                                                                                baseURL: environment.serviceEnvironment.url)
@@ -169,11 +181,11 @@ extension DefaultSubscriptionManagerV2 {
             }
 
             switch feature {
-            case .usePrivacyProUSARegionOverride:
+            case .useSubscriptionUSARegionOverride:
                 return (featureFlagger.internalUserDecider.isInternalUser &&
                         environment.serviceEnvironment == .staging &&
                         userDefaults.storefrontRegionOverride == .usa)
-            case .usePrivacyProROWRegionOverride:
+            case .useSubscriptionROWRegionOverride:
                 return (featureFlagger.internalUserDecider.isInternalUser &&
                         environment.serviceEnvironment == .staging &&
                         userDefaults.storefrontRegionOverride == .restOfWorld)

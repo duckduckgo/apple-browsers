@@ -302,4 +302,125 @@ class SecureVaultTests: XCTestCase {
         let neverPromptWebsites = try testVault.neverPromptWebsites()
         XCTAssertEqual(neverPromptWebsites.count, 0)
     }
+
+    // MARK: - Credit Card Tests
+
+    func testWhenDeletingCreditCard_ThenDatabaseCalled() throws {
+        mockKeystoreProvider._generatedPassword = "generated".data(using: .utf8)!
+        mockCryptoProvider._derivedKey = "derived".data(using: .utf8)!
+        mockKeystoreProvider._encryptedL2Key = "encryptedL2Key".data(using: .utf8)!
+        mockCryptoProvider._decryptedData = "decrypted".data(using: .utf8)!
+
+        _ = try testVault.authWith(password: "userPassword".data(using: .utf8)!)
+
+        let creditCard = SecureVaultModels.CreditCard(
+            id: 1,
+            title: "Test Card",
+            cardNumber: "4111111111111111",
+            cardholderName: "John Doe",
+            cardSecurityCode: "123",
+            expirationMonth: 12,
+            expirationYear: 2025
+        )
+
+        let cardId = try testVault.storeCreditCard(creditCard)
+
+        XCTAssertEqual(1, mockDatabaseProvider._creditCards.count)
+        XCTAssertEqual("4111111111111111", mockDatabaseProvider._creditCards[cardId]?.cardNumber)
+        try testVault.deleteCreditCardFor(cardId: cardId)
+        XCTAssert(mockDatabaseProvider._creditCards.isEmpty)
+    }
+
+    func testWhenStoringCreditCard_ThenTheCardNumberIsEncryptedWithL2Key() throws {
+        mockKeystoreProvider._generatedPassword = "generated".data(using: .utf8)!
+        mockCryptoProvider._derivedKey = "derived".data(using: .utf8)!
+        mockKeystoreProvider._encryptedL2Key = "encryptedL2Key".data(using: .utf8)!
+        mockCryptoProvider._decryptedData = "decrypted".data(using: .utf8)!
+
+        let creditCard = SecureVaultModels.CreditCard(
+            title: "Test Card",
+            cardNumber: "4111111111111111",
+            cardholderName: "John Doe",
+            cardSecurityCode: "123",
+            expirationMonth: 12,
+            expirationYear: 2025
+        )
+
+        let cardId = try testVault.storeCreditCard(creditCard)
+
+        XCTAssertNotNil(mockDatabaseProvider._creditCards[cardId])
+        // Credit card encryption happens at the model level
+    }
+
+    func testWhenCreditCardsAreRetrievedUsingGeneratedPassword_ThenTheyAreDecrypted() throws {
+        let creditCard = SecureVaultModels.CreditCard(
+            id: 1,
+            title: "Test Card",
+            cardNumber: "4111111111111111",
+            cardholderName: "John Doe",
+            cardSecurityCode: "123",
+            expirationMonth: 12,
+            expirationYear: 2025
+        )
+        self.mockDatabaseProvider._creditCards = [1: creditCard]
+
+        mockCryptoProvider._decryptedData = "decrypted".data(using: .utf8)
+        mockKeystoreProvider._generatedPassword = "generated".data(using: .utf8)
+        mockCryptoProvider._derivedKey = "derived".data(using: .utf8)
+        mockKeystoreProvider._encryptedL2Key = "encryptedL2Key".data(using: .utf8)
+
+        try testVault.storeCreditCard(creditCard)
+
+        let fetchedCreditCard = try testVault.creditCardFor(id: 1)
+        XCTAssertNotNil(fetchedCreditCard)
+        XCTAssertNotNil(fetchedCreditCard?.cardNumber)
+    }
+
+    func testWhenCreditCardsAreRetrievedUsingUserPassword_ThenTheyAreDecrypted() throws {
+        let userPassword = "userPassword".data(using: .utf8)!
+        let creditCard = SecureVaultModels.CreditCard(
+            id: 1,
+            title: "Test Card",
+            cardNumber: "4111111111111111",
+            cardholderName: "John Doe",
+            cardSecurityCode: "123",
+            expirationMonth: 12,
+            expirationYear: 2025
+        )
+        self.mockDatabaseProvider._creditCards = [1: creditCard]
+
+        mockCryptoProvider._decryptedData = "decrypted".data(using: .utf8)
+        mockCryptoProvider._derivedKey = "derived".data(using: .utf8)
+        mockKeystoreProvider._encryptedL2Key = "encryptedL2Key".data(using: .utf8)
+
+        _ = try testVault.authWith(password: userPassword)
+        try testVault.storeCreditCard(creditCard)
+
+        let fetchedCreditCard = try testVault.authWith(password: userPassword).creditCardFor(id: 1)
+
+        XCTAssertNotNil(fetchedCreditCard)
+        XCTAssertNotNil(fetchedCreditCard?.cardNumber)
+    }
+
+    func testWhenCreditCardsAreRetrievedUsingExpiredUserPassword_ThenErrorIsThrown() throws {
+        let userPassword = "userPassword".data(using: .utf8)!
+        mockCryptoProvider._decryptedData = "decrypted".data(using: .utf8)
+        mockCryptoProvider._derivedKey = "derived".data(using: .utf8)
+        mockKeystoreProvider._encryptedL2Key = "encryptedL2Key".data(using: .utf8)
+
+        _ = try testVault.authWith(password: userPassword)
+
+        sleep(2) // allow vault to expire password
+
+        do {
+            _ = try testVault.creditCardFor(id: 1)
+        } catch {
+            if case SecureStorageError.authRequired = error {
+                // no-op
+            } else {
+                XCTFail("Unexpected error \(error)")
+            }
+        }
+    }
+
 }

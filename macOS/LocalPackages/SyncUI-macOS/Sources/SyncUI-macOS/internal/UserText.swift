@@ -37,7 +37,8 @@ enum UserText {
     static let beginSyncTitle = NSLocalizedString("preferences.begin-sync.card-title", bundle: Bundle.module, value: "Begin Syncing", comment: "Begin Syncing card title in sync settings")
     static let beginSyncDescription = NSLocalizedString("preferences.begin-sync.card-description", bundle: Bundle.module, value: "Securely sync bookmarks and passwords between your devices.", comment: "Begin Syncing card description in sync settings")
     static let beginSyncButton = NSLocalizedString("preferences.begin-sync.card-button", bundle: Bundle.module, value: "Sync With Another Device", comment: "Button text on the Begin Syncing card in sync settings")
-    static let beginSyncFooter = NSLocalizedString("preferences.begin-sync.card-footer", bundle: Bundle.module, value: "Your data is end-to-end encrypted, and DuckDuckGo does not have access to the encryption key.", comment: "Footer / caption on the Begin Syncing card in sync settings")
+    static let beginSyncFooter = NSLocalizedString("preferences.begin-sync.card-footer", bundle: Bundle.module, value: "Your data is end-to-end encrypted. Nobody but you can see your data, not even us. Support for certain data types depends on the platform. [Learn More](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)", comment: "Footer / caption on the Begin Syncing card in sync settings")
+    static let syncFooter = NSLocalizedString("preferences.sync.card-footer", bundle: Bundle.module, value: "Support for certain data types depends on the platform. [Learn More](https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/sync-and-backup-privacy/)", comment: "Footer / caption on the Sync card in sync settings")
 
     // Options
     static let otherOptionsSectionTitle = NSLocalizedString("preferences.other-options.section-title", bundle: Bundle.module, value: "Other Options", comment: "Sync settings. Other Options section title")
@@ -46,7 +47,7 @@ enum UserText {
 
     // Preparing to sync dialog
     static let preparingToSyncDialogTitle = NSLocalizedString("preferences.preparing-to-sync.dialog-title", bundle: Bundle.module, value: "Preparing To Sync", comment: "Preparing to sync dialog title during sync set up")
-    static let preparingToSyncDialogSubTitle = NSLocalizedString("preferences.preparing-to-sync.dialog-subtitle", bundle: Bundle.module, value: "We're setting up the connection to synchronize your bookmarks and saved logins with the other device.", comment: "Preparing to sync dialog subtitle during sync set up")
+    static let preparingToSyncDialogSubTitle = NSLocalizedString("preferences.preparing-to-sync.dialog-subtitle", bundle: Bundle.module, value: "We're setting up the connection to synchronize your bookmarks and autofill data with the other device.", comment: "Preparing to sync dialog subtitle during sync set up")
     static let preparingToSyncDialogAction = NSLocalizedString("preferences.preparing-to-sync.dialog-action", bundle: Bundle.module, value: "Connecting…", comment: "Sync preparing to sync dialog action")
 
     // Enter recovery code dialog
@@ -122,7 +123,7 @@ enum UserText {
 
     // Sync with server dialog
     static let syncWithServerTitle = NSLocalizedString("preferences.sync.sync-with-server-title", bundle: Bundle.module, value: "Sync and Back Up This Device", comment: "Sync with server dialog title")
-    static let syncWithServerSubtitle1 = NSLocalizedString("preferences.sync.sync-with-server-subtitle1", bundle: Bundle.module, value: "This creates an encrypted backup of your bookmarks and passwords on DuckDuckGo’s secure server, which can be synced with your other devices.", comment: "Sync with server dialog first subtitle")
+    static let syncWithServerSubtitle1 = NSLocalizedString("preferences.sync.sync-with-server-subtitle1", bundle: Bundle.module, value: "This creates an encrypted backup of your bookmarks and autofill data on DuckDuckGo’s secure server, which can be synced with your other devices.", comment: "Sync with server dialog first subtitle")
     static let syncWithServerSubtitle2 = NSLocalizedString("preferences.sync.sync-with-server-subtitle2", bundle: Bundle.module, value: "The encryption key is only stored on your device, DuckDuckGo cannot access it.", comment: "Sync with server dialog second subtitle")
     static let syncWithServerButton = NSLocalizedString("preferences.sync.sync-with-server-button", bundle: Bundle.module, value: "Turn On Sync & Backup", comment: "Sync with server dialog button")
 
@@ -147,13 +148,14 @@ enum UserText {
     static let fetchFaviconsOptionCaption = NSLocalizedString("prefrences.sync.fetch-favicons-option-caption", bundle: Bundle.module, value: "Automatically download icons for synced bookmarks. Icon downloads are exposed to your network.", comment: "Caption for fetch favicons option")
 
     // sync enabled errors
-    static let syncLimitExceededTitle = NSLocalizedString("prefrences.sync.limit-exceeded-title", bundle: Bundle.module, value: "Sync Paused", comment: "Title for sync limits exceeded warning")
-    static let bookmarksLimitExceededDescription = NSLocalizedString("prefrences.sync.bookmarks-limit-exceeded-description", bundle: Bundle.module, value: "Bookmark limit exceeded. Delete some to resume syncing.", comment: "Description for sync bookmarks limits exceeded warning")
-    static let credentialsLimitExceededDescription = NSLocalizedString("prefrences.sync.credentials-limit-exceeded-description", bundle: Bundle.module, value: "Logins limit exceeded. Delete some to resume syncing.", comment: "Description for sync credentials limits exceeded warning")
     static let bookmarksLimitExceededAction = NSLocalizedString("prefrences.sync.bookmarks-limit-exceeded-action", bundle: Bundle.module, value: "Manage Bookmarks", comment: "Button title for sync bookmarks limits exceeded warning to go to manage bookmarks")
     static let credentialsLimitExceededAction = NSLocalizedString("prefrences.sync.credentials-limit-exceeded-action", bundle: Bundle.module, value: "Manage passwords…", comment: "Button title for sync credentials limits exceeded warning to go to manage passwords")
+    static let creditCardsLimitExceededAction = NSLocalizedString("prefrences.sync.credit-cards-limit-exceeded-action", value: "Manage credit cards…", comment: "Button title for sync credit cards limits exceeded warning to go to manage payment methods")
+    static let identitiesLimitExceededAction = NSLocalizedString("prefrences.sync.identities-limit-exceeded-action", value: "Manage identities…", comment: "Button title for sync identities limits exceeded warning to go to manage identities")
     static let invalidBookmarksPresentTitle = NSLocalizedString("prefrences.sync.invalid-bookmarks-present-title", bundle: Bundle.module, value: "Some bookmarks are not syncing due to excessively long content in certain fields.", comment: "Alert title for invalid bookmarks being filtered out of synced data")
-    static let invalidCredentialsPresentTitle = NSLocalizedString("prefrences.sync.invalid-credentials-present-title", bundle: Bundle.module, value: "Some logins are not syncing due to excessively long content in certain fields.", comment: "Alert title for invalid logins being filtered out of synced data")
+    static let invalidCredentialsPresentTitle = NSLocalizedString("prefrences.sync.invalid-credentials-present-title", bundle: Bundle.module, value: "Some passwords are not syncing due to excessively long content in certain fields.", comment: "Alert title for invalid logins being filtered out of synced data")
+    static let invalidCreditCardsPresentTitle = NSLocalizedString("prefrences.sync.invalid-credit-cards-present-title", bundle: Bundle.module, value: "Some credit cards are not syncing due to excessively long content in certain fields.", comment: "Alert title for invalid credit cards being filtered out of synced data")
+    static let invalidIdentitiesPresentTitle = NSLocalizedString("prefrences.sync.invalid-identities-present-title", bundle: Bundle.module, value: "Some identities are not syncing due to excessively long content in certain fields.", comment: "Alert title for invalid identities being filtered out of synced data")
 
     static func invalidBookmarksPresentDescription(_ invalidItemTitle: String, numberOfInvalidItems: Int) -> String {
         guard numberOfInvalidItems > 1 else {
@@ -187,8 +189,46 @@ enum UserText {
         let message = NSLocalizedString(
             "prefrences.sync.invalid-credentials-present-description-many",
             bundle: Bundle.module,
-            value: "Some passwords (n) can't sync because some of their fields exceed the character limit.",
+            value: "Some passwords (%d) can't sync because some of their fields exceed the character limit.",
             comment: "Alert message for multiple invalid logins being filtered out of synced data"
+        )
+        return String(format: message, numberOfInvalidItems)
+    }
+
+    static func invalidCreditCardsPresentDescription(_ invalidItemTitle: String, numberOfInvalidItems: Int) -> String {
+        guard numberOfInvalidItems > 1 else {
+            let message = NSLocalizedString(
+                "prefrences.sync.invalid-credit-cards-present-description-one",
+                bundle: Bundle.module,
+                value: "Your credit card %@ can't sync because one of its fields exceeds the character limit.",
+                comment: "Alert message for 1 invalid credit card being filtered out of synced data"
+            )
+            return String(format: message, invalidItemTitle)
+        }
+        let message = NSLocalizedString(
+            "prefrences.sync.invalid-credit-cards-present-description-many",
+            bundle: Bundle.module,
+            value: "Some credit cards (%d) can't sync because some of their fields exceed the character limit.",
+            comment: "Alert message for multiple invalid credit cards being filtered out of synced data"
+        )
+        return String(format: message, numberOfInvalidItems)
+    }
+
+    static func invalidIdentitiesPresentDescription(_ invalidItemTitle: String, numberOfInvalidItems: Int) -> String {
+        guard numberOfInvalidItems > 1 else {
+            let message = NSLocalizedString(
+                "prefrences.sync.invalid-identities-present-description-one",
+                bundle: Bundle.module,
+                value: "Your identity for %@ can't sync because one of its fields exceeds the character limit.",
+                comment: "Alert message for 1 invalid credit card being filtered out of synced data"
+            )
+            return String(format: message, invalidItemTitle)
+        }
+        let message = NSLocalizedString(
+            "prefrences.sync.invalid-identities-present-description-many",
+            bundle: Bundle.module,
+            value: "Some identities (%d) can't sync because some of their fields exceed the character limit.",
+            comment: "Alert message for multiple invalid identities being filtered out of synced data"
         )
         return String(format: message, numberOfInvalidItems)
     }

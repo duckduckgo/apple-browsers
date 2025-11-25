@@ -43,6 +43,7 @@ let package = Package(
         .target(
             name: "NewTabPage",
             dependencies: [
+                .product(name: "AutoconsentStats", package: "BrowserServicesKit"),
                 .product(name: "Bookmarks", package: "BrowserServicesKit"),
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
@@ -61,6 +62,7 @@ let package = Package(
             dependencies: [
                 "NewTabPage",
                 "Utilities",
+                .product(name: "AutoconsentStats", package: "BrowserServicesKit"),
             ]
         ),
     ]

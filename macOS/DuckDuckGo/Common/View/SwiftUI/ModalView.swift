@@ -39,8 +39,7 @@ extension ModalView {
 
         window.beginSheet(sheetWindow, completionHandler: completion.map { completion in { _ in
             completion()
-        }
-        })
+        }})
     }
 
 }

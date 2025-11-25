@@ -64,7 +64,7 @@ final class PersistentPixelTests: XCTestCase {
         persistentPixel.fireDailyAndCount(
             pixel: .networkProtectionMemoryWarning,
             withAdditionalParameters: ["key": "value"],
-            includedParameters: [.appVersion, .atb],
+            includedParameters: [.appVersion],
             completion: { errors in
                 expectation.fulfill()
                 XCTAssertNil(errors.dailyPixelStorageError)
@@ -79,7 +79,7 @@ final class PersistentPixelTests: XCTestCase {
 
         XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.networkProtectionMemoryWarning.name)
         XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.params, ["key": "value", PixelParameters.originalPixelTimestamp: testDateString])
-        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.includedParams, [.appVersion, .atb])
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.includedParams, [.appVersion])
     }
 
     func testWhenDailyPixelFailsDueToAlreadySentError_ThenNoPixelIsStored() throws {

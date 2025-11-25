@@ -35,7 +35,7 @@ final class SubscriptionRedirectManagerTests: XCTestCase {
     private var canPurchase: Bool = true
     private var mockInternalUserStoring: MockInternalUserStoring! = MockInternalUserStoring()
 
-    private var sut: PrivacyProSubscriptionRedirectManager!
+    private var sut: SubscriptionRedirectManager!
 
     override func setUpWithError() throws {
         try super.setUpWithError()
@@ -44,7 +44,7 @@ final class SubscriptionRedirectManagerTests: XCTestCase {
 
         mockInternalUserStoring.isInternalUser = false
 
-        sut = PrivacyProSubscriptionRedirectManager(subscriptionManager: subscriptionManager,
+        sut = SubscriptionRedirectManager(subscriptionManager: subscriptionManager,
                                                     baseURL: Constants.redirectURL,
                                                     tld: TLD(),
                                                     featureFlagger: MockFeatureFlagger(internalUserDecider: DefaultInternalUserDecider(store: mockInternalUserStoring)))
@@ -56,7 +56,7 @@ final class SubscriptionRedirectManagerTests: XCTestCase {
         subscriptionManager = nil
     }
 
-    func testWhenURLIsPrivacyProThenRedirectToSubscriptionBaseURL() throws {
+    func testWhenURLIsSubscriptionThenRedirectToSubscriptionBaseURL() throws {
         // GIVEN
         let url = try XCTUnwrap(URL(string: "https://www.duckduckgo.com/pro"))
         let expectedURL = SubscriptionURL.baseURL.subscriptionURL(environment: .production)
@@ -70,7 +70,7 @@ final class SubscriptionRedirectManagerTests: XCTestCase {
         XCTAssertEqual(result, expectedURL)
     }
 
-    func testWhenURLIsPrivacyProAndPurchaseIsNotAllowedThenRedirectReturnsNil() throws {
+    func testWhenURLIsSubscriptionAndPurchaseIsNotAllowedThenRedirectReturnsNil() throws {
         // GIVEN
         let url = try XCTUnwrap(URL(string: "https://www.duckduckgo.com/pro?origin=test"))
 

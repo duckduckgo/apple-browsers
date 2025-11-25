@@ -81,6 +81,9 @@ public extension PixelKit {
 
         // Data import
         public static let importedFavorites = "saved_favorites"
+
+        // UserScript
+        public static let jsFile = "jsFile"
     }
 
     enum Values {

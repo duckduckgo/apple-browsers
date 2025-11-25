@@ -24,6 +24,7 @@ import Common
 import PixelKit
 import SecureStorage
 import WebKit
+import enum UserScript.UserScriptError
 
 @MainActor
 public final class ContentOverlayViewController: NSViewController, EmailManagerRequestDelegate {
@@ -62,10 +63,12 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
     init?(
         coder: NSCoder,
         privacyConfigurationManager: PrivacyConfigurationManaging,
+        webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
         featureFlagger: FeatureFlagger,
         tld: TLD
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.webTrackingProtectionPreferences = webTrackingProtectionPreferences
         self.featureFlagger = featureFlagger
         self.tld = tld
         super.init(coder: coder)
@@ -78,6 +81,7 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
     lazy var passwordManagerCoordinator: PasswordManagerCoordinating = PasswordManagerCoordinator.shared
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     private let featureFlagger: FeatureFlagger
     private let tld: TLD
 
@@ -287,11 +291,11 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
         // no-op on macOS
     }
 
-    public func secureVaultManager(_: SecureVaultManager, promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard], withTrigger trigger: AutofillUserScript.GetTriggerType, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+    public func secureVaultManager(_: SecureVaultManager, promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard], withTrigger trigger: AutofillUserScript.GetTriggerType, isMainFrame: Bool, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         // no-op on macOS
     }
 
-    public func secureVaultManager(_: SecureVaultManager, didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType, withCreditCards creditCards: [SecureVaultModels.CreditCard], completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+    public func secureVaultManager(_: SecureVaultManager, didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType, withCreditCards creditCards: [SecureVaultModels.CreditCard], isMainFrame: Bool, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         // no-op on macOS
     }
 
@@ -404,24 +408,30 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
     }
 
     public func secureVaultManager(_: SecureVaultManager, didRequestRuntimeConfigurationForDomain domain: String, completionHandler: @escaping (String?) -> Void) {
-        let isGPCEnabled = WebTrackingProtectionPreferences.shared.isGPCEnabled
+        let isGPCEnabled = webTrackingProtectionPreferences.isGPCEnabled
         let properties = ContentScopeProperties(gpcEnabled: isGPCEnabled,
                                                 sessionKey: topAutofillUserScript?.sessionKey ?? "",
                                                 messageSecret: topAutofillUserScript?.messageSecret ?? "",
                                                 featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfigurationManager.privacyConfig))
 
-        let runtimeConfiguration = DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfigurationManager,
-                                                                         properties: properties)
-            .build()
-            .buildRuntimeConfigResponse()
+        do {
+            let runtimeConfiguration = try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfigurationManager,
+                                                                                 properties: properties)
+                .build()
+                .buildRuntimeConfigResponse()
 
-        completionHandler(runtimeConfiguration)
+            completionHandler(runtimeConfiguration)
+        } catch {
+            if let error = error as? UserScriptError {
+                error.fireLoadJSFailedPixelIfNeeded()
+            }
+            fatalError("Failed to load JS for DefaultAutofillSourceProvider: \(error.localizedDescription)")
+        }
     }
 }
 
 extension ContentOverlayViewController: AutofillCredentialsImportPresentationDelegate {
     public func autofillDidRequestCredentialsImportFlow(onFinished: @escaping () -> Void, onCancelled: @escaping () -> Void) {
-        let viewModel = DataImportViewModel(onFinished: onFinished, onCancelled: onCancelled)
-        DataImportFlowLauncher().launchDataImport(model: viewModel, isDataTypePickerExpanded: true)
+        DataImportFlowLauncher().launchDataImport(isDataTypePickerExpanded: true, onFinished: onFinished, onCancelled: onCancelled)
     }
 }

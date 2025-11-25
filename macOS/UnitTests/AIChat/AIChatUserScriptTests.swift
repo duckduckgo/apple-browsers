@@ -87,11 +87,43 @@ final class AIChatUserScriptTests: XCTestCase {
         XCTAssertNil(result, "Expected result to be nil")
     }
 
-    @MainActor func testGetPageContext() async throws {
-        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.getPageContext.rawValue))
+    @MainActor func testGetAIChatPageContext() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatPageContext.rawValue))
         let result = try await handler([""], WKScriptMessage())
 
-        XCTAssertTrue(mockHandler.didGetPageContext, "getPageContext should be called")
+        XCTAssertTrue(mockHandler.didGetAIChatPageContext, "getAIChatPageContext should be called")
+        XCTAssertNil(result, "Expected result to be nil")
+    }
+
+    @MainActor func testStoreMigrationData() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.storeMigrationData.rawValue))
+        let result = try await handler([""], WKScriptMessage())
+
+        XCTAssertTrue(mockHandler.didStoreMigrationData, "storeMigrationData should be called")
+        XCTAssertNil(result, "Expected result to be nil")
+    }
+
+    @MainActor func testGetMigrationDataByIndex() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.getMigrationDataByIndex.rawValue))
+        let result = try await handler([""], WKScriptMessage())
+
+        XCTAssertTrue(mockHandler.didGetMigrationDataByIndex, "getMigrationDataByIndex should be called")
+        XCTAssertNil(result, "Expected result to be nil")
+    }
+
+    @MainActor func testGetMigrationInfo() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.getMigrationInfo.rawValue))
+        let result = try await handler([""], WKScriptMessage())
+
+        XCTAssertTrue(mockHandler.didGetMigrationInfo, "getMigrationInfo should be called")
+        XCTAssertNil(result, "Expected result to be nil")
+    }
+
+    @MainActor func testClearMigrationData() async throws {
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.clearMigrationData.rawValue))
+        let result = try await handler([""], WKScriptMessage())
+
+        XCTAssertTrue(mockHandler.didClearMigrationData, "clearMigrationData should be called")
         XCTAssertNil(result, "Expected result to be nil")
     }
 }
@@ -108,15 +140,25 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     var didRestoreChat = false
     var didRemoveChat = false
     var didOpenSummarizationSourceLink = false
+    var didOpenTranslationSourceLink = false
 
     var didSubmitAIChatNativePrompt = false
     var aiChatNativePromptSubject = PassthroughSubject<AIChatNativePrompt, Never>()
 
-    var didGetPageContext = false
-    var didSubmitPageContext = false
+    var didGetAIChatPageContext = false
+    var didSubmitAIChatPageContext = false
     var didTogglePageContextTelemetry = false
     var pageContextSubject = PassthroughSubject<AIChatPageContextData?, Never>()
     var pageContextRequestedSubject = PassthroughSubject<Void, Never>()
+    var chatRestorationDataSubject = PassthroughSubject<AIChatRestorationData?, Never>()
+
+    var didReportMetric = false
+
+    // Migration tracking flags
+    var didStoreMigrationData = false
+    var didGetMigrationDataByIndex = false
+    var didGetMigrationInfo = false
+    var didClearMigrationData = false
 
     var messageHandling: any DuckDuckGo_Privacy_Browser.AIChatMessageHandling
 
@@ -182,8 +224,13 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
-    func getPageContext(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
-        didGetPageContext = true
+    func openTranslationSourceLink(params: Any, message: any UserScriptMessage) async -> (any Encodable)? {
+        didOpenTranslationSourceLink = true
+        return nil
+    }
+
+    func getAIChatPageContext(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
+        didGetAIChatPageContext = true
         return nil
     }
 
@@ -195,14 +242,42 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         pageContextRequestedSubject.eraseToAnyPublisher()
     }
 
-    func submitPageContext(_ pageContext: AIChatPageContextData?) {
-        didSubmitPageContext = true
+    var chatRestorationDataPublisher: AnyPublisher<AIChatRestorationData?, Never> {
+        chatRestorationDataSubject.eraseToAnyPublisher()
+    }
+
+    func submitAIChatPageContext(_ pageContext: AIChatPageContextData?) {
+        didSubmitAIChatPageContext = true
+    }
+
+    func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable? {
+        didReportMetric = true
+        return nil
     }
 
     func togglePageContextTelemetry(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
         didTogglePageContextTelemetry = true
         return nil
     }
+
+    // Migration data mocks
+    func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable? {
+        didStoreMigrationData = true
+        return nil
+    }
+    func getMigrationDataByIndex(params: Any, message: UserScriptMessage) -> Encodable? {
+        didGetMigrationDataByIndex = true
+        return nil
+    }
+    func getMigrationInfo(params: Any, message: UserScriptMessage) -> Encodable? {
+        didGetMigrationInfo = true
+        return nil
+    }
+    func clearMigrationData(params: Any, message: UserScriptMessage) -> Encodable? {
+        didClearMigrationData = true
+        return nil
+    }
+
 }
 
 final class AIChatMockDebugSettings: AIChatDebugURLSettingsRepresentable {

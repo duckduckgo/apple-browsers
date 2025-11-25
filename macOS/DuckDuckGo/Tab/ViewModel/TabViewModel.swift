@@ -26,13 +26,12 @@ import PrivacyDashboard
 import WebKit
 import DesignResourcesKitIcons
 
-final class TabViewModel {
+final class TabViewModel: NSObject {
 
     private(set) var tab: Tab
     private let appearancePreferences: AppearancePreferences
     private let accessibilityPreferences: AccessibilityPreferences
     private let featureFlagger: FeatureFlagger
-    private let visualStyle: VisualStyleProviding
     private var cancellables = Set<AnyCancellable>()
 
     @Published private(set) var canGoForward: Bool = false
@@ -130,15 +129,15 @@ final class TabViewModel {
 
     init(tab: Tab,
          appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences,
-         accessibilityPreferences: AccessibilityPreferences = .shared,
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-         visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyle) {
+         accessibilityPreferences: AccessibilityPreferences = NSApp.delegateTyped.accessibilityPreferences,
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.tab = tab
         self.appearancePreferences = appearancePreferences
         self.accessibilityPreferences = accessibilityPreferences
         self.featureFlagger = featureFlagger
-        self.visualStyle = visualStyle
         zoomLevel = accessibilityPreferences.defaultPageZoom
+
+        super.init()
         subscribeToUrl()
         subscribeToCanGoBackForwardAndReload()
         subscribeToTitle()
@@ -394,13 +393,13 @@ final class TabViewModel {
         case .bookmarks:
                 .bookmarksTrustedIndicator
         case .history:
-            featureFlagger.isFeatureOn(.historyView) ? .historyTrustedIndicator : .init()
+            .historyTrustedIndicator
         case .url(let url, _, _) where url.isHistory:
-            featureFlagger.isFeatureOn(.historyView) ? .historyTrustedIndicator : .init()
+            .historyTrustedIndicator
         case .dataBrokerProtection:
                 .dbpTrustedIndicator
         case .subscription:
-            NSAttributedString.subscriptionTrustedIndicator(isSubscriptionRebrandingOn: featureFlagger.isFeatureOn(.subscriptionRebranding))
+            NSAttributedString.subscriptionTrustedIndicator
         case .identityTheftRestoration:
                 .identityTheftRestorationTrustedIndicator
         case .releaseNotes:
@@ -465,7 +464,7 @@ final class TabViewModel {
         case .url, .none, .subscription, .identityTheftRestoration, .onboarding, .webExtensionUrl, .aiChat:
             if let tabTitle = tab.title?.trimmingWhitespace(), !tabTitle.isEmpty {
                 title = tabTitle
-            } else if let host = tab.url?.host?.droppingWwwPrefix() {
+            } else if let host = tab.url?.suggestedTitlePlaceholder {
                 title = host
             } else if let url = tab.url, url.isFileURL {
                 title = url.lastPathComponent
@@ -488,8 +487,7 @@ final class TabViewModel {
             error: isShowingErrorPage ? tab.error : nil,
             actualFavicon: tabFavicon ?? tab.favicon,
             isBurner: tab.burnerMode.isBurner,
-            featureFlagger: featureFlagger,
-            visualStyle: visualStyle
+            featureFlagger: featureFlagger
         )
     }
 
@@ -604,13 +602,8 @@ private extension NSAttributedString {
                                                                           title: UserText.mainMenuHistory)
     static let dbpTrustedIndicator = trustedIndicatorAttributedString(with: .personalInformationRemovalMulticolor16,
                                                                       title: UserText.tabDataBrokerProtectionTitle)
-    static func subscriptionTrustedIndicator(isSubscriptionRebrandingOn: Bool) -> NSAttributedString {
-        trustedIndicatorAttributedString(
-            with: .privacyPro,
-            title: UserText.subscriptionName(isSubscriptionRebrandingOn: isSubscriptionRebrandingOn)
-        )
-    }
-
+    static let subscriptionTrustedIndicator = trustedIndicatorAttributedString(with: .privacyPro,
+                                                                               title: UserText.subscriptionName)
     static let identityTheftRestorationTrustedIndicator = trustedIndicatorAttributedString(with: .identityTheftRestorationMulticolor16,
                                                                                            title: UserText.identityTheftRestorationOptionsMenuItem)
     static let duckPlayerTrustedIndicator = trustedIndicatorAttributedString(with: .duckPlayerSettings,

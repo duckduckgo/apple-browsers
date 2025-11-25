@@ -16,19 +16,36 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
+import Combine
+import Common
 import Foundation
 import History
-
+import os.log
+import SharedTestUtilities
 import XCTest
-import Combine
+
 @testable import DuckDuckGo_Privacy_Browser
 
+@available(macOS 12.0, *)
 final class FireTests: XCTestCase {
 
+    var pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock!
+    var schemeHandler: TestSchemeHandler!
     var cancellables = Set<AnyCancellable>()
+    static let testHtml = "<html><head><title>Title 1</title></head><body>test</body></html>"
+
+    override func setUp() {
+        schemeHandler = TestSchemeHandler { _ in
+            return .ok(.html(Self.testHtml))
+        }
+        pinnedTabsManagerProvider = PinnedTabsManagerProvidingMock()
+    }
 
     @MainActor
     override func tearDown() {
+        schemeHandler = nil
+        pinnedTabsManagerProvider = nil
         autoreleasepool {
             WindowsManager.closeWindows()
             for controller in Application.appDelegate.windowControllersManager.mainWindowControllers {
@@ -38,8 +55,11 @@ final class FireTests: XCTestCase {
         }
     }
 
+    // MARK: - Tests
+
     @MainActor
-    func testWhenBurnAll_ThenAllWindowsAreClosed() async {
+    func testWhenBurnAll_WithExistingWindow_ThenWindowStaysOpenAndTabsAreCleared() {
+        // When burning "Everything", keep window open and just close tabs + open a new tab
         let manager = WebCacheManagerMock()
         let historyCoordinator = HistoryCoordinatingMock()
         let permissionManager = PermissionManagerMock()
@@ -50,21 +70,115 @@ final class FireTests: XCTestCase {
         let fire = Fire(cacheManager: manager,
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
-                        windowControllerManager: Application.appDelegate.windowControllersManager,
+                        windowControllersManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
                         tld: Application.appDelegate.tld,
-                        visualizeFireAnimationDecider: visualizeFire)
+                        visualizeFireAnimationDecider: visualizeFire,
+                        isAppActiveProvider: { true }) // App is active - should manage windows
 
-        let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel()
-        _ = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)
+        let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel(with: pinnedTabsManagerProvider)
+        var window: NSWindow! = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)
+        Logger.tests.info("\(self.name) opened \(window.windowController ??? "<nil>")")
+        defer {
+            window.close()
+            window = nil
+        }
+        let windowCountBeforeBurning = Application.appDelegate.windowControllersManager.mainWindowControllers.count
+        let windowControllersBeforeBurning = Set(Application.appDelegate.windowControllersManager.mainWindowControllers.map { ObjectIdentifier($0) })
 
         XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 3)
         XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.first?.content, .newtab)
+        XCTAssertGreaterThan(windowCountBeforeBurning, 0, "Should have at least one window before burning")
 
         let burningExpectation = expectation(description: "Burning")
 
         fire.burnAll {
-            XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 0)
+            burningExpectation.fulfill()
+        }
+
+        wait(for: [burningExpectation], timeout: 5)
+
+        // Verify: All old tabs cleared and a new tab was added to keep window open
+        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 1,
+                       "A new tab should be added to keep the window open (original 3 tabs cleared)")
+        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.first?.content, .newtab,
+                       "New tab should be a newtab")
+
+        // Verify: Window is still open (not closed and reopened)
+        let windowCountAfterBurning = Application.appDelegate.windowControllersManager.mainWindowControllers.count
+        XCTAssertEqual(windowCountAfterBurning, windowCountBeforeBurning,
+                       "Window count should remain the same - window should not be closed and reopened")
+
+        // Verify: The same window controller instances are still present
+        let windowControllersAfterBurning = Set(Application.appDelegate.windowControllersManager.mainWindowControllers.map { ObjectIdentifier($0) })
+        XCTAssertEqual(windowControllersBeforeBurning, windowControllersAfterBurning,
+                      "Original window controllers should still be registered (not closed and reopened)")
+    }
+
+    @MainActor
+    func testWhenBurnAll_WithNoExistingWindows_ThenNewWindowIsOpened() async {
+        // When no windows exist, should still open a new window (preserve existing behavior)
+        let manager = WebCacheManagerMock()
+        let historyCoordinator = HistoryCoordinatingMock()
+        let permissionManager = PermissionManagerMock()
+        let faviconManager = FaviconManagerMock()
+
+        let fire = Fire(cacheManager: manager,
+                        historyCoordinating: historyCoordinator,
+                        permissionManager: permissionManager,
+                        windowControllersManager: Application.appDelegate.windowControllersManager,
+                        faviconManagement: faviconManager,
+                        pinnedTabsManagerProvider: pinnedTabsManagerProvider,
+                        tld: Application.appDelegate.tld,
+                        isAppActiveProvider: { true }) // App is active - should open new window
+
+        // Ensure no windows exist
+        XCTAssertEqual(Application.appDelegate.windowControllersManager.mainWindowControllers.count, 0,
+                       "Should start with no windows")
+
+        let burningExpectation = expectation(description: "Burning")
+
+        fire.burnAll {
+            burningExpectation.fulfill()
+        }
+
+        await fulfillment(of: [burningExpectation], timeout: 5)
+
+        // Wait a bit for async window opening
+        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
+
+        // Verify: A new window was opened
+        XCTAssertEqual(Application.appDelegate.windowControllersManager.mainWindowControllers.count, 1,
+                       "A new window should be opened when no windows existed before burning")
+    }
+
+    @MainActor
+    func testWhenBurnAll_WithAppInactive_ThenNoWindowIsOpened() async {
+        // When app is inactive, should NOT open a new window even if none exist
+        let manager = WebCacheManagerMock()
+        let historyCoordinator = HistoryCoordinatingMock()
+        let permissionManager = PermissionManagerMock()
+        let faviconManager = FaviconManagerMock()
+
+        let fire = Fire(cacheManager: manager,
+                        historyCoordinating: historyCoordinator,
+                        permissionManager: permissionManager,
+                        windowControllersManager: Application.appDelegate.windowControllersManager,
+                        faviconManagement: faviconManager,
+                        pinnedTabsManagerProvider: pinnedTabsManagerProvider,
+                        tld: Application.appDelegate.tld,
+                        isAppActiveProvider: { false })  // App is INACTIVE - should NOT open window
+
+        // Ensure no windows exist
+        XCTAssertEqual(Application.appDelegate.windowControllersManager.mainWindowControllers.count, 0,
+                       "Should start with no windows")
+
+        let burningExpectation = expectation(description: "Burning")
+
+        fire.burnAll {
+            // Verify: NO window was opened (app is inactive)
+            XCTAssertEqual(Application.appDelegate.windowControllersManager.mainWindowControllers.count, 0,
+                           "No window should be opened when app is inactive")
             burningExpectation.fulfill()
         }
 
@@ -79,23 +193,25 @@ final class FireTests: XCTestCase {
         let permissionManager = PermissionManagerMock()
         let faviconManager = FaviconManagerMock()
 
-        let pinnedTabs: [Tab] = [
-            .init(content: .url("https://duck.com/".url!, source: .link)),
-            .init(content: .url("https://spreadprivacy.com/".url!, source: .link)),
-            .init(content: .url("https://wikipedia.org/".url!, source: .link))
-        ]
-        let pinnedTabsManagerProvider = PinnedTabsManagerProvidingMock()
-        pinnedTabsManagerProvider.pinnedTabsManager = PinnedTabsManager(tabCollection: .init(tabs: pinnedTabs))
+        let urls = ["https://duck.com/", "https://spreadprivacy.com/", "https://wikipedia.org/"].map { $0.url! }
+        let pinnedTabs: [Tab] = urls.map { Tab(content: .url($0, source: .link), webViewConfiguration: schemeHandler.webViewConfiguration()) }
+        pinnedTabsManagerProvider.newPinnedTabsManager = PinnedTabsManager(tabCollection: .init(tabs: pinnedTabs))
 
         let fire = Fire(cacheManager: manager,
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
-                        windowControllerManager: Application.appDelegate.windowControllersManager,
+                        windowControllersManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
                         pinnedTabsManagerProvider: pinnedTabsManagerProvider,
-                        tld: Application.appDelegate.tld)
+                        tld: Application.appDelegate.tld,
+                        isAppActiveProvider: { true }) // App is active - should manage windows
         let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel(with: pinnedTabsManagerProvider)
-        _ = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)
+        var window: NSWindow! = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)
+        Logger.tests.info("\(self.name) opened \(window.windowController ??? "<nil>")")
+        defer {
+            window.close()
+            window = nil
+        }
 
         let burningExpectation = expectation(description: "Burning")
         fire.burnAll {
@@ -104,8 +220,9 @@ final class FireTests: XCTestCase {
 
         await fulfillment(of: [burningExpectation], timeout: 5)
 
-        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 0)
-        XCTAssertEqual(pinnedTabsManagerProvider.pinnedTabsManager.tabCollection.tabs.map(\.content.userEditableUrl), pinnedTabs.map(\.content.userEditableUrl))
+        // Verify: No new tab is inserted because pinned tabs exist (window stays open with pinned tabs only)
+        XCTAssertEqual(tabCollectionViewModel.tabCollection.tabs.count, 0, "No new regular tab should be inserted when pinned tabs exist")
+        XCTAssertEqual(tabCollectionViewModel.pinnedTabsCollection?.tabs.map(\.content.userEditableUrl), urls as [URL?], "Pinned tabs should be preserved")
     }
 
     @MainActor
@@ -122,13 +239,20 @@ final class FireTests: XCTestCase {
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
                         savedZoomLevelsCoordinating: zoomLevelsCoordinator,
-                        windowControllerManager: Application.appDelegate.windowControllersManager,
+                        windowControllersManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
                         recentlyClosedCoordinator: recentlyClosedCoordinator,
+                        pinnedTabsManagerProvider: pinnedTabsManagerProvider,
                         tld: Application.appDelegate.tld,
-                        getVisitedLinkStore: { WKVisitedLinkStoreWrapper(visitedLinkStore: visitedLinkStore) })
-        let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel()
-        _ = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)
+                        getVisitedLinkStore: { WKVisitedLinkStoreWrapper(visitedLinkStore: visitedLinkStore) },
+                        isAppActiveProvider: { false })
+        let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel(with: pinnedTabsManagerProvider)
+        var window: NSWindow! = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)
+        Logger.tests.info("\(self.name) opened \(window.windowController ??? "<nil>")")
+        defer {
+            window.close()
+            window = nil
+        }
 
         let finishedBurningExpectation = expectation(description: "Finished burning")
         fire.burnAll {
@@ -155,9 +279,11 @@ final class FireTests: XCTestCase {
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
                         faviconManagement: faviconManager,
-                        tld: Application.appDelegate.tld)
+                        pinnedTabsManagerProvider: pinnedTabsManagerProvider,
+                        tld: Application.appDelegate.tld,
+                        isAppActiveProvider: { false })
 
-        _ = TabCollectionViewModel.makeTabCollectionViewModel()
+        _ = TabCollectionViewModel.makeTabCollectionViewModel(with: pinnedTabsManagerProvider)
 
         let isBurningExpectation = expectation(description: "Burning")
         let finishedBurningExpectation = expectation(description: "Finished burning")
@@ -170,7 +296,7 @@ final class FireTests: XCTestCase {
             }
         } .store(in: &cancellables)
 
-        fire.burnAll()
+        fire.burnAll(completion: {})
 
         await fulfillment(of: [isBurningExpectation, finishedBurningExpectation], timeout: 5)
     }
@@ -183,6 +309,7 @@ final class FireTests: XCTestCase {
         let appStateRestorationManager = AppStateRestorationManager(fileStore: fileStore,
                                                                     service: service,
                                                                     startupPreferences: NSApp.delegateTyped.startupPreferences,
+                                                                    tabsPreferences: NSApp.delegateTyped.tabsPreferences,
                                                                     keyValueStore: NSApp.delegateTyped.keyValueStore,
                                                                     sessionRestorePromptCoordinator: NSApp.delegateTyped.sessionRestorePromptCoordinator,
                                                                     pixelFiring: nil)
@@ -190,6 +317,7 @@ final class FireTests: XCTestCase {
 
         let fire = Fire(historyCoordinating: HistoryCoordinatingMock(),
                         stateRestorationManager: appStateRestorationManager,
+                        pinnedTabsManagerProvider: pinnedTabsManagerProvider,
                         tld: Application.appDelegate.tld)
 
         XCTAssertTrue(appStateRestorationManager.canRestoreLastSessionState)
@@ -205,6 +333,7 @@ final class FireTests: XCTestCase {
         let appStateRestorationManager = AppStateRestorationManager(fileStore: fileStore,
                                                                     service: service,
                                                                     startupPreferences: NSApp.delegateTyped.startupPreferences,
+                                                                    tabsPreferences: NSApp.delegateTyped.tabsPreferences,
                                                                     keyValueStore: NSApp.delegateTyped.keyValueStore,
                                                                     sessionRestorePromptCoordinator: NSApp.delegateTyped.sessionRestorePromptCoordinator,
                                                                     pixelFiring: nil)
@@ -212,10 +341,11 @@ final class FireTests: XCTestCase {
 
         let fire = Fire(historyCoordinating: HistoryCoordinatingMock(),
                         stateRestorationManager: appStateRestorationManager,
+                        pinnedTabsManagerProvider: pinnedTabsManagerProvider,
                         tld: Application.appDelegate.tld)
 
         XCTAssertTrue(appStateRestorationManager.canRestoreLastSessionState)
-        fire.burnEntity(entity: .none(selectedDomains: Set()))
+        fire.burnEntity(.none(selectedDomains: Set()))
         XCTAssertFalse(appStateRestorationManager.canRestoreLastSessionState)
     }
 
@@ -224,10 +354,15 @@ final class FireTests: XCTestCase {
         let domainsToBurn: Set<String> = ["test.com", "provola.co.uk"]
         let zoomLevelsCoordinator = MockSavedZoomCoordinator()
         let fire = Fire(savedZoomLevelsCoordinating: zoomLevelsCoordinator,
+                        pinnedTabsManagerProvider: pinnedTabsManagerProvider,
                         tld: Application.appDelegate.tld)
 
-        fire.burnEntity(entity: .none(selectedDomains: domainsToBurn))
+        let finishedBurningExpectation = expectation(description: "Finished burning")
+        fire.burnEntity(.none(selectedDomains: domainsToBurn)) {
+            finishedBurningExpectation.fulfill()
+        }
 
+        waitForExpectations(timeout: 5)
         XCTAssertTrue(zoomLevelsCoordinator.burnZoomLevelsOfDomainsCalled)
         XCTAssertEqual(zoomLevelsCoordinator.domainsBurned, domainsToBurn)
     }
@@ -244,25 +379,36 @@ final class FireTests: XCTestCase {
         let fire = Fire(cacheManager: manager,
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
-                        windowControllerManager: Application.appDelegate.windowControllersManager,
+                        windowControllersManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
                         recentlyClosedCoordinator: recentlyClosedCoordinator,
+                        pinnedTabsManagerProvider: pinnedTabsManagerProvider,
                         tld: Application.appDelegate.tld,
-                        getVisitedLinkStore: { WKVisitedLinkStoreWrapper(visitedLinkStore: visitedLinkStore) })
-        let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel()
-        _ = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)
+                        getVisitedLinkStore: { WKVisitedLinkStoreWrapper(visitedLinkStore: visitedLinkStore) },
+                        isAppActiveProvider: { true }) // App is active - should open new window
+        let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel(with: pinnedTabsManagerProvider)
+        var window: NSWindow! = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)
+        Logger.tests.info("\(self.name) opened \(window.windowController ??? "<nil>")")
+        defer {
+            window.close()
+            window = nil
+        }
         XCTAssertNotEqual(tabCollectionViewModel.allTabsCount, 0)
 
         let finishedBurningExpectation = expectation(description: "Finished burning")
         fire.burnVisits([],
                         except: Application.appDelegate.fireproofDomains,
                         isToday: true,
+                        closeWindows: true,
+                        clearSiteData: true,
+                        clearChatHistory: false,
                         completion: {
             finishedBurningExpectation.fulfill()
         })
 
         await fulfillment(of: [finishedBurningExpectation], timeout: 5)
-        XCTAssertEqual(tabCollectionViewModel.allTabsCount, 0)
+        // Verify: New empty tab is present to keep window open (original tabs were cleared)
+        XCTAssertEqual(tabCollectionViewModel.allTabsCount, 1, "A new tab should be inserted to keep window open")
         XCTAssert(manager.clearCalled)
         XCTAssert(historyCoordinator.burnVisitsCalled)
         XCTAssertFalse(historyCoordinator.burnAllCalled)
@@ -284,13 +430,20 @@ final class FireTests: XCTestCase {
         let fire = Fire(cacheManager: manager,
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
-                        windowControllerManager: Application.appDelegate.windowControllersManager,
+                        windowControllersManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
                         recentlyClosedCoordinator: recentlyClosedCoordinator,
+                        pinnedTabsManagerProvider: pinnedTabsManagerProvider,
                         tld: Application.appDelegate.tld,
-                        getVisitedLinkStore: { WKVisitedLinkStoreWrapper(visitedLinkStore: visitedLinkStore) })
-        let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel()
-        _ = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)
+                        getVisitedLinkStore: { WKVisitedLinkStoreWrapper(visitedLinkStore: visitedLinkStore) },
+                        isAppActiveProvider: { true }) // App is active - should open new window
+        let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel(with: pinnedTabsManagerProvider)
+        var window: NSWindow! = WindowsManager.openNewWindow(with: tabCollectionViewModel, lazyLoadTabs: true)
+        Logger.tests.info("\(self.name) opened \(window.windowController ??? "<nil>")")
+        defer {
+            window.close()
+            window = nil
+        }
         XCTAssertNotEqual(tabCollectionViewModel.allTabsCount, 0)
         let numberOfTabs = tabCollectionViewModel.allTabsCount
 
@@ -302,9 +455,12 @@ final class FireTests: XCTestCase {
         fire.burnVisits([
             Visit(date: Date(), identifier: nil, historyEntry: historyEntries[0]),
             Visit(date: Date(), identifier: nil, historyEntry: historyEntries[1]),
-                        ],
+        ],
                         except: Application.appDelegate.fireproofDomains,
                         isToday: false,
+                        closeWindows: false,
+                        clearSiteData: true,
+                        clearChatHistory: false,
                         completion: {
             finishedBurningExpectation.fulfill()
         })
@@ -322,6 +478,249 @@ final class FireTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenBurnAllIsCalled_ChatHistoryIsCleared() async {
+        let chatHistoryCleaner = MockAIChatHistoryCleaner()
+        let fire = Fire(pinnedTabsManagerProvider: pinnedTabsManagerProvider,
+                        tld: Application.appDelegate.tld,
+                        aIChatHistoryCleaner: chatHistoryCleaner)
+
+        let burningExpectation = expectation(description: "Burning")
+
+        fire.burnAll {
+            XCTAssertTrue(chatHistoryCleaner.didCleanAIChatHistory)
+            burningExpectation.fulfill()
+        }
+
+        await fulfillment(of: [burningExpectation], timeout: 5)
+    }
+
+    @MainActor
+    func testWhenBurnVisitsIsCalled_IncludingChatHistory_ChatHistoryIsCleared() async {
+        let chatHistoryCleaner = MockAIChatHistoryCleaner()
+        let fire = Fire(pinnedTabsManagerProvider: pinnedTabsManagerProvider,
+                        tld: Application.appDelegate.tld,
+                        aIChatHistoryCleaner: chatHistoryCleaner)
+
+        let burningExpectation = expectation(description: "Burning")
+
+        fire.burnVisits([],
+                        except: Application.appDelegate.fireproofDomains,
+                        isToday: false,
+                        closeWindows: false,
+                        clearSiteData: true,
+                        clearChatHistory: true,
+        ) {
+            XCTAssertTrue(chatHistoryCleaner.didCleanAIChatHistory)
+            burningExpectation.fulfill()
+        }
+
+        await fulfillment(of: [burningExpectation], timeout: 5)
+    }
+
+    @MainActor
+    func testWhenBurnVisitsIsCalled_NotIncludingChatHistory_ChatHistoryIsNotCleared() async {
+        let chatHistoryCleaner = MockAIChatHistoryCleaner()
+        let fire = Fire(pinnedTabsManagerProvider: pinnedTabsManagerProvider,
+                        tld: Application.appDelegate.tld,
+                        aIChatHistoryCleaner: chatHistoryCleaner)
+
+        let burningExpectation = expectation(description: "Burning")
+
+        fire.burnVisits([],
+                        except: Application.appDelegate.fireproofDomains,
+                        isToday: false,
+                        closeWindows: true,
+                        clearSiteData: true,
+                        clearChatHistory: false,
+        ) {
+            XCTAssertFalse(chatHistoryCleaner.didCleanAIChatHistory)
+            burningExpectation.fulfill()
+        }
+
+        await fulfillment(of: [burningExpectation], timeout: 5)
+    }
+
+    // MARK: - Helpers
+
+    @MainActor
+    func testWhenBurnAllIsCalled_AutoconsentStatsAreCleared() async {
+        let autoconsentStats = AutoconsentStatsMock()
+
+        // Simulate some recorded stats
+        await autoconsentStats.recordAutoconsentAction(clicksMade: 5, timeSpent: 10.0)
+        let initialPopUpsBlocked = await autoconsentStats.fetchTotalCookiePopUpsBlocked()
+        XCTAssertEqual(initialPopUpsBlocked, 1)
+
+        let fire = Fire(autoconsentStats: autoconsentStats,
+                        pinnedTabsManagerProvider: pinnedTabsManagerProvider,
+                        tld: Application.appDelegate.tld)
+
+        let burningExpectation = expectation(description: "Burning")
+
+        fire.burnAll {
+            XCTAssertTrue(autoconsentStats.clearAutoconsentStatsCalled)
+            burningExpectation.fulfill()
+        }
+
+        await fulfillment(of: [burningExpectation], timeout: 5)
+
+        // Verify stats were actually cleared
+        let clearedStats = await autoconsentStats.fetchAutoconsentDailyUsagePack()
+        XCTAssertEqual(clearedStats.totalCookiePopUpsBlocked, 0)
+        XCTAssertEqual(clearedStats.totalClicksMadeBlockingCookiePopUps, 0)
+        XCTAssertEqual(clearedStats.totalTotalTimeSpentBlockingCookiePopUps, 0.0)
+    }
+
+    @MainActor
+    func testWhenBurnEntityIsCalled_WithCookiesAndSiteData_AutoconsentStatsAreCleared() async {
+        let autoconsentStats = AutoconsentStatsMock()
+
+        // Simulate some recorded stats
+        await autoconsentStats.recordAutoconsentAction(clicksMade: 10, timeSpent: 25.5)
+        let initialPopUpsBlocked = await autoconsentStats.fetchTotalCookiePopUpsBlocked()
+        XCTAssertEqual(initialPopUpsBlocked, 1)
+
+        let fire = Fire(autoconsentStats: autoconsentStats,
+                        pinnedTabsManagerProvider: pinnedTabsManagerProvider,
+                        tld: Application.appDelegate.tld)
+
+        let burningExpectation = expectation(description: "Burning")
+
+        fire.burnEntity(.none(selectedDomains: Set()),
+                       includingHistory: false,
+                       includeCookiesAndSiteData: true,
+                       includeChatHistory: false) {
+            XCTAssertTrue(autoconsentStats.clearAutoconsentStatsCalled)
+            burningExpectation.fulfill()
+        }
+
+        await fulfillment(of: [burningExpectation], timeout: 5)
+
+        // Verify stats were actually cleared
+        let clearedPopUpsBlocked = await autoconsentStats.fetchTotalCookiePopUpsBlocked()
+        XCTAssertEqual(clearedPopUpsBlocked, 0)
+    }
+
+    @MainActor
+    func testWhenBurnEntityWithoutHistory_ThenCookiePopupFlagsAreReset() async {
+        let historyCoordinator = HistoryCoordinatingMock()
+        let manager = WebCacheManagerMock()
+        let permissionManager = PermissionManagerMock()
+        let faviconManager = FaviconManagerMock()
+
+        let fire = Fire(cacheManager: manager,
+                        historyCoordinating: historyCoordinator,
+                        permissionManager: permissionManager,
+                        windowControllersManager: Application.appDelegate.windowControllersManager,
+                        faviconManagement: faviconManager,
+                        pinnedTabsManagerProvider: pinnedTabsManagerProvider,
+                        tld: Application.appDelegate.tld)
+
+        let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel(with: pinnedTabsManagerProvider)
+        let domains: Set<String> = ["example.com", "test.org"]
+        let entity = Fire.BurningEntity.window(
+            tabCollectionViewModel: tabCollectionViewModel,
+            selectedDomains: domains,
+            close: true
+        )
+
+        let expectation = expectation(description: "Burning completed")
+
+        await fire.burnEntity(entity,
+                             includingHistory: false,  // Key: not clearing history
+                             includeCookiesAndSiteData: true,
+                             includeChatHistory: false) {
+            expectation.fulfill()
+        }
+
+        await fulfillment(of: [expectation], timeout: 5)
+
+        // Verify resetCookiePopupBlocked was called
+        XCTAssertTrue(historyCoordinator.resetCookiePopupBlockedCalled,
+                     "resetCookiePopupBlocked should be called when includingHistory is false")
+        XCTAssertEqual(historyCoordinator.resetCookiePopupBlockedDomains, domains,
+                      "Should reset cookie popup flags for the selected domains")
+    }
+
+    @MainActor
+    func testWhenBurnEntityWithHistory_ThenCookiePopupFlagsAreNotReset() async {
+        let historyCoordinator = HistoryCoordinatingMock()
+        let manager = WebCacheManagerMock()
+        let permissionManager = PermissionManagerMock()
+        let faviconManager = FaviconManagerMock()
+
+        let fire = Fire(cacheManager: manager,
+                        historyCoordinating: historyCoordinator,
+                        permissionManager: permissionManager,
+                        windowControllersManager: Application.appDelegate.windowControllersManager,
+                        faviconManagement: faviconManager,
+                        pinnedTabsManagerProvider: pinnedTabsManagerProvider,
+                        tld: Application.appDelegate.tld)
+
+        let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel(with: pinnedTabsManagerProvider)
+        let domains: Set<String> = ["example.com"]
+        let entity = Fire.BurningEntity.window(
+            tabCollectionViewModel: tabCollectionViewModel,
+            selectedDomains: domains,
+            close: true
+        )
+
+        let expectation = expectation(description: "Burning completed")
+
+        await fire.burnEntity(entity,
+                             includingHistory: true,  // Key: clearing history
+                             includeCookiesAndSiteData: true,
+                             includeChatHistory: false) {
+            expectation.fulfill()
+        }
+
+        await fulfillment(of: [expectation], timeout: 5)
+
+        // Verify resetCookiePopupBlocked was NOT called when history is being cleared
+        XCTAssertFalse(historyCoordinator.resetCookiePopupBlockedCalled,
+                      "resetCookiePopupBlocked should NOT be called when includingHistory is true")
+    }
+
+    @MainActor
+    func testWhenBurnEntityWithoutCookiesAndSiteData_ThenCookiePopupFlagsAreNotReset() async {
+        let historyCoordinator = HistoryCoordinatingMock()
+        let manager = WebCacheManagerMock()
+        let permissionManager = PermissionManagerMock()
+        let faviconManager = FaviconManagerMock()
+
+        let fire = Fire(cacheManager: manager,
+                        historyCoordinating: historyCoordinator,
+                        permissionManager: permissionManager,
+                        windowControllersManager: Application.appDelegate.windowControllersManager,
+                        faviconManagement: faviconManager,
+                        pinnedTabsManagerProvider: pinnedTabsManagerProvider,
+                        tld: Application.appDelegate.tld)
+
+        let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel(with: pinnedTabsManagerProvider)
+        let domains: Set<String> = ["example.com"]
+        let entity = Fire.BurningEntity.window(
+            tabCollectionViewModel: tabCollectionViewModel,
+            selectedDomains: domains,
+            close: true
+        )
+
+        let expectation = expectation(description: "Burning completed")
+
+        await fire.burnEntity(entity,
+                             includingHistory: false,
+                             includeCookiesAndSiteData: false,  // Key: not clearing cookies
+                             includeChatHistory: false) {
+            expectation.fulfill()
+        }
+
+        await fulfillment(of: [expectation], timeout: 5)
+
+        // Verify resetCookiePopupBlocked was NOT called when cookies/site data are not being cleared
+        XCTAssertFalse(historyCoordinator.resetCookiePopupBlockedCalled,
+                      "resetCookiePopupBlocked should NOT be called when includeCookiesAndSiteData is false")
+    }
+
+    @MainActor
     func preparePersistedState(withFileName fileName: String) -> FileStore {
         let fileStore = FileStoreMock()
         let state = SavedStateMock()
@@ -334,16 +733,20 @@ final class FireTests: XCTestCase {
         return fileStore
     }
 
+    @MainActor
+    private func makeTab(url: URL) -> Tab {
+        Tab(content: .url(url, source: .link), webViewConfiguration: schemeHandler.webViewConfiguration(), extensionsBuilder: TestTabExtensionsBuilder())
+    }
+
 }
 
 fileprivate extension TabCollectionViewModel {
 
     @MainActor
-    static func makeTabCollectionViewModel(with pinnedTabsManagerProvider: PinnedTabsManagerProviding? = nil) -> TabCollectionViewModel {
-
-        let tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(), pinnedTabsManagerProvider: pinnedTabsManagerProvider ?? Application.appDelegate.windowControllersManager.pinnedTabsManagerProvider)
-        tabCollectionViewModel.append(tab: Tab(content: .none))
-        tabCollectionViewModel.append(tab: Tab(content: .none))
+    static func makeTabCollectionViewModel(with pinnedTabsManagerProvider: PinnedTabsManagerProviding) -> TabCollectionViewModel {
+        let tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(), pinnedTabsManagerProvider: pinnedTabsManagerProvider)
+        tabCollectionViewModel.append(tab: Tab(content: .none, extensionsBuilder: TestTabExtensionsBuilder()))
+        tabCollectionViewModel.append(tab: Tab(content: .none, extensionsBuilder: TestTabExtensionsBuilder()))
         return tabCollectionViewModel
     }
 
@@ -378,3 +781,6 @@ private class WKVisitedLinkStoreMock: NSObject {
     }
 
 }
+
+extension FileStoreMock: FileStore {}
+extension MockAIChatHistoryCleaner: AIChatHistoryCleaning {}

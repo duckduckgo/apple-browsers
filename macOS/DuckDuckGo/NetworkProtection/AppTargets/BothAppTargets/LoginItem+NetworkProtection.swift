@@ -18,27 +18,16 @@
 
 import Foundation
 import LoginItems
-import VPN
 import os.log
+import VPN
+import VPNAppState
 
 extension LoginItem {
     static let vpnMenu = LoginItem(bundleId: Bundle.main.vpnMenuAgentBundleId,
                                    defaults: .netP,
                                    logger: Logger.networkProtection)
-#if NETP_SYSTEM_EXTENSION
-    static let notificationsAgent = LoginItem(bundleId: Bundle.main.notificationsAgentBundleId,
-                                              defaults: .netP,
-                                              logger: Logger.networkProtection)
-#endif
-
 }
 
 extension LoginItemsManager {
-    static var vpnLoginItems: Set<LoginItem> {
-        var items: Set<LoginItem> = [.vpnMenu]
-#if NETP_SYSTEM_EXTENSION
-        items.insert(.notificationsAgent)
-#endif
-        return items
-    }
+    static let vpnLoginItems: Set<LoginItem> = [.vpnMenu]
 }

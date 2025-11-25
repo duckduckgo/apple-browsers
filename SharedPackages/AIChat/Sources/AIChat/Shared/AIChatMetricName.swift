@@ -24,6 +24,7 @@ public enum AIChatMetricName: String, Codable {
     case userDidOpenHistory
     case userDidSelectFirstHistoryItem
     case userDidCreateNewChat
+    case userDidTapKeyboardReturnKey
 }
 
 public struct AIChatMetric: Codable {
@@ -32,4 +33,15 @@ public struct AIChatMetric: Codable {
      public init(metricName: AIChatMetricName) {
          self.metricName = metricName
      }
+}
+
+extension AIChatMetric {
+    public var shouldIncludeTimestampParameters: Bool {
+        switch metricName {
+        case .userDidTapKeyboardReturnKey:
+            return false
+        default:
+            return true
+        }
+    }
 }

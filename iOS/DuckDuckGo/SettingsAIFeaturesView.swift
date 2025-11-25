@@ -24,6 +24,7 @@ import DesignResourcesKitIcons
 import BrowserServicesKit
 import Common
 import Networking
+import PixelKit
 
 struct SettingsAIFeaturesView: View {
     @EnvironmentObject var viewModel: SettingsViewModel
@@ -110,7 +111,7 @@ struct SettingsAIFeaturesView: View {
                     }
                     .listRowBackground(Color(designSystemColor: .surface))
                 } else {
-                    Section(header: Text(UserText.settingsAiChatShortcuts)) {
+                    Section(header: Text(UserText.aiChatSettingsBrowserShortcutsSectionTitle)) {
                         SettingsCellView(label: UserText.aiChatSettingsEnableBrowsingMenuToggle,
                                          accessory: .toggle(isOn: viewModel.aiChatBrowsingMenuEnabledBinding))
 
@@ -128,17 +129,48 @@ struct SettingsAIFeaturesView: View {
                 }
             }
 
-            Section {
-                SettingsCellView(label: UserText.settingsAiFeaturesSearchAssist,
-                                 subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle,
-                                 image: Image(uiImage: DesignSystemImages.Glyphs.Size24.assist),
-                                 action: { viewModel.openAssistSettings() },
-                                 webLinkIndicator: true,
-                                 isButton: true)
+            if !viewModel.openedFromSERPSettingsButton {
+                Section {
+                    if viewModel.embedSERPSettings {
+                        NavigationLink(destination: SERPSettingsView(page: .searchAssist).environmentObject(viewModel)) {
+                            SettingsCellView(label: UserText.settingsAiFeaturesSearchAssist,
+                                             subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle,
+                                             image: Image(uiImage: DesignSystemImages.Glyphs.Size24.assist))
+                        }
+                        .listRowBackground(Color(designSystemColor: .surface))
+
+                        if viewModel.shouldShowHideAIGeneratedImagesSection {
+                            NavigationLink(destination:
+                                SERPSettingsView(page: .hideAIGeneratedImages)
+                                    .environmentObject(viewModel)
+                                    .onAppear {
+                                        PixelKit.fire(SERPSettingsPixel.hideAIGeneratedImagesButtonClicked, frequency: .dailyAndStandard)
+                                    }
+                            ) {
+                                SettingsCellView(label: UserText.settingsAiFeaturesHideAIGeneratedImages,
+                                                 subtitle: UserText.settingsAiFeaturesHideAIGeneratedImagesSubtitle,
+                                                 image: Image(uiImage: DesignSystemImages.Glyphs.Size24.imageAIHide))
+                            }
+                            .listRowBackground(Color(designSystemColor: .surface))
+                        }
+                    } else {
+                        SettingsCellView(label: UserText.settingsAiFeaturesSearchAssist,
+                                         subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle,
+                                         image: Image(uiImage: DesignSystemImages.Glyphs.Size24.assist),
+                                         action: { viewModel.openAssistSettings() },
+                                         webLinkIndicator: true,
+                                         isButton: true)
+                    }
+                }
             }
         }.applySettingsListModifiers(title: UserText.settingsAiFeatures,
                                      displayMode: .inline,
                                      viewModel: viewModel)
+        .navigationBarBackButtonHidden(viewModel.openedFromSERPSettingsButton)
+        .navigationBarItems(trailing: viewModel.openedFromSERPSettingsButton ?
+            AnyView(Button(UserText.navigationTitleDone) {
+                viewModel.onRequestDismissSettings?()
+            }.foregroundColor(Color(designSystemColor: .textPrimary))) : AnyView(EmptyView()))
 
 
         .onAppear {
@@ -154,7 +186,7 @@ struct SettingsAIFeaturesView: View {
 
 private extension SettingsAIFeaturesView {
     var footerAttributedString: AttributedString {
-        var base = AttributedString(UserText.settingsAiExperimentalPickerFooterDescription + " ")
+        var base = AttributedString(UserText.settingsAIPickerFooterDescription + " ")
         var link = AttributedString(UserText.subscriptionFeedback)
         link.foregroundColor = Color(designSystemColor: .accent)
         link.link = FooterAction.shareFeedback.url

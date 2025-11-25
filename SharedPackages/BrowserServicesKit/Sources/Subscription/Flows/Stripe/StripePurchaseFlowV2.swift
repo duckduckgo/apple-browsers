@@ -63,7 +63,7 @@ public enum StripePurchaseFlowError: DDGError {
 }
 
 public protocol StripePurchaseFlowV2 {
-    typealias PrepareResult = (purchaseUpdate: PurchaseUpdate, accountCreationDuration: WidePixel.MeasuredInterval?)
+    typealias PrepareResult = (purchaseUpdate: PurchaseUpdate, accountCreationDuration: WideEvent.MeasuredInterval?)
 
     func subscriptionOptions() async -> Result<SubscriptionOptionsV2, StripePurchaseFlowError>
     func prepareSubscriptionPurchase(emailAccessToken: String?) async -> Result<PrepareResult, StripePurchaseFlowError>
@@ -127,7 +127,7 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
         } else {
             do {
                 // Create account
-                var accountCreation = WidePixel.MeasuredInterval.startingNow()
+                var accountCreation = WideEvent.MeasuredInterval.startingNow()
                 let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .createIfNeeded)
                 accountCreation.complete()
 
@@ -150,5 +150,6 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
         Logger.subscriptionStripePurchaseFlow.log("Completing subscription purchase")
         subscriptionManager.clearSubscriptionCache()
         _ = try? await subscriptionManager.getTokenContainer(policy: .localForceRefresh)
+        NotificationCenter.default.post(name: .userDidPurchaseSubscription, object: self)
     }
 }

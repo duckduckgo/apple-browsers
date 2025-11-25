@@ -80,6 +80,9 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     private let bookmarkDragDropManager: BookmarkDragDropManager
     private let contentBlocking: ContentBlockingProtocol
     private let fireproofDomains: FireproofDomains
+    private let downloadsPreferences: DownloadsPreferences
+    private let downloadListCoordinator: DownloadListCoordinator
+    private let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     private let permissionManager: PermissionManagerProtocol
     private let networkProtectionPopoverManager: NetPPopoverManager
     private let vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter
@@ -92,6 +95,9 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         bookmarkDragDropManager: BookmarkDragDropManager,
         contentBlocking: ContentBlockingProtocol,
         fireproofDomains: FireproofDomains,
+        downloadsPreferences: DownloadsPreferences,
+        downloadListCoordinator: DownloadListCoordinator,
+        webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
         permissionManager: PermissionManagerProtocol,
         networkProtectionPopoverManager: NetPPopoverManager,
         autofillPopoverPresenter: AutofillPopoverPresenter,
@@ -102,11 +108,29 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         self.bookmarkDragDropManager = bookmarkDragDropManager
         self.contentBlocking = contentBlocking
         self.fireproofDomains = fireproofDomains
+        self.downloadsPreferences = downloadsPreferences
+        self.downloadListCoordinator = downloadListCoordinator
+        self.webTrackingProtectionPreferences = webTrackingProtectionPreferences
         self.permissionManager = permissionManager
         self.networkProtectionPopoverManager = networkProtectionPopoverManager
         self.autofillPopoverPresenter = autofillPopoverPresenter
         self.vpnUpsellPopoverPresenter = vpnUpsellPopoverPresenter
         self.isBurner = isBurner
+    }
+
+    deinit {
+#if DEBUG
+        bookmarkListPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        saveCredentialsPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        saveIdentityPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        savePaymentMethodPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        downloadsPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        autofillOnboardingPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        historyViewOnboardingPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        privacyDashboardPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        bookmarkPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+        zoomPopover?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
     }
 
     var passwordManagementDomain: String? {
@@ -203,7 +227,11 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         guard closeTransientPopovers(),
               button.window != nil else { return }
 
-        let popover = DownloadsPopover(fireWindowSession: FireWindowSessionRef(window: button.window))
+        let popover = DownloadsPopover(
+            fireWindowSession: FireWindowSessionRef(window: button.window),
+            downloadsPreferences: downloadsPreferences,
+            downloadListCoordinator: downloadListCoordinator
+        )
         popover.delegate = popoverDelegate
         popover.viewController.delegate = downloadsDelegate
         downloadsPopover = popover
@@ -371,7 +399,12 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     func openPrivacyDashboard(for tabViewModel: TabViewModel, from button: MouseOverButton, entryPoint: PrivacyDashboardEntryPoint) {
         guard closeTransientPopovers() else { return }
 
-        let popover = PrivacyDashboardPopover(entryPoint: entryPoint, contentBlocking: contentBlocking, permissionManager: permissionManager)
+        let popover = PrivacyDashboardPopover(
+            entryPoint: entryPoint,
+            contentBlocking: contentBlocking,
+            permissionManager: permissionManager,
+            webTrackingProtectionPreferences: webTrackingProtectionPreferences
+        )
         popover.delegate = self
         self.privacyDashboardPopover = popover
         self.subscribePrivacyDashboardPendingUpdates(for: popover)
@@ -399,7 +432,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
         let privacyDashboardViewController = privacyDashboardPopover.viewController
 
         privacyDashboadPendingUpdatesCancellable = privacyDashboardViewController.rulesUpdateObserver
-            .$pendingUpdates.dropFirst().receive(on: DispatchQueue.main).sink { [weak privacyDashboardPopover] _ in
+            .$pendingUpdates.dropFirst().receive(on: DispatchQueue.main).sink { [weak privacyDashboardPopover, weak self] _ in
                 let isPendingUpdate = privacyDashboardViewController.isPendingUpdates()
 
             // Prevent popover from being closed when clicking away, while pending updates
@@ -412,6 +445,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
 #else
                 privacyDashboardPopover?.behavior = .transient
 #endif
+                self?.resetPrivacyDashboardPopover()
             }
         }
     }
@@ -587,9 +621,10 @@ extension NavigationBarPopovers: NSPopoverDelegate {
             bookmarkPopover = nil
 
         case privacyDashboardPopover:
-            privacyDashboardPopover = nil
-            privacyInfoCancellable = nil
-            privacyDashboadPendingUpdatesCancellable = nil
+            // Prevent popover from being deallocated while pending updates
+            if let popover = privacyDashboardPopover, !popover.viewController.isPendingUpdates() {
+                resetPrivacyDashboardPopover()
+            }
 
         case zoomPopover:
             zoomPopoverDelegate?.popoverDidClose?(notification)
@@ -597,6 +632,12 @@ extension NavigationBarPopovers: NSPopoverDelegate {
 
         default: break
         }
+    }
+
+    private func resetPrivacyDashboardPopover() {
+        privacyDashboardPopover = nil
+        privacyInfoCancellable = nil
+        privacyDashboadPendingUpdatesCancellable = nil
     }
 
 }

@@ -213,7 +213,7 @@ final class VPNSubscriptionEventsHandler {
 
     private func handleAccountDidSignOut(_ notification: Notification) {
         Task { @MainActor in
-            print("[NetP Subscription] Deleted NetP auth token after signing out from Privacy Pro")
+            print("[NetP Subscription] Deleted NetP auth token after signing out from Subscription")
 
             let isAuthV2Enabled = NSApp.delegateTyped.isUsingAuthV2
             let isSubscriptionActive = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).isActive

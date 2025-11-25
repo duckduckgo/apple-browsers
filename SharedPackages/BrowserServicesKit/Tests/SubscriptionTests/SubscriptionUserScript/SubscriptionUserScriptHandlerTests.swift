@@ -78,7 +78,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
     func testWhenSubscriptionIsActiveThenSubscriptionDetailsReturnsSubscriptionData() async throws {
         let startedAt = Date().startOfDay
         let expiresAt = Date().startOfDay.daysAgo(-10)
-        let subscription = PrivacyProSubscription(
+        let subscription = DuckDuckGoSubscription(
             productId: "test",
             name: "test",
             billingPeriod: .yearly,
@@ -106,7 +106,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
     }
 
     func testWhenSubscriptionIsExpiredThenSubscriptionDetailsReturnsSubscriptionData() async throws {
-        let subscription = PrivacyProSubscription(status: .expired)
+        let subscription = DuckDuckGoSubscription(status: .expired)
 
         subscriptionManager.returnSubscription = .success(subscription)
         handler = .init(platform: .ios,
@@ -118,7 +118,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
     }
 
     func testWhenSubscriptionIsInactiveThenSubscriptionDetailsReturnsSubscriptionData() async throws {
-        let subscription = PrivacyProSubscription(status: .inactive)
+        let subscription = DuckDuckGoSubscription(status: .inactive)
 
         subscriptionManager.returnSubscription = .success(subscription)
         handler = .init(platform: .ios,
@@ -251,7 +251,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
 
 }
 
-private extension PrivacyProSubscription {
+private extension DuckDuckGoSubscription {
     init(status: Status) {
         self.init(productId: "test", name: "test", billingPeriod: .monthly, startedAt: Date(), expiresOrRenewsAt: Date(), platform: .apple, status: status, activeOffers: [])
     }

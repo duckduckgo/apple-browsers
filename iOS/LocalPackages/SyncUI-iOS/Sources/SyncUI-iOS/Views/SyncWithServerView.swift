@@ -75,6 +75,6 @@ public struct SyncWithServerView: View {
                     .foregroundColor(Color(designSystemColor: .textSecondary))
             }
         }
-        .background(Color(designSystemColor: .background))
+        .background(Color(designSystemColor: .backgroundSheets))
     }
 }

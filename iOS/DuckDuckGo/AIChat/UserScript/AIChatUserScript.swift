@@ -52,6 +52,8 @@ final class AIChatUserScript: NSObject, Subfeature {
         case fireButtonAction
         case newChatAction
         case promptInterruption
+        case openSettingsAction
+        case openHistoryAction
 
         var methodName: String {
             switch self {
@@ -63,6 +65,10 @@ final class AIChatUserScript: NSObject, Subfeature {
                 return "submitNewChatAction"
             case .promptInterruption:
                 return "submitPromptInterruption"
+            case .openSettingsAction:
+                return "submitOpenSettingsAction"
+            case .openHistoryAction:
+                return "submitOpenHistoryAction"
             }
         }
 
@@ -98,7 +104,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         self.handler = handler
         self.messageOriginPolicy = .only(rules: Self.buildMessageOriginRules(debugSettings: debugSettings))
         super.init()
-        
+
         // Set self as the metric reporting handler
         handler.setMetricReportingHandler(self)
     }
@@ -108,6 +114,10 @@ final class AIChatUserScript: NSObject, Subfeature {
 
         if let ddgDomain = URL.ddg.host {
             rules.append(.exact(hostname: ddgDomain))
+        }
+
+        if let duckAiDomain = URL.duckAi.host {
+            rules.append(.exact(hostname: duckAiDomain))
         }
 
         if let debugHostname = debugSettings.messagePolicyHostname {
@@ -145,6 +155,18 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.showChatInput
         case .reportMetric:
             return handler.reportMetric
+        case .openKeyboard:
+            return { [weak self] params, message in
+                await self?.handler.openKeyboard(params: params, message: message, webView: self?.webView)
+            }
+        case .storeMigrationData:
+            return handler.storeMigrationData
+        case .getMigrationDataByIndex:
+            return handler.getMigrationDataByIndex
+        case .getMigrationInfo:
+            return handler.getMigrationInfo
+        case .clearMigrationData:
+            return handler.clearMigrationData
         default:
             return nil
         }
@@ -181,6 +203,21 @@ final class AIChatUserScript: NSObject, Subfeature {
     func submitPrompt(_ prompt: String) {
         let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true)
         push(.submitPrompt(promptPayload))
+    }
+    
+    /// Submits a start chat action to the web content, initiating a new AI Chat conversation.
+    func submitStartChatAction() {
+        push(.newChatAction)
+    }
+
+    /// Submits an open settings action to the web content, opening the AI Chat settings.
+    func submitOpenSettingsAction() {
+        push(.openSettingsAction)
+    }
+
+    /// Submits an open history action to the web content, opening the AI Chat history.
+    func submitOpenHistoryAction() {
+        push(.openHistoryAction)
     }
 
     // MARK: - Private Helper

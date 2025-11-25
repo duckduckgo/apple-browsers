@@ -45,7 +45,7 @@ final class VPNService: NSObject {
         self.subscriptionManager = subscriptionManager
         self.application = application
         self.notificationServiceManager = notificationServiceManager
-        
+
         notificationCenter.delegate = notificationServiceManager
         
         super.init()
@@ -64,7 +64,6 @@ final class VPNService: NSObject {
 
         Task {
             await stopAndRemoveVPNIfNotAuthenticated()
-            await refreshVPNShortcuts()
 
             if #available(iOS 17.0, *) {
                 await VPNSnoozeLiveActivityManager().endSnoozeActivityIfNecessary()
@@ -91,9 +90,9 @@ final class VPNService: NSObject {
     @MainActor
     private func presentExpiredEntitlementAlert() {
         let alertController = CriticalAlerts.makeExpiredEntitlementAlert {
-            self.mainCoordinator.segueToPrivacyPro()
+            self.mainCoordinator.segueToDuckDuckGoSubscription()
         }
-        application.window?.rootViewController?.present(alertController, animated: true) {
+        application.firstKeyWindow?.rootViewController?.present(alertController, animated: true) {
             self.tunnelDefaults.showEntitlementAlert = false
         }
     }
@@ -111,28 +110,22 @@ final class VPNService: NSObject {
     // MARK: - Suspend
 
     func suspend() {
-        Task { @MainActor in
-            await refreshVPNShortcuts()
-        }
+        // No-op
     }
 
     @MainActor
-    private func refreshVPNShortcuts() async {
+    func shortcutItem() async -> UIApplicationShortcutItem? {
         guard await vpnFeatureVisibility.shouldShowVPNShortcut(),
-              let canShowVPNInUI = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection),
-              canShowVPNInUI
-        else {
-            application.shortcutItems = nil
-            return
+           let canShowVPNInUI = try? await subscriptionManager.isFeatureIncludedInSubscription(.networkProtection),
+           canShowVPNInUI else {
+            return nil
         }
 
-        application.shortcutItems = [
-            UIApplicationShortcutItem(type: ShortcutKey.openVPNSettings,
-                                      localizedTitle: UserText.netPOpenVPNQuickAction,
-                                      localizedSubtitle: nil,
-                                      icon: UIApplicationShortcutIcon(templateImageName: "VPN-16"),
-                                      userInfo: nil)
-        ]
+        return UIApplicationShortcutItem(type: ShortcutKey.openVPNSettings,
+                                  localizedTitle: UserText.netPOpenVPNQuickAction,
+                                  localizedSubtitle: nil,
+                                  icon: UIApplicationShortcutIcon(templateImageName: "ApplicationShortcutItemVPN"),
+                                  userInfo: nil)
     }
 
 }

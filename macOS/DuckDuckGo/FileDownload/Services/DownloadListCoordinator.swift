@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKitExtensions
 import Combine
 import Common
 import Foundation
@@ -24,35 +25,11 @@ import os.log
 import PixelKit
 import WebKit
 
-@MainActor
-private func getFirstAvailableWebView() -> WKWebView? {
-    let wcm = Application.appDelegate.windowControllersManager
-    if wcm.lastKeyMainWindowController?.mainViewController.browserTabViewController == nil {
-        WindowsManager.openNewWindow()
-    }
-
-    guard let tab = wcm.lastKeyMainWindowController?.mainViewController.browserTabViewController.tabViewModel?.tab else {
-        assertionFailure("Expected to have an open window")
-        return nil
-    }
-    return tab.webView
-}
-
 final class DownloadListCoordinator {
-    static let shared: DownloadListCoordinator = {
-#if DEBUG
-        if AppVersion.runType.requiresEnvironment {
-            return DownloadListCoordinator()
-        } else {
-            return DownloadListCoordinator(store: DownloadListStore(database: nil))
-        }
-#else
-        return DownloadListCoordinator()
-#endif
-    }()
 
     private let store: DownloadListStoring
     private let downloadManager: FileDownloadManagerProtocol
+    private let windowControllersManager: WindowControllersManagerProtocol
     private let webViewProvider: (() -> WKWebView?)?
 
     private var items = [UUID: DownloadListItem]()
@@ -82,13 +59,19 @@ final class DownloadListCoordinator {
     private let regularWindowDownloadProgress = Progress()
     @MainActor private var fireWindowSessionsProgress = [FireWindowSessionRef: Progress]()
 
-    init(store: DownloadListStoring = DownloadListStore(database: Application.appDelegate.database.db),
-         downloadManager: FileDownloadManagerProtocol = FileDownloadManager.shared,
+    /// Initializes download list coordinator.
+    ///
+    /// `webViewProvider` can be specified to override the default logic for retrieving the web view for resuming downloads.
+    ///
+    init(store: DownloadListStoring,
+         downloadManager: FileDownloadManagerProtocol,
+         windowControllersManager: WindowControllersManagerProtocol,
          clearItemsOlderThan clearDate: Date = .daysAgo(2),
          webViewProvider: (() -> WKWebView?)? = nil) {
 
         self.store = store
         self.downloadManager = downloadManager
+        self.windowControllersManager = windowControllersManager
         self.webViewProvider = webViewProvider
 
         load(clearingItemsOlderThan: clearDate)
@@ -544,6 +527,19 @@ final class DownloadListCoordinator {
             let request = item.createRequest()
             webView.startDownload(using: request, completionHandler: self.downloadRestartedCallback(for: item, webView: webView, presenters: presenters))
         }
+    }
+
+    @MainActor
+    private func getFirstAvailableWebView() -> WKWebView? {
+        if windowControllersManager.lastKeyMainWindowController?.mainViewController.browserTabViewController == nil {
+            WindowsManager.openNewWindow()
+        }
+
+        guard let tab = windowControllersManager.lastKeyMainWindowController?.mainViewController.browserTabViewController.tabViewModel?.tab else {
+            assertionFailure("Expected to have an open window")
+            return nil
+        }
+        return tab.webView
     }
 
     @MainActor

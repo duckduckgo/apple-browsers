@@ -1,7 +1,7 @@
 {
   "name": "Centeda",
   "url": "centeda.com",
-  "version": "0.7.0",
+  "version": "0.9.0",
   "addedDatetime": 1677736800000,
   "optOutUrl": "https://centeda.com/ng/control/privacy",
   "steps": [
@@ -22,6 +22,17 @@
             "71-80",
             "81+"
           ]
+        },
+        {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": ".page-title",
+              "parent": ".search-page"
+            }
+          ],
+          "id": "b4350352-85cc-461c-b520-029002683826"
         },
         {
           "actionType": "extract",
@@ -66,37 +77,50 @@
           "id": "7f9525f8-6195-4dfe-bcc0-b95aab2a0053"
         },
         {
+          "actionType": "expectation",
+          "expectations": [
+            {
+              "type": "element",
+              "selector": ".page-title",
+              "parent": ".search-page"
+            }
+          ],
+          "id": "eeeef2aa-1360-4e5e-912b-28b3e067c941"
+        },
+        {
           "actionType": "click",
           "elements": [
             {
               "type": "button",
               "selector": "//a[contains(text(), 'Profile control')]",
-              "profileMatch": {
-                "selector": "preceding-sibling::a[contains(@href, '/srv/go_sponsored_link')][1]",
-                "profile": {
-                  "name": {
-                    "selector": ".title",
-                    "beforeText": "Age "
-                  },
-                  "alternativeNamesList": {
-                    "selector": ".//div[@class='col-sm-24 col-md-8 known-as']//li",
-                    "findElements": true
-                  },
-                  "age": {
-                    "selector": ".age"
-                  },
-                  "addressCityStateList": {
-                    "selector": ".//div[@class='col-sm-24 col-md-8 lived-in']//li",
-                    "findElements": true
-                  },
-                  "relativesList": {
-                    "selector": ".//div[@class='col-sm-24 col-md-8 related-to']//li",
-                    "findElements": true
-                  },
-                  "profileUrl": {
-                    "selector": ".",
-                    "identifierType": "param",
-                    "identifier": "pid"
+              "parent": {
+                "profileMatch": {
+                  "selector": ".search-item",
+                  "profile": {
+                    "name": {
+                      "selector": ".title",
+                      "beforeText": "Age "
+                    },
+                    "alternativeNamesList": {
+                      "selector": ".//div[@class='col-sm-24 col-md-8 known-as']//li",
+                      "findElements": true
+                    },
+                    "age": {
+                      "selector": ".age"
+                    },
+                    "addressCityStateList": {
+                      "selector": ".//div[@class='col-sm-24 col-md-8 lived-in']//li",
+                      "findElements": true
+                    },
+                    "relativesList": {
+                      "selector": ".//div[@class='col-sm-24 col-md-8 related-to']//li",
+                      "findElements": true
+                    },
+                    "profileUrl": {
+                      "selector": "//following-sibling::a[contains(@href, '/ng/control/privacy?pid=')][1]",
+                      "identifierType": "param",
+                      "identifier": "pid"
+                    }
                   }
                 }
               }

@@ -13,7 +13,7 @@ appId: com.duckduckgo.mobile.ios
 - tapOn:
     id: Button_DismissImportPromo
     optional: true
-- tapOn: My Personal Website 
+- tapOn: My Personal Website
 - tapOn: Delete Password
 - tapOn: Delete Password
 - tapOn: Passwords & Autofill

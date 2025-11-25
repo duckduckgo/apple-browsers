@@ -21,7 +21,11 @@ import BrowserServicesKit
 import Common
 import Foundation
 import AppKitExtensions
+import URLPredictor
 import os.log
+#if !SANDBOX_TEST_TOOL
+import PixelKit
+#endif
 
 extension URL.NavigationalScheme {
 
@@ -109,7 +113,7 @@ extension URL {
 
         if NSApp.delegateTyped.featureFlagger.isFeatureOn(.duckAISearchParameter) {
             /// Append the kbg disable parameter only when Duck AI features are not shown
-            if !AIChatPreferences.shared.shouldShowAIFeatures {
+            if !NSApp.delegateTyped.aiChatPreferences.shouldShowAIFeatures {
                 url = url.appendingParameter(name: URL.DuckDuckGoParameters.KBG.kbg,
                                              value: URL.DuckDuckGoParameters.KBG.kbgDisabledValue)
             }
@@ -119,7 +123,31 @@ extension URL {
     }
 
     static func makeURL(from addressBarString: String) -> URL? {
+        guard Application.appDelegate.featureFlagger.isFeatureOn(.unifiedURLPredictor) else {
+            return makeURLUsingNativePredictionLogic(from: addressBarString)
+        }
 
+        return makeURLUsingUnifiedPredictionLogic(from: addressBarString)
+    }
+
+    static func makeURLUsingUnifiedPredictionLogic(from addressBarString: String) -> URL? {
+        do {
+            switch try Classifier.classify(input: addressBarString) {
+            case .navigate(let url):
+                return url
+            case .search(let query):
+                return URL.makeSearchUrl(from: query)
+            }
+        } catch let error as Classifier.Error {
+            Logger.general.error("Failed to classify \"\(addressBarString)\" as URL or search phrase: \(error)")
+            return nil
+        } catch {
+            Logger.general.error("URL extension: Making URL from \(addressBarString) failed")
+            return nil
+        }
+    }
+
+    static func makeURLUsingNativePredictionLogic(from addressBarString: String) -> URL? {
         let trimmed = addressBarString.trimmingWhitespace()
 
         if let addressBarUrl = URL(trimmedAddressBarString: trimmed), addressBarUrl.isValid {
@@ -134,15 +162,17 @@ extension URL {
         return nil
     }
 
-    static func makeURL(fromSuggestionPhrase phrase: String) -> URL? {
-        guard let url = URL(trimmedAddressBarString: phrase),
-              let scheme = url.scheme.map(NavigationalScheme.init),
-              NavigationalScheme.hypertextSchemes.contains(scheme),
-              url.isValid else {
-            return nil
+    static func makeURL(fromSuggestionPhrase phrase: String, useUnifiedLogic: Bool) -> URL? {
+        guard useUnifiedLogic else {
+            guard let url = URL(trimmedAddressBarString: phrase),
+                  let scheme = url.scheme.map(NavigationalScheme.init),
+                  NavigationalScheme.hypertextSchemes.contains(scheme),
+                  url.isValid else {
+                return nil
+            }
+            return url
         }
-
-        return url
+        return .init(trimmedAddressBarString: phrase, useUnifiedLogic: true)
     }
 #endif
 
@@ -164,12 +194,24 @@ extension URL {
         return settings.appendingPathComponent(pane.rawValue)
     }
 
+    static func historyPane(_ pane: HistoryPaneIdentifier) -> URL {
+        return history.appendingParameter(name: "range", value: pane.rawValue)
+    }
+
     var isSettingsURL: Bool {
         isChild(of: .settings) && (pathComponents.isEmpty || PreferencePaneIdentifier(url: self) != nil)
     }
 
     var isErrorURL: Bool {
         return navigationalScheme == .duck && host == URL.error.host
+    }
+
+    var isHistory: Bool {
+        return navigationalScheme == .duck && host == URL.history.host
+    }
+
+    var isNTP: Bool {
+        return navigationalScheme == .duck && host == URL.newtab.host
     }
 
 #endif
@@ -184,6 +226,7 @@ extension URL {
 
         static let aboutSettings = URL(string: "about:settings")!
         static let aboutPreferences = URL(string: "about:preferences")!
+        static let aboutHistory = URL(string: "about:history")!
         static let duckPreferences = URL(string: "duck://preferences")!
         static let aboutConfig = URL(string: "about:config")!
         static let duckConfig = URL(string: "duck://config")!
@@ -229,6 +272,18 @@ extension URL {
                 DuckDuckGoParameters.ATB.atb: atbWithVariant,
                 DuckDuckGoParameters.ATB.setAtb: setAtb
             ])
+    }
+
+    static func duckAIAtb(atbWithVariant: String, setAtb: String?) -> URL {
+        var params: [String: String?] = [
+            DuckDuckGoParameters.ATB.activityType: DuckDuckGoParameters.ATB.duckAIValue,
+            DuckDuckGoParameters.ATB.atb: atbWithVariant,
+            DuckDuckGoParameters.ATB.setAtb: setAtb
+        ]
+
+        // Don't include setAtb if the parameter is nil
+        return Self.initialAtb
+            .appendingParameters(params.compactMapValues { $0 })
     }
 
     static func exti(forAtb atb: String) -> URL {
@@ -342,6 +397,10 @@ extension URL {
         return filename
     }
 
+    var suggestedTitlePlaceholder: String? {
+        host?.droppingWwwPrefix()
+    }
+
     var emailAddresses: [String] {
         guard navigationalScheme == .mailto, let path = URLComponents(url: self, resolvingAgainstBaseURL: false)?.path else {
             return []
@@ -374,6 +433,11 @@ extension URL {
     static var duckDuckGo: URL {
         let duckDuckGoUrlString = "https://duckduckgo.com/"
         return URL(string: duckDuckGoUrlString)!
+    }
+
+    static var duckAi: URL {
+        let duckAiString = "https://duck.ai/"
+        return URL(string: duckAiString)!
     }
 
     static var duckDuckGoAutocomplete: URL {
@@ -440,7 +504,11 @@ extension URL {
         return URL(string: "https://duckduckgo.com/privacy")!
     }
 
-    static var privacyPro: URL {
+    static var termsOfService: URL {
+        URL(string: "https://duckduckgo.com/terms")!
+    }
+
+    static var subscription: URL {
         return URL(string: "https://duckduckgo.com/pro")!
     }
 
@@ -483,6 +551,7 @@ extension URL {
             static let email = "email"
 
             static let appUsageValue = "app_use"
+            static let duckAIValue = "duckai"
         }
     }
 
@@ -574,27 +643,6 @@ extension URL {
             return false
         }
     }
-
-#if DEBUG && APPSTORE
-    /// sandbox extension URL access should be stopped after SecurityScopedFileURLController is deallocated - this function validates it and breaks if the file is still writable
-    func ensureUrlIsNotWritable(or handler: () -> Void) {
-        let fm = FileManager.default
-        // is the URL ~/Downloads?
-        if self.resolvingSymlinksInPath() == fm.urls(for: .downloadsDirectory, in: .userDomainMask).first!.resolvingSymlinksInPath() {
-            assert(isWritableLocation())
-            return
-        }
-        // is parent directory writable (e.g. ~/Downloads)?
-        if fm.isWritableFile(atPath: self.deletingLastPathComponent().path)
-            // trashed files are still accessible for some reason even after stopping access
-            || fm.isInTrash(self)
-            // other file is being saved at the same URL
-            || NSURL.activeSecurityScopedUrlUsages.contains(where: { $0.url !== self as NSURL && $0.url == self as NSURL })
-            || !isWritableLocation() { return }
-
-        handler()
-    }
-#endif
 
     // MARK: - System Settings
 

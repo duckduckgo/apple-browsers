@@ -21,7 +21,7 @@ import Foundation
 
 struct DefaultFeedbackMetadata: UnifiedFeedbackMetadata {}
 
-/// Default implementation for Privacy Pro metadata collector
+/// Default implementation for Subscription metadata collector
 /// Intentionally left blank as we currently don't collect any metadata for PIR and ITR
 /// See `DefaultVPNMetadataCollector` for a reference implementation
 final class DefaultMetadataCollector: UnifiedMetadataCollector {

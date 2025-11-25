@@ -235,7 +235,7 @@ class DuckPlayerTests: UITestCase {
         XCTAssertFalse(watchLink.waitForExistence(timeout: UITests.Timeouts.elementExistence))
     }
 
-    // MARK:  Ask Mode - Serp
+    // MARK: Ask Mode - Serp
     func test_DuckPlayer_AskMode_ShowsOverlay_FromSERPAndOpensInDuckPlayer() throws {
 
         // Settings

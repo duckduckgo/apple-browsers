@@ -51,7 +51,7 @@ final class HistoryViewDataProviderPixelHandlerTests: XCTestCase {
     }
 
     func testThatDomainFilterFiresFilterSetPixel() {
-        handler.fireFilterUpdatedPixel(.domainFilter("example.com"))
+        handler.fireFilterUpdatedPixel(.domainFilter(["example.com"]))
         XCTAssertEqual(firePixelCalls.map(\.name), [HistoryViewPixel.filterSet(.domain).name])
     }
 

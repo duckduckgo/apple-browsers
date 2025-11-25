@@ -18,10 +18,8 @@
 //
 
 import Testing
-import Networking
 import Subscription
 import SubscriptionTestingUtilities
-import NetworkingTestingUtils
 @testable import DuckDuckGo
 import Foundation
 
@@ -35,25 +33,14 @@ struct UnifiedFeedbackFormViewModelTests {
     private func makeViewModel(
         subscriptionFeatures: [Entitlement.ProductName] = [],
         isPaidAIChatFeatureEnabled: Bool = false,
-        apiResponse: Result<APIResponseV2, Swift.Error> = .failure(TestError.generic),
         source: UnifiedFeedbackFormViewModel.Source = .unknown,
         feedbackSender: MockFeedbackSender = MockFeedbackSender()
     ) -> UnifiedFeedbackFormViewModel {
 
         let subscriptionManager = makeSubscriptionManager(features: subscriptionFeatures)
 
-        // Configure API service with requestHandler
-        let apiService = MockAPIService { request in
-            // Only respond to feedback endpoint requests
-            if request.url!.absoluteString.contains("feedback") {
-                return apiResponse
-            }
-            return .failure(TestError.generic)
-        }
-
         let viewModel = UnifiedFeedbackFormViewModel(
             subscriptionManager: subscriptionManager,
-            apiService: apiService,
             vpnMetadataCollector: MockUnifiedMetadataCollector(),
             dbpMetadataCollector: MockUnifiedMetadataCollector(),
             defaultMetadatCollector: MockUnifiedMetadataCollector(),
@@ -86,18 +73,6 @@ struct UnifiedFeedbackFormViewModelTests {
         return manager
     }
 
-    private func makeSuccessfulAPIResponse() throws -> Result<APIResponseV2, Swift.Error> {
-        struct TestResponse: Codable {
-            let message: String?
-            let error: String?
-        }
-
-        let responseData = TestResponse(message: "Success", error: nil)
-        let data = try JSONEncoder().encode(responseData)
-        let response = APIResponseV2(data: data, httpResponse: HTTPURLResponse())
-        return .success(response)
-    }
-
     // MARK: - Initialization Tests
 
     @Test func testInitialization_SetsInitialState() async throws {
@@ -109,7 +84,6 @@ struct UnifiedFeedbackFormViewModelTests {
         #expect(viewModel.selectedReportType == nil)
         #expect(viewModel.selectedCategory == nil)
         #expect(viewModel.selectedSubcategory == nil)
-        #expect(viewModel.userEmail.isEmpty)
     }
 
     @Test func testInitialization_DefaultCategoriesIncludeSubscription() async throws {
@@ -209,13 +183,13 @@ struct UnifiedFeedbackFormViewModelTests {
     // MARK: - Subcategory Tests
 
     @Test func testSubscriptionSubcategories_HaveCorrectDisplayNames() {
-        #expect(PrivacyProFeedbackSubcategory.otp.displayName == UserText.pproFeedbackFormCategoryOTP)
-        #expect(PrivacyProFeedbackSubcategory.somethingElse.displayName == UserText.pproFeedbackFormCategoryOther)
+        #expect(SubscriptionFeedbackSubcategory.otp.displayName == UserText.pproFeedbackFormCategoryOTP)
+        #expect(SubscriptionFeedbackSubcategory.somethingElse.displayName == UserText.pproFeedbackFormCategoryOther)
     }
 
     @Test func testSubscriptionSubcategories_HaveCorrectFAQUrls() {
-        #expect(PrivacyProFeedbackSubcategory.otp.url.absoluteString.contains("payments") == true)
-        #expect(PrivacyProFeedbackSubcategory.somethingElse.url.absoluteString.contains("payments") == true)
+        #expect(SubscriptionFeedbackSubcategory.otp.url.absoluteString.contains("payments") == true)
+        #expect(SubscriptionFeedbackSubcategory.somethingElse.url.absoluteString.contains("payments") == true)
     }
 
     @Test func testVPNSubcategories_HaveCorrectDisplayNames() {
@@ -301,7 +275,7 @@ struct UnifiedFeedbackFormViewModelTests {
 
         // Set initial category and subcategory
         viewModel.selectedCategory = UnifiedFeedbackCategory.subscription.rawValue
-        viewModel.selectedSubcategory = PrivacyProFeedbackSubcategory.otp.rawValue
+        viewModel.selectedSubcategory = SubscriptionFeedbackSubcategory.otp.rawValue
 
         #expect(viewModel.selectedSubcategory == "otp")
 
@@ -319,7 +293,7 @@ struct UnifiedFeedbackFormViewModelTests {
         #expect(viewModel.feedbackFormText == "Some feedback text")
 
         // Change subcategory should reset feedback text
-        viewModel.selectedSubcategory = PrivacyProFeedbackSubcategory.otp.rawValue
+        viewModel.selectedSubcategory = SubscriptionFeedbackSubcategory.otp.rawValue
 
         #expect(viewModel.feedbackFormText.isEmpty)
     }
@@ -347,31 +321,23 @@ struct UnifiedFeedbackFormViewModelTests {
         #expect(viewModel.submitButtonEnabled == false)
     }
 
-    @Test func testSubmitButton_WhenFormHasTextButInvalidEmail_IsDisabled() {
+    @Test func testSubmitButton_WhenFormHasText_IsEnabled() {
         let viewModel = makeViewModel()
 
         viewModel.feedbackFormText = "Some feedback"
-        viewModel.userEmail = "invalid-email"
+
+        #expect(viewModel.submitButtonEnabled == true)
+    }
+
+    @Test func testSubmitButton_WhenFormTextCleared_IsDisabled() {
+        let viewModel = makeViewModel()
+
+        viewModel.feedbackFormText = "Some feedback"
+        #expect(viewModel.submitButtonEnabled == true)
+
+        viewModel.feedbackFormText = ""
 
         #expect(viewModel.submitButtonEnabled == false)
-    }
-
-    @Test func testSubmitButton_WhenFormHasTextAndValidEmail_IsEnabled() {
-        let viewModel = makeViewModel()
-
-        viewModel.feedbackFormText = "Some feedback"
-        viewModel.userEmail = "test@example.com"
-
-        #expect(viewModel.submitButtonEnabled == true)
-    }
-
-    @Test func testSubmitButton_WhenFormHasTextAndNoEmail_IsEnabled() {
-        let viewModel = makeViewModel()
-
-        viewModel.feedbackFormText = "Some feedback"
-        viewModel.userEmail = ""
-
-        #expect(viewModel.submitButtonEnabled == true)
     }
 
     // MARK: - Feedback Submission Tests
@@ -408,7 +374,7 @@ struct UnifiedFeedbackFormViewModelTests {
 
         viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
         viewModel.selectedCategory = UnifiedFeedbackCategory.subscription.rawValue
-        viewModel.selectedSubcategory = PrivacyProFeedbackSubcategory.otp.rawValue
+        viewModel.selectedSubcategory = SubscriptionFeedbackSubcategory.otp.rawValue
         viewModel.feedbackFormText = "Issue report text"
 
         await viewModel.process(action: .submit)
@@ -441,8 +407,7 @@ struct UnifiedFeedbackFormViewModelTests {
     }
 
     @Test func testSubmitFeedback_WhenSuccessful_UpdatesStateToSent() async throws {
-        let successfulResponse = try makeSuccessfulAPIResponse()
-        let viewModel = makeViewModel(apiResponse: successfulResponse)
+        let viewModel = makeViewModel()
 
         viewModel.selectedReportType = UnifiedFeedbackReportType.general.rawValue
         viewModel.feedbackFormText = "Test feedback"
@@ -515,7 +480,7 @@ struct UnifiedFeedbackFormViewModelTests {
 
         viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
         viewModel.selectedCategory = UnifiedFeedbackCategory.subscription.rawValue
-        viewModel.selectedSubcategory = PrivacyProFeedbackSubcategory.otp.rawValue
+        viewModel.selectedSubcategory = SubscriptionFeedbackSubcategory.otp.rawValue
 
         await viewModel.process(action: .reportSubmitShow)
 
@@ -528,7 +493,7 @@ struct UnifiedFeedbackFormViewModelTests {
 
         viewModel.selectedReportType = UnifiedFeedbackReportType.reportIssue.rawValue
         viewModel.selectedCategory = UnifiedFeedbackCategory.subscription.rawValue
-        viewModel.selectedSubcategory = PrivacyProFeedbackSubcategory.otp.rawValue
+        viewModel.selectedSubcategory = SubscriptionFeedbackSubcategory.otp.rawValue
 
         await viewModel.process(action: .reportFAQClick)
 

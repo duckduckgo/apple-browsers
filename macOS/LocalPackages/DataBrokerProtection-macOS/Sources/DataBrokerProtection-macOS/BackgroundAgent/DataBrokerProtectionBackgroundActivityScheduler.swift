@@ -23,22 +23,29 @@ import os.log
 import DataBrokerProtectionCore
 
 public protocol DataBrokerProtectionBackgroundActivityScheduler {
-    func startScheduler()
+    func startScheduler() async
+
     var delegate: DataBrokerProtectionBackgroundActivitySchedulerDelegate? { get set }
+    var dataSource: DataBrokerProtectionBackgroundActivitySchedulerDataSource? { get set }
 
     var lastTriggerTimestamp: Date? { get }
 }
 
 public protocol DataBrokerProtectionBackgroundActivitySchedulerDelegate: AnyObject {
-    func dataBrokerProtectionBackgroundActivitySchedulerDidTrigger(_ activityScheduler: DataBrokerProtectionBackgroundActivityScheduler, completion: (() -> Void)?)
+    func dataBrokerProtectionBackgroundActivitySchedulerDidTrigger(_ activityScheduler: DataBrokerProtectionBackgroundActivityScheduler) async
 }
 
-public final class DefaultDataBrokerProtectionBackgroundActivityScheduler: DataBrokerProtectionBackgroundActivityScheduler {
+public protocol DataBrokerProtectionBackgroundActivitySchedulerDataSource: AnyObject {
+    func emailConfirmationDataServiceForDataBrokerProtectionBackgroundActivityScheduler(_ activityScheduler: DataBrokerProtectionBackgroundActivityScheduler) -> EmailConfirmationDataServiceProvider?
+}
+
+public final class DefaultDataBrokerProtectionBackgroundActivityScheduler: DataBrokerProtectionBackgroundActivityScheduler, @unchecked Sendable {
 
     private let activity: NSBackgroundActivityScheduler
     private let schedulerIdentifier = "com.duckduckgo.macos.browser.databroker-protection-scheduler"
 
     public weak var delegate: DataBrokerProtectionBackgroundActivitySchedulerDelegate?
+    public weak var dataSource: DataBrokerProtectionBackgroundActivitySchedulerDataSource?
     public private(set) var lastTriggerTimestamp: Date?
 
     public init(config: DataBrokerMacOSSchedulingConfig) {
@@ -49,15 +56,20 @@ public final class DefaultDataBrokerProtectionBackgroundActivityScheduler: DataB
         activity.qualityOfService = config.activitySchedulerQOS
     }
 
-    public func startScheduler() {
-        activity.schedule { completion in
+    public func startScheduler() async {
+        await withCheckedContinuation { continuation in
+            activity.schedule { completion in
+                Task {
+                    self.lastTriggerTimestamp = Date()
+                    Logger.dataBrokerProtection.log("Scheduler running...")
 
-            self.lastTriggerTimestamp = Date()
-            Logger.dataBrokerProtection.log("Scheduler running...")
-            self.delegate?.dataBrokerProtectionBackgroundActivitySchedulerDidTrigger(self) {
-                Logger.dataBrokerProtection.log("Scheduler finished...")
-                completion(.finished)
+                    await self.delegate?.dataBrokerProtectionBackgroundActivitySchedulerDidTrigger(self)
+
+                    Logger.dataBrokerProtection.log("Scheduler finished...")
+                    completion(.finished)
+                }
             }
+            continuation.resume()
         }
     }
 }

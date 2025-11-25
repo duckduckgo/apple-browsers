@@ -57,7 +57,7 @@ final class DebugScanJob: SubJobWebRunning {
     let privacyConfig: PrivacyConfigurationManaging
     let prefs: ContentScopeProperties
     let context: SubJobContextProviding
-    let emailService: EmailServiceProtocol
+    let emailConfirmationDataService: EmailConfirmationDataServiceProvider
     let captchaService: CaptchaServiceProtocol
     let stageCalculator: StageDurationCalculator
     let executionConfig: BrokerJobExecutionConfig
@@ -81,7 +81,7 @@ final class DebugScanJob: SubJobWebRunning {
     init(privacyConfig: PrivacyConfigurationManaging,
          prefs: ContentScopeProperties,
          context: SubJobContextProviding,
-         emailService: EmailServiceProtocol,
+         emailConfirmationDataService: EmailConfirmationDataServiceProvider,
          captchaService: CaptchaServiceProtocol,
          featureFlagger: DBPFeatureFlagging,
          executionConfig: BrokerJobExecutionConfig = BrokerJobExecutionConfig(),
@@ -92,7 +92,7 @@ final class DebugScanJob: SubJobWebRunning {
         self.privacyConfig = privacyConfig
         self.prefs = prefs
         self.context = context
-        self.emailService = emailService
+        self.emailConfirmationDataService = emailConfirmationDataService
         self.captchaService = captchaService
         self.executionConfig = executionConfig
         self.operationAwaitTime = operationAwaitTime
@@ -118,14 +118,22 @@ final class DebugScanJob: SubJobWebRunning {
         try await withCheckedThrowingContinuation { continuation in
             self.continuation = continuation
             Task {
-                await initialize(handler: webViewHandler, isFakeBroker: context.dataBroker.isFakeBroker, showWebView: showWebView)
+                do {
+                    try await initialize(handler: webViewHandler, isFakeBroker: context.dataBroker.isFakeBroker, showWebView: showWebView)
+                } catch {
+                    if case let UserScriptError.failedToLoadJS(jsFile, error) = error {
+                        pixelHandler.fire(.userScriptLoadJSFailed(jsFile: jsFile, error: error))
+                        try await Task.sleep(interval: 1.0) // give time for the pixel to be sent
+                    }
+                    fatalError("Failed to initialize handler for DebugScanJob: \(error.localizedDescription)")
+                }
 
                 do {
                     let scanStep = try context.dataBroker.scanStep()
                     if let actionsHandler = actionsHandler {
                         self.actionsHandler = actionsHandler
                     } else {
-                        self.actionsHandler = ActionsHandler(step: scanStep)
+                        self.actionsHandler = ActionsHandler.forScan(scanStep)
                     }
                     if self.shouldRunNextStep() {
                         await executeNextStep()
@@ -178,14 +186,6 @@ final class DebugScanJob: SubJobWebRunning {
         }
 
         await executeNextStep()
-    }
-
-    func evaluateActionAndHaltIfNeeded(_ action: Action) async -> Bool {
-        if action.actionType == .expectation, !stageCalculator.isRetrying {
-            retriesCountOnError = 1
-        }
-
-        return false
     }
 
     public func executeNextStep() async {

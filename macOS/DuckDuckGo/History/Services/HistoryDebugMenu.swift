@@ -45,19 +45,19 @@ final class HistoryDebugMenu: NSMenu {
                 action: #selector(populateFakeHistory),
                 target: self,
                 representedObject: (10, FakeURLsPool.random10Domains)
-            )
+            ).withAccessibilityIdentifier("HistoryDebugMenu.populate10")
             NSMenuItem(
                 title: "Add 100 history visits each day (10 domains)",
                 action: #selector(populateFakeHistory),
                 target: self,
                 representedObject: (100, FakeURLsPool.random10Domains)
-            )
+            ).withAccessibilityIdentifier("HistoryDebugMenu.populate100")
             NSMenuItem(
-                title: "Add 100 history visits each day (200 domains – SLOW!)",
+                title: "Add 100 history visits each day (200 domains – SLOW!)",
                 action: #selector(populateFakeHistory),
                 target: self,
                 representedObject: (100, FakeURLsPool.random200Domains)
-            )
+            ).withAccessibilityIdentifier("HistoryDebugMenu.populate100slow")
 
             NSMenuItem.separator()
             resetMenuItem
@@ -69,23 +69,16 @@ final class HistoryDebugMenu: NSMenu {
         fatalError("init(coder:) has not been implemented")
     }
 
-    override func update() {
-        super.update()
-
-        let isHistoryViewEnabled = featureFlagger.isFeatureOn(.historyView)
-        resetMenuItem.isHidden = !isHistoryViewEnabled
-        showMenuItem.isHidden = !isHistoryViewEnabled
-    }
-
     @objc func populateFakeHistory(_ sender: NSMenuItem) {
         guard let (maxVisitsPerDay, pool) = sender.representedObject as? (Int, FakeURLsPool) else {
             return
         }
-        Task.detached {
+        DispatchQueue.main.async {
             self.populateHistory(maxVisitsPerDay, pool.urls)
         }
     }
 
+    @MainActor
     private func populateHistory(_ maxVisitsPerDay: Int, _ urls: [URL]) {
         var date = Date()
         let endDate = Date.monthAgo

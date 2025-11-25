@@ -1,0 +1,9 @@
+{
+    "m_forget-all-pressed_settings": {
+        "description": "Fired when user pressed the button to clear data in Data Clearing Settings",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    }
+}

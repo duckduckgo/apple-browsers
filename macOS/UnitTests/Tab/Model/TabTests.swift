@@ -16,10 +16,12 @@
 //  limitations under the License.
 //
 
-import Combine
-import Navigation
-import XCTest
 import BrowserServicesKit
+import Combine
+import FeatureFlags
+import Navigation
+import SharedTestUtilities
+import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -76,6 +78,22 @@ final class TabTests: XCTestCase {
         XCTAssertEqual(tab.content, .url(.duckDuckGo, source: .link))
     }
 
+    @MainActor func testSpecialTabsCanBePinned() {
+        let tabs: [Tab.Content] = [
+            .subscription(.aboutDuckDuckGo),
+            .identityTheftRestoration(.aboutDuckDuckGo),
+            .dataBrokerProtection,
+            .anyHistoryPane,
+            .settings(pane: .general),
+            .newtab,
+            .bookmarks
+        ]
+
+        for tab in tabs {
+            XCTAssertTrue(tab.canBePinned)
+        }
+    }
+
     // MARK: - Equality
 
     @MainActor func testWhenTabsAreIdenticalThenTheyAreEqual() {
@@ -100,7 +118,7 @@ final class TabTests: XCTestCase {
         let internalUserDecider = MockInternalUserDecider()
         internalUserDecider.isInternalUser = false
 
-        let featureFlagger = FeatureFlaggerMock(internalUserDecider: internalUserDecider)
+        let featureFlagger = MockFeatureFlagger(internalUserDecider: internalUserDecider)
 
         let tab = Tab(content: .newtab, featureFlagger: featureFlagger)
         XCTAssertFalse(tab.canKillWebContentProcess)
@@ -110,7 +128,7 @@ final class TabTests: XCTestCase {
         let internalUserDecider = MockInternalUserDecider()
         internalUserDecider.isInternalUser = true
 
-        let featureFlagger = FeatureFlaggerMock(internalUserDecider: internalUserDecider)
+        let featureFlagger = MockFeatureFlagger(internalUserDecider: internalUserDecider)
 
         let tab = Tab(content: .newtab, featureFlagger: featureFlagger)
         XCTAssertFalse(tab.canKillWebContentProcess)
@@ -120,7 +138,7 @@ final class TabTests: XCTestCase {
         let internalUserDecider = MockInternalUserDecider()
         internalUserDecider.isInternalUser = true
 
-        let featureFlagger = FeatureFlaggerMock(internalUserDecider: internalUserDecider, enabledFeatureFlags: [.tabCrashDebugging])
+        let featureFlagger = MockFeatureFlagger(internalUserDecider: internalUserDecider, featuresStub: [FeatureFlag.tabCrashDebugging.rawValue: true])
 
         let tab = Tab(content: .newtab, featureFlagger: featureFlagger)
         XCTAssertTrue(tab.canKillWebContentProcess)

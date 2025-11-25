@@ -35,7 +35,7 @@ public struct GetCustomerPortalURLResponse: Codable, Equatable {
 
 public struct ConfirmPurchaseResponseV2: Codable, Equatable {
     public let email: String?
-    public let subscription: PrivacyProSubscription
+    public let subscription: DuckDuckGoSubscription
 }
 
 public struct GetSubscriptionFeaturesResponseV2: Decodable {
@@ -66,7 +66,7 @@ public enum SubscriptionEndpointServiceError: DDGError {
     }
 }
 
-/// Defines the caching strategy used when retrieving a `PrivacyProSubscription`.
+/// Defines the caching strategy used when retrieving a `DuckDuckGoSubscription`.
 public enum SubscriptionCachePolicy {
 
     /// Always attempts to fetch the subscription from the remote source.
@@ -87,9 +87,9 @@ public enum SubscriptionCachePolicy {
 }
 
 public protocol SubscriptionEndpointServiceV2 {
-    func ingestSubscription(_ subscription: PrivacyProSubscription) async throws
-    func getSubscription(accessToken: String?, cachePolicy: SubscriptionCachePolicy) async throws -> PrivacyProSubscription
-    func getCachedSubscription() -> PrivacyProSubscription?
+    func ingestSubscription(_ subscription: DuckDuckGoSubscription) async throws
+    func getSubscription(accessToken: String?, cachePolicy: SubscriptionCachePolicy) async throws -> DuckDuckGoSubscription
+    func getCachedSubscription() -> DuckDuckGoSubscription?
     func clearSubscription()
     func getProducts() async throws -> [GetProductsItem]
     func getSubscriptionFeatures(for subscriptionID: String) async throws -> GetSubscriptionFeaturesResponseV2
@@ -110,7 +110,7 @@ public protocol SubscriptionEndpointServiceV2 {
 
 extension SubscriptionEndpointServiceV2 {
 
-    public func getSubscription(accessToken: String) async throws -> PrivacyProSubscription {
+    public func getSubscription(accessToken: String) async throws -> DuckDuckGoSubscription {
         try await getSubscription(accessToken: accessToken, cachePolicy: SubscriptionCachePolicy.cacheFirst)
     }
 }
@@ -120,12 +120,12 @@ public struct DefaultSubscriptionEndpointServiceV2: SubscriptionEndpointServiceV
 
     private let apiService: APIService
     private let baseURL: URL
-    private let subscriptionCache: UserDefaultsCache<PrivacyProSubscription>
+    private let subscriptionCache: UserDefaultsCache<DuckDuckGoSubscription>
     private let cacheSerialQueue = DispatchQueue(label: "com.duckduckgo.subscriptionEndpointService.cache", qos: .background)
 
     public init(apiService: APIService,
                 baseURL: URL,
-                subscriptionCache: UserDefaultsCache<PrivacyProSubscription> = UserDefaultsCache<PrivacyProSubscription>(key: UserDefaultsCacheKey.subscription, settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))) {
+                subscriptionCache: UserDefaultsCache<DuckDuckGoSubscription> = UserDefaultsCache<DuckDuckGoSubscription>(key: UserDefaultsCacheKey.subscription, settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))) {
         self.apiService = apiService
         self.baseURL = baseURL
         self.subscriptionCache = subscriptionCache
@@ -133,7 +133,7 @@ public struct DefaultSubscriptionEndpointServiceV2: SubscriptionEndpointServiceV
 
     // MARK: - Subscription fetching with caching
 
-    private func getRemoteSubscription(accessToken: String) async throws -> PrivacyProSubscription {
+    private func getRemoteSubscription(accessToken: String) async throws -> DuckDuckGoSubscription {
 
         Logger.subscriptionEndpointService.log("Requesting subscription details")
         guard let request = SubscriptionRequest.getSubscription(baseURL: baseURL, accessToken: accessToken) else {
@@ -143,7 +143,7 @@ public struct DefaultSubscriptionEndpointServiceV2: SubscriptionEndpointServiceV
         let statusCode = response.httpResponse.httpStatus
 
         if statusCode.isSuccess {
-            let subscription: PrivacyProSubscription = try response.decodeBody()
+            let subscription: DuckDuckGoSubscription = try response.decodeBody()
             Logger.subscriptionEndpointService.log("Subscription details retrieved successfully: \(subscription.debugDescription, privacy: .public)")
             return try await storeAndAddFeaturesIfNeededTo(subscription: subscription)
         } else {
@@ -160,7 +160,7 @@ public struct DefaultSubscriptionEndpointServiceV2: SubscriptionEndpointServiceV
     }
 
     @discardableResult
-    private func storeAndAddFeaturesIfNeededTo(subscription: PrivacyProSubscription) async throws -> PrivacyProSubscription {
+    private func storeAndAddFeaturesIfNeededTo(subscription: DuckDuckGoSubscription) async throws -> DuckDuckGoSubscription {
         let cachedSubscription = getCachedSubscription()
         var subscription = subscription
         // fetch remote features
@@ -179,7 +179,7 @@ New: \(subscription.debugDescription, privacy: .public)
         return subscription
     }
 
-    func updateCache(with subscription: PrivacyProSubscription) {
+    func updateCache(with subscription: DuckDuckGoSubscription) {
         cacheSerialQueue.sync {
             let expiryDate = subscription.expiresOrRenewsAt
 #if DEBUG
@@ -202,11 +202,11 @@ New: \(subscription.debugDescription, privacy: .public)
         }
     }
 
-    public func ingestSubscription(_ subscription: PrivacyProSubscription) async throws {
+    public func ingestSubscription(_ subscription: DuckDuckGoSubscription) async throws {
         try await storeAndAddFeaturesIfNeededTo(subscription: subscription)
     }
 
-    public func getSubscription(accessToken: String?, cachePolicy: SubscriptionCachePolicy = .cacheFirst) async throws -> PrivacyProSubscription {
+    public func getSubscription(accessToken: String?, cachePolicy: SubscriptionCachePolicy = .cacheFirst) async throws -> DuckDuckGoSubscription {
 
         guard let accessToken else {
             if let subscription = getCachedSubscription() {
@@ -240,8 +240,8 @@ New: \(subscription.debugDescription, privacy: .public)
         }
     }
 
-    public func getCachedSubscription() -> PrivacyProSubscription? {
-        var result: PrivacyProSubscription?
+    public func getCachedSubscription() -> DuckDuckGoSubscription? {
+        var result: DuckDuckGoSubscription?
         cacheSerialQueue.sync {
             result = subscriptionCache.get()
         }

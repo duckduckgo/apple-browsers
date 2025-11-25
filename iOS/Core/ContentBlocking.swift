@@ -36,12 +36,6 @@ public final class ContentBlocking {
     private let exceptionsSource: DefaultContentBlockerRulesExceptionsSource
     private let lastCompiledRulesStore: AppLastCompiledRulesStore
 
-    public var onCriticalError: (() -> Void)? {
-        didSet {
-            contentBlockingManager.onCriticalError = onCriticalError
-        }
-    }
-
     enum PixelParameterName {
         static let experimentName = "experimentName"
         static let etag = "etag"
@@ -89,7 +83,7 @@ public final class ContentBlocking {
         var finalParameters = parameters ?? [:]
         switch event {
         case .trackerDataParseFailed:
-            domainEvent = .trackerDataParseFailed
+            domainEvent = .couldNotParseConfiguration(configuration: .trackerDataSet, target: .app)
             if let experimentName = SiteBreakageExperimentMetrics.activeTDSExperimentNameWithCohort {
                 finalParameters[PixelParameterName.experimentName] = experimentName
                 finalParameters[PixelParameterName.etag] = UserDefaultsETagStorage().loadEtag(for: .trackerDataSet)
@@ -99,16 +93,13 @@ public final class ContentBlocking {
             domainEvent = .trackerDataReloadFailed
 
         case .trackerDataCouldNotBeLoaded:
-            domainEvent = .trackerDataCouldNotBeLoaded
+            domainEvent = .couldNotLoadConfiguration(configuration: .trackerDataSet, target: .app)
 
         case .privacyConfigurationReloadFailed:
             domainEvent = .privacyConfigurationReloadFailed
 
         case .privacyConfigurationParseFailed:
-            domainEvent = .privacyConfigurationParseFailed
-
-        case .privacyConfigurationCouldNotBeLoaded:
-            domainEvent = .privacyConfigurationCouldNotBeLoaded
+            domainEvent = .couldNotParseConfiguration(configuration: .privacyConfiguration, target: .app)
 
         case .contentBlockingCompilationFailed(let listName, let component):
             let defaultTDSListName = DefaultContentBlockerRulesListsSource.Constants.trackerDataSetRulesListName
@@ -126,6 +117,11 @@ public final class ContentBlocking {
             }
 
             domainEvent = .contentBlockingCompilationFailed(listType: listType, component: component)
+            
+            let tmpDirectory = FileManager.default.temporaryDirectory
+            if !FileManager.default.fileExists(atPath: tmpDirectory.path) {
+                Pixel.fire(pixel: .contentBlockingCompilationFailedMissingTmpDir)
+            }
 
         case .contentBlockingLookupRulesSucceeded:
             domainEvent = .contentBlockingLookupRulesSucceeded

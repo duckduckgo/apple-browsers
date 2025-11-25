@@ -29,7 +29,7 @@ enum UniversalOmniBarState {
         var showBackButton: Bool { baseState.showBackButton }
         var showForwardButton: Bool { baseState.showForwardButton }
         var showBookmarksButton: Bool { baseState.showBookmarksButton }
-        var showAccessoryButton: Bool { baseState.showAccessoryButton }
+        var showAIChatButton: Bool { baseState.showAIChatButton }
         var clearTextOnStart: Bool { baseState.clearTextOnStart }
         var allowsTrackersAnimation: Bool { baseState.allowsTrackersAnimation }
         var showSearchLoupe: Bool { baseState.showSearchLoupe }
@@ -39,7 +39,7 @@ enum UniversalOmniBarState {
         var showDismiss: Bool { baseState.showDismiss }
         var showAbort: Bool { baseState.showAbort }
         var showRefresh: Bool { baseState.showRefresh }
-        var showShare: Bool { baseState.showShare }
+        var showCustomizableButton: Bool { baseState.showCustomizableButton }
         var showMenu: Bool { baseState.showMenu }
         var showSettings: Bool { baseState.showSettings }
         var showVoiceSearch: Bool { baseState.showVoiceSearch }
@@ -61,6 +61,7 @@ enum UniversalOmniBarState {
         var onEnterPhoneState: any OmniBarState { baseState.onEnterPhoneState }
         var onEnterPadState: any OmniBarState { baseState.onEnterPadState }
         var onReloadState: any OmniBarState { baseState.onReloadState }
+        var onEnterAIChatState: OmniBarState { baseState.onEnterAIChatState }
 
         // MARK: init params
         let dependencies: OmnibarDependencyProvider

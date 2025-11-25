@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Combine
+import Common
 import Foundation
 import Navigation
 import WebKit
@@ -81,8 +82,10 @@ final class TabCrashRecoveryExtension {
     private let featureFlagger: FeatureFlagger
     private let crashLoopDetector: TabCrashLoopDetecting
     private let firePixel: (PixelKitEvent, [String: String]) -> Void
+    private let tabCrashAggregator: TabCrashAggregator
 
     private var cancellables = Set<AnyCancellable>()
+    private var lastPixelFireTime: Date?
 
     init(
         featureFlagger: FeatureFlagger,
@@ -92,11 +95,13 @@ final class TabCrashRecoveryExtension {
         crashLoopDetector: TabCrashLoopDetecting = TabCrashLoopDetector(),
         firePixel: @escaping (PixelKitEvent, [String: String]) -> Void = { event, parameters in
             PixelKit.fire(event, frequency: .dailyAndStandard, withAdditionalParameters: parameters)
-        }
+        },
+        tabCrashAggregator: TabCrashAggregator
     ) {
         self.featureFlagger = featureFlagger
         self.crashLoopDetector = crashLoopDetector
         self.firePixel = firePixel
+        self.tabCrashAggregator = tabCrashAggregator
 
         contentPublisher.sink { [weak self] content in
             self?.content = content
@@ -132,36 +137,43 @@ extension TabCrashRecoveryExtension: NavigationResponder {
 
         attemptTabCrashRecovery(for: error, in: webView)
 
-        Task.detached(priority: .utility) {
+        let now = Date()
+        let lastFireTime = lastPixelFireTime ?? Date.distantPast
+        if now.timeIntervalSince(lastFireTime) >= 0.1 {
+            lastPixelFireTime = now
+            let isDuckURL = webView.url?.isDuckURLScheme == true
+            let isDuckURLParameter = ["is_duck_url": String(isDuckURL)]
+
+            Task.detached(priority: .utility) {
 #if APPSTORE
-            let additionalParameters = [String: String]()
+                let additionalParameters: [String: String] = isDuckURLParameter
 #else
-            let additionalParameters = await SystemInfo.pixelParameters()
+                let additionalParameters = await SystemInfo.pixelParameters().merging(isDuckURLParameter, uniquingKeysWith: { $1 })
 #endif
-            self.firePixel(DebugEvent(GeneralPixel.webKitDidTerminate, error: error), additionalParameters)
+                self.firePixel(DebugEvent(GeneralPixel.webKitDidTerminate, error: error), additionalParameters)
+            }
         }
     }
 
     private func attemptTabCrashRecovery(for error: WKError, in webView: WKWebView) {
-        let shouldAutoReload: Bool
+        let crashTimestamp = crashLoopDetector.currentDate()
+        let isCrashLoop = crashLoopDetector.isCrashLoop(for: crashTimestamp, lastCrashTimestamp: lastCrashedAt)
+        tabDidCrashSubject.send(isCrashLoop ? .crashLoop : .single)
+        lastCrashedAt = crashTimestamp
 
-        if featureFlagger.isFeatureOn(.tabCrashRecovery) {
-            let crashTimestamp = crashLoopDetector.currentDate()
-            let isCrashLoop = crashLoopDetector.isCrashLoop(for: crashTimestamp, lastCrashTimestamp: lastCrashedAt)
-            tabDidCrashSubject.send(isCrashLoop ? .crashLoop : .single)
-            lastCrashedAt = crashTimestamp
+        if isCrashLoop {
+            tabCrashAggregator.recordCrash()
 
-            if isCrashLoop {
-                Task.detached(priority: .utility) {
-                    self.firePixel(GeneralPixel.webKitTerminationLoop, [:])
-                }
+            Task.detached(priority: .utility) {
+                self.firePixel(GeneralPixel.webKitTerminationLoop, [:])
             }
-
-            shouldAutoReload = !isCrashLoop
-        } else {
-            // disable auto-reload if tab crash debugging flag is enabled, to allow testing
-            shouldAutoReload = featureFlagger.internalUserDecider.isInternalUser && !featureFlagger.isFeatureOn(.tabCrashDebugging)
         }
+
+#if DEBUG
+        let shouldAutoReload = !isCrashLoop && AppVersion.runType != .integrationTests
+#else
+        let shouldAutoReload = !isCrashLoop
+#endif
 
         handleTabCrash(error, in: webView, shouldAutoReload: shouldAutoReload)
     }

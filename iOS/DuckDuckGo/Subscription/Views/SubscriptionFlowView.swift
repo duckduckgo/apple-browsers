@@ -57,14 +57,21 @@ struct SubscriptionFlowView: View {
         NavigationLink(destination: LazyView(NetworkProtectionRootView().navigationViewStyle(.stack)),
                        isActive: $isShowingNetP,
                        label: { EmptyView() })
-        NavigationLink(destination: LazyView(SubscriptionITPView().navigationViewStyle(.stack)),
+        
+        NavigationLink(destination: LazyView(SubscriptionITPView(viewModel: SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+                                                                                                     userScriptsDependencies: viewModel.userScriptsDependencies,
+                                                                                                     isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser,
+                                                                                                     isAuthV2Enabled: AppDependencyProvider.shared.isUsingAuthV2)).navigationViewStyle(.stack)),
                        isActive: $isShowingITR,
                        label: { EmptyView() })
-        if viewModel.isPIREnabled,
-           let vcProvider = viewModel.dataBrokerProtectionViewControllerProvider {
-            NavigationLink(destination: LazyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: vcProvider).navigationViewStyle(.stack)),
-                           isActive: $isShowingDBP,
-                           label: { EmptyView() })
+        if viewModel.isPIREnabled, let vcProvider = viewModel.dataBrokerProtectionViewControllerProvider {
+            NavigationLink(
+                destination: LazyView(DataBrokerProtectionViewControllerRepresentation(dbpViewControllerProvider: vcProvider)
+                    .edgesIgnoringSafeArea(.bottom)
+                    .navigationViewStyle(.stack)),
+                isActive: $isShowingDBP,
+                label: { EmptyView() }
+            )
         } else {
             NavigationLink(destination: LazyView(SubscriptionPIRMoveToDesktopView().navigationViewStyle(.stack)),
                            isActive: $isShowingDBP,

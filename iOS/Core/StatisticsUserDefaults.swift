@@ -29,6 +29,7 @@ public class StatisticsUserDefaults: StatisticsStore {
         static let atb = "com.duckduckgo.statistics.atb.key"
         static let searchRetentionAtb = "com.duckduckgo.statistics.retentionatb.key"
         static let appRetentionAtb = "com.duckduckgo.statistics.appretentionatb.key"
+        static let duckAIRetentionAtb = "com.duckduckgo.statistics.duckairetentionatb.key"
         static let variant = "com.duckduckgo.statistics.variant.key"
     }
 
@@ -94,6 +95,16 @@ public class StatisticsUserDefaults: StatisticsStore {
 
         set {
             userDefaults?.setValue(newValue, forKey: Keys.variant)
+        }
+    }
+
+    public var duckAIRetentionAtb: String? {
+        get {
+            return userDefaults?.string(forKey: Keys.duckAIRetentionAtb)
+        }
+
+        set {
+            userDefaults?.setValue(newValue, forKey: Keys.duckAIRetentionAtb)
         }
     }
 }

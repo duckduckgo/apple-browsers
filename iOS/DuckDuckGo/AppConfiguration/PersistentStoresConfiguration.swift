@@ -38,9 +38,9 @@ final class PersistentStoresConfiguration {
         self.application = application
     }
 
-    func configure(syncKeyValueStore: ThrowingKeyValueStoring) throws -> Bool {
+    func configure(syncKeyValueStore: ThrowingKeyValueStoring, isBackground: Bool = false) throws {
         try loadDatabase()
-        return try loadAndMigrateBookmarksDatabase(syncKeyValueStore: syncKeyValueStore)
+        try loadAndMigrateBookmarksDatabase(syncKeyValueStore: syncKeyValueStore, isBackground: isBackground)
     }
 
     private func loadDatabase() throws {
@@ -58,21 +58,15 @@ final class PersistentStoresConfiguration {
         }
     }
 
-    private func loadAndMigrateBookmarksDatabase(syncKeyValueStore: ThrowingKeyValueStoring) throws -> Bool {
-        // Check if sync is enabled from the same keyValueStore that sync uses
-        let syncEnabledKey = "com.duckduckgo.sync.enabled"
-        let isSyncEnabled = (try? syncKeyValueStore.object(forKey: syncEnabledKey)) != nil
-        
-        var didRepairBookmarksStructure: Bool = false
+    private func loadAndMigrateBookmarksDatabase(syncKeyValueStore: ThrowingKeyValueStoring, isBackground: Bool) throws {
         do {
-            let validator = BookmarksDatabaseSetup.makeValidator(isSyncEnabled: isSyncEnabled)
-            didRepairBookmarksStructure = try BookmarksDatabaseSetup().loadStoreAndMigrate(bookmarksDatabase: bookmarksDatabase, validator: validator)
+            let validator = BookmarksDatabaseSetup.makeValidator()
+            try BookmarksDatabaseSetup().loadStoreAndMigrate(bookmarksDatabase: bookmarksDatabase, validator: validator, isBackground: isBackground)
         } catch let error as BookmarksDatabaseError {
             throw TerminationError.bookmarksDatabase(error)
         } catch {
             throw TerminationError.bookmarksDatabase(.other(error))
         }
-        return didRepairBookmarksStructure
     }
 
 }

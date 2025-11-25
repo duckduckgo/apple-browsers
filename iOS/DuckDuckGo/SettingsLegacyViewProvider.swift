@@ -158,6 +158,7 @@ class SettingsLegacyViewProvider: ObservableObject {
         return SyncSettingsViewController(syncService: self.syncService,
                                           syncBookmarksAdapter: self.syncDataProviders.bookmarksAdapter,
                                           syncCredentialsAdapter: self.syncDataProviders.credentialsAdapter,
+                                          syncCreditCardsAdapter: self.syncDataProviders.creditCardsAdapter,
                                           appSettings: self.appSettings,
                                           syncPausedStateManager: self.syncPausedStateManager,
                                           source: source,
@@ -169,6 +170,7 @@ class SettingsLegacyViewProvider: ObservableObject {
                        selectedCard: SecureVaultModels.CreditCard?,
                        showPasswordManagement: Bool,
                        showCreditCardManagement: Bool,
+                       showSettingsScreen: AutofillSettingsDestination?,
                        source: AutofillSettingsSource?) -> AutofillSettingsViewController {
         return AutofillSettingsViewController(appSettings: self.appSettings,
                                               syncService: self.syncService,
@@ -177,6 +179,7 @@ class SettingsLegacyViewProvider: ObservableObject {
                                               selectedCard: selectedCard,
                                               showPasswordManagement: showPasswordManagement,
                                               showCardManagement: showCreditCardManagement,
+                                              showSettingsScreen: showSettingsScreen,
                                               source: source ?? .settings,
                                               bookmarksDatabase: self.bookmarksDatabase,
                                               favoritesDisplayMode: self.appSettings.favoritesDisplayMode,

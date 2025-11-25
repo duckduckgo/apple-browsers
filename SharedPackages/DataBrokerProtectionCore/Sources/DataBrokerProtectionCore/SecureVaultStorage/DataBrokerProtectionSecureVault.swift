@@ -70,7 +70,8 @@ public protocol DataBrokerProtectionSecureVault: SecureVault {
               submittedSuccessfullyDate: Date?,
               sevenDaysConfirmationPixelFired: Bool,
               fourteenDaysConfirmationPixelFired: Bool,
-              twentyOneDaysConfirmationPixelFired: Bool) throws
+              twentyOneDaysConfirmationPixelFired: Bool,
+              fortyTwoDaysConfirmationPixelFired: Bool) throws
     func updatePreferredRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws
     func updateLastRunDate(_ date: Date?, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws
     func updateAttemptCount(_ count: Int64, brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws
@@ -91,6 +92,10 @@ public protocol DataBrokerProtectionSecureVault: SecureVault {
                                                    forBrokerId brokerId: Int64,
                                                    profileQueryId: Int64,
                                                    extractedProfileId: Int64) throws
+    func updateFortyTwoDaysConfirmationPixelFired(_ pixelFired: Bool,
+                                                  forBrokerId brokerId: Int64,
+                                                  profileQueryId: Int64,
+                                                  extractedProfileId: Int64) throws
     func fetchOptOut(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws -> OptOutJobData?
     func fetchOptOuts(brokerId: Int64, profileQueryId: Int64) throws -> [OptOutJobData]
     func fetchOptOuts(brokerId: Int64) throws -> [OptOutJobData]
@@ -129,6 +134,7 @@ public protocol DataBrokerProtectionSecureVault: SecureVault {
     func fetchAllOptOutEmailConfirmations() throws -> [OptOutEmailConfirmationJobData]
     func fetchOptOutEmailConfirmationsAwaitingLink() throws -> [OptOutEmailConfirmationJobData]
     func fetchOptOutEmailConfirmationsWithLink() throws -> [OptOutEmailConfirmationJobData]
+    func fetchIdentifiersForActiveEmailConfirmations() throws -> Set<OptOutIdentifier>
     func updateOptOutEmailConfirmationLink(_ emailConfirmationLink: String?,
                                            emailConfirmationLinkObtainedOnBEDate: Date?,
                                            profileQueryId: Int64,
@@ -302,7 +308,8 @@ public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectio
                      submittedSuccessfullyDate: Date?,
                      sevenDaysConfirmationPixelFired: Bool,
                      fourteenDaysConfirmationPixelFired: Bool,
-                     twentyOneDaysConfirmationPixelFired: Bool) throws {
+                     twentyOneDaysConfirmationPixelFired: Bool,
+                     fortyTwoDaysConfirmationPixelFired: Bool) throws {
         let mapper = MapperToDB(mechanism: l2Encrypt(data:))
         let extractedProfileDB = try mapper.mapToDB(extractedProfile, brokerId: brokerId, profileQueryId: profileQueryId)
         try self.providers.database.save(
@@ -316,7 +323,8 @@ public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectio
             submittedSuccessfullyDate: submittedSuccessfullyDate,
             sevenDaysConfirmationPixelFired: sevenDaysConfirmationPixelFired,
             fourteenDaysConfirmationPixelFired: fourteenDaysConfirmationPixelFired,
-            twentyOneDaysConfirmationPixelFired: twentyOneDaysConfirmationPixelFired
+            twentyOneDaysConfirmationPixelFired: twentyOneDaysConfirmationPixelFired,
+            fortyTwoDaysConfirmationPixelFired: fortyTwoDaysConfirmationPixelFired
         )
     }
 
@@ -371,6 +379,16 @@ public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectio
                                                                               forBrokerId: brokerId,
                                                                               profileQueryId: profileQueryId,
                                                                               extractedProfileId: extractedProfileId)
+    }
+
+    public func updateFortyTwoDaysConfirmationPixelFired(_ pixelFired: Bool,
+                                                         forBrokerId brokerId: Int64,
+                                                         profileQueryId: Int64,
+                                                         extractedProfileId: Int64) throws {
+        try self.providers.database.updateFortyTwoDaysConfirmationPixelFired(pixelFired,
+                                                                             forBrokerId: brokerId,
+                                                                             profileQueryId: profileQueryId,
+                                                                             extractedProfileId: extractedProfileId)
     }
 
     public func fetchOptOut(brokerId: Int64, profileQueryId: Int64, extractedProfileId: Int64) throws -> OptOutJobData? {
@@ -592,6 +610,10 @@ public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectio
     public func fetchOptOutEmailConfirmationsWithLink() throws -> [OptOutEmailConfirmationJobData] {
         let mapper = MapperToModel(mechanism: l2Decrypt(data:))
         return try self.providers.database.fetchOptOutEmailConfirmationsWithLink().map(mapper.mapToModel(_:))
+    }
+
+    public func fetchIdentifiersForActiveEmailConfirmations() throws -> Set<OptOutIdentifier> {
+        return try self.providers.database.fetchIdentifiersForActiveEmailConfirmations()
     }
 
     public func updateOptOutEmailConfirmationLink(_ emailConfirmationLink: String?,

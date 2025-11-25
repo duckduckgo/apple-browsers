@@ -31,8 +31,8 @@ extension SpecialPagesUserScript {
 
     func withDuckPlayerIfAvailable() {
         var youtubePlayerUserScript: YoutubePlayerUserScript?
-        if DuckPlayer.shared.isAvailable {
-            youtubePlayerUserScript = YoutubePlayerUserScript()
+        if NSApp.delegateTyped.duckPlayer.isAvailable {
+            youtubePlayerUserScript = YoutubePlayerUserScript(duckPlayer: NSApp.delegateTyped.duckPlayer)
         }
         if let youtubePlayerUserScript {
             self.registerSubfeature(delegate: youtubePlayerUserScript)

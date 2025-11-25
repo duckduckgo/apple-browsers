@@ -17,6 +17,9 @@
 //
 
 import AppKit
+import AppKitExtensions
+import DeveloperToolsSupport
+import Foundation
 
 extension NSViewController {
 
@@ -98,6 +101,40 @@ extension NSViewController {
         return self
     }
 
+    func addKeyEquivalent(_ keyEquivalent: NSEvent.KeyEquivalent, perform action: @escaping @MainActor (NSEvent) -> Bool) {
+        let keyEquivalentView = view.subviews.last(where: { $0 is KeyEquivalentView }) as? KeyEquivalentView ?? {
+            let keyEquivalentView = KeyEquivalentView()
+            self.view.addSubview(keyEquivalentView)
+            return keyEquivalentView
+        }()
+        keyEquivalentView.addKeyEquivalent(keyEquivalent, action: action)
+    }
+
+    func addKeyEquivalent(_ characters: String, modifierFlags: NSEvent.ModifierFlags, perform action: @escaping @MainActor (NSEvent) -> Bool) {
+        addKeyEquivalent(.init(characters: characters, modifierFlags: modifierFlags), perform: action)
+    }
+
+    enum Key {
+        case backspace
+        case tab
+        case left
+        case right
+        case escape
+
+        var keyEquivalentElement: KeyEquivalentElement {
+            switch self {
+            case .backspace: return .backspace
+            case .tab: return .tab
+            case .left: return .left
+            case .right: return .right
+            case .escape: return .escape
+            }
+        }
+    }
+    func addKeyEquivalent(_ key: Key, modifierFlags: NSEvent.ModifierFlags, perform action: @escaping @MainActor (NSEvent) -> Bool) {
+        addKeyEquivalent(.init(keyEquivalentElement: key.keyEquivalentElement, modifierFlags: modifierFlags), perform: action)
+    }
+
 }
 
 func withoutAnimation(_ closure: () -> Void) {
@@ -123,5 +160,15 @@ final class Preview_ViewControllerWindowObserver: NSObject {
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
         window.styleMask = []
+    }
+}
+
+public extension CGSize {
+    /// #Preview helper to convert CGSize to Preview Traits
+    @available(macOS 14.0, *)
+    var fixedLayout: PreviewTrait<Preview.ViewTraits> {
+        MainActor.assumeMainThread {
+            .fixedLayout(width: width, height: height)
+        }
     }
 }

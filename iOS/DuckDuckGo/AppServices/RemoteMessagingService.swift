@@ -29,6 +29,14 @@ import DDGSync
 final class RemoteMessagingService {
 
     let remoteMessagingClient: RemoteMessagingClient
+    let remoteMessagingActionHandler: RemoteMessagingActionHandler
+    let pixelReporter: RemoteMessagingPixelReporting
+
+    var messageNavigator: MessageNavigator? {
+        didSet {
+            remoteMessagingActionHandler.messageNavigator = messageNavigator
+        }
+    }
 
     init(bookmarksDatabase: CoreDataDatabase,
          database: CoreDataDatabase,
@@ -37,8 +45,18 @@ final class RemoteMessagingService {
          configurationStore: ConfigurationStore,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          configurationURLProvider: ConfigurationURLProviding,
-         syncService: DDGSyncing
+         syncService: DDGSyncing,
+         winBackOfferService: WinBackOfferService,
+         subscriptionDataReporter: SubscriptionDataReporting
     ) {
+        remoteMessagingActionHandler = RemoteMessagingActionHandler(
+            lastSearchStateRefresher: RemoteMessagingSurveyLastSearchStateRefresher()
+        )
+
+        pixelReporter = RemoteMessagePixelReporter(
+            parameterRandomiser: subscriptionDataReporter.mergeRandomizedParameters(for:with:)
+        )
+
         remoteMessagingClient = RemoteMessagingClient(
             bookmarksDatabase: bookmarksDatabase,
             appSettings: appSettings,
@@ -49,9 +67,11 @@ final class RemoteMessagingService {
             remoteMessagingAvailabilityProvider: PrivacyConfigurationRemoteMessagingAvailabilityProvider(
                 privacyConfigurationManager: privacyConfigurationManager
             ),
+            remoteMessagingSurfacesProvider: DefaultRemoteMessagingSurfacesProvider(),
             duckPlayerStorage: DefaultDuckPlayerStorage(),
             configurationURLProvider: configurationURLProvider,
-            syncService: syncService
+            syncService: syncService,
+            winBackOfferService: winBackOfferService
         )
         remoteMessagingClient.registerBackgroundRefreshTaskHandler()
 

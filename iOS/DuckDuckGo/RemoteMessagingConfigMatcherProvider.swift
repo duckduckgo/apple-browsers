@@ -39,7 +39,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         duckPlayerStorage: DuckPlayerStorage,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         themeManager: ThemeManaging = ThemeManager.shared,
-        syncService: DDGSyncing
+        syncService: DDGSyncing,
+        winBackOfferService: WinBackOfferService
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.appSettings = appSettings
@@ -48,6 +49,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         self.featureFlagger = featureFlagger
         self.themeManager = themeManager
         self.syncService = syncService
+        self.winBackOfferService = winBackOfferService
     }
 
     let bookmarksDatabase: CoreDataDatabase
@@ -57,7 +59,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
     let featureFlagger: FeatureFlagger
     let themeManager: ThemeManaging
     let syncService: DDGSyncing
-
+    let winBackOfferService: WinBackOfferService
     func refreshConfigMatcher(using store: RemoteMessagingStoring) async -> RemoteMessagingConfigMatcher {
 
         var bookmarksCount = 0
@@ -69,21 +71,23 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         }
 
         let statisticsStore = StatisticsUserDefaults()
+        let featureDiscovery = DefaultFeatureDiscovery()
         let variantManager = DefaultVariantManager()
         let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
-        let isPrivacyProSubscriber = subscriptionManager.isUserAuthenticated
-        let isPrivacyProEligibleUser = subscriptionManager.canPurchase
+        let isDuckDuckGoSubscriber = subscriptionManager.isUserAuthenticated
+        let isSubscriptionEligibleUser = subscriptionManager.canPurchase
 
         let activationDateStore = DefaultVPNActivationDateStore()
         let daysSinceNetworkProtectionEnabled = activationDateStore.daysSinceActivation() ?? -1
         let autofillUsageStore = AutofillUsageStore()
 
-        var privacyProDaysSinceSubscribed: Int = -1
-        var privacyProDaysUntilExpiry: Int = -1
-        var privacyProPurchasePlatform: String?
-        var isPrivacyProSubscriptionActive: Bool = false
-        var isPrivacyProSubscriptionExpiring: Bool = false
-        var isPrivacyProSubscriptionExpired: Bool = false
+        var subscriptionDaysSinceSubscribed: Int = -1
+        var subscriptionDaysUntilExpiry: Int = -1
+        var subscriptionPurchasePlatform: String?
+        var isSubscriptionActive: Bool = false
+        var isSubscriptionExpiring: Bool = false
+        var isSubscriptionExpired: Bool = false
+        var subscriptionFreeTrialActive: Bool = false
 
         var isDuckPlayerOnboarded: Bool {
             duckPlayerStorage.userInteractedWithDuckPlayer
@@ -95,32 +99,35 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             syncService.authState != .inactive
         }
 
+        let shouldShowWinBackOfferUrgencyMessage = winBackOfferService.shouldShowUrgencyMessage
+
         let surveyActionMapper: DefaultRemoteMessagingSurveyURLBuilder
 
         if let subscription = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst) {
-            privacyProDaysSinceSubscribed = Calendar.current.numberOfDaysBetween(subscription.startedAt, and: Date()) ?? -1
-            privacyProDaysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: subscription.expiresOrRenewsAt) ?? -1
-            privacyProPurchasePlatform = subscription.platform.rawValue
+            subscriptionDaysSinceSubscribed = Calendar.current.numberOfDaysBetween(subscription.startedAt, and: Date()) ?? -1
+            subscriptionDaysUntilExpiry = Calendar.current.numberOfDaysBetween(Date(), and: subscription.expiresOrRenewsAt) ?? -1
+            subscriptionPurchasePlatform = subscription.platform.rawValue
+            subscriptionFreeTrialActive = subscription.hasActiveTrialOffer
 
             switch subscription.status {
             case .autoRenewable, .gracePeriod:
-                isPrivacyProSubscriptionActive = true
+                isSubscriptionActive = true
             case .notAutoRenewable:
-                isPrivacyProSubscriptionExpiring = true
+                isSubscriptionExpiring = true
             case .expired, .inactive:
-                isPrivacyProSubscriptionExpired = true
+                isSubscriptionExpired = true
             case .unknown:
                 break // Not supported in RMF
             }
 
             surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(statisticsStore: statisticsStore,
                                                                         vpnActivationDateStore: DefaultVPNActivationDateStore(),
-                                                                        subscription: subscription,
+                                                                        subscriptionDataProvider: subscription,
                                                                         autofillUsageStore: autofillUsageStore)
         } else {
             surveyActionMapper = DefaultRemoteMessagingSurveyURLBuilder(statisticsStore: statisticsStore,
                                                                         vpnActivationDateStore: DefaultVPNActivationDateStore(),
-                                                                        subscription: nil,
+                                                                        subscriptionDataProvider: nil,
                                                                         autofillUsageStore: autofillUsageStore)
         }
 
@@ -136,29 +143,54 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                      variantManager: variantManager,
                                                      isInternalUser: internalUserDecider.isInternalUser),
             userAttributeMatcher: UserAttributeMatcher(statisticsStore: statisticsStore,
+                                                       featureDiscovery: featureDiscovery,
                                                        variantManager: variantManager,
                                                        bookmarksCount: bookmarksCount,
                                                        favoritesCount: favoritesCount,
                                                        appTheme: appSettings.currentThemeStyle.rawValue,
                                                        isWidgetInstalled: await appSettings.isWidgetInstalled(),
                                                        daysSinceNetPEnabled: daysSinceNetworkProtectionEnabled,
-                                                       isPrivacyProEligibleUser: isPrivacyProEligibleUser,
-                                                       isPrivacyProSubscriber: isPrivacyProSubscriber,
-                                                       privacyProDaysSinceSubscribed: privacyProDaysSinceSubscribed,
-                                                       privacyProDaysUntilExpiry: privacyProDaysUntilExpiry,
-                                                       privacyProPurchasePlatform: privacyProPurchasePlatform,
-                                                       isPrivacyProSubscriptionActive: isPrivacyProSubscriptionActive,
-                                                       isPrivacyProSubscriptionExpiring: isPrivacyProSubscriptionExpiring,
-                                                       isPrivacyProSubscriptionExpired: isPrivacyProSubscriptionExpired,
+                                                       isSubscriptionEligibleUser: isSubscriptionEligibleUser,
+                                                       isDuckDuckGoSubscriber: isDuckDuckGoSubscriber,
+                                                       subscriptionDaysSinceSubscribed: subscriptionDaysSinceSubscribed,
+                                                       subscriptionDaysUntilExpiry: subscriptionDaysUntilExpiry,
+                                                       subscriptionPurchasePlatform: subscriptionPurchasePlatform,
+                                                       isSubscriptionActive: isSubscriptionActive,
+                                                       isSubscriptionExpiring: isSubscriptionExpiring,
+                                                       isSubscriptionExpired: isSubscriptionExpired,
+                                                       subscriptionFreeTrialActive: subscriptionFreeTrialActive,
                                                        isDuckPlayerOnboarded: isDuckPlayerOnboarded,
                                                        isDuckPlayerEnabled: isDuckPlayerEnabled,
                                                        dismissedMessageIds: dismissedMessageIds,
                                                        shownMessageIds: shownMessageIds,
                                                        enabledFeatureFlags: enabledFeatureFlags,
-                                                       isSyncEnabled: isSyncEnabled),
+                                                       isSyncEnabled: isSyncEnabled,
+                                                       shouldShowWinBackOfferUrgencyMessage: shouldShowWinBackOfferUrgencyMessage),
             percentileStore: RemoteMessagingPercentileUserDefaultsStore(keyValueStore: UserDefaults.standard),
             surveyActionMapper: surveyActionMapper,
             dismissedMessageIds: dismissedMessageIds
         )
+    }
+}
+
+extension DuckDuckGoSubscription: @retroactive SubscriptionSurveyDataProviding {
+    public var subscriptionStatus: String? {
+        return status.remoteMessagingFrameworkValue
+    }
+
+    public var subscriptionPlatform: String? {
+        return platform.rawValue
+    }
+
+    public var subscriptionBilling: String? {
+        return billingPeriod.remoteMessagingFrameworkValue
+    }
+
+    public var subscriptionStartDate: Date? {
+        return startedAt
+    }
+
+    public var subscriptionExpiryDate: Date? {
+        return expiresOrRenewsAt
     }
 }

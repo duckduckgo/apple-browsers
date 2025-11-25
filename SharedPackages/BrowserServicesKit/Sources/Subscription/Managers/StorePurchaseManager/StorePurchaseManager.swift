@@ -118,14 +118,14 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
     }
 
     public func subscriptionOptions() async -> SubscriptionOptions? {
-        let nonFreeTrialProducts = availableProducts.filter { !$0.isFreeTrialProduct }
+        let nonFreeTrialProducts = availableProducts.filter { !$0.isProTierProduct && !$0.isFreeTrialProduct }
         let ids = nonFreeTrialProducts.map(\.self.id)
         Logger.subscription.debug("[StorePurchaseManager] Returning SubscriptionOptions for products: \(ids)")
         return await subscriptionOptions(for: nonFreeTrialProducts)
     }
 
     public func freeTrialSubscriptionOptions() async -> SubscriptionOptions? {
-        let freeTrialProducts = availableProducts.filter { $0.isFreeTrialProduct }
+        let freeTrialProducts = availableProducts.filter { !$0.isProTierProduct && $0.isFreeTrialProduct }
         let ids = freeTrialProducts.map(\.self.id)
         Logger.subscription.debug("[StorePurchaseManager] Returning Free Trial SubscriptionOptions for products: \(ids)")
         return await subscriptionOptions(for: freeTrialProducts)
@@ -139,9 +139,9 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
             let storefrontCountryCode: String?
             let storefrontRegion: SubscriptionRegion
 
-            if let subscriptionFeatureFlagger, subscriptionFeatureFlagger.isFeatureOn(.usePrivacyProUSARegionOverride) {
+            if let subscriptionFeatureFlagger, subscriptionFeatureFlagger.isFeatureOn(.useSubscriptionUSARegionOverride) {
                 storefrontCountryCode = "USA"
-            } else if let subscriptionFeatureFlagger, subscriptionFeatureFlagger.isFeatureOn(.usePrivacyProROWRegionOverride) {
+            } else if let subscriptionFeatureFlagger, subscriptionFeatureFlagger.isFeatureOn(.useSubscriptionROWRegionOverride) {
                 storefrontCountryCode = "POL"
             } else {
                 storefrontCountryCode = await Storefront.current?.countryCode

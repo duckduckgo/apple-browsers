@@ -129,6 +129,7 @@ public struct EmailServiceV1: EmailServiceV1Protocol {
     }
 
     public func fetchEmailData(items: [EmailDataRequestItemV1]) async throws -> EmailDataResponseV1 {
+        Logger.service.log("✉️ [EmailServiceV1] Fetching email data for \(items.count, privacy: .public) items")
         guard !items.isEmpty else {
             throw EmailErrorV1.noEmailData
         }
@@ -160,10 +161,12 @@ public struct EmailServiceV1: EmailServiceV1Protocol {
 
         let (data, response) = try await urlSession.data(for: request)
         try validateHTTPResponse(response)
+        Logger.service.log("✉️ [EmailServiceV1] Email data API call successful for \(items.count, privacy: .public) items")
 
         do {
             return try JSONDecoder().decode(EmailDataResponseV1.self, from: data)
         } catch {
+            Logger.service.error("✉️ [EmailServiceV1] Failed to decode email data response: \(error, privacy: .public)")
             throw EmailErrorV1.invalidResponse
         }
     }
@@ -172,6 +175,7 @@ public struct EmailServiceV1: EmailServiceV1Protocol {
         guard !items.isEmpty else {
             return
         }
+        Logger.service.log("✉️ [EmailServiceV1] Deleting email data for \(items.count, privacy: .public) items")
 
         var urlComponents = URLComponents(url: settings.endpointURL, resolvingAgainstBaseURL: true)
         urlComponents?.path += "\(Constants.endpointSubPath)/email-data/delete"

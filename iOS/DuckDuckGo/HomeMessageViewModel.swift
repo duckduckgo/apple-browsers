@@ -22,9 +22,21 @@ import BrowserServicesKit
 import RemoteMessaging
 import UIKit
 
+enum HomeSupportedMessageDisplayType {
+    case small(titleText: String, descriptionText: String)
+    case medium(titleText: String, descriptionText: String, placeholder: RemotePlaceholder)
+    case bigSingleAction(titleText: String, descriptionText: String, placeholder: RemotePlaceholder,
+                         primaryActionText: String, primaryAction: RemoteAction)
+    case bigTwoAction(titleText: String, descriptionText: String, placeholder: RemotePlaceholder,
+                      primaryActionText: String, primaryAction: RemoteAction, secondaryActionText: String,
+                      secondaryAction: RemoteAction)
+    case promoSingleAction(titleText: String, descriptionText: String, placeholder: RemotePlaceholder,
+                           actionText: String, action: RemoteAction)
+}
+
 struct HomeMessageViewModel {
 
-    enum ButtonAction {
+    enum ButtonAction: Equatable {
         case close
         case action(isShare: Bool) // a generic action that is specific to the type of message
         case primaryAction(isShare: Bool)
@@ -33,8 +45,8 @@ struct HomeMessageViewModel {
 
     let messageId: String
     let sendPixels: Bool
-    let modelType: RemoteMessageModelType
-    let navigator: MessageNavigator
+    let modelType: HomeSupportedMessageDisplayType
+    let messageActionHandler: RemoteMessagingActionHandling
 
     var image: String? {
         switch modelType {
@@ -122,53 +134,17 @@ struct HomeMessageViewModel {
     
     let onDidClose: (ButtonAction?) async -> Void
     let onDidAppear: () -> Void
-    let onAttachAdditionalParameters: ((_ useCase: PrivacyProDataReportingUseCase, _ params: [String: String]) -> [String: String])?
+    let onAttachAdditionalParameters: ((_ useCase: SubscriptionDataReportingUseCase, _ params: [String: String]) -> [String: String])?
 
-    func mapActionToViewModel(remoteAction: RemoteAction,
-                              buttonAction: HomeMessageViewModel.ButtonAction,
-                              onDidClose: @escaping (HomeMessageViewModel.ButtonAction?) async -> Void) -> () async -> Void {
-
-        switch remoteAction {
-        case .share:
-            return { @MainActor in
-                await onDidClose(buttonAction)
-            }
-        case .url(let value):
-            return { @MainActor in
-                LaunchTabNotification.postLaunchTabNotification(urlString: value)
-                await onDidClose(buttonAction)
-            }
-        case .survey(let value):
-            return { @MainActor in
-                let refreshedURL = refreshLastSearchState(in: value)
-                LaunchTabNotification.postLaunchTabNotification(urlString: refreshedURL)
-                await onDidClose(buttonAction)
-            }
-        case .appStore:
-            return { @MainActor in
-                let url = URL.appStore
-                if UIApplication.shared.canOpenURL(url as URL) {
-                    UIApplication.shared.open(url)
-                }
-                await onDidClose(buttonAction)
-            }
-        case .dismiss:
-            return { @MainActor in
-                await onDidClose(buttonAction)
-            }
-
-        case .navigation(let target):
-            return { @MainActor in
-                navigator.navigateTo(target)
-                await onDidClose(buttonAction)
-            }
+    func mapActionToViewModel(
+        remoteAction: RemoteAction,
+        buttonAction: HomeMessageViewModel.ButtonAction,
+        onDidClose: @escaping (HomeMessageViewModel.ButtonAction?) async -> Void
+    ) -> (_ presenter: RemoteMessagingPresenter) async -> Void {
+        return { @MainActor presenter in
+            await self.messageActionHandler.handleAction(remoteAction, context: PresentationContext(presenter: presenter, presentationStyle: .dismissModalsAndPresentFromRoot))
+            await onDidClose(buttonAction)
         }
-    }
-    
-    /// If `last_search_state` is present, refresh before opening URL
-    private func refreshLastSearchState(in urlString: String) -> String {
-        let lastSearchDate = AutofillUsageStore().searchDauDate
-        return DefaultRemoteMessagingSurveyURLBuilder.refreshLastSearchState(in: urlString, lastSearchDate: lastSearchDate)
     }
 }
 
@@ -178,10 +154,10 @@ struct HomeMessageButtonViewModel {
         case share(value: String, title: String?)
         case cancel
     }
-    
+
     let title: String
     var actionStyle: ActionStyle = .default
-    let action: () async -> Void
+    let action: (RemoteMessagingPresenter) async -> Void
 
 }
 

@@ -34,20 +34,32 @@ final class SessionRestorePromptPopover: NSPopover {
         fatalError("\(Self.self): Bad initializer")
     }
 
+    deinit {
+#if DEBUG
+        // Check that our content view controller deallocates
+        contentViewController?.ensureObjectDeallocated(after: 1.0, do: .interrupt)
+#endif
+    }
+
     private func setupContentController() {
         /// Popover frame used for positioning is 26px wider than `contentSize.width`.
         /// Adjust the width to get the expected positioning.
         contentSize = NSSize(width: SessionRestorePromptView.Const.width - 26, height: 256)
-        contentViewController = SessionRestorePromptViewController(ctaCallback: ctaCallback)
+        contentViewController = SessionRestorePromptViewController(ctaCallback: ctaCallback) { [weak self] in
+            self?.close()
+        }
     }
 }
 
 final class SessionRestorePromptViewController: NSHostingController<SessionRestorePromptView> {
     private let viewModel: SessionRestorePromptViewModel
+    private let dismiss: () -> Void
 
-    init(ctaCallback: @escaping (Bool) -> Void) {
+    init(ctaCallback: @escaping (Bool) -> Void,
+         dismiss: @escaping () -> Void) {
         self.viewModel = SessionRestorePromptViewModel(ctaCallback: ctaCallback)
-        let view = SessionRestorePromptView(model: viewModel)
+        self.dismiss = dismiss
+        let view = SessionRestorePromptView(model: viewModel, dismiss: dismiss)
         super.init(rootView: view)
     }
 

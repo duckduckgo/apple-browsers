@@ -176,7 +176,7 @@ public struct SecureVaultModels {
 
     }
 
-    public struct CreditCard {
+    public struct CreditCard: Decodable {
 
         private enum Constants {
             static let creditCardsKey = "creditCards"
@@ -200,7 +200,11 @@ public struct SecureVaultModels {
         public var expirationYear: Int?
 
         public var cardNumber: String {
-            return String(data: cardNumberData, encoding: .utf8)!
+            guard let cardNumber = String(data: cardNumberData, encoding: .utf8) else {
+                assertionFailure("cardNumberData could not be decoded as UTF-8 - data may still be encrypted")
+                return ""
+            }
+            return cardNumber
         }
 
         public var displayName: String {
@@ -337,7 +341,7 @@ public struct SecureVaultModels {
 
     }
 
-    public struct Identity {
+    public struct Identity: Decodable {
 
         private static let mediumPersonNameComponentsFormatter: PersonNameComponentsFormatter = {
             let nameFormatter = PersonNameComponentsFormatter()
@@ -374,8 +378,8 @@ public struct SecureVaultModels {
 
         public var id: Int64?
         public var title: String
-        public let created: Date
-        public let lastUpdated: Date
+        public var created: Date
+        public var lastUpdated: Date
 
         public var firstName: String? {
             didSet {

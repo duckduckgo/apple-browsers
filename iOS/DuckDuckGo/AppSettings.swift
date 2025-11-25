@@ -125,6 +125,8 @@ protocol AppSettings: AnyObject, OnboardingDebugAppSettings {
     var duckPlayerControlsVisible: Bool { get set }
     var duckPlayerNativeUIWasUsed: Bool { get set }
     var duckPlayerNativeUISettingsMapped: Bool { get set }
+
+    var autoClearAIChatHistory: Bool { get set }
 }
 
 // MARK: - AppSettings + OnboardingDebugSettings

@@ -35,12 +35,13 @@ public protocol SubJobWebRunning: CCFCommunicationDelegate {
     var privacyConfig: PrivacyConfigurationManaging { get }
     var prefs: ContentScopeProperties { get }
     var context: SubJobContextProviding { get }
-    var emailService: EmailServiceProtocol { get }
+    var emailConfirmationDataService: EmailConfirmationDataServiceProvider { get }
     var captchaService: CaptchaServiceProtocol { get }
     var cookieHandler: CookieHandler { get }
     var stageCalculator: StageDurationCalculator { get }
     var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels> { get }
     var executionConfig: BrokerJobExecutionConfig { get }
+    var featureFlagger: DBPFeatureFlagging { get }
 
     var webViewHandler: WebViewHandler? { get set }
     var actionsHandler: ActionsHandler? { get }
@@ -75,11 +76,17 @@ public extension SubJobWebRunning {
     // MARK: - Shared functions
 
     func evaluateActionAndHaltIfNeeded(_ action: Action) async -> Bool {
-        false
+        if !stageCalculator.isRetrying {
+            retriesCountOnError = 3
+        }
+
+        return false
     }
 
     func runNextAction(_ action: Action) async {
         let stepType = actionsHandler?.stepType
+
+        stageCalculator.setLastAction(action)
 
         switch action {
         case is GetCaptchaInfoAction:
@@ -113,6 +120,8 @@ public extension SubJobWebRunning {
             actionsHandler?.captchaTransactionId = nil
             stageCalculator.setStage(.captchaSolve)
             if let captchaData = try? await captchaService.submitCaptchaToBeResolved(for: captchaTransactionId,
+                                                                                     dataBrokerURL: context.dataBroker.url,
+                                                                                     dataBrokerVersion: context.dataBroker.version,
                                                                                      attemptId: stageCalculator.attemptId,
                                                                                      shouldRunNextStep: shouldRunNextStep) {
                 stageCalculator.fireOptOutCaptchaSolve()
@@ -129,7 +138,13 @@ public extension SubJobWebRunning {
         if action.needsEmail {
             do {
                 stageCalculator.setStage(.emailGenerate)
-                let emailData = try await emailService.getEmail(dataBrokerURL: context.dataBroker.url, attemptId: stageCalculator.attemptId)
+                let emailData = try await emailConfirmationDataService.getEmailAndOptionallySaveToDatabase(
+                    dataBrokerId: context.dataBroker.id,
+                    dataBrokerURL: context.dataBroker.url,
+                    profileQueryId: context.profileQuery.id,
+                    extractedProfileId: extractedProfile?.id,
+                    attemptId: stageCalculator.attemptId
+                )
                 extractedProfile?.email = emailData.emailAddress
                 stageCalculator.setEmailPattern(emailData.pattern)
                 stageCalculator.fireOptOutEmailGenerate()
@@ -151,7 +166,7 @@ public extension SubJobWebRunning {
     private func runEmailConfirmationAction(action: EmailConfirmationAction) async throws {
         if let email = extractedProfile?.email {
             stageCalculator.setStage(.emailReceive)
-            let url =  try await emailService.getConfirmationLink(
+            let url =  try await emailConfirmationDataService.getConfirmationLink(
                 from: email,
                 numberOfRetries: 10, // Move to constant
                 pollingInterval: action.pollingTime,
@@ -187,11 +202,11 @@ public extension SubJobWebRunning {
 
     func initialize(handler: WebViewHandler?,
                     isFakeBroker: Bool = false,
-                    showWebView: Bool) async {
+                    showWebView: Bool) async throws {
         if let handler = handler { // This help us swapping up the WebViewHandler on tests
             self.webViewHandler = handler
         } else {
-            self.webViewHandler = await DataBrokerProtectionWebViewHandler(privacyConfig: privacyConfig, prefs: prefs, delegate: self, isFakeBroker: isFakeBroker, executionConfig: executionConfig, shouldContinueActionHandler: shouldRunNextStep)
+            self.webViewHandler = try await DataBrokerProtectionWebViewHandler(privacyConfig: privacyConfig, prefs: prefs, delegate: self, isFakeBroker: isFakeBroker, executionConfig: executionConfig, shouldContinueActionHandler: shouldRunNextStep)
         }
 
         await webViewHandler?.initializeWebView(showWebView: showWebView)
@@ -255,14 +270,20 @@ public extension SubJobWebRunning {
     }
 
     func success(actionId: String, actionType: ActionType) async {
+        let isForOptOut = actionsHandler?.isForOptOut == true
+
         switch actionType {
         case .click:
-            stageCalculator.fireOptOutFillForm()
+            if isForOptOut {
+                stageCalculator.fireOptOutFillForm()
+            }
             // We wait 40 seconds before tapping
             try? await Task.sleep(nanoseconds: UInt64(clickAwaitTime) * 1_000_000_000)
             await executeNextStep()
         case .fillForm:
-            stageCalculator.fireOptOutFillForm()
+            if isForOptOut {
+                stageCalculator.fireOptOutFillForm()
+            }
             await executeNextStep()
         default: await executeNextStep()
         }
@@ -292,6 +313,8 @@ public extension SubJobWebRunning {
             stageCalculator.setStage(.captchaSend)
             actionsHandler?.captchaTransactionId = try await captchaService.submitCaptchaInformation(
                 captchaInfo,
+                dataBrokerURL: context.dataBroker.url,
+                dataBrokerVersion: context.dataBroker.version,
                 attemptId: stageCalculator.attemptId,
                 shouldRunNextStep: shouldRunNextStep)
             stageCalculator.fireOptOutCaptchaSend()
@@ -360,9 +383,10 @@ public extension SubJobWebRunning {
     }
 
     private func fireScanStagePixel(for action: Action) {
-        pixelHandler.fire(.scanStage(dataBroker: context.dataBroker.name,
+        pixelHandler.fire(.scanStage(dataBroker: context.dataBroker.url,
                                      dataBrokerVersion: context.dataBroker.version,
                                      tries: stageCalculator.tries,
+                                     parent: context.dataBroker.parent ?? "",
                                      actionId: action.id,
                                      actionType: action.actionType.rawValue))
     }

@@ -22,8 +22,8 @@ import Common
 
 final class MoreOptionsMenuButton: MouseOverButton, NotificationDotProviding {
 
+    private var updateController: UpdateController?
 #if SPARKLE
-    private var updateController: UpdateControllerProtocol?
     private var dockCustomization: DockCustomization?
 #endif
 
@@ -39,22 +39,20 @@ final class MoreOptionsMenuButton: MouseOverButton, NotificationDotProviding {
     var isNotificationVisible: Bool = false {
         didSet {
             updateNotificationVisibility()
-#if SPARKLE
             needsDisplay = isNotificationVisible != oldValue
-#endif
         }
     }
 
     override func awakeFromNib() {
         super.awakeFromNib()
 
-#if SPARKLE
         if AppVersion.runType != .uiTests {
             updateController = Application.appDelegate.updateController
+#if SPARKLE
             dockCustomization = Application.appDelegate.dockCustomization
+#endif
         }
         subscribeToUpdateInfo()
-#endif
     }
 
     override func updateLayer() {
@@ -63,14 +61,19 @@ final class MoreOptionsMenuButton: MouseOverButton, NotificationDotProviding {
     }
 
     private func subscribeToUpdateInfo() {
+        var dockPublisher: AnyPublisher<Bool, Never>
 #if SPARKLE
-        guard let updateController, let dockCustomization else { return }
-        cancellable = Publishers.CombineLatest3(updateController.hasPendingUpdatePublisher, updateController.notificationDotPublisher, dockCustomization.shouldShowNotificationPublisher)
+        guard let dockCustomization = dockCustomization else { return }
+        dockPublisher = dockCustomization.shouldShowNotificationPublisher
+#else
+        dockPublisher = .init(Just(false))
+#endif
+        guard let updateController else { return }
+        cancellable = Publishers.CombineLatest3(updateController.hasPendingUpdatePublisher, updateController.notificationDotPublisher, dockPublisher)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] hasPendingUpdate, needsNotificationDot, shouldNotificationForAddToDock in
                 self?.isNotificationVisible = hasPendingUpdate && needsNotificationDot || shouldNotificationForAddToDock
             }
-#endif
     }
 
     override func layout() {

@@ -14,6 +14,7 @@ tags:
     arguments:
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         "autoclear-ui-test": true
+        isRunningUITests: true
 
 # Enable autoclear
 

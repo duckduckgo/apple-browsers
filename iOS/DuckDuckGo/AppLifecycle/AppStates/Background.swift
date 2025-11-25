@@ -29,16 +29,19 @@ struct Background: BackgroundHandling {
 
     private let lastBackgroundDate: Date = Date()
     private let appDependencies: AppDependencies
+    private let sceneDependencies: SceneDependencies
     private let didTransitionFromLaunching: Bool
     private var services: AppServices { appDependencies.services }
 
-    init(stateContext: Launching.StateContext) {
+    init(stateContext: Connected.StateContext) {
         appDependencies = stateContext.appDependencies
+        sceneDependencies = stateContext.sceneDependencies
         didTransitionFromLaunching = true
     }
 
     init(stateContext: Foreground.StateContext) {
         appDependencies = stateContext.appDependencies
+        sceneDependencies = stateContext.sceneDependencies
         didTransitionFromLaunching = false
     }
 
@@ -48,13 +51,25 @@ struct Background: BackgroundHandling {
 
         services.dbpService.onBackground()
         services.vpnService.suspend()
-        services.authenticationService.suspend()
-        services.autoClearService.suspend()
+        services.aiChatService.suspend()
+        sceneDependencies.authenticationService.suspend()
+        sceneDependencies.autoClearService.suspend()
         services.autofillService.suspend()
         services.syncService.suspend()
         services.reportingService.suspend()
 
         appDependencies.mainCoordinator.onBackground()
+
+        updateApplicationShortcutItems()
+    }
+
+    private func updateApplicationShortcutItems() {
+        Task { @MainActor in
+            UIApplication.shared.shortcutItems = [
+                services.aiChatService.shortcutItem(),
+                await services.vpnService.shortcutItem()
+            ].compactMap { $0 }
+        }
     }
 
 }
@@ -73,7 +88,7 @@ extension Background {
     func willLeave() {
         Logger.lifecycle.info("\(type(of: self)): \(#function)")
         ThemeManager.shared.updateUserInterfaceStyle()
-        services.autoClearService.resume()
+        sceneDependencies.autoClearService.resume()
         services.systemSettingsPiPTutorialService.resume()
     }
 
@@ -94,6 +109,7 @@ extension Background {
 
         let lastBackgroundDate: Date
         let appDependencies: AppDependencies
+        let sceneDependencies: SceneDependencies
         let didTransitionFromLaunching: Bool
 
     }
@@ -101,8 +117,19 @@ extension Background {
     func makeForegroundState(actionToHandle: AppAction?) -> any ForegroundHandling {
         Foreground(stateContext: StateContext(lastBackgroundDate: lastBackgroundDate,
                                               appDependencies: appDependencies,
+                                              sceneDependencies: sceneDependencies,
                                               didTransitionFromLaunching: didTransitionFromLaunching),
                    actionToHandle: actionToHandle)
+    }
+
+    /// Temporary logic to handle cases where the window is disconnected and later reconnected.
+    /// Ensures the main coordinator’s main view controller is reattached to the new window.
+    /// If confirmed this scenario never occurs, this code should be removed.
+    func makeConnectedState(window: UIWindow, actionToHandle: AppAction?) -> any ConnectedHandling {
+        Connected(stateContext: Launching.StateContext(didFinishLaunchingStartTime: 0,
+                                                       appDependencies: appDependencies),
+                  actionToHandle: actionToHandle,
+                  window: window)
     }
 
 }

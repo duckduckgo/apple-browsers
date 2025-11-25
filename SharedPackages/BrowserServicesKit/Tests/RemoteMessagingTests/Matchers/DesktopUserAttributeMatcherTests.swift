@@ -26,6 +26,7 @@ import XCTest
 class DesktopUserAttributeMatcherTests: XCTestCase {
 
     var mockStatisticsStore: MockStatisticsStore!
+    var mockFeatureDiscovery: MockFeatureDiscovery!
     var manager: MockVariantManager!
     var emailManager: EmailManager!
     var matcher: DesktopUserAttributeMatcher!
@@ -41,6 +42,8 @@ class DesktopUserAttributeMatcherTests: XCTestCase {
         mockStatisticsStore.appRetentionAtb = "v105-44"
         mockStatisticsStore.searchRetentionAtb = "v105-88"
         mockStatisticsStore.installDate = dateYesterday
+
+        mockFeatureDiscovery = MockFeatureDiscovery()
 
         manager = MockVariantManager(isSupportedReturns: true,
                                          currentVariant: MockVariant(name: "zo", weight: 44, isIncluded: { return true }, features: [.dummy]))
@@ -178,20 +181,22 @@ class DesktopUserAttributeMatcherTests: XCTestCase {
     private func setUpUserAttributeMatcher(dismissedMessageIds: [String] = [], dismissedDeprecatedMacRemoteMessageIds: [String] = []) {
         matcher = DesktopUserAttributeMatcher(
             statisticsStore: mockStatisticsStore,
+            featureDiscovery: mockFeatureDiscovery,
             variantManager: manager,
             emailManager: emailManager,
             bookmarksCount: 44,
             favoritesCount: 88,
             appTheme: "default",
             daysSinceNetPEnabled: 3,
-            isPrivacyProEligibleUser: true,
-            isPrivacyProSubscriber: true,
-            privacyProDaysSinceSubscribed: 5,
-            privacyProDaysUntilExpiry: 25,
-            privacyProPurchasePlatform: "apple",
-            isPrivacyProSubscriptionActive: true,
-            isPrivacyProSubscriptionExpiring: false,
-            isPrivacyProSubscriptionExpired: false,
+            isSubscriptionEligibleUser: true,
+            isDuckDuckGoSubscriber: true,
+            subscriptionDaysSinceSubscribed: 5,
+            subscriptionDaysUntilExpiry: 25,
+            subscriptionPurchasePlatform: "apple",
+            isSubscriptionActive: true,
+            isSubscriptionExpiring: false,
+            isSubscriptionExpired: false,
+            subscriptionFreeTrialActive: false,
             dismissedMessageIds: dismissedMessageIds,
             shownMessageIds: [],
             pinnedTabsCount: 3,

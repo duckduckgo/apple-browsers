@@ -1,0 +1,771 @@
+---
+title: "Feature Flag Addition Pattern"
+description: "Interactive pattern for adding feature flags to iOS and/or macOS with proper configuration"
+keywords: ["feature flags", "iOS", "macOS", "FeatureFlagger", "remote configuration", "PrivacyFeature"]
+alwaysApply: false
+---
+
+# Feature Flag Addition Pattern
+
+## When This Pattern Applies
+
+This pattern is activated when the user explicitly requests to add a feature flag, such as:
+- "Add a feature flag for [feature name]"
+- "Create a feature flag for [feature name] on [platform]"
+- "I need a feature flag to control [feature name]"
+
+## Overview
+
+Adding a feature flag requires careful consideration of several factors:
+1. **Platform** (iOS, macOS, or both)
+2. **Source type** (how the flag is controlled)
+3. **Default value** (fallback behavior)
+4. **Local overriding** (debug menu access)
+5. **Remote configuration** (if applicable)
+
+## Step 1: Validate and Check for Duplicates
+
+Before adding a new feature flag, check if a similar flag already exists:
+
+```bash
+# Search for similar flags
+grep -i "case.*[searchTerm]" iOS/Core/FeatureFlag.swift
+grep -i "case.*[searchTerm]" macOS/LocalPackages/FeatureFlags/Sources/FeatureFlags/FeatureFlag.swift
+```
+
+## Step 1.5: Create Asana Task (REQUIRED)
+
+**STOP:** Before proceeding with implementation, the user must create an Asana task.
+
+Instruct the user:
+```
+Please create an Asana task in the Apple Feature Flags Registry:
+
+1. Open Asana
+2. Navigate to the "Apple Feature Flags Registry" project
+3. Create a new task default feature flag task
+4. Copy the task URL
+
+Paste the Asana task URL when ready to continue.
+```
+
+**This is mandatory** - all feature flags must be tracked in the Apple Feature Flags Registry.
+
+## Step 2: Ask Clarifying Questions
+
+### Question 1: Platform Selection
+
+**Ask the user:**
+```
+Which platform(s) should this feature flag target?
+  a) iOS only
+  b) macOS only
+  c) Both iOS and macOS
+```
+
+**Default:** Infer from user's request. If ambiguous, ask.
+
+### Question 2: Feature Flag Source Type
+
+**Ask the user:**
+```
+What source type should this feature flag use?
+
+  a) .remoteReleasable - Can be controlled remotely in production (RECOMMENDED for most features)
+     • Allows gradual rollout
+     • Can be toggled without app updates
+     • Requires Privacy Config setup
+     
+  b) .remoteDevelopment - Remote control in development environments only
+     • For testing remote config before production
+     • Not visible in production builds
+     
+  c) .internalOnly() - Only enabled for internal users
+     • Always on for internal users
+     • Always off for external users
+     • No remote control
+     
+  d) .enabled - Always on for everyone
+     • No toggle capability
+     • Use for features ready for full rollout
+     
+  e) .disabled - Always off for everyone
+     • Placeholder for future features
+     • Code is present but inactive
+
+Which option? (a is recommended for new features)
+```
+
+**Important:** If user selects `a` or `b`, proceed to Question 2b.
+
+### Question 2b: Parent Feature Selection (for remote flags)
+
+**Ask the user:**
+```
+For remote feature flags, we need to add a subfeature to PrivacyFeature.swift.
+
+Which parent feature should this belong to?
+
+Platform-specific generic:
+  a) macOSBrowserConfig - Generic macOS browser features
+  b) iOSBrowserConfig - Generic iOS browser features
+
+Domain-specific (if applicable):
+  c) aiChat - AI Chat related features
+  d) sync - Sync related features
+  e) privacyPro - Privacy Pro subscription features
+  f) autofill - Autofill related features
+  g) networkProtection - VPN related features
+  h) duckPlayer - Duck Player features
+  i) dbp - Data Broker Protection features
+  j) htmlNewTabPage - New Tab Page features
+  k) maliciousSiteProtection - Malicious site protection
+  l) Other existing parent feature (specify name)
+  m) Create NEW parent feature (requires additional setup)
+
+Which option?
+```
+
+**Guidance for selection:**
+- Use platform-specific generic (a/b) when feature doesn't fit existing domains
+- Use domain-specific when feature clearly belongs to an existing area
+- Creating a new parent feature (m) requires:
+  1. Adding case to `PrivacyFeature` enum
+  2. Creating new `[FeatureName]Subfeature` enum
+  3. Coordinating with backend team for remote config
+
+### Question 3: Default Value
+
+**Ask the user:**
+```
+What should the default value be?
+
+  a) false - Feature OFF when remote config unavailable (RECOMMENDED)
+     • Safer option
+     • Opt-in behavior
+     • Better for new/experimental features
+     
+  b) true - Feature ON when remote config unavailable
+     • Used when feature should be on by default
+     • Useful for rollback safety (can disable remotely)
+     • Better for stable features being gradually enabled
+
+Which option? (a is recommended for new features)
+```
+
+**Explanation:** The default value is used when:
+- Remote config is unavailable
+- Flag source is local-only (`.internalOnly`, `.enabled`, `.disabled`)
+- Network is down or config fetch fails
+
+### Question 4: Local Overriding
+
+**Ask the user:**
+```
+Should this feature flag support local overriding?
+
+  a) true - Allow internal users to toggle in debug menu (RECOMMENDED)
+     • Enables testing both states
+     • Useful during development
+     • No effect on external users
+     
+  b) false - No local override available
+     • Use for production pixels/metrics
+     • Use for security-critical flags
+     • Use when override would break functionality
+
+Which option? (a is recommended unless there's a specific reason)
+```
+
+### Question 5: Asana Task Link
+
+**REQUIRED:** Before proceeding, the user must create an Asana task.
+
+**Instruct the user:**
+```
+Please create an Asana task for this feature flag:
+
+1. Go to Asana
+2. Navigate to: Apple Feature Flags Registry
+3. Create a new task with:
+   - Title: [Feature name] feature flag
+   - Add any relevant context or description in the task
+4. Copy the task URL
+
+Once created, paste the Asana task URL here:
+```
+
+**Note:** All feature flags MUST have an associated Asana task in the Apple Feature Flags Registry for tracking and documentation purposes.
+
+## Step 3: Implementation
+
+### File Locations
+
+- **iOS:** `iOS/Core/FeatureFlag.swift`
+- **macOS:** `macOS/LocalPackages/FeatureFlags/Sources/FeatureFlags/FeatureFlag.swift`
+- **Shared (remote flags):** `SharedPackages/BrowserServicesKit/Sources/BrowserServicesKit/PrivacyConfig/Features/PrivacyFeature.swift`
+
+### 3.1: Add Feature Flag Enum Case
+
+#### For iOS (`iOS/Core/FeatureFlag.swift`)
+
+```swift
+public enum FeatureFlag: String {
+    // ... existing cases ...
+    
+    /// https://app.asana.com/[task-url]
+    case yourFeatureName
+```
+
+#### For macOS (`macOS/LocalPackages/FeatureFlags/Sources/FeatureFlags/FeatureFlag.swift`)
+
+```swift
+public enum FeatureFlag: String, CaseIterable {
+    // ... existing cases ...
+    
+    /// https://app.asana.com/[task-url]
+    case yourFeatureName
+```
+
+**Naming conventions:**
+- Use camelCase
+- Be descriptive but concise
+- Follow existing patterns in the file
+
+### 3.2: Add to `defaultValue` Switch
+
+Find the `defaultValue` computed property and add your case:
+
+```swift
+public var defaultValue: Bool {
+    switch self {
+    // If default is TRUE, add to this group:
+    case .existingTrueCase1,
+         .existingTrueCase2,
+         .yourFeatureName:  // Add here if default is true
+        true
+    default:
+        false  // All other cases default to false
+    }
+}
+```
+
+**OR** if default is false, no change needed (handled by `default` case).
+
+### 3.3: Add to `source` Switch
+
+```swift
+public var source: FeatureFlagSource {
+    switch self {
+    // ... other cases ...
+    
+    case .yourFeatureName:
+        return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.yourFeatureName))
+        // OR
+        return .internalOnly()
+        // OR
+        return .enabled
+        // OR
+        return .disabled
+    }
+}
+```
+
+**Examples by source type:**
+
+```swift
+// Remote releasable with macOS-specific subfeature
+case .macOSFeature:
+    return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.macOSFeature))
+
+// Remote releasable with iOS-specific subfeature
+case .iOSFeature:
+    return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.iOSFeature))
+
+// Remote releasable with domain-specific subfeature
+case .aiFeature:
+    return .remoteReleasable(.subfeature(AIChatSubfeature.aiFeature))
+
+// Remote releasable with parent feature (no subfeature)
+case .newParentFeature:
+    return .remoteReleasable(.feature(.newParentFeature))
+
+// Remote development (testing)
+case .experimentalFeature:
+    return .remoteDevelopment(.subfeature(MacOSBrowserConfigSubfeature.experimentalFeature))
+
+// Internal only
+case .debugFeature:
+    return .internalOnly()
+
+// Always enabled
+case .stableFeature:
+    return .enabled
+
+// Always disabled (placeholder)
+case .futureFeature:
+    return .disabled
+```
+
+### 3.4: Add to `supportsLocalOverriding` Switch
+
+```swift
+public var supportsLocalOverriding: Bool {
+    switch self {
+    case .existingOverridableFlag1,
+         .existingOverridableFlag2,
+         .yourFeatureName:  // Add here if supports local override
+        return true
+    case .existingNonOverridableFlag1,
+         .existingNonOverridableFlag2:
+        return false
+    }
+}
+```
+
+**Note:** Most flags should support local overriding for testing purposes.
+
+### 3.5: Add Subfeature to PrivacyFeature.swift (Remote Flags Only)
+
+**File:** `SharedPackages/BrowserServicesKit/Sources/BrowserServicesKit/PrivacyConfig/Features/PrivacyFeature.swift`
+
+**Important Documentation Note:**
+- **MacOSBrowserConfigSubfeature** and **iOSBrowserConfigSubfeature**: Include documentation comments with Asana task URLs
+- **All other domain-specific subfeatures** (PrivacyPro, AIChat, Sync, DBP, etc.): NO documentation comments - just the case name
+
+#### For macOS-specific features:
+
+```swift
+public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature {
+        .macOSBrowserConfig
+    }
+    
+    // ... existing cases ...
+    
+    /// https://app.asana.com/[task-url]
+    case yourFeatureName
+}
+```
+
+#### For iOS-specific features:
+
+```swift
+public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature {
+        .iOSBrowserConfig
+    }
+    
+    // ... existing cases ...
+    
+    /// https://app.asana.com/[task-url]
+    case yourFeatureName
+}
+```
+
+#### For domain-specific features (e.g., PrivacyPro, AIChat, Sync, etc.):
+
+**Important:** Domain-specific subfeatures should NOT include documentation comments in PrivacyFeature.swift. Keep them clean and simple with just the case name.
+
+```swift
+public enum [DomainName]Subfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .[domainName] }
+    
+    // ... existing cases ...
+    
+    case yourFeatureName
+}
+```
+
+**Example for PrivacyPro features:**
+```swift
+public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
+    public var parent: PrivacyFeature { .privacyPro }
+    
+    // ... existing cases ...
+    
+    case yourNewFeature
+}
+```
+
+### 3.6: Creating a New Parent Feature (Advanced)
+
+If you need to create a NEW parent feature:
+
+**Step 1:** Add to `PrivacyFeature` enum:
+
+```swift
+public enum PrivacyFeature: String {
+    // ... existing cases ...
+    case yourNewFeature
+}
+```
+
+**Step 2:** Create subfeature enum:
+
+```swift
+public enum YourNewFeatureSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature {
+        .yourNewFeature
+    }
+    
+    case firstSubfeature
+    case secondSubfeature
+}
+```
+
+**Step 3:** Coordinate with backend team to add feature to remote Privacy Config.
+
+### 3.7: Add Feature Flag Category (macOS Only)
+
+**File:** `macOS/LocalPackages/FeatureFlags/Sources/FeatureFlags/FeatureFlagCategory.swift`
+
+On macOS, feature flags can be organized into categories for better organization in the debug menu. Consider if your feature flag should be categorized.
+
+**Available Categories:**
+- `duckAI` - Duck.ai related features
+- `dbp` - Personal Information Removal
+- `subscription` - Subscription/Privacy Pro features
+- `sync` - Sync related features
+- `updates` - Update related features
+- `vpn` - VPN related features
+- `osSupportWarnings` - OS Support Warnings
+- `other` - Default for uncategorized flags
+
+**When to categorize:**
+- If the feature belongs to a clear domain (Subscription, VPN, Sync, Duck.ai, etc.), add it to the appropriate category
+- If unsure or the feature is general browser functionality, it can remain in `.other` (default)
+
+**How to categorize:**
+
+**Step 1:** If needed, add a new category to the enum:
+
+```swift
+public enum FeatureFlagCategory: String, CaseIterable, Comparable {
+    case duckAI = "Duck.ai"
+    // ... existing cases ...
+    case yourNewCategory = "Your Category Name"
+    // ... other cases ...
+}
+```
+
+**Step 2:** Add your feature flag to the appropriate category in the `category` computed property:
+
+```swift
+extension FeatureFlag: FeatureFlagCategorization {
+    public var category: FeatureFlagCategory {
+        switch self {
+        // ... existing cases ...
+        
+        case .yourFeatureFlag1,
+             .yourFeatureFlag2:
+            return .yourCategory
+            
+        default:
+            return .other
+        }
+    }
+}
+```
+
+**Example for Subscription features:**
+
+```swift
+case .privacyProAuthV2,
+     .privacyProFreeTrial,
+     .paidAIChat,
+     .tierMessagingEnabled,
+     .allowProTierPurchase:
+    return .subscription
+```
+
+**Note:** iOS does not have feature flag categories - this is macOS-specific functionality.
+
+## Step 4: Usage in Code
+
+### Basic Usage
+
+```swift
+// Check if feature is enabled
+if featureFlagger.isFeatureOn(.yourFeatureName) {
+    // Feature-specific code
+}
+```
+
+### With Dependency Injection
+
+```swift
+final class MyViewController {
+    private let featureFlagger: FeatureFlagger
+    
+    init(featureFlagger: FeatureFlagger) {
+        self.featureFlagger = featureFlagger
+    }
+    
+    func setupUI() {
+        if featureFlagger.isFeatureOn(.yourFeatureName) {
+            setupNewUI()
+        } else {
+            setupLegacyUI()
+        }
+    }
+}
+```
+
+### iOS-specific (via AppDependencies)
+
+```swift
+if AppDependencies.shared.featureFlagger.isFeatureOn(.yourFeatureName) {
+    // iOS-specific feature code
+}
+```
+
+### macOS-specific (via Application)
+
+```swift
+if Application.appDelegate.featureFlagger.isFeatureOn(.yourFeatureName) {
+    // macOS-specific feature code
+}
+```
+
+## Complete Example
+
+### Example: Add "Enhanced Bookmarks UI" feature flag for macOS
+
+**Step 1: User Request**
+```
+User: "Add a feature flag for enhanced bookmarks UI on macOS"
+```
+
+**Step 2: Questions**
+```
+1. Platform: macOS ✓
+2. Source: a) .remoteReleasable
+3. Parent: a) macOSBrowserConfig
+4. Default: a) false
+5. Local override: a) true
+6. Asana: https://app.asana.com/0/123456789/987654321
+```
+
+**Step 3: Implementation**
+
+**File 1:** `macOS/LocalPackages/FeatureFlags/Sources/FeatureFlags/FeatureFlag.swift`
+
+```swift
+public enum FeatureFlag: String, CaseIterable {
+    // ... existing cases ...
+    
+    /// https://app.asana.com/0/123456789/987654321
+    case enhancedBookmarksUI
+}
+
+extension FeatureFlag: FeatureFlagDescribing {
+    public var defaultValue: Bool {
+        switch self {
+        // ... existing true cases ...
+        default:
+            false  // enhancedBookmarksUI uses default false
+        }
+    }
+    
+    public var supportsLocalOverriding: Bool {
+        switch self {
+        case .existingFlag1,
+             .existingFlag2,
+             .enhancedBookmarksUI:  // ← Added here
+            return true
+        // ... rest of cases
+        }
+    }
+    
+    public var source: FeatureFlagSource {
+        switch self {
+        // ... other cases ...
+        case .enhancedBookmarksUI:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.enhancedBookmarksUI))
+        }
+    }
+}
+```
+
+**File 2:** `SharedPackages/BrowserServicesKit/Sources/BrowserServicesKit/PrivacyConfig/Features/PrivacyFeature.swift`
+
+```swift
+public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature {
+        .macOSBrowserConfig
+    }
+    
+    // ... existing cases ...
+    
+    /// https://app.asana.com/0/123456789/987654321
+    case enhancedBookmarksUI
+}
+```
+
+## Anti-Patterns to Avoid
+
+### ❌ DON'T: Add feature flag without Asana task
+
+```swift
+// ❌ BAD: No tracking or documentation
+case mysteriousFeature
+```
+
+```swift
+// ✅ GOOD: Clear documentation with Asana task from Apple Feature Flags Registry
+/// https://app.asana.com/0/123456789/987654321
+case tabGrouping
+```
+
+**CRITICAL:** Every feature flag MUST have an Asana task in the Apple Feature Flags Registry. This is not optional.
+
+### ❌ DON'T: Use generic names
+
+```swift
+// ❌ BAD: Too vague
+case newFeature
+case experiment1
+case testFlag
+```
+
+```swift
+// ✅ GOOD: Descriptive names
+case improvedTabSwitcher
+case aiChatSidebar
+case passwordAutofillV2
+```
+
+### ❌ DON'T: Forget to add to all required switches
+
+```swift
+// ❌ BAD: Missing from supportsLocalOverriding
+case newFeature  // Added to enum
+// source: return .remoteReleasable(...)
+// defaultValue: false (via default)
+// supportsLocalOverriding: ❌ MISSING!
+```
+
+### ❌ DON'T: Use wrong parent for domain-specific features
+
+```swift
+// ❌ BAD: AI feature in generic config
+case aiNewFeature:
+    return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.aiNewFeature))
+
+// ✅ GOOD: AI feature in AI domain
+case aiNewFeature:
+    return .remoteReleasable(.subfeature(AIChatSubfeature.aiNewFeature))
+```
+
+### ❌ DON'T: Add to iOS when feature is macOS-only (or vice versa)
+
+```swift
+// ❌ BAD: Adding macOS-specific flag to iOS
+// In iOS/Core/FeatureFlag.swift:
+case macOSOnlyFeature  // This doesn't make sense!
+```
+
+### ❌ DON'T: Add documentation comments to domain-specific subfeatures in PrivacyFeature.swift
+
+```swift
+// ❌ BAD: Adding comments to domain-specific subfeatures (e.g., PrivacyPro, AIChat, Sync)
+public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
+    public var parent: PrivacyFeature { .privacyPro }
+    
+    /// https://app.asana.com/...
+    case tierMessagingEnabled  // ❌ Don't add ANY comments here!
+}
+```
+
+```swift
+// ✅ GOOD: Domain-specific subfeatures without comments
+public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
+    public var parent: PrivacyFeature { .privacyPro }
+    
+    case tierMessagingEnabled  // ✅ Clean and simple
+    case allowProTierPurchase
+}
+```
+
+**Note:** Only `MacOSBrowserConfigSubfeature` and `iOSBrowserConfigSubfeature` should have documentation comments. All other domain-specific subfeatures (PrivacyPro, AIChat, Sync, DBP, etc.) should be kept clean without comments.
+
+## Testing Your Feature Flag
+
+### Manual Testing
+
+1. **Internal user testing:**
+   - Enable internal user mode
+   - Access debug menu to toggle flag
+   - Test both on/off states
+
+2. **Production simulation:**
+   - Disable internal user mode
+   - Verify default value behavior
+   - Test without remote config
+
+### Debug Menu Access
+
+**macOS:**
+- Develop menu → Feature Flags
+- Toggle individual flags
+- Changes persist across sessions
+
+**iOS:**
+- Settings → Debug → Feature Flags
+- Toggle individual flags
+- Changes persist across sessions
+
+## Remote Configuration (Next Steps)
+
+After adding the feature flag code, coordinate with backend team to:
+
+1. Add feature to Privacy Configuration JSON
+2. Set initial state (enabled/disabled/internal)
+3. Configure rollout percentage (if gradual rollout)
+4. Set up A/B test cohorts (if applicable)
+
+Example Privacy Config structure:
+
+```json
+{
+  "macOSBrowserConfig": {
+    "state": "enabled",
+    "features": {
+      "enhancedBookmarksUI": {
+        "state": "internal",
+        "rollout": {
+          "steps": [
+            { "percent": 10 }
+          ]
+        }
+      }
+    }
+  }
+}
+```
+
+## Summary Checklist
+
+When adding a feature flag, ensure you:
+
+- [ ] Checked for existing similar flags
+- [ ] **Created Asana task in Apple Feature Flags Registry (REQUIRED)**
+- [ ] Asked all required questions
+- [ ] Added enum case with Asana task link
+- [ ] Updated `defaultValue` switch (if non-default)
+- [ ] Updated `source` switch
+- [ ] Updated `supportsLocalOverriding` switch
+- [ ] Added subfeature to PrivacyFeature.swift (if remote)
+- [ ] Added to appropriate category in FeatureFlagCategory.swift (macOS only, if applicable)
+- [ ] Used descriptive naming
+- [ ] Tested in debug menu
+- [ ] Coordinated with backend (if remote)
+
+## Reference Documentation
+
+For more information, see:
+- `doc-bot/feature-flags.md` - Type-safe feature flag patterns
+- `doc-bot/abn-experiment-framework.md` - A/B testing with feature flags
+- `SharedPackages/BrowserServicesKit/Sources/BrowserServicesKit/FeatureFlagger/FeatureFlagger.swift` - Core implementation
+

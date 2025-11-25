@@ -35,11 +35,23 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
             if model.isSyncCredentialsPaused {
                 syncPaused(for: .credentials)
             }
+            if model.isSyncCreditCardsPaused {
+                syncPaused(for: .creditCards)
+            }
+            if model.isSyncIdentitiesPaused {
+                syncPaused(for: .identities)
+            }
             if !model.invalidBookmarksTitles.isEmpty {
                 syncHasInvalidItems(for: .bookmarks)
             }
             if !model.invalidCredentialsTitles.isEmpty {
                 syncHasInvalidItems(for: .credentials)
+            }
+            if !model.invalidCreditCardsTitles.isEmpty {
+                syncHasInvalidItems(for: .creditCards)
+            }
+            if !model.invalidIdentitiesTitles.isEmpty {
+                syncHasInvalidItems(for: .identities)
             }
         }
 
@@ -112,6 +124,10 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
                 return model.syncBookmarksPausedTitle
             case .credentials:
                 return model.syncCredentialsPausedTitle
+            case .creditCards:
+                return model.syncCreditCardsPausedTitle
+            case .identities:
+                return model.syncIdentitiesPausedTitle
             }
         }
         var message: String? {
@@ -120,6 +136,10 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
                 return model.syncBookmarksPausedMessage
             case .credentials:
                 return model.syncCredentialsPausedMessage
+            case .creditCards:
+                return model.syncCreditCardsPausedMessage
+            case .identities:
+                return model.syncIdentitiesPausedMessage
             }
         }
         var buttonTitle: String? {
@@ -128,6 +148,10 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
                 return model.syncBookmarksPausedButtonTitle
             case .credentials:
                 return model.syncCredentialsPausedButtonTitle
+            case .creditCards:
+                return model.syncCreditCardsPausedButtonTitle
+            case .identities:
+                return model.syncIdentitiesPausedButtonTitle
             }
         }
 
@@ -152,6 +176,10 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
                 return UserText.invalidBookmarksPresentTitle
             case .credentials:
                 return UserText.invalidCredentialsPresentTitle
+            case .creditCards:
+                return UserText.invalidCreditCardsPresentTitle
+            case .identities:
+                return UserText.invalidIdentitiesPresentTitle
             }
         }
         var description: String {
@@ -165,6 +193,16 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
                 assert(!model.invalidCredentialsTitles.isEmpty)
                 let firstInvalidCredentialTitle = model.invalidCredentialsTitles.first ?? ""
                 return UserText.invalidCredentialsPresentDescription(firstInvalidCredentialTitle, numberOfInvalidItems: model.invalidCredentialsTitles.count)
+
+            case .creditCards:
+                assert(!model.invalidCreditCardsTitles.isEmpty)
+                let firstInvalidCreditCardTitle = model.invalidCreditCardsTitles.first ?? ""
+                return UserText.invalidCreditCardsPresentDescription(firstInvalidCreditCardTitle, numberOfInvalidItems: model.invalidCreditCardsTitles.count)
+
+            case .identities:
+                assert(!model.invalidIdentitiesTitles.isEmpty)
+                let firstInvalidIdentityTitle = model.invalidIdentitiesTitles.first ?? ""
+                return UserText.invalidIdentitiesPresentDescription(firstInvalidIdentityTitle, numberOfInvalidItems: model.invalidIdentitiesTitles.count)
             }
         }
         var actionTitle: String {
@@ -173,6 +211,10 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
                 return UserText.bookmarksLimitExceededAction
             case .credentials:
                 return UserText.credentialsLimitExceededAction
+            case .creditCards:
+                return UserText.creditCardsLimitExceededAction
+            case .identities:
+                return UserText.identitiesLimitExceededAction
             }
         }
         SyncWarningMessage(title: title, message: description, buttonTitle: actionTitle) {
@@ -181,6 +223,10 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
                 model.manageBookmarks()
             case .credentials:
                 model.manageLogins()
+            case .creditCards:
+                model.manageCreditCards()
+            case .identities:
+                model.manageIdentities()
             }
         }
     }
@@ -201,5 +247,7 @@ struct SyncEnabledView<ViewModel>: View where ViewModel: ManagementViewModel {
     enum LimitedItemType {
         case bookmarks
         case credentials
+        case creditCards
+        case identities
     }
 }

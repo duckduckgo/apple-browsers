@@ -21,6 +21,7 @@ import Testing
 import Foundation
 import Combine
 import BrowserServicesKit
+import BrowserServicesKitTestsUtils
 import Subscription
 @testable import DuckDuckGo
 import UIKit
@@ -32,10 +33,12 @@ struct AIChatViewControllerManagerTests {
     private func createManager() -> AIChatViewControllerManager {
         let manager = AIChatViewControllerManager(
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            contentBlockingAssetsPublisher: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
             downloadsDirectoryHandler: MockDownloadsDirectoryHandler(),
             userAgentManager: MockUserAgentManager(privacyConfig: MockPrivacyConfiguration()),
             experimentalAIChatManager: ExperimentalAIChatManager(),
             featureFlagger: MockFeatureFlagger(),
+            featureDiscovery: MockFeatureDiscovery(),
             aiChatSettings: MockAIChatSettingsProvider()
         )
 
@@ -162,6 +165,257 @@ struct AIChatViewControllerManagerTests {
         #expect(manager.chatViewController !== firstViewController)
     }
 
+    // MARK: - Container Presentation Tests
+
+    @Test("Opening in container adds as child view controller")
+    @MainActor
+    func testOpeningInContainerAddsAsChildViewController() async throws {
+        // Given
+        let manager = createManager()
+        let mockParentViewController = createMockViewController()
+        let mockContainerView = MockContainerView()
+
+        // When
+        manager.openAIChatInContainer(in: mockContainerView, parentViewController: mockParentViewController)
+        await waitForTaskProcessing()
+
+        // Then
+        #expect(manager.chatViewController != nil)
+        #expect(mockParentViewController.addedChildCount == 1)
+    }
+
+    @Test("Opening in container adds view as subview to container")
+    @MainActor
+    func testOpeningInContainerAddsViewAsSubview() async throws {
+        // Given
+        let manager = createManager()
+        let mockParentViewController = createMockViewController()
+        let mockContainerView = MockContainerView()
+
+        // When
+        manager.openAIChatInContainer(in: mockContainerView, parentViewController: mockParentViewController)
+        await waitForTaskProcessing()
+
+        // Then
+        #expect(manager.chatViewController != nil)
+        #expect(mockContainerView.subviews.count == 1)
+    }
+
+    @Test("Opening in container applies layout constraints")
+    @MainActor
+    func testOpeningInContainerApplesLayoutConstraints() async throws {
+        // Given
+        let manager = createManager()
+        let mockParentViewController = createMockViewController()
+        let mockContainerView = MockContainerView()
+
+        // When
+        manager.openAIChatInContainer(in: mockContainerView, parentViewController: mockParentViewController)
+        await waitForTaskProcessing()
+
+        // Then
+        guard let chatVC = manager.chatViewController else {
+            Issue.record("Chat view controller not created")
+            return
+        }
+
+        #expect(chatVC.view.translatesAutoresizingMaskIntoConstraints == false)
+        #expect(chatVC.view.superview === mockContainerView)
+    }
+
+    @Test("Container completion callback is called")
+    @MainActor
+    func testContainerCompletionCallbackIsCalled() async throws {
+        // Given
+        let manager = createManager()
+        let mockParentViewController = createMockViewController()
+        let mockContainerView = MockContainerView()
+        var completionCalled = false
+
+        // When
+        manager.openAIChatInContainer(
+            in: mockContainerView,
+            parentViewController: mockParentViewController
+        ) {
+            completionCalled = true
+        }
+        await waitForTaskProcessing()
+
+        // Then
+        #expect(completionCalled)
+    }
+
+    @Test("Opening in container twice reuses same view controller")
+    @MainActor
+    func testOpeningInContainerTwiceReusesTheSameViewController() async throws {
+        // Given
+        let manager = createManager()
+        let mockParentViewController = createMockViewController()
+        let mockContainerView = MockContainerView()
+
+        // When
+        manager.openAIChatInContainer(in: mockContainerView, parentViewController: mockParentViewController)
+        await waitForTaskProcessing()
+        let firstViewController = manager.chatViewController
+
+        // When (again)
+        manager.openAIChatInContainer(in: mockContainerView, parentViewController: mockParentViewController)
+        await waitForTaskProcessing()
+
+        // Then
+        #expect(manager.chatViewController != nil)
+        #expect(firstViewController != nil)
+        #expect(manager.chatViewController === firstViewController)
+    }
+
+    // MARK: - Container Session Invalidation Tests
+
+    @Test("Account sign in notification triggers session invalidation in container")
+    @MainActor
+    func testAccountSignInTriggersSessionInvalidationInContainer() async throws {
+        // Given
+        let manager = createManager()
+        let mockParentViewController = createMockViewController()
+        let mockContainerView = MockContainerView()
+
+        manager.openAIChatInContainer(in: mockContainerView, parentViewController: mockParentViewController)
+        await waitForTaskProcessing()
+        let firstViewController = manager.chatViewController
+
+        // When
+        NotificationCenter.default.post(
+            name: .accountDidSignIn,
+            object: nil,
+            userInfo: nil
+        )
+        await waitForTaskProcessing()
+
+        manager.openAIChatInContainer(in: mockContainerView, parentViewController: mockParentViewController)
+        await waitForTaskProcessing()
+
+        // Then
+        #expect(manager.chatViewController != nil)
+        #expect(firstViewController != nil)
+        #expect(manager.chatViewController !== firstViewController)
+    }
+
+    @Test("Subscription change triggers session invalidation in container")
+    @MainActor
+    func testSubscriptionChangeTriggersSessionInvalidationInContainer() async throws {
+        // Given
+        let manager = createManager()
+        let mockParentViewController = createMockViewController()
+        let mockContainerView = MockContainerView()
+
+        manager.openAIChatInContainer(in: mockContainerView, parentViewController: mockParentViewController)
+        await waitForTaskProcessing()
+        let firstViewController = manager.chatViewController
+
+        // When
+        NotificationCenter.default.post(
+            name: .subscriptionDidChange,
+            object: nil,
+            userInfo: nil
+        )
+        await waitForTaskProcessing()
+
+        manager.openAIChatInContainer(in: mockContainerView, parentViewController: mockParentViewController)
+        await waitForTaskProcessing()
+
+        // Then
+        #expect(manager.chatViewController != nil)
+        #expect(firstViewController != nil)
+        #expect(manager.chatViewController !== firstViewController)
+    }
+
+    // MARK: - Query/Payload Cleanup Tests
+
+    @Test("Query triggers session cleanup in modal mode")
+    @MainActor
+    func testQueryTriggersSessionCleanupInModalMode() async throws {
+        // Given
+        let manager = createManager()
+        let mockViewController = createMockViewController()
+
+        manager.openAIChat(on: mockViewController)
+        await waitForTaskProcessing()
+        let firstViewController = manager.chatViewController
+
+        // When
+        manager.openAIChat("test query", on: mockViewController)
+        await waitForTaskProcessing()
+
+        // Then
+        #expect(manager.chatViewController != nil)
+        #expect(firstViewController != nil)
+        #expect(manager.chatViewController !== firstViewController)
+    }
+
+    @Test("Query triggers session cleanup in container mode")
+    @MainActor
+    func testQueryTriggersSessionCleanupInContainerMode() async throws {
+        // Given
+        let manager = createManager()
+        let mockParentViewController = createMockViewController()
+        let mockContainerView = MockContainerView()
+
+        manager.openAIChatInContainer(in: mockContainerView, parentViewController: mockParentViewController)
+        await waitForTaskProcessing()
+        let firstViewController = manager.chatViewController
+
+        // When
+        manager.openAIChatInContainer("test query", in: mockContainerView, parentViewController: mockParentViewController)
+        await waitForTaskProcessing()
+
+        // Then
+        #expect(manager.chatViewController != nil)
+        #expect(firstViewController != nil)
+        #expect(manager.chatViewController !== firstViewController)
+    }
+
+    @Test("Payload triggers session cleanup in modal mode")
+    @MainActor
+    func testPayloadTriggersSessionCleanupInModalMode() async throws {
+        // Given
+        let manager = createManager()
+        let mockViewController = createMockViewController()
+
+        manager.openAIChat(on: mockViewController)
+        await waitForTaskProcessing()
+        let firstViewController = manager.chatViewController
+
+        // When
+        manager.openAIChat(payload: ["key": "value"], on: mockViewController)
+        await waitForTaskProcessing()
+
+        // Then
+        #expect(manager.chatViewController != nil)
+        #expect(firstViewController != nil)
+        #expect(manager.chatViewController !== firstViewController)
+    }
+
+    @Test("Payload triggers session cleanup in container mode")
+    @MainActor
+    func testPayloadTriggersSessionCleanupInContainerMode() async throws {
+        // Given
+        let manager = createManager()
+        let mockParentViewController = createMockViewController()
+        let mockContainerView = MockContainerView()
+
+        manager.openAIChatInContainer(in: mockContainerView, parentViewController: mockParentViewController)
+        await waitForTaskProcessing()
+        let firstViewController = manager.chatViewController
+
+        // When
+        manager.openAIChatInContainer(payload: ["key": "value"], in: mockContainerView, parentViewController: mockParentViewController)
+        await waitForTaskProcessing()
+
+        // Then
+        #expect(manager.chatViewController != nil)
+        #expect(firstViewController != nil)
+        #expect(manager.chatViewController !== firstViewController)
+    }
+
 }
 
 // MARK: - Mock UIViewController for Testing
@@ -169,12 +423,22 @@ struct AIChatViewControllerManagerTests {
 private class MockUIViewController: UIViewController {
     var presentedViewControllerForTest: UIViewController?
     var presentCallCount = 0
+    var addedChildCount = 0
 
     override func present(_ viewControllerToPresent: UIViewController, animated flag: Bool, completion: (() -> Void)? = nil) {
         presentedViewControllerForTest = viewControllerToPresent
         presentCallCount += 1
         completion?()
     }
+
+    override func addChild(_ childViewController: UIViewController) {
+        super.addChild(childViewController)
+        addedChildCount += 1
+    }
+}
+
+private class MockContainerView: UIView {
+    // Simple mock view for testing container embedding
 }
 
 private final class MockDownloadsDirectoryHandler: DownloadsDirectoryHandling {

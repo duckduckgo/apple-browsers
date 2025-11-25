@@ -28,8 +28,8 @@ public final class SubscriptionEndpointServiceMockV2: SubscriptionEndpointServic
     public init() { }
 
     public var updateCacheWithSubscriptionCalled: Bool = false
-    public var onUpdateCache: ((PrivacyProSubscription) -> Void)?
-    public func updateCache(with subscription: Subscription.PrivacyProSubscription) {
+    public var onUpdateCache: ((DuckDuckGoSubscription) -> Void)?
+    public func updateCache(with subscription: Subscription.DuckDuckGoSubscription) {
         onUpdateCache?(subscription)
         updateCacheWithSubscriptionCalled = true
     }
@@ -46,8 +46,8 @@ public final class SubscriptionEndpointServiceMockV2: SubscriptionEndpointServic
 
     public var getSubscriptionCalled: Bool = false
     public var onGetSubscription: ((String?, SubscriptionCachePolicy) -> Void)?
-    public var getSubscriptionResult: Result<PrivacyProSubscription, SubscriptionEndpointServiceError>?
-    public func getSubscription(accessToken: String?, cachePolicy: Subscription.SubscriptionCachePolicy) async throws -> Subscription.PrivacyProSubscription {
+    public var getSubscriptionResult: Result<DuckDuckGoSubscription, SubscriptionEndpointServiceError>?
+    public func getSubscription(accessToken: String?, cachePolicy: Subscription.SubscriptionCachePolicy) async throws -> Subscription.DuckDuckGoSubscription {
         getSubscriptionCalled = true
         onGetSubscription?(accessToken, cachePolicy)
         switch getSubscriptionResult! {
@@ -80,11 +80,11 @@ public final class SubscriptionEndpointServiceMockV2: SubscriptionEndpointServic
         }
     }
 
-    public func ingestSubscription(_ subscription: Subscription.PrivacyProSubscription) async throws {
+    public func ingestSubscription(_ subscription: Subscription.DuckDuckGoSubscription) async throws {
         getSubscriptionResult = .success(subscription)
     }
 
-    public func getCachedSubscription() -> Subscription.PrivacyProSubscription? {
+    public func getCachedSubscription() -> Subscription.DuckDuckGoSubscription? {
         switch getSubscriptionResult! {
         case .success(let subscription): return subscription
         case .failure: return nil

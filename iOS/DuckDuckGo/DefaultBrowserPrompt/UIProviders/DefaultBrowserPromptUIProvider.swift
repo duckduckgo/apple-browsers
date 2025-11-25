@@ -19,6 +19,7 @@
 
 import Foundation
 import SetDefaultBrowserUI
+import Onboarding
 
 struct DefaultBrowserPromptUIProvider: DefaultBrowserPromptUIProviding {
 

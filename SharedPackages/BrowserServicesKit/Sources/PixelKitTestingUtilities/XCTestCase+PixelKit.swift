@@ -140,9 +140,9 @@ public extension XCTestCase {
                 XCTAssertEqual(expectations.pixelName, firedPixelName)
             }
             let expectedParams = expectations.parameters
-            XCTAssertTrue(firedParameters.contains { (key, value) in
+            XCTAssertTrue(firedParameters.allSatisfy({ (key, value) in
                 expectedParams[key] == value
-            })
+            }))
 
             completion(true, nil)
         }

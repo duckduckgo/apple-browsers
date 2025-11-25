@@ -44,6 +44,12 @@ final class FadeoutContainerViewController: UIViewController {
     private(set) var searchPageContainer: UIView!
     private(set) var chatPageContainer: UIView!
 
+    // MARK: - Gesture Recognition
+
+    private var panGestureRecognizer: UIPanGestureRecognizer!
+    private let swipeVelocityThreshold: CGFloat = 500
+    private let swipeTranslationThreshold: CGFloat = 50
+
     init(switchBarHandler: SwitchBarHandling) {
         self.switchBarHandler = switchBarHandler
         super.init(nibName: nil, bundle: nil)
@@ -110,31 +116,33 @@ final class FadeoutContainerViewController: UIViewController {
     }
 
     private func setupSwipeGestures() {
-        let swipeLeft = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipeGesture(_:)))
-        swipeLeft.direction = .left
-        view.addGestureRecognizer(swipeLeft)
-
-        let swipeRight = UISwipeGestureRecognizer(target: self, action: #selector(handleSwipeGesture(_:)))
-        swipeRight.direction = .right
-        view.addGestureRecognizer(swipeRight)
+        panGestureRecognizer = UIPanGestureRecognizer(target: self, action: #selector(handlePanGesture(_:)))
+        panGestureRecognizer.delegate = self
+        view.addGestureRecognizer(panGestureRecognizer)
     }
 
-    @objc private func handleSwipeGesture(_ gesture: UISwipeGestureRecognizer) {
+    @objc private func handlePanGesture(_ gesture: UIPanGestureRecognizer) {
+        guard gesture.state == .ended else { return }
+
+        let velocity = gesture.velocity(in: view)
+        let translation = gesture.translation(in: view)
         let currentMode = switchBarHandler.currentToggleState
 
-        switch gesture.direction {
-        case .left:
-            // Swipe left: go to Duck.ai (if currently in Search mode)
-            if currentMode == .search {
-                delegate?.fadeoutContainerViewController(self, didTransitionToMode: .aiChat)
-            }
-        case .right:
-            // Swipe right: go to Search (if currently in Duck.ai mode)
-            if currentMode == .aiChat {
-                delegate?.fadeoutContainerViewController(self, didTransitionToMode: .search)
-            }
-        default:
-            break
+        // Check if the swipe is predominantly horizontal and meets thresholds
+        let isHorizontalSwipe = abs(velocity.x) > abs(velocity.y)
+        guard isHorizontalSwipe else { return }
+
+        let meetsVelocityThreshold = abs(velocity.x) > swipeVelocityThreshold
+        let meetsTranslationThreshold = abs(translation.x) > swipeTranslationThreshold
+
+        guard meetsVelocityThreshold || meetsTranslationThreshold else { return }
+
+        if velocity.x < 0 && currentMode == .search {
+            // Swipe left: go to Duck.ai
+            delegate?.fadeoutContainerViewController(self, didTransitionToMode: .aiChat)
+        } else if velocity.x > 0 && currentMode == .aiChat {
+            // Swipe right: go to Search
+            delegate?.fadeoutContainerViewController(self, didTransitionToMode: .search)
         }
     }
 
@@ -174,6 +182,32 @@ final class FadeoutContainerViewController: UIViewController {
     private func updateTransitionProgress(_ progress: CGFloat) {
         transitionProgress = progress
         delegate?.fadeoutContainerViewController(self, didUpdateTransitionProgress: progress)
+    }
+}
+
+// MARK: - UIGestureRecognizerDelegate
+
+extension FadeoutContainerViewController: UIGestureRecognizerDelegate {
+
+    func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        guard let panGesture = gestureRecognizer as? UIPanGestureRecognizer else {
+            return true
+        }
+
+        let velocity = panGesture.velocity(in: view)
+
+        // Only begin if the pan is predominantly horizontal
+        // This prevents conflicts with vertical scrolling in favorites view
+        return abs(velocity.x) > abs(velocity.y)
+    }
+
+    func gestureRecognizer(
+        _ gestureRecognizer: UIGestureRecognizer,
+        shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
+    ) -> Bool {
+        // Allow simultaneous recognition with other gestures
+        // The shouldBegin check will filter out vertical scrolls
+        return true
     }
 }
 

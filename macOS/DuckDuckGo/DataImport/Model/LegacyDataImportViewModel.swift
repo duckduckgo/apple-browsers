@@ -187,8 +187,7 @@ struct LegacyDataImportViewModel {
         self.screen = screen ?? importSource.legacyInitialScreen
 
         self.browserProfiles = ThirdPartyBrowser.browser(for: importSource).map(loadProfiles)
-        let selectedProfile = self.browserProfiles?.defaultProfile
-        self.selectedProfile = selectedProfile
+        self.selectedProfile = browserProfiles?.defaultProfile ?? browserProfiles?.profiles.first
 
         self.selectableImportTypes = importSource.supportedDataTypes
         self.selectedDataTypes = importSource.supportedDataTypes

@@ -909,7 +909,7 @@ final class TabBarViewItem: NSCollectionViewItem {
         // for the next incoming mouse event of the given type to consequently close tabs.
         // https://app.asana.com/1/137249556945/project/1177771139624306/task/1202049975066624?focus=true
         // https://app.asana.com/1/137249556945/project/1201048563534612/task/1209477403052191?focus=true
-        if let event = NSApp.currentEvent, event.type == .leftMouseDown {
+        if let event = NSApp.currentEvent, [.leftMouseDown, .leftMouseUp].contains(event.type) {
             (NSApp as? Application)?.shouldResetClickCountForNextEventOfType = event.type
         }
 

@@ -119,7 +119,6 @@ final class SuggestionViewController: NSViewController {
         tableView.sizeToFit()
         let column = tableView.tableColumns.first
         column?.width = tableView.frame.width
-        tableView.reloadData()
     }
 
     private func setupTableView() {
@@ -221,7 +220,11 @@ final class SuggestionViewController: NSViewController {
               tableRow >= 0,
               suggestionContainerViewModel.numberOfSuggestions != 0,
               tableRow < suggestionContainerViewModel.numberOfSuggestions + numberOfPrefixRows else {
-            self.clearSelection()
+            if shouldShowSearchCell {
+                tableView.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false)
+            } else {
+                self.clearSelection()
+            }
             return
         }
 

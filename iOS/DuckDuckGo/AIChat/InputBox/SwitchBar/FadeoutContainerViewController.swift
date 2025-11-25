@@ -19,6 +19,7 @@
 
 import UIKit
 import Combine
+import BrowserServicesKit
 
 /// Protocol for handling fadeout container events
 protocol FadeoutContainerViewControllerDelegate: AnyObject {
@@ -38,6 +39,7 @@ final class FadeoutContainerViewController: UIViewController {
     }
 
     private let switchBarHandler: SwitchBarHandling
+    private let featureFlagger: FeatureFlagger
     private var cancellables = Set<AnyCancellable>()
 
     // MARK: - UI Elements
@@ -51,8 +53,10 @@ final class FadeoutContainerViewController: UIViewController {
     private let swipeVelocityThreshold: CGFloat = 500
     private let swipeTranslationThreshold: CGFloat = 50
 
-    init(switchBarHandler: SwitchBarHandling) {
+    init(switchBarHandler: SwitchBarHandling,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.switchBarHandler = switchBarHandler
+        self.featureFlagger = featureFlagger
         super.init(nibName: nil, bundle: nil)
         setupBindings()
     }
@@ -82,8 +86,8 @@ final class FadeoutContainerViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .removeDuplicates()
             .sink { [weak self] _ in
-                guard SwipeContainerManager.tryFadeout else { return }
-                self?.updateVisibility(animated: true)
+                guard let self, featureFlagger.isFeatureOn(.fadeoutOnToggle) else { return }
+                self.updateVisibility(animated: true)
             }
             .store(in: &cancellables)
     }

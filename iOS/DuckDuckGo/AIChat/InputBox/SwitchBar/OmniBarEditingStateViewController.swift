@@ -83,6 +83,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private weak var contentContainerViewTrailingConstraint: NSLayoutConstraint?
 
     let appSettings: AppSettings
+    private let featureFlagger: FeatureFlagger
 
     // MARK: - Manager Components
 
@@ -99,11 +100,13 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     internal init(switchBarHandler: any SwitchBarHandling,
                   switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding = SwitchBarSubmissionMetrics(),
-                  appSettings: AppSettings = AppDependencyProvider.shared.appSettings) {
+                  appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
+                  featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.switchBarHandler = switchBarHandler
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
         self.daxLogoManager = DaxLogoManager()
         self.appSettings = appSettings
+        self.featureFlagger = featureFlagger
         self.isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top || isLandscapeOrientation
         self.isAdjustedForTopBar = self.isUsingTopBarPosition
 
@@ -477,7 +480,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         let isHomeDaxVisible = !shouldDisplaySuggestionTray && !shouldDisplayFavoritesOverlay && !isHorizontallyCompactLayoutEnabled
 
         let isAIDaxVisible: Bool
-        if SwipeContainerManager.tryFadeout {
+        if featureFlagger.isFeatureOn(.fadeoutOnToggle) {
             // For fadeout mode, always show Dax logo on AI Chat screen (ignoring suggestion tray)
             isAIDaxVisible = !isHorizontallyCompactLayoutEnabled
         } else {

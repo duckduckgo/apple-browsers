@@ -19,19 +19,23 @@
 
 import Foundation
 import UIKit
+import BrowserServicesKit
 
 
 /// Manages the horizontal swipe container with pagination between search and AI chat modes
 final class SwipeContainerManager: NSObject {
 
-    static let tryFadeout = true
-
     // MARK: - Properties
 
     private let switchBarHandler: SwitchBarHandling
+    private let featureFlagger: FeatureFlagger
+
+    private var isFadeoutEnabled: Bool {
+        featureFlagger.isFeatureOn(.fadeoutOnToggle)
+    }
 
     var searchPageContainer: UIView {
-        if SwipeContainerManager.tryFadeout {
+        if isFadeoutEnabled {
             return fadeoutContainerViewController.searchPageContainer
         } else {
             return swipeContainerViewController.searchPageContainer
@@ -39,10 +43,10 @@ final class SwipeContainerManager: NSObject {
     }
 
     private lazy var swipeContainerViewController = SwipeContainerViewController(switchBarHandler: switchBarHandler)
-    private lazy var fadeoutContainerViewController = FadeoutContainerViewController(switchBarHandler: switchBarHandler)
+    private lazy var fadeoutContainerViewController = FadeoutContainerViewController(switchBarHandler: switchBarHandler, featureFlagger: featureFlagger)
 
     var containerViewController: UIViewController {
-        SwipeContainerManager.tryFadeout ? fadeoutContainerViewController : swipeContainerViewController
+        isFadeoutEnabled ? fadeoutContainerViewController : swipeContainerViewController
     }
 
     var delegate: SwipeContainerViewControllerDelegate? {
@@ -57,8 +61,10 @@ final class SwipeContainerManager: NSObject {
 
     // MARK: - Initialization
     
-    init(switchBarHandler: SwitchBarHandling) {
+    init(switchBarHandler: SwitchBarHandling,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.switchBarHandler = switchBarHandler
+        self.featureFlagger = featureFlagger
         super.init()
     }
     

@@ -22,6 +22,7 @@ import SwiftUI
 import Combine
 import DesignResourcesKitIcons
 import Core
+import BrowserServicesKit
 
 class SwitchBarTextEntryView: UIView {
 
@@ -46,6 +47,7 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private let handler: SwitchBarHandling
+    private let featureFlagger: FeatureFlagger
 
     private let textView = SwitchBarTextView()
     private let placeholderLabel = UILabel()
@@ -60,7 +62,7 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private var currentMinHeight: CGFloat {
-        guard SwipeContainerManager.tryFadeout else {
+        guard featureFlagger.isFeatureOn(.fadeoutOnToggle) else {
             return Constants.minHeight
         }
 
@@ -73,9 +75,9 @@ class SwitchBarTextEntryView: UIView {
         return currentMode == .aiChat ? Constants.minHeightAIChat : Constants.minHeight
     }
 
-    /// Returns true when using bottom bar with increased height (tryFadeout mode)
+    /// Returns true when using bottom bar with increased height (fadeoutOnToggle mode)
     private var isUsingBottomBarIncreasedHeight: Bool {
-        SwipeContainerManager.tryFadeout && AppDependencyProvider.shared.appSettings.currentAddressBarPosition.isBottom
+        featureFlagger.isFeatureOn(.fadeoutOnToggle) && AppDependencyProvider.shared.appSettings.currentAddressBarPosition.isBottom
     }
 
     private var cancellables = Set<AnyCancellable>()
@@ -117,8 +119,10 @@ class SwitchBarTextEntryView: UIView {
     }
 
     // MARK: - Initialization
-    init(handler: SwitchBarHandling) {
+    init(handler: SwitchBarHandling,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.handler = handler
+        self.featureFlagger = featureFlagger
         super.init(frame: .zero)
 
         setupView()

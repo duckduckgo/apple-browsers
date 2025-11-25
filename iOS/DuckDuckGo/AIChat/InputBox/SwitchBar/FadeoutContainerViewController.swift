@@ -81,6 +81,7 @@ final class FadeoutContainerViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .removeDuplicates()
             .sink { [weak self] _ in
+                guard SwipeContainerManager.tryFadeout else { return }
                 self?.updateVisibility(animated: true)
             }
             .store(in: &cancellables)
@@ -172,6 +173,12 @@ final class FadeoutContainerViewController: UIViewController {
         }
 
         if animated {
+            // Use CATransaction to prevent implicit layout animations
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            view.layoutIfNeeded()
+            CATransaction.commit()
+            
             UIView.animate(withDuration: 0.25, animations: animations, completion: completion)
         } else {
             animations()
@@ -181,7 +188,10 @@ final class FadeoutContainerViewController: UIViewController {
 
     private func updateTransitionProgress(_ progress: CGFloat) {
         transitionProgress = progress
-        delegate?.fadeoutContainerViewController(self, didUpdateTransitionProgress: progress)
+        // Prevent layout animations when updating delegate
+        UIView.performWithoutAnimation {
+            delegate?.fadeoutContainerViewController(self, didUpdateTransitionProgress: progress)
+        }
     }
 }
 

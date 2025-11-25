@@ -28,6 +28,7 @@ class SwitchBarTextEntryView: UIView {
     private enum Constants {
         static let maxHeight: CGFloat = 120
         static let minHeight: CGFloat = 44
+        static let minHeightAIChat: CGFloat = 68
         static let fontSize: CGFloat = 16
 
         // Text container insets
@@ -56,6 +57,12 @@ class SwitchBarTextEntryView: UIView {
     private var currentMode: TextEntryMode {
         handler.currentToggleState
     }
+
+    private var currentMinHeight: CGFloat {
+        let useIncreasedMinHeight = SwipeContainerManager.tryFadeout && currentMode == .aiChat
+        return useIncreasedMinHeight ? Constants.minHeightAIChat : Constants.minHeight
+    }
+
     private var cancellables = Set<AnyCancellable>()
 
     private var heightConstraint: NSLayoutConstraint?
@@ -138,7 +145,7 @@ class SwitchBarTextEntryView: UIView {
         textView.translatesAutoresizingMaskIntoConstraints = false
         placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
 
-        heightConstraint = heightAnchor.constraint(equalToConstant: Constants.minHeight)
+        heightConstraint = heightAnchor.constraint(equalToConstant: currentMinHeight)
         heightConstraint?.isActive = true
 
         setupConstraints()
@@ -299,7 +306,7 @@ class SwitchBarTextEntryView: UIView {
 
             /// When empty (or showing an unexpanded URL), size to one line  to avoid clipping at larger accessibility sizes.
             let requiredEmptyStateHeight = requiredHeightForSingleLineContent()
-            heightConstraint?.constant = max(Constants.minHeight, min(Constants.maxHeight, requiredEmptyStateHeight))
+            heightConstraint?.constant = max(currentMinHeight, min(Constants.maxHeight, requiredEmptyStateHeight))
             textView.isScrollEnabled = false
             textView.showsVerticalScrollIndicator = false
             textView.textContainer.lineBreakMode = .byTruncatingTail
@@ -307,14 +314,14 @@ class SwitchBarTextEntryView: UIView {
             let contentHeight = getCurrentContentHeight()
             let contentExceedsMaxHeight = contentHeight > Constants.maxHeight
             
-            let newHeight = max(Constants.minHeight, min(Constants.maxHeight, contentHeight))
+            let newHeight = max(currentMinHeight, min(Constants.maxHeight, contentHeight))
 
             heightConstraint?.constant = newHeight
 
             textView.isScrollEnabled = contentExceedsMaxHeight
             textView.showsVerticalScrollIndicator = contentExceedsMaxHeight
         } else {
-            heightConstraint?.constant = Constants.minHeight
+            heightConstraint?.constant = currentMinHeight
             textView.isScrollEnabled = true
             textView.showsVerticalScrollIndicator = true
             return

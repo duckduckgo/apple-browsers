@@ -501,7 +501,7 @@
         "description": "Fired when a backend DBP service call is attempted without an auth token",
         "owners": ["quanganhdo"],
         "triggers": ["other"],
-        "suffixes": ["d"],
+        "suffixes": ["legacy_daily_count"],
         "parameters": [
             "appVersion",
             "pixelSource",

@@ -78,6 +78,11 @@
         "description": "Final status of the wide event flow",
         "enum": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"]
     },
+    "wideEventFeatureStatusReason": {
+        "key": "feature.status_reason",
+        "type": "string",
+        "description": "Optional reason accompanying the feature status"
+    },
     "wideEventErrorDomain": {
         "key": "feature.data.error.domain",
         "type": "string",
@@ -101,7 +106,7 @@
     },
     "wideEventUnderlyingErrorCode": {
         "keyPattern": "feature\\.data\\.error\\.underlying_code[0-9]?",
-        "type": "integer",
+        "type": "string",
         "description": "Underlying error code (supports optional numeric index for nested errors)"
     },
     "duration": {

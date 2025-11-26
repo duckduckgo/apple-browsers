@@ -28,7 +28,7 @@ extension JWTError: DDGError {
         return self.reason
     }
 
-    public static var errorDomain: String { "JWTError" }
+    public static var errorDomain: String { "com.duckduckgo.networking.JWTError" }
 
     public var errorCode: Int {
         switch self {

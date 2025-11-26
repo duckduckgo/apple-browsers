@@ -44,7 +44,7 @@ final class YoutubeOverlayUserScript: NSObject, Subfeature {
         }
     }
 
-    let duckPlayerPreferences: DuckPlayerPreferences
+    let duckPlayer: DuckPlayer
     weak var broker: UserScriptMessageBroker?
     weak var delegate: YoutubeOverlayUserScriptDelegate?
     weak var webView: WKWebView?
@@ -54,8 +54,8 @@ final class YoutubeOverlayUserScript: NSObject, Subfeature {
     ])
     public var featureName: String = "duckPlayer"
 
-    init(duckPlayerPreferences: DuckPlayerPreferences = DuckPlayerPreferences.shared) {
-        self.duckPlayerPreferences = duckPlayerPreferences
+    init(duckPlayer: DuckPlayer) {
+        self.duckPlayer = duckPlayer
     }
 
     // MARK: - Subfeature
@@ -81,11 +81,11 @@ final class YoutubeOverlayUserScript: NSObject, Subfeature {
                 assertionFailure("YoutubeOverlayUserScript: Unexpected message origin: \(String(describing: webView?.url))")
                 return nil
             }
-            return DuckPlayer.shared.handleSetUserValuesMessage(from: origin)
+            return duckPlayer.handleSetUserValuesMessage(from: origin)
         case .getUserValues:
-            return DuckPlayer.shared.handleGetUserValues
+            return duckPlayer.handleGetUserValues
         case .initialSetup:
-            return DuckPlayer.shared.initialOverlaySetup(with: webView)
+            return duckPlayer.initialOverlaySetup(with: webView)
         case .openDuckPlayer:
             return handleOpenDuckPlayer
         case .sendDuckPlayerPixel:
@@ -146,7 +146,7 @@ extension YoutubeOverlayUserScript {
 
         switch pixelName {
         case "play.use":
-            duckPlayerPreferences.youtubeOverlayAnyButtonPressed = true
+            duckPlayer.preferences.youtubeOverlayAnyButtonPressed = true
             PixelKit.fire(GeneralPixel.duckPlayerViewFromYoutubeViaMainOverlay)
             // Temporary pixel for first time user uses Duck Player
             if AppDelegate.isNewUser {
@@ -159,7 +159,7 @@ extension YoutubeOverlayUserScript {
                 PixelKit.fire(GeneralPixel.watchInDuckPlayerInitial, frequency: .legacyInitial)
             }
         case "play.do_not_use":
-            duckPlayerPreferences.youtubeOverlayAnyButtonPressed = true
+            duckPlayer.preferences.youtubeOverlayAnyButtonPressed = true
             PixelKit.fire(GeneralPixel.duckPlayerOverlayYoutubeWatchHere)
 
         // Moved to DuckPlayerTabExtension

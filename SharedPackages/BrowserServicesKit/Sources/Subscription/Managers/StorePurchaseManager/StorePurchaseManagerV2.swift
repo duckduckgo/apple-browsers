@@ -112,15 +112,10 @@ public enum StorePurchaseManagerError: DDGError {
 public protocol StorePurchaseManagerV2 {
     typealias TransactionJWS = String
 
-    /// Returns the available subscription options that DON'T include Free Trial periods.
+    /// Returns the available subscription options.
     /// - Returns: A `SubscriptionOptions` object containing the available subscription plans and pricing,
     ///           or `nil` if no options are available or cannot be fetched.
     func subscriptionOptions() async -> SubscriptionOptionsV2?
-
-    /// Returns the subscription options that include Free Trial periods.
-    /// - Returns: A `SubscriptionOptions` object containing subscription plans with free trial offers,
-    ///           or `nil` if no free trial options are available or the user is not eligible.
-    func freeTrialSubscriptionOptions() async -> SubscriptionOptionsV2?
 
     var purchasedProductIDs: [String] { get }
     var purchaseQueue: [String] { get }
@@ -206,25 +201,27 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
         }
     }
 
-    func getAvailableProducts() async -> [any SubscriptionProduct] {
+    func getAvailableProducts(includeProTier: Bool = false) async -> [any SubscriptionProduct] {
         if availableProducts.isEmpty {
             await updateAvailableProducts()
         }
-        return availableProducts
+
+        Logger.subscriptionStorePurchaseManager.debug("[Store Purchase Manager] All available products: \(self.availableProducts.map(\.id))")
+        if includeProTier {
+            return availableProducts
+        }
+
+        let nonProTierProducts = availableProducts.filter { !$0.isProTierProduct }
+        Logger.subscriptionStorePurchaseManager.debug("[Store Purchase Manager] All filtered available products: \(nonProTierProducts.map(\.id))")
+
+        return nonProTierProducts
     }
 
     public func subscriptionOptions() async -> SubscriptionOptionsV2? {
-        let nonFreeTrialProducts = await getAvailableProducts().filter { !$0.isFreeTrialProduct }
-        let ids = nonFreeTrialProducts.map(\.self.id)
+        let products = await getAvailableProducts(includeProTier: false)
+        let ids = products.map(\.self.id)
         Logger.subscriptionStorePurchaseManager.debug("Returning SubscriptionOptions for products: \(ids)")
-        return await subscriptionOptions(for: nonFreeTrialProducts)
-    }
-
-    public func freeTrialSubscriptionOptions() async -> SubscriptionOptionsV2? {
-        let freeTrialProducts = await getAvailableProducts().filter { $0.isFreeTrialProduct }
-        let ids = freeTrialProducts.map(\.self.id)
-        Logger.subscriptionStorePurchaseManager.debug("Returning Free Trial SubscriptionOptions for products: \(ids)")
-        return await subscriptionOptions(for: freeTrialProducts)
+        return await subscriptionOptions(for: products)
     }
 
     @MainActor

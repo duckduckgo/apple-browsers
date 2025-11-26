@@ -601,10 +601,6 @@ extension AppDelegate {
         alert.runModal()
     }
 
-    @objc func resetDefaultBrowserPrompt(_ sender: Any?) {
-        UserDefaultsWrapper.clear(.defaultBrowserDismissed)
-    }
-
     @objc func resetDefaultGrammarChecks(_ sender: Any?) {
         UserDefaultsWrapper.clear(.spellingCheckEnabledOnce)
         UserDefaultsWrapper.clear(.grammarCheckEnabledOnce)
@@ -675,8 +671,8 @@ extension AppDelegate {
     }
 
     @objc func resetDuckPlayerOverlayInteractions(_ sender: Any?) {
-        DuckPlayerPreferences.shared.youtubeOverlayAnyButtonPressed = false
-        DuckPlayerPreferences.shared.youtubeOverlayInteracted = false
+        duckPlayer.preferences.youtubeOverlayAnyButtonPressed = false
+        duckPlayer.preferences.youtubeOverlayInteracted = false
     }
 
     @objc func resetMakeDuckDuckGoYoursUserSettings(_ sender: Any?) {
@@ -700,7 +696,7 @@ extension AppDelegate {
     }
 
     @objc func resetDuckPlayerPreferences(_ sender: Any?) {
-        DuckPlayerPreferences.shared.reset()
+        duckPlayer.preferences.reset()
     }
 
     @MainActor

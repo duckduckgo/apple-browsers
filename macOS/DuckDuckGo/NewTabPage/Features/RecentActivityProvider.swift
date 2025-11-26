@@ -201,6 +201,7 @@ extension NewTabPageDataModel.DomainActivity {
             favicon: favicon,
             favorite: urlFavoriteStatusProvider.isUrlFavorited(url: rootURL),
             trackersFound: historyEntry.trackersFound,
+            cookiePopUpBlocked: historyEntry.cookiePopupBlocked,
             trackingStatus: .init(totalCount: 0, trackerCompanies: []), // keep this empty because it's updated separately
             history: []
         )

@@ -54,7 +54,6 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     public var messageNames: [String] { MessageName.allCases.map(\.rawValue) }
     let source: String
     private let config: PrivacyConfiguration
-    private let statsManager: AutoconsentDailyStatsManaging
     weak var delegate: AutoconsentUserScriptDelegate?
 
     // Publisher for cookie popup managed events
@@ -64,7 +63,6 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     }
 
     init(config: PrivacyConfiguration,
-         statsManager: AutoconsentDailyStatsManaging,
          management: AutoconsentManagement,
          preferences: CookiePopupProtectionPreferences
     ) {
@@ -78,7 +76,6 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
             fatalError("Failed to load JS for AutoconsentUserScript: \(error.localizedDescription)")
         }
         self.config = config
-        self.statsManager = statsManager
         self.management = management
         self.preferences = preferences
     }
@@ -439,9 +436,6 @@ extension AutoconsentUserScript {
 
         refreshDashboardState(consentManaged: true, cosmetic: messageData.isCosmetic, optoutFailed: false, selftestFailed: nil)
         firePixel(pixel: messageData.isCosmetic ? .doneCosmetic : .done)
-
-        // Increment the popup managed counter for any popup handling
-        statsManager.incrementPopupCount()
 
         popupManagedSubject.send(messageData)
 

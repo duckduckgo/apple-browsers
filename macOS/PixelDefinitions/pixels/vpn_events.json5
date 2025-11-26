@@ -49,7 +49,7 @@
                 "key": "feature.status_reason",
                 "type": "string",
                 "description": "Reason string for the current status",
-                "enum": ["partial_data", "timeout"]
+                "enum": ["partial_data", "timeout", "retried"]
             },
             {
                 "key": "feature.data.ext.extension_type",
@@ -67,7 +67,13 @@
                 "key": "feature.data.ext.is_setup",
                 "type": "string",
                 "description": "Is the current flow setup or reconnection",
-                "enum": ["true", "false"]
+                "enum": ["yes", "no", "unknown"]
+            },
+            {
+                "key": "feature.data.ext.onboarding_status",
+                "type": "string",
+                "description": "The current onboarding status, if applicable",
+                "enum": ["needs_to_allow_extension", "needs_to_allow_vpn_configuration", "unknown", "completed"]
             },
             // Overall latency
             {

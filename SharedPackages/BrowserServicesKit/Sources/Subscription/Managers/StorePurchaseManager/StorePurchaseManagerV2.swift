@@ -231,6 +231,7 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
 
     public func subscriptionTierOptions(includeProTier: Bool) async -> SubscriptionTierOptions? {
         // To be implemented in a follow up PR
+        Logger.subscriptionStorePurchaseManager.log("[Store Purchase Manager] subscriptionTierOptions called, includeProTier = \(includeProTier)")
         return nil
     }
 

@@ -766,7 +766,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             guard subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed else { return subscriptionTierOptions.withoutPurchaseOptions() }
             return subscriptionTierOptions
         } else {
-            Logger.subscription.error("Failed to obtain subscription options")
+            Logger.subscription.error("Failed to obtain subscription tier options")
             setTransactionError(.failedToGetSubscriptionOptions)
             return SubscriptionTierOptions.empty
         }

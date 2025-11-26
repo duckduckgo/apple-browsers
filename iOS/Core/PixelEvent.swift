@@ -1373,12 +1373,16 @@ extension Pixel {
         case aiChatInternalSwitchBarDisplayed
         case aiChatExperimentalAddressBarIsEnabledDaily
         
+        case aiChatOmnibarTapped
         case aiChatOmnibarSidebarButtonTapped
         case aiChatOmnibarNewChatButtonTapped
         
+        case aiChatSettingsMenuOpened
         case aiChatSettingsMenuSidebarTapped
         case aiChatSettingsMenuAIChatSettingsTapped
         case aiChatSettingsMenuNewChatTabTapped
+        
+        case aiChatTabSwitcherOpened
         
         // MARK: New Address Bar Picker
         case aiChatNewAddressBarPickerDisplayed
@@ -2751,12 +2755,16 @@ extension Pixel.Event {
         case .aiChatInternalSwitchBarDisplayed: return "m_aichat_internal_switch_bar_displayed"
         case .aiChatExperimentalAddressBarIsEnabledDaily: return "m_aichat_experimental_address_bar_is_enabled_daily"
 
+        case .aiChatOmnibarTapped: return "m_aichat_omnibar_tapped"
         case .aiChatOmnibarSidebarButtonTapped: return "m_aichat_omnibar_sidebar_button_tapped"
         case .aiChatOmnibarNewChatButtonTapped: return "m_aichat_omnibar_new_chat_button_tapped"
 
+        case .aiChatSettingsMenuOpened: return "m_aichat_settings_menu_opened"
         case .aiChatSettingsMenuSidebarTapped: return "m_aichat_settings_menu_sidebar_tapped"
         case .aiChatSettingsMenuAIChatSettingsTapped: return "m_aichat_settings_menu_aichat_settings_tapped"
         case .aiChatSettingsMenuNewChatTabTapped: return "m_aichat_settings_menu_new_chat_tab_tapped"
+            
+        case .aiChatTabSwitcherOpened: return "m_aichat_tab_switcher_opened"
 
         // MARK: New Address Bar Picker
         case .aiChatNewAddressBarPickerDisplayed: return "m_aichat_new_address_bar_picker_displayed"

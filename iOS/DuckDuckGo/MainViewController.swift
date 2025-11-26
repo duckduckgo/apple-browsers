@@ -2658,7 +2658,7 @@ extension MainViewController: OmniBarDelegate {
         if newTabPageViewController != nil {
             menuEntries = tab.buildShortcutsMenu()
             headerEntries = []
-        } else if aichatFullModeFeature.isAvailable && tab.tabModel.isAITab {
+        } else if aichatFullModeFeature.isAvailable && tab.isAITab {
             menuEntries = tab.buildAITabMenu()
             headerEntries = tab.buildAITabMenuHeaderContent()
         } else {
@@ -2713,6 +2713,10 @@ extension MainViewController: OmniBarDelegate {
             Pixel.fire(pixel: .browsingMenuOpenedNewTabPage)
         } else {
             Pixel.fire(pixel: .browsingMenuOpened)
+            
+            if currentTab?.isAITab == true {
+                DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuOpened)
+            }
         }
     }
     
@@ -2946,6 +2950,7 @@ extension MainViewController: OmniBarDelegate {
 
     /// Delegate method called when the omnibar branding area is tapped while in AI Chat mode.
     func onAIChatBrandingPressed() {
+        DailyPixel.fireDailyAndCount(pixel: .aiChatOmnibarTapped)
         viewCoordinator.omniBar.beginEditing(animated: true)
     }
 }
@@ -3459,6 +3464,10 @@ extension MainViewController: TabSwitcherButtonDelegate {
     func showTabSwitcher(_ button: TabSwitcherButton) {
         Pixel.fire(pixel: .tabBarTabSwitcherOpened)
         DailyPixel.fireDaily(.tabSwitcherOpenedDaily, withAdditionalParameters: TabSwitcherOpenDailyPixel().parameters(with: tabManager.model.tabs))
+        
+        if currentTab?.isAITab == true {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatTabSwitcherOpened)
+        }
 
         performCancel()
         showTabSwitcher()

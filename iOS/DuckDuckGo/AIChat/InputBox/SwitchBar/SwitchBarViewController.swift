@@ -79,9 +79,7 @@ class SwitchBarViewController: UIViewController {
     private var pickerViewModel: ImageSegmentedPickerViewModel!
 
     // MARK: - Initialization
-    init(switchBarHandler: SwitchBarHandling,
-         showsSeparator: Bool,
-         reduceTopPaddings: Bool) {
+    init(switchBarHandler: SwitchBarHandling, showsSeparator: Bool, reduceTopPaddings: Bool) {
         self.switchBarHandler = switchBarHandler
         self.textEntryViewController = SwitchBarTextEntryViewController(handler: switchBarHandler)
         self.showsSeparator = showsSeparator
@@ -137,8 +135,7 @@ class SwitchBarViewController: UIViewController {
     }
 
     private func updateLayouts() {
-        // When fadeoutOnToggle is enabled, skip layoutIfNeeded() here
-        // because layout updates are animated in SwitchBarTextEntryView
+        // Skip layoutIfNeeded() here because layout updates are animated in SwitchBarTextEntryView
         guard !switchBarHandler.usesFadeoutAnimation else { return }
         
         self.view.layoutIfNeeded()

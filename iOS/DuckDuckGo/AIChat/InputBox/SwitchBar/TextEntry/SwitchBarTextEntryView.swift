@@ -326,8 +326,6 @@ class SwitchBarTextEntryView: UIView {
             let contentHeight = getCurrentContentHeight()
             let contentExceedsMaxHeight = contentHeight > Constants.maxHeight
 
-            // For bottom bar with increased height: don't expand until text requires multiple lines
-            // This ensures the field stays at 96pt for single-line text
             let newHeight: CGFloat
             if isUsingBottomBarIncreasedHeight {
                 let singleLineHeight = requiredHeightForSingleLineContent()

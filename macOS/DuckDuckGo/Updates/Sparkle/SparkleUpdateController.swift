@@ -553,7 +553,7 @@ final class SparkleUpdateController: NSObject, SparkleUpdateControllerProtocol {
     }
 
     func handleAppTermination() {
-        updateWideEvent.handleAppTermination(updateWillInstallOnQuit: hasPendingUpdate)
+        updateWideEvent.handleAppTermination()
     }
 }
 
@@ -730,7 +730,7 @@ extension SparkleUpdateController: SPUUpdaterDelegate {
             Logger.updates.log("Updater did finish update cycle with no update found")
             updateProgress = .updateCycleDone(.finishedWithNoUpdateFound)
             Task { @UpdateCheckActor in await updateCheckState.recordCheckTime() }
-            updateWideEvent.completeFlow(status: .success(reason: "no_update_available"))
+            updateWideEvent.completeFlow(status: .success(reason: UpdateWideEventData.SuccessReason.noUpdateAvailable.rawValue))
         } else if let error {
             Logger.updates.log("Updater did finish update cycle with error: \(error.localizedDescription, privacy: .public) (\(error.pixelParameters, privacy: .public))")
             updateProgress = .updaterError(error)

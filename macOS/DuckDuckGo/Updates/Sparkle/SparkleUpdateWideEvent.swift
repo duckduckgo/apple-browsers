@@ -246,18 +246,20 @@ final class SparkleUpdateWideEvent {
 
     /// Handles app termination for update tracking.
     ///
-    /// If an update is ready to install, fires success since the update will install on quit.
-    /// If no update is ready, fires cancellation since the user quit during active check/download.
-    ///
-    /// - Parameter updateWillInstallOnQuit: Whether the updater has a pending update ready to install
-    func handleAppTermination(updateWillInstallOnQuit: Bool) {
-        guard currentFlowID != nil else { return }
+    /// Checks the flow's last known step to determine the correct completion status:
+    /// - `.restartingToUpdate` → success (user clicked "Restart to Update")
+    /// - `.extractionCompleted` → success (update ready, will install on quit)
+    /// - Anything else → cancellation (user quit during active check/download)
+    func handleAppTermination() {
+        guard let globalID = currentFlowID,
+              let flowData = wideEventManager.getFlowData(UpdateWideEventData.self, globalID: globalID) else { return }
 
-        if updateWillInstallOnQuit {
-            // Update is ready - will be installed when app terminates
-            completeFlow(status: .success(reason: "installing_on_quit"))
-        } else {
-            // User quit during active update check/download - true cancellation
+        switch flowData.lastKnownStep {
+        case .restartingToUpdate:
+            completeFlow(status: .success(reason: UpdateWideEventData.SuccessReason.restartingToUpdate.rawValue))
+        case .extractionCompleted:
+            completeFlow(status: .success(reason: UpdateWideEventData.SuccessReason.installingOnQuit.rawValue))
+        default:
             cancelFlow(reason: .appQuit)
         }
     }

@@ -586,15 +586,15 @@ final class SparkleUpdateWideEventTests: XCTestCase {
         XCTAssertEqual(mockWideEventManager.completions.count, 0)
     }
 
-    func test_handleAppTermination_withActiveFlowAndNoUpdateReady_cancelsWithAppQuit() {
-        // Given - active flow during download (update not ready)
+    func test_handleAppTermination_duringDownload_cancelsWithAppQuit() {
+        // Given - active flow during download (not at extractionCompleted)
         sut.startFlow(initiationType: .automatic)
         sut.didStartDownload()
 
-        // When - app terminates without update ready
-        sut.handleAppTermination(updateWillInstallOnQuit: false)
+        // When
+        sut.handleAppTermination()
 
-        // Then - should cancel since update wasn't ready
+        // Then - should cancel since extraction wasn't completed
         XCTAssertEqual(mockWideEventManager.completions.count, 1)
         let (completedData, status) = mockWideEventManager.completions[0]
         XCTAssertEqual((completedData as? UpdateWideEventData)?.cancellationReason, .appQuit)
@@ -605,17 +605,17 @@ final class SparkleUpdateWideEventTests: XCTestCase {
         }
     }
 
-    func test_handleAppTermination_withActiveFlowAndUpdateReady_completesAsSuccess() {
-        // Given - active flow with update ready to install
+    func test_handleAppTermination_atExtractionCompleted_completesAsInstallingOnQuit() {
+        // Given - extraction completed (update ready to install on quit)
         sut.startFlow(initiationType: .automatic)
         sut.didFindUpdate(version: "1.1.0", build: "123", isCritical: false)
         sut.didCompleteDownload()
         sut.didCompleteExtraction()
 
-        // When - app terminates with update ready
-        sut.handleAppTermination(updateWillInstallOnQuit: true)
+        // When
+        sut.handleAppTermination()
 
-        // Then - should complete as success since update will install
+        // Then - should complete as success since update will install on quit
         XCTAssertEqual(mockWideEventManager.completions.count, 1)
         let (_, status) = mockWideEventManager.completions[0]
         if case .success(let reason) = status {
@@ -625,11 +625,32 @@ final class SparkleUpdateWideEventTests: XCTestCase {
         }
     }
 
+    func test_handleAppTermination_atRestartingToUpdate_completesAsRestartingToUpdate() {
+        // User clicked "Restart to Update" which sets lastKnownStep to .restartingToUpdate
+        sut.startFlow(initiationType: .automatic)
+        sut.didFindUpdate(version: "1.1.0", build: "123", isCritical: false)
+        sut.didCompleteDownload()
+        sut.didCompleteExtraction()
+        sut.didInitiateRestart()
+
+        // When
+        sut.handleAppTermination()
+
+        // Then - should complete as success because user initiated restart
+        XCTAssertEqual(mockWideEventManager.completions.count, 1)
+        let (_, status) = mockWideEventManager.completions[0]
+        if case .success(let reason) = status {
+            XCTAssertEqual(reason, "restarting_to_update")
+        } else {
+            XCTFail("Expected success status with restarting_to_update reason")
+        }
+    }
+
     func test_handleAppTermination_noActiveFlow_handlesGracefully() {
         // Given - no flow started
 
         // When
-        sut.handleAppTermination(updateWillInstallOnQuit: false)
+        sut.handleAppTermination()
 
         // Then - should not crash
         XCTAssertEqual(mockWideEventManager.completions.count, 0)

@@ -137,7 +137,7 @@ public struct AIChatNativeConfigValues: Codable {
         self.supportsFullChatRestoration = supportsFullChatRestoration
         self.supportsPageContext = supportsPageContext
         self.supportsStandaloneMigration = supportsStandaloneMigration
-        self.isAIChatTopToolBarHidden = isAIChatHandoffEnabled
+        self.isAIChatTopToolBarHidden = isAIChatTopToolBarHidden
         self.isAIChatModelPickerInChatInput = isAIChatModelPickerInChatInput
         self.appVersion = appVersion
     }

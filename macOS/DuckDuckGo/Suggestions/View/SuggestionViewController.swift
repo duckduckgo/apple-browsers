@@ -133,7 +133,7 @@ final class SuggestionViewController: NSViewController {
 
     @IBAction func removeButtonAction(_ sender: NSButton) {
         guard let cell = sender.superview as? SuggestionTableCellView,
-        let suggestion = cell.suggestion else {
+              let suggestion = cell.suggestion else {
             assertionFailure("Correct cell or url are not available")
             return
         }
@@ -153,8 +153,8 @@ final class SuggestionViewController: NSViewController {
         suggestionResultCancellable = suggestionContainerViewModel.suggestionContainer.$result
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-            self?.displayNewSuggestions()
-        }
+                self?.displayNewSuggestions()
+            }
     }
 
     private func subscribeToSelectionIndex() {
@@ -189,7 +189,6 @@ final class SuggestionViewController: NSViewController {
         }
     }
 
-    /// Selects a row in the table view by its row index
     private func selectTableRow(at rowIndex: Int?) {
         if tableView.selectedRow == rowIndex {
             if let rowIndex, let cell = tableView.view(atColumn: 0, row: rowIndex, makeIfNecessary: false) as? SuggestionTableCellView {
@@ -222,12 +221,10 @@ final class SuggestionViewController: NSViewController {
             return
         }
 
-        // Don't select divider rows
         guard suggestionContainerViewModel.isSelectableRow(tableRow) else {
             return
         }
 
-        // Select the row in the viewModel (works for all rows including header rows)
         suggestionContainerViewModel.selectRow(at: tableRow)
     }
 
@@ -260,11 +257,11 @@ final class SuggestionViewController: NSViewController {
 
         if barStyleProvider.shouldLeaveBottomPaddingInSuggestions {
             tableViewHeightConstraint.constant = totalHeight
-                + (tableView.enclosingScrollView?.contentInsets.top ?? 0)
-                + (tableView.enclosingScrollView?.contentInsets.bottom ?? 0)
+            + (tableView.enclosingScrollView?.contentInsets.top ?? 0)
+            + (tableView.enclosingScrollView?.contentInsets.bottom ?? 0)
         } else {
             tableViewHeightConstraint.constant = totalHeight
-                + (tableView.enclosingScrollView?.contentInsets.top ?? 0)
+            + (tableView.enclosingScrollView?.contentInsets.top ?? 0)
         }
     }
 
@@ -370,7 +367,6 @@ extension SuggestionViewController: NSTableViewDelegate {
         return cell
     }
 
-    /// Creates a divider view between the header and suggestions sections
     private func makeSectionDividerView() -> NSView {
         let containerView = NSView()
         containerView.wantsLayer = true
@@ -404,7 +400,7 @@ extension SuggestionViewController: NSTableViewDelegate {
 
     func tableView(_ tableView: NSTableView, rowViewForRow row: Int) -> NSTableRowView? {
         guard let suggestionTableRowView = tableView.makeView(
-                withIdentifier: NSUserInterfaceItemIdentifier(rawValue: SuggestionTableRowView.identifier), owner: self)
+            withIdentifier: NSUserInterfaceItemIdentifier(rawValue: SuggestionTableRowView.identifier), owner: self)
                 as? SuggestionTableRowView else {
             assertionFailure("SuggestionViewController: Making of table row view failed")
             return nil
@@ -421,15 +417,12 @@ extension SuggestionViewController: NSTableViewDelegate {
             return
         }
 
-        // Don't allow selection of divider rows
         guard suggestionContainerViewModel.isSelectableRow(tableView.selectedRow) else {
             return
         }
 
-        // Update the viewModel's row selection to match the table view
         if suggestionContainerViewModel.selectedRowIndex != tableView.selectedRow {
             suggestionContainerViewModel.selectRow(at: tableView.selectedRow)
         }
     }
-
 }

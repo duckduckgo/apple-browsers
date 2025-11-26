@@ -313,4 +313,3 @@ class BrowserProfileTests: XCTestCase {
         return fileStore
     }
 }
-}

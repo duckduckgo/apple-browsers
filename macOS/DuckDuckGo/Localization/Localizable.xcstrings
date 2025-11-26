@@ -42876,7 +42876,7 @@
       }
     },
     "import.csv.instructions.bitwarden.new" : {
-      "comment" : "Instructions to import Passwords as CSV from Bitwarden.\n%d - step number\n%s - app name (Bitwarden)\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Passwords as CSV from Bitwarden.\n%N$d - step number\n%2$s - app name (Bitwarden)\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -42948,7 +42948,7 @@
       }
     },
     "import.csv.instructions.brave.new" : {
-      "comment" : "Instructions to import Passwords as CSV from Brave browser.\n%d - step number\n%s - browser name (Brave)\n%@ - hamburger menu icon\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Passwords as CSV from Brave browser.\n%N$d - step number\n%2$s - browser name (Brave)\n%3$@ - hamburger menu icon\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -43020,7 +43020,7 @@
       }
     },
     "import.csv.instructions.chrome.new.new" : {
-      "comment" : "Instructions to import Passwords as CSV from Google Chrome browser.\n%d - step number\n%s - browser name (Chrome)\n%@ - hamburger menu icon\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Passwords as CSV from Google Chrome browser.\n%N$d - step number\n%2$s - browser name (Chrome)\n%3$@ - hamburger menu icon\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -43092,7 +43092,7 @@
       }
     },
     "import.csv.instructions.chromium.new" : {
-      "comment" : "Instructions to import Passwords as CSV from Chromium-based browsers.\n%d - step number\n%s - browser name\n%@ - hamburger menu icon\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Passwords as CSV from Chromium-based browsers.\n%N$d - step number\n%2$s - browser name\n%3$@ - hamburger menu icon\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -43164,7 +43164,7 @@
       }
     },
     "import.csv.instructions.coccoc.new" : {
-      "comment" : "Instructions to import Passwords as CSV from Cốc Cốc browser.\n%d - step number\n%@ - menu icon\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Passwords as CSV from Cốc Cốc browser.\n%N$d - step number\n%3$@ - menu icon\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -43236,7 +43236,7 @@
       }
     },
     "import.csv.instructions.firefox.new" : {
-      "comment" : "Instructions to import Passwords as CSV from Firefox.\n%d - step number\n%s - browser name (Firefox)\n%@ - hamburger menu icon (first instance)\n%@ - horizontal menu icon (second instance)\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Passwords as CSV from Firefox.\n%N$d - step number\n%2$s - browser name (Firefox)\n%3$@ - hamburger menu icon (first instance)\n%4$@ - horizontal menu icon (second instance)\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -43308,7 +43308,7 @@
       }
     },
     "import.csv.instructions.generic.new" : {
-      "comment" : "Instructions to import a generic CSV passwords file.\n%d - step number\n**bold text**; _italic text_",
+      "comment" : "Instructions to import a generic CSV passwords file.\n%N$d - step number\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -43380,7 +43380,7 @@
       }
     },
     "import.csv.instructions.lastpass.new" : {
-      "comment" : "Instructions to import Passwords as CSV from LastPass.\n%d - step number\n%s - app name (LastPass) - first instance\n%s - app name (LastPass) - second instance\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Passwords as CSV from LastPass.\n%N$d - step number\n%2$s - app name (LastPass) - first instance\n%4$s - app name (LastPass) - second instance\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -43452,7 +43452,7 @@
       }
     },
     "import.csv.instructions.onePassword7.new" : {
-      "comment" : "Instructions to import Passwords as CSV from 1Password 7.\n%d - step number\n%s - app name (1Password)\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Passwords as CSV from 1Password 7.\n%N$d - step number\n%2$s - app name (1Password)\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -43524,7 +43524,7 @@
       }
     },
     "import.csv.instructions.onePassword8.new" : {
-      "comment" : "Instructions to import Passwords as CSV from 1Password 8.\n%d - step number\n%s - app name (1Password)\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Passwords as CSV from 1Password 8.\n%N$d - step number\n%2$s - app name (1Password)\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -43596,7 +43596,7 @@
       }
     },
     "import.csv.instructions.opera.new" : {
-      "comment" : "Instructions to import Passwords as CSV from Opera browser.\n%d - step number\n%s - browser name (Opera)\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Passwords as CSV from Opera browser.\n%N$d - step number\n%2$s - browser name (Opera)\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -43668,7 +43668,7 @@
       }
     },
     "import.csv.instructions.operagx.new" : {
-      "comment" : "Instructions to import Passwords as CSV from Opera GX browsers.\n%d - step number\n%s - browser name (Opera GX)\n%@ - menu button icon\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Passwords as CSV from Opera GX browsers.\n%N$d - step number\n%2$s - browser name (Opera GX)\n%4$@ - menu button icon\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -43680,7 +43680,7 @@
       }
     },
     "import.csv.instructions.safari" : {
-      "comment" : "Instructions to import Passwords as CSV from Safari.\n%N$d - step number\n%5$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_\nInstructions to import Passwords as CSV from Safari.\n%d - step number\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Passwords as CSV from Safari.\n%N$d - step number\n%5$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_\nInstructions to import Passwords as CSV from Safari.\n%N$d - step number\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -43740,7 +43740,7 @@
       }
     },
     "import.csv.instructions.safari.macos15-2" : {
-      "comment" : "Instructions to import Passwords as CSV from Safari zip file on >= macOS 15.2.\n%N$d - step number\n%5$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_\nInstructions to import Passwords as CSV from Safari zip file on >= macOS 15.2.\n%d - step number\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Passwords as CSV from Safari zip file on >= macOS 15.2.\n%N$d - step number\n%5$@ - “Select Passwords CSV File” button\n**bold text**; _italic text_\nInstructions to import Passwords as CSV from Safari zip file on >= macOS 15.2.\n%N$d - step number\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -43860,7 +43860,7 @@
       }
     },
     "import.csv.instructions.vivaldi.new" : {
-      "comment" : "Instructions to import Passwords exported as CSV from Vivaldi browser.\n%d - step number\n%@ - menu button icon\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Passwords exported as CSV from Vivaldi browser.\n%N$d - step number\n%3$@ - menu button icon\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -43932,7 +43932,7 @@
       }
     },
     "import.csv.instructions.yandex.new" : {
-      "comment" : "Instructions to import Passwords as CSV from Yandex Browser.\n%d - step number\n%s - browser name (Yandex)\n%@ - hamburger menu icon (first instruction)\n%@ - vertical menu icon (second instruction)\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Passwords as CSV from Yandex Browser.\n%N$d - step number\n%2$s - browser name (Yandex)\n%3$@ - hamburger menu icon\n%5$@ - vertical menu icon\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -44736,7 +44736,7 @@
       }
     },
     "import.html.instructions.chromium.new" : {
-      "comment" : "Instructions to import Bookmarks exported as HTML from Chromium-based browsers.\n%N$d - step number\n%s - browser name\n%@ - hamburger menu icon\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Bookmarks exported as HTML from Chromium-based browsers.\n%N$d - step number\n%2$s - browser name\n%4$@ - hamburger menu icon\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -44808,7 +44808,7 @@
       }
     },
     "import.html.instructions.firefox.new" : {
-      "comment" : "Instructions to import Bookmarks exported as HTML from Firefox based browsers.\n%d - step number\n%s - browser name (Firefox)\n%@ - import/export icon\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Bookmarks exported as HTML from Firefox based browsers.\n%N$d - step number\n%2$s - browser name (Firefox)\n%4$@ - import/export icon\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -44880,7 +44880,7 @@
       }
     },
     "import.html.instructions.generic.new" : {
-      "comment" : "Instructions to import a generic HTML Bookmarks file.\n%d - step number\n**bold text**; _italic text_",
+      "comment" : "Instructions to import a generic HTML Bookmarks file.\n%N$d - step number\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -44952,7 +44952,7 @@
       }
     },
     "import.html.instructions.opera.new" : {
-      "comment" : "Instructions to import Bookmarks exported as HTML from Opera browser.\n%d - step number\n%s - browser name (Opera)\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Bookmarks exported as HTML from Opera browser.\n%N$d - step number\n%2$s - browser name (Opera)\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -45024,7 +45024,7 @@
       }
     },
     "import.html.instructions.operagx.new" : {
-      "comment" : "Instructions to import Bookmarks exported as HTML from Opera GX browser.\n%d - step number\n%s - browser name (Opera GX)\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Bookmarks exported as HTML from Opera GX browser.\n%N$d - step number\n%2$s - browser name (Opera GX)\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -45096,7 +45096,7 @@
       }
     },
     "import.html.instructions.safari.new" : {
-      "comment" : "Instructions to import Bookmarks exported as HTML from Safari.\n%d - step number\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Bookmarks exported as HTML from Safari.\n%N$d - step number\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -45168,7 +45168,7 @@
       }
     },
     "import.html.instructions.vivaldi.new" : {
-      "comment" : "Instructions to import Bookmarks exported as HTML from Vivaldi browser.\n%d - step number\n%s - browser name (Vivaldi)\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Bookmarks exported as HTML from Vivaldi browser.\n%N$d - step number\n%2$s - browser name (Vivaldi)\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -45240,7 +45240,7 @@
       }
     },
     "import.html.instructions.yandex.new" : {
-      "comment" : "Instructions to import Bookmarks exported as HTML from Yandex Browser.\n%d - step number\n%s - browser name (Yandex)\n%@ - menu icon\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Bookmarks exported as HTML from Yandex Browser.\n%N$d - step number\n%2$s - browser name (Yandex)\n%4$@ - menu icon\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -46512,7 +46512,7 @@
       }
     },
     "import.zip.instructions.safari" : {
-      "comment" : "Instructions to import multiple data types exported as ZIP from Safari.\n%d - step number\n%@ - browser icon\n**bold text**; _italic text_",
+      "comment" : "Instructions to import multiple data types exported as ZIP from Safari.\n%N$d - step number\n%2$@ - browser icon\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {

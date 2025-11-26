@@ -26,6 +26,7 @@ enum FaviconPlaceholderStyle {
 
 final class TabFaviconView: NSView {
 
+    private let loadingPolicy = DefaultLoadingIndicatorPolicy()
     private let imageView = NSImageView()
     private let placeholderView = LetterView()
     private let spinnerView = SpinnerView()
@@ -64,16 +65,27 @@ final class TabFaviconView: NSView {
 
 extension TabFaviconView {
 
-    func startSpinnerIfNeeded(url: URL?, isLoading: Bool, error: Error?) {
-        let policy = DefaultLoadingIndicatorPolicy()
-        guard policy.shouldShowLoadingIndicator(url: url, isLoading: isLoading, error: error) else {
+    func startSpinnerIfNeeded(isLoading: Bool, url: URL?, error: Error?) {
+        guard shouldStartSpinner(isLoading: isLoading, url: url, error: error) else {
             stopSpinner()
-            resizeImageIfNeeded(scaleDown: false)
             return
         }
 
         startSpinner()
+    }
+
+    func startSpinner() {
+        spinnerView.startAnimating()
         resizeImageIfNeeded(scaleDown: true)
+    }
+
+    func stopSpinner(animated: Bool = true) {
+        spinnerView.stopAnimating(animated: animated)
+        resizeImageIfNeeded(scaleDown: false)
+    }
+
+    func refreshSpinnerColorsIfNeeded(rendered: Bool) {
+        spinnerView.refreshSpinnerColorsIfNeeded(rendered: rendered)
     }
 
     /// Renders a given Favicon, with a crossfade animation.
@@ -83,7 +95,7 @@ extension TabFaviconView {
     ///
     func displayFavicon(favicon: NSImage?, placeholderStyle: FaviconPlaceholderStyle) {
         let targetImage = favicon ?? placeholderStyle.placeholderImage
-        if shouldApplyCrossfade(targetImage: targetImage) {
+        if shouldCrossfadeFavicon(newFavicon: targetImage) {
             imageView.applyCrossfadeTransition(timingFunction: FaviconAnimation.animationTimingFunction, duration: FaviconAnimation.animationDuration)
         }
 
@@ -102,16 +114,12 @@ extension TabFaviconView {
 
 private extension TabFaviconView {
 
-    func startSpinner() {
-        spinnerView.startAnimating()
+    func shouldCrossfadeFavicon(newFavicon: NSImage?) -> Bool {
+        loadingPolicy.shouldCrossfadeFavicon(newFavicon: newFavicon, oldFavicon: imageView.image, displaysPlaceholder: placeholderView.isShown)
     }
 
-    func stopSpinner(animated: Bool = true) {
-        spinnerView.stopAnimating(animated: animated)
-    }
-
-    func shouldApplyCrossfade(targetImage: NSImage?) -> Bool {
-        placeholderView.isShown && targetImage != nil || imageView.image != nil && imageView.image != targetImage
+    func shouldStartSpinner(isLoading: Bool, url: URL?, error: Error?) -> Bool {
+        loadingPolicy.shouldShowLoadingIndicator(isLoading: isLoading, url: url, error: error)
     }
 }
 

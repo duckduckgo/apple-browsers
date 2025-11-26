@@ -24,12 +24,13 @@ class DownloadsListDataSource {
     
     @Published var model: DownloadsListModel
     
-    private var downloadManager = AppDependencyProvider.shared.downloadManager
+    private var downloadManager: DownloadManaging
     private var deleteDownloadsHelper = DownloadsDeleteHelper()
     
     private var bag: Set<AnyCancellable> = []
     
-    init() {
+    init(downloadManager: DownloadManaging = AppDependencyProvider.shared.downloadManager) {
+        self.downloadManager = downloadManager
         model = DownloadsListModel(ongoingDownloads: downloadManager.downloadList.filter { !$0.temporary }.map { AnyDownloadListRepresentable($0) },
                                    completeDownloads: downloadManager.downloadsDirectoryFiles.map { AnyDownloadListRepresentable($0) })
         downloadManager.startMonitoringDownloadsDirectoryChanges()
@@ -46,7 +47,14 @@ class DownloadsListDataSource {
         let downloadFinishedPublisher = NotificationCenter.default.publisher(for: .downloadFinished)
         let downloadsDirectoryChangedPublisher = NotificationCenter.default.publisher(for: .downloadsDirectoryChanged)
         
-        downloadsDirectoryChangedPublisher.merge(with: downloadStartedPublisher, downloadFinishedPublisher)
+        downloadsDirectoryChangedPublisher
+            .merge(with: downloadStartedPublisher, downloadFinishedPublisher)
+            .sink { [weak self] _ in
+                self?.updateModel()
+            }
+            .store(in: &bag)
+        
+        deleteDownloadsHelper.temporaryDirectoryURLs
             .sink { [weak self] _ in
                 self?.updateModel()
             }
@@ -56,9 +64,24 @@ class DownloadsListDataSource {
     private func updateModel() {
         let ongoingDownloads = downloadManager.downloadList.filter { !$0.temporary }.map { AnyDownloadListRepresentable($0) }
         let completeDownloads = downloadManager.downloadsDirectoryFiles.map { AnyDownloadListRepresentable($0) }
+        let temporaryDirectoryURLs = deleteDownloadsHelper.temporaryDirectoryURLs.value
         
         model.update(ongoingDownloads: ongoingDownloads,
                      completeDownloads: completeDownloads)
+
+        deleteDownloadsDirectoryIfNeeded(ongoingDownloads: ongoingDownloads,
+                                         completeDownloads: completeDownloads,
+                                         temporaryDirectoryURLs: temporaryDirectoryURLs)
+    }
+    
+    private func deleteDownloadsDirectoryIfNeeded(ongoingDownloads: [Any],
+                                                  completeDownloads: [Any],
+                                                  temporaryDirectoryURLs: [URL]) {
+        if ongoingDownloads.isEmpty
+            && completeDownloads.isEmpty
+            && temporaryDirectoryURLs.isEmpty {
+            downloadManager.deleteDownloadsDirectoryIfEmpty()
+        }
     }
     
     func cancelDownloadWithIdentifier(_ identifier: String) {

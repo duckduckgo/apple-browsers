@@ -20,28 +20,35 @@
 import SwiftUI
 import DesignResourcesKit
 import DuckUI
+import Lottie
+
+private struct ExtensionLottieView: UIViewRepresentable {
+    let animationName: String
+
+    func makeUIView(context: Context) -> LottieAnimationView {
+        let view = LottieAnimationView(name: animationName)
+        view.loopMode = .playOnce
+        view.contentMode = .scaleAspectFit
+        view.play()
+        return view
+    }
+
+    func updateUIView(_ uiView: LottieAnimationView, context: Context) { }
+}
 
 struct CredentialProviderActivatedView: View {
 
     let viewModel: CredentialProviderActivatedViewModel
-    @State private var imageAppeared = false
+    @State private var isAnimating = false
 
     var body: some View {
         NavigationView {
 
             VStack(spacing: 0) {
 
-                Image(.passwordsDDG96X96)
+                ExtensionLottieView(animationName: "confirmation-prompt-128")
+                    .frame(width: 128, height: 128)
                     .padding(.top, 48)
-                    .scaleEffect(imageAppeared ? 1 : 0.7)
-                    .animation(
-                        .interpolatingSpring(stiffness: 170, damping: 10)
-                        .delay(0.1),
-                        value: imageAppeared
-                    )
-                    .onAppear {
-                        imageAppeared = true
-                    }
 
                 Text(UserText.credentialProviderActivatedTitle)
                     .daxTitle2()

@@ -408,7 +408,7 @@ extension TabViewController {
                  accessibilityLabel: UserText.actionNewAIChat,
                  image: DesignSystemImages.Glyphs.Size24.aiChatAdd,
                  action: { [weak self] in
-            self?.submitStartChatAction()
+            self?.openNewChatInNewTab()
         })
     }
     
@@ -606,7 +606,7 @@ extension TabViewController {
     
     private func onOpenAutofillLoginsAction() {
         Pixel.fire(pixel: .browsingMenuAutofill)
-        delegate?.tab(self, didRequestAutofillLogins: nil, source: .overflow)
+        delegate?.tab(self, didRequestAutofillLogins: nil, source: .overflow, extensionPromotionManager: extensionPromotionManager)
     }
     
     private func onBrowsingSettingsAction() {

@@ -466,6 +466,51 @@
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Enable Email Protection";
 
+/* Button title to dismiss the autofill extension activation view */
+"autofill.extension.activation.done.button.title" = "Done";
+
+/* Title shown when the autofill extension activation succeeds */
+"autofill.extension.activation.title" = "Autofill passwords activated!";
+
+/* Footer text describing what enabling the autofill extension does */
+"autofill.extension.footer" = "Use passwords you saved in DuckDuckGo across all apps on your device.";
+
+/* Header text shown when the autofill extension is disabled */
+"autofill.extension.header.disabled" = "Autofill in Other Apps";
+
+/* Header text shown when the autofill extension is enabled */
+"autofill.extension.header.enabled" = "Autofill in Other Apps Enabled";
+
+/* Dismiss button title for the Autofill extension promotion */
+"autofill.extension.promo.button.dismiss.title" = "Set up Later in Settings";
+
+/* CTA button title for the Autofill extension promotion */
+"autofill.extension.promo.button.title" = "Turn On Autofill in Other Apps";
+
+/* Message for the Autofill extension promotion */
+"autofill.extension.promo.message" = "Use DuckDuckGo to securely autofill passwords for all your apps.";
+
+/* Title for the Autofill extension promotion */
+"autofill.extension.promo.title" = "Quickly sign in to your apps without typing passwords";
+
+/* Title for screen showing autofill extension settings */
+"autofill.extension.screen.title" = "Autofill Passwords in Other Apps";
+
+/* Status text when autofill extension is disabled */
+"autofill.extension.status.off" = "Turn On";
+
+/* Status text when autofill extension is enabled */
+"autofill.extension.status.on" = "On";
+
+/* Title for autofill extension settings row */
+"autofill.extension.title" = "Autofill in Other Apps";
+
+/* Button title that opens system settings to turn off the autofill extension */
+"autofill.extension.turn.off.button.title" = "Turn Off in System Settings...";
+
+/* Button title that triggers system prompt to turn on the autofill extension */
+"autofill.extension.turn.on.button.title" = "Turn On...";
+
 /* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
 "autofill.hide-card-cvv" = "Hide CVV";
 
@@ -802,8 +847,8 @@
 /* Section header for the autofill settings screen */
 "autofill.settings.import-passwords.section-header" = "Import Passwords";
 
-/* Section header for the autofill settings screen */
-"autofill.settings.options.section-header" = "Options";
+/* Section header for the autofill passwords options section of the settings screen */
+"autofill.settings.options.section-header" = "Password Options";
 
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Report a problem with autofill";

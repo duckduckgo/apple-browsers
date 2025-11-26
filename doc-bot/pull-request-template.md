@@ -7,6 +7,15 @@ keywords: ["pull request", "pr", "template", "workflow", "code review", "assignm
 
 # Pull Request Guidelines & Workflow
 
+## 🚨 CRITICAL: Always Open PR URL After Creation
+
+**MANDATORY**: After creating or updating a PR, **IMMEDIATELY** run:
+```bash
+open <PR_URL>
+```
+
+This ensures the PR is accessible and properly formatted in the browser.
+
 ## Objective
 
 - **Maintain a clear and maintainable list** of open PRs in the Apple repositories
@@ -128,11 +137,11 @@ Use pre-defined labels to classify PR intention/state:
 
 ## Pull Request Template
 
-When creating Pull Requests, always follow this template structure:
+**MANDATORY**: When creating Pull Requests, ALWAYS follow this template structure:
 
 ```markdown
-Task/Issue URL: [Insert URL or ask user if not provided]
-Tech Design URL: [Insert URL, N/A, or ask user if not provided for significant changes]
+Task/Issue URL: [Insert URL in current line (not a newline); or ask user if not provided]
+Tech Design URL: [Insert URL in current line; N/A, or ask user if not provided for significant changes]
 CC: [Insert stakeholders or N/A]
 
 ### Description
@@ -181,6 +190,17 @@ CC: [Insert stakeholders or N/A]
 - **Documentation updates** required
 - **Privacy and security** considerations, if applicable
 
+## PR Creation Workflow
+
+**CRITICAL**: After creating or updating a PR, **ALWAYS open the PR URL** in the browser immediately.
+
+### Steps:
+1. Create PR with `gh pr create` or update with `gh pr edit`
+2. **Immediately run**: `open <PR_URL>` (the URL returned by gh command)
+3. Verify the PR appears correctly in the browser
+
+This ensures the PR is accessible and properly formatted.
+
 ## Review Process Best Practices
 
 ### For PR Authors
@@ -203,12 +223,14 @@ CC: [Insert stakeholders or N/A]
 1. Technical reviewer assigned by default
 2. Ready for review → Assign technical reviewer → Ping on Asana
 3. No MM posting required
+4. **Open PR URL in browser**
 
 ### For Tasks:
 1. Pre-agree on reviewer OR use auto-assignment
 2. Assign "Apple-dev" team for auto-assignment
 3. Create Asana task → Assign to reviewer → Ping on Asana
 4. Handle AFK reviewers by reassigning
+5. **Open PR URL in browser**
 
 ### For All PRs:
 1. Use feature flags for safe merging
@@ -217,6 +239,7 @@ CC: [Insert stakeholders or N/A]
 4. Set auto-merge if desired
 5. Follow template requirements
 6. Maintain clean draft PR list
+7. **ALWAYS open PR URL after creation/update**
 
 ---
 

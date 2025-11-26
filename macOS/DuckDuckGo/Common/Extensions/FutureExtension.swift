@@ -58,6 +58,16 @@ extension Future where Failure == Never {
     }
 
 }
+extension Future where Failure: Error {
+
+    static func promise() -> (future: Future<Output, Failure>, fulfill: (Result<Output, Failure>) -> Void) {
+        var fulfill: ((Result<Output, Failure>) -> Void)!
+        let future = Future<Output, Failure> { fulfill = $0 }
+        assert(fulfill != nil)
+        return (future, { fulfill($0) })
+    }
+
+}
 
 extension Publishers.First {
 

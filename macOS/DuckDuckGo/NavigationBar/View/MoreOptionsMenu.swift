@@ -636,8 +636,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             var subscriptionItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem)
                 .withImage(moreOptionsMenuIconsProvider.subscriptionIcon)
 
-            if featureFlagger.isFeatureOn(.privacyProFreeTrial) &&
-               subscriptionManager.isUserEligibleForFreeTrial() &&
+            if subscriptionManager.isUserEligibleForFreeTrial() &&
                !freeTrialBadgePersistor.hasReachedViewLimit {
                 subscriptionItem = NSMenuItem.createMenuItemWithBadge(
                     title: UserText.subscriptionOptionsMenuItem,
@@ -763,7 +762,6 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
         // Increment free trial badge view count if the user is eligible and badge is shown
         if !subscriptionManager.isUserAuthenticated &&
-           featureFlagger.isFeatureOn(.privacyProFreeTrial) &&
            subscriptionManager.isUserEligibleForFreeTrial() &&
            !freeTrialBadgePersistor.hasReachedViewLimit {
             freeTrialBadgePersistor.incrementViewCount()

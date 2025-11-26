@@ -740,7 +740,7 @@
         <scene sceneID="gr3-5z-X3m">
             <objects>
                 <viewController storyboardIdentifier="AddressBarButtonsViewController" id="mcr-nj-GmC" customClass="AddressBarButtonsViewController" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target" sceneMemberID="viewController">
-                    <view key="view" id="Bhg-sv-n5J">
+                    <view key="view" id="Bhg-sv-n5J" customClass="AddressBarButtonsView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
                         <rect key="frame" x="0.0" y="0.0" width="578" height="34"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>

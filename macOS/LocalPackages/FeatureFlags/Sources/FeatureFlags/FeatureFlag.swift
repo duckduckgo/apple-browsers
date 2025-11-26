@@ -110,9 +110,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866613117546
     case canScanUrlBasedSyncSetupBarcodes
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866610505232
-    case privacyProFreeTrial
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866617269950
     case paidAIChat
 
@@ -137,8 +134,7 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866617328244
     case aiChatKeepSession
 
-    /// Enables the omnibar toggle for AI Chat
-    /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1211652685709106
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212016242789291
     case aiChatOmnibarToggle
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866476152134
@@ -185,9 +181,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720037380
     case openFireWindowByDefault
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866619027311
-    case restoreSessionPrompt
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473926615
     case duckAISearchParameter
@@ -276,6 +269,32 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212014826835069?focus=true
     case newTabPageAutoconsentStats
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211998610726861?focus=true
+    case tierMessagingEnabled
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211998614203544?focus=true
+    case allowProTierPurchase
+
+    /// New popup blocking heuristics based on user interaction timing (internal only)
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212017698257925?focus=true
+    case popupBlocking
+
+    /// Use extended user-initiated popup timeout (extends from 1s to 6s)
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212001891093823?focus=true
+    case extendedUserInitiatedPopupTimeout
+
+    /// Suppress empty or about: URL popups after permission approval
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212017701300907?focus=true
+    case suppressEmptyPopUpsOnApproval
+
+    /// Allow all popups for current page after permission approval (until next navigation)
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212017701300913?focus=true
+    case allowPopupsForCurrentPage
+
+    /// Show popup permission button in inactive state when temporary allowance is active
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212017701300919?focus=true
+    case popupPermissionButtonPersistence
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -287,7 +306,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .updateSafariBookmarksImport,
                 .updateFirefoxBookmarksImport,
                 .supportsAlternateStripePaymentFlow,
-                .restoreSessionPrompt,
                 .refactorOfSyncPreferences,
                 .subscriptionPurchaseWidePixelMeasurement,
                 .subscriptionRestoreWidePixelMeasurement,
@@ -300,7 +318,11 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .historyViewSitesSection,
                 .blurryAddressBarTahoeFix,
                 .pinnedTabsViewRewrite,
-                .vpnConnectionWidePixelMeasurement:
+                .vpnConnectionWidePixelMeasurement,
+                .allowPopupsForCurrentPage,
+                .extendedUserInitiatedPopupTimeout,
+                .suppressEmptyPopUpsOnApproval,
+                .popupPermissionButtonPersistence:
             true
         default:
             false
@@ -336,7 +358,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .paidAIChat,
                 .exchangeKeysToSyncWithAnotherDevice,
                 .canScanUrlBasedSyncSetupBarcodes,
-                .privacyProFreeTrial,
                 .removeWWWInCanonicalizationInThreatProtection,
                 .osSupportForceUnsupportedMessage,
                 .osSupportForceWillSoonDropSupportMessage,
@@ -358,7 +379,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .newTabPageTabIDs,
                 .vpnToolbarUpsell,
                 .supportsAlternateStripePaymentFlow,
-                .restoreSessionPrompt,
                 .openFireWindowByDefault,
                 .duckAISearchParameter,
                 .refactorOfSyncPreferences,
@@ -389,7 +409,14 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .showHideAIGeneratedImagesSection,
                 .standaloneMigration,
                 .blackFridayCampaign,
-                .newTabPageAutoconsentStats:
+                .newTabPageAutoconsentStats,
+                .tierMessagingEnabled,
+                .allowProTierPurchase,
+                .popupBlocking,
+                .extendedUserInitiatedPopupTimeout,
+                .suppressEmptyPopUpsOnApproval,
+                .allowPopupsForCurrentPage,
+                .popupPermissionButtonPersistence:
             return true
         case .sslCertificatesBypass,
                 .appendAtbToSerpQueries,
@@ -466,8 +493,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
         case .canScanUrlBasedSyncSetupBarcodes:
             return .remoteReleasable(.subfeature(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
-        case .privacyProFreeTrial:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrial))
         case .paidAIChat:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.paidAIChat))
         case .removeWWWInCanonicalizationInThreatProtection:
@@ -514,8 +539,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
         case .openFireWindowByDefault:
             return .remoteReleasable(.feature(.openFireWindowByDefault))
-        case .restoreSessionPrompt:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.restoreSessionPrompt))
         case .duckAISearchParameter:
             return .enabled
         case .subscriptionPurchaseWidePixelMeasurement:
@@ -561,7 +584,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .pinnedTabsViewRewrite:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.pinnedTabsViewRewrite))
         case .tabProgressIndicator:
-            return .disabled
+            return .internalOnly()
         case .attributedMetrics:
             return .remoteReleasable(.feature(.attributedMetrics))
         case .vpnConnectionWidePixelMeasurement:
@@ -572,6 +595,20 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.standaloneMigration))
         case .newTabPageAutoconsentStats:
             return .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.autoconsentStats))
+        case .tierMessagingEnabled:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.tierMessagingEnabled))
+        case .allowProTierPurchase:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.allowProTierPurchase))
+        case .popupBlocking:
+            return .remoteReleasable(.feature(.popupBlocking))
+        case .extendedUserInitiatedPopupTimeout:
+            return .remoteReleasable(.subfeature(PopupBlockingSubfeature.extendedUserInitiatedPopupTimeout))
+        case .suppressEmptyPopUpsOnApproval:
+            return .remoteReleasable(.subfeature(PopupBlockingSubfeature.suppressEmptyPopUpsOnApproval))
+        case .allowPopupsForCurrentPage:
+            return .remoteReleasable(.subfeature(PopupBlockingSubfeature.allowPopupsForCurrentPage))
+        case .popupPermissionButtonPersistence:
+            return .remoteReleasable(.subfeature(PopupBlockingSubfeature.popupPermissionButtonPersistence))
         }
     }
 }

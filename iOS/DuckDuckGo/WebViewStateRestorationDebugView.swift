@@ -23,41 +23,8 @@ import AIChat
 struct WebViewStateRestorationDebugView: View {
     @StateObject private var viewModel = WebViewStateRestorationDebugViewModel()
 
-    private var localFlagEnabled: Binding<Bool> {
-        Binding {
-            viewModel.isLocalFlagEnabled
-        } set: {
-            viewModel.setLocalFlagEnabled($0)
-        }
-    }
-
     var body: some View {
         List {
-            Section {
-                Toggle(isOn: localFlagEnabled,
-                       label: {
-                    Text(verbatim: "Local setting enabled")
-                })
-            } header: {
-                Text(verbatim: "Feature settings")
-            } footer: {
-                Text(verbatim: "Requires internal user flag set to have an effect. Restart is required after modifying the flag.")
-            }
-
-            Section {
-                HStack {
-                    Text(verbatim: "WebView state restoration enabled")
-                    Spacer()
-                    if viewModel.isFeatureEnabled {
-                        Image(systemName: "checkmark")
-                            .foregroundColor(Color(designSystemColor: .accent))
-                    } else {
-                        Image(systemName: "xmark")
-                            .foregroundColor(Color(baseColor: .red40))
-                    }
-                }
-            }
-
             Section {
                 ForEach(viewModel.allFiles, id: \.self) { file in
                     Text(verbatim: file.lastPathComponent)
@@ -80,29 +47,16 @@ struct WebViewStateRestorationDebugView: View {
 }
 
 private final class WebViewStateRestorationDebugViewModel: ObservableObject {
-    private var debugSettings = AIChatDebugSettings()
     private let interactionStateSource = TabInteractionStateDiskSource()
-    private var featureManager = WebViewStateRestorationManager()
 
-    @Published private(set) var isFeatureEnabled: Bool
     @Published private(set) var allFiles: [URL]
-    @Published private(set) var isLocalFlagEnabled: Bool
 
     init() {
-        isFeatureEnabled = featureManager.isFeatureEnabled
-        isLocalFlagEnabled = featureManager.isLocalOverrideEnabled
         allFiles = (try? interactionStateSource?.allCacheFiles()) ?? []
     }
 
     func clearCache() {
         interactionStateSource?.removeAll(excluding: [])
         allFiles = (try? interactionStateSource?.allCacheFiles()) ?? []
-    }
-
-    func setLocalFlagEnabled(_ enabled: Bool) {
-        featureManager.isLocalOverrideEnabled = enabled
-
-        isFeatureEnabled = featureManager.isFeatureEnabled
-        isLocalFlagEnabled = featureManager.isLocalOverrideEnabled
     }
 }

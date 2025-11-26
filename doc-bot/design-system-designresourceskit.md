@@ -1,6 +1,6 @@
 ---
 alwaysApply: true
-title: "DuckDuckGo iOS Design System & DesignResourcesKit (DRK)"
+title: "DuckDuckGo iOS Design System & DesignResourcesKit (design-system-designresourceskit.md)"
 description: "DuckDuckGo iOS design system implementation through DesignResourcesKit including typography, colors, component strategy, enforcement mechanisms, and modularization guidelines"
 keywords: ["design system", "DesignResourcesKit", "DRK", "typography", "colors", "icons", "UIKit", "SwiftUI", "Figma", "semantic colors", "Danger", "modularization"]
 ---

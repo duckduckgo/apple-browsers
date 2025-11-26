@@ -58,6 +58,16 @@ final class SuggestionTableCellView: NSTableCellView {
     @IBOutlet var switchToTabBoxTrailingConstraint: NSLayoutConstraint!
     @IBOutlet weak var iconImageViewLeadingConstraint: NSLayoutConstraint!
     @IBOutlet weak var searchSuggestionTextFieldLeadingConstraint: NSLayoutConstraint!
+    @IBOutlet var switchToTabLabelLeadingConstraint: NSLayoutConstraint!
+
+    private lazy var keyboardShortcutView: KeyboardShortcutView = {
+        let view = KeyboardShortcutView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.configure(with: ["⌥", "↩"])
+        return view
+    }()
+
+    private var labelLeadingToShortcutsConstraint: NSLayoutConstraint?
 
     var theme: ThemeStyleProviding?
     var suggestion: Suggestion?
@@ -106,6 +116,37 @@ final class SuggestionTableCellView: NSTableCellView {
             .kern: 0.06,
         ]
         return NSAttributedString(string: text, attributes: attributes)
+    }
+
+    private func setupKeyboardShortcutView() {
+        guard keyboardShortcutView.superview == nil else { return }
+
+        switchToTabBox.addSubview(keyboardShortcutView)
+
+        NSLayoutConstraint.activate([
+            keyboardShortcutView.leadingAnchor.constraint(equalTo: switchToTabBox.leadingAnchor, constant: 8),
+            keyboardShortcutView.centerYAnchor.constraint(equalTo: switchToTabBox.centerYAnchor)
+        ])
+
+        labelLeadingToShortcutsConstraint = switchToTabLabel.leadingAnchor.constraint(
+            equalTo: keyboardShortcutView.trailingAnchor,
+            constant: 4
+        )
+    }
+
+    private func updateKeyboardShortcutVisibility() {
+        let showShortcuts: Bool
+        if case .aiChat = cellStyle {
+            showShortcuts = true
+        } else {
+            showShortcuts = false
+        }
+
+        keyboardShortcutView.isHidden = !showShortcuts
+        keyboardShortcutView.isHighlighted = isSelected
+
+        switchToTabLabelLeadingConstraint?.isActive = !showShortcuts
+        labelLeadingToShortcutsConstraint?.isActive = showShortcuts
     }
 
     override func awakeFromNib() {
@@ -184,6 +225,7 @@ final class SuggestionTableCellView: NSTableCellView {
             switchToTabBox.isHidden = frame.size.width <= 272
             switchToTabLabel.attributedStringValue = Self.chatWithAIAttributedString
             switchToTabArrowView.isHidden = false
+            setupKeyboardShortcutView()
         case .visit(let host):
             suffixTextField.stringValue = ""
             switchToTabBox.isHidden = frame.size.width <= 272
@@ -195,6 +237,7 @@ final class SuggestionTableCellView: NSTableCellView {
         }
 
         setRemoveButtonHidden(true)
+        updateKeyboardShortcutVisibility()
         updateTextField()
     }
 
@@ -232,6 +275,8 @@ final class SuggestionTableCellView: NSTableCellView {
                 suffixTextField.textColor = theme?.colorsProvider.addressBarSuffixTextColor ?? Constants.suffixColor
             }
         }
+
+        updateKeyboardShortcutVisibility()
     }
 
     private func updateImageViews() {
@@ -265,11 +310,12 @@ final class SuggestionTableCellView: NSTableCellView {
             suffixTrailingConstraint.constant = Constants.trailingSpace
         } else {
             let boxWidth: CGFloat
+            let keyboardShortcutsWidth: CGFloat = 48
             switch cellStyle {
             case .search:
                 boxWidth = Self.searchTheWebBoxWidth
             case .aiChat:
-                boxWidth = Self.chatWithAIBoxWidth
+                boxWidth = Self.chatWithAIBoxWidth + keyboardShortcutsWidth
             case .visit(let host):
                 let visitAttrString = Self.visitAttributedString(host: host)
                 boxWidth = visitAttrString.size().width + Constants.switchToTabExtraSpace

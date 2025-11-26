@@ -92,7 +92,7 @@ class HomeButtonUITests: UITestCase {
             duckduckGoText.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "DuckDuckGo site New Tab didn't become available in a reasonable timeframe."
         )
-        
+
         // Also validate address bar shows expected URL
         let addressBarValue = app.addressBarValueActivatingIfNeeded()
         XCTAssertTrue(

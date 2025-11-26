@@ -835,7 +835,7 @@ extension XCUIApplication {
             "View menu item didn't become available in a reasonable timeframe."
         )
         viewMenu.click()
-        
+
         let menuItem = menuItems["Show Right of the Reload Button"].firstMatch
         XCTAssertTrue(
             menuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),

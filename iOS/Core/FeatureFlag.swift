@@ -251,7 +251,7 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614122594
     case fullDuckAIMode
 
-    /// Enables fadeout animation when toggling between Search and Duck.ai modes
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212197756955039?focus=true
     case fadeoutOnToggle
 
     /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053

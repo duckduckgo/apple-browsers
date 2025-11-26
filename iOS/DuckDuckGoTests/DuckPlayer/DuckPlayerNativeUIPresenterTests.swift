@@ -168,8 +168,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             appSettings: mockAppSettings,
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
-            notificationCenter: testNotificationCenter,
-            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(privacyConfig: mockPrivacyConfig)
+            notificationCenter: testNotificationCenter
         )
 
         // Subscribe to constraint updates
@@ -953,7 +952,6 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
-            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -985,7 +983,6 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
-            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1016,7 +1013,6 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
-            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1220,8 +1216,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             appSettings: mockAppSettings,
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
-            notificationCenter: testNotificationCenter,
-            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock()
+            notificationCenter: testNotificationCenter
         )
         
         // Store weak reference
@@ -1241,8 +1236,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             appSettings: mockAppSettings,
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
-            notificationCenter: testNotificationCenter,
-            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock()
+            notificationCenter: testNotificationCenter
         )
         
         // Verify observer is working
@@ -1272,7 +1266,6 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
-            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1294,7 +1287,6 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
-            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1316,7 +1308,6 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
-            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1344,7 +1335,6 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
-            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1369,7 +1359,6 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
-            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         
@@ -1394,7 +1383,6 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             duckPlayerSettings: mockDuckPlayerSettings,
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter,
-            userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
             pixelHandler: MockDuckPlayerPixelHandler.self
         )
         

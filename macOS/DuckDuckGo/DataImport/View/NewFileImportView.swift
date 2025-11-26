@@ -485,14 +485,7 @@ struct NewFileImportView: View {
             }
 
             VStack(alignment: .center, spacing: 20) {
-                switch source {
-                case .safari, .safariTechnologyPreview:
-                    Image(nsImage: isTargeted ? DesignSystemImages.Color.Size128.fileDrop : DesignSystemImages.Color.Size128.fileDrag)
-                default:
-                    Image(.passwordsAdd96)
-                        .resizable()
-                        .frame(width: 54, height: 54)
-                }
+                Image(nsImage: isTargeted ? DesignSystemImages.Color.Size128.fileDrop : DesignSystemImages.Color.Size128.fileDrag)
 
                 VStack(alignment: .center, spacing: 0) {
                     Text(UserText.importDragAndDropFile).font(.system(size: 14, weight: .bold))

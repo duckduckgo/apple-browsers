@@ -89,4 +89,3 @@ struct SubscriptionPageFeatureFlagAdapterTests {
         #expect(adapter.isEnabled(.subscriptionRestoreWidePixelMeasurement) == false)
     }
 }
-

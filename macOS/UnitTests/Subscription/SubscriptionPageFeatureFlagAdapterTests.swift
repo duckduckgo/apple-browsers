@@ -23,7 +23,7 @@ import FeatureFlags
 
 @Suite("SubscriptionPageFeatureFlagAdapter Tests")
 struct SubscriptionPageFeatureFlagAdapterTests {
-    
+
     @Test("Flag mapping correctness", arguments: [
         (SubscriptionPageFeatureFlag.paidAIChat, FeatureFlag.paidAIChat, true),
         (SubscriptionPageFeatureFlag.paidAIChat, FeatureFlag.paidAIChat, false),
@@ -48,10 +48,10 @@ struct SubscriptionPageFeatureFlagAdapterTests {
             mockFlagger.enabledFeatureFlags = [appFlag]
         }
         let adapter = SubscriptionPageFeatureFlagAdapter(featureFlagger: mockFlagger)
-        
+
         #expect(adapter.isEnabled(subscriptionFlag) == isEnabled)
     }
-    
+
     @Test("All flags respond independently")
     func allFlagsIndependent() {
         // Enable only paidAIChat
@@ -59,7 +59,7 @@ struct SubscriptionPageFeatureFlagAdapterTests {
         mockFlagger.enabledFeatureFlags = [.paidAIChat]
 
         let adapter = SubscriptionPageFeatureFlagAdapter(featureFlagger: mockFlagger)
-        
+
         // Only paidAIChat should be enabled
         #expect(adapter.isEnabled(.paidAIChat) == true)
         #expect(adapter.isEnabled(.tierMessaging) == false)
@@ -68,7 +68,7 @@ struct SubscriptionPageFeatureFlagAdapterTests {
         #expect(adapter.isEnabled(.subscriptionPurchaseWidePixelMeasurement) == false)
         #expect(adapter.isEnabled(.subscriptionRestoreWidePixelMeasurement) == false)
     }
-    
+
     @Test("Multiple flags can be enabled simultaneously")
     func multipleFlagsEnabled() {
         let mockFlagger = MockFeatureFlagger()
@@ -77,9 +77,9 @@ struct SubscriptionPageFeatureFlagAdapterTests {
             .tierMessagingEnabled,
             .allowProTierPurchase
         ]
-        
+
         let adapter = SubscriptionPageFeatureFlagAdapter(featureFlagger: mockFlagger)
-        
+
         #expect(adapter.isEnabled(.paidAIChat) == true)
         #expect(adapter.isEnabled(.tierMessaging) == true)
         #expect(adapter.isEnabled(.proTierPurchase) == true)

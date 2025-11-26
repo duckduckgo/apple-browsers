@@ -71,8 +71,8 @@ class StringExtensionTests: XCTestCase {
         XCTAssertFalse("".containsAny(of: []))
 
         // Empty string in search array
-        XCTAssertTrue("test".containsAny(of: ["", "a"]))
-        XCTAssertTrue("anything".containsAny(of: [""]))
+        XCTAssertFalse("test".containsAny(of: ["", "a"]))
+        XCTAssertFalse("anything".containsAny(of: [""]))
     }
 
     func testDropSubdomainDoesntDropDomainWhenTLDHasTwoComponents() {

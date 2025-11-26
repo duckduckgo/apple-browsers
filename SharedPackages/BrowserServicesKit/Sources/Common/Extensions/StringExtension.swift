@@ -524,7 +524,7 @@ public extension StringProtocol {
     /// - Returns: `true` if the string contains at least one of the provided strings (case-insensitive),
     ///           `false` if none are found or if the array is empty.
     func containsAny(of strings: [String]) -> Bool {
-        guard !strings.isEmpty else {
+        guard !strings.isEmpty, !self.isEmpty else {
             return false
         }
         let lowercasedSelf = self.lowercased()

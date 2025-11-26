@@ -181,7 +181,7 @@ public struct WideEventAppData: Codable {
         // We can't check whether we're running in the alpha build BSK, and need to avoid sending the alpha
         // product name - this check intercepts the alpha product name and returns the default app name instead.
         if productName == "DuckDuckGo-Alpha" {
-            return "DuckDucKGo"
+            return "DuckDuckGo"
         } else {
             return productName
         }

@@ -49,7 +49,7 @@ final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
 
     // MARK: - Initialization
 
-    init(timeElapsedInMinutes: Int?, pixelFiring: PixelFiring.Type = Pixel.self) {
+    init(timeElapsedInMinutes: Int? = nil, pixelFiring: PixelFiring.Type = Pixel.self) {
         self.timeElapsedInMinutes = timeElapsedInMinutes
         self.pixelFiring = pixelFiring
     }

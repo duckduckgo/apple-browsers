@@ -91,7 +91,9 @@ public struct EmailService: EmailServiceProtocol {
 
         var request = URLRequest(url: url)
         guard let authHeader = await authenticationManager.getAuthHeader() else {
-            servicePixel.fireEmptyAccessToken(callSite: .getEmail)
+            servicePixel.fireEmptyAccessToken(callSite: .getEmail,
+                                              dataBrokerURL: dataBrokerURL,
+                                              dataBrokerVersion: nil)
             throw AuthenticationError.noAuthToken
         }
 

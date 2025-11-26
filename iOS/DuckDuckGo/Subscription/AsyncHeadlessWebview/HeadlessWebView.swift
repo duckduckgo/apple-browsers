@@ -85,8 +85,8 @@ struct HeadlessWebView: UIViewRepresentable {
         let userContentController = WKUserContentController()
         
         // Enable content blocking rules
-        if settings.contentBlocking {
-            let sourceProvider = DefaultScriptSourceProvider(fireproofing: UserDefaultsFireproofing.xshared)
+        if let userScriptsDependencies = settings.userScriptsDependencies {
+            let sourceProvider = DefaultScriptSourceProvider(dependencies: userScriptsDependencies)
             let contentBlockerUserScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig)
             do {
                 let contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager,

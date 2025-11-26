@@ -1,5 +1,5 @@
 //
-//  MockAutoconsentDailyStats.swift
+//  MockWireGuardAdapterEventHandler.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,11 +16,12 @@
 //  limitations under the License.
 //
 
-import Foundation
-@testable import DuckDuckGo_Privacy_Browser
+@testable import VPN
 
-class MockAutoconsentDailyStat: AutoconsentDailyStatsManaging  {
-    func incrementPopupCount() {}
+final class MockWireGuardAdapterEventHandler: WireGuardAdapterEventHandling {
+    private(set) var handledEvents: [WireGuardAdapterEvent] = []
 
-    func sendDailyPixelIfNeeded() {}
+    func handle(_ event: WireGuardAdapterEvent) {
+        handledEvents.append(event)
+    }
 }

@@ -404,6 +404,9 @@ extension SuggestionJsonScenarioTests {
         func trackerFound(on: URL) {
         }
         
+        func cookiePopupBlocked(on: URL) {
+        }
+        
         func updateTitleIfNeeded(title: String, url: URL) {
         }
         
@@ -438,6 +441,12 @@ extension SuggestionJsonScenarioTests {
         func removeUrlEntry(_ url: URL, completion: (@MainActor ((any Error)?) -> Void)?) {
             MainActor.assumeMainThread {
                 completion?(nil)
+            }
+        }
+
+        func resetCookiePopupBlocked(for domains: Set<String>, tld: Common.TLD, completion: @escaping @MainActor () -> Void) {
+            MainActor.assumeMainThread {
+                completion()
             }
         }
     }

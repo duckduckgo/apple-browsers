@@ -47,6 +47,7 @@ public protocol HistoryCoordinating: AnyObject, HistoryCoordinatingDebuggingSupp
     @discardableResult @MainActor func addVisit(of url: URL) -> Visit?
     @MainActor func addBlockedTracker(entityName: String, on url: URL)
     @MainActor func trackerFound(on: URL)
+    @MainActor func cookiePopupBlocked(on: URL)
     @MainActor func updateTitleIfNeeded(title: String, url: URL)
     @MainActor func markFailedToLoadUrl(_ url: URL)
     @MainActor func commitChanges(url: URL)
@@ -56,6 +57,8 @@ public protocol HistoryCoordinating: AnyObject, HistoryCoordinatingDebuggingSupp
     @MainActor func burnAll(completion: @escaping @MainActor () -> Void)
     @MainActor func burnDomains(_ baseDomains: Set<String>, tld: TLD, completion: @escaping @MainActor (Set<URL>) -> Void)
     @MainActor func burnVisits(_ visits: [Visit], completion: @escaping @MainActor () -> Void)
+
+    @MainActor func resetCookiePopupBlocked(for domains: Set<String>, tld: TLD, completion: @escaping @MainActor () -> Void)
 
     @MainActor func removeUrlEntry(_ url: URL, completion: (@MainActor (Error?) -> Void)?)
 }
@@ -150,6 +153,21 @@ final public class HistoryCoordinator: HistoryCoordinating {
         entry.trackersFound = true
     }
 
+    public func cookiePopupBlocked(on url: URL) {
+        guard let historyDictionary else {
+            Logger.history.debug("Set cookie popup blocked on \(url.absoluteString) ignored, no history")
+            return
+        }
+
+        guard let entry = historyDictionary[url] else {
+            Logger.history.debug("Set cookie popup blocked on \(url.absoluteString) ignored, no entry")
+            return
+        }
+
+        entry.cookiePopupBlocked = true
+        commitChanges(url: url)
+    }
+
     public func updateTitleIfNeeded(title: String, url: URL) {
         guard let historyDictionary else { return }
         guard let entry = historyDictionary[url] else {
@@ -216,6 +234,26 @@ final public class HistoryCoordinator: HistoryCoordinating {
 
     public enum EntryRemovalError: Error {
         case notAvailable
+    }
+
+    @MainActor
+    public func resetCookiePopupBlocked(for domains: Set<String>, tld: TLD, completion: @escaping @MainActor () -> Void) {
+        guard let historyDictionary else {
+            completion()
+            return
+        }
+
+        let entries: [HistoryEntry] = historyDictionary.values.filter { historyEntry in
+            guard let host = historyEntry.url.host,
+                  domains.contains(tld.eTLDplus1(host) ?? host) else { return false }
+            return true
+        }
+
+        for entry in entries {
+            entry.cookiePopupBlocked = false
+            commitChanges(url: entry.url)
+        }
+        completion()
     }
 
     @MainActor
@@ -369,7 +407,7 @@ final public class HistoryCoordinator: HistoryCoordinating {
         Task {
             do {
                 let result = try await historyStoring.save(entry: entryCopy)
-                Logger.history.debug("Visit entry updated successfully. URL: \(entry.url.absoluteString), Title: \(entry.title ?? "-"), Number of visits: \(entry.numberOfTotalVisits), failed to load: \(entry.failedToLoad ? "yes" : "no")")
+                Logger.history.debug("Visit entry updated successfully. URL: \(entry.url.absoluteString), Title: \(entry.title ?? "-"), Number of visits: \(entry.numberOfTotalVisits), failed to load: \(entry.failedToLoad ? "yes" : "no"), cookie popup blocked: \(entry.cookiePopupBlocked ? "yes" : "no")")
                 await MainActor.run {
                     for (id, date) in result {
                         if let visit = entry.visits.first(where: { $0.date == date }) {

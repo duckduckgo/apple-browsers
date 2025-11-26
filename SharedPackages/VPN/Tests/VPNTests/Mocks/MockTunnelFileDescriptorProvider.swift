@@ -1,8 +1,7 @@
 //
-//  MockSubscriptionFreeTrialsHelping.swift
-//  DuckDuckGo
+//  MockTunnelFileDescriptorProvider.swift
 //
-//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,12 +17,16 @@
 //
 
 import Foundation
-@testable import DuckDuckGo
-@testable import BrowserServicesKit
-@testable import Common
-@testable import UserScript
-@testable import Subscription
+@testable import VPN
 
-class MockSubscriptionFreeTrialsHelping: SubscriptionFreeTrialsHelping {
-    var areFreeTrialsEnabled: Bool = false
+final class MockTunnelFileDescriptorProvider: TunnelFileDescriptorProviding {
+    var fileDescriptor: Int32?
+
+    init(fileDescriptor: Int32?) {
+        self.fileDescriptor = fileDescriptor
+    }
+
+    func currentFileDescriptor() -> Int32? {
+        fileDescriptor
+    }
 }

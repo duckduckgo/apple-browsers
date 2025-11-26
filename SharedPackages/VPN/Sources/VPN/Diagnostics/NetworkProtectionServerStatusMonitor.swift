@@ -44,7 +44,7 @@ public actor NetworkProtectionServerStatusMonitor: ServerStatusMonitoring {
         }
     }
 
-    var isStarted: Bool {
+    public var isStarted: Bool {
         task?.isCancelled == false
     }
 

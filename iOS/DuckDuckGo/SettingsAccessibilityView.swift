@@ -28,14 +28,12 @@ struct SettingsAccessibilityView: View {
 
     var body: some View {
         List {
-            if viewModel.state.textZoom.enabled {
-                Section(footer: Text(UserText.textZoomDescription)) {
-                    // Text Size
-                    SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,
-                                           label: UserText.settingsText,
-                                           options: TextZoomLevel.allCases,
-                                           selectedOption: viewModel.textZoomLevelBinding)
-                }
+            Section(footer: Text(UserText.textZoomDescription)) {
+                // Text Size
+                SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,
+                                       label: UserText.settingsText,
+                                       options: TextZoomLevel.allCases,
+                                       selectedOption: viewModel.textZoomLevelBinding)
             }
 
             if viewModel.state.speechRecognitionAvailable {

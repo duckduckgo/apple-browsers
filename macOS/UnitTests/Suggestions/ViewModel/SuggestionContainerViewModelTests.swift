@@ -384,7 +384,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
 extension SuggestionContainerViewModel {
 
     convenience init(suggestionContainer: SuggestionContainer, searchPreferences: SearchPreferences) {
-        self.init(isHomePage: false, isBurner: false, suggestionContainer: suggestionContainer, searchPreferences: searchPreferences, themeManager: MockThemeManager())
+        self.init(isHomePage: false, isBurner: false, suggestionContainer: suggestionContainer, searchPreferences: searchPreferences, themeManager: MockThemeManager(), featureFlagger: MockFeatureFlagger())
     }
 
 }

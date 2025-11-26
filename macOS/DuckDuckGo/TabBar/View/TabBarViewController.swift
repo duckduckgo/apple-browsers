@@ -51,7 +51,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     @IBOutlet weak var fireButton: MouseOverAnimationButton!
     @IBOutlet weak var draggingSpace: NSView!
     @IBOutlet weak var windowDraggingViewLeadingConstraint: NSLayoutConstraint!
-    @IBOutlet weak var burnerWindowBackgroundView: NSImageView!
+
+    private var fireWindowBackgroundView: NSImageView?
 
     private var pinnedTabsCollectionView: PinnedTabsCollectionView?
 
@@ -96,6 +97,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private weak var crashPopoverViewController: PopoverMessageViewController?
 
     let themeManager: ThemeManaging
+    private let tabDragAndDropManager: TabDragAndDropManager
     var themeUpdateCancellable: AnyCancellable?
 
     var tabPreviewsEnabled: Bool = true
@@ -157,7 +159,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         bookmarkManager: BookmarkManager,
         fireproofDomains: FireproofDomains,
         activeRemoteMessageModel: ActiveRemoteMessageModel,
-        featureFlagger: FeatureFlagger
+        featureFlagger: FeatureFlagger,
+        tabDragAndDropManager: TabDragAndDropManager
     ) -> TabBarViewController {
         NSStoryboard(name: "TabBar", bundle: nil).instantiateInitialController { coder in
             self.init(
@@ -166,7 +169,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
                 bookmarkManager: bookmarkManager,
                 fireproofDomains: fireproofDomains,
                 activeRemoteMessageModel: activeRemoteMessageModel,
-                featureFlagger: featureFlagger
+                featureFlagger: featureFlagger,
+                tabDragAndDropManager: tabDragAndDropManager
             )
         }!
     }
@@ -181,15 +185,19 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
           fireproofDomains: FireproofDomains,
           activeRemoteMessageModel: ActiveRemoteMessageModel,
           featureFlagger: FeatureFlagger,
-          themeManager: ThemeManager = NSApp.delegateTyped.themeManager) {
+          themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
+          tabDragAndDropManager: TabDragAndDropManager) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.fireproofDomains = fireproofDomains
         self.featureFlagger = featureFlagger
         let tabBarActiveRemoteMessageModel = TabBarActiveRemoteMessage(activeRemoteMessageModel: activeRemoteMessageModel)
-        self.tabBarRemoteMessageViewModel = TabBarRemoteMessageViewModel(activeRemoteMessageModel: tabBarActiveRemoteMessageModel,
-                                                                         isFireWindow: tabCollectionViewModel.isBurner)
+        self.tabBarRemoteMessageViewModel = TabBarRemoteMessageViewModel(
+            activeRemoteMessageModel: tabBarActiveRemoteMessageModel,
+            isFireWindow: tabCollectionViewModel.isBurner
+        )
         self.themeManager = themeManager
+        self.tabDragAndDropManager = tabDragAndDropManager
 
         standardTabHeight = themeManager.theme.tabStyleProvider.standardTabHeight
         pinnedTabHeight = themeManager.theme.tabStyleProvider.pinnedTabHeight
@@ -257,7 +265,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         setupPinnedTabsView()
         subscribeToTabModeChanges()
         setupAddTabButton()
-        setupAsBurnerWindowIfNeeded()
+        setupAsBurnerWindowIfNeeded(theme: theme)
         subscribeToPinnedTabsSettingChanged()
         setupScrollButtons()
         setupTabsContainersHeight()
@@ -399,18 +407,48 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         pinnedTabsContainerHeightConstraint.constant = theme.tabStyleProvider.pinnedTabsContainerViewHeight
     }
 
-    private func setupAsBurnerWindowIfNeeded() {
-        if tabCollectionViewModel.isBurner {
-            burnerWindowBackgroundView.image = theme.fireWindowGraphic
-            burnerWindowBackgroundView.isHidden = false
-            fireButton.isAnimationEnabled = false
-            fireButton.backgroundColor = NSColor.fireButtonRedBackground
-            fireButton.mouseOverColor = NSColor.fireButtonRedHover
-            fireButton.mouseDownColor = NSColor.fireButtonRedPressed
-            fireButton.normalTintColor = NSColor.white
-            fireButton.mouseDownTintColor = NSColor.white
-            fireButton.mouseOverTintColor = NSColor.white
+    private func addFireWindowBackgroundViewIfNeeded() {
+        guard !tabCollectionViewModel.isPopup else { return }
+
+        if fireWindowBackgroundView == nil {
+            let imageView = NSImageView()
+            imageView.translatesAutoresizingMaskIntoConstraints = false
+            imageView.imageScaling = .scaleAxesIndependently
+            imageView.imageAlignment = .alignBottom
+            imageView.isHidden = true
+            fireWindowBackgroundView = imageView
         }
+
+        guard let fireWindowBackgroundView, fireWindowBackgroundView.superview == nil else { return }
+
+        view.addSubview(fireWindowBackgroundView, positioned: .above, relativeTo: visualEffectBackgroundView)
+
+        NSLayoutConstraint.activate([
+            fireWindowBackgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -2),
+            fireWindowBackgroundView.topAnchor.constraint(equalTo: view.topAnchor),
+            fireWindowBackgroundView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            fireWindowBackgroundView.widthAnchor.constraint(equalToConstant: 96)
+        ])
+    }
+
+    private func setupAsBurnerWindowIfNeeded(theme: (any ThemeStyleProviding)? = nil) {
+        guard tabCollectionViewModel.isBurner,
+              !tabCollectionViewModel.isPopup else { return }
+
+        fireButton.isAnimationEnabled = false
+        fireButton.backgroundColor = NSColor.fireButtonRedBackground
+        fireButton.mouseOverColor = NSColor.fireButtonRedHover
+        fireButton.mouseDownColor = NSColor.fireButtonRedPressed
+        fireButton.normalTintColor = NSColor.white
+        fireButton.mouseDownTintColor = NSColor.white
+        fireButton.mouseOverTintColor = NSColor.white
+
+        addFireWindowBackgroundViewIfNeeded()
+
+        let currentTheme = theme ?? self.theme
+        guard let fireWindowBackgroundView else { return }
+        fireWindowBackgroundView.image = currentTheme.fireWindowGraphic
+        fireWindowBackgroundView.isHidden = false
     }
 
     private func setupAccessibility() {
@@ -754,13 +792,13 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private func moveItemIfNeeded(to newIndex: TabIndex) {
         let tabCollection = newIndex.isPinnedTab ? tabCollectionViewModel.pinnedTabsCollection : tabCollectionViewModel.tabCollection
         guard let tabCollection,
-              TabDragAndDropManager.shared.sourceUnit?.tabCollectionViewModel === tabCollectionViewModel,
+              tabDragAndDropManager.sourceUnit?.tabCollectionViewModel === tabCollectionViewModel,
               tabCollection.tabs.indices.contains(newIndex.item),
-              let oldIndex = TabDragAndDropManager.shared.sourceUnit?.index,
+              let oldIndex = tabDragAndDropManager.sourceUnit?.index,
               oldIndex != newIndex else { return }
 
         tabCollectionViewModel.moveTab(at: oldIndex, to: newIndex)
-        TabDragAndDropManager.shared.setSource(tabCollectionViewModel: tabCollectionViewModel, index: newIndex)
+        tabDragAndDropManager.setSource(tabCollectionViewModel: tabCollectionViewModel, index: newIndex)
     }
 
     private func moveToNewWindow(unpinnedIndex: Int, droppingPoint: NSPoint? = nil, burner: Bool) {
@@ -1171,6 +1209,8 @@ extension TabBarViewController: MouseOverButtonDelegate {
 extension TabBarViewController: ThemeUpdateListening {
 
     func applyThemeStyle(theme: any ThemeStyleProviding) {
+        setupAsBurnerWindowIfNeeded(theme: theme)
+
         let colorsProvider = theme.colorsProvider
         let isFireWindow = tabCollectionViewModel.isBurner
 
@@ -1526,7 +1566,7 @@ extension TabBarViewController: NSCollectionViewDelegate {
 
         let tabIndex: TabIndex = collectionView == pinnedTabsCollectionView ? .pinned(indexPath.item) : .unpinned(indexPath.item)
 
-        TabDragAndDropManager.shared.setSource(tabCollectionViewModel: tabCollectionViewModel, index: tabIndex)
+        tabDragAndDropManager.setSource(tabCollectionViewModel: tabCollectionViewModel, index: tabIndex)
         hideTabPreview()
     }
 
@@ -1592,7 +1632,7 @@ extension TabBarViewController: NSCollectionViewDelegate {
               draggingInfo.draggingPasteboard.types == [TabBarViewItemPasteboardWriter.utiInternalType] else { return false }
 
         // update drop destination
-        TabDragAndDropManager.shared.setDestination(tabCollectionViewModel: tabCollectionViewModel, index: tabIndex)
+        tabDragAndDropManager.setDestination(tabCollectionViewModel: tabCollectionViewModel, index: tabIndex)
 
         return true
     }
@@ -1605,12 +1645,12 @@ extension TabBarViewController: NSCollectionViewDelegate {
         guard !tabCollectionViewModel.burnerMode.isBurner else { return }
 
         defer {
-            TabDragAndDropManager.shared.clear()
+            tabDragAndDropManager.clear()
         }
 
         if case .private = operation {
             // Perform the drag and drop between multiple windows
-            TabDragAndDropManager.shared.performDragAndDropIfNeeded()
+            tabDragAndDropManager.performDragAndDropIfNeeded()
             DispatchQueue.main.async {
                 self.collectionView.scrollToSelected()
             }
@@ -1621,8 +1661,8 @@ extension TabBarViewController: NSCollectionViewDelegate {
 
         // Create a new window if dragged upward or too distant
         let frameRelativeToWindow = view.convert(view.bounds, to: nil)
-        guard TabDragAndDropManager.shared.sourceUnit?.tabCollectionViewModel === tabCollectionViewModel,
-              let sourceIndex = TabDragAndDropManager.shared.sourceUnit?.index,
+        guard tabDragAndDropManager.sourceUnit?.tabCollectionViewModel === tabCollectionViewModel,
+              let sourceIndex = tabDragAndDropManager.sourceUnit?.index,
               let frameRelativeToScreen = view.window?.convertToScreen(frameRelativeToWindow) else {
             return
         }

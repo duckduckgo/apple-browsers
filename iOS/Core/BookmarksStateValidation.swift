@@ -60,7 +60,7 @@ public class BookmarksStateValidator: BookmarksStateValidation {
         let fetch = BookmarkEntity.fetchRequest()
         do {
             let count = try context.count(for: fetch)
-            if count != 0 {
+            if count == 0 {
                 errorHandler(validationError, nil)
                 return false
             }

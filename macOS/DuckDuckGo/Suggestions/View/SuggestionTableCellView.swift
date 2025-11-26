@@ -178,17 +178,17 @@ final class SuggestionTableCellView: NSTableCellView {
             suffixTextField.stringValue = " – DuckDuckGo"
             switchToTabBox.isHidden = frame.size.width <= 272
             switchToTabLabel.attributedStringValue = Self.searchTheWebAttributedString
-            switchToTabArrowView.isHidden = true
+            switchToTabArrowView.isHidden = false
         case .aiChat:
             suffixTextField.stringValue = " – Duck.ai"
             switchToTabBox.isHidden = frame.size.width <= 272
             switchToTabLabel.attributedStringValue = Self.chatWithAIAttributedString
-            switchToTabArrowView.isHidden = true
+            switchToTabArrowView.isHidden = false
         case .visit(let host):
             suffixTextField.stringValue = ""
             switchToTabBox.isHidden = frame.size.width <= 272
             switchToTabLabel.attributedStringValue = Self.visitAttributedString(host: host)
-            switchToTabArrowView.isHidden = true
+            switchToTabArrowView.isHidden = false
         case .default:
             suffixTextField.stringValue = ""
             switchToTabBox.isHidden = true
@@ -205,19 +205,27 @@ final class SuggestionTableCellView: NSTableCellView {
             Logger.general.error("SuggestionTableCellView: Attributed strings are nil")
             return
         }
+
+        let usesTransparentBox: Bool
+        if case .default = cellStyle {
+            usesTransparentBox = false
+        } else {
+            usesTransparentBox = true
+        }
+
         if isSelected {
             textField?.attributedStringValue = attributedString
             textField?.textColor = Constants.selectedTintColor
             suffixTextField.textColor = Constants.selectedTintColor
             switchToTabLabel.textColor = Constants.selectedTintColor
             switchToTabArrowView.contentTintColor = Constants.selectedTintColor
-            switchToTabBox.backgroundColor = .white.withAlphaComponent(0.09)
+            switchToTabBox.backgroundColor = usesTransparentBox ? .clear : .white.withAlphaComponent(0.09)
         } else {
             textField?.attributedStringValue = attributedString
             textField?.textColor = theme?.colorsProvider.addressBarTextFieldColor ?? Constants.textColor
             switchToTabLabel.textColor = Constants.textColor
             switchToTabArrowView.contentTintColor = Constants.textColor
-            switchToTabBox.backgroundColor = .buttonMouseOver
+            switchToTabBox.backgroundColor = usesTransparentBox ? .clear : .buttonMouseOver
             if isBurner {
                 suffixTextField.textColor = Constants.burnerSuffixColor
             } else {
@@ -269,28 +277,36 @@ final class SuggestionTableCellView: NSTableCellView {
                 boxWidth = Self.switchToTabBoxWidth
             }
 
-            var textWidth = attributedString?.boundingRect(with: bounds.size).width ?? 0
-            if textWidth < bounds.width {
-                textWidth += suffixTextField.attributedStringValue.boundingRect(with: bounds.size).width
+            let alwaysAnchorToTrailing: Bool
+            if case .default = cellStyle {
+                alwaysAnchorToTrailing = false
+            } else {
+                alwaysAnchorToTrailing = true
             }
-            if textField!.frame.minX
-                + textWidth
-                + Constants.switchToTabSuffixPadding
-                + boxWidth
-                + Constants.trailingSpace > bounds.width {
 
-                // when cropping title+suffix to fit the trailing box
-                // tie the box to the right boundary
+            if alwaysAnchorToTrailing {
                 switchToTabBoxLeadingConstraint.isActive = false
                 switchToTabBoxTrailingConstraint.isActive = true
-                // crop title+suffix to fit the trailing box
                 suffixTrailingConstraint.constant = boxWidth + Constants.trailingSpace + Constants.switchToTabSuffixPadding
             } else {
-                switchToTabBoxTrailingConstraint.isActive = false
-                // we can fit everything: align trailing box left edge after the suffix
-                switchToTabBoxLeadingConstraint.constant = textField!.frame.minX + textWidth + Constants.switchToTabSuffixPadding
-                switchToTabBoxLeadingConstraint.isActive = true
-                suffixTrailingConstraint.constant = Constants.trailingSpace
+                var textWidth = attributedString?.boundingRect(with: bounds.size).width ?? 0
+                if textWidth < bounds.width {
+                    textWidth += suffixTextField.attributedStringValue.boundingRect(with: bounds.size).width
+                }
+                if textField!.frame.minX
+                    + textWidth
+                    + Constants.switchToTabSuffixPadding
+                    + boxWidth
+                    + Constants.trailingSpace > bounds.width {
+
+                    switchToTabBoxLeadingConstraint.isActive = false
+                    switchToTabBoxTrailingConstraint.isActive = true
+                } else {
+                    switchToTabBoxTrailingConstraint.isActive = false
+                    switchToTabBoxLeadingConstraint.constant = textField!.frame.minX + textWidth + Constants.switchToTabSuffixPadding
+                    switchToTabBoxLeadingConstraint.isActive = true
+                    suffixTrailingConstraint.constant = Constants.trailingSpace
+                }
             }
         }
 
@@ -299,5 +315,4 @@ final class SuggestionTableCellView: NSTableCellView {
 
         super.layout()
     }
-
 }

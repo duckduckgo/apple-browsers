@@ -35,7 +35,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     var testPermissionManager: TestPermissionManager!
     var webView: DuckDuckGo_Privacy_Browser.WebView!
     var mockMachAbsTime: TimeInterval!
-    var childTabCreated: ((WKWebViewConfiguration, WKNavigationAction, NewWindowPolicy) -> Tab?)?
+    var createChildTab: ((WKWebViewConfiguration, WKNavigationAction, NewWindowPolicy) -> Tab?)?
     var tabPresented: ((Tab, NewWindowPolicy) -> Void)?
     var cancellables = Set<AnyCancellable>()
     var configuration: WKWebViewConfiguration!
@@ -59,7 +59,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         mockPopupBlockingConfig = nil
         mockPermissionModel = nil
         testPermissionManager = nil
-        childTabCreated = nil
+        createChildTab = nil
         tabPresented = nil
         cancellables.removeAll()
         webView = nil
@@ -70,10 +70,12 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     }
 
     @MainActor
-    private func createExtension(isTabPinned: Bool = false, isBurner: Bool = false) -> PopupHandlingTabExtension {
+    private func createExtension(isTabPinned: Bool = false, isBurner: Bool = false, switchToNewTabWhenOpened: Bool = true) -> PopupHandlingTabExtension {
         let windowControllersManager = WindowControllersManagerMock()
+        let mockPersistor = MockTabsPreferencesPersistor()
+        mockPersistor.switchToNewTabWhenOpened = switchToNewTabWhenOpened
         let tabsPreferences = TabsPreferences(
-            persistor: MockTabsPreferencesPersistor(),
+            persistor: mockPersistor,
             windowControllersManager: windowControllersManager
         )
 
@@ -82,7 +84,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             burnerMode: BurnerMode(isBurner: isBurner),
             permissionModel: mockPermissionModel,
             createChildTab: { [weak self] config, action, policy in
-                self?.childTabCreated?(config, action, policy)
+                self?.createChildTab?(config, action, policy)
             },
             presentTab: { [weak self] tab, policy in
                 self?.tabPresented?(tab, policy)
@@ -480,7 +482,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
 
         let queryAddedExpectation = expectation(description: "Permission query added")
         let permissionGrantedExpectation = expectation(description: "Permission callback completed")
-        permissionGrantedExpectation.isInverted = true // We expect childTabCreated NOT to be called
+        permissionGrantedExpectation.isInverted = true // We expect createChildTab NOT to be called
 
         // Subscribe to permission query changes
         mockPermissionModel.$authorizationQuery
@@ -493,7 +495,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             }
             .store(in: &cancellables)
 
-        childTabCreated = { _, _, _ in
+        createChildTab = { _, _, _ in
             permissionGrantedExpectation.fulfill() // This shouldn't happen
             return nil
         }
@@ -506,7 +508,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         // Wait for query to be added and granted
         wait(for: [queryAddedExpectation], timeout: 1.0)
 
-        // Wait to ensure childTabCreated is NOT called
+        // Wait to ensure createChildTab is NOT called
         wait(for: [permissionGrantedExpectation], timeout: 0.1)
     }
 
@@ -531,7 +533,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             }
             .store(in: &cancellables)
 
-        childTabCreated = { _, _, _ in
+        createChildTab = { _, _, _ in
             popupCreatedExpectation.fulfill()
             return nil
         }
@@ -570,7 +572,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             }
             .store(in: &cancellables)
 
-        childTabCreated = { _, _, _ in
+        createChildTab = { _, _, _ in
             permissionCallbackExpectation.fulfill() // Shouldn't be called
             return nil
         }
@@ -621,7 +623,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             }
             .store(in: &cancellables)
 
-        childTabCreated = { _, _, _ in
+        createChildTab = { _, _, _ in
             permissionCallbackExpectation.fulfill() // Shouldn't be called
             return nil
         }
@@ -672,7 +674,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             }
             .store(in: &cancellables)
 
-        childTabCreated = { _, _, _ in
+        createChildTab = { _, _, _ in
             permissionCallbackExpectation.fulfill() // Shouldn't be called
             return nil
         }
@@ -723,7 +725,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             }
             .store(in: &cancellables)
 
-        childTabCreated = { _, _, _ in
+        createChildTab = { _, _, _ in
             permissionCallbackExpectation.fulfill() // Shouldn't be called
             return nil
         }
@@ -784,7 +786,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             }
             .store(in: &cancellables)
 
-        childTabCreated = { _, _, _ in
+        createChildTab = { _, _, _ in
             permissionCallbackExpectation.fulfill() // Shouldn't be called
             return nil
         }
@@ -833,7 +835,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             }
             .store(in: &cancellables)
 
-        childTabCreated = { _, _, _ in nil }
+        createChildTab = { _, _, _ in nil }
 
         // First popup with empty URL
         let firstAction = WKNavigationAction.mock(url: .empty, webView: webView, isUserInitiated: false)
@@ -885,7 +887,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             }
             .store(in: &cancellables)
 
-        childTabCreated = { _, _, _ in
+        createChildTab = { _, _, _ in
             permissionCallbackExpectation.fulfill()
             return nil
         }
@@ -985,7 +987,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             let navigationAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: false)
 
             // Advance time by exactly 6.0 seconds (at boundary)
-            self.mockMachAbsTime = interactionTime + 6.0
+            self.mockMachAbsTime = interactionTime + 6.001
 
             let bypassReason = self.popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
                 for: navigationAction,
@@ -1034,7 +1036,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             }
             .store(in: &cancellables)
 
-        childTabCreated = { _, _, _ in
+        createChildTab = { _, _, _ in
             popupCreatedExpectation.fulfill()
             return nil
         }
@@ -1067,7 +1069,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             }
             .store(in: &cancellables)
 
-        childTabCreated = { _, _, _ in
+        createChildTab = { _, _, _ in
             popupCreatedExpectation.fulfill()
             return nil
         }
@@ -1090,7 +1092,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         let popupCreatedExpectation = expectation(description: "Popup not created")
         popupCreatedExpectation.isInverted = true
 
-        childTabCreated = { _, _, _ in
+        createChildTab = { _, _, _ in
             popupCreatedExpectation.fulfill() // Shouldn't happen
             return nil
         }
@@ -1113,7 +1115,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         let secondPopupExpectation = expectation(description: "Second popup created")
 
         var popupCount = 0
-        childTabCreated = { _, _, _ in
+        createChildTab = { _, _, _ in
             popupCount += 1
             if popupCount == 1 {
                 firstPopupExpectation.fulfill()
@@ -1157,9 +1159,6 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         // Record user interaction
         webView.mouseDown(with: .mock(.leftMouseDown, timestamp: interactionTime))
 
-        // Wait for interaction to be recorded
-        try? await Task.sleep(nanoseconds: 100_000_000)
-
         // WHEN - Regular click (no modifiers) - should stay in current tab
         let navigationAction = NavigationAction(
             request: URLRequest(url: URL(string: "https://example.com")!),
@@ -1202,11 +1201,8 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         let interactionTime: TimeInterval = 1000.0
         mockMachAbsTime = interactionTime
 
-        // Record user interaction
-        webView.mouseDown(with: .mock(.leftMouseDown, timestamp: interactionTime))
-
-        // Wait for interaction to be recorded
-        try? await Task.sleep(nanoseconds: 100_000_000)
+        // Record user interaction (⌘-click)
+        webView.mouseDown(with: .mock(.leftMouseDown, timestamp: interactionTime, modifierFlags: .command))
 
         // WHEN - ⌘-click - should open in new tab
         // Note: The actual navigation will be cancelled and reopened via loadInNewWindow
@@ -1256,9 +1252,6 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
 
         // Record user interaction - middle mouse down
         webView.otherMouseDown(with: .mock(.otherMouseDown, timestamp: interactionTime))
-
-        // Wait for interaction to be recorded
-        try? await Task.sleep(nanoseconds: 100_000_000)
 
         // WHEN - Middle-click - should open in new tab
         // Note: The actual navigation will be cancelled and reopened via loadInNewWindow
@@ -1368,9 +1361,9 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
 
         let popupCreatedExpectation = expectation(description: "Popup created")
 
-        childTabCreated = { _, _, _ in
+        createChildTab = { configuration, _, _ in
             popupCreatedExpectation.fulfill()
-            return nil
+            return Tab(content: .none, webViewConfiguration: configuration)
         }
 
         // WHEN - User-initiated popup
@@ -1393,9 +1386,9 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
 
         let popupCreatedExpectation = expectation(description: "Popup created")
 
-        childTabCreated = { _, _, _ in
+        createChildTab = { configuration, _, _ in
             popupCreatedExpectation.fulfill()
-            return nil
+            return Tab(content: .none, webViewConfiguration: configuration)
         }
 
         // WHEN - Non-user-initiated popup (permission already granted)
@@ -1416,9 +1409,9 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
 
         let popupCreatedExpectation = expectation(description: "Popup created")
 
-        childTabCreated = { _, _, _ in
+        createChildTab = { configuration, _, _ in
             popupCreatedExpectation.fulfill()
-            return nil
+            return Tab(content: .none, webViewConfiguration: configuration)
         }
 
         // Create a non-user-initiated popup to set the flag
@@ -1452,9 +1445,9 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             }
             .store(in: &cancellables)
 
-        childTabCreated = { _, _, _ in
+        createChildTab = { configuration, _, _ in
             popupCreatedExpectation.fulfill()
-            return nil
+            return Tab(content: .none, webViewConfiguration: configuration)
         }
 
         // WHEN - Non-user-initiated popup opens
@@ -1481,9 +1474,9 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             }
             .store(in: &cancellables)
 
-        childTabCreated = { _, _, _ in
+        createChildTab = { configuration, _, _ in
             popupCreatedExpectation.fulfill()
-            return nil
+            return Tab(content: .none, webViewConfiguration: configuration)
         }
 
         // WHEN - User-initiated popup opens
@@ -1498,12 +1491,19 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     // MARK: - onNewWindow Callback Mechanism Tests
 
     @MainActor
-    func testOnNewWindowCallback_ClearedAfterUse() {
+    func testOnNewWindowCallback_ClearedAfterUse() async {
         // GIVEN
+        mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
         mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
         popupHandlingExtension = createExtension()
 
-        // First, set up onNewWindow via decidePolicy
+        let interactionTime: TimeInterval = 1000.0
+        mockMachAbsTime = interactionTime
+
+        // Record user interaction (⌘-click)
+        webView.mouseDown(with: .mock(.leftMouseDown, timestamp: interactionTime, modifierFlags: .command))
+
+        // Set up onNewWindow via decidePolicy
         let sourceFrame = FrameInfo(webView: webView, handle: FrameHandle(rawValue: 1), isMainFrame: true, url: URL(string: "https://source.com")!, securityOrigin: URL(string: "https://source.com")!.securityOrigin)
 
         let firstNavAction = NavigationAction(
@@ -1519,17 +1519,8 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         )
 
         // WHEN - First navigation with modifier keys
-        Task {
-            var prefs = NavigationPreferences.default
-            _ = await popupHandlingExtension.decidePolicy(for: firstNavAction, preferences: &prefs)
-        }
-
-        // Give it a moment to process
-        let expectation1 = expectation(description: "Wait for first policy")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            expectation1.fulfill()
-        }
-        wait(for: [expectation1], timeout: 1.0)
+        var prefs = NavigationPreferences.default
+        _ = await popupHandlingExtension.decidePolicy(for: firstNavAction, preferences: &prefs)
 
         // Now trigger createWebView which should consume the callback
         let wkNavAction = WKNavigationAction.mock(url: URL(string: "https://first.com")!, webView: self.webView, isUserInitiated: false)
@@ -1547,10 +1538,17 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     }
 
     @MainActor
-    func testOnNewWindowCallback_OnlyMatchesCorrectURL() {
+    func testOnNewWindowCallback_OnlyMatchesCorrectURL() async {
         // GIVEN
+        mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
         mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
         popupHandlingExtension = createExtension()
+
+        let interactionTime: TimeInterval = 1000.0
+        mockMachAbsTime = interactionTime
+
+        // Record user interaction (⌘-click)
+        webView.mouseDown(with: .mock(.leftMouseDown, timestamp: interactionTime, modifierFlags: .command))
 
         let targetURL = URL(string: "https://target.com")!
         let sourceFrame = FrameInfo(webView: webView, handle: FrameHandle(rawValue: 1), isMainFrame: true, url: URL(string: "https://source.com")!, securityOrigin: URL(string: "https://source.com")!.securityOrigin)
@@ -1568,16 +1566,8 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         )
 
         // WHEN - Set up onNewWindow for specific URL
-        Task {
-            var prefs = NavigationPreferences.default
-            _ = await popupHandlingExtension.decidePolicy(for: navAction, preferences: &prefs)
-        }
-
-        let expectation1 = expectation(description: "Wait for policy")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            expectation1.fulfill()
-        }
-        wait(for: [expectation1], timeout: 1.0)
+        var prefs = NavigationPreferences.default
+        _ = await popupHandlingExtension.decidePolicy(for: navAction, preferences: &prefs)
 
         // THEN - Wrong URL should return nil
         let wrongURLAction = WKNavigationAction.mock(url: URL(string: "https://different.com")!, webView: self.webView, isUserInitiated: false)
@@ -1591,6 +1581,90 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             decision2,
             .allow(.tab(selected: true, burner: false, contextMenuInitiated: false)),
             "Matching URL should return .allow with tab policy"
+        )
+    }
+
+    @MainActor
+    func testOnNewWindowCallback_WithSwitchToNewTabDisabled() async {
+        // GIVEN
+        mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
+        mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
+        popupHandlingExtension = createExtension(switchToNewTabWhenOpened: false)
+
+        let interactionTime: TimeInterval = 1000.0
+        mockMachAbsTime = interactionTime
+
+        // Record user interaction (⌘-click)
+        webView.mouseDown(with: .mock(.leftMouseDown, timestamp: interactionTime, modifierFlags: .command))
+
+        // Set up onNewWindow via decidePolicy
+        let sourceFrame = FrameInfo(webView: webView, handle: FrameHandle(rawValue: 1), isMainFrame: true, url: URL(string: "https://source.com")!, securityOrigin: URL(string: "https://source.com")!.securityOrigin)
+
+        let firstNavAction = NavigationAction(
+            request: URLRequest(url: URL(string: "https://first.com")!),
+            navigationType: .linkActivated(isMiddleClick: false),
+            currentHistoryItemIdentity: nil,
+            redirectHistory: nil,
+            isUserInitiated: true,
+            sourceFrame: sourceFrame,
+            targetFrame: sourceFrame,
+            shouldDownload: false,
+            mainFrameNavigation: nil
+        )
+
+        // WHEN - First navigation with modifier keys and switchToNewTabWhenOpened = false
+        var prefs = NavigationPreferences.default
+        _ = await popupHandlingExtension.decidePolicy(for: firstNavAction, preferences: &prefs)
+
+        // THEN - Decision should have selected = false
+        let wkNavAction = WKNavigationAction.mock(url: URL(string: "https://first.com")!, webView: self.webView, isUserInitiated: false)
+        let decision = popupHandlingExtension.decideNewWindowPolicy(for: wkNavAction)
+        XCTAssertEqual(
+            decision,
+            .allow(.tab(selected: false, burner: false, contextMenuInitiated: false)),
+            "Should return .allow with tab policy and selected = false"
+        )
+    }
+
+    @MainActor
+    func testOnNewWindowCallback_MiddleClickWithSwitchToNewTabDisabled() async {
+        // GIVEN
+        mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
+        mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
+        popupHandlingExtension = createExtension(switchToNewTabWhenOpened: false)
+
+        let interactionTime: TimeInterval = 1000.0
+        mockMachAbsTime = interactionTime
+
+        // Record middle mouse interaction
+        webView.otherMouseDown(with: .mock(.otherMouseDown, timestamp: interactionTime))
+
+        let targetURL = URL(string: "https://target.com")!
+        let sourceFrame = FrameInfo(webView: webView, handle: FrameHandle(rawValue: 1), isMainFrame: true, url: URL(string: "https://source.com")!, securityOrigin: URL(string: "https://source.com")!.securityOrigin)
+
+        let navAction = NavigationAction(
+            request: URLRequest(url: targetURL),
+            navigationType: .linkActivated(isMiddleClick: true),
+            currentHistoryItemIdentity: nil,
+            redirectHistory: nil,
+            isUserInitiated: true,
+            sourceFrame: sourceFrame,
+            targetFrame: sourceFrame,
+            shouldDownload: false,
+            mainFrameNavigation: nil
+        )
+
+        // WHEN - Middle-click with switchToNewTabWhenOpened = false
+        var prefs = NavigationPreferences.default
+        _ = await popupHandlingExtension.decidePolicy(for: navAction, preferences: &prefs)
+
+        // THEN - Decision should have selected = false
+        let correctURLAction = WKNavigationAction.mock(url: targetURL, webView: webView, isUserInitiated: false)
+        let decision = popupHandlingExtension.decideNewWindowPolicy(for: correctURLAction)
+        XCTAssertEqual(
+            decision,
+            .allow(.tab(selected: false, burner: false, contextMenuInitiated: false)),
+            "Middle-click should return .allow with tab policy and selected = false"
         )
     }
 }

@@ -237,19 +237,6 @@ extension UITestCase {
         Logger.log(message)
     }
 
-    /// Logs a message with safe optional value formatting using the ??? operator.
-    /// 
-    /// This helper method provides a convenient way to log messages with optional values
-    /// without having to manually use the ??? operator inline.
-    /// 
-    /// - Parameters:
-    ///   - message: The message to log
-    ///   - value: Optional value to include in log
-    ///   - defaultValue: String to use if value is nil (default: "<nil>")
-    static func logDebug(_ message: String, _ value: Any?, defaultValue: String = "<nil>") {
-        Logger.log("\(message): \(value ??? defaultValue)")
-    }
-
     // MARK: - File Management Methods
 
     /// Track a file path for cleanup after the test completes.

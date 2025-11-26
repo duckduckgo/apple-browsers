@@ -36,32 +36,32 @@ struct NewImportSummaryView: View {
     }
 
     var body: some View {
-        VStack {
-            Image(nsImage: viewModel.shouldShowSuccessImage ? DesignSystemImages.Color.Size128.success : sourceImage)
+        VStack(spacing: 20) {
+            Image(nsImage: viewModel.shouldShowSuccessImage ? DesignSystemImages.Color.Size128.bringStuff : sourceImage)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: viewModel.shouldShowSuccessImage ? 96 : 72)
-                .padding(.top, 20)
-                .padding(.bottom, 10)
-            VStack(spacing: 20) {
-                ForEach(viewModel.items) { item in
-                    VStack(alignment: .leading, spacing: 0) {
-                        switch item {
-                        case .success(let successItem):
-                            importSuccessRow(item: successItem, in: item)
-                        case .failure(let title):
-                            NewImportErrorView(text: title)
-                        }
+            Text(UserText.importDataSummaryTitle)
+                .font(.title2)
+                .fontWeight(.semibold)
+                .foregroundColor(.primary)
+            ForEach(viewModel.items) { item in
+                VStack(alignment: .leading, spacing: 0) {
+                    switch item {
+                    case .success(let successItem):
+                        importSuccessRow(item: successItem, in: item)
+                    case .failure(let title):
+                        NewImportErrorView(text: title)
                     }
-                    .borderedBackground()
                 }
-                if viewModel.shouldShowFeedbackView {
-                    NewReportFeedbackView(model: $reportModel)
-                }
+                .borderedBackground()
             }
-            .padding(.bottom, 20)
+            if viewModel.shouldShowFeedbackView {
+                NewReportFeedbackView(model: $reportModel)
+            }
         }
-        .padding(20)
+        .padding(.vertical, 40)
+        .padding(.horizontal, 20)
     }
 
     @ViewBuilder

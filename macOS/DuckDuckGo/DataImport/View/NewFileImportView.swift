@@ -252,7 +252,7 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         if #available(macOS 15.2, *) {
             NSLocalizedString("import.csv.instructions.safari.macos15-2", value: """
             %d Open **Safari → File → Export Browsing Data to File...**
-            %d Select **passwords** and save the file
+            %d Select **Passwords** and save the file
             %d Double click the .zip file to unzip it, then upload the CSV file to DuckDuckGo
             """, comment: """
             Instructions to import Passwords as CSV from Safari zip file on >= macOS 15.2.
@@ -314,7 +314,7 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
     case (.onePassword8, .passwords):
         NSLocalizedString("import.csv.instructions.onePassword8.new", value: """
         %d Open **%s → File → Export** and select an account to export
-        %d Select format **CSV Logins and Passwords only → Export** and save the file
+        %d Select format **CSV (Logins and Passwords only) → Export Data** and save the file
         %d Upload the exported CSV file to DuckDuckGo
         """, comment: """
         Instructions to import Passwords as CSV from 1Password 8.
@@ -325,45 +325,43 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
 
     case (.onePassword7, .passwords):
         NSLocalizedString("import.csv.instructions.onePassword7.new", value: """
-        %d Open **%s** and select the vault you want to export (one vault at a time)
-        %d Select **File → Export → All Items**
-        %d Enter your 1Password password
-        %d Select **File Format: iCloud Keychain (.csv)** and save the file
+        %d Open **%s** and select the vault to export **→ File → Export → All Items** from the menu bar
+        %d Select the format **Comma Delimited Text (.csv)** and save the file
         %d Upload the exported CSV file to DuckDuckGo
         """, comment: """
         Instructions to import Passwords as CSV from 1Password 7.
-        %2$s - app name (1Password)
+        %d - step number
+        %s - app name (1Password)
         **bold text**; _italic text_
         """)
         source.importSourceName
 
     case (.bitwarden, .passwords):
         NSLocalizedString("import.csv.instructions.bitwarden.new", value: """
-        %d Open and unlock **%s → File → Export vault**
-        %d Select **File Format: .csv**
-        %d Enter your Bitwarden password → Click %@ and save the file
+        %d Open **%s → Settings** and scroll down to **Tools →** select **Export vault**
+        %d Select the **File Format: .csv → Export vault** and save the file
         %d Upload the exported CSV file to DuckDuckGo
         """, comment: """
         Instructions to import Passwords as CSV from Bitwarden.
-        %2$s - app name (Bitwarden)
-        %5$@ - download icon
+        %d - step number
+        %s - app name (Bitwarden)
         **bold text**; _italic text_
         """)
         source.importSourceName
-        NSImage(systemSymbolName: "square.and.arrow.down", accessibilityDescription: nil) ?? .downloads
 
     case (.lastPass, .passwords):
         NSLocalizedString("import.csv.instructions.lastpass.new", value: """
-        %d Click the **%s** icon in your browser → enter your password → **Open My Vault**
-        %d From the sidebar: **Advanced Options → Export**
-        %d Enter your LastPass password
-        %d Select **File Format: Comma Delimited Text (.csv)** and save the file
+        %d Log in to the **%s** website → select **Advanced Options → Export → Continue**. You'll receive a verification email.
+        %d In the email, click **Continue export**, then return to **%s** and select **Advanced Options → Export → Submit** and save the **CSV** file 
         %d Upload the exported CSV file to DuckDuckGo
         """, comment: """
         Instructions to import Passwords as CSV from LastPass.
-        %2$s - app name (LastPass)
+        %d - step number
+        %s - app name (LastPass) - first instance
+        %s - app name (LastPass) - second instance
         **bold text**; _italic text_
         """)
+        source.importSourceName
         source.importSourceName
 
     case (.csv, .passwords):

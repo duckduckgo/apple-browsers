@@ -53,6 +53,8 @@ final class AttributedMetricDebugMenu: NSMenu, NSMenuDelegate {
 
             NSMenuItem(title: "Last Retention Threshold: \(attributedMetricDataStorage.lastRetentionThreshold?.description ?? "nil")")
 
+            NSMenuItem(title: "Debug Origin: \(attributedMetricDataStorage.debugOrigin ?? "nil")")
+
             NSMenuItem.separator()
 
             NSMenuItem(title: "Search (8 days): \(attributedMetricDataStorage.search8Days.debugDescription)")

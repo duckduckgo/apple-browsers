@@ -28,6 +28,7 @@ import Combine
 import AIChat
 import SetDefaultBrowserCore
 import ContentBlocking
+import os.log
 
 /// Reporting service for various metrics:
 /// - AttributedMetric: https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053
@@ -249,6 +250,7 @@ struct DefaultAttributedMetricSettingsProvider: AttributedMetricSettingsProvidin
         guard let originSettingString = privacyConfig.settings(for: AttributedMetricsSubfeature.sendOriginParam),
               let settingsData = originSettingString.data(using: .utf8),
               let settings = try? JSONDecoder().decode(OriginSettings.self, from: settingsData) else {
+            Logger.attributedMetric.error("Failed to decode origin settings, returning empty list")
             return []
         }
         return settings.originCampaignSubstrings

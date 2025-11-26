@@ -21,6 +21,7 @@ import AttributedMetric
 import BrowserServicesKit
 import Subscription
 import AppKit
+import os.log
 
 extension SystemDefaultBrowserProvider: AttributedMetricDefaultBrowserProviding {
 
@@ -41,6 +42,7 @@ struct DefaultAttributedMetricSettingsProvider: AttributedMetricSettingsProvidin
         guard let originSettingString = privacyConfig.settings(for: AttributedMetricsSubfeature.sendOriginParam),
               let settingsData = originSettingString.data(using: .utf8),
               let settings = try? JSONDecoder().decode(OriginSettings.self, from: settingsData) else {
+            Logger.attributedMetric.error("Failed to decode origin settings, returning empty list")
             return []
         }
         return settings.originCampaignSubstrings

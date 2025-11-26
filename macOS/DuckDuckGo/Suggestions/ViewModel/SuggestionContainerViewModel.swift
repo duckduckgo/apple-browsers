@@ -37,6 +37,8 @@ enum SuggestionRowContent: Equatable {
     case searchCell
     /// The AI chat cell row (shown when AI chat toggle and AI features are enabled)
     case aiChatCell
+    /// The visit cell row (shown when user types a URL-like string)
+    case visitCell
     /// A divider row between sections
     case sectionDivider
     /// A suggestion item at the given index
@@ -77,21 +79,48 @@ final class SuggestionContainerViewModel {
     /// When true, the header section is hidden and the AI chat cell moves to the footer.
     @Published private(set) var hasAutoSelectedSuggestion = false
 
+    /// Whether the user input looks like a URL (e.g., "apple.com").
+    /// When true, the visit cell is shown first and the search cell is hidden.
+    private var userInputIsURL: Bool {
+        guard let userStringValue, !userStringValue.isEmpty else { return false }
+        guard let url = URL(trimmedAddressBarString: userStringValue) else { return false }
+        return url.isValid
+    }
+
+    /// The URL parsed from user input, used for the visit cell display.
+    var parsedURLFromUserInput: URL? {
+        guard let userStringValue, !userStringValue.isEmpty else { return nil }
+        guard let url = URL(trimmedAddressBarString: userStringValue), url.isValid else { return nil }
+        return url
+    }
+
+    /// The host to display in the visit cell suffix (e.g., "apple.com").
+    var visitCellHost: String? {
+        parsedURLFromUserInput?.root?.toString(decodePunycode: true, dropScheme: true, dropTrailingSlash: true)
+    }
+
     /// Whether to show header cells (search and AI chat at the top).
-    /// Header is hidden when a suggestion is auto-selected.
+    /// Header is hidden when a suggestion is auto-selected OR when user input is a URL.
     private var shouldShowHeaderSection: Bool {
-        !hasAutoSelectedSuggestion
+        !hasAutoSelectedSuggestion && !userInputIsURL
     }
 
     /// Whether to show the AI chat cell in the footer section.
-    /// Footer AI chat is shown when a suggestion is auto-selected.
+    /// Footer AI chat is shown when a suggestion is auto-selected OR when user input is a URL.
     private var shouldShowAIChatCellInFooter: Bool {
-        hasAutoSelectedSuggestion && shouldShowAIChatCellBase
+        (hasAutoSelectedSuggestion || userInputIsURL) && shouldShowAIChatCellBase
+    }
+
+    /// Whether to show the visit cell in the header (when user types a URL-like string).
+    private var shouldShowVisitCell: Bool {
+        guard featureFlagger.isFeatureOn(.aiChatOmnibarToggle) else { return false }
+        return userInputIsURL
     }
 
     var numberOfHeaderRows: Int {
-        guard shouldShowHeaderSection else { return 0 }
         var count = 0
+        if shouldShowVisitCell { count += 1 }
+        guard shouldShowHeaderSection else { return count }
         if shouldShowSearchCell { count += 1 }
         if shouldShowAIChatCell { count += 1 }
         return count
@@ -102,7 +131,8 @@ final class SuggestionContainerViewModel {
     }
 
     private var shouldShowHeaderDivider: Bool {
-        numberOfHeaderRows > 0 && numberOfSuggestions > 0
+        guard !shouldShowVisitCell else { return false }
+        return numberOfHeaderRows > 0 && numberOfSuggestions > 0
     }
 
     private var shouldShowFooterDivider: Bool {
@@ -132,6 +162,7 @@ final class SuggestionContainerViewModel {
     private func buildRowContents() -> [SuggestionRowContent] {
         var contents: [SuggestionRowContent] = []
 
+        if shouldShowVisitCell { contents.append(.visitCell) }
         if shouldShowSearchCell { contents.append(.searchCell) }
         if shouldShowAIChatCell { contents.append(.aiChatCell) }
 
@@ -170,9 +201,13 @@ final class SuggestionContainerViewModel {
     }
 
     /// Returns the default row to select when no suggestion is selected.
+    /// - When visit cell is shown: returns 0 (visit cell is first and should be selected)
     /// - When auto-selection is active: returns nil (the auto-selected suggestion handles selection)
     /// - When no auto-selection: returns the search cell row (0) if shown, otherwise nil
     var defaultSelectedRow: Int? {
+        if shouldShowVisitCell {
+            return 0
+        }
         if hasAutoSelectedSuggestion {
             return nil
         }

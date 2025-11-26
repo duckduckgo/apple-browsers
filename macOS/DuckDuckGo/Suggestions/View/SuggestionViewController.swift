@@ -330,7 +330,6 @@ extension SuggestionViewController: NSTableViewDelegate {
 
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         guard let rowContent = suggestionContainerViewModel.rowContent(at: row) else {
-            assertionFailure("SuggestionViewController: Invalid row index")
             return nil
         }
 
@@ -352,6 +351,12 @@ extension SuggestionViewController: NSTableViewDelegate {
             let userText = suggestionContainerViewModel.userStringValue ?? ""
             let aiChatIcon: NSImage = .aiChat
             cell.display(userText: userText, style: .aiChat, icon: aiChatIcon, isBurner: self.isBurner)
+
+        case .visitCell:
+            let userText = suggestionContainerViewModel.userStringValue ?? ""
+            let host = suggestionContainerViewModel.visitCellHost ?? ""
+            let websiteIcon = themeManager.theme.iconsProvider.suggestionsIconsProvider.websiteEntryIcon
+            cell.display(userText: userText, style: .visit(host: host), icon: websiteIcon, isBurner: self.isBurner)
 
         case .sectionDivider:
             break // Already handled above

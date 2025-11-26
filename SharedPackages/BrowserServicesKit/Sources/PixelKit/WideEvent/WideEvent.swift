@@ -248,7 +248,7 @@ public final class WideEvent: WideEventManaging {
         }
 
         let finalPixelName = Self.generatePixelName(for: pixelName)
-        let event = WideEventPixelKitEvent(name: finalPixelName, parameters: parameters)
+        let event = WideEventPixelKitEvent(name: finalPixelName, parameters: parameters, standardParameters: [.pixelSource])
 
         pixelKit.fire(
             event,
@@ -318,9 +318,11 @@ public final class WideEvent: WideEventManaging {
 struct WideEventPixelKitEvent: PixelKitEvent {
     let name: String
     let parameters: [String: String]?
+    let standardParameters: [PixelKitStandardParameter]?
 
-    init(name: String, parameters: [String: String]) {
+    init(name: String, parameters: [String: String], standardParameters: [PixelKitStandardParameter]?) {
         self.name = name
         self.parameters = parameters
+        self.standardParameters = standardParameters
     }
 }

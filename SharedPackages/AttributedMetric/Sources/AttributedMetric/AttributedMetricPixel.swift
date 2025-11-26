@@ -139,6 +139,22 @@ enum AttributedMetricPixel: PixelKitEvent {
         }
     }
 
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .userRetentionWeek,
+                .userRetentionMonth,
+                .userActivePastWeek,
+                .userAverageSearchesPastWeekFirstMonth,
+                .userAverageSearchesPastWeek,
+                .userAverageAdClicksPastWeek,
+                .userAverageDuckAiUsagePastWeek,
+                .userSubscribed,
+                .userSyncedDevice,
+                .dataStoreError:
+            return [.pixelSource]
+        }
+    }
+
     func addBaseParamFor(dictionary: inout [String: String], origin: String?, installDate: String?) {
         if let origin {
             dictionary[ConstantKeys.origin] = origin

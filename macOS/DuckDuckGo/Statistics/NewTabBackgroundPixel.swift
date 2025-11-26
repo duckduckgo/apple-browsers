@@ -166,4 +166,21 @@ enum NewTabBackgroundPixel: PixelKitEvent {
         nil
     }
 
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .newTabBackgroundSelectedGradient,
+                .newTabBackgroundSelectedSolidColor,
+                .newTabBackgroundSelectedUserImage,
+                .newTabBackgroundReset,
+                .newTabBackgroundAddedUserImage,
+                .newTabBackgroundDeletedUserImage,
+                .newTabBackgroundInitializeStorageError,
+                .newTabBackgroundAddImageError,
+                .newTabBackgroundThumbnailGenerationError,
+                .newTabBackgroundImageNotFound,
+                .newTabBackgroundThumbnailNotFound:
+            return [.pixelSource]
+        }
+    }
+
 }

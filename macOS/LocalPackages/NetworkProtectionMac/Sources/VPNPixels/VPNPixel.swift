@@ -38,6 +38,10 @@ extension VPNPixel {
         scopedPixelName(forUnscopedPixelName: unscopedPixelName)
     }
 
+    public var standardParameters: [PixelKitStandardParameter]? {
+        [.pixelSource]
+    }
+
     func scopedPixelName(forUnscopedPixelName unscopedName: String) -> String {
         "\(vpnPixelModulePrefix)_\(unscopedName)"
     }

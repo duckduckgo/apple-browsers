@@ -78,18 +78,12 @@ public extension Bundle {
         return loginItemsURL.appendingPathComponent(productName + ".app")
     }
 
-    var vpnSystemExtensionBundleId: String {
-        guard let bundleID = object(forInfoDictionaryKey: Key.vpnSystemExtensionBundleId) as? String else {
-            fatalError("Info.plist is missing \(Key.vpnSystemExtensionBundleId)")
-        }
-        return bundleID
+    var vpnSystemExtensionBundleId: String? {
+        return object(forInfoDictionaryKey: Key.vpnSystemExtensionBundleId) as? String
     }
 
-    var vpnProxyExtensionBundleId: String {
-        guard let bundleID = object(forInfoDictionaryKey: Key.vpnProxyExtensionBundleId) as? String else {
-            fatalError("Info.plist is missing \(Key.vpnProxyExtensionBundleId)")
-        }
-        return bundleID
+    var vpnProxyExtensionBundleId: String? {
+        return object(forInfoDictionaryKey: Key.vpnProxyExtensionBundleId) as? String
     }
 
     var dbpBackgroundAgentBundleId: String {

@@ -21,21 +21,18 @@ import UIKit
 import SwiftUI
 import Combine
 import UIComponents
-import BrowserServicesKit
 
 class SwitchBarTextEntryViewController: UIViewController {
 
     // MARK: - Properties
     private let textEntryView: SwitchBarTextEntryView
     private let handler: SwitchBarHandling
-    private let featureFlagger: FeatureFlagger
     private let containerView = CompositeShadowView()
 
     let buttonsContainerView = UIView()
 
-    /// Returns true when using bottom bar with overlay layout (fadeoutOnToggle mode)
     private var isUsingOverlayButtonsLayout: Bool {
-        featureFlagger.isFeatureOn(.fadeoutOnToggle) && AppDependencyProvider.shared.appSettings.currentAddressBarPosition.isBottom
+        handler.usesExpandedBottomBarHeight
     }
 
     var textHeightChangePublisher: AnyPublisher<Void, Never> {
@@ -63,11 +60,9 @@ class SwitchBarTextEntryViewController: UIViewController {
     }
 
     // MARK: - Initialization
-    init(handler: SwitchBarHandling,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+    init(handler: SwitchBarHandling) {
         self.handler = handler
-        self.featureFlagger = featureFlagger
-        self.textEntryView = SwitchBarTextEntryView(handler: handler, featureFlagger: featureFlagger)
+        self.textEntryView = SwitchBarTextEntryView(handler: handler)
         super.init(nibName: nil, bundle: nil)
     }
 

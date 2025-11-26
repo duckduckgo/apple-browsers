@@ -22,7 +22,6 @@ import SwiftUI
 import Combine
 import DesignResourcesKitIcons
 import Core
-import BrowserServicesKit
 
 class SwitchBarTextEntryView: UIView {
 
@@ -47,7 +46,6 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private let handler: SwitchBarHandling
-    private let featureFlagger: FeatureFlagger
 
     private let textView = SwitchBarTextView()
     private let placeholderLabel = UILabel()
@@ -62,22 +60,19 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private var currentMinHeight: CGFloat {
-        guard featureFlagger.isFeatureOn(.fadeoutOnToggle) else {
+        guard handler.usesFadeoutAnimation else {
             return Constants.minHeight
         }
 
-        // Bottom bar position: use increased height for both modes
-        if AppDependencyProvider.shared.appSettings.currentAddressBarPosition.isBottom {
+        if handler.usesExpandedBottomBarHeight {
             return Constants.minHeightBottomBar
         }
 
-        // Top bar position: use increased height only for AI Chat mode
         return currentMode == .aiChat ? Constants.minHeightAIChat : Constants.minHeight
     }
 
-    /// Returns true when using bottom bar with increased height (fadeoutOnToggle mode)
     private var isUsingBottomBarIncreasedHeight: Bool {
-        featureFlagger.isFeatureOn(.fadeoutOnToggle) && AppDependencyProvider.shared.appSettings.currentAddressBarPosition.isBottom
+        handler.usesExpandedBottomBarHeight
     }
 
     private var cancellables = Set<AnyCancellable>()
@@ -119,10 +114,8 @@ class SwitchBarTextEntryView: UIView {
     }
 
     // MARK: - Initialization
-    init(handler: SwitchBarHandling,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+    init(handler: SwitchBarHandling) {
         self.handler = handler
-        self.featureFlagger = featureFlagger
         super.init(frame: .zero)
 
         setupView()
@@ -408,7 +401,7 @@ class SwitchBarTextEntryView: UIView {
             .sink { [weak self] _ in
                 guard let self else { return }
 
-                if self.featureFlagger.isFeatureOn(.fadeoutOnToggle) {
+                if self.handler.usesFadeoutAnimation {
                     self.superview?.layoutIfNeeded()
                     self.updateForCurrentMode()
                     UIView.animate(withDuration: 0.25) {

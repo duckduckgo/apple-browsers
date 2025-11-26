@@ -23,6 +23,7 @@ import Persistence
 import Core
 import UIKit
 import AIChat
+import BrowserServicesKit
 
 // MARK: - TextEntryMode Enum
 public enum TextEntryMode: String, CaseIterable {
@@ -41,6 +42,9 @@ protocol SwitchBarHandling: AnyObject {
     var isCurrentTextValidURL: Bool { get }
     var buttonState: SwitchBarButtonState { get }
     var isTopBarPosition: Bool { get }
+
+    var usesExpandedBottomBarHeight: Bool { get }
+    var usesFadeoutAnimation: Bool { get }
 
     var currentTextPublisher: AnyPublisher<String, Never> { get }
     var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> { get }
@@ -79,6 +83,7 @@ final class SwitchBarHandler: SwitchBarHandling {
     private let aiChatSettings: AIChatSettingsProvider
     private let funnelState: SwitchBarFunnelProviding
     private var sessionStateMetrics: SessionStateMetricsProviding
+    private let featureFlagger: FeatureFlagger
 
     // MARK: - Published Properties
     @Published private(set) var currentText: String = ""
@@ -92,6 +97,14 @@ final class SwitchBarHandler: SwitchBarHandling {
     private static var hasUsedAIChatInSession = false
 
     private(set) var isTopBarPosition: Bool = true
+
+    var usesExpandedBottomBarHeight: Bool {
+        featureFlagger.isFeatureOn(.fadeoutOnToggle) && !isTopBarPosition
+    }
+
+    var usesFadeoutAnimation: Bool {
+        featureFlagger.isFeatureOn(.fadeoutOnToggle)
+    }
 
     var isVoiceSearchEnabled: Bool {
         voiceSearchHelper.isVoiceSearchEnabled
@@ -142,12 +155,14 @@ final class SwitchBarHandler: SwitchBarHandling {
          storage: KeyValueStoring,
          aiChatSettings: AIChatSettingsProvider,
          funnelState: SwitchBarFunnelProviding = SwitchBarFunnel(storage: UserDefaults.standard),
-         sessionStateMetrics: SessionStateMetricsProviding) {
+         sessionStateMetrics: SessionStateMetricsProviding,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.voiceSearchHelper = voiceSearchHelper
         self.storage = storage
         self.aiChatSettings = aiChatSettings
         self.funnelState = funnelState
         self.sessionStateMetrics = sessionStateMetrics
+        self.featureFlagger = featureFlagger
 
         // Set up app lifecycle observers to reset session flags
         backgroundObserver = NotificationCenter.default.addObserver(

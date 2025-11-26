@@ -1237,7 +1237,7 @@ extension MainMenu: SharingMenuDelegate {
               tabViewModel.canReload,
               !tabViewModel.isShowingErrorPage,
               let url = tabViewModel.tab.content.userEditableUrl else { return nil }
-        
+
         return (tabViewModel.title, [url])
     }
 }

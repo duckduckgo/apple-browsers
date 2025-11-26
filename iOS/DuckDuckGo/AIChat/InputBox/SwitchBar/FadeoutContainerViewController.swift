@@ -188,12 +188,6 @@ final class FadeoutContainerViewController: UIViewController {
         }
 
         if animated {
-            // Use CATransaction to prevent implicit layout animations
-            CATransaction.begin()
-            CATransaction.setDisableActions(true)
-            view.layoutIfNeeded()
-            CATransaction.commit()
-            
             UIView.animate(withDuration: 0.25, animations: animations, completion: completion)
         } else {
             animations()

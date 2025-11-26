@@ -176,7 +176,15 @@ public struct WideEventAppData: Codable {
     /// - iOS: Uses CFBundleExecutable (the product name, which maps to Xcode targets)
     public static func defaultAppName() -> String {
         #if os(iOS)
-        return AppVersion.shared.productName
+        let productName = AppVersion.shared.productName
+
+        // We can't check whether we're running in the alpha build from BSK, but need to avoid sending the alpha
+        // product name - this check intercepts the alpha product name and returns the default app name instead.
+        if productName == "DuckDuckGo-Alpha" {
+            return "DuckDuckGo"
+        } else {
+            return productName
+        }
         #else
         return AppVersion.shared.name
         #endif

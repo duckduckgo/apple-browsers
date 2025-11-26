@@ -21,9 +21,6 @@ import Foundation
 import BrowserServicesKit
 
 public enum FeatureFlag: String {
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866466606715
-    case debugMenu
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866605041091
     case sync
 
@@ -108,9 +105,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866468784743
     case autocompleteTabs
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711501880
-    case textZoom
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711151217
     case adAttributionReporting
 
@@ -122,12 +116,6 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711635701
     case crashReportOptInStatusResetting
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866469242236
-    case privacyProFreeTrialJan25
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866469329722
-    case webViewStateRestoration
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866706505415
     case syncSeamlessAccountSwitching
@@ -159,9 +147,6 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866611816519
     case canScanUrlBasedSyncSetupBarcodes
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866470253328
-    case privacyProFreeTrial
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866470360367
     case autofillPasswordVariantCategorization
@@ -269,7 +254,7 @@ public enum FeatureFlag: String {
     /// macOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015252281641
     /// iOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015250423471
     case attributedMetrics
-    
+
     /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1211652685709099?focus=true
     case onboardingSearchExperience
 
@@ -284,6 +269,23 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1201141132935289/task/1210497696306780?focus=true
     case standaloneMigration
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211998610726855?focus=true
+    case tierMessagingEnabled
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211998614203542?focus=true
+    case allowProTierPurchase
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211992061067315?focus=true
+    case browsingMenuSheetPresentation
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1208824174611454?focus=true
+    case autofillExtensionSettings
+    case canPromoteAutofillExtensionInBrowser
+    case canPromoteAutofillExtensionInPasswordManagement
+
+    /// https://app.asana.com/1/137249556945/project/1201462886803403/task/1211326076710245?focus=true
+    case migrateKeychainAccessibility
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -305,7 +307,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .unifiedURLPredictor,
              .forgetAllInSettings,
              .vpnConnectionWidePixelMeasurement,
-             .showHideAIGeneratedImagesSection:
+             .migrateKeychainAccessibility:
             true
         default:
             false
@@ -314,8 +316,6 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var cohortType: (any FeatureFlagCohortDescribing.Type)? {
         switch self {
-        case .privacyProFreeTrialJan25:
-            PrivacyProFreeTrialExperimentCohort.self
         default:
             nil
         }
@@ -325,23 +325,19 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var supportsLocalOverriding: Bool {
         switch self {
-        case .textZoom,
-             .privacyProAuthV2,
+        case .privacyProAuthV2,
              .scamSiteProtection,
              .maliciousSiteProtection,
              .autocompleteAttributeSupport,
              .privacyProOnboardingPromotion,
              .duckPlayerNativeUI,
              .removeWWWInCanonicalizationInThreatProtection,
-             .privacyProFreeTrial,
              .autofillPasswordVariantCategorization,
              .syncSetupBarcodeIsUrlBased,
              .canScanUrlBasedSyncSetupBarcodes,
              .paidAIChat,
              .canInterceptSyncSetupUrls,
              .exchangeKeysToSyncWithAnotherDevice,
-             .canPromoteImportPasswordsInPasswordManagement,
-             .canPromoteImportPasswordsInBrowser,
              .setAsDefaultBrowserPiPVideoTutorial,
              .supportsAlternateStripePaymentFlow,
              .personalInformationRemoval,
@@ -355,7 +351,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .dbpRemoteBrokerDelivery,
              .subscriptionPurchaseWidePixelMeasurement,
              .showAIChatAddressBarChoiceScreen,
-             .newDeviceSyncPrompt,
              .subscriptionRestoreWidePixelMeasurement,
              .embeddedSERPSettings,
              .authV2WideEventEnabled,
@@ -373,7 +368,13 @@ extension FeatureFlag: FeatureFlagDescribing {
              .storeSerpSettings,
              .showHideAIGeneratedImagesSection,
              .standaloneMigration,
-             .blackFridayCampaign:
+             .blackFridayCampaign,
+             .tierMessagingEnabled,
+             .allowProTierPurchase,
+             .browsingMenuSheetPresentation,
+             .autofillExtensionSettings,
+             .canPromoteAutofillExtensionInBrowser,
+             .canPromoteAutofillExtensionInPasswordManagement:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -381,8 +382,7 @@ extension FeatureFlag: FeatureFlagDescribing {
             } else {
                 return false
             }
-        case .debugMenu,
-               .sync,
+        case .sync,
                .autofillCredentialInjecting,
                .autofillCredentialsSaving,
                .autofillInlineIconCredentials,
@@ -409,21 +409,21 @@ extension FeatureFlag: FeatureFlagDescribing {
                .autocompleteTabs,
                .adAttributionReporting,
                .crashReportOptInStatusResetting,
-               .privacyProFreeTrialJan25,
-               .webViewStateRestoration,
                .syncSeamlessAccountSwitching,
                .experimentalAddressBar,
                .aiChatKeepSession,
                .aiFeaturesSettingsUpdate,
-               .widgetReporting:
+               .widgetReporting,
+               .canPromoteImportPasswordsInBrowser,
+               .canPromoteImportPasswordsInPasswordManagement,
+               .newDeviceSyncPrompt,
+               .migrateKeychainAccessibility:
             return false
         }
     }
 
     public var source: FeatureFlagSource {
         switch self {
-        case .debugMenu:
-            return .internalOnly()
         case .sync:
             return .remoteReleasable(.subfeature(SyncSubfeature.level0ShowSync))
         case .autofillCredentialInjecting:
@@ -482,8 +482,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.autofillSurveys))
         case .autocompleteTabs:
             return .remoteReleasable(.feature(.autocompleteTabs))
-        case .textZoom:
-            return .remoteReleasable(.feature(.textZoom))
         case .adAttributionReporting:
             return .remoteReleasable(.feature(.adAttributionReporting))
         case .dbpRemoteBrokerDelivery:
@@ -492,10 +490,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DBPSubfeature.emailConfirmationDecoupling))
         case .crashReportOptInStatusResetting:
             return .internalOnly()
-        case .privacyProFreeTrialJan25:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrialJan25))
-        case .webViewStateRestoration:
-            return .remoteReleasable(.feature(.webViewStateRestoration))
         case .syncSeamlessAccountSwitching:
             return .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching))
         case .maliciousSiteProtection:
@@ -518,8 +512,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
         case .removeWWWInCanonicalizationInThreatProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.removeWWWInCanonicalization))
-        case .privacyProFreeTrial:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrial))
         case .autofillPasswordVariantCategorization:
             return .remoteReleasable(.subfeature(AutofillSubfeature.passwordVariantCategorization))
         case .paidAIChat:
@@ -592,6 +584,20 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.showHideAiGeneratedImages))
         case .standaloneMigration:
             return .remoteReleasable(.subfeature(AIChatSubfeature.standaloneMigration))
+        case .tierMessagingEnabled:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.tierMessagingEnabled))
+        case .allowProTierPurchase:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.allowProTierPurchase))
+        case .browsingMenuSheetPresentation:
+            return .disabled
+        case .autofillExtensionSettings:
+            return .remoteReleasable(.subfeature(AutofillSubfeature.autofillExtensionSettings))
+        case .canPromoteAutofillExtensionInBrowser:
+            return .remoteReleasable(.subfeature(AutofillSubfeature.canPromoteAutofillExtensionInBrowser))
+        case .canPromoteAutofillExtensionInPasswordManagement:
+            return .remoteReleasable(.subfeature(AutofillSubfeature.canPromoteAutofillExtensionInPasswordManagement))
+        case .migrateKeychainAccessibility:
+            return .remoteReleasable(.subfeature(AutofillSubfeature.migrateKeychainAccessibility))
         }
     }
 }
@@ -600,11 +606,4 @@ extension FeatureFlagger {
     public func isFeatureOn(_ featureFlag: FeatureFlag) -> Bool {
         return isFeatureOn(for: featureFlag)
     }
-}
-
-public enum PrivacyProFreeTrialExperimentCohort: String, FeatureFlagCohortDescribing {
-    /// Control cohort with no changes applied.
-    case control
-    /// Treatment cohort where the experiment modifications are applied.
-    case treatment
 }

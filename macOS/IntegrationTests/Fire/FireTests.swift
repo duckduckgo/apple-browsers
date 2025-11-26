@@ -602,6 +602,125 @@ final class FireTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenBurnEntityWithoutHistory_ThenCookiePopupFlagsAreReset() async {
+        let historyCoordinator = HistoryCoordinatingMock()
+        let manager = WebCacheManagerMock()
+        let permissionManager = PermissionManagerMock()
+        let faviconManager = FaviconManagerMock()
+
+        let fire = Fire(cacheManager: manager,
+                        historyCoordinating: historyCoordinator,
+                        permissionManager: permissionManager,
+                        windowControllersManager: Application.appDelegate.windowControllersManager,
+                        faviconManagement: faviconManager,
+                        pinnedTabsManagerProvider: pinnedTabsManagerProvider,
+                        tld: Application.appDelegate.tld)
+
+        let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel(with: pinnedTabsManagerProvider)
+        let domains: Set<String> = ["example.com", "test.org"]
+        let entity = Fire.BurningEntity.window(
+            tabCollectionViewModel: tabCollectionViewModel,
+            selectedDomains: domains,
+            close: true
+        )
+
+        let expectation = expectation(description: "Burning completed")
+
+        await fire.burnEntity(entity,
+                             includingHistory: false,  // Key: not clearing history
+                             includeCookiesAndSiteData: true,
+                             includeChatHistory: false) {
+            expectation.fulfill()
+        }
+
+        await fulfillment(of: [expectation], timeout: 5)
+
+        // Verify resetCookiePopupBlocked was called
+        XCTAssertTrue(historyCoordinator.resetCookiePopupBlockedCalled,
+                     "resetCookiePopupBlocked should be called when includingHistory is false")
+        XCTAssertEqual(historyCoordinator.resetCookiePopupBlockedDomains, domains,
+                      "Should reset cookie popup flags for the selected domains")
+    }
+
+    @MainActor
+    func testWhenBurnEntityWithHistory_ThenCookiePopupFlagsAreNotReset() async {
+        let historyCoordinator = HistoryCoordinatingMock()
+        let manager = WebCacheManagerMock()
+        let permissionManager = PermissionManagerMock()
+        let faviconManager = FaviconManagerMock()
+
+        let fire = Fire(cacheManager: manager,
+                        historyCoordinating: historyCoordinator,
+                        permissionManager: permissionManager,
+                        windowControllersManager: Application.appDelegate.windowControllersManager,
+                        faviconManagement: faviconManager,
+                        pinnedTabsManagerProvider: pinnedTabsManagerProvider,
+                        tld: Application.appDelegate.tld)
+
+        let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel(with: pinnedTabsManagerProvider)
+        let domains: Set<String> = ["example.com"]
+        let entity = Fire.BurningEntity.window(
+            tabCollectionViewModel: tabCollectionViewModel,
+            selectedDomains: domains,
+            close: true
+        )
+
+        let expectation = expectation(description: "Burning completed")
+
+        await fire.burnEntity(entity,
+                             includingHistory: true,  // Key: clearing history
+                             includeCookiesAndSiteData: true,
+                             includeChatHistory: false) {
+            expectation.fulfill()
+        }
+
+        await fulfillment(of: [expectation], timeout: 5)
+
+        // Verify resetCookiePopupBlocked was NOT called when history is being cleared
+        XCTAssertFalse(historyCoordinator.resetCookiePopupBlockedCalled,
+                      "resetCookiePopupBlocked should NOT be called when includingHistory is true")
+    }
+
+    @MainActor
+    func testWhenBurnEntityWithoutCookiesAndSiteData_ThenCookiePopupFlagsAreNotReset() async {
+        let historyCoordinator = HistoryCoordinatingMock()
+        let manager = WebCacheManagerMock()
+        let permissionManager = PermissionManagerMock()
+        let faviconManager = FaviconManagerMock()
+
+        let fire = Fire(cacheManager: manager,
+                        historyCoordinating: historyCoordinator,
+                        permissionManager: permissionManager,
+                        windowControllersManager: Application.appDelegate.windowControllersManager,
+                        faviconManagement: faviconManager,
+                        pinnedTabsManagerProvider: pinnedTabsManagerProvider,
+                        tld: Application.appDelegate.tld)
+
+        let tabCollectionViewModel = TabCollectionViewModel.makeTabCollectionViewModel(with: pinnedTabsManagerProvider)
+        let domains: Set<String> = ["example.com"]
+        let entity = Fire.BurningEntity.window(
+            tabCollectionViewModel: tabCollectionViewModel,
+            selectedDomains: domains,
+            close: true
+        )
+
+        let expectation = expectation(description: "Burning completed")
+
+        await fire.burnEntity(entity,
+                             includingHistory: false,
+                             includeCookiesAndSiteData: false,  // Key: not clearing cookies
+                             includeChatHistory: false) {
+            expectation.fulfill()
+        }
+
+        await fulfillment(of: [expectation], timeout: 5)
+
+        // Verify resetCookiePopupBlocked was NOT called when cookies/site data are not being cleared
+        XCTAssertFalse(historyCoordinator.resetCookiePopupBlockedCalled,
+                      "resetCookiePopupBlocked should NOT be called when includeCookiesAndSiteData is false")
+    }
+
+    @MainActor
     func preparePersistedState(withFileName fileName: String) -> FileStore {
         let fileStore = FileStoreMock()
         let state = SavedStateMock()

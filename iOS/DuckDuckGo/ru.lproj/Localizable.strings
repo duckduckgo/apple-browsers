@@ -463,6 +463,51 @@
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Включите защиту электронной почты";
 
+/* Button title to dismiss the autofill extension activation view */
+"autofill.extension.activation.done.button.title" = "Готово";
+
+/* Title shown when the autofill extension activation succeeds */
+"autofill.extension.activation.title" = "Автозаполнение паролей включено!";
+
+/* Footer text describing what enabling the autofill extension does */
+"autofill.extension.footer" = "Использовать сохраненные в DuckDuckGo пароли во всех приложениях на устройстве.";
+
+/* Header text shown when the autofill extension is disabled */
+"autofill.extension.header.disabled" = "Автозаполнение в других приложениях";
+
+/* Header text shown when the autofill extension is enabled */
+"autofill.extension.header.enabled" = "Автозаполнение в других приложениях включено";
+
+/* Dismiss button title for the Autofill extension promotion */
+"autofill.extension.promo.button.dismiss.title" = "Настроить позже в настройках";
+
+/* CTA button title for the Autofill extension promotion */
+"autofill.extension.promo.button.title" = "Включить автозаполнение в других приложениях";
+
+/* Message for the Autofill extension promotion */
+"autofill.extension.promo.message" = "Использовать DuckDuckGo для безопасного автозаполнения паролей всех приложений.";
+
+/* Title for the Autofill extension promotion */
+"autofill.extension.promo.title" = "Быстрый вход в приложения без ввода паролей";
+
+/* Title for screen showing autofill extension settings */
+"autofill.extension.screen.title" = "Автозаполнение паролей в других приложениях";
+
+/* Status text when autofill extension is disabled */
+"autofill.extension.status.off" = "Включить";
+
+/* Status text when autofill extension is enabled */
+"autofill.extension.status.on" = "Включено";
+
+/* Title for autofill extension settings row */
+"autofill.extension.title" = "Автозаполнение в других приложениях";
+
+/* Button title that opens system settings to turn off the autofill extension */
+"autofill.extension.turn.off.button.title" = "Выключить в системных настройках...";
+
+/* Button title that triggers system prompt to turn on the autofill extension */
+"autofill.extension.turn.on.button.title" = "Включить...";
+
 /* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
 "autofill.hide-card-cvv" = "Скрыть CVV-код";
 
@@ -799,8 +844,8 @@
 /* Section header for the autofill settings screen */
 "autofill.settings.import-passwords.section-header" = "Импорт паролей";
 
-/* Section header for the autofill settings screen */
-"autofill.settings.options.section-header" = "Параметры";
+/* Section header for the autofill passwords options section of the settings screen */
+"autofill.settings.options.section-header" = "Параметры пароля";
 
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Сообщить о сбое автозаполнения";

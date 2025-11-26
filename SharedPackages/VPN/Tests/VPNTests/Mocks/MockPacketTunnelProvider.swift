@@ -24,13 +24,14 @@ final class MockPacketTunnelProvider: PacketTunnelProviding {
     private(set) var setTunnelNetworkSettingsCallCount = 0
     private(set) var lastNetworkSettings: NETunnelNetworkSettings?
     var setTunnelNetworkSettingsError: Error?
+    var setTunnelNetworkSettingsDelay: DispatchTimeInterval = .milliseconds(0)
 
     func setTunnelNetworkSettings(_ tunnelNetworkSettings: NETunnelNetworkSettings?, completionHandler: (@Sendable (Error?) -> Void)?) {
         setTunnelNetworkSettingsCallCount += 1
         lastNetworkSettings = tunnelNetworkSettings
 
         if let completionHandler {
-            DispatchQueue.global().async {
+            DispatchQueue.global().asyncAfter(deadline: .now() + setTunnelNetworkSettingsDelay) {
                 completionHandler(self.setTunnelNetworkSettingsError)
             }
         }

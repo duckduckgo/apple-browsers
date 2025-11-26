@@ -70,6 +70,7 @@ final class AddressBarTextField: NSTextField {
     weak var searchPreferences: SearchPreferences?
     weak var tabsPreferences: TabsPreferences?
     weak var sharedTextState: AddressBarSharedTextState?
+    weak var customToggleControl: NSControl?
 
     private enum TextDidChangeEventType {
         case none
@@ -216,8 +217,9 @@ final class AddressBarTextField: NSTextField {
             let barStyleProvider = themeManager.theme.addressBarStyleProvider
             let newTabFontSize = barStyleProvider.newTabOrHomePageAddressBarFontSize
             let defaultFontSize = barStyleProvider.defaultAddressBarFontSize
+            let hideSuffix = Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
 
-            if let attributedString = value.toAttributedString(size: isHomePage ? newTabFontSize : defaultFontSize, isBurner: isBurner) {
+            if let attributedString = value.toAttributedString(size: isHomePage ? newTabFontSize : defaultFontSize, isBurner: isBurner, hideSuffix: hideSuffix) {
                 self.attributedStringValue = attributedString
             } else {
                 self.stringValue = value.string
@@ -857,16 +859,15 @@ extension AddressBarTextField {
             self.suggestion != nil
         }
 
-        func toAttributedString(size: CGFloat, isBurner: Bool) -> NSAttributedString? {
+        func toAttributedString(size: CGFloat, isBurner: Bool, hideSuffix: Bool = false) -> NSAttributedString? {
             var attributes: [NSAttributedString.Key: Any] {
                 return [
                     .font: NSFont.systemFont(ofSize: size, weight: .regular),
-                    .foregroundColor: NSColor.textColor,
-                    .kern: -0.16
+                    .foregroundColor: NSColor.textColor
                 ]
             }
 
-            guard let suffix else { return nil }
+            guard let suffix, !hideSuffix else { return nil }
 
             let attributedString = NSMutableAttributedString(string: self.string, attributes: attributes)
             attributedString.append(suffix.toAttributedString(size: size, isBurner: isBurner))
@@ -1004,7 +1005,7 @@ extension AddressBarTextField: NSTextFieldDelegate {
         // don't blink and keep the Suggestion displayed
         if case .userAppendingTextToTheEnd = currentTextDidChangeEvent,
            let suggestion = autocompleteSuggestionBeingTypedOverByUser(with: stringValueWithoutSuffix) {
-            self.value = .suggestion(SuggestionViewModel(isHomePage: isHomePage, suggestion: suggestion.suggestion, userStringValue: stringValueWithoutSuffix, themeManager: themeManager))
+            self.value = .suggestion(SuggestionViewModel(isHomePage: isHomePage, suggestion: suggestion.suggestion, userStringValue: stringValueWithoutSuffix, themeManager: themeManager, featureFlagger: Application.appDelegate.featureFlagger))
 
         } else {
             suggestionContainerViewModel?.clearSelection()
@@ -1034,12 +1035,12 @@ extension AddressBarTextField: NSTextFieldDelegate {
 
         let textToRestore = sharedTextState.text.replacingOccurrences(of: "\n", with: " ")
         self.value = Value(stringValue: textToRestore, userTyped: true)
+    }
 
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self, let editor = self.currentEditor() as? NSTextView else { return }
-            let textLength = editor.string.count
-            editor.selectedRange = NSRange(location: textLength, length: 0)
-        }
+    func setCursorPositionAfterRestore() {
+        guard let editor = currentEditor() as? NSTextView else { return }
+        let textLength = editor.string.count
+        editor.selectedRange = NSRange(location: textLength, length: 0)
     }
 
     func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
@@ -1049,6 +1050,12 @@ extension AddressBarTextField: NSTextFieldDelegate {
             self.addressBarEnterPressed()
             return true
         } else if commandSelector == #selector(NSResponder.insertTab(_:)) {
+            if let customToggleControl = customToggleControl,
+               !customToggleControl.isHidden,
+               customToggleControl.isEnabled {
+                window?.makeFirstResponder(customToggleControl)
+                return true
+            }
             window?.makeFirstResponder(nextKeyView)
             return false
 

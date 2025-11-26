@@ -85,6 +85,7 @@ public enum PrivacyFeature: String {
     case dataImport
     case duckAiDataClearing
     case serp
+    case popupBlocking
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -112,10 +113,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     // Import Firefox's bookmarks and new tab shortcuts to better match Firefox's behavior
     case updateFirefoxBookmarksImport
-
-    /// Displays a restore session prompt after the app closes unexpectedly
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1208994157946492?focus=true
-    case restoreSessionPrompt
 
     /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
     case willSoonDropBigSurSupport
@@ -212,6 +209,10 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case canPromoteImportPasswordsInPasswordManagement
     case canPromoteImportPasswordsInBrowser
     case createFireproofFaviconUpdaterSecureVaultInBackground
+    case autofillExtensionSettings
+    case canPromoteAutofillExtensionInBrowser
+    case canPromoteAutofillExtensionInPasswordManagement
+    case migrateKeychainAccessibility
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
@@ -373,10 +374,8 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case allowPurchase
     case allowPurchaseStripe
     case useUnifiedFeedback
-    case privacyProFreeTrialJan25
     case privacyProAuthV2
     case privacyProOnboardingPromotion
-    case privacyProFreeTrial
     case paidAIChat
     case vpnToolbarUpsell
     case supportsAlternateStripePaymentFlow
@@ -387,6 +386,8 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case winBackOffer
     case vpnMenuItem
     case blackFridayCampaign
+    case tierMessagingEnabled
+    case allowProTierPurchase
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {
@@ -531,4 +532,22 @@ public enum SERPSubfeature: String, PrivacySubfeature {
 
     /// Global switch to disable New Tab Page search box
     case storeSerpSettings
+}
+
+public enum PopupBlockingSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature {
+        .popupBlocking
+    }
+
+    /// Use extended user-initiated popup timeout (extends from 1s to 6s)
+    case extendedUserInitiatedPopupTimeout
+
+    /// Suppress empty or about: URL popups after permission approval
+    case suppressEmptyPopUpsOnApproval
+
+    /// Allow popups for current page after permission approval (until next navigation)
+    case allowPopupsForCurrentPage
+
+    /// Show popup permission button in inactive state when temporary allowance is active
+    case popupPermissionButtonPersistence
 }

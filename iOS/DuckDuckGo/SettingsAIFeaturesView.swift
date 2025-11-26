@@ -141,7 +141,7 @@ struct SettingsAIFeaturesView: View {
 
                         if viewModel.shouldShowHideAIGeneratedImagesSection {
                             NavigationLink(destination:
-                                SERPSettingsView(page: .searchAssist)
+                                SERPSettingsView(page: .hideAIGeneratedImages)
                                     .environmentObject(viewModel)
                                     .onAppear {
                                         PixelKit.fire(SERPSettingsPixel.hideAIGeneratedImagesButtonClicked, frequency: .dailyAndStandard)

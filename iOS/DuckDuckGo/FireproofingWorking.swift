@@ -29,12 +29,15 @@ struct FireproofingWorking {
     weak var controller: UIViewController?
     let fireproofing: Fireproofing
 
-    func handleLoginDetection(detectedURL: URL?, currentURL: URL?, isAutofillEnabled: Bool, saveLoginPromptLastDismissed: Date?, saveLoginPromptIsPresenting: Bool) -> Bool {
+    func handleLoginDetection(detectedURL: URL?, currentURL: URL?, isAutofillEnabled: Bool, saveLoginPromptLastDismissed: Date?, saveLoginPromptIsPresenting: Bool, shouldShowAutofillExtensionPrompt: Bool) -> Bool {
         guard let detectedURL = detectedURL, let currentURL = currentURL else { return false }
         guard let domain = detectedURL.host, domainOrPathDidChange(detectedURL, currentURL) else { return false }
         guard !fireproofing.isAllowed(fireproofDomain: domain) else { return false }
         if isAutofillEnabled && autofillShouldBlockPrompt(saveLoginPromptLastDismissed, saveLoginPromptIsPresenting: saveLoginPromptIsPresenting) {
             return false
+        }
+        if isAutofillEnabled && shouldShowAutofillExtensionPrompt {
+            return true
         }
         if let window = UIApplication.shared.firstKeyWindow, window.subviews.contains(where: { $0 is ActionMessageView }) {
             // if an ActionMessageView is currently displayed wait before prompting to fireproof

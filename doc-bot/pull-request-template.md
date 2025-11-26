@@ -1,11 +1,88 @@
 ---
 alwaysApply: false
-title: "Pull Request Guidelines & Workflow"
+title: "Pull Request Guidelines & Workflow (pull-request-template.md)"
 description: "Comprehensive guidelines for creating pull requests, assignment workflows, review processes, and maintaining clean PR lists for Apple browser repositories"
 keywords: ["pull request", "pr", "template", "workflow", "code review", "assignment", "asana", "github", "auto-merge", "feature flags", "projects", "tasks"]
 ---
 
 # Pull Request Guidelines & Workflow
+
+## 🚨 CRITICAL: Required Information and Approval Before Creating PR
+
+**MANDATORY**: Before creating any PR, you MUST:
+
+### Step 1: Gather Required Information
+
+### 1. Task/Issue URL
+**Ask**: "What is the Asana task URL for this PR?"
+- **NEVER proceed** with placeholder text like `[TASK_ID]` or `[INSERT_URL]`
+- **NEVER assume** you can skip this step
+- **ONLY proceed** if user explicitly says to omit it or provides the URL
+
+### 2. PR Reviewer Assignment (CRITICAL for Asana Integration)
+**Ask**: "Who should review this PR?"
+- Ask if they want to:
+  - Assign a specific reviewer (get their GitHub username for `--reviewer` flag)
+  - Use auto-assignment (`--reviewer Apple-dev` team)
+  - Handle it themselves after PR creation
+- **NEVER proceed** without understanding the reviewer assignment strategy
+- **ONLY proceed** if user explicitly provides the information or strategy
+
+**WHY THIS MATTERS**: 
+- GitHub Action only creates Asana subtask when reviewer is **assigned via GitHub's reviewer mechanism**
+- Using `--reviewer` flag triggers the `review_requested` event that runs the Asana integration
+- Without reviewer assignment, no Asana subtask is created automatically
+
+### 3. Tech Design URL (For Significant Changes)
+- **Default to "N/A"** for minor changes and bug fixes
+- **ASK for significant changes** (new features, architectural changes)
+- **Can be omitted** if user doesn't explicitly provide one - use "N/A"
+- Unlike Task/Issue URL, this is **optional** and can default to "N/A"
+
+### 4. Exception: User Explicitly Opts Out
+The **ONLY** acceptable reason to skip asking for Task URL and Reviewer is if the user explicitly states:
+- "Skip Asana task" or "No Asana task"
+- "I'll assign reviewer myself" or "Use auto-assignment"
+
+**Failure to ask for Task URL and Reviewer = violation of PR workflow.**
+
+---
+
+### Step 2: Get User Approval Before Creating PR
+
+**MANDATORY**: After gathering all information, you MUST:
+
+1. **Present the complete PR body text** to the user for review and approval
+2. **Include the reviewer name** that will be assigned
+3. **Show the exact text** that will be used in the PR body (not the command)
+4. **Wait for explicit approval** before proceeding
+5. **ONLY after approval**: Execute the `gh pr create` command
+
+**Do NOT create the PR without showing the user the exact PR body text first.**
+
+**Format for approval request:**
+```
+Here's the PR I'm about to create:
+**Title:** [PR title]
+
+**Reviewer:** @username
+
+**PR Body:**
+[Show complete PR body text here]
+
+Proceed with creating the PR?
+```
+
+After user approves, then execute the `gh pr create` command.
+
+## 🚨 CRITICAL: Always Open PR URL After Creation
+
+**MANDATORY**: After creating or updating a PR, **IMMEDIATELY** run:
+```bash
+open <PR_URL>
+```
+
+This ensures the PR is accessible and properly formatted in the browser.
 
 ## Objective
 
@@ -35,10 +112,11 @@ For significant features and planned work:
 1. **Use Technical Reviewer**: The technical reviewer should be the default person to assign the PR review
 2. **No MM Posting**: There's no need to post the PR link on MM (Mattermost)
 3. **Review Assignment Process**:
-   - Once the PR is ready for review, assign the technical reviewer as the reviewer on the PR
-   - Ping them on Asana on the appropriate task
+   - Create PR with: `gh pr create --reviewer TECHNICAL_REVIEWER_USERNAME`
+   - This automatically creates Asana subtask and assigns it to the reviewer
+   - No need to manually ping on Asana (automation handles it)
 4. **Shared Responsibility**: Both the technical reviewer and developer are responsible for staying in sync
-5. **Fallback**: If the technical reviewer can't review the PR, use the Tasks workflow below
+5. **Fallback**: If the technical reviewer can't review the PR, request different reviewer in GitHub UI (triggers new Asana assignment)
 
 ### Tasks Workflow
 
@@ -46,12 +124,13 @@ For bug fixes and small improvements:
 
 1. **Pre-Agreement**: Think about who's the best person to review this task and **agree with them to be the reviewer even before posting the PR** (similar to choosing technical reviewer for projects)
 
-2. **When Uncertain**: If you don't know who would be the best person, or the problem is generic and doesn't require domain knowledge, use **GitHub auto assignment** (see below)
+2. **When Uncertain**: If you don't know who would be the best person, or the problem is generic and doesn't require domain knowledge, use **GitHub auto assignment** with `--reviewer Apple-dev`
 
 3. **Assignment Process**:
-   - Once someone is assigned, ping that person on **Asana** letting them know there's a PR for review
-   - If that person is AFK, run the process again to find a new reviewer
-   - Feel free to ask the original reviewer for suggestions
+   - Create PR with: `gh pr create --reviewer USERNAME` (or `--reviewer Apple-dev` for auto)
+   - Asana subtask is automatically created and assigned
+   - No need to manually ping on Asana (automation notifies them)
+   - If reviewer is AFK, request different reviewer in GitHub UI (triggers new assignment)
 
 4. **Availability Management**:
    - Set your GitHub to "away" to prevent auto-selection if unavailable
@@ -64,15 +143,19 @@ For bug fixes and small improvements:
 **Algorithm**: Load balance routing to equally distribute review work
 
 **Process**:
-1. Manually select the **"Apple-dev" team** as the reviewer on the PR
-2. GitHub will automatically assign based on load balancing
-3. Create an Asana task with the PR link and assign to the selected reviewer
+1. Use `gh pr create --reviewer Apple-dev` OR manually select the **"Apple-dev" team** as reviewer in GitHub UI
+2. GitHub will automatically assign an individual based on load balancing
+3. Asana workflow automatically creates subtask and assigns to the selected reviewer's Asana account
 
 ### Assignment on Asana
 
-For both auto and manual assignment:
-- **Create an Asana task** with the PR link in the description
-- **Assign the task** to the person you want to review
+**AUTOMATED**: When you assign a reviewer on GitHub (via `--reviewer` or UI), the workflow automatically:
+- Extracts Asana task ID from PR body
+- Creates a "Code Review" subtask in that Asana task
+- Assigns the subtask to the GitHub reviewer's Asana account
+
+**Manual steps (if needed):**
+- If automation fails or reviewer doesn't match, manually create subtask in Asana
 - **Reviewer completes** the code review subtask once review is finished
 - **Communication**: Use best judgment to contact PR author via Asana, MM, or PR comments for review feedback
 
@@ -128,18 +211,18 @@ Use pre-defined labels to classify PR intention/state:
 
 ## Pull Request Template
 
-When creating Pull Requests, always follow this template structure:
+**MANDATORY**: When creating Pull Requests, ALWAYS follow this template structure:
 
 ```markdown
-Task/Issue URL: [Insert URL or ask user if not provided]
-Tech Design URL: [Insert URL, N/A, or ask user if not provided for significant changes]
-CC: [Insert stakeholders or N/A]
+Task/Issue URL: [MUST ASK USER - Do not proceed with placeholder]
+Tech Design URL: [ASK USER for significant changes; can default to N/A if not provided]
+CC: [ASK USER for stakeholders; can default to N/A if not provided]
 
 ### Description
-[Provide a clear and comprehensive description of the changes]
+[Provide a clear and concise description of the changes as a bulleted list. List changes in order of significance - most impactful/critical changes first, implementation details last. Be brief and omit small changes that are not directly related to the core issue being fixed. Format as bullet points without subsection titles]
 
 ### Testing Steps
-[List detailed steps for testing the changes]
+[List detailed manual testing steps only. Do not include "run tests" or similar - CI runs automated tests. Focus on manual verification steps that require human interaction]
 
 ### Impact and Risks
 **Impact Level: [Assess as High, Medium, Low, or None]**
@@ -157,11 +240,11 @@ CC: [Insert stakeholders or N/A]
 ### Template Guidelines
 
 #### Required Information
-- **Task/Issue URL**: Always provide the related task or issue
-- **Tech Design URL**: Required for significant changes, use "N/A" for minor changes/bug fixes
-- **CC**: List relevant stakeholders or use "N/A"
-- **Description**: Clear explanation of what was changed and why
-- **Testing Steps**: Detailed steps for thorough testing
+- **Task/Issue URL**: **MUST ASK USER** - Always obtain the actual Asana task URL, never use placeholders
+- **Tech Design URL**: **ASK USER** for significant changes; can be omitted and default to "N/A" if not explicitly provided
+- **CC**: **ASK USER** for relevant stakeholders; can default to "N/A" if not explicitly provided
+- **Description**: Clear, concise bulleted list of changes in order of significance - most critical/impactful changes first, implementation details last. Be brief and omit small changes not directly related to the core issue. No subsection titles
+- **Testing Steps**: Manual testing steps only (CI runs automated tests). Focus on human verification steps
 - **Impact Assessment**: Use guidelines below
 - **Risk Analysis**: Potential issues and mitigation strategies
 - **Quality Considerations**: Edge cases, performance, monitoring, documentation, privacy/security
@@ -180,6 +263,42 @@ CC: [Insert stakeholders or N/A]
 - **Monitoring and analytics** additions or changes
 - **Documentation updates** required
 - **Privacy and security** considerations, if applicable
+
+## PR Creation Workflow
+
+**CRITICAL**: After creating or updating a PR, **ALWAYS open the PR URL** in the browser immediately.
+
+### Steps:
+1. **Create PR with reviewer assignment**:
+   ```bash
+   # For specific reviewer
+   gh pr create --reviewer USERNAME
+   
+   # For auto-assignment (Apple-dev team)
+   gh pr create --reviewer Apple-dev
+   ```
+   
+2. **Immediately run**: `open <PR_URL>` (the URL returned by gh command)
+3. Verify the PR appears correctly in the browser
+
+### ⚠️ CRITICAL: Reviewer Assignment Requirement
+
+**The Asana integration ONLY works when reviewers are assigned via GitHub's reviewer mechanism.**
+
+**How it works:**
+- GitHub Action `.github/workflows/create_asana_pr_subtask.yml` triggers on `review_requested` event
+- Extracts Asana task ID from PR body (looks for `Task/Issue URL: https://app.asana.com/...`)
+- Creates subtask in Asana and assigns it to the GitHub reviewer
+
+**This means:**
+- ✅ **CORRECT**: `gh pr create --reviewer USERNAME` (triggers Asana assignment)
+- ✅ **CORRECT**: Manually request reviewer in GitHub UI (triggers Asana assignment)
+- ❌ **WRONG**: Only mentioning reviewer in PR description (does NOT trigger Asana assignment)
+- ❌ **WRONG**: Creating PR without `--reviewer` flag (does NOT trigger Asana assignment)
+
+**If you forget to assign reviewer during creation:**
+1. Request reviewer manually in GitHub UI
+2. This will trigger the workflow and create the Asana subtask
 
 ## Review Process Best Practices
 
@@ -201,22 +320,27 @@ CC: [Insert stakeholders or N/A]
 
 ### For Projects:
 1. Technical reviewer assigned by default
-2. Ready for review → Assign technical reviewer → Ping on Asana
-3. No MM posting required
+2. Ready for review → **Use `gh pr create --reviewer USERNAME`** → Asana subtask auto-created
+3. No MM posting required (Asana handles it)
+4. **Open PR URL in browser**
 
 ### For Tasks:
 1. Pre-agree on reviewer OR use auto-assignment
-2. Assign "Apple-dev" team for auto-assignment
-3. Create Asana task → Assign to reviewer → Ping on Asana
-4. Handle AFK reviewers by reassigning
+2. **Use `gh pr create --reviewer USERNAME`** or `--reviewer Apple-dev` for auto-assignment
+3. Asana subtask is automatically created and assigned to reviewer
+4. Handle AFK reviewers by requesting different reviewer in GitHub (triggers new Asana assignment)
+5. **Open PR URL in browser**
 
 ### For All PRs:
-1. Use feature flags for safe merging
-2. Keep PRs small and focused
-3. Apply appropriate labels
-4. Set auto-merge if desired
-5. Follow template requirements
-6. Maintain clean draft PR list
+1. **CRITICAL**: Use `--reviewer` flag when creating PR (enables Asana integration)
+2. Include valid Asana task URL in PR body (required for automation)
+3. Use feature flags for safe merging
+4. Keep PRs small and focused
+5. Apply appropriate labels
+6. Set auto-merge if desired
+7. Follow template requirements
+8. Maintain clean draft PR list
+9. **ALWAYS open PR URL after creation/update**
 
 ---
 

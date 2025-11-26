@@ -46,4 +46,26 @@ class StringExtensionTests: XCTestCase {
         XCTAssertTrue("bAbBb".contains(any: ["a", "bbb"]))
     }
 
+    func testDropSubdomainDoesntDropDomainWhenTLDHasTwoComponents() {
+        let sample = [
+            ("lantean.com.ar", "lantean.com.ar"),
+        ]
+
+        for (source, expected) in sample {
+            XCTAssertEqual(source.dropSubdomain(), expected)
+        }
+    }
+
+    func testDropSubdomainEffectivelyDropsDomainComponent() {
+        let sample = [
+            ("www.duckduckgo.com", "duckduckgo.com"),
+            ("hostname.duckduckgo.com", "duckduckgo.com"),
+            ("www.lantean.co", "lantean.co"),
+            ("www.lantean.com.ar", "lantean.com.ar")
+        ]
+
+        for (source, expected) in sample {
+            XCTAssertEqual(source.dropSubdomain(), expected)
+        }
+    }
 }

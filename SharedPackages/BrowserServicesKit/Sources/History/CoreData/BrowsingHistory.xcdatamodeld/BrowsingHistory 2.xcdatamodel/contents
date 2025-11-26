@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23788.4" systemVersion="24G231" minimumToolsVersion="Automatic" sourceLanguage="Swift" usedWithSwiftData="YES" userDefinedModelVersionIdentifier="">
+    <entity name="BrowsingHistoryEntryManagedObject" representedClassName="BrowsingHistoryEntryManagedObject" syncable="YES">
+        <attribute name="blockedTrackingEntities" optional="YES" attributeType="String"/>
+        <attribute name="cookiePopupBlocked" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="failedToLoad" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="identifier" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="lastVisit" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="numberOfTotalVisits" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES" elementID="numberOfVisits"/>
+        <attribute name="numberOfTrackersBlocked" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="title" optional="YES" attributeType="String" valueTransformerName="NSStringTransformer"/>
+        <attribute name="trackersFound" optional="YES" attributeType="Boolean" usesScalarValueType="YES"/>
+        <attribute name="url" attributeType="URI" valueTransformerName="NSURLTransformer"/>
+        <relationship name="visits" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="PageVisitManagedObject" inverseName="historyEntry" inverseEntity="PageVisitManagedObject"/>
+    </entity>
+    <entity name="PageVisitManagedObject" representedClassName="PageVisitManagedObject" syncable="YES">
+        <attribute name="date" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="historyEntry" maxCount="1" deletionRule="Nullify" destinationEntity="BrowsingHistoryEntryManagedObject" inverseName="visits" inverseEntity="BrowsingHistoryEntryManagedObject"/>
+    </entity>
+</model>

@@ -287,7 +287,7 @@
 "sync.with.another.device.footer" = "Tus datos están encriptados de extremo a extremo y DuckDuckGo no tiene acceso a la clave de encriptación.";
 
 /* Message for syncing with another device */
-"sync.with.another.device.message" = "Sincroniza de manera segura los marcadores y los datos de autocompletado entre tus dispositivos.";
+"sync.with.another.device.message" = "Sincroniza de forma segura los marcadores y las contraseñas entre tus dispositivos.";
 
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Iniciar sincronización";

@@ -843,7 +843,6 @@ final class MoreOptionsMenuTests: XCTestCase {
 
         subscriptionManager.canPurchase = true
         subscriptionManager.isEligibleForFreeTrialResult = true
-        mockFeatureFlagger.enabledFeatureFlags = [.privacyProFreeTrial]
 
         setupMoreOptionsMenu(freeTrialBadgePersistor: persistor)
 
@@ -864,7 +863,6 @@ final class MoreOptionsMenuTests: XCTestCase {
 
         subscriptionManager.canPurchase = true
         subscriptionManager.isEligibleForFreeTrialResult = true
-        mockFeatureFlagger.enabledFeatureFlags = [.privacyProFreeTrial]
 
         setupMoreOptionsMenu(freeTrialBadgePersistor: persistor)
 

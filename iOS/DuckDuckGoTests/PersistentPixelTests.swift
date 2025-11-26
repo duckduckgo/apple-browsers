@@ -135,7 +135,8 @@ final class PersistentPixelTests: XCTestCase {
             "param": "value",
             PixelParameters.originalPixelTimestamp: testDateString,
             PixelParameters.errorDomain: error.domain,
-            PixelParameters.errorCode: "\(error.code)"
+            PixelParameters.errorCode: "\(error.code)",
+            PixelParameters.errorDescription: error.description
         ]
 
         XCTAssertEqual(storedPixels.count, 2)

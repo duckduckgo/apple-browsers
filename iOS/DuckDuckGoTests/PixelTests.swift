@@ -246,17 +246,22 @@ class PixelTests: XCTestCase {
         var parameters: [String: String] = [:]
         parameters.appendErrorPixelParams(error: error)
 
-        XCTAssertEqual(parameters.count, 10)
+        XCTAssertEqual(parameters.count, 15)
         XCTAssertEqual(parameters["d"], error.domain)
         XCTAssertEqual(parameters["e"], String(error.code))
+        XCTAssertEqual(parameters["ed"], error.description)
         XCTAssertEqual(parameters["ud"], underlyingError1.domain)
         XCTAssertEqual(parameters["ue"], String(underlyingError1.code))
+        XCTAssertEqual(parameters["ued"], underlyingError1.description)
         XCTAssertEqual(parameters["ud2"], underlyingError2.domain)
         XCTAssertEqual(parameters["ue2"], String(underlyingError2.code))
+        XCTAssertEqual(parameters["ued2"], underlyingError2.description)
         XCTAssertEqual(parameters["ud3"], underlyingError3.domain)
         XCTAssertEqual(parameters["ue3"], String(underlyingError3.code))
+        XCTAssertEqual(parameters["ued3"], underlyingError3.description)
         XCTAssertEqual(parameters["ud4"], underlyingError4.domain)
         XCTAssertEqual(parameters["ue4"], String(underlyingError4.code))
+        XCTAssertEqual(parameters["ued4"], underlyingError4.description)
     }
 
     func testWhenDefiningUnderlyingErrorParametersAndThereIsNoUnderlyingErrorThenOnlyTopLevelParametersAreIncluded() {
@@ -265,9 +270,10 @@ class PixelTests: XCTestCase {
         var parameters: [String: String] = [:]
         parameters.appendErrorPixelParams(error: error)
 
-        XCTAssertEqual(parameters.count, 2)
+        XCTAssertEqual(parameters.count, 3)
         XCTAssertEqual(parameters["d"], error.domain)
         XCTAssertEqual(parameters["e"], String(error.code))
+        XCTAssertEqual(parameters["ed"], error.description)
     }
 
 }

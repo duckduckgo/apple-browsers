@@ -131,7 +131,7 @@ public final class AttributedMetricManager {
 
     var originOrInstall: (origin: String?, installDate: String?) {
         if let origin = dataStorage.debugOrigin ?? originProvider?.origin,
-           origin.contains(any: self.featureSettings.originSendList) {
+           origin.containsAny(of: self.featureSettings.originSendList) {
             return (origin, nil)
         } else {
             let installDate = dataStorage.installDate

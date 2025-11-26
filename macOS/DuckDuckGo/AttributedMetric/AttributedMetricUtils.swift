@@ -30,7 +30,7 @@ extension SystemDefaultBrowserProvider: AttributedMetricDefaultBrowserProviding 
 }
 
 struct DefaultAttributedMetricSettingsProvider: AttributedMetricSettingsProviding {
-    
+
     let privacyConfig: PrivacyConfiguration
 
     var bucketsSettings: [String: Any] {

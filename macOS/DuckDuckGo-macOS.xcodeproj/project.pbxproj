@@ -2836,6 +2836,8 @@
 		B55C8F752E81A8730024B421 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B55C8F732E81A8730024B421 /* ThemeManager.swift */; };
 		B56776752ED778C600303198 /* FaviconImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B56776742ED778C600303198 /* FaviconImageView.swift */; };
 		B56776762ED778C600303198 /* FaviconImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B56776742ED778C600303198 /* FaviconImageView.swift */; };
+		B56776812ED79FCB00303198 /* FaviconImageViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B56776802ED79FCB00303198 /* FaviconImageViewTests.swift */; };
+		B56776822ED79FCB00303198 /* FaviconImageViewTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B56776802ED79FCB00303198 /* FaviconImageViewTests.swift */; };
 		B568715E2EC528950075A270 /* CABasicAnimationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B568715D2EC528950075A270 /* CABasicAnimationExtension.swift */; };
 		B568715F2EC528950075A270 /* CABasicAnimationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B568715D2EC528950075A270 /* CABasicAnimationExtension.swift */; };
 		B56871612EC528CF0075A270 /* CATransitionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B56871602EC528CF0075A270 /* CATransitionExtension.swift */; };
@@ -8493,6 +8495,7 @@
 		5601FECB29B7971600068905 /* View */ = {
 			isa = PBXGroup;
 			children = (
+				B56776802ED79FCB00303198 /* FaviconImageViewTests.swift */,
 				5601FECC29B7973D00068905 /* TabBarViewItemTests.swift */,
 				5603D90529B7B746007F9F01 /* MockTabViewItemDelegate.swift */,
 			);
@@ -14790,6 +14793,7 @@
 				9F0FFFB52BCCAE37007C87DD /* BookmarkAllTabsDialogCoordinatorViewModelTests.swift in Sources */,
 				3706FE34293F661700E42796 /* PermissionStoreTests.swift in Sources */,
 				BBE9A9AC2E9D1DED00E573AA /* MockWinBackOfferVisibilityManager.swift in Sources */,
+				B56776822ED79FCB00303198 /* FaviconImageViewTests.swift in Sources */,
 				3706FE35293F661700E42796 /* ThirdPartyBrowserTests.swift in Sources */,
 				1DFAB5232A8983E100A0F7F6 /* SetExtensionTests.swift in Sources */,
 				56A054002C1AEFA1007D8FAB /* OnboardingManagerTests.swift in Sources */,
@@ -16936,6 +16940,7 @@
 				84C1007B2ECC6F3C0083AB11 /* PopupHandlingTabExtensionTests.swift in Sources */,
 				CD3301302C89B602009AA127 /* ErrorPageHTMLFactoryTests.swift in Sources */,
 				4B2975992828285900187C4E /* FirefoxKeyReaderTests.swift in Sources */,
+				B56776812ED79FCB00303198 /* FaviconImageViewTests.swift in Sources */,
 				56B33CE12D5F58D20062DBC2 /* VPNPreferencesModelTests.swift in Sources */,
 				56D145EE29E6DAD900E3488A /* DataImportProviderTests.swift in Sources */,
 				C11198342C89AEFA00F0272C /* FreemiumDBPFirstProfileSavedNotifierTests.swift in Sources */,

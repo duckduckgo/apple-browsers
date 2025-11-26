@@ -406,7 +406,7 @@ extension FaviconManager: Bookmarks.FaviconStoring {
     }
 }
 
-fileprivate extension NSImage {
+extension NSImage {
     /**
      * This function attempts to initialize `NSImage` from `CIImage`.
      *

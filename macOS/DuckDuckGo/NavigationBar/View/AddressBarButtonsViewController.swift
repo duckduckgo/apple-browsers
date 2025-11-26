@@ -667,7 +667,7 @@ final class AddressBarButtonsViewController: NSViewController {
         updatePermissionCenterButton()
     }
 
-    //MARK: - Permission Center
+    // MARK: - Permission Center
 
     private func updatePermissionCenterButton() {
         // Prevent crash if Combine subscriptions outlive view lifecycle
@@ -681,9 +681,12 @@ final class AddressBarButtonsViewController: NSViewController {
 
         // Show permission buttons when there's a requested permission on NTP even if address bar is focused,
         // since NTP has the address bar focused by default
-        let hasRequestedPermission = tabViewModel.usedPermissions.values.contains(where: { $0.isRequested})
+        let hasRequestedPermission = tabViewModel.usedPermissions.values.contains(where: { $0.isRequested
+        })
         let shouldShowWhileFocused = (tabViewModel.tab.content == .newtab) && hasRequestedPermission
-        let isAnyPermissionPresent = tabViewModel.usedPermissions.values.contains(where: { !$0.isReloading})
+        let isAnyPermissionPresent = tabViewModel.usedPermissions.values.contains(where: {
+            !$0.isReloading
+        })
 
         permissionCenterButton.isShown = (shouldShowWhileFocused ||
                                           (!isTextFieldEditorFirstResponder && hasRequestedPermission) ||

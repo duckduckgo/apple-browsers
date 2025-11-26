@@ -251,7 +251,9 @@ public final class AttributedMetricManager {
                                                                    defaultBrowser: isDefaultBrowser,
                                                                    count: bucket.value,
                                                                    bucketVersion: bucket.version),
-                           frequency: .legacyDailyNoSuffix)
+                           frequency: .legacyDailyNoSuffix,
+                           includeAppVersionParameter: false,
+                           includePixelSourceParameter: false)
         case .months(let month):
             Logger.attributedMetric.log("\(month, privacy: .public) month(s) from installation")
             guard let bucket = try? bucketModifier.bucket(value: month, pixelName: .userRetentionMonth) else {
@@ -259,11 +261,13 @@ public final class AttributedMetricManager {
                 return
             }
             pixelKit?.fire(AttributedMetricPixel.userRetentionMonth(origin: originOrInstall.origin,
-                                                                   installDate: originOrInstall.installDate,
-                                                                   defaultBrowser: isDefaultBrowser,
-                                                                   count: bucket.value,
-                                                                   bucketVersion: bucket.version),
-                          frequency: .legacyDailyNoSuffix)
+                                                                    installDate: originOrInstall.installDate,
+                                                                    defaultBrowser: isDefaultBrowser,
+                                                                    count: bucket.value,
+                                                                    bucketVersion: bucket.version),
+                           frequency: .legacyDailyNoSuffix,
+                           includeAppVersionParameter: false,
+                           includePixelSourceParameter: false)
         }
     }
 
@@ -299,11 +303,13 @@ public final class AttributedMetricManager {
             return
         }
         pixelKit?.fire(AttributedMetricPixel.userActivePastWeek(origin: originOrInstall.origin,
-                                                               installDate: originOrInstall.installDate,
-                                                               days: bucket.value,
-                                                               daysSinceInstalled: addDaysSinceInstalled ? daysSinceInstalled : nil,
-                                                               bucketVersion: bucket.version),
-                      frequency: .legacyDailyNoSuffix)
+                                                                installDate: originOrInstall.installDate,
+                                                                days: bucket.value,
+                                                                daysSinceInstalled: addDaysSinceInstalled ? daysSinceInstalled : nil,
+                                                                bucketVersion: bucket.version),
+                       frequency: .legacyDailyNoSuffix,
+                       includeAppVersionParameter: false,
+                       includePixelSourceParameter: false)
     }
 
     // MARK: - Average searches
@@ -327,10 +333,12 @@ public final class AttributedMetricManager {
             }
             Logger.attributedMetric.debug("Average last week (first month) search count: \(average, privacy: .public), bucket: \(bucket.value, privacy: .public)")
             pixelKit?.fire(AttributedMetricPixel.userAverageSearchesPastWeekFirstMonth(origin: originOrInstall.origin,
-                                                                                      installDate: originOrInstall.installDate,
-                                                                                      count: bucket.value,
-                                                                                      bucketVersion: bucket.version),
-                          frequency: .legacyDailyNoSuffix)
+                                                                                       installDate: originOrInstall.installDate,
+                                                                                       count: bucket.value,
+                                                                                       bucketVersion: bucket.version),
+                           frequency: .legacyDailyNoSuffix,
+                           includeAppVersionParameter: false,
+                           includePixelSourceParameter: false)
         case .months:
             guard let bucket = try? bucketModifier.bucket(value: average, pixelName: .userAverageSearchesPastWeek) else {
                 Logger.attributedMetric.error("Failed to bucket average search count value")
@@ -338,10 +346,12 @@ public final class AttributedMetricManager {
             }
             Logger.attributedMetric.debug("Average last week search count: \(average, privacy: .public), bucket: \(bucket.value, privacy: .public)")
             pixelKit?.fire(AttributedMetricPixel.userAverageSearchesPastWeek(origin: originOrInstall.origin,
-                                                                            installDate: originOrInstall.installDate,
-                                                                            count: bucket.value,
-                                                                            bucketVersion: bucket.version),
-                          frequency: .legacyDailyNoSuffix)
+                                                                             installDate: originOrInstall.installDate,
+                                                                             count: bucket.value,
+                                                                             bucketVersion: bucket.version),
+                           frequency: .legacyDailyNoSuffix,
+                           includeAppVersionParameter: false,
+                           includePixelSourceParameter: false)
         }
     }
 
@@ -368,10 +378,12 @@ public final class AttributedMetricManager {
         }
         Logger.attributedMetric.log("Average AD click count in the last week: \(bucket.value, privacy: .public)")
         pixelKit?.fire(AttributedMetricPixel.userAverageAdClicksPastWeek(origin: originOrInstall.origin,
-                                                                        installDate: originOrInstall.installDate,
-                                                                        count: bucket.value,
-                                                                        bucketVersion: bucket.version),
-                      frequency: .legacyDailyNoSuffix)
+                                                                         installDate: originOrInstall.installDate,
+                                                                         count: bucket.value,
+                                                                         bucketVersion: bucket.version),
+                       frequency: .legacyDailyNoSuffix,
+                       includeAppVersionParameter: false,
+                       includePixelSourceParameter: false)
     }
 
     // MARK: - Average Duck.ai chats
@@ -397,10 +409,12 @@ public final class AttributedMetricManager {
         }
         Logger.attributedMetric.log("Average Duck.AI chats count in the last week: \(bucket.value, privacy: .public)")
         pixelKit?.fire(AttributedMetricPixel.userAverageDuckAiUsagePastWeek(origin: originOrInstall.origin,
-                                                                           installDate: originOrInstall.installDate,
-                                                                           count: bucket.value,
-                                                                           bucketVersion: bucket.version),
-                      frequency: .legacyDailyNoSuffix)
+                                                                            installDate: originOrInstall.installDate,
+                                                                            count: bucket.value,
+                                                                            bucketVersion: bucket.version),
+                       frequency: .legacyDailyNoSuffix,
+                       includeAppVersionParameter: false,
+                       includePixelSourceParameter: false)
     }
 
     // MARK: - Subscription
@@ -426,10 +440,12 @@ public final class AttributedMetricManager {
                 return
             }
             pixelKit?.fire(AttributedMetricPixel.userSubscribed(origin: originOrInstall.origin,
-                                                               installDate: originOrInstall.installDate,
-                                                               month: bucket.value,
-                                                               bucketVersion: bucket.version),
-                          frequency: .legacyDailyNoSuffix)
+                                                                installDate: originOrInstall.installDate,
+                                                                month: bucket.value,
+                                                                bucketVersion: bucket.version),
+                           frequency: .legacyDailyNoSuffix,
+                           includeAppVersionParameter: false,
+                           includePixelSourceParameter: false)
         }
     }
 
@@ -454,10 +470,12 @@ public final class AttributedMetricManager {
                 do {
                     let bucket = try bucketModifier.bucket(value: 1, pixelName: .userSubscribed)
                     pixelKit?.fire(AttributedMetricPixel.userSubscribed(origin: originOrInstall.origin,
-                                                                       installDate: originOrInstall.installDate,
-                                                                       month: bucket.value,
-                                                                       bucketVersion: bucket.version),
-                                  frequency: .legacyDailyNoSuffix)
+                                                                        installDate: originOrInstall.installDate,
+                                                                        month: bucket.value,
+                                                                        bucketVersion: bucket.version),
+                                   frequency: .legacyDailyNoSuffix,
+                                   includeAppVersionParameter: false,
+                                   includePixelSourceParameter: false)
                     dataStorage.subscriptionMonth1Fired = true
                 } catch {
                     Logger.attributedMetric.error("Failed to bucket length value: \(error, privacy: .public)")
@@ -468,10 +486,12 @@ public final class AttributedMetricManager {
                     let subscriptionMonth = Int(monthsActive.rounded(.up))
                     let bucket = try bucketModifier.bucket(value: subscriptionMonth, pixelName: .userSubscribed)
                     pixelKit?.fire(AttributedMetricPixel.userSubscribed(origin: originOrInstall.origin,
-                                                                       installDate: originOrInstall.installDate,
-                                                                       month: bucket.value,
-                                                                       bucketVersion: bucket.version),
-                                  frequency: .legacyDailyNoSuffix)
+                                                                        installDate: originOrInstall.installDate,
+                                                                        month: bucket.value,
+                                                                        bucketVersion: bucket.version),
+                                   frequency: .legacyDailyNoSuffix,
+                                   includeAppVersionParameter: false,
+                                   includePixelSourceParameter: false)
                 } catch {
                     Logger.attributedMetric.error("Failed to bucket length value: \(error, privacy: .public)")
                 }
@@ -504,6 +524,12 @@ public final class AttributedMetricManager {
             assertionFailure("Failed to bucket devices value")
             return
         }
-        pixelKit?.fire(AttributedMetricPixel.userSyncedDevice(origin: originOrInstall.origin, installDate: originOrInstall.installDate, devices: bucket.value, bucketVersion: bucket.version), frequency: .standard)
+        pixelKit?.fire(AttributedMetricPixel.userSyncedDevice(origin: originOrInstall.origin,
+                                                              installDate: originOrInstall.installDate,
+                                                              devices: bucket.value,
+                                                              bucketVersion: bucket.version),
+                       frequency: .standard,
+                       includeAppVersionParameter: false,
+                       includePixelSourceParameter: false)
     }
 }

@@ -838,7 +838,6 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
     }
 }
 
-
 private final class MockProductFetcher: ProductFetching {
     var mockProducts: [any StoreProduct] = []
     var fetchError: Error?

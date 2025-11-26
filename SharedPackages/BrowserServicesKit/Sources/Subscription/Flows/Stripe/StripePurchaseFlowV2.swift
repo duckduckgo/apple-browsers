@@ -113,13 +113,13 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
     }
 
     public func subscriptionTierOptions() async -> Result<SubscriptionTierOptions, StripePurchaseFlowError> {
-        Logger.subscriptionStripePurchaseFlow.log("Getting subscription tier options for Stripe")
+        Logger.subscriptionStripePurchaseFlow.log("[StripePurchaseFlowV2] Getting subscription tier options for Stripe")
 
         let regionParameter: String? = isUSRegion() ? "US" : "ROW"
 
         guard let productsResponse = try? await subscriptionManager.getTierProducts(region: regionParameter, platform: SubscriptionPlatformName.stripe.rawValue),
               !productsResponse.products.isEmpty else {
-            Logger.subscriptionStripePurchaseFlow.error("Failed to obtain products from v2 API")
+            Logger.subscriptionStripePurchaseFlow.error("[StripePurchaseFlowV2] Failed to obtain products from v2 API")
             return .failure(.noProductsFound)
         }
 
@@ -127,17 +127,18 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
 
         for product in productsResponse.products {
             guard let tier = createTier(from: product) else {
-                Logger.subscriptionStripePurchaseFlow.warning("Failed to create tier for \(product.tier)")
+                Logger.subscriptionStripePurchaseFlow.warning("[StripePurchaseFlowV2] Failed to create tier for \(product.tier)")
                 continue
             }
             tiers.append(tier)
         }
 
         guard !tiers.isEmpty else {
-            Logger.subscriptionStripePurchaseFlow.error("No tiers created")
+            Logger.subscriptionStripePurchaseFlow.error("[StripePurchaseFlowV2] No tiers created")
             return .failure(.noProductsFound)
         }
 
+        Logger.subscriptionStripePurchaseFlow.error("[StripePurchaseFlowV2] Tiers products created \(tiers)")
         return .success(SubscriptionTierOptions(platform: .stripe, products: tiers))
     }
 

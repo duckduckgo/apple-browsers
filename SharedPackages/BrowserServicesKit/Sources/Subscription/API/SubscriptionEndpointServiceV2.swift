@@ -42,6 +42,29 @@ public struct GetSubscriptionFeaturesResponseV2: Decodable {
     public let features: [SubscriptionEntitlement]
 }
 
+public struct GetSubscriptionTierFeaturesResponse: Decodable {
+    public let features: [String: [EntitlementPayload]]
+}
+
+public struct GetTierProductsResponse: Decodable {
+    public let products: [TierProduct]
+}
+
+public struct TierProduct: Decodable, Equatable {
+    public let productName: String
+    public let tier: String
+    public let regions: [String]
+    public let entitlements: [EntitlementPayload]
+    public let billingCycles: [BillingCycle]
+}
+
+public struct BillingCycle: Decodable, Equatable {
+    public let productId: String
+    public let period: String  // "Monthly", "Yearly"
+    public let price: String
+    public let currency: String
+}
+
 public enum SubscriptionEndpointServiceError: DDGError {
     case noData
     case invalidRequest
@@ -92,7 +115,20 @@ public protocol SubscriptionEndpointServiceV2 {
     func getCachedSubscription() -> DuckDuckGoSubscription?
     func clearSubscription()
     func getProducts() async throws -> [GetProductsItem]
+
+    /// Fetches products using the new /api/v2/products endpoint with tier information.
+    /// - Parameters:
+    ///   - region: Optional region filter ("us", "row")
+    ///   - platform: Optional platform filter ("apple", "stripe")
+    /// - Returns: A response containing products with tier and entitlement information
+    func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse
     func getSubscriptionFeatures(for subscriptionID: String) async throws -> GetSubscriptionFeaturesResponseV2
+
+    /// Fetches subscription features for multiple SKUs in a single API call.
+    /// This uses the new /api/v2/features endpoint that returns features with tier information.
+    /// - Parameter subscriptionIDs: Array of subscription identifiers (SKUs)
+    /// - Returns: A response containing features keyed by SKU, with tier information included
+    func getSubscriptionTierFeatures(for subscriptionIDs: [String]) async throws -> GetSubscriptionTierFeaturesResponse
     func getCustomerPortalURL(accessToken: String, externalID: String) async throws -> GetCustomerPortalURLResponse
 
     /// Confirms a subscription purchase by validating the provided access token and signature with the backend service.
@@ -271,6 +307,24 @@ New: \(subscription.debugDescription, privacy: .public)
         }
     }
 
+    public func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse {
+        // Uses the old endpoint
+        // Will use the new endpoint in a followup PR
+        let productItems = try await getProducts()
+        var billingCycles: [BillingCycle] = []
+        for productItem in productItems {
+            let cicle = BillingCycle(productId: productItem.productId, period: productItem.billingPeriod, price: productItem.price, currency: productItem.currency)
+            billingCycles.append(cicle)
+        }
+        let tierProduct = TierProduct(productName: productItems[0].productLabel, tier: "plus", regions: ["us"], entitlements: [
+            EntitlementPayload(product: .dataBrokerProtection, name: "plus"),
+            EntitlementPayload(product: .identityTheftRestoration, name: "plus"),
+            EntitlementPayload(product: .networkProtection, name: "plus"),
+            EntitlementPayload(product: .paidAIChat, name: "plus")
+        ], billingCycles: billingCycles)
+        return GetTierProductsResponse(products: [tierProduct])
+    }
+
     // MARK: -
 
     public func getCustomerPortalURL(accessToken: String, externalID: String) async throws -> GetCustomerPortalURLResponse {
@@ -318,5 +372,21 @@ New: \(subscription.debugDescription, privacy: .public)
         } else {
             throw SubscriptionEndpointServiceError.invalidResponseCode(statusCode)
         }
+    }
+
+    public func getSubscriptionTierFeatures(for subscriptionIDs: [String]) async throws -> GetSubscriptionTierFeaturesResponse {
+        // Uses the old endpoint
+        // Will use the new endpoint in a followup PR
+        var featuresDict: [String: [EntitlementPayload]] = [:]
+
+        for subscriptionID in subscriptionIDs {
+            let response = try await getSubscriptionFeatures(for: subscriptionID)
+            let entitlements = response.features.map { feature in
+                EntitlementPayload(product: feature, name: "plus")
+            }
+            featuresDict[subscriptionID] = entitlements
+        }
+
+        return GetSubscriptionTierFeaturesResponse(features: featuresDict)
     }
 }

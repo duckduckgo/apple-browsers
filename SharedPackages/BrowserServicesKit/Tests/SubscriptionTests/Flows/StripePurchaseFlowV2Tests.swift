@@ -70,4 +70,70 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
         }
     }
 
+    // MARK: - Tests for subscriptionTierOptions
+
+    func testSubscriptionTierOptionsSuccess() async throws {
+        // Given
+        subscriptionManager.tierProductsResponse = .success(SubscriptionMockFactory.tierProductsResponse)
+
+        // When
+        let result = await stripePurchaseFlow.subscriptionTierOptions()
+
+        // Then
+        switch result {
+        case .success(let success):
+            XCTAssertEqual(success.platform, SubscriptionPlatformName.stripe)
+            XCTAssertEqual(success.products.count, 1)
+
+            let tier = success.products[0]
+            XCTAssertEqual(tier.tier, "plus")
+            XCTAssertEqual(tier.features.count, 4)
+            XCTAssertEqual(tier.options.count, 2)
+
+            // Verify features
+            let expectedFeatures: [SubscriptionEntitlement] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat]
+            for expectedFeature in expectedFeatures {
+                XCTAssertTrue(tier.features.contains(where: { $0.product == expectedFeature }))
+            }
+
+            // Verify options
+            XCTAssertTrue(tier.options.contains(where: { $0.id == "monthly-plus" }))
+            XCTAssertTrue(tier.options.contains(where: { $0.id == "yearly-plus" }))
+        case .failure(let error):
+            XCTFail("Unexpected failure: \(error)")
+        }
+    }
+
+    func testSubscriptionTierOptionsFailureNoProducts() async throws {
+        // Given
+        subscriptionManager.tierProductsResponse = .success(GetTierProductsResponse(products: []))
+
+        // When
+        let result = await stripePurchaseFlow.subscriptionTierOptions()
+
+        // Then
+        switch result {
+        case .success:
+            XCTFail("Expected failure but got success")
+        case .failure(let error):
+            XCTAssertEqual(error, .noProductsFound)
+        }
+    }
+
+    func testSubscriptionTierOptionsFailureAPIError() async throws {
+        // Given
+        subscriptionManager.tierProductsResponse = .failure(SubscriptionEndpointServiceError.noData)
+
+        // When
+        let result = await stripePurchaseFlow.subscriptionTierOptions()
+
+        // Then
+        switch result {
+        case .success:
+            XCTFail("Expected failure but got success")
+        case .failure(let error):
+            XCTAssertEqual(error, .noProductsFound)
+        }
+    }
+
 }

@@ -19,7 +19,17 @@
         "key": "pixelSource",
         "type": "string",
         "description": "The channel the user is on",
-        "enum": ["browser-dmg", "browser-appstore"]
+        "enum": [
+            "browser-dmg",
+            "browser-appstore",
+            "vpnAgent",
+            "vpnAgentAppStore",
+            "vpnAppExtension",
+            "vpnSystemExtension",
+            "vpnSystemExtensionAppStore",
+            "vpnProxyExtension",
+            "dbpBackgroundAgent"
+        ]
     },
     "errorDomain": {
         "key": "d",

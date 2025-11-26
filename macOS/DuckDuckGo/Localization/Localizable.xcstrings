@@ -29858,6 +29858,66 @@
         }
       }
     },
+    "feedback.problem-subcategory.popup-windows-not-opening" : {
+      "comment" : "Problem subcategory for popup windows being blocked",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pop-up-Fenster öffnen sich nicht oder sind defekt"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Pop-up windows not opening or broken"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las ventanas emergentes no se abren o están rotas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les fenêtres contextuelles ne s'ouvrent pas ou sont cassées"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I popup non si aprono o non funzionano"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pop-upvensters worden niet geopend of werken niet"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyskakujące okienka nie otwierają się lub nie działają"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As janelas pop-up não abrem ou estão quebradas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Всплывающие окна не открываются или не работают"
+          }
+        }
+      }
+    },
     "feedback.problem-subcategory.passwords-management" : {
       "comment" : "Problem subcategory for general password management issues",
       "extractionState" : "extracted_with_value",

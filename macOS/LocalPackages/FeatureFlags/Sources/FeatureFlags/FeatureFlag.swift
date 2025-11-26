@@ -110,9 +110,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866613117546
     case canScanUrlBasedSyncSetupBarcodes
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866610505232
-    case privacyProFreeTrial
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866617269950
     case paidAIChat
 
@@ -184,9 +181,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720037380
     case openFireWindowByDefault
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866619027311
-    case restoreSessionPrompt
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866473926615
     case duckAISearchParameter
@@ -312,7 +306,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .updateSafariBookmarksImport,
                 .updateFirefoxBookmarksImport,
                 .supportsAlternateStripePaymentFlow,
-                .restoreSessionPrompt,
                 .refactorOfSyncPreferences,
                 .subscriptionPurchaseWidePixelMeasurement,
                 .subscriptionRestoreWidePixelMeasurement,
@@ -366,7 +359,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .paidAIChat,
                 .exchangeKeysToSyncWithAnotherDevice,
                 .canScanUrlBasedSyncSetupBarcodes,
-                .privacyProFreeTrial,
                 .removeWWWInCanonicalizationInThreatProtection,
                 .osSupportForceUnsupportedMessage,
                 .osSupportForceWillSoonDropSupportMessage,
@@ -388,7 +380,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .newTabPageTabIDs,
                 .vpnToolbarUpsell,
                 .supportsAlternateStripePaymentFlow,
-                .restoreSessionPrompt,
                 .openFireWindowByDefault,
                 .duckAISearchParameter,
                 .refactorOfSyncPreferences,
@@ -503,8 +494,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
         case .canScanUrlBasedSyncSetupBarcodes:
             return .remoteReleasable(.subfeature(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
-        case .privacyProFreeTrial:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrial))
         case .paidAIChat:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.paidAIChat))
         case .removeWWWInCanonicalizationInThreatProtection:
@@ -551,8 +540,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
         case .openFireWindowByDefault:
             return .remoteReleasable(.feature(.openFireWindowByDefault))
-        case .restoreSessionPrompt:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.restoreSessionPrompt))
         case .duckAISearchParameter:
             return .enabled
         case .subscriptionPurchaseWidePixelMeasurement:

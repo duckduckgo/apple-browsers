@@ -36,13 +36,10 @@ final class SessionRestorePromptCoordinator: SessionRestorePromptCoordinating {
     }
 
     private let pixelFiring: PixelFiring?
-    private let featureFlagger: FeatureFlagger
     private var state: State = .initial
 
-    init(pixelFiring: PixelFiring?,
-         featureFlagger: FeatureFlagger) {
+    init(pixelFiring: PixelFiring?) {
         self.pixelFiring = pixelFiring
-        self.featureFlagger = featureFlagger
     }
 
     func markUIReady() {
@@ -74,7 +71,6 @@ final class SessionRestorePromptCoordinator: SessionRestorePromptCoordinating {
     }
 
     private func showPrompt(with restoreAction: @escaping (Bool) -> Void) {
-        guard featureFlagger.isFeatureOn(.restoreSessionPrompt) else { return }
         state = .promptShown
         let dismissPromptAction = { [weak self] restoreSession in
             self?.state = .promptDismissed

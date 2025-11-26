@@ -48,6 +48,9 @@ public protocol AIChatViewControllerDelegate: AnyObject {
     ///   - viewController: The `AIChatViewController` instance that completed the download.
     ///   - fileName: The name of the downloaded file that the user has requested to open
     func aiChatViewController(_ viewController: AIChatViewController, didRequestOpenDownloadWithFileName fileName: String)
+
+    /// Tells the delegate that the `AIChatViewController` will begin downloading a file.
+    func aiChatViewControllerWillStartDownload()
 }
 
 public final class AIChatViewController: UIViewController {
@@ -203,6 +206,10 @@ extension AIChatViewController: AIChatWebViewControllerDelegate {
 
     func aiChatWebViewController(_ viewController: AIChatWebViewController, didRequestToLoad url: URL) {
         delegate?.aiChatViewController(self, didRequestToLoad: url)
+    }
+
+    func aiChatWebViewControllerWillStartDownload(_ viewController: AIChatWebViewController) {
+        delegate?.aiChatViewControllerWillStartDownload()
     }
 }
 #endif

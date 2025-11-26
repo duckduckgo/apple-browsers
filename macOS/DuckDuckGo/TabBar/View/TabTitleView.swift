@@ -20,6 +20,7 @@ import AppKit
 
 final class TabTitleView: NSView {
 
+    private let displayPolicy = DefaultTitleDisplayPolicy()
     private lazy var titleTextField: NSTextField = buildTitleTextField()
     private lazy var previousTextField: NSTextField = buildTitleTextField()
     private(set) var sourceURL: URL?
@@ -56,18 +57,18 @@ extension TabTitleView {
     /// avoid animating the Placeholder.
     ///
     func displayTitleIfNeeded(title: String, url: URL?, animated: Bool = true) {
-        if mustSkipDisplayingTitle(title: title, url: url, previousURL: sourceURL) {
+        if displayPolicy.mustSkipDisplayingTitle(title: title, url: url, previousURL: sourceURL) {
             return
         }
 
         let previousTitle = titleTextField.stringValue
-        let mustFadeInLatestTitle = mustAnimateNewTitleFadeIn(targetURL: url, previousURL: sourceURL)
+        let mustFadeInLatestTitle = displayPolicy.mustAnimateNewTitleFadeIn(targetURL: url, previousURL: sourceURL)
 
         titleTextField.stringValue = title
         previousTextField.stringValue = previousTitle
         sourceURL = url
 
-        guard animated, mustAnimateTitleTransition(title: title, previousTitle: previousTitle) else {
+        guard animated, displayPolicy.mustAnimateTitleTransition(title: title, previousTitle: previousTitle) else {
             return
         }
 
@@ -125,21 +126,6 @@ private extension TabTitleView {
         textField.font = .systemFont(ofSize: 13)
         textField.lineBreakMode = .byClipping
         return textField
-    }
-}
-
-private extension TabTitleView {
-
-    func mustSkipDisplayingTitle(title: String, url: URL?, previousURL: URL?) -> Bool {
-        previousURL?.host == url?.host && url?.suggestedTitlePlaceholder == title
-    }
-
-    func mustAnimateTitleTransition(title: String, previousTitle: String) -> Bool {
-        title != previousTitle && previousTitle.isEmpty == false
-    }
-
-    func mustAnimateNewTitleFadeIn(targetURL: URL?, previousURL: URL?) -> Bool {
-        targetURL?.host?.dropSubdomain() != previousURL?.host?.dropSubdomain()
     }
 }
 

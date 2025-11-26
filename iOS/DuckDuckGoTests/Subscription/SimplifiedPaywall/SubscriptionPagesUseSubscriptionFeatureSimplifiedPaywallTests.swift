@@ -58,8 +58,7 @@ final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTes
             subscriptionAttributionOrigin: nil,
             appStorePurchaseFlow: mockAppStorePurchaseFlow,
             appStoreRestoreFlow: AppStoreRestoreFlowMock(),
-            appStoreAccountManagementFlow: AppStoreAccountManagementFlowMock(),
-        subscriptionFreeTrialsHelper: MockSubscriptionFreeTrialsHelper())
+            appStoreAccountManagementFlow: AppStoreAccountManagementFlowMock())
     }
 
     func testWhenSubscriptionSelectedIncludesExperimentParameters_thenSubscriptionPurchasedReceivesExperimentParameters() async throws {

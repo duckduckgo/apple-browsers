@@ -108,7 +108,7 @@ final class UpdateWideEventData: WideEventData {
         case downloadCompleted
         case extractionStarted
         case extractionCompleted
-        case readyToInstall
+        case restartingToUpdate
     }
 
     /// Time bucket for privacy-safe update frequency tracking.

@@ -538,7 +538,7 @@ class TabViewController: UIViewController {
         }
         
         self.aiChatSettings = aiChatSettings
-        self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings)
+        self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings, featureDiscovery: featureDiscovery)
 
         super.init(coder: aDecoder)
         

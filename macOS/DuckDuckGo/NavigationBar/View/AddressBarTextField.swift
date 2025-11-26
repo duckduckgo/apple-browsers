@@ -1304,6 +1304,15 @@ private extension NSMenuItem {
 extension AddressBarTextField: SuggestionViewControllerDelegate {
 
     func suggestionViewControllerDidConfirmSelection(_ suggestionViewController: SuggestionViewController) {
+        let selectedRowContent = suggestionContainerViewModel?.selectedRowContent
+        suggestionContainerViewModel?.clearUserStringValue()
+
+        if case .aiChatCell = selectedRowContent {
+            openAIChatWithPrompt()
+            hideSuggestionWindow()
+            return
+        }
+
         let suggestion = suggestionContainerViewModel?.selectedSuggestionViewModel?.suggestion
         navigate(suggestion: suggestion)
     }

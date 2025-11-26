@@ -367,8 +367,15 @@ extension SuggestionViewController: NSTableViewDelegate {
         return cell
     }
 
+    private static let sectionDividerViewIdentifier = NSUserInterfaceItemIdentifier("SectionDividerView")
+
     private func makeSectionDividerView() -> NSView {
+        if let reusedView = tableView.makeView(withIdentifier: Self.sectionDividerViewIdentifier, owner: self) {
+            return reusedView
+        }
+
         let containerView = NSView()
+        containerView.identifier = Self.sectionDividerViewIdentifier
         containerView.wantsLayer = true
 
         let dividerLine = NSView()

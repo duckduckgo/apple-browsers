@@ -157,7 +157,13 @@
                   Identifier = "SyncDialogControllerTests/test_enterRecoveryCodePressed_whenUrlBarcodeOff_usesBase64Format()">
                </Test>
                <Test
+                  Identifier = "SyncDialogControllerTests/test_enterRecoveryCodePressed_whenUrlBarcodeOn_usesUrlFormat()">
+               </Test>
+               <Test
                   Identifier = "SyncDialogControllerTests/test_recoverDevice_accountAlreadyExists_oneDevice_updatesDevicesWithReturnedDevices()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/test_recoverDevice_accountAlreadyExists_twoOrMoreDevices_showsAccountSwitchingMessage()">
                </Test>
                <Test
                   Identifier = "SyncPreferencesTests/test_recoverDevice_accountAlreadyExists_twoOrMoreDevices_showsAccountSwitchingMessage()">

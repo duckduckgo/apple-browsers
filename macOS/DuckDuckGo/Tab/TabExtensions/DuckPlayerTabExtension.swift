@@ -209,7 +209,7 @@ extension DuckPlayerTabExtension: YoutubeOverlayUserScriptDelegate {
 
 extension DuckPlayerTabExtension: NewWindowPolicyDecisionMaker {
 
-    func decideNewWindowPolicy(for navigationAction: WKNavigationAction) -> NavigationDecision? {
+    func decideNewWindowPolicy(for navigationAction: WKNavigationAction) -> NewWindowPolicyDecision? {
         // if a link was clicked inside duckplayer (like a recommendation)
         // and has target=_blank - then we want to prevent a new tab
         // opening, and just load it inside the current one instead

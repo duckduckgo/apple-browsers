@@ -45,7 +45,7 @@ extension Tab: NavigationResponder {
             // AI Chat navigations handling
             .weak(nullable: self.aiChat),
 
-            .weak(nullable: self.navigationHotkeyHandler),
+            .weak(nullable: self.popupHandling),
             .strong(NavigationPixelNavigationResponder(featureFlagger: featureFlagger)),
             .weak(nullable: self.brokenSiteInfo),
             .weak(nullable: self.tabCrashRecovery),
@@ -117,7 +117,6 @@ extension Tab: NavigationResponder {
 
         newWindowPolicyDecisionMakers = [NewWindowPolicyDecisionMaker?](arrayLiteral:
             self.contextMenuManager,
-            self.navigationHotkeyHandler,
             self.duckPlayer
         ).compactMap { $0 }
 

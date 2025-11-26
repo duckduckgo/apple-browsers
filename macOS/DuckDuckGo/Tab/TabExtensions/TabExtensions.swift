@@ -206,14 +206,16 @@ extension TabExtensionsBuilder {
         }
         add {
             PopupHandlingTabExtension(tabsPreferences: args.tabsPreferences,
-                                     burnerMode: args.burnerMode,
-                                     permissionModel: args.permissionModel,
-                                     createChildTab: args.createChildTab,
-                                     presentTab: args.presentTab,
-                                     newWindowPolicyDecisionMakers: args.newWindowPolicyDecisionMakers,
-                                     featureFlagger: dependencies.featureFlagger,
-                                     popupBlockingConfig: DefaultPopupBlockingConfiguration(privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager),
-                                     interactionEventsPublisher: args.interactionEventsPublisher)
+                                      burnerMode: args.burnerMode,
+                                      permissionModel: args.permissionModel,
+                                      createChildTab: args.createChildTab,
+                                      presentTab: args.presentTab,
+                                      newWindowPolicyDecisionMakers: args.newWindowPolicyDecisionMakers,
+                                      featureFlagger: dependencies.featureFlagger,
+                                      popupBlockingConfig: DefaultPopupBlockingConfiguration(privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager),
+                                      interactionEventsPublisher: args.interactionEventsPublisher,
+                                      isTabPinned: args.isTabPinned,
+                                      isBurner: args.isTabBurner)
         }
         add {
             HoveredLinkTabExtension(hoverUserScriptPublisher: userScripts.map(\.?.hoverUserScript))
@@ -264,9 +266,6 @@ extension TabExtensionsBuilder {
         }
         add {
             ExternalAppSchemeHandler(workspace: dependencies.workspace, permissionModel: args.permissionModel, contentPublisher: args.contentPublisher)
-        }
-        add {
-            NavigationHotkeyHandler(isTabPinned: args.isTabPinned, isBurner: args.isTabBurner, tabsPreferences: dependencies.tabsPreferences)
         }
 
         let duckPlayerOnboardingDecider = DefaultDuckPlayerOnboardingDecider(preferences: dependencies.duckPlayer.preferences)

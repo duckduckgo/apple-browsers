@@ -8026,7 +8026,6 @@
 		4B723DFE26B0003E00E14D75 /* DataImport */ = {
 			isa = PBXGroup;
 			children = (
-				EE1886572EB8D83300A46272 /* NewImportSummaryViewModelTests.swift */,
 				37A803DA27FD69D300052F4C /* DataImportResources */,
 				B65CD8D42B316FCA00A595BB /* __Snapshots__ */,
 				373A1AB128451ED400586521 /* BookmarksHTMLImporterTests.swift */,
@@ -8051,6 +8050,7 @@
 				4B2975982828285900187C4E /* FirefoxKeyReaderTests.swift */,
 				4B8AC93C26B49BE600879451 /* FirefoxLoginReaderTests.swift */,
 				CC00A08F2E1D52A700750ED3 /* FirefoxPreferencesTests.swift */,
+				EE1886572EB8D83300A46272 /* NewImportSummaryViewModelTests.swift */,
 				C1C257122ECD178400C4AEAD /* SafariArchiveImporterTests.swift */,
 				4BB99D0E26FE1A84001E4761 /* SafariBookmarksReaderTests.swift */,
 				4BF4951726C08395000547B8 /* ThirdPartyBrowserTests.swift */,

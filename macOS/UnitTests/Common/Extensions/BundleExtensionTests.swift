@@ -28,15 +28,11 @@ final class BundleExtensionTests: XCTestCase {
         let dbpBackgroundAgentBundleId = Bundle.main.dbpBackgroundAgentBundleId
         XCTAssertTrue(!dbpBackgroundAgentBundleId.isEmpty)
 
-#if !APPSTORE
-        let vpnSystemExtensionBundleId = Bundle.main.vpnSystemExtensionBundleId!
+        let vpnSystemExtensionBundleId = Bundle.main.vpnSystemExtensionBundleId
         XCTAssertTrue(!vpnSystemExtensionBundleId.isEmpty)
 
-        let vpnProxyExtensionBundleId = Bundle.main.vpnProxyExtensionBundleId!
+        let vpnProxyExtensionBundleId = Bundle.main.vpnProxyExtensionBundleId
         XCTAssertTrue(!vpnProxyExtensionBundleId.isEmpty)
-#endif
-
-
     }
 
 }

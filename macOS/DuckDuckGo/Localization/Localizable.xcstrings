@@ -41651,6 +41651,18 @@
         }
       }
     },
+    "import.browser.data.complete.set.up.sync.button.title" : {
+      "comment" : "Import Browser Data dialog button title to set up data sync at completion stage",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Set Up Sync"
+          }
+        }
+      }
+    },
     "import.browser.data.complete.sync.button.title" : {
       "comment" : "Import Browser Data dialog button title to sync imported data at completion stage",
       "extractionState" : "extracted_with_value",

@@ -30,11 +30,12 @@ struct AIChatViewControllerManagerTests {
     
     // MARK: - Helper Methods
     private var delegate = MockAIChatViewControllerManagerDelegate()
-    private func createManager() -> AIChatViewControllerManager {
+    private func createManager(
+        downloadsDirectoryHandler: MockDownloadsDirectoryHandler = MockDownloadsDirectoryHandler()) -> AIChatViewControllerManager {
         let manager = AIChatViewControllerManager(
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             contentBlockingAssetsPublisher: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
-            downloadsDirectoryHandler: MockDownloadsDirectoryHandler(),
+            downloadsDirectoryHandler: downloadsDirectoryHandler,
             userAgentManager: MockUserAgentManager(privacyConfig: MockPrivacyConfiguration()),
             experimentalAIChatManager: ExperimentalAIChatManager(),
             featureFlagger: MockFeatureFlagger(),
@@ -416,6 +417,38 @@ struct AIChatViewControllerManagerTests {
         #expect(manager.chatViewController !== firstViewController)
     }
 
+    @Test("Presenting AI Chat view controller does not create downloads directory")
+    @MainActor
+    func testPresentAIChatViewController_DoesNotCreateDownloadsDirectory() async throws {
+        // Given
+        let mockDownloadsHandler = MockDownloadsDirectoryHandler()
+        let manager = createManager(downloadsDirectoryHandler: mockDownloadsHandler)
+        let mockViewController = createMockViewController()
+        
+        // When
+        manager.openAIChat(on: mockViewController)
+
+        // Then
+        #expect(mockDownloadsHandler.createDownloadsDirectoryIfNeededCallCount == 0,
+                      "Downloads directory should not be created when presenting AI Chat")
+    }
+    
+    @Test("AI Chat will start download creates downloads directory")
+    @MainActor
+    func testAIChatViewControllerWillStartDownload_CreatesDownloadsDirectory() async throws {
+        // Given
+        let mockDownloadsHandler = MockDownloadsDirectoryHandler()
+        let manager = createManager(downloadsDirectoryHandler: mockDownloadsHandler)
+        let mockViewController = createMockViewController()
+                
+        // When
+        manager.openAIChat(on: mockViewController)
+        manager.aiChatViewControllerWillStartDownload()
+
+        // Then
+        #expect(mockDownloadsHandler.createDownloadsDirectoryIfNeededCallCount == 1,
+                      "Downloads directory should be created when download starts")
+    }
 }
 
 // MARK: - Mock UIViewController for Testing
@@ -442,17 +475,23 @@ private class MockContainerView: UIView {
 }
 
 private final class MockDownloadsDirectoryHandler: DownloadsDirectoryHandling {
+    
+    var createDownloadsDirectoryIfNeededCallCount: Int = 0
+
     var downloadsDirectoryFiles: [URL] = []
+    var downloadsDirectory: URL = URL(string: "/tmp/downloads")!
 
     func downloadsDirectoryExists() -> Bool {
         return false
     }
 
-    func createDownloadsDirectory() {
-    }
+    func createDownloadsDirectory() {}
 
-    var downloadsDirectory: URL = URL(string: "/tmp/downloads")!
-    func createDownloadsDirectoryIfNeeded() {}
+    func createDownloadsDirectoryIfNeeded() {
+        createDownloadsDirectoryIfNeededCallCount += 1
+    }
+    
+    func deleteDownloadsDirectoryIfEmpty() {}
 }
 
 private final class MockAIChatViewControllerManagerDelegate: AIChatViewControllerManagerDelegate {

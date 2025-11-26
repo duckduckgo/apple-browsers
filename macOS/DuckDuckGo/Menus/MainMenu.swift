@@ -52,7 +52,7 @@ final class MainMenu: NSMenu {
     let importBrowserDataMenuItem = NSMenuItem(title: UserText.mainMenuFileImportBookmarksandPasswords, action: #selector(AppDelegate.openImportBrowserDataWindow))
 
     @MainActor
-    let sharingMenu = SharingMenu(title: UserText.shareMenuItem, location: .mainMenu)
+    lazy var sharingMenu = SharingMenu(title: UserText.shareMenuItem, location: .mainMenu, delegate: self)
 
     // MARK: View
     let stopMenuItem = NSMenuItem(title: UserText.mainMenuViewStop, action: #selector(MainViewController.stopLoadingPage), keyEquivalent: ".")
@@ -1017,6 +1017,18 @@ final class MainMenu: NSMenu {
             newBurnerWindowMenuItem.keyEquivalent = "N"
             newBurnerWindowMenuItem.keyEquivalentModifierMask = [.command, .shift]
         }
+    }
+}
+
+// MARK: - SharingMenuDelegate
+extension MainMenu: SharingMenuDelegate {
+    func sharingMenuRequestsSharingData() -> SharingMenu.SharingData? {
+        guard let tabViewModel = (NSApp.keyWindow?.nextResponder as? MainWindowController ?? Application.appDelegate.windowControllersManager.lastKeyMainWindowController)?.mainViewController.tabCollectionViewModel.selectedTabViewModel,
+              tabViewModel.canReload,
+              !tabViewModel.isShowingErrorPage,
+              let url = tabViewModel.tab.content.userEditableUrl else { return nil }
+
+        return (tabViewModel.title, [url])
     }
 }
 

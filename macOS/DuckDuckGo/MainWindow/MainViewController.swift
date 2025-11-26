@@ -977,60 +977,97 @@ extension MainViewController {
         let key = event.charactersIgnoringModifiers?.lowercased() ?? ""
         let isWebViewFocused = view.window?.firstResponder is WebView
 
-        // Handle Enter
-        if event.keyCode == kVK_Return,
-           navigationBarViewController.addressBarViewController?.addressBarTextField.isFirstResponder == true {
-            if flags.contains(.shift) && aiChatMenuConfig.shouldDisplayAddressBarShortcutWhenTyping {
-                navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.aiChatButtonAction(self)
-            } else {
-                navigationBarViewController.addressBarViewController?.addressBarTextField.addressBarEnterPressed()
-            }
+        if handleReturnKey(event: event, flags: flags) {
             return true
         }
 
-        // Handle Escape
-        if event.keyCode == kVK_Escape {
-            var isHandled = false
-            if !mainView.findInPageContainerView.isHidden {
-                findInPageViewController.findInPageDone(self)
-                isHandled = true
-            }
-            if let addressBarVC = navigationBarViewController.addressBarViewController {
-                isHandled = isHandled || addressBarVC.escapeKeyDown()
-            }
-            return isHandled
-        }
-
-        // Handle tab switching (CMD+1 through CMD+9)
-        if [.command, [.command, .numericPad]].contains(flags), "123456789".contains(key) {
-            if isWebViewFocused {
-                NSApp.menu?.performKeyEquivalent(with: event)
-                return true
-            }
-            return false
-        }
-
-        if event.keyCode == kVK_Tab, [.control, [.control, .shift]].contains(flags) {
-            NSApp.menu?.performKeyEquivalent(with: event)
+        if handleEscapeKey(event: event) {
             return true
         }
 
-        // Handle browser tab/window actions
-        if isWebViewFocused {
-            switch (key, flags, flags.contains(.command)) {
-            case ("n", [.command], _),
-                ("t", [.command], _), ("t", [.command, .shift], _),
-                ("w", _, true),
-                ("q", [.command], _),
-                ("r", [.command], _):
-                NSApp.menu?.performKeyEquivalent(with: event)
-                return true
-            default:
-                break
-            }
+        if handleTabSwitching(event: event, flags: flags, key: key, isWebViewFocused: isWebViewFocused) {
+            return true
+        }
+
+        if handleControlTab(event: event, flags: flags) {
+            return true
+        }
+
+        if handleBrowserActions(key: key, flags: flags, isWebViewFocused: isWebViewFocused, event: event) {
+            return true
         }
 
         return false
+    }
+
+    private func handleReturnKey(event: NSEvent, flags: NSEvent.ModifierFlags) -> Bool {
+        guard event.keyCode == kVK_Return,
+              navigationBarViewController.addressBarViewController?.addressBarTextField.isFirstResponder == true else {
+            return false
+        }
+
+        if flags.contains(.shift) || flags.contains(.option),
+           featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
+           let buttonsViewController = navigationBarViewController.addressBarViewController?.addressBarButtonsViewController {
+            buttonsViewController.toggleSearchMode()
+            return true
+        } else if flags.contains(.shift) && aiChatMenuConfig.shouldDisplayAddressBarShortcutWhenTyping {
+            navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.aiChatButtonAction(self)
+        } else {
+            navigationBarViewController.addressBarViewController?.addressBarTextField.addressBarEnterPressed()
+        }
+        return true
+    }
+
+    private func handleEscapeKey(event: NSEvent) -> Bool {
+        guard event.keyCode == kVK_Escape else { return false }
+
+        var isHandled = false
+        if !mainView.findInPageContainerView.isHidden {
+            findInPageViewController.findInPageDone(self)
+            isHandled = true
+        }
+        if let addressBarVC = navigationBarViewController.addressBarViewController {
+            isHandled = isHandled || addressBarVC.escapeKeyDown()
+        }
+        return isHandled
+    }
+
+    private func handleTabSwitching(event: NSEvent, flags: NSEvent.ModifierFlags, key: String, isWebViewFocused: Bool) -> Bool {
+        guard [.command, [.command, .numericPad]].contains(flags), "123456789".contains(key) else {
+            return false
+        }
+
+        if isWebViewFocused {
+            NSApp.menu?.performKeyEquivalent(with: event)
+            return true
+        }
+        return false
+    }
+
+    private func handleControlTab(event: NSEvent, flags: NSEvent.ModifierFlags) -> Bool {
+        guard event.keyCode == kVK_Tab, [.control, [.control, .shift]].contains(flags) else {
+            return false
+        }
+
+        NSApp.menu?.performKeyEquivalent(with: event)
+        return true
+    }
+
+    private func handleBrowserActions(key: String, flags: NSEvent.ModifierFlags, isWebViewFocused: Bool, event: NSEvent) -> Bool {
+        guard isWebViewFocused else { return false }
+
+        switch (key, flags, flags.contains(.command)) {
+        case ("n", [.command], _),
+            ("t", [.command], _), ("t", [.command, .shift], _),
+            ("w", _, true),
+            ("q", [.command], _),
+            ("r", [.command], _):
+            NSApp.menu?.performKeyEquivalent(with: event)
+            return true
+        default:
+            return false
+        }
     }
 
     func otherMouseUp(with event: NSEvent) -> NSEvent? {

@@ -1,6 +1,6 @@
 ---
 alwaysApply: false
-title: "UI Testing Guidelines & Best Practices"
+title: "UI Testing Guidelines & Best Practices (ui-testing.md)"
 description: "Comprehensive UI testing practices and patterns for DuckDuckGo browser macOS UI tests including element handling, navigation testing, window management, and accessibility patterns"
 keywords: ["UI testing", "UI tests", "UITests", "XCTest", "XCUIApplication", "XCUIElement", "accessibility", "tab navigation", "window management", "element timing", "feature flags", "test server", "macOS testing", "middle click", "modifier keys", "timing patterns"]
 ---

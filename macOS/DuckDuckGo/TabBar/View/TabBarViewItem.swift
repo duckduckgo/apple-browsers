@@ -153,7 +153,7 @@ final class TabBarItemCellView: NSView {
 
     /// Will be removed in favor of `faviconView`
     fileprivate lazy var faviconImageView = {
-        let faviconImageView = NSImageView()
+        let faviconImageView = FaviconImageView()
         faviconImageView.imageScaling = .scaleProportionallyDown
         return faviconImageView
     }()

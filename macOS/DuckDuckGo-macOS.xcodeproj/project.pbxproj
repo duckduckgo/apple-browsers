@@ -2834,6 +2834,8 @@
 		B541A3552E858041004AEAAD /* ThemeColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B541A3532E858041004AEAAD /* ThemeColors.swift */; };
 		B55C8F742E81A8730024B421 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B55C8F732E81A8730024B421 /* ThemeManager.swift */; };
 		B55C8F752E81A8730024B421 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B55C8F732E81A8730024B421 /* ThemeManager.swift */; };
+		B56776752ED778C600303198 /* FaviconImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B56776742ED778C600303198 /* FaviconImageView.swift */; };
+		B56776762ED778C600303198 /* FaviconImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B56776742ED778C600303198 /* FaviconImageView.swift */; };
 		B568715E2EC528950075A270 /* CABasicAnimationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B568715D2EC528950075A270 /* CABasicAnimationExtension.swift */; };
 		B568715F2EC528950075A270 /* CABasicAnimationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B568715D2EC528950075A270 /* CABasicAnimationExtension.swift */; };
 		B56871612EC528CF0075A270 /* CATransitionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B56871602EC528CF0075A270 /* CATransitionExtension.swift */; };
@@ -5532,6 +5534,8 @@
 		B53F4E912EA917AB0043B5EF /* LetterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LetterView.swift; sourceTree = "<group>"; };
 		B541A3532E858041004AEAAD /* ThemeColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeColors.swift; sourceTree = "<group>"; };
 		B55C8F732E81A8730024B421 /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
+		B56776742ED778C600303198 /* FaviconImageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconImageView.swift; sourceTree = "<group>"; };
+		B56776802ED79FCB00303198 /* FaviconImageViewTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconImageViewTests.swift; sourceTree = "<group>"; };
 		B568715D2EC528950075A270 /* CABasicAnimationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CABasicAnimationExtension.swift; sourceTree = "<group>"; };
 		B56871602EC528CF0075A270 /* CATransitionExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CATransitionExtension.swift; sourceTree = "<group>"; };
 		B574243A2EBA8CDF002E5460 /* TabFaviconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabFaviconView.swift; sourceTree = "<group>"; };
@@ -10063,6 +10067,7 @@
 				3154FD1328E6011A00909769 /* TabShadowView.swift */,
 				B574243A2EBA8CDF002E5460 /* TabFaviconView.swift */,
 				B5CBB60A2EC4F80A006C3F54 /* TabTitleView.swift */,
+				B56776742ED778C600303198 /* FaviconImageView.swift */,
 				B53F4E912EA917AB0043B5EF /* LetterView.swift */,
 				B5DE8DA82EBE292F005C5EF4 /* SpinnerView.swift */,
 			);
@@ -14164,6 +14169,7 @@
 				31267C6B2B640C5200FEF811 /* DataBrokerProtectionAppEvents.swift in Sources */,
 				1DD6A7B22D804786006AE043 /* PinnedTabsDiscoveryPopUpView.swift in Sources */,
 				3706FBE4293F65D500E42796 /* FireAnimationView.swift in Sources */,
+				B56776762ED778C600303198 /* FaviconImageView.swift in Sources */,
 				3706FBE5293F65D500E42796 /* FaviconUrlReference.swift in Sources */,
 				7BD504A02E5FA439008A0646 /* WKWebExtensionWindow.swift in Sources */,
 				9FFBEE762DDEDE870058B11A /* DefaultBrowserAndDockPromptStoreMigrator.swift in Sources */,
@@ -15704,6 +15710,7 @@
 				B69B503A2726A12500758A2B /* StatisticsLoader.swift in Sources */,
 				371BBC5B2D00C919008FA0C7 /* NewTabPageActionsManagerExtension.swift in Sources */,
 				37CD54C927F2FDD100F1F7B9 /* DataClearingPreferences.swift in Sources */,
+				B56776752ED778C600303198 /* FaviconImageView.swift in Sources */,
 				37A756EB2DD5EAA50003C8C9 /* NewTabPageProtectionsReportSettingsMigrator.swift in Sources */,
 				B6F1C80B2761C45400334924 /* LocalUnprotectedDomains.swift in Sources */,
 				B69A14FA2B4D705D00B9417D /* BookmarkFolderPicker.swift in Sources */,

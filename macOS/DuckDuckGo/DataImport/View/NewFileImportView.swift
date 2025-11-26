@@ -38,7 +38,7 @@ func newFileImportMultipleTypeInstructionsBuilder(source: DataImport.Source) -> 
         %@ - browser icon
         **bold text**; _italic text_
         """)
-        (source.importSourceImage ?? DataImport.Source.safari.importSourceImage!)//.resizedToFaviconSize()
+        (source.importSourceImage ?? DataImport.Source.safari.importSourceImage!).resizedToFaviconSize()
     case // browsers
          .brave, .chrome, .chromium, .coccoc,
          .edge, .firefox, .opera, .operaGX,

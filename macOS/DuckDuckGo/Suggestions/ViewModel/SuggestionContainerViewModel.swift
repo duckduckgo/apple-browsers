@@ -73,58 +73,78 @@ final class SuggestionContainerViewModel {
 
     // MARK: - Section-based API (for TableView)
 
+    /// Indicates whether the top suggestion has been auto-selected (e.g., user typed "apple" and there's a matching bookmark).
+    /// When true, the header section is hidden and the AI chat cell moves to the footer.
+    @Published private(set) var hasAutoSelectedSuggestion = false
+
+    /// Whether to show header cells (search and AI chat at the top).
+    /// Header is hidden when a suggestion is auto-selected.
+    private var shouldShowHeaderSection: Bool {
+        !hasAutoSelectedSuggestion
+    }
+
+    /// Whether to show the AI chat cell in the footer section.
+    /// Footer AI chat is shown when a suggestion is auto-selected.
+    private var shouldShowAIChatCellInFooter: Bool {
+        hasAutoSelectedSuggestion && shouldShowAIChatCellBase
+    }
+
     var numberOfHeaderRows: Int {
+        guard shouldShowHeaderSection else { return 0 }
         var count = 0
         if shouldShowSearchCell { count += 1 }
         if shouldShowAIChatCell { count += 1 }
         return count
     }
 
-    private var shouldShowSectionDivider: Bool {
+    var numberOfFooterRows: Int {
+        shouldShowAIChatCellInFooter ? 1 : 0
+    }
+
+    private var shouldShowHeaderDivider: Bool {
         numberOfHeaderRows > 0 && numberOfSuggestions > 0
     }
 
+    private var shouldShowFooterDivider: Bool {
+        numberOfFooterRows > 0 && numberOfSuggestions > 0
+    }
+
     var numberOfRows: Int {
-        numberOfHeaderRows + (shouldShowSectionDivider ? 1 : 0) + numberOfSuggestions
+        numberOfHeaderRows
+        + (shouldShowHeaderDivider ? 1 : 0)
+        + numberOfSuggestions
+        + (shouldShowFooterDivider ? 1 : 0)
+        + numberOfFooterRows
     }
 
     /// Returns the row index where the suggestions section starts
     private var suggestionsSectionStartRow: Int {
-        numberOfHeaderRows + (shouldShowSectionDivider ? 1 : 0)
+        numberOfHeaderRows + (shouldShowHeaderDivider ? 1 : 0)
     }
 
     /// Returns the type of content to display for the given row index.
-    /// - Parameter row: The zero-based row index in the table view
-    /// - Returns: The row content type, or nil if the row index is out of bounds
     func rowContent(at row: Int) -> SuggestionRowContent? {
-        guard row >= 0, row < numberOfRows else { return nil }
+        let contents = buildRowContents()
+        guard row >= 0, row < contents.count else { return nil }
+        return contents[row]
+    }
 
-        var currentRow = 0
+    private func buildRowContents() -> [SuggestionRowContent] {
+        var contents: [SuggestionRowContent] = []
 
-        if shouldShowSearchCell {
-            if row == currentRow {
-                return .searchCell
-            }
-            currentRow += 1
+        if shouldShowSearchCell { contents.append(.searchCell) }
+        if shouldShowAIChatCell { contents.append(.aiChatCell) }
+
+        if shouldShowHeaderDivider { contents.append(.sectionDivider) }
+
+        for index in 0..<numberOfSuggestions {
+            contents.append(.suggestion(index: index))
         }
 
-        if shouldShowAIChatCell {
-            if row == currentRow {
-                return .aiChatCell
-            }
-            currentRow += 1
-        }
+        if shouldShowFooterDivider { contents.append(.sectionDivider) }
+        if shouldShowAIChatCellInFooter { contents.append(.aiChatCell) }
 
-        if shouldShowSectionDivider {
-            if row == currentRow {
-                return .sectionDivider
-            }
-            currentRow += 1
-        }
-
-        let suggestionIndex = row - suggestionsSectionStartRow
-        guard suggestionIndex >= 0, suggestionIndex < numberOfSuggestions else { return nil }
-        return .suggestion(index: suggestionIndex)
+        return contents
     }
 
     func selectionIndex(forRow row: Int) -> Int? {
@@ -139,10 +159,6 @@ final class SuggestionContainerViewModel {
         return index + suggestionsSectionStartRow
     }
 
-    func isHeaderRow(_ row: Int) -> Bool {
-        row >= 0 && row < numberOfHeaderRows
-    }
-
     func isDividerRow(_ row: Int) -> Bool {
         guard let content = rowContent(at: row) else { return false }
         return content == .sectionDivider
@@ -153,9 +169,14 @@ final class SuggestionContainerViewModel {
         return content != .sectionDivider
     }
 
-    /// Returns the default row to select when no suggestion is selected (search cell if shown, otherwise nil)
+    /// Returns the default row to select when no suggestion is selected.
+    /// - When auto-selection is active: returns nil (the auto-selected suggestion handles selection)
+    /// - When no auto-selection: returns the search cell row (0) if shown, otherwise nil
     var defaultSelectedRow: Int? {
-        shouldShowSearchCell ? 0 : nil
+        if hasAutoSelectedSuggestion {
+            return nil
+        }
+        return shouldShowSearchCell ? 0 : nil
     }
 
     // MARK: - Suggestion Data
@@ -164,17 +185,25 @@ final class SuggestionContainerViewModel {
         suggestionContainer.result?.count ?? 0
     }
 
-    var shouldShowSearchCell: Bool {
+    private var shouldShowSearchCellBase: Bool {
         guard featureFlagger.isFeatureOn(.aiChatOmnibarToggle) else { return false }
         guard let userStringValue, !userStringValue.isEmpty else { return false }
         return true
     }
 
-    var shouldShowAIChatCell: Bool {
+    private var shouldShowAIChatCellBase: Bool {
         guard featureFlagger.isFeatureOn(.aiChatOmnibarToggle) else { return false }
         guard aiChatPreferencesStorage.isAIFeaturesEnabled else { return false }
         guard let userStringValue, !userStringValue.isEmpty else { return false }
         return true
+    }
+
+    var shouldShowSearchCell: Bool {
+        shouldShowHeaderSection && shouldShowSearchCellBase
+    }
+
+    var shouldShowAIChatCell: Bool {
+        shouldShowHeaderSection && shouldShowAIChatCellBase
     }
 
     // MARK: - Row Selection (includes prefix rows)
@@ -243,9 +272,10 @@ final class SuggestionContainerViewModel {
                     try validateShouldSelectTopSuggestion(from: result)
                 } catch {
                     Logger.general.debug("SuggestionContainerViewModel: ignoring top suggestion from \( result.map(String.init(describing:)) ?? "<nil>"): \(error)")
+                    self.hasAutoSelectedSuggestion = false
                     return
                 }
-
+                self.hasAutoSelectedSuggestion = true
                 self.select(at: 0)
             }
     }
@@ -258,6 +288,7 @@ final class SuggestionContainerViewModel {
         self.userStringValue = userStringValue
 
         guard !userStringValue.isEmpty else {
+            hasAutoSelectedSuggestion = false
             suggestionContainer.stopGettingSuggestions()
             return
         }
@@ -265,11 +296,16 @@ final class SuggestionContainerViewModel {
 
         self.isTopSuggestionSelectionExpected = userAppendedStringToTheEnd && !userStringValue.contains(" ")
 
+        if !isTopSuggestionSelectionExpected {
+            hasAutoSelectedSuggestion = false
+        }
+
         suggestionContainer.getSuggestions(for: userStringValue)
     }
 
     func clearUserStringValue() {
         self.userStringValue = nil
+        hasAutoSelectedSuggestion = false
         suggestionContainer.stopGettingSuggestions()
     }
 

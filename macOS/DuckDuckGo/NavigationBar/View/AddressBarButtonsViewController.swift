@@ -1657,12 +1657,15 @@ final class AddressBarButtonsViewController: NSViewController {
         let toggleControl = CustomToggleControl(frame: NSRect(x: 0, y: 0, width: 72, height: 28))
         toggleControl.translatesAutoresizingMaskIntoConstraints = false
 
-        toggleControl.leftSelectedImage = DesignSystemImages.Color.Size16.searchFindToggle
-        toggleControl.rightSelectedImage = DesignSystemImages.Color.Size16.aiChatToggle
+        toggleControl.setSelectedImage(DesignSystemImages.Color.Size16.searchFindToggle, forSegment: 0)
+        toggleControl.setSelectedImage(DesignSystemImages.Color.Size16.aiChatToggle, forSegment: 1)
+
+        toggleControl.setToolTip(UserText.aiChatSearchTheWebTooltip, forSegment: 0)
+        toggleControl.setToolTip(UserText.aiChatChatWithAITooltip, forSegment: 1)
 
         applyThemeToToggleControl(toggleControl)
 
-        toggleControl.isRightSelected = false
+        toggleControl.selectedSegment = 0
 
         toggleControl.target = self
         toggleControl.action = #selector(searchModeToggleDidChange(_:))
@@ -1679,12 +1682,21 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     @objc private func searchModeToggleDidChange(_ sender: CustomToggleControl) {
-        let isAIChatMode = sender.isRightSelected
+        let isAIChatMode = sender.selectedSegment == 1
         delegate?.addressBarButtonsViewControllerSearchModeToggleChanged(self, isAIChatMode: isAIChatMode)
     }
 
     func resetSearchModeToggle() {
-        searchModeToggleControl?.isRightSelected = false
+        searchModeToggleControl?.reset()
+    }
+
+    func toggleSearchMode() {
+        guard let toggleControl = searchModeToggleControl,
+              !toggleControl.isHidden,
+              toggleControl.isEnabled else {
+            return
+        }
+        toggleControl.selectedSegment = toggleControl.selectedSegment == 0 ? 1 : 0
     }
 
     private func updateKeyViewChainForToggle(shouldShowToggle: Bool) {
@@ -1710,8 +1722,15 @@ final class AddressBarButtonsViewController: NSViewController {
         toggleControl.backgroundColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
         toggleControl.focusedBackgroundColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
         toggleControl.selectionColor = NSColor(designSystemColor: .controlsRaisedFillPrimary)
-        toggleControl.focusBorderColor = theme.colorsProvider.accentPrimaryColor
-        toggleControl.outerBorderColor = NSColor(designSystemColor: .accentAltPrimary)
+
+        if tabCollectionViewModel.isBurner {
+            toggleControl.focusBorderColor = NSColor.burnerAccent.withAlphaComponent(0.8)
+            toggleControl.outerBorderColor = NSColor.burnerAccent.withAlphaComponent(0.2)
+        } else {
+            toggleControl.focusBorderColor = theme.colorsProvider.accentPrimaryColor
+            toggleControl.outerBorderColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
+        }
+
         toggleControl.outerBorderWidth = 2.0
         toggleControl.selectionInnerBorderColor = NSColor(designSystemColor: .shadowSecondary)
 

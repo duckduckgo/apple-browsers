@@ -34,7 +34,8 @@ public class VPNConnectionWideEventData: WideEventData {
     // VPN-specific
     public var extensionType: ExtensionType
     public var startupMethod: StartupMethod
-    public var isSetup: Bool
+    public var isSetup: SetupState
+    public var onboardingStatus: MacOSOnboardingStatus?
 
     // Overall duration
     public var overallDuration: WideEvent.MeasuredInterval?
@@ -55,7 +56,8 @@ public class VPNConnectionWideEventData: WideEventData {
 
     public init(extensionType: ExtensionType,
                 startupMethod: StartupMethod,
-                isSetup: Bool = false,
+                isSetup: SetupState = .unknown,
+                onboardingStatus: MacOSOnboardingStatus? = nil,
                 overallDuration: WideEvent.MeasuredInterval? = nil,
                 browserStartDuration: WideEvent.MeasuredInterval? = nil,
                 controllerStartDuration: WideEvent.MeasuredInterval? = nil,
@@ -72,6 +74,7 @@ public class VPNConnectionWideEventData: WideEventData {
         self.extensionType = extensionType
         self.startupMethod = startupMethod
         self.isSetup = isSetup
+        self.onboardingStatus = onboardingStatus
         self.overallDuration = overallDuration
 
         // Per-step latencies
@@ -111,15 +114,29 @@ extension VPNConnectionWideEventData {
         case manualByTheSystem = "manual_by_the_system"
     }
 
-    public enum StatusReason: String {
+    public enum MacOSOnboardingStatus: String, Codable, CaseIterable {
+        case needsToAllowExtension = "needs_to_allow_extension"
+        case needsToAllowVPNConfiguration = "needs_to_allow_vpn_configuration"
+        case completed
+        case unknown
+    }
+
+    public enum SetupState: String, Codable, CaseIterable {
+        case yes
+        case no
+        case unknown
+    }
+
+    public enum StatusReason: String, Codable, CaseIterable {
         case partialData = "partial_data"
         case timeout
+        case retried
     }
 
     public enum Step: String, Codable, CaseIterable {
         case browserStart = "browser_start"
         case controllerStart = "controller_start"
-        case oauth = "oauth"
+        case oauth
         case tunnelStart = "tunnel_start"
 
         public var durationPath: WritableKeyPath<VPNConnectionWideEventData, WideEvent.MeasuredInterval?> {
@@ -147,7 +164,11 @@ extension VPNConnectionWideEventData {
         params[WideEventParameter.Feature.name] = Self.featureName
         params[WideEventParameter.VPNConnectionFeature.extensionType] = extensionType.rawValue
         params[WideEventParameter.VPNConnectionFeature.startupMethod] = startupMethod.rawValue
-        params[WideEventParameter.VPNConnectionFeature.isSetup] = isSetup ? "true" : "false"
+        params[WideEventParameter.VPNConnectionFeature.isSetup] = isSetup.rawValue
+
+        if let onboardingStatus {
+            params[WideEventParameter.VPNConnectionFeature.onboardingStatus] = onboardingStatus.rawValue
+        }
 
         // Overall latency
         if let overallDuration = overallDuration?.durationMilliseconds {
@@ -213,6 +234,7 @@ extension WideEventParameter {
     public enum VPNConnectionFeature {
         static let extensionType = "feature.data.ext.extension_type"
         static let startupMethod = "feature.data.ext.startup_method"
+        static let onboardingStatus = "feature.data.ext.onboarding_status"
         static let isSetup = "feature.data.ext.is_setup"
         static let latency = "feature.data.ext.latency_ms"
 

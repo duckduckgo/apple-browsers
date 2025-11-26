@@ -95,9 +95,97 @@ final class AutofillKeyStoreProviderTests: XCTestCase {
             // Then
             XCTAssertEqual(keychainService.addCallCount, 1)
             XCTAssertEqual(keychainService.latestAddQuery[kSecAttrService as String] as! String, AutofillKeyStoreProvider.Constants.v4ServiceName) // Ensure v4 is used for write
-            XCTAssertEqual(keychainService.latestAddQuery[kSecAttrAccessible as String] as! String, kSecAttrAccessibleWhenUnlocked as String) // Ensure correct accessibility
+            XCTAssertEqual(keychainService.latestAddQuery[kSecAttrAccessible as String] as! String, kSecAttrAccessibleAfterFirstUnlock as String) // Ensure correct accessibility
             XCTAssertEqual(keychainService.latestAddQuery[kSecAttrAccessGroup as String] as! String, iOSPlatformProvider.keychainSecurityGroup as String) // Ensure correct accessibility
         }
+    }
+
+    // MARK: - Eager Accessibility Migration Tests
+
+    func testMigrateKeychainAccessibility_WhenAllItemsExist_ReturnsTrue() {
+        // Given
+        let keychainService = MockKeychainService()
+        keychainService.mode = .v4Found
+        keychainService.updateStatusToReturn = errSecSuccess
+        let sut = AutofillKeyStoreProvider(keychainService: keychainService, platformProvider: iOSPlatformProvider)
+
+        // When
+        let result = sut.migrateKeychainAccessibility()
+
+        // Then
+        XCTAssertTrue(result)
+        XCTAssertEqual(keychainService.updateCallCount, 3) // 3 entries (l1Key, l2Key, generatedPassword)
+        XCTAssertEqual(keychainService.latestUpdateAttributes[kSecAttrAccessible as String] as? String, kSecAttrAccessibleAfterFirstUnlock as String)
+    }
+
+    func testMigrateKeychainAccessibility_WhenItemsNotFound_ReturnsTrue() {
+        // Given
+        let keychainService = MockKeychainService()
+        keychainService.updateStatusToReturn = errSecItemNotFound
+        let sut = AutofillKeyStoreProvider(keychainService: keychainService, platformProvider: iOSPlatformProvider)
+
+        // When
+        let result = sut.migrateKeychainAccessibility()
+
+        // Then
+        XCTAssertTrue(result) // Items not found is considered success (nothing to migrate)
+        XCTAssertEqual(keychainService.updateCallCount, 3)
+    }
+
+    func testMigrateKeychainAccessibility_WhenDeviceLocked_ReturnsFalse() {
+        // Given
+        let keychainService = MockKeychainService()
+        keychainService.updateStatusToReturn = errSecInteractionNotAllowed
+        let sut = AutofillKeyStoreProvider(keychainService: keychainService, platformProvider: iOSPlatformProvider)
+
+        // When
+        let result = sut.migrateKeychainAccessibility()
+
+        // Then
+        XCTAssertFalse(result) // Should return false when device locked
+        XCTAssertEqual(keychainService.updateCallCount, 1) // Should stop after first failure
+    }
+
+    func testMigrateKeychainAccessibility_WhenUpdateFails_ReturnsFalse() {
+        // Given
+        let keychainService = MockKeychainService()
+        keychainService.updateStatusToReturn = errSecAuthFailed
+        let sut = AutofillKeyStoreProvider(keychainService: keychainService, platformProvider: iOSPlatformProvider)
+
+        // When
+        let result = sut.migrateKeychainAccessibility()
+
+        // Then
+        XCTAssertFalse(result)
+        XCTAssertEqual(keychainService.updateCallCount, 1) // Should stop after first failure
+    }
+
+    func testMigrateKeychainAccessibility_WhenAllSucceed_UpdatesAllThreeEntries() {
+        // Given
+        let keychainService = MockKeychainService()
+        keychainService.updateStatusToReturn = errSecSuccess
+        let sut = AutofillKeyStoreProvider(keychainService: keychainService, platformProvider: iOSPlatformProvider)
+
+        // When
+        let result = sut.migrateKeychainAccessibility()
+
+        // Then
+        XCTAssertTrue(result)
+        XCTAssertEqual(keychainService.updateCallCount, 3) // All three entries attempted
+    }
+
+    func testMigrateKeychainAccessibility_UsesCorrectV4Service() {
+        // Given
+        let keychainService = MockKeychainService()
+        keychainService.updateStatusToReturn = errSecSuccess
+        let sut = AutofillKeyStoreProvider(keychainService: keychainService, platformProvider: iOSPlatformProvider)
+
+        // When
+        _ = sut.migrateKeychainAccessibility()
+
+        // Then
+        XCTAssertEqual(keychainService.latestUpdateQuery[kSecAttrService as String] as? String,
+                       AutofillKeyStoreProvider.Constants.v4ServiceName)
     }
 
     #else

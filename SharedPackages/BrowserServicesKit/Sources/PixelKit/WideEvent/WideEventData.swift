@@ -178,7 +178,7 @@ public struct WideEventAppData: Codable {
         #if os(iOS)
         let productName = AppVersion.shared.productName
 
-        // We can't check whether we're running in the alpha build BSK, and need to avoid sending the alpha
+        // We can't check whether we're running in the alpha build from BSK, but need to avoid sending the alpha
         // product name - this check intercepts the alpha product name and returns the default app name instead.
         if productName == "DuckDuckGo-Alpha" {
             return "DuckDuckGo"

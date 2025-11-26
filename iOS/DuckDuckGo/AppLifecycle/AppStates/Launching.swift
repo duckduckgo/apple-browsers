@@ -61,20 +61,14 @@ struct Launching: LaunchingHandling {
         // Initialize configuration with the key-value store
         configuration = AppConfiguration(appKeyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
 
+        var isBookmarksDBFilePresent: Bool = true
+        if BoolFileMarker(name: .hasSuccessfullySetupBookmarksDatabaseBefore)?.isPresent ?? false {
+            isBookmarksDBFilePresent = FileManager.default.fileExists(atPath: BookmarksDatabase.defaultDBFileURL.path)
+        }
+
         // MARK: - Application Setup
         // Handles one-time application setup during launch
-        try configuration.start()
-
-        // Create App Group test file for validation (temporary debugging - only once)
-        let testFileCreatedMarker = BoolFileMarker(name: .init(rawValue: "app_group_test_file_created"))
-        if let marker = testFileCreatedMarker, !marker.isPresent,
-           let appGroupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: BookmarksDatabase.Constants.bookmarksGroupID) {
-            let testFileURL = appGroupURL.appendingPathComponent("app_group_test.txt")
-            let testContent = "App Group test file"
-            if (try? testContent.write(to: testFileURL, atomically: true, encoding: .utf8)) != nil {
-                marker.mark()
-            }
-        }
+        try configuration.start(isBookmarksDBFilePresent: isBookmarksDBFilePresent)
 
         // MARK: - Service Initialization (continued)
         // Create and initialize remaining core services

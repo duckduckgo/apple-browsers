@@ -49,16 +49,6 @@ final class SuggestionViewController: NSViewController {
     private let suggestionContainerViewModel: SuggestionContainerViewModel
     private let isBurner: Bool
 
-    /// Returns whether the search cell should be shown (delegates to view model)
-    private var shouldShowSearchCell: Bool {
-        suggestionContainerViewModel.shouldShowSearchCell
-    }
-
-    /// The number of extra rows added before the suggestion results (currently just the search cell)
-    private var numberOfPrefixRows: Int {
-        shouldShowSearchCell ? 1 : 0
-    }
-
     required init?(coder: NSCoder) {
         fatalError("SuggestionViewController: Bad initializer")
     }
@@ -180,15 +170,14 @@ final class SuggestionViewController: NSViewController {
             selectedRowCache = nil
         }
 
-        let totalRows = suggestionContainerViewModel.numberOfSuggestions + numberOfPrefixRows
-        guard totalRows > 0 else {
+        guard suggestionContainerViewModel.numberOfRows > 0 else {
             closeWindow()
             tableView.reloadData()
             return
         }
 
         // Remove the second reload that causes visual glitch in the beginning of typing
-        if suggestionContainerViewModel.suggestionContainer.result != nil || shouldShowSearchCell {
+        if suggestionContainerViewModel.suggestionContainer.result != nil || suggestionContainerViewModel.shouldShowSearchCell {
             updateHeight()
             tableView.reloadData()
 
@@ -202,11 +191,8 @@ final class SuggestionViewController: NSViewController {
     }
 
     private func selectRow(at index: Int?) {
-        // Convert viewModel index to tableView row (accounting for search cell)
-        let tableRow: Int? = {
-            guard let index else { return nil }
-            return index + numberOfPrefixRows
-        }()
+        // Convert viewModel selection index to tableView row
+        let tableRow = suggestionContainerViewModel.tableRow(forSelectionIndex: index)
 
         if tableView.selectedRow == tableRow {
             if let tableRow, let cell = tableView.view(atColumn: 0, row: tableRow, makeIfNecessary: false) as? SuggestionTableCellView {
@@ -219,9 +205,9 @@ final class SuggestionViewController: NSViewController {
         guard let tableRow,
               tableRow >= 0,
               suggestionContainerViewModel.numberOfSuggestions != 0,
-              tableRow < suggestionContainerViewModel.numberOfSuggestions + numberOfPrefixRows else {
-            if shouldShowSearchCell {
-                tableView.selectRowIndexes(IndexSet(integer: 0), byExtendingSelection: false)
+              tableRow < suggestionContainerViewModel.numberOfRows else {
+            if let defaultRow = suggestionContainerViewModel.defaultSelectedRow {
+                tableView.selectRowIndexes(IndexSet(integer: defaultRow), byExtendingSelection: false)
             } else {
                 self.clearSelection()
             }
@@ -235,18 +221,19 @@ final class SuggestionViewController: NSViewController {
         let flippedPoint = view.convert(point, to: tableView)
         let tableRow = tableView.row(at: flippedPoint)
 
-        // Convert tableView row to viewModel index, accounting for search cell
-        let viewModelIndex: Int?
-        if tableRow < 0 {
-            viewModelIndex = nil
-        } else if shouldShowSearchCell && tableRow == 0 {
-            // Search cell selected - select the tableView row directly but no viewModel index
-            tableView.selectRowIndexes(IndexSet(integer: tableRow), byExtendingSelection: false)
+        guard tableRow >= 0 else {
+            selectRow(at: nil)
             return
-        } else {
-            viewModelIndex = tableRow - numberOfPrefixRows
         }
 
+        // Check if this is a prefix row (like search cell) - select it directly without updating viewModel
+        if suggestionContainerViewModel.isPrefixRow(tableRow) {
+            tableView.selectRowIndexes(IndexSet(integer: tableRow), byExtendingSelection: false)
+            return
+        }
+
+        // Convert tableView row to viewModel selection index
+        let viewModelIndex = suggestionContainerViewModel.selectionIndex(forRow: tableRow)
         selectRow(at: viewModelIndex)
     }
 
@@ -263,7 +250,7 @@ final class SuggestionViewController: NSViewController {
     }
 
     private func updateHeight() {
-        let totalRows = suggestionContainerViewModel.numberOfSuggestions + numberOfPrefixRows
+        let totalRows = suggestionContainerViewModel.numberOfRows
         guard totalRows > 0 else {
             tableViewHeightConstraint.constant = 0
             return
@@ -301,13 +288,8 @@ final class SuggestionViewController: NSViewController {
             return
         }
 
-        // Cache the viewModel index (not the tableView row)
-        let tableRow = tableView.selectedRow
-        if tableRow >= numberOfPrefixRows {
-            selectedRowCache = tableRow - numberOfPrefixRows
-        } else {
-            selectedRowCache = nil
-        }
+        // Cache the viewModel selection index (not the tableView row)
+        selectedRowCache = suggestionContainerViewModel.selectionIndex(forRow: tableView.selectedRow)
 
         NSApp.delegateTyped.historyCoordinator.removeUrlEntry(url) { [weak self] error in
             guard let self = self, error == nil else {
@@ -343,7 +325,7 @@ extension SuggestionViewController: ThemeUpdateListening {
 extension SuggestionViewController: NSTableViewDataSource {
 
     func numberOfRows(in tableView: NSTableView) -> Int {
-        return suggestionContainerViewModel.numberOfSuggestions + numberOfPrefixRows
+        return suggestionContainerViewModel.numberOfRows
     }
 
 }
@@ -354,22 +336,25 @@ extension SuggestionViewController: NSTableViewDelegate {
         let cell = tableView.makeView(withIdentifier: SuggestionTableCellView.identifier, owner: self) as? SuggestionTableCellView ?? SuggestionTableCellView()
         cell.theme = themeManager.theme
 
-        // Show search cell as the first row
-        if shouldShowSearchCell && row == 0 {
-            let userText = suggestionContainerViewModel.userStringValue ?? ""
-            let searchIcon = themeManager.theme.iconsProvider.suggestionsIconsProvider.phraseEntryIcon
-            cell.display(userText: userText, style: .search, icon: searchIcon, isBurner: self.isBurner)
-            return cell
-        }
-
-        // Adjust row index to account for the search cell
-        let suggestionIndex = row - numberOfPrefixRows
-        guard let suggestionViewModel = suggestionContainerViewModel.suggestionViewModel(at: suggestionIndex) else {
-            assertionFailure("SuggestionViewController: Failed to get suggestion")
+        guard let rowContent = suggestionContainerViewModel.rowContent(at: row) else {
+            assertionFailure("SuggestionViewController: Invalid row index")
             return nil
         }
 
-        cell.display(suggestionViewModel, isBurner: self.isBurner)
+        switch rowContent {
+        case .searchCell:
+            let userText = suggestionContainerViewModel.userStringValue ?? ""
+            let searchIcon = themeManager.theme.iconsProvider.suggestionsIconsProvider.phraseEntryIcon
+            cell.display(userText: userText, style: .search, icon: searchIcon, isBurner: self.isBurner)
+
+        case .suggestion(let suggestionIndex):
+            guard let suggestionViewModel = suggestionContainerViewModel.suggestionViewModel(at: suggestionIndex) else {
+                assertionFailure("SuggestionViewController: Failed to get suggestion")
+                return nil
+            }
+            cell.display(suggestionViewModel, isBurner: self.isBurner)
+        }
+
         return cell
     }
 
@@ -392,11 +377,13 @@ extension SuggestionViewController: NSTableViewDelegate {
             return
         }
 
-        // Convert tableView row to viewModel index (accounting for search cell)
-        let suggestionIndex = tableView.selectedRow - numberOfPrefixRows
+        // If a prefix row is selected (like search cell), don't update viewModel selection
+        if suggestionContainerViewModel.isPrefixRow(tableView.selectedRow) {
+            return
+        }
 
-        // If search cell is selected (row 0 when showing search cell), don't update viewModel selection
-        if shouldShowSearchCell && tableView.selectedRow == 0 {
+        // Convert tableView row to viewModel selection index
+        guard let suggestionIndex = suggestionContainerViewModel.selectionIndex(forRow: tableView.selectedRow) else {
             return
         }
 

@@ -23,6 +23,14 @@ import Foundation
 import os.log
 import Suggestions
 
+/// Represents the type of content to display in a suggestion row
+enum SuggestionRowContent {
+    /// The search cell row (shown when AI chat toggle is enabled)
+    case searchCell
+    /// A suggestion item at the given index
+    case suggestion(index: Int)
+}
+
 final class SuggestionContainerViewModel {
 
     var isHomePage: Bool
@@ -47,6 +55,57 @@ final class SuggestionContainerViewModel {
         self.featureFlagger = featureFlagger
         subscribeToSuggestionResult()
     }
+
+    // MARK: - Row-based API (for TableView)
+
+    /// The number of extra rows added before the suggestion results (e.g., search cell)
+    private var numberOfPrefixRows: Int {
+        shouldShowSearchCell ? 1 : 0
+    }
+
+    /// Total number of rows to display in the table view (includes prefix rows like search cell)
+    var numberOfRows: Int {
+        numberOfSuggestions + numberOfPrefixRows
+    }
+
+    /// Returns the content type for a given table row
+    func rowContent(at row: Int) -> SuggestionRowContent? {
+        guard row >= 0, row < numberOfRows else { return nil }
+
+        if shouldShowSearchCell && row == 0 {
+            return .searchCell
+        }
+
+        let suggestionIndex = row - numberOfPrefixRows
+        guard suggestionIndex >= 0, suggestionIndex < numberOfSuggestions else { return nil }
+        return .suggestion(index: suggestionIndex)
+    }
+
+    /// Converts a table view row to a suggestion selection index (returns nil for non-suggestion rows)
+    func selectionIndex(forRow row: Int) -> Int? {
+        guard row >= numberOfPrefixRows else { return nil }
+        let index = row - numberOfPrefixRows
+        guard index >= 0, index < numberOfSuggestions else { return nil }
+        return index
+    }
+
+    /// Converts a suggestion selection index to a table view row
+    func tableRow(forSelectionIndex index: Int?) -> Int? {
+        guard let index, index >= 0, index < numberOfSuggestions else { return nil }
+        return index + numberOfPrefixRows
+    }
+
+    /// Returns whether the given row is a non-suggestion prefix row (like search cell)
+    func isPrefixRow(_ row: Int) -> Bool {
+        row >= 0 && row < numberOfPrefixRows
+    }
+
+    /// Returns the default row to select when no suggestion is selected (search cell if shown, otherwise nil)
+    var defaultSelectedRow: Int? {
+        shouldShowSearchCell ? 0 : nil
+    }
+
+    // MARK: - Suggestion Data
 
     var numberOfSuggestions: Int {
         suggestionContainer.result?.count ?? 0

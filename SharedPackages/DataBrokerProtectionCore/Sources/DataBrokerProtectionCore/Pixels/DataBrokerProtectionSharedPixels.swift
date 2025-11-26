@@ -570,7 +570,6 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                 .optOutSubmitSuccess,
                 .optOutSuccess,
                 .optOutFailure,
-                // .scanStarted,
                 .scanSuccess,
                 .scanNoResults,
                 .scanError,
@@ -624,6 +623,11 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                 .updateDataBrokersSuccess,
                 .updateDataBrokersFailure:
             return [.pixelSource]
+
+#if os(iOS)
+        case .scanStarted:
+            return [.pixelSource]
+#endif
         }
     }
 }

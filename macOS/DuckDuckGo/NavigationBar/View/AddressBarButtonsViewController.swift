@@ -660,10 +660,10 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updateAllPermissionButtons() {
-        // Old version
+        // Legacy permission buttons
         updateLegacyPermissionButtons()
 
-        // New version
+        // New permission button
         updatePermissionCenterButton()
     }
 

@@ -77,7 +77,7 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
         subscriptionManager.tierProductsResponse = .success(SubscriptionMockFactory.tierProductsResponse)
 
         // When
-        let result = await stripePurchaseFlow.subscriptionTierOptions()
+        let result = await stripePurchaseFlow.subscriptionTierOptions(includeProTier: false)
 
         // Then
         switch result {
@@ -104,12 +104,97 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
         }
     }
 
+    func testSubscriptionTierOptionsFiltersOutProTierWhenDisabled() async throws {
+        // Given
+        let responseWithProTier = GetTierProductsResponse(products: [
+            TierProduct(
+                productName: "Plus Subscription",
+                tier: "plus",
+                regions: ["us", "row"],
+                entitlements: [
+                    EntitlementPayload(product: .networkProtection, name: "plus")
+                ],
+                billingCycles: [
+                    BillingCycle(productId: "monthly-plus", period: "Monthly", price: "9.99", currency: "USD")
+                ]
+            ),
+            TierProduct(
+                productName: "Pro Subscription",
+                tier: "pro",
+                regions: ["us", "row"],
+                entitlements: [
+                    EntitlementPayload(product: .networkProtection, name: "pro"),
+                    EntitlementPayload(product: .paidAIChat, name: "pro")
+                ],
+                billingCycles: [
+                    BillingCycle(productId: "monthly-pro", period: "Monthly", price: "19.99", currency: "USD")
+                ]
+            )
+        ])
+        subscriptionManager.tierProductsResponse = .success(responseWithProTier)
+
+        // When - includeProTier is false
+        let result = await stripePurchaseFlow.subscriptionTierOptions(includeProTier: false)
+
+        // Then - Only plus tier should be returned
+        switch result {
+        case .success(let success):
+            XCTAssertEqual(success.products.count, 1)
+            XCTAssertEqual(success.products[0].tier, "plus")
+        case .failure(let error):
+            XCTFail("Unexpected failure: \(error)")
+        }
+    }
+
+    func testSubscriptionTierOptionsIncludesProTierWhenEnabled() async throws {
+        // Given
+        let responseWithProTier = GetTierProductsResponse(products: [
+            TierProduct(
+                productName: "Plus Subscription",
+                tier: "plus",
+                regions: ["us", "row"],
+                entitlements: [
+                    EntitlementPayload(product: .networkProtection, name: "plus")
+                ],
+                billingCycles: [
+                    BillingCycle(productId: "monthly-plus", period: "Monthly", price: "9.99", currency: "USD")
+                ]
+            ),
+            TierProduct(
+                productName: "Pro Subscription",
+                tier: "pro",
+                regions: ["us", "row"],
+                entitlements: [
+                    EntitlementPayload(product: .networkProtection, name: "pro"),
+                    EntitlementPayload(product: .paidAIChat, name: "pro")
+                ],
+                billingCycles: [
+                    BillingCycle(productId: "monthly-pro", period: "Monthly", price: "19.99", currency: "USD")
+                ]
+            )
+        ])
+        subscriptionManager.tierProductsResponse = .success(responseWithProTier)
+
+        // When - includeProTier is true
+        let result = await stripePurchaseFlow.subscriptionTierOptions(includeProTier: true)
+
+        // Then - Both tiers should be returned
+        switch result {
+        case .success(let success):
+            XCTAssertEqual(success.products.count, 2)
+            XCTAssertTrue(success.products.contains(where: { $0.tier == "plus" }))
+            XCTAssertTrue(success.products.contains(where: { $0.tier == "pro" }))
+        case .failure(let error):
+            XCTFail("Unexpected failure: \(error)")
+        }
+    }
+
     func testSubscriptionTierOptionsFailureNoProducts() async throws {
         // Given
         subscriptionManager.tierProductsResponse = .success(GetTierProductsResponse(products: []))
 
         // When
-        let result = await stripePurchaseFlow.subscriptionTierOptions()
+        let result = await stripePurchaseFlow.subscriptionTierOptions(includeProTier: false)
 
         // Then
         switch result {
@@ -125,7 +210,7 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
         subscriptionManager.tierProductsResponse = .failure(SubscriptionEndpointServiceError.noData)
 
         // When
-        let result = await stripePurchaseFlow.subscriptionTierOptions()
+        let result = await stripePurchaseFlow.subscriptionTierOptions(includeProTier: false)
 
         // Then
         switch result {

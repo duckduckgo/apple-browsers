@@ -42,15 +42,15 @@ public struct GetSubscriptionFeaturesResponseV2: Decodable {
     public let features: [SubscriptionEntitlement]
 }
 
-public struct GetSubscriptionTierFeaturesResponse: Decodable {
+public struct GetSubscriptionTierFeaturesResponse: Codable {
     public let features: [String: [EntitlementPayload]]
 }
 
-public struct GetTierProductsResponse: Decodable {
+public struct GetTierProductsResponse: Codable {
     public let products: [TierProduct]
 }
 
-public struct TierProduct: Decodable, Equatable {
+public struct TierProduct: Codable, Equatable {
     public let productName: String
     public let tier: String
     public let regions: [String]
@@ -58,7 +58,7 @@ public struct TierProduct: Decodable, Equatable {
     public let billingCycles: [BillingCycle]
 }
 
-public struct BillingCycle: Decodable, Equatable {
+public struct BillingCycle: Codable, Equatable {
     public let productId: String
     public let period: String  // "Monthly", "Yearly"
     public let price: String
@@ -308,21 +308,18 @@ New: \(subscription.debugDescription, privacy: .public)
     }
 
     public func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse {
-        // Uses the old endpoint
-        // Will use the new endpoint in a followup PR
-        let productItems = try await getProducts()
-        var billingCycles: [BillingCycle] = []
-        for productItem in productItems {
-            let cicle = BillingCycle(productId: productItem.productId, period: productItem.billingPeriod, price: productItem.price, currency: productItem.currency)
-            billingCycles.append(cicle)
+        guard let request = SubscriptionRequest.getTierProducts(baseURL: baseURL, region: region, platform: platform) else {
+            throw SubscriptionEndpointServiceError.invalidRequest
         }
-        let tierProduct = TierProduct(productName: productItems[0].productLabel, tier: "plus", regions: ["us"], entitlements: [
-            EntitlementPayload(product: .dataBrokerProtection, name: "plus"),
-            EntitlementPayload(product: .identityTheftRestoration, name: "plus"),
-            EntitlementPayload(product: .networkProtection, name: "plus"),
-            EntitlementPayload(product: .paidAIChat, name: "plus")
-        ], billingCycles: billingCycles)
-        return GetTierProductsResponse(products: [tierProduct])
+        let response = try await apiService.fetch(request: request.apiRequest)
+        let statusCode = response.httpResponse.httpStatus
+
+        if statusCode.isSuccess {
+            Logger.subscriptionEndpointService.log("\(#function) request completed")
+            return try response.decodeBody()
+        } else {
+            throw SubscriptionEndpointServiceError.invalidResponseCode(statusCode)
+        }
     }
 
     // MARK: -
@@ -375,18 +372,20 @@ New: \(subscription.debugDescription, privacy: .public)
     }
 
     public func getSubscriptionTierFeatures(for subscriptionIDs: [String]) async throws -> GetSubscriptionTierFeaturesResponse {
-        // Uses the old endpoint
-        // Will use the new endpoint in a followup PR
-        var featuresDict: [String: [EntitlementPayload]] = [:]
-
-        for subscriptionID in subscriptionIDs {
-            let response = try await getSubscriptionFeatures(for: subscriptionID)
-            let entitlements = response.features.map { feature in
-                EntitlementPayload(product: feature, name: "plus")
-            }
-            featuresDict[subscriptionID] = entitlements
+        guard !subscriptionIDs.isEmpty else {
+            return GetSubscriptionTierFeaturesResponse(features: [:])
         }
 
-        return GetSubscriptionTierFeaturesResponse(features: featuresDict)
+        guard let request = SubscriptionRequest.subscriptionTierFeatures(baseURL: baseURL, subscriptionIDs: subscriptionIDs) else {
+            throw SubscriptionEndpointServiceError.invalidRequest
+        }
+        let response = try await apiService.fetch(request: request.apiRequest)
+        let statusCode = response.httpResponse.httpStatus
+        if statusCode.isSuccess {
+            Logger.subscriptionEndpointService.log("\(#function) request completed for \(subscriptionIDs.count) SKUs")
+            return try response.decodeBody()
+        } else {
+            throw SubscriptionEndpointServiceError.invalidResponseCode(statusCode)
+        }
     }
 }

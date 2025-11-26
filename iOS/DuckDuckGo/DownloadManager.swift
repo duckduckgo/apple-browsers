@@ -24,7 +24,18 @@ import WebKit
 import UniformTypeIdentifiers
 import os.log
 
-class DownloadManager {
+protocol DownloadManaging {
+    var downloadList: Set<Download> { get }
+    var downloadsDirectoryFiles: [URL] { get }
+    func cancelDownload(_ download: Download)
+    func cancelAllDownloads()
+    func markAllDownloadsSeen()
+    func deleteDownloadsDirectoryIfEmpty()
+    func startMonitoringDownloadsDirectoryChanges()
+    func stopMonitoringDownloadsDirectoryChanges()
+}
+
+class DownloadManager: DownloadManaging {
 
     struct UserInfoKeys {
         static let download = "com.duckduckgo.com.userInfoKey.download"
@@ -43,8 +54,7 @@ class DownloadManager {
          downloadsDirectoryHandler: DownloadsDirectoryHandling = DownloadsDirectoryHandler()) {
         self.notificationCenter = notificationCenter
         self.downloadsDirectoryHandler = downloadsDirectoryHandler
-        downloadsDirectoryHandler.createDownloadsDirectoryIfNeeded()
-        Logger.general.debug("Downloads directory location \(self.downloadsDirectoryHandler.downloadsDirectory.absoluteString)")
+        deleteDownloadsDirectoryIfEmpty()
     }
 
     func makeDownload(response: URLResponse,
@@ -117,6 +127,10 @@ class DownloadManager {
         unseenDownloadsAvailable = false
     }
 
+    func deleteDownloadsDirectoryIfEmpty() {
+        downloadsDirectoryHandler.deleteDownloadsDirectoryIfEmpty()
+    }
+    
     private func move(_ download: Download, toPath path: URL) {
         guard let location = download.location else { return }
         do {
@@ -129,8 +143,9 @@ class DownloadManager {
         }
     }
 
-    private func moveToDownloadDirectortIfNeeded(_ download: Download) {
+    private func moveToDownloadDirectoryIfNeeded(_ download: Download) {
         guard !download.temporary else { return }
+        downloadsDirectoryHandler.createDownloadsDirectoryIfNeeded()
         move(download, toPath: downloadsDirectoryHandler.downloadsDirectory)
     }
 }
@@ -200,7 +215,7 @@ extension DownloadManager {
 
 extension DownloadManager: DownloadDelegate {
     func downloadDidFinish(_ download: Download, error: Error?) {
-        moveToDownloadDirectortIfNeeded(download)
+        moveToDownloadDirectoryIfNeeded(download)
         var userInfo: [AnyHashable: Any] = [UserInfoKeys.download: download]
         if let error = error {
             userInfo[UserInfoKeys.error] = error

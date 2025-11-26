@@ -56,7 +56,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             appStorePurchaseFlow: AppStorePurchaseFlowMockV2(),
             appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
             subscriptionDataReporter: nil,
-            subscriptionFreeTrialsHelper: MockSubscriptionFreeTrialsHelping(),
             internalUserDecider: mockInternalUserDecider,
             wideEvent: mockWideEvent)
     }
@@ -204,7 +203,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             appStorePurchaseFlow: purchaseFlow,
             appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
             subscriptionDataReporter: nil,
-            subscriptionFreeTrialsHelper: MockSubscriptionFreeTrialsHelping(),
             internalUserDecider: mockInternalUserDecider,
             wideEvent: mockWideEvent
         )
@@ -248,7 +246,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             appStorePurchaseFlow: purchaseFlow,
             appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
             subscriptionDataReporter: nil,
-            subscriptionFreeTrialsHelper: MockSubscriptionFreeTrialsHelping(),
             internalUserDecider: mockInternalUserDecider,
             wideEvent: mockWideEvent
         )
@@ -280,7 +277,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             appStorePurchaseFlow: purchaseFlow,
             appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
             subscriptionDataReporter: nil,
-            subscriptionFreeTrialsHelper: MockSubscriptionFreeTrialsHelping(),
             internalUserDecider: mockInternalUserDecider,
             wideEvent: mockWideEvent
         )

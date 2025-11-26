@@ -2934,11 +2934,13 @@ extension MainViewController: OmniBarDelegate {
 
     /// Delegate method called when the AI Chat left button is tapped
     func onAIChatLeftButtonPressed() {
+        DailyPixel.fireDailyAndCount(pixel: .aiChatOmnibarSidebarButtonTapped)
         currentTab?.submitToggleSidebarAction()
     }
 
     /// Delegate method called when the AI Chat right button is tapped
     func onAIChatRightButtonPressed() {
+        DailyPixel.fireDailyAndCount(pixel: .aiChatOmnibarNewChatButtonTapped)
         currentTab?.submitStartChatAction()
     }
 

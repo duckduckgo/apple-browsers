@@ -1372,7 +1372,14 @@ extension Pixel {
         case aiChatMetricDuckAIKeyboardReturnPressed
         case aiChatInternalSwitchBarDisplayed
         case aiChatExperimentalAddressBarIsEnabledDaily
-
+        
+        case aiChatOmnibarSidebarButtonTapped
+        case aiChatOmnibarNewChatButtonTapped
+        
+        case aiChatSettingsMenuSidebarTapped
+        case aiChatSettingsMenuAIChatSettingsTapped
+        case aiChatSettingsMenuNewChatTabTapped
+        
         // MARK: New Address Bar Picker
         case aiChatNewAddressBarPickerDisplayed
         case aiChatNewAddressBarPickerConfirmed
@@ -2743,6 +2750,13 @@ extension Pixel.Event {
         case .aiChatMetricDuckAIKeyboardReturnPressed: return "m_aichat_duckai_keyboard_return_pressed"
         case .aiChatInternalSwitchBarDisplayed: return "m_aichat_internal_switch_bar_displayed"
         case .aiChatExperimentalAddressBarIsEnabledDaily: return "m_aichat_experimental_address_bar_is_enabled_daily"
+
+        case .aiChatOmnibarSidebarButtonTapped: return "m_aichat_omnibar_sidebar_button_tapped"
+        case .aiChatOmnibarNewChatButtonTapped: return "m_aichat_omnibar_new_chat_button_tapped"
+
+        case .aiChatSettingsMenuSidebarTapped: return "m_aichat_settings_menu_sidebar_tapped"
+        case .aiChatSettingsMenuAIChatSettingsTapped: return "m_aichat_settings_menu_aichat_settings_tapped"
+        case .aiChatSettingsMenuNewChatTabTapped: return "m_aichat_settings_menu_new_chat_tab_tapped"
 
         // MARK: New Address Bar Picker
         case .aiChatNewAddressBarPickerDisplayed: return "m_aichat_new_address_bar_picker_displayed"

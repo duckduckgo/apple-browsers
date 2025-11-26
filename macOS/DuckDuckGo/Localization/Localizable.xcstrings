@@ -46517,55 +46517,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Öffne %2$@ **Safari → Datei → Browsing-Daten in Datei exportieren...**\n%3$d Wähle **Lesezeichen, Passwörter** bzw. **Kreditkarten** und klicke dann auf **Exportieren**\n%4$d Füge die exportierte ZIP-Datei unten hinzu"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%1$d Open %2$@ **Safari → File → Export Browsing Data to File...**\n%3$d Choose **Bookmarks, Passwords,** and/or **Credit Cards**, then click **Export**\n%4$d Add the exported ZIP file below"
+            "value" : "%1$d Open %2$@ **Safari → File → Export Browsing Data to File...**\n%3$d Choose **Bookmarks, Passwords,** and **Credit Cards**, → **Export** and save the file\n%4$d Upload the exported ZIP or CSV file to DuckDuckGo"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Abre %2$@ **Safari → Archivo → Exportar datos de navegación a archivo…**\n%3$d Elige **Marcadores, contraseñas** o **Tarjetas de crédito**, luego haz clic en **Exportar**\n%4$d Añade el archivo ZIP exportado a continuación"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Ouvrez %2$@ **Safari → Fichier → Exporter les données de navigation vers un fichier...**\n%3$d Choisissez **Signets, Mots de passe** et/ou **Cartes de crédit**, puis cliquez sur **Exporter**\n%4$d Ajoutez le fichier ZIP exporté ci-dessous"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Apri %2$@ **Safari → File → Esporta dati di navigazione su file...**\n%3$d Scegli **Segnalibri, password** e/o **Carte di credito**, quindi fai clic su **Esporta**\n%4$d Aggiungi il file ZIP esportato qui sotto"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Open %2$@ **Safari → Bestand → Exporteer browsinggegevens naar bestand…**\n%3$d Kies **Bladwijzers, Wachtwoorden,** en/of **Creditcards** en klik dan op **Exporteren**\n%4$d Voeg het geëxporteerde ZIP-bestand hieronder toe"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Otwórz %2$@ **Safari → Plik → Eksportuj dane przeglądania do pliku...**\n%3$d Wybierz **Zakładki, Hasła** i/lub **Karty kredytowe**, a następnie kliknij **Eksportuj**\n%4$d Dodaj poniżej wyeksportowany plik ZIP"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Abre %2$@ **Safari → Ficheiro → Exportar dados de navegação para o ficheiro...**\n%3$d Escolhe **Marcadores, Palavras-passe,** e/ou **Cartões de crédito** e, em seguida, clica em **Exportar**\n%4$d Adiciona o ficheiro ZIP exportado abaixo"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Откройте %2$@ **Safari → Файл → Экспорт данных просмотра в файл...**\n%3$d Выберите **Закладки**, **пароли** и/или **кредитные карты** и нажмите **Экспортировать**.\n%4$d Загрузите экспортированный ZIP-архив ниже."
           }
         }

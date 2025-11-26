@@ -37,7 +37,6 @@ final class UserChurnServiceTests: XCTestCase {
 
     private var sut: UserChurnService!
     private var mockDefaultBrowserProvider: MockDefaultBrowserProvider!
-    private var mockStatisticsStore: MockStatisticsStore!
     private var mockKeyValueStore: MockThrowingKeyValueStore!
     private var mockPixelFiring: MockPixelFiring!
 
@@ -45,22 +44,20 @@ final class UserChurnServiceTests: XCTestCase {
         super.setUp()
 
         mockDefaultBrowserProvider = MockDefaultBrowserProvider()
-        mockStatisticsStore = MockStatisticsStore()
         mockKeyValueStore = MockThrowingKeyValueStore()
         mockPixelFiring = MockPixelFiring()
 
         sut = UserChurnService(
             defaultBrowserProvider: mockDefaultBrowserProvider,
-            statisticsStore: mockStatisticsStore,
             keyValueStore: mockKeyValueStore,
-            pixelFiring: mockPixelFiring
+            pixelFiring: mockPixelFiring,
+            atbProvider: { "v123-4" }
         )
     }
 
     override func tearDown() {
         sut = nil
         mockDefaultBrowserProvider = nil
-        mockStatisticsStore = nil
         mockKeyValueStore = nil
         mockPixelFiring = nil
         super.tearDown()
@@ -123,7 +120,6 @@ final class UserChurnServiceTests: XCTestCase {
         mockDefaultBrowserProvider.isDefault = false
         mockDefaultBrowserProvider.defaultBrowserURL = URL(fileURLWithPath: "/Applications/Safari.app")
         try mockKeyValueStore.set(true, forKey: "user-churn.was-default-browser")
-        mockStatisticsStore.atb = "v123-4"
 
         // When
         sut.checkForDefaultBrowserChange()
@@ -151,7 +147,6 @@ final class UserChurnServiceTests: XCTestCase {
         mockDefaultBrowserProvider.isDefault = false
         mockDefaultBrowserProvider.defaultBrowserURL = URL(fileURLWithPath: "/Applications/Safari.app")
         try mockKeyValueStore.set(true, forKey: "user-churn.was-default-browser")
-        mockStatisticsStore.atb = "v123-4"
 
         // When
         sut.checkForDefaultBrowserChange()
@@ -195,22 +190,6 @@ final class UserChurnServiceTests: XCTestCase {
 
         // Then
         XCTAssertEqual(try mockKeyValueStore.object(forKey: "user-churn.was-default-browser") as? Bool, false)
-    }
-
-    // MARK: - Tests: ATB handling
-
-    func testWhenAtbIsNil_ThenPixelDoesNotContainAtb() throws {
-        // Given
-        mockDefaultBrowserProvider.isDefault = false
-        mockDefaultBrowserProvider.defaultBrowserURL = URL(fileURLWithPath: "/Applications/Safari.app")
-        try mockKeyValueStore.set(true, forKey: "user-churn.was-default-browser")
-        mockStatisticsStore.atb = nil
-
-        // When
-        sut.checkForDefaultBrowserChange()
-
-        // Then
-        XCTAssertNil(mockPixelFiring.firedPixels.first?.event.parameters?["atb"])
     }
 
     // MARK: - Tests: Browser detection
@@ -280,9 +259,9 @@ final class UserChurnServiceTests: XCTestCase {
         XCTAssertEqual(mockPixelFiring.firedPixels.first?.event.parameters?["newDefault"], "Other")
     }
 
-    // MARK: - Tests: First run (no stored state)
+    // MARK: - Tests: checkForDefaultBrowserChange with no stored state
 
-    func testWhenNoStoredStateAndDuckDuckGoIsDefault_ThenStoredStateSetToTrue() throws {
+    func testWhenNoStoredStateAndDuckDuckGoIsDefault_ThenStateInitializedToTrue() throws {
         // Given
         mockDefaultBrowserProvider.isDefault = true
         // No stored state
@@ -291,19 +270,37 @@ final class UserChurnServiceTests: XCTestCase {
         sut.checkForDefaultBrowserChange()
 
         // Then
-        XCTAssertEqual(try mockKeyValueStore.object(forKey: "user-churn.was-default-browser") as? Bool, true)
+        XCTAssertEqual(try mockKeyValueStore.object(forKey: "user-churn.was-default-browser") as? Bool, true, "State should be initialized to true")
         XCTAssertTrue(mockPixelFiring.firedPixels.isEmpty)
     }
 
-    func testWhenNoStoredStateAndDuckDuckGoIsNotDefault_ThenNoPixelFired() {
+    func testWhenNoStoredStateAndDuckDuckGoIsNotDefault_ThenStateInitializedToFalseAndNoPixelFired() throws {
         // Given
         mockDefaultBrowserProvider.isDefault = false
-        // No stored state (defaults to false)
+        // No stored state
 
         // When
         sut.checkForDefaultBrowserChange()
 
         // Then
-        XCTAssertTrue(mockPixelFiring.firedPixels.isEmpty, "No pixel should be fired on first run when DuckDuckGo is not default")
+        XCTAssertEqual(try mockKeyValueStore.object(forKey: "user-churn.was-default-browser") as? Bool, false, "State should be initialized to false")
+        XCTAssertTrue(mockPixelFiring.firedPixels.isEmpty, "No pixel should be fired when state is being initialized")
+    }
+
+    // MARK: - Tests: Full churn detection flow
+
+    func testWhenAppLaunchesThenUserChangesDefaultBrowser_ThenChurnDetectedCorrectly() throws {
+        // Given - App starts with DuckDuckGo as default
+        mockDefaultBrowserProvider.isDefault = true
+        sut.checkForDefaultBrowserChange()  // First call initializes state
+
+        // When - User changes default browser away from DuckDuckGo
+        mockDefaultBrowserProvider.isDefault = false
+        mockDefaultBrowserProvider.defaultBrowserURL = URL(fileURLWithPath: "/Applications/Safari.app")
+        sut.checkForDefaultBrowserChange()
+
+        // Then
+        XCTAssertEqual(mockPixelFiring.firedPixels.count, 1, "Churn pixel should be fired")
+        XCTAssertEqual(mockPixelFiring.firedPixels.first?.event.name, "m_mac_unset-as-default")
     }
 }

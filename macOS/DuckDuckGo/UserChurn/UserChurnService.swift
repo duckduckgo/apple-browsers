@@ -29,20 +29,18 @@ final class UserChurnService {
     }
 
     private let defaultBrowserProvider: DefaultBrowserProvider
-    private let statisticsStore: StatisticsStore
     private let keyValueStore: ThrowingKeyValueStoring
     private let pixelFiring: PixelFiring?
+    private let atbProvider: () -> String?
 
-    private var wasDefaultBrowser: Bool {
+    private var wasDefaultBrowser: Bool? {
         get {
             do {
-                if let value = try keyValueStore.object(forKey: Key.wasDefaultBrowser.rawValue) as? Bool {
-                    return value
-                }
+                return try keyValueStore.object(forKey: Key.wasDefaultBrowser.rawValue) as? Bool
             } catch {
                 Logger.general.error("Failed to read wasDefaultBrowser from keyValueStore: \(error)")
+                return nil
             }
-            return false
         }
         set {
             do {
@@ -55,45 +53,43 @@ final class UserChurnService {
 
     init(
         defaultBrowserProvider: DefaultBrowserProvider,
-        statisticsStore: StatisticsStore,
         keyValueStore: ThrowingKeyValueStoring,
-        pixelFiring: PixelFiring?
+        pixelFiring: PixelFiring?,
+        atbProvider: @escaping () -> String?
     ) {
         self.defaultBrowserProvider = defaultBrowserProvider
-        self.statisticsStore = statisticsStore
         self.keyValueStore = keyValueStore
         self.pixelFiring = pixelFiring
+        self.atbProvider = atbProvider
     }
 
     /// Checks if the user has changed the default browser away from DuckDuckGo and fires a pixel if so.
     ///
     /// Logic:
-    /// 1. If this app is currently the default, update stored state if needed and return (no churn)
-    /// 2. If this app is not the default and it was previously, fire the churn pixel
-    /// 3. Update the stored state if needed
+    /// 1. If the stored state is not initialized, initialize it and exit early
+    /// 2. If DuckDuckGo is currently the default, update stored state if needed and return (no churn)
+    /// 3. If DuckDuckGo is not the default and it was previously, fire the churn pixel
+    /// 4. Update the stored state if needed
     func checkForDefaultBrowserChange() {
         let isDefault = defaultBrowserProvider.isDefault
-        let wasDefault = wasDefaultBrowser
+        guard let wasDefault = wasDefaultBrowser else {
+            wasDefaultBrowser = isDefault
+            return
+        }
 
         // Only update stored state if it changed
         if isDefault != wasDefault {
             wasDefaultBrowser = isDefault
         }
 
-        // If this app is currently the default, no churn to detect
-        guard !isDefault else {
+        // If DuckDuckGo is not the default and it was previously the default, fire the churn pixel
+        guard !isDefault, wasDefault else {
             return
         }
 
-        // This app is not currently the default - check if it was previously
-        guard wasDefault else {
-            return
-        }
-
-        // The user has changed the default browser away from DuckDuckGo - fire the pixel
         pixelFiring?.fire(UserChurnPixel.unsetAsDefault(
             newDefaultBrowserURL: defaultBrowserProvider.defaultBrowserURL,
-            atb: statisticsStore.atb
+            atb: atbProvider()
         ))
     }
 }

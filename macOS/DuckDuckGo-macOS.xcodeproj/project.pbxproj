@@ -3678,6 +3678,8 @@
 		CCF40A6F2ED7434C00CBF271 /* UserChurnPixelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCF40A692ED7434C00CBF271 /* UserChurnPixelTests.swift */; };
 		CCF40A712ED7529D00CBF271 /* UserChurnPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCF40A702ED7529D00CBF271 /* UserChurnPixel.swift */; };
 		CCF40A722ED7529D00CBF271 /* UserChurnPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCF40A702ED7529D00CBF271 /* UserChurnPixel.swift */; };
+		CCF40A782ED76C0600CBF271 /* UserChurnBackgroundActivityScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCF40A772ED76C0600CBF271 /* UserChurnBackgroundActivityScheduler.swift */; };
+		CCF40A792ED76C0600CBF271 /* UserChurnBackgroundActivityScheduler.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCF40A772ED76C0600CBF271 /* UserChurnBackgroundActivityScheduler.swift */; };
 		CD2AB5BF2C8222F20019EB49 /* MaliciousSiteProtectionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDE248A42C821FFE00F9399D /* MaliciousSiteProtectionManager.swift */; };
 		CD2AB5C02C8222F20019EB49 /* MaliciousSiteProtectionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDE248A42C821FFE00F9399D /* MaliciousSiteProtectionManager.swift */; };
 		CD2AB5C12C8222F40019EB49 /* MaliciousSiteProtectionPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDE248A52C821FFE00F9399D /* MaliciousSiteProtectionPreferences.swift */; };
@@ -6033,6 +6035,7 @@
 		CCF40A692ED7434C00CBF271 /* UserChurnPixelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserChurnPixelTests.swift; sourceTree = "<group>"; };
 		CCF40A6A2ED7434C00CBF271 /* UserChurnServiceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserChurnServiceTests.swift; sourceTree = "<group>"; };
 		CCF40A702ED7529D00CBF271 /* UserChurnPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserChurnPixel.swift; sourceTree = "<group>"; };
+		CCF40A772ED76C0600CBF271 /* UserChurnBackgroundActivityScheduler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserChurnBackgroundActivityScheduler.swift; sourceTree = "<group>"; };
 		CD2AB5C92C8225E70019EB49 /* URLTokenValidator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = URLTokenValidator.swift; sourceTree = "<group>"; };
 		CD3301282C887B1C009AA127 /* URLTokenValidatorTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = URLTokenValidatorTests.swift; sourceTree = "<group>"; };
 		CD33012B2C89B588009AA127 /* ErrorPageHTMLFactory.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ErrorPageHTMLFactory.swift; sourceTree = "<group>"; };
@@ -11633,6 +11636,7 @@
 		CCF40A732ED7654000CBF271 /* UserChurn */ = {
 			isa = PBXGroup;
 			children = (
+				CCF40A772ED76C0600CBF271 /* UserChurnBackgroundActivityScheduler.swift */,
 				CCF40A662ED7432800CBF271 /* UserChurnService.swift */,
 				CCF40A702ED7529D00CBF271 /* UserChurnPixel.swift */,
 			);
@@ -14461,6 +14465,7 @@
 				CC0942FE2E16AF9C00E67336 /* FavoritesImportProcessor.swift in Sources */,
 				EE8C11D62E9E8347002FFD72 /* FileImportScreenView.swift in Sources */,
 				3706FC6C293F65D500E42796 /* BookmarkViewModel.swift in Sources */,
+				CCF40A782ED76C0600CBF271 /* UserChurnBackgroundActivityScheduler.swift in Sources */,
 				ED4470162EB2676A003DC918 /* HangReportingFeatureMonitor.swift in Sources */,
 				CB63DECC2CDC0BBE0097986A /* PageRefreshMonitor.swift in Sources */,
 				3706FC6E293F65D500E42796 /* DuckURLSchemeHandler.swift in Sources */,
@@ -16011,6 +16016,7 @@
 				AA6EF9B525081B4C004754E6 /* MainMenuActions.swift in Sources */,
 				EEDFA38A2CD148DE00D1C558 /* SyncDiagnosisHelper.swift in Sources */,
 				BBBD29FF2E2FE16F005E7664 /* RequestNewFeatureViewModel.swift in Sources */,
+				CCF40A792ED76C0600CBF271 /* UserChurnBackgroundActivityScheduler.swift in Sources */,
 				EED4D3D82C874AE200C79EEA /* PopoverInfoViewController.swift in Sources */,
 				B6F1B0222BCE5658005E863C /* BrokenSiteInfoTabExtension.swift in Sources */,
 				4B975BFF2E431FD40019F757 /* VPNUpsellPopover.swift in Sources */,

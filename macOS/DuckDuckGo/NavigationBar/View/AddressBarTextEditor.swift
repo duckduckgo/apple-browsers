@@ -153,9 +153,6 @@ final class AddressBarTextEditor: NSTextView {
             return
         }
 
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(selectedText, forType: .string)
-
         if let url = URL(trimmedAddressBarString: selectedText.trimmingWhitespace(), useUnifiedLogic: Application.appDelegate.featureFlagger.isFeatureOn(.unifiedURLPredictor)) {
             NSPasteboard.general.copy(url, withString: selectedText)
         } else {

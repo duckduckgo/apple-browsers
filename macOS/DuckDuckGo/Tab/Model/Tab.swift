@@ -1358,6 +1358,10 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
         }
         guard navigationAction.url.scheme != nil else { return .allow }
 
+        if navigationAction.url.isDuckDuckGoSearch && !navigationAction.url.isDuckAIURL {
+            NotificationCenter.default.post(name: .userDidPerformDDGSearch, object: self)
+        }
+
         return .next
     }
 

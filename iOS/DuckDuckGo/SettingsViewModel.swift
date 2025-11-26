@@ -743,7 +743,7 @@ extension SettingsViewModel {
             showCreditCardManagement: false,
             version: versionProvider.versionAndBuildNumber,
             crashCollectionOptInStatus: appSettings.crashCollectionOptInStatus,
-            debugModeEnabled: featureFlagger.isFeatureOn(.debugMenu) || isDebugBuild,
+            debugModeEnabled: isInternalUser || isDebugBuild,
             voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled,
             speechRecognitionAvailable: voiceSearchHelper.isSpeechRecognizerAvailable,
             loginsEnabled: featureFlagger.isFeatureOn(.autofillAccessCredentialManagement),

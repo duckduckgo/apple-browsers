@@ -417,7 +417,7 @@ extension TabViewController {
                  accessibilityLabel: UserText.actionAIChatHistory,
                  image: DesignSystemImages.Glyphs.Size16.aiChatHistory,
                  action: { [weak self] in
-            self?.submitOpenHistoryAction()
+            self?.submitToggleSidebarAction()
         })
     }
     

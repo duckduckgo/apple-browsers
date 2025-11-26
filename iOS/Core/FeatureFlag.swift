@@ -21,9 +21,6 @@ import Foundation
 import BrowserServicesKit
 
 public enum FeatureFlag: String {
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866466606715
-    case debugMenu
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866605041091
     case sync
 
@@ -119,9 +116,6 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711635701
     case crashReportOptInStatusResetting
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866469329722
-    case webViewStateRestoration
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866706505415
     case syncSeamlessAccountSwitching
@@ -387,8 +381,7 @@ extension FeatureFlag: FeatureFlagDescribing {
             } else {
                 return false
             }
-        case .debugMenu,
-               .sync,
+        case .sync,
                .autofillCredentialInjecting,
                .autofillCredentialsSaving,
                .autofillInlineIconCredentials,
@@ -415,7 +408,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                .autocompleteTabs,
                .adAttributionReporting,
                .crashReportOptInStatusResetting,
-               .webViewStateRestoration,
                .syncSeamlessAccountSwitching,
                .experimentalAddressBar,
                .aiChatKeepSession,
@@ -431,8 +423,6 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var source: FeatureFlagSource {
         switch self {
-        case .debugMenu:
-            return .internalOnly()
         case .sync:
             return .remoteReleasable(.subfeature(SyncSubfeature.level0ShowSync))
         case .autofillCredentialInjecting:
@@ -499,8 +489,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DBPSubfeature.emailConfirmationDecoupling))
         case .crashReportOptInStatusResetting:
             return .internalOnly()
-        case .webViewStateRestoration:
-            return .remoteReleasable(.feature(.webViewStateRestoration))
         case .syncSeamlessAccountSwitching:
             return .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching))
         case .maliciousSiteProtection:

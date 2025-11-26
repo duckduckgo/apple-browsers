@@ -93,6 +93,9 @@ final class SuggestionContainerViewModel {
         numberOfHeaderRows + (shouldShowSectionDivider ? 1 : 0)
     }
 
+    /// Returns the type of content to display for the given row index.
+    /// - Parameter row: The zero-based row index in the table view
+    /// - Returns: The row content type, or nil if the row index is out of bounds
     func rowContent(at row: Int) -> SuggestionRowContent? {
         guard row >= 0, row < numberOfRows else { return nil }
 
@@ -122,18 +125,6 @@ final class SuggestionContainerViewModel {
         let suggestionIndex = row - suggestionsSectionStartRow
         guard suggestionIndex >= 0, suggestionIndex < numberOfSuggestions else { return nil }
         return .suggestion(index: suggestionIndex)
-    }
-
-    func section(forRow row: Int) -> SuggestionListSection? {
-        guard let content = rowContent(at: row) else { return nil }
-        switch content {
-        case .searchCell, .aiChatCell:
-            return .header
-        case .sectionDivider:
-            return nil
-        case .suggestion:
-            return .suggestions
-        }
     }
 
     func selectionIndex(forRow row: Int) -> Int? {

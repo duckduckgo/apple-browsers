@@ -79,6 +79,8 @@ public struct AIChatNativeConfigValues: Codable {
     public let supportsFullChatRestoration: Bool
     public let supportsPageContext: Bool
     public let supportsStandaloneMigration: Bool
+    public let isAIChatTopToolBarHidden: Bool
+    public let isAIChatModelPickerInChatInput: Bool
     public let appVersion: String
 
     public static var defaultValues: AIChatNativeConfigValues {
@@ -92,6 +94,8 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsURLChatIDRestoration: false,
                                         supportsFullChatRestoration: false,
                                         supportsPageContext: false,
+                                        isAIChatTopToolBarHidden: false,
+                                        isAIChatModelPickerInChatInput: false,
                                         appVersion: "")
 #endif
 
@@ -105,6 +109,8 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsURLChatIDRestoration: false,
                                         supportsFullChatRestoration: false,
                                         supportsPageContext: false,
+                                        isAIChatTopToolBarHidden: false,
+                                        isAIChatModelPickerInChatInput: false,
                                         appVersion: "")
 #endif
     }
@@ -118,6 +124,8 @@ public struct AIChatNativeConfigValues: Codable {
                 supportsURLChatIDRestoration: Bool,
                 supportsFullChatRestoration: Bool,
                 supportsPageContext: Bool,
+                isAIChatTopToolBarHidden: Bool,
+                isAIChatModelPickerInChatInput: Bool,
                 appVersion: String) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = Platform.name
@@ -129,6 +137,8 @@ public struct AIChatNativeConfigValues: Codable {
         self.supportsFullChatRestoration = supportsFullChatRestoration
         self.supportsPageContext = supportsPageContext
         self.supportsStandaloneMigration = supportsStandaloneMigration
+        self.isAIChatTopToolBarHidden = isAIChatTopToolBarHidden
+        self.isAIChatModelPickerInChatInput = isAIChatModelPickerInChatInput
         self.appVersion = appVersion
     }
 }

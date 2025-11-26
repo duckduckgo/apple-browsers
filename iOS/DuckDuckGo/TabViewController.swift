@@ -2093,7 +2093,10 @@ extension TabViewController: WKNavigationDelegate {
                decision != .cancel,
                navigationAction.isTargetingMainFrame() {
                 if url.isDuckDuckGoSearch {
-                    NotificationCenter.default.post(name: .userDidPerformDDGSearch, object: self)
+
+                    if !url.isDuckAIURL {
+                        NotificationCenter.default.post(name: .userDidPerformDDGSearch, object: self)
+                    }
                     let backgroundAssertion = QRunInBackgroundAssertion(name: "StatisticsLoader background assertion - search",
                                                                         application: UIApplication.shared)
                     StatisticsLoader.shared.refreshSearchRetentionAtb {

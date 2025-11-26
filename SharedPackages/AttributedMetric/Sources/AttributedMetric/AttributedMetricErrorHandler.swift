@@ -26,13 +26,13 @@ public protocol AttributedMetricErrorHandling {
 
 public class AttributedMetricErrorHandler: AttributedMetricErrorHandling {
 
-    let pixelKit: PixelKit
+    let pixelKit: PixelKit?
 
-    public init(pixelKit: PixelKit) {
+    public init(pixelKit: PixelKit?) {
         self.pixelKit = pixelKit
     }
 
     public func report(error: any DDGError) {
-        pixelKit.fire(AttributedMetricPixel.dataStoreError(error: error))
+        pixelKit?.fire(AttributedMetricPixel.dataStoreError(error: error))
     }
 }

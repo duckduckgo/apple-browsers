@@ -144,6 +144,7 @@ public enum RemoteMessageResponse {
         case imageAI = "ImageAI"
         case radar = "Radar"
         case keyImport = "KeyImport"
+        case mobileCustomization = "MobileCustomization"
     }
 
     public enum StatusError: Error {

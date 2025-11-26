@@ -94,11 +94,9 @@ final class FadeoutContainerViewController: UIViewController {
 
     private func createContainerViews() {
         searchPageContainer = UIView()
-//        searchPageContainer.backgroundColor = .yellow
         searchPageContainer.translatesAutoresizingMaskIntoConstraints = false
 
         chatPageContainer = UIView()
-//        chatPageContainer.backgroundColor = .green
         chatPageContainer.translatesAutoresizingMaskIntoConstraints = false
 
         view.addSubview(searchPageContainer)
@@ -205,10 +203,7 @@ final class FadeoutContainerViewController: UIViewController {
 
     private func updateTransitionProgress(_ progress: CGFloat) {
         transitionProgress = progress
-        // Prevent layout animations when updating delegate
-        UIView.performWithoutAnimation {
-            delegate?.fadeoutContainerViewController(self, didUpdateTransitionProgress: progress)
-        }
+        delegate?.fadeoutContainerViewController(self, didUpdateTransitionProgress: progress)
     }
 }
 

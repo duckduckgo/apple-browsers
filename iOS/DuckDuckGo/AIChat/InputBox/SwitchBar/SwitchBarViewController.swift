@@ -23,6 +23,7 @@ import Combine
 import DesignResourcesKitIcons
 import DesignResourcesKit
 import UIComponents
+import BrowserServicesKit
 
 class SwitchBarViewController: UIViewController {
     private struct Constants {
@@ -58,6 +59,7 @@ class SwitchBarViewController: UIViewController {
     private let usesReducedTopPadding: Bool
 
     private let switchBarHandler: SwitchBarHandling
+    private let featureFlagger: FeatureFlagger
     private var cancellables = Set<AnyCancellable>()
 
     var segmentedPickerView: UIView? { segmentedPickerHostingController?.viewIfLoaded }
@@ -79,8 +81,12 @@ class SwitchBarViewController: UIViewController {
     private var pickerViewModel: ImageSegmentedPickerViewModel!
 
     // MARK: - Initialization
-    init(switchBarHandler: SwitchBarHandling, showsSeparator: Bool, reduceTopPaddings: Bool) {
+    init(switchBarHandler: SwitchBarHandling,
+         showsSeparator: Bool,
+         reduceTopPaddings: Bool,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.switchBarHandler = switchBarHandler
+        self.featureFlagger = featureFlagger
         self.textEntryViewController = SwitchBarTextEntryViewController(handler: switchBarHandler)
         self.showsSeparator = showsSeparator
         self.usesReducedTopPadding = reduceTopPaddings
@@ -135,6 +141,10 @@ class SwitchBarViewController: UIViewController {
     }
 
     private func updateLayouts() {
+        // When fadeoutOnToggle is enabled, skip layoutIfNeeded() here
+        // because layout updates are animated in SwitchBarTextEntryView
+        guard !featureFlagger.isFeatureOn(.fadeoutOnToggle) else { return }
+        
         self.view.layoutIfNeeded()
     }
 

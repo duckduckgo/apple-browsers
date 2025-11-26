@@ -406,7 +406,17 @@ class SwitchBarTextEntryView: UIView {
             .receive(on: DispatchQueue.main)
             .removeDuplicates()
             .sink { [weak self] _ in
-                self?.updateForCurrentMode()
+                guard let self else { return }
+
+                if self.featureFlagger.isFeatureOn(.fadeoutOnToggle) {
+                    self.superview?.layoutIfNeeded()
+                    self.updateForCurrentMode()
+                    UIView.animate(withDuration: 0.25) {
+                        self.superview?.layoutIfNeeded()
+                    }
+                } else {
+                    self.updateForCurrentMode()
+                }
             }
             .store(in: &cancellables)
 

@@ -69,4 +69,59 @@ class DownloadsDirectoryHandlerTests: XCTestCase {
         handler.createDownloadsDirectory()
         XCTAssertTrue(handler.downloadsDirectoryExists())
     }
+
+    func testDeleteDownloadsDirectoryIfEmptyWhenDirectoryDoesNotExist() {
+        // Given
+        XCTAssertFalse(handler.downloadsDirectoryExists())
+        
+        // When
+        handler.deleteDownloadsDirectoryIfEmpty()
+        
+        // Then - should not crash or throw
+        XCTAssertFalse(handler.downloadsDirectoryExists())
+    }
+
+    func testDeleteDownloadsDirectoryIfEmptyWhenDirectoryIsEmpty() {
+        // Given
+        handler.createDownloadsDirectory()
+        XCTAssertTrue(handler.downloadsDirectoryExists())
+        XCTAssertTrue(handler.downloadsDirectoryFiles.isEmpty)
+        
+        // When
+        handler.deleteDownloadsDirectoryIfEmpty()
+        
+        // Then
+        XCTAssertFalse(handler.downloadsDirectoryExists(), "Empty directory should be deleted")
+    }
+
+    func testDeleteDownloadsDirectoryIfEmptyWhenDirectoryHasFiles() {
+        // Given
+        handler.createDownloadsDirectory()
+        let fileURL = handler.downloadsDirectory.appendingPathComponent("testFile.txt")
+        FileManager.default.createFile(atPath: fileURL.path, contents: nil, attributes: nil)
+        XCTAssertFalse(handler.downloadsDirectoryFiles.isEmpty)
+        
+        // When
+        handler.deleteDownloadsDirectoryIfEmpty()
+        
+        // Then
+        XCTAssertTrue(handler.downloadsDirectoryExists(), "Directory with files should not be deleted")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: fileURL.path), "File should still exist")
+    }
+
+    func testDeleteDownloadsDirectoryIfEmptyWhenDirectoryHasOnlySubdirectories() {
+        // Given
+        handler.createDownloadsDirectory()
+        let subdirectoryURL = handler.downloadsDirectory.appendingPathComponent("Subdirectory")
+        try? FileManager.default.createDirectory(at: subdirectoryURL, withIntermediateDirectories: true, attributes: nil)
+        
+        // downloadsDirectoryFiles filters out directories
+        XCTAssertTrue(handler.downloadsDirectoryFiles.isEmpty, "Should be empty (no files)")
+        
+        // When
+        handler.deleteDownloadsDirectoryIfEmpty()
+        
+        // Then
+        XCTAssertFalse(handler.downloadsDirectoryExists(), "Directory with only subdirectories should be deleted")
+    }
 }

@@ -25,14 +25,12 @@ final class SessionRestorePromptCoordinatorTests: XCTestCase {
 
     private var coordinator: SessionRestorePromptCoordinator!
     private var mockPixelKit: PixelKitMock!
-    private var mockFeatureFlagger: MockFeatureFlagger!
     private var notificationCenter: NotificationCenter!
     private var receivedNotifications: [Notification] = []
 
     override func setUpWithError() throws {
-        mockFeatureFlagger = MockFeatureFlagger()
         mockPixelKit = PixelKitMock()
-        coordinator = SessionRestorePromptCoordinator(pixelFiring: mockPixelKit, featureFlagger: mockFeatureFlagger)
+        coordinator = SessionRestorePromptCoordinator(pixelFiring: mockPixelKit)
         notificationCenter = NotificationCenter.default
         receivedNotifications = []
 
@@ -50,7 +48,6 @@ final class SessionRestorePromptCoordinatorTests: XCTestCase {
         notificationCenter.removeObserver(self)
         notificationCenter = nil
         coordinator = nil
-        mockFeatureFlagger = nil
         mockPixelKit = nil
         receivedNotifications = []
     }
@@ -58,14 +55,12 @@ final class SessionRestorePromptCoordinatorTests: XCTestCase {
     // MARK: - Initial State Tests
 
     func testMarkUIReady_whenInitialState_doesNotTriggerPrompt() throws {
-        mockFeatureFlagger.enabledFeatureFlags = [.restoreSessionPrompt]
         coordinator.markUIReady()
 
         XCTAssertTrue(receivedNotifications.isEmpty)
     }
 
     func testShowRestoreSessionPrompt_whenInitialState_doesNotTriggerPrompt() throws {
-        mockFeatureFlagger.enabledFeatureFlags = [.restoreSessionPrompt]
         coordinator.showRestoreSessionPrompt(restoreAction: { _ in })
 
         XCTAssertTrue(receivedNotifications.isEmpty)
@@ -73,8 +68,7 @@ final class SessionRestorePromptCoordinatorTests: XCTestCase {
 
     // MARK: - State Transition Tests
 
-    func testMarkUIReady_afterShowRestoreSessionPrompt_triggersPromptWhenFeatureEnabled() throws {
-        mockFeatureFlagger.enabledFeatureFlags = [.restoreSessionPrompt]
+    func testMarkUIReady_afterShowRestoreSessionPrompt_triggersPrompt() throws {
         coordinator.showRestoreSessionPrompt(restoreAction: { _ in })
 
         coordinator.markUIReady()
@@ -83,36 +77,16 @@ final class SessionRestorePromptCoordinatorTests: XCTestCase {
         XCTAssertEqual(receivedNotifications.first?.name, .sessionRestorePromptShouldBeShown)
     }
 
-    func testMarkUIReady_afterShowRestoreSessionPrompt_doesNotTriggerPromptWhenFeatureDisabled() throws {
-        mockFeatureFlagger.enabledFeatureFlags = []
-        coordinator.showRestoreSessionPrompt(restoreAction: { _ in })
-
-        coordinator.markUIReady()
-
-        XCTAssertTrue(receivedNotifications.isEmpty)
-    }
-
-    func testShowRestoreSessionPrompt_afterMarkUIReady_triggersPromptImmediatelyWhenFeatureEnabled() throws {
-        mockFeatureFlagger.enabledFeatureFlags = [.restoreSessionPrompt]
+    func testShowRestoreSessionPrompt_afterMarkUIReady_triggersPromptImmediately() throws {
         coordinator.markUIReady()
 
         coordinator.showRestoreSessionPrompt(restoreAction: { _ in })
 
         XCTAssertEqual(receivedNotifications.count, 1)
         XCTAssertEqual(receivedNotifications.first?.name, .sessionRestorePromptShouldBeShown)
-    }
-
-    func testShowRestoreSessionPrompt_afterMarkUIReady_doesNotTriggerPromptWhenFeatureDisabled() throws {
-        mockFeatureFlagger.enabledFeatureFlags = []
-        coordinator.markUIReady()
-
-        coordinator.showRestoreSessionPrompt(restoreAction: { _ in })
-
-        XCTAssertTrue(receivedNotifications.isEmpty)
     }
 
     func testShowRestoreSessionPrompt_afterMarkUIReady_triggersPromptWithExpectedRestoreAction() throws {
-        mockFeatureFlagger.enabledFeatureFlags = [.restoreSessionPrompt]
         coordinator.markUIReady()
         var restoreSession = false
         let restoreAction: (Bool) -> Void = { _ in restoreSession = true }
@@ -131,7 +105,6 @@ final class SessionRestorePromptCoordinatorTests: XCTestCase {
     // MARK: - Multiple Call Protection Tests
 
     func testMultipleShowRestoreSessionPromptCalls_onlyFirstOneIsProcessed() throws {
-        mockFeatureFlagger.enabledFeatureFlags = [.restoreSessionPrompt]
         coordinator.markUIReady()
         var firstActionCalled = false
         var secondActionCalled = false
@@ -171,14 +144,12 @@ final class SessionRestorePromptCoordinatorTests: XCTestCase {
     }
 
     func testMarkUIReady_whenInitialState_doesNotFirePixel() throws {
-        mockFeatureFlagger.enabledFeatureFlags = [.restoreSessionPrompt]
         coordinator.markUIReady()
 
         mockPixelKit.verifyExpectations()
     }
 
     func testShowRestoreSessionPrompt_whenInitialState_doesNotFirePixel() throws {
-        mockFeatureFlagger.enabledFeatureFlags = [.restoreSessionPrompt]
         coordinator.showRestoreSessionPrompt(restoreAction: { _ in })
 
         mockPixelKit.verifyExpectations()
@@ -257,7 +228,6 @@ final class SessionRestorePromptCoordinatorTests: XCTestCase {
     // MARK: - Test helpers
 
     func showPrompt() {
-        mockFeatureFlagger.enabledFeatureFlags = [.restoreSessionPrompt]
         coordinator.markUIReady()
         coordinator.showRestoreSessionPrompt(restoreAction: { _ in })
     }

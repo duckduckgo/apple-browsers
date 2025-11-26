@@ -852,7 +852,7 @@ public struct UserText {
 
     // MARK: Autofill
     public static let autofillSettingsViewSectionHeader = NSLocalizedString("autofill.settings.view.section-header", value: "View", comment: "Section header for the autofill settings screen")
-    public static let autofillSettingsOptionsSectionHeader = NSLocalizedString("autofill.settings.options.section-header", value: "Options", comment: "Section header for the autofill settings screen")
+    public static let autofillSettingsOptionsSectionHeader = NSLocalizedString("autofill.settings.options.section-header", value: "Password Options", comment: "Section header for the autofill passwords options section of the settings screen")
     public static let autofillSettingsAskToSaveAndAutofill = NSLocalizedString("autofill.settings.ask-to-save-and-autofill", value: "Ask to save and autofill", comment: "Title for the toggle that enables autofill")
     public static let autofillSettingsImportPasswordsSectionHeader = NSLocalizedString("autofill.settings.import-passwords.section-header", value: "Import Passwords", comment: "Section header for the autofill settings screen")
 
@@ -956,6 +956,17 @@ public struct UserText {
     public static let autofillLoginListSettingsFooter = NSLocalizedString("autofill.logins.list.settings.footer", value: "Passwords are encrypted. Nobody but you can see them, not even us.", comment: "Subtext under Autofill Settings briefly explaining security to alleviate user concerns.")
     public static let autofillLoginListSettingsPasswordsAndCardsFooter = NSLocalizedString("autofill.logins.list.settings.passwords.cards.footer", value: "Passwords and credit cards are encrypted. Nobody but you can see them, not even us.", comment: "Subtext under Autofill Settings briefly explaining security to alleviate user concerns.")
     public static let autofillLearnMoreLinkTitle = NSLocalizedString("autofill.learn.more.link.title", value: "[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)", comment: "A link that takes the user to the DuckDuckGo help pages explaining password managers")
+    public static let autofillExtensionTitle = NSLocalizedString("autofill.extension.title", value: "Autofill in Other Apps", comment: "Title for autofill extension settings row")
+    public static let autofillExtensionStatusOn = NSLocalizedString("autofill.extension.status.on", value: "On", comment: "Status text when autofill extension is enabled")
+    public static let autofillExtensionStatusOff = NSLocalizedString("autofill.extension.status.off", value: "Turn On", comment: "Status text when autofill extension is disabled")
+    public static let autofillExtensionScreenTitle = NSLocalizedString("autofill.extension.screen.title", value: "Autofill Passwords in Other Apps", comment: "Title for screen showing autofill extension settings")
+    public static let autofillExtensionTurnOffButtonTitle = NSLocalizedString("autofill.extension.turn.off.button.title", value: "Turn Off in System Settings...", comment: "Button title that opens system settings to turn off the autofill extension")
+    public static let autofillExtensionTurnOnButtonTitle = NSLocalizedString("autofill.extension.turn.on.button.title", value: "Turn On...", comment: "Button title that triggers system prompt to turn on the autofill extension")
+    public static let autofillExtensionHeaderEnabled = NSLocalizedString("autofill.extension.header.enabled", value: "Autofill in Other Apps Enabled", comment: "Header text shown when the autofill extension is enabled")
+    public static let autofillExtensionHeaderDisabled = NSLocalizedString("autofill.extension.header.disabled", value: "Autofill in Other Apps", comment: "Header text shown when the autofill extension is disabled")
+    public static let autofillExtensionFooter = NSLocalizedString("autofill.extension.footer", value: "Use passwords you saved in DuckDuckGo across all apps on your device.", comment: "Footer text describing what enabling the autofill extension does")
+    public static let autofillExtensionActivationTitle = NSLocalizedString("autofill.extension.activation.title", value: "Autofill passwords activated!", comment: "Title shown when the autofill extension activation succeeds")
+    public static let autofillExtensionActivationDoneButtonTitle = NSLocalizedString("autofill.extension.activation.done.button.title", value: "Done", comment: "Button title to dismiss the autofill extension activation view")
 
     public static let autofillResetNeverSavedActionTitle = NSLocalizedString("autofill.logins.list.never.saved.reset.action.title", value:"If you reset excluded sites, you will be prompted to save your password next time you sign in to any of these sites.", comment: "Alert title")
     public static let autofillResetNeverSavedActionConfirmButton = NSLocalizedString("autofill.logins.list.never.saved.reset.action.confirm", value: "Reset Excluded Sites", comment: "Confirm button to reset list of never saved sites")
@@ -1222,6 +1233,12 @@ public struct UserText {
     public static let importPasswordsPromoMessage =  NSLocalizedString("import.passwords.promo.message", value: "Quickly and securely transfer your passwords from another browser.", comment: "Message body for the Import Passwords Promotion banner")
     public static let importPasswordsPromoButtonTitle =  NSLocalizedString("import.passwords.promo.button.title", value: "Import Passwords", comment: "Title for button of the Import Passwords Promotion banner")
     public static let importPasswordsPromoDismissButtonTitle =  NSLocalizedString("import.passwords.promo.dismiss.button.title", value: "Don’t Ask Again", comment: "Title for button to dismiss the Import Passwords Promotion banner")
+
+    // Mark: Extension Promotion
+    public static let extensionPromotionTitle = NSLocalizedString("autofill.extension.promo.title", value: "Quickly sign in to your apps without typing passwords", comment: "Title for the Autofill extension promotion")
+    public static let extensionPromotionMessage = NSLocalizedString("autofill.extension.promo.message", value: "Use DuckDuckGo to securely autofill passwords for all your apps.", comment: "Message for the Autofill extension promotion")
+    public static let extensionPromotionButtonTitle = NSLocalizedString("autofill.extension.promo.button.title", value: "Turn On Autofill in Other Apps", comment: "CTA button title for the Autofill extension promotion")
+    public static let extensionPromotionButtonDismissTitle = NSLocalizedString("autofill.extension.promo.button.dismiss.title", value: "Set up Later in Settings", comment: "Dismiss button title for the Autofill extension promotion")
 
     static let preemptiveCrashTitle = NSLocalizedString("error.preemptive-crash.title", value: "App issue detected", comment: "Alert title")
     static let preemptiveCrashBody = NSLocalizedString("error.preemptive-crash.body", value: "Looks like there's an issue with the app and it needs to close. Please reopen to continue.", comment: "Alert message")

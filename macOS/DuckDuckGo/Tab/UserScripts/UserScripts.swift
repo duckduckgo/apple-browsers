@@ -113,7 +113,6 @@ final class UserScripts: UserScriptsProvider {
 
         autoconsentUserScript = AutoconsentUserScript(
             config: sourceProvider.privacyConfigurationManager.privacyConfig,
-            statsManager: NSApp.delegateTyped.autoconsentDailyStats,
             management: sourceProvider.autoconsentManagement,
             preferences: sourceProvider.cookiePopupProtectionPreferences
         )

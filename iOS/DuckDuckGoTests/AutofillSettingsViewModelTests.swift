@@ -25,6 +25,7 @@ import DDGSync
 import Persistence
 @testable import Core
 import Common
+@testable import BrowserServicesKitTestsUtils
 
 final class AutofillSettingsViewModelTests: XCTestCase {
     
@@ -310,7 +311,7 @@ final class AutofillSettingsViewModelTests: XCTestCase {
         vault.storedCards.append(SecureVaultModels.CreditCard(title: "Card 2", cardNumber: "5555555555554444", cardholderName: "Test User", cardSecurityCode: "123", expirationMonth: 11, expirationYear: 2028))
 
         // When
-        viewModel.refreshCounts()
+        viewModel.refreshData()
 
         // Then both counts are updated
         XCTAssertEqual(viewModel.passwordsCount, 1)
@@ -368,7 +369,10 @@ final class AutofillSettingsViewModelTests: XCTestCase {
         XCTAssertTrue(mockDelegate.navigateToImportViaSyncCalled)
         XCTAssertTrue(mockDelegate.navigateToImportViaSyncViewModel === viewModel)
     }
-    
+
+    // Note: testNavigateToExtensionManagement removed because it tests through too many layers
+    // The coordinator functionality is tested directly in AutofillExtensionEnableCoordinatorTests
+
     // MARK: - Excluded Sites Tests
     
     func testShouldShowNeverPromptResetWhenEmpty() {
@@ -423,7 +427,46 @@ final class AutofillSettingsViewModelTests: XCTestCase {
         XCTAssertFalse(manager.neverPromptWebsites.isEmpty)
         XCTAssertFalse(viewModel.showingResetConfirmation)
     }
-    
+
+    // MARK: - Autofill Extension Tests
+
+    @available(iOS 18, *)
+    func testInitCorrectlySetsShowAutofillExtensionBasedOnFeatureFlag() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags.append(.autofillExtensionSettings)
+
+        // When
+        let viewModelWithFeature = AutofillSettingsViewModel(
+            appSettings: appSettings,
+            autofillNeverPromptWebsitesManager: manager,
+            secureVault: vault,
+            source: .settings,
+            featureFlagger: mockFeatureFlagger,
+            syncService: syncService,
+            syncDataProviders: dataProviders
+        )
+
+        // Then
+        XCTAssertTrue(viewModelWithFeature.showExtensionSettings)
+
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = []
+
+        // When
+        let viewModelWithoutFeature = AutofillSettingsViewModel(
+            appSettings: appSettings,
+            autofillNeverPromptWebsitesManager: manager,
+            secureVault: vault,
+            source: .settings,
+            featureFlagger: mockFeatureFlagger,
+            syncService: syncService,
+            syncDataProviders: dataProviders
+        )
+
+        // Then
+        XCTAssertFalse(viewModelWithoutFeature.showExtensionSettings)
+    }
+
 }
 
 private class MockAutofillSettingsViewModelDelegate: AutofillSettingsViewModelDelegate {
@@ -440,6 +483,9 @@ private class MockAutofillSettingsViewModelDelegate: AutofillSettingsViewModelDe
     var navigateToImportViaSyncCalled = false
     var navigateToImportViaSyncViewModel: AutofillSettingsViewModel?
     
+    var navigateToExtensionManagementCalled = false
+    var navigateToExtensionManagementViewModel: AutofillSettingsViewModel?
+
     func navigateToPasswords(viewModel: AutofillSettingsViewModel) {
         navigateToPasswordsCalled = true
         navigateToPasswordsViewModel = viewModel
@@ -454,9 +500,14 @@ private class MockAutofillSettingsViewModelDelegate: AutofillSettingsViewModelDe
         navigateToFileImportCalled = true
         navigateToFileImportViewModel = viewModel
     }
-    
+
     func navigateToImportViaSync(viewModel: AutofillSettingsViewModel) {
         navigateToImportViaSyncCalled = true
         navigateToImportViaSyncViewModel = viewModel
+    }
+    
+    func navigateToExtensionManagement(viewModel: AutofillSettingsViewModel) {
+        navigateToExtensionManagementCalled = true
+        navigateToExtensionManagementViewModel = viewModel
     }
 }

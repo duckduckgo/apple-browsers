@@ -34,7 +34,8 @@ class HistoryTabExtensionTests: XCTestCase {
         let trackersPublisher: AnyPublisher<DetectedTracker, Never> = Empty().eraseToAnyPublisher()
         let urlPublisher: AnyPublisher<URL?, Never> = Empty().eraseToAnyPublisher()
         let titlePublisher: AnyPublisher<String?, Never> = Empty().eraseToAnyPublisher()
-        let historyTabExtension = HistoryTabExtension(isCapturingHistory: false, historyCoordinating: historyCoordinatingMock, trackersPublisher: trackersPublisher, urlPublisher: urlPublisher, titlePublisher: titlePublisher)
+        let popupManagedPublisher: AnyPublisher<AutoconsentUserScript.AutoconsentDoneMessage, Never> = Empty().eraseToAnyPublisher()
+        let historyTabExtension = HistoryTabExtension(isCapturingHistory: false, historyCoordinating: historyCoordinatingMock, trackersPublisher: trackersPublisher, urlPublisher: urlPublisher, titlePublisher: titlePublisher, popupManagedPublisher: popupManagedPublisher)
 
         let navigationIdentity = NavigationIdentity(nil)
         let responderChain = ResponderChain(responderRefs: [])

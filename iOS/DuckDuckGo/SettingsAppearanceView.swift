@@ -85,6 +85,15 @@ struct SettingsAppearanceView: View {
                 legacySettings()
             }
 
+            if viewModel.isInternalUser {
+                Section {
+                    SettingsCellView(label: "Sheet menu presentation",
+                                     accessory: .toggle(isOn: viewModel.showMenuInSheetBinding))
+                } footer: {
+                    Text(verbatim: "This setting is experimental and available only for internal users")
+                }
+            }
+
         }
         .applySettingsListModifiers(title: UserText.settingsAppearanceSection,
                                     displayMode: .inline,

@@ -287,7 +287,7 @@
 "sync.with.another.device.footer" = "Vaše údaje sú šifrované na oboch koncoch (end-to-end) a DuckDuckGo nemá prístup k šifrovaciemu kľúču.";
 
 /* Message for syncing with another device */
-"sync.with.another.device.message" = "Bezpečne synchronizujte záložky a údaje na automatické vypĺňanie medzi svojimi zariadeniami.";
+"sync.with.another.device.message" = "Bezpečne synchronizujte záložky a heslá medzi svojimi zariadeniami.";
 
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Začať synchronizáciu";

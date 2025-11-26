@@ -37,7 +37,6 @@ enum AutoconsentPixel: PixelKitEvent {
     case selfTestFail
 
     case summary(events: [String: Int])
-    case popupManagedCount(params: [String: String])
     case usageStats(stats: [String: String])
 
     static var summaryPixels: [AutoconsentPixel] =  [
@@ -76,7 +75,6 @@ enum AutoconsentPixel: PixelKitEvent {
         case .selfTestOk: "autoconsent_self-test-ok"
         case .selfTestFail: "autoconsent_self-test-fail"
         case .summary: "autoconsent_summary"
-        case .popupManagedCount: "autoconsent_popup-managed-count"
         case .usageStats: "autoconsent_usage-stats"
         }
     }
@@ -91,8 +89,6 @@ enum AutoconsentPixel: PixelKitEvent {
             Dictionary(uniqueKeysWithValues: AutoconsentPixel.summaryPixels.map { pixel in
             (pixel.key, "\(events[pixel.key] ?? 0)")
             })
-        case let .popupManagedCount(params):
-            params
         case let .usageStats(stats): {
             var params = stats
             // Added as a requirement from the privacy triage

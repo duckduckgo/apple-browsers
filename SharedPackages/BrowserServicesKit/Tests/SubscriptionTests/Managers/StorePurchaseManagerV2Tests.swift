@@ -38,110 +38,6 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
                                           productFetcher: mockProductFetcher)
     }
 
-    func testSubscriptionOptionsReturnsOnlyNonTrialProducts() async {
-        // Given
-        let monthlyProduct = MockSubscriptionProduct(
-            id: "com.test.monthly",
-            displayName: "Monthly Plan",
-            displayPrice: "$9.99",
-            isMonthly: true,
-            isFreeTrialProduct: false
-        )
-
-        let yearlyProduct = MockSubscriptionProduct(
-            id: "com.test.yearly",
-            displayName: "Yearly Plan",
-            displayPrice: "$99.99",
-            isYearly: true,
-            isFreeTrialProduct: false
-        )
-
-        let monthlyTrialProduct = MockSubscriptionProduct(
-            id: "com.test.monthly.trial",
-            displayName: "Monthly Plan with Trial",
-            displayPrice: "$9.99",
-            isMonthly: true,
-            isFreeTrialProduct: true,
-            introOffer: MockIntroductoryOffer(
-                id: "trial1",
-                displayPrice: "Free",
-                periodInDays: 7,
-                isFreeTrial: true
-            )
-        )
-
-        mockProductFetcher.mockProducts = [monthlyProduct, yearlyProduct, monthlyTrialProduct]
-        await sut.updateAvailableProducts()
-
-        // When
-        let subscriptionOptions = await sut.subscriptionOptions()
-
-        // Then
-        XCTAssertNotNil(subscriptionOptions)
-        XCTAssertEqual(subscriptionOptions?.options.count, 2)
-
-        let productIds = subscriptionOptions?.options.map { $0.id } ?? []
-        XCTAssertTrue(productIds.contains("com.test.monthly"))
-        XCTAssertTrue(productIds.contains("com.test.yearly"))
-        XCTAssertFalse(productIds.contains("com.test.monthly.trial"))
-    }
-
-    func testFreeTrialSubscriptionOptionsReturnsOnlyTrialProducts() async {
-        // Given
-        let monthlyTrialProduct = MockSubscriptionProduct(
-            id: "com.test.monthly.trial",
-            displayName: "Monthly Plan with Trial",
-            displayPrice: "$9.99",
-            isMonthly: true,
-            isFreeTrialProduct: true,
-            introOffer: MockIntroductoryOffer(
-                id: "trial1",
-                displayPrice: "Free",
-                periodInDays: 7,
-                isFreeTrial: true
-            ),
-            isEligibleForFreeTrial: true
-        )
-
-        let yearlyTrialProduct = MockSubscriptionProduct(
-            id: "com.test.yearly.trial",
-            displayName: "Yearly Plan with Trial",
-            displayPrice: "$99.99",
-            isYearly: true,
-            isFreeTrialProduct: true,
-            introOffer: MockIntroductoryOffer(
-                id: "trial2",
-                displayPrice: "Free",
-                periodInDays: 7,
-                isFreeTrial: true
-            ),
-            isEligibleForFreeTrial: true
-        )
-
-        let regularProduct = MockSubscriptionProduct(
-            id: "com.test.regular",
-            displayName: "Regular Plan",
-            displayPrice: "$9.99",
-            isMonthly: true,
-            isFreeTrialProduct: false
-        )
-
-        mockProductFetcher.mockProducts = [monthlyTrialProduct, yearlyTrialProduct, regularProduct]
-        await sut.updateAvailableProducts()
-
-        // When
-        let subscriptionOptions = await sut.freeTrialSubscriptionOptions()
-
-        // Then
-        XCTAssertNotNil(subscriptionOptions)
-        XCTAssertEqual(subscriptionOptions?.options.count, 2)
-
-        let productIds = subscriptionOptions?.options.map { $0.id } ?? []
-        XCTAssertTrue(productIds.contains("com.test.monthly.trial"))
-        XCTAssertTrue(productIds.contains("com.test.yearly.trial"))
-        XCTAssertFalse(productIds.contains("com.test.regular"))
-    }
-
     func testSubscriptionOptionsReturnsNilWhenNoValidProductPairExists() async {
         // Given
         let monthlyProduct = MockSubscriptionProduct(
@@ -149,7 +45,7 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
             displayName: "Monthly Plan",
             displayPrice: "$9.99",
             isMonthly: true,
-            isFreeTrialProduct: false
+            hasIntroductoryFreeTrialOffer: false
         )
 
         mockProductFetcher.mockProducts = [monthlyProduct]
@@ -162,32 +58,6 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         XCTAssertNil(subscriptionOptions)
     }
 
-    func testFreeTrialSubscriptionOptionsReturnsNilWhenNoValidProductPairExists() async {
-        // Given
-        let monthlyTrialProduct = MockSubscriptionProduct(
-            id: "com.test.monthly.trial",
-            displayName: "Monthly Plan with Trial",
-            displayPrice: "$9.99",
-            isMonthly: true,
-            isFreeTrialProduct: true,
-            introOffer: MockIntroductoryOffer(
-                id: "trial1",
-                displayPrice: "Free",
-                periodInDays: 7,
-                isFreeTrial: true
-            )
-        )
-
-        mockProductFetcher.mockProducts = [monthlyTrialProduct]
-        await sut.updateAvailableProducts()
-
-        // When
-        let subscriptionOptions = await sut.freeTrialSubscriptionOptions()
-
-        // Then
-        XCTAssertNil(subscriptionOptions)
-    }
-
     func testSubscriptionOptionsIncludesCorrectDetails() async {
         // Given
         let monthlyProduct = MockSubscriptionProduct(
@@ -195,7 +65,7 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
             displayName: "Monthly Plan",
             displayPrice: "$9.99",
             isMonthly: true,
-            isFreeTrialProduct: false
+            hasIntroductoryFreeTrialOffer: false
         )
 
         let yearlyProduct = MockSubscriptionProduct(
@@ -203,7 +73,7 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
             displayName: "Yearly Plan",
             displayPrice: "$99.99",
             isYearly: true,
-            isFreeTrialProduct: false
+            hasIntroductoryFreeTrialOffer: false
         )
 
         mockProductFetcher.mockProducts = [monthlyProduct, yearlyProduct]
@@ -236,7 +106,7 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
             displayName: "Monthly Plan with Trial",
             displayPrice: "$9.99",
             isMonthly: true,
-            isFreeTrialProduct: true,
+            hasIntroductoryFreeTrialOffer: true,
             introOffer: MockIntroductoryOffer(
                 id: "trial1",
                 displayPrice: "$0.00",
@@ -251,7 +121,7 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
             displayName: "Yearly Plan with Trial",
             displayPrice: "$99.99",
             isYearly: true,
-            isFreeTrialProduct: true,
+            hasIntroductoryFreeTrialOffer: true,
             introOffer: MockIntroductoryOffer(
                 id: "trial2",
                 displayPrice: "$0.00",
@@ -265,7 +135,7 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         await sut.updateAvailableProducts()
 
         // When
-        let subscriptionOptions = await sut.freeTrialSubscriptionOptions()
+        let subscriptionOptions = await sut.subscriptionOptions()
 
         // Then
         XCTAssertNotNil(subscriptionOptions)
@@ -422,12 +292,12 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         // Given
         let product1 = MockSubscriptionProduct(
             id: "product1",
-            isFreeTrialProduct: true,
+            hasIntroductoryFreeTrialOffer: true,
             isEligibleForFreeTrial: true
         )
         let product2 = MockSubscriptionProduct(
             id: "product2",
-            isFreeTrialProduct: true,
+            hasIntroductoryFreeTrialOffer: true,
             isEligibleForFreeTrial: true
         )
         mockProductFetcher.mockProducts = [product1, product2]
@@ -526,6 +396,148 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         XCTAssertEqual(receivedValues, [true, false])
         cancellable.cancel()
     }
+
+    // Tiers
+    func testSubscriptionOptionsExcludesProTierProducts() async {
+        // Given
+        let regularMonthly = MockSubscriptionProduct(
+            id: "com.test.monthly",
+            isMonthly: true,
+            hasIntroductoryFreeTrialOffer: false
+        )
+        let regularYearly = MockSubscriptionProduct(
+            id: "com.test.yearly",
+            isYearly: true,
+            hasIntroductoryFreeTrialOffer: false
+        )
+        let proMonthly = MockSubscriptionProduct(
+            id: "com.test.monthly.pro",
+            isMonthly: true,
+            hasIntroductoryFreeTrialOffer: false
+        )
+        let proYearly = MockSubscriptionProduct(
+            id: "com.test.yearly.pro",
+            isYearly: true,
+            hasIntroductoryFreeTrialOffer: false
+        )
+
+        mockProductFetcher.mockProducts = [regularMonthly, regularYearly, proMonthly, proYearly]
+        await sut.updateAvailableProducts()
+
+        // When
+        let subscriptionOptions = await sut.subscriptionOptions()
+
+        // Then
+        XCTAssertNotNil(subscriptionOptions)
+        XCTAssertEqual(subscriptionOptions?.options.count, 2)
+
+        let productIds = subscriptionOptions?.options.map { $0.id } ?? []
+        XCTAssertTrue(productIds.contains("com.test.monthly"))
+        XCTAssertTrue(productIds.contains("com.test.yearly"))
+        XCTAssertFalse(productIds.contains("com.test.monthly.pro"))
+        XCTAssertFalse(productIds.contains("com.test.yearly.pro"))
+    }
+
+    func testFreeTrialSubscriptionOptionsExcludesProTierProducts() async {
+        // Given
+        let regularTrialMonthly = MockSubscriptionProduct(
+            id: "com.test.monthly.freetrial",
+            isMonthly: true,
+            hasIntroductoryFreeTrialOffer: true,
+            introOffer: MockIntroductoryOffer(id: "trial1", displayPrice: "Free", periodInDays: 7, isFreeTrial: true)
+        )
+        let regularTrialYearly = MockSubscriptionProduct(
+            id: "com.test.yearly.freetrial",
+            isYearly: true,
+            hasIntroductoryFreeTrialOffer: true,
+            introOffer: MockIntroductoryOffer(id: "trial2", displayPrice: "Free", periodInDays: 7, isFreeTrial: true)
+        )
+        let proTrialMonthly = MockSubscriptionProduct(
+            id: "com.test.monthly.freetrial.pro",
+            isMonthly: true,
+            hasIntroductoryFreeTrialOffer: true,
+            introOffer: MockIntroductoryOffer(id: "trial3", displayPrice: "Free", periodInDays: 7, isFreeTrial: true)
+        )
+
+        mockProductFetcher.mockProducts = [regularTrialMonthly, regularTrialYearly, proTrialMonthly]
+        await sut.updateAvailableProducts()
+
+        // When
+        let freeTrialOptions = await sut.subscriptionOptions()
+
+        // Then
+        XCTAssertNotNil(freeTrialOptions)
+        XCTAssertEqual(freeTrialOptions?.options.count, 2)
+
+        let productIds = freeTrialOptions?.options.map { $0.id } ?? []
+        XCTAssertTrue(productIds.contains("com.test.monthly.freetrial"))
+        XCTAssertTrue(productIds.contains("com.test.yearly.freetrial"))
+        XCTAssertFalse(productIds.contains("com.test.monthly.freetrial.pro"))
+    }
+
+    func testGetAvailableProductsExcludesProTierByDefault() async {
+        // Given
+        let regularMonthly = MockSubscriptionProduct(id: "com.test.monthly", isMonthly: true)
+        let proMonthly = MockSubscriptionProduct(id: "com.test.monthly.pro", isMonthly: true)
+
+        mockProductFetcher.mockProducts = [regularMonthly, proMonthly]
+        await sut.updateAvailableProducts()
+
+        // When
+        let products = await sut.getAvailableProducts(includeProTier: false)
+
+        // Then
+        XCTAssertEqual(products.count, 1)
+        XCTAssertEqual(products[0].id, "com.test.monthly")
+    }
+
+    func testGetAvailableProductsIncludesProTierWhenRequested() async {
+        // Given
+        let regularMonthly = MockSubscriptionProduct(id: "com.test.monthly", isMonthly: true)
+        let proMonthly = MockSubscriptionProduct(id: "com.test.monthly.pro", isMonthly: true)
+
+        mockProductFetcher.mockProducts = [regularMonthly, proMonthly]
+        await sut.updateAvailableProducts()
+
+        // When
+        let products = await sut.getAvailableProducts(includeProTier: true)
+
+        // Then
+        XCTAssertEqual(products.count, 2)
+        XCTAssertTrue(products.contains(where: { $0.id == "com.test.monthly" }))
+        XCTAssertTrue(products.contains(where: { $0.id == "com.test.monthly.pro" }))
+    }
+
+    func testGetAvailableProductsHandlesEmptyArray() async {
+        // Given
+        mockProductFetcher.mockProducts = []
+        await sut.updateAvailableProducts()
+
+        // When
+        let regularProducts = await sut.getAvailableProducts(includeProTier: false)
+        let allProducts = await sut.getAvailableProducts(includeProTier: true)
+
+        // Then
+        XCTAssertEqual(regularProducts.count, 0)
+        XCTAssertEqual(allProducts.count, 0)
+    }
+
+    func testGetAvailableProductsHandlesOnlyProTierProducts() async {
+        // Given
+        let proMonthly = MockSubscriptionProduct(id: "com.test.monthly.pro", isMonthly: true)
+        let proYearly = MockSubscriptionProduct(id: "com.test.yearly.pro", isYearly: true)
+
+        mockProductFetcher.mockProducts = [proMonthly, proYearly]
+        await sut.updateAvailableProducts()
+
+        // When
+        let regularProducts = await sut.getAvailableProducts(includeProTier: false)
+        let allProducts = await sut.getAvailableProducts(includeProTier: true)
+
+        // Then
+        XCTAssertEqual(regularProducts.count, 0, "Should filter out all pro products")
+        XCTAssertEqual(allProducts.count, 2, "Should include all pro products")
+    }
 }
 
 private final class MockProductFetcher: ProductFetching {
@@ -553,7 +565,7 @@ private extension StorePurchaseManagerV2Tests {
             displayName: "Monthly Plan\(withTrial ? " with Trial" : "")",
             displayPrice: "$9.99",
             isMonthly: true,
-            isFreeTrialProduct: withTrial,
+            hasIntroductoryFreeTrialOffer: withTrial,
             introOffer: withTrial ? MockIntroductoryOffer(
                 id: "trial1",
                 displayPrice: "Free",
@@ -570,7 +582,7 @@ private extension StorePurchaseManagerV2Tests {
             displayName: "Yearly Plan\(withTrial ? " with Trial" : "")",
             displayPrice: "$99.99",
             isYearly: true,
-            isFreeTrialProduct: withTrial,
+            hasIntroductoryFreeTrialOffer: withTrial,
             introOffer: withTrial ? MockIntroductoryOffer(
                 id: "trial2",
                 displayPrice: "Free",
@@ -589,7 +601,7 @@ private class MockSubscriptionProduct: StoreProduct {
     let description: String
     let isMonthly: Bool
     let isYearly: Bool
-    let isFreeTrialProduct: Bool
+    let hasIntroductoryFreeTrialOffer: Bool
     private let mockIntroOffer: MockIntroductoryOffer?
     private let mockIsEligibleForFreeTrial: Bool
 
@@ -601,7 +613,7 @@ private class MockSubscriptionProduct: StoreProduct {
          description: String = "Mock Description",
          isMonthly: Bool = false,
          isYearly: Bool = false,
-         isFreeTrialProduct: Bool = false,
+         hasIntroductoryFreeTrialOffer: Bool = false,
          introOffer: MockIntroductoryOffer? = nil,
          isEligibleForFreeTrial: Bool = false) {
         self.id = id
@@ -610,7 +622,7 @@ private class MockSubscriptionProduct: StoreProduct {
         self.description = description
         self.isMonthly = isMonthly
         self.isYearly = isYearly
-        self.isFreeTrialProduct = isFreeTrialProduct
+        self.hasIntroductoryFreeTrialOffer = hasIntroductoryFreeTrialOffer
         self.mockIntroOffer = introOffer
         self.mockIsEligibleForFreeTrial = isEligibleForFreeTrial
     }

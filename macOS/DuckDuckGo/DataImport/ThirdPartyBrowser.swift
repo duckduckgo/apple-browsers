@@ -251,6 +251,10 @@ enum ThirdPartyBrowser: CaseIterable {
         }
     }
 
+    var isSafari: Bool {
+        self == .safari || self == .safariTechnologyPreview
+    }
+
     private func findRunningApplications() -> [NSRunningApplication] {
         var applications = [NSRunningApplication]()
 

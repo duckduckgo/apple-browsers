@@ -49,6 +49,9 @@ public enum DataImport {
 
         static let preferredSources: [Self] = [.chrome, .safari]
 
+        public var isSafari: Bool {
+            self == .safari || self == .safariTechnologyPreview
+        }
     }
 
     public enum DataType: String, Hashable, CaseIterable, CustomStringConvertible {

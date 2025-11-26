@@ -58,27 +58,33 @@ struct ImportSourcePickerView: View {
                     Text(UserText.importChooseSourceTitle)
                         .font(.title2.weight(.semibold))
                         .padding(.top, 20)
-                    HoverButtonView {
-                        viewModel.showTypeSelectionSheet()
-                    } content: {
-                        HStack(alignment: .lastTextBaseline, spacing: 1) {
-                            Text(viewModel.typeButtonTitle)
-                                .font(.system(size: 13, weight: .semibold))
-                            Image(nsImage: DesignSystemImages.Glyphs.Size16.chevronRight)
-                                .renderingMode(.template)
-                                .resizable()
-                                .frame(width: 10, height: 10)
-                                .rotationEffect(.degrees(90))
+                    if viewModel.selectedSource.isSafari {
+                        Text(UserText.importDataImportTypeTitleSelected)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(Color(designSystemColor: .textTertiary))
+                    } else {
+                        HoverButtonView {
+                            viewModel.showTypeSelectionSheet()
+                        } content: {
+                            HStack(alignment: .lastTextBaseline, spacing: 1) {
+                                Text(viewModel.typeButtonTitle)
+                                    .font(.system(size: 13, weight: .semibold))
+                                Image(nsImage: DesignSystemImages.Glyphs.Size16.chevronRight)
+                                    .renderingMode(.template)
+                                    .resizable()
+                                    .frame(width: 10, height: 10)
+                                    .rotationEffect(.degrees(90))
+                            }
                         }
                     }
-                    .sheet(isPresented: $viewModel.isTypePickerSheetVisible) {
-                        NewImportTypePickerView(
-                            items: $viewModel.importTypeItems,
-                            doneAction: viewModel.typeSelectionDone,
-                            cancelAction: viewModel.typeSelectionCancelled,
-                            isDoneDisabled: $viewModel.isDoneButtonDisabled
-                        )
-                    }
+                }
+                .sheet(isPresented: $viewModel.isTypePickerSheetVisible) {
+                    NewImportTypePickerView(
+                        items: $viewModel.importTypeItems,
+                        doneAction: viewModel.typeSelectionDone,
+                        cancelAction: viewModel.typeSelectionCancelled,
+                        isDoneDisabled: $viewModel.isDoneButtonDisabled
+                    )
                 }
                 .padding(.top, 20)
                 .padding(.bottom, 16)

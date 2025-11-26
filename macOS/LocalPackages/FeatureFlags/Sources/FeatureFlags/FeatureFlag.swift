@@ -622,7 +622,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .popupPermissionButtonPersistence:
             return .remoteReleasable(.subfeature(PopupBlockingSubfeature.popupPermissionButtonPersistence))
         case .newPermissionView:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.hangReporting))
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.newPermissionView))
         }
 
     }

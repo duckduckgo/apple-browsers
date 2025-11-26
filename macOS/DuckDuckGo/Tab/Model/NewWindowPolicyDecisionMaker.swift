@@ -38,10 +38,10 @@ protocol NewWindowPolicyDecisionMaker {
 extension LinkOpenBehavior {
     func newWindowPolicy(isBurner: Bool) -> NewWindowPolicy? {
         switch self {
-        case .newWindow:
-            return .window(active: true, burner: isBurner)
-        case .newTab:
-            return .tab(selected: true, burner: isBurner)
+        case .newWindow(let selected):
+            return .window(active: selected, burner: isBurner)
+        case .newTab(let selected):
+            return .tab(selected: selected, burner: isBurner)
         case .currentTab:
             return .none
         }

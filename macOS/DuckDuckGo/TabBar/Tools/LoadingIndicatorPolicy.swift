@@ -17,18 +17,24 @@
 //
 
 import Foundation
+import AppKit
 
 protocol LoadingIndicatorPolicy {
-    func shouldShowLoadingIndicator(url: URL?, isLoading: Bool, error: Error?) -> Bool
+    func shouldShowLoadingIndicator(isLoading: Bool, url: URL?, error: Error?) -> Bool
+    func shouldCrossfadeFavicon(newFavicon: NSImage?, oldFavicon: NSImage?, displaysPlaceholder: Bool) -> Bool
 }
 
 struct DefaultLoadingIndicatorPolicy: LoadingIndicatorPolicy {
 
-    func shouldShowLoadingIndicator(url: URL?, isLoading: Bool, error: Error?) -> Bool {
+    func shouldShowLoadingIndicator(isLoading: Bool, url: URL?, error: Error?) -> Bool {
         guard isLoading, error == nil, let url else {
             return false
         }
 
         return !url.isDuckDuckGoSearch && !url.isDuckPlayer && url.navigationalScheme?.isHypertextScheme == true
+    }
+
+    func shouldCrossfadeFavicon(newFavicon: NSImage?, oldFavicon: NSImage?, displaysPlaceholder: Bool) -> Bool {
+        displaysPlaceholder && newFavicon != nil || oldFavicon != nil && oldFavicon != newFavicon
     }
 }

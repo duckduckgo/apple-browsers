@@ -772,6 +772,7 @@ extension Pixel {
         
         case contentBlockingCompilationTaskPerformance(iterationCount: Int, timeBucketAggregation: CompileTimeBucketAggregation)
         case ampBlockingRulesCompilationFailed
+        case ampKeywordDetectionPerformance
 
         case webKitDidTerminate
         case webKitTerminationDidReloadCurrentTab
@@ -1486,6 +1487,10 @@ extension Pixel {
         case recreateTmpWebViewFallbackFailed
         case contentBlockingCompilationFailedMissingTmpDir
         case tmpDirStillMissingAfterRecreation
+
+        // MARK: - Dax Easter Egg
+        case daxEasterEggLogoDisplayed
+        case daxEasterEggLogoTapped
     }
 
 }
@@ -2172,6 +2177,7 @@ extension Pixel.Event {
         case .contentBlockingCompilationTaskPerformance(let iterationCount, let timeBucketAggregation):
             return "m_content_blocking_compilation_loops_\(iterationCount)_time_\(timeBucketAggregation)"
         case .ampBlockingRulesCompilationFailed: return "m_debug_amp_rules_compilation_failed"
+        case .ampKeywordDetectionPerformance: return "m_debug_amp-keyword-detection-performance"
 
         case .webKitDidTerminate: return "m_d_wkt"
         case .webKitDidTerminateDuringWarmup: return "m_d_webkit-terminated-during-warmup"
@@ -2906,6 +2912,9 @@ extension Pixel.Event {
         case .customizationToolbarStarted: return "m_customization_toolbar_started"
         case .customizationToolbarSelected: return "m_customization_toolbar_selected"
 
+        // MARK: - Dax Easter Egg
+        case .daxEasterEggLogoDisplayed: return "m_dax_easter_egg_logo_displayed"
+        case .daxEasterEggLogoTapped: return "m_dax_easter_egg_logo_tapped"
         }
     }
 }

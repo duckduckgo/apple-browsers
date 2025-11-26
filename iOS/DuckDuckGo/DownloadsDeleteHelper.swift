@@ -18,10 +18,11 @@
 //
 
 import Foundation
+import Combine
 import Core
 
 private enum Const {
-    static let undoTimeoutInterval: TimeInterval = 3.0
+    static let defaultUndoTimeoutInterval: TimeInterval = 3.0
 }
 
 enum DownloadDeleteError: Error {
@@ -34,6 +35,13 @@ typealias DeleteResult = Result<DeleteUndoHandler, DownloadDeleteError>
 typealias DeleteHandler = (_ result: DeleteResult) -> Void
 
 class DownloadsDeleteHelper {
+    
+    private var undoTimeoutInterval: TimeInterval
+    private(set) var temporaryDirectoryURLs: CurrentValueSubject<[URL], Never> = .init([])
+    
+    init(undoTimeoutInterval: TimeInterval = Const.defaultUndoTimeoutInterval) {
+        self.undoTimeoutInterval = undoTimeoutInterval
+    }
     
     func deleteDownloads(atPaths filePaths: [String], completionHandler: DeleteHandler) {
         let fileURLsForRemoval = existingFileURLs(atPaths: filePaths)
@@ -50,7 +58,10 @@ class DownloadsDeleteHelper {
         
         move(fileURLsForRemoval, to: undoDirectoryURL)
         
-        let timer = makeTimerForRemovingDirectory(undoDirectoryURL)
+        // Add temporary directory to tracking
+        temporaryDirectoryURLs.value.append(undoDirectoryURL)
+        
+        let timer = makeTimerForRemovingDirectory(undoDirectoryURL, withDelay: self.undoTimeoutInterval)
         let undoHandler = makeUndoHandlerForMovingBackFiles(in: undoDirectoryURL,
                                                             to: AppDependencyProvider.shared.downloadManager.downloadsDirectory,
                                                             cancelling: timer)
@@ -80,14 +91,17 @@ class DownloadsDeleteHelper {
         }
     }
     
-    private func makeTimerForRemovingDirectory(_ directory: URL, withDelay delay: TimeInterval = Const.undoTimeoutInterval) -> Timer {
-        Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { _ in
+    private func makeTimerForRemovingDirectory(_ directory: URL, withDelay delay: TimeInterval) -> Timer {
+        Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { [weak self] _ in
             try? FileManager.default.removeItem(at: directory)
+            
+            // Remove this directory from tracking
+            self?.temporaryDirectoryURLs.value.removeAll { $0 == directory }
         }
     }
     
     private func makeUndoHandlerForMovingBackFiles(in directory: URL, to destinationDirectory: URL, cancelling timer: Timer?) -> DeleteUndoHandler {
-        {
+        { [weak self] in
             timer?.invalidate()
             
             let filesToMoveURLs = (try? FileManager.default.contentsOfDirectory(at: directory,
@@ -100,6 +114,9 @@ class DownloadsDeleteHelper {
             }
             
             try? FileManager.default.removeItem(at: directory)
+            
+            // Remove this directory from tracking
+            self?.temporaryDirectoryURLs.value.removeAll { $0 == directory }
             
             Pixel.fire(pixel: .downloadsListDeleteUndo)
         }

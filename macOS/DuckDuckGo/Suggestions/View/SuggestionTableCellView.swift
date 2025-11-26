@@ -86,6 +86,18 @@ final class SuggestionTableCellView: NSTableCellView {
     private static let searchTheWebTextWidth: CGFloat = searchTheWebAttributedString.size().width
     private static let searchTheWebBoxWidth: CGFloat = searchTheWebTextWidth + Constants.switchToTabExtraSpace
 
+    static let chatWithAIAttributedString: NSAttributedString = {
+        let text = UserText.aiChatChatWithAITooltip
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 11, weight: .regular),
+            .kern: 0.06,
+        ]
+
+        return NSAttributedString(string: text, attributes: attributes)
+    }()
+    private static let chatWithAITextWidth: CGFloat = chatWithAIAttributedString.size().width
+    private static let chatWithAIBoxWidth: CGFloat = chatWithAITextWidth + Constants.switchToTabExtraSpace
+
     override func awakeFromNib() {
         suffixTextField.textColor = Constants.suffixColor
         removeButton.toolTip = UserText.removeSuggestionTooltip
@@ -158,8 +170,10 @@ final class SuggestionTableCellView: NSTableCellView {
             switchToTabLabel.attributedStringValue = Self.searchTheWebAttributedString
             switchToTabArrowView.isHidden = true
         case .aiChat:
-            suffixTextField.stringValue = ""
-            switchToTabBox.isHidden = true
+            suffixTextField.stringValue = " – Duck.ai"
+            switchToTabBox.isHidden = frame.size.width <= 272
+            switchToTabLabel.attributedStringValue = Self.chatWithAIAttributedString
+            switchToTabArrowView.isHidden = true
         case .default:
             suffixTextField.stringValue = ""
             switchToTabBox.isHidden = true
@@ -227,7 +241,15 @@ final class SuggestionTableCellView: NSTableCellView {
             switchToTabBoxTrailingConstraint.isActive = false
             suffixTrailingConstraint.constant = Constants.trailingSpace
         } else {
-            let boxWidth = cellStyle == .search ? Self.searchTheWebBoxWidth : Self.switchToTabBoxWidth
+            let boxWidth: CGFloat
+            switch cellStyle {
+            case .search:
+                boxWidth = Self.searchTheWebBoxWidth
+            case .aiChat:
+                boxWidth = Self.chatWithAIBoxWidth
+            case .default:
+                boxWidth = Self.switchToTabBoxWidth
+            }
 
             var textWidth = attributedString?.boundingRect(with: bounds.size).width ?? 0
             if textWidth < bounds.width {

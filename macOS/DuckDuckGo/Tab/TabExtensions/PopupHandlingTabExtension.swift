@@ -484,9 +484,11 @@ enum PopupPermissionBypassReason: Equatable {
 
     var isUserInitiated: Bool {
         switch self {
-        case .userInitiated, .popupsTemporarilyAllowedForCurrentPage, .allowlistedDomain:
+        case .userInitiated, .allowlistedDomain:
             // Don‘t show the pop-up button for user-initiated popups, popups temporarily allowed for the current page, or allowlisted domains
             return true
+        case .popupsTemporarilyAllowedForCurrentPage:
+            return false
         }
     }
 }

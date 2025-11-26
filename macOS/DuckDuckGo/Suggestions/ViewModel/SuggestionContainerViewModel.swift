@@ -345,7 +345,6 @@ final class SuggestionContainerViewModel {
     }
 
     func selectPreviousIfPossible() {
-        // When no item is selected, start selection from the last selectable row
         guard let currentRowIndex = selectedRowIndex else {
             if let lastSelectable = lastSelectableRow() {
                 selectRow(at: lastSelectable)
@@ -353,7 +352,6 @@ final class SuggestionContainerViewModel {
             return
         }
 
-        // Find previous selectable row (skip divider)
         var prevRow = currentRowIndex - 1
         while prevRow >= 0 {
             if isSelectableRow(prevRow) {
@@ -363,7 +361,6 @@ final class SuggestionContainerViewModel {
             prevRow -= 1
         }
 
-        // If no previous selectable row, cancel the selection
         clearRowSelection()
     }
 
@@ -395,5 +392,4 @@ final class SuggestionContainerViewModel {
 
         suggestionContainer.result = result
     }
-
 }

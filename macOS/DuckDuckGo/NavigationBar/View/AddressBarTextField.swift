@@ -1155,7 +1155,7 @@ extension AddressBarTextField: NSTextViewDelegate {
 
         if let sharingMenuItem = menu.item(with: Self.shareMenuItemAction) {
             sharingMenuItem.title = UserText.shareMenuItem
-            sharingMenuItem.submenu = SharingMenu(title: UserText.shareMenuItem, location: .addressBarTextField)
+            sharingMenuItem.submenu = SharingMenu(title: UserText.shareMenuItem, location: .addressBarTextField, delegate: self)
         }
 
         let additionalMenuItems: [NSMenuItem] = [
@@ -1186,7 +1186,7 @@ extension AddressBarTextField: NSTextViewDelegate {
         return menu.numberOfItems
     }
 
-    private static var selectorsToRemove = Set([
+    static var selectorsToRemove = Set([
         Selector(("_openLinkFromMenu:")),
         NSSelectorFromString("invoke"),
         Selector(("_openPreview")),
@@ -1199,14 +1199,15 @@ extension AddressBarTextField: NSTextViewDelegate {
         #selector(NSStandardKeyBindingResponding.uppercaseWord(_:)),
         #selector(NSTextView.startSpeaking(_:)),
         #selector(NSTextView.changeLayoutOrientation(_:)),
-        #selector(NSTextView.orderFrontSubstitutionsPanel(_:))
+        #selector(NSTextView.orderFrontSubstitutionsPanel(_:)),
+        { if #available(macOS 15.2, *) { #selector(showWritingTools(_:)) } else { Selector(("noop")) } }(),
     ])
     private static let shareMenuItemAction = Selector(("_performStandardShareMenuItem:"))
 
     private func removeUnwantedMenuItems(from menu: NSMenu) {
         // filter out menu items with action from `selectorsToRemove` or containing submenu items with action from the list
         menu.items = menu.items.filter { menuItem in
-            menuItem.action.map { action in  Self.selectorsToRemove.contains(action) } != true
+            menuItem.action.map { action in Self.selectorsToRemove.contains(action) } != true
             && Self.selectorsToRemove.isDisjoint(with: menuItem.submenu?.items.compactMap(\.action) ?? [])
         }
     }
@@ -1340,4 +1341,16 @@ extension URL {
         }
     }
 
+}
+
+// MARK: - SharingMenuDelegate
+extension AddressBarTextField: SharingMenuDelegate {
+    func sharingMenuRequestsSharingData() -> SharingMenu.SharingData? {
+        guard let selectedTabViewModel = tabCollectionViewModel?.selectedTabViewModel,
+              selectedTabViewModel.canReload,
+              !selectedTabViewModel.isShowingErrorPage,
+              let url = selectedTabViewModel.tab.content.userEditableUrl else { return nil }
+
+        return (selectedTabViewModel.title, [url])
+    }
 }

@@ -54,14 +54,14 @@
         "description": "Fired when the Privacy Configuration file fails to parse",
         "owners": ["alessandroboron", "samsymons"],
         "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "errorCode", "errorDomain"]
     },
     "m_debug_trackerdataset_parse_failed": {
         "description": "Fired when the TDS configuration file fails to parse",
         "owners": ["alessandroboron", "samsymons"],
         "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion", "errorCode", "errorDomain"]
     },
 

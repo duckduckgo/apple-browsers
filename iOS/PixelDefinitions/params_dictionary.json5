@@ -55,7 +55,7 @@
         "key": "app.name",
         "type": "string",
         "description": "The name of the app sending the pixel",
-        "enum": ["DuckDuckGo iOS"]
+        "enum": ["DuckDuckGo", "PacketTunnelProvider"]
     },
     "wideEventAppVersion": {
         "key": "app.version",

@@ -58,14 +58,14 @@ extension URL {
 
      Rules:
      - Any URL with host `duck.ai` is considered Duck AI.
-     - Or a `duckduckgo.com` URL that either includes `ia=chat` or a supported AI bang in `q=`.
+     - Or a `duckduckgo.com` URL (including subdomains) that either includes `ia=chat` or a supported AI bang in `q=`.
      - Or any URL whose path is exactly `/revoke-duckai-access` (used for revocation flow)
      */
     public var isDuckAIURL: Bool {
         // Entry via duck.ai root
         if host == DuckDuckGo.aiHost { return true }
-        // Chat intent on duckduckgo.com via query or bang
-        if host == DuckDuckGo.host { return isDuckAIChatQuery || isDuckAIBang || isRevokeAccessPath }
+        // Chat intent on duckduckgo.com (or subdomains) via query or bang
+        if isDuckDuckGoHost { return isDuckAIChatQuery || isDuckAIBang || isRevokeAccessPath }
         return false
     }
 
@@ -85,8 +85,12 @@ extension URL {
     }
 
     var isDuckAIBang: Bool {
-        guard host == DuckDuckGo.host else { return false }
+        guard isDuckDuckGoHost else { return false }
         return queryItems?.contains { $0.name == DuckDuckGo.bangQueryName && isSupportedBang(value: $0.value) } == true
+    }
+
+    private var isDuckDuckGoHost: Bool {
+        host == DuckDuckGo.host || host?.hasSuffix(".\(DuckDuckGo.host)") == true
     }
 
     private var queryItems: [URLQueryItem]? {

@@ -52,7 +52,7 @@ final class MainMenu: NSMenu {
     let importBrowserDataMenuItem = NSMenuItem(title: UserText.mainMenuFileImportBookmarksandPasswords, action: #selector(AppDelegate.openImportBrowserDataWindow))
 
     @MainActor
-    let sharingMenu = SharingMenu(title: UserText.shareMenuItem, location: .mainMenu)
+    lazy var sharingMenu = SharingMenu(title: UserText.shareMenuItem, location: .mainMenu, delegate: self)
 
     // MARK: View
     let stopMenuItem = NSMenuItem(title: UserText.mainMenuViewStop, action: #selector(MainViewController.stopLoadingPage), keyEquivalent: ".")
@@ -733,8 +733,13 @@ final class MainMenu: NSMenu {
     @MainActor
     private func setupDebugMenu(featureFlagger: FeatureFlagger, historyCoordinator: HistoryCoordinating) -> NSMenu {
         let debugMenu = NSMenu(title: Self.debugMenuTitle) {
+            // Keep Feature Flag Overrides at top - will not be sorted
             NSMenuItem(title: "Feature Flag Overrides")
                 .submenu(FeatureFlagOverridesMenu(featureFlagOverrides: featureFlagger))
+
+            NSMenuItem.separator()
+
+            // All items below will be automatically sorted alphabetically
             NSMenuItem(title: "Open Vanilla Browser", action: #selector(MainViewController.openVanillaBrowser)).withAccessibilityIdentifier("MainMenu.openVanillaBrowser")
             NSMenuItem(title: "Skip Onboarding", action: #selector(AppDelegate.skipOnboarding)).withAccessibilityIdentifier("MainMenu.skipOnboarding")
             NSMenuItem(title: "New Tab Page") {
@@ -820,6 +825,9 @@ final class MainMenu: NSMenu {
                     .submenu(NetworkProtectionDebugMenu())
             }
 
+            NSMenuItem(title: "Attributed Metrics")
+                .submenu(AttributedMetricDebugMenu())
+
             NSMenuItem(title: "AppStore Updates")
                 .submenu(AppStoreUpdatesDebugMenu())
 
@@ -899,6 +907,39 @@ final class MainMenu: NSMenu {
             }
         }
 
+        // Sort menu items alphabetically (keep Feature Flag Overrides at top)
+        sortDebugMenuItems(debugMenu)
+
+        // Add search field at the top
+        let searchField = NSSearchField(frame: .zero)
+        searchField.placeholderString = "Search debug menu..."
+        searchField.focusRingType = .none
+
+        // Create delegate to handle real-time text changes
+        let searchDelegate = DebugMenuSearchDelegate(menu: debugMenu)
+        searchField.delegate = searchDelegate
+
+        let searchContainer = NSView(frame: NSRect(x: 0, y: 0, width: 300, height: 30))
+        searchContainer.addSubview(searchField)
+        searchField.translatesAutoresizingMaskIntoConstraints = false
+        NSLayoutConstraint.activate([
+            searchField.leadingAnchor.constraint(equalTo: searchContainer.leadingAnchor, constant: 10),
+            searchField.trailingAnchor.constraint(equalTo: searchContainer.trailingAnchor, constant: -10),
+            searchField.centerYAnchor.constraint(equalTo: searchContainer.centerYAnchor),
+            searchField.heightAnchor.constraint(equalToConstant: 22)
+        ])
+
+        let searchMenuItem = NSMenuItem()
+        searchMenuItem.view = searchContainer
+        searchMenuItem.tag = -1
+        // Store delegate to keep it alive
+        objc_setAssociatedObject(searchMenuItem, "searchDelegate", searchDelegate, .OBJC_ASSOCIATION_RETAIN)
+        debugMenu.insertItem(searchMenuItem, at: 0)
+
+        let separatorItem = NSMenuItem.separator()
+        separatorItem.tag = -1
+        debugMenu.insertItem(separatorItem, at: 1)
+
         debugMenu.addItem(internalUserItem)
 #if !ALPHA
         debugMenu.addItem(.separator())
@@ -906,6 +947,50 @@ final class MainMenu: NSMenu {
 #endif
         debugMenu.autoenablesItems = false
         return debugMenu
+    }
+
+    private func sortDebugMenuItems(_ menu: NSMenu) {
+        // Get all items except the first two (Feature Flag Overrides and its separator)
+        let featureFlagItem = menu.items.count > 0 ? menu.items[0] : nil
+        let firstSeparator = menu.items.count > 1 ? menu.items[1] : nil
+
+        // Get items to sort (everything after the first separator)
+        let itemsToSort = menu.items.dropFirst(2)
+
+        // Separate regular items from separators
+        var regularItems: [NSMenuItem] = []
+        var separatorIndices: [Int] = []
+
+        for (index, item) in itemsToSort.enumerated() {
+            if item.isSeparatorItem {
+                separatorIndices.append(index)
+            } else {
+                regularItems.append(item)
+            }
+        }
+
+        // Sort regular items alphabetically by title
+        regularItems.sort { item1, item2 in
+            // Handle items without titles (like custom views)
+            let title1 = item1.title.isEmpty ? "zzz" : item1.title
+            let title2 = item2.title.isEmpty ? "zzz" : item2.title
+            return title1.localizedCaseInsensitiveCompare(title2) == .orderedAscending
+        }
+
+        menu.removeAllItems()
+
+        // Add Feature Flag Overrides back at the top
+        if let featureFlagItem = featureFlagItem {
+            menu.addItem(featureFlagItem)
+        }
+        if let firstSeparator = firstSeparator {
+            menu.addItem(firstSeparator)
+        }
+
+        // Add sorted items (separators are removed since they'll be managed by filtering)
+        for item in regularItems {
+            menu.addItem(item)
+        }
     }
 
     private func setupLoggingMenu() -> NSMenu {
@@ -1017,6 +1102,143 @@ final class MainMenu: NSMenu {
             newBurnerWindowMenuItem.keyEquivalent = "N"
             newBurnerWindowMenuItem.keyEquivalentModifierMask = [.command, .shift]
         }
+    }
+}
+
+// MARK: - Debug Menu Search Delegate
+
+private class DebugMenuSearchDelegate: NSObject, NSSearchFieldDelegate {
+    weak var menu: NSMenu?
+
+    init(menu: NSMenu) {
+        self.menu = menu
+        super.init()
+    }
+
+    func controlTextDidChange(_ obj: Notification) {
+        guard let searchField = obj.object as? NSSearchField,
+              let menu = menu else { return }
+
+        let searchText = searchField.stringValue.lowercased()
+
+        if searchText.isEmpty {
+            menu.showAllMenuItems()
+        } else {
+            menu.filterMenuItems(searchText: searchText)
+        }
+    }
+}
+
+// MARK: - Debug Menu Search Extension
+
+extension NSMenu {
+    func showAllMenuItems() {
+        for item in items {
+            // Skip search field and its separator
+            if item.tag == -1 {
+                continue
+            }
+
+            if !item.isSeparatorItem && item.view == nil {
+                item.isHidden = false
+                item.submenu?.showAllMenuItems()
+            }
+        }
+    }
+
+    func filterMenuItems(searchText: String) {
+        for item in items {
+            // Skip search field and its separator
+            if item.tag == -1 {
+                continue
+            }
+
+            // Skip separator items - they'll be handled based on surrounding items
+            if item.isSeparatorItem {
+                continue
+            }
+
+            // Skip custom view items
+            if item.view != nil {
+                continue
+            }
+
+            let titleMatches = item.title.lowercased().contains(searchText)
+
+            if titleMatches {
+                // If parent matches, show parent and ALL submenu items
+                item.isHidden = false
+                if let submenu = item.submenu {
+                    submenu.showAllMenuItems()
+                }
+            } else {
+                // Parent doesn't match - check if any submenu items match
+                var submenuMatches = false
+                if let submenu = item.submenu {
+                    submenu.filterMenuItems(searchText: searchText)
+                    submenuMatches = submenu.items.contains { !$0.isHidden && !$0.isSeparatorItem }
+                }
+
+                // Show item only if submenu has matches
+                item.isHidden = !submenuMatches
+            }
+        }
+
+        // Hide separators that are adjacent to hidden items or other separators
+        manageSeparatorVisibility()
+    }
+
+    private func manageSeparatorVisibility() {
+        var previousVisibleItem: NSMenuItem?
+
+        for item in items {
+            // Skip search field items
+            if item.tag == -1 {
+                continue
+            }
+
+            if item.isSeparatorItem {
+                // Hide separator if:
+                // - It's the first visible item
+                // - The previous visible item was also a separator
+                // - There are no more visible items after it
+                if previousVisibleItem == nil || previousVisibleItem?.isSeparatorItem == true {
+                    item.isHidden = true
+                } else {
+                    // Tentatively show it - will hide if it's the last item
+                    item.isHidden = false
+                }
+            } else if !item.isHidden {
+                previousVisibleItem = item
+            }
+        }
+
+        // Hide trailing separators
+        for item in items.reversed() {
+            if item.tag == -1 {
+                continue
+            }
+
+            if item.isSeparatorItem {
+                if !item.isHidden {
+                    item.isHidden = true
+                }
+            } else if !item.isHidden {
+                break
+            }
+        }
+    }
+}
+
+// MARK: - SharingMenuDelegate
+extension MainMenu: SharingMenuDelegate {
+    func sharingMenuRequestsSharingData() -> SharingMenu.SharingData? {
+        guard let tabViewModel = (NSApp.keyWindow?.nextResponder as? MainWindowController ?? Application.appDelegate.windowControllersManager.lastKeyMainWindowController)?.mainViewController.tabCollectionViewModel.selectedTabViewModel,
+              tabViewModel.canReload,
+              !tabViewModel.isShowingErrorPage,
+              let url = tabViewModel.tab.content.userEditableUrl else { return nil }
+
+        return (tabViewModel.title, [url])
     }
 }
 

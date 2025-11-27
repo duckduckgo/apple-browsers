@@ -152,7 +152,7 @@
     },
     "wideEventUnderlyingErrorCode": {
         "keyPattern": "feature\\.data\\.error\\.underlying_code[0-9]?",
-        "type": "string",
+        "type": "integer",
         "description": "Underlying error code (supports optional numeric index for nested errors)"
     },
     "dbpDataBroker": {

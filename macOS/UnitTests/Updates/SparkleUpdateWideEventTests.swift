@@ -586,15 +586,15 @@ final class SparkleUpdateWideEventTests: XCTestCase {
         XCTAssertEqual(mockWideEventManager.completions.count, 0)
     }
 
-    func test_handleAppTermination_withActiveFlow_cancelsWithAppQuit() {
-        // Given
+    func test_handleAppTermination_duringDownload_cancelsWithAppQuit() {
+        // Given - active flow during download (not at extractionCompleted)
         sut.startFlow(initiationType: .automatic)
         sut.didStartDownload()
 
         // When
         sut.handleAppTermination()
 
-        // Then
+        // Then - should cancel since extraction wasn't completed
         XCTAssertEqual(mockWideEventManager.completions.count, 1)
         let (completedData, status) = mockWideEventManager.completions[0]
         XCTAssertEqual((completedData as? UpdateWideEventData)?.cancellationReason, .appQuit)
@@ -602,6 +602,47 @@ final class SparkleUpdateWideEventTests: XCTestCase {
             XCTAssertTrue(true)
         } else {
             XCTFail("Expected cancelled status")
+        }
+    }
+
+    func test_handleAppTermination_atExtractionCompleted_completesAsInstallingOnQuit() {
+        // Given - extraction completed (update ready to install on quit)
+        sut.startFlow(initiationType: .automatic)
+        sut.didFindUpdate(version: "1.1.0", build: "123", isCritical: false)
+        sut.didCompleteDownload()
+        sut.didCompleteExtraction()
+
+        // When
+        sut.handleAppTermination()
+
+        // Then - should complete as success since update will install on quit
+        XCTAssertEqual(mockWideEventManager.completions.count, 1)
+        let (_, status) = mockWideEventManager.completions[0]
+        if case .success(let reason) = status {
+            XCTAssertEqual(reason, "installing_on_quit")
+        } else {
+            XCTFail("Expected success status with installing_on_quit reason")
+        }
+    }
+
+    func test_handleAppTermination_atRestartingToUpdate_completesAsRestartingToUpdate() {
+        // User clicked "Restart to Update" which sets lastKnownStep to .restartingToUpdate
+        sut.startFlow(initiationType: .automatic)
+        sut.didFindUpdate(version: "1.1.0", build: "123", isCritical: false)
+        sut.didCompleteDownload()
+        sut.didCompleteExtraction()
+        sut.didInitiateRestart()
+
+        // When
+        sut.handleAppTermination()
+
+        // Then - should complete as success because user initiated restart
+        XCTAssertEqual(mockWideEventManager.completions.count, 1)
+        let (_, status) = mockWideEventManager.completions[0]
+        if case .success(let reason) = status {
+            XCTAssertEqual(reason, "restarting_to_update")
+        } else {
+            XCTFail("Expected success status with restarting_to_update reason")
         }
     }
 

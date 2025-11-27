@@ -121,7 +121,7 @@
                     "downloadCompleted",
                     "extractionStarted",
                     "extractionCompleted",
-                    "readyToInstall"
+                    "restartingToUpdate"
                 ]
             },
             {

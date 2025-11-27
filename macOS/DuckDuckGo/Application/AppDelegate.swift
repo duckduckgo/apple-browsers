@@ -55,6 +55,7 @@ import Utilities
 import VPN
 import VPNAppState
 import WebKit
+import AttributedMetric
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
@@ -150,8 +151,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let recentlyClosedCoordinator: RecentlyClosedCoordinating
     let downloadManager: FileDownloadManagerProtocol
     let downloadListCoordinator: DownloadListCoordinator
-
     let autoconsentManagement = AutoconsentManagement()
+    let attributedMetricManager: AttributedMetricManager
 
     private var updateProgressCancellable: AnyCancellable?
 
@@ -973,6 +974,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 featureFlagger?.isFeatureOn(.blackFridayCampaign) ?? false
             }
         )
+
+        // AttributedMetric initialisation
+
+        let errorHandler = AttributedMetricErrorHandler(pixelKit: PixelKit.shared)
+        let attributedMetricDataStorage = AttributedMetricDataStorage(userDefaults: .appConfiguration,
+                                                                      errorHandler: errorHandler)
+        let bucketsSettingsProvider = DefaultBucketsSettingsProvider(privacyConfig: privacyConfigurationManager.privacyConfig)
+        let subscriptionStateProvider = DefaultSubscriptionStateProvider(subscriptionManager: subscriptionAuthV1toV2Bridge)
+        let defaultBrowserProvider = SystemDefaultBrowserProvider()
+        self.attributedMetricManager = AttributedMetricManager(pixelKit: PixelKit.shared,
+                                                               dataStoring: attributedMetricDataStorage,
+                                                               featureFlagger: featureFlagger,
+                                                               originProvider: AttributedMetricOriginFileProvider(),
+                                                               defaultBrowserProviding: defaultBrowserProvider,
+                                                               subscriptionStateProvider: subscriptionStateProvider,
+                                                               bucketsSettingsProvider: bucketsSettingsProvider)
+        self.attributedMetricManager.addNotificationsObserver()
 
         super.init()
 

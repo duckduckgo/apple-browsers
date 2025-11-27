@@ -154,6 +154,180 @@
                   Identifier = "SubscriptionPagesUseSubscriptionFeatureTests/testBackToSettingsSuccess()">
                </Test>
                <Test
+                  Identifier = "SyncDialogControllerTests">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testControllerDidCompleteAccountConnection_whenShouldNotShowSyncEnabled_doesNotPresentDialog()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testControllerDidCompleteAccountConnection_whenShouldShowSyncEnabled_presentsRecoveryDialog()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testControllerDidCompleteLogin_updatesDevicesAndPresentsRecoveryDialog()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testControllerDidCreateSyncAccount_presentsSaveRecoveryCodeDialog()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testControllerDidError_connectionErrors_setsCorrectErrorMessage()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testControllerDidError_pollingTimeout_endsFlow()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testControllerDidError_unableToRecognizeCode_setsCorrectErrorMessage()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testControllerDidFinishTransmittingRecoveryKey_waitsForDevices()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testControllerDidReceiveRecoveryKey_presentsPrepareDialog()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testDidEndFlow_cancelsConnectionController_beforeNotifyingDelegate()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testDidEndFlow_notifiesDelegate()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testInitialization_setsDelegateOnManagementDialogModel()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testOnPresentRecoverSyncAccountDialogThenRecoverAccountDialogShown()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testOnPresentRemoveDeviceThenRemoveDeviceShown()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testOnPresentTurnOffSyncConfirmDialogThenTurnOffSyncShown()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testOnSyncWithServerPressedThenSyncWithServerDialogShown()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testOnTurnOffSyncThenSyncServiceIsDisconnected()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testPresentDeleteAccount_presentsCorrectDialog()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testRecoverDataPressed_whenAuthenticationDoesNotSucceed_forAnyReason_callsDidEndFlowOnCoordinationDelegate()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testRecoverDataPressed_whenAuthenticationFails_setsErrorMessage()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testRecoveryCodeNextPressed_showsNowSyncing()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testRefreshDevices_onMapDevices_sortsDevicesWithCurrentFirst()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testRefreshDevices_whenFetchDevicesSucceeds_updatesDevices()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testRefreshDevices_whenNoAccount_clearsDevices()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testRemoveDevice_whenFails_handlesErrorsGracefully()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testRemoveDevice_whenSucceeds_endsFlow()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testRemoveDevice_whenSucceeds_refreshesDevices()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testSaveRecoveryPDF_whenAuthenticationDoesNotSucceed_forAnyReason_callsDidEndFlowOnCoordinationDelegate()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testSyncWithAnotherDevicePressed_whenAuthenticationDoesNotSucceed_forAnyReason_callsDidEndFlowOnCoordinationDelegate()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testSyncWithAnotherDevicePressed_whenAuthenticationFails_setsErrorMessage()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testSyncWithServerPressed_whenAuthenticationDoesNotSucceed_forAnyReason_callsDidEndFlowOnCoordinationDelegate()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testSyncWithServerPressed_whenAuthenticationFails_setsErrorMessage()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testTurnOnSync_callsCreateAccount()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testTurnOnSync_onAccountCreationError_setsErrorMessage()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testUpdateDeviceName_callsUpdateMethod()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/testUpdateDeviceName_handlesErrorsGracefully()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/test_WhenAccountRemoved_ErrorHandlerSyncDidTurnOffCalled()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/test_WhenSyncIsTurnedOff_ErrorHandlerSyncDidTurnOffCalled()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/test_controllerDidFindTwoAccountsDuringRecovery_accountAlreadyExists_oneDevice_disconnectsThenLogsInAgain()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/test_enterRecoveryCodePressed_whenUrlBarcodeOff_usesBase64Format()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/test_enterRecoveryCodePressed_whenUrlBarcodeOn_usesUrlFormat()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/test_recoverDevice_accountAlreadyExists_oneDevice_endsFlow()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/test_recoverDevice_accountAlreadyExists_oneDevice_updatesDevicesWithReturnedDevices()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/test_recoverDevice_accountAlreadyExists_twoOrMoreDevices_showsAccountSwitchingMessage()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/test_recoverDevice_callsConnectionController()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/test_startPollingForRecoveryKey_whenError_showsError()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/test_startPollingForRecoveryKey_whenFeatureFlagOff_usesBase64Code()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/test_startPollingForRecoveryKey_whenFeatureFlagOn_usesURL()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/test_switchAccounts_disconnectsThenLogsInAgain()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/test_switchAccounts_updatesDevicesWithReturnedDevices()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/test_syncWithAnotherDevicePressed_accountExists_whenError_showsError()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/test_syncWithAnotherDevicePressed_accountExists_whenExchangeFeatureFlagOff_usesRecoveryCode()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/test_syncWithAnotherDevicePressed_accountExists_whenExchangeFeatureFlagOn_andUrlBarcodeOn_usesUrlFormat()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/test_syncWithAnotherDevicePressed_accountExists_whenFeatureFlagOff_usesBase64Code()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/test_syncWithAnotherDevicePressed_accountExists_whenFeatureFlagOn_usesURL()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/test_syncWithAnotherDevicePressed_whenUrlBarcodeOff_usesBase64Format()">
+               </Test>
+               <Test
+                  Identifier = "SyncDialogControllerTests/test_syncWithAnotherDevicePressed_whenUrlBarcodeOn_usesUrlFormat()">
+               </Test>
+               <Test
                   Identifier = "SyncPreferencesTests/test_recoverDevice_accountAlreadyExists_twoOrMoreDevices_showsAccountSwitchingMessage()">
                </Test>
                <Test

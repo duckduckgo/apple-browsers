@@ -229,9 +229,9 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         let expectedTierOptions = SubscriptionTierOptions(
             platform: .ios,
             products: [
-                SubscriptionTierOptions.Tier(
+                SubscriptionTier(
                     tier: "plus",
-                    features: [EntitlementPayload(product: .networkProtection, name: "plus")],
+                    features: [TierFeature(product: .networkProtection, name: "plus")],
                     options: [
                         SubscriptionOptionV2(id: "1",
                                            cost: SubscriptionOptionCost(displayPrice: "5 USD", recurrence: "monthly"),
@@ -270,9 +270,9 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         let tierOptionsWithPurchase = SubscriptionTierOptions(
             platform: .ios,
             products: [
-                SubscriptionTierOptions.Tier(
+                SubscriptionTier(
                     tier: "plus",
-                    features: [EntitlementPayload(product: .networkProtection, name: "plus")],
+                    features: [TierFeature(product: .networkProtection, name: "plus")],
                     options: [
                         SubscriptionOptionV2(id: "1",
                                            cost: SubscriptionOptionCost(displayPrice: "5 USD", recurrence: "monthly"),
@@ -309,9 +309,9 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         let tierOptionsWithPurchase = SubscriptionTierOptions(
             platform: .ios,
             products: [
-                SubscriptionTierOptions.Tier(
+                SubscriptionTier(
                     tier: "plus",
-                    features: [EntitlementPayload(product: .networkProtection, name: "plus")],
+                    features: [TierFeature(product: .networkProtection, name: "plus")],
                     options: [
                         SubscriptionOptionV2(id: "1",
                                            cost: SubscriptionOptionCost(displayPrice: "5 USD", recurrence: "monthly"),

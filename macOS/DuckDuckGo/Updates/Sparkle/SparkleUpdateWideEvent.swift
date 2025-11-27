@@ -172,10 +172,10 @@ final class SparkleUpdateWideEvent {
         }
     }
 
-    func didBecomeReadyToInstall() {
+    func didInitiateRestart() {
         guard let globalID = currentFlowID else { return }
         wideEventManager.updateFlow(globalID: globalID) { (data: inout UpdateWideEventData) in
-            data.lastKnownStep = .readyToInstall
+            data.lastKnownStep = .restartingToUpdate
         }
     }
 
@@ -244,13 +244,22 @@ final class SparkleUpdateWideEvent {
         }
     }
 
-    /// Cancels any active flow when the app is about to terminate.
+    /// Handles app termination for update tracking.
     ///
-    /// Flows cancelled by app quit cannot be resumed (unlike user dismissal), so the cancellation
-    /// pixel is fired immediately. This coordinates with AppDelegate's termination sequence to
-    /// ensure the pixel is sent before the app fully terminates.
+    /// Checks the flow's last known step to determine the correct completion status:
+    /// - `.restartingToUpdate` → success (user clicked "Restart to Update")
+    /// - `.extractionCompleted` → success (update ready, will install on quit)
+    /// - Anything else → cancellation (user quit during active check/download)
     func handleAppTermination() {
-        if currentFlowID != nil {
+        guard let globalID = currentFlowID,
+              let flowData = wideEventManager.getFlowData(UpdateWideEventData.self, globalID: globalID) else { return }
+
+        switch flowData.lastKnownStep {
+        case .restartingToUpdate:
+            completeFlow(status: .success(reason: UpdateWideEventData.SuccessReason.restartingToUpdate.rawValue))
+        case .extractionCompleted:
+            completeFlow(status: .success(reason: UpdateWideEventData.SuccessReason.installingOnQuit.rawValue))
+        default:
             cancelFlow(reason: .appQuit)
         }
     }

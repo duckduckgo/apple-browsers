@@ -1,6 +1,5 @@
 //
-//  MockSubscriptionFreeTrialsHelping.swift
-//  DuckDuckGo
+//  OriginSettings.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,12 +17,7 @@
 //
 
 import Foundation
-@testable import DuckDuckGo
-@testable import BrowserServicesKit
-@testable import Common
-@testable import UserScript
-@testable import Subscription
 
-class MockSubscriptionFreeTrialsHelping: SubscriptionFreeTrialsHelping {
-    var areFreeTrialsEnabled: Bool = false
+public struct OriginSettings: Decodable {
+    public let originCampaignSubstrings: [String]
 }

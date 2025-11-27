@@ -115,7 +115,7 @@ class PrivacyIconView: UIView {
         icon = newIcon
     }
     
-    func setDaxEasterEggLogoURL(_ url: URL?) {
+    func setDaxEasterEggLogoURL(_ url: URL?, completion: (() -> Void)? = nil) {
         let oldURL = daxLogoURL
         
         // Exit early if URL hasn't changed
@@ -153,6 +153,8 @@ class PrivacyIconView: UIView {
             } else {
                 updateShieldImageView(for: icon)
             }
+
+            completion?()
         }
     }
     

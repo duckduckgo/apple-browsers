@@ -568,9 +568,14 @@ extension SparkleUpdateController: SPUUpdaterDelegate {
     }
 
     func updaterWillRelaunchApplication(_ updater: SPUUpdater) {
-        Logger.updates.log("Updater will relaunch application - completing wide event")
+        Logger.updates.log("Updater will relaunch application")
 
-        // Capture metadata from wide event before completing
+        // Mark that user interacted with "Restart to Update" button
+        // This sets lastKnownStep to .restartingToUpdate to distinguish from
+        // users who just quit the app (which stays at .extractionCompleted)
+        updateWideEvent.didInitiateRestart()
+
+        // Capture metadata from wide event before app terminates
         if let flowData = updateWideEvent.getCurrentFlowData() {
             SparkleUpdateCompletionValidator.storePendingUpdateMetadata(
                 sourceVersion: flowData.fromVersion,
@@ -582,10 +587,8 @@ extension SparkleUpdateController: SPUUpdaterDelegate {
             )
         }
 
-        // Complete WideEvent with success - update is being installed and app will restart
-        // This is the last reliable callback before the app terminates, so we complete here
-        // rather than in didFinishUpdateCycleFor (which won't be called for restart scenarios)
-        updateWideEvent.completeFlow(status: .success(reason: "restarting_to_update"))
+        // Note: Wide event completion is handled by handleAppTermination()
+        // which fires when the app actually terminates
         willRelaunchAppSubject.send()
     }
 
@@ -727,7 +730,7 @@ extension SparkleUpdateController: SPUUpdaterDelegate {
             Logger.updates.log("Updater did finish update cycle with no update found")
             updateProgress = .updateCycleDone(.finishedWithNoUpdateFound)
             Task { @UpdateCheckActor in await updateCheckState.recordCheckTime() }
-            updateWideEvent.completeFlow(status: .success(reason: "no_update_available"))
+            updateWideEvent.completeFlow(status: .success(reason: UpdateWideEventData.SuccessReason.noUpdateAvailable.rawValue))
         } else if let error {
             Logger.updates.log("Updater did finish update cycle with error: \(error.localizedDescription, privacy: .public) (\(error.pixelParameters, privacy: .public))")
             updateProgress = .updaterError(error)

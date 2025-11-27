@@ -1,6 +1,6 @@
 ---
 alwaysApply: false
-title: "Testing Guidelines & Best Practices"
+title: "Testing Guidelines & Best Practices (testing.md)"
 description: "Comprehensive testing practices and patterns for DuckDuckGo browser development across iOS and macOS platforms including unit tests, mocks, memory management, advanced testing techniques, time/date testing patterns, and critical async testing anti-patterns to avoid"
 keywords: ["testing", "unit tests", "XCTest", "mocks", "async testing", "UI tests", "performance tests", "memory management", "snapshot testing", "MockFeatureFlagger", "Tab Extensions", "BSK tests", "event-driven testing", "timing anti-patterns", "DispatchQueue", "Timer", "expectations", "TestClock", "MockDateProvider", "TimeTraveller", "Sleeper", "time injection", "date provider"]
 ---

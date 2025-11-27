@@ -146,7 +146,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     private let appStoreRestoreFlow: AppStoreRestoreFlow
     private let appStoreAccountManagementFlow: AppStoreAccountManagementFlow
     private let subscriptionDataReporter: SubscriptionDataReporting?
-    private let subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping
 
     init(subscriptionManager: SubscriptionManager,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
@@ -154,8 +153,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
          appStorePurchaseFlow: AppStorePurchaseFlow,
          appStoreRestoreFlow: AppStoreRestoreFlow,
          appStoreAccountManagementFlow: AppStoreAccountManagementFlow,
-         subscriptionDataReporter: SubscriptionDataReporting? = nil,
-         subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper()) {
+         subscriptionDataReporter: SubscriptionDataReporting? = nil) {
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.appStorePurchaseFlow = appStorePurchaseFlow
@@ -163,7 +161,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         self.appStoreAccountManagementFlow = appStoreAccountManagementFlow
         self.subscriptionAttributionOrigin = subscriptionAttributionOrigin
         self.subscriptionDataReporter = subscriptionAttributionOrigin != nil ? subscriptionDataReporter : nil
-        self.subscriptionFreeTrialsHelper = subscriptionFreeTrialsHelper
     }
 
     // Transaction Status and errors are observed from ViewModels to handle errors in the UI
@@ -261,13 +258,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     func getSubscriptionOptions(params: Any, original: WKScriptMessage) async -> Encodable? {
         resetSubscriptionFlow()
 
-        var subscriptionOptions: SubscriptionOptions?
-
-        if subscriptionFreeTrialsHelper.areFreeTrialsEnabled {
-            subscriptionOptions = await freeTrialSubscriptionOptions()
-        } else {
-            subscriptionOptions = await subscriptionManager.storePurchaseManager().subscriptionOptions()
-        }
+        let subscriptionOptions = await subscriptionManager.storePurchaseManager().subscriptionOptions()
 
         if let subscriptionOptions {
             if subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed {
@@ -564,22 +555,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     }
 }
 
-private extension DefaultSubscriptionPagesUseSubscriptionFeature {
-    /// Retrieves free trial subscription options.
-    ///
-    /// - Returns: A `SubscriptionOptions` object containing the relevant subscription options.
-    func freeTrialSubscriptionOptions() async -> SubscriptionOptions? {
-        guard let subscriptionOptions = await subscriptionManager.storePurchaseManager().freeTrialSubscriptionOptions() else {
-            /*
-             Fallback to standard subscription options if nil.
-             This could occur if the Free Trial offer in AppStoreConnect had an end date in the past.
-             */
-            return await subscriptionManager.storePurchaseManager().subscriptionOptions()
-        }
-        return subscriptionOptions
-    }
-}
-
 final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesUseSubscriptionFeature {
 
     private let subscriptionAttributionOrigin: String?
@@ -588,7 +563,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
     private let appStoreRestoreFlow: AppStoreRestoreFlowV2
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private let subscriptionDataReporter: SubscriptionDataReporting?
-    private let subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping
     private let internalUserDecider: InternalUserDecider
     private let wideEvent: WideEventManaging
     private var wideEventData: SubscriptionPurchaseWideEventData?
@@ -600,7 +574,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
          appStorePurchaseFlow: AppStorePurchaseFlowV2,
          appStoreRestoreFlow: AppStoreRestoreFlowV2,
          subscriptionDataReporter: SubscriptionDataReporting? = nil,
-         subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper(),
          internalUserDecider: InternalUserDecider,
          wideEvent: WideEventManaging) {
         self.subscriptionManager = subscriptionManager
@@ -609,7 +582,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         self.appStoreRestoreFlow = appStoreRestoreFlow
         self.subscriptionAttributionOrigin = subscriptionAttributionOrigin
         self.subscriptionDataReporter = subscriptionAttributionOrigin != nil ? subscriptionDataReporter : nil
-        self.subscriptionFreeTrialsHelper = subscriptionFreeTrialsHelper
         self.internalUserDecider = internalUserDecider
         self.wideEvent = wideEvent
     }
@@ -768,13 +740,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
     func getSubscriptionOptions(params: Any, original: WKScriptMessage) async -> Encodable? {
         resetSubscriptionFlow()
 
-        var subscriptionOptions: SubscriptionOptionsV2?
-
-        if subscriptionFreeTrialsHelper.areFreeTrialsEnabled {
-            subscriptionOptions = await freeTrialSubscriptionOptions()
-        } else {
-            subscriptionOptions = await subscriptionManager.storePurchaseManager().subscriptionOptions()
-        }
+        let subscriptionOptions = await subscriptionManager.storePurchaseManager().subscriptionOptions()
 
         if let subscriptionOptions {
             if subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed {
@@ -1112,22 +1078,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         onSetSubscription = nil
         onActivateSubscription = nil
         onBackToSettings = nil
-    }
-}
-
-private extension DefaultSubscriptionPagesUseSubscriptionFeatureV2 {
-    /// Retrieves free trial subscription options.
-    ///
-    /// - Returns: A `SubscriptionOptions` object containing the relevant subscription options.
-    func freeTrialSubscriptionOptions() async -> SubscriptionOptionsV2? {
-        guard let subscriptionOptions = await subscriptionManager.storePurchaseManager().freeTrialSubscriptionOptions() else {
-            /*
-             Fallback to standard subscription options if nil.
-             This could occur if the Free Trial offer in AppStoreConnect had an end date in the past.
-             */
-            return await subscriptionManager.storePurchaseManager().subscriptionOptions()
-        }
-        return subscriptionOptions
     }
 }
 

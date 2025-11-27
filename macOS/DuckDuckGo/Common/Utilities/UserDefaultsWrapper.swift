@@ -269,6 +269,7 @@ public struct UserDefaultsWrapper<T> {
 
         // SAD/ATT Debug
         case debugSetDefaultAndAddToDockPromptCurrentDateKey = "com.duckduckgo.ios.debug.setDefaultAndAddToDockPromptCurrentDate"
+        case debugSetDefaultAndAddToDockPromptInstallDateKey = "com.duckduckgo.debug.setDefaultAndAddToDockPromptInstallDate"
 
         // Win-back Offer Debug
         case debugWinBackOfferSimulatedTodayDate = "com.duckduckgo.debug.winBackOfferSimulatedTodayDate"

@@ -573,7 +573,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .dataImportNewExperience:
             return .disabled
         case .scheduledDefaultBrowserAndDockPromptsInactiveUser:
-            return .remoteDevelopment(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPromptsInactiveUser))
+            return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPromptsInactiveUser))
         case .pinnedTabsViewRewrite:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.pinnedTabsViewRewrite))
         case .tabProgressIndicator:

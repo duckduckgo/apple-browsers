@@ -7070,8 +7070,8 @@
 			isa = PBXGroup;
 			children = (
 				37534C9F28113101002621E7 /* LazyLoadable.swift */,
-				37534CA2281132CB002621E7 /* TabLazyLoaderDataSource.swift */,
 				37B11B3828095E6600CBB621 /* TabLazyLoader.swift */,
+				37534CA2281132CB002621E7 /* TabLazyLoaderDataSource.swift */,
 			);
 			path = TabLazyLoader;
 			sourceTree = "<group>";
@@ -8994,8 +8994,8 @@
 		853014D425E6709500FB8205 /* Support */ = {
 			isa = PBXGroup;
 			children = (
-				3145BF5A2DC109DF00A9B8D4 /* ShortcutTooltip.swift */,
 				853014D525E671A000FB8205 /* PageObserverUserScript.swift */,
+				3145BF5A2DC109DF00A9B8D4 /* ShortcutTooltip.swift */,
 			);
 			path = Support;
 			sourceTree = "<group>";
@@ -10038,10 +10038,10 @@
 		AA86491124D8318F001BABEE /* TabBar */ = {
 			isa = PBXGroup;
 			children = (
+				AA9FF95724A1ECE20039E328 /* Model */,
 				B520EBE12EC4D66A00D286E4 /* Tools */,
 				AA86491224D831A1001BABEE /* View */,
 				AA8EDF1F2491FCC10071C2E8 /* ViewModel */,
-				AA9FF95724A1ECE20039E328 /* Model */,
 			);
 			path = TabBar;
 			sourceTree = "<group>";
@@ -10049,6 +10049,8 @@
 		AA86491224D831A1001BABEE /* View */ = {
 			isa = PBXGroup;
 			children = (
+				B53F4E912EA917AB0043B5EF /* LetterView.swift */,
+				B5DE8DA82EBE292F005C5EF4 /* SpinnerView.swift */,
 				84DD63E32E9788960043A25E /* TabBar.storyboard */,
 				1456D6E024EFCBC300775049 /* TabBarCollectionView.swift */,
 				AA2CB1342587C29500AA6FBE /* TabBarFooter.swift */,
@@ -10058,12 +10060,10 @@
 				1430DFF424D0580F00B8978C /* TabBarViewController.swift */,
 				AA7412B024D0B3AC00D22FE0 /* TabBarViewItem.swift */,
 				AA9E9A5D25A4867200D1959D /* TabDragAndDropManager.swift */,
+				B574243A2EBA8CDF002E5460 /* TabFaviconView.swift */,
 				311B262628E73E0A00FD181A /* TabShadowConfig.swift */,
 				3154FD1328E6011A00909769 /* TabShadowView.swift */,
-				B574243A2EBA8CDF002E5460 /* TabFaviconView.swift */,
 				B5CBB60A2EC4F80A006C3F54 /* TabTitleView.swift */,
-				B53F4E912EA917AB0043B5EF /* LetterView.swift */,
-				B5DE8DA82EBE292F005C5EF4 /* SpinnerView.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";
@@ -10104,8 +10104,8 @@
 				853014D425E6709500FB8205 /* Support */,
 				37EE55D72D5F197300D53C7C /* View */,
 				37EE562E2D5F197700D53C7C /* ViewModel */,
-				4B0DB5E428BD9D08007DD239 /* PinningManager.swift */,
 				311309742ECE71B600FCD220 /* AddressBarSharedTextState.swift */,
+				4B0DB5E428BD9D08007DD239 /* PinningManager.swift */,
 			);
 			path = NavigationBar;
 			sourceTree = "<group>";
@@ -10113,14 +10113,14 @@
 		AA86491B24D837DE001BABEE /* Tab */ = {
 			isa = PBXGroup;
 			children = (
-				AA86491C24D83868001BABEE /* View */,
-				AA86491D24D83A59001BABEE /* ViewModel */,
 				AA86491E24D83A66001BABEE /* Model */,
 				B6BF5D912947198E006742B1 /* Navigation */,
-				B6BDD9F12940764100F68088 /* UserScripts */,
+				AA512D1224D99D4900230283 /* Services */,
 				B647EFB32922539400BA628D /* TabExtensions */,
 				37534CA128113277002621E7 /* TabLazyLoader */,
-				AA512D1224D99D4900230283 /* Services */,
+				B6BDD9F12940764100F68088 /* UserScripts */,
+				AA86491C24D83868001BABEE /* View */,
+				AA86491D24D83A59001BABEE /* ViewModel */,
 			);
 			path = Tab;
 			sourceTree = "<group>";
@@ -10178,8 +10178,8 @@
 			children = (
 				376597852E32E3310039EF74 /* NewTabPageTabPreloader.swift */,
 				BB9BDD482D09BA9D0069E9EF /* TabBarRemoteMessageViewModel.swift */,
-				37D23779287EB8CA00BCE03B /* TabIndex.swift */,
 				AA9FF95E24A1FB680039E328 /* TabCollectionViewModel.swift */,
+				37D23779287EB8CA00BCE03B /* TabIndex.swift */,
 			);
 			path = ViewModel;
 			sourceTree = "<group>";
@@ -11074,12 +11074,12 @@
 		B6BDD9F12940764100F68088 /* UserScripts */ = {
 			isa = PBXGroup;
 			children = (
-				BBBC5F672EA7C037003505EE /* SERPSettingsEventHandler.swift */,
-				BB2582792E9EC770002B8DB5 /* SERPSettingsProvider.swift */,
 				85D438B5256E7C9E00F3BAF8 /* ContextMenuUserScript.swift */,
 				4BB88B4425B7B55C006F6B06 /* DebugUserScript.swift */,
 				856CADEF271710F400E79BB0 /* HoverUserScript.swift */,
 				4B2E7D6226FF9D6500D2DB17 /* PrintingUserScript.swift */,
+				BBBC5F672EA7C037003505EE /* SERPSettingsEventHandler.swift */,
+				BB2582792E9EC770002B8DB5 /* SERPSettingsProvider.swift */,
 				567A23BD2C7F539C0010F66C /* SpecialErrorPageUserScriptExtension.swift */,
 				56406D4A2C636A8900BF8FA2 /* SpecialPagesUserScriptExtension.swift */,
 				F1B33DF92BAD9C83001128B3 /* Subscription */,
@@ -11091,11 +11091,11 @@
 		B6BF5D912947198E006742B1 /* Navigation */ = {
 			isa = PBXGroup;
 			children = (
+				31F28C5228C8EECA00119F70 /* DuckURLSchemeHandler.swift */,
 				B687B7CB2947A1E9001DEA6F /* ExternalAppSchemeHandler.swift */,
 				1E559BB02BBCA9F1002B4AF6 /* RedirectNavigationResponder.swift */,
 				B60C6F7629B0E286007BFAA8 /* SearchNonexistentDomainNavigationResponder.swift */,
 				B6BF5D922947199A006742B1 /* SerpHeadersNavigationResponder.swift */,
-				31F28C5228C8EECA00119F70 /* DuckURLSchemeHandler.swift */,
 			);
 			path = Navigation;
 			sourceTree = "<group>";

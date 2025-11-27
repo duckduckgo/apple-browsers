@@ -38,7 +38,6 @@ final class ReportingService {
     let subscriptionDataReporter: SubscriptionDataReporting
     let featureFlagging: FeatureFlagger
     let attributedMetricManager: AttributedMetricManager
-    let workQueue = DispatchQueue(label: "com.duckduckgo.ReportingService", qos: .background)
     
     private var cancellables = Set<AnyCancellable>()
     let adAttributionPixelReporter: AdAttributionPixelReporter
@@ -54,7 +53,7 @@ final class ReportingService {
     init(fireproofing: Fireproofing,
          featureFlagging: FeatureFlagger,
          userDefaults: UserDefaults,
-         pixelKit: PixelKit,
+         pixelKit: PixelKit?,
          appDependencies: DependencyProvider,
          privacyConfigurationManager: PrivacyConfigurationManaging) {
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -94,7 +93,7 @@ final class ReportingService {
 
         // App start
         NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
-            .receive(on: workQueue)
+            .receive(on: attributedMetricManager.workQueue)
             .sink { [weak self] _ in
                 self?.attributedMetricManager.process(trigger: .appDidStart)
             }
@@ -103,7 +102,7 @@ final class ReportingService {
         // Search
 
         NotificationCenter.default.publisher(for: .userDidPerformDDGSearch)
-            .receive(on: workQueue)
+            .receive(on: attributedMetricManager.workQueue)
             .sink { [weak self] _ in
                 self?.attributedMetricManager.process(trigger: .userDidSearch)
             }
@@ -112,7 +111,7 @@ final class ReportingService {
         // AD click
 
         NotificationCenter.default.publisher(for: .userDidSelectDDGAD)
-            .receive(on: workQueue)
+            .receive(on: attributedMetricManager.workQueue)
             .sink { [weak self] _ in
                 self?.attributedMetricManager.process(trigger: .userDidSelectAD)
             }
@@ -121,7 +120,7 @@ final class ReportingService {
         // New AI chat message sent
 
         NotificationCenter.default.publisher(for: .aiChatUserDidSubmitPrompt)
-            .receive(on: workQueue)
+            .receive(on: attributedMetricManager.workQueue)
             .sink { [weak self] _ in
                 self?.attributedMetricManager.process(trigger: .userDidDuckAIChat)
             }
@@ -130,7 +129,7 @@ final class ReportingService {
         // User purchased subscription
 
         NotificationCenter.default.publisher(for: .userDidPurchaseSubscription)
-            .receive(on: workQueue)
+            .receive(on: attributedMetricManager.workQueue)
             .sink { [weak self] _ in
                 self?.attributedMetricManager.process(trigger: .userDidSubscribe)
             }
@@ -139,7 +138,7 @@ final class ReportingService {
         // Device sync
 
         NotificationCenter.default.publisher(for: .syncDevicesUpdate)
-            .receive(on: workQueue)
+            .receive(on: attributedMetricManager.workQueue)
             .sink { [weak self] notification in
                 guard let deviceCount = notification.userInfo?[AttributedMetricNotificationParameter.syncCount.rawValue] as? Int else {
                     assertionFailure("Missing \(AttributedMetricNotificationParameter.syncCount.rawValue)")

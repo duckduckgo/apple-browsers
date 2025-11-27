@@ -329,8 +329,7 @@ final class MainViewController: NSViewController {
         mainView.setupAIChatOmnibarTextContainerConstraints(addressBarStack: navigationBarViewController.addressBarStack)
         mainView.setupAIChatOmnibarContainerConstraints(addressBarStack: navigationBarViewController.addressBarStack)
 
-        // Wire the custom toggle control reference to the AI Chat text container for TAB key navigation
-        wireToggleReferenceToAIChatTextContainer()
+        wireAIChatOmnibarUpdates()
     }
 
     override func viewWillAppear() {
@@ -439,6 +438,8 @@ final class MainViewController: NSViewController {
     }
 
     deinit {
+        NotificationCenter.default.removeObserver(self, name: NSWindow.didResizeNotification, object: nil)
+
 #if DEBUG
 
         // Check that TabCollectionViewModel deallocates
@@ -487,9 +488,21 @@ final class MainViewController: NSViewController {
             aiChatOmnibarContainerViewController.startEventMonitoring()
             aiChatOmnibarTextContainerViewController.startEventMonitoring()
             aiChatOmnibarTextContainerViewController.focusTextView()
+
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                let desiredHeight = self.aiChatOmnibarTextContainerViewController.calculateDesiredPanelHeight()
+                self.mainView.updateAIChatOmnibarContainerHeight(desiredHeight, animated: false)
+
+                let maxHeight = self.mainView.calculateMaxAIChatOmnibarHeight()
+                self.aiChatOmnibarTextContainerViewController.updateScrollingBehavior(maxHeight: maxHeight)
+            }
         } else {
             aiChatOmnibarContainerViewController.cleanup()
             aiChatOmnibarTextContainerViewController.cleanup()
+
+            /// Reset panel height to minimum to prevent size flash on next open
+            mainView.updateAIChatOmnibarContainerHeight(100, animated: false)
         }
     }
 
@@ -497,6 +510,60 @@ final class MainViewController: NSViewController {
         /// This enables TAB key navigation from AI Chat mode to the toggle
         if let searchModeToggleControl = navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.searchModeToggleControl {
             aiChatOmnibarTextContainerViewController.customToggleControl = searchModeToggleControl
+        }
+    }
+
+    private func wireAIChatOmnibarHeightUpdates() {
+        aiChatOmnibarTextContainerViewController.heightDidChange = { [weak self] desiredHeight in
+            guard let self = self else { return }
+
+            self.mainView.updateAIChatOmnibarContainerHeight(desiredHeight, animated: true)
+
+            let maxHeight = self.mainView.calculateMaxAIChatOmnibarHeight()
+            self.aiChatOmnibarTextContainerViewController.updateScrollingBehavior(maxHeight: maxHeight)
+        }
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(windowDidResize),
+            name: NSWindow.didResizeNotification,
+            object: view.window
+        )
+    }
+
+    private func wireAIChatOmnibarUpdates() {
+        wireToggleReferenceToAIChatTextContainer()
+        wireAIChatOmnibarHeightUpdates()
+        wireAIChatOmnibarHitTesting()
+    }
+
+    @objc private func windowDidResize() {
+        guard mainView.isAIChatOmnibarContainerShown else { return }
+
+        let currentHeight = mainView.aiChatOmnibarContainerView.frame.height
+        mainView.updateAIChatOmnibarContainerHeight(currentHeight, animated: false)
+
+        let maxHeight = mainView.calculateMaxAIChatOmnibarHeight()
+        aiChatOmnibarTextContainerViewController.updateScrollingBehavior(maxHeight: maxHeight)
+    }
+
+    private func wireAIChatOmnibarHitTesting() {
+        navigationBarViewController.addressBarViewController?.isPointInAIChatOmnibar = { [weak self] locationInWindow in
+            guard let self = self else { return false }
+            guard self.mainView.isAIChatOmnibarContainerShown else { return false }
+
+            let containerFrame = self.mainView.aiChatOmnibarContainerView.frame
+            let pointInMainView = self.mainView.convert(locationInWindow, from: nil)
+            if containerFrame.contains(pointInMainView) {
+                return true
+            }
+
+            let textContainerFrame = self.mainView.aiChatOmnibarTextContainerView.frame
+            if textContainerFrame.contains(pointInMainView) {
+                return true
+            }
+
+            return false
         }
     }
 
@@ -910,60 +977,97 @@ extension MainViewController {
         let key = event.charactersIgnoringModifiers?.lowercased() ?? ""
         let isWebViewFocused = view.window?.firstResponder is WebView
 
-        // Handle Enter
-        if event.keyCode == kVK_Return,
-           navigationBarViewController.addressBarViewController?.addressBarTextField.isFirstResponder == true {
-            if flags.contains(.shift) && aiChatMenuConfig.shouldDisplayAddressBarShortcutWhenTyping {
-                navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.aiChatButtonAction(self)
-            } else {
-                navigationBarViewController.addressBarViewController?.addressBarTextField.addressBarEnterPressed()
-            }
+        if handleReturnKey(event: event, flags: flags) {
             return true
         }
 
-        // Handle Escape
-        if event.keyCode == kVK_Escape {
-            var isHandled = false
-            if !mainView.findInPageContainerView.isHidden {
-                findInPageViewController.findInPageDone(self)
-                isHandled = true
-            }
-            if let addressBarVC = navigationBarViewController.addressBarViewController {
-                isHandled = isHandled || addressBarVC.escapeKeyDown()
-            }
-            return isHandled
-        }
-
-        // Handle tab switching (CMD+1 through CMD+9)
-        if [.command, [.command, .numericPad]].contains(flags), "123456789".contains(key) {
-            if isWebViewFocused {
-                NSApp.menu?.performKeyEquivalent(with: event)
-                return true
-            }
-            return false
-        }
-
-        if event.keyCode == kVK_Tab, [.control, [.control, .shift]].contains(flags) {
-            NSApp.menu?.performKeyEquivalent(with: event)
+        if handleEscapeKey(event: event) {
             return true
         }
 
-        // Handle browser tab/window actions
-        if isWebViewFocused {
-            switch (key, flags, flags.contains(.command)) {
-            case ("n", [.command], _),
-                ("t", [.command], _), ("t", [.command, .shift], _),
-                ("w", _, true),
-                ("q", [.command], _),
-                ("r", [.command], _):
-                NSApp.menu?.performKeyEquivalent(with: event)
-                return true
-            default:
-                break
-            }
+        if handleTabSwitching(event: event, flags: flags, key: key, isWebViewFocused: isWebViewFocused) {
+            return true
+        }
+
+        if handleControlTab(event: event, flags: flags) {
+            return true
+        }
+
+        if handleBrowserActions(key: key, flags: flags, isWebViewFocused: isWebViewFocused, event: event) {
+            return true
         }
 
         return false
+    }
+
+    private func handleReturnKey(event: NSEvent, flags: NSEvent.ModifierFlags) -> Bool {
+        guard event.keyCode == kVK_Return,
+              navigationBarViewController.addressBarViewController?.addressBarTextField.isFirstResponder == true else {
+            return false
+        }
+
+        if flags.contains(.shift) || flags.contains(.option),
+           featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
+           let buttonsViewController = navigationBarViewController.addressBarViewController?.addressBarButtonsViewController {
+            buttonsViewController.toggleSearchMode()
+            return true
+        } else if flags.contains(.shift) && aiChatMenuConfig.shouldDisplayAddressBarShortcutWhenTyping {
+            navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.aiChatButtonAction(self)
+        } else {
+            navigationBarViewController.addressBarViewController?.addressBarTextField.addressBarEnterPressed()
+        }
+        return true
+    }
+
+    private func handleEscapeKey(event: NSEvent) -> Bool {
+        guard event.keyCode == kVK_Escape else { return false }
+
+        var isHandled = false
+        if !mainView.findInPageContainerView.isHidden {
+            findInPageViewController.findInPageDone(self)
+            isHandled = true
+        }
+        if let addressBarVC = navigationBarViewController.addressBarViewController {
+            isHandled = isHandled || addressBarVC.escapeKeyDown()
+        }
+        return isHandled
+    }
+
+    private func handleTabSwitching(event: NSEvent, flags: NSEvent.ModifierFlags, key: String, isWebViewFocused: Bool) -> Bool {
+        guard [.command, [.command, .numericPad]].contains(flags), "123456789".contains(key) else {
+            return false
+        }
+
+        if isWebViewFocused {
+            NSApp.menu?.performKeyEquivalent(with: event)
+            return true
+        }
+        return false
+    }
+
+    private func handleControlTab(event: NSEvent, flags: NSEvent.ModifierFlags) -> Bool {
+        guard event.keyCode == kVK_Tab, [.control, [.control, .shift]].contains(flags) else {
+            return false
+        }
+
+        NSApp.menu?.performKeyEquivalent(with: event)
+        return true
+    }
+
+    private func handleBrowserActions(key: String, flags: NSEvent.ModifierFlags, isWebViewFocused: Bool, event: NSEvent) -> Bool {
+        guard isWebViewFocused else { return false }
+
+        switch (key, flags, flags.contains(.command)) {
+        case ("n", [.command], _),
+            ("t", [.command], _), ("t", [.command, .shift], _),
+            ("w", _, true),
+            ("q", [.command], _),
+            ("r", [.command], _):
+            NSApp.menu?.performKeyEquivalent(with: event)
+            return true
+        default:
+            return false
+        }
     }
 
     func otherMouseUp(with event: NSEvent) -> NSEvent? {

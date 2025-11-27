@@ -287,7 +287,7 @@
 "sync.with.another.device.footer" = "Dataene dine er ende-til-ende-kryptert og DuckDuckGo har ikke tilgang til krypteringsnøkkelen.";
 
 /* Message for syncing with another device */
-"sync.with.another.device.message" = "Synkroniser bokmerker og autofyll-data på en sikker måte mellom enhetene dine.";
+"sync.with.another.device.message" = "Synkroniser bokmerker og passord på en sikker måte mellom enhetene dine.";
 
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Begynn synkronisering";

@@ -1656,7 +1656,7 @@ class MainViewController: UIViewController {
         suggestionTrayController?.didHide(animated: false)
     }
     
-    func launchAutofillLogins(with currentTabUrl: URL? = nil, currentTabUid: String? = nil, openSearch: Bool = false, source: AutofillSettingsSource, selectedAccount: SecureVaultModels.WebsiteAccount? = nil) {
+    func launchAutofillLogins(with currentTabUrl: URL? = nil, currentTabUid: String? = nil, openSearch: Bool = false, source: AutofillSettingsSource, selectedAccount: SecureVaultModels.WebsiteAccount? = nil, extensionPromotionManager: AutofillExtensionPromotionManaging? = nil) {
         let appSettings = AppDependencyProvider.shared.appSettings
         let autofillLoginListViewController = AutofillLoginListViewController(
             appSettings: appSettings,
@@ -1669,7 +1669,8 @@ class MainViewController: UIViewController {
             source: source,
             bookmarksDatabase: self.bookmarksDatabase,
             favoritesDisplayMode: self.appSettings.favoritesDisplayMode,
-            keyValueStore: self.keyValueStore
+            keyValueStore: self.keyValueStore,
+            extensionPromotionManager: extensionPromotionManager
         )
         autofillLoginListViewController.delegate = self
         let navigationController = UINavigationController(rootViewController: autofillLoginListViewController)
@@ -2769,7 +2770,7 @@ extension MainViewController: OmniBarDelegate {
     }
 
     @objc func onMenuLongPressed() {
-        if featureFlagger.isFeatureOn(.debugMenu) || isDebugBuild {
+        if featureFlagger.internalUserDecider.isInternalUser || isDebugBuild {
             segueToDebugSettings()
         } else {
             segueToSettings()
@@ -2935,7 +2936,7 @@ extension MainViewController: OmniBarDelegate {
 
     /// Delegate method called when the AI Chat left button is tapped
     func onAIChatLeftButtonPressed() {
-        currentTab?.submitOpenHistoryAction()
+        currentTab?.submitToggleSidebarAction()
     }
 
     /// Delegate method called when the AI Chat right button is tapped
@@ -3190,8 +3191,8 @@ extension MainViewController: TabDelegate {
     
     func tab(_ tab: TabViewController,
              didRequestAutofillLogins account: SecureVaultModels.WebsiteAccount?,
-             source: AutofillSettingsSource) {
-        launchAutofillLogins(with: currentTab?.url, currentTabUid: tab.tabModel.uid, source: source, selectedAccount: account)
+             source: AutofillSettingsSource, extensionPromotionManager: AutofillExtensionPromotionManaging? = nil) {
+        launchAutofillLogins(with: currentTab?.url, currentTabUid: tab.tabModel.uid, source: source, selectedAccount: account, extensionPromotionManager: extensionPromotionManager)
     }
 
     func tab(_ tab: TabViewController,

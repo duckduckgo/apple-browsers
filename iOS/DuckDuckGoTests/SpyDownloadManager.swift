@@ -1,5 +1,5 @@
 //
-//  MockSubscriptionFreeTrialsHelping.swift
+//  SpyDownloadManager.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -19,11 +19,23 @@
 
 import Foundation
 @testable import DuckDuckGo
-@testable import BrowserServicesKit
-@testable import Common
-@testable import UserScript
-@testable import Subscription
 
-class MockSubscriptionFreeTrialsHelping: SubscriptionFreeTrialsHelping {
-    var areFreeTrialsEnabled: Bool = false
+class SpyDownloadManager: DownloadManaging {
+    var downloadList: Set<Download> = []
+    var downloadsDirectoryFiles: [URL] = []
+    var deleteDownloadsDirectoryIfEmptyCallCount = 0
+    
+    func deleteDownloadsDirectoryIfEmpty() {
+        deleteDownloadsDirectoryIfEmptyCallCount += 1
+    }
+    
+    func startMonitoringDownloadsDirectoryChanges() { }
+    
+    func stopMonitoringDownloadsDirectoryChanges() { }
+    
+    func markAllDownloadsSeen() { }
+    
+    func cancelDownload(_ download: Download) { }
+    
+    func cancelAllDownloads() { }
 }

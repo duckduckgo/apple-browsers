@@ -164,7 +164,7 @@ final class PreferencesPurchaseSubscriptionModelTests: XCTestCase {
         // Given
         mockWinBackOfferManager.isOfferAvailable = false
         mockBlackFridayCampaignProvider.isCampaignEnabled = false
-        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat, .privacyProFreeTrial]
+        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
         mockSubscriptionManager.isEligibleForFreeTrialResult = true
 
         // Force update eligibility

@@ -21,7 +21,6 @@ import UIKit
 import Combine
 import BrowserServicesKit
 
-/// Protocol for handling fadeout container events
 protocol FadeoutContainerViewControllerDelegate: AnyObject {
     func fadeoutContainerViewController(_ controller: FadeoutContainerViewController, didTransitionToMode mode: TextEntryMode)
     func fadeoutContainerViewController(_ controller: FadeoutContainerViewController, didUpdateTransitionProgress progress: CGFloat)
@@ -29,25 +28,16 @@ protocol FadeoutContainerViewControllerDelegate: AnyObject {
 }
 
 final class FadeoutContainerViewController: UIViewController {
-
     weak var delegate: FadeoutContainerViewControllerDelegate?
 
-    // MARK: - Transition Progress
     @Published private(set) var transitionProgress: CGFloat = 0.0
-    var transitionProgressPublisher: AnyPublisher<CGFloat, Never> {
-        $transitionProgress.eraseToAnyPublisher()
-    }
 
     private let switchBarHandler: SwitchBarHandling
     private let featureFlagger: FeatureFlagger
     private var cancellables = Set<AnyCancellable>()
 
-    // MARK: - UI Elements
-
     private(set) var searchPageContainer: UIView!
     private(set) var chatPageContainer: UIView!
-
-    // MARK: - Gesture Recognition
 
     private var panGestureRecognizer: UIPanGestureRecognizer!
     private let swipeVelocityThreshold: CGFloat = 500
@@ -105,13 +95,11 @@ final class FadeoutContainerViewController: UIViewController {
 
     private func setupConstraints() {
         NSLayoutConstraint.activate([
-            // Search page constraints (full size)
             searchPageContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             searchPageContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             searchPageContainer.topAnchor.constraint(equalTo: view.topAnchor),
             searchPageContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
-            // Chat page constraints (full size, overlaid)
             chatPageContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             chatPageContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             chatPageContainer.topAnchor.constraint(equalTo: view.topAnchor),
@@ -132,7 +120,6 @@ final class FadeoutContainerViewController: UIViewController {
         let translation = gesture.translation(in: view)
         let currentMode = switchBarHandler.currentToggleState
 
-        // Check if the swipe is predominantly horizontal and meets thresholds
         let isHorizontalSwipe = abs(velocity.x) > abs(velocity.y)
         guard isHorizontalSwipe else { return }
 
@@ -142,10 +129,8 @@ final class FadeoutContainerViewController: UIViewController {
         guard meetsVelocityThreshold || meetsTranslationThreshold else { return }
 
         if velocity.x < 0 && currentMode == .search {
-            // Swipe left: go to Duck.ai
             delegate?.fadeoutContainerViewController(self, didTransitionToMode: .aiChat)
         } else if velocity.x > 0 && currentMode == .aiChat {
-            // Swipe right: go to Search
             delegate?.fadeoutContainerViewController(self, didTransitionToMode: .search)
         }
     }
@@ -161,16 +146,12 @@ final class FadeoutContainerViewController: UIViewController {
         let isSearchMode = switchBarHandler.currentToggleState == .search
         let targetProgress: CGFloat = isSearchMode ? 0.0 : 1.0
 
-        // Update progress immediately so the toggle moves right away
         updateTransitionProgress(targetProgress)
 
-        // When switching to Duck.ai and showing suggestions, hide search immediately (no fade)
-        // This improves the animation when suggestions are visible
         let isShowingSuggestions = delegate?.fadeoutContainerViewControllerIsShowingSuggestions(self) ?? false
         let shouldHideSearchImmediately = !isSearchMode && isShowingSuggestions
 
         if shouldHideSearchImmediately {
-            // Hide search page immediately without animation
             searchPageContainer.alpha = 0.0
         }
 
@@ -211,18 +192,11 @@ extension FadeoutContainerViewController: UIGestureRecognizerDelegate {
         }
 
         let velocity = panGesture.velocity(in: view)
-
-        // Only begin if the pan is predominantly horizontal
-        // This prevents conflicts with vertical scrolling in favorites view
         return abs(velocity.x) > abs(velocity.y)
     }
 
-    func gestureRecognizer(
-        _ gestureRecognizer: UIGestureRecognizer,
-        shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer
-    ) -> Bool {
-        // Allow simultaneous recognition with other gestures
-        // The shouldBegin check will filter out vertical scrolls
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                           shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
         return true
     }
 }

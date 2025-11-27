@@ -127,8 +127,6 @@ class SwitchBarTextEntryViewController: UIViewController {
         ])
 
         if isUsingOverlayButtonsLayout {
-            // Overlay layout: buttonsContainerView overlays bottom part of textEntryView
-            // This keeps total height at 96pt even with the search button visible
             NSLayoutConstraint.activate([
                 textEntryView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
 
@@ -139,7 +137,6 @@ class SwitchBarTextEntryViewController: UIViewController {
                 buttonsContainerView.heightAnchor.constraint(equalToConstant: 0).withPriority(.defaultLow)
             ])
         } else {
-            // Stacked layout: buttonsContainerView is below textEntryView
             NSLayoutConstraint.activate([
                 buttonsContainerView.topAnchor.constraint(equalTo: textEntryView.bottomAnchor),
                 buttonsContainerView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),

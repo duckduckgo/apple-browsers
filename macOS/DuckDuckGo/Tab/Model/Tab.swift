@@ -43,11 +43,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     func closeTab(_ tab: Tab)
 }
 
-@MainActor
-protocol NewWindowPolicyDecisionMaker {
-    func decideNewWindowPolicy(for navigationAction: WKNavigationAction) -> NavigationDecision?
-}
-
 @dynamicMemberLookup final class Tab: NSObject, Identifiable, ObservableObject {
 
     private struct ExtensionDependencies: TabExtensionDependencies {
@@ -77,7 +72,7 @@ protocol NewWindowPolicyDecisionMaker {
     func setDelegate(_ delegate: TabDelegate) { self.delegate = delegate }
 
     private let navigationDelegate: DistributedNavigationDelegate // swiftlint:disable:this weak_delegate
-    private var newWindowPolicyDecisionMakers: [NewWindowPolicyDecisionMaker]?
+    private var newWindowPolicyDecisionMakers: [NewWindowPolicyDecisionMaking]?
 
     private let statisticsLoader: StatisticsLoader?
     private let onboardingPixelReporter: OnboardingAddressBarReporting
@@ -370,7 +365,7 @@ protocol NewWindowPolicyDecisionMaker {
         tabGetter = { [weak self] in self }
         userContentController.map(userContentControllerPromise.fulfill)
 
-        setupNavigationDelegate()
+        setupNavigationDelegate(navigationDelegate: navigationDelegate, newWindowPolicyDecisionMakers: &newWindowPolicyDecisionMakers)
         userContentController?.delegate = self
         setupWebView(shouldLoadInBackground: shouldLoadInBackground)
         webViewPromise.fulfill(webView)
@@ -1527,21 +1522,5 @@ extension Tab {
 
     static var objcDelegateKeyPath: String { #keyPath(objcDelegate) }
     @objc private var objcDelegate: Any? { delegate }
-
-    static var objcNavigationDelegateKeyPath: String { #keyPath(objcNavigationDelegate) }
-    @objc private var objcNavigationDelegate: Any? { navigationDelegate }
-
-    static var objcNewWindowPolicyDecisionMakersKeyPath: String { #keyPath(objcNewWindowPolicyDecisionMakers) }
-    @objc private var objcNewWindowPolicyDecisionMakers: Any? {
-        get {
-            newWindowPolicyDecisionMakers
-        }
-        set {
-            newWindowPolicyDecisionMakers = newValue as? [NewWindowPolicyDecisionMaker] ?? {
-                assertionFailure("\(String(describing: newValue)) is not [NewWindowPolicyDecisionMaker]")
-                return nil
-            }()
-        }
-    }
 
 }

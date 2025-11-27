@@ -82,6 +82,7 @@ public struct AIChatNativeConfigValues: Codable {
     public let isAIChatTopToolBarHidden: Bool
     public let isAIChatModelPickerInChatInput: Bool
     public let appVersion: String
+    public let supportsHomePageEntryPoint: Bool
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
@@ -96,7 +97,8 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsPageContext: false,
                                         isAIChatTopToolBarHidden: false,
                                         isAIChatModelPickerInChatInput: false,
-                                        appVersion: "")
+                                        appVersion: "",
+                                        supportsHomePageEntryPoint: true)
 #endif
 
 #if os(macOS)
@@ -111,7 +113,8 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsPageContext: false,
                                         isAIChatTopToolBarHidden: false,
                                         isAIChatModelPickerInChatInput: false,
-                                        appVersion: "")
+                                        appVersion: "",
+                                        supportsHomePageEntryPoint: true)
 #endif
     }
 
@@ -126,7 +129,8 @@ public struct AIChatNativeConfigValues: Codable {
                 supportsPageContext: Bool,
                 isAIChatTopToolBarHidden: Bool,
                 isAIChatModelPickerInChatInput: Bool,
-                appVersion: String) {
+                appVersion: String,
+                supportsHomePageEntryPoint: Bool = true) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = Platform.name
         self.supportsClosingAIChat = supportsClosingAIChat
@@ -140,6 +144,7 @@ public struct AIChatNativeConfigValues: Codable {
         self.isAIChatTopToolBarHidden = isAIChatTopToolBarHidden
         self.isAIChatModelPickerInChatInput = isAIChatModelPickerInChatInput
         self.appVersion = appVersion
+        self.supportsHomePageEntryPoint = supportsHomePageEntryPoint
     }
 }
 

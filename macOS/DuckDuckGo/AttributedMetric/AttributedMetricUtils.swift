@@ -21,6 +21,7 @@ import AttributedMetric
 import BrowserServicesKit
 import Subscription
 import AppKit
+import os.log
 
 extension SystemDefaultBrowserProvider: AttributedMetricDefaultBrowserProviding {
 
@@ -29,12 +30,22 @@ extension SystemDefaultBrowserProvider: AttributedMetricDefaultBrowserProviding 
     }
 }
 
-struct DefaultBucketsSettingsProvider: BucketsSettingsProviding {
+struct DefaultAttributedMetricSettingsProvider: AttributedMetricSettingsProviding {
 
     let privacyConfig: PrivacyConfiguration
 
     var bucketsSettings: [String: Any] {
         privacyConfig.settings(for: .attributedMetrics)
+    }
+
+    var originSendList: [String] {
+        guard let originSettingString = privacyConfig.settings(for: AttributedMetricsSubfeature.sendOriginParam),
+              let settingsData = originSettingString.data(using: .utf8),
+              let settings = try? JSONDecoder().decode(OriginSettings.self, from: settingsData) else {
+            Logger.attributedMetric.error("Failed to decode origin settings, returning empty list")
+            return []
+        }
+        return settings.originCampaignSubstrings
     }
 }
 

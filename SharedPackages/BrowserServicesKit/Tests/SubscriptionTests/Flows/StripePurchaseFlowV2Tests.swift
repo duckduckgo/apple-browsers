@@ -112,7 +112,7 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
                 tier: "plus",
                 regions: ["us", "row"],
                 entitlements: [
-                    EntitlementPayload(product: .networkProtection, name: "plus")
+                    TierFeature(product: .networkProtection, name: "plus")
                 ],
                 billingCycles: [
                     BillingCycle(productId: "monthly-plus", period: "Monthly", price: "9.99", currency: "USD")
@@ -123,8 +123,8 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
                 tier: "pro",
                 regions: ["us", "row"],
                 entitlements: [
-                    EntitlementPayload(product: .networkProtection, name: "pro"),
-                    EntitlementPayload(product: .paidAIChat, name: "pro")
+                    TierFeature(product: .networkProtection, name: "pro"),
+                    TierFeature(product: .paidAIChat, name: "pro")
                 ],
                 billingCycles: [
                     BillingCycle(productId: "monthly-pro", period: "Monthly", price: "19.99", currency: "USD")
@@ -154,7 +154,7 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
                 tier: "plus",
                 regions: ["us", "row"],
                 entitlements: [
-                    EntitlementPayload(product: .networkProtection, name: "plus")
+                    TierFeature(product: .networkProtection, name: "plus")
                 ],
                 billingCycles: [
                     BillingCycle(productId: "monthly-plus", period: "Monthly", price: "9.99", currency: "USD")
@@ -165,8 +165,8 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
                 tier: "pro",
                 regions: ["us", "row"],
                 entitlements: [
-                    EntitlementPayload(product: .networkProtection, name: "pro"),
-                    EntitlementPayload(product: .paidAIChat, name: "pro")
+                    TierFeature(product: .networkProtection, name: "pro"),
+                    TierFeature(product: .paidAIChat, name: "pro")
                 ],
                 billingCycles: [
                     BillingCycle(productId: "monthly-pro", period: "Monthly", price: "19.99", currency: "USD")

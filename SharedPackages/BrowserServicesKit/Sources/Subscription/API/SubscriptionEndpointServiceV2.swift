@@ -43,7 +43,7 @@ public struct GetSubscriptionFeaturesResponseV2: Decodable {
 }
 
 public struct GetSubscriptionTierFeaturesResponse: Codable {
-    public let features: [String: [EntitlementPayload]]
+    public let features: [String: [TierFeature]]
 }
 
 public struct GetTierProductsResponse: Codable {
@@ -54,7 +54,7 @@ public struct TierProduct: Codable, Equatable {
     public let productName: String
     public let tier: String
     public let regions: [String]
-    public let entitlements: [EntitlementPayload]
+    public let entitlements: [TierFeature]
     public let billingCycles: [BillingCycle]
 }
 

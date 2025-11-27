@@ -322,7 +322,7 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
         return SubscriptionTierOptions(platform: platform, products: tiers)
     }
 
-    private func createTier(from products: [any SubscriptionProduct], tierName: String, features: [EntitlementPayload]) async -> SubscriptionTier? {
+    private func createTier(from products: [any SubscriptionProduct], tierName: String, features: [TierFeature]) async -> SubscriptionTier? {
         // Create options for available products (monthly and/or yearly)
         var options: [SubscriptionOptionV2] = []
 

@@ -61,10 +61,10 @@ public struct SubscriptionMockFactory {
             tier: "plus",
             regions: ["us", "row"],
             entitlements: [
-                EntitlementPayload(product: .networkProtection, name: "plus"),
-                EntitlementPayload(product: .dataBrokerProtection, name: "plus"),
-                EntitlementPayload(product: .identityTheftRestoration, name: "plus"),
-                EntitlementPayload(product: .paidAIChat, name: "plus")
+                TierFeature(product: .networkProtection, name: "plus"),
+                TierFeature(product: .dataBrokerProtection, name: "plus"),
+                TierFeature(product: .identityTheftRestoration, name: "plus"),
+                TierFeature(product: .paidAIChat, name: "plus")
             ],
             billingCycles: [
                 BillingCycle(productId: "monthly-plus", period: "Monthly", price: "9.99", currency: "USD"),

@@ -574,10 +574,10 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
 
         // Setup mock features
         let plusFeatures = [
-            EntitlementPayload(product: .networkProtection, name: "plus"),
-            EntitlementPayload(product: .dataBrokerProtection, name: "plus"),
-            EntitlementPayload(product: .identityTheftRestoration, name: "plus"),
-            EntitlementPayload(product: .paidAIChat, name: "plus")
+            TierFeature(product: .networkProtection, name: "plus"),
+            TierFeature(product: .dataBrokerProtection, name: "plus"),
+            TierFeature(product: .identityTheftRestoration, name: "plus"),
+            TierFeature(product: .paidAIChat, name: "plus")
         ]
         mockCache.tierMapping = ["com.test.monthly": plusFeatures]
 
@@ -637,14 +637,14 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
 
         // Setup mock features
         let plusFeatures = [
-            EntitlementPayload(product: .networkProtection, name: "plus"),
-            EntitlementPayload(product: .dataBrokerProtection, name: "plus")
+            TierFeature(product: .networkProtection, name: "plus"),
+            TierFeature(product: .dataBrokerProtection, name: "plus")
         ]
         let proFeatures = [
-            EntitlementPayload(product: .networkProtection, name: "pro"),
-            EntitlementPayload(product: .dataBrokerProtection, name: "pro"),
-            EntitlementPayload(product: .identityTheftRestoration, name: "pro"),
-            EntitlementPayload(product: .paidAIChat, name: "pro")
+            TierFeature(product: .networkProtection, name: "pro"),
+            TierFeature(product: .dataBrokerProtection, name: "pro"),
+            TierFeature(product: .identityTheftRestoration, name: "pro"),
+            TierFeature(product: .paidAIChat, name: "pro")
         ]
         mockCache.tierMapping = [
             "com.test.monthly": plusFeatures,
@@ -712,7 +712,7 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
 
         // Setup mock features
         let plusFeatures = [
-            EntitlementPayload(product: .networkProtection, name: "plus")
+            TierFeature(product: .networkProtection, name: "plus")
         ]
         mockCache.tierMapping = ["com.test.monthly.trial": plusFeatures]
 
@@ -749,7 +749,7 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         await sut.updateAvailableProducts()
 
         // Setup mock features
-        let plusFeatures = [EntitlementPayload(product: .networkProtection, name: "plus")]
+        let plusFeatures = [TierFeature(product: .networkProtection, name: "plus")]
         mockCache.tierMapping = ["com.test.monthly": plusFeatures]
 
         // When
@@ -775,7 +775,7 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         await sut.updateAvailableProducts()
 
         // Setup mock features
-        let features = [EntitlementPayload(product: .networkProtection, name: "plus")]
+        let features = [TierFeature(product: .networkProtection, name: "plus")]
         mockCache.tierMapping = ["com.test.monthly": features]
 
         // When
@@ -819,8 +819,8 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         await sut.updateAvailableProducts()
 
         // Setup mock features for both representative products
-        let plusFeatures = [EntitlementPayload(product: .networkProtection, name: "plus")]
-        let proFeatures = [EntitlementPayload(product: .paidAIChat, name: "pro")]
+        let plusFeatures = [TierFeature(product: .networkProtection, name: "plus")]
+        let proFeatures = [TierFeature(product: .paidAIChat, name: "pro")]
         mockCache.tierMapping = [
             "com.test.monthly": plusFeatures,
             "com.test.monthly.pro": proFeatures

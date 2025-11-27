@@ -32,8 +32,8 @@ struct SubscriptionTierOptionsTests {
 
         let plusTier = SubscriptionTier(
             tier: "plus",
-            features: [EntitlementPayload(product: .paidAIChat, name: "plus"),
-                       EntitlementPayload(product: .networkProtection, name: "plus")],
+            features: [TierFeature(product: .paidAIChat, name: "plus"),
+                       TierFeature(product: .networkProtection, name: "plus")],
             options: [
                 SubscriptionOptionV2(id: "1",
                                    cost: SubscriptionOptionCost(displayPrice: "5 USD", recurrence: "monthly"),
@@ -43,8 +43,8 @@ struct SubscriptionTierOptionsTests {
 
         let proTier = SubscriptionTier(
             tier: "pro",
-            features: [EntitlementPayload(product: .paidAIChat, name: "pro"),
-                       EntitlementPayload(product: .networkProtection, name: "plus")],
+            features: [TierFeature(product: .paidAIChat, name: "pro"),
+                       TierFeature(product: .networkProtection, name: "plus")],
             options: [
                 SubscriptionOptionV2(id: "2",
                                    cost: SubscriptionOptionCost(displayPrice: "9 USD", recurrence: "monthly"),
@@ -159,7 +159,7 @@ struct SubscriptionTierOptionsTests {
     func withoutPurchaseOptions() {
         let plusTier = SubscriptionTier(
             tier: "plus",
-            features: [EntitlementPayload(product: .networkProtection, name: "plus")],
+            features: [TierFeature(product: .networkProtection, name: "plus")],
             options: [
                 SubscriptionOptionV2(id: "1",
                                    cost: SubscriptionOptionCost(displayPrice: "5 USD", recurrence: "monthly"),
@@ -169,9 +169,9 @@ struct SubscriptionTierOptionsTests {
 
         let proTier = SubscriptionTier(
             tier: "pro",
-            features: [EntitlementPayload(product: .identityTheftRestoration, name: "plus"),
-                       EntitlementPayload(product: .dataBrokerProtection, name: "plus"),
-                       EntitlementPayload(product: .networkProtection, name: "plus")],
+            features: [TierFeature(product: .identityTheftRestoration, name: "plus"),
+                       TierFeature(product: .dataBrokerProtection, name: "plus"),
+                       TierFeature(product: .networkProtection, name: "plus")],
             options: [
                 SubscriptionOptionV2(id: "2",
                                    cost: SubscriptionOptionCost(displayPrice: "9 USD", recurrence: "monthly"),
@@ -193,14 +193,14 @@ struct SubscriptionTierOptionsTests {
 
         // Verify first tier (plus)
         #expect(withoutOptions.products[0].tier == "plus")
-        #expect(withoutOptions.products[0].features == [EntitlementPayload(product: .networkProtection, name: "plus")])
+        #expect(withoutOptions.products[0].features == [TierFeature(product: .networkProtection, name: "plus")])
         #expect(withoutOptions.products[0].options.isEmpty, "Plus tier should have no purchase options")
 
         // Verify second tier (pro)
         #expect(withoutOptions.products[1].tier == "pro")
-        #expect(withoutOptions.products[1].features == [EntitlementPayload(product: .identityTheftRestoration, name: "plus"),
-                                                        EntitlementPayload(product: .dataBrokerProtection, name: "plus"),
-                                                        EntitlementPayload(product: .networkProtection, name: "plus")])
+        #expect(withoutOptions.products[1].features == [TierFeature(product: .identityTheftRestoration, name: "plus"),
+                                                        TierFeature(product: .dataBrokerProtection, name: "plus"),
+                                                        TierFeature(product: .networkProtection, name: "plus")])
         #expect(withoutOptions.products[1].options.isEmpty, "Pro tier should have no purchase options")
     }
 

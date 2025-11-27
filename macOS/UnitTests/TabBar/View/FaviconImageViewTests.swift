@@ -54,7 +54,7 @@ final class FaviconImageViewTests: XCTestCase {
         faviconView.bounds = Constants.imageBounds
         snapshotWindowSD.contentView = faviconView
 
-        assertSnapshot(of: faviconView, as: .image(perceptualPrecision: 0.9), named: snapshotWindowSD.name)
+        assertSnapshot(of: faviconView, as: .image(perceptualPrecision: 0.9), named: "sd")
     }
 }
 
@@ -73,9 +73,5 @@ private class SnapshotWindow: NSWindow {
 
     override var backingScaleFactor: CGFloat {
         scale
-    }
-
-    var name: String {
-        "window_scale_\(scale)"
     }
 }

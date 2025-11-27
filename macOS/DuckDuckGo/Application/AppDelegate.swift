@@ -1097,13 +1097,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if [.normal, .uiTests].contains(AppVersion.runType) {
             stateRestorationManager.applicationDidFinishLaunching()
         }
+        let urlEventHandlerResult = urlEventHandler.applicationDidFinishLaunching()
 
         setUpAutoClearHandler()
 
         BWManager.shared.initCommunication()
 
-        if WindowsManager.windows.first(where: { $0 is MainWindow }) == nil,
-           case .normal = AppVersion.runType {
+        if case .normal = AppVersion.runType,
+           !urlEventHandlerResult.willOpenWindows && WindowsManager.windows.first(where: { $0 is MainWindow }) == nil {
             // Use startup window preferences if not restoring previous session
             if !startupPreferences.restorePreviousSession {
                 let burnerMode = startupPreferences.startupBurnerMode(featureFlagger: featureFlagger)
@@ -1150,7 +1151,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             await crashReporter.checkForNewReports()
         }
 #endif
-        urlEventHandler.applicationDidFinishLaunching()
 
         subscribeToEmailProtectionStatusNotifications()
         subscribeToDataImportCompleteNotification()

@@ -167,6 +167,7 @@ final class WireGuardAdapterTests: XCTestCase {
 
     func testAdapterStartFailsWhenSettingNetworkSettingsFails() {
         packetTunnelProvider.setTunnelNetworkSettingsError = TestError.someError
+        packetTunnelProvider.setTunnelNetworkSettingsDelay = .milliseconds(10)
 
         let expectation = expectation(description: "Start fails with network settings error")
         adapter.start(tunnelConfiguration: tunnelConfiguration) { error in

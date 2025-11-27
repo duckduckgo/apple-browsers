@@ -81,7 +81,7 @@ final class SiteThemeColorManager {
     private func startObservingThemeColor() {
         themeColorObservation = tabViewController?.webView?.observe(\.themeColor, options: [.initial, .new]) { [weak self] webView, change in
 
-            guard let self, self.isCurrentTabShowingAIChat == false, self.isCurrentTabShowingDaxPlayer == false else {
+            guard let self, self.isCurrentTabShowingDaxPlayer == false, self.isCurrentTabShowingAIChat == false else {
                 return
             }
 
@@ -119,9 +119,9 @@ final class SiteThemeColorManager {
     private var isCurrentTabShowingDaxPlayer: Bool {
         currentTabViewController()?.url?.isDuckPlayer == true
     }
-
+    
     private var isCurrentTabShowingAIChat: Bool {
-        currentTabViewController()?.tabModel.isAITab == true
+        currentTabViewController()?.url?.isDuckAIURL == true
     }
 
     private func updateThemeColor(_ color: UIColor) {

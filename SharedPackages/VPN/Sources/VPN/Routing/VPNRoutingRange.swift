@@ -28,15 +28,18 @@ public enum VPNRoutingRange {
     ]
 
     public static let alwaysExcludedIPv6Range: [VPN.IPAddressRange] = [
-        "fe80::/10",  /* link local */
-        "ff00::/8",   /* multicast */
-        "fc00::/7",   /* local unicast */
-        "::1/128",    /* loopback */
+        "::1/128",    /* ::1                  Loopback */
+        "fe80::/10",  /* fe80:: - febf::      Link-local */
+        "ff00::/8",   /* ff00:: - ffff::      Multicast */
     ]
 
     public static let localNetworkRangeWithoutDNS: [VPN.IPAddressRange] = [
         "172.16.0.0/12",  /* 255.240.0.0 */
         "192.168.0.0/16", /* 255.255.0.0 */
+    ]
+
+    public static let localIPv6NetworkRange: [VPN.IPAddressRange] = [
+        "fc00::/7",   /* fc00:: - fdff::      Unique Local Addresses (ULA) - IPv6 private networks */
     ]
 
     public static let localNetworkRange: [VPN.IPAddressRange] = [
@@ -45,7 +48,7 @@ public enum VPNRoutingRange {
         "192.168.0.0/16", /* 255.255.0.0 */
     ]
 
-    public static let publicNetworkRange: [VPN.IPAddressRange] = [
+    public static let publicIPv4NetworkRange: [VPN.IPAddressRange] = [
         "1.0.0.0/8",        /* 1.0.0.0 - 1.255.255.255 */
         "2.0.0.0/8",        /* 2.0.0.0 - 2.255.255.255 */
         "3.0.0.0/8",        /* 3.0.0.0 - 3.255.255.255 */
@@ -100,6 +103,10 @@ public enum VPNRoutingRange {
         "208.0.0.0/4",      /* 208.0.0.0 - 223.255.255.255 */
         /* 224.0.0.0            224.0.0.0/4 - 239.255.255.255   Multicast */
         /* 240.0.0.0            240.0.0.0/4 - 255.255.255.255   Class E */
-        "::/0" /* IPv6 */
     ]
+
+    /// The full IPv6 routing range (all addresses).
+    /// Unlike IPv4 which uses explicitly carved ranges, IPv6 includes all addresses
+    /// and relies on excluded routes taking precedence per Apple's NEIPv6Settings documentation.
+    public static let fullIPv6RoutingRange: VPN.IPAddressRange = "::/0"
 }

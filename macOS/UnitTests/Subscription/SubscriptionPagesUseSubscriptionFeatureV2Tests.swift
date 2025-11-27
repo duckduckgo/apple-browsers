@@ -40,7 +40,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     private var mockSubscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock!
     private var mockFreemiumDBPUserStateManager: MockFreemiumDBPUserStateManager!
     private var mockPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler!
-    private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockNotificationCenter: NotificationCenter!
     private var mockWideEvent: WideEventMock!
     private var broker: UserScriptMessageBroker!
@@ -72,7 +71,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
                                                                                   usesUnifiedFeedbackForm: false)
         mockFreemiumDBPUserStateManager = MockFreemiumDBPUserStateManager()
         mockPixelHandler = MockDataBrokerProtectionFreemiumPixelHandler()
-        mockFeatureFlagger = MockFeatureFlagger()
         mockNotificationCenter = NotificationCenter()
         mockWideEvent = WideEventMock()
 
@@ -84,14 +82,12 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
                                                         freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager,
                                                         notificationCenter: mockNotificationCenter,
                                                         dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
-                                                        featureFlagger: mockFeatureFlagger,
                                                         aiChatURL: URL.duckDuckGo,
                                                         wideEvent: mockWideEvent)
         sut.with(broker: broker)
     }
 
     override func tearDown() {
-        mockFeatureFlagger = nil
         mockFreemiumDBPUserStateManager = nil
         mockNotificationCenter = nil
         mockPixelHandler = nil
@@ -103,70 +99,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         subscriptionSuccessPixelHandler = nil
         sut = nil
         broker = nil
-    }
-
-    // MARK: - Free Trials
-
-    @MainActor
-    func testGetSubscriptionOptions_FreeTrialFlagOn_AndFreeTrialOptionsAvailable_ReturnsFreeTrialOptions() async throws {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.privacyProFreeTrial]
-        mockSubscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
-
-        let freeTrialOptions = SubscriptionOptionsV2(
-            platform: .macos,
-            options: [SubscriptionOptionV2(id: "free-trial-monthly-from-store-manager", cost: SubscriptionOptionCost(displayPrice: "0 USD", recurrence: "monthly"))],
-            availableEntitlements: [.networkProtection]
-        )
-
-        mockStorePurchaseManager.freeTrialSubscriptionOptionsResult = freeTrialOptions
-        mockStorePurchaseManager.subscriptionOptionsResult = Constants.subscriptionOptions
-
-        // When
-        let result = try await sut.getSubscriptionOptions(params: Constants.mockParams, original: Constants.mockScriptMessage)
-
-        // Then
-        let subscriptionOptionsResult = try XCTUnwrap(result as? SubscriptionOptionsV2)
-        XCTAssertEqual(subscriptionOptionsResult, freeTrialOptions)
-    }
-
-    @MainActor
-    func testGetSubscriptionOptions_FreeTrialFlagOn_AndFreeTrialReturnsNil_ReturnsRegularOptions() async throws {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.privacyProFreeTrial]
-        mockSubscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
-
-        mockStorePurchaseManager.freeTrialSubscriptionOptionsResult = nil
-        mockStorePurchaseManager.subscriptionOptionsResult = Constants.subscriptionOptions
-
-        // When
-        let result = try await sut.getSubscriptionOptions(params: Constants.mockParams, original: Constants.mockScriptMessage)
-
-        // Then
-        let subscriptionOptionsResult = try XCTUnwrap(result as? SubscriptionOptionsV2)
-        XCTAssertEqual(subscriptionOptionsResult, Constants.subscriptionOptions)
-    }
-
-    @MainActor
-    func testGetSubscriptionOptions_FreeTrialFlagOff_AndFreeTrialOptionsAvailable_ReturnsRegularOptions() async throws {
-        // Given
-        mockSubscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
-
-        let freeTrialOptions = SubscriptionOptionsV2(
-            platform: .macos,
-            options: [SubscriptionOptionV2(id: "free-trial-monthly-from-store-manager", cost: SubscriptionOptionCost(displayPrice: "0 USD", recurrence: "monthly"))],
-            availableEntitlements: [.networkProtection]
-        )
-
-        mockStorePurchaseManager.freeTrialSubscriptionOptionsResult = freeTrialOptions
-        mockStorePurchaseManager.subscriptionOptionsResult = Constants.subscriptionOptions
-
-        // When
-        let result = try await sut.getSubscriptionOptions(params: Constants.mockParams, original: Constants.mockScriptMessage)
-
-        // Then
-        let subscriptionOptionsResult = try XCTUnwrap(result as? SubscriptionOptionsV2)
-        XCTAssertEqual(subscriptionOptionsResult, Constants.subscriptionOptions)
     }
 
     func testGetFeatureConfig_WhenPaidAIChatEnabled_ReturnsCorrectConfig() async throws {

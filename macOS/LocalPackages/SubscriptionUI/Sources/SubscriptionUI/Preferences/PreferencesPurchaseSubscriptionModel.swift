@@ -144,20 +144,14 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
         featureFlagger.isFeatureOn(.paidAIChat) && subscriptionManager is DefaultSubscriptionManagerV2
     }
 
-    /// Updates the user's eligibility for a free trial based on feature flag status and subscription manager checks.
+    /// Updates the user's eligibility for a free trial based on subscription manager checks.
     ///
-    /// This method checks if the Subscription free trial feature flag is enabled. If the flag is active,
-    /// it queries the subscription manager to determine if the user is eligible for a free trial.
-    /// If the feature flag is disabled, the user is marked as ineligible for the free trial.
+    /// This method queries the subscription manager to determine if the user is eligible for a free trial.
     ///
     /// - Note: This method updates the `isUserEligibleForFreeTrial` published property, which will
     ///         trigger UI updates for any observers.
     private func updateFreeTrialEligibility() {
-        if featureFlagger.isFeatureOn(.privacyProFreeTrial) {
-            self.isUserEligibleForFreeTrial = subscriptionManager.isUserEligibleForFreeTrial()
-        } else {
-            self.isUserEligibleForFreeTrial = false
-        }
+        self.isUserEligibleForFreeTrial = subscriptionManager.isUserEligibleForFreeTrial()
     }
 
     private func currentStorefrontRegion() -> SubscriptionRegion {

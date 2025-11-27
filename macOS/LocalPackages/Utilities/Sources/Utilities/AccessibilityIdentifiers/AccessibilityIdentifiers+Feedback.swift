@@ -1,6 +1,5 @@
 //
-//  MockSubscriptionFreeTrialsHelping.swift
-//  DuckDuckGo
+//  AccessibilityIdentifiers+Feedback.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,13 +16,8 @@
 //  limitations under the License.
 //
 
-import Foundation
-@testable import DuckDuckGo
-@testable import BrowserServicesKit
-@testable import Common
-@testable import UserScript
-@testable import Subscription
-
-class MockSubscriptionFreeTrialsHelping: SubscriptionFreeTrialsHelping {
-    var areFreeTrialsEnabled: Bool = false
+public extension AccessibilityIdentifiers {
+    enum Feedback {
+        public static let reportAProblem = "Feedback.reportAProblem"
+    }
 }

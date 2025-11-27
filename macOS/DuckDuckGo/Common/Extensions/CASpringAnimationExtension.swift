@@ -21,18 +21,18 @@ import QuartzCore
 extension CASpringAnimation {
 
     static func buildFadeInAnimation(duration: TimeInterval, timingFunctionName: CAMediaTimingFunctionName = .easeInEaseOut, toAlpha: Float = 1) -> CASpringAnimation {
-        buildFadeAnimation(duration: duration, timingFunctionName: timingFunctionName, fromValue: 0, toValue: toAlpha)
+        buildFadeAnimation(duration: duration, timingFunctionName: timingFunctionName, fromAlpha: 0, toAlpha: toAlpha)
     }
 
-    static func buildFadeOutAnimation(duration: TimeInterval, timingFunctionName: CAMediaTimingFunctionName = .easeInEaseOut, fromAlpha: Float = 1) -> CASpringAnimation {
-        buildFadeAnimation(duration: duration, timingFunctionName: timingFunctionName, fromValue: fromAlpha, toValue: 0)
+    static func buildFadeOutAnimation(duration: TimeInterval, timingFunctionName: CAMediaTimingFunctionName = .easeInEaseOut, fromAlpha: Float? = nil) -> CASpringAnimation {
+        buildFadeAnimation(duration: duration, timingFunctionName: timingFunctionName, fromAlpha: fromAlpha, toAlpha: 0)
     }
 
-    static func buildFadeAnimation(duration: TimeInterval, timingFunctionName: CAMediaTimingFunctionName = .easeInEaseOut, fromValue: Float, toValue: Float) -> CASpringAnimation {
+    static func buildFadeAnimation(duration: TimeInterval, timingFunctionName: CAMediaTimingFunctionName = .easeInEaseOut, fromAlpha: Float? = nil, toAlpha: Float) -> CASpringAnimation {
         let animation = CASpringAnimation(keyPath: #keyPath(CALayer.opacity))
         animation.duration = duration
-        animation.fromValue = fromValue
-        animation.toValue = toValue
+        animation.fromValue = fromAlpha
+        animation.toValue = toAlpha
         animation.timingFunction = CAMediaTimingFunction(name: timingFunctionName)
         return animation
     }

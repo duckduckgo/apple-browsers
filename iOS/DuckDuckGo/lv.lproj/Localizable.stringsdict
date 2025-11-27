@@ -139,11 +139,65 @@ Es tos nobloķēju!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>zero</key>
-			<string>%1$d Izsekotāji ir bloķēti</string>
+			<string>%1$d izsekotāju ielādēšana ir bloķēta</string>
 			<key>one</key>
-			<string>%1$d Izsekotājs ir bloķēts</string>
+			<string>%1$d izsekotāja ielādēšana ir bloķēta</string>
 			<key>other</key>
-			<string>%1$d Izsekotāji ir bloķēti</string>
+			<string>%1$d izsekotāju ielādēšana ir bloķēta</string>
+		</dict>
+	</dict>
+	<key>omnibar.notification.trackers-blocked</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%1$d Zsekotājs</string>
+			<key>one</key>
+			<string>%1$d Zsekotājs</string>
+			<key>other</key>
+			<string>%1$d Izsekotāji</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.other.domains.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%1$d citi domēni ielādēti</string>
+			<key>one</key>
+			<string>%1$d cits domēns ielādēts</string>
+			<key>other</key>
+			<string>%1$d citi domēni ielādēti</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.first.party.trackers.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%1$d izsekotāji, kas pieder šai vietnei (ielādēti)</string>
+			<key>one</key>
+			<string>%1$d izsekotājs, kas pieder šai vietnei (ielādēts)</string>
+			<key>other</key>
+			<string>%1$d izsekotāji, kas pieder šai vietnei (ielādēti)</string>
 		</dict>
 	</dict>
 	<key>number.of.tabs</key>

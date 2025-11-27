@@ -35,13 +35,15 @@ public class KeyValueFileStore: ThrowingKeyValueStoring {
 
     private let location: URL
     private let name: String
+    private let writeOptions: Data.WritingOptions
 
     private var internalRepresentation: [String: Any]?
     private let lock = NSLock()
 
-    public init(location: URL, name: String) throws {
+    public init(location: URL, name: String, writeOptions: Data.WritingOptions = [.atomic, .completeFileProtectionUntilFirstUserAuthentication]) throws {
         self.location = location
         self.name = name
+        self.writeOptions = writeOptions
 
         try Self.ensureSingleAccessTo(fileURL: fileURL)
     }
@@ -59,7 +61,7 @@ public class KeyValueFileStore: ThrowingKeyValueStoring {
 
         do {
             let data = try PropertyListSerialization.data(fromPropertyList: dictionary, format: .binary, options: 0)
-            try data.write(to: location, options: [.atomic, .completeFileProtectionUntilFirstUserAuthentication])
+            try data.write(to: location, options: writeOptions)
         } catch {
             throw Error.writeFailure(error)
         }

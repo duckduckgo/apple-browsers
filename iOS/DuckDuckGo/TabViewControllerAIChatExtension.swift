@@ -47,6 +47,9 @@ extension TabViewController: AITabController {
         aiChatContentHandler.setPayload(payload: payload)
 
         let queryURL = aiChatContentHandler.buildQueryURL(query: query, autoSend: autoSend, tools: tools)
+        
+        aiChatContentHandler.fireChatOpenPixelAndSetWasUsed()
+        
         load(url: queryURL)
     }
     

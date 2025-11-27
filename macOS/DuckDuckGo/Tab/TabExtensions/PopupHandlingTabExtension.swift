@@ -392,10 +392,11 @@ extension PopupHandlingTabExtension: NavigationResponder {
             return .next
 
         case .newTab, .newWindow:
-            // Save the link open behavior for the upcoming createWebViewWithConfiguration callback that will follow the loadInNewWindow call
             let url = navigationAction.url
+            // Save the link open behavior for the upcoming createWebViewWithConfiguration callback that will follow the loadInNewWindow call
             self.onNewWindow = { [isBurner] newWindowNavigationAction -> NewWindowPolicyDecision? in
-                // Ignore the navigation action if its URL is not the same as the original navigation action URL
+                // Only allow the new window/tab if the URL matches the original navigation action URL.
+                // Fallback to default createWebViewWithConfiguration handling otherwise.
                 guard newWindowNavigationAction.request.url?.matches(url) ?? false else {
                     Logger.navigation.debug("PopupHandlingTabExtension.onNewWindow: ignoring `\(newWindowNavigationAction.request.url?.absoluteString ??? "<nil>")`")
                     return nil

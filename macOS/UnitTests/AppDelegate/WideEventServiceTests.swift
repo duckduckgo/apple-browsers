@@ -221,7 +221,7 @@ final class WideEventServiceTests: XCTestCase {
     func test_processSubscriptionRestorePixels_emailRestoreInProgressWithinTimeout_leavesPending() async {
         let data = makeInProgressEmailRestoreData()
         mockWideEvent.started.append(data)
-        
+
         await sut.sendPendingEvents()
         XCTAssertEqual(mockWideEvent.completions.count, 0)
     }

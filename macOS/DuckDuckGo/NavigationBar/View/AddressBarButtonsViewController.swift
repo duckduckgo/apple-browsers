@@ -1918,7 +1918,6 @@ final class AddressBarButtonsViewController: NSViewController {
 
         updatePrivacyEntryPointIcon()
         updateAllPermissionButtons()
-        updatePermissionCenterButton()
     }
 
     private func stopAnimations(trackerAnimations: Bool = true,

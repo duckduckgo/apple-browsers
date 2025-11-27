@@ -118,44 +118,7 @@ final class PopupHandlingTabExtension {
 
     /// Handles WKUIDelegate createWebViewWithConfiguration:forNavigationAction:windowFeatures: callback
     @MainActor
-    func createWebView(from webView: WKWebView,
-                       with configuration: WKWebViewConfiguration,
-                       for navigationAction: WKNavigationAction,
-                       windowFeatures: WKWindowFeatures) -> WKWebView? {
-
-        var isCalledSynchronously = true
-        var synchronousResultWebView: WKWebView?
-        handleCreateWebViewRequest(from: webView,
-                                   with: configuration,
-                                   for: navigationAction,
-                                   windowFeatures: windowFeatures) { [weak self] childWebView in
-            guard self != nil else { return }
-            if isCalledSynchronously {
-                synchronousResultWebView = childWebView
-            } else {
-                // automatic loading won‘t start for asynchronous callback as we‘ve already returned nil at this point
-                childWebView?.load(navigationAction.request)
-            }
-        }
-        isCalledSynchronously = false
-        return synchronousResultWebView
-    }
-
-    @MainActor
-    private func handleCreateWebViewRequest(from webView: WKWebView,
-                                            with configuration: WKWebViewConfiguration,
-                                            for navigationAction: WKNavigationAction,
-                                            windowFeatures: WKWindowFeatures,
-                                            completionHandler: @escaping (WKWebView?) -> Void) {
-        // guarantee the completionHandler is called at all paths
-        enum CompletionHandlerResult { case sync(WKWebView?), async }
-        let result: CompletionHandlerResult
-        defer {
-            switch result {
-            case .sync(let maybeWebView): completionHandler(maybeWebView)
-            case .async: break
-            }
-        }
+    func createWebView(from webView: WKWebView, with configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
 
         let url = navigationAction.request.url
         switch newWindowPolicy(for: navigationAction) {
@@ -168,14 +131,13 @@ final class PopupHandlingTabExtension {
             // apply selecting the tab if `switchToNewTabWhenOpened` is `true`.
             targetKind = targetKind.preferringSelectedTabs(tabsPreferences.switchToNewTabWhenOpened)
             Logger.navigation.debug("handleCreateWebViewRequest: newWindowPolicy: \(targetKind) for \(url?.absoluteString ??? "<nil>")")
-            result = .sync(createChildWebView(from: webView, with: configuration, for: navigationAction, of: targetKind, isUserInitiated: true))
-            return
+            return createChildWebView(from: webView, with: configuration, for: navigationAction, of: targetKind, isUserInitiated: true)
+
         case .cancel:
             Logger.navigation.debug("handleCreateWebViewRequest: canceling request for `\(url?.absoluteString ??? "<nil>")` per newWindowPolicy")
-            result = .sync(nil)
-            return
-        case .none:
-            break
+            return nil
+
+        case .none: break
         }
 
         // Use current keyboard modifiers state from NSApp.currentEvent to determine the link open behavior.
@@ -193,8 +155,7 @@ final class PopupHandlingTabExtension {
         // Disable pop-ups from unknown sources
         guard let sourceSecurityOrigin = navigationAction.safeSourceFrame.map({ SecurityOrigin($0.securityOrigin) }) else {
             Logger.navigation.debug("handleCreateWebViewRequest: disabling pop-ups from unknown source for `\(url?.absoluteString ??? "<nil>")`")
-            result = .sync(nil)
-            return
+            return nil
         }
 
         // Action doesn't require pop-up permission
@@ -204,14 +165,16 @@ final class PopupHandlingTabExtension {
             if bypassReason.isUserInitiated {
                 lastUserInteractionEvent = nil
             }
-            result = .sync(createChildWebView(from: webView, with: configuration, for: navigationAction, of: targetKind, isUserInitiated: bypassReason.isUserInitiated))
-            return
+            return createChildWebView(from: webView, with: configuration, for: navigationAction, of: targetKind, isUserInitiated: bypassReason.isUserInitiated)
         }
 
         Logger.navigation.debug("handleCreateWebViewRequest: requesting pop-up permission for `\(url?.absoluteString ??? "<nil>")`")
 
-        // Pop-up permission is needed: firing an async PermissionAuthorizationQuery
-        result = .async // don‘t call the completionHandler in the first `defer`
+        // Pop-up permission is needed: firing an async PermissionAuthorizationQuery.
+        // ---
+        // When the permission is granted synchronously, the resulting WebView is returned immediately.
+        // When the callback is called asynchronously, the resulting Tab is created, presented and loaded manually.
+        var resultWebView: WKWebView? = nil 
         var isCalledSynchronously = true
         defer { isCalledSynchronously = false } // whether the callback was called synchronously or asynchronously
         permissionModel.request([.popups], forDomain: sourceSecurityOrigin.host, url: url)
@@ -221,9 +184,10 @@ final class PopupHandlingTabExtension {
                                                     with: configuration,
                                                     for: navigationAction,
                                                     targetKind: targetKind,
-                                                    isCalledSynchronously: isCalledSynchronously,
-                                                    completionHandler: completionHandler)
+                                                    isCalledSynchronously: isCalledSynchronously) { resultWebView = $0 }
             }
+
+        return resultWebView
     }
 
     /// Handles the result of the pop-up permission request
@@ -237,7 +201,13 @@ final class PopupHandlingTabExtension {
                                        completionHandler: @escaping (WKWebView?) -> Void) {
         // guarantee the completionHandler is called at all paths
         let result: WKWebView?
-        defer { completionHandler(result) }
+        defer { 
+            // automatic loading won‘t start for asynchronous callback as we‘ve already returned nil as the `createWebView` result at this point
+            if !isCalledSynchronously {                
+                result?.load(navigationAction.request)
+            }
+            completionHandler(result) 
+        }
 
         let url = navigationAction.request.url
         guard case .success(true) = permissionRequestResult else {
@@ -263,7 +233,7 @@ final class PopupHandlingTabExtension {
         // Permission granted: create and present new tab for the pop-up
         Logger.navigation.debug("handleCreateWebViewRequest: permission granted for `\(url?.absoluteString ??? "<nil>")`")
         result = self.createChildWebView(from: webView, with: configuration, for: navigationAction, of: targetKind, isUserInitiated: false)
-        // `defer` calls the completionHandler
+        // `defer` calls the completionHandler 
     }
 
     /// Determines the new window policy for a navigation action based on LinkOpenBehavior and NewWindowPolicy

@@ -752,12 +752,16 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         }
 
         // show Tab Preview when mouse was moved over a tab when the Tab Preview was hidden before
-        guard !tabPreviewWindowController.isPresented else { return }
-
-        if let indexPath = collectionView.withMouseLocationInViewCoordinates(convert: { self.collectionView.indexPathForItem(at: $0) }),
-           let tabBarViewItem = collectionView.item(at: indexPath) as? TabBarViewItem {
-            showTabPreview(for: tabBarViewItem)
+        guard !tabPreviewWindowController.isPresented else {
+            return
         }
+
+        let locationInWindow = event.locationInWindow
+        guard let tabBarViewItem = collectionView.tabBarItemAtMouseLocation(locationInWindow) ?? pinnedTabsCollectionView?.tabBarItemAtMouseLocation(locationInWindow) else {
+            return
+        }
+
+        showTabPreview(for: tabBarViewItem)
     }
 
     override func mouseExited(with event: NSEvent) {

@@ -481,7 +481,6 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
         let isAIDaxVisible: Bool
         if featureFlagger.isFeatureOn(.fadeoutOnToggle) {
-            // For fadeout mode, always show Dax logo on AI Chat screen (ignoring suggestion tray)
             isAIDaxVisible = !isHorizontallyCompactLayoutEnabled
         } else {
             isAIDaxVisible = !shouldDisplaySuggestionTray && !isHorizontallyCompactLayoutEnabled
@@ -536,7 +535,6 @@ extension OmniBarEditingStateViewController: FadeoutContainerViewControllerDeleg
     }
 
     func fadeoutContainerViewControllerIsShowingSuggestions(_ controller: FadeoutContainerViewController) -> Bool {
-        // Returns true when showing autocomplete suggestions (not just favorites)
         return suggestionTrayManager?.shouldDisplaySuggestionTray ?? false
     }
 }

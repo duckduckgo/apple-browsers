@@ -200,4 +200,3 @@ extension FadeoutContainerViewController: UIGestureRecognizerDelegate {
         return true
     }
 }
-

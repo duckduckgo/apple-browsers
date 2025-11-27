@@ -109,7 +109,6 @@ final class SuggestionViewController: NSViewController {
         tableView.sizeToFit()
         let column = tableView.tableColumns.first
         column?.width = tableView.frame.width
-        tableView.reloadData()
     }
 
     private func setupTableView() {
@@ -134,7 +133,7 @@ final class SuggestionViewController: NSViewController {
 
     @IBAction func removeButtonAction(_ sender: NSButton) {
         guard let cell = sender.superview as? SuggestionTableCellView,
-        let suggestion = cell.suggestion else {
+              let suggestion = cell.suggestion else {
             assertionFailure("Correct cell or url are not available")
             return
         }
@@ -154,15 +153,14 @@ final class SuggestionViewController: NSViewController {
         suggestionResultCancellable = suggestionContainerViewModel.suggestionContainer.$result
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-            self?.displayNewSuggestions()
-        }
+                self?.displayNewSuggestions()
+            }
     }
 
     private func subscribeToSelectionIndex() {
-        selectionIndexCancellable = suggestionContainerViewModel.$selectionIndex.receive(on: DispatchQueue.main).sink { [weak self] _ in
-            if let weakSelf = self {
-                weakSelf.selectRow(at: weakSelf.suggestionContainerViewModel.selectionIndex)
-            }
+        selectionIndexCancellable = suggestionContainerViewModel.$selectedRowIndex.receive(on: DispatchQueue.main).sink { [weak self] selectedRowIndex in
+            guard let self else { return }
+            self.selectTableRow(at: selectedRowIndex)
         }
     }
 
@@ -171,50 +169,63 @@ final class SuggestionViewController: NSViewController {
             selectedRowCache = nil
         }
 
-        guard suggestionContainerViewModel.numberOfSuggestions > 0 else {
+        guard suggestionContainerViewModel.numberOfRows > 0 else {
             closeWindow()
             tableView.reloadData()
             return
         }
 
         // Remove the second reload that causes visual glitch in the beginning of typing
-        if suggestionContainerViewModel.suggestionContainer.result != nil {
+        if suggestionContainerViewModel.suggestionContainer.result != nil || suggestionContainerViewModel.shouldShowSearchCell {
             updateHeight()
             tableView.reloadData()
 
             // Select at the same position where the suggestion was removed
             if let selectedRowCache = selectedRowCache {
-                suggestionContainerViewModel.select(at: selectedRowCache)
+                suggestionContainerViewModel.selectRow(at: selectedRowCache)
             }
 
-            self.selectRow(at: self.suggestionContainerViewModel.selectionIndex)
+            self.selectTableRow(at: self.suggestionContainerViewModel.selectedRowIndex)
         }
     }
 
-    private func selectRow(at index: Int?) {
-        if tableView.selectedRow == index {
-            if let index, let cell = tableView.view(atColumn: 0, row: index, makeIfNecessary: false) as? SuggestionTableCellView {
+    private func selectTableRow(at rowIndex: Int?) {
+        if tableView.selectedRow == rowIndex {
+            if let rowIndex, let cell = tableView.view(atColumn: 0, row: rowIndex, makeIfNecessary: false) as? SuggestionTableCellView {
                 // Show the delete button if necessary
                 cell.updateDeleteImageViewVisibility()
             }
             return
         }
 
-        guard let index = index,
-              index >= 0,
-              suggestionContainerViewModel.numberOfSuggestions != 0,
-              index < suggestionContainerViewModel.numberOfSuggestions else {
-            self.clearSelection()
+        guard let rowIndex,
+              rowIndex >= 0,
+              rowIndex < suggestionContainerViewModel.numberOfRows else {
+            if let defaultRow = suggestionContainerViewModel.defaultSelectedRow {
+                tableView.selectRowIndexes(IndexSet(integer: defaultRow), byExtendingSelection: false)
+            } else {
+                self.clearSelection()
+            }
             return
         }
 
-        tableView.selectRowIndexes(IndexSet(integer: index), byExtendingSelection: false)
+        tableView.selectRowIndexes(IndexSet(integer: rowIndex), byExtendingSelection: false)
     }
 
-    private func selectRow(at point: NSPoint) {
+    private func selectRowFromMousePoint(_ point: NSPoint) {
         let flippedPoint = view.convert(point, to: tableView)
-        let row = tableView.row(at: flippedPoint)
-        selectRow(at: row)
+        let tableRow = tableView.row(at: flippedPoint)
+
+        guard tableRow >= 0 else {
+            suggestionContainerViewModel.clearRowSelection()
+            return
+        }
+
+        guard suggestionContainerViewModel.isSelectableRow(tableRow) else {
+            return
+        }
+
+        suggestionContainerViewModel.selectRow(at: tableRow)
     }
 
     private func clearSelection() {
@@ -222,7 +233,7 @@ final class SuggestionViewController: NSViewController {
     }
 
     override func mouseMoved(with event: NSEvent) {
-        selectRow(at: event.locationInWindow)
+        selectRowFromMousePoint(event.locationInWindow)
     }
 
     override func mouseExited(with event: NSEvent) {
@@ -230,21 +241,27 @@ final class SuggestionViewController: NSViewController {
     }
 
     private func updateHeight() {
-        guard suggestionContainerViewModel.numberOfSuggestions > 0 else {
+        let totalRows = suggestionContainerViewModel.numberOfRows
+        guard totalRows > 0 else {
             tableViewHeightConstraint.constant = 0
             return
         }
 
-        let rowHeight = tableView.rowHeight
+        // Calculate total height considering different row heights (divider is smaller)
+        var totalHeight: CGFloat = 0
+        for row in 0..<totalRows {
+            totalHeight += tableView(tableView, heightOfRow: row)
+        }
+
         let barStyleProvider = themeManager.theme.addressBarStyleProvider
 
         if barStyleProvider.shouldLeaveBottomPaddingInSuggestions {
-            tableViewHeightConstraint.constant = CGFloat(suggestionContainerViewModel.numberOfSuggestions) * rowHeight
-                + (tableView.enclosingScrollView?.contentInsets.top ?? 0)
-                + (tableView.enclosingScrollView?.contentInsets.bottom ?? 0)
+            tableViewHeightConstraint.constant = totalHeight
+            + (tableView.enclosingScrollView?.contentInsets.top ?? 0)
+            + (tableView.enclosingScrollView?.contentInsets.bottom ?? 0)
         } else {
-            tableViewHeightConstraint.constant = CGFloat(suggestionContainerViewModel.numberOfSuggestions) * rowHeight
-                + (tableView.enclosingScrollView?.contentInsets.top ?? 0)
+            tableViewHeightConstraint.constant = totalHeight
+            + (tableView.enclosingScrollView?.contentInsets.top ?? 0)
         }
     }
 
@@ -267,7 +284,8 @@ final class SuggestionViewController: NSViewController {
             return
         }
 
-        selectedRowCache = tableView.selectedRow
+        // Cache the viewModel row index
+        selectedRowCache = tableView.selectedRow >= 0 ? tableView.selectedRow : nil
 
         NSApp.delegateTyped.historyCoordinator.removeUrlEntry(url) { [weak self] error in
             guard let self = self, error == nil else {
@@ -303,7 +321,7 @@ extension SuggestionViewController: ThemeUpdateListening {
 extension SuggestionViewController: NSTableViewDataSource {
 
     func numberOfRows(in tableView: NSTableView) -> Int {
-        return suggestionContainerViewModel.numberOfSuggestions
+        return suggestionContainerViewModel.numberOfRows
     }
 
 }
@@ -311,21 +329,90 @@ extension SuggestionViewController: NSTableViewDataSource {
 extension SuggestionViewController: NSTableViewDelegate {
 
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
-        let cell = tableView.makeView(withIdentifier: SuggestionTableCellView.identifier, owner: self) as? SuggestionTableCellView ?? SuggestionTableCellView()
-        cell.theme = themeManager.theme
-
-        guard let suggestionViewModel = suggestionContainerViewModel.suggestionViewModel(at: row) else {
-            assertionFailure("SuggestionViewController: Failed to get suggestion")
+        guard let rowContent = suggestionContainerViewModel.rowContent(at: row) else {
             return nil
         }
 
-        cell.display(suggestionViewModel, isBurner: self.isBurner)
+        // Handle section divider separately
+        if case .sectionDivider = rowContent {
+            return makeSectionDividerView()
+        }
+
+        let cell = tableView.makeView(withIdentifier: SuggestionTableCellView.identifier, owner: self) as? SuggestionTableCellView ?? SuggestionTableCellView()
+        cell.theme = themeManager.theme
+
+        switch rowContent {
+        case .searchCell:
+            let userText = suggestionContainerViewModel.userStringValue ?? ""
+            let searchIcon = themeManager.theme.iconsProvider.suggestionsIconsProvider.phraseEntryIcon
+            cell.display(userText: userText, style: .search, icon: searchIcon, isBurner: self.isBurner)
+
+        case .aiChatCell:
+            let userText = suggestionContainerViewModel.userStringValue ?? ""
+            let aiChatIcon: NSImage = .aiChat
+            cell.display(userText: userText, style: .aiChat, icon: aiChatIcon, isBurner: self.isBurner)
+
+        case .visitCell:
+            let userText = suggestionContainerViewModel.userStringValue ?? ""
+            let host = suggestionContainerViewModel.visitCellHost ?? ""
+            let websiteIcon = themeManager.theme.iconsProvider.suggestionsIconsProvider.websiteEntryIcon
+            cell.display(userText: userText, style: .visit(host: host), icon: websiteIcon, isBurner: self.isBurner)
+
+        case .sectionDivider:
+            break // Already handled above
+
+        case .suggestion(let suggestionIndex):
+            guard let suggestionViewModel = suggestionContainerViewModel.suggestionViewModel(at: suggestionIndex) else {
+                assertionFailure("SuggestionViewController: Failed to get suggestion")
+                return nil
+            }
+            cell.display(suggestionViewModel, isBurner: self.isBurner)
+        }
+
         return cell
+    }
+
+    private static let sectionDividerViewIdentifier = NSUserInterfaceItemIdentifier("SectionDividerView")
+
+    private func makeSectionDividerView() -> NSView {
+        if let reusedView = tableView.makeView(withIdentifier: Self.sectionDividerViewIdentifier, owner: self) {
+            return reusedView
+        }
+
+        let containerView = NSView()
+        containerView.identifier = Self.sectionDividerViewIdentifier
+        containerView.wantsLayer = true
+
+        let dividerLine = NSView()
+        dividerLine.wantsLayer = true
+        dividerLine.layer?.backgroundColor = NSColor.addressBarSeparator.cgColor
+        dividerLine.translatesAutoresizingMaskIntoConstraints = false
+
+        containerView.addSubview(dividerLine)
+
+        NSLayoutConstraint.activate([
+            dividerLine.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 12),
+            dividerLine.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -12),
+            dividerLine.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            dividerLine.heightAnchor.constraint(equalToConstant: 1)
+        ])
+
+        return containerView
+    }
+
+    private static let sectionDividerRowHeight: CGFloat = 9
+
+    func tableView(_ tableView: NSTableView, heightOfRow row: Int) -> CGFloat {
+        if suggestionContainerViewModel.isDividerRow(row) {
+            return Self.sectionDividerRowHeight
+        }
+        let barStyleProvider = themeManager.theme.addressBarStyleProvider
+        return barStyleProvider.sizeForSuggestionRow(isHomePage: suggestionContainerViewModel.isHomePage)
     }
 
     func tableView(_ tableView: NSTableView, rowViewForRow row: Int) -> NSTableRowView? {
         guard let suggestionTableRowView = tableView.makeView(
-                withIdentifier: NSUserInterfaceItemIdentifier(rawValue: SuggestionTableRowView.identifier), owner: self)
+            withIdentifier: NSUserInterfaceItemIdentifier(rawValue: SuggestionTableRowView.identifier), owner: self)
                 as? SuggestionTableRowView else {
             assertionFailure("SuggestionViewController: Making of table row view failed")
             return nil
@@ -338,13 +425,16 @@ extension SuggestionViewController: NSTableViewDelegate {
 
     func tableViewSelectionDidChange(_ notification: Notification) {
         if tableView.selectedRow == -1 {
-            suggestionContainerViewModel.clearSelection()
+            suggestionContainerViewModel.clearRowSelection()
             return
         }
 
-        if suggestionContainerViewModel.selectionIndex != tableView.selectedRow {
-            suggestionContainerViewModel.select(at: tableView.selectedRow)
+        guard suggestionContainerViewModel.isSelectableRow(tableView.selectedRow) else {
+            return
+        }
+
+        if suggestionContainerViewModel.selectedRowIndex != tableView.selectedRow {
+            suggestionContainerViewModel.selectRow(at: tableView.selectedRow)
         }
     }
-
 }

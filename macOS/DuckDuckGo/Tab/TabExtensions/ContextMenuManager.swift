@@ -16,24 +16,20 @@
 //  limitations under the License.
 //
 
-import AppKit
 import AIChat
-import Combine
-import Foundation
-import WebKitExtensions
+import AppKit
 import BrowserServicesKit
+import Combine
 import Common
-
-enum NavigationDecision {
-    case allow(NewWindowPolicy)
-    case cancel
-}
+import Foundation
+import OSLog
+import WebKitExtensions
 
 @MainActor
 final class ContextMenuManager: NSObject {
     private var cancellables = Set<AnyCancellable>()
 
-    private var onNewWindow: ((WKNavigationAction?) -> NavigationDecision)?
+    private var onNewWindow: ((WKNavigationAction) -> NewWindowPolicyDecision?)?
     private var originalItems: [WKMenuItemIdentifier: NSMenuItem]?
     private var selectedText: String?
     private var linkURL: String?
@@ -91,9 +87,9 @@ final class ContextMenuManager: NSObject {
     }
 }
 
-extension ContextMenuManager: NewWindowPolicyDecisionMaker {
+extension ContextMenuManager: NewWindowPolicyDecisionMaking {
 
-    func decideNewWindowPolicy(for navigationAction: WKNavigationAction) -> NavigationDecision? {
+    func decideNewWindowPolicy(for navigationAction: WKNavigationAction) -> NewWindowPolicyDecision? {
         defer {
             onNewWindow = nil
         }
@@ -419,8 +415,13 @@ private extension ContextMenuManager {
             return
         }
 
-        self.onNewWindow = { _ in
-            .allow(.tab(selected: true, burner: burner))
+        self.onNewWindow = { navigationAction in
+            guard navigationAction.request.url?.matches(url) ?? false else {
+                Logger.navigation.debug("ContextMenuManager.onNewWindow: ignoring `\(navigationAction.request.url?.absoluteString ??? "<nil>")`")
+                return nil
+            }
+            Logger.navigation.debug("ContextMenuManager.onNewWindow: allowing new tab for `\(url.absoluteString)`")
+            return .allow(.tab(selected: true, burner: burner))
         }
         webView.loadInNewWindow(url)
     }
@@ -486,8 +487,11 @@ private extension ContextMenuManager {
             return
         }
 
-        onNewWindow = { [weak self] _ in
-            .allow(.tab(selected: self?.tabsPreferences.switchToNewTabWhenOpened ?? false, burner: burner, contextMenuInitiated: true))
+        let switchToNewTabWhenOpened = tabsPreferences.switchToNewTabWhenOpened
+        onNewWindow = { navigationAction in
+            // We don‘t have the URL for the context menu item, so we can‘t check if it matches the navigation action URL
+            Logger.navigation.debug("ContextMenuManager.onNewWindow: allowing new tab for `\(navigationAction.request.url?.absoluteString ??? "<nil>")`")
+            return .allow(.tab(selected: switchToNewTabWhenOpened, burner: burner, contextMenuInitiated: true))
         }
         NSApp.sendAction(action, to: originalItem.target, from: originalItem)
     }
@@ -511,10 +515,13 @@ private extension ContextMenuManager {
         }
 
         onNewWindow = { navigationAction in
+            // We don‘t have the URL for the context menu item, so we can‘t check if it matches the navigation action URL
             if burner {
-                WindowsManager.openNewWindow(with: navigationAction?.request.url ?? .blankPage, source: .link, isBurner: true)
+                Logger.navigation.debug("ContextMenuManager.onNewWindow: opening new burner window for `\(navigationAction.request.url?.absoluteString ??? "<nil>")`")
+                WindowsManager.openNewWindow(with: navigationAction.request.url ?? .blankPage, source: .link, isBurner: true)
                 return .cancel
             } else {
+                Logger.navigation.debug("ContextMenuManager.onNewWindow: allowing new window for `\(navigationAction.request.url?.absoluteString ??? "<nil>")`")
                 return .allow(.window(active: true, burner: false))
             }
         }
@@ -539,7 +546,11 @@ private extension ContextMenuManager {
             return
         }
 
-        onNewWindow = { _ in .allow(.window(active: true, burner: burner)) }
+        onNewWindow = { navigationAction in
+            // We don‘t have the URL for the context menu item, so we can‘t check if it matches the navigation action URL
+            Logger.navigation.debug("ContextMenuManager.onNewWindow: allowing new window for `\(navigationAction.request.url?.absoluteString ??? "<nil>")`")
+            return .allow(.window(active: true, burner: burner))
+        }
         NSApp.sendAction(action, to: originalItem.target, from: originalItem)
     }
 
@@ -567,8 +578,13 @@ private extension ContextMenuManager {
         }
 
         onNewWindow = { [selectedText] navigationAction in
-            guard let url = navigationAction?.request.url else { return .cancel }
+            // We don‘t have the URL for the context menu item, so we can‘t check if it matches the navigation action URL
+            guard let url = navigationAction.request.url else {
+                Logger.navigation.error("ContextMenuManager.onNewWindow: could not get URL for navigation action `\(String(describing: navigationAction))`")
+                return .cancel
+            }
 
+            Logger.navigation.debug("ContextMenuManager.onNewWindow: adding bookmark for `\(url.absoluteString)`")
             let title = selectedText ?? url.absoluteString
             NSApp.delegateTyped.bookmarkManager.makeBookmark(for: url, title: title, isFavorite: false)
 
@@ -590,8 +606,13 @@ private extension ContextMenuManager {
         let isEmailAddress = self.isEmailAddress
 
         onNewWindow = { navigationAction in
-            guard let url = navigationAction?.request.url else { return .cancel }
+            // We don‘t have the URL for the context menu item, so we can‘t check if it matches the navigation action URL
+            guard let url = navigationAction.request.url else {
+                Logger.navigation.error("ContextMenuManager.onNewWindow: could not get URL for navigation action `\(String(describing: navigationAction))`")
+                return .cancel
+            }
 
+            Logger.navigation.debug("ContextMenuManager.onNewWindow: copying \(isEmailAddress ? "email addresses" : "link"): `\(url.absoluteString)`")
             if isEmailAddress {
                 let emailAddresses = url.emailAddresses
                 if !emailAddresses.isEmpty {
@@ -624,8 +645,10 @@ private extension ContextMenuManager {
             return
         }
 
-        onNewWindow = { _ in
-            .allow(.tab(selected: true, burner: burner))
+        onNewWindow = { navigationAction in
+            // We don‘t have the URL for the context menu item, so we can‘t check if it matches the navigation action URL
+            Logger.navigation.debug("ContextMenuManager.onNewWindow: allowing new tab for `\(navigationAction.request.url?.absoluteString ??? "<nil>")`")
+            return .allow(.tab(selected: true, burner: burner))
         }
         NSApp.sendAction(action, to: originalItem.target, from: originalItem)
     }
@@ -648,8 +671,10 @@ private extension ContextMenuManager {
             return
         }
 
-        onNewWindow = { _ in
-            .allow(.window(active: true, burner: burner))
+        onNewWindow = { navigationAction in
+            // We don‘t have the URL for the context menu item, so we can‘t check if it matches the navigation action URL
+            Logger.navigation.debug("ContextMenuManager.onNewWindow: allowing new window for `\(navigationAction.request.url?.absoluteString ??? "<nil>")`")
+            return .allow(.window(active: true, burner: burner))
         }
         NSApp.sendAction(action, to: originalItem.target, from: originalItem)
     }
@@ -678,8 +703,13 @@ private extension ContextMenuManager {
         }
 
         onNewWindow = { navigationAction in
-            guard let url = navigationAction?.request.url else { return .cancel }
+            // We don‘t have the URL for the context menu item, so we can‘t check if it matches the navigation action URL
+            guard let url = navigationAction.request.url else {
+                Logger.navigation.error("ContextMenuManager.onNewWindow: could not get URL for navigation action `\(String(describing: navigationAction))`")
+                return .cancel
+            }
 
+            Logger.navigation.debug("ContextMenuManager.onNewWindow: copying image address: `\(url.absoluteString)`")
             NSPasteboard.general.copy(url)
 
             return .cancel
@@ -699,8 +729,8 @@ extension ContextMenuManager: ContextMenuUserScriptDelegate {
 
 // MARK: - TabExtensions
 
-protocol ContextMenuManagerProtocol: NewWindowPolicyDecisionMaker, WebViewContextMenuDelegate {
-    func decideNewWindowPolicy(for navigationAction: WKNavigationAction) -> NavigationDecision?
+protocol ContextMenuManagerProtocol: NewWindowPolicyDecisionMaking, WebViewContextMenuDelegate {
+    func decideNewWindowPolicy(for navigationAction: WKNavigationAction) -> NewWindowPolicyDecision?
 }
 
 extension ContextMenuManager: TabExtension, ContextMenuManagerProtocol {

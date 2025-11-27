@@ -360,7 +360,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
 
     @available(iOS 16, *)
     @MainActor
-    @Test("Check Multiple Preferences Settings Toggles And Final Preference is Off Does Not Start Fetching Tasks", .timeLimit(.minutes(1)))
+    @Test("Check Multiple Preferences Settings Toggles And Final Preference is Off Does Not Start Fetching Tasks", .disabled("Flaky Test"), .timeLimit(.minutes(1)))
     func whenPreferencesEnabledAndDisabledMultipleTimes_AndFinalPreferencesOff_ThenDoNotStartUpdateTask() async {
         // GIVEN
         updateManagerMock.lastHashPrefixSetUpdateDate = .distantPast

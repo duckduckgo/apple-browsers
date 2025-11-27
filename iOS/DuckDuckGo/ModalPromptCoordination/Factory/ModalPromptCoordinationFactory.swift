@@ -43,8 +43,7 @@ enum ModalPromptCoordinationFactory {
             remoteMessageStore: dependency.remoteMessagingStore,
             remoteMessageActionHandler: dependency.remoteMessagingActionHandler,
             isIPad: isIPad,
-            pixelReporter: dependency.remoteMessagingPixelReporter,
-            userScriptsDependencies: dependency.userScriptsDependencies
+            pixelReporter: dependency.remoteMessagingPixelReporter
         )
 
         return ModalPromptCoordinationService(
@@ -111,7 +110,6 @@ extension ModalPromptCoordinationFactory {
         let defaultBrowserPromptPresenter: DefaultBrowserPromptPresenting
         let winBackOfferPresenter: WinBackOfferPresenting
         let winBackOfferCoordinator: WinBackOfferCoordinating
-        let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     }
 
 }

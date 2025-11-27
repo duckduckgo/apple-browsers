@@ -24,10 +24,9 @@ final class EmbeddedWebViewController: UIViewController {
     private let webViewModel: AsyncHeadlessWebViewViewModel
     let url: URL
 
-    init(url: URL, userScriptsDependencies: DefaultScriptSourceProvider.Dependencies) {
+    init(url: URL) {
         self.url = url
-        webViewModel = AsyncHeadlessWebViewViewModel(settings: AsyncHeadlessWebViewSettings(bounces: false,
-                                                                                            userScriptsDependencies: userScriptsDependencies))
+        webViewModel = AsyncHeadlessWebViewViewModel(settings: AsyncHeadlessWebViewSettings(bounces: false))
         super.init(nibName: nil, bundle: nil)
     }
 

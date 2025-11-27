@@ -467,7 +467,6 @@ public enum MaliciousSiteProtectionSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .maliciousSiteProtection }
     case onByDefault // Rollout feature
     case scamProtection
-    case removeWWWInCanonicalization
 }
 
 public enum SetAsDefaultAndAddToDockSubfeature: String, PrivacySubfeature {
@@ -516,6 +515,7 @@ public enum AttributedMetricsSubfeature: String, PrivacySubfeature {
     case canEmitSubscriptionRetention
     case syncDevices
     case canEmitSyncDevices
+    case sendOriginParam
 }
 
 public enum DataImportSubfeature: String, PrivacySubfeature {

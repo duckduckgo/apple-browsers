@@ -39,6 +39,7 @@ final class UserChurnServiceTests: XCTestCase {
     private var mockDefaultBrowserProvider: MockDefaultBrowserProvider!
     private var mockKeyValueStore: MockThrowingKeyValueStore!
     private var mockPixelFiring: MockPixelFiring!
+    private var mockBundleIdentifiers: [URL: String]!
 
     override func setUp() {
         super.setUp()
@@ -46,12 +47,16 @@ final class UserChurnServiceTests: XCTestCase {
         mockDefaultBrowserProvider = MockDefaultBrowserProvider()
         mockKeyValueStore = MockThrowingKeyValueStore()
         mockPixelFiring = MockPixelFiring()
+        mockBundleIdentifiers = [:]
 
         sut = UserChurnService(
             defaultBrowserProvider: mockDefaultBrowserProvider,
             keyValueStore: mockKeyValueStore,
             pixelFiring: mockPixelFiring,
-            atbProvider: { "v123-4" }
+            atbProvider: { "v123-4" },
+            bundleIdentifierProvider: { [weak self] url in
+                self?.mockBundleIdentifiers[url]
+            }
         )
     }
 
@@ -60,14 +65,29 @@ final class UserChurnServiceTests: XCTestCase {
         mockDefaultBrowserProvider = nil
         mockKeyValueStore = nil
         mockPixelFiring = nil
+        mockBundleIdentifiers = nil
         super.tearDown()
+    }
+
+    // MARK: - Helper Methods
+
+    private func setDefaultBrowserAsDuckDuckGo(bundleId: String = "com.duckduckgo.macos.browser") {
+        let url = URL(fileURLWithPath: "/Applications/DuckDuckGo.app")
+        mockDefaultBrowserProvider.defaultBrowserURL = url
+        mockBundleIdentifiers[url] = bundleId
+    }
+
+    private func setDefaultBrowserAsNonDuckDuckGo(path: String, bundleId: String) {
+        let url = URL(fileURLWithPath: path)
+        mockDefaultBrowserProvider.defaultBrowserURL = url
+        mockBundleIdentifiers[url] = bundleId
     }
 
     // MARK: - Tests: DuckDuckGo is currently the default browser
 
     func testWhenDuckDuckGoIsDefaultAndWasDefault_ThenNoPixelFired() throws {
         // Given
-        mockDefaultBrowserProvider.isDefault = true
+        setDefaultBrowserAsDuckDuckGo()
         try mockKeyValueStore.set(true, forKey: "user-churn.was-default-browser")
 
         // When
@@ -79,7 +99,7 @@ final class UserChurnServiceTests: XCTestCase {
 
     func testWhenDuckDuckGoIsDefaultAndWasDefault_ThenStoredStateNotUpdated() throws {
         // Given
-        mockDefaultBrowserProvider.isDefault = true
+        setDefaultBrowserAsDuckDuckGo()
         try mockKeyValueStore.set(true, forKey: "user-churn.was-default-browser")
 
         // When
@@ -91,7 +111,7 @@ final class UserChurnServiceTests: XCTestCase {
 
     func testWhenDuckDuckGoIsDefaultAndWasNotDefault_ThenNoPixelFired() throws {
         // Given
-        mockDefaultBrowserProvider.isDefault = true
+        setDefaultBrowserAsDuckDuckGo()
         try mockKeyValueStore.set(false, forKey: "user-churn.was-default-browser")
 
         // When
@@ -103,7 +123,7 @@ final class UserChurnServiceTests: XCTestCase {
 
     func testWhenDuckDuckGoIsDefaultAndWasNotDefault_ThenStoredStateUpdatedToTrue() throws {
         // Given
-        mockDefaultBrowserProvider.isDefault = true
+        setDefaultBrowserAsDuckDuckGo()
         try mockKeyValueStore.set(false, forKey: "user-churn.was-default-browser")
 
         // When
@@ -117,8 +137,7 @@ final class UserChurnServiceTests: XCTestCase {
 
     func testWhenDuckDuckGoIsNotDefaultAndWasDefault_ThenPixelFired() throws {
         // Given
-        mockDefaultBrowserProvider.isDefault = false
-        mockDefaultBrowserProvider.defaultBrowserURL = URL(fileURLWithPath: "/Applications/Safari.app")
+        setDefaultBrowserAsNonDuckDuckGo(path: "/Applications/Safari.app", bundleId: "com.apple.Safari")
         try mockKeyValueStore.set(true, forKey: "user-churn.was-default-browser")
 
         // When
@@ -131,8 +150,7 @@ final class UserChurnServiceTests: XCTestCase {
 
     func testWhenDuckDuckGoIsNotDefaultAndWasDefault_ThenPixelContainsCorrectNewDefault() throws {
         // Given
-        mockDefaultBrowserProvider.isDefault = false
-        mockDefaultBrowserProvider.defaultBrowserURL = URL(fileURLWithPath: "/Applications/Safari.app")
+        setDefaultBrowserAsNonDuckDuckGo(path: "/Applications/Safari.app", bundleId: "com.apple.Safari")
         try mockKeyValueStore.set(true, forKey: "user-churn.was-default-browser")
 
         // When
@@ -144,8 +162,7 @@ final class UserChurnServiceTests: XCTestCase {
 
     func testWhenDuckDuckGoIsNotDefaultAndWasDefault_ThenPixelContainsAtb() throws {
         // Given
-        mockDefaultBrowserProvider.isDefault = false
-        mockDefaultBrowserProvider.defaultBrowserURL = URL(fileURLWithPath: "/Applications/Safari.app")
+        setDefaultBrowserAsNonDuckDuckGo(path: "/Applications/Safari.app", bundleId: "com.apple.Safari")
         try mockKeyValueStore.set(true, forKey: "user-churn.was-default-browser")
 
         // When
@@ -157,8 +174,7 @@ final class UserChurnServiceTests: XCTestCase {
 
     func testWhenDuckDuckGoIsNotDefaultAndWasDefault_ThenStoredStateUpdatedToFalse() throws {
         // Given
-        mockDefaultBrowserProvider.isDefault = false
-        mockDefaultBrowserProvider.defaultBrowserURL = URL(fileURLWithPath: "/Applications/Safari.app")
+        setDefaultBrowserAsNonDuckDuckGo(path: "/Applications/Safari.app", bundleId: "com.apple.Safari")
         try mockKeyValueStore.set(true, forKey: "user-churn.was-default-browser")
 
         // When
@@ -170,7 +186,7 @@ final class UserChurnServiceTests: XCTestCase {
 
     func testWhenDuckDuckGoIsNotDefaultAndWasNotDefault_ThenNoPixelFired() throws {
         // Given
-        mockDefaultBrowserProvider.isDefault = false
+        setDefaultBrowserAsNonDuckDuckGo(path: "/Applications/Safari.app", bundleId: "com.apple.Safari")
         try mockKeyValueStore.set(false, forKey: "user-churn.was-default-browser")
 
         // When
@@ -182,7 +198,7 @@ final class UserChurnServiceTests: XCTestCase {
 
     func testWhenDuckDuckGoIsNotDefaultAndWasNotDefault_ThenStoredStateNotUpdated() throws {
         // Given
-        mockDefaultBrowserProvider.isDefault = false
+        setDefaultBrowserAsNonDuckDuckGo(path: "/Applications/Safari.app", bundleId: "com.apple.Safari")
         try mockKeyValueStore.set(false, forKey: "user-churn.was-default-browser")
 
         // When
@@ -196,8 +212,7 @@ final class UserChurnServiceTests: XCTestCase {
 
     func testWhenNewDefaultIsChrome_ThenPixelContainsChromeParameter() throws {
         // Given
-        mockDefaultBrowserProvider.isDefault = false
-        mockDefaultBrowserProvider.defaultBrowserURL = URL(fileURLWithPath: "/Applications/Google Chrome.app")
+        setDefaultBrowserAsNonDuckDuckGo(path: "/Applications/Google Chrome.app", bundleId: "com.google.Chrome")
         try mockKeyValueStore.set(true, forKey: "user-churn.was-default-browser")
 
         // When
@@ -209,8 +224,7 @@ final class UserChurnServiceTests: XCTestCase {
 
     func testWhenNewDefaultIsFirefox_ThenPixelContainsFirefoxParameter() throws {
         // Given
-        mockDefaultBrowserProvider.isDefault = false
-        mockDefaultBrowserProvider.defaultBrowserURL = URL(fileURLWithPath: "/Applications/Firefox.app")
+        setDefaultBrowserAsNonDuckDuckGo(path: "/Applications/Firefox.app", bundleId: "org.mozilla.firefox")
         try mockKeyValueStore.set(true, forKey: "user-churn.was-default-browser")
 
         // When
@@ -222,8 +236,7 @@ final class UserChurnServiceTests: XCTestCase {
 
     func testWhenNewDefaultIsBrave_ThenPixelContainsBraveParameter() throws {
         // Given
-        mockDefaultBrowserProvider.isDefault = false
-        mockDefaultBrowserProvider.defaultBrowserURL = URL(fileURLWithPath: "/Applications/Brave Browser.app")
+        setDefaultBrowserAsNonDuckDuckGo(path: "/Applications/Brave Browser.app", bundleId: "com.brave.Browser")
         try mockKeyValueStore.set(true, forKey: "user-churn.was-default-browser")
 
         // When
@@ -235,8 +248,7 @@ final class UserChurnServiceTests: XCTestCase {
 
     func testWhenNewDefaultIsUnknown_ThenPixelContainsOtherParameter() throws {
         // Given
-        mockDefaultBrowserProvider.isDefault = false
-        mockDefaultBrowserProvider.defaultBrowserURL = URL(fileURLWithPath: "/Applications/SomeOtherBrowser.app")
+        setDefaultBrowserAsNonDuckDuckGo(path: "/Applications/SomeOtherBrowser.app", bundleId: "com.example.browser")
         try mockKeyValueStore.set(true, forKey: "user-churn.was-default-browser")
 
         // When
@@ -248,7 +260,6 @@ final class UserChurnServiceTests: XCTestCase {
 
     func testWhenNewDefaultURLIsNil_ThenPixelContainsOtherParameter() throws {
         // Given
-        mockDefaultBrowserProvider.isDefault = false
         mockDefaultBrowserProvider.defaultBrowserURL = nil
         try mockKeyValueStore.set(true, forKey: "user-churn.was-default-browser")
 
@@ -263,7 +274,7 @@ final class UserChurnServiceTests: XCTestCase {
 
     func testWhenNoStoredStateAndDuckDuckGoIsDefault_ThenStateInitializedToTrue() throws {
         // Given
-        mockDefaultBrowserProvider.isDefault = true
+        setDefaultBrowserAsDuckDuckGo()
         // No stored state
 
         // When
@@ -276,7 +287,7 @@ final class UserChurnServiceTests: XCTestCase {
 
     func testWhenNoStoredStateAndDuckDuckGoIsNotDefault_ThenStateInitializedToFalseAndNoPixelFired() throws {
         // Given
-        mockDefaultBrowserProvider.isDefault = false
+        setDefaultBrowserAsNonDuckDuckGo(path: "/Applications/Safari.app", bundleId: "com.apple.Safari")
         // No stored state
 
         // When
@@ -291,16 +302,90 @@ final class UserChurnServiceTests: XCTestCase {
 
     func testWhenAppLaunchesThenUserChangesDefaultBrowser_ThenChurnDetectedCorrectly() throws {
         // Given - App starts with DuckDuckGo as default
-        mockDefaultBrowserProvider.isDefault = true
+        setDefaultBrowserAsDuckDuckGo()
         sut.checkForDefaultBrowserChange()  // First call initializes state
 
         // When - User changes default browser away from DuckDuckGo
-        mockDefaultBrowserProvider.isDefault = false
-        mockDefaultBrowserProvider.defaultBrowserURL = URL(fileURLWithPath: "/Applications/Safari.app")
+        setDefaultBrowserAsNonDuckDuckGo(path: "/Applications/Safari.app", bundleId: "com.apple.Safari")
         sut.checkForDefaultBrowserChange()
 
         // Then
         XCTAssertEqual(mockPixelFiring.firedPixels.count, 1, "Churn pixel should be fired")
         XCTAssertEqual(mockPixelFiring.firedPixels.first?.event.name, "m_mac_unset-as-default")
+    }
+
+    // MARK: - Tests: Switching between DuckDuckGo builds
+
+    func testWhenUserSwitchesFromDMGToAppStore_ThenNoPixelFired() throws {
+        // Given - App starts with DuckDuckGo DMG as default
+        setDefaultBrowserAsDuckDuckGo(bundleId: "com.duckduckgo.macos.browser")
+        sut.checkForDefaultBrowserChange()  // Initialize state
+
+        // When - User switches to App Store version
+        let appStoreURL = URL(fileURLWithPath: "/Applications/DuckDuckGo.app")
+        mockDefaultBrowserProvider.defaultBrowserURL = appStoreURL
+        mockBundleIdentifiers[appStoreURL] = "com.duckduckgo.mobile.ios"
+        sut.checkForDefaultBrowserChange()
+
+        // Then
+        XCTAssertTrue(mockPixelFiring.firedPixels.isEmpty, "No pixel should be fired when switching between DuckDuckGo builds")
+        XCTAssertEqual(try mockKeyValueStore.object(forKey: "user-churn.was-default-browser") as? Bool, true, "State should remain true")
+    }
+
+    func testWhenUserSwitchesFromReleaseToDebug_ThenNoPixelFired() throws {
+        // Given - App starts with DuckDuckGo release as default
+        setDefaultBrowserAsDuckDuckGo(bundleId: "com.duckduckgo.macos.browser")
+        sut.checkForDefaultBrowserChange()  // Initialize state
+
+        // When - User switches to debug build
+        let debugURL = URL(fileURLWithPath: "/Applications/DuckDuckGo Debug.app")
+        mockDefaultBrowserProvider.defaultBrowserURL = debugURL
+        mockBundleIdentifiers[debugURL] = "com.duckduckgo.macos.browser.debug"
+        sut.checkForDefaultBrowserChange()
+
+        // Then
+        XCTAssertTrue(mockPixelFiring.firedPixels.isEmpty, "No pixel should be fired when switching between DuckDuckGo builds")
+    }
+
+    func testWhenUserSwitchesFromReleaseToAlpha_ThenNoPixelFired() throws {
+        // Given - App starts with DuckDuckGo release as default
+        setDefaultBrowserAsDuckDuckGo(bundleId: "com.duckduckgo.macos.browser")
+        sut.checkForDefaultBrowserChange()  // Initialize state
+
+        // When - User switches to alpha build
+        let alphaURL = URL(fileURLWithPath: "/Applications/DuckDuckGo Alpha.app")
+        mockDefaultBrowserProvider.defaultBrowserURL = alphaURL
+        mockBundleIdentifiers[alphaURL] = "com.duckduckgo.macos.browser.alpha"
+        sut.checkForDefaultBrowserChange()
+
+        // Then
+        XCTAssertTrue(mockPixelFiring.firedPixels.isEmpty, "No pixel should be fired when switching between DuckDuckGo builds")
+    }
+
+    func testWhenUserSwitchesFromAppStoreToSafari_ThenPixelFired() throws {
+        // Given - App starts with DuckDuckGo App Store as default
+        setDefaultBrowserAsDuckDuckGo(bundleId: "com.duckduckgo.mobile.ios")
+        sut.checkForDefaultBrowserChange()  // Initialize state
+
+        // When - User switches to Safari
+        setDefaultBrowserAsNonDuckDuckGo(path: "/Applications/Safari.app", bundleId: "com.apple.Safari")
+        sut.checkForDefaultBrowserChange()
+
+        // Then
+        XCTAssertEqual(mockPixelFiring.firedPixels.count, 1, "Churn pixel should be fired when switching away from DuckDuckGo")
+    }
+
+    func testWhenDefaultBrowserURLHasNoBundleIdentifier_ThenTreatedAsNonDuckDuckGo() throws {
+        // Given - DuckDuckGo was previously the default
+        try mockKeyValueStore.set(true, forKey: "user-churn.was-default-browser")
+
+        // When - Default browser URL has no bundle identifier (unknown app)
+        let unknownURL = URL(fileURLWithPath: "/Applications/Unknown.app")
+        mockDefaultBrowserProvider.defaultBrowserURL = unknownURL
+        // mockBundleIdentifiers does not contain this URL, so bundleIdentifierProvider returns nil
+        sut.checkForDefaultBrowserChange()
+
+        // Then
+        XCTAssertEqual(mockPixelFiring.firedPixels.count, 1, "Pixel should be fired when new default has no bundle ID")
     }
 }

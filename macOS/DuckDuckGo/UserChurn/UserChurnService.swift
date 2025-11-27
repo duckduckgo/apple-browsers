@@ -32,6 +32,7 @@ final class UserChurnService {
     private let keyValueStore: ThrowingKeyValueStoring
     private let pixelFiring: PixelFiring?
     private let atbProvider: () -> String?
+    private let bundleIdentifierProvider: (URL) -> String?
 
     private var wasDefaultBrowser: Bool? {
         get {
@@ -55,41 +56,57 @@ final class UserChurnService {
         defaultBrowserProvider: DefaultBrowserProvider,
         keyValueStore: ThrowingKeyValueStoring,
         pixelFiring: PixelFiring?,
-        atbProvider: @escaping () -> String?
+        atbProvider: @escaping () -> String?,
+        bundleIdentifierProvider: @escaping (URL) -> String? = { Bundle(url: $0)?.bundleIdentifier }
     ) {
         self.defaultBrowserProvider = defaultBrowserProvider
         self.keyValueStore = keyValueStore
         self.pixelFiring = pixelFiring
         self.atbProvider = atbProvider
+        self.bundleIdentifierProvider = bundleIdentifierProvider
     }
 
     /// Checks if the user has changed the default browser away from DuckDuckGo and fires a pixel if so.
     ///
     /// Logic:
-    /// 1. If the stored state is not initialized, initialize it and exit early
-    /// 2. If DuckDuckGo is currently the default, update stored state if needed and return (no churn)
-    /// 3. If DuckDuckGo is not the default and it was previously, fire the churn pixel
-    /// 4. Update the stored state if needed
+    /// 1. Check if any DuckDuckGo build is currently the default browser
+    /// 2. If the stored state is not initialized, initialize it and exit early
+    /// 3. If any DuckDuckGo build is currently the default, update stored state if needed and return (no churn)
+    /// 4. If no DuckDuckGo build is the default and one was previously, fire the churn pixel
+    /// 5. Update the stored state if needed
     func checkForDefaultBrowserChange() {
-        let isDefault = defaultBrowserProvider.isDefault
+        let defaultBrowserURL = defaultBrowserProvider.defaultBrowserURL
+        let isAnyDuckDuckGoBuildDefault = isDuckDuckGoBuild(url: defaultBrowserURL)
+
         guard let wasDefault = wasDefaultBrowser else {
-            wasDefaultBrowser = isDefault
+            wasDefaultBrowser = isAnyDuckDuckGoBuildDefault
             return
         }
 
         // Only update stored state if it changed
-        if isDefault != wasDefault {
-            wasDefaultBrowser = isDefault
+        if isAnyDuckDuckGoBuildDefault != wasDefault {
+            wasDefaultBrowser = isAnyDuckDuckGoBuildDefault
         }
 
-        // If DuckDuckGo is not the default and it was previously the default, fire the churn pixel
-        guard !isDefault, wasDefault else {
+        // Fire churn pixel only if no DDG build is default AND one was previously
+        guard !isAnyDuckDuckGoBuildDefault, wasDefault else {
             return
         }
 
         pixelFiring?.fire(UserChurnPixel.unsetAsDefault(
-            newDefaultBrowserURL: defaultBrowserProvider.defaultBrowserURL,
+            newDefaultBrowserURL: defaultBrowserURL,
             atb: atbProvider()
         ))
+    }
+
+    /// Returns true if the app at the given URL is a DuckDuckGo build.
+    ///
+    /// All DuckDuckGo builds share the `com.duckduckgo` bundle identifier prefix.
+    private func isDuckDuckGoBuild(url: URL?) -> Bool {
+        guard let url,
+              let bundleIdentifier = bundleIdentifierProvider(url) else {
+            return false
+        }
+        return bundleIdentifier.hasPrefix("com.duckduckgo")
     }
 }

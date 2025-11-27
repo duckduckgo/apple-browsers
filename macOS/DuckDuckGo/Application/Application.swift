@@ -124,9 +124,8 @@ final class Application: NSApplication {
 
         // Handle the hack to reset the click count to 1 for the next incoming mouse event of the given type.
         var event = event
-        if featureFlagger.isFeatureOn(.tabClosingEventRecreation),
-           let expectedEventType = shouldResetClickCountForNextEventOfType,
-           event.type == expectedEventType {
+        if let expectedEventType = shouldResetClickCountForNextEventOfType, event.type == expectedEventType,
+           featureFlagger.isFeatureOn(.tabClosingEventRecreation) {
             if event.clickCount > 1 {
                 event = {
                     guard let cg = event.cgEvent?.copy() else { return event }

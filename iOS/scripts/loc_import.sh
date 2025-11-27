@@ -26,10 +26,10 @@ for dir in "$1"/*; do
       		rm "${dir}/${fileName}.bak"
     	fi
 
-        # Change state="new" to state="translated"
-        echo "Changing state from 'new' to 'translated' for all entries in ${fileName}"
-        sed -i '.bak' 's/state="new"/state="translated"/g' "${dir}/${fileName}"
-        rm "${dir}/${fileName}.bak"
+    	# Change state="new" to state="translated"
+    	echo "Changing state from 'new' to 'translated' for all entries in ${fileName}"
+    	sed -i '.bak' 's/state="new"/state="translated"/g' "${dir}/${fileName}"
+    	rm "${dir}/${fileName}.bak"
 
     	echo "Importing ${dir}/${fileName} ..."
 

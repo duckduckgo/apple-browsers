@@ -1489,6 +1489,14 @@ final class AddressBarButtonsViewController: NSViewController {
 
         if featureFlagger.isFeatureOn(.newPermissionView) {
             button = permissionCenterButton
+            if query.permissions.first?.isPopups == true {
+                guard !query.wasShownOnce else { return }
+                popover = popupBlockedPopoverCreatingIfNeeded()
+            }
+            if query.permissions.first?.isExternalScheme == true {
+                query.shouldShowAlwaysAllowCheckbox = true
+                query.shouldShowCancelInsteadOfDeny = true
+            }
         } else {
             if query.permissions.contains(.camera)
                 || (query.permissions.contains(.microphone) && microphoneButton.isHidden && cameraButton.isShown) {

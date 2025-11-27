@@ -9847,10 +9847,10 @@ ${iframeContent}
         /** @type {((this: Notification, ev: Event) => any) | null} */
         __publicField(this, "onshow", null);
         __privateSet(this, _id, crypto.randomUUID());
-        this.title = title;
-        this.body = options.body || "";
-        this.icon = options.icon || "";
-        this.tag = options.tag || "";
+        this.title = String(title);
+        this.body = options.body ? String(options.body) : "";
+        this.icon = options.icon ? String(options.icon) : "";
+        this.tag = options.tag ? String(options.tag) : "";
         this.data = options.data;
         __privateGet(feature, _notifications).set(__privateGet(this, _id), this);
         feature.notify("showNotification", {

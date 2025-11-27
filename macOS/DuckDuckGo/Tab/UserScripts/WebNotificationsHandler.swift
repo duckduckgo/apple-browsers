@@ -19,11 +19,37 @@
 import Common
 import Foundation
 import OSLog
+import UserNotifications
 import UserScript
 import WebKit
 
-/// Handles messages from the ContentScopeScripts webNotifications feature.
-/// This handler bridges the JavaScript Notification API polyfill to native macOS notifications.
+// MARK: - Protocols for Testability
+
+/// Abstraction for `UNUserNotificationCenter` operations, enabling dependency injection and testing.
+protocol WebNotificationService {
+
+    /// Requests authorization to display notifications.
+    /// - Parameter options: The notification options to request.
+    /// - Returns: `true` if authorization was granted.
+    func requestAuthorization(options: UNAuthorizationOptions) async throws -> Bool
+
+    /// Returns the current notification authorization status.
+    func authorizationStatus() async -> UNAuthorizationStatus
+
+    /// Schedules a notification request.
+    /// - Parameter request: The notification request to schedule.
+    func add(_ request: UNNotificationRequest) async throws
+}
+
+extension UNUserNotificationCenter: WebNotificationService {}
+
+// MARK: - WebNotificationsHandler
+
+/// Bridges the JavaScript `Notification` API polyfill to native macOS notifications.
+///
+/// This handler receives messages from ContentScopeScripts' webNotifications feature and
+/// translates them into `UNUserNotificationCenter` calls. Notifications are blocked in
+/// Fire Windows to preserve privacy.
 final class WebNotificationsHandler: NSObject, Subfeature {
 
     let messageOriginPolicy: MessageOriginPolicy = .all
@@ -31,12 +57,43 @@ final class WebNotificationsHandler: NSObject, Subfeature {
 
     weak var broker: UserScriptMessageBroker?
 
-    // MARK: - Message Names
+    // MARK: - Dependencies
+
+    private let notificationService: WebNotificationService
+    private let iconFetcher: NotificationIconFetching
+
+    // MARK: - Initialization
+
+    init(notificationService: WebNotificationService = UNUserNotificationCenter.current(),
+         iconFetcher: NotificationIconFetching = NotificationIconFetcher()) {
+        self.notificationService = notificationService
+        self.iconFetcher = iconFetcher
+        super.init()
+    }
+
+    // MARK: - Constants
 
     enum MessageNames: String, CaseIterable {
         case showNotification
         case closeNotification
         case requestPermission
+    }
+
+    enum Permission: String {
+        case granted
+        case denied
+    }
+
+    enum NotificationEvent: String {
+        case show
+        case error
+        case click  // Step 4
+        case close  // Step 4
+    }
+
+    enum UserInfoKey {
+        static let notificationId = "notificationId"
+        static let originURL = "originURL"
     }
 
     // MARK: - Message Payloads
@@ -63,7 +120,7 @@ final class WebNotificationsHandler: NSObject, Subfeature {
         switch MessageNames(rawValue: methodName) {
         case .showNotification:
             return { [weak self] params, original in
-                self?.handleShowNotification(params: params, original: original)
+                await self?.handleShowNotification(params: params, original: original)
                 return nil
             }
         case .closeNotification:
@@ -73,30 +130,117 @@ final class WebNotificationsHandler: NSObject, Subfeature {
             }
         case .requestPermission:
             return { [weak self] params, original in
-                return self?.handleRequestPermission(params: params, original: original)
+                return await self?.handleRequestPermission(params: params, original: original)
             }
         default:
             return nil
         }
     }
 
+    // MARK: - Fire Window Detection
+
+    /// Detects if the message originates from a Fire Window by checking websiteDataStore persistence.
+    @MainActor
+    private func isFireWindow(_ message: WKScriptMessage) -> Bool {
+        guard let webView = message.webView else { return false }
+        return webView.configuration.websiteDataStore.isPersistent == false
+    }
+
+    // MARK: - System Authorization
+
+    /// Checks system notification authorization, requesting permission if not yet determined.
+    /// - Returns: `true` if authorized to show notifications, `false` otherwise.
+    private func ensureSystemAuthorization() async -> Bool {
+        let status = await notificationService.authorizationStatus()
+
+        switch status {
+        case .authorized, .provisional:
+            return true
+        case .notDetermined:
+            do {
+                return try await notificationService.requestAuthorization(options: [.alert, .sound])
+            } catch {
+                Logger.general.error("WebNotificationsHandler: Authorization failed - \(error.localizedDescription)")
+                return false
+            }
+        case .denied:
+            return false
+        @unknown default:
+            return false
+        }
+    }
+
+    // MARK: - Notification Content Building
+
+    /// Builds notification content from a JavaScript payload.
+    /// - Parameters:
+    ///   - payload: The notification data from JavaScript.
+    ///   - originURL: The URL of the page requesting the notification.
+    /// - Returns: Configured notification content with optional icon attachment.
+    private func buildNotificationContent(
+        from payload: ShowNotificationPayload,
+        originURL: String
+    ) async -> UNNotificationContent {
+        let content = UNMutableNotificationContent()
+        content.title = payload.title
+        content.body = payload.body ?? ""
+        content.sound = .default
+        content.userInfo = [UserInfoKey.notificationId: payload.id, UserInfoKey.originURL: originURL]
+
+        if let iconURLString = payload.icon, let iconURL = URL(string: iconURLString) {
+            if let attachment = await iconFetcher.fetchIcon(from: iconURL) {
+                content.attachments = [attachment]
+            }
+        }
+
+        return content
+    }
+
+    // MARK: - Notification Posting
+
+    /// Posts a notification to the system and dispatches the corresponding JavaScript event.
+    /// - Parameters:
+    ///   - id: The notification identifier.
+    ///   - content: The notification content to display.
+    ///   - webView: The web view to receive the `onshow` or `onerror` event.
+    private func postNotification(
+        id: String,
+        content: UNNotificationContent,
+        webView: WKWebView?
+    ) async {
+        let request = UNNotificationRequest(identifier: id, content: content, trigger: nil)
+
+        do {
+            try await notificationService.add(request)
+            Logger.general.debug("WebNotificationsHandler: Notification posted (ID: \(id))")
+            sendShowEvent(id: id, to: webView)
+        } catch {
+            Logger.general.error("WebNotificationsHandler: Failed to post - \(error.localizedDescription)")
+            sendErrorEvent(id: id, to: webView)
+        }
+    }
+
     // MARK: - Message Handlers
 
-    private func handleShowNotification(params: Any, original: WKScriptMessage) {
+    private func handleShowNotification(params: Any, original: WKScriptMessage) async {
         guard let payload: ShowNotificationPayload = DecodableHelper.decode(from: params) else {
             Logger.general.error("WebNotificationsHandler: Invalid showNotification payload")
             return
         }
 
-        Logger.general.debug("""
-            WebNotificationsHandler: Notification requested (ID: \(payload.id))
-            - Title: \(payload.title)
-            - Body: \(payload.body ?? "")
-            - Icon: \(payload.icon ?? "")
-            - Tag: \(payload.tag ?? "")
-            """)
+        if await isFireWindow(original) {
+            Logger.general.debug("WebNotificationsHandler: Blocked in Fire Window (ID: \(payload.id))")
+            return
+        }
 
-        // Project 3 will implement UNUserNotificationCenter.add() here
+        guard await ensureSystemAuthorization() else {
+            await sendErrorEvent(id: payload.id, to: original.webView)
+            return
+        }
+
+        let originURL = await original.webView?.url?.absoluteString ?? ""
+        let content = await buildNotificationContent(from: payload, originURL: originURL)
+        await postNotification(id: payload.id, content: content, webView: original.webView)
     }
 
     private func handleCloseNotification(params: Any, original: WKScriptMessage) {
@@ -107,15 +251,20 @@ final class WebNotificationsHandler: NSObject, Subfeature {
 
         Logger.general.debug("WebNotificationsHandler: Notification close requested (ID: \(payload.id))")
 
-        // Project 7 will implement UNUserNotificationCenter.removeDeliveredNotifications() here
+        // Step 7 will implement UNUserNotificationCenter.removeDeliveredNotifications() here
     }
 
-    private func handleRequestPermission(params: Any, original: WKScriptMessage) -> Encodable? {
+    private func handleRequestPermission(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.general.debug("WebNotificationsHandler: Permission request received")
 
-        // For now, auto-grant permissions
-        // Project 5 will implement the permission UI
-        return RequestPermissionResponse(permission: "granted")
+        if await isFireWindow(original) {
+            Logger.general.debug("WebNotificationsHandler: Permission denied in Fire Window")
+            return RequestPermissionResponse(permission: Permission.denied.rawValue)
+        }
+
+        let authorized = await ensureSystemAuthorization()
+        let permission = authorized ? Permission.granted : Permission.denied
+        return RequestPermissionResponse(permission: permission.rawValue)
     }
 
     // MARK: - Event Sending (for native to JS communication)
@@ -125,8 +274,17 @@ final class WebNotificationsHandler: NSObject, Subfeature {
     ///   - id: The notification ID
     ///   - event: The event type (show, close, click, error)
     ///   - webView: The webView to send the event to
-    func sendNotificationEvent(id: String, event: String, to webView: WKWebView) {
+    func sendNotificationEvent(id: String, event: String, to webView: WKWebView?) {
+        guard let webView = webView else { return }
         broker?.push(method: "notificationEvent", params: NotificationEventParams(id: id, event: event), for: self, into: webView)
+    }
+
+    private func sendShowEvent(id: String, to webView: WKWebView?) {
+        sendNotificationEvent(id: id, event: NotificationEvent.show.rawValue, to: webView)
+    }
+
+    private func sendErrorEvent(id: String, to webView: WKWebView?) {
+        sendNotificationEvent(id: id, event: NotificationEvent.error.rawValue, to: webView)
     }
 
     struct NotificationEventParams: Encodable {
@@ -134,4 +292,3 @@ final class WebNotificationsHandler: NSObject, Subfeature {
         let event: String
     }
 }
-

@@ -2125,6 +2125,8 @@
 		7BBBD8912ED8A438003A7DA5 /* WebNotificationsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BBBD88F2ED8A438003A7DA5 /* WebNotificationsHandler.swift */; };
 		7BBBD8942ED8A451003A7DA5 /* WebNotificationsHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BBBD8922ED8A451003A7DA5 /* WebNotificationsHandlerTests.swift */; };
 		7BBBD8952ED8A451003A7DA5 /* WebNotificationsHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BBBD8922ED8A451003A7DA5 /* WebNotificationsHandlerTests.swift */; };
+		7BBBD8982ED8DA51003A7DA5 /* NotificationIconFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BBBD8962ED8DA51003A7DA5 /* NotificationIconFetcher.swift */; };
+		7BBBD8992ED8DA51003A7DA5 /* NotificationIconFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BBBD8962ED8DA51003A7DA5 /* NotificationIconFetcher.swift */; };
 		7BBD45B12A691AB500C83CA9 /* NetworkProtectionDebugUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BBD45B02A691AB500C83CA9 /* NetworkProtectionDebugUtilities.swift */; };
 		7BBD45B22A691AB500C83CA9 /* NetworkProtectionDebugUtilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BBD45B02A691AB500C83CA9 /* NetworkProtectionDebugUtilities.swift */; };
 		7BBE2B7B2B61663C00697445 /* NetworkProtectionProxy in Frameworks */ = {isa = PBXBuildFile; productRef = 7BBE2B7A2B61663C00697445 /* NetworkProtectionProxy */; };
@@ -5106,6 +5108,7 @@
 		7BB9F8E72DFC1AB700741690 /* VPN */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = VPN; path = ../SharedPackages/VPN; sourceTree = SOURCE_ROOT; };
 		7BBBD88F2ED8A438003A7DA5 /* WebNotificationsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebNotificationsHandler.swift; sourceTree = "<group>"; };
 		7BBBD8922ED8A451003A7DA5 /* WebNotificationsHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebNotificationsHandlerTests.swift; sourceTree = "<group>"; };
+		7BBBD8962ED8DA51003A7DA5 /* NotificationIconFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationIconFetcher.swift; sourceTree = "<group>"; };
 		7BBD45B02A691AB500C83CA9 /* NetworkProtectionDebugUtilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionDebugUtilities.swift; sourceTree = "<group>"; };
 		7BC16BA82E724CF80016EE8E /* ContentScopePreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentScopePreferences.swift; sourceTree = "<group>"; };
 		7BC5F7DF2D49044C0005B3D9 /* PreferencesUI-macOS */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "PreferencesUI-macOS"; sourceTree = "<group>"; };
@@ -8793,6 +8796,14 @@
 			path = UserScripts;
 			sourceTree = "<group>";
 		};
+		7BBBD8972ED8DA51003A7DA5 /* UserNotifications */ = {
+			isa = PBXGroup;
+			children = (
+				7BBBD8962ED8DA51003A7DA5 /* NotificationIconFetcher.swift */,
+			);
+			path = UserNotifications;
+			sourceTree = "<group>";
+		};
 		7BDA36E72B7E037200AD5388 /* VPNProxyExtension */ = {
 			isa = PBXGroup;
 			children = (
@@ -9760,6 +9771,7 @@
 				B6040859274B8C5200680351 /* UnprotectedDomains */,
 				1D72D5902BFF361700AEDE36 /* Updates */,
 				AACF6FD426BC35C200CF09F9 /* UserAgent */,
+				7BBBD8972ED8DA51003A7DA5 /* UserNotifications */,
 				4B41EDAC2B168A66001EEDF4 /* UnifiedFeedbackForm */,
 				4B9DB0062A983B23000927DB /* Waitlist */,
 				BBFEE6CB2E99244200F9BA45 /* WinBackOffer */,
@@ -14524,6 +14536,7 @@
 				3706FC8E293F65D500E42796 /* PinnedTabsView.swift in Sources */,
 				B6B5F58A2B03673B008DB58A /* BrowserImportMoreInfoView.swift in Sources */,
 				EEEE20102E57B6F30071A566 /* DataImportFlowLauncher.swift in Sources */,
+				7BBBD8982ED8DA51003A7DA5 /* NotificationIconFetcher.swift in Sources */,
 				3706FC93293F65D500E42796 /* PreferencesViewController.swift in Sources */,
 				376597872E32E3370039EF74 /* NewTabPageTabPreloader.swift in Sources */,
 				3706FC94293F65D500E42796 /* FireproofDomains.swift in Sources */,
@@ -15686,6 +15699,7 @@
 				4B4D60E22A0C883A00BCD287 /* AppMain.swift in Sources */,
 				7BCB90C22C18626E008E3543 /* VPNControllerXPCClient+ConvenienceInitializers.swift in Sources */,
 				4B9DB0202A983B24000927DB /* ProductWaitlistRequest.swift in Sources */,
+				7BBBD8992ED8DA51003A7DA5 /* NotificationIconFetcher.swift in Sources */,
 				37B904752E2A532000E5DAF7 /* NavigationPixelNavigationResponder.swift in Sources */,
 				7B60B0022C5145EC008E32A3 /* VPNUIActionHandler.swift in Sources */,
 				98779A0029999B64005D8EB6 /* Bookmark.xcdatamodeld in Sources */,

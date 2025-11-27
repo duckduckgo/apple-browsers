@@ -72,7 +72,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     func setDelegate(_ delegate: TabDelegate) { self.delegate = delegate }
 
     private let navigationDelegate: DistributedNavigationDelegate // swiftlint:disable:this weak_delegate
-    private var newWindowPolicyDecisionMakers: [NewWindowPolicyDecisionMaker]?
+    private var newWindowPolicyDecisionMakers: [NewWindowPolicyDecisionMaking]?
 
     private let statisticsLoader: StatisticsLoader?
     private let onboardingPixelReporter: OnboardingAddressBarReporting
@@ -1522,14 +1522,14 @@ extension Tab {
     static var objcNavigationDelegateKeyPath: String { #keyPath(objcNavigationDelegate) }
     @objc private var objcNavigationDelegate: Any? { navigationDelegate }
 
-    static var objcNewWindowPolicyDecisionMakersKeyPath: String { #keyPath(objcNewWindowPolicyDecisionMakers) }
-    @objc private var objcNewWindowPolicyDecisionMakers: Any? {
+    static var objcNewWindowPolicyDecisionMakingsKeyPath: String { #keyPath(objcNewWindowPolicyDecisionMakings) }
+    @objc private var objcNewWindowPolicyDecisionMakings: Any? {
         get {
             newWindowPolicyDecisionMakers
         }
         set {
-            newWindowPolicyDecisionMakers = newValue as? [NewWindowPolicyDecisionMaker] ?? {
-                assertionFailure("\(String(describing: newValue)) is not [NewWindowPolicyDecisionMaker]")
+            newWindowPolicyDecisionMakers = newValue as? [NewWindowPolicyDecisionMaking] ?? {
+                assertionFailure("\(String(describing: newValue)) is not [NewWindowPolicyDecisionMaking]")
                 return nil
             }()
         }

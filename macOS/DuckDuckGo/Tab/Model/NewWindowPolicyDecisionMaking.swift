@@ -1,5 +1,5 @@
 //
-//  NewWindowPolicyDecisionMaker.swift
+//  NewWindowPolicyDecisionMaking.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -28,7 +28,7 @@ enum NewWindowPolicyDecision: Equatable {
 
 /// Protocol for objects that can make decisions about new window/tab creation.
 @MainActor
-protocol NewWindowPolicyDecisionMaker {
+protocol NewWindowPolicyDecisionMaking {
     /// Decides whether and how to open a new window/tab for a navigation action.
     /// - Parameter navigationAction: The navigation action requesting a new window
     /// - Returns: A decision to allow with a policy, cancel, or nil to defer to the next decision maker

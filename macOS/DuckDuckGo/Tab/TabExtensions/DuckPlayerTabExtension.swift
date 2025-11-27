@@ -207,7 +207,7 @@ extension DuckPlayerTabExtension: YoutubeOverlayUserScriptDelegate {
 
 }
 
-extension DuckPlayerTabExtension: NewWindowPolicyDecisionMaker {
+extension DuckPlayerTabExtension: NewWindowPolicyDecisionMaking {
 
     func decideNewWindowPolicy(for navigationAction: WKNavigationAction) -> NewWindowPolicyDecision? {
         // if a link was clicked inside duckplayer (like a recommendation)
@@ -463,7 +463,7 @@ extension DuckPlayerTabExtension: NavigationResponder {
 
 }
 
-protocol DuckPlayerExtensionProtocol: AnyObject, NavigationResponder, NewWindowPolicyDecisionMaker {
+protocol DuckPlayerExtensionProtocol: AnyObject, NavigationResponder, NewWindowPolicyDecisionMaking {
 }
 
 extension DuckPlayerTabExtension: DuckPlayerExtensionProtocol, TabExtension {

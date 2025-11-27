@@ -2333,8 +2333,8 @@
 		846F4CD12E04829D00266DB7 /* TabContent+DisplayedFavicon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 846F4CD02E04829D00266DB7 /* TabContent+DisplayedFavicon.swift */; };
 		846F4CD22E04829D00266DB7 /* TabContent+DisplayedFavicon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 846F4CD02E04829D00266DB7 /* TabContent+DisplayedFavicon.swift */; };
 		846F4CDF2E048A0500266DB7 /* BWIntegration in Frameworks */ = {isa = PBXBuildFile; productRef = 846F4CDE2E048A0500266DB7 /* BWIntegration */; };
-		846FA8DD2ED6CDAC00F263AA /* NewWindowPolicyDecisionMaker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 846FA8DC2ED6CDAC00F263AA /* NewWindowPolicyDecisionMaker.swift */; };
-		846FA8DE2ED6CDAC00F263AA /* NewWindowPolicyDecisionMaker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 846FA8DC2ED6CDAC00F263AA /* NewWindowPolicyDecisionMaker.swift */; };
+		846FA8DD2ED6CDAC00F263AA /* NewWindowPolicyDecisionMaking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 846FA8DC2ED6CDAC00F263AA /* NewWindowPolicyDecisionMaking.swift */; };
+		846FA8DE2ED6CDAC00F263AA /* NewWindowPolicyDecisionMaking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 846FA8DC2ED6CDAC00F263AA /* NewWindowPolicyDecisionMaking.swift */; };
 		8477AF2A2EBB3F0E00849EA5 /* AttributedMetricOriginFileProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FBD84552BB3ACFD00220859 /* AttributedMetricOriginFileProviderTests.swift */; };
 		8477AF2B2EBB3F0E00849EA5 /* AttributedMetricOriginFileProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FBD84552BB3ACFD00220859 /* AttributedMetricOriginFileProviderTests.swift */; };
 		8477AF2D2EBB440D00849EA5 /* DownloadsWebViewMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8477AF2C2EBB440D00849EA5 /* DownloadsWebViewMock.swift */; };
@@ -5172,7 +5172,7 @@
 		84658D3D2EAA0BCF0018D992 /* PinnedTabsManagerProvidingMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedTabsManagerProvidingMock.swift; sourceTree = "<group>"; };
 		84658D402EAA0CBD0018D992 /* MockHistoryViewDataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockHistoryViewDataProvider.swift; sourceTree = "<group>"; };
 		846F4CD02E04829D00266DB7 /* TabContent+DisplayedFavicon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TabContent+DisplayedFavicon.swift"; sourceTree = "<group>"; };
-		846FA8DC2ED6CDAC00F263AA /* NewWindowPolicyDecisionMaker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewWindowPolicyDecisionMaker.swift; sourceTree = "<group>"; };
+		846FA8DC2ED6CDAC00F263AA /* NewWindowPolicyDecisionMaking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewWindowPolicyDecisionMaking.swift; sourceTree = "<group>"; };
 		847642EC2E570E5B00AA33EE /* WindowControllersManagerMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowControllersManagerMock.swift; sourceTree = "<group>"; };
 		8477AF2C2EBB440D00849EA5 /* DownloadsWebViewMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsWebViewMock.swift; sourceTree = "<group>"; };
 		84796D742E67000C007E6F9F /* FireDialogView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireDialogView.swift; sourceTree = "<group>"; };
@@ -10146,7 +10146,7 @@
 				F4A6198B283CFFBB007F2080 /* ContentScopeFeatureFlagging.swift */,
 				84A72AA52DB276A20092A4B4 /* LinkOpenBehavior.swift */,
 				B634DBE4293C944700C3C99E /* NewWindowPolicy.swift */,
-				846FA8DC2ED6CDAC00F263AA /* NewWindowPolicyDecisionMaker.swift */,
+				846FA8DC2ED6CDAC00F263AA /* NewWindowPolicyDecisionMaking.swift */,
 				1DC9DD1D2DB0416D0029D4A5 /* NSAlert+Tab.swift */,
 				85B49AF92CD1B7C5007FAA2A /* SystemInfo.swift */,
 				AA9FF95824A1ECF20039E328 /* Tab.swift */,
@@ -13446,7 +13446,7 @@
 				3706FA88293F65D500E42796 /* Logger+Multiple.swift in Sources */,
 				3745DE0C2D53969300024FC8 /* HistoryDebugMenu.swift in Sources */,
 				EECA36BC2E869E49005A42EE /* SafariArchiveImporter.swift in Sources */,
-				846FA8DD2ED6CDAC00F263AA /* NewWindowPolicyDecisionMaker.swift in Sources */,
+				846FA8DD2ED6CDAC00F263AA /* NewWindowPolicyDecisionMaking.swift in Sources */,
 				3706FA89293F65D500E42796 /* CrashReportPromptPresenter.swift in Sources */,
 				1DBFD9122D6C7387003F8D98 /* PinnedTabsManagerProvider.swift in Sources */,
 				3706FA8B293F65D500E42796 /* PreferencesRootView.swift in Sources */,
@@ -15729,7 +15729,7 @@
 				B626A76D29928B1600053070 /* TestsClosureNavigationResponder.swift in Sources */,
 				9FFBEE772DDEDE870058B11A /* DefaultBrowserAndDockPromptStoreMigrator.swift in Sources */,
 				F1DA51862BF607D200CF29FA /* SubscriptionAttributionPixelHandler.swift in Sources */,
-				846FA8DE2ED6CDAC00F263AA /* NewWindowPolicyDecisionMaker.swift in Sources */,
+				846FA8DE2ED6CDAC00F263AA /* NewWindowPolicyDecisionMaking.swift in Sources */,
 				B693954C26F04BEB0015B914 /* FocusRingView.swift in Sources */,
 				4BE41A5E28446EAD00760399 /* BookmarksBarViewModel.swift in Sources */,
 				4B1E6EF127AB5E5D00F51793 /* NSPopUpButtonView.swift in Sources */,

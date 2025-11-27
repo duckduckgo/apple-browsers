@@ -113,7 +113,7 @@ typealias TabExtensionsBuilderArguments = (
     urlProvider: () -> URL?,
     createChildTab: (WKWebViewConfiguration, WKNavigationAction, NewWindowPolicy) -> Tab?,
     presentTab: (Tab, NewWindowPolicy) -> Void,
-    newWindowPolicyDecisionMakers: () -> [NewWindowPolicyDecisionMaker]?
+    newWindowPolicyDecisionMakers: () -> [NewWindowPolicyDecisionMaking]?
 )
 
 extension TabExtensionsBuilder {

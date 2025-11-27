@@ -31,12 +31,12 @@ extension Tab: NavigationResponder {
     }
 
     // "protected" newWindowPolicyDecisionMakers
-    private var newWindowPolicyDecisionMakers: [NewWindowPolicyDecisionMaker]? {
+    private var newWindowPolicyDecisionMakers: [NewWindowPolicyDecisionMaking]? {
         get {
-            self.value(forKey: Tab.objcNewWindowPolicyDecisionMakersKeyPath) as? [NewWindowPolicyDecisionMaker]
+            self.value(forKey: Tab.objcNewWindowPolicyDecisionMakingsKeyPath) as? [NewWindowPolicyDecisionMaking]
         }
         set {
-            self.setValue(newValue, forKey: Tab.objcNewWindowPolicyDecisionMakersKeyPath)
+            self.setValue(newValue, forKey: Tab.objcNewWindowPolicyDecisionMakingsKeyPath)
         }
     }
 
@@ -115,7 +115,7 @@ extension Tab: NavigationResponder {
             // !! don‘t add Tab Extensions here !!
         )
 
-        newWindowPolicyDecisionMakers = [NewWindowPolicyDecisionMaker?](arrayLiteral:
+        newWindowPolicyDecisionMakers = [NewWindowPolicyDecisionMaking?](arrayLiteral:
             self.contextMenuManager,
             self.duckPlayer
         ).compactMap { $0 }

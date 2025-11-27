@@ -34,7 +34,7 @@ final class PopupHandlingTabExtension {
     private let permissionModel: PermissionModel
     private let createChildTab: (WKWebViewConfiguration, WKNavigationAction, NewWindowPolicy) -> Tab?
     private let presentTab: (Tab, NewWindowPolicy) -> Void
-    private let newWindowPolicyDecisionMakers: () -> [NewWindowPolicyDecisionMaker]?
+    private let newWindowPolicyDecisionMakers: () -> [NewWindowPolicyDecisionMaking]?
     private let featureFlagger: FeatureFlagger
     private let popupBlockingConfig: PopupBlockingConfiguration
     private let machAbsTimeProvider: () -> TimeInterval
@@ -73,7 +73,7 @@ final class PopupHandlingTabExtension {
          permissionModel: PermissionModel,
          createChildTab: @escaping (WKWebViewConfiguration, WKNavigationAction, NewWindowPolicy) -> Tab?,
          presentTab: @escaping (Tab, NewWindowPolicy) -> Void,
-         newWindowPolicyDecisionMakers: @escaping () -> [NewWindowPolicyDecisionMaker]?,
+         newWindowPolicyDecisionMakers: @escaping () -> [NewWindowPolicyDecisionMaking]?,
          featureFlagger: FeatureFlagger,
          popupBlockingConfig: PopupBlockingConfiguration,
          machAbsTimeProvider: @escaping () -> TimeInterval = CACurrentMediaTime,
@@ -239,7 +239,7 @@ final class PopupHandlingTabExtension {
     }
 
     /// Determines the new window policy for a navigation action based on LinkOpenBehavior and NewWindowPolicy
-    /// handled below in decidePolicy(for:) or NewWindowPolicyDecisionMaker-s (ContextMenuManager, DuckPlayerTabExtension, etc.)
+    /// handled below in decidePolicy(for:) or NewWindowPolicyDecisionMaking-s (ContextMenuManager, DuckPlayerTabExtension, etc.)
     @MainActor
     private func newWindowPolicy(for navigationAction: WKNavigationAction) -> NewWindowPolicyDecision? {
         for handler in [self] + (newWindowPolicyDecisionMakers() ?? []) {
@@ -333,8 +333,8 @@ final class PopupHandlingTabExtension {
 
 }
 
-// MARK: - NewWindowPolicyDecisionMaker
-extension PopupHandlingTabExtension: NewWindowPolicyDecisionMaker {
+// MARK: - NewWindowPolicyDecisionMaking
+extension PopupHandlingTabExtension: NewWindowPolicyDecisionMaking {
 
     func decideNewWindowPolicy(for navigationAction: WKNavigationAction) -> NewWindowPolicyDecision? {
         if let decision = onNewWindow?(navigationAction) {

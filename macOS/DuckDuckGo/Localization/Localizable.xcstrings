@@ -28326,10 +28326,58 @@
       "comment" : "Problem category for other issues",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sonstiges Feedback"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Other feedback"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otros comentarios"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autres commentaires"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Altri feedback"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Andere feedback"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inne opinie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Outro feedback"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Другие отзывы"
           }
         }
       }
@@ -29898,10 +29946,58 @@
       "comment" : "Problem subcategory for feedback related to promotional messages",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Werbebotschaften"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Promotional messages"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mensajes promocionales"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Messages promotionnels"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Messaggi promozionali"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Promotieberichten"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wiadomości promocyjne"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mensagens promocionais"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Рекламные сообщения"
           }
         }
       }
@@ -77604,7 +77700,7 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Füge DuckDuckGo zu deinem Dock hinzu, um schnell auf Schutzfunktionen zuzugreifen, die andere Browser nicht bieten."
           }
         },
@@ -77616,43 +77712,43 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Añade DuckDuckGo a tu Dock para acceder rápidamente a protecciones que otros navegadores no proporcionan."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Ajoutez DuckDuckGo à votre Dock pour accéder rapidement aux protections que les autres navigateurs ne proposent pas."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Aggiungi DuckDuckGo al tuo dock per accedere rapidamente alle protezioni che altri browser non offrono."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Voeg DuckDuckGo toe aan je dock voor snelle toegang tot beveiligingen die andere browsers niet bieden."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Dodaj DuckDuckGo do Docka, aby uzyskać szybki dostęp do zabezpieczeń, których nie oferują inne przeglądarki."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Adiciona o DuckDuckGo à tua dock para acesso rápido às proteções que outros navegadores não oferecem."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Добавьте DuckDuckGo на док-панель для быстрого доступа к функциям защиты, которых нет в других браузерах."
           }
         }
@@ -78382,10 +78478,58 @@
       "comment" : "Subtitle of system notification asking the user why they dismissed a prompt with the 'No Thanks' button. The parameter %1$@ is the localized 'No Thanks' string.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wir sind immer bestrebt, uns zu verbessern. Könnt ihr uns sagen, warum ihr „%1$@“ gewählt habt?"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "We’re always looking to improve. Can you tell us why you chose \"%1$@\"?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siempre estamos buscando mejorar. ¿Puedes decirnos por qué elegiste \"%1$@\"?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nous cherchons toujours à nous améliorer. Pouvez-vous nous dire pourquoi vous avez choisi « %1$@ » ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerchiamo sempre di migliorare. Puoi dirci perché hai scelto \"%1$@\"?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "We zijn altijd op zoek naar manieren om te verbeteren. Kun je ons vertellen waarom je \"%1$@\" hebt gekozen?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zawsze staramy się doskonalić. Czy możesz opisać nam powód wybrania opcji „%1$@”?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estamos sempre a tentar melhorar. Podes dizer-nos porque escolheste \"%1$@\"?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Мы всегда стремимся к совершенству. Расскажите, почему вы выбрали \"%1$@\"?"
           }
         }
       }
@@ -78394,10 +78538,58 @@
       "comment" : "Title of system notification asking the user for quick feedback after declining a prompt by clicking 'No Thanks'.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hast du Zeit, uns kurz Feedback zu geben?"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Got time for quick feedback?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Tienes tiempo para dejarnos un comentario rápido?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vous avez le temps pour un rapide retour d'information ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hai tempo per un feedback veloce?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tijd voor wat snelle feedback?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masz chwilę na szybkie podzielenie się swoją opinią?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tens tempo para um feedback rápido?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Есть время для быстрого отзыва?"
           }
         }
       }

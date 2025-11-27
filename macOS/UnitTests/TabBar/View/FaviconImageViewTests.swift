@@ -50,11 +50,12 @@ final class FaviconImageViewTests: XCTestCase {
         }
 
         let faviconView = FaviconImageView(image: image)
+        faviconView.forceCustomDrawing = true
         faviconView.imageScaling = .scaleProportionallyUpOrDown
         faviconView.bounds = Constants.imageBounds
         snapshotWindowSD.contentView = faviconView
 
-        assertSnapshot(of: faviconView, as: .image(perceptualPrecision: 0.9), named: "sd")
+        assertSnapshot(of: faviconView, as: .image(perceptualPrecision: 1.0), named: "sd")
     }
 }
 

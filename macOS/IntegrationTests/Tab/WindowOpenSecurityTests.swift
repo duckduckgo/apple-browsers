@@ -391,6 +391,124 @@ final class WindowOpenSecurityTests: XCTestCase {
         XCTAssertEqual(result.referrer, "", "rel='noreferrer' should omit Referer header")
     }
 
+    // <a href=url target="_blank" rel="noopener noreferrer"> — combined flags
+    @MainActor
+    func testAnchorBlankTargetNoopenerAndNoreferrer() async throws {
+        let result = try await evaluateAnchorClick(href: popupURL, target: .blank, rel: [.noopener, .noreferrer])
+
+        XCTAssertTrue(result.openerIsNull, "rel='noopener noreferrer' should clear window.opener")
+        XCTAssertEqual(result.referrer, "", "rel='noopener noreferrer' should omit Referer header")
+    }
+
+    // <a href="about:blank" target="_blank"> — about:blank with implicit noopener
+    @MainActor
+    func testAnchorBlankTargetAboutBlank() async throws {
+        let result = try await evaluateAnchorClick(href: .blankPage, target: .blank, rel: [])
+
+        XCTAssertTrue(result.openerIsNull, "Implicit rel='noopener' should clear window.opener")
+        XCTAssertEqual(result.referrer, "", "Referrer should be empty for about:blank")
+    }
+
+    // <a href="about:blank" target="_blank" rel="noopener"> — about:blank with explicit noopener
+    @MainActor
+    func testAnchorBlankTargetAboutBlankWithNoopener() async throws {
+        let result = try await evaluateAnchorClick(href: .blankPage, target: .blank, rel: .noopener)
+
+        XCTAssertTrue(result.openerIsNull, "rel='noopener' should clear window.opener")
+        XCTAssertEqual(result.referrer, "", "Referrer should be empty for about:blank")
+    }
+
+    // <a href="about:blank" target="_blank" rel="noreferrer"> — about:blank with noreferrer
+    @MainActor
+    func testAnchorBlankTargetAboutBlankWithNoreferrer() async throws {
+        let result = try await evaluateAnchorClick(href: .blankPage, target: .blank, rel: .noreferrer)
+
+        XCTAssertTrue(result.openerIsNull, "rel='noreferrer' should clear window.opener")
+        XCTAssertEqual(result.referrer, "", "Referrer should be empty for about:blank")
+    }
+
+    // <a href="about:blank" target="_blank" rel="noopener noreferrer"> — about:blank with both flags
+    @MainActor
+    func testAnchorBlankTargetAboutBlankWithNoopenerAndNoreferrer() async throws {
+        let result = try await evaluateAnchorClick(href: .blankPage, target: .blank, rel: [.noopener, .noreferrer])
+
+        XCTAssertTrue(result.openerIsNull, "rel='noopener noreferrer' should clear window.opener")
+        XCTAssertEqual(result.referrer, "", "Referrer should be empty for about:blank")
+    }
+
+    // <a href=url target="name"> — named target should preserve opener and referrer
+    // Note: Unlike target="_blank", named targets do NOT have implicit noopener
+    @MainActor
+    func testAnchorNamedTarget() async throws {
+        let result = try await evaluateAnchorClick(href: popupURL, target: .named("testPopup"), rel: [])
+
+        XCTAssertFalse(result.openerIsNull, "Named target should preserve window.opener")
+        XCTAssertEqual(result.referrer, mainURL.absoluteString, "Referrer should be present")
+    }
+
+    // <a href=url target="name" rel="noopener"> — named target with explicit noopener
+    @MainActor
+    func testAnchorNamedTargetWithNoopener() async throws {
+        let result = try await evaluateAnchorClick(href: popupURL, target: .named("testPopup"), rel: .noopener)
+
+        XCTAssertTrue(result.openerIsNull, "rel='noopener' should clear window.opener")
+        XCTAssertEqual(result.referrer, mainURL.absoluteString, "Referrer should be present")
+    }
+
+    // <a href=url target="name" rel="noreferrer"> — named target with noreferrer
+    @MainActor
+    func testAnchorNamedTargetWithNoreferrer() async throws {
+        let result = try await evaluateAnchorClick(href: popupURL, target: .named("testPopup"), rel: .noreferrer)
+
+        XCTAssertTrue(result.openerIsNull, "rel='noreferrer' should clear window.opener")
+        XCTAssertEqual(result.referrer, "", "Referrer should be empty with noreferrer")
+    }
+
+    // <a href=url target="name" rel="noopener noreferrer"> — named target with both flags
+    @MainActor
+    func testAnchorNamedTargetWithNoopenerAndNoreferrer() async throws {
+        let result = try await evaluateAnchorClick(href: popupURL, target: .named("testPopup"), rel: [.noopener, .noreferrer])
+
+        XCTAssertTrue(result.openerIsNull, "rel='noopener noreferrer' should clear window.opener")
+        XCTAssertEqual(result.referrer, "", "Referrer should be empty with noreferrer")
+    }
+
+    // <a href=url> (no target) — same-tab navigation, rel attributes should have no effect
+    @MainActor
+    func testAnchorSameTabNavigation() async throws {
+        let result = try await evaluateAnchorClick(href: popupURL, target: nil, rel: [])
+
+        XCTAssertEqual(result.openerIsNull, true, "window.opener should be null (not a popup)")
+        XCTAssertEqual(result.referrer, mainURL.absoluteString, "Referrer should be present")
+    }
+
+    // <a href=url rel="noopener"> (no target) — same-tab navigation, noopener should have no effect
+    @MainActor
+    func testAnchorSameTabNavigationWithNoopener() async throws {
+        let result = try await evaluateAnchorClick(href: popupURL, target: nil, rel: .noopener)
+
+        XCTAssertEqual(result.openerIsNull, true, "window.opener should be null (not a popup)")
+        XCTAssertEqual(result.referrer, mainURL.absoluteString, "Referrer should be present, noopener doesn't affect it")
+    }
+
+    // <a href=url rel="noreferrer"> (no target) — same-tab navigation, noreferrer should suppress referrer
+    @MainActor
+    func testAnchorSameTabNavigationWithNoreferrer() async throws {
+        let result = try await evaluateAnchorClick(href: popupURL, target: nil, rel: .noreferrer)
+
+        XCTAssertEqual(result.openerIsNull, true, "window.opener should be null (not a popup)")
+        XCTAssertEqual(result.referrer, "", "Referrer should be empty with rel='noreferrer' even in same-tab navigation")
+    }
+
+    // <a href=url rel="noopener noreferrer"> (no target) — same-tab navigation with both flags
+    @MainActor
+    func testAnchorSameTabNavigationWithNoopenerAndNoreferrer() async throws {
+        let result = try await evaluateAnchorClick(href: popupURL, target: nil, rel: [.noopener, .noreferrer])
+
+        XCTAssertEqual(result.openerIsNull, true, "window.opener should be null (not a popup)")
+        XCTAssertEqual(result.referrer, "", "Referrer should be empty with rel='noopener noreferrer' even in same-tab navigation")
+    }
+
     // MARK: - Helpers
 
     @MainActor
@@ -629,14 +747,14 @@ final class WindowOpenSecurityTests: XCTestCase {
 
     @MainActor
     private func evaluateAnchorClick(href: URL,
-                                     target: WindowOpenTarget,
+                                     target: WindowOpenTarget?,
                                      rel: WindowOpenFeatures,
                                      file: StaticString = #file,
                                      line: UInt = #line) async throws -> AnchorClickResult {
         var argsDict = [String: Any]()
         argsDict["href"] = href.absoluteString
-        argsDict["target"] = target.stringValue
-        argsDict["rel"] = rel.featureString ?? ""
+        argsDict["target"] = target?.stringValue
+        argsDict["rel"] = rel.featureString?.replacingOccurrences(of: ",", with: " ") ?? ""
 
         let arguments: [String: Any] = ["arguments": argsDict]
 
@@ -647,14 +765,13 @@ final class WindowOpenSecurityTests: XCTestCase {
             if (!arguments.href) {
                 throw new Error('Missing href argument. Received: ' + JSON.stringify(arguments));
             }
-            if (!arguments.target) {
-                throw new Error('Missing target argument. Received: ' + JSON.stringify(arguments));
-            }
 
             // Create anchor
             const anchor = document.createElement('a');
             anchor.href = arguments.href;
-            anchor.target = arguments.target;
+            if (arguments.target) {
+                anchor.target = arguments.target;
+            }
             if (arguments.rel && arguments.rel.length > 0) {
                 anchor.rel = arguments.rel;
             }
@@ -674,27 +791,31 @@ final class WindowOpenSecurityTests: XCTestCase {
 
         // Set up expectation for child tab creation
         childTabExpectation = expectation(description: "Child tab created")
+        childTabExpectation?.isInverted = (target == nil)
+
+        // For about:blank or empty URLs, navigation completes immediately
+        let isBlankNavigation = href.isEmpty || href == .blankPage
+        var navigationFinished: Future<Void, TimeoutError>?
+        if target == nil, !isBlankNavigation {
+            navigationFinished = tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
+        }
 
         // Click the anchor - this will trigger tab delegate's createdChild callback
         _=try await tab.webView.callAsyncJavaScript(clickScript, arguments: arguments, in: nil, contentWorld: .page)
 
         // Wait for child tab to be created
-        await fulfillment(of: [childTabExpectation!], timeout: 2)
+        await fulfillment(of: [childTabExpectation!], timeout: (target == nil ? 0.1 : 2))
 
-        guard let childTab = createdChildTabs.first else {
-            XCTFail("Child tab was not created", file: file, line: line)
-            return AnchorClickResult(openerIsNull: false, referrer: nil)
+        let targetTab = try XCTUnwrap(target == nil ? tab : createdChildTabs.first, "Child tab was not created", file: file, line: line)
+        if target != nil, !isBlankNavigation {
+            navigationFinished = targetTab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
         }
 
         // Wait for popup navigation to complete
-        // For about:blank or empty URLs, navigation completes immediately
-        let isBlankNavigation = href.isEmpty || href == .blankPage
-        if !isBlankNavigation {
-            _ = try await childTab.webViewDidFinishNavigationPublisher.timeout(5).first().promise().value
-        }
+        _ = try await navigationFinished?.value
 
         // Evaluate opener and referrer in the popup
-        let result = try await evaluatePopupProperties(in: childTab, file: file, line: line)
+        let result = try await evaluatePopupProperties(in: targetTab, file: file, line: line)
         return AnchorClickResult(openerIsNull: result.openerIsNull, referrer: result.referrer)
     }
 
@@ -819,8 +940,6 @@ enum WindowOpenTarget {
 private struct WindowOpenFeatures: OptionSet {
     let rawValue: Int
 
-    // Note: 'opener' is NOT a valid window.open() feature per MDN spec
-    // Anchors/forms can use rel="opener" to opt back into opener behavior
     static let noopener = Self(rawValue: 1 << 0)
     static let noreferrer = Self(rawValue: 1 << 1)
 

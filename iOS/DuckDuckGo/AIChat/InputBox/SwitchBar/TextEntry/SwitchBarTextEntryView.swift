@@ -60,11 +60,11 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private var currentMinHeight: CGFloat {
-        guard handler.usesFadeoutAnimation else {
+        guard handler.isUsingFadeOutAnimation else {
             return Constants.minHeight
         }
 
-        if handler.usesExpandedBottomBarHeight {
+        if handler.isUsingExpandedBottomBarHeight {
             return Constants.minHeightBottomBar
         }
 
@@ -72,7 +72,7 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private var isUsingBottomBarIncreasedHeight: Bool {
-        handler.usesExpandedBottomBarHeight
+        handler.isUsingExpandedBottomBarHeight
     }
 
     private var cancellables = Set<AnyCancellable>()
@@ -399,7 +399,7 @@ class SwitchBarTextEntryView: UIView {
             .sink { [weak self] _ in
                 guard let self else { return }
 
-                if self.handler.usesFadeoutAnimation {
+                if self.handler.isUsingFadeOutAnimation {
                     self.window?.layoutIfNeeded()
                     self.updateForCurrentMode()
                     UIView.animate(withDuration: 0.25) {

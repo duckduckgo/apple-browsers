@@ -43,8 +43,8 @@ protocol SwitchBarHandling: AnyObject {
     var buttonState: SwitchBarButtonState { get }
     var isTopBarPosition: Bool { get }
 
-    var usesExpandedBottomBarHeight: Bool { get }
-    var usesFadeoutAnimation: Bool { get }
+    var isUsingExpandedBottomBarHeight: Bool { get }
+    var isUsingFadeOutAnimation: Bool { get }
 
     var currentTextPublisher: AnyPublisher<String, Never> { get }
     var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> { get }
@@ -98,11 +98,11 @@ final class SwitchBarHandler: SwitchBarHandling {
 
     private(set) var isTopBarPosition: Bool = true
 
-    var usesExpandedBottomBarHeight: Bool {
+    var isUsingExpandedBottomBarHeight: Bool {
         featureFlagger.isFeatureOn(.fadeoutOnToggle) && !isTopBarPosition
     }
 
-    var usesFadeoutAnimation: Bool {
+    var isUsingFadeOutAnimation: Bool {
         featureFlagger.isFeatureOn(.fadeoutOnToggle)
     }
 

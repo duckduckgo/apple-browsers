@@ -30,12 +30,12 @@ final class SwipeContainerManager: NSObject {
     private let switchBarHandler: SwitchBarHandling
     private let featureFlagger: FeatureFlagger
 
-    private var isFadeoutEnabled: Bool {
+    private var isUsingFadeOutAnimation: Bool {
         featureFlagger.isFeatureOn(.fadeoutOnToggle)
     }
 
     var searchPageContainer: UIView {
-        if isFadeoutEnabled {
+        if isUsingFadeOutAnimation {
             return fadeoutContainerViewController.searchPageContainer
         } else {
             return swipeContainerViewController.searchPageContainer
@@ -46,7 +46,7 @@ final class SwipeContainerManager: NSObject {
     private lazy var fadeoutContainerViewController = FadeoutContainerViewController(switchBarHandler: switchBarHandler, featureFlagger: featureFlagger)
 
     var containerViewController: UIViewController {
-        isFadeoutEnabled ? fadeoutContainerViewController : swipeContainerViewController
+        isUsingFadeOutAnimation ? fadeoutContainerViewController : swipeContainerViewController
     }
 
     var delegate: SwipeContainerViewControllerDelegate? {

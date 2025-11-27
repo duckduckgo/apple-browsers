@@ -32,7 +32,7 @@ class SwitchBarTextEntryViewController: UIViewController {
     let buttonsContainerView = UIView()
 
     private var isUsingOverlayButtonsLayout: Bool {
-        handler.usesExpandedBottomBarHeight
+        handler.isUsingExpandedBottomBarHeight
     }
 
     var textHeightChangePublisher: AnyPublisher<Void, Never> {

@@ -10059,8 +10059,6 @@
 		AA86491224D831A1001BABEE /* View */ = {
 			isa = PBXGroup;
 			children = (
-				B53F4E912EA917AB0043B5EF /* LetterView.swift */,
-				B5DE8DA82EBE292F005C5EF4 /* SpinnerView.swift */,
 				84DD63E32E9788960043A25E /* TabBar.storyboard */,
 				1456D6E024EFCBC300775049 /* TabBarCollectionView.swift */,
 				AA2CB1342587C29500AA6FBE /* TabBarFooter.swift */,

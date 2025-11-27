@@ -27,7 +27,6 @@ final class SubscriptionITPViewModel: ObservableObject {
     
     var userScript: IdentityTheftRestorationPagesUserScript?
     var subFeature: IdentityTheftRestorationPagesFeature?
-    let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     let manageITPURL: URL
     var viewTitle = UserText.settingsPProITRTitle
 
@@ -62,10 +61,8 @@ final class SubscriptionITPViewModel: ObservableObject {
     private let webViewSettings: AsyncHeadlessWebViewSettings
 
     init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
-         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          isInternalUser: Bool = false,
          isAuthV2Enabled: Bool) {
-        self.userScriptsDependencies = userScriptsDependencies
         self.itpURL = subscriptionManager.url(for: .identityTheftRestoration)
         self.manageITPURL = self.itpURL
         self.userScript = IdentityTheftRestorationPagesUserScript()
@@ -75,7 +72,7 @@ final class SubscriptionITPViewModel: ObservableObject {
 
         self.webViewSettings = AsyncHeadlessWebViewSettings(bounces: false,
                                                             allowedDomains: allowedDomains,
-                                                            userScriptsDependencies: nil)
+                                                            contentBlocking: false)
 
         self.webViewModel = AsyncHeadlessWebViewViewModel(userScript: userScript,
                                                           subFeature: subFeature,
@@ -173,9 +170,7 @@ final class SubscriptionITPViewModel: ObservableObject {
         if let existingModel = externalLinksViewModel {
             return existingModel
         } else {
-            let model = SubscriptionExternalLinkViewModel(url: url,
-                                                          allowedDomains: externalAllowedDomains,
-                                                          userScriptsDependencies: userScriptsDependencies)
+            let model = SubscriptionExternalLinkViewModel(url: url, allowedDomains: externalAllowedDomains)
             externalLinksViewModel = model
             return model
         }

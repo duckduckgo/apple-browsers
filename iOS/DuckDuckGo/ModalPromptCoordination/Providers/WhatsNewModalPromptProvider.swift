@@ -28,7 +28,6 @@ final class WhatsNewCoordinator: NSObject, ModalPromptProvider {
     private let remoteMessageActionHandler: RemoteMessagingActionHandling
     private let isIPad: Bool
     private let pixelReporter: RemoteMessagingPixelReporting
-    private let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     private let displayModelMapper: WhatsNewDisplayModelMapping
 
     private weak var navigationController: UINavigationController?
@@ -40,14 +39,12 @@ final class WhatsNewCoordinator: NSObject, ModalPromptProvider {
         remoteMessageActionHandler: RemoteMessagingActionHandling,
         isIPad: Bool,
         pixelReporter: RemoteMessagingPixelReporting,
-        userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
         displayModelMapper: WhatsNewDisplayModelMapping = WhatsNewDisplayModelMapper()
     ) {
         self.remoteMessageStore = remoteMessageStore
         self.remoteMessageActionHandler = remoteMessageActionHandler
         self.isIPad = isIPad
         self.pixelReporter = pixelReporter
-        self.userScriptsDependencies = userScriptsDependencies
         self.displayModelMapper = displayModelMapper
     }
 
@@ -99,8 +96,7 @@ extension WhatsNewCoordinator: RemoteMessagingPresenter {
 
     @MainActor
     func presentEmbeddedWebView(url: URL) async {
-        let embeddedWebViewController = EmbeddedWebViewController(url: url,
-                                                                  userScriptsDependencies: userScriptsDependencies)
+        let embeddedWebViewController = EmbeddedWebViewController(url: url)
         navigationController?.pushViewController(embeddedWebViewController, animated: true)
     }
 

@@ -20,6 +20,7 @@ import AppKit
 
 final class TabTitleView: NSView {
 
+    private let displayPolicy = DefaultTitleDisplayPolicy()
     private lazy var titleTextField: NSTextField = buildTitleTextField()
     private lazy var previousTextField: NSTextField = buildTitleTextField()
     private(set) var sourceURL: URL?
@@ -56,18 +57,18 @@ extension TabTitleView {
     /// avoid animating the Placeholder.
     ///
     func displayTitleIfNeeded(title: String, url: URL?, animated: Bool = true) {
-        if mustSkipDisplayingTitle(title: title, url: url, previousURL: sourceURL) {
+        if displayPolicy.mustSkipDisplayingTitle(title: title, url: url, previousURL: sourceURL) {
             return
         }
 
         let previousTitle = titleTextField.stringValue
-        let mustFadeInLatestTitle = mustAnimateNewTitleFadeIn(targetURL: url, previousURL: sourceURL)
+        let mustFadeInLatestTitle = displayPolicy.mustAnimateNewTitleFadeIn(targetURL: url, previousURL: sourceURL)
 
         titleTextField.stringValue = title
         previousTextField.stringValue = previousTitle
         sourceURL = url
 
-        guard animated, mustAnimateTitleTransition(title: title, previousTitle: previousTitle) else {
+        guard animated, displayPolicy.mustAnimateTitleTransition(title: title, previousTitle: previousTitle) else {
             return
         }
 
@@ -112,7 +113,7 @@ private extension TabTitleView {
 
     func setupTextFields() {
         titleTextField.textColor = .labelColor
-        previousTextField.textColor = .labelColor.withAlphaComponent(0.6)
+        previousTextField.textColor = .labelColor
     }
 
     func buildTitleTextField() -> NSTextField {
@@ -125,21 +126,6 @@ private extension TabTitleView {
         textField.font = .systemFont(ofSize: 13)
         textField.lineBreakMode = .byClipping
         return textField
-    }
-}
-
-private extension TabTitleView {
-
-    func mustSkipDisplayingTitle(title: String, url: URL?, previousURL: URL?) -> Bool {
-        previousURL?.host == url?.host && url?.suggestedTitlePlaceholder == title
-    }
-
-    func mustAnimateTitleTransition(title: String, previousTitle: String) -> Bool {
-        title != previousTitle && previousTitle.isEmpty == false
-    }
-
-    func mustAnimateNewTitleFadeIn(targetURL: URL?, previousURL: URL?) -> Bool {
-        targetURL?.host?.dropSubdomain() != previousURL?.host?.dropSubdomain()
     }
 }
 
@@ -163,10 +149,9 @@ private extension TabTitleView {
             return
         }
 
-        let fromAlpha = Float(titleTextField.alphaValue)
         let animationGroup = CAAnimationGroup()
         animationGroup.animations = [
-            CASpringAnimation.buildFadeOutAnimation(duration: TitleAnimation.duration, fromAlpha: fromAlpha),
+            CASpringAnimation.buildFadeOutAnimation(duration: TitleAnimation.duration, fromAlpha: TitleAnimation.previousTitleAlpha),
             CASpringAnimation.buildTranslationXAnimation(duration: TitleAnimation.duration, fromValue: TitleAnimation.slidingOutStartX, toValue: TitleAnimation.slidingOutLastX)
         ]
 
@@ -188,7 +173,7 @@ private extension TabTitleView {
             return
         }
 
-        let animation = CASpringAnimation.buildFadeAnimation(duration: TitleAnimation.duration, fromValue: Float(fromAlpha), toValue: Float(toAlpha))
+        let animation = CASpringAnimation.buildFadeAnimation(duration: TitleAnimation.duration, fromAlpha: Float(fromAlpha), toAlpha: Float(toAlpha))
         titleLayer.add(animation, forKey: TitleAnimation.alphaKey)
     }
 }
@@ -198,6 +183,7 @@ private enum TitleAnimation {
     static let slideInKey = "slideIn"
     static let alphaKey = "alpha"
     static let duration: TimeInterval = 0.2
+    static let previousTitleAlpha = Float(0.6)
     static let slidingOutStartX = CGFloat(0)
     static let slidingOutLastX = CGFloat(-4)
     static let slidingInStartX = CGFloat(-4)

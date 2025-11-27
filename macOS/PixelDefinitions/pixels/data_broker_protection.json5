@@ -224,7 +224,7 @@
                 "key": "vpn_bypass",
                 "description": "VPN bypass status when the submission succeeded",
                 "type": "string",
-                "enum": ["on", "off", "unsupported"]
+                "enum": ["on", "off", "unsupported", "unknown"]
             }
         ]
     },
@@ -255,7 +255,7 @@
                 "key": "vpn_bypass",
                 "description": "VPN bypass status when the attempt succeeded",
                 "type": "string",
-                "enum": ["on", "off", "unsupported"]
+                "enum": ["on", "off", "unsupported", "unknown"]
             }
         ]
     },
@@ -301,7 +301,8 @@
                     "emailConfirmation",
                     "getCaptchaInfo",
                     "solveCaptcha",
-                    "condition"
+                    "condition",
+                    "unknown"
                 ]
             },
             {
@@ -313,7 +314,7 @@
                 "key": "vpn_bypass",
                 "description": "VPN bypass status when the failure happened",
                 "type": "string",
-                "enum": ["on", "off", "unsupported"]
+                "enum": ["on", "off", "unsupported", "unknown"]
             }
         ]
     },
@@ -395,9 +396,10 @@
         "description": "Fired when a backend DBP service call is attempted without an auth token",
         "owners": ["quanganhdo"],
         "triggers": ["other"],
-        "suffixes": [],
+        "suffixes": ["legacy_daily_count"],
         "parameters": [
             "appVersion",
+            "pixelSource",
             {
                 "key": "environment",
                 "description": "DBP backend environment",
@@ -419,7 +421,7 @@
             },
             {
                 "key": "data_broker",
-                "description": "The URL of the data broker that this action was operating on (unknown when not available)",
+                "description": "The name of the data broker that this action was operating on (unknown when not available)",
                 "type": "string"
             },
             {
@@ -611,6 +613,7 @@
             "wideEventType",
             "wideEventSampleRate",
             "wideEventFeatureStatus",
+            "wideEventFeatureStatusReason",
             "wideEventErrorDomain",
             "wideEventErrorCode",
             "wideEventUnderlyingErrorDomain",
@@ -624,7 +627,7 @@
             {
                 "key": "feature.data.ext.data_broker",
                 "type": "string",
-                "description": "The URL of the data broker associated with this opt-out submission"
+                "description": "The name of the data broker associated with this opt-out submission"
             },
             "dbpFeatureDataBrokerVersion",
             {
@@ -647,6 +650,7 @@
             "wideEventType",
             "wideEventSampleRate",
             "wideEventFeatureStatus",
+            "wideEventFeatureStatusReason",
             "wideEventErrorDomain",
             "wideEventErrorCode",
             "wideEventUnderlyingErrorDomain",
@@ -660,7 +664,7 @@
             {
                 "key": "feature.data.ext.data_broker",
                 "type": "string",
-                "description": "The URL of the data broker associated with this scan"
+                "description": "The name of the data broker associated with this scan"
             },
             "dbpFeatureDataBrokerVersion",
             {
@@ -694,6 +698,7 @@
             "wideEventType",
             "wideEventSampleRate",
             "wideEventFeatureStatus",
+            "wideEventFeatureStatusReason",
             "wideEventErrorDomain",
             "wideEventErrorCode",
             "wideEventUnderlyingErrorDomain",
@@ -707,7 +712,7 @@
             {
                 "key": "feature.data.ext.data_broker",
                 "type": "string",
-                "description": "The URL of the data broker associated with this confirmation flow"
+                "description": "The name of the data broker associated with this confirmation flow"
             },
             "dbpFeatureDataBrokerVersion",
             {
@@ -758,7 +763,7 @@
                 "key": "vpn_bypass",
                 "description": "VPN bypass status when the error occurred",
                 "type": "string",
-                "enum": ["on", "off", "unsupported"]
+                "enum": ["on", "off", "unsupported", "unknown"]
             },
             "dbpParentBroker",
             "dbpActionId",
@@ -775,7 +780,8 @@
                     "emailConfirmation",
                     "getCaptchaInfo",
                     "solveCaptcha",
-                    "condition"
+                    "condition",
+                    "unknown"
                 ]
             }
         ]
@@ -784,12 +790,14 @@
         "description": "Fired when a scan or opt-out action fails while processing a data broker.",
         "owners": ["quanganhdo"],
         "triggers": ["other"],
-        "suffixes": [],
+        "suffixes": ["legacy_daily_count", "count"],
         "parameters": [
             "appVersion",
             "pixelSource",
             "dbpDataBroker",
             "dbpBrokerVersion",
+            "errorDomain",
+            "errorCode",
             {
                 "key": "actionID",
                 "description": "The unique identifier of the action that failed",

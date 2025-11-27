@@ -16,12 +16,34 @@
 //  limitations under the License.
 //
 
+import AIChat
 import BrowserServicesKit
 import Combine
 import Common
 import Foundation
 import os.log
 import Suggestions
+
+/// Represents the sections in the suggestion list
+enum SuggestionListSection: Int, CaseIterable {
+    case header = 0
+    case suggestions = 1
+    case footer = 2
+}
+
+/// Represents the type of content to display in a suggestion row
+enum SuggestionRowContent: Equatable {
+    /// The search cell row (shown when AI chat toggle is enabled)
+    case searchCell
+    /// The AI chat cell row (shown when AI chat toggle and AI features are enabled)
+    case aiChatCell
+    /// The visit cell row (shown when user types a URL-like string)
+    case visitCell
+    /// A divider row between sections
+    case sectionDivider
+    /// A suggestion item at the given index
+    case suggestion(index: Int)
+}
 
 final class SuggestionContainerViewModel {
 
@@ -30,24 +52,220 @@ final class SuggestionContainerViewModel {
     let suggestionContainer: SuggestionContainer
     private let searchPreferences: SearchPreferences
     private let themeManager: ThemeManaging
+    private let featureFlagger: FeatureFlagger
+    private let aiChatPreferencesStorage: AIChatPreferencesStorage
     private var suggestionResultCancellable: AnyCancellable?
 
     init(isHomePage: Bool,
          isBurner: Bool,
          suggestionContainer: SuggestionContainer,
          searchPreferences: SearchPreferences,
-         themeManager: ThemeManaging) {
+         themeManager: ThemeManaging,
+         featureFlagger: FeatureFlagger,
+         aiChatPreferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage()) {
         self.isHomePage = isHomePage
         self.isBurner = isBurner
         self.suggestionContainer = suggestionContainer
         self.searchPreferences = searchPreferences
         self.themeManager = themeManager
+        self.featureFlagger = featureFlagger
+        self.aiChatPreferencesStorage = aiChatPreferencesStorage
         subscribeToSuggestionResult()
     }
+
+    // MARK: - Section-based API (for TableView)
+
+    /// Indicates whether the top suggestion has been auto-selected (e.g., user typed "apple" and there's a matching bookmark).
+    /// When true, the header section is hidden and the AI chat cell moves to the footer.
+    @Published private(set) var hasAutoSelectedSuggestion = false
+
+    /// Whether the user input looks like a URL (e.g., "apple.com").
+    /// When true, the visit cell is shown first and the search cell is hidden.
+    private var userInputIsURL: Bool {
+        guard let userStringValue, !userStringValue.isEmpty else { return false }
+        guard let url = URL(trimmedAddressBarString: userStringValue) else { return false }
+        return url.isValid
+    }
+
+    /// The URL parsed from user input, used for the visit cell display.
+    var parsedURLFromUserInput: URL? {
+        guard let userStringValue, !userStringValue.isEmpty else { return nil }
+        guard let url = URL(trimmedAddressBarString: userStringValue), url.isValid else { return nil }
+        return url
+    }
+
+    /// The host to display in the visit cell suffix (e.g., "apple.com").
+    var visitCellHost: String? {
+        parsedURLFromUserInput?.root?.toString(decodePunycode: true, dropScheme: true, dropTrailingSlash: true)
+    }
+
+    /// Whether to show header cells (search and AI chat at the top).
+    /// Header is hidden when a suggestion is auto-selected OR when user input is a URL.
+    private var shouldShowHeaderSection: Bool {
+        !hasAutoSelectedSuggestion && !userInputIsURL
+    }
+
+    /// Whether to show the AI chat cell in the footer section.
+    /// Footer AI chat is shown when a suggestion is auto-selected OR when user input is a URL.
+    private var shouldShowAIChatCellInFooter: Bool {
+        (hasAutoSelectedSuggestion || userInputIsURL) && shouldShowAIChatCellBase
+    }
+
+    /// Whether to show the visit cell in the header (when user types a URL-like string).
+    private var shouldShowVisitCell: Bool {
+        guard featureFlagger.isFeatureOn(.aiChatOmnibarToggle) else { return false }
+        return userInputIsURL
+    }
+
+    var numberOfHeaderRows: Int {
+        var count = 0
+        if shouldShowVisitCell { count += 1 }
+        guard shouldShowHeaderSection else { return count }
+        if shouldShowSearchCell { count += 1 }
+        if shouldShowAIChatCell { count += 1 }
+        return count
+    }
+
+    var numberOfFooterRows: Int {
+        shouldShowAIChatCellInFooter ? 1 : 0
+    }
+
+    private var shouldShowHeaderDivider: Bool {
+        guard !shouldShowVisitCell else { return false }
+        return numberOfHeaderRows > 0 && numberOfSuggestions > 0
+    }
+
+    private var shouldShowFooterDivider: Bool {
+        numberOfFooterRows > 0 && numberOfSuggestions > 0
+    }
+
+    var numberOfRows: Int {
+        numberOfHeaderRows
+        + (shouldShowHeaderDivider ? 1 : 0)
+        + numberOfSuggestions
+        + (shouldShowFooterDivider ? 1 : 0)
+        + numberOfFooterRows
+    }
+
+    /// Returns the row index where the suggestions section starts
+    private var suggestionsSectionStartRow: Int {
+        numberOfHeaderRows + (shouldShowHeaderDivider ? 1 : 0)
+    }
+
+    /// Returns the type of content to display for the given row index.
+    func rowContent(at row: Int) -> SuggestionRowContent? {
+        let contents = buildRowContents()
+        guard row >= 0, row < contents.count else { return nil }
+        return contents[row]
+    }
+
+    private func buildRowContents() -> [SuggestionRowContent] {
+        var contents: [SuggestionRowContent] = []
+
+        if shouldShowVisitCell { contents.append(.visitCell) }
+        if shouldShowSearchCell { contents.append(.searchCell) }
+        if shouldShowAIChatCell { contents.append(.aiChatCell) }
+
+        if shouldShowHeaderDivider { contents.append(.sectionDivider) }
+
+        for index in 0..<numberOfSuggestions {
+            contents.append(.suggestion(index: index))
+        }
+
+        if shouldShowFooterDivider { contents.append(.sectionDivider) }
+        if shouldShowAIChatCellInFooter { contents.append(.aiChatCell) }
+
+        return contents
+    }
+
+    func selectionIndex(forRow row: Int) -> Int? {
+        guard row >= suggestionsSectionStartRow else { return nil }
+        let index = row - suggestionsSectionStartRow
+        guard index >= 0, index < numberOfSuggestions else { return nil }
+        return index
+    }
+
+    func tableRow(forSelectionIndex index: Int?) -> Int? {
+        guard let index, index >= 0, index < numberOfSuggestions else { return nil }
+        return index + suggestionsSectionStartRow
+    }
+
+    func isDividerRow(_ row: Int) -> Bool {
+        guard let content = rowContent(at: row) else { return false }
+        return content == .sectionDivider
+    }
+
+    func isSelectableRow(_ row: Int) -> Bool {
+        guard let content = rowContent(at: row) else { return false }
+        return content != .sectionDivider
+    }
+
+    /// Returns the default row to select when no suggestion is selected.
+    /// - When visit cell is shown: returns 0 (visit cell is first and should be selected)
+    /// - When auto-selection is active: returns nil (the auto-selected suggestion handles selection)
+    /// - When no auto-selection: returns the search cell row (0) if shown, otherwise nil
+    var defaultSelectedRow: Int? {
+        if shouldShowVisitCell {
+            return 0
+        }
+        if hasAutoSelectedSuggestion {
+            return nil
+        }
+        return shouldShowSearchCell ? 0 : nil
+    }
+
+    // MARK: - Suggestion Data
 
     var numberOfSuggestions: Int {
         suggestionContainer.result?.count ?? 0
     }
+
+    private var shouldShowSearchCellBase: Bool {
+        guard featureFlagger.isFeatureOn(.aiChatOmnibarToggle) else { return false }
+        guard let userStringValue, !userStringValue.isEmpty else { return false }
+        return true
+    }
+
+    private var shouldShowAIChatCellBase: Bool {
+        guard featureFlagger.isFeatureOn(.aiChatOmnibarToggle) else { return false }
+        guard aiChatPreferencesStorage.isAIFeaturesEnabled else { return false }
+        guard let userStringValue, !userStringValue.isEmpty else { return false }
+        return true
+    }
+
+    var shouldShowSearchCell: Bool {
+        shouldShowHeaderSection && shouldShowSearchCellBase
+    }
+
+    var shouldShowAIChatCell: Bool {
+        shouldShowHeaderSection && shouldShowAIChatCellBase
+    }
+
+    // MARK: - Row Selection (includes prefix rows)
+
+    @Published private(set) var selectedRowIndex: Int?
+
+    var selectedRowContent: SuggestionRowContent? {
+        guard let selectedRowIndex else { return nil }
+        return rowContent(at: selectedRowIndex)
+    }
+
+    func selectRow(at rowIndex: Int) {
+        guard rowIndex >= 0, rowIndex < numberOfRows else {
+            Logger.general.error("SuggestionContainerViewModel: Row index out of bounds")
+            selectedRowIndex = nil
+            return
+        }
+        selectedRowIndex = rowIndex
+        selectionIndex = selectionIndex(forRow: rowIndex)
+    }
+
+    func clearRowSelection() {
+        selectedRowIndex = nil
+        selectionIndex = nil
+    }
+
+    // MARK: - Suggestion Selection (legacy, for backward compatibility)
 
     @Published private(set) var selectionIndex: Int? {
         didSet { updateSelectedSuggestionViewModel() }
@@ -89,9 +307,10 @@ final class SuggestionContainerViewModel {
                     try validateShouldSelectTopSuggestion(from: result)
                 } catch {
                     Logger.general.debug("SuggestionContainerViewModel: ignoring top suggestion from \( result.map(String.init(describing:)) ?? "<nil>"): \(error)")
+                    self.hasAutoSelectedSuggestion = false
                     return
                 }
-
+                self.hasAutoSelectedSuggestion = true
                 self.select(at: 0)
             }
     }
@@ -104,6 +323,7 @@ final class SuggestionContainerViewModel {
         self.userStringValue = userStringValue
 
         guard !userStringValue.isEmpty else {
+            hasAutoSelectedSuggestion = false
             suggestionContainer.stopGettingSuggestions()
             return
         }
@@ -111,11 +331,16 @@ final class SuggestionContainerViewModel {
 
         self.isTopSuggestionSelectionExpected = userAppendedStringToTheEnd && !userStringValue.contains(" ")
 
+        if !isTopSuggestionSelectionExpected {
+            hasAutoSelectedSuggestion = false
+        }
+
         suggestionContainer.getSuggestions(for: userStringValue)
     }
 
     func clearUserStringValue() {
         self.userStringValue = nil
+        hasAutoSelectedSuggestion = false
         suggestionContainer.stopGettingSuggestions()
     }
 
@@ -135,59 +360,92 @@ final class SuggestionContainerViewModel {
             return nil
         }
 
-        return SuggestionViewModel(isHomePage: isHomePage, suggestion: items[index], userStringValue: userStringValue ?? "", themeManager: themeManager)
+        return SuggestionViewModel(isHomePage: isHomePage, suggestion: items[index], userStringValue: userStringValue ?? "", themeManager: themeManager, featureFlagger: featureFlagger)
     }
 
+    /// Selects a suggestion by its index (for backward compatibility)
     func select(at index: Int) {
         guard index >= 0, index < numberOfSuggestions else {
             Logger.general.error("SuggestionContainerViewModel: Index out of bounds")
             selectionIndex = nil
+            selectedRowIndex = nil
             return
         }
 
         if suggestionViewModel(at: index) != self.selectedSuggestionViewModel {
             selectionIndex = index
+            // Update row index to match
+            selectedRowIndex = tableRow(forSelectionIndex: index)
         }
     }
 
     func clearSelection() {
-        if selectionIndex != nil {
-            selectionIndex = nil
-        }
+        clearRowSelection()
     }
 
     func selectNextIfPossible() {
-        // When no item is selected, start selection from the top of the list
-        guard let selectionIndex = selectionIndex else {
-            select(at: 0)
+        // When no item is selected, start selection from the first selectable row
+        guard let currentRowIndex = selectedRowIndex else {
+            if let firstSelectable = firstSelectableRow() {
+                selectRow(at: firstSelectable)
+            }
             return
         }
 
-        // At the end of the list, cancel the selection
-        if selectionIndex == numberOfSuggestions - 1 {
-            clearSelection()
-            return
+        // Find next selectable row (skip divider)
+        var nextRow = currentRowIndex + 1
+        while nextRow < numberOfRows {
+            if isSelectableRow(nextRow) {
+                selectRow(at: nextRow)
+                return
+            }
+            nextRow += 1
         }
 
-        let newIndex = min(numberOfSuggestions - 1, selectionIndex + 1)
-        select(at: newIndex)
+        wrapAroundOrClearSelection(using: firstSelectableRow)
     }
 
     func selectPreviousIfPossible() {
-        // When no item is selected, start selection from the bottom of the list
-        guard let selectionIndex = selectionIndex else {
-            select(at: numberOfSuggestions - 1)
+        guard let currentRowIndex = selectedRowIndex else {
+            if let lastSelectable = lastSelectableRow() {
+                selectRow(at: lastSelectable)
+            }
             return
         }
 
-        // If the first item is selected, cancel the selection
-        if selectionIndex == 0 {
-            clearSelection()
-            return
+        var prevRow = currentRowIndex - 1
+        while prevRow >= 0 {
+            if isSelectableRow(prevRow) {
+                selectRow(at: prevRow)
+                return
+            }
+            prevRow -= 1
         }
 
-        let newIndex = max(0, selectionIndex - 1)
-        select(at: newIndex)
+        wrapAroundOrClearSelection(using: lastSelectableRow)
+    }
+
+    /// Wraps around to the given row when aiChatOmnibarToggle is on, otherwise clears selection
+    private func wrapAroundOrClearSelection(using selectableRow: () -> Int?) {
+        if featureFlagger.isFeatureOn(.aiChatOmnibarToggle), let row = selectableRow() {
+            selectRow(at: row)
+        } else {
+            clearRowSelection()
+        }
+    }
+
+    private func firstSelectableRow() -> Int? {
+        for row in 0..<numberOfRows where isSelectableRow(row) {
+            return row
+        }
+        return nil
+    }
+
+    private func lastSelectableRow() -> Int? {
+        for row in stride(from: numberOfRows - 1, through: 0, by: -1) where isSelectableRow(row) {
+            return row
+        }
+        return nil
     }
 
     func removeSuggestionFromResult(suggestion: Suggestion) {
@@ -204,5 +462,4 @@ final class SuggestionContainerViewModel {
 
         suggestionContainer.result = result
     }
-
 }

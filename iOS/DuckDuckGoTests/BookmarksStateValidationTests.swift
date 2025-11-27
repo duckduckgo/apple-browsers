@@ -70,7 +70,7 @@ class BookmarksStateValidationTests: XCTestCase {
 
         let testContext = dbStack.makeContext(concurrencyType: .privateQueueConcurrencyType)
         testContext.performAndWait {
-            XCTAssertTrue(validator.validateInitialState(context: testContext, validationError: .bookmarksStructureLost, isBackground: false))
+            XCTAssertTrue(validator.validateInitialState(context: testContext, validationError: .bookmarksStructureLost))
             validator.validateBookmarksStructure(context: testContext)
         }
     }
@@ -83,7 +83,7 @@ class BookmarksStateValidationTests: XCTestCase {
 
         let testContext = dbStack.makeContext(concurrencyType: .privateQueueConcurrencyType)
         testContext.performAndWait {
-            XCTAssertTrue(validator.validateInitialState(context: testContext, validationError: .bookmarksStructureLost, isBackground: false))
+            XCTAssertTrue(validator.validateInitialState(context: testContext, validationError: .bookmarksStructureLost))
         }
     }
 
@@ -107,7 +107,7 @@ class BookmarksStateValidationTests: XCTestCase {
 
         let testContext = dbStack.makeContext(concurrencyType: .privateQueueConcurrencyType)
         testContext.performAndWait {
-            XCTAssertFalse(validator.validateInitialState(context: testContext, validationError: .bookmarksStructureLost, isBackground: false))
+            XCTAssertFalse(validator.validateInitialState(context: testContext, validationError: .bookmarksStructureLost))
             validator.validateBookmarksStructure(context: testContext)
         }
 
@@ -148,7 +148,7 @@ class BookmarksStateValidationTests: XCTestCase {
 
         let testContext = dbStack.makeContext(concurrencyType: .privateQueueConcurrencyType)
         testContext.performAndWait {
-            XCTAssertTrue(validator.validateInitialState(context: testContext, validationError: .bookmarksStructureLost, isBackground: false))
+            XCTAssertTrue(validator.validateInitialState(context: testContext, validationError: .bookmarksStructureLost))
             validator.validateBookmarksStructure(context: testContext)
         }
 
@@ -188,7 +188,7 @@ class BookmarksStateValidationTests: XCTestCase {
 
         let testContext = dbStack.makeContext(concurrencyType: .privateQueueConcurrencyType)
         testContext.performAndWait {
-            XCTAssertTrue(validator.validateInitialState(context: testContext, validationError: .bookmarksStructureLost, isBackground: false))
+            XCTAssertTrue(validator.validateInitialState(context: testContext, validationError: .bookmarksStructureLost))
             validator.validateBookmarksStructure(context: testContext)
         }
 

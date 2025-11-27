@@ -32,7 +32,6 @@ struct SettingsState {
     }
     
     struct TextZoom {
-        var enabled: Bool
         var level: TextZoomLevel
     }
 
@@ -127,7 +126,7 @@ struct SettingsState {
             appThemeStyle: .systemDefault,
             appIcon: AppIconManager.shared.appIcon,
             fireButtonAnimation: .fireRising,
-            textZoom: TextZoom(enabled: false, level: .percent100),
+            textZoom: TextZoom(level: .percent100),
             addressBar: AddressBar(enabled: false, position: .top),
             showsFullURL: false,
             isExperimentalAIChatEnabled: false,

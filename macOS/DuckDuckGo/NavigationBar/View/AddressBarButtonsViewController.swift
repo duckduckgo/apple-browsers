@@ -529,7 +529,7 @@ final class AddressBarButtonsViewController: NSViewController {
         tabViewModel?.$usedPermissions.dropFirst().sink { [weak self] _ in
             self?.updateAllPermissionButtons()
         }.store(in: &permissionsCancellables)
-        tabViewModel?.tab.popupHandling?.popupOpenedPublisher.sink { [weak self] _ in
+        tabViewModel?.tab.popupHandling?.pageInitiatedPopupPublisher.sink { [weak self] _ in
             self?.updateAllPermissionButtons()
         }.store(in: &permissionsCancellables)
         tabViewModel?.$permissionAuthorizationQuery.dropFirst().sink { [weak self] _ in
@@ -628,9 +628,9 @@ final class AddressBarButtonsViewController: NSViewController {
             popupsButton.buttonState = tabViewModel.usedPermissions.popups
         } else if featureFlagger.isFeatureOn(.popupBlocking),
                   featureFlagger.isFeatureOn(.popupPermissionButtonPersistence) {
-            let popupWasOpenedForCurrentPage = tabViewModel.tab.popupHandling?.popupWasOpenedForCurrentPage ?? false
-            // Keep button visible (as .inactive) when a pop-up was allowed or opened for the current page (always allowed)
-            popupsButton.buttonState = popupWasOpenedForCurrentPage ? .inactive : tabViewModel.usedPermissions.popups // .inactive or nil
+            let pageInitiatedPopupOpened = tabViewModel.tab.popupHandling?.pageInitiatedPopupOpened ?? false
+            // Keep button visible (as .inactive) when a page-initiated pop-up was allowed or opened by the current page (always allowed)
+            popupsButton.buttonState = pageInitiatedPopupOpened ? .inactive : tabViewModel.usedPermissions.popups // .inactive or nil
         } else {
             popupsButton.buttonState = nil
         }
@@ -1520,10 +1520,19 @@ final class AddressBarButtonsViewController: NSViewController {
         button.backgroundColor = .buttonMouseDown
         button.mouseOverColor = .buttonMouseDown
         (popover.contentViewController as? PermissionAuthorizationViewController)?.query = query
+        query.wasShownOnce = true
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + NSAnimationContext.current.duration) {
+        // Wait for the button appearance animation to complete before showing popover
+        DispatchQueue.main.asyncAfter(deadline: .now() + NSAnimationContext.current.duration) { [weak self] in
+            guard let self, let tabViewModel,
+                  tabViewModel.tab.permissions.authorizationQueries.contains(where: { $0 === query }),
+                  button.isVisible else {
+                // Tab is no longer selected or button became hidden - reset button state
+                button.backgroundColor = .clear
+                button.mouseOverColor = .buttonMouseOver
+                return
+            }
             popover.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
-            query.wasShownOnce = true
         }
     }
 
@@ -1668,10 +1677,10 @@ final class AddressBarButtonsViewController: NSViewController {
             return
         }
         guard let state = tabViewModel.usedPermissions.popups ?? {
-            // If popup permission button persistence feature flag is enabled and the popup was opened for the current page,
+            // If popup permission button persistence feature flag is enabled and a page-initiated popup was opened for the current page,
             // return .inactive state for the pop-up button
             if featureFlagger.isFeatureOn(.popupBlocking) && featureFlagger.isFeatureOn(.popupPermissionButtonPersistence),
-               tabViewModel.tab.popupHandling?.popupWasOpenedForCurrentPage ?? false { return .inactive } else { return nil }
+               tabViewModel.tab.popupHandling?.pageInitiatedPopupOpened ?? false { return .inactive } else { return nil }
         }() else {
             return
         }
@@ -1780,6 +1789,15 @@ final class AddressBarButtonsViewController: NSViewController {
         searchModeToggleControl?.reset()
     }
 
+    func toggleSearchMode() {
+        guard let toggleControl = searchModeToggleControl,
+              !toggleControl.isHidden,
+              toggleControl.isEnabled else {
+            return
+        }
+        toggleControl.selectedSegment = toggleControl.selectedSegment == 0 ? 1 : 0
+    }
+
     private func updateKeyViewChainForToggle(shouldShowToggle: Bool) {
         guard let addressBarViewController = parent as? AddressBarViewController,
               let addressBarTextField = addressBarViewController.addressBarTextField,
@@ -1803,8 +1821,15 @@ final class AddressBarButtonsViewController: NSViewController {
         toggleControl.backgroundColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
         toggleControl.focusedBackgroundColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
         toggleControl.selectionColor = NSColor(designSystemColor: .controlsRaisedFillPrimary)
-        toggleControl.focusBorderColor = theme.colorsProvider.accentPrimaryColor
-        toggleControl.outerBorderColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
+
+        if tabCollectionViewModel.isBurner {
+            toggleControl.focusBorderColor = NSColor.burnerAccent.withAlphaComponent(0.8)
+            toggleControl.outerBorderColor = NSColor.burnerAccent.withAlphaComponent(0.2)
+        } else {
+            toggleControl.focusBorderColor = theme.colorsProvider.accentPrimaryColor
+            toggleControl.outerBorderColor = NSColor(designSystemColor: .controlsRaisedBackdrop)
+        }
+
         toggleControl.outerBorderWidth = 2.0
         toggleControl.selectionInnerBorderColor = NSColor(designSystemColor: .shadowSecondary)
 

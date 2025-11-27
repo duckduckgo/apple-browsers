@@ -141,65 +141,21 @@
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
-
-    // Bookmarks database file missing before loading
-    "m_d_bookmarks_database_file_missing": {
-        "description": "Fires when bookmarks database file doesn't exist before attempting to load it.",
-        "owners": ["jaceklyp", "bwaresiak"],
-        "triggers": ["exception"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion"]
-    },
-
-    // Enhanced bookmarks structure lost pixel with diagnostic parameters
     "m_d_bookmarks_structure_lost": {
         "description": "Fires when bookmarks database loads but structure is missing/empty with detailed diagnostics.",
         "owners": ["jaceklyp", "bwaresiak"],
         "triggers": ["exception"],
-        "suffixes": [
-            ["first_daily_count", "platform", "form_factor"],
-            ["platform", "form_factor"]
-        ],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": [
             "appVersion",
             {
-                "key": "sync-enabled",
-                "description": "Whether sync is enabled",
-                "type": "boolean"
+                "key": "occurrence-count",
+                "description": "Number of times this structure lost event has occurred for this user (helps track if it's recurring). Capped at 5.",
+                "type": "integer"
             },
             {
-                "key": "recent-bookmark-error-name",
-                "description": "Name of recent bookmark error case within 24 hours",
-                "type": "string"
-            },
-            {
-                "key": "recent-bookmark-error-domain",
-                "description": "Domain of recent bookmark error within 24 hours",
-                "type": "string"
-            },
-            {
-                "key": "recent-bookmark-error-code",
-                "description": "Code of recent bookmark error within 24 hours",
-                "type": "number"
-            },
-            {
-                "key": "launch-marker-present",
-                "description": "Whether app has successfully launched before (helps distinguish backup restore from corruption)",
-                "type": "boolean"
-            },
-            {
-                "key": "is-background",
-                "description": "Whether the app was in background state when the validation occurred",
-                "type": "boolean"
-            },
-            {
-                "key": "app-group-container-available",
-                "description": "Whether the app group container URL is accessible",
-                "type": "boolean"
-            },
-            {
-                "key": "app-group-marker-present",
-                "description": "Whether the app group access marker file exists (indicates previous successful access)",
+                "key": "is-bookmarks-db-file-present",
+                "description": "Whether the main bookmarks database file exists in the App Group container",
                 "type": "boolean"
             }
         ]

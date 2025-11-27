@@ -1,6 +1,5 @@
 //
-//  WebViewStateRestorationManager.swift
-//  DuckDuckGo
+//  OriginSettings.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,21 +16,8 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
-import Core
+import Foundation
 
-struct WebViewStateRestorationManager {
-
-    let featureFlagger: FeatureFlagger
-
-    @UserDefaultsWrapper(key: .debugWebViewStateRestorationEnabledKey, defaultValue: false)
-    var isLocalOverrideEnabled: Bool
-
-    init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
-        self.featureFlagger = featureFlagger
-    }
-
-    var isFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(.webViewStateRestoration) || (isLocalOverrideEnabled && featureFlagger.internalUserDecider.isInternalUser)
-    }
+public struct OriginSettings: Decodable {
+    public let originCampaignSubstrings: [String]
 }

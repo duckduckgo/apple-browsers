@@ -57,11 +57,7 @@ struct SubscriptionFlowView: View {
         NavigationLink(destination: LazyView(NetworkProtectionRootView().navigationViewStyle(.stack)),
                        isActive: $isShowingNetP,
                        label: { EmptyView() })
-        
-        NavigationLink(destination: LazyView(SubscriptionITPView(viewModel: SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
-                                                                                                     userScriptsDependencies: viewModel.userScriptsDependencies,
-                                                                                                     isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser,
-                                                                                                     isAuthV2Enabled: AppDependencyProvider.shared.isUsingAuthV2)).navigationViewStyle(.stack)),
+        NavigationLink(destination: LazyView(SubscriptionITPView().navigationViewStyle(.stack)),
                        isActive: $isShowingITR,
                        label: { EmptyView() })
         if viewModel.isPIREnabled, let vcProvider = viewModel.dataBrokerProtectionViewControllerProvider {

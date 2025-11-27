@@ -208,8 +208,7 @@ final class SuggestionTableCellView: NSTableCellView {
         self.suggestion = nil
 
         let attributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 13),
-            .foregroundColor: Constants.textColor
+            .font: NSFont.systemFont(ofSize: 13)
         ]
         attributedString = NSAttributedString(string: userText, attributes: attributes)
         iconImageView.image = icon

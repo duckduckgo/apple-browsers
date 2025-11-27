@@ -45,6 +45,7 @@ extension Tab: NavigationResponder {
             // AI Chat navigations handling
             .weak(nullable: self.aiChat),
 
+            // Pop-ups and Navigation Key Modifiers handling
             .weak(nullable: self.popupHandling),
             .strong(NavigationPixelNavigationResponder(featureFlagger: featureFlagger)),
             .weak(nullable: self.brokenSiteInfo),
@@ -106,9 +107,6 @@ extension Tab: NavigationResponder {
 
             // New Tab Page
             .weak(nullable: self.newTabPage),
-
-            // Popup Handling - track navigation to clear per-page popup allowances
-            .weak(nullable: self.popupHandling),
 
             // should be the last, for Unit Tests navigation events tracking
             .struct(nullable: testsClosureNavigationResponder)

@@ -80,9 +80,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
     private var wideEventData: SubscriptionPurchaseWideEventData?
     private var restoreEmailOfferPageWideEventData: SubscriptionRestoreWideEventData?
     private var restoreEmailAppSettingsWideEventData: SubscriptionRestoreWideEventData?
-    private var isSubscriptionRestoreWidePixelMeasurementEnabled: Bool {
-        subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled
-    }
 
     public init(subscriptionManager: SubscriptionManagerV2,
                 subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandling = SubscriptionAttributionPixelHandler(),
@@ -299,8 +296,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                 let appStorePurchaseFlow = DefaultAppStorePurchaseFlowV2(subscriptionManager: subscriptionManager,
                                                                          storePurchaseManager: subscriptionManager.storePurchaseManager(),
                                                                          appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                         wideEvent: wideEvent,
-                                                                         isSubscriptionRestoreWidePixelMeasurementEnabled: subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled)
+                                                                         wideEvent: wideEvent)
 
                 // 6: Execute App Store purchase (account creation + StoreKit transaction) and handle the result
                 Logger.subscription.log("[Purchase] Purchasing")
@@ -658,28 +654,21 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         switch await uiHandler.dismissProgressViewAndShow(alertType: .subscriptionFound, text: nil) {
         case .alertFirstButtonReturn:
             if #available(macOS 12.0, *) {
-                if isSubscriptionRestoreWidePixelMeasurementEnabled {
-                    restorePrePurcahseBackgroundWideEventData.appleAccountRestoreDuration = WideEvent.MeasuredInterval.startingNow()
-                    wideEvent.startFlow(restorePrePurcahseBackgroundWideEventData)
-                }
+                restorePrePurcahseBackgroundWideEventData.appleAccountRestoreDuration = WideEvent.MeasuredInterval.startingNow()
+                wideEvent.startFlow(restorePrePurcahseBackgroundWideEventData)
                 let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager,
                                                                        storePurchaseManager: subscriptionManager.storePurchaseManager())
                 let result = await appStoreRestoreFlow.restoreAccountFromPastPurchase()
                 switch result {
                 case .success:
                     PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseStoreSuccess, frequency: .legacyDailyAndCount)
-
-                    if isSubscriptionRestoreWidePixelMeasurementEnabled {
-                        restorePrePurcahseBackgroundWideEventData.appleAccountRestoreDuration?.complete()
-                        wideEvent.completeFlow(restorePrePurcahseBackgroundWideEventData, status: .success(reason: nil), onComplete: { _, _ in })
-                    }
+                    restorePrePurcahseBackgroundWideEventData.appleAccountRestoreDuration?.complete()
+                    wideEvent.completeFlow(restorePrePurcahseBackgroundWideEventData, status: .success(reason: nil), onComplete: { _, _ in })
                 case .failure(let error):
                     Logger.subscription.error("Failed to restore account from past purchase: \(error, privacy: .public)")
-                    if isSubscriptionRestoreWidePixelMeasurementEnabled {
-                        restorePrePurcahseBackgroundWideEventData.appleAccountRestoreDuration?.complete()
-                        restorePrePurcahseBackgroundWideEventData.errorData = .init(error: error)
-                        wideEvent.completeFlow(restorePrePurcahseBackgroundWideEventData, status: .failure, onComplete: { _, _ in })
-                    }
+                    restorePrePurcahseBackgroundWideEventData.appleAccountRestoreDuration?.complete()
+                    restorePrePurcahseBackgroundWideEventData.errorData = .init(error: error)
+                    wideEvent.completeFlow(restorePrePurcahseBackgroundWideEventData, status: .failure, onComplete: { _, _ in })
                 }
                 Task { @MainActor in
                     originalMessage.webView?.reload()
@@ -777,7 +766,6 @@ private extension SubscriptionPagesUseSubscriptionFeatureV2 {
 
     // Attempt to retrieve restoreEmailAppSettingsWideEventData sent from Preferences/View/PreferencesRootView.swift
     func retrieveRestoreEmailAppSettingsWideEventDataIfNeeded() {
-        guard isSubscriptionRestoreWidePixelMeasurementEnabled else { return }
         let flows = wideEvent.getAllFlowData(SubscriptionRestoreWideEventData.self)
         if let data = flows.last(where: { $0.restorePlatform == .emailAddress && $0.emailAddressRestoreDuration?.start != nil && $0.emailAddressRestoreDuration?.end == nil && $0.contextData.name == SubscriptionRestoreFunnelOrigin.appSettings.rawValue }) {
             self.restoreEmailAppSettingsWideEventData = data
@@ -785,7 +773,6 @@ private extension SubscriptionPagesUseSubscriptionFeatureV2 {
     }
 
     func setupRestoreEmailOfferPageWideEventDataIfNeeded() {
-        guard isSubscriptionRestoreWidePixelMeasurementEnabled else { return }
         let restoreEmailOfferPageWideEventData = SubscriptionRestoreWideEventData(
             restorePlatform: .emailAddress,
             contextData: WideEventContextData(name: SubscriptionRestoreFunnelOrigin.purchaseOffer.rawValue)
@@ -796,7 +783,6 @@ private extension SubscriptionPagesUseSubscriptionFeatureV2 {
     }
 
     func markEmailAddressRestoreAsFailure(data dataList: [SubscriptionRestoreWideEventData], with error: Error? = nil) {
-        guard isSubscriptionRestoreWidePixelMeasurementEnabled else { return }
         for data in dataList {
             data.emailAddressRestoreDuration?.complete()
             if let error {
@@ -807,7 +793,6 @@ private extension SubscriptionPagesUseSubscriptionFeatureV2 {
     }
 
     func markEmailAddressRestoreAsSuccess(data dataList: [SubscriptionRestoreWideEventData]) {
-        guard isSubscriptionRestoreWidePixelMeasurementEnabled else { return }
         for data in dataList {
             data.emailAddressRestoreDuration?.complete()
             wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })

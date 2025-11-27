@@ -215,9 +215,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866714634010
     case newDeviceSyncPrompt
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866463258596
-    case subscriptionRestoreWidePixelMeasurement
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866712760347
     case embeddedSERPSettings
 
@@ -300,7 +297,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .daxEasterEggLogos,
              .subscriptionPurchaseWidePixelMeasurement,
              .newDeviceSyncPrompt,
-             .subscriptionRestoreWidePixelMeasurement,
              .authV2WideEventEnabled,
              .embeddedSERPSettings,
              .syncCreditCards,
@@ -351,7 +347,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .dbpRemoteBrokerDelivery,
              .subscriptionPurchaseWidePixelMeasurement,
              .showAIChatAddressBarChoiceScreen,
-             .subscriptionRestoreWidePixelMeasurement,
              .embeddedSERPSettings,
              .authV2WideEventEnabled,
              .winBackOffer,
@@ -548,8 +543,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.showAIChatAddressBarChoiceScreen))
         case .newDeviceSyncPrompt:
             return .remoteReleasable(.subfeature(SyncSubfeature.newDeviceSyncPrompt))
-        case .subscriptionRestoreWidePixelMeasurement:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRestoreWidePixelMeasurement))
         case .embeddedSERPSettings:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.embeddedSERPSettings))
         case .authV2WideEventEnabled:

@@ -25,7 +25,6 @@ public final class SubscriptionFeatureAvailabilityMock: SubscriptionFeatureAvail
     public var isSubscriptionPurchaseAllowed: Bool
     public var isSupportsAlternateStripePaymentFlowEnabled: Bool = false
     public var isSubscriptionPurchaseWidePixelMeasurementEnabled: Bool = true
-    public var isSubscriptionRestoreWidePixelMeasurementEnabled: Bool = false
 
     public init(isSubscriptionPurchaseAllowed: Bool, usesUnifiedFeedbackForm: Bool) {
         self.isSubscriptionPurchaseAllowed = isSubscriptionPurchaseAllowed

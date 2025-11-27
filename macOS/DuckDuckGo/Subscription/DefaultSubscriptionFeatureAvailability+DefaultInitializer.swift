@@ -32,8 +32,6 @@ extension DefaultSubscriptionFeatureAvailability {
             Application.appDelegate.featureFlagger.isFeatureOn(.supportsAlternateStripePaymentFlow)
         }, isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: {
             Application.appDelegate.featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement)
-        }, isSubscriptionRestoreWidePixelMeasurementEnabledProvider: {
-            Application.appDelegate.featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement)
         })
     }
 }

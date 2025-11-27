@@ -43,6 +43,9 @@ final class FadeoutContainerViewController: UIViewController {
     private let swipeVelocityThreshold: CGFloat = 500
     private let swipeTranslationThreshold: CGFloat = 50
 
+    private var displayLink: CADisplayLink?
+    private var targetProgress: CGFloat = 0.0
+
     init(switchBarHandler: SwitchBarHandling,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.switchBarHandler = switchBarHandler
@@ -54,6 +57,10 @@ final class FadeoutContainerViewController: UIViewController {
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    deinit {
+        stopDisplayLink()
     }
 
     override func viewDidLoad() {
@@ -144,9 +151,7 @@ final class FadeoutContainerViewController: UIViewController {
 
     private func updateVisibility(animated: Bool) {
         let isSearchMode = switchBarHandler.currentToggleState == .search
-        let targetProgress: CGFloat = isSearchMode ? 0.0 : 1.0
-
-        updateTransitionProgress(targetProgress)
+        targetProgress = isSearchMode ? 0.0 : 1.0
 
         let isShowingSuggestions = delegate?.fadeoutContainerViewControllerIsShowingSuggestions(self) ?? false
         let shouldHideSearchImmediately = !isSearchMode && isShowingSuggestions
@@ -164,16 +169,39 @@ final class FadeoutContainerViewController: UIViewController {
 
         let completion: (Bool) -> Void = { [weak self] finished in
             guard let self, finished else { return }
+            self.stopDisplayLink()
+            self.updateTransitionProgress(self.targetProgress)
             let newMode: TextEntryMode = isSearchMode ? .search : .aiChat
             self.delegate?.fadeoutContainerViewController(self, didTransitionToMode: newMode)
         }
 
         if animated {
+            startDisplayLink()
             UIView.animate(withDuration: 0.25, animations: animations, completion: completion)
         } else {
             animations()
             completion(true)
         }
+    }
+
+    // MARK: - Display Link for Smooth Toggle transitionss
+
+    private func startDisplayLink() {
+        stopDisplayLink()
+        displayLink = CADisplayLink(target: self, selector: #selector(displayLinkTick))
+        displayLink?.add(to: .main, forMode: .common)
+    }
+
+    private func stopDisplayLink() {
+        displayLink?.invalidate()
+        displayLink = nil
+    }
+
+    @objc private func displayLinkTick() {
+        guard let presentationLayer = chatPageContainer.layer.presentation() else { return }
+
+        let currentProgress = CGFloat(presentationLayer.opacity)
+        updateTransitionProgress(currentProgress)
     }
 
     private func updateTransitionProgress(_ progress: CGFloat) {

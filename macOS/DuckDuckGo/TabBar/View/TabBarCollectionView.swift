@@ -158,6 +158,14 @@ open class TabBarCollectionView: NSCollectionView {
         return item(at: nextIndexPath)
     }
 
+    func indexPathForItemAtMouseLocation(_ location: NSPoint) -> IndexPath? {
+        guard let point = mouseLocationInsideBounds(location), let indexPath = indexPathForItem(at: point) else {
+            return nil
+        }
+
+        return indexPath
+    }
+
     // MARK: - Accessibility
 
     open override func accessibilityChildren() -> [Any]? {

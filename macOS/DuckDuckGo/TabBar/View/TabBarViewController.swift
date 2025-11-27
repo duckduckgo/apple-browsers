@@ -599,8 +599,13 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private func selectTab(with event: NSEvent) {
         let locationInWindow = event.locationInWindow
 
-        if let point = collectionView.mouseLocationInsideBounds(locationInWindow), let indexPath = collectionView.indexPathForItem(at: point) {
+        if let indexPath = collectionView.indexPathForItemAtMouseLocation(locationInWindow) {
             tabCollectionViewModel.select(at: .unpinned(indexPath.item))
+            return
+        }
+
+        if let indexPath = pinnedTabsCollectionView?.indexPathForItemAtMouseLocation(locationInWindow) {
+            tabCollectionViewModel.select(at: .pinned(indexPath.item))
         }
     }
 

@@ -248,14 +248,14 @@ final class SuggestionTableCellView: NSTableCellView {
             textField?.attributedStringValue = attributedString
             textField?.textColor = Constants.selectedTintColor
             suffixTextField.textColor = theme?.palette.accentContentSecondary ?? Constants.selectedTintColor
-            switchToTabLabel.textColor = Constants.selectedTintColor
-            switchToTabArrowView.contentTintColor = Constants.selectedTintColor
+            switchToTabLabel.textColor = theme?.palette.accentContentSecondary ?? Constants.selectedTintColor
+            switchToTabArrowView.contentTintColor = theme?.palette.accentContentSecondary ?? Constants.selectedTintColor
             switchToTabBox.backgroundColor = usesTransparentBox ? .clear : .white.withAlphaComponent(0.09)
         } else {
             textField?.attributedStringValue = attributedString
             textField?.textColor = theme?.colorsProvider.addressBarTextFieldColor ?? Constants.textColor
-            switchToTabLabel.textColor = Constants.textColor
-            switchToTabArrowView.contentTintColor = Constants.textColor
+            switchToTabLabel.textColor = theme?.palette.accentPrimary ?? Constants.textColor
+            switchToTabArrowView.contentTintColor = theme?.palette.accentPrimary ?? Constants.textColor
             switchToTabBox.backgroundColor = usesTransparentBox ? .clear : .buttonMouseOver
             if isBurner {
                 suffixTextField.textColor = Constants.burnerSuffixColor

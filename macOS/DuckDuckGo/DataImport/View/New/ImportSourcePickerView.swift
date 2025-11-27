@@ -30,7 +30,7 @@ struct ImportSourcePickerView: View {
     let selectableImportTypes: [DataImport.DataType]
 
     let onExpandedStateChanged: (Bool) -> Void
-    
+
     init(availableSources: [DataImport.Source],
          selectedSource: DataImport.Source,
          selectedImportTypes: [DataImport.DataType],

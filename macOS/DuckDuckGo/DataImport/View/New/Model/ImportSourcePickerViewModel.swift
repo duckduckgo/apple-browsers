@@ -76,7 +76,7 @@ final class ImportSourcePickerViewModel: ObservableObject {
         self.isPickerExpanded = initialPickerExpanded
         typeButtonTitle = Self.titleFor(selectedImportTypes: selectedImportTypes)
         importTypeItems = Self.makeImportTypeItems(selectableTypes: selectableImportTypes, selectedTypes: selectedImportTypes)
-        
+
         ensurePickerExpandedIfNeeded()
     }
 
@@ -99,7 +99,7 @@ final class ImportSourcePickerViewModel: ObservableObject {
     private var collapsedOptions: [DataImport.Source] {
         Array(availableImportSources[0..<min(availableImportSources.count, Constants.minVisibleOptions)])
     }
-    
+
     private func ensurePickerExpandedIfNeeded() {
         if visibleOptions.contains(selectedSource) == false {
             isPickerExpanded = true

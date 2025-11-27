@@ -191,6 +191,7 @@ struct DataImportViewModel {
          availableImportSources: [DataImport.Source] = DataImport.Source.allCases.filter { $0.canImportData },
          preferredImportSources: [Source] = [.chrome, .firefox, .safari],
          summary: [DataTypeImportResult] = [],
+         selectedDataTypes: Set<DataType>? = nil,
          isPickerExpanded: Bool = false,
          isPasswordManagerAutolockEnabled: Bool = AutofillPreferences().isAutoLockEnabled,
          syncFeatureVisibility: SyncFeatureVisibility = .hide,
@@ -223,8 +224,12 @@ struct DataImportViewModel {
         let selectedProfile = self.browserProfiles?.defaultProfile
         self.selectedProfile = selectedProfile
 
-        self.selectableImportTypes = importSource.supportedDataTypes.filter { selectedProfile?.hasValidProfileData(for: $0) ?? true }
-        self.selectedDataTypes = selectableImportTypes
+        let availableImportTypes = importSource.supportedDataTypes.filter { selectedProfile?.hasValidProfileData(for: $0) ?? true }
+        self.selectableImportTypes = availableImportTypes
+        self.selectedDataTypes = Self.determineSelectedDataTypes(
+            previousSelectedTypes: selectedDataTypes,
+            availableTypes: availableImportTypes
+        )
 
         self.summary = summary
         self.isPickerExpanded = isPickerExpanded
@@ -559,6 +564,24 @@ extension DataImport.DataType {
 
 extension DataImportViewModel {
 
+    /// Determines the selected data types when switching import sources.
+    /// - Parameters:
+    ///   - previousSelectedTypes: Types that were selected in the previous import source, if any
+    ///   - availableTypes: Types available for the new import source
+    /// - Returns: The newly selected data types based on the following logic:
+    ///   - Preserve previous selections, filtered to available types in the new source.
+    ///   - If none of the previously selected types are available, fallback to select all available types.
+    ///   - If no previous selection exists, default to all available types.
+    static func determineSelectedDataTypes(previousSelectedTypes: Set<DataType>?, availableTypes: Set<DataType>) -> Set<DataType> {
+        guard let previousSelectedTypes else {
+            return availableTypes
+        }
+
+        let availablePreviousTypes = Set(previousSelectedTypes.filter { availableTypes.contains($0) })
+
+        return availablePreviousTypes.isEmpty ? availableTypes : availablePreviousTypes
+    }
+
     private var areAllSelectedDataTypesSuccessfullyImported: Bool {
         selectedDataTypes.allSatisfy(isDataTypeSuccessfullyImported)
     }
@@ -765,6 +788,7 @@ extension DataImportViewModel {
 
     mutating func update(with importSource: Source) {
         self = .init(importSource: importSource,
+                     selectedDataTypes: self.selectedDataTypes,
                      isPickerExpanded: self.isPickerExpanded,
                      isPasswordManagerAutolockEnabled: isPasswordManagerAutolockEnabled,
                      syncFeatureVisibility: syncFeatureVisibility,

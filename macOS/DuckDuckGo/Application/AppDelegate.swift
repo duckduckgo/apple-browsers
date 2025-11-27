@@ -980,7 +980,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let errorHandler = AttributedMetricErrorHandler(pixelKit: PixelKit.shared)
         let attributedMetricDataStorage = AttributedMetricDataStorage(userDefaults: .appConfiguration,
                                                                       errorHandler: errorHandler)
-        let bucketsSettingsProvider = DefaultBucketsSettingsProvider(privacyConfig: privacyConfigurationManager.privacyConfig)
+        let settingsProvider = DefaultAttributedMetricSettingsProvider(privacyConfig: privacyConfigurationManager.privacyConfig)
         let subscriptionStateProvider = DefaultSubscriptionStateProvider(subscriptionManager: subscriptionAuthV1toV2Bridge)
         let defaultBrowserProvider = SystemDefaultBrowserProvider()
         self.attributedMetricManager = AttributedMetricManager(pixelKit: PixelKit.shared,
@@ -989,7 +989,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                originProvider: AttributedMetricOriginFileProvider(),
                                                                defaultBrowserProviding: defaultBrowserProvider,
                                                                subscriptionStateProvider: subscriptionStateProvider,
-                                                               bucketsSettingsProvider: bucketsSettingsProvider)
+                                                               settingsProvider: settingsProvider)
         self.attributedMetricManager.addNotificationsObserver()
 
         super.init()

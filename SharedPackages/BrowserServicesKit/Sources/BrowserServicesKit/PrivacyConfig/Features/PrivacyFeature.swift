@@ -516,6 +516,7 @@ public enum AttributedMetricsSubfeature: String, PrivacySubfeature {
     case canEmitSubscriptionRetention
     case syncDevices
     case canEmitSyncDevices
+    case sendOriginParam
 }
 
 public enum DataImportSubfeature: String, PrivacySubfeature {

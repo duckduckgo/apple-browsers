@@ -88,7 +88,7 @@ final class SuggestionTableCellView: NSTableCellView {
     static let searchTheWebAttributedString: NSAttributedString = {
         let text = UserText.searchTheWeb
         let attributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 11, weight: .regular),
+            .font: NSFont.systemFont(ofSize: 11, weight: .semibold),
             .kern: 0.06,
         ]
 
@@ -100,7 +100,7 @@ final class SuggestionTableCellView: NSTableCellView {
     static let chatWithAIAttributedString: NSAttributedString = {
         let text = UserText.aiChatChatWithAITooltip
         let attributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 11, weight: .regular),
+            .font: NSFont.systemFont(ofSize: 11, weight: .semibold),
             .kern: 0.06,
         ]
 

@@ -501,23 +501,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             }
     }
 
-    private func pinnedTabsViewDidUpdateHoveredItem(to index: Int?) {
-        if let index {
-            showPinnedTabPreview(at: index)
-        } else if !shouldDisplayTabPreviews {
-            hideTabPreview(allowQuickRedisplay: true)
-        }
-    }
-
-    private func deselectTabAndSelectPinnedTab(at index: Int) {
-        hideTabPreview()
-        if tabCollectionViewModel.selectionIndex != .pinned(index), tabCollectionViewModel.select(at: .pinned(index)) {
-            let previousSelection = collectionView.selectionIndexPaths
-            clearSelection(animated: true)
-            collectionView.reloadItems(at: previousSelection)
-        }
-    }
-
     // MARK: - Actions
 
     @objc func addButtonAction(_ sender: NSButton) {

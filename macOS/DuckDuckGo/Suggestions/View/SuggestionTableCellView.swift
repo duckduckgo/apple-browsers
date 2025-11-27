@@ -247,7 +247,7 @@ final class SuggestionTableCellView: NSTableCellView {
         if isSelected {
             textField?.attributedStringValue = attributedString
             textField?.textColor = Constants.selectedTintColor
-            suffixTextField.textColor = Constants.selectedTintColor
+            suffixTextField.textColor = theme?.palette.accentContentSecondary ?? Constants.selectedTintColor
             switchToTabLabel.textColor = Constants.selectedTintColor
             switchToTabArrowView.contentTintColor = Constants.selectedTintColor
             switchToTabBox.backgroundColor = usesTransparentBox ? .clear : .white.withAlphaComponent(0.09)
@@ -260,7 +260,7 @@ final class SuggestionTableCellView: NSTableCellView {
             if isBurner {
                 suffixTextField.textColor = Constants.burnerSuffixColor
             } else {
-                suffixTextField.textColor = theme?.colorsProvider.addressBarSuffixTextColor ?? Constants.suffixColor
+                suffixTextField.textColor = theme?.palette.accentPrimary ?? Constants.suffixColor
             }
         }
 

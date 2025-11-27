@@ -28,7 +28,7 @@ protocol AIChatUserScriptProviding: AnyObject {
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling)
     func submitStartChatAction()
     func submitOpenSettingsAction()
-    func submitOpenHistoryAction()
+    func submitToggleSidebarAction()
 }
 
 extension AIChatUserScript: AIChatUserScriptProviding { }
@@ -62,8 +62,8 @@ protocol AIChatContentHandling {
     /// Submits an open settings action to open the AI Chat settings.
     func submitOpenSettingsAction()
     
-    /// Submits an open history action to open the AI Chat history.
-    func submitOpenHistoryAction()
+    /// Submits a toggle sidebar action to open/close the sidebar.
+    func submitToggleSidebarAction()
 }
 
 final class AIChatContentHandler: AIChatContentHandling {
@@ -139,9 +139,9 @@ final class AIChatContentHandler: AIChatContentHandling {
         userScript?.submitOpenSettingsAction()
     }
 
-    /// Submits an open history action to open the AI Chat history.
-    func submitOpenHistoryAction() {
-        userScript?.submitOpenHistoryAction()
+    /// Submits a toggle sidebar action to open/close the sidebar.
+    func submitToggleSidebarAction() {
+        userScript?.submitToggleSidebarAction()
     }
 }
 

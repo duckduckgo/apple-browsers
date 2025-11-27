@@ -2932,6 +2932,8 @@
 		B643BF1427ABF772000BACEC /* NSWorkspaceExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B643BF1327ABF772000BACEC /* NSWorkspaceExtension.swift */; };
 		B644B43D29D56829003FA9AB /* SearchNonexistentDomainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B644B43929D565DB003FA9AB /* SearchNonexistentDomainTests.swift */; };
 		B644B43E29D5682B003FA9AB /* SearchNonexistentDomainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B644B43929D565DB003FA9AB /* SearchNonexistentDomainTests.swift */; };
+		B6F6B0022F1E1C2C00A1B2C3 /* WindowOpenSecurityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6F6B0012F1E1C2C00A1B2C3 /* WindowOpenSecurityTests.swift */; };
+		B6F6B0032F1E1C2C00A1B2C3 /* WindowOpenSecurityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6F6B0012F1E1C2C00A1B2C3 /* WindowOpenSecurityTests.swift */; };
 		B645D8F629FA95440024461F /* WKProcessPoolExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B645D8F529FA95440024461F /* WKProcessPoolExtension.swift */; };
 		B645D8F729FA95440024461F /* WKProcessPoolExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B645D8F529FA95440024461F /* WKProcessPoolExtension.swift */; };
 		B647EFBB2922584B00BA628D /* AdClickAttributionTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B647EFBA2922584B00BA628D /* AdClickAttributionTabExtension.swift */; };
@@ -5604,6 +5606,7 @@
 		B642738127B65BAC0005DFD1 /* SecureVaultReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureVaultReporter.swift; sourceTree = "<group>"; };
 		B643BF1327ABF772000BACEC /* NSWorkspaceExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSWorkspaceExtension.swift; sourceTree = "<group>"; };
 		B644B43929D565DB003FA9AB /* SearchNonexistentDomainTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchNonexistentDomainTests.swift; sourceTree = "<group>"; };
+		B6F6B0012F1E1C2C00A1B2C3 /* WindowOpenSecurityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowOpenSecurityTests.swift; sourceTree = "<group>"; };
 		B645D8F529FA95440024461F /* WKProcessPoolExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WKProcessPoolExtension.swift; sourceTree = "<group>"; };
 		B647EFBA2922584B00BA628D /* AdClickAttributionTabExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdClickAttributionTabExtension.swift; sourceTree = "<group>"; };
 		B64C84DD2692D7400048FEBE /* PermissionAuthorization.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = PermissionAuthorization.storyboard; sourceTree = "<group>"; };
@@ -10816,6 +10819,7 @@
 				B693766D2B6B5F26005BD9D4 /* ErrorPageTests.swift */,
 				56A054322C205814007D8FAB /* OnboardingPageTests.swift */,
 				B644B43929D565DB003FA9AB /* SearchNonexistentDomainTests.swift */,
+				B6F6B0012F1E1C2C00A1B2C3 /* WindowOpenSecurityTests.swift */,
 			);
 			path = Tab;
 			sourceTree = "<group>";
@@ -15036,6 +15040,7 @@
 				B62A234129C41D4400D22475 /* HistoryIntegrationTests.swift in Sources */,
 				8434E6B32DB0148C008FFA3D /* BookmarksBarViewModelTests.swift in Sources */,
 				B644B43E29D5682B003FA9AB /* SearchNonexistentDomainTests.swift in Sources */,
+				B6F6B0032F1E1C2C00A1B2C3 /* WindowOpenSecurityTests.swift in Sources */,
 				8477AF2D2EBB440D00849EA5 /* DownloadsWebViewMock.swift in Sources */,
 				3706FEA5293F662100E42796 /* CoreDataEncryptionTesting.xcdatamodeld in Sources */,
 				845063542DB76FC900A60B56 /* DownloadListCoordinatorTests.swift in Sources */,
@@ -15080,6 +15085,7 @@
 				B62A234029C41D4400D22475 /* HistoryIntegrationTests.swift in Sources */,
 				8477AF2E2EBB440D00849EA5 /* DownloadsWebViewMock.swift in Sources */,
 				B644B43D29D56829003FA9AB /* SearchNonexistentDomainTests.swift in Sources */,
+				B6F6B0022F1E1C2C00A1B2C3 /* WindowOpenSecurityTests.swift in Sources */,
 				845063532DB76FC900A60B56 /* DownloadListCoordinatorTests.swift in Sources */,
 				B64CE01E2B8622D700126CA5 /* AddressBarTests.swift in Sources */,
 				84E4A4972E79BDDC00D6A1E7 /* FireMock.swift in Sources */,

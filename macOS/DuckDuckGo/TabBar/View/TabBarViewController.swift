@@ -957,17 +957,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         }
     }
 
-    private func showPinnedTabPreview(at index: Int) {
-        guard let tabViewModel = tabCollectionViewModel.pinnedTabsManager?.tabViewModel(at: index) else {
-            Logger.general.error("TabBarViewController: Showing pinned tab preview window failed")
-            return
-        }
-
-        let pinnedTabWidth = theme.tabStyleProvider.pinnedTabWidth
-        let position = pinnedTabsContainerView.frame.minX + pinnedTabWidth * CGFloat(index)
-        showTabPreview(for: tabViewModel, from: position)
-    }
-
     private func showTabPreview(for tabViewModel: TabViewModel, from xPosition: CGFloat) {
         guard shouldDisplayTabPreviews else {
             Logger.tabPreview.error("Not showing tab preview: shouldDisplayTabPreviews == false")

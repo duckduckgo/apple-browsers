@@ -25,15 +25,6 @@ import AppKit
 ///
 final class FaviconImageView: NSImageView {
 
-    /// Forces our Custom Drawing mechanism
-    /// - Important: Meant only for CI usage, where we're still running Sequoia
-    ///
-    var forceCustomDrawing = false {
-        didSet {
-            needsDisplay = true
-        }
-    }
-
     override func draw(_ dirtyRect: NSRect) {
         guard requiresCustomDrawing, let image, let context = NSGraphicsContext.current else {
             super.draw(dirtyRect)
@@ -55,7 +46,7 @@ final class FaviconImageView: NSImageView {
     }
 
     private var requiresCustomDrawing: Bool {
-        isRunningMacOsTahoeOrLater && isStandardDefinitionWindow || forceCustomDrawing
+        isRunningMacOsTahoeOrLater && isStandardDefinitionWindow
     }
 
     private var isStandardDefinitionWindow: Bool {

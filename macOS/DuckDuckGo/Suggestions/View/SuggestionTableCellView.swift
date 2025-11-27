@@ -63,7 +63,7 @@ final class SuggestionTableCellView: NSTableCellView {
     private lazy var keyboardShortcutView: KeyboardShortcutView = {
         let view = KeyboardShortcutView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.configure(with: ["⌥", "↩"])
+        view.configure(with: ["⌃", "⏎"])
         return view
     }()
 

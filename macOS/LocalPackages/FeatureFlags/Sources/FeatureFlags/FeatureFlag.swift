@@ -298,6 +298,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Show popup permission button in inactive state when temporary allowance is active
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212017701300919?focus=true
     case popupPermissionButtonPersistence
+
+    /// Tab closing event recreation (failsafe for removing private API)
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212206087745586?focus=true
+    case tabClosingEventRecreation
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -326,7 +330,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .allowPopupsForCurrentPage,
                 .extendedUserInitiatedPopupTimeout,
                 .suppressEmptyPopUpsOnApproval,
-                .popupPermissionButtonPersistence:
+                .popupPermissionButtonPersistence,
+                .tabClosingEventRecreation:
             true
         default:
             false
@@ -431,7 +436,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .credentialsImportPromotionForExistingUsers,
                 .scheduledSetDefaultBrowserAndAddToDockPrompts,
                 .fireDialogIndividualSitesLink,
-                .scheduledDefaultBrowserAndDockPromptsInactiveUser:
+                .scheduledDefaultBrowserAndDockPromptsInactiveUser,
+                .tabClosingEventRecreation:
             return false
         }
     }
@@ -616,6 +622,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PopupBlockingSubfeature.allowPopupsForCurrentPage))
         case .popupPermissionButtonPersistence:
             return .remoteReleasable(.subfeature(PopupBlockingSubfeature.popupPermissionButtonPersistence))
+        case .tabClosingEventRecreation:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.tabClosingEventRecreation))
         }
     }
 }

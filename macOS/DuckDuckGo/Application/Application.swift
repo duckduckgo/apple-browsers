@@ -17,15 +17,18 @@
 //
 
 import AppKit
-import Common
-import Foundation
+import BrowserServicesKit
 import Combine
+import Common
+import FeatureFlags
+import Foundation
 
 @objc(Application)
 final class Application: NSApplication {
 
     public static var appDelegate: AppDelegate! // swiftlint:disable:this weak_delegate
     private var fireWindowPreferenceCancellable: AnyCancellable?
+    private var featureFlagger: FeatureFlagger { delegateTyped.featureFlagger }
 
     override init() {
         super.init()
@@ -121,7 +124,9 @@ final class Application: NSApplication {
 
         // Handle the hack to reset the click count to 1 for the next incoming mouse event of the given type.
         var event = event
-        if let expectedEventType = shouldResetClickCountForNextEventOfType, event.type == expectedEventType {
+        if featureFlagger.isFeatureOn(.tabClosingEventRecreation),
+           let expectedEventType = shouldResetClickCountForNextEventOfType,
+           event.type == expectedEventType {
             if event.clickCount > 1 {
                 event = {
                     guard let cg = event.cgEvent?.copy() else { return event }

@@ -64,6 +64,7 @@ final class MobileCustomizationTests {
 
     @Test("Validate initial state on phone when feature is enabled")
     func initialStateOnPhoneWhenFeatureIsEnabled() {
+        #expect(false)
         let keyValueStore = MockThrowingKeyValueStore()
         let customization = MobileCustomization(isFeatureEnabled: true,
                                                 keyValueStore: keyValueStore,

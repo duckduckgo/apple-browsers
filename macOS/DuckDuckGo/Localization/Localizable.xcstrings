@@ -3738,9 +3738,6 @@
         }
       }
     },
-    "Allow" : {
-
-    },
     "allow.integration" : {
       "comment" : "Setup of the integration with Bitwarden app",
       "extractionState" : "extracted_with_value",
@@ -42562,6 +42559,18 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Choose where to import from"
+          }
+        }
+      }
+    },
+    "import.chrome.allow-keychain.allow.button.title" : {
+      "comment" : "Button title of example dialog demonstrating to the user what to click when the system needs to access their Keychain.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow"
           }
         }
       }

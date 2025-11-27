@@ -19,6 +19,7 @@
 import Foundation
 import SwiftUI
 import DesignResourcesKit
+import AppKit
 
 struct NewImportMoreInfoView: View {
     @State private var showPopover = false
@@ -33,17 +34,21 @@ struct NewImportMoreInfoView: View {
             }
             .frame(width: Metrics.containerImageWidth)
             .padding(EdgeInsets(top: Metrics.largeOuterPadding, leading: Metrics.largeOuterPadding, bottom: Metrics.itemHeight, trailing: Metrics.largeOuterPadding))
-            .popover(isPresented: $showPopover, arrowEdge: .bottom) {
-                if #available(macOS 12, *), let attr = try? AttributedString(markdown: UserText.importChromeAllowKeychainIntructions) {
-                    Text(attr)
-                        .padding()
-                        .frame(width: Metrics.popoverContentWidth)
-                } else {
-                    Text(UserText.importChromeAllowKeychainIntructions)
-                        .padding()
-                        .frame(width: Metrics.popoverContentWidth)
+            .overlay(
+                ProgrammaticallyDismissedPopover(
+                    isPresented: $showPopover,
+                ) {
+                    if #available(macOS 12, *), let attr = try? AttributedString(markdown: UserText.importChromeAllowKeychainIntructions) {
+                        Text(attr)
+                            .padding()
+                            .frame(width: 280)
+                    } else {
+                        Text(UserText.importChromeAllowKeychainIntructions) // fallback
+                            .padding()
+                            .frame(width: 280)
+                    }
                 }
-            }
+            )
         }
         .padding(.bottom, Metrics.imageBottomPadding)
         .onAppear {
@@ -123,4 +128,45 @@ private extension NewImportMoreInfoView {
 
 #Preview {
     NewImportMoreInfoView()
+}
+
+/// A popover that can be dismissed programmatically, so we can prevent it from being dismissed by clicking outside of it.
+/// (This can't be done with a SwiftUI popover directly)
+///
+private struct ProgrammaticallyDismissedPopover<Content: View>: NSViewRepresentable {
+    @Binding var isPresented: Bool
+    let content: () -> Content
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        if isPresented {
+            if context.coordinator.popover == nil {
+                let hostingController = NSHostingController(rootView: content())
+                hostingController.view.frame = CGRect(origin: .zero, size: hostingController.view.intrinsicContentSize)
+                
+                let popover = NSPopover()
+                popover.contentViewController = hostingController
+                popover.behavior = .applicationDefined
+                popover.animates = true
+                
+                context.coordinator.popover = popover
+                popover.show(relativeTo: nsView.bounds, of: nsView, preferredEdge: .minY)
+            }
+        } else {
+            context.coordinator.popover?.close()
+            context.coordinator.popover = nil
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    class Coordinator: NSObject {
+        var popover: NSPopover?
+    }
 }

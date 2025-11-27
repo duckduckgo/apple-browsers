@@ -60,8 +60,6 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     /// The `DataBrokerProtectionFreemiumPixelHandler` instance used to fire pixels
     private let dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels>
 
-    private let featureFlagger: FeatureFlagger
-
     public init(subscriptionManager: SubscriptionManager,
                 subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandling = SubscriptionAttributionPixelHandler(),
                 stripePurchaseFlow: StripePurchaseFlow,
@@ -69,8 +67,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 subscriptionFeatureAvailability: SubscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(),
                 freemiumDBPUserStateManager: FreemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp),
                 notificationCenter: NotificationCenter = .default,
-                dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> = DataBrokerProtectionFreemiumPixelHandler(),
-                featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+                dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> = DataBrokerProtectionFreemiumPixelHandler()) {
         self.subscriptionManager = subscriptionManager
         self.stripePurchaseFlow = stripePurchaseFlow
         self.subscriptionSuccessPixelHandler = subscriptionSuccessPixelHandler
@@ -79,7 +76,6 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         self.notificationCenter = notificationCenter
         self.dataBrokerProtectionFreemiumPixelHandler = dataBrokerProtectionFreemiumPixelHandler
-        self.featureFlagger = featureFlagger
     }
 
     func with(broker: UserScriptMessageBroker) {
@@ -181,18 +177,13 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     }
 
     func getSubscriptionOptions(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        var subscriptionOptions = SubscriptionOptions.empty
+        var subscriptionOptions: SubscriptionOptions?
 
         switch subscriptionPlatform {
         case .appStore:
             guard #available(macOS 12.0, *) else { break }
 
-            if featureFlagger.isFeatureOn(.privacyProFreeTrial),
-               let freeTrialOptions = await freeTrialSubscriptionOptions() {
-                subscriptionOptions = freeTrialOptions
-            } else if let appStoreSubscriptionOptions = await subscriptionManager.storePurchaseManager().subscriptionOptions() {
-                subscriptionOptions = appStoreSubscriptionOptions
-            }
+            subscriptionOptions = await subscriptionManager.storePurchaseManager().subscriptionOptions()
         case .stripe:
             switch await stripePurchaseFlow.subscriptionOptions() {
             case .success(let stripeSubscriptionOptions):
@@ -202,9 +193,12 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             }
         }
 
-        guard subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed else { return subscriptionOptions.withoutPurchaseOptions() }
-
-        return subscriptionOptions
+        if let subscriptionOptions {
+            guard subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed else { return subscriptionOptions.withoutPurchaseOptions() }
+            return subscriptionOptions
+        } else {
+            return SubscriptionOptions.empty
+        }
     }
 
     func subscriptionSelected(params: Any, original: WKScriptMessage) async throws -> Encodable? {
@@ -576,18 +570,5 @@ private extension SubscriptionPagesUseSubscriptionFeature {
         if freemiumDBPUserStateManager.didActivate && freemiumDBPUserStateManager.upgradeToSubscriptionTimestamp == nil {
             freemiumDBPUserStateManager.upgradeToSubscriptionTimestamp = Date()
         }
-    }
-
-    /// Retrieves free trial subscription options for App Store.
-    ///
-    /// - Returns: A `SubscriptionOptions` object containing the relevant subscription options, or nil if unavailable.
-    ///   If free trial options are unavailable, falls back to standard subscription options.
-    ///   This fallback could occur if the Free Trial offer in AppStoreConnect had an end date in the past.
-    @available(macOS 12.0, *)
-    func freeTrialSubscriptionOptions() async -> SubscriptionOptions? {
-        guard let options = await subscriptionManager.storePurchaseManager().freeTrialSubscriptionOptions() else {
-            return await subscriptionManager.storePurchaseManager().subscriptionOptions()
-        }
-        return options
     }
 }

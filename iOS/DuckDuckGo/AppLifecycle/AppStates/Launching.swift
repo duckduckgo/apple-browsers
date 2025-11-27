@@ -84,7 +84,7 @@ struct Launching: LaunchingHandling {
         let reportingService = ReportingService(fireproofing: fireproofing,
                                                 featureFlagging: featureFlagger,
                                                 userDefaults: UserDefaults.app,
-                                                pixelKit: PixelKit.shared!,
+                                                pixelKit: PixelKit.shared,
                                                 appDependencies: AppDependencyProvider.shared,
                                                 privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager)
         let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,

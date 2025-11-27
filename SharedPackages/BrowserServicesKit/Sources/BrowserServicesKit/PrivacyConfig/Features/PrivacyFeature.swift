@@ -378,10 +378,8 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case allowPurchase
     case allowPurchaseStripe
     case useUnifiedFeedback
-    case privacyProFreeTrialJan25
     case privacyProAuthV2
     case privacyProOnboardingPromotion
-    case privacyProFreeTrial
     case paidAIChat
     case vpnToolbarUpsell
     case supportsAlternateStripePaymentFlow
@@ -522,6 +520,7 @@ public enum AttributedMetricsSubfeature: String, PrivacySubfeature {
     case canEmitSubscriptionRetention
     case syncDevices
     case canEmitSyncDevices
+    case sendOriginParam
 }
 
 public enum DataImportSubfeature: String, PrivacySubfeature {

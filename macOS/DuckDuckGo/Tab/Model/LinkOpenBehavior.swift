@@ -92,3 +92,12 @@ enum LinkOpenBehavior: Equatable {
     }
 
 }
+extension LinkOpenBehavior: CustomStringConvertible {
+    var description: String {
+        switch self {
+        case .currentTab: return "currentTab"
+        case .newTab(selected: let selected): return "newTab" + (selected ? " (selected)" : "")
+        case .newWindow(selected: let selected): return "newWindow" + (selected ? " (selected)" : "")
+        }
+    }
+}

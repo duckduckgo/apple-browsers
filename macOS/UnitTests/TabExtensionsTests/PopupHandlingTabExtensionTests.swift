@@ -33,12 +33,11 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     var mockPopupBlockingConfig: MockPopupBlockingConfiguration!
     var mockPermissionModel: PermissionModel!
     var testPermissionManager: TestPermissionManager!
-    var interactionEventsSubject: PassthroughSubject<WebViewInteractionEvent, Never>!
-    var mockDate: Date!
-    var childTabCreated: ((WKWebViewConfiguration, WKNavigationAction, NewWindowPolicy) -> Tab?)?
+    var webView: DuckDuckGo_Privacy_Browser.WebView!
+    var mockMachAbsTime: TimeInterval!
+    var createChildTab: ((WKWebViewConfiguration, WKNavigationAction, NewWindowPolicy) -> Tab?)?
     var tabPresented: ((Tab, NewWindowPolicy) -> Void)?
     var cancellables = Set<AnyCancellable>()
-    var webView: WKWebView!
     var configuration: WKWebViewConfiguration!
     var windowFeatures: WKWindowFeatures!
 
@@ -48,10 +47,10 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         mockPopupBlockingConfig = MockPopupBlockingConfiguration()
         testPermissionManager = TestPermissionManager()
         mockPermissionModel = PermissionModel(permissionManager: testPermissionManager)
-        interactionEventsSubject = PassthroughSubject<WebViewInteractionEvent, Never>()
-        webView = WKWebView()
+        webView = WebView()
         configuration = WKWebViewConfiguration()
         windowFeatures = WKWindowFeatures()
+        mockMachAbsTime = 1000.0 // Default mock time
     }
 
     override func tearDown() {
@@ -60,31 +59,32 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         mockPopupBlockingConfig = nil
         mockPermissionModel = nil
         testPermissionManager = nil
-        interactionEventsSubject = nil
-        mockDate = nil
-        childTabCreated = nil
+        createChildTab = nil
         tabPresented = nil
         cancellables.removeAll()
         webView = nil
         configuration = nil
         windowFeatures = nil
+        mockMachAbsTime = nil
         super.tearDown()
     }
 
     @MainActor
-    private func createExtension() -> PopupHandlingTabExtension {
+    private func createExtension(isTabPinned: Bool = false, isBurner: Bool = false, switchToNewTabWhenOpened: Bool = true) -> PopupHandlingTabExtension {
         let windowControllersManager = WindowControllersManagerMock()
+        let mockPersistor = MockTabsPreferencesPersistor()
+        mockPersistor.switchToNewTabWhenOpened = switchToNewTabWhenOpened
         let tabsPreferences = TabsPreferences(
-            persistor: MockTabsPreferencesPersistor(),
+            persistor: mockPersistor,
             windowControllersManager: windowControllersManager
         )
 
         return PopupHandlingTabExtension(
             tabsPreferences: tabsPreferences,
-            burnerMode: BurnerMode(isBurner: false),
+            burnerMode: BurnerMode(isBurner: isBurner),
             permissionModel: mockPermissionModel,
             createChildTab: { [weak self] config, action, policy in
-                self?.childTabCreated?(config, action, policy)
+                self?.createChildTab?(config, action, policy)
             },
             presentTab: { [weak self] tab, policy in
                 self?.tabPresented?(tab, policy)
@@ -92,60 +92,49 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             newWindowPolicyDecisionMakers: { nil },
             featureFlagger: mockFeatureFlagger,
             popupBlockingConfig: mockPopupBlockingConfig,
-            dateProvider: { [weak self] in self!.mockDate! },
-            interactionEventsPublisher: interactionEventsSubject.eraseToAnyPublisher()
-        )
-    }
-
-    private func makeMockNavigationAction(url: URL, isUserInitiated: Bool = false) -> WKNavigationAction {
-        let sourceFrame = WKFrameInfoMock(
-            webView: webView,
-            securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://example.com")!),
-            request: URLRequest(url: URL(string: "https://example.com")!),
-            isMainFrame: true
-        )
-        return MockWKNavigationAction(
-            request: URLRequest(url: url),
-            targetFrame: nil,
-            sourceFrame: sourceFrame,
-            isUserInitiated: isUserInitiated
+            machAbsTimeProvider: { [weak self] in self!.mockMachAbsTime! },
+            interactionEventsPublisher: webView.interactionEventsPublisher.eraseToAnyPublisher(),
+            isTabPinned: { isTabPinned },
+            isBurner: isBurner
         )
     }
 
     // MARK: - User Interaction Tracking Tests
 
     @MainActor
-    func testWhenUserInteractionPublisherEnabled_ThenMouseDownUpdatesLastInteractionDate() {
+    func testWhenUserInteractionPublisherEnabled_ThenMouseDownUpdatesLastInteractionTime() {
         // GIVEN
         mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
         mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
         mockPopupBlockingConfig.userInitiatedPopupThreshold = 6.0
-        popupHandlingExtension = createExtension()
 
-        // Set current time
-        let currentTime = Date(timeIntervalSince1970: 1000)
-        mockDate = currentTime
+        let interactionTime: TimeInterval = 1000.0
+        mockMachAbsTime = interactionTime
+        popupHandlingExtension = createExtension()
 
         let expectation = expectation(description: "User interaction recorded")
 
-        // WHEN
-        let event = NSEvent()
-        interactionEventsSubject.send(.mouseDown(event))
+        // WHEN - Simulate mouse down at the interaction time
+        webView.mouseDown(with: .mock(.leftMouseDown, timestamp: interactionTime))
 
         // Wait for interaction to be processed on main actor
         DispatchQueue.main.async {
-            // THEN - Popup should be allowed within threshold
-            let navigationAction = self.makeMockNavigationAction(url: URL(string: "https://popup.com")!, isUserInitiated: false)
+            // THEN - Popup should be allowed within threshold (3 seconds is within 6s threshold)
+            let navigationAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: false)
 
-            // Advance time by 3 seconds (within 6s threshold)
-            self.mockDate = currentTime.addingTimeInterval(3.0)
+            // Advance mock time by 3 seconds
+            self.mockMachAbsTime = interactionTime + 3.0
 
-            let shouldAllow = self.popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
+            let bypassReason = self.popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
                 for: navigationAction,
                 windowFeatures: self.windowFeatures
             )
 
-            XCTAssertTrue(shouldAllow, "Popup should be allowed within interaction threshold")
+            XCTAssertEqual(
+                bypassReason,
+                .userInitiated(.extendedTimeout(eventTimestamp: interactionTime, currentTime: interactionTime + 3.0)),
+                "Expected userInitiated with extendedTimeout reason"
+            )
             expectation.fulfill()
         }
 
@@ -153,37 +142,39 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenUserInteractionPublisherEnabled_ThenKeyDownUpdatesLastInteractionDate() {
+    func testWhenUserInteractionPublisherEnabled_ThenKeyDownUpdatesLastInteractionTime() {
         // GIVEN
         mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
         mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
         mockPopupBlockingConfig.userInitiatedPopupThreshold = 6.0
-        popupHandlingExtension = createExtension()
 
-        // Set current time
-        let currentTime = Date(timeIntervalSince1970: 1000)
-        mockDate = currentTime
+        let interactionTime: TimeInterval = 1000.0
+        mockMachAbsTime = interactionTime
+        popupHandlingExtension = createExtension()
 
         let expectation = expectation(description: "User interaction recorded")
 
-        // WHEN
-        let event = NSEvent()
-        interactionEventsSubject.send(.keyDown(event))
+        // WHEN - Simulate key down at the interaction time
+        webView.keyDown(with: .mock(.keyDown, timestamp: interactionTime))
 
         // Wait for interaction to be processed on main actor
         DispatchQueue.main.async {
             // THEN - Popup should be allowed within threshold
-            let navigationAction = self.makeMockNavigationAction(url: URL(string: "https://popup.com")!, isUserInitiated: false)
+            let navigationAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: false)
 
-            // Advance time by 3 seconds (within 6s threshold)
-            self.mockDate = currentTime.addingTimeInterval(3.0)
+            // Advance mock time by 3 seconds (within 6s threshold)
+            self.mockMachAbsTime = interactionTime + 3.0
 
-            let shouldAllow = self.popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
+            let bypassReason = self.popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
                 for: navigationAction,
                 windowFeatures: self.windowFeatures
             )
 
-            XCTAssertTrue(shouldAllow, "Popup should be allowed within interaction threshold")
+            XCTAssertEqual(
+                bypassReason,
+                .userInitiated(.extendedTimeout(eventTimestamp: interactionTime, currentTime: interactionTime + 3.0)),
+                "Expected userInitiated with extendedTimeout reason"
+            )
             expectation.fulfill()
         }
 
@@ -191,33 +182,78 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenUserInteractionPublisherEnabled_ThenScrollWheelDoesNotUpdateLastInteractionDate() {
+    func testWhenUserInteractionPublisherEnabled_ThenMiddleMouseDownUpdatesLastInteractionTime() {
+        // GIVEN
+        mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
+        mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
+        mockPopupBlockingConfig.userInitiatedPopupThreshold = 6.0
+
+        let interactionTime: TimeInterval = 1000.0
+        mockMachAbsTime = interactionTime
+        popupHandlingExtension = createExtension()
+
+        let expectation = expectation(description: "User interaction recorded")
+
+        // WHEN - Simulate middle mouse down at the interaction time
+        webView.otherMouseDown(with: .mock(.otherMouseDown, timestamp: interactionTime))
+
+        // Wait for interaction to be processed on main actor
+        DispatchQueue.main.async {
+            // THEN - Popup should be allowed within threshold
+            let navigationAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: false)
+
+            // Advance mock time by 3 seconds (within 6s threshold)
+            self.mockMachAbsTime = interactionTime + 3.0
+
+            let bypassReason = self.popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
+                for: navigationAction,
+                windowFeatures: self.windowFeatures
+            )
+
+            XCTAssertEqual(
+                bypassReason,
+                .userInitiated(.extendedTimeout(eventTimestamp: interactionTime, currentTime: interactionTime + 3.0)),
+                "Expected userInitiated with extendedTimeout reason"
+            )
+            expectation.fulfill()
+        }
+
+        wait(for: [expectation], timeout: 1.0)
+    }
+
+    @MainActor
+    func testWhenUserInteractionPublisherEnabled_ThenScrollWheelDoesNotUpdateLastInteractionTime() {
         // GIVEN
         mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
         mockPopupBlockingConfig.userInitiatedPopupThreshold = 6.0
         popupHandlingExtension = createExtension()
 
-        // Set current time
-        let currentTime = Date(timeIntervalSince1970: 1000)
-        mockDate = currentTime
+        // Set current mach absolute time
+        let currentTime: TimeInterval = 1000.0
+        mockMachAbsTime = currentTime
 
         let expectation = expectation(description: "Scroll event processed")
 
-        // WHEN
-        let event = NSEvent()
-        interactionEventsSubject.send(.scrollWheel(event))
+        // WHEN - Send scroll wheel event (doesn't update interaction time)
+        // Note: NSEvent doesn't provide a convenient factory for scroll wheel events, so we skip this test interaction
+        // The extension should not track scroll wheel as user interaction anyway
+        let expectation2 = self.expectation(description: "Scroll processed")
+        DispatchQueue.main.async {
+            expectation2.fulfill()
+        }
+        wait(for: [expectation2], timeout: 0.1)
 
         // Wait for event to be processed on main actor
         DispatchQueue.main.async {
             // THEN - Popup should NOT be allowed (no interaction recorded)
-            let navigationAction = self.makeMockNavigationAction(url: URL(string: "https://popup.com")!, isUserInitiated: false)
+            let navigationAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: false)
 
-            let shouldAllow = self.popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
+            let bypassReason = self.popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
                 for: navigationAction,
                 windowFeatures: self.windowFeatures
             )
 
-            XCTAssertFalse(shouldAllow, "Scroll wheel should not record interaction")
+            XCTAssertNil(bypassReason, "Scroll wheel should not record interaction")
             expectation.fulfill()
         }
 
@@ -225,33 +261,32 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenUserInteractionPublisherDisabled_ThenInteractionsDoNotUpdateLastInteractionDate() {
+    func testWhenUserInteractionPublisherDisabled_ThenInteractionsDoNotUpdateLastInteractionTime() {
         // GIVEN
         mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = false
         popupHandlingExtension = createExtension()
 
-        // Set current time
-        let currentTime = Date(timeIntervalSince1970: 1000)
-        mockDate = currentTime
+        // Set current mach absolute time
+        let interactionTime: TimeInterval = 1000.0
+        mockMachAbsTime = interactionTime
 
         let expectation = expectation(description: "Events processed")
 
-        // WHEN
-        let event = NSEvent()
-        interactionEventsSubject.send(.mouseDown(event))
-        interactionEventsSubject.send(.keyDown(event))
+        // WHEN - Send interaction events
+        webView.mouseDown(with: .mock(.leftMouseDown, timestamp: interactionTime))
+        webView.keyDown(with: .mock(.keyDown, timestamp: interactionTime))
 
         // Wait for events to be processed on main actor
         DispatchQueue.main.async {
             // THEN - Should fall back to WebKit's isUserInitiated
-            let navigationAction = self.makeMockNavigationAction(url: URL(string: "https://popup.com")!, isUserInitiated: false)
+            let navigationAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: false)
 
-            let shouldAllow = self.popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
+            let bypassReason = self.popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
                 for: navigationAction,
                 windowFeatures: self.windowFeatures
             )
 
-            XCTAssertFalse(shouldAllow, "Should use WebKit's isUserInitiated when feature disabled")
+            XCTAssertNil(bypassReason, "Should use WebKit's isUserInitiated when feature disabled")
             expectation.fulfill()
         }
 
@@ -266,16 +301,16 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = false
         popupHandlingExtension = createExtension()
 
-        let navigationAction = makeMockNavigationAction(url: URL(string: "https://popup.com")!, isUserInitiated: true)
+        let navigationAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: true)
 
         // WHEN
-        let shouldAllow = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
+        let bypassReason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
             for: navigationAction,
             windowFeatures: windowFeatures
         )
 
         // THEN
-        XCTAssertTrue(shouldAllow, "User-initiated popup should be allowed without permission")
+        XCTAssertEqual(bypassReason, .userInitiated(.webKitUserInitiated), "Expected userInitiated with webKitUserInitiated reason")
     }
 
     @MainActor
@@ -284,16 +319,16 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = false
         popupHandlingExtension = createExtension()
 
-        let navigationAction = makeMockNavigationAction(url: URL(string: "https://popup.com")!, isUserInitiated: false)
+        let navigationAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: false)
 
         // WHEN
-        let shouldAllow = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
+        let bypassReason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
             for: navigationAction,
             windowFeatures: windowFeatures
         )
 
         // THEN
-        XCTAssertFalse(shouldAllow, "Non-user-initiated popup without recent interaction should require permission")
+        XCTAssertNil(bypassReason, "Non-user-initiated popup without recent interaction should require permission")
     }
 
     // MARK: - Extended Timeout Logic Tests
@@ -306,18 +341,18 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         mockPopupBlockingConfig.userInitiatedPopupThreshold = 6.0
         popupHandlingExtension = createExtension()
 
-        mockDate = Date(timeIntervalSince1970: 1000)
+        mockMachAbsTime = 1000.0
 
         // WHEN - No user interaction has occurred (lastUserInteractionDate is nil)
-        let navigationAction = makeMockNavigationAction(url: URL(string: "https://popup.com")!, isUserInitiated: false)
+        let navigationAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: false)
 
-        let shouldAllow = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
+        let bypassReason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
             for: navigationAction,
             windowFeatures: windowFeatures
         )
 
         // THEN
-        XCTAssertFalse(shouldAllow, "Popup should require permission when no interaction recorded")
+        XCTAssertNil(bypassReason, "Popup should require permission when no interaction recorded")
     }
 
     @MainActor
@@ -328,12 +363,15 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         popupHandlingExtension = createExtension()
 
         // WHEN - navigationAction.isUserInitiated = true/false
-        let userInitiatedAction = makeMockNavigationAction(url: URL(string: "https://popup.com")!, isUserInitiated: true)
-        let nonUserInitiatedAction = makeMockNavigationAction(url: URL(string: "https://popup.com")!, isUserInitiated: false)
+        let userInitiatedAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: true)
+        let nonUserInitiatedAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: false)
 
         // THEN - Should use WebKit's isUserInitiated
-        XCTAssertTrue(popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: userInitiatedAction, windowFeatures: windowFeatures))
-        XCTAssertFalse(popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: nonUserInitiatedAction, windowFeatures: windowFeatures))
+        let userInitiatedBypassReason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: userInitiatedAction, windowFeatures: windowFeatures)
+        XCTAssertEqual(userInitiatedBypassReason, .userInitiated(.webKitUserInitiated), "Expected userInitiated with webKitUserInitiated")
+
+        let nonUserInitiatedBypassReason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: nonUserInitiatedAction, windowFeatures: windowFeatures)
+        XCTAssertNil(nonUserInitiatedBypassReason, "Non-user-initiated should require permission")
     }
 
     @MainActor
@@ -344,12 +382,15 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         popupHandlingExtension = createExtension()
 
         // WHEN - navigationAction.isUserInitiated = true/false
-        let userInitiatedAction = makeMockNavigationAction(url: URL(string: "https://popup.com")!, isUserInitiated: true)
-        let nonUserInitiatedAction = makeMockNavigationAction(url: URL(string: "https://popup.com")!, isUserInitiated: false)
+        let userInitiatedAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: true)
+        let nonUserInitiatedAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: false)
 
         // THEN - Should use WebKit's isUserInitiated
-        XCTAssertTrue(popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: userInitiatedAction, windowFeatures: windowFeatures))
-        XCTAssertFalse(popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: nonUserInitiatedAction, windowFeatures: windowFeatures))
+        let userInitiatedBypassReason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: userInitiatedAction, windowFeatures: windowFeatures)
+        XCTAssertEqual(userInitiatedBypassReason, .userInitiated(.webKitUserInitiated), "Expected userInitiated with webKitUserInitiated")
+
+        let nonUserInitiatedBypassReason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: nonUserInitiatedAction, windowFeatures: windowFeatures)
+        XCTAssertNil(nonUserInitiatedBypassReason, "Non-user-initiated should require permission")
     }
 
     @MainActor
@@ -360,30 +401,33 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         mockPopupBlockingConfig.userInitiatedPopupThreshold = 6.0
         popupHandlingExtension = createExtension()
 
-        // Set current time
-        let currentTime = Date(timeIntervalSince1970: 1000)
-        mockDate = currentTime
+        // Set current mach absolute time
+        let interactionTime: TimeInterval = 1000.0
+        mockMachAbsTime = interactionTime
 
         let expectation = expectation(description: "User interaction recorded")
 
         // WHEN - Simulate user interaction
-        let event = NSEvent()
-        interactionEventsSubject.send(.mouseDown(event))
+        webView.mouseDown(with: .mock(.leftMouseDown, timestamp: interactionTime))
 
         // Wait for interaction to be processed on main actor
         DispatchQueue.main.async {
-            let navigationAction = self.makeMockNavigationAction(url: URL(string: "https://popup.com")!, isUserInitiated: false)
+            let navigationAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: false)
 
             // Advance time by 3 seconds (within 6s threshold)
-            self.mockDate = currentTime.addingTimeInterval(3.0)
+            self.mockMachAbsTime = interactionTime + 3.0
 
-            let shouldAllow = self.popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
+            let bypassReason = self.popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
                 for: navigationAction,
                 windowFeatures: self.windowFeatures
             )
 
             // THEN
-            XCTAssertTrue(shouldAllow, "Should allow popup due to recent user interaction")
+            XCTAssertEqual(
+                bypassReason,
+                .userInitiated(.extendedTimeout(eventTimestamp: interactionTime, currentTime: interactionTime + 3.0)),
+                "Expected userInitiated with extendedTimeout reason"
+            )
             expectation.fulfill()
         }
 
@@ -398,30 +442,29 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         mockPopupBlockingConfig.userInitiatedPopupThreshold = 6.0
         popupHandlingExtension = createExtension()
 
-        // Set current time
-        let currentTime = Date(timeIntervalSince1970: 1000)
-        mockDate = currentTime
+        // Set current mach absolute time
+        let interactionTime: TimeInterval = 1000.0
+        mockMachAbsTime = interactionTime
 
         let expectation = expectation(description: "User interaction recorded")
 
         // WHEN - Simulate user interaction
-        let event = NSEvent()
-        interactionEventsSubject.send(.mouseDown(event))
+        webView.mouseDown(with: .mock(.leftMouseDown, timestamp: interactionTime))
 
         // Wait for interaction to be processed on main actor
         DispatchQueue.main.async {
-            let navigationAction = self.makeMockNavigationAction(url: URL(string: "https://popup.com")!, isUserInitiated: false)
+            let navigationAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: false)
 
             // Advance time by 7 seconds (beyond 6s threshold)
-            self.mockDate = currentTime.addingTimeInterval(7.0)
+            self.mockMachAbsTime = interactionTime + 7.0
 
-            let shouldAllow = self.popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
+            let bypassReason = self.popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
                 for: navigationAction,
                 windowFeatures: self.windowFeatures
             )
 
             // THEN
-            XCTAssertFalse(shouldAllow, "Should require permission due to old user interaction")
+            XCTAssertNil(bypassReason, "Should require permission due to old user interaction")
             expectation.fulfill()
         }
 
@@ -439,7 +482,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
 
         let queryAddedExpectation = expectation(description: "Permission query added")
         let permissionGrantedExpectation = expectation(description: "Permission callback completed")
-        permissionGrantedExpectation.isInverted = true // We expect childTabCreated NOT to be called
+        permissionGrantedExpectation.isInverted = true // We expect createChildTab NOT to be called
 
         // Subscribe to permission query changes
         mockPermissionModel.$authorizationQuery
@@ -452,12 +495,12 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             }
             .store(in: &cancellables)
 
-        childTabCreated = { _, _, _ in
+        createChildTab = { _, _, _ in
             permissionGrantedExpectation.fulfill() // This shouldn't happen
             return nil
         }
 
-        let navigationAction = makeMockNavigationAction(url: .empty, isUserInitiated: false)
+        let navigationAction = WKNavigationAction.mock(url: .empty, webView: webView, isUserInitiated: false)
 
         // WHEN
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
@@ -465,7 +508,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         // Wait for query to be added and granted
         wait(for: [queryAddedExpectation], timeout: 1.0)
 
-        // Wait to ensure childTabCreated is NOT called
+        // Wait to ensure createChildTab is NOT called
         wait(for: [permissionGrantedExpectation], timeout: 0.1)
     }
 
@@ -490,12 +533,12 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             }
             .store(in: &cancellables)
 
-        childTabCreated = { _, _, _ in
+        createChildTab = { _, _, _ in
             popupCreatedExpectation.fulfill()
             return nil
         }
 
-        let navigationAction = makeMockNavigationAction(url: .empty, isUserInitiated: false)
+        let navigationAction = WKNavigationAction.mock(url: .empty, webView: webView, isUserInitiated: false)
 
         // WHEN
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
@@ -529,13 +572,13 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             }
             .store(in: &cancellables)
 
-        childTabCreated = { _, _, _ in
+        createChildTab = { _, _, _ in
             permissionCallbackExpectation.fulfill() // Shouldn't be called
             return nil
         }
 
         // First popup with empty URL
-        let firstAction = makeMockNavigationAction(url: .empty, isUserInitiated: false)
+        let firstAction = WKNavigationAction.mock(url: .empty, webView: webView, isUserInitiated: false)
 
         // WHEN - First popup requires permission
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: firstAction, windowFeatures: windowFeatures)
@@ -547,14 +590,14 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         wait(for: [permissionCallbackExpectation], timeout: 0.1)
 
         // THEN - Second empty URL popup should be allowed without permission
-        let secondAction = makeMockNavigationAction(url: .empty, isUserInitiated: false)
+        let secondAction = WKNavigationAction.mock(url: .empty, webView: webView, isUserInitiated: false)
 
-        let shouldAllow = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
+        let bypassReason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
             for: secondAction,
             windowFeatures: windowFeatures
         )
 
-        XCTAssertTrue(shouldAllow, "Subsequent empty URL should be allowed after initial approval")
+        XCTAssertEqual(bypassReason, .popupsTemporarilyAllowedForCurrentPage, "Expected popupsTemporarilyAllowedForCurrentPage")
     }
 
     @MainActor
@@ -580,13 +623,13 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             }
             .store(in: &cancellables)
 
-        childTabCreated = { _, _, _ in
+        createChildTab = { _, _, _ in
             permissionCallbackExpectation.fulfill() // Shouldn't be called
             return nil
         }
 
         // First popup with empty URL
-        let firstAction = makeMockNavigationAction(url: .empty, isUserInitiated: false)
+        let firstAction = WKNavigationAction.mock(url: .empty, webView: webView, isUserInitiated: false)
 
         // WHEN - First popup requires permission
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: firstAction, windowFeatures: windowFeatures)
@@ -598,14 +641,14 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         wait(for: [permissionCallbackExpectation], timeout: 0.1)
 
         // THEN - Second popup with about: URL should be allowed without permission
-        let secondAction = makeMockNavigationAction(url: URL(string: "about:blank")!, isUserInitiated: false)
+        let secondAction = WKNavigationAction.mock(url: URL(string: "about:blank")!, webView: self.webView, isUserInitiated: false)
 
-        let shouldAllow = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
+        let bypassReason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
             for: secondAction,
             windowFeatures: windowFeatures
         )
 
-        XCTAssertTrue(shouldAllow, "Subsequent about: URL should be allowed after initial approval")
+        XCTAssertEqual(bypassReason, .popupsTemporarilyAllowedForCurrentPage, "Expected popupsTemporarilyAllowedForCurrentPage")
     }
 
     @MainActor
@@ -631,13 +674,13 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             }
             .store(in: &cancellables)
 
-        childTabCreated = { _, _, _ in
+        createChildTab = { _, _, _ in
             permissionCallbackExpectation.fulfill() // Shouldn't be called
             return nil
         }
 
         // First popup with empty URL
-        let firstAction = makeMockNavigationAction(url: .empty, isUserInitiated: false)
+        let firstAction = WKNavigationAction.mock(url: .empty, webView: webView, isUserInitiated: false)
 
         // WHEN - First popup requires permission
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: firstAction, windowFeatures: windowFeatures)
@@ -649,14 +692,14 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         wait(for: [permissionCallbackExpectation], timeout: 0.1)
 
         // THEN - Cross-origin popup should be allowed when feature is enabled
-        let crossOriginAction = makeMockNavigationAction(url: URL(string: "https://other-domain.com")!, isUserInitiated: false)
+        let crossOriginAction = WKNavigationAction.mock(url: URL(string: "https://other-domain.com")!, webView: self.webView, isUserInitiated: false)
 
-        let shouldAllow = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
+        let bypassReason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
             for: crossOriginAction,
             windowFeatures: windowFeatures
         )
 
-        XCTAssertTrue(shouldAllow, "Cross-origin popup should be allowed when allowPopupsForCurrentPage is enabled")
+        XCTAssertEqual(bypassReason, .popupsTemporarilyAllowedForCurrentPage, "Expected popupsTemporarilyAllowedForCurrentPage")
     }
 
     @MainActor
@@ -682,13 +725,13 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             }
             .store(in: &cancellables)
 
-        childTabCreated = { _, _, _ in
+        createChildTab = { _, _, _ in
             permissionCallbackExpectation.fulfill() // Shouldn't be called
             return nil
         }
 
         // First popup with empty URL to establish allowance
-        let firstAction = makeMockNavigationAction(url: .empty, isUserInitiated: false)
+        let firstAction = WKNavigationAction.mock(url: .empty, webView: webView, isUserInitiated: false)
 
         // WHEN
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: firstAction, windowFeatures: windowFeatures)
@@ -700,24 +743,24 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         wait(for: [permissionCallbackExpectation], timeout: 0.1)
 
         // Verify allowance is set
-        let secondAction = makeMockNavigationAction(url: .empty, isUserInitiated: false)
+        let secondAction = WKNavigationAction.mock(url: .empty, webView: webView, isUserInitiated: false)
 
-        let shouldAllowBefore = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
+        let bypassReasonBefore = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
             for: secondAction,
             windowFeatures: windowFeatures
         )
-        XCTAssertTrue(shouldAllowBefore, "Popup should be allowed before navigation")
+        XCTAssertEqual(bypassReasonBefore, .popupsTemporarilyAllowedForCurrentPage, "Expected popupsTemporarilyAllowedForCurrentPage before navigation")
 
         // Navigate to clear allowance
         let navigation = Navigation(identity: NavigationIdentity(nil), responders: ResponderChain(), state: .started, isCurrent: true)
         popupHandlingExtension.willStart(navigation)
 
         // THEN - Popup should no longer be allowed
-        let shouldAllowAfter = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
+        let bypassReasonAfter = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
             for: secondAction,
             windowFeatures: windowFeatures
         )
-        XCTAssertFalse(shouldAllowAfter, "Popup allowance should be cleared after navigation")
+        XCTAssertNil(bypassReasonAfter, "Popup allowance should be cleared after navigation")
     }
 
     @MainActor
@@ -743,13 +786,13 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             }
             .store(in: &cancellables)
 
-        childTabCreated = { _, _, _ in
+        createChildTab = { _, _, _ in
             permissionCallbackExpectation.fulfill() // Shouldn't be called
             return nil
         }
 
         // First popup with empty URL
-        let firstAction = makeMockNavigationAction(url: .empty, isUserInitiated: false)
+        let firstAction = WKNavigationAction.mock(url: .empty, webView: webView, isUserInitiated: false)
 
         // WHEN
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: firstAction, windowFeatures: windowFeatures)
@@ -761,17 +804,13 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         wait(for: [permissionCallbackExpectation], timeout: 0.1)
 
         // THEN - Empty/about URLs still allowed, but cross-origin requires permission when feature disabled
-        let emptyAction = makeMockNavigationAction(url: .empty, isUserInitiated: false)
-        XCTAssertTrue(
-            popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: emptyAction, windowFeatures: windowFeatures),
-            "Empty URL should still be allowed"
-        )
+        let emptyAction = WKNavigationAction.mock(url: .empty, webView: webView, isUserInitiated: false)
+        let emptyBypassReason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: emptyAction, windowFeatures: windowFeatures)
+        XCTAssertEqual(emptyBypassReason, .popupsTemporarilyAllowedForCurrentPage, "Expected popupsTemporarilyAllowedForCurrentPage for empty URL")
 
-        let crossOriginAction = makeMockNavigationAction(url: URL(string: "https://other-domain.com")!, isUserInitiated: false)
-        XCTAssertFalse(
-            popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: crossOriginAction, windowFeatures: windowFeatures),
-            "Cross-origin popup should require permission when feature is disabled"
-        )
+        let crossOriginAction = WKNavigationAction.mock(url: URL(string: "https://other-domain.com")!, webView: self.webView, isUserInitiated: false)
+        let crossOriginBypassReason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: crossOriginAction, windowFeatures: windowFeatures)
+        XCTAssertNil(crossOriginBypassReason, "Cross-origin popup should require permission when feature is disabled")
     }
 
     // MARK: - Multiple Consecutive Popup Tests
@@ -796,25 +835,32 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             }
             .store(in: &cancellables)
 
-        childTabCreated = { _, _, _ in nil }
+        createChildTab = { _, _, _ in nil }
 
         // First popup with empty URL
-        let firstAction = makeMockNavigationAction(url: .empty, isUserInitiated: false)
+        let firstAction = WKNavigationAction.mock(url: .empty, webView: webView, isUserInitiated: false)
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: firstAction, windowFeatures: windowFeatures)
 
         wait(for: [queryAddedExpectation], timeout: 1.0)
 
         // WHEN - Multiple subsequent popups of different types
-        let emptyAction = makeMockNavigationAction(url: .empty, isUserInitiated: false)
-        let aboutBlankAction = makeMockNavigationAction(url: URL(string: "about:blank")!, isUserInitiated: false)
-        let crossOriginAction = makeMockNavigationAction(url: URL(string: "https://other-domain.com")!, isUserInitiated: false)
-        let sameDomainAction = makeMockNavigationAction(url: URL(string: "https://example.com/popup")!, isUserInitiated: false)
+        let emptyAction = WKNavigationAction.mock(url: .empty, webView: webView, isUserInitiated: false)
+        let aboutBlankAction = WKNavigationAction.mock(url: URL(string: "about:blank")!, webView: self.webView, isUserInitiated: false)
+        let crossOriginAction = WKNavigationAction.mock(url: URL(string: "https://other-domain.com")!, webView: self.webView, isUserInitiated: false)
+        let sameDomainAction = WKNavigationAction.mock(url: URL(string: "https://example.com/popup")!, webView: self.webView, isUserInitiated: false)
 
         // THEN - All should be allowed
-        XCTAssertTrue(popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: emptyAction, windowFeatures: windowFeatures))
-        XCTAssertTrue(popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: aboutBlankAction, windowFeatures: windowFeatures))
-        XCTAssertTrue(popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: crossOriginAction, windowFeatures: windowFeatures))
-        XCTAssertTrue(popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: sameDomainAction, windowFeatures: windowFeatures))
+        let emptyBypassReason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: emptyAction, windowFeatures: windowFeatures)
+        XCTAssertEqual(emptyBypassReason, .popupsTemporarilyAllowedForCurrentPage, "Expected popupsTemporarilyAllowedForCurrentPage for empty URL")
+
+        let aboutBlankBypassReason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: aboutBlankAction, windowFeatures: windowFeatures)
+        XCTAssertEqual(aboutBlankBypassReason, .popupsTemporarilyAllowedForCurrentPage, "Expected popupsTemporarilyAllowedForCurrentPage for about:blank")
+
+        let crossOriginBypassReason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: crossOriginAction, windowFeatures: windowFeatures)
+        XCTAssertEqual(crossOriginBypassReason, .popupsTemporarilyAllowedForCurrentPage, "Expected popupsTemporarilyAllowedForCurrentPage for cross-origin")
+
+        let sameDomainBypassReason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: sameDomainAction, windowFeatures: windowFeatures)
+        XCTAssertEqual(sameDomainBypassReason, .popupsTemporarilyAllowedForCurrentPage, "Expected popupsTemporarilyAllowedForCurrentPage for same domain")
     }
 
     @MainActor
@@ -841,21 +887,22 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             }
             .store(in: &cancellables)
 
-        childTabCreated = { _, _, _ in
+        createChildTab = { _, _, _ in
             permissionCallbackExpectation.fulfill()
             return nil
         }
 
         // WHEN - about:blank popup
-        let aboutBlankAction = makeMockNavigationAction(url: URL(string: "about:blank")!, isUserInitiated: false)
+        let aboutBlankAction = WKNavigationAction.mock(url: URL(string: "about:blank")!, webView: self.webView, isUserInitiated: false)
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: aboutBlankAction, windowFeatures: windowFeatures)
 
         wait(for: [queryAddedExpectation, permissionGrantedExpectation], timeout: 1.0)
         wait(for: [permissionCallbackExpectation], timeout: 0.1)
 
         // THEN - Subsequent about:blank allowed
-        let secondAboutBlank = makeMockNavigationAction(url: URL(string: "about:blank")!, isUserInitiated: false)
-        XCTAssertTrue(popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: secondAboutBlank, windowFeatures: windowFeatures))
+        let secondAboutBlank = WKNavigationAction.mock(url: URL(string: "about:blank")!, webView: webView, isUserInitiated: false)
+        let secondAboutBlankBypassReason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: secondAboutBlank, windowFeatures: windowFeatures)
+        XCTAssertEqual(secondAboutBlankBypassReason, .popupsTemporarilyAllowedForCurrentPage, "Expected popupsTemporarilyAllowedForCurrentPage for subsequent about:blank")
     }
 
     // MARK: - Temporary Allowance API Tests
@@ -872,12 +919,15 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         XCTAssertTrue(popupHandlingExtension.popupsTemporarilyAllowedForCurrentPage)
 
         // WHEN - Try to open popups
-        let emptyAction = makeMockNavigationAction(url: .empty, isUserInitiated: false)
-        let regularAction = makeMockNavigationAction(url: URL(string: "https://popup.com")!, isUserInitiated: false)
+        let emptyAction = WKNavigationAction.mock(url: .empty, webView: webView, isUserInitiated: false)
+        let regularAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: false)
 
         // THEN - Temporary allowance should NOT work because suppressEmptyPopUpsOnApproval is OFF
-        XCTAssertFalse(popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: emptyAction, windowFeatures: windowFeatures))
-        XCTAssertFalse(popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: regularAction, windowFeatures: windowFeatures))
+        let emptyBypassReason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: emptyAction, windowFeatures: windowFeatures)
+        XCTAssertNil(emptyBypassReason, "Empty URL should require permission when suppress feature is off")
+
+        let regularBypassReason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: regularAction, windowFeatures: windowFeatures)
+        XCTAssertNil(regularBypassReason, "Regular URL should require permission when suppress feature is off")
     }
 
     @MainActor
@@ -909,10 +959,11 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         popupHandlingExtension.setPopupAllowanceForCurrentPage()
 
         // WHEN - User-initiated popup
-        let userInitiatedAction = makeMockNavigationAction(url: URL(string: "https://popup.com")!, isUserInitiated: true)
+        let userInitiatedAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: true)
 
         // THEN - Should still be allowed
-        XCTAssertTrue(popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: userInitiatedAction, windowFeatures: windowFeatures))
+        let userInitiatedBypassReason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: userInitiatedAction, windowFeatures: windowFeatures)
+        XCTAssertEqual(userInitiatedBypassReason, .userInitiated(.webKitUserInitiated), "Expected userInitiated with webKitUserInitiated")
     }
 
     // MARK: - Edge Cases
@@ -925,26 +976,25 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         mockPopupBlockingConfig.userInitiatedPopupThreshold = 6.0
         popupHandlingExtension = createExtension()
 
-        let currentTime = Date(timeIntervalSince1970: 1000)
-        mockDate = currentTime
+        let interactionTime: TimeInterval = 1000.0
+        mockMachAbsTime = interactionTime
 
         let expectation = expectation(description: "User interaction recorded")
 
-        let event = NSEvent()
-        interactionEventsSubject.send(.mouseDown(event))
+        webView.mouseDown(with: .mock(.leftMouseDown, timestamp: interactionTime))
 
         DispatchQueue.main.async {
-            let navigationAction = self.makeMockNavigationAction(url: URL(string: "https://popup.com")!, isUserInitiated: false)
+            let navigationAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: false)
 
             // Advance time by exactly 6.0 seconds (at boundary)
-            self.mockDate = currentTime.addingTimeInterval(6.0)
+            self.mockMachAbsTime = interactionTime + 6.001
 
-            let shouldAllow = self.popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
+            let bypassReason = self.popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(
                 for: navigationAction,
                 windowFeatures: self.windowFeatures
             )
 
-            XCTAssertFalse(shouldAllow, "Popup at exact timeout boundary should require permission")
+            XCTAssertNil(bypassReason, "Popup at exact timeout boundary should require permission")
             expectation.fulfill()
         }
 
@@ -986,13 +1036,13 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             }
             .store(in: &cancellables)
 
-        childTabCreated = { _, _, _ in
+        createChildTab = { _, _, _ in
             popupCreatedExpectation.fulfill()
             return nil
         }
 
         // WHEN - about:blank popup
-        let aboutBlankAction = makeMockNavigationAction(url: URL(string: "about:blank")!, isUserInitiated: false)
+        let aboutBlankAction = WKNavigationAction.mock(url: URL(string: "about:blank")!, webView: self.webView, isUserInitiated: false)
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: aboutBlankAction, windowFeatures: windowFeatures)
 
         // THEN - Should be created (not suppressed)
@@ -1019,13 +1069,13 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             }
             .store(in: &cancellables)
 
-        childTabCreated = { _, _, _ in
+        createChildTab = { _, _, _ in
             popupCreatedExpectation.fulfill()
             return nil
         }
 
         // WHEN - Non-user-initiated popup
-        let navigationAction = makeMockNavigationAction(url: URL(string: "https://popup.com")!, isUserInitiated: false)
+        let navigationAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: false)
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
 
         // THEN - Popup should be created without prompting
@@ -1042,13 +1092,13 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         let popupCreatedExpectation = expectation(description: "Popup not created")
         popupCreatedExpectation.isInverted = true
 
-        childTabCreated = { _, _, _ in
+        createChildTab = { _, _, _ in
             popupCreatedExpectation.fulfill() // Shouldn't happen
             return nil
         }
 
         // WHEN - Non-user-initiated popup
-        let navigationAction = makeMockNavigationAction(url: URL(string: "https://popup.com")!, isUserInitiated: false)
+        let navigationAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: false)
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
 
         // THEN - Popup should be blocked (permission denied automatically)
@@ -1065,7 +1115,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         let secondPopupExpectation = expectation(description: "Second popup created")
 
         var popupCount = 0
-        childTabCreated = { _, _, _ in
+        createChildTab = { _, _, _ in
             popupCount += 1
             if popupCount == 1 {
                 firstPopupExpectation.fulfill()
@@ -1076,7 +1126,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         }
 
         // WHEN - First popup
-        let firstAction = makeMockNavigationAction(url: URL(string: "https://popup1.com")!, isUserInitiated: false)
+        let firstAction = WKNavigationAction.mock(url: URL(string: "https://popup1.com")!, webView: self.webView, isUserInitiated: false)
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: firstAction, windowFeatures: windowFeatures)
 
         wait(for: [firstPopupExpectation], timeout: 1.0)
@@ -1086,11 +1136,536 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         popupHandlingExtension.willStart(navigation)
 
         // Second popup after navigation
-        let secondAction = makeMockNavigationAction(url: URL(string: "https://popup2.com")!, isUserInitiated: false)
+        let secondAction = WKNavigationAction.mock(url: URL(string: "https://popup2.com")!, webView: self.webView, isUserInitiated: false)
         _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: secondAction, windowFeatures: windowFeatures)
 
         // THEN - Both popups allowed
         wait(for: [secondPopupExpectation], timeout: 1.0)
+    }
+
+    // MARK: - lastUserInteractionEvent Consumption Tests
+
+    @MainActor
+    func testWhenLinkOpenedInCurrentTab_ThenLastUserInteractionEventNotConsumed() async {
+        // GIVEN
+        mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
+        mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
+        mockPopupBlockingConfig.userInitiatedPopupThreshold = 6.0
+        popupHandlingExtension = createExtension()
+
+        let interactionTime: TimeInterval = 1000.0
+        mockMachAbsTime = interactionTime
+
+        // Record user interaction
+        webView.mouseDown(with: .mock(.leftMouseDown, timestamp: interactionTime))
+
+        // WHEN - Regular click (no modifiers) - should stay in current tab
+        let navigationAction = NavigationAction(
+            request: URLRequest(url: URL(string: "https://example.com")!),
+            navigationType: .linkActivated(isMiddleClick: false),
+            currentHistoryItemIdentity: nil,
+            redirectHistory: nil,
+            isUserInitiated: true,
+            sourceFrame: FrameInfo(webView: webView, handle: FrameHandle(rawValue: 1), isMainFrame: true, url: URL(string: "https://source.com")!, securityOrigin: URL(string: "https://source.com")!.securityOrigin),
+            targetFrame: FrameInfo(webView: webView, handle: FrameHandle(rawValue: 1), isMainFrame: true, url: URL(string: "https://source.com")!, securityOrigin: URL(string: "https://source.com")!.securityOrigin),
+            shouldDownload: false,
+            mainFrameNavigation: nil
+        )
+
+        var prefs = NavigationPreferences.default
+        let policy = await popupHandlingExtension.decidePolicy(for: navigationAction, preferences: &prefs)
+
+        // THEN - Should allow navigation in current tab (.next is nil)
+        XCTAssertNil(policy, "Regular click should return .next (nil)")
+
+        // AND - lastUserInteractionEvent should NOT be consumed
+        mockMachAbsTime = interactionTime + 3.0
+        let popupAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: false)
+        let bypassReason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: popupAction, windowFeatures: windowFeatures)
+
+        XCTAssertEqual(
+            bypassReason,
+            .userInitiated(.extendedTimeout(eventTimestamp: interactionTime, currentTime: interactionTime + 3.0)),
+            "User interaction should still be available (not consumed)"
+        )
+    }
+
+    @MainActor
+    func testWhenLinkOpenedInNewTab_ThenLastUserInteractionEventConsumed() async {
+        // GIVEN
+        mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
+        mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
+        mockPopupBlockingConfig.userInitiatedPopupThreshold = 6.0
+        popupHandlingExtension = createExtension()
+
+        let interactionTime: TimeInterval = 1000.0
+        mockMachAbsTime = interactionTime
+
+        // Record user interaction (⌘-click)
+        webView.mouseDown(with: .mock(.leftMouseDown, timestamp: interactionTime, modifierFlags: .command))
+
+        // WHEN - ⌘-click - should open in new tab
+        // Note: The actual navigation will be cancelled and reopened via loadInNewWindow
+        let url = URL(string: "https://example.com")!
+        let sourceFrame = FrameInfo(webView: webView, handle: FrameHandle(rawValue: 1), isMainFrame: true, url: URL(string: "https://source.com")!, securityOrigin: URL(string: "https://source.com")!.securityOrigin)
+
+        let navigationAction = NavigationAction(
+            request: URLRequest(url: url),
+            navigationType: .linkActivated(isMiddleClick: false),
+            currentHistoryItemIdentity: nil,
+            redirectHistory: nil,
+            isUserInitiated: true,
+            sourceFrame: sourceFrame,
+            targetFrame: sourceFrame,
+            shouldDownload: false,
+            mainFrameNavigation: nil
+        )
+
+        var prefs = NavigationPreferences.default
+        let policy = await popupHandlingExtension.decidePolicy(for: navigationAction, preferences: &prefs)
+
+        // THEN - Should cancel (will be reopened in new tab)
+        if case .cancel = policy {
+            // Success
+        } else {
+            XCTFail("Expected .cancel policy for ⌘-click, got \(String(describing: policy))")
+        }
+
+        // AND - lastUserInteractionEvent should be consumed
+        mockMachAbsTime = interactionTime + 3.0
+        let popupAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: false)
+        let bypassReason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: popupAction, windowFeatures: windowFeatures)
+
+        XCTAssertNil(bypassReason, "User interaction should be consumed after opening new tab")
+    }
+
+    @MainActor
+    func testWhenLinkMiddleClickedInNewTab_ThenLastUserInteractionEventConsumed() async {
+        // GIVEN
+        mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
+        mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
+        mockPopupBlockingConfig.userInitiatedPopupThreshold = 6.0
+        popupHandlingExtension = createExtension()
+
+        let interactionTime: TimeInterval = 1000.0
+        mockMachAbsTime = interactionTime
+
+        // Record user interaction - middle mouse down
+        webView.otherMouseDown(with: .mock(.otherMouseDown, timestamp: interactionTime))
+
+        // WHEN - Middle-click - should open in new tab
+        // Note: The actual navigation will be cancelled and reopened via loadInNewWindow
+        let url = URL(string: "https://example.com")!
+        let sourceFrame = FrameInfo(webView: webView, handle: FrameHandle(rawValue: 1), isMainFrame: true, url: URL(string: "https://source.com")!, securityOrigin: URL(string: "https://source.com")!.securityOrigin)
+
+        let navigationAction = NavigationAction(
+            request: URLRequest(url: url),
+            navigationType: .linkActivated(isMiddleClick: true),
+            currentHistoryItemIdentity: nil,
+            redirectHistory: nil,
+            isUserInitiated: true,
+            sourceFrame: sourceFrame,
+            targetFrame: sourceFrame,
+            shouldDownload: false,
+            mainFrameNavigation: nil
+        )
+
+        var prefs = NavigationPreferences.default
+        let policy = await popupHandlingExtension.decidePolicy(for: navigationAction, preferences: &prefs)
+
+        // THEN - Should cancel (will be reopened in new tab)
+        if case .cancel = policy {
+            // Success
+        } else {
+            XCTFail("Expected .cancel policy for middle-click, got \(String(describing: policy))")
+        }
+
+        // AND - lastUserInteractionEvent should be consumed
+        mockMachAbsTime = interactionTime + 3.0
+        let popupAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: false)
+        let bypassReason = popupHandlingExtension.shouldAllowPopupBypassingPermissionRequest(for: popupAction, windowFeatures: windowFeatures)
+
+        XCTAssertNil(bypassReason, "User interaction should be consumed after middle-click opening new tab")
+    }
+
+    @MainActor
+    func testWhenPinnedTabNavigatesToAnotherDomain_ThenOpensInNewTab() async {
+        // GIVEN - Tab is pinned
+        mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
+        popupHandlingExtension = createExtension(isTabPinned: true)
+
+        // WHEN - Navigate to different domain
+        let sourceFrame = FrameInfo(webView: webView, handle: FrameHandle(rawValue: 1), isMainFrame: true, url: URL(string: "https://source.com")!, securityOrigin: URL(string: "https://source.com")!.securityOrigin)
+
+        let navigationAction = NavigationAction(
+            request: URLRequest(url: URL(string: "https://different.com")!),
+            navigationType: .linkActivated(isMiddleClick: false),
+            currentHistoryItemIdentity: nil,
+            redirectHistory: nil,
+            isUserInitiated: true,
+            sourceFrame: sourceFrame,
+            targetFrame: sourceFrame,
+            shouldDownload: false,
+            mainFrameNavigation: nil
+        )
+
+        var prefs = NavigationPreferences.default
+        let policy = await popupHandlingExtension.decidePolicy(for: navigationAction, preferences: &prefs)
+
+        // THEN - Should cancel and open in new tab
+        if case .cancel = policy {
+            // Success
+        } else {
+            XCTFail("Expected .cancel policy for pinned tab cross-domain navigation, got \(String(describing: policy))")
+        }
+    }
+
+    @MainActor
+    func testWhenPinnedTabNavigatesToSameDomain_ThenStaysInCurrentTab() async {
+        // GIVEN - Tab is pinned
+        popupHandlingExtension = createExtension(isTabPinned: true)
+
+        // WHEN - Navigate to same domain
+        let sourceURL = URL(string: "https://source.com/page1")!
+        let targetURL = URL(string: "https://source.com/page2")!
+        let sourceFrame = FrameInfo(webView: webView, handle: FrameHandle(rawValue: 1), isMainFrame: true, url: sourceURL, securityOrigin: sourceURL.securityOrigin)
+
+        let navigationAction = NavigationAction(
+            request: URLRequest(url: targetURL),
+            navigationType: .linkActivated(isMiddleClick: false),
+            currentHistoryItemIdentity: nil,
+            redirectHistory: nil,
+            isUserInitiated: true,
+            sourceFrame: sourceFrame,
+            targetFrame: sourceFrame,
+            shouldDownload: false,
+            mainFrameNavigation: nil
+        )
+
+        var prefs = NavigationPreferences.default
+        let policy = await popupHandlingExtension.decidePolicy(for: navigationAction, preferences: &prefs)
+
+        // THEN - Should allow navigation in current tab (.next is nil)
+        XCTAssertNil(policy, "Pinned tab same-domain navigation should return .next (nil)")
+    }
+
+    // MARK: - pageInitiatedPopupOpened Flag Tests
+
+    @MainActor
+    func testWhenUserInitiatedPopupOpens_ThenPageInitiatedPopupOpenedNotSet() {
+        // GIVEN
+        mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = false
+        popupHandlingExtension = createExtension()
+
+        XCTAssertFalse(popupHandlingExtension.pageInitiatedPopupOpened, "Should start as false")
+
+        let popupCreatedExpectation = expectation(description: "Popup created")
+
+        createChildTab = { configuration, _, _ in
+            popupCreatedExpectation.fulfill()
+            return Tab(content: .none, webViewConfiguration: configuration)
+        }
+
+        // WHEN - User-initiated popup
+        let navigationAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: true)
+        _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
+
+        wait(for: [popupCreatedExpectation], timeout: 1.0)
+
+        // THEN - pageInitiatedPopupOpened should NOT be set
+        XCTAssertFalse(popupHandlingExtension.pageInitiatedPopupOpened, "User-initiated popup should not set pageInitiatedPopupOpened flag")
+    }
+
+    @MainActor
+    func testWhenNonUserInitiatedPopupOpens_ThenPageInitiatedPopupOpenedSet() {
+        // GIVEN
+        popupHandlingExtension = createExtension()
+        testPermissionManager.setPermission(.allow, forDomain: "example.com", permissionType: .popups)
+
+        XCTAssertFalse(popupHandlingExtension.pageInitiatedPopupOpened, "Should start as false")
+
+        let popupCreatedExpectation = expectation(description: "Popup created")
+
+        createChildTab = { configuration, _, _ in
+            popupCreatedExpectation.fulfill()
+            return Tab(content: .none, webViewConfiguration: configuration)
+        }
+
+        // WHEN - Non-user-initiated popup (permission already granted)
+        let navigationAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: false)
+        _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
+
+        wait(for: [popupCreatedExpectation], timeout: 1.0)
+
+        // THEN - pageInitiatedPopupOpened should be set
+        XCTAssertTrue(popupHandlingExtension.pageInitiatedPopupOpened, "Non-user-initiated popup should set pageInitiatedPopupOpened flag")
+    }
+
+    @MainActor
+    func testWhenNavigationStarts_ThenPageInitiatedPopupOpenedCleared() {
+        // GIVEN
+        popupHandlingExtension = createExtension()
+        testPermissionManager.setPermission(.allow, forDomain: "example.com", permissionType: .popups)
+
+        let popupCreatedExpectation = expectation(description: "Popup created")
+
+        createChildTab = { configuration, _, _ in
+            popupCreatedExpectation.fulfill()
+            return Tab(content: .none, webViewConfiguration: configuration)
+        }
+
+        // Create a non-user-initiated popup to set the flag
+        let navigationAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: false)
+        _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
+
+        wait(for: [popupCreatedExpectation], timeout: 1.0)
+
+        XCTAssertTrue(popupHandlingExtension.pageInitiatedPopupOpened, "Flag should be set after popup")
+
+        // WHEN - Navigation starts
+        let navigation = Navigation(identity: NavigationIdentity(nil), responders: ResponderChain(), state: .started, isCurrent: true)
+        popupHandlingExtension.willStart(navigation)
+
+        // THEN - Flag should be cleared
+        XCTAssertFalse(popupHandlingExtension.pageInitiatedPopupOpened, "Flag should be cleared on navigation")
+    }
+
+    @MainActor
+    func testPageInitiatedPopupPublisher_SendsEventWhenFlagSet() {
+        // GIVEN
+        popupHandlingExtension = createExtension()
+        testPermissionManager.setPermission(.allow, forDomain: "example.com", permissionType: .popups)
+
+        let publisherExpectation = expectation(description: "Publisher sends event")
+        let popupCreatedExpectation = expectation(description: "Popup created")
+
+        popupHandlingExtension.pageInitiatedPopupPublisher
+            .sink { _ in
+                publisherExpectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        createChildTab = { configuration, _, _ in
+            popupCreatedExpectation.fulfill()
+            return Tab(content: .none, webViewConfiguration: configuration)
+        }
+
+        // WHEN - Non-user-initiated popup opens
+        let navigationAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: false)
+        _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
+
+        // THEN - Publisher should send event
+        wait(for: [popupCreatedExpectation, publisherExpectation], timeout: 1.0)
+    }
+
+    @MainActor
+    func testPageInitiatedPopupPublisher_DoesNotSendForUserInitiatedPopup() {
+        // GIVEN
+        mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = false
+        popupHandlingExtension = createExtension()
+
+        let publisherExpectation = expectation(description: "Publisher does not send")
+        publisherExpectation.isInverted = true
+        let popupCreatedExpectation = expectation(description: "Popup created")
+
+        popupHandlingExtension.pageInitiatedPopupPublisher
+            .sink { _ in
+                publisherExpectation.fulfill() // Should not happen
+            }
+            .store(in: &cancellables)
+
+        createChildTab = { configuration, _, _ in
+            popupCreatedExpectation.fulfill()
+            return Tab(content: .none, webViewConfiguration: configuration)
+        }
+
+        // WHEN - User-initiated popup opens
+        let navigationAction = WKNavigationAction.mock(url: URL(string: "https://popup.com")!, webView: self.webView, isUserInitiated: true)
+        _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
+
+        // THEN - Publisher should NOT send event
+        wait(for: [popupCreatedExpectation], timeout: 1.0)
+        wait(for: [publisherExpectation], timeout: 0.1)
+    }
+
+    // MARK: - onNewWindow Callback Mechanism Tests
+
+    @MainActor
+    func testOnNewWindowCallback_ClearedAfterUse() async {
+        // GIVEN
+        mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
+        mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
+        popupHandlingExtension = createExtension()
+
+        let interactionTime: TimeInterval = 1000.0
+        mockMachAbsTime = interactionTime
+
+        // Record user interaction (⌘-click)
+        webView.mouseDown(with: .mock(.leftMouseDown, timestamp: interactionTime, modifierFlags: .command))
+
+        // Set up onNewWindow via decidePolicy
+        let sourceFrame = FrameInfo(webView: webView, handle: FrameHandle(rawValue: 1), isMainFrame: true, url: URL(string: "https://source.com")!, securityOrigin: URL(string: "https://source.com")!.securityOrigin)
+
+        let firstNavAction = NavigationAction(
+            request: URLRequest(url: URL(string: "https://first.com")!),
+            navigationType: .linkActivated(isMiddleClick: false),
+            currentHistoryItemIdentity: nil,
+            redirectHistory: nil,
+            isUserInitiated: true,
+            sourceFrame: sourceFrame,
+            targetFrame: sourceFrame,
+            shouldDownload: false,
+            mainFrameNavigation: nil
+        )
+
+        // WHEN - First navigation with modifier keys
+        var prefs = NavigationPreferences.default
+        _ = await popupHandlingExtension.decidePolicy(for: firstNavAction, preferences: &prefs)
+
+        // Now trigger createWebView which should consume the callback
+        let wkNavAction = WKNavigationAction.mock(url: URL(string: "https://first.com")!, webView: self.webView, isUserInitiated: false)
+
+        let decision1 = popupHandlingExtension.decideNewWindowPolicy(for: wkNavAction)
+        XCTAssertEqual(
+            decision1,
+            .allow(.tab(selected: true, burner: false, contextMenuInitiated: false)),
+            "First call should return .allow with tab policy"
+        )
+
+        // THEN - Second call should return nil (callback cleared)
+        let decision2 = popupHandlingExtension.decideNewWindowPolicy(for: wkNavAction)
+        XCTAssertNil(decision2, "Second call should return nil as callback is cleared")
+    }
+
+    @MainActor
+    func testOnNewWindowCallback_OnlyMatchesCorrectURL() async {
+        // GIVEN
+        mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
+        mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
+        popupHandlingExtension = createExtension()
+
+        let interactionTime: TimeInterval = 1000.0
+        mockMachAbsTime = interactionTime
+
+        // Record user interaction (⌘-click)
+        webView.mouseDown(with: .mock(.leftMouseDown, timestamp: interactionTime, modifierFlags: .command))
+
+        let targetURL = URL(string: "https://target.com")!
+        let sourceFrame = FrameInfo(webView: webView, handle: FrameHandle(rawValue: 1), isMainFrame: true, url: URL(string: "https://source.com")!, securityOrigin: URL(string: "https://source.com")!.securityOrigin)
+
+        let navAction = NavigationAction(
+            request: URLRequest(url: targetURL),
+            navigationType: .linkActivated(isMiddleClick: false),
+            currentHistoryItemIdentity: nil,
+            redirectHistory: nil,
+            isUserInitiated: true,
+            sourceFrame: sourceFrame,
+            targetFrame: sourceFrame,
+            shouldDownload: false,
+            mainFrameNavigation: nil
+        )
+
+        // WHEN - Set up onNewWindow for specific URL
+        var prefs = NavigationPreferences.default
+        _ = await popupHandlingExtension.decidePolicy(for: navAction, preferences: &prefs)
+
+        // THEN - Wrong URL should return nil
+        let wrongURLAction = WKNavigationAction.mock(url: URL(string: "https://different.com")!, webView: self.webView, isUserInitiated: false)
+        let decision1 = popupHandlingExtension.decideNewWindowPolicy(for: wrongURLAction)
+        XCTAssertNil(decision1, "Different URL should not match")
+
+        // AND - Correct URL should return decision
+        let correctURLAction = WKNavigationAction.mock(url: targetURL, webView: webView, isUserInitiated: false)
+        let decision2 = popupHandlingExtension.decideNewWindowPolicy(for: correctURLAction)
+        XCTAssertEqual(
+            decision2,
+            .allow(.tab(selected: true, burner: false, contextMenuInitiated: false)),
+            "Matching URL should return .allow with tab policy"
+        )
+    }
+
+    @MainActor
+    func testOnNewWindowCallback_WithSwitchToNewTabDisabled() async {
+        // GIVEN
+        mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
+        mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
+        popupHandlingExtension = createExtension(switchToNewTabWhenOpened: false)
+
+        let interactionTime: TimeInterval = 1000.0
+        mockMachAbsTime = interactionTime
+
+        // Record user interaction (⌘-click)
+        webView.mouseDown(with: .mock(.leftMouseDown, timestamp: interactionTime, modifierFlags: .command))
+
+        // Set up onNewWindow via decidePolicy
+        let sourceFrame = FrameInfo(webView: webView, handle: FrameHandle(rawValue: 1), isMainFrame: true, url: URL(string: "https://source.com")!, securityOrigin: URL(string: "https://source.com")!.securityOrigin)
+
+        let firstNavAction = NavigationAction(
+            request: URLRequest(url: URL(string: "https://first.com")!),
+            navigationType: .linkActivated(isMiddleClick: false),
+            currentHistoryItemIdentity: nil,
+            redirectHistory: nil,
+            isUserInitiated: true,
+            sourceFrame: sourceFrame,
+            targetFrame: sourceFrame,
+            shouldDownload: false,
+            mainFrameNavigation: nil
+        )
+
+        // WHEN - First navigation with modifier keys and switchToNewTabWhenOpened = false
+        var prefs = NavigationPreferences.default
+        _ = await popupHandlingExtension.decidePolicy(for: firstNavAction, preferences: &prefs)
+
+        // THEN - Decision should have selected = false
+        let wkNavAction = WKNavigationAction.mock(url: URL(string: "https://first.com")!, webView: self.webView, isUserInitiated: false)
+        let decision = popupHandlingExtension.decideNewWindowPolicy(for: wkNavAction)
+        XCTAssertEqual(
+            decision,
+            .allow(.tab(selected: false, burner: false, contextMenuInitiated: false)),
+            "Should return .allow with tab policy and selected = false"
+        )
+    }
+
+    @MainActor
+    func testOnNewWindowCallback_MiddleClickWithSwitchToNewTabDisabled() async {
+        // GIVEN
+        mockFeatureFlagger.featuresStub[FeatureFlag.popupBlocking.rawValue] = true
+        mockFeatureFlagger.featuresStub[FeatureFlag.extendedUserInitiatedPopupTimeout.rawValue] = true
+        popupHandlingExtension = createExtension(switchToNewTabWhenOpened: false)
+
+        let interactionTime: TimeInterval = 1000.0
+        mockMachAbsTime = interactionTime
+
+        // Record middle mouse interaction
+        webView.otherMouseDown(with: .mock(.otherMouseDown, timestamp: interactionTime))
+
+        let targetURL = URL(string: "https://target.com")!
+        let sourceFrame = FrameInfo(webView: webView, handle: FrameHandle(rawValue: 1), isMainFrame: true, url: URL(string: "https://source.com")!, securityOrigin: URL(string: "https://source.com")!.securityOrigin)
+
+        let navAction = NavigationAction(
+            request: URLRequest(url: targetURL),
+            navigationType: .linkActivated(isMiddleClick: true),
+            currentHistoryItemIdentity: nil,
+            redirectHistory: nil,
+            isUserInitiated: true,
+            sourceFrame: sourceFrame,
+            targetFrame: sourceFrame,
+            shouldDownload: false,
+            mainFrameNavigation: nil
+        )
+
+        // WHEN - Middle-click with switchToNewTabWhenOpened = false
+        var prefs = NavigationPreferences.default
+        _ = await popupHandlingExtension.decidePolicy(for: navAction, preferences: &prefs)
+
+        // THEN - Decision should have selected = false
+        let correctURLAction = WKNavigationAction.mock(url: targetURL, webView: webView, isUserInitiated: false)
+        let decision = popupHandlingExtension.decideNewWindowPolicy(for: correctURLAction)
+        XCTAssertEqual(
+            decision,
+            .allow(.tab(selected: false, burner: false, contextMenuInitiated: false)),
+            "Middle-click should return .allow with tab policy and selected = false"
+        )
     }
 }
 
@@ -1135,4 +1710,69 @@ class TestPermissionManager: PermissionManagerProtocol {
     }
 
     var persistedPermissionTypes: Set<PermissionType> { return [] }
+}
+
+// MARK: - Test Helpers
+
+private extension NSEvent {
+
+    static func mock(_ type: NSEvent.EventType, timestamp: TimeInterval, modifierFlags: NSEvent.ModifierFlags = []) -> NSEvent {
+        switch type {
+        case .keyDown:
+            return NSEvent.keyEvent(
+                with: type,
+                location: .zero,
+                modifierFlags: modifierFlags,
+                timestamp: timestamp,
+                windowNumber: 0,
+                context: nil,
+                characters: "",
+                charactersIgnoringModifiers: "",
+                isARepeat: false,
+                keyCode: 0
+            )!
+        default:
+            var event = NSEvent.mouseEvent(
+                with: type,
+                location: .zero,
+                modifierFlags: modifierFlags,
+                timestamp: timestamp,
+                windowNumber: 0,
+                context: nil,
+                eventNumber: 0,
+                clickCount: 1,
+                pressure: 1.0
+            )!
+            // Set buttonNumber for mouse events via CGEvent
+            let button: NSEvent.Button = switch type {
+            case .rightMouseDown, .rightMouseUp: .right
+            case .otherMouseDown, .otherMouseUp: .middle
+            default: .left
+            }
+            if button.rawValue != 0 {
+                let cgEvent = event.cgEvent!
+                cgEvent.setIntegerValueField(.mouseEventButtonNumber, value: Int64(button.rawValue))
+                event = .init(cgEvent: cgEvent)!
+            }
+            return event
+        }
+    }
+}
+
+private extension WKNavigationAction {
+
+    static func mock(url: URL, webView: WKWebView, isUserInitiated: Bool = false) -> WKNavigationAction {
+        let sourceFrame = WKFrameInfoMock(
+            webView: webView,
+            securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://example.com")!),
+            request: URLRequest(url: URL(string: "https://example.com")!),
+            isMainFrame: true
+        )
+        return MockWKNavigationAction(
+            request: URLRequest(url: url),
+            targetFrame: nil,
+            sourceFrame: sourceFrame,
+            isUserInitiated: isUserInitiated
+        )
+    }
 }

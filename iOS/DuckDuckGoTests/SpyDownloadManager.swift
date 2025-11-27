@@ -1,5 +1,5 @@
 //
-//  WebViewStateRestorationManager.swift
+//  SpyDownloadManager.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -17,21 +17,25 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
-import Core
+import Foundation
+@testable import DuckDuckGo
 
-struct WebViewStateRestorationManager {
-
-    let featureFlagger: FeatureFlagger
-
-    @UserDefaultsWrapper(key: .debugWebViewStateRestorationEnabledKey, defaultValue: false)
-    var isLocalOverrideEnabled: Bool
-
-    init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
-        self.featureFlagger = featureFlagger
+class SpyDownloadManager: DownloadManaging {
+    var downloadList: Set<Download> = []
+    var downloadsDirectoryFiles: [URL] = []
+    var deleteDownloadsDirectoryIfEmptyCallCount = 0
+    
+    func deleteDownloadsDirectoryIfEmpty() {
+        deleteDownloadsDirectoryIfEmptyCallCount += 1
     }
-
-    var isFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(.webViewStateRestoration) || (isLocalOverrideEnabled && featureFlagger.internalUserDecider.isInternalUser)
-    }
+    
+    func startMonitoringDownloadsDirectoryChanges() { }
+    
+    func stopMonitoringDownloadsDirectoryChanges() { }
+    
+    func markAllDownloadsSeen() { }
+    
+    func cancelDownload(_ download: Download) { }
+    
+    func cancelAllDownloads() { }
 }

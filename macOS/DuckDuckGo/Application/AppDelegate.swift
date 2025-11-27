@@ -1086,7 +1086,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         BWManager.shared.initCommunication()
 
         if case .normal = AppVersion.runType,
-           !urlEventHandlerResult.willOpenWindows && WindowsManager.windows.first(where: { $0 is MainWindow }) == nil{
+           !urlEventHandlerResult.willOpenWindows && WindowsManager.windows.first(where: { $0 is MainWindow }) == nil {
             // Use startup window preferences if not restoring previous session
             if !startupPreferences.restorePreviousSession {
                 let burnerMode = startupPreferences.startupBurnerMode(featureFlagger: featureFlagger)

@@ -51,24 +51,20 @@ final class URLEventHandler {
     }
 
     struct AppDidFinishLaunchingResult {
-        var urlsToOpen: Int = 0
+        let urlsToOpen: Int
 
         var willOpenWindows: Bool {
             urlsToOpen > 0
         }
     }
     func applicationDidFinishLaunching() -> AppDidFinishLaunchingResult {
-        var result = AppDidFinishLaunchingResult()
-        if !urlsToOpen.isEmpty {
-            result.urlsToOpen = urlsToOpen.count
-            for url in urlsToOpen {
-                DispatchQueue.main.async {
-                    self.handler(url)
-                }
+        var result = AppDidFinishLaunchingResult(urlsToOpen: urlsToOpen.count)
+        for url in urlsToOpen {
+            DispatchQueue.main.async {
+                self.handler(url)
             }
-
-            self.urlsToOpen = []
         }
+        urlsToOpen = []
 
         didFinishLaunching = true
         return result

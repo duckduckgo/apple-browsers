@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import BrowserServicesKitTestsUtils
 import XCTest
 import WebKit
 @testable import DuckDuckGo

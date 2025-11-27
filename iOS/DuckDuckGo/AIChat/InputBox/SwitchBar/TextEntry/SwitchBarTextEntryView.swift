@@ -400,10 +400,10 @@ class SwitchBarTextEntryView: UIView {
                 guard let self else { return }
 
                 if self.handler.usesFadeoutAnimation {
-                    self.superview?.layoutIfNeeded()
+                    self.window?.layoutIfNeeded()
                     self.updateForCurrentMode()
                     UIView.animate(withDuration: 0.25) {
-                        self.superview?.layoutIfNeeded()
+                        self.window?.layoutIfNeeded()
                     }
                 } else {
                     self.updateForCurrentMode()

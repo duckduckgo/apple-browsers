@@ -21,56 +21,51 @@ import XCTest
 
 final class UserChurnPixelTests: XCTestCase {
 
-    // MARK: - Tests: Browser detection from URL
+    // MARK: - Tests: Browser detection from bundle identifier
 
-    func testWhenURLContainsGoogleChrome_ThenNewDefaultIsChrome() {
+    func testWhenBundleIdIsChrome_ThenNewDefaultIsChrome() {
         // Given
-        let url = URL(fileURLWithPath: "/Applications/Google Chrome.app")
-        let pixel = UserChurnPixel.unsetAsDefault(newDefaultBrowserURL: url, atb: nil)
+        let pixel = UserChurnPixel.unsetAsDefault(newDefaultBrowserBundleId: "com.google.Chrome", atb: nil)
 
         // Then
         XCTAssertEqual(pixel.parameters?["newDefault"], "Chrome")
     }
 
-    func testWhenURLContainsSafari_ThenNewDefaultIsSafari() {
+    func testWhenBundleIdIsSafari_ThenNewDefaultIsSafari() {
         // Given
-        let url = URL(fileURLWithPath: "/Applications/Safari.app")
-        let pixel = UserChurnPixel.unsetAsDefault(newDefaultBrowserURL: url, atb: nil)
+        let pixel = UserChurnPixel.unsetAsDefault(newDefaultBrowserBundleId: "com.apple.Safari", atb: nil)
 
         // Then
         XCTAssertEqual(pixel.parameters?["newDefault"], "Safari")
     }
 
-    func testWhenURLContainsFirefox_ThenNewDefaultIsFirefox() {
+    func testWhenBundleIdIsFirefox_ThenNewDefaultIsFirefox() {
         // Given
-        let url = URL(fileURLWithPath: "/Applications/Firefox.app")
-        let pixel = UserChurnPixel.unsetAsDefault(newDefaultBrowserURL: url, atb: nil)
+        let pixel = UserChurnPixel.unsetAsDefault(newDefaultBrowserBundleId: "org.mozilla.firefox", atb: nil)
 
         // Then
         XCTAssertEqual(pixel.parameters?["newDefault"], "Firefox")
     }
 
-    func testWhenURLContainsBrave_ThenNewDefaultIsBrave() {
+    func testWhenBundleIdIsBrave_ThenNewDefaultIsBrave() {
         // Given
-        let url = URL(fileURLWithPath: "/Applications/Brave Browser.app")
-        let pixel = UserChurnPixel.unsetAsDefault(newDefaultBrowserURL: url, atb: nil)
+        let pixel = UserChurnPixel.unsetAsDefault(newDefaultBrowserBundleId: "com.brave.Browser", atb: nil)
 
         // Then
         XCTAssertEqual(pixel.parameters?["newDefault"], "Brave")
     }
 
-    func testWhenURLContainsUnknownBrowser_ThenNewDefaultIsOther() {
+    func testWhenBundleIdIsUnknownBrowser_ThenNewDefaultIsOther() {
         // Given
-        let url = URL(fileURLWithPath: "/Applications/SomeOtherBrowser.app")
-        let pixel = UserChurnPixel.unsetAsDefault(newDefaultBrowserURL: url, atb: nil)
+        let pixel = UserChurnPixel.unsetAsDefault(newDefaultBrowserBundleId: "com.example.SomeBrowser", atb: nil)
 
         // Then
         XCTAssertEqual(pixel.parameters?["newDefault"], "Other")
     }
 
-    func testWhenURLIsNil_ThenNewDefaultIsOther() {
+    func testWhenBundleIdIsNil_ThenNewDefaultIsOther() {
         // Given
-        let pixel = UserChurnPixel.unsetAsDefault(newDefaultBrowserURL: nil, atb: nil)
+        let pixel = UserChurnPixel.unsetAsDefault(newDefaultBrowserBundleId: nil, atb: nil)
 
         // Then
         XCTAssertEqual(pixel.parameters?["newDefault"], "Other")
@@ -80,8 +75,7 @@ final class UserChurnPixelTests: XCTestCase {
 
     func testWhenAtbIsProvided_ThenParametersIncludeAtb() {
         // Given
-        let url = URL(fileURLWithPath: "/Applications/Safari.app")
-        let pixel = UserChurnPixel.unsetAsDefault(newDefaultBrowserURL: url, atb: "v123-4")
+        let pixel = UserChurnPixel.unsetAsDefault(newDefaultBrowserBundleId: "com.apple.Safari", atb: "v123-4")
 
         // Then
         XCTAssertEqual(pixel.parameters?["atb"], "v123-4")
@@ -89,8 +83,7 @@ final class UserChurnPixelTests: XCTestCase {
 
     func testWhenAtbIsNil_ThenParametersDoNotIncludeAtb() {
         // Given
-        let url = URL(fileURLWithPath: "/Applications/Safari.app")
-        let pixel = UserChurnPixel.unsetAsDefault(newDefaultBrowserURL: url, atb: nil)
+        let pixel = UserChurnPixel.unsetAsDefault(newDefaultBrowserBundleId: "com.apple.Safari", atb: nil)
 
         // Then
         XCTAssertNil(pixel.parameters?["atb"])
@@ -98,8 +91,7 @@ final class UserChurnPixelTests: XCTestCase {
 
     func testWhenAtbIsProvided_ThenParametersContainBothNewDefaultAndAtb() {
         // Given
-        let url = URL(fileURLWithPath: "/Applications/Firefox.app")
-        let pixel = UserChurnPixel.unsetAsDefault(newDefaultBrowserURL: url, atb: "v456-7ab")
+        let pixel = UserChurnPixel.unsetAsDefault(newDefaultBrowserBundleId: "org.mozilla.firefox", atb: "v456-7ab")
 
         // Then
         XCTAssertEqual(pixel.parameters?.count, 2)
@@ -109,12 +101,10 @@ final class UserChurnPixelTests: XCTestCase {
 
     func testWhenAtbIsNil_ThenParametersContainOnlyNewDefault() {
         // Given
-        let url = URL(fileURLWithPath: "/Applications/Firefox.app")
-        let pixel = UserChurnPixel.unsetAsDefault(newDefaultBrowserURL: url, atb: nil)
+        let pixel = UserChurnPixel.unsetAsDefault(newDefaultBrowserBundleId: "org.mozilla.firefox", atb: nil)
 
         // Then
         XCTAssertEqual(pixel.parameters?.count, 1)
         XCTAssertEqual(pixel.parameters?["newDefault"], "Firefox")
     }
 }
-

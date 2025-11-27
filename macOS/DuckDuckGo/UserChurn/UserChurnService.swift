@@ -93,8 +93,9 @@ final class UserChurnService {
             return
         }
 
+        let bundleId = defaultBrowserURL.flatMap { bundleIdentifierProvider($0) }
         pixelFiring?.fire(UserChurnPixel.unsetAsDefault(
-            newDefaultBrowserURL: defaultBrowserURL,
+            newDefaultBrowserBundleId: bundleId,
             atb: atbProvider()
         ))
     }

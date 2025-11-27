@@ -21,7 +21,7 @@ import PixelKit
 
 enum UserChurnPixel: PixelKitEvent {
 
-    case unsetAsDefault(newDefaultBrowserURL: URL?, atb: String?)
+    case unsetAsDefault(newDefaultBrowserBundleId: String?, atb: String?)
 
     var name: String {
         switch self {
@@ -32,8 +32,8 @@ enum UserChurnPixel: PixelKitEvent {
 
     var parameters: [String: String]? {
         switch self {
-        case .unsetAsDefault(let newDefaultBrowserURL, let atb):
-            var params = ["newDefault": Self.browserName(from: newDefaultBrowserURL)]
+        case .unsetAsDefault(let newDefaultBrowserBundleId, let atb):
+            var params = ["newDefault": Self.browserName(from: newDefaultBrowserBundleId)]
             if let atb {
                 params["atb"] = atb
             }
@@ -41,20 +41,18 @@ enum UserChurnPixel: PixelKitEvent {
         }
     }
 
-    private static func browserName(from url: URL?) -> String {
-        guard let url else {
+    private static func browserName(from bundleId: String?) -> String {
+        guard let bundleId = bundleId?.lowercased() else {
             return "Other"
         }
 
-        let path = url.path.lowercased()
-
-        if path.contains("google chrome") {
+        if bundleId.contains("chrome") {
             return "Chrome"
-        } else if path.contains("safari") {
+        } else if bundleId == "com.apple.safari" {
             return "Safari"
-        } else if path.contains("firefox") {
+        } else if bundleId.contains("firefox") {
             return "Firefox"
-        } else if path.contains("brave") {
+        } else if bundleId.contains("brave") {
             return "Brave"
         } else {
             return "Other"

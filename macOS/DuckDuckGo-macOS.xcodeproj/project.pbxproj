@@ -1998,6 +1998,10 @@
 		7B1E819E27C8874900FF0E60 /* ContentOverlayPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1E819B27C8874900FF0E60 /* ContentOverlayPopover.swift */; };
 		7B1E819F27C8874900FF0E60 /* ContentOverlay.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7B1E819C27C8874900FF0E60 /* ContentOverlay.storyboard */; };
 		7B1E81A027C8874900FF0E60 /* ContentOverlayViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1E819D27C8874900FF0E60 /* ContentOverlayViewController.swift */; };
+		7B1FF4F82ED888E300F94BE5 /* WebsiteNotificationUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1FF4F72ED888E300F94BE5 /* WebsiteNotificationUserScript.swift */; };
+		7B1FF4F92ED888E300F94BE5 /* WebsiteNotificationUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1FF4F72ED888E300F94BE5 /* WebsiteNotificationUserScript.swift */; };
+		7B1FF4FC2ED8890100F94BE5 /* WebsiteNotificationUserScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1FF4FA2ED8890100F94BE5 /* WebsiteNotificationUserScriptTests.swift */; };
+		7B1FF4FD2ED8890100F94BE5 /* WebsiteNotificationUserScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1FF4FA2ED8890100F94BE5 /* WebsiteNotificationUserScriptTests.swift */; };
 		7B22D86E2CCFD7B7006A76E1 /* TipKitController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B22D86D2CCFD7B7006A76E1 /* TipKitController.swift */; };
 		7B22D86F2CCFD7B7006A76E1 /* TipKitController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B22D86D2CCFD7B7006A76E1 /* TipKitController.swift */; };
 		7B22D8702CCFD7B7006A76E1 /* TipKitController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B22D86D2CCFD7B7006A76E1 /* TipKitController.swift */; };
@@ -5034,6 +5038,8 @@
 		7B1E819B27C8874900FF0E60 /* ContentOverlayPopover.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ContentOverlayPopover.swift; sourceTree = "<group>"; };
 		7B1E819C27C8874900FF0E60 /* ContentOverlay.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = ContentOverlay.storyboard; sourceTree = "<group>"; };
 		7B1E819D27C8874900FF0E60 /* ContentOverlayViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ContentOverlayViewController.swift; sourceTree = "<group>"; };
+		7B1FF4F72ED888E300F94BE5 /* WebsiteNotificationUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebsiteNotificationUserScript.swift; sourceTree = "<group>"; };
+		7B1FF4FA2ED8890100F94BE5 /* WebsiteNotificationUserScriptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebsiteNotificationUserScriptTests.swift; sourceTree = "<group>"; };
 		7B22D86D2CCFD7B7006A76E1 /* TipKitController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TipKitController.swift; sourceTree = "<group>"; };
 		7B25FE322AD12C990012AFAB /* NetworkProtectionMac */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = NetworkProtectionMac; sourceTree = "<group>"; };
 		7B2DDCF72A93A8BB0039D884 /* VPNAppEventsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNAppEventsHandler.swift; sourceTree = "<group>"; };
@@ -8667,6 +8673,14 @@
 			path = Autofill;
 			sourceTree = "<group>";
 		};
+		7B1FF4FB2ED8890100F94BE5 /* UserScripts */ = {
+			isa = PBXGroup;
+			children = (
+				7B1FF4FA2ED8890100F94BE5 /* WebsiteNotificationUserScriptTests.swift */,
+			);
+			path = UserScripts;
+			sourceTree = "<group>";
+		};
 		7B4CE8DB26F02108009134B1 /* UITests */ = {
 			isa = PBXGroup;
 			children = (
@@ -10212,9 +10226,10 @@
 				B67C6C3C2654B897006C872E /* WebViewExtensionTests.swift */,
 				3783F92229432E1800BCA897 /* WebViewTests.swift */,
 				B67C6C412654BF49006C872E /* DuckDuckGo-Symbol.jpg */,
-				AA92ACAF24EFE209005F41C9 /* ViewModel */,
 				AA92ACB024EFE210005F41C9 /* Model */,
 				AA9C362625518B61004B1BA3 /* Services */,
+				7B1FF4FB2ED8890100F94BE5 /* UserScripts */,
+				AA92ACAF24EFE209005F41C9 /* ViewModel */,
 			);
 			path = Tab;
 			sourceTree = "<group>";
@@ -11084,6 +11099,7 @@
 				56406D4A2C636A8900BF8FA2 /* SpecialPagesUserScriptExtension.swift */,
 				F1B33DF92BAD9C83001128B3 /* Subscription */,
 				85AC3AEE25D5CE9800C7D2AA /* UserScripts.swift */,
+				7B1FF4F72ED888E300F94BE5 /* WebsiteNotificationUserScript.swift */,
 			);
 			path = UserScripts;
 			sourceTree = "<group>";
@@ -14507,6 +14523,7 @@
 				3706FC8E293F65D500E42796 /* PinnedTabsView.swift in Sources */,
 				B6B5F58A2B03673B008DB58A /* BrowserImportMoreInfoView.swift in Sources */,
 				EEEE20102E57B6F30071A566 /* DataImportFlowLauncher.swift in Sources */,
+				7B1FF4F92ED888E300F94BE5 /* WebsiteNotificationUserScript.swift in Sources */,
 				3706FC93293F65D500E42796 /* PreferencesViewController.swift in Sources */,
 				376597872E32E3370039EF74 /* NewTabPageTabPreloader.swift in Sources */,
 				3706FC94293F65D500E42796 /* FireproofDomains.swift in Sources */,
@@ -14583,6 +14600,7 @@
 				3706FDDE293F661700E42796 /* SuggestionViewModelTests.swift in Sources */,
 				3706FDDF293F661700E42796 /* BookmarkSidebarTreeControllerTests.swift in Sources */,
 				3706FDE0293F661700E42796 /* TabIndexTests.swift in Sources */,
+				7B1FF4FD2ED8890100F94BE5 /* WebsiteNotificationUserScriptTests.swift in Sources */,
 				ED4B8BDA2E8C3FB100B9D9E9 /* MacWatchdogDiagnosticProviderTests.swift in Sources */,
 				9F26060F2B85E17D00819292 /* AddEditBookmarkDialogCoordinatorViewModelTests.swift in Sources */,
 				7BBAA0912E684AB40041BCE2 /* WebExtensionLoaderMock.swift in Sources */,
@@ -15609,6 +15627,7 @@
 				F4A6198C283CFFBB007F2080 /* ContentScopeFeatureFlagging.swift in Sources */,
 				4B8A4E0127C8447E005F40E8 /* SaveIdentityPopover.swift in Sources */,
 				B637273B26CBC8AF00C8CB02 /* AuthenticationAlert.swift in Sources */,
+				7B1FF4F82ED888E300F94BE5 /* WebsiteNotificationUserScript.swift in Sources */,
 				1DFAB51D2A8982A600A0F7F6 /* SetExtension.swift in Sources */,
 				EEE11C5E2C7F54AD000ABD7E /* AutofillLoginImportState.swift in Sources */,
 				315AA07028CA5CC800200030 /* YoutubePlayerNavigationHandler.swift in Sources */,
@@ -16836,6 +16855,7 @@
 				C1E961EB2B879E79001760E1 /* MockAutofillActionPresenter.swift in Sources */,
 				1DE717D52E44B4FA009BDFFA /* NewTabPageTabExtensionTests.swift in Sources */,
 				8477AF2A2EBB3F0E00849EA5 /* AttributedMetricOriginFileProviderTests.swift in Sources */,
+				7B1FF4FC2ED8890100F94BE5 /* WebsiteNotificationUserScriptTests.swift in Sources */,
 				4BA1A6FE258C5C1300F6F690 /* EncryptedValueTransformerTests.swift in Sources */,
 				85F69B3C25EDE81F00978E59 /* URLExtensionTests.swift in Sources */,
 				B5E7B6C62ED4A79500094EDF /* TitleDisplayPolicyTests.swift in Sources */,

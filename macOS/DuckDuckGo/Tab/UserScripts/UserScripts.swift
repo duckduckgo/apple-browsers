@@ -61,6 +61,7 @@ final class UserScripts: UserScriptsProvider {
     let newTabPageUserScript: NewTabPageUserScript?
     let serpSettingsUserScript: SERPSettingsUserScript?
     let faviconScript = FaviconUserScript()
+    let websiteNotificationUserScript = WebsiteNotificationUserScript()
 
     private let contentScopePreferences: ContentScopePreferences
 
@@ -207,6 +208,10 @@ final class UserScripts: UserScriptsProvider {
                 specialPages.registerSubfeature(delegate: newTabPageUserScript)
             }
             userScripts.append(specialPages)
+        }
+
+        if sourceProvider.featureFlagger.isFeatureOn(.websiteNotifications) {
+            userScripts.append(websiteNotificationUserScript)
         }
 
         var delegate: Subfeature

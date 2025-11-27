@@ -116,6 +116,8 @@ struct DataImportView: ModalView {
                 )
             case .moreInfo:
                 NewImportMoreInfoView()
+            case .passwordEntryHelp:
+                PasswordEntryHelpView()
             case .summary(let summary):
                 NewImportSummaryView(
                     summary: summary,

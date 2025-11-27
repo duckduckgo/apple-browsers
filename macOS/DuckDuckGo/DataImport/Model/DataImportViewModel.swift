@@ -69,6 +69,7 @@ struct DataImportViewModel {
         case sourceAndDataTypesPicker
         case profilePicker
         case moreInfo
+        case passwordEntryHelp
         case fileImport(dataType: DataType, summary: DataImportSummary = [:])
         case archiveImport(dataTypes: Set<DataType>, summary: DataImportSummary? = nil)
         case summary(DataImportSummary)
@@ -151,7 +152,7 @@ struct DataImportViewModel {
 
     var shouldHideProgressAndFooter: Bool {
         switch screen {
-        case .moreInfo:
+        case .moreInfo, .passwordEntryHelp:
             return true
         default:
             return false
@@ -160,7 +161,7 @@ struct DataImportViewModel {
 
     var shouldHidePasswordExplainerView: Bool {
         switch screen {
-        case .moreInfo, .profilePicker:
+        case .moreInfo, .profilePicker, .passwordEntryHelp:
             return true
         default:
             return false
@@ -380,8 +381,13 @@ struct DataImportViewModel {
                 // chromium user denied keychain prompt error
             case let error as ChromiumLoginReader.ImportError where error.type == .userDeniedKeychainPrompt:
                 PixelKit.fire(GeneralPixel.passwordImportKeychainPromptDenied)
-                goBack()
-                // stay on the same screen
+                if screen == .passwordEntryHelp {
+                    // User already saw help, go back to start
+                    goBack()
+                } else {
+                    // First time seeing the error, show help
+                    screen = .passwordEntryHelp
+                }
                 return true
 
                 // firefox passwords db is main-password protected: request password
@@ -730,6 +736,8 @@ extension DataImportViewModel {
             return .continue
         case .moreInfo:
             return initiateImport()
+        case .passwordEntryHelp:
+            return nil
 
         case .archiveImport:
             return nil
@@ -755,7 +763,7 @@ extension DataImportViewModel {
             switch screen {
             case .sourceAndDataTypesPicker:
                 return .cancel
-            case .archiveImport, .profilePicker, .moreInfo:
+            case .archiveImport, .profilePicker, .moreInfo, .passwordEntryHelp:
                 return .back
             case .fileImport(_, let summary):
                 return summary.isEmpty ? .back : nil

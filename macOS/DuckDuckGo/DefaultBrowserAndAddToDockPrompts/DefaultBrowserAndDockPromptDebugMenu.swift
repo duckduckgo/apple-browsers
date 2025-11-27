@@ -211,7 +211,7 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
                 popoverWillShowDateMenuItem.title = "Popover prompt has shown: \(Self.dateFormatter.string(from: popoverShownDate))"
             } else {
                 // Popover not shown yet → calculate when it will show (install date + delay)
-                let popoverWillShowDate = debugStore.simulatedInstallDate ?? localStatisticsStore.installDate
+                let popoverWillShowDate = (debugStore.simulatedInstallDate ?? localStatisticsStore.installDate)
                     .flatMap { $0.addingTimeInterval(.days(defaultBrowserAndDockPromptFeatureFlagger.firstPopoverDelayDays)) }
 
                 let formattedWillShowDate = popoverWillShowDate.flatMap { Self.dateFormatter.string(from: $0) } ?? "N/A"

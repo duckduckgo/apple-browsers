@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import Utilities
 
 /// **DEBUG MENU for Default Browser & Dock Prompts**
 ///
@@ -82,8 +83,10 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
         buildItems {
             overrideDateMenuItem
             NSMenuItem(title: "Advance by 14 Days", action: #selector(advanceBy14Days))
+                .withAccessibilityIdentifier(AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.advanceBy14DaysMenuItem)
                 .targetting(self)
             NSMenuItem(title: "Simulate Fresh App Install", action: #selector(simulateFreshAppInstall))
+                .withAccessibilityIdentifier(AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.simulateFreshAppInstallMenuItem)
                 .targetting(self)
             NSMenuItem(title: "Reset Prompts And Today/Install Dates", action: #selector(resetPrompts))
                 .targetting(self)

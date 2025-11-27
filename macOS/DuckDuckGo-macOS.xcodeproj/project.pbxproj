@@ -94,6 +94,8 @@
 		1D4B03D72CA4432000224E99 /* BookmarkUrlExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D4B03D52CA4431C00224E99 /* BookmarkUrlExtension.swift */; };
 		1D4B03D92CA55DDF00224E99 /* BookmarkUrlExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D4B03D82CA55DDF00224E99 /* BookmarkUrlExtensionTests.swift */; };
 		1D4B03DA2CA55DDF00224E99 /* BookmarkUrlExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D4B03D82CA55DDF00224E99 /* BookmarkUrlExtensionTests.swift */; };
+		1D532BB12ED89E1000D219FA /* PermissionAuthorizationSwiftUIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D532BB02ED89E1000D219FA /* PermissionAuthorizationSwiftUIView.swift */; };
+		1D532BB22ED89E1000D219FA /* PermissionAuthorizationSwiftUIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D532BB02ED89E1000D219FA /* PermissionAuthorizationSwiftUIView.swift */; };
 		1D5C1AF12CFF58220073ED65 /* Logger+WebExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D5C1AF02CFF58170073ED65 /* Logger+WebExtensions.swift */; };
 		1D6216B229069BBF00386B2C /* BWKeyStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6216B129069BBF00386B2C /* BWKeyStorage.swift */; };
 		1D638D612C44F2BA00530DD5 /* ApplicationUpdateDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D638D602C44F2BA00530DD5 /* ApplicationUpdateDetectorTests.swift */; };
@@ -4238,6 +4240,7 @@
 		1D43EB3B292B664A0065E5D6 /* BWMessageIdGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BWMessageIdGenerator.swift; sourceTree = "<group>"; };
 		1D4B03D52CA4431C00224E99 /* BookmarkUrlExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkUrlExtension.swift; sourceTree = "<group>"; };
 		1D4B03D82CA55DDF00224E99 /* BookmarkUrlExtensionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarkUrlExtensionTests.swift; sourceTree = "<group>"; };
+		1D532BB02ED89E1000D219FA /* PermissionAuthorizationSwiftUIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionAuthorizationSwiftUIView.swift; sourceTree = "<group>"; };
 		1D5C1AF02CFF58170073ED65 /* Logger+WebExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+WebExtensions.swift"; sourceTree = "<group>"; };
 		1D6216B129069BBF00386B2C /* BWKeyStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BWKeyStorage.swift; sourceTree = "<group>"; };
 		1D638D602C44F2BA00530DD5 /* ApplicationUpdateDetectorTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ApplicationUpdateDetectorTests.swift; sourceTree = "<group>"; };
@@ -10832,6 +10835,7 @@
 			children = (
 				B64C84DD2692D7400048FEBE /* PermissionAuthorization.storyboard */,
 				B64C84E22692DC9F0048FEBE /* PermissionAuthorizationViewController.swift */,
+				1D532BB02ED89E1000D219FA /* PermissionAuthorizationSwiftUIView.swift */,
 				B64C84EA2692DD650048FEBE /* PermissionAuthorizationPopover.swift */,
 				B6BBF17327475B15004F850E /* PopupBlockedPopover.swift */,
 				B64C852926942AC90048FEBE /* PermissionContextMenu.swift */,
@@ -13388,6 +13392,7 @@
 				37EE56122D5F197300D53C7C /* BadgeAnimationView.swift in Sources */,
 				37EE56132D5F197300D53C7C /* BadgeNotificationAnimationModel.swift in Sources */,
 				37EE56142D5F197300D53C7C /* CookieManagedNotificationContainerView.swift in Sources */,
+				1D532BB12ED89E1000D219FA /* PermissionAuthorizationSwiftUIView.swift in Sources */,
 				37EE56152D5F197300D53C7C /* CookieManagedNotificationView.swift in Sources */,
 				37EE56162D5F197300D53C7C /* CookieNotificationAnimationModel.swift in Sources */,
 				37EE56172D5F197300D53C7C /* NavigationBarBadgeAnimationView.swift in Sources */,
@@ -16378,6 +16383,7 @@
 				C126B35A2C820924005DC2A3 /* FreemiumDebugMenu.swift in Sources */,
 				B6A9E46B2614618A0067D1B9 /* OperatingSystemVersionExtension.swift in Sources */,
 				4BDFA4AE27BF19E500648192 /* ToggleableScrollView.swift in Sources */,
+				1D532BB22ED89E1000D219FA /* PermissionAuthorizationSwiftUIView.swift in Sources */,
 				7B0A6DFC2D47CCDF00FDFDC2 /* ExcludedAppsViewController.swift in Sources */,
 				1D36F4242A3B85C50052B527 /* TabCleanupPreparer.swift in Sources */,
 				4B4D60DF2A0C875F00BCD287 /* NetworkProtectionOptionKeyExtension.swift in Sources */,

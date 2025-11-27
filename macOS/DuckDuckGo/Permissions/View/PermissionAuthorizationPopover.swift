@@ -17,12 +17,16 @@
 //
 
 import Cocoa
+import BrowserServicesKit
+import FeatureFlags
 
 final class PermissionAuthorizationPopover: NSPopover {
 
     @nonobjc private var didShow: Bool = false
+    private let featureFlagger: FeatureFlagger
 
-    override init() {
+    init(featureFlagger: FeatureFlagger) {
+        self.featureFlagger = featureFlagger
         super.init()
 
         behavior = .applicationDefined
@@ -50,6 +54,7 @@ final class PermissionAuthorizationPopover: NSPopover {
         let storyboard = NSStoryboard(name: "PermissionAuthorization", bundle: nil)
         let controller = storyboard
             .instantiateController(withIdentifier: "PermissionAuthorizationViewController") as! PermissionAuthorizationViewController
+        controller.featureFlagger = featureFlagger
         contentViewController = controller
     }
     // swiftlint:enable force_cast

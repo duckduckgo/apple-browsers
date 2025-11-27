@@ -975,6 +975,9 @@ struct UserText {
     static let permissionPopupLearnMoreLink = NSLocalizedString("permission.popup.learn-more.link", value: "Learn more about location services", comment: "Text of link that leads to web page with more informations about location services.")
     static let permissionPopupAllowButton = NSLocalizedString("permission.popup.allow.button", value: "Allow", comment: "Button that the user can use to authorise a web site to for, for example access location or camera and microphone etc.")
 
+    static let permissionPopupNeverAllowButton = NSLocalizedString("permission.popup.never.allow.button", value: "Never Allow", comment: "Button that denies permission and remembers the decision")
+    static let permissionPopupAlwaysAllowButton = NSLocalizedString("permission.popup.always.allow.button", value: "Always Allow", comment: "Button that grants permission and remembers the decision for future requests")
+
     static let privacyDashboardPermissionAsk = NSLocalizedString("dashboard.permission.ask", value: "Ask every time", comment: "Privacy Dashboard: Website should always Ask for permission for input media device access")
     static let privacyDashboardPermissionAlwaysAllow = NSLocalizedString("dashboard.permission.allow", value: "Always allow", comment: "Privacy Dashboard: Website can always access input media device")
     static let privacyDashboardPermissionAlwaysDeny = NSLocalizedString("dashboard.permission.deny", value: "Always deny", comment: "Privacy Dashboard: Website can never access input media device")

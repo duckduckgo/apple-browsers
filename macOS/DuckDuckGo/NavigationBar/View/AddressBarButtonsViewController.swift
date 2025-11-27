@@ -61,7 +61,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private var permissionAuthorizationPopover: PermissionAuthorizationPopover?
     private func permissionAuthorizationPopoverCreatingIfNeeded() -> PermissionAuthorizationPopover {
         return permissionAuthorizationPopover ?? {
-            let popover = PermissionAuthorizationPopover()
+            let popover = PermissionAuthorizationPopover(featureFlagger: featureFlagger)
             NotificationCenter.default.addObserver(self, selector: #selector(popoverDidClose), name: NSPopover.didCloseNotification, object: popover)
             NotificationCenter.default.addObserver(self, selector: #selector(popoverWillShow), name: NSPopover.willShowNotification, object: popover)
             self.permissionAuthorizationPopover = popover

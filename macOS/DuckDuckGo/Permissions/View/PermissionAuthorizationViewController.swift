@@ -17,6 +17,9 @@
 //
 
 import Cocoa
+import SwiftUI
+import BrowserServicesKit
+import FeatureFlags
 
 extension PermissionType {
     var localizedDescription: String {
@@ -66,14 +69,23 @@ final class PermissionAuthorizationViewController: NSViewController {
     @IBOutlet weak var linkButton: LinkButton!
     @IBOutlet weak var allowButton: NSButton!
 
+    var featureFlagger: FeatureFlagger?
+
     weak var query: PermissionAuthorizationQuery? {
         didSet {
             updateText()
+            setupSwiftUIViewIfNeeded()
         }
     }
 
     override func viewDidLoad() {
-        updateText()
+        super.viewDidLoad()
+
+        if featureFlagger?.isFeatureOn(.newPermissionView) == true {
+            setupSwiftUIViewIfNeeded()
+        } else {
+            updateText()
+        }
     }
 
     override func viewWillAppear() {
@@ -142,5 +154,73 @@ final class PermissionAuthorizationViewController: NSViewController {
 
     @IBAction func learnMoreAction(_ sender: NSButton) {
         Application.appDelegate.windowControllersManager.show(url: "https://help.duckduckgo.com/privacy/device-location-services".url, source: .ui, newTab: true)
+    }
+
+    // Mark: - New Authorization View
+
+    private var swiftUIHostingView: NSHostingView<PermissionAuthorizationSwiftUIView>?
+
+    private func setupSwiftUIViewIfNeeded() {
+        guard isViewLoaded,
+              let query = query,
+              !query.permissions.isEmpty,
+              query.permissions.contains(.geolocation),
+              let featureFlagger = featureFlagger,
+              featureFlagger.isFeatureOn(.newPermissionView)
+        else {
+            // Hide SwiftUI view if it exists but shouldn't be shown
+            swiftUIHostingView?.isHidden = true
+            return
+        }
+
+        // Hide storyboard-based UI elements
+        descriptionLabel?.isHidden = true
+        domainNameLabel?.isHidden = true
+        alwaysAllowCheckbox?.isHidden = true
+        alwaysAllowStackView?.isHidden = true
+        learnMoreStackView?.isHidden = true
+        denyButton?.isHidden = true
+        allowButton?.isHidden = true
+        linkButton?.isHidden = true
+
+        // Create SwiftUI view if it doesn't exist
+        if swiftUIHostingView == nil {
+            let swiftUIView = PermissionAuthorizationSwiftUIView(
+                domain: query.domain,
+                onNeverAllow: { [weak self] in
+                    self?.handleNeverAllow()
+                },
+                onAlwaysAllow: { [weak self] in
+                    self?.handleAlwaysAllow()
+                }
+            )
+            let hostingView = NSHostingView(rootView: swiftUIView)
+            hostingView.translatesAutoresizingMaskIntoConstraints = false
+            view.addSubview(hostingView)
+
+            NSLayoutConstraint.activate([
+                hostingView.topAnchor.constraint(equalTo: view.topAnchor),
+                hostingView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+                hostingView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+                hostingView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            ])
+
+            swiftUIHostingView = hostingView
+            
+            // Update preferred content size for the popover
+            preferredContentSize = NSSize(width: 400, height: 160)
+        } else {
+            swiftUIHostingView?.isHidden = false
+        }
+    }
+
+    private func handleNeverAllow() {
+        dismiss()
+        query?.handleDecision(grant: false)
+    }
+
+    private func handleAlwaysAllow() {
+        dismiss()
+        query?.handleDecision(grant: true, remember: true)
     }
 }

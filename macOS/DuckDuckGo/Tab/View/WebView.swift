@@ -18,6 +18,7 @@
 
 import Carbon.HIToolbox
 import Cocoa
+import Combine
 import CommonObjCExtensions
 import WebKit
 
@@ -27,10 +28,11 @@ protocol WebViewContextMenuDelegate: AnyObject {
     func webView(_ webView: WebView, didCloseContextMenu menu: NSMenu, with event: NSEvent?)
 }
 
-protocol WebViewInteractionEventsDelegate: AnyObject {
-    func webView(_ webView: WebView, mouseDown event: NSEvent)
-    func webView(_ webView: WebView, keyDown event: NSEvent)
-    func webView(_ webView: WebView, scrollWheel event: NSEvent)
+enum WebViewInteractionEvent {
+    case mouseDown(NSEvent)
+    case middleMouseDown(NSEvent)
+    case keyDown(NSEvent)
+    case scrollWheel(NSEvent)
 }
 
 protocol WebViewZoomLevelDelegate: AnyObject {
@@ -45,8 +47,9 @@ protocol WebViewZoomLevelDelegate: AnyObject {
 final class WebView: WKWebView {
 
     weak var contextMenuDelegate: WebViewContextMenuDelegate?
-    weak var interactionEventsDelegate: WebViewInteractionEventsDelegate?
     weak var zoomLevelDelegate: WebViewZoomLevelDelegate?
+
+    let interactionEventsPublisher = PassthroughSubject<WebViewInteractionEvent, Never>()
 
     private var isLoadingObserver: Any?
     /// used in tests
@@ -181,7 +184,14 @@ final class WebView: WKWebView {
 
     override func mouseDown(with event: NSEvent) {
         super.mouseDown(with: event)
-        interactionEventsDelegate?.webView(self, mouseDown: event)
+        interactionEventsPublisher.send(.mouseDown(event))
+    }
+
+    override func otherMouseDown(with event: NSEvent) {
+        super.otherMouseDown(with: event)
+        if case .middle = event.button {
+            interactionEventsPublisher.send(.middleMouseDown(event))
+        }
     }
 
     override func keyDown(with event: NSEvent) {
@@ -193,12 +203,12 @@ final class WebView: WKWebView {
         }
 
         super.keyDown(with: event)
-        interactionEventsDelegate?.webView(self, keyDown: event)
+        interactionEventsPublisher.send(.keyDown(event))
     }
 
     override func scrollWheel(with event: NSEvent) {
         super.scrollWheel(with: event)
-        interactionEventsDelegate?.webView(self, scrollWheel: event)
+        interactionEventsPublisher.send(.scrollWheel(event))
     }
 
     // MARK: - Developer Tools

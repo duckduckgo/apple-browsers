@@ -2079,6 +2079,42 @@
         }
       }
     },
+    "aichat.chat-with-ai.tooltip" : {
+      "comment" : "Tooltip for the chat with AI segment in the toggle control",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Chat with AI"
+          }
+        }
+      }
+    },
+    "aichat.search-the-web.tooltip" : {
+      "comment" : "Tooltip for the search the web segment in the toggle control",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search the Web"
+          }
+        }
+      }
+    },
+    "aichat.send-button.tooltip" : {
+      "comment" : "Tooltip for the send button in AI chat omnibar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Send"
+          }
+        }
+      }
+    },
     "aichat.sidebar.close-button.tooltip" : {
       "comment" : "Tooltip for button to close the sidebar with the duck.ai chat",
       "extractionState" : "extracted_with_value",
@@ -4517,7 +4553,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Handle Pop-ups For Me"
+            "value" : "Handle Pop-Ups For Me"
           }
         },
         "es" : {
@@ -4697,7 +4733,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Manage Cookie Pop-ups"
+            "value" : "Manage Cookie Pop-Ups"
           }
         },
         "es" : {
@@ -14645,6 +14681,7 @@
     },
     "Clear All History…" : {
       "comment" : "Main Menu History item",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -18312,7 +18349,7 @@
       }
     },
     "dashboard.popups.ask" : {
-      "comment" : "Make PopUp Windows always asked from user for current domain",
+      "comment" : "Make pop-up windows always request permission for the current domain",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -24049,186 +24086,6 @@
         }
       }
     },
-    "duckai.hide-ai-generated-images-settings" : {
-      "comment" : "The section name in preferences for Hide AI-Generated Images Settings",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "KI-generierte Bilder ausblenden"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Hide AI-Generated Images"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ocultar imágenes generadas por IA"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Masquer les images générées par l'IA"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nascondi immagini generate dall'intelligenza artificiale"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Verberg door AI gegenereerde afbeeldingen"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ukryj obrazy wygenerowane przez sztuczną inteligencję"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ocultar imagens geradas por IA"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Скрыть изображения, созданные ИИ"
-          }
-        }
-      }
-    },
-    "duckai.hide-ai-generated-images-settings.description" : {
-      "comment" : "Description of the section in Settings",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Filtert KI-generierte Bilder aus den Bildsuchergebnissen heraus"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Filter out AI-generated images from image search results"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Filtra las imágenes generadas por IA de los resultados de búsqueda de imágenes"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Filtre les images générées par l'IA dans les résultats de recherche d'images"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Filtra le immagini generate dall'intelligenza artificiale dai risultati di ricerca di immagini"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Filtert door AI gegenereerde afbeeldingen uit de zoekresultaten van afbeeldingen"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Filtruje obrazy wygenerowane przez sztuczną inteligencję z wyników wyszukiwania obrazów"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Filtra as imagens geradas por IA dos resultados de pesquisa de imagens"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Фильтрует изображения, созданные ИИ, из результатов поиска изображений"
-          }
-        }
-      }
-    },
-    "duckai.search-ai-features-settings.link" : {
-      "comment" : "Button to open the Search AI Features Settings",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Such-KI-Funktionen öffnen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Open Search AI Features"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Abrir funciones de IA de búsqueda"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ouvrir les fonctionnalités d'IA de recherche"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apri le funzionalità di ricerca IA"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Open AI-zoekfuncties"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Otwórz funkcje wyszukiwania AI"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Abrir funcionalidades de IA de pesquisa"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Открыть функции поиска с ИИ"
-          }
-        }
-      }
-    },
     "duckai.shortcuts.section.title" : {
       "comment" : "Section title for Duck.ai shortcuts settings",
       "extractionState" : "extracted_with_value",
@@ -24705,6 +24562,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Показывать вариант Duck.ai в поисковом поле на странице новой вкладки"
+          }
+        }
+      }
+    },
+    "duckai.show-search-and-duckai-toggle.label" : {
+      "comment" : "Label for showing Search/Duck.ai toggle when address bar is focused",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show Search and Duck.ai toggle when the address bar is focused"
           }
         }
       }
@@ -30049,6 +29918,19 @@
         }
       }
     },
+    "feedback.problem-subcategory.promotional-messages" : {
+      "comment" : "Problem subcategory for feedback related to promotional messages",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Promotional messages"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
     "feedback.problem-subcategory.site-asks-to-turn-off-ad-blocker" : {
       "comment" : "Problem subcategory for ad blocker detection messages",
       "extractionState" : "extracted_with_value",
@@ -33624,7 +33506,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Usuń 1$#@items@."
+            "value" : "Usuń %#@items@."
           },
           "substitutions" : {
             "items" : {
@@ -38409,7 +38291,7 @@
     },
     "history.menu.clear.all.history.description" : {
       "comment" : "Description in the alert with the confirmation to clear all data",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -38469,7 +38351,7 @@
     },
     "history.menu.clear.all.history.question" : {
       "comment" : "Alert with the confirmation to clear all history and data",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -38529,7 +38411,7 @@
     },
     "history.menu.clear.data.description" : {
       "comment" : "Description in the alert with the confirmation to clear browsing history",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -38589,7 +38471,7 @@
     },
     "history.menu.clear.data.question" : {
       "comment" : "Alert with the confirmation to clear all data",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -38649,7 +38531,7 @@
     },
     "history.menu.clear.data.today.description" : {
       "comment" : "Description in the alert with the confirmation to clear browsing history",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -38709,7 +38591,7 @@
     },
     "history.menu.clear.data.today.question" : {
       "comment" : "Alert with the confirmation to clear all data",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -38769,7 +38651,7 @@
     },
     "history.menu.clear.this.history" : {
       "comment" : "Menu item to clear parts of history and data",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -38829,7 +38711,7 @@
     },
     "history.menu.delete.this.history" : {
       "comment" : "Menu item to delete parts of history and website data",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -38889,7 +38771,7 @@
     },
     "history.menu.older" : {
       "comment" : "Menu item representing older history",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -54593,7 +54475,7 @@
       }
     },
     "notification.badge.popuphidden" : {
-      "comment" : "Notification that appears when browser cosmetically hides a cookie popup",
+      "comment" : "Notification that appears when the browser cosmetically hides a cookie pop-up",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -54605,7 +54487,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Pop-up Hidden"
+            "value" : "Pop-Up Hidden"
           }
         },
         "es" : {
@@ -60078,7 +59960,7 @@
       }
     },
     "permission.authorization.popups.format" : {
-      "comment" : "Popover asking for domain %@ to open Popup Window",
+      "comment" : "Popover asking for domain %@ to open a pop-up window",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -60090,7 +59972,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Allow “%@“ to open PopUp Window?"
+            "value" : "Allow “%@” to open a pop-up window?"
           }
         },
         "es" : {
@@ -60138,7 +60020,7 @@
       }
     },
     "permission.authorization.popups.menu-header" : {
-      "comment" : "Popover asking for domain %@ to open Popup Window",
+      "comment" : "Popover asking for domain %@ to open pop-up windows",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -60150,7 +60032,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Allow “%@“ to open PopUp Windows?"
+            "value" : "Allow “%@” to open pop-up windows?"
           }
         },
         "es" : {
@@ -60857,8 +60739,68 @@
         }
       }
     },
+    "permission.popup.allow.popups.page" : {
+      "comment" : "Option to temporarily allow pop-ups for the current page during this visit until it reloads",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pop-ups für diesen Besuch erlauben"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Only allow pop-ups for this visit"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir ventanas emergentes durante esta visita"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autoriser les fenêtres contextuelles pour cette visite"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consenti popup per questa visita"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pop-ups voor dit bezoek toestaan"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zezwalaj na wyskakujące okienka podczas tej wizyty"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir pop-ups nesta visita"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить всплывающие окна для этого посещения"
+          }
+        }
+      }
+    },
     "permission.popup.blocked.popover" : {
-      "comment" : "Text of popver warning the user that the a pop-up as been blocked",
+      "comment" : "Text of popover warning the user that a pop-up has been blocked",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -60870,7 +60812,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Pop-up Blocked"
+            "value" : "Pop-Up Blocked"
           }
         },
         "es" : {
@@ -60978,127 +60920,348 @@
       }
     },
     "permission.popup.open.format" : {
-      "comment" : "Open %@ URL Pop-up",
+      "comment" : "Menu action to open the blocked pop-up at the specified URL",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@"
+            "value" : "„%@“ öffnen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%@"
+            "value" : "Open “%@”"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@"
+            "value" : "Abrir “%@”"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@"
+            "value" : "Ouvrir « %@ »"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@"
+            "value" : "Apri “%@”"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@"
+            "value" : "\"%@\" openen"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@"
+            "value" : "Otwórz „%@”"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@"
+            "value" : "Abrir “%@”"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@"
+            "value" : "Открыть «%@»"
           }
         }
       }
     },
     "permission.popup.title" : {
-      "comment" : "Title of a popup that has a list of blocked popups",
-      "extractionState" : "extracted_with_value",
+      "comment" : "Title showing number of blocked pop-ups",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Blockierte Pop-ups"
+            "value" : "%#@popups@ blockiert"
+          },
+          "substitutions" : {
+            "popups" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg Pop-up"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg Pop-ups"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Blocked Pop-ups"
+            "value" : "Blocked %#@popups@"
+          },
+          "substitutions" : {
+            "popups" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "new",
+                      "value" : "%arg pop-up"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "new",
+                      "value" : "%arg pop-ups"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ventanas emergentes bloqueadas"
+            "value" : "%#@popups@ bloqueadas"
+          },
+          "substitutions" : {
+            "popups" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg ventana emergente"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg ventanas emergentes"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Fenêtres contextuelles bloquées"
+            "value" : "%#@popups@ bloquées"
+          },
+          "substitutions" : {
+            "popups" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg fenêtre contextuelle"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg fenêtres contextuelles"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Popup bloccati"
+            "value" : "%#@popups@ bloccati"
+          },
+          "substitutions" : {
+            "popups" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg popup"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg popup"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Geblokkeerde pop-ups"
+            "value" : "%#@popups@ geblokkeerd"
+          },
+          "substitutions" : {
+            "popups" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg pop-up"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg pop-ups"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zablokowane wyskakujące okienka"
+            "value" : "Zablokowane %#@popups@"
+          },
+          "substitutions" : {
+            "popups" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "few" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg wyskakujące okienka"
+                    }
+                  },
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg wyskakujących okienek"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg wyskakujące okienko"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg wyskakujących okienek"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pop-ups bloqueados"
+            "value" : "%#@popups@ bloqueados"
+          },
+          "substitutions" : {
+            "popups" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg pop-up"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg pop-ups"
+                    }
+                  }
+                }
+              }
+            }
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Заблокированные всплывающие окна"
+            "value" : "Заблокировано %#@popups@"
+          },
+          "substitutions" : {
+            "popups" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "few" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg всплывающих окна"
+                    }
+                  },
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg всплывающих окон"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg всплывающее окно"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg всплывающих окон"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
     },
     "permission.popups" : {
-      "comment" : "Open Pop Up Windows permission access name",
+      "comment" : "Open pop-up windows permission access name",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -77460,6 +77623,126 @@
         }
       }
     },
+    "sad.att.add-to-dock.inactive-user.message" : {
+      "comment" : "Body of a modal view inviting inactive users to add DuckDuckGo to their Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Füge DuckDuckGo zu deinem Dock hinzu, um schnell auf Schutzfunktionen zuzugreifen, die andere Browser nicht bieten."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add DuckDuckGo to your dock for quick access to protections other browsers don't provide."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade DuckDuckGo a tu Dock para acceder rápidamente a protecciones que otros navegadores no proporcionan."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoutez DuckDuckGo à votre Dock pour accéder rapidement aux protections que les autres navigateurs ne proposent pas."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi DuckDuckGo al tuo dock per accedere rapidamente alle protezioni che altri browser non offrono."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voeg DuckDuckGo toe aan je dock voor snelle toegang tot beveiligingen die andere browsers niet bieden."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj DuckDuckGo do Docka, aby uzyskać szybki dostęp do zabezpieczeń, których nie oferują inne przeglądarki."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adiciona o DuckDuckGo à tua dock para acesso rápido às proteções que outros navegadores não oferecem."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавьте DuckDuckGo на док-панель для быстрого доступа к функциям защиты, которых нет в других браузерах."
+          }
+        }
+      }
+    },
+    "sad.att.add-to-dock.inactive-user.primary" : {
+      "comment" : "Button primary action title that appears on a modal inviting inactive users to add DuckDuckGo to their Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zum Dock hinzufügen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add To Dock"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir al Dock"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter au Dock"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi al dock"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toevoegen aan Dock"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj do Docka"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar à Dock"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить на док-панель"
+          }
+        }
+      }
+    },
     "sad.att.add-to-dock.popover.message" : {
       "comment" : "Body of the popover that invites users to add DuckDuckGo to their Dock",
       "extractionState" : "extracted_with_value",
@@ -77696,6 +77979,126 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Больше не спрашивать"
+          }
+        }
+      }
+    },
+    "sad.att.both.inactive-user.message" : {
+      "comment" : "Body of a modal view inviting inactive users to set DuckDuckGo as their default browser and add to their Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Füge DuckDuckGo zu deinem Dock hinzu und wähle es als Standardbrowser, um mehr von dem zu schützen, was du online tust."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add DuckDuckGo to your Dock and set it as your default browser to protect more of what you do online."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añade DuckDuckGo a tu Dock y configúralo como tu navegador predeterminado para mejorar la protección de tu actividad en Internet."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajoutez DuckDuckGo à votre Dock et faites-en votre navigateur par défaut pour mieux protéger vos activités en ligne."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi DuckDuckGo al dock e impostalo come browser predefinito per proteggere meglio quello che fai online."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voeg DuckDuckGo toe aan je dock en stel het in als je standaardbrowser om je online activiteiten beter te beschermen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj DuckDuckGo do Docka i ustaw jako domyślną przeglądarkę, aby w większym stopniu chronić swoją aktywność w Internecie."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adiciona o DuckDuckGo à tua Dock e define-o como navegador predefinido para protegeres mais o que fazes online."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чтобы лучше защитить себя онлайн, добавьте DuckDuckGo на док-панель и назначьте его браузером по умолчанию."
+          }
+        }
+      }
+    },
+    "sad.att.both.inactive-user.primary" : {
+      "comment" : "Button primary action title that appears on a modal inviting inactive users to set DuckDuckGo as their default browser and add to their Dock",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hinzufügen und als Standard festlegen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Add & Set As Default"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir y configurar como predeterminado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter et définir par défaut"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi e imposta come predefinito"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toevoegen en als standaard instellen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj i ustaw jako domyślną"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar e definir como predefinição"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить и установить по умолчанию"
           }
         }
       }
@@ -77940,6 +78343,92 @@
         }
       }
     },
+    "sad.att.inactive-user.dismiss" : {
+      "comment" : "Button action title that appears on a prompt that dismisses the prompt.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nein, danke"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No Thanks"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No, gracias"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non merci"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No, grazie"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nee, bedankt"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie, dziękuję"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não, obrigado"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет, спасибо"
+          }
+        }
+      }
+    },
+    "sad.att.inactive-user.notification.body" : {
+      "comment" : "Subtitle of system notification asking the user why they dismissed a prompt with the 'No Thanks' button. The parameter %1$@ is the localized 'No Thanks' string.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "We’re always looking to improve. Can you tell us why you chose \"%1$@\"?"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "sad.att.inactive-user.notification.title" : {
+      "comment" : "Title of system notification asking the user for quick feedback after declining a prompt by clicking 'No Thanks'.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Got time for quick feedback?"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
     "sad.att.set-as-default.banner.message" : {
       "comment" : "Body of the banner view that invites users to set DuckDuckGo as their default browser",
       "extractionState" : "extracted_with_value",
@@ -77996,6 +78485,126 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "DuckDuckGo не назначен вашим браузером по умолчанию. Почему бы не поднять уровень защиты?"
+          }
+        }
+      }
+    },
+    "sad.att.set-as-default.inactive-user.message" : {
+      "comment" : "Body of a modal view inviting inactive users to set DuckDuckGo as their default browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mach DuckDuckGo zu deinem Standard-Browser, um mehr von dem zu schützen, was du online tust."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Make DuckDuckGo your default browser to protect more of what you do online."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Haz que DuckDuckGo sea tu navegador predeterminado para mejorar la protección de tu actividad en Internet."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faites de DuckDuckGo votre navigateur par défaut pour protéger davantage vos activités en ligne."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rendi DuckDuckGo il tuo browser predefinito per proteggere meglio quello che fai online."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Maak DuckDuckGo je standaardbrowser om meer van wat je online doet te beschermen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustaw DuckDuckGo jako domyślną przeglądarkę, aby w większym stopniu chronić swoją aktywność w Internecie."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Define o DuckDuckGo como navegador predefinido para protegeres mais o que fazes online."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чтобы лучше защитить себя онлайн, назначьте DuckDuckGo браузером по умолчанию."
+          }
+        }
+      }
+    },
+    "sad.att.set-as-default.inactive-user.primary" : {
+      "comment" : "Button primary action title that appears on a modal inviting inactive users to set DuckDuckGo as their default browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Als Standard festlegen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Set As Default"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Establecer como predeterminado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Définir par défaut"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imposta come predefinito"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Als standaard instellen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustaw jako domyślną"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Definir como predefinição"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сделать браузером по умолчанию"
           }
         }
       }
@@ -84215,6 +84824,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "VPN для защиты Wi-Fi и личной информации"
+          }
+        }
+      }
+    },
+    "suggestion.search.the.web" : {
+      "comment" : "Label shown on the search suggestion cell indicating the action will search the web",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search the web"
           }
         }
       }

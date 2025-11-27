@@ -35,9 +35,9 @@ enum AutoconsentPixel: PixelKitEvent {
     case detectedOnlyRules
     case selfTestOk
     case selfTestFail
-    case popupManagedCount(params: [String: String])
 
     case summary(events: [String: Int])
+    case usageStats(stats: [String: String])
 
     static var summaryPixels: [AutoconsentPixel] =  [
         .acInit,
@@ -75,7 +75,7 @@ enum AutoconsentPixel: PixelKitEvent {
         case .selfTestOk: "autoconsent_self-test-ok"
         case .selfTestFail: "autoconsent_self-test-fail"
         case .summary: "autoconsent_summary"
-        case .popupManagedCount: "autoconsent_popup-managed-count"
+        case .usageStats: "autoconsent_usage-stats"
         }
     }
 
@@ -89,8 +89,13 @@ enum AutoconsentPixel: PixelKitEvent {
             Dictionary(uniqueKeysWithValues: AutoconsentPixel.summaryPixels.map { pixel in
             (pixel.key, "\(events[pixel.key] ?? 0)")
             })
-        case let .popupManagedCount(params):
-            params
+        case let .usageStats(stats): {
+            var params = stats
+            // Added as a requirement from the privacy triage
+            // see: https://app.asana.com/1/137249556945/project/1209220182846570/task/1211062294407696?focus=true
+            params["petal"] = "true"
+            return params
+        }()
         default: [:]
         }
     }

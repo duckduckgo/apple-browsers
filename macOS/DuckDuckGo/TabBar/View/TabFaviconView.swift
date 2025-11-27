@@ -26,8 +26,10 @@ enum FaviconPlaceholderStyle {
 
 final class TabFaviconView: NSView {
 
-    private let placeholderView = LetterView()
+    private let loadingPolicy = DefaultLoadingIndicatorPolicy()
     private let imageView = NSImageView()
+    private let placeholderView = LetterView()
+    private let spinnerView = SpinnerView()
 
     var displaysImage: Bool {
         imageView.image != nil
@@ -41,8 +43,6 @@ final class TabFaviconView: NSView {
             imageView.contentTintColor = newValue
         }
     }
-
-    private let spinnerView = SpinnerView()
 
     override init(frame: NSRect) {
         super.init(frame: frame)
@@ -65,24 +65,40 @@ final class TabFaviconView: NSView {
 
 extension TabFaviconView {
 
-    func displaySpinnerIfNeeded(url: URL?, isLoading: Bool, error: Error?) {
-        let policy = DefaultLoadingIndicatorPolicy()
-        guard policy.shouldShowLoadingIndicator(url: url, isLoading: isLoading, error: error) else {
+    func startSpinnerIfNeeded(isLoading: Bool, url: URL?, error: Error?) {
+        guard shouldStartSpinner(isLoading: isLoading, url: url, error: error) else {
             stopSpinner()
-            resizeImageIfNeeded(scaleDown: false)
             return
         }
 
+        startSpinner()
+    }
+
+    func startSpinner() {
         spinnerView.startAnimating()
         resizeImageIfNeeded(scaleDown: true)
     }
 
-    func stopSpinner() {
-        spinnerView.stopAnimating()
+    func stopSpinner(animated: Bool = true) {
+        spinnerView.stopAnimating(animated: animated)
+        resizeImageIfNeeded(scaleDown: false)
     }
 
+    func refreshSpinnerColorsIfNeeded(rendered: Bool) {
+        spinnerView.refreshSpinnerColorsIfNeeded(rendered: rendered)
+    }
+
+    /// Renders a given Favicon, with a crossfade animation.
+    ///
+    /// - Important:
+    ///     In order to avoid flickering triggered during CollectionView reload (ie. Pinning / Unpinning a tab), we'll skip Crossfading whenever the View was effectively reset.
+    ///
     func displayFavicon(favicon: NSImage?, placeholderStyle: FaviconPlaceholderStyle) {
         let targetImage = favicon ?? placeholderStyle.placeholderImage
+        if shouldCrossfadeFavicon(newFavicon: targetImage) {
+            imageView.applyCrossfadeTransition(timingFunction: FaviconAnimation.animationTimingFunction, duration: FaviconAnimation.animationDuration)
+        }
+
         imageView.image = targetImage
 
         placeholderView.isShown = shouldDisplayPlaceholderView(favicon: favicon, placeholderStyle: placeholderStyle)
@@ -90,9 +106,20 @@ extension TabFaviconView {
     }
 
     func reset() {
-        stopSpinner()
+        stopSpinner(animated: false)
         imageView.image = nil
         placeholderView.isShown = false
+    }
+}
+
+private extension TabFaviconView {
+
+    func shouldCrossfadeFavicon(newFavicon: NSImage?) -> Bool {
+        loadingPolicy.shouldCrossfadeFavicon(newFavicon: newFavicon, oldFavicon: imageView.image, displaysPlaceholder: placeholderView.isShown)
+    }
+
+    func shouldStartSpinner(isLoading: Bool, url: URL?, error: Error?) -> Bool {
+        loadingPolicy.shouldShowLoadingIndicator(isLoading: isLoading, url: url, error: error)
     }
 }
 
@@ -238,6 +265,14 @@ private extension NSImage {
         image.unlockFocus()
 
         return image
+    }
+}
+
+extension NSView {
+
+    func applyCrossfadeTransition(timingFunction: CAMediaTimingFunction, duration: TimeInterval) {
+        let transition = CATransition.buildFadeTransition(timingFunction: timingFunction, duration: duration)
+        layer?.add(transition, forKey: nil)
     }
 }
 

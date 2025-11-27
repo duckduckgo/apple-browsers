@@ -27,6 +27,7 @@ import Navigation
 import PixelKit
 import os.log
 import BrowserServicesKit
+import AttributedMetric
 
 /// Protocol for handling sync settings view interactions and device management.
 /// 
@@ -177,6 +178,7 @@ final class SyncDialogController {
         }.sorted(by: { item, _ in
             item.isCurrent
         })
+        NotificationCenter.default.post(name: .syncDevicesUpdate, object: self, userInfo: [AttributedMetricNotificationParameter.syncCount.rawValue: registeredDevices.count])
     }
 
     private func recoverDevice(recoveryCode: String, fromRecoveryScreen: Bool, codeSource: SyncCodeSource) {

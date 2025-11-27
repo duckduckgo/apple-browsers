@@ -19,6 +19,7 @@
 import AIChat
 import BrowserServicesKit
 import UserScript
+import Common
 
 enum AIChatMessageType {
     case nativeConfigValues
@@ -84,6 +85,8 @@ final class AIChatMessageHandler: AIChatMessageHandling {
 // MARK: - Messages
 extension AIChatMessageHandler {
     private func getNativeConfigValues() -> Encodable? {
+        let appVersion = AppVersion.shared.versionAndBuildNumber
+        let defaults = AIChatNativeConfigValues.defaultValues
         if featureFlagger.isFeatureOn(.aiChatSidebar) {
             return AIChatNativeConfigValues(isAIChatHandoffEnabled: true,
                                             supportsClosingAIChat: true,
@@ -93,9 +96,25 @@ extension AIChatMessageHandler {
                                             supportsNativeChatInput: false,
                                             supportsURLChatIDRestoration: true,
                                             supportsFullChatRestoration: true,
-                                            supportsPageContext: featureFlagger.isFeatureOn(.aiChatPageContext))
+                                            supportsPageContext: featureFlagger.isFeatureOn(.aiChatPageContext),
+                                            isAIChatTopToolBarHidden: false,
+                                            isAIChatModelPickerInChatInput: false,
+                                            appVersion: appVersion,
+                                            supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint)
         } else {
-            return AIChatNativeConfigValues.defaultValues
+            return AIChatNativeConfigValues(isAIChatHandoffEnabled: defaults.isAIChatHandoffEnabled,
+                                            supportsClosingAIChat: defaults.supportsClosingAIChat,
+                                            supportsOpeningSettings: defaults.supportsOpeningSettings,
+                                            supportsNativePrompt: defaults.supportsNativePrompt,
+                                            supportsStandaloneMigration: defaults.supportsStandaloneMigration,
+                                            supportsNativeChatInput: defaults.supportsNativeChatInput,
+                                            supportsURLChatIDRestoration: defaults.supportsURLChatIDRestoration,
+                                            supportsFullChatRestoration: defaults.supportsFullChatRestoration,
+                                            supportsPageContext: defaults.supportsPageContext,
+                                            isAIChatTopToolBarHidden: defaults.isAIChatTopToolBarHidden,
+                                            isAIChatModelPickerInChatInput: defaults.isAIChatModelPickerInChatInput,
+                                            appVersion: appVersion,
+                                            supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint)
         }
     }
 

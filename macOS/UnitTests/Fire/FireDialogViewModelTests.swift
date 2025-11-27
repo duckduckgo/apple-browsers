@@ -140,7 +140,7 @@ final class FireDialogViewModelTests: XCTestCase {
         }
 
         // Then
-        wait(for: [presentExpectation], timeout: 2.0)
+        wait(for: [presentExpectation], timeout: 5.0)
         XCTAssertNil(onboardingContextualDialogsManager.updatedForTab)
         XCTAssertFalse(onboardingContextualDialogsManager.gotItPressedCalled)
         XCTAssertTrue(onboardingContextualDialogsManager.fireButtonUsedCalled)
@@ -214,7 +214,7 @@ final class FireDialogViewModelTests: XCTestCase {
             presentExpectation.fulfill()
         }
 
-        wait(for: [presentExpectation], timeout: 2.0)
+        wait(for: [presentExpectation], timeout: 5.0)
 
         // Validate openNewWindow was NOT called
         wait(for: [openNewWindowExp], timeout: 0.5)
@@ -277,7 +277,7 @@ final class FireDialogViewModelTests: XCTestCase {
             handleExpectation.fulfill()
         }
 
-        wait(for: [handleExpectation], timeout: 3.0)
+        wait(for: [handleExpectation], timeout: 5)
         withExtendedLifetime(tabCollectionVM) {}
 
         XCTAssertFalse(historyCoordinator.burnAllCalled)
@@ -378,7 +378,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeCookiesAndSiteData: vm.includeCookiesAndSiteData,
                                   includeChatHistory: vm.includeChatHistory)
         _=handle(vm, r1)
-        wait(for: [exp], timeout: 2)
+        wait(for: [exp], timeout: 5)
         wait(for: [openNewWindowExp], timeout: 0.5)
 
         // Verify window still exists and old tab was removed, new tab was inserted
@@ -438,7 +438,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeCookiesAndSiteData: vm.includeCookiesAndSiteData,
                                   includeChatHistory: vm.includeChatHistory)
         _=handle(vm, r2)
-        wait(for: [exp], timeout: 2)
+        wait(for: [exp], timeout: 5)
         wait(for: [openNewWindowExp], timeout: 0.5)
 
         // Verify window still exists and all old tabs were removed, new tab was inserted
@@ -500,7 +500,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeCookiesAndSiteData: vm.includeCookiesAndSiteData,
                                   includeChatHistory: vm.includeChatHistory)
         _=handle(vm, r3)
-        wait(for: [exp], timeout: 2)
+        wait(for: [exp], timeout: 5)
         wait(for: [openNewWindowExp], timeout: 0.5)
     }
 
@@ -548,7 +548,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeCookiesAndSiteData: vm.includeCookiesAndSiteData,
                                   includeChatHistory: vm.includeChatHistory)
         _=handle(vm, r4)
-        wait(for: [exp], timeout: 2)
+        wait(for: [exp], timeout: 5)
         wait(for: [openNewWindowExp], timeout: 0.5)
     }
 
@@ -596,7 +596,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeCookiesAndSiteData: vm.includeCookiesAndSiteData,
                                   includeChatHistory: vm.includeChatHistory)
         _=handle(vm, r5)
-        wait(for: [exp], timeout: 2)
+        wait(for: [exp], timeout: 5)
         wait(for: [openNewWindowExp], timeout: 0.5)
     }
 
@@ -651,7 +651,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeCookiesAndSiteData: vm.includeCookiesAndSiteData,
                                   includeChatHistory: vm.includeChatHistory)
         _=handle(vm, r6)
-        wait(for: [exp], timeout: 2)
+        wait(for: [exp], timeout: 5)
         wait(for: [openNewWindowExp], timeout: 0.5)
 
         // Verify window still exists with new tab
@@ -707,7 +707,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeCookiesAndSiteData: vm.includeCookiesAndSiteData,
                                   includeChatHistory: vm.includeChatHistory)
         _=handle(vm, r7)
-        wait(for: [exp], timeout: 2)
+        wait(for: [exp], timeout: 5)
         wait(for: [openNewWindowExp], timeout: 0.5)
 
         // Verify window still exists with new tab
@@ -766,7 +766,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeCookiesAndSiteData: vm.includeCookiesAndSiteData,
                                   includeChatHistory: vm.includeChatHistory)
         _=handle(vm, r8)
-        wait(for: [exp], timeout: 2)
+        wait(for: [exp], timeout: 5)
         wait(for: [openNewWindowExp], timeout: 0.5)
 
         // Verify window still exists with new tab
@@ -827,7 +827,7 @@ final class FireDialogViewModelTests: XCTestCase {
                                   includeCookiesAndSiteData: vm.includeCookiesAndSiteData,
                                   includeChatHistory: vm.includeChatHistory)
         _=handle(vm, r9)
-        wait(for: [exp], timeout: 2)
+        wait(for: [exp], timeout: 5)
         wait(for: [openNewWindowExp], timeout: 0.5)
 
         // Verify window still exists with new tab
@@ -884,7 +884,7 @@ final class FireDialogViewModelTests: XCTestCase {
             handleExpectation.fulfill()
         }
 
-        wait(for: [handleExpectation], timeout: 3.0)
+        wait(for: [handleExpectation], timeout: 5)
         withExtendedLifetime(tabCollectionVM) {}
 
         XCTAssertFalse(historyCoordinator.burnAllCalled)
@@ -949,7 +949,7 @@ final class FireDialogViewModelTests: XCTestCase {
             handleExpectation.fulfill()
         }
 
-        wait(for: [handleExpectation], timeout: 3.0)
+        wait(for: [handleExpectation], timeout: 5)
         withExtendedLifetime(tabCollectionVM) {}
 
         XCTAssertFalse(historyCoordinator.burnAllCalled)

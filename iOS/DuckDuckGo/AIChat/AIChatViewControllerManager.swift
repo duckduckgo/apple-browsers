@@ -154,8 +154,6 @@ final class AIChatViewControllerManager {
                       containerView: UIView? = nil,
                       viewController: UIViewController? = nil,
                       completion: (() -> Void)? = nil) {
-        downloadsDirectoryHandler.createDownloadsDirectoryIfNeeded()
-
         // Reset the session timer if the subscription state has changed
         if subscriptionAIChatStateHandler.shouldForceAIChatRefresh {
             stopSessionTimer()
@@ -408,6 +406,10 @@ extension AIChatViewControllerManager: AIChatViewControllerDelegate {
             self.delegate?.aiChatViewControllerManager(self, didRequestOpenDownloadWithFileName: fileName)
         }
     }
+    
+    func aiChatViewControllerWillStartDownload() {
+        downloadsDirectoryHandler.createDownloadsDirectoryIfNeeded()
+    }
 }
 
 // MARK: - RoundedPageSheetContainerViewControllerDelegate
@@ -440,6 +442,12 @@ extension AIChatViewControllerManager: AIChatUserScriptDelegate {
     }
 
     func aiChatUserScript(_ userScript: AIChatUserScript, didReceiveMetric metric: AIChatMetric) {
+
+        if metric.metricName == .userDidSubmitPrompt
+            || metric.metricName == .userDidSubmitFirstPrompt {
+            NotificationCenter.default.post(name: .aiChatUserDidSubmitPrompt, object: nil)
+        }
+
         pixelMetricHandler?.firePixelWithMetric(metric)
     }
 }

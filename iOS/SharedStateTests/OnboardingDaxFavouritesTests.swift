@@ -75,20 +75,26 @@ import Combine
         let onboardingPixelReporter = OnboardingPixelReporterMock()
         let tabsPersistence = TabsModelPersistence(store: keyValueStore, legacyStore: MockKeyValueStore())
         let variantManager = MockVariantManager()
-        let interactionStateSource = WebViewStateRestorationManager(featureFlagger: featureFlagger).isFeatureEnabled ? TabInteractionStateDiskSource() : nil
         let daxDialogsFactory = ExperimentContextualDaxDialogsFactory(contextualOnboardingLogic: contextualOnboardingLogicMock,
                                                                       contextualOnboardingPixelReporter: onboardingPixelReporter)
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
         let mockConfigManager = MockPrivacyConfigurationManager()
 
+        let mockScriptDependencies = DefaultScriptSourceProvider.Dependencies(appSettings: AppSettingsMock(),
+                                                                              privacyConfigurationManager: mockConfigManager,
+                                                                              contentBlockingManager: ContentBlockerRulesManagerMock(),
+                                                                              fireproofing: fireproofing,
+                                                                              contentScopeExperimentsManager: MockContentScopeExperimentManager())
+
         let tabManager = TabManager(model: tabsModel,
                                     persistence: tabsPersistence,
                                     previewsSource: MockTabPreviewsSource(),
-                                    interactionStateSource: interactionStateSource,
+                                    interactionStateSource: nil,
                                     privacyConfigurationManager: mockConfigManager,
                                     bookmarksDatabase: db,
                                     historyManager: historyManager,
                                     syncService: syncService,
+                                    userScriptsDependencies: mockScriptDependencies,
                                     contentBlockingAssetsPublisher: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
                                     subscriptionDataReporter: subscriptionDataReporter,
                                     contextualOnboardingPresenter: contextualOnboardingPresenter,
@@ -115,6 +121,7 @@ import Combine
             homePageConfiguration: homePageConfiguration,
             syncService: syncService,
             syncDataProviders: dataProviders,
+            userScriptsDependencies: mockScriptDependencies,
             contentBlockingAssetsPublisher: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
             appSettings: AppSettingsMock(),
             previewsSource: MockTabPreviewsSource(),

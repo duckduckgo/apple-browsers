@@ -26,7 +26,8 @@ struct SERPSettingsView: View {
     /// Used to show the right settings screen on SERP
     let page: Page
     
-    let webViewModel = AsyncHeadlessWebViewViewModel(settings: AsyncHeadlessWebViewSettings(bounces: false, contentBlocking: false))
+    let webViewModel = AsyncHeadlessWebViewViewModel(settings: AsyncHeadlessWebViewSettings(bounces: false,
+                                                                                            userScriptsDependencies: nil))
 
     var body: some View {
         AsyncHeadlessWebView(viewModel: webViewModel)
@@ -41,11 +42,14 @@ struct SERPSettingsView: View {
 
         case general
         case searchAssist
+        case hideAIGeneratedImages
 
         var url: URL {
             return switch self {
             case .searchAssist:
                 URL.embeddedSearchAssistSettings
+            case .hideAIGeneratedImages:
+                URL.embeddedHideAIGeneratedImagesSettings
             default:
                 URL.embeddedGeneralSERPSettings
             }

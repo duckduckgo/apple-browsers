@@ -19,7 +19,7 @@
 
 import Core
 import UIKit
-
+import PixelKit
 import BrowserServicesKit
 import Subscription
 
@@ -71,10 +71,11 @@ struct Launching: LaunchingHandling {
         // 1. To begin their essential work immediately, without waiting for UI or other components
         // 2. To potentially complete their tasks before the app becomes visible to the user
         // This approach aims to optimize performance and ensure critical functionalities are ready ASAP
-        let autofillService = AutofillService()
+        let autofillService = AutofillService(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
 
         let contentBlockingService = ContentBlockingService(appSettings: appSettings,
-                                                            fireproofing: fireproofing)
+                                                            fireproofing: fireproofing,
+                                                            contentScopeExperimentsManager: contentScopeExperimentsManager)
 
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared, contentBlocking: contentBlockingService.common)
         let configurationService = RemoteConfigurationService()
@@ -82,6 +83,9 @@ struct Launching: LaunchingHandling {
         let statisticsService = StatisticsService()
         let reportingService = ReportingService(fireproofing: fireproofing,
                                                 featureFlagging: featureFlagger,
+                                                userDefaults: UserDefaults.app,
+                                                pixelKit: PixelKit.shared,
+                                                appDependencies: AppDependencyProvider.shared,
                                                 privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager)
         let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                       privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
@@ -123,7 +127,7 @@ struct Launching: LaunchingHandling {
             systemSettingsPiPTutorialManager: systemSettingsPiPTutorialService.manager
         )
 
-        // Has to be intialised after configuration.start in case values need to be migrated
+        // Has to be initialised after configuration.start in case values need to be migrated
         aiChatSettings = AIChatSettings()
 
         // Initialise modal prompts coordination
@@ -142,7 +146,8 @@ struct Launching: LaunchingHandling {
                 experimentalAIChatManager: ExperimentalAIChatManager(),
                 defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter,
                 winBackOfferPresenter: winBackOfferService.presenter,
-                winBackOfferCoordinator: winBackOfferService.coordinator
+                winBackOfferCoordinator: winBackOfferService.coordinator,
+                userScriptsDependencies: contentBlockingService.userScriptsDependencies
             )
         )
 

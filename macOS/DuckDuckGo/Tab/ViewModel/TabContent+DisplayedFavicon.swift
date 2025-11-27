@@ -62,7 +62,7 @@ extension TabContent {
             return .bookmarksFolder
 
         case .history:
-            return featureFlagger.isFeatureOn(.historyView) ? .historyFavicon : nil
+            return .historyFavicon
 
         case .subscription:
             return .privacyPro
@@ -79,7 +79,7 @@ extension TabContent {
         case .url(let url, _, _):
             // Handle special URL types
             if url.isHistory {
-                return featureFlagger.isFeatureOn(.historyView) ? .historyFavicon : nil
+                return .historyFavicon
             } else if url.isDuckPlayer {
                 return .duckPlayerSettings
             } else if url.isDuckAIURL {

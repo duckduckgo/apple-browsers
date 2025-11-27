@@ -7,26 +7,10 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "d",
-                "description": "The error domain, representing the type of error, e.g. SUSparkleErrorDomain",
-                "type": "string"
-            },
-            {
-                "key": "e",
-                "description": "The error code representing the exact error, e.g. 4005",
-                "type": "number"
-            },
-            {
-                "key": "ud",
-                "description": "The underlying error domain, representing the type of error, e.g. SUSparkleErrorDomain",
-                "type": "string"
-            },
-            {
-                "key": "ue",
-                "description": "The underlying error code representing the exact error, e.g. 10",
-                "type": "number"
-            },
+            "errorDomain",
+            "errorCode",
+            "underlyingErrorDomain",
+            "underlyingErrorCode",
             {
                 "key": "reason",
                 "description": "The reason string provided by the Sparkle framework, e.g. \"The update is improperly signed and could not be validated.\"",

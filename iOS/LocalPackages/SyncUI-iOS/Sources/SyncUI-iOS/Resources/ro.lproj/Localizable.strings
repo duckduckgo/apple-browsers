@@ -287,7 +287,7 @@
 "sync.with.another.device.footer" = "Datele tale sunt criptate integral, iar DuckDuckGo nu are acces la cheia de criptare.";
 
 /* Message for syncing with another device */
-"sync.with.another.device.message" = "Sincronizează în siguranță marcajele și datele de completare automată între dispozitivele tale.";
+"sync.with.another.device.message" = "Sincronizează în siguranță marcajele și parolele între dispozitivele tale.";
 
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Începe sincronizarea";

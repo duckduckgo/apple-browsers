@@ -479,9 +479,11 @@ class OmniBarViewController: UIViewController, OmniBar {
     
     func setDaxEasterEggLogoURL(_ logoURL: String?) {
         let url = logoURL.flatMap { URL(string: $0) }
-
-        barView.privacyInfoContainer.privacyIcon.setDaxEasterEggLogoURL(url)
-
+        
+        barView.privacyInfoContainer.privacyIcon.setDaxEasterEggLogoURL(url) {
+            DailyPixel.fireDailyAndCount(pixel: .daxEasterEggLogoDisplayed)
+        }
+        
         // Set up delegate if not already done
         if barView.privacyInfoContainer.delegate == nil {
             barView.privacyInfoContainer.delegate = self
@@ -661,6 +663,9 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     private func applyCustomization() {
+        // Some states (e.g. `AIChatModeState`) do not support customization, i.e we should not show the customizable button
+        guard state.allowCustomization else { return }
+        
         let state = dependencies.mobileCustomization.state
         guard state.isEnabled else {
             barView.customizableButton.setImage(DesignSystemImages.Glyphs.Size24.shareApple, for: .normal)
@@ -915,15 +920,7 @@ extension OmniBarViewController {
 
     /// Enters AI Chat full mode, showing AI Chat-specific UI in the omnibar
     func enterAIChatMode() {
-        let dependencies = state.dependencies
-        let isLoading = state.isLoading
-
-        let baseState: any OmniBarState = state.hasLargeWidth
-            ? LargeOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
-            : SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
-
-        let aiChatState = UniversalOmniBarState.AIChatModeState(baseState: baseState, dependencies: dependencies, isLoading: isLoading)
-        refreshState(aiChatState)
+        refreshState(state.onEnterAIChatState)
     }
 }
 
@@ -942,6 +939,8 @@ extension OmniBarViewController {
 
 extension OmniBarViewController: PrivacyInfoContainerViewDelegate {
     func privacyInfoContainerViewDidTapDaxLogo(_ view: PrivacyInfoContainerView, logoURL: URL?, currentImage: UIImage?, sourceFrame: CGRect) {
+        DailyPixel.fireDailyAndCount(pixel: .daxEasterEggLogoTapped)
+        
         dependencies.daxEasterEggPresenter.presentFullScreen(
             from: self,
             logoURL: logoURL,

@@ -25,27 +25,13 @@ import WebKit
 
 extension Tab: NavigationResponder {
 
-    // "protected" navigationDelegate
-    private var navigationDelegate: DistributedNavigationDelegate! {
-        self.value(forKey: Tab.objcNavigationDelegateKeyPath) as? DistributedNavigationDelegate
-    }
-
-    // "protected" newWindowPolicyDecisionMakers
-    private var newWindowPolicyDecisionMakers: [NewWindowPolicyDecisionMaker]? {
-        get {
-            self.value(forKey: Tab.objcNewWindowPolicyDecisionMakersKeyPath) as? [NewWindowPolicyDecisionMaker]
-        }
-        set {
-            self.setValue(newValue, forKey: Tab.objcNewWindowPolicyDecisionMakersKeyPath)
-        }
-    }
-
-    func setupNavigationDelegate() {
+    func setupNavigationDelegate(navigationDelegate: DistributedNavigationDelegate, newWindowPolicyDecisionMakers: inout [NewWindowPolicyDecisionMaking]?) {
         navigationDelegate.setResponders(
             // AI Chat navigations handling
             .weak(nullable: self.aiChat),
 
-            .weak(nullable: self.navigationHotkeyHandler),
+            // Pop-ups and Navigation Key Modifiers handling
+            .weak(nullable: self.popupHandling),
             .strong(NavigationPixelNavigationResponder(featureFlagger: featureFlagger)),
             .weak(nullable: self.brokenSiteInfo),
             .weak(nullable: self.tabCrashRecovery),
@@ -112,9 +98,8 @@ extension Tab: NavigationResponder {
             // !! don‘t add Tab Extensions here !!
         )
 
-        newWindowPolicyDecisionMakers = [NewWindowPolicyDecisionMaker?](arrayLiteral:
+        newWindowPolicyDecisionMakers = [NewWindowPolicyDecisionMaking?](arrayLiteral:
             self.contextMenuManager,
-            self.navigationHotkeyHandler,
             self.duckPlayer
         ).compactMap { $0 }
 

@@ -415,7 +415,7 @@ final class BookmarksOutlineView: NSOutlineView {
     }
 
     override func validateProposedFirstResponder(_ responder: NSResponder, for event: NSEvent?) -> Bool {
-        if event?.type == .rightMouseDown {
+        if event?.isContextClick ?? false {
             // always allow context menu on a cell
             return true
         }

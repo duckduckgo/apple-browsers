@@ -466,6 +466,9 @@ extension Pixel {
         case autofillCardsManagementSaveCard
         case autofillCardsManagementUpdateCard
 
+        case autofillCardsAutofilledInMainframe
+        case autofillCardsAutofilledInIframe
+
         case autofillManagementScreenVisitSurveyAvailable
 
         case getDesktopCopy
@@ -481,6 +484,21 @@ extension Pixel {
         case autofillExtensionPasswordsDismissed
         case autofillExtensionPasswordSelected
         case autofillExtensionPasswordsSearch
+
+        case autofillExtensionPasswordsPromoDisplayed
+        case autofillExtensionPasswordsPromoConfirmed
+        case autofillExtensionPasswordsPromoDismissed
+        case autofillExtensionInlinePromoDisplayed
+        case autofillExtensionInlinePromoConfirmed
+        case autofillExtensionInlinePromoDismissed
+        case autofillExtensionInlinePromoDismissedPermanently
+
+        case autofillExtensionSettingsTurnOnTapped
+        case autofillExtensionSettingsTurnOffTapped
+        case autofillExtensionSettingsTurnOnSuccess
+        case autofillExtensionSettingsTurnOnThrottled
+        case autofillExtensionSettingsTurnOnCancelled
+        case autofillExtensionSettingsTurnOnFailed
 
         case autofillJSPixelFired(_ pixel: AutofillUserScript.JSPixel)
         
@@ -754,6 +772,7 @@ extension Pixel {
         
         case contentBlockingCompilationTaskPerformance(iterationCount: Int, timeBucketAggregation: CompileTimeBucketAggregation)
         case ampBlockingRulesCompilationFailed
+        case ampKeywordDetectionPerformance
 
         case webKitDidTerminate
         case webKitTerminationDidReloadCurrentTab
@@ -1311,9 +1330,6 @@ extension Pixel {
         // MARK: WebView Error Page Shown
         case webViewErrorPageShown
 
-        case webViewExternalSchemeNavigationXSafariHTTPSCancel
-        case webViewExternalSchemeNavigationXSafariHTTPSContinue
-
         // MARK: Browsing
         case stopPageLoad
 
@@ -1344,8 +1360,6 @@ extension Pixel {
         case aiChatSettingsBrowserMenuTurnedOn
         case aiChatSettingsTabManagerTurnedOff
         case aiChatSettingsTabManagerTurnedOn
-        case aiChatSettingsSERPFollowupTurnedOff
-        case aiChatSettingsSERPFollowupTurnedOn
         case aiChatSettingsDisplayed
         case aiChatSettingsEnabled
         case aiChatSettingsDisabled
@@ -1473,6 +1487,10 @@ extension Pixel {
         case recreateTmpWebViewFallbackFailed
         case contentBlockingCompilationFailedMissingTmpDir
         case tmpDirStillMissingAfterRecreation
+
+        // MARK: - Dax Easter Egg
+        case daxEasterEggLogoDisplayed
+        case daxEasterEggLogoTapped
     }
 
 }
@@ -1879,6 +1897,9 @@ extension Pixel.Event {
         case .autofillCardsManagementSaveCard: return "autofill_cards_management_save_card"
         case .autofillCardsManagementUpdateCard: return "autofill_cards_management_update_card"
 
+        case .autofillCardsAutofilledInMainframe: return "autofill_cards_autofilled_in_mainframe"
+        case .autofillCardsAutofilledInIframe: return "autofill_cards_autofilled_in_iframe"
+
         case .autofillManagementScreenVisitSurveyAvailable: return "m_autofill_management_screen_visit_survey_available"
 
         case .getDesktopCopy: return "m_get_desktop_copy"
@@ -1895,6 +1916,21 @@ extension Pixel.Event {
         case .autofillExtensionPasswordsDismissed: return "autofill_extension_passwords_dismissed"
         case .autofillExtensionPasswordSelected: return "autofill_extension_password_selected"
         case .autofillExtensionPasswordsSearch: return "autofill_extension_passwords_search"
+
+        case .autofillExtensionPasswordsPromoDisplayed: return "autofill_extension_passwords_promo_displayed"
+        case .autofillExtensionPasswordsPromoConfirmed: return "autofill_extension_passwords_promo_confirmed"
+        case .autofillExtensionPasswordsPromoDismissed: return "autofill_extension_passwords_promo_dismissed"
+        case .autofillExtensionInlinePromoDisplayed: return "autofill_extension_inline_promo_displayed"
+        case .autofillExtensionInlinePromoConfirmed: return "autofill_extension_inline_promo_confirmed"
+        case .autofillExtensionInlinePromoDismissed: return "autofill_extension_inline_promo_dismissed"
+        case .autofillExtensionInlinePromoDismissedPermanently: return "autofill_extension_inline_promo_dismissed_permanently"
+
+        case .autofillExtensionSettingsTurnOnTapped: return "autofill_extension_settings_turn_on_tapped"
+        case .autofillExtensionSettingsTurnOffTapped: return "autofill_extension_settings_turn_off_tapped"
+        case .autofillExtensionSettingsTurnOnSuccess: return "autofill_extension_settings_turn_on_success"
+        case .autofillExtensionSettingsTurnOnThrottled: return "autofill_extension_settings_turn_on_throttled"
+        case .autofillExtensionSettingsTurnOnCancelled: return "autofill_extension_settings_turn_on_cancelled"
+        case .autofillExtensionSettingsTurnOnFailed: return "autofill_extension_settings_turn_on_failed"
 
         case .autofillJSPixelFired(let pixel):
             return "m_ios_\(pixel.pixelName)"
@@ -2141,6 +2177,7 @@ extension Pixel.Event {
         case .contentBlockingCompilationTaskPerformance(let iterationCount, let timeBucketAggregation):
             return "m_content_blocking_compilation_loops_\(iterationCount)_time_\(timeBucketAggregation)"
         case .ampBlockingRulesCompilationFailed: return "m_debug_amp_rules_compilation_failed"
+        case .ampKeywordDetectionPerformance: return "m_debug_amp-keyword-detection-performance"
 
         case .webKitDidTerminate: return "m_d_wkt"
         case .webKitDidTerminateDuringWarmup: return "m_d_webkit-terminated-during-warmup"
@@ -2306,7 +2343,7 @@ extension Pixel.Event {
         case .syncFailedToInitFileStore: return "m_debug_sync_failed_to_init_file_store"
         case .syncFailedToMigrateToFileStore: return "m_debug_sync_failed_to_migrate_to_file_store"
         case .syncFailedToLoadAccount: return "m_d_sync_failed_to_load_account2"
-        case .syncFailedToSetupEngine: return "m_d_sync_failed_to_setup_engine"
+        case .syncFailedToSetupEngine: return "m_d_sync_failed_to_setup_engine2"
         case .syncBookmarksObjectLimitExceededDaily: return "m_sync_bookmarks_object_limit_exceeded_daily"
         case .syncCredentialsObjectLimitExceededDaily: return "m_sync_credentials_object_limit_exceeded_daily"
         case .syncCreditCardsObjectLimitExceededDaily: return "m_sync_credit_cards_object_limit_exceeded_daily"
@@ -2665,8 +2702,6 @@ extension Pixel.Event {
 
         // MARK: Browsing
         case .stopPageLoad: return "m_stop-page-load"
-        case .webViewExternalSchemeNavigationXSafariHTTPSCancel: return "m_webview_external-scheme-navigation_x-safari-https_cancel"
-        case .webViewExternalSchemeNavigationXSafariHTTPSContinue: return "m_webview_external-scheme-navigation_x-safari-https_continue"
 
         // MARK: Launch time
         case .appDidFinishLaunchingTime(let time): return "m_debug_app-did-finish-launching-time-\(time)"
@@ -2695,8 +2730,6 @@ extension Pixel.Event {
         case .aiChatSettingsBrowserMenuTurnedOn: return "m_aichat_settings_browser_menu_turned_on"
         case .aiChatSettingsTabManagerTurnedOff: return "m_aichat_settings_tab_manager_turned_off"
         case .aiChatSettingsTabManagerTurnedOn: return "m_aichat_settings_tab_manager_turned_on"
-        case .aiChatSettingsSERPFollowupTurnedOff: return "m_aichat_settings_serp_followup_turned_off"
-        case .aiChatSettingsSERPFollowupTurnedOn: return "m_aichat_settings_serp_followup_turned_on"
         case .aiChatSettingsDisplayed: return "m_aichat_settings_displayed"
         case .aiChatSettingsEnabled: return "m_aichat_settings_enabled"
         case .aiChatSettingsDisabled: return "m_aichat_settings_disabled"
@@ -2879,6 +2912,9 @@ extension Pixel.Event {
         case .customizationToolbarStarted: return "m_customization_toolbar_started"
         case .customizationToolbarSelected: return "m_customization_toolbar_selected"
 
+        // MARK: - Dax Easter Egg
+        case .daxEasterEggLogoDisplayed: return "m_dax_easter_egg_logo_displayed"
+        case .daxEasterEggLogoTapped: return "m_dax_easter_egg_logo_tapped"
         }
     }
 }

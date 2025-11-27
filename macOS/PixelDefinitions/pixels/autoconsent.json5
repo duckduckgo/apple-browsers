@@ -105,36 +105,6 @@
         "suffixes": [],
         "parameters": ["appVersion", "pixelSource"]
     },
-    "m_mac_autoconsent_popup-managed-count_daily": {
-        "description": "Fires (for internal users only) on app use once per day.",
-        "owners": ["SabrinaTardio"],
-        "triggers": ["other"],
-        "suffixes": [],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            {
-                "key": "d1",
-                "description": "Number of pop-ups managed the day before",
-                "type": "number"
-            },
-            {
-                "key": "d2",
-                "description": "Number of pop-ups managed in the past 2 days",
-                "type": "number"
-            },
-            {
-                "key": "d5",
-                "description": "Number of pop-ups managed in the past 5 days",
-                "type": "number"
-            },
-            {
-                "key": "d10",
-                "description": "Number of pop-ups managed in the past 10 days",
-                "type": "number"
-            }
-        ]
-    },
     "m_mac_autoconsent_summary": {
         "description": "Fires periodically with counts of autoconsent metrics.",
         "owners": ["sammacbeth"],
@@ -154,12 +124,12 @@
                 "type": "number"
             },
             {
-                "key": "error-multiple-popups",
+                "key": "error_multiple-popups",
                 "description": "Number of autoconsent error-multiple-popups pixels fired.",
                 "type": "number"
             },
             {
-                "key": "error-optout",
+                "key": "error_optout",
                 "description": "Number of autoconsent error-optout pixels fired.",
                 "type": "number"
             },
@@ -174,7 +144,7 @@
                 "type": "number"
             },
             {
-                "key": "done-cosmetic",
+                "key": "done_cosmetic",
                 "description": "Number of autoconsent done-cosmetic pixels fired.",
                 "type": "number"
             },
@@ -184,7 +154,7 @@
                 "type": "number"
             },
             {
-                "key": "animation-shown-cosmetic",
+                "key": "animation-shown_cosmetic",
                 "description": "Number of autoconsent animation-shown-cosmetic pixels fired.",
                 "type": "number"
             },
@@ -217,6 +187,33 @@
                 "key": "self-test-fail",
                 "description": "Number of autoconsent self-test-fail pixels fired.",
                 "type": "number"
+            }
+        ]
+    },
+    "m_mac_autoconsent_usage-stats_daily": {
+        "description": "Fires once per day with autoconsent usage statistics.",
+        "owners": ["miasma13"],
+        "triggers": ["startup"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "averageClicksBlockingCookiePopUp",
+                "description": "Average number of clicks blocked by cookie pop-up management",
+                "type": "number"
+            },
+            {
+                "key": "totalCookiePopUpsBlockedBucket",
+                "description": "Total number of cookie pop-ups blocked as predefined bucket value",
+                "type": "string",
+                "enum": ["0", "1-10", "11-50", "51-100", "101-150", "151-200", "201-250", "251-300", "301-500", "500+", "unknown"]
+            },
+            {
+                "key": "totalTimeBlockingCookiePopUpsBucket",
+                "description": "Total time spent blocking cookie pop-ups as predefined bucket value",
+                "type": "string",
+                "enum": ["0s", "1-10s", "10-60s", "1-5min", "5-10min", "10-20min", "20-40min", "40-60min", "1-2hr", "2hr+", "unknown"]
             }
         ]
     }

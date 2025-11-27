@@ -81,22 +81,23 @@ struct ThemeStyle: ThemeStyleProviding {
 
     static var current: ThemeStyleProviding {
         let palette = NewColorPalette()
-        return buildThemeStyle(name: .default, palette: palette)
+        let featureFlagger = NSApp.delegateTyped.featureFlagger
+        return buildThemeStyle(name: .default, palette: palette, featureFlagger: featureFlagger)
     }
 
-    static func buildThemeStyle(themeName: ThemeName) -> ThemeStyle {
+    static func buildThemeStyle(themeName: ThemeName, featureFlagger: FeatureFlagger) -> ThemeStyle {
         let palette = ThemeColors(themeName: themeName)
-        return buildThemeStyle(name: themeName, palette: palette)
+        return buildThemeStyle(name: themeName, palette: palette, featureFlagger: featureFlagger)
     }
 
-    private static func buildThemeStyle(name: ThemeName, palette: ColorPalette) -> ThemeStyle {
-        ThemeStyle(
+    private static func buildThemeStyle(name: ThemeName, palette: ColorPalette, featureFlagger: FeatureFlagger) -> ThemeStyle {
+        return ThemeStyle(
             name: name,
             palette: palette,
             toolbarButtonsCornerRadius: 9,
             fireWindowGraphic: .burnerWindowGraphicNew,
             areNavigationBarCornersRound: true,
-            addressBarStyleProvider: CurrentAddressBarStyleProvider(),
+            addressBarStyleProvider: CurrentAddressBarStyleProvider(featureFlagger: featureFlagger),
             tabStyleProvider: NewlineTabStyleProvider(palette: palette),
             colorsProvider: NewColorsProviding(palette: palette),
             iconsProvider: CurrentIconsProvider(),

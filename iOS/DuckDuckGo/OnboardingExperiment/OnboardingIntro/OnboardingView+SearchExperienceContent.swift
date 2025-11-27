@@ -27,8 +27,8 @@ extension OnboardingView {
         private var isSkipped: Binding<Bool>
         private let action: () -> Void
         
-        @State private var animateMessage = false
         @State private var showContent = false
+        @StateObject private var viewModel = OnboardingSearchExperiencePickerViewModel()
 
         init(animateTitle: Binding<Bool> = .constant(true),
              isSkipped: Binding<Bool>,
@@ -41,28 +41,23 @@ extension OnboardingView {
         var body: some View {
             VStack(spacing: 16.0) {
                 AnimatableTypingText(UserText.Onboarding.SearchExperience.title, startAnimating: animateTitle, skipAnimation: isSkipped) {
-                    animateMessage = true
+                    showContent = true
                 }
                 .foregroundColor(.primary)
                 .font(Metrics.titleFont)
 
-                AnimatableTypingText(UserText.Onboarding.SearchExperience.subtitleAttributed(), startAnimating: $animateMessage, skipAnimation: isSkipped) {
-                    withAnimation {
-                        showContent = true
-                    }
-                }
-                .foregroundColor(.primary)
-                .font(Metrics.messageFont)
-
                 VStack(spacing: 24.0) {
-                    OnboardingSearchExperiencePicker()
+                    OnboardingSearchExperiencePicker(viewModel: viewModel)
                     
                     Text(AttributedString(UserText.Onboarding.SearchExperience.footerAttributed()))
                         .foregroundColor(.secondary)
                         .font(.footnote)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    Button(action: action) {
+                    Button(action: {
+                        viewModel.confirmChoice()
+                        action()
+                    }) {
                         Text(UserText.Onboarding.SearchExperience.cta)
                     }
                     .buttonStyle(PrimaryButtonStyle())

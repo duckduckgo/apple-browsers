@@ -25,7 +25,7 @@ public final class StripePurchaseFlowMockV2: StripePurchaseFlowV2 {
     public var prepareSubscriptionPurchaseResult: Result<PrepareResult, StripePurchaseFlowError>
     public var subscriptionTierOptionsIncludeProTierCalled: Bool?
 
-    public init(subscriptionOptionsResult: Result<SubscriptionOptionsV2, StripePurchaseFlowError>, 
+    public init(subscriptionOptionsResult: Result<SubscriptionOptionsV2, StripePurchaseFlowError>,
                 prepareSubscriptionPurchaseResult: Result<PrepareResult, StripePurchaseFlowError>,
                 subscriptionTierOptionsResult: Result<SubscriptionTierOptions, StripePurchaseFlowError>? = nil) {
         self.subscriptionOptionsResult = subscriptionOptionsResult

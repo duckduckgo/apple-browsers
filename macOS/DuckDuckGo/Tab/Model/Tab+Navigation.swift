@@ -25,22 +25,7 @@ import WebKit
 
 extension Tab: NavigationResponder {
 
-    // "protected" navigationDelegate
-    private var navigationDelegate: DistributedNavigationDelegate! {
-        self.value(forKey: Tab.objcNavigationDelegateKeyPath) as? DistributedNavigationDelegate
-    }
-
-    // "protected" newWindowPolicyDecisionMakers
-    private var newWindowPolicyDecisionMakers: [NewWindowPolicyDecisionMaking]? {
-        get {
-            self.value(forKey: Tab.objcNewWindowPolicyDecisionMakingsKeyPath) as? [NewWindowPolicyDecisionMaking]
-        }
-        set {
-            self.setValue(newValue, forKey: Tab.objcNewWindowPolicyDecisionMakingsKeyPath)
-        }
-    }
-
-    func setupNavigationDelegate() {
+    func setupNavigationDelegate(navigationDelegate: DistributedNavigationDelegate, newWindowPolicyDecisionMakers: inout [NewWindowPolicyDecisionMaking]?) {
         navigationDelegate.setResponders(
             // AI Chat navigations handling
             .weak(nullable: self.aiChat),

@@ -365,7 +365,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         tabGetter = { [weak self] in self }
         userContentController.map(userContentControllerPromise.fulfill)
 
-        setupNavigationDelegate()
+        setupNavigationDelegate(navigationDelegate: navigationDelegate, newWindowPolicyDecisionMakers: &newWindowPolicyDecisionMakers)
         userContentController?.delegate = self
         setupWebView(shouldLoadInBackground: shouldLoadInBackground)
         webViewPromise.fulfill(webView)
@@ -1522,21 +1522,5 @@ extension Tab {
 
     static var objcDelegateKeyPath: String { #keyPath(objcDelegate) }
     @objc private var objcDelegate: Any? { delegate }
-
-    static var objcNavigationDelegateKeyPath: String { #keyPath(objcNavigationDelegate) }
-    @objc private var objcNavigationDelegate: Any? { navigationDelegate }
-
-    static var objcNewWindowPolicyDecisionMakingsKeyPath: String { #keyPath(objcNewWindowPolicyDecisionMakings) }
-    @objc private var objcNewWindowPolicyDecisionMakings: Any? {
-        get {
-            newWindowPolicyDecisionMakers
-        }
-        set {
-            newWindowPolicyDecisionMakers = newValue as? [NewWindowPolicyDecisionMaking] ?? {
-                assertionFailure("\(String(describing: newValue)) is not [NewWindowPolicyDecisionMaking]")
-                return nil
-            }()
-        }
-    }
 
 }

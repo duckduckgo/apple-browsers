@@ -37,7 +37,8 @@ final class AIChatContentHandlerTests: XCTestCase {
         handler = AIChatContentHandler(
             aiChatSettings: mockSettings,
             payloadHandler: mockPayloadHandler,
-            pixelMetricHandler: mockMetricHandler
+            pixelMetricHandler: mockMetricHandler,
+            featureDiscovery: MockFeatureDiscovery()
         )
     }
 

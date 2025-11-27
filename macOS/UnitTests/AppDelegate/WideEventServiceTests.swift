@@ -68,15 +68,11 @@ final class WideEventServiceTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = [.subscriptionPurchaseWidePixelMeasurement]
         let purchaseData = makeAbandonedPurchaseData()
         mockWideEvent.started.append(purchaseData)
-        let restoreData = makeAbandonedRestoreData()
-        mockWideEvent.started.append(restoreData)
 
         await sut.sendPendingEvents()
 
         let completedPurchaseData = mockWideEvent.completions.compactMap { $0.0 as? SubscriptionPurchaseWideEventData }
-        let completedRestoreData = mockWideEvent.completions.compactMap { $0.0 as? SubscriptionRestoreWideEventData }
         XCTAssertEqual(completedPurchaseData.count, 1)
-        XCTAssertEqual(completedRestoreData.count, 0)
     }
 
     func test_sendPendingEvents_onlyRestorePixelFlagEnabled_processesRestorePixelsOnly() async {

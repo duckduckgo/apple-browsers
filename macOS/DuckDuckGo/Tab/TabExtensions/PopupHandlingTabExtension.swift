@@ -147,12 +147,14 @@ final class PopupHandlingTabExtension {
                                             for navigationAction: WKNavigationAction,
                                             windowFeatures: WKWindowFeatures,
                                             completionHandler: @escaping (WKWebView?) -> Void) {
-
-        let completionHandler = { [weak self, completionHandler] (webView: WKWebView?) in
-            guard self != nil, let webView else {
-                return completionHandler(nil)
+        // guarantee the completionHandler is called at all paths
+        enum CompletionHandlerResult { case sync(WKWebView?), async }
+        let result: CompletionHandlerResult
+        defer {
+            switch result {
+            case .sync(let maybeWebView): completionHandler(maybeWebView)
+            case .async: break
             }
-            completionHandler(webView)
         }
 
         let url = navigationAction.request.url
@@ -163,16 +165,14 @@ final class PopupHandlingTabExtension {
                !tabsPreferences.preferNewTabsToWindows {
                 targetKind = .window(active: true, burner: isBurner)
             }
+            // apply selecting the tab if `switchToNewTabWhenOpened` is `true`.
+            targetKind = targetKind.preferringSelectedTabs(tabsPreferences.switchToNewTabWhenOpened)
             Logger.navigation.debug("handleCreateWebViewRequest: newWindowPolicy: \(targetKind) for \(url?.absoluteString ??? "<nil>")")
-            completionHandler(createChildWebView(from: webView,
-                                                 with: configuration,
-                                                 for: navigationAction,
-                                                 of: targetKind.preferringSelectedTabs(tabsPreferences.switchToNewTabWhenOpened),
-                                                 isUserInitiated: true))
+            result = .sync(createChildWebView(from: webView, with: configuration, for: navigationAction, of: targetKind, isUserInitiated: true))
             return
         case .cancel:
             Logger.navigation.debug("handleCreateWebViewRequest: canceling request for `\(url?.absoluteString ??? "<nil>")` per newWindowPolicy")
-            completionHandler(nil)
+            result = .sync(nil)
             return
         case .none:
             break
@@ -193,7 +193,7 @@ final class PopupHandlingTabExtension {
         // Disable pop-ups from unknown sources
         guard let sourceSecurityOrigin = navigationAction.safeSourceFrame.map({ SecurityOrigin($0.securityOrigin) }) else {
             Logger.navigation.debug("handleCreateWebViewRequest: disabling pop-ups from unknown source for `\(url?.absoluteString ??? "<nil>")`")
-            completionHandler(nil)
+            result = .sync(nil)
             return
         }
 
@@ -204,38 +204,66 @@ final class PopupHandlingTabExtension {
             if bypassReason.isUserInitiated {
                 lastUserInteractionEvent = nil
             }
-            completionHandler(createChildWebView(from: webView, with: configuration, for: navigationAction, of: targetKind, isUserInitiated: bypassReason.isUserInitiated))
+            result = .sync(createChildWebView(from: webView, with: configuration, for: navigationAction, of: targetKind, isUserInitiated: bypassReason.isUserInitiated))
             return
         }
 
         Logger.navigation.debug("handleCreateWebViewRequest: requesting pop-up permission for `\(url?.absoluteString ??? "<nil>")`")
 
         // Pop-up permission is needed: firing an async PermissionAuthorizationQuery
+        result = .async // don‘t call the completionHandler in the first `defer`
         var isCalledSynchronously = true
-        permissionModel.request([.popups], forDomain: sourceSecurityOrigin.host, url: url).receive { [weak self] result in
-            guard let self, case .success(true) = result else {
-                Logger.navigation.info("handleCreateWebViewRequest: pop-up permission denied for `\(url?.absoluteString ??? "<nil>")`")
-                completionHandler(nil)
-                return
+        defer { isCalledSynchronously = false } // whether the request was called synchronously or asynchronously
+        permissionModel.request([.popups], forDomain: sourceSecurityOrigin.host, url: url)
+            .receive { [weak self] result in
+                self?.handlePermissionRequestResult(result,
+                                                    from: webView,
+                                                    with: configuration,
+                                                    for: navigationAction,
+                                                    targetKind: targetKind,
+                                                    isCalledSynchronously: isCalledSynchronously,
+                                                    completionHandler: completionHandler)
             }
+    }
 
-            if !isCalledSynchronously,
-               // disable opening empty or about: URLs as they would be non-functional when returned asynchronously after user‘s permission
-               featureFlagger.isFeatureOn(.popupBlocking), featureFlagger.isFeatureOn(.suppressEmptyPopUpsOnApproval),
-               url?.isEmpty ?? true || url?.navigationalScheme == .about {
-                Logger.navigation.info("handleCreateWebViewRequest: suppressing pop-up for `\(url?.absoluteString ??? "<nil>")`")
-                self.popupsTemporarilyAllowedForCurrentPage = true
+    /// Handles the result of the pop-up permission request
+    @MainActor
+    func handlePermissionRequestResult(_ permissionRequestResult: Result<Bool, Never>,
+                                       from webView: WKWebView,
+                                       with configuration: WKWebViewConfiguration,
+                                       for navigationAction: WKNavigationAction,
+                                       targetKind: NewWindowPolicy,
+                                       isCalledSynchronously: Bool,
+                                       completionHandler: @escaping (WKWebView?) -> Void) {
+        // guarantee the completionHandler is called at all paths
+        let result: WKWebView?
+        defer { completionHandler(result) }
 
-                completionHandler(nil)
-                return
-            }
-
-            // Permission granted: create and present new tab for regular pop-ups
-            Logger.navigation.debug("handleCreateWebViewRequest: permission granted for `\(url?.absoluteString ??? "<nil>")`")
-            let webView = self.createChildWebView(from: webView, with: configuration, for: navigationAction, of: targetKind, isUserInitiated: false)
-            completionHandler(webView)
+        let url = navigationAction.request.url
+        guard case .success(true) = permissionRequestResult else {
+            // pop-up permission denied
+            Logger.navigation.info("handleCreateWebViewRequest: pop-up permission denied for `\(url?.absoluteString ??? "<nil>")`")
+            result = nil
+            return
         }
-        isCalledSynchronously = false
+        // Pop-up permission granted.
+
+        // Disable opening empty or `about:` URLs as the opened pop-ups would be non-functional
+        // when opened asynchronously after the user has granted the permission.
+        if !isCalledSynchronously,
+           featureFlagger.isFeatureOn(.popupBlocking), featureFlagger.isFeatureOn(.suppressEmptyPopUpsOnApproval),
+           url?.isEmpty ?? true || url?.navigationalScheme == .about {
+            Logger.navigation.info("handleCreateWebViewRequest: suppressing pop-up for `\(url?.absoluteString ??? "<nil>")`")
+            self.popupsTemporarilyAllowedForCurrentPage = true
+
+            result = nil
+            return
+        }
+
+        // Permission granted: create and present new tab for the pop-up
+        Logger.navigation.debug("handleCreateWebViewRequest: permission granted for `\(url?.absoluteString ??? "<nil>")`")
+        result = self.createChildWebView(from: webView, with: configuration, for: navigationAction, of: targetKind, isUserInitiated: false)
+        // `defer` calls the completionHandler
     }
 
     /// Determines the new window policy for a navigation action based on LinkOpenBehavior and NewWindowPolicy

@@ -56,7 +56,7 @@ final class WideEventServiceTests: XCTestCase {
 
     // MARK: - sendPendingEvents - Feature Flag Gating
 
-    func test_sendPendingEvents_bothFlagsDisabled_returnsEarlyWithoutProcessing() async {
+    func test_sendPendingEvents_allFlagsDisabled_returnsEarlyWithoutProcessing() async {
         mockFeatureFlagger.enabledFeatureFlags = []
 
         await sut.sendPendingEvents()
@@ -75,7 +75,7 @@ final class WideEventServiceTests: XCTestCase {
         XCTAssertEqual(completedPurchaseData.count, 1)
     }
 
-    func test_sendPendingEvents_onlyRestorePixelFlagEnabled_processesRestorePixelsOnly() async {
+    func test_sendPendingEvents_onlyRestore_processesRestorePixelsOnly() async {
         let purchaseData = makeAbandonedPurchaseData()
         mockWideEvent.started.append(purchaseData)
         let restoreData = makeAbandonedRestoreData()
@@ -89,7 +89,7 @@ final class WideEventServiceTests: XCTestCase {
         XCTAssertEqual(completedRestoreData.count, 1)
     }
 
-    func test_sendPendingEvents_bothFlagsEnabled_processesBothPixelTypes() async {
+    func test_sendPendingEvents_allFlagsEnabled_processesAllPixelTypes() async {
         mockFeatureFlagger.enabledFeatureFlags = [.subscriptionPurchaseWidePixelMeasurement]
         let purchaseData = makeAbandonedPurchaseData()
         mockWideEvent.started.append(purchaseData)

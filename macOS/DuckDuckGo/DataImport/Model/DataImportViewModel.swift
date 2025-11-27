@@ -201,7 +201,7 @@ struct DataImportViewModel {
          reportSenderFactory: @escaping ReportSenderFactory = { FeedbackSender().sendDataImportReport },
          onFinished: @escaping () -> Void = {},
          onCancelled: @escaping () -> Void = {}) {
-        self.availableImportSources = availableImportSources.filter {
+        let filteredAvailableSources = availableImportSources.filter {
             let browser = ThirdPartyBrowser.browser(for: $0)
             guard browser?.isWebBrowser == true else {
                 // Don't filter out password managers or file imports
@@ -210,7 +210,8 @@ struct DataImportViewModel {
             let profiles = browser.map(loadProfiles)
             return profiles?.defaultProfile != nil
         }
-        let importSource = importSource ?? preferredImportSources.first(where: { availableImportSources.contains($0) }) ?? .csv
+        self.availableImportSources = filteredAvailableSources
+        let importSource = importSource ?? preferredImportSources.first(where: { filteredAvailableSources.contains($0) }) ?? filteredAvailableSources.first ?? .csv
 
         self.importSource = importSource
         self.loadProfiles = loadProfiles

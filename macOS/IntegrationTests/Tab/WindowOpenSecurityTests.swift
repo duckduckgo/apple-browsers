@@ -1,7 +1,7 @@
 //
 //  WindowOpenSecurityTests.swift
 //
-//  Copyright © 2025 DuckDuckGo.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -132,7 +132,7 @@ final class WindowOpenSecurityTests: XCTestCase {
     // window.open(url) — opener present, return non-null WindowProxy
     @MainActor
     func testWindowOpenWithUrlOnly() async throws {
-        let result = try await evaluatePopup(popupURL, target: nil, features: [])
+        let result = try await evaluatePopup(url: popupURL, target: nil, features: [])
 
         XCTAssertTrue(result.returnedWindowProxy, "window.open() should return WindowProxy (non-null)")
         XCTAssertFalse(result.openerIsNull, "Opener should be present per MDN spec")
@@ -142,7 +142,7 @@ final class WindowOpenSecurityTests: XCTestCase {
     // window.open(url, '_blank') — opener present, return non-null WindowProxy
     @MainActor
     func testWindowOpenWithBlankTarget() async throws {
-        let result = try await evaluatePopup(popupURL, target: "_blank", features: [])
+        let result = try await evaluatePopup(url: popupURL, target: .blank, features: [])
 
         XCTAssertTrue(result.returnedWindowProxy, "window.open() should return WindowProxy (non-null)")
         XCTAssertFalse(result.openerIsNull, "Opener should be present per MDN spec")
@@ -152,7 +152,7 @@ final class WindowOpenSecurityTests: XCTestCase {
     // window.open(url, '_blank', 'noopener') — opener null, return null
     @MainActor
     func testWindowOpenWithNoopenerFlag() async throws {
-        let result = try await evaluatePopup(popupURL, target: "_blank", features: .noopener)
+        let result = try await evaluatePopup(url: popupURL, target: .blank, features: .noopener)
 
         XCTAssertFalse(result.returnedWindowProxy, "window.open() should return null with noopener per MDN spec")
         XCTAssertTrue(result.openerIsNull, "Opener should be null with noopener")
@@ -162,7 +162,7 @@ final class WindowOpenSecurityTests: XCTestCase {
     // window.open(url, '_blank', 'noreferrer') — opener null, no Referer header, return null
     @MainActor
     func testWindowOpenWithNoreferrerFlag() async throws {
-        let result = try await evaluatePopup(popupURL, target: "_blank", features: .noreferrer)
+        let result = try await evaluatePopup(url: popupURL, target: .blank, features: .noreferrer)
 
         XCTAssertFalse(result.returnedWindowProxy, "window.open() should return null with noreferrer per MDN spec")
         XCTAssertTrue(result.openerIsNull, "Opener should be null with noreferrer")
@@ -172,7 +172,7 @@ final class WindowOpenSecurityTests: XCTestCase {
     // window.open(url, '_blank', 'noopener,noreferrer') — opener null, no Referer, return null
     @MainActor
     func testWindowOpenWithNoopenerAndNoreferrer() async throws {
-        let result = try await evaluatePopup(popupURL, target: "_blank", features: [.noopener, .noreferrer])
+        let result = try await evaluatePopup(url: popupURL, target: .blank, features: [.noopener, .noreferrer])
 
         XCTAssertFalse(result.returnedWindowProxy, "window.open() should return null per MDN spec")
         XCTAssertTrue(result.openerIsNull, "Opener should be null")
@@ -184,7 +184,7 @@ final class WindowOpenSecurityTests: XCTestCase {
     // window.open(url, 'name') — new named context, opener present, return non-null
     @MainActor
     func testWindowOpenWithNamedTarget() async throws {
-        let result = try await evaluatePopup(popupURL, target: "myPopup", features: [])
+        let result = try await evaluatePopup(url: popupURL, target: .named("myPopup"), features: [])
 
         XCTAssertTrue(result.returnedWindowProxy, "window.open() should return WindowProxy (non-null)")
         XCTAssertFalse(result.openerIsNull, "Opener should be present per MDN spec")
@@ -196,14 +196,16 @@ final class WindowOpenSecurityTests: XCTestCase {
     @MainActor
     func testWindowOpenReusesSameOriginNamedContext() async throws {
         // First open
-        let result1 = try await evaluatePopup(popupURL, target: "reuseTest", features: [])
+        let result1 = try await evaluatePopup(url: popupURL, target: .named("reuseTest"), features: [])
         XCTAssertTrue(result1.returnedWindowProxy, "window.open() should return WindowProxy (non-null)")
+        XCTAssertFalse(result1.openerIsNull, "Opener should be present per MDN spec")
+        XCTAssertEqual(result1.referrer, mainURL.absoluteString, "Referrer should be present")
 
         // Second open with same name should reuse the context (not create a new child tab)
         childTabExpectation = expectation(description: "No child tab created")
         childTabExpectation?.isInverted = true
 
-        let result2 = try await evaluatePopupReuse(popupURL, target: "reuseTest", features: [])
+        let result2 = try await evaluatePopupReuse(popupURL, target: .named("reuseTest"), features: [])
         XCTAssertTrue(result2.returnedWindowProxy, "window.open() should return WindowProxy (reused context)")
         XCTAssertTrue(result2.wasReused, "Context should be reused")
 
@@ -213,32 +215,42 @@ final class WindowOpenSecurityTests: XCTestCase {
 
     // MARK: - window.open() with blank/empty URLs
 
-    // window.open() with no URL — opens about:blank, return non-null (or null if noopener/noreferrer)
+    // window.open() with no arguments — opens about:blank, return non-null
     // Per MDN: omitted URL opens about:blank
     @MainActor
-    func testWindowOpenWithNoUrl() async throws {
-        let result = try await evaluatePopup(nil, target: "_blank", features: [])
+    func testWindowOpenWithNoArguments() async throws {
+        let result = try await evaluatePopup(url: nil, target: nil, features: [])
 
         XCTAssertTrue(result.returnedWindowProxy, "window.open() should return WindowProxy (non-null)")
         XCTAssertFalse(result.openerIsNull, "Opener should be present without noopener")
+        XCTAssertEqual(result.referrer, "", "Referrer should be empty for empty URL") // this matches Firefox behavior
+    }
+
+    // window.open(undefined, target) — omitted URL with target
+    @MainActor
+    func testWindowOpenWithNoUrl() async throws {
+        let result = try await evaluatePopup(url: nil, target: .blank, features: [])
+
+        XCTAssertTrue(result.returnedWindowProxy, "window.open() should return WindowProxy (non-null)")
+        XCTAssertFalse(result.openerIsNull, "Opener should be present without noopener")
+        XCTAssertEqual(result.referrer, "", "Referrer should be empty for empty URL") // this matches Firefox behavior
     }
 
     @MainActor
     func testWindowOpenWithNoUrlAndNoopener() async throws {
-        throw XCTSkip("Corner-case: Empty URL popup with noopener arg opens popup with referrer set")
-
-        let result = try await evaluatePopup(nil, target: "_blank", features: .noopener)
+        let result = try await evaluatePopup(url: nil, target: .blank, features: .noopener)
 
         XCTAssertFalse(result.returnedWindowProxy, "window.open() should return null with noopener")
         XCTAssertTrue(result.openerIsNull, "Opener should be null with noopener")
+        XCTAssertEqual(result.referrer, "", "Referrer should be empty for empty URL") // this matches Firefox behavior
     }
 
     @MainActor
     func testWindowOpenWithNoUrlAndNoreferrer() async throws {
-        let result = try await evaluatePopup(nil, target: "_blank", features: .noreferrer)
+        let result = try await evaluatePopup(url: nil, target: .blank, features: .noreferrer)
 
-        XCTAssertTrue(result.returnedWindowProxy, "window.open() should return WindowProxy (non-null)")
-        XCTAssertFalse(result.openerIsNull, "Opener should be present without noopener")
+        XCTAssertFalse(result.returnedWindowProxy, "window.open() should return null with noreferrer – noreferrer implies noopener")
+        XCTAssertTrue(result.openerIsNull, "Opener should be null with noreferrer – noreferrer implies noopener")
         XCTAssertEqual(result.referrer, "", "Referrer should be empty with noreferrer")
     }
 
@@ -246,23 +258,25 @@ final class WindowOpenSecurityTests: XCTestCase {
     // Per MDN: empty string URL opens about:blank
     @MainActor
     func testWindowOpenWithEmptyString() async throws {
-        let result = try await evaluatePopup(.empty, target: "_blank", features: [])
+        let result = try await evaluatePopup(url: .empty, target: .blank, features: [])
 
         XCTAssertTrue(result.returnedWindowProxy, "window.open() should return WindowProxy (non-null)")
         XCTAssertFalse(result.openerIsNull, "Opener should be present without noopener")
+        XCTAssertEqual(result.referrer, "", "Referrer should be empty for empty URL") // this matches Firefox behavior
     }
 
     @MainActor
     func testWindowOpenWithEmptyStringAndNoopener() async throws {
-        let result = try await evaluatePopup(.empty, target: "_blank", features: .noopener)
+        let result = try await evaluatePopup(url: .empty, target: .blank, features: .noopener)
 
         XCTAssertFalse(result.returnedWindowProxy, "window.open() should return null with noopener")
         XCTAssertTrue(result.openerIsNull, "Opener should be null with noopener")
+        XCTAssertEqual(result.referrer, "", "Referrer should be empty for empty URL") // this matches Firefox behavior
     }
 
     @MainActor
     func testWindowOpenWithEmptyStringAndNoreferrer() async throws {
-        let result = try await evaluatePopup(.empty, target: "_blank", features: .noreferrer)
+        let result = try await evaluatePopup(url: .empty, target: .blank, features: .noreferrer)
 
         XCTAssertFalse(result.returnedWindowProxy, "window.open() should return null with noreferrer")
         XCTAssertTrue(result.openerIsNull, "Opener should be null with noreferrer")
@@ -272,27 +286,29 @@ final class WindowOpenSecurityTests: XCTestCase {
     // window.open('about:blank', ...) — explicitly opens about:blank
     @MainActor
     func testWindowOpenWithAboutBlank() async throws {
-        let result = try await evaluatePopup(.blankPage, target: "_blank", features: [])
+        let result = try await evaluatePopup(url: .blankPage, target: .blank, features: [])
 
         XCTAssertTrue(result.returnedWindowProxy, "window.open() should return WindowProxy (non-null)")
         XCTAssertFalse(result.openerIsNull, "Opener should be present without noopener")
+        XCTAssertEqual(result.referrer, "", "Referrer should be empty for about:blank") // this matches Firefox behavior
     }
 
     @MainActor
     func testWindowOpenWithAboutBlankAndNoopener() async throws {
-        let result = try await evaluatePopup(.blankPage, target: "_blank", features: .noopener)
+        let result = try await evaluatePopup(url: .blankPage, target: .blank, features: .noopener)
 
         XCTAssertFalse(result.returnedWindowProxy, "window.open() should return null with noopener")
         XCTAssertTrue(result.openerIsNull, "Opener should be null with noopener")
+        XCTAssertEqual(result.referrer, "", "Referrer should be empty for about:blank") // this matches Firefox behavior
     }
 
     @MainActor
     func testWindowOpenWithAboutBlankAndNoreferrer() async throws {
-        let result = try await evaluatePopup(.blankPage, target: "_blank", features: .noreferrer)
+        let result = try await evaluatePopup(url: .blankPage, target: .blank, features: .noreferrer)
 
         XCTAssertFalse(result.returnedWindowProxy, "window.open() should return null with noreferrer")
         XCTAssertTrue(result.openerIsNull, "Opener should be null with noreferrer")
-        XCTAssertEqual(result.referrer, "", "Referrer should be empty with noreferrer")
+        XCTAssertEqual(result.referrer, "", "Referrer should be empty for about:blank") // this matches Firefox behavior
     }
 
     // MARK: - window.open() with cross-origin URLs
@@ -300,7 +316,7 @@ final class WindowOpenSecurityTests: XCTestCase {
     // window.open(crossOriginUrl) — opener present, cross-origin DOM restricted, return non-null
     @MainActor
     func testWindowOpenCrossOriginNoFeatures() async throws{
-        let result = try await evaluatePopup(crossOriginPopupURL, target: "_blank", features: [])
+        let result = try await evaluatePopup(url: crossOriginPopupURL, target: .blank, features: [])
 
         XCTAssertTrue(result.returnedWindowProxy, "window.open() should return WindowProxy (non-null)")
         XCTAssertFalse(result.openerIsNull, "Opener should be present per MDN spec")
@@ -310,19 +326,21 @@ final class WindowOpenSecurityTests: XCTestCase {
     // window.open(crossOriginUrl, ..., 'noopener') — opener null, return null
     @MainActor
     func testWindowOpenCrossOriginWithNoopener() async throws {
-        let result = try await evaluatePopup(crossOriginPopupURL, target: "_blank", features: .noopener)
+        let result = try await evaluatePopup(url: crossOriginPopupURL, target: .blank, features: .noopener)
 
         XCTAssertFalse(result.returnedWindowProxy, "window.open() should return null with noopener")
         XCTAssertTrue(result.openerIsNull, "Opener should be null with noopener")
+        XCTAssertEqual(result.referrer, mainURL.absoluteString.dropping(suffix: mainURL.path) + "/", "Referrer should be trimmed to the host name for cross-origin popups")
     }
 
     // window.open(crossOriginUrl, ..., 'noreferrer') — opener null, no Referer, return null
     @MainActor
     func testWindowOpenCrossOriginWithNoreferrer() async throws {
-        let result = try await evaluatePopup(crossOriginPopupURL, target: "_blank", features: .noreferrer)
+        let result = try await evaluatePopup(url: crossOriginPopupURL, target: .blank, features: .noreferrer)
 
         XCTAssertFalse(result.returnedWindowProxy, "window.open() should return null with noreferrer")
         XCTAssertTrue(result.openerIsNull, "Opener should be null with noreferrer")
+        XCTAssertEqual(result.referrer, "", "Referrer should be empty with noreferrer")
     }
 
     // MARK: - window.open() with navigation targets (_self, _parent, _top)
@@ -333,7 +351,7 @@ final class WindowOpenSecurityTests: XCTestCase {
         childTabExpectation = expectation(description: "No child tab created")
         childTabExpectation?.isInverted = true
 
-        let result = try await evaluatePopupNavigation(popupURL, target: "_self")
+        let result = try await evaluatePopupNavigation(url: popupURL, target: .self)
 
         XCTAssertTrue(result.navigated, "window.open(url, '_self') should navigate current context")
         XCTAssertTrue(result.returnedWindowProxy, "window.open() should return WindowProxy (non-null)")
@@ -348,7 +366,7 @@ final class WindowOpenSecurityTests: XCTestCase {
     // Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a
     @MainActor
     func testAnchorBlankTargetImplicitNoopener() async throws {
-        let result = try await evaluateAnchorClick(href: popupURL, target: "_blank", rel: [])
+        let result = try await evaluateAnchorClick(href: popupURL, target: .blank, rel: [])
 
         XCTAssertTrue(result.openerIsNull, "Implicit rel='noopener' should clear window.opener per MDN spec")
         XCTAssertEqual(result.referrer, mainURL.absoluteString, "Referrer should be present per page policy")
@@ -358,7 +376,7 @@ final class WindowOpenSecurityTests: XCTestCase {
     // Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/rel/noopener
     @MainActor
     func testAnchorBlankTargetExplicitNoopener() async throws {
-        let result = try await evaluateAnchorClick(href: popupURL, target: "_blank", rel: .noopener)
+        let result = try await evaluateAnchorClick(href: popupURL, target: .blank, rel: .noopener)
 
         XCTAssertTrue(result.openerIsNull, "Explicit rel='noopener' should clear window.opener")
         XCTAssertEqual(result.referrer, mainURL.absoluteString, "Referrer should be present per page policy")
@@ -367,7 +385,7 @@ final class WindowOpenSecurityTests: XCTestCase {
     // <a href=url target="_blank" rel="noreferrer"> — opener null, no Referer
     @MainActor
     func testAnchorBlankTargetNoreferrer() async throws {
-        let result = try await evaluateAnchorClick(href: popupURL, target: "_blank", rel: .noreferrer)
+        let result = try await evaluateAnchorClick(href: popupURL, target: .blank, rel: .noreferrer)
 
         XCTAssertTrue(result.openerIsNull, "rel='noreferrer' should clear window.opener")
         XCTAssertEqual(result.referrer, "", "rel='noreferrer' should omit Referer header")
@@ -383,26 +401,15 @@ final class WindowOpenSecurityTests: XCTestCase {
     }
 
     @MainActor
-    private func evaluatePopup(_ popupURL: URL?,
-                               target: String?,
+    private func evaluatePopup(url popupURL: URL?,
+                               target: WindowOpenTarget?,
                                features: WindowOpenFeatures,
                                file: StaticString = #file,
                                line: UInt = #line) async throws -> PopupScriptResult {
-        var argsDict: [String: Any] = [
-            "hasURL": popupURL != nil,
-            "hasTarget": target != nil,
-            "hasFeatures": features.featureString != nil
-        ]
-
-        if let popupURL = popupURL {
-            argsDict["popupURL"] = popupURL.absoluteString
-        }
-        if let target = target {
-            argsDict["target"] = target
-        }
-        if let featureString = features.featureString {
-            argsDict["features"] = featureString
-        }
+        var argsDict = [String: Any]()
+        argsDict["url"] = popupURL?.absoluteString
+        argsDict["target"] = target?.stringValue
+        argsDict["features"] = features.featureString
 
         let arguments: [String: Any] = ["arguments": argsDict]
 
@@ -413,29 +420,23 @@ final class WindowOpenSecurityTests: XCTestCase {
                 throw new Error('Invalid arguments object: ' + typeof arguments);
             }
 
-            const hasUrl = arguments.hasURL;
-            const popupUrl = hasUrl ? arguments.popupURL : undefined;
-            const hasTarget = arguments.hasTarget;
-            const target = hasTarget ? arguments.target : undefined;
-            const hasFeatures = arguments.hasFeatures;
-            const featureString = hasFeatures ? arguments.features : undefined;
+            const url = arguments.url;
+            const target = arguments.target;
+            const features = arguments.features;
 
-            // Build window.open() arguments dynamically
-            const callArgs = [];
-            if (hasUrl) {
-                callArgs.push(popupUrl);
-            }
-            if (hasTarget) {
-                if (!hasUrl) callArgs.push(undefined);
-                callArgs.push(target);
-            }
-            if (hasFeatures) {
-                if (!hasUrl) callArgs.push(undefined);
-                if (!hasTarget) callArgs.push(undefined);
-                callArgs.push(featureString);
+            // Call window.open() with appropriate number of arguments
+            // Check from most specific (3 args) to least specific (0 args)
+            let popup;
+            if (features !== undefined) {
+                popup = window.open(url, target, features);
+            } else if (target !== undefined) {
+                popup = window.open(url, target);
+            } else if (url !== undefined) {
+                popup = window.open(url);
+            } else {
+                popup = window.open();
             }
 
-            const popup = window.open(...callArgs);
             const returnValue = popup !== null ? 'WindowProxy' : null;
 
             return {
@@ -487,21 +488,14 @@ final class WindowOpenSecurityTests: XCTestCase {
 
     @MainActor
     private func evaluatePopupReuse(_ popupURL: URL?,
-                                    target: String?,
+                                    target: WindowOpenTarget?,
                                     features: WindowOpenFeatures,
                                     file: StaticString = #file,
                                     line: UInt = #line) async throws -> PopupReuseResult {
-        var argsDict: [String: Any] = [:]
-
-        if let popupURL = popupURL {
-            argsDict["popupURL"] = popupURL.absoluteString
-        }
-        if let target = target {
-            argsDict["target"] = target
-        }
-        if let featureString = features.featureString {
-            argsDict["features"] = featureString
-        }
+        var argsDict = [String: Any]()
+        argsDict["popupURL"] = popupURL?.absoluteString
+        argsDict["target"] = target?.stringValue
+        argsDict["features"] = features.featureString
 
         let arguments: [String: Any] = ["arguments": argsDict]
 
@@ -572,17 +566,13 @@ final class WindowOpenSecurityTests: XCTestCase {
     }
 
     @MainActor
-    private func evaluatePopupNavigation(_ popupURL: URL?,
-                                         target: String,
+    private func evaluatePopupNavigation(url popupURL: URL?,
+                                         target: WindowOpenTarget,
                                          file: StaticString = #file,
                                          line: UInt = #line) async throws -> PopupNavigationResult {
-        var argsDict: [String: Any] = [
-            "target": target
-        ]
-
-        if let popupURL = popupURL {
-            argsDict["popupURL"] = popupURL.absoluteString
-        }
+        var argsDict = [String: Any]()
+        argsDict["popupURL"] = popupURL?.absoluteString
+        argsDict["target"] = target.stringValue
 
         let arguments: [String: Any] = ["arguments": argsDict]
 
@@ -639,17 +629,16 @@ final class WindowOpenSecurityTests: XCTestCase {
 
     @MainActor
     private func evaluateAnchorClick(href: URL,
-                                     target: String,
+                                     target: WindowOpenTarget,
                                      rel: WindowOpenFeatures,
                                      file: StaticString = #file,
                                      line: UInt = #line) async throws -> AnchorClickResult {
-        let arguments: [String: Any] = [
-            "arguments": [
-                "href": href.absoluteString,
-                "target": target,
-                "rel": rel.featureString ?? ""
-            ]
-        ]
+        var argsDict = [String: Any]()
+        argsDict["href"] = href.absoluteString
+        argsDict["target"] = target.stringValue
+        argsDict["rel"] = rel.featureString ?? ""
+
+        let arguments: [String: Any] = ["arguments": argsDict]
 
         // Create the anchor and click it
         let clickScript = """
@@ -807,6 +796,24 @@ private struct PopupNavigationResult {
 private struct AnchorClickResult {
     let openerIsNull: Bool
     let referrer: String?
+}
+
+enum WindowOpenTarget {
+    case blank          // "_blank"
+    case `self`         // "_self"
+    case parent         // "_parent"
+    case top            // "_top"
+    case named(String)  // Custom name like "myPopup"
+
+    var stringValue: String {
+        switch self {
+        case .blank: return "_blank"
+        case .self: return "_self"
+        case .parent: return "_parent"
+        case .top: return "_top"
+        case .named(let name): return name
+        }
+    }
 }
 
 private struct WindowOpenFeatures: OptionSet {

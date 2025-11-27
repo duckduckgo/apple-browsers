@@ -296,8 +296,8 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212017701300919?focus=true
     case popupPermissionButtonPersistence
 
-    /// Website notifications via UserScript polyfill
-    case websiteNotifications
+    /// Web Notifications API polyfill - allows websites to show notifications via native macOS Notification Center
+    case webNotifications
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -420,7 +420,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .suppressEmptyPopUpsOnApproval,
                 .allowPopupsForCurrentPage,
                 .popupPermissionButtonPersistence,
-                .websiteNotifications:
+                .webNotifications:
             return true
         case .sslCertificatesBypass,
                 .appendAtbToSerpQueries,
@@ -613,7 +613,7 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PopupBlockingSubfeature.allowPopupsForCurrentPage))
         case .popupPermissionButtonPersistence:
             return .remoteReleasable(.subfeature(PopupBlockingSubfeature.popupPermissionButtonPersistence))
-        case .websiteNotifications:
+        case .webNotifications:
             return .internalOnly()
         }
     }

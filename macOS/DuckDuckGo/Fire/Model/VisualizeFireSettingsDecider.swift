@@ -40,23 +40,13 @@ final class DefaultVisualizeFireSettingsDecider: VisualizeFireSettingsDecider {
     }
 
     var shouldShowFireAnimation: Bool {
-        if featureFlagger.isFeatureOn(.disableFireAnimation) {
-            return dataClearingPreferences.isFireAnimationEnabled
-        } else {
-            return true
-        }
+        return dataClearingPreferences.isFireAnimationEnabled
     }
 
     var shouldShowFireAnimationPublisher: AnyPublisher<Bool, Never> {
         dataClearingPreferences.$isFireAnimationEnabled
-            .map { [weak self] isFireAnimationEnabled in
-                guard let self = self else { return true }
-
-                if self.featureFlagger.isFeatureOn(.disableFireAnimation) {
-                    return isFireAnimationEnabled
-                } else {
-                    return true
-                }
+            .map { isFireAnimationEnabled in
+                return isFireAnimationEnabled
             }
             .eraseToAnyPublisher()
     }

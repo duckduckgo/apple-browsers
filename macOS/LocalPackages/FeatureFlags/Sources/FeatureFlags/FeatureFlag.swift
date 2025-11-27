@@ -143,9 +143,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866618404342
     case updateSafariBookmarksImport
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866618564878
-    case disableFireAnimation
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866476860577
     case newTabPageOmnibar
 
@@ -351,7 +348,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatOmnibarToggle,
                 .aiChatOmnibarCluster,
                 .updateSafariBookmarksImport,
-                .disableFireAnimation,
                 .newTabPageOmnibar,
                 .newTabPagePerTab,
                 .newTabPageTabIDs,
@@ -492,8 +488,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.hangReporting))
         case .updateSafariBookmarksImport:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.updateSafariBookmarksImport))
-        case .disableFireAnimation:
-            return .remoteReleasable(.feature(.disableFireAnimation))
         case .newTabPageOmnibar:
             return .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.omnibar))
         case .vpnToolbarUpsell:

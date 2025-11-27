@@ -49,7 +49,7 @@ let package = Package(
                 .product(name: "UserScript", package: "BrowserServicesKit")
             ],
             resources: [
-                .process("Resources/Assets.xcassets")
+                .process("Resources")
             ]
         ),
         .testTarget(

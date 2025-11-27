@@ -68,11 +68,11 @@ final class PermissionAuthorizationViewController: NSViewController {
     @IBOutlet weak var allowButton: NSButton!
 
     private var swiftUIHostingView: NSHostingView<PermissionAuthorizationSwiftUIView>?
-    private let useSwiftUI: Bool
+    private let newPermissionView: Bool
 
     weak var query: PermissionAuthorizationQuery? {
         didSet {
-            if useSwiftUI {
+            if newPermissionView {
                 setupSwiftUIView()
             } else {
                 updateText()
@@ -81,19 +81,19 @@ final class PermissionAuthorizationViewController: NSViewController {
     }
 
     // Programmatic initializer for SwiftUI mode
-    init(useSwiftUI: Bool) {
-        self.useSwiftUI = useSwiftUI
+    init(newPermissionView: Bool) {
+        self.newPermissionView = newPermissionView
         super.init(nibName: nil, bundle: nil)
     }
 
     // Storyboard initializer
     required init?(coder: NSCoder) {
-        self.useSwiftUI = false
+        self.newPermissionView = false
         super.init(coder: coder)
     }
 
     override func loadView() {
-        if useSwiftUI {
+        if newPermissionView {
             // Create a simple container view for SwiftUI
             view = NSView()
         } else {
@@ -105,7 +105,7 @@ final class PermissionAuthorizationViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        if useSwiftUI {
+        if newPermissionView {
             setupSwiftUIView()
         } else {
             updateText()
@@ -113,7 +113,7 @@ final class PermissionAuthorizationViewController: NSViewController {
     }
 
     override func viewWillAppear() {
-        guard !useSwiftUI else { return }
+        guard !newPermissionView else { return }
         
         alwaysAllowCheckbox.state = .off
         if query?.shouldShowCancelInsteadOfDeny == true {
@@ -125,7 +125,7 @@ final class PermissionAuthorizationViewController: NSViewController {
     }
 
     private func updateText() {
-        guard !useSwiftUI,
+        guard !newPermissionView,
               isViewLoaded,
               let query = query,
               !query.permissions.isEmpty
@@ -162,18 +162,18 @@ final class PermissionAuthorizationViewController: NSViewController {
     }
 
     @IBAction func alwaysAllowLabelClick(_ sender: Any) {
-        guard !useSwiftUI else { return }
+        guard !newPermissionView else { return }
         alwaysAllowCheckbox.setNextState()
     }
 
     @IBAction func grantAction(_ sender: NSButton) {
-        guard !useSwiftUI else { return }
+        guard !newPermissionView else { return }
         self.dismiss()
         query?.handleDecision(grant: true, remember: query!.shouldShowAlwaysAllowCheckbox && alwaysAllowCheckbox.state == .on)
     }
 
     @IBAction func denyAction(_ sender: NSButton) {
-        guard !useSwiftUI else { return }
+        guard !newPermissionView else { return }
         self.dismiss()
         guard let query = query,
               !query.shouldShowCancelInsteadOfDeny
@@ -183,14 +183,14 @@ final class PermissionAuthorizationViewController: NSViewController {
     }
 
     @IBAction func learnMoreAction(_ sender: NSButton) {
-        guard !useSwiftUI else { return }
+        guard !newPermissionView else { return }
         Application.appDelegate.windowControllersManager.show(url: "https://help.duckduckgo.com/privacy/device-location-services".url, source: .ui, newTab: true)
     }
 
     // MARK: - SwiftUI View Setup
 
     private func setupSwiftUIView() {
-        guard useSwiftUI, let query = query else { return }
+        guard newPermissionView, let query = query else { return }
 
         // Remove existing hosting view if any
         swiftUIHostingView?.removeFromSuperview()

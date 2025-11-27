@@ -27,7 +27,7 @@ struct PermissionAuthorizationSwiftUIView: View {
     var body: some View {
         VStack(spacing: 20) {
             Text("Allow \"\(domain)\" to use your current location?")
-                .font(.system(size: 15))
+                .font(.system(size: 13))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -37,11 +37,11 @@ struct PermissionAuthorizationSwiftUIView: View {
             HStack(spacing: 12) {
                 Button(action: onNeverAllow) {
                     Text(UserText.permissionPopupNeverAllowButton)
-                        .font(.system(size: 13))
+                        .font(.system(size: 13, weight: .light))
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                         .frame(maxWidth: .infinity)
                         .frame(height: 32)
-                        .background(Color(designSystemColor: .controlsFillSecondary))
+                        .background(Color(designSystemColor: .controlsFillPrimary))
                         .cornerRadius(8)
                 }
                 .buttonStyle(PlainButtonStyle())
@@ -49,11 +49,11 @@ struct PermissionAuthorizationSwiftUIView: View {
 
                 Button(action: onAlwaysAllow) {
                     Text(UserText.permissionPopupAlwaysAllowButton)
-                        .font(.system(size: 13))
+                        .font(.system(size: 13, weight: .light))
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                         .frame(maxWidth: .infinity)
                         .frame(height: 32)
-                        .background(Color(designSystemColor: .controlsFillSecondary))
+                        .background(Color(designSystemColor: .controlsFillPrimary))
                         .cornerRadius(8)
                 }
                 .buttonStyle(PlainButtonStyle())

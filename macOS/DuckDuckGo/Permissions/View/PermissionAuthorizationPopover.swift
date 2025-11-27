@@ -59,13 +59,11 @@ final class PermissionAuthorizationPopover: NSPopover {
     // swiftlint:enable force_cast
 
     private func setupContentController() {
-        // Check if we should use SwiftUI for this query
         let controller: PermissionAuthorizationViewController
 
         if featureFlagger.isFeatureOn(.newPermissionView) {
-
-            // Create programmatically with SwiftUI
-            controller = PermissionAuthorizationViewController(useSwiftUI: true)
+            // Create programmatically
+            controller = PermissionAuthorizationViewController(newPermissionView: true)
 
         } else {
             // Load from storyboard

@@ -213,7 +213,7 @@ final class PopupHandlingTabExtension {
         // Pop-up permission is needed: firing an async PermissionAuthorizationQuery
         result = .async // don‘t call the completionHandler in the first `defer`
         var isCalledSynchronously = true
-        defer { isCalledSynchronously = false } // whether the request was called synchronously or asynchronously
+        defer { isCalledSynchronously = false } // whether the callback was called synchronously or asynchronously
         permissionModel.request([.popups], forDomain: sourceSecurityOrigin.host, url: url)
             .receive { [weak self] result in
                 self?.handlePermissionRequestResult(result,

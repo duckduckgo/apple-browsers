@@ -17,6 +17,7 @@
 //
 
 import Cocoa
+import SwiftUI
 import BrowserServicesKit
 import FeatureFlags
 
@@ -46,16 +47,39 @@ final class PermissionAuthorizationPopover: NSPopover {
     }
 
     // swiftlint:disable force_cast
-    var viewController: PermissionAuthorizationViewController { contentViewController as! PermissionAuthorizationViewController }
+    var viewController: PermissionAuthorizationViewController {
+        get {
+            // Ensure content controller is set up
+            if contentViewController == nil {
+                setupContentController()
+            }
+            return contentViewController as! PermissionAuthorizationViewController
+        }
+    }
     // swiftlint:enable force_cast
 
-    // swiftlint:disable force_cast
     private func setupContentController() {
-        let storyboard = NSStoryboard(name: "PermissionAuthorization", bundle: nil)
-        let controller = storyboard
-            .instantiateController(withIdentifier: "PermissionAuthorizationViewController") as! PermissionAuthorizationViewController
-        controller.featureFlagger = featureFlagger
+        // Check if we should use SwiftUI for this query
+        let controller: PermissionAuthorizationViewController
+
+        if featureFlagger.isFeatureOn(.newPermissionView) {
+
+            // Create programmatically with SwiftUI
+            controller = PermissionAuthorizationViewController(useSwiftUI: true)
+
+        } else {
+            // Load from storyboard
+            controller = setupStoryboardController()
+        }
+
         contentViewController = controller
+    }
+
+    // swiftlint:disable force_cast
+    private func setupStoryboardController() -> PermissionAuthorizationViewController {
+        let storyboard = NSStoryboard(name: "PermissionAuthorization", bundle: nil)
+        return storyboard
+            .instantiateController(withIdentifier: "PermissionAuthorizationViewController") as! PermissionAuthorizationViewController
     }
     // swiftlint:enable force_cast
 

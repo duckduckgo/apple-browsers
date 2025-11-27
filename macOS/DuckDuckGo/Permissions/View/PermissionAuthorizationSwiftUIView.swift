@@ -40,7 +40,7 @@ struct PermissionAuthorizationSwiftUIView: View {
                         .font(.system(size: 13))
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
+                        .frame(height: 32)
                         .background(Color(designSystemColor: .controlsFillSecondary))
                         .cornerRadius(8)
                 }
@@ -52,7 +52,7 @@ struct PermissionAuthorizationSwiftUIView: View {
                         .font(.system(size: 13))
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
+                        .frame(height: 32)
                         .background(Color(designSystemColor: .controlsFillSecondary))
                         .cornerRadius(8)
                 }
@@ -62,6 +62,7 @@ struct PermissionAuthorizationSwiftUIView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 20)
         }
+        .frame(width: 400)
     }
 }
 

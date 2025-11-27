@@ -174,7 +174,7 @@ final class PopupHandlingTabExtension {
         // ---
         // When the permission is granted synchronously, the resulting WebView is returned immediately.
         // When the callback is called asynchronously, the resulting Tab is created, presented and loaded manually.
-        var resultWebView: WKWebView? = nil 
+        var resultWebView: WKWebView?
         var isCalledSynchronously = true
         defer { isCalledSynchronously = false } // whether the callback was called synchronously or asynchronously
         permissionModel.request([.popups], forDomain: sourceSecurityOrigin.host, url: url)
@@ -201,12 +201,12 @@ final class PopupHandlingTabExtension {
                                        completionHandler: @escaping (WKWebView?) -> Void) {
         // guarantee the completionHandler is called at all paths
         let result: WKWebView?
-        defer { 
+        defer {
             // automatic loading won‘t start for asynchronous callback as we‘ve already returned nil as the `createWebView` result at this point
-            if !isCalledSynchronously {                
+            if !isCalledSynchronously {
                 result?.load(navigationAction.request)
             }
-            completionHandler(result) 
+            completionHandler(result)
         }
 
         let url = navigationAction.request.url

@@ -290,6 +290,97 @@ final class DataImportViewModelTests: XCTestCase {
         XCTAssertEqual(result, .none)
     }
 
+    // MARK: - Data Tests
+
+    func testDataTypesSelection_noPreviousSelection_returnsAllAvailableTypes() {
+        // GIVEN
+        let availableTypes: Set<DataType> = [.bookmarks, .passwords]
+
+        // WHEN
+        let result = DataImportViewModel.determineSelectedDataTypes(
+            previousSelectedTypes: nil,
+            availableTypes: availableTypes
+        )
+
+        // THEN
+        XCTAssertEqual(result, availableTypes)
+    }
+
+    func testDataTypesSelection_partialSelection_preservesPartialSelection() {
+        // GIVEN: Both sources have same types available, but user only selected one
+        let previousTypes: Set<DataType> = [.bookmarks]
+        let availableTypes: Set<DataType> = [.bookmarks, .passwords]
+
+        // WHEN
+        let result = DataImportViewModel.determineSelectedDataTypes(
+            previousSelectedTypes: previousTypes,
+            availableTypes: availableTypes
+        )
+
+        // THEN: Should preserve the partial selection
+        XCTAssertEqual(result, [.bookmarks])
+    }
+
+    func testDataTypesSelection_newSourceHasSameNumberOfTypesAvailable_preservesSelections() {
+        // GIVEN: Both sources have same number of types
+        let previousTypes: Set<DataType> = [.bookmarks, .passwords]
+        let availableTypes: Set<DataType> = [.bookmarks, .passwords]
+
+        // WHEN
+        let result = DataImportViewModel.determineSelectedDataTypes(
+            previousSelectedTypes: previousTypes,
+            availableTypes: availableTypes
+        )
+
+        // THEN: Should preserve previous selections
+        XCTAssertEqual(result, previousTypes)
+    }
+
+    func testDataTypesSelection_newSourceHasLessTypesAvailable_preservesFilteredSelections() {
+        // GIVEN: Previous source had 2 types, new source has 1 type
+        let previousTypes: Set<DataType> = [.bookmarks, .passwords]
+        let availableTypes: Set<DataType> = [.passwords]
+
+        // WHEN
+        let result = DataImportViewModel.determineSelectedDataTypes(
+            previousSelectedTypes: previousTypes,
+            availableTypes: availableTypes
+        )
+
+        // THEN: Should preserve only the available type
+        XCTAssertEqual(result, [.passwords])
+    }
+
+    func testDataTypesSelection_previousTypesNotAvailable_fallbacksToAllAvailable() {
+        // GIVEN: Previous types don't exist in new source
+        let previousTypes: Set<DataType> = [.creditCards]
+        let availableTypes: Set<DataType> = [.bookmarks, .passwords]
+
+        // WHEN
+        let result = DataImportViewModel.determineSelectedDataTypes(
+            previousSelectedTypes: previousTypes,
+            availableTypes: availableTypes
+        )
+
+        // THEN: Should fallback to all available types
+        XCTAssertEqual(result, availableTypes)
+    }
+
+    func testDataTypesSelection_partialMatch_preservesFilteredTypes() {
+        // GIVEN: Previous source had 2 types, new source has 2 types, but only 1 previous type available
+        let previousTypes: Set<DataType> = [.passwords, .creditCards]
+        let availableTypes: Set<DataType> = [.bookmarks, .passwords]
+
+        // WHEN
+        let result = DataImportViewModel.determineSelectedDataTypes(
+            previousSelectedTypes: previousTypes,
+            availableTypes: availableTypes
+        )
+
+        // THEN: Should preserve filtered types (not all previous types available, so don't select all)
+        XCTAssertEqual(result, [.passwords])
+    }
+
     // MARK: - Button State Tests
 
     @MainActor
@@ -922,19 +1013,6 @@ final class DataImportViewModelTests: XCTestCase {
 
         // THEN
         XCTAssertEqual(model.importSource, .firefox)
-    }
-
-    @MainActor
-    func testUpdateWithImportSource_resetsSelectedDataTypes() {
-        // GIVEN
-        model = DataImportViewModel(importSource: .chrome, syncFeatureVisibility: .hide)
-        model.selectedDataTypes = [.bookmarks]
-
-        // WHEN
-        model.update(with: .firefox)
-
-        // THEN
-        XCTAssertEqual(model.selectedDataTypes, model.selectableImportTypes)
     }
 
     @MainActor

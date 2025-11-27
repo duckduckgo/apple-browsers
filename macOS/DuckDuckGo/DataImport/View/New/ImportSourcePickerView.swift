@@ -29,22 +29,28 @@ struct ImportSourcePickerView: View {
     let selectedImportTypes: [DataImport.DataType]
     let selectableImportTypes: [DataImport.DataType]
 
+    let onExpandedStateChanged: (Bool) -> Void
+
     init(availableSources: [DataImport.Source],
          selectedSource: DataImport.Source,
          selectedImportTypes: [DataImport.DataType],
          selectableImportTypes: [DataImport.DataType],
          shouldShowSyncFeature: Bool,
+         isPickerExpanded: Bool,
          onSourceSelected: @escaping (DataImport.Source) -> Void,
          onTypeSelected: @escaping (DataImport.DataType, Bool) -> Void,
-         onSyncSelected: @escaping () -> Void) {
+         onSyncSelected: @escaping () -> Void,
+         onExpandedStateChanged: @escaping (Bool) -> Void) {
         self.selectedImportTypes = selectedImportTypes
         self.selectableImportTypes = selectableImportTypes
+        self.onExpandedStateChanged = onExpandedStateChanged
         _viewModel = StateObject(wrappedValue: ImportSourcePickerViewModel(
             availableSources: availableSources,
             selectedSource: selectedSource,
             selectedImportTypes: selectedImportTypes,
             selectableImportTypes: selectableImportTypes,
             shouldShowSyncButton: shouldShowSyncFeature,
+            initialPickerExpanded: isPickerExpanded,
             onSourceSelected: onSourceSelected,
             onTypeSelected: onTypeSelected,
             onSyncSelected: onSyncSelected
@@ -132,6 +138,9 @@ struct ImportSourcePickerView: View {
         }
         .onChange(of: selectedImportTypes) { newValue in
             viewModel.updateSelectedImportTypes(newValue)
+        }
+        .onChange(of: viewModel.isPickerExpanded) { newValue in
+            onExpandedStateChanged(newValue)
         }
     }
 }

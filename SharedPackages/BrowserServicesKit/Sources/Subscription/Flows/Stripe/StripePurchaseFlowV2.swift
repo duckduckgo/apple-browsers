@@ -133,7 +133,7 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
             return .failure(.noProductsFound)
         }
 
-        var tiers: [SubscriptionTierOptions.Tier] = []
+        var tiers: [SubscriptionTier] = []
 
         for product in filteredProducts {
             guard let tier = createTier(from: product) else {
@@ -156,7 +156,7 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
         return Locale.current.regionCode == "US"
     }
 
-    private func createTier(from product: TierProduct) -> SubscriptionTierOptions.Tier? {
+    private func createTier(from product: TierProduct) -> SubscriptionTier? {
         var options: [SubscriptionOptionV2] = []
 
         for billingCycle in product.billingCycles {
@@ -187,7 +187,7 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
             return nil
         }
 
-        return SubscriptionTierOptions.Tier(
+        return SubscriptionTier(
             tier: product.tier,
             features: product.entitlements,
             options: options

@@ -296,7 +296,7 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
         let tierFeaturesMap = await subscriptionFeatureMappingCache.subscriptionTierFeatures(for: productIDsToFetch)
         Logger.subscription.debug("[AppStorePurchaseFlow] Received features for \(tierFeaturesMap.count) products")
 
-        var tiers: [SubscriptionTierOptions.Tier] = []
+        var tiers: [SubscriptionTier] = []
 
         // Create Plus tier if products exist
         if let plusProductId,
@@ -322,7 +322,7 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
         return SubscriptionTierOptions(platform: platform, products: tiers)
     }
 
-    private func createTier(from products: [any SubscriptionProduct], tierName: String, features: [EntitlementPayload]) async -> SubscriptionTierOptions.Tier? {
+    private func createTier(from products: [any SubscriptionProduct], tierName: String, features: [EntitlementPayload]) async -> SubscriptionTier? {
         // Create options for available products (monthly and/or yearly)
         var options: [SubscriptionOptionV2] = []
 
@@ -337,7 +337,7 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
             return nil
         }
 
-        return SubscriptionTierOptions.Tier(
+        return SubscriptionTier(
             tier: tierName,
             features: features,
             options: options

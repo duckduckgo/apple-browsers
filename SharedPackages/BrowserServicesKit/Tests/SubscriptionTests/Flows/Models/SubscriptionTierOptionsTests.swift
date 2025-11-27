@@ -30,7 +30,7 @@ struct SubscriptionTierOptionsTests {
         let monthlySubscriptionOffer = SubscriptionOptionOffer(type: .freeTrial, id: "1", durationInDays: 7, isUserEligible: true)
         let yearlySubscriptionOffer = SubscriptionOptionOffer(type: .freeTrial, id: "2", durationInDays: 7, isUserEligible: true)
 
-        let plusTier = SubscriptionTierOptions.Tier(
+        let plusTier = SubscriptionTier(
             tier: "plus",
             features: [EntitlementPayload(product: .paidAIChat, name: "plus"),
                        EntitlementPayload(product: .networkProtection, name: "plus")],
@@ -41,7 +41,7 @@ struct SubscriptionTierOptionsTests {
             ]
         )
 
-        let proTier = SubscriptionTierOptions.Tier(
+        let proTier = SubscriptionTier(
             tier: "pro",
             features: [EntitlementPayload(product: .paidAIChat, name: "pro"),
                        EntitlementPayload(product: .networkProtection, name: "plus")],
@@ -157,7 +157,7 @@ struct SubscriptionTierOptionsTests {
 
     @Test("Remove purchase options while preserving tier data")
     func withoutPurchaseOptions() {
-        let plusTier = SubscriptionTierOptions.Tier(
+        let plusTier = SubscriptionTier(
             tier: "plus",
             features: [EntitlementPayload(product: .networkProtection, name: "plus")],
             options: [
@@ -167,7 +167,7 @@ struct SubscriptionTierOptionsTests {
             ]
         )
 
-        let proTier = SubscriptionTierOptions.Tier(
+        let proTier = SubscriptionTier(
             tier: "pro",
             features: [EntitlementPayload(product: .identityTheftRestoration, name: "plus"),
                        EntitlementPayload(product: .dataBrokerProtection, name: "plus"),

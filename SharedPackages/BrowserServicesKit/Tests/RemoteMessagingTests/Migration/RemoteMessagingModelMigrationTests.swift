@@ -43,6 +43,8 @@ final class RemoteMessagingModelMigrationTests {
 
     @Test("Check Model Lightweight Migration From V1 to V2")
     func checkModelMigrationFromV1ToV2() throws {
+        #expect(false)
+
         // GIVEN
         // Copy real V1 database files
         try copyDatabase(name: "Database_V1", formDirectory: resourcesURLDirectory, toDirectory: testLocation, targetName: "RemoteMessaging")

@@ -109,15 +109,6 @@ final class SuggestionTableCellView: NSTableCellView {
     private static let chatWithAITextWidth: CGFloat = chatWithAIAttributedString.size().width
     private static let chatWithAIBoxWidth: CGFloat = chatWithAITextWidth + Constants.switchToTabExtraSpace
 
-    static func visitAttributedString(host: String) -> NSAttributedString {
-        let text = "\(UserText.addressBarVisitSuffix) \(host)"
-        let attributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 11, weight: .regular),
-            .kern: 0.06,
-        ]
-        return NSAttributedString(string: text, attributes: attributes)
-    }
-
     private func setupKeyboardShortcutView() {
         guard keyboardShortcutView.superview == nil else { return }
 
@@ -226,10 +217,8 @@ final class SuggestionTableCellView: NSTableCellView {
             switchToTabArrowView.isHidden = false
             setupKeyboardShortcutView()
         case .visit(let host):
-            suffixTextField.stringValue = ""
-            switchToTabBox.isHidden = frame.size.width <= 272
-            switchToTabLabel.attributedStringValue = Self.visitAttributedString(host: host)
-            switchToTabArrowView.isHidden = false
+            suffixTextField.stringValue = " – \(UserText.addressBarVisitSuffix) \(host)"
+            switchToTabBox.isHidden = true
         case .default:
             suffixTextField.stringValue = ""
             switchToTabBox.isHidden = true
@@ -315,18 +304,16 @@ final class SuggestionTableCellView: NSTableCellView {
                 boxWidth = Self.searchTheWebBoxWidth
             case .aiChat:
                 boxWidth = Self.chatWithAIBoxWidth + keyboardShortcutsWidth
-            case .visit(let host):
-                let visitAttrString = Self.visitAttributedString(host: host)
-                boxWidth = visitAttrString.size().width + Constants.switchToTabExtraSpace
-            case .default:
+            case .visit, .default:
                 boxWidth = Self.switchToTabBoxWidth
             }
 
             let alwaysAnchorToTrailing: Bool
-            if case .default = cellStyle {
-                alwaysAnchorToTrailing = false
-            } else {
+            switch cellStyle {
+            case .search, .aiChat:
                 alwaysAnchorToTrailing = true
+            case .visit, .default:
+                alwaysAnchorToTrailing = false
             }
 
             if alwaysAnchorToTrailing {

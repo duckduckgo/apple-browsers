@@ -73,6 +73,7 @@ struct DataImportView: ModalView {
                     selectedImportTypes: Array(model.selectedDataTypes),
                     selectableImportTypes: Array(model.selectableImportTypes),
                     shouldShowSyncFeature: syncFeatureVisibility.shouldShowSyncFeature,
+                    isPickerExpanded: model.isPickerExpanded,
                     onSourceSelected: { source in
                         model.update(with: source)
                     },
@@ -83,6 +84,9 @@ struct DataImportView: ModalView {
                         model.launchSync(using: dismiss.callAsFunction) {
                             importFlowLauncher.relaunchDataImport(model: model)
                         }
+                    },
+                    onExpandedStateChanged: { isExpanded in
+                        model.isPickerExpanded = isExpanded
                     }
                 )
             case .profilePicker:

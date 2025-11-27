@@ -102,6 +102,7 @@ struct DataImportViewModel {
     var selectedProfile: BrowserProfile?
     /// selected Data Types to import (bookmarks/passwords)
     var selectedDataTypes: Set<DataType> = []
+    var isPickerExpanded: Bool = false
 
     enum DataTypeSelection: Equatable {
         case all
@@ -190,6 +191,7 @@ struct DataImportViewModel {
          availableImportSources: [DataImport.Source] = DataImport.Source.allCases.filter { $0.canImportData },
          preferredImportSources: [Source] = [.chrome, .firefox, .safari],
          summary: [DataTypeImportResult] = [],
+         isPickerExpanded: Bool = false,
          isPasswordManagerAutolockEnabled: Bool = AutofillPreferences().isAutoLockEnabled,
          syncFeatureVisibility: SyncFeatureVisibility = .hide,
          loadProfiles: @escaping (ThirdPartyBrowser) -> BrowserProfileList = { $0.browserProfiles() },
@@ -224,6 +226,7 @@ struct DataImportViewModel {
         self.selectedDataTypes = selectableImportTypes
 
         self.summary = summary
+        self.isPickerExpanded = isPickerExpanded
         self.isPasswordManagerAutolockEnabled = isPasswordManagerAutolockEnabled
         self.syncFeatureVisibility = syncFeatureVisibility
 
@@ -761,6 +764,7 @@ extension DataImportViewModel {
 
     mutating func update(with importSource: Source) {
         self = .init(importSource: importSource,
+                     isPickerExpanded: self.isPickerExpanded,
                      isPasswordManagerAutolockEnabled: isPasswordManagerAutolockEnabled,
                      syncFeatureVisibility: syncFeatureVisibility,
                      loadProfiles: loadProfiles,

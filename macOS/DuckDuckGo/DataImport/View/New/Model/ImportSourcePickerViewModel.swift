@@ -60,6 +60,7 @@ final class ImportSourcePickerViewModel: ObservableObject {
          selectedImportTypes: [DataImport.DataType],
          selectableImportTypes: [DataImport.DataType],
          shouldShowSyncButton: Bool,
+         initialPickerExpanded: Bool = false,
          onSourceSelected: @escaping (DataImport.Source) -> Void,
          onTypeSelected: @escaping (DataImport.DataType, Bool) -> Void,
          onSyncSelected: @escaping () -> Void) {
@@ -71,6 +72,7 @@ final class ImportSourcePickerViewModel: ObservableObject {
         self.onSourceSelected = onSourceSelected
         self.onTypeSelected = onTypeSelected
         self.onSyncSelected = onSyncSelected
+        self.isPickerExpanded = initialPickerExpanded
         typeButtonTitle = Self.titleFor(selectedImportTypes: selectedImportTypes)
         importTypeItems = Self.makeImportTypeItems(selectableTypes: selectableImportTypes, selectedTypes: selectedImportTypes)
     }

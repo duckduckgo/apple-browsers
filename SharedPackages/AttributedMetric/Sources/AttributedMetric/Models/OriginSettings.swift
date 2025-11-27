@@ -1,8 +1,7 @@
 //
-//  TrackerAnimationLogic.swift
-//  DuckDuckGo
+//  OriginSettings.swift
 //
-//  Copyright © 2022 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,12 +17,7 @@
 //
 
 import Foundation
-import Core
-import PrivacyDashboard
 
-final class TrackerAnimationLogic {
-    
-    static func shouldAnimateTrackers(for trackerInfo: TrackerInfo) -> Bool {
-        !trackerInfo.trackersBlocked.isEmpty
-    }
+public struct OriginSettings: Decodable {
+    public let originCampaignSubstrings: [String]
 }

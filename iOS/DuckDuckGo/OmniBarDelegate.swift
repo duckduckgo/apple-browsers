@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import UIKit
 import Suggestions
 import Bookmarks
 import AIChat
@@ -99,6 +100,8 @@ protocol OmniBarDelegate: AnyObject {
 
     func isSuggestionTrayVisible() -> Bool
 
+    func onDaxLogoTapped(logoURL: URL?, image: UIImage?, sourceFrame: CGRect)
+
     // MARK: - Experimental Address Bar (pixels only)
     func onExperimentalAddressBarTapped()
     func onExperimentalAddressBarClearPressed()
@@ -163,6 +166,9 @@ extension OmniBarDelegate {
     
     func onVoiceSearchPressed(preferredTarget: VoiceSearchTarget) {
         onVoiceSearchPressed()
+    }
+
+    func onDaxLogoTapped(logoURL: URL?, image: UIImage?, sourceFrame: CGRect) {
     }
 
     // Default no-op implementations for experimental address bar pixel hooks

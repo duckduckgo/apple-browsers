@@ -183,7 +183,7 @@ public class RollingEightDaysInt: RollingEightDays<Int>, CustomDebugStringConver
         let valuesDescription = values.map { element -> String in
             switch element {
             case .unknown:
-                return "unknown"
+                return "-"
             case .value(let v):
                 return String(v)
             }

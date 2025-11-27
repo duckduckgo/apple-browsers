@@ -63,7 +63,7 @@ struct DuckPlayerWebView: UIViewRepresentable {
 
    init(viewModel: DuckPlayerViewModel,
         contentController: WKUserContentController = WKUserContentController(),
-        scriptSourceProviderDependencies: DefaultScriptSourceProvider.Dependencies,
+        scriptSourceProvider: ScriptSourceProviding = DefaultScriptSourceProvider(fireproofing: UserDefaultsFireproofing.xshared),
         duckPlayerUserScript: DuckPlayerUserScriptPlayer? = nil,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
         privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator? = nil,
@@ -71,7 +71,7 @@ struct DuckPlayerWebView: UIViewRepresentable {
        
        self.viewModel = viewModel
        self.contentController = contentController
-       self.scriptSourceProvider = DefaultScriptSourceProvider(dependencies: scriptSourceProviderDependencies)
+       self.scriptSourceProvider = scriptSourceProvider
               
        self.duckPlayerUserScript = duckPlayerUserScript ?? DuckPlayerUserScriptPlayer(viewModel: viewModel)
 

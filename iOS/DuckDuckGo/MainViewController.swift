@@ -1169,6 +1169,9 @@ class MainViewController: UIViewController {
         }
 
         Pixel.fire(pixel: .forgetAllPressedBrowsing)
+        
+        performActionIfAITab { DailyPixel.fireDailyAndCount(pixel: .aiChatFireButtonTapped) }
+        
         hideNotificationBarIfBrokenSitePromptShown()
         wakeLazyFireButtonAnimator()
 
@@ -2338,6 +2341,12 @@ class MainViewController: UIViewController {
 
         load(query, autoSend: autoSend, payload: payload, tools: tools)
     }
+    
+    /// Executes the closure if the current tab is an AI tab
+    private func performActionIfAITab(_ action: () -> Void) {
+        guard currentTab?.isAITab == true else { return }
+        action()
+    }
 }
 
 extension MainViewController: FindInPageDelegate {
@@ -2714,9 +2723,7 @@ extension MainViewController: OmniBarDelegate {
         } else {
             Pixel.fire(pixel: .browsingMenuOpened)
             
-            if currentTab?.isAITab == true {
-                DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuOpened)
-            }
+            performActionIfAITab { DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuOpened) }
         }
     }
     
@@ -2740,14 +2747,19 @@ extension MainViewController: OmniBarDelegate {
     }
     
     func onEnterPressed() {
-        fireControllerAwarePixel(ntp: .keyboardGoWhileOnNTP, serp: .keyboardGoWhileOnSERP, website: .keyboardGoWhileOnWebsite)
+        fireControllerAwarePixel(ntp: .keyboardGoWhileOnNTP,
+                                 serp: .keyboardGoWhileOnSERP,
+                                 website: .keyboardGoWhileOnWebsite,
+                                 aiChat: .keyboardGoWhileOnAIChat)
     }
 
-    func fireControllerAwarePixel(ntp: Pixel.Event, serp: Pixel.Event, website: Pixel.Event) {
+    func fireControllerAwarePixel(ntp: Pixel.Event, serp: Pixel.Event, website: Pixel.Event, aiChat: Pixel.Event) {
         if newTabPageViewController != nil {
             Pixel.fire(pixel: ntp)
         } else if let currentTab {
-            if currentTab.url?.isDuckDuckGoSearch == true {
+            if currentTab.isAITab == true {
+                Pixel.fire(pixel: aiChat)
+            } else if currentTab.url?.isDuckDuckGoSearch == true {
                 Pixel.fire(pixel: serp)
             } else {
                 Pixel.fire(pixel: website)
@@ -2790,7 +2802,8 @@ extension MainViewController: OmniBarDelegate {
     func onCancelPressed() {
         fireControllerAwarePixel(ntp: .addressBarCancelPressedOnNTP,
                                  serp: .addressBarCancelPressedOnSERP,
-                                 website: .addressBarCancelPressedOnWebsite)
+                                 website: .addressBarCancelPressedOnWebsite,
+                                 aiChat: .addressBarCancelPressedOnAIChat)
         performCancel()
     }
 
@@ -2802,7 +2815,8 @@ extension MainViewController: OmniBarDelegate {
     func onClearTextPressed() {
         fireControllerAwarePixel(ntp: .addressBarClearPressedOnNTP,
                                  serp: .addressBarClearPressedOnSERP,
-                                 website: .addressBarClearPressedOnWebsite)
+                                 website: .addressBarClearPressedOnWebsite,
+                                 aiChat: .addressBarClearPressedOnAIChat)
     }
 
     private func newTabShortcutAction() {
@@ -2825,7 +2839,10 @@ extension MainViewController: OmniBarDelegate {
         }
 
         if tapped {
-            fireControllerAwarePixel(ntp: .addressBarClickOnNTP, serp: .addressBarClickOnSERP, website: .addressBarClickOnWebsite)
+            fireControllerAwarePixel(ntp: .addressBarClickOnNTP,
+                                     serp: .addressBarClickOnSERP,
+                                     website: .addressBarClickOnWebsite,
+                                     aiChat: .addressBarClickOnAIChat)
         }
 
         guard newTabPageViewController == nil else { return }
@@ -2921,19 +2938,22 @@ extension MainViewController: OmniBarDelegate {
     func onExperimentalAddressBarTapped() {
         fireControllerAwarePixel(ntp: .addressBarClickOnNTP,
                                  serp: .addressBarClickOnSERP,
-                                 website: .addressBarClickOnWebsite)
+                                 website: .addressBarClickOnWebsite,
+                                 aiChat: .addressBarClickOnAIChat)
     }
 
     func onExperimentalAddressBarClearPressed() {
         fireControllerAwarePixel(ntp: .addressBarClearPressedOnNTP,
                                  serp: .addressBarClearPressedOnSERP,
-                                 website: .addressBarClearPressedOnWebsite)
+                                 website: .addressBarClearPressedOnWebsite,
+                                 aiChat: .addressBarClearPressedOnAIChat)
     }
 
     func onExperimentalAddressBarCancelPressed() {
         fireControllerAwarePixel(ntp: .addressBarCancelPressedOnNTP,
                                  serp: .addressBarCancelPressedOnSERP,
-                                 website: .addressBarCancelPressedOnWebsite)
+                                 website: .addressBarCancelPressedOnWebsite,
+                                 aiChat: .addressBarCancelPressedOnAIChat)
     }
 
     /// Delegate method called when the AI Chat left button is tapped
@@ -2950,7 +2970,7 @@ extension MainViewController: OmniBarDelegate {
 
     /// Delegate method called when the omnibar branding area is tapped while in AI Chat mode.
     func onAIChatBrandingPressed() {
-        DailyPixel.fireDailyAndCount(pixel: .aiChatOmnibarTapped)
+        DailyPixel.fireDailyAndCount(pixel: .addressBarClickOnAIChat)
         viewCoordinator.omniBar.beginEditing(animated: true)
     }
 }
@@ -3465,9 +3485,7 @@ extension MainViewController: TabSwitcherButtonDelegate {
         Pixel.fire(pixel: .tabBarTabSwitcherOpened)
         DailyPixel.fireDaily(.tabSwitcherOpenedDaily, withAdditionalParameters: TabSwitcherOpenDailyPixel().parameters(with: tabManager.model.tabs))
         
-        if currentTab?.isAITab == true {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatTabSwitcherOpened)
-        }
+        performActionIfAITab { DailyPixel.fireDailyAndCount(pixel: .aiChatTabSwitcherOpened) }
 
         performCancel()
         showTabSwitcher()

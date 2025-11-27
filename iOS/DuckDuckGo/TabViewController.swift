@@ -319,6 +319,11 @@ class TabViewController: UIViewController {
         
         return activeLink.merge(with: storedLink)
     }
+    
+    /// Convenience property which passes back the value of `isAITab` from the underlying `TabModel`
+    var isAITab: Bool {
+        tabModel.isAITab
+    }
 
     var emailManager: EmailManager? {
         return (parent as? MainViewController)?.emailManager
@@ -538,7 +543,7 @@ class TabViewController: UIViewController {
         }
         
         self.aiChatSettings = aiChatSettings
-        self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings)
+        self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings, featureDiscovery: featureDiscovery)
 
         super.init(coder: aDecoder)
         

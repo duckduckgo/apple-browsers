@@ -453,12 +453,12 @@ class TabViewController: UIViewController {
             let handler = NativeDuckPlayerNavigationHandler(duckPlayer: duckPlayer,
                                          appSettings: appSettings,
                                          tabNavigationHandler: self)
-            
+
             // Set up constraint handling if using native UI
             if let presenter = duckPlayer.nativeUIPresenter as? DuckPlayerNativeUIPresenter {
                 setupDuckPlayerConstraintHandling(publisher: presenter.constraintUpdates)
             }
-            
+
             return handler
         } else {
             return WebDuckPlayerNavigationHandler(duckPlayer: duckPlayer,
@@ -2888,9 +2888,11 @@ extension TabViewController: UserContentControllerDelegate {
         // Special Error Page (SSL, Malicious Site protection)
         specialErrorPageNavigationHandler.setUserScript(userScripts.specialErrorPageUserScript)
 
-        // Setup DuckPlayer Scripts if not using native UI
+        // Setup DuckPlayer Scripts
+        userScripts.duckPlayer = duckPlayerNavigationHandler.duckPlayer
+
+        // Set webView for legacy scripts only if not using native UI
         if duckPlayerNavigationHandler.duckPlayer.settings.nativeUI == false {
-            userScripts.duckPlayer = duckPlayerNavigationHandler.duckPlayer
             userScripts.youtubeOverlayScript?.webView = webView
             userScripts.youtubePlayerUserScript?.webView = webView
         }

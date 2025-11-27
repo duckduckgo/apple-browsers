@@ -39,10 +39,9 @@ final class PersistentStoresConfiguration {
     }
 
     func configure(syncKeyValueStore: ThrowingKeyValueStoring,
-                   isBackground: Bool = false,
                    isBookmarksDBFilePresent: Bool) throws {
         try loadDatabase()
-        try loadAndMigrateBookmarksDatabase(syncKeyValueStore: syncKeyValueStore, isBackground: isBackground, isBookmarksDBFilePresent: isBookmarksDBFilePresent)
+        try loadAndMigrateBookmarksDatabase(syncKeyValueStore: syncKeyValueStore, isBookmarksDBFilePresent: isBookmarksDBFilePresent)
     }
 
     private func loadDatabase() throws {
@@ -60,7 +59,7 @@ final class PersistentStoresConfiguration {
         }
     }
 
-    private func loadAndMigrateBookmarksDatabase(syncKeyValueStore: ThrowingKeyValueStoring, isBackground: Bool, isBookmarksDBFilePresent: Bool) throws {
+    private func loadAndMigrateBookmarksDatabase(syncKeyValueStore: ThrowingKeyValueStoring, isBookmarksDBFilePresent: Bool) throws {
         do {
             // Create a simple counter store with just atomic writes (no encryption for debugging data)
             let appSupportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!

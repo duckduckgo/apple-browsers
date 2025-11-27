@@ -76,15 +76,6 @@ struct BookmarksDatabaseSetup {
                              formFactorFavoritesMigrator: BookmarkFormFactorFavoritesMigrating = BookmarkFormFactorFavoritesMigration(),
                              validator: BookmarksStateValidation = Self.makeValidator(),
                              isBookmarksDBFilePresent: Bool = false) throws {
-
-        // Check if bookmarks database file exists before attempting to load
-        let dbFileURL = BookmarksDatabase.defaultDBFileURL
-        let dbFileExists = FileManager.default.fileExists(atPath: dbFileURL.path)
-        
-        if !dbFileExists {
-            DailyPixel.fireDailyAndCount(pixel: .debugBookmarksDatabaseFileMissing)
-        }
-
         let oldFavoritesOrder: [String]?
         do {
             oldFavoritesOrder = try formFactorFavoritesMigrator.getFavoritesOrderFromPreV4Model(

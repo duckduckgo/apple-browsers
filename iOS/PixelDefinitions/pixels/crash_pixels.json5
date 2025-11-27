@@ -141,17 +141,6 @@
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
-
-    // Bookmarks database file missing before loading
-    "m_d_bookmarks_database_file_missing": {
-        "description": "Fires when bookmarks database file doesn't exist before attempting to load it.",
-        "owners": ["jaceklyp", "bwaresiak"],
-        "triggers": ["exception"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion"]
-    },
-
-    // Enhanced bookmarks structure lost pixel with diagnostic parameters
     "m_d_bookmarks_structure_lost": {
         "description": "Fires when bookmarks database loads but structure is missing/empty with detailed diagnostics.",
         "owners": ["jaceklyp", "bwaresiak"],

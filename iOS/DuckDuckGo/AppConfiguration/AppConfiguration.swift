@@ -46,8 +46,7 @@ struct AppConfiguration {
 
         onboardingConfiguration.migrateToNewOnboarding()
         clearTemporaryDirectory()
-        let isBackground = UIApplication.shared.applicationState == .background
-        try persistentStoresConfiguration.configure(syncKeyValueStore: appKeyValueStore, isBackground: isBackground, isBookmarksDBFilePresent: isBookmarksDBFilePresent)
+        try persistentStoresConfiguration.configure(syncKeyValueStore: appKeyValueStore, isBookmarksDBFilePresent: isBookmarksDBFilePresent)
         migrateAIChatSettings()
         migratePromptCooldown()
 

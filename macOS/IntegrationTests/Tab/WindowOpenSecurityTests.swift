@@ -128,7 +128,7 @@ final class WindowOpenSecurityTests: XCTestCase {
     // Tests based on MDN spec: https://developer.mozilla.org/en-US/docs/Web/API/Window/open
 
     // MARK: - window.open() with regular URLs
-    
+
     // window.open(url) — opener present, return non-null WindowProxy
     @MainActor
     func testWindowOpenWithUrlOnly() async throws {
@@ -180,7 +180,7 @@ final class WindowOpenSecurityTests: XCTestCase {
     }
 
     // MARK: - window.open() with named contexts
-    
+
     // window.open(url, 'name') — new named context, opener present, return non-null
     @MainActor
     func testWindowOpenWithNamedTarget() async throws {
@@ -202,17 +202,17 @@ final class WindowOpenSecurityTests: XCTestCase {
         // Second open with same name should reuse the context (not create a new child tab)
         childTabExpectation = expectation(description: "No child tab created")
         childTabExpectation?.isInverted = true
-        
+
         let result2 = try await evaluatePopupReuse(popupURL, target: "reuseTest", features: [])
         XCTAssertTrue(result2.returnedWindowProxy, "window.open() should return WindowProxy (reused context)")
         XCTAssertTrue(result2.wasReused, "Context should be reused")
-        
+
         await fulfillment(of: [childTabExpectation!], timeout: 0)
         XCTAssertEqual(createdChildTabs.count, 1, "Should have only the first child tab")
     }
 
     // MARK: - window.open() with blank/empty URLs
-    
+
     // window.open() with no URL — opens about:blank, return non-null (or null if noopener/noreferrer)
     // Per MDN: omitted URL opens about:blank
     @MainActor
@@ -296,7 +296,7 @@ final class WindowOpenSecurityTests: XCTestCase {
     }
 
     // MARK: - window.open() with cross-origin URLs
-    
+
     // window.open(crossOriginUrl) — opener present, cross-origin DOM restricted, return non-null
     @MainActor
     func testWindowOpenCrossOriginNoFeatures() async throws{
@@ -326,24 +326,24 @@ final class WindowOpenSecurityTests: XCTestCase {
     }
 
     // MARK: - window.open() with navigation targets (_self, _parent, _top)
-    
+
     // window.open(url, '_self') — navigates existing context, return non-null
     @MainActor
     func testWindowOpenWithSelfTarget() async throws{
         childTabExpectation = expectation(description: "No child tab created")
         childTabExpectation?.isInverted = true
-        
+
         let result = try await evaluatePopupNavigation(popupURL, target: "_self")
 
         XCTAssertTrue(result.navigated, "window.open(url, '_self') should navigate current context")
         XCTAssertTrue(result.returnedWindowProxy, "window.open() should return WindowProxy (non-null)")
-        
+
         await fulfillment(of: [childTabExpectation!], timeout: 0)
         XCTAssertEqual(createdChildTabs.count, 0, "window.open with _self should not create any child tabs")
     }
 
     // MARK: - <a target="_blank"> anchor tests
-    
+
     // <a href=url target="_blank"> (no rel) — implicit rel="noopener", opener null
     // Reference: https://developer.mozilla.org/en-US/docs/Web/HTML/Element/a
     @MainActor
@@ -460,7 +460,7 @@ final class WindowOpenSecurityTests: XCTestCase {
             XCTFail("Unexpected script result: \(String(describing: rawResult))", file: file, line: line)
             return PopupScriptResult(returnedWindowProxy: false, openerIsNull: false, referrer: nil)
         }
-        
+
         let returnValue = dictionary["returnValue"] as? String
         let returnedWindowProxy = returnValue != nil // window.open() returned WindowProxy (non-null)
 

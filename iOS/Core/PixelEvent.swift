@@ -51,6 +51,7 @@ extension Pixel {
         case keyboardGoWhileOnNTP
         case keyboardGoWhileOnWebsite
         case keyboardGoWhileOnSERP
+        case keyboardGoWhileOnAIChat
         
         case keyboardSettingsOnNewTabEnabledDaily
         case keyboardSettingsOnAppLaunchEnabledDaily
@@ -162,12 +163,15 @@ extension Pixel {
         case addressBarCancelPressedOnNTP
         case addressBarCancelPressedOnWebsite
         case addressBarCancelPressedOnSERP
+        case addressBarCancelPressedOnAIChat
         case addressBarClickOnNTP
         case addressBarClickOnWebsite
         case addressBarClickOnSERP
+        case addressBarClickOnAIChat
         case addressBarClearPressedOnNTP
         case addressBarClearPressedOnWebsite
         case addressBarClearPressedOnSERP
+        case addressBarClearPressedOnAIChat
         case addressBarGestureDismiss
 
         case shareSheetResultSuccess
@@ -816,7 +820,6 @@ extension Pixel {
         case debugTabSwitcherDidChangeInvalidState
 
         case debugBookmarksInitialStructureQueryFailed
-        case debugBookmarksDatabaseFileMissing
         case debugBookmarksStructureLost
         
         case debugAppDelegateInitToLaunchTime
@@ -1373,7 +1376,18 @@ extension Pixel {
         case aiChatMetricDuckAIKeyboardReturnPressed
         case aiChatInternalSwitchBarDisplayed
         case aiChatExperimentalAddressBarIsEnabledDaily
-
+        
+        case aiChatOmnibarSidebarButtonTapped
+        case aiChatOmnibarNewChatButtonTapped
+        
+        case aiChatSettingsMenuOpened
+        case aiChatSettingsMenuSidebarTapped
+        case aiChatSettingsMenuAIChatSettingsTapped
+        case aiChatSettingsMenuNewChatTabTapped
+        
+        case aiChatTabSwitcherOpened
+        case aiChatFireButtonTapped
+        
         // MARK: New Address Bar Picker
         case aiChatNewAddressBarPickerDisplayed
         case aiChatNewAddressBarPickerConfirmed
@@ -1515,6 +1529,7 @@ extension Pixel.Event {
         case .keyboardGoWhileOnNTP: return "m_keyboard_go_click_ntp"
         case .keyboardGoWhileOnWebsite: return "m_keyboard_go_click_website"
         case .keyboardGoWhileOnSERP: return "m_keyboard_go_click_serp"
+        case .keyboardGoWhileOnAIChat: return "m_keyboard_go_click_aichat"
         
         case .keyboardSettingsOnNewTabEnabledDaily: return "m_keyboard_settings_on_new_tab_enabled"
         case .keyboardSettingsOnAppLaunchEnabledDaily: return "m_keyboard_settings_on_app_launch_enabled"
@@ -1612,12 +1627,15 @@ extension Pixel.Event {
         case .addressBarCancelPressedOnNTP: return "m_addressbar_cancel_ntp"
         case .addressBarCancelPressedOnWebsite: return "m_addressbar_cancel_website"
         case .addressBarCancelPressedOnSERP: return "m_addressbar_cancel_serp"
+        case .addressBarCancelPressedOnAIChat: return "m_addressbar_cancel_aichat"
         case .addressBarClickOnNTP: return "m_addressbar_click_ntp"
         case .addressBarClickOnWebsite: return "m_addressbar_click_website"
         case .addressBarClickOnSERP: return "m_addressbar_click_serp"
+        case .addressBarClickOnAIChat: return "m_addressbar_click_aichat"
         case .addressBarClearPressedOnNTP: return "m_addressbar_focus_clear_entry_ntp"
         case .addressBarClearPressedOnWebsite: return "m_addressbar_focus_clear_entry_website"
         case .addressBarClearPressedOnSERP: return "m_addressbar_focus_clear_entry_serp"
+        case .addressBarClearPressedOnAIChat: return "m_addressbar_focus_clear_entry_aichat"
         case .addressBarGestureDismiss: return "m_addressbar_focus_dismiss_gesture"
 
         case .shareSheetResultSuccess: return "m_sharesheet_result_success"
@@ -2212,7 +2230,6 @@ extension Pixel.Event {
         case .emailAutofillKeychainError: return "m_email_autofill_keychain_error"
         
         case .debugBookmarksInitialStructureQueryFailed: return "m_d_bookmarks-initial-structure-query-failed"
-        case .debugBookmarksDatabaseFileMissing: return "m_d_bookmarks_database_file_missing"
         case .debugBookmarksStructureLost: return "m_d_bookmarks_structure_lost"
         case .debugAppDelegateInitToLaunchTime: return "m_d_app_delegate_init_to_launch_time"
         case .debugBookmarksStructureNotRecovered: return "m_d_bookmarks_structure_not_recovered"
@@ -2745,6 +2762,17 @@ extension Pixel.Event {
         case .aiChatMetricDuckAIKeyboardReturnPressed: return "m_aichat_duckai_keyboard_return_pressed"
         case .aiChatInternalSwitchBarDisplayed: return "m_aichat_internal_switch_bar_displayed"
         case .aiChatExperimentalAddressBarIsEnabledDaily: return "m_aichat_experimental_address_bar_is_enabled_daily"
+
+        case .aiChatOmnibarSidebarButtonTapped: return "m_aichat_omnibar_sidebar_button_tapped"
+        case .aiChatOmnibarNewChatButtonTapped: return "m_aichat_omnibar_new_chat_button_tapped"
+
+        case .aiChatSettingsMenuOpened: return "m_aichat_settings_menu_opened"
+        case .aiChatSettingsMenuSidebarTapped: return "m_aichat_settings_menu_sidebar_tapped"
+        case .aiChatSettingsMenuAIChatSettingsTapped: return "m_aichat_settings_menu_aichat_settings_tapped"
+        case .aiChatSettingsMenuNewChatTabTapped: return "m_aichat_settings_menu_new_chat_tab_tapped"
+            
+        case .aiChatTabSwitcherOpened: return "m_aichat_tab_switcher_opened"
+        case .aiChatFireButtonTapped: return "m_aichat_fire_button_tapped"
 
         // MARK: New Address Bar Picker
         case .aiChatNewAddressBarPickerDisplayed: return "m_aichat_new_address_bar_picker_displayed"

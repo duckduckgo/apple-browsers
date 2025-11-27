@@ -25,6 +25,13 @@ final class SuggestionTableCellView: NSTableCellView {
 
     static let identifier = NSUserInterfaceItemIdentifier("SuggestionTableCellView")
 
+    enum CellStyle {
+        case `default`
+        case aiChat
+        case search
+        case visit(host: String)
+    }
+
     private enum Constants {
         static let textColor: NSColor = .suggestionText
         static let suffixColor: NSColor = .addressBarSuffix
@@ -51,9 +58,20 @@ final class SuggestionTableCellView: NSTableCellView {
     @IBOutlet var switchToTabBoxTrailingConstraint: NSLayoutConstraint!
     @IBOutlet weak var iconImageViewLeadingConstraint: NSLayoutConstraint!
     @IBOutlet weak var searchSuggestionTextFieldLeadingConstraint: NSLayoutConstraint!
+    @IBOutlet var switchToTabLabelLeadingConstraint: NSLayoutConstraint!
+
+    private lazy var keyboardShortcutView: KeyboardShortcutView = {
+        let view = KeyboardShortcutView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        view.configure(with: ["⌃", "⏎"])
+        return view
+    }()
+
+    private var labelLeadingToShortcutsConstraint: NSLayoutConstraint?
 
     var theme: ThemeStyleProviding?
     var suggestion: Suggestion?
+    private(set) var cellStyle: CellStyle = .default
 
     static let switchToTabAttributedString: NSAttributedString = {
         let text = UserText.switchToTab
@@ -66,6 +84,61 @@ final class SuggestionTableCellView: NSTableCellView {
     }()
     private static let switchToTabTextWidth: CGFloat = switchToTabAttributedString.size().width
     private static let switchToTabBoxWidth: CGFloat = switchToTabTextWidth + Constants.switchToTabExtraSpace
+
+    static let searchTheWebAttributedString: NSAttributedString = {
+        let text = UserText.searchTheWeb
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 11, weight: .semibold),
+            .kern: 0.06,
+        ]
+
+        return NSAttributedString(string: text, attributes: attributes)
+    }()
+    private static let searchTheWebTextWidth: CGFloat = searchTheWebAttributedString.size().width
+    private static let searchTheWebBoxWidth: CGFloat = searchTheWebTextWidth + Constants.switchToTabExtraSpace
+
+    static let chatWithAIAttributedString: NSAttributedString = {
+        let text = UserText.aiChatChatWithAITooltip
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 11, weight: .semibold),
+            .kern: 0.06,
+        ]
+
+        return NSAttributedString(string: text, attributes: attributes)
+    }()
+    private static let chatWithAITextWidth: CGFloat = chatWithAIAttributedString.size().width
+    private static let chatWithAIBoxWidth: CGFloat = chatWithAITextWidth + Constants.switchToTabExtraSpace
+
+    private func setupKeyboardShortcutView() {
+        guard keyboardShortcutView.superview == nil else { return }
+
+        switchToTabBox.addSubview(keyboardShortcutView)
+
+        NSLayoutConstraint.activate([
+            keyboardShortcutView.leadingAnchor.constraint(equalTo: switchToTabBox.leadingAnchor, constant: 8),
+            keyboardShortcutView.centerYAnchor.constraint(equalTo: switchToTabBox.centerYAnchor)
+        ])
+
+        labelLeadingToShortcutsConstraint = switchToTabLabel.leadingAnchor.constraint(
+            equalTo: keyboardShortcutView.trailingAnchor,
+            constant: 4
+        )
+    }
+
+    private func updateKeyboardShortcutVisibility() {
+        let showShortcuts: Bool
+        if case .aiChat = cellStyle {
+            showShortcuts = true
+        } else {
+            showShortcuts = false
+        }
+
+        keyboardShortcutView.isHidden = !showShortcuts
+        keyboardShortcutView.isHighlighted = isSelected
+
+        switchToTabLabelLeadingConstraint?.isActive = !showShortcuts
+        labelLeadingToShortcutsConstraint?.isActive = showShortcuts
+    }
 
     override func awakeFromNib() {
         suffixTextField.textColor = Constants.suffixColor
@@ -90,6 +163,7 @@ final class SuggestionTableCellView: NSTableCellView {
     var isBurner: Bool = false
 
     func display(_ suggestionViewModel: SuggestionViewModel, isBurner: Bool) {
+        self.cellStyle = .default
         self.isBurner = isBurner
         self.suggestion = suggestionViewModel.suggestion
 
@@ -104,10 +178,54 @@ final class SuggestionTableCellView: NSTableCellView {
         if case .openTab = suggestionViewModel.suggestion,
            frame.size.width > 272 {
             switchToTabBox.isHidden = false
+            switchToTabLabel.attributedStringValue = Self.switchToTabAttributedString
+            switchToTabArrowView.isHidden = false
         } else {
             switchToTabBox.isHidden = true
         }
 
+        updateTextField()
+    }
+
+    /// Displays the cell in a specific style with user-typed text
+    /// - Parameters:
+    ///   - userText: The text the user is typing in the address bar
+    ///   - style: The cell style to use (.search or .aiChat)
+    ///   - icon: Optional icon to display
+    ///   - isBurner: Whether this is a burner window
+    func display(userText: String, style: CellStyle, icon: NSImage?, isBurner: Bool) {
+        self.cellStyle = style
+        self.isBurner = isBurner
+        self.suggestion = nil
+
+        let attributes: [NSAttributedString.Key: Any] = [
+            .font: NSFont.systemFont(ofSize: 13)
+        ]
+        attributedString = NSAttributedString(string: userText, attributes: attributes)
+        iconImageView.image = icon
+
+        switch style {
+        case .search:
+            suffixTextField.stringValue = " – DuckDuckGo"
+            switchToTabBox.isHidden = frame.size.width <= 272
+            switchToTabLabel.attributedStringValue = Self.searchTheWebAttributedString
+            switchToTabArrowView.isHidden = false
+        case .aiChat:
+            suffixTextField.stringValue = " – Duck.ai"
+            switchToTabBox.isHidden = frame.size.width <= 272
+            switchToTabLabel.attributedStringValue = Self.chatWithAIAttributedString
+            switchToTabArrowView.isHidden = false
+            setupKeyboardShortcutView()
+        case .visit(let host):
+            suffixTextField.stringValue = " – \(UserText.addressBarVisitSuffix) \(host)"
+            switchToTabBox.isHidden = true
+        case .default:
+            suffixTextField.stringValue = ""
+            switchToTabBox.isHidden = true
+        }
+
+        setRemoveButtonHidden(true)
+        updateKeyboardShortcutVisibility()
         updateTextField()
     }
 
@@ -118,25 +236,35 @@ final class SuggestionTableCellView: NSTableCellView {
             Logger.general.error("SuggestionTableCellView: Attributed strings are nil")
             return
         }
+
+        let usesTransparentBox: Bool
+        if case .default = cellStyle {
+            usesTransparentBox = false
+        } else {
+            usesTransparentBox = true
+        }
+
         if isSelected {
             textField?.attributedStringValue = attributedString
             textField?.textColor = Constants.selectedTintColor
-            suffixTextField.textColor = Constants.selectedTintColor
-            switchToTabLabel.textColor = Constants.selectedTintColor
-            switchToTabArrowView.contentTintColor = Constants.selectedTintColor
-            switchToTabBox.backgroundColor = .white.withAlphaComponent(0.09)
+            suffixTextField.textColor = theme?.palette.accentContentSecondary ?? Constants.selectedTintColor
+            switchToTabLabel.textColor = theme?.palette.accentContentSecondary ?? Constants.selectedTintColor
+            switchToTabArrowView.contentTintColor = theme?.palette.accentContentSecondary ?? Constants.selectedTintColor
+            switchToTabBox.backgroundColor = usesTransparentBox ? .clear : .white.withAlphaComponent(0.09)
         } else {
             textField?.attributedStringValue = attributedString
             textField?.textColor = theme?.colorsProvider.addressBarTextFieldColor ?? Constants.textColor
-            switchToTabLabel.textColor = Constants.textColor
-            switchToTabArrowView.contentTintColor = Constants.textColor
-            switchToTabBox.backgroundColor = .buttonMouseOver
+            switchToTabLabel.textColor = theme?.palette.accentPrimary ?? Constants.textColor
+            switchToTabArrowView.contentTintColor = theme?.palette.accentPrimary ?? Constants.textColor
+            switchToTabBox.backgroundColor = usesTransparentBox ? .clear : .buttonMouseOver
             if isBurner {
                 suffixTextField.textColor = Constants.burnerSuffixColor
             } else {
-                suffixTextField.textColor = theme?.colorsProvider.addressBarSuffixTextColor ?? Constants.suffixColor
+                suffixTextField.textColor = theme?.palette.accentPrimary ?? Constants.suffixColor
             }
         }
+
+        updateKeyboardShortcutVisibility()
     }
 
     private func updateImageViews() {
@@ -169,28 +297,48 @@ final class SuggestionTableCellView: NSTableCellView {
             switchToTabBoxTrailingConstraint.isActive = false
             suffixTrailingConstraint.constant = Constants.trailingSpace
         } else {
-            var textWidth = attributedString?.boundingRect(with: bounds.size).width ?? 0
-            if textWidth < bounds.width {
-                textWidth += suffixTextField.attributedStringValue.boundingRect(with: bounds.size).width
+            let boxWidth: CGFloat
+            let keyboardShortcutsWidth: CGFloat = 48
+            switch cellStyle {
+            case .search:
+                boxWidth = Self.searchTheWebBoxWidth
+            case .aiChat:
+                boxWidth = Self.chatWithAIBoxWidth + keyboardShortcutsWidth
+            case .visit, .default:
+                boxWidth = Self.switchToTabBoxWidth
             }
-            if textField!.frame.minX
-                + textWidth
-                + Constants.switchToTabSuffixPadding
-                + Self.switchToTabBoxWidth
-                + Constants.trailingSpace > bounds.width {
 
-                // when cropping title+suffix to fit the Switch to Tab box
-                // tie the box to the right boundary
+            let alwaysAnchorToTrailing: Bool
+            switch cellStyle {
+            case .search, .aiChat:
+                alwaysAnchorToTrailing = true
+            case .visit, .default:
+                alwaysAnchorToTrailing = false
+            }
+
+            if alwaysAnchorToTrailing {
                 switchToTabBoxLeadingConstraint.isActive = false
                 switchToTabBoxTrailingConstraint.isActive = true
-                // crop title+suffix to fit the Switch to Tab box
-                suffixTrailingConstraint.constant = Self.switchToTabBoxWidth + Constants.trailingSpace + Constants.switchToTabSuffixPadding
+                suffixTrailingConstraint.constant = boxWidth + Constants.trailingSpace + Constants.switchToTabSuffixPadding
             } else {
-                switchToTabBoxTrailingConstraint.isActive = false
-                // we can fit everything: align Switch to Tab box left edge after the suffix
-                switchToTabBoxLeadingConstraint.constant = textField!.frame.minX + textWidth + Constants.switchToTabSuffixPadding
-                switchToTabBoxLeadingConstraint.isActive = true
-                suffixTrailingConstraint.constant = Constants.trailingSpace
+                var textWidth = attributedString?.boundingRect(with: bounds.size).width ?? 0
+                if textWidth < bounds.width {
+                    textWidth += suffixTextField.attributedStringValue.boundingRect(with: bounds.size).width
+                }
+                if textField!.frame.minX
+                    + textWidth
+                    + Constants.switchToTabSuffixPadding
+                    + boxWidth
+                    + Constants.trailingSpace > bounds.width {
+
+                    switchToTabBoxLeadingConstraint.isActive = false
+                    switchToTabBoxTrailingConstraint.isActive = true
+                } else {
+                    switchToTabBoxTrailingConstraint.isActive = false
+                    switchToTabBoxLeadingConstraint.constant = textField!.frame.minX + textWidth + Constants.switchToTabSuffixPadding
+                    switchToTabBoxLeadingConstraint.isActive = true
+                    suffixTrailingConstraint.constant = Constants.trailingSpace
+                }
             }
         }
 
@@ -199,5 +347,4 @@ final class SuggestionTableCellView: NSTableCellView {
 
         super.layout()
     }
-
 }

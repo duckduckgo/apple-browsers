@@ -31,6 +31,15 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Hozzáadás";
 
+/* Open AI Chat history action in the menu list */
+"action.title.aiChat.history" = "Duck.ai-csevegések";
+
+/* Start new AI Chat action in the menu list */
+"action.title.aiChat.new" = "AI-csevegés";
+
+/* Open AI Chat settings action in the menu list */
+"action.title.aiChat.settings" = "A Duck.ai beállításai";
+
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Jelszavak";
 

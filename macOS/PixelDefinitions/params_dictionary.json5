@@ -19,7 +19,17 @@
         "key": "pixelSource",
         "type": "string",
         "description": "The channel the user is on",
-        "enum": ["browser-dmg", "browser-appstore"]
+        "enum": [
+            "browser-dmg",
+            "browser-appstore",
+            "vpnAgent",
+            "vpnAgentAppStore",
+            "vpnAppExtension",
+            "vpnSystemExtension",
+            "vpnSystemExtensionAppStore",
+            "vpnProxyExtension",
+            "dbpBackgroundAgent"
+        ]
     },
     "errorDomain": {
         "key": "d",
@@ -75,6 +85,11 @@
         "type": "string",
         "description": "Final status of the wide event flow",
         "enum": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"]
+    },
+    "wideEventFeatureStatusReason": {
+        "key": "feature.status_reason",
+        "type": "string",
+        "description": "Optional reason accompanying the feature status"
     },
     "wideEventErrorDomain": {
         "key": "feature.data.error.domain",
@@ -138,7 +153,7 @@
     "dbpDataBroker": {
         "key": "data_broker",
         "type": "string",
-        "description": "URL of the data broker involved in the opt-out attempt or action"
+        "description": "Name of the data broker involved in the opt-out attempt or action"
     },
     "dbpParentBroker": {
         "key": "parent",

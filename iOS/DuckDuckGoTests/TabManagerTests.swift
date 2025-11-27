@@ -92,7 +92,6 @@ final class TabManagerTests: XCTestCase {
                           bookmarksDatabase: MockBookmarksDatabase.make(prepareFolderStructure: false),
                           historyManager: MockHistoryManager(),
                           syncService: MockDDGSyncing(),
-                          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
                           contentBlockingAssetsPublisher: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
                           subscriptionDataReporter: MockSubscriptionDataReporter(),
                           contextualOnboardingPresenter: ContextualOnboardingPresenterMock(),

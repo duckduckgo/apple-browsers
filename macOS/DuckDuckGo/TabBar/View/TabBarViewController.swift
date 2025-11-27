@@ -328,7 +328,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private func updatePinnedTabsViewModel() {
-        guard let _ = tabCollectionViewModel.pinnedTabsCollection else { return }
+        guard tabCollectionViewModel.pinnedTabsCollection != nil else { return }
 
         // Refresh tab selection
         if let selectionIndex = tabCollectionViewModel.selectionIndex {

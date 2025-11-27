@@ -41651,6 +41651,18 @@
         }
       }
     },
+    "import.browser.data.complete.set.up.sync.button.title" : {
+      "comment" : "Import Browser Data dialog button title to set up data sync at completion stage",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Set Up Sync"
+          }
+        }
+      }
+    },
     "import.browser.data.complete.sync.button.title" : {
       "comment" : "Import Browser Data dialog button title to sync imported data at completion stage",
       "extractionState" : "extracted_with_value",
@@ -42864,13 +42876,13 @@
       }
     },
     "import.csv.instructions.bitwarden.new" : {
-      "comment" : "Instructions to import Passwords as CSV from Bitwarden.\n%2$s - app name (Bitwarden)\n%5$@ - download icon\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Passwords as CSV from Bitwarden.\n%N$d - step number\n%2$s - app name (Bitwarden)\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%1$d Open and unlock **%2$s → File → Export vault**\n%3$d Select **File Format: .csv**\n%4$d Enter your Bitwarden password → Click %5$@ and save the file\n%6$d Upload the exported CSV file to DuckDuckGo"
+            "value" : "%1$d Open **%2$s → Settings** and scroll down to **Tools →** select **Export vault**\n%3$d Select the **File Format: .csv → Export vault** and save the file\n%4$d Upload the exported CSV file to DuckDuckGo"
           }
         }
       }
@@ -42936,7 +42948,7 @@
       }
     },
     "import.csv.instructions.brave.new" : {
-      "comment" : "Instructions to import Passwords as CSV from Brave browser.\n%N$d - step number\n%2$s - browser name (Brave)\n%4$@ - hamburger menu icon\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Passwords as CSV from Brave browser.\n%N$d - step number\n%2$s - browser name (Brave)\n%3$@ - hamburger menu icon\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -43008,7 +43020,7 @@
       }
     },
     "import.csv.instructions.chrome.new.new" : {
-      "comment" : "Instructions to import Passwords as CSV from Google Chrome browser.\n%N$d - step number\n%2$s - browser name (Chrome)\n%4$@ - hamburger menu icon\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Passwords as CSV from Google Chrome browser.\n%N$d - step number\n%2$s - browser name (Chrome)\n%3$@ - hamburger menu icon\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -43080,7 +43092,7 @@
       }
     },
     "import.csv.instructions.chromium.new" : {
-      "comment" : "Instructions to import Passwords as CSV from Chromium-based browsers.\n%N$d - step number\n%2$s - browser name\n%4$@ - hamburger menu icon\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Passwords as CSV from Chromium-based browsers.\n%N$d - step number\n%2$s - browser name\n%3$@ - hamburger menu icon\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -43152,7 +43164,7 @@
       }
     },
     "import.csv.instructions.coccoc.new" : {
-      "comment" : "Instructions to import Passwords as CSV from Cốc Cốc browser.\n%N$d - step number\n%2$s - browser name (Cốc Cốc)\n%4$@ - hamburger menu icon\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Passwords as CSV from Cốc Cốc browser.\n%N$d - step number\n%3$@ - menu icon\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -43224,7 +43236,7 @@
       }
     },
     "import.csv.instructions.firefox.new" : {
-      "comment" : "Instructions to import Passwords as CSV from Firefox.\n%N$d - step number\n%2$s - browser name (Firefox)\n%4$@ - hamburger menu icon\n%6$@ - horizontal menu icon\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Passwords as CSV from Firefox.\n%N$d - step number\n%2$s - browser name (Firefox)\n%3$@ - hamburger menu icon (first instance)\n%4$@ - horizontal menu icon (second instance)\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -43368,13 +43380,13 @@
       }
     },
     "import.csv.instructions.lastpass.new" : {
-      "comment" : "Instructions to import Passwords as CSV from LastPass.\n%2$s - app name (LastPass)\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Passwords as CSV from LastPass.\n%N$d - step number\n%2$s - app name (LastPass) - first instance\n%4$s - app name (LastPass) - second instance\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%1$d Click the **%2$s** icon in your browser → enter your password → **Open My Vault**\n%3$d From the sidebar: **Advanced Options → Export**\n%4$d Enter your LastPass password\n%5$d Select **File Format: Comma Delimited Text (.csv)** and save the file\n%6$d Upload the exported CSV file to DuckDuckGo"
+            "value" : "%1$d Log in to the **%2$s** website → select **Advanced Options → Export → Continue**. You'll receive a verification email.\n%3$d In the email, click **Continue export**, then return to **%4$s** and select **Advanced Options → Export → Submit** and save the **CSV** file\n%5$d Upload the exported CSV file to DuckDuckGo"
           }
         }
       }
@@ -43440,13 +43452,13 @@
       }
     },
     "import.csv.instructions.onePassword7.new" : {
-      "comment" : "Instructions to import Passwords as CSV from 1Password 7.\n%2$s - app name (1Password)\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Passwords as CSV from 1Password 7.\n%N$d - step number\n%2$s - app name (1Password)\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%1$d Open **%2$s** and select the vault you want to export (one vault at a time)\n%3$d Select **File → Export → All Items**\n%4$d Enter your 1Password password\n%5$d Select **File Format: iCloud Keychain (.csv)** and save the file\n%6$d Upload the exported CSV file to DuckDuckGo"
+            "value" : "%1$d Open **%2$s** and select the vault to export **→ File → Export → All Items** from the menu bar\n%3$d Select the format **Comma Delimited Text (.csv)** and save the file\n%4$d Upload the exported CSV file to DuckDuckGo"
           }
         }
       }
@@ -43512,13 +43524,13 @@
       }
     },
     "import.csv.instructions.onePassword8.new" : {
-      "comment" : "Instructions to import Passwords as CSV from 1Password 8.\n%2$s - app name (1Password)\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Passwords as CSV from 1Password 8.\n%N$d - step number\n%2$s - app name (1Password)\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%1$d Open **%2$s → File → Export** and select an account to export\n%3$d Select format **CSV Logins and Passwords only → Export** and save the file\n%4$d Upload the exported CSV file to DuckDuckGo"
+            "value" : "%1$d Open **%2$s → File → Export** and select an account to export\n%3$d Select format **CSV (Logins and Passwords only) → Export Data** and save the file\n%4$d Upload the exported CSV file to DuckDuckGo"
           }
         }
       }
@@ -43740,7 +43752,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%1$d Open **Safari → File → Export Browsing Data to File...**\n%2$d Select **passwords** and save the file\n%3$d Double click the .zip file to unzip it, then upload the CSV file to DuckDuckGo"
+            "value" : "%1$d Open **Safari → File → Export Browsing Data to File...**\n%2$d Select **Passwords** and save the file\n%3$d Double click the .zip file to unzip it, then upload the CSV file to DuckDuckGo"
           }
         },
         "es" : {
@@ -43848,7 +43860,7 @@
       }
     },
     "import.csv.instructions.vivaldi.new" : {
-      "comment" : "Instructions to import Passwords exported as CSV from Vivaldi browser.\n%N$d - step number\n%2$s - browser name (Vivaldi)\n%4$@ - menu button icon\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Passwords exported as CSV from Vivaldi browser.\n%N$d - step number\n%3$@ - menu button icon\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -43920,7 +43932,7 @@
       }
     },
     "import.csv.instructions.yandex.new" : {
-      "comment" : "Instructions to import Passwords as CSV from Yandex Browser.\n%N$d - step number\n%2$s - browser name (Yandex)\n%4$@ - hamburger menu icon\n%6$@ - vertical menu icon\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Passwords as CSV from Yandex Browser.\n%N$d - step number\n%2$s - browser name (Yandex)\n%3$@ - hamburger menu icon\n%5$@ - vertical menu icon\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -45228,7 +45240,7 @@
       }
     },
     "import.html.instructions.yandex.new" : {
-      "comment" : "Instructions to import Bookmarks exported as HTML from Yandex Browser.\n%N$d - step number\n%2$s - browser name (Yandex)\n%4$@ - hamburger menu icon\n**bold text**; _italic text_",
+      "comment" : "Instructions to import Bookmarks exported as HTML from Yandex Browser.\n%N$d - step number\n%2$s - browser name (Yandex)\n%4$@ - menu icon\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
@@ -46500,60 +46512,60 @@
       }
     },
     "import.zip.instructions.safari" : {
-      "comment" : "Instructions to import multiple data types exported as ZIP from Safari.\n%N$d - step number\n**bold text**; _italic text_",
+      "comment" : "Instructions to import multiple data types exported as ZIP from Safari.\n%N$d - step number\n%2$@ - browser icon\n**bold text**; _italic text_",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Öffne %2$@ **Safari → Datei → Browsing-Daten in Datei exportieren...**\n%3$d Wähle **Lesezeichen, Passwörter** bzw. **Kreditkarten** und klicke dann auf **Exportieren**\n%4$d Füge die exportierte ZIP-Datei unten hinzu"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%1$d Open %2$@ **Safari → File → Export Browsing Data to File...**\n%3$d Choose **Bookmarks, Passwords,** and/or **Credit Cards**, then click **Export**\n%4$d Add the exported ZIP file below"
+            "value" : "%1$d Open %2$@ **Safari → File → Export Browsing Data to File...**\n%3$d Choose **Bookmarks, Passwords,** and **Credit Cards**, → **Export** and save the file\n%4$d Upload the exported ZIP or CSV file to DuckDuckGo"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Abre %2$@ **Safari → Archivo → Exportar datos de navegación a archivo…**\n%3$d Elige **Marcadores, contraseñas** o **Tarjetas de crédito**, luego haz clic en **Exportar**\n%4$d Añade el archivo ZIP exportado a continuación"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Ouvrez %2$@ **Safari → Fichier → Exporter les données de navigation vers un fichier...**\n%3$d Choisissez **Signets, Mots de passe** et/ou **Cartes de crédit**, puis cliquez sur **Exporter**\n%4$d Ajoutez le fichier ZIP exporté ci-dessous"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Apri %2$@ **Safari → File → Esporta dati di navigazione su file...**\n%3$d Scegli **Segnalibri, password** e/o **Carte di credito**, quindi fai clic su **Esporta**\n%4$d Aggiungi il file ZIP esportato qui sotto"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Open %2$@ **Safari → Bestand → Exporteer browsinggegevens naar bestand…**\n%3$d Kies **Bladwijzers, Wachtwoorden,** en/of **Creditcards** en klik dan op **Exporteren**\n%4$d Voeg het geëxporteerde ZIP-bestand hieronder toe"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Otwórz %2$@ **Safari → Plik → Eksportuj dane przeglądania do pliku...**\n%3$d Wybierz **Zakładki, Hasła** i/lub **Karty kredytowe**, a następnie kliknij **Eksportuj**\n%4$d Dodaj poniżej wyeksportowany plik ZIP"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Abre %2$@ **Safari → Ficheiro → Exportar dados de navegação para o ficheiro...**\n%3$d Escolhe **Marcadores, Palavras-passe,** e/ou **Cartões de crédito** e, em seguida, clica em **Exportar**\n%4$d Adiciona o ficheiro ZIP exportado abaixo"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "%1$d Откройте %2$@ **Safari → Файл → Экспорт данных просмотра в файл...**\n%3$d Выберите **Закладки**, **пароли** и/или **кредитные карты** и нажмите **Экспортировать**.\n%4$d Загрузите экспортированный ZIP-архив ниже."
           }
         }

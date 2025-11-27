@@ -39,6 +39,42 @@ class StringExtensionTests: XCTestCase {
         XCTAssertEqual(URLError(URLError.Code.cannotConnectToHost, userInfo: [NSLocalizedDescriptionKey: "Could not connect to the server."]).localizedDescription.escapedUnicodeHtmlString(), "Could not connect to the server.")
     }
 
+    func testStringContainsAny() {
+        // Positive cases - exact matches
+        XCTAssertTrue("a".containsAny(of: ["a", "b"]))
+        XCTAssertTrue("hello world".containsAny(of: ["hello", "goodbye"]))
+        XCTAssertTrue("test".containsAny(of: ["test"]))
+
+        // Case-insensitive matching
+        XCTAssertTrue("AAA".containsAny(of: ["a", "b"]))
+        XCTAssertTrue("Hello World".containsAny(of: ["hello", "goodbye"]))
+        XCTAssertTrue("UPPERCASE".containsAny(of: ["upper"]))
+        XCTAssertTrue("lowercase".containsAny(of: ["LOWER"]))
+
+        // Partial matches
+        XCTAssertTrue("bAb".containsAny(of: ["a", "b"]))
+        XCTAssertTrue("bAbBb".containsAny(of: ["a", "bbb"]))
+        XCTAssertTrue("The quick brown fox".containsAny(of: ["quick", "slow"]))
+
+        // Multiple potential matches (should match on first found)
+        XCTAssertTrue("abc".containsAny(of: ["a", "b", "c"]))
+        XCTAssertTrue("hello".containsAny(of: ["goodbye", "hello", "hi"]))
+
+        // Negative cases - no matches
+        XCTAssertFalse("xyz".containsAny(of: ["a", "b", "c"]))
+        XCTAssertFalse("hello".containsAny(of: ["goodbye", "farewell"]))
+        XCTAssertFalse("test".containsAny(of: ["different", "words"]))
+
+        // Edge cases
+        XCTAssertFalse("".containsAny(of: ["a", "b"]))
+        XCTAssertFalse("test".containsAny(of: []))
+        XCTAssertFalse("".containsAny(of: []))
+
+        // Empty string in search array
+        XCTAssertFalse("test".containsAny(of: ["", "a"]))
+        XCTAssertFalse("anything".containsAny(of: [""]))
+    }
+
     func testDropSubdomainDoesntDropDomainWhenTLDHasTwoComponents() {
         let sample = [
             ("lantean.com.ar", "lantean.com.ar"),

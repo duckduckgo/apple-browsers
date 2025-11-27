@@ -68,6 +68,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertNotNil(configValues)
         XCTAssertEqual(configValues?.isAIChatHandoffEnabled, true)
         XCTAssertEqual(configValues?.platform, "ios")
+        XCTAssertEqual(configValues?.supportsHomePageEntryPoint, true)
     }
     
     func testGetAIChatNativeConfigValuesWithFullModeFeatureAvailable() {
@@ -80,6 +81,9 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         // Then
         XCTAssertNotNil(configValues)
         XCTAssertEqual(configValues?.supportsURLChatIDRestoration, true)
+        XCTAssertEqual(configValues?.isAIChatTopToolBarHidden, true)
+        XCTAssertEqual(configValues?.isAIChatModelPickerInChatInput, true)
+        XCTAssertEqual(configValues?.supportsHomePageEntryPoint, true)
     }
     
     func testGetAIChatNativeConfigValuesWithFullModeFeatureUnavailable() {
@@ -92,6 +96,9 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         // Then
         XCTAssertNotNil(configValues)
         XCTAssertEqual(configValues?.supportsURLChatIDRestoration, AIChatNativeConfigValues.defaultValues.supportsURLChatIDRestoration)
+        XCTAssertEqual(configValues?.isAIChatTopToolBarHidden, AIChatNativeConfigValues.defaultValues.isAIChatTopToolBarHidden)
+        XCTAssertEqual(configValues?.isAIChatModelPickerInChatInput, AIChatNativeConfigValues.defaultValues.isAIChatModelPickerInChatInput)
+        XCTAssertEqual(configValues?.supportsHomePageEntryPoint, AIChatNativeConfigValues.defaultValues.supportsHomePageEntryPoint)
     }
 
     func testGetAIChatNativeHandoffData() {

@@ -34,6 +34,8 @@ struct DataImportSummaryDetailView: View {
     var body: some View {
         VStack(spacing: 0) {
             headerView
+                .padding(.horizontal, Metrics.outerPadding)
+                .padding(.top, Metrics.outerPadding)
                 .padding(.bottom, 16)
 
             ScrollView {
@@ -50,9 +52,10 @@ struct DataImportSummaryDetailView: View {
                         }
                     }
                 }
+                .padding(.horizontal, Metrics.outerPadding)
             }
+            .padding(.bottom, Metrics.outerPadding)
         }
-        .padding(20)
         .frame(maxHeight: 600)
     }
 
@@ -112,7 +115,7 @@ struct DataImportSummaryDetailView: View {
 
     @ViewBuilder
     private func duplicateRow(item: ImportItem) -> some View {
-        if case .password(let _, let domain, let username, _) = item {
+        if case .password(_, let domain, let username, _) = item {
             duplicateRowContent(
                 icon: DesignSystemImages.Glyphs.Size16.globe,
                 content: {

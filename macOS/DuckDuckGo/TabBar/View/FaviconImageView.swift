@@ -58,7 +58,10 @@ final class FaviconImageView: NSImageView {
     }
 
     private var isRunningMacOsTahoeOrLater: Bool {
-        let tahoeMajorVersion: Int = 26
-        return ProcessInfo.processInfo.operatingSystemVersion.majorVersion >= tahoeMajorVersion
+        if #available(macOS 26.0, *) {
+            return true
+        }
+
+        return false
     }
 }

@@ -1,5 +1,5 @@
 //
-//  PinnedTabsAppKitTests.swift
+//  AccessibilityIdentifiers+Feedback.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,11 +16,8 @@
 //  limitations under the License.
 //
 
-import XCTest
-
-class PinnedTabsAppKitTests: PinnedTabsTests {
-
-    override var featureFlags: [String: Bool] {
-        ["pinnedTabsViewRewrite": true]
+public extension AccessibilityIdentifiers {
+    enum Feedback {
+        public static let reportAProblem = "Feedback.reportAProblem"
     }
 }

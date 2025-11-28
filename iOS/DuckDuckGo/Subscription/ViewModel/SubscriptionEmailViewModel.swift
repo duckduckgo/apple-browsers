@@ -29,6 +29,7 @@ import PixelKit
 final class SubscriptionEmailViewModel: ObservableObject {
     
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     weak var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
     let userScript: SubscriptionPagesUserScript
     let subFeature: any SubscriptionPagesUseSubscriptionFeature
@@ -92,6 +93,7 @@ final class SubscriptionEmailViewModel: ObservableObject {
 
     init(isInternalUser: Bool = false,
          userScript: SubscriptionPagesUserScript,
+         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          subFeature: any SubscriptionPagesUseSubscriptionFeature,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge,
          urlOpener: URLOpener = UIApplication.shared,
@@ -99,6 +101,7 @@ final class SubscriptionEmailViewModel: ObservableObject {
          wideEvent: WideEventManaging = AppDependencyProvider.shared.wideEvent,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) {
         self.userScript = userScript
+        self.userScriptsDependencies = userScriptsDependencies
         self.subFeature = subFeature
         self.subscriptionManager = subscriptionManager
         self.urlOpener = urlOpener
@@ -112,7 +115,7 @@ final class SubscriptionEmailViewModel: ObservableObject {
                                                           subFeature: subFeature,
                                                           settings: AsyncHeadlessWebViewSettings(bounces: false,
                                                                                                  allowedDomains: allowedDomains,
-                                                                                                 contentBlocking: false))
+                                                                                                 userScriptsDependencies: nil))
     }
 
     func setEmailFlowMode(_ flow: EmailViewFlow) {

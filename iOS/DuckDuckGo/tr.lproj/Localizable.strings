@@ -31,6 +31,15 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Ekle";
 
+/* Open AI Chat history action in the menu list */
+"action.title.aiChat.history" = "Duck.ai Sohbetleri";
+
+/* Start new AI Chat action in the menu list */
+"action.title.aiChat.new" = "Yapay Zeka Sohbeti";
+
+/* Open AI Chat settings action in the menu list */
+"action.title.aiChat.settings" = "Duck.ai Ayarları";
+
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Şifreler";
 

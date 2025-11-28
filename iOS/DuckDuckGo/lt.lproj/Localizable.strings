@@ -31,6 +31,15 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Papildyti";
 
+/* Open AI Chat history action in the menu list */
+"action.title.aiChat.history" = "„Duck.ai“ pokalbiai";
+
+/* Start new AI Chat action in the menu list */
+"action.title.aiChat.new" = "DI pokalbis";
+
+/* Open AI Chat settings action in the menu list */
+"action.title.aiChat.settings" = "„Duck.ai“ nustatymai";
+
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Slaptažodžiai";
 

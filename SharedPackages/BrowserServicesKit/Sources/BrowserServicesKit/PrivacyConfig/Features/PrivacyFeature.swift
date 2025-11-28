@@ -142,9 +142,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211448334620171?focus=true
     case blurryAddressBarTahoeFix
 
-    /// Pinned Tabs AppKit Rewrite Feature Flag
-    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1209949983074592?focus=true
-    case pinnedTabsViewRewrite
+    /// Tab closing event recreation feature flag (failsafe for removing private API)
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212206087745586?focus=true
+    case tabClosingEventRecreation
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {

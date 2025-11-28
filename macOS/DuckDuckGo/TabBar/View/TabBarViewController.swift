@@ -205,16 +205,11 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         super.init(coder: coder)
 
-        initializePinnedTabs(themeManager: themeManager)
+        initializePinnedTabs()
     }
 
-    private func initializePinnedTabs(themeManager: ThemeManager) {
-        guard !tabCollectionViewModel.isBurner, let pinnedTabCollection = tabCollectionViewModel.pinnedTabsManager?.tabCollection else {
-            return
-        }
-
-        guard featureFlagger.isFeatureOn(.pinnedTabsViewRewrite) || [.unitTests, .integrationTests].contains(AppVersion.runType) else {
-            initializePinnedTabsLegacyView(pinnedTabCollection: pinnedTabCollection, themeManager: themeManager)
+    private func initializePinnedTabs() {
+        guard !tabCollectionViewModel.isBurner else {
             return
         }
 
@@ -340,10 +335,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
                     return
                 }
 
-                if featureFlagger.isFeatureOn(.pinnedTabsViewRewrite) {
-                    subscribeToPinnedTabsCollection()
-                }
-
+                subscribeToPinnedTabsCollection()
                 updatePinnedTabsViewModel()
             }.store(in: &cancellables)
     }
@@ -492,21 +484,13 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     // MARK: - Pinned Tabs
 
     private func setupPinnedTabsView() {
-        if featureFlagger.isFeatureOn(.pinnedTabsViewRewrite) {
-            layoutPinnedTabsCollectionView()
-            subscribeToPinnedTabsCollection()
+        layoutPinnedTabsCollectionView()
+        subscribeToPinnedTabsCollection()
 
-            pinnedTabsWindowDraggingView.isHidden = true
+        pinnedTabsWindowDraggingView.isHidden = true
 
-            pinnedTabsCollectionView?.dataSource = self
-            pinnedTabsCollectionView?.delegate = self
-
-        } else {
-            layoutPinnedTabsView()
-            subscribeToPinnedTabsHostingView()
-            subscribeToPinnedTabsViewModelOutputs()
-            subscribeToPinnedTabsViewModelInputs()
-        }
+        pinnedTabsCollectionView?.dataSource = self
+        pinnedTabsCollectionView?.delegate = self
     }
 
     private func layoutPinnedTabsView() {
@@ -687,19 +671,11 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private func reloadSelection() {
         let isPinnedTab = tabCollectionViewModel.selectionIndex?.isPinnedTab == true
 
-        let collectionView: TabBarCollectionView?
-        let shouldContinue: Bool
-        if featureFlagger.isFeatureOn(.pinnedTabsViewRewrite) {
-            shouldContinue = true
-            collectionView = isPinnedTab ? pinnedTabsCollectionView : self.collectionView
-        } else {
-            shouldContinue = !isPinnedTab
-            collectionView = self.collectionView
-        }
+        let collectionView: TabBarCollectionView? = isPinnedTab ? pinnedTabsCollectionView : self.collectionView
 
         bringSelectedTabCollectionToFront()
 
-        guard shouldContinue, let collectionView else {
+        guard let collectionView else {
             return
         }
 
@@ -729,7 +705,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private func refreshPinnedTabsLastSeparator() {
-        guard featureFlagger.isFeatureOn(.pinnedTabsViewRewrite), let pinnedTabsCollectionView else {
+        guard let pinnedTabsCollectionView else {
             return
         }
 
@@ -1596,10 +1572,9 @@ extension TabBarViewController: NSCollectionViewDelegate {
         let tabIndex: TabIndex = collectionView == pinnedTabsCollectionView ? .pinned(proposedDropIndexPath.pointee.item) : .unpinned(proposedDropIndexPath.pointee.item)
 
         // move tab within one window if needed: bail out if we're outside the CollectionView Bounds!
-        let isPinnedTabsRewriteEnabled = featureFlagger.isFeatureOn(.pinnedTabsViewRewrite)
         let locationInView = collectionView.convert(draggingInfo.draggingLocation, from: nil)
 
-        guard collectionView.frame.contains(locationInView) || !isPinnedTabsRewriteEnabled else {
+        guard collectionView.frame.contains(locationInView) else {
             return .none
         }
 

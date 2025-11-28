@@ -184,6 +184,7 @@ struct ProblemCategory: Identifiable, Hashable {
                 SubCategory(id: "logged-out-unexpectedly", text: UserText.problemSubcategoryLoggedOutUnexpectedly),
                 SubCategory(id: "lost-tabs-or-history", text: UserText.problemSubcategoryLostTabsOrHistory),
                 SubCategory(id: "no-download-history", text: UserText.problemSubcategoryNoDownloadHistory),
+                SubCategory(id: "popup-windows-not-opening", text: UserText.problemSubcategoryPopupWindowsNotOpening),
                 SubCategory(id: "too-many-captchas", text: UserText.problemSubcategoryTooManyCaptchas),
                 SubCategory(id: "video-audio-plays-automatically", text: UserText.problemSubcategoryVideoAudioPlaysAutomatically),
                 SubCategory(id: "video-doesnt-play", text: UserText.problemSubcategoryVideoDoesntPlay)
@@ -233,7 +234,7 @@ struct ProblemCategory: Identifiable, Hashable {
         ),
         ProblemCategory(
             id: somethingElseID,
-            text: UserText.problemCategorySomethingElse,
+            text: UserText.problemCategoryOtherFeedback,
             subcategories: [
                 SubCategory(id: "cant-complete-a-purchase", text: UserText.problemSubcategoryCantCompleteAPurchase),
                 SubCategory(id: "cant-restart-failed-downloads", text: UserText.problemSubcategoryCantRestartFailedDownloads),

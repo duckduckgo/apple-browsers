@@ -40,9 +40,8 @@ extension FireDialogUITests {
         app.enforceSingleWindow()
 
         // Reset fireproof sites
-        let menuBarsQuery = app.menuBars
-        menuBarsQuery.menuBarItems["Debug"].click()
-        menuBarsQuery.menuItems["Reset Fireproof Sites"].click()
+        app.debugMenu.click()
+        app.debugMenu.menuItems["Reset Fireproof Sites"].click()
 
         // Clear state
         app.fireButton.click()
@@ -58,8 +57,7 @@ extension FireDialogUITests {
 
     func populateFakeHistoryFromDebugMenu(file: StaticString = #file, line: UInt = #line) {
         // Open Debug menu -> History submenu -> Populate fake history
-        let debugMenu = app.menuBars.menuBarItems["Debug"]
-        debugMenu.click()
+        app.debugMenu.click()
 
         let historySubmenu = app.menuItems["History"]
         XCTAssertTrue(historySubmenu.waitForExistence(timeout: UITests.Timeouts.elementExistence), "History submenu should exist", file: file, line: line)

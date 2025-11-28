@@ -217,18 +217,14 @@ class SwitchBarTextEntryView: UIView {
     // MARK: - UI Updates
 
     private func updateForCurrentMode() {
-        textView.keyboardType = .webSearch
-
         switch currentMode {
         case .search:
             placeholderLabel.text = UserText.searchDuckDuckGo
-            textView.returnKeyType = .search
             textView.autocapitalizationType = .none
             textView.autocorrectionType = .no
             textView.spellCheckingType = .no
         case .aiChat:
             placeholderLabel.text = UserText.searchInputFieldPlaceholderDuckAI
-            textView.returnKeyType = .go
             textView.autocapitalizationType = .sentences
             textView.autocorrectionType = .default
             textView.spellCheckingType = .default
@@ -239,10 +235,28 @@ class SwitchBarTextEntryView: UIView {
                 self?.textView.becomeFirstResponder()
             }
         }
-
+        updateKeyboardConfiguration()
         updatePlaceholderVisibility()
         updateButtonState()
         updateTextViewHeight()
+    }
+
+    private func updateKeyboardConfiguration() {
+        guard handler.isUsingFadeOutAnimation else {
+            textView.keyboardType = .webSearch
+            textView.returnKeyType = currentMode == .search ? .search : .go
+            return
+        }
+
+        switch currentMode {
+        case .search:
+            textView.keyboardType = .webSearch
+            textView.returnKeyType = .search
+        case .aiChat:
+            textView.keyboardType = .default
+            textView.returnKeyType = .default
+        }
+        textView.reloadInputViews()
     }
 
     private func updatePlaceholderVisibility() {
@@ -476,6 +490,10 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         if text == "\n" {
+            if handler.isUsingFadeOutAnimation && currentMode == .aiChat {
+                return true
+            }
+
             fireKeyboardGoPressedPixel()
             /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1210629837418046?focus=true
             let currentText = textView.text ?? ""

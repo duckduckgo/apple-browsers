@@ -17,7 +17,7 @@
 //
 
 import SwiftUI
-import Common
+import Combine
 
 struct PermissionAuthorizationSwiftUIView: View {
     let domain: String
@@ -26,11 +26,29 @@ struct PermissionAuthorizationSwiftUIView: View {
     let onAlwaysDeny: () -> Void
     let onAllow: () -> Void
     let onAlwaysAllow: () -> Void
+    let systemPermissionManager: SystemPermissionManagerProtocol
+
+    /// State for the system permission step in two-step geolocation flow
+    enum SystemPermissionState {
+        case initial
+        case waiting
+        case authorized
+        case denied
+    }
+
+    @State private var systemPermissionState: SystemPermissionState = .initial
+    @State private var authorizationCancellable: AnyCancellable?
+
+    /// Whether to show the two-step UI (only for geolocation when system permission not granted)
+    private var showsTwoStepUI: Bool {
+        guard case .geolocation = permissionType else { return false }
+        return systemPermissionManager.isGeolocationAuthorizationRequired || systemPermissionState != .initial
+    }
 
     private var promptText: String {
         switch permissionType {
         case .geolocation:
-            return String(format: UserText.locationPermissionAuthorizationFormat, domain)
+            return String(format: UserText.permissionGeolocationPromptFormat, domain)
         case .camera, .microphone:
             return String(format: UserText.devicePermissionAuthorizationFormat, domain, permissionType.localizedDescription.lowercased())
         case .popups:
@@ -44,23 +62,172 @@ struct PermissionAuthorizationSwiftUIView: View {
         }
     }
 
-    private var denyButtonTitle: String {
-        permissionType == .geolocation ? UserText.permissionPopupDenyButton : UserText.permissionPopupAlwaysDenyButton
-    }
-
-    private var allowButtonTitle: String {
-        permissionType == .geolocation ? UserText.permissionPopupAllowButton : UserText.permissionPopupAlwaysAllowButton
-    }
-
-    private var denyAction: () -> Void {
-        permissionType == .geolocation ? onDeny : onAlwaysDeny
-    }
-
-    private var allowAction: () -> Void {
-        permissionType == .geolocation ? onAllow : onAlwaysAllow
-    }
-
     var body: some View {
+        if showsTwoStepUI {
+            twoStepGeolocationView
+        } else {
+            standardPermissionView
+        }
+    }
+
+    // MARK: - Two-Step Geolocation View
+
+    private var twoStepGeolocationView: some View {
+        VStack(spacing: 16) {
+            // Prompt text
+            Text(promptText)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
+
+            // Step 1: System permission
+            stepOneView
+                .padding(.horizontal, 16)
+
+            // Step 2: Website permission
+            stepTwoView
+                .padding(.horizontal, 16)
+                .padding(.bottom, 16)
+        }
+        .frame(width: 360)
+        .background(Color(designSystemColor: .containerFillPrimary))
+    }
+
+    @ViewBuilder
+    private var stepOneView: some View {
+        HStack(spacing: 12) {
+            stepIndicator(step: 1, isActive: systemPermissionState != .authorized)
+
+            switch systemPermissionState {
+            case .initial:
+                Button(action: requestSystemPermission) {
+                    Text(UserText.permissionSystemLocationEnable)
+                        .font(.system(size: 13))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 36)
+                        .background(Color.accentColor)
+                        .cornerRadius(8)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .accessibilityIdentifier("PermissionAuthorizationSwiftUIView.enableSystemLocationButton")
+
+            case .waiting:
+                Text(UserText.permissionSystemLocationWaiting)
+                    .font(.system(size: 13))
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 36)
+                    .background(Color(designSystemColor: .controlsFillSecondary))
+                    .cornerRadius(8)
+
+            case .authorized:
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(Color(NSColor.systemGreen))
+                        .font(.system(size: 20))
+
+                    Text(UserText.permissionSystemLocationEnabled)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(Color(NSColor.systemGreen))
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(height: 36)
+
+            case .denied:
+                HStack(spacing: 8) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(Color(NSColor.systemRed))
+                        .font(.system(size: 20))
+
+                    Text(UserText.permissionSystemLocationDenied)
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(Color(NSColor.systemRed))
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(height: 36)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var stepTwoView: some View {
+        let isEnabled = systemPermissionState == .authorized
+
+        HStack(spacing: 12) {
+            stepIndicator(step: 2, isActive: isEnabled)
+
+            HStack(spacing: 8) {
+                Button(action: onAlwaysDeny) {
+                    Text(UserText.permissionPopupNeverAllowButton)
+                        .font(.system(size: 13))
+                        .foregroundColor(isEnabled ? Color(designSystemColor: .textPrimary) : Color(designSystemColor: .textSecondary))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 36)
+                        .background(isEnabled ? Color(designSystemColor: .controlsFillPrimary) : Color(designSystemColor: .controlsFillSecondary))
+                        .cornerRadius(8)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .disabled(!isEnabled)
+                .accessibilityIdentifier("PermissionAuthorizationSwiftUIView.neverAllowButton")
+
+                Button(action: onAlwaysAllow) {
+                    Text(UserText.permissionPopupAlwaysAllowButton)
+                        .font(.system(size: 13))
+                        .foregroundColor(isEnabled ? Color(designSystemColor: .textPrimary) : Color(designSystemColor: .textSecondary))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 36)
+                        .background(isEnabled ? Color(designSystemColor: .controlsFillPrimary) : Color(designSystemColor: .controlsFillSecondary))
+                        .cornerRadius(8)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .disabled(!isEnabled)
+                .accessibilityIdentifier("PermissionAuthorizationSwiftUIView.alwaysAllowButton")
+            }
+        }
+    }
+
+    private func stepIndicator(step: Int, isActive: Bool) -> some View {
+        ZStack {
+            if isActive {
+                Circle()
+                    .fill(Color.primary)
+                    .frame(width: 28, height: 28)
+            } else {
+                Circle()
+                    .stroke(Color.secondary.opacity(0.4), lineWidth: 1)
+                    .frame(width: 28, height: 28)
+            }
+
+            Text("\(step)")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(isActive ? Color(NSColor.windowBackgroundColor) : Color.secondary.opacity(0.6))
+        }
+    }
+
+    private func requestSystemPermission() {
+        systemPermissionState = .waiting
+
+        authorizationCancellable = systemPermissionManager.requestGeolocationAuthorization { state in
+            DispatchQueue.main.async {
+                switch state {
+                case .authorized:
+                    systemPermissionState = .authorized
+                case .denied, .restricted, .systemDisabled:
+                    systemPermissionState = .denied
+                case .notDetermined:
+                    systemPermissionState = .initial
+                }
+            }
+        }
+    }
+
+    // MARK: - Standard Permission View
+
+    private var standardPermissionView: some View {
         VStack(spacing: 20) {
             Text(promptText)
                 .font(.system(size: 13, weight: .medium))
@@ -71,8 +238,8 @@ struct PermissionAuthorizationSwiftUIView: View {
                 .padding(.top, 16)
 
             HStack(spacing: 12) {
-                Button(action: denyAction) {
-                    Text(denyButtonTitle)
+                Button(action: standardDenyAction) {
+                    Text(standardDenyButtonTitle)
                         .font(.system(size: 13))
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                         .frame(maxWidth: .infinity)
@@ -83,8 +250,8 @@ struct PermissionAuthorizationSwiftUIView: View {
                 .buttonStyle(PlainButtonStyle())
                 .accessibilityIdentifier("PermissionAuthorizationSwiftUIView.denyButton")
 
-                Button(action: allowAction) {
-                    Text(allowButtonTitle)
+                Button(action: standardAllowAction) {
+                    Text(standardAllowButtonTitle)
                         .font(.system(size: 13))
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                         .frame(maxWidth: .infinity)
@@ -101,6 +268,43 @@ struct PermissionAuthorizationSwiftUIView: View {
         .frame(width: 360)
         .background(Color(designSystemColor: .containerFillPrimary))
     }
+
+    private var standardDenyButtonTitle: String {
+        permissionType == .geolocation ? UserText.permissionPopupDenyButton : UserText.permissionPopupAlwaysDenyButton
+    }
+
+    private var standardAllowButtonTitle: String {
+        permissionType == .geolocation ? UserText.permissionPopupAllowButton : UserText.permissionPopupAlwaysAllowButton
+    }
+
+    private var standardDenyAction: () -> Void {
+        permissionType == .geolocation ? onDeny : onAlwaysDeny
+    }
+
+    private var standardAllowAction: () -> Void {
+        permissionType == .geolocation ? onAllow : onAlwaysAllow
+    }
+}
+
+// MARK: - Convenience Initializer
+
+extension PermissionAuthorizationSwiftUIView {
+    init(
+        domain: String,
+        permissionType: PermissionType,
+        onDeny: @escaping () -> Void,
+        onAlwaysDeny: @escaping () -> Void,
+        onAllow: @escaping () -> Void,
+        onAlwaysAllow: @escaping () -> Void
+    ) {
+        self.domain = domain
+        self.permissionType = permissionType
+        self.onDeny = onDeny
+        self.onAlwaysDeny = onAlwaysDeny
+        self.onAllow = onAllow
+        self.onAlwaysAllow = onAlwaysAllow
+        self.systemPermissionManager = SystemPermissionManager()
+    }
 }
 
 #if DEBUG
@@ -114,7 +318,7 @@ struct PermissionAuthorizationSwiftUIView_Previews: PreviewProvider {
             onAllow: {},
             onAlwaysAllow: {}
         )
-        .previewDisplayName("Geolocation (Deny / Allow)")
+        .previewDisplayName("Geolocation - Two Step")
 
         PermissionAuthorizationSwiftUIView(
             domain: "apple.com",

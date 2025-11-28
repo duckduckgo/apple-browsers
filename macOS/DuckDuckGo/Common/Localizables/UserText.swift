@@ -984,6 +984,14 @@ struct UserText {
     static let privacyDashboardPermissionAlwaysDeny = NSLocalizedString("dashboard.permission.deny", value: "Always deny", comment: "Privacy Dashboard: Website can never access input media device")
     static let permissionPopoverDenyButton = NSLocalizedString("permission.popover.deny", value: "Deny", comment: "Permission Popover: Deny Website input media device access")
 
+    // Two-step permission authorization (geolocation)
+    static let permissionSystemLocationEnable = NSLocalizedString("permission.system.location.enable", value: "Enable System Location", comment: "Button to enable system location services")
+    static let permissionSystemLocationWaiting = NSLocalizedString("permission.system.location.waiting", value: "Waiting for system permission…", comment: "Text shown while waiting for user to respond to system location permission dialog")
+    static let permissionSystemLocationEnabled = NSLocalizedString("permission.system.location.enabled", value: "System location enabled!", comment: "Text shown after system location permission has been granted")
+    static let permissionSystemLocationDenied = NSLocalizedString("permission.system.location.denied", value: "System location denied", comment: "Text shown after system location permission has been denied")
+    static let permissionGeolocationPromptFormat = NSLocalizedString("permission.geolocation.prompt.format", value: "Allow %@ to use your current location?", comment: "Prompt asking if domain %@ can use location")
+    static let permissionPopupNeverAllowButton = NSLocalizedString("permission.popup.never.allow.button", value: "Never Allow", comment: "Button that denies permission and remembers the decision for future requests")
+
     static let privacyDashboardPopupsAlwaysAsk = NSLocalizedString("dashboard.popups.ask", value: "Notify", comment: "Make pop-up windows always request permission for the current domain")
 
     static let settings = NSLocalizedString("settings", value: "Settings", comment: "Menu item for opening settings")

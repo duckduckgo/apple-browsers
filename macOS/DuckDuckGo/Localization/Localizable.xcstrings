@@ -60546,6 +60546,18 @@
         }
       }
     },
+    "permission.geolocation.prompt.format" : {
+      "comment" : "Prompt asking if domain %@ can use location",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow %@ to use your current location?"
+          }
+        }
+      }
+    },
     "permission.microphone" : {
       "comment" : "Microphone input media device name",
       "extractionState" : "extracted_with_value",
@@ -61062,6 +61074,18 @@
         }
       }
     },
+    "permission.popup.never.allow.button" : {
+      "comment" : "Button that denies permission and remembers the decision for future requests",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Never Allow"
+          }
+        }
+      }
+    },
     "permission.popup.open.format" : {
       "comment" : "Menu action to open the blocked pop-up at the specified URL",
       "extractionState" : "extracted_with_value",
@@ -61519,6 +61543,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Перезагрузите страницу, чтобы снова увидеть запрос"
+          }
+        }
+      }
+    },
+    "permission.system.location.denied" : {
+      "comment" : "Text shown after system location permission has been denied",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "System location denied"
+          }
+        }
+      }
+    },
+    "permission.system.location.enable" : {
+      "comment" : "Button to enable system location services",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Enable System Location"
+          }
+        }
+      }
+    },
+    "permission.system.location.enabled" : {
+      "comment" : "Text shown after system location permission has been granted",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "System location enabled!"
+          }
+        }
+      }
+    },
+    "permission.system.location.waiting" : {
+      "comment" : "Text shown while waiting for user to respond to system location permission dialog",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Waiting for system permission…"
           }
         }
       }

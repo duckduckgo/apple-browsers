@@ -212,7 +212,8 @@ final class PermissionAuthorizationViewController: NSViewController {
             },
             onAlwaysAllow: { [weak self] in
                 self?.handleAlwaysAllow()
-            }
+            },
+            systemPermissionManager: systemPermissionManager
         )
 
         let hostingView = NSHostingView(rootView: swiftUIView)

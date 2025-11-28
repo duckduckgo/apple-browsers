@@ -99,7 +99,7 @@ extension XCUIApplication {
     }
 
     static func setUp(environment: [String: String]? = nil,
-                      featureFlags: [String: Bool] = [:], //"visualUpdates": true],
+                      featureFlags: [String: Bool] = [:],
                       arguments: [String]? = nil) -> XCUIApplication {
         let app = XCUIApplication()
         if let environment {

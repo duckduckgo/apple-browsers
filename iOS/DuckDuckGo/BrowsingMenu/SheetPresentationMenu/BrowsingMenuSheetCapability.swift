@@ -40,12 +40,15 @@ enum BrowsingMenuClusteringVariant: String, CaseIterable, CustomStringConvertibl
             "Easy Shortcuts"
         case .c:
             "Easy Privacy Tools"
+        case .d:
+            "Easy Privacy - No floating button"
         }
     }
 
     case a
     case b
     case c
+    case d
 }
 
 enum BrowsingMenuSheetCapability {

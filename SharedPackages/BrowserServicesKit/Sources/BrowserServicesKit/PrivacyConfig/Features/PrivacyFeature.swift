@@ -105,9 +105,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlySubfeatureForTests
 
-    // Import Chrome's new tab shortcuts when bookmarks are imported
-    case importChromeShortcuts
-
     // Import Safari's bookmarks and favorites to better match Safari's behavior
     case updateSafariBookmarksImport
 

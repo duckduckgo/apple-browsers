@@ -89,6 +89,12 @@ struct BrowsingMenuSheetView: View {
                 actionToPerform()
                 onDismiss()
             })
+            .floatingToolbar(
+                footerItems: model.footerItems,
+                actionToPerform: $actionToPerform,
+                presentationMode: presentationMode,
+                showsLabels: model.footerItems.count < 2
+            )
         }
         .tint(Color(designSystemColor: .textPrimary))
         .background((Color(designSystemColor: .background)))
@@ -211,5 +217,70 @@ private struct MenuHeaderButton: View {
 
     private enum Constant {
         static let cornerRadius: CGFloat = 4
+    }
+}
+
+private extension View {
+    func floatingToolbar(
+        footerItems: [BrowsingMenuModel.Entry],
+        actionToPerform: Binding<() -> Void>,
+        presentationMode: Binding<PresentationMode>,
+        showsLabels: Bool
+    ) -> some View {
+        modifier(FloatingToolbarModifier(
+            footerItems: footerItems,
+            actionToPerform: actionToPerform,
+            presentationMode: presentationMode,
+            showsLabels: showsLabels
+        ))
+    }
+}
+
+private struct FloatingToolbarModifier: ViewModifier {
+    let footerItems: [BrowsingMenuModel.Entry]
+    @Binding var actionToPerform: () -> Void
+    let presentationMode: Binding<PresentationMode>
+    let showsLabels: Bool
+
+    func body(content: Content) -> some View {
+        if footerItems.isEmpty {
+            content
+        } else {
+            content
+                .safeAreaInset(edge: .bottom, content: {
+                    createBottomToolbar(labels: showsLabels)
+                })
+        }
+    }
+
+    @ViewBuilder
+    private func createBottomToolbar(labels: Bool = false) -> some View {
+        HStack(spacing: 4) {
+            ForEach(footerItems) { footerItem in
+                Button(action: {
+                    actionToPerform = { footerItem.action() }
+                    presentationMode.wrappedValue.dismiss()
+                }) {
+                    HStack(spacing: 4) {
+                        Image(uiImage: footerItem.image)
+                            .tint(Color(designSystemColor: .icons))
+                        if labels {
+                            Text(footerItem.name)
+                                .daxBodyRegular()
+                                .foregroundStyle(Color(designSystemColor: .textPrimary))
+                        }
+                    }
+                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(footerItem.accessibilityLabel ?? footerItem.name)
+            }
+        }
+        .background(Color(designSystemColor: .surfaceCanvas))
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 4, x: 0, y: 4)
+        .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 2, x: 0, y: 1)
+        .fixedSize(horizontal: true, vertical: true)
     }
 }

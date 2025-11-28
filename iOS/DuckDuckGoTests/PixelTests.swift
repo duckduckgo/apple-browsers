@@ -265,7 +265,7 @@ class PixelTests: XCTestCase {
         var parameters: [String: String] = [:]
         parameters.appendErrorPixelParams(error: error)
 
-        XCTAssertEqual(parameters.count, 3)
+        XCTAssertEqual(parameters.count, 2)
         XCTAssertEqual(parameters["d"], error.domain)
         XCTAssertEqual(parameters["e"], String(error.code))
     }

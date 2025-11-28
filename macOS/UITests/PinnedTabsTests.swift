@@ -79,6 +79,26 @@ class PinnedTabsTests: UITestCase {
         assertCurrentPageCannotBePinned()
     }
 
+    func testUnpinnedTabCanBeDraggedIntoNewWindowAndMapsIntoAnUnpinnedTab() {
+        app.openNewTab()
+        app.openNewTab()
+        pinCurrentPage()
+
+        dragLastUnpinnedTabAboveWindow()
+        waitForSecondWindow()
+
+        bringForemostWindowToForeground()
+        assertCurrentPageCanBePinned()
+    }
+
+    func testPinnedTabCannotBeDraggedIntoNew() {
+        app.openNewTab()
+        pinCurrentPage()
+
+        dragFirstPinnedTabAboveWindow()
+        assertSingleWindowScenario()
+    }
+
     // MARK: - Utilities
 
     private func openThreeSitesOnSameWindow() {
@@ -196,6 +216,12 @@ class PinnedTabsTests: UITestCase {
         )
     }
 
+    private func assertCurrentPageCanBePinned() {
+        XCTAssertTrue(
+            app.menuItems["Pin Tab"].waitForExistence(timeout: UITests.Timeouts.elementExistence)
+        )
+    }
+
     private func assertCurrentPageCannotBePinned() {
         let pinItem = app.menuItems["Pin Tab"]
 
@@ -208,5 +234,39 @@ class PinnedTabsTests: UITestCase {
 
     private func waitForSite(pageTitle: String) {
         XCTAssertTrue(app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+    }
+
+    private func waitForSecondWindow() {
+        XCTAssertTrue(app.windows.element(boundBy: 1).waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertEqual(app.windows.count, 2)
+    }
+
+    private func assertSingleWindowScenario() {
+        XCTAssertEqual(app.windows.count, 1)
+    }
+
+    private func bringForemostWindowToForeground() {
+        app.windows.element(boundBy: 0).click()
+    }
+
+    private func dragFirstPinnedTabAboveWindow() {
+        let pinnedTabs = app.tabGroups.matching(identifier: "Pinned Tabs").radioButtons
+        let firstPinnedTab = pinnedTabs.element(boundBy: .zero)
+
+        dragTabElementAboveWindow(firstPinnedTab)
+    }
+
+    private func dragLastUnpinnedTabAboveWindow() {
+        let unpinnedTabs = app.tabGroups.matching(identifier: "Tabs").radioButtons
+        let lastUnpinnedTab = unpinnedTabs.element(boundBy: unpinnedTabs.count - 1)
+
+        dragTabElementAboveWindow(lastUnpinnedTab)
+    }
+
+    private func dragTabElementAboveWindow(_ tabElement: XCUIElement) {
+        let tabCoordinate = tabElement.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        let aboveWindow = tabCoordinate.withOffset(CGVector(dx: 0, dy: -100))
+
+        tabCoordinate.press(forDuration: 0.5, thenDragTo: aboveWindow)
     }
 }

@@ -158,10 +158,6 @@ final class SettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.aiFeaturesSettingsUpdate)
     }
 
-    var embedSERPSettings: Bool {
-        featureFlagger.isFeatureOn(.embeddedSERPSettings)
-    }
-
     var isDuckAiDataClearingEnabled: Bool {
         featureFlagger.isFeatureOn(.duckAiDataClearing)
     }

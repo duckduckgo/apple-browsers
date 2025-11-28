@@ -36,10 +36,13 @@ enum BrowsingMenuClusteringVariant: String, CaseIterable, CustomStringConvertibl
         switch self {
         case .a:
             "Production"
+        case .b:
+            "Easy Shortcuts"
         }
     }
 
     case a
+    case b
 }
 
 enum BrowsingMenuSheetCapability {

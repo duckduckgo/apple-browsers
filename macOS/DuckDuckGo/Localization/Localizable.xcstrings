@@ -29865,55 +29865,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pop-up-Fenster öffnen sich nicht oder sind defekt"
+            "value" : "Pop-ups öffnen sich nicht"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Pop-up windows not opening or broken"
+            "value" : "Pop-ups don't open"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Las ventanas emergentes no se abren o están rotas"
+            "value" : "Los pop-ups no se abren"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les fenêtres contextuelles ne s'ouvrent pas ou sont cassées"
+            "value" : "Les pop-ups ne s'ouvrent pas"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "I popup non si aprono o non funzionano"
+            "value" : "I pop-up non si aprono"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pop-upvensters worden niet geopend of werken niet"
+            "value" : "Pop-ups openen niet"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wyskakujące okienka nie otwierają się lub nie działają"
+            "value" : "Wyskakujące okienka się nie otwierają"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "As janelas pop-up não abrem ou estão quebradas"
+            "value" : "Pop-ups não abrem"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Всплывающие окна не открываются или не работают"
+            "value" : "Всплывающие окна не открываются"
           }
         }
       }

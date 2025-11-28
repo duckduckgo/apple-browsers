@@ -28,6 +28,7 @@ import Common
 import Configuration
 import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
+import Subscription
 
 class SettingsLegacyViewProvider: ObservableObject {
 
@@ -50,6 +51,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
     let daxDialogsManager: DaxDialogsManaging
     let dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?
+    let subscriptionDataReporter: SubscriptionDataReporting
 
     init(syncService: any DDGSyncing,
          syncDataProviders: SyncDataProviders,
@@ -63,7 +65,8 @@ class SettingsLegacyViewProvider: ObservableObject {
          keyValueStore: ThrowingKeyValueStoring,
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          daxDialogsManager: DaxDialogsManaging,
-         dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?) {
+         dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?,
+         subscriptionDataReporter: SubscriptionDataReporting) {
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
         self.appSettings = appSettings
@@ -77,6 +80,7 @@ class SettingsLegacyViewProvider: ObservableObject {
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.daxDialogsManager = daxDialogsManager
         self.dbpIOSPublicInterface = dbpIOSPublicInterface
+        self.subscriptionDataReporter = subscriptionDataReporter
     }
     
     enum LegacyView {
@@ -135,7 +139,8 @@ class SettingsLegacyViewProvider: ObservableObject {
             daxDialogManager: self.daxDialogsManager,
             databaseDelegate: self.dbpIOSPublicInterface,
             debuggingDelegate: self.dbpIOSPublicInterface,
-            runPrequisitesDelegate: self.dbpIOSPublicInterface))
+            runPrequisitesDelegate: self.dbpIOSPublicInterface,
+            subscriptionDataReporter: self.subscriptionDataReporter))
     }
 
     // Legacy UIKit Views (Pushed unmodified)

@@ -52,6 +52,9 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         ///
         /// A tracking pixel is sent on consecutive reconnects to verify that this scenario occurs in practice.
         /// If confirmed to never happen, these temporary transitions should be removed.
+        ///
+        /// UPDATE: It does happen for iOS <17
+        /// 
     }
 
     /// See: `Foreground.swift` -> `onTransition()`

@@ -166,18 +166,10 @@ struct Terminating: TerminatingHandling {
                                      pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
                                      error: errorToReport,
                                      withAdditionalParameters: additionalParams)
-        switch mode {
-        case .immediately(let message):
+
+        if case .immediately(let debugMessage) = mode {
             Thread.sleep(forTimeInterval: 1)
-            fatalError(message)
-        case .afterAlert(let reason):
-            if !Bundle.main.supportsScenes {
-                let window = UIWindow(frame: UIScreen.main.bounds)
-                window.backgroundColor = .white
-                window.makeKeyAndVisible()
-                UIApplication.shared.setWindow(window)
-                alertAndTerminate(window: window)
-            }
+            fatalError(debugMessage)
         }
     }
 

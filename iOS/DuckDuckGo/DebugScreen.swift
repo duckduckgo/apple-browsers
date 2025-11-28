@@ -26,6 +26,7 @@ import UIKit
 import Configuration
 import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
+import Subscription
 
 enum DebugScreen: Identifiable {
 
@@ -44,6 +45,7 @@ enum DebugScreen: Identifiable {
         let databaseDelegate: DBPIOSInterface.DatabaseDelegate?
         let debuggingDelegate: DBPIOSInterface.DebuggingDelegate?
         let runPrequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
+        let subscriptionDataReporter: SubscriptionDataReporting
 
     }
 

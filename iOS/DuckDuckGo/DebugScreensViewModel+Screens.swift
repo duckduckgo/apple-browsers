@@ -203,9 +203,9 @@ extension DebugScreensViewModel {
             .controller(title: "Logging", { _ in
                 return LoggingDebugViewController()
             }),
-            .controller(title: "Subscription", { _ in
+            .controller(title: "Subscription", { dependencies in
                 return self.debugStoryboard.instantiateViewController(identifier: "SubscriptionDebugViewController") { coder in
-                    SubscriptionDebugViewController(coder: coder)
+                    SubscriptionDebugViewController(coder: coder, subscriptionDataReporter: dependencies.subscriptionDataReporter)
                 }
             }),
             .controller(title: "Configuration URLs", { _ in

@@ -339,7 +339,8 @@ extension MainViewController {
                                                             keyValueStore: keyValueStore,
                                                             systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                                                             daxDialogsManager: daxDialogsManager,
-                                                            dbpIOSPublicInterface: dbpIOSPublicInterface)
+                                                            dbpIOSPublicInterface: dbpIOSPublicInterface,
+                                                            subscriptionDataReporter: subscriptionDataReporter)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
         let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings,
@@ -422,7 +423,8 @@ extension MainViewController {
             daxDialogManager: self.daxDialogsManager,
             databaseDelegate: self.dbpIOSPublicInterface,
             debuggingDelegate: self.dbpIOSPublicInterface,
-            runPrequisitesDelegate: self.dbpIOSPublicInterface))
+            runPrequisitesDelegate: self.dbpIOSPublicInterface,
+            subscriptionDataReporter: self.subscriptionDataReporter))
 
         let controller = UINavigationController(rootViewController: debug)
         controller.modalPresentationStyle = .automatic

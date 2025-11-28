@@ -82,7 +82,8 @@ final class MainCoordinator {
          launchSourceManager: LaunchSourceManaging,
          winBackOfferService: WinBackOfferService,
          modalPromptCoordinationService: ModalPromptCoordinationService,
-         mobileCustomization: MobileCustomization
+         mobileCustomization: MobileCustomization,
+         productSurfaceTelemetry: ProductSurfaceTelemetry
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
@@ -170,7 +171,8 @@ final class MainCoordinator {
                                         launchSourceManager: launchSourceManager,
                                         winBackOfferVisibilityManager: winBackOfferService.visibilityManager,
                                         mobileCustomization: mobileCustomization,
-                                        remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler)
+                                        remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler,
+                                        productSurfaceTelemetry: productSurfaceTelemetry)
     }
 
     func start() {

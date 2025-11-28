@@ -159,6 +159,8 @@ struct Launching: LaunchingHandling {
         let mobileCustomization = MobileCustomization(isFeatureEnabled: featureFlagger.isFeatureOn(.mobileCustomization),
                                                       keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
 
+        let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
+
         // MARK: - Main Coordinator Setup
         // Initialize the main coordinator which manages the app's primary view controller
         // This step may take some time due to loading from nibs, etc.
@@ -187,7 +189,8 @@ struct Launching: LaunchingHandling {
                                               launchSourceManager: launchSourceManager,
                                               winBackOfferService: winBackOfferService,
                                               modalPromptCoordinationService: modalPromptCoordinationService,
-                                              mobileCustomization: mobileCustomization)
+                                              mobileCustomization: mobileCustomization,
+                                              productSurfaceTelemetry: productSurfaceTelemetry)
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components

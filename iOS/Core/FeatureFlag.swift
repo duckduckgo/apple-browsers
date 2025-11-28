@@ -597,7 +597,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .migrateKeychainAccessibility:
             return .remoteReleasable(.subfeature(AutofillSubfeature.migrateKeychainAccessibility))
         case .productTelemeterySurfaceUsage:
-            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.productTelemetrySurfaceUsage))
+            return // .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.productTelemetrySurfaceUsage))
+                .enabled
         }
     }
 }

@@ -251,6 +251,7 @@ class MainViewController: UIViewController {
     let mobileCustomization: MobileCustomization
     
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
+    private let productSurfaceTelemetry: ProductSurfaceTelemetry
 
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -294,7 +295,8 @@ class MainViewController: UIViewController {
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
         mobileCustomization: MobileCustomization,
-        remoteMessagingActionHandler: RemoteMessagingActionHandling
+        remoteMessagingActionHandler: RemoteMessagingActionHandling,
+        productSurfaceTelemetry: ProductSurfaceTelemetry
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -341,6 +343,8 @@ class MainViewController: UIViewController {
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.mobileCustomization = mobileCustomization
         self.aichatFullModeFeature = aichatFullModeFeature
+        self.productSurfaceTelemetry = productSurfaceTelemetry
+
         super.init(nibName: nil, bundle: nil)
         
         tabManager.delegate = self
@@ -2701,8 +2705,9 @@ extension MainViewController: OmniBarDelegate {
         } else {
             let browsingMenu: BrowsingMenuViewController =
             BrowsingMenuViewController.instantiate(headerEntries: headerEntries,
-                                                                    menuEntries: menuEntries,
-                                                                    daxDialogsManager: daxDialogsManager)
+                                                   menuEntries: menuEntries,
+                                                   daxDialogsManager: daxDialogsManager,
+                                                   productSurfaceTelemetry: productSurfaceTelemetry)
             browsingMenu.onDismiss = {
                 self.viewCoordinator.menuToolbarButton.isEnabled = true
             }

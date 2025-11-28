@@ -1508,6 +1508,20 @@ extension Pixel {
 
         // MARK: - Product surface telemetery
         case productTelemeterySurfaceUsageMenu
+        case productTelemeterySurfaceUsageDAU
+        case productTelemeterySurfaceUsageIPad
+        case productTelemeterySurfaceUsageLandscapeMode
+        case productTelemeterySurfaceUsageKeyboardFocused
+        case productTelemeterySurfaceUsageAutocomplete
+        case productTelemeterySurfaceUsageSERP
+        case productTelemeterySurfaceUsageWebsite
+        case productTelemeterySurfaceUsageDuckAI
+        case productTelemeterySurfaceUsageTabManager
+        case productTelemeterySurfaceUsageDataClearing
+        case productTelemeterySurfaceUsageNewTabPage
+        case productTelemeterySurfaceUsageSettings
+        case productTelemeterySurfaceUsageBookmarksPage
+        case productTelemeterySurfaceUsagePasswordsPage
     }
 
 }
@@ -2949,6 +2963,20 @@ extension Pixel.Event {
 
         // MARK: - Product surface telemetery
         case .productTelemeterySurfaceUsageMenu: return "m_product_telemetry_surface_usage_menu"
+        case .productTelemeterySurfaceUsageDAU: return "m_product_telemetry_surface_usage_dau"
+        case .productTelemeterySurfaceUsageIPad: return "m_product_telemetry_surface_usage_ipad"
+        case .productTelemeterySurfaceUsageLandscapeMode: return "m_product_telemetry_surface_usage_landscape"
+        case .productTelemeterySurfaceUsageKeyboardFocused: return "m_product_telemetry_surface_usage_keyboard_focused"
+        case .productTelemeterySurfaceUsageAutocomplete: return "m_product_telemetry_surface_usage_autocomplete"
+        case .productTelemeterySurfaceUsageSERP: return "m_product_telemetry_surface_usage_serp"
+        case .productTelemeterySurfaceUsageWebsite: return "m_product_telemetry_surface_usage_website_url"
+        case .productTelemeterySurfaceUsageDuckAI: return "m_product_telemetry_surface_usage_duck_ai"
+        case .productTelemeterySurfaceUsageTabManager: return "m_product_telemetry_surface_usage_tab_manager"
+        case .productTelemeterySurfaceUsageDataClearing: return "m_product_telemetry_surface_usage_data_clearing"
+        case .productTelemeterySurfaceUsageNewTabPage: return "m_product_telemetry_surface_usage_new_tab_page"
+        case .productTelemeterySurfaceUsageSettings: return "m_product_telemetry_surface_usage_settings"
+        case .productTelemeterySurfaceUsageBookmarksPage: return "m_product_telemetry_surface_usage_bookmarks_page"
+        case .productTelemeterySurfaceUsagePasswordsPage: return "m_product_telemetry_surface_usage_passwords_page"
         }
     }
 }

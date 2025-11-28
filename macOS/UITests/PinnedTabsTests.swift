@@ -87,6 +87,9 @@ class PinnedTabsTests: UITestCase {
     }
 
     func testUnpinnedTabCanBeDraggedIntoNewWindowAndMapsIntoAnUnpinnedTab() {
+        app.closeAllWindows()
+        app.openNewWindow()
+
         app.openNewTab()
         app.openNewTab()
         pinCurrentPage()
@@ -99,6 +102,9 @@ class PinnedTabsTests: UITestCase {
     }
 
     func testPinnedTabCannotBeDraggedIntoNewWindow() {
+        app.closeAllWindows()
+        app.openNewWindow()
+
         app.openNewTab()
         pinCurrentPage()
 
@@ -107,7 +113,8 @@ class PinnedTabsTests: UITestCase {
     }
 
     func testDraggingOnlyTabAboveWindowDoesNotResultInNewWindowBeingCreated() {
-        app.openSite(pageTitle: "Page #1")
+        app.closeAllWindows()
+        app.openNewWindow()
 
         dragLastUnpinnedTabAboveWindow()
         assertSingleWindowScenario()

@@ -1011,6 +1011,10 @@ extension MainViewController {
            let buttonsViewController = navigationBarViewController.addressBarViewController?.addressBarButtonsViewController {
             buttonsViewController.toggleSearchMode()
             return true
+        } else if flags.contains(.control),
+                  featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
+            navigationBarViewController.addressBarViewController?.addressBarTextField.openAIChatWithPrompt()
+            return true
         } else if flags.contains(.shift) && aiChatMenuConfig.shouldDisplayAddressBarShortcutWhenTyping {
             navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.aiChatButtonAction(self)
         } else {

@@ -50,16 +50,10 @@ public final class ContentBlockingUpdating {
 
     private(set) var userContentBlockingAssets: AnyPublisher<NewContent, Never>!
 
-    init(appSettings: AppSettings,
-         contentBlockerRulesManager: ContentBlockerRulesManagerProtocol,
-         privacyConfigurationManager: PrivacyConfigurationManaging,
-         fireproofing: Fireproofing) {
+    init(userScriptsDependencies: DefaultScriptSourceProvider.Dependencies) {
 
         let makeValue: (Update) -> NewContent = { rulesUpdate in
-            let sourceProvider = DefaultScriptSourceProvider(appSettings: appSettings,
-                                                             privacyConfigurationManager: privacyConfigurationManager,
-                                                             contentBlockingManager: contentBlockerRulesManager,
-                                                             fireproofing: fireproofing)
+            let sourceProvider = DefaultScriptSourceProvider(dependencies: userScriptsDependencies)
             return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider)
         }
 
@@ -76,7 +70,7 @@ public final class ContentBlockingUpdating {
         }
 
         // 1. Collect updates from ContentBlockerRulesManager and generate UserScripts based on its output
-        cancellable = contentBlockerRulesManager.updatesPublisher
+        cancellable = userScriptsDependencies.contentBlockingManager.updatesPublisher
             // regenerate UserScripts on:
             // prefs changes notifications with initially published value for combineLatest to work.
             // Not all of these will trigger Tab reload,

@@ -153,7 +153,7 @@ extension TabViewController {
         
         entries.append(buildDownloadsEntry())
         
-        entries.append(buildAIChatHistoryEntry())
+        entries.append(buildAIChatSidebarEntry())
         
         entries.append(.separator)
         
@@ -408,15 +408,17 @@ extension TabViewController {
                  accessibilityLabel: UserText.actionNewAIChat,
                  image: DesignSystemImages.Glyphs.Size24.aiChatAdd,
                  action: { [weak self] in
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuNewChatTabTapped)
             self?.openNewChatInNewTab()
         })
     }
     
-    private func buildAIChatHistoryEntry() -> BrowsingMenuEntry {
+    private func buildAIChatSidebarEntry() -> BrowsingMenuEntry {
         .regular(name: UserText.actionAIChatHistory,
                  accessibilityLabel: UserText.actionAIChatHistory,
                  image: DesignSystemImages.Glyphs.Size16.aiChatHistory,
                  action: { [weak self] in
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuSidebarTapped)
             self?.submitToggleSidebarAction()
         })
     }
@@ -426,6 +428,7 @@ extension TabViewController {
                  accessibilityLabel: UserText.actionAIChatSettings,
                  image: DesignSystemImages.Glyphs.Size16.aiChatSettings,
                  action: { [weak self] in
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuAIChatSettingsTapped)
             self?.submitOpenSettingsAction()
         })
     }

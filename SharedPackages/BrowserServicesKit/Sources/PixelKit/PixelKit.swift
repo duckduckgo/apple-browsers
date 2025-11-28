@@ -724,6 +724,7 @@ internal extension Dictionary where Key == String, Value == String {
         var params = [String: String]()
         params[PixelKit.Parameters.errorCode] = "\(error.code)"
         params[PixelKit.Parameters.errorDomain] = error.domain
+        // WARNING: Avoid adding error.description to prevent leaking personal information.
 
         let underlyingErrorParameters = self.underlyingErrorParameters(for: error)
         params.merge(underlyingErrorParameters) { first, _ in
@@ -745,12 +746,14 @@ internal extension Dictionary where Key == String, Value == String {
     /// Recursive call to add underlying error information for non DDGErrors
     private func underlyingErrorParameters(for nsError: NSError, level: Int = 0) -> [String: String] {
         if let underlyingError = nsError.userInfo[NSUnderlyingErrorKey] as? NSError {
-            let errorCodeParameterName = PixelKit.Parameters.underlyingErrorCode + (level == 0 ? "" : String(level + 1))
-            let errorDomainParameterName = PixelKit.Parameters.underlyingErrorDomain + (level == 0 ? "" : String(level + 1))
+            let levelString = (level == 0 ? "" : String(level + 1))
+            let errorCodeParameterName = PixelKit.Parameters.underlyingErrorCode + levelString
+            let errorDomainParameterName = PixelKit.Parameters.underlyingErrorDomain + levelString
 
             let currentUnderlyingErrorParameters = [
                 errorCodeParameterName: "\(underlyingError.code)",
                 errorDomainParameterName: underlyingError.domain
+                // WARNING: Avoid adding error.description to prevent leaking personal information.
             ]
 
             // Check if the underlying error has an underlying error of its own

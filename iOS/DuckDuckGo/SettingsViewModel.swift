@@ -68,6 +68,7 @@ final class SettingsViewModel: ObservableObject {
     var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
     weak var autoClearActionDelegate: SettingsAutoClearActionDelegate?
     let mobileCustomization: MobileCustomization
+    let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
 
     // Subscription Dependencies
     let isAuthV2Enabled: Bool
@@ -661,7 +662,8 @@ final class SettingsViewModel: ObservableObject {
          runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
-         mobileCustomization: MobileCustomization
+         mobileCustomization: MobileCustomization,
+         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     ) {
 
         self.state = SettingsState.defaults
@@ -693,6 +695,7 @@ final class SettingsViewModel: ObservableObject {
         self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.mobileCustomization = mobileCustomization
+        self.userScriptsDependencies = userScriptsDependencies
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
     }

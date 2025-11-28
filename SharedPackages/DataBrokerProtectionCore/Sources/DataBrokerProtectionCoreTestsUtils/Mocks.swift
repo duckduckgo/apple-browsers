@@ -2262,10 +2262,9 @@ public final class MockDataBrokerProtectionStatsPixelsRepository: DataBrokerProt
     func clear() {
         didSetCustomStatsPixelsLastSentTimestamp = false
         didGetCustomStatsPixelsLastSentTimestamp = false
+        customStatsPixelsLastSentTimestamp = nil
         getCount = 0
         setCount = 0
-        customStatsPixelsLastSentTimestamp = nil
-
     }
 }
 

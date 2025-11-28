@@ -292,9 +292,7 @@ public final class DataBrokerProtectionAgentManager {
 extension DataBrokerProtectionAgentManager {
     func fireMonitoringPixels() {
         // Only send pixels for authenticated users
-        guard authenticationManager.isUserAuthenticated else {
-            return
-        }
+        guard authenticationManager.isUserAuthenticated else { return }
 
         let database = jobDependencies.database
         let engagementPixels = DataBrokerProtectionEngagementPixels(database: database, handler: sharedPixelsHandler, repository: engagementPixelRepository)

@@ -17,7 +17,6 @@
 //  limitations under the License.
 //
 
-import UIKit
 import Core
 
 @UIApplicationMain class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -33,16 +32,6 @@ import Core
         let isTesting: Bool = ProcessInfo().arguments.contains("testing")
         appStateMachine.handle(.didFinishLaunching(isTesting: isTesting))
         return true
-    }
-
-    // MARK: - Debug
-    /// These are public to allow access via Debug menu. Otherwise they shouldn't be called from outside.
-    /// Avoid abusing this pattern. Inject dependencies where needed instead of relying on global access.
-
-    func debugRefreshRemoteMessages() {
-        if case .foreground(let foregroundHandling) = appStateMachine.currentState {
-            (foregroundHandling as? Foreground)?.services.remoteMessagingService.refreshRemoteMessages()
-        }
     }
 
 }

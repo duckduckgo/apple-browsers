@@ -52,6 +52,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     let daxDialogsManager: DaxDialogsManaging
     let dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?
     let subscriptionDataReporter: SubscriptionDataReporting
+    let remoteMessagingDebugHandler: RemoteMessagingDebugHandling
 
     init(syncService: any DDGSyncing,
          syncDataProviders: SyncDataProviders,
@@ -66,7 +67,8 @@ class SettingsLegacyViewProvider: ObservableObject {
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          daxDialogsManager: DaxDialogsManaging,
          dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?,
-         subscriptionDataReporter: SubscriptionDataReporting) {
+         subscriptionDataReporter: SubscriptionDataReporting,
+         remoteMessagingDebugHandler: RemoteMessagingDebugHandling) {
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
         self.appSettings = appSettings
@@ -81,6 +83,7 @@ class SettingsLegacyViewProvider: ObservableObject {
         self.daxDialogsManager = daxDialogsManager
         self.dbpIOSPublicInterface = dbpIOSPublicInterface
         self.subscriptionDataReporter = subscriptionDataReporter
+        self.remoteMessagingDebugHandler = remoteMessagingDebugHandler
     }
     
     enum LegacyView {
@@ -140,7 +143,8 @@ class SettingsLegacyViewProvider: ObservableObject {
             databaseDelegate: self.dbpIOSPublicInterface,
             debuggingDelegate: self.dbpIOSPublicInterface,
             runPrequisitesDelegate: self.dbpIOSPublicInterface,
-            subscriptionDataReporter: self.subscriptionDataReporter))
+            subscriptionDataReporter: self.subscriptionDataReporter,
+            remoteMessagingDebugHandler: self.remoteMessagingDebugHandler))
     }
 
     // Legacy UIKit Views (Pushed unmodified)

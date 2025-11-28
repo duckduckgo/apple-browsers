@@ -28,6 +28,10 @@ import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
 import Subscription
 
+protocol RemoteMessagingDebugHandling {
+    func refreshRemoteMessages()
+}
+
 enum DebugScreen: Identifiable {
 
     struct Dependencies {
@@ -46,6 +50,7 @@ enum DebugScreen: Identifiable {
         let debuggingDelegate: DBPIOSInterface.DebuggingDelegate?
         let runPrequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
         let subscriptionDataReporter: SubscriptionDataReporting
+        let remoteMessagingDebugHandler: RemoteMessagingDebugHandling
 
     }
 

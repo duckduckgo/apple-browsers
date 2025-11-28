@@ -162,7 +162,8 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
             launchSourceManager: LaunchSourceManager(),
             winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager(),
             mobileCustomization: MobileCustomization(isFeatureEnabled: false, keyValueStore: MockThrowingKeyValueStore()),
-            remoteMessagingActionHandler: MockRemoteMessagingActionHandler()
+            remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
+            remoteMessagingDebugHandler: MockRemoteMessagingDebugHandler()
         )
         
         let window = UIWindow(frame: UIScreen.main.bounds)

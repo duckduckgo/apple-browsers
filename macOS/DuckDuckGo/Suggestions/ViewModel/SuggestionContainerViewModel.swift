@@ -402,8 +402,7 @@ final class SuggestionContainerViewModel {
             nextRow += 1
         }
 
-        // At the end of the list, cancel the selection
-        clearRowSelection()
+        wrapAroundOrClearSelection(using: firstSelectableRow)
     }
 
     func selectPreviousIfPossible() {
@@ -423,7 +422,16 @@ final class SuggestionContainerViewModel {
             prevRow -= 1
         }
 
-        clearRowSelection()
+        wrapAroundOrClearSelection(using: lastSelectableRow)
+    }
+
+    /// Wraps around to the given row when aiChatOmnibarToggle is on, otherwise clears selection
+    private func wrapAroundOrClearSelection(using selectableRow: () -> Int?) {
+        if featureFlagger.isFeatureOn(.aiChatOmnibarToggle), let row = selectableRow() {
+            selectRow(at: row)
+        } else {
+            clearRowSelection()
+        }
     }
 
     private func firstSelectableRow() -> Int? {

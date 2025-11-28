@@ -531,7 +531,7 @@ extension URL {
     }
 
     // MARK: Canonicalization
-    public func canonicalHost(shouldRemoveWWW: Bool = false) -> String? {
+    public func canonicalHost() -> String? {
         // Step 1: Extract hostname portion from the URL
         guard var canonicalHost = self.host else {
             return nil
@@ -564,9 +564,7 @@ extension URL {
         canonicalHost = canonicalHost.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? ""
 
         // Step 8: Strip www. prefix (if present)
-        if shouldRemoveWWW {
-            canonicalHost = canonicalHost.droppingWwwPrefix()
-        }
+        canonicalHost = canonicalHost.droppingWwwPrefix()
 
         // Step 9: If more than six components in the resulting hostname, discard all but the rightmost six components
         let components = canonicalHost.components(separatedBy: ".").suffix(6)
@@ -575,7 +573,7 @@ extension URL {
         return canonicalHost
      }
 
-    public func canonicalURL(shouldRemoveWWW: Bool = false) -> URL? {
+    public func canonicalURL() -> URL? {
         // Step 1: Remove tab (0x09), CR (0x0d), and LF (0x0a) characters
         var urlString = self.absoluteString.filter { $0 != "\t" && $0 != "\r" && $0 != "\n" }
 
@@ -620,7 +618,7 @@ extension URL {
         urlString = urlString.lowercased()
 
         // Step 9: Remove "www." from the host component
-        if shouldRemoveWWW, let tempURL = URL(string: urlString) {
+        if let tempURL = URL(string: urlString) {
             if let urlWithoutWWW = tempURL.removingWWWFromHost() {
                 urlString = urlWithoutWWW.absoluteString
             }

@@ -17,6 +17,7 @@
 //
 
 import SwiftUI
+import Utilities
 
 final class DefaultBrowserAndDockPromptInactiveUserViewModel {
     let message: String
@@ -111,8 +112,10 @@ private struct PromptChartAndButtons: View {
             HStack {
                 OnboardingSecondaryCTAButton(title: dismissButtonLabel, action: dismissButtonAction)
                     .frame(minWidth: 132) // Prevent button from being condensed to an unreadable width in non-English locales
+                    .accessibilityIdentifier(AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.dismissButton)
                 OnboardingPrimaryCTAButton(title: primaryButtonLabel, action: primaryButtonAction)
                     .layoutPriority(1) // Resist compression to avoid multiline label if possible
+                    .accessibilityIdentifier(AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.confirmButton)
             }
             .frame(maxWidth: .infinity, alignment: .trailing)
         }

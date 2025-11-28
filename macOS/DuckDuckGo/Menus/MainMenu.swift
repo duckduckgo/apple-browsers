@@ -29,6 +29,7 @@ import Configuration
 import VPN
 import Subscription
 import SubscriptionUI
+import Utilities
 
 final class MainMenu: NSMenu {
 
@@ -451,6 +452,7 @@ final class MainMenu: NSMenu {
     func buildDebugMenu(featureFlagger: FeatureFlagger, historyCoordinator: HistoryCoordinating) -> NSMenuItem? {
 #if DEBUG || REVIEW || ALPHA
         NSMenuItem(title: "Debug")
+            .withAccessibilityIdentifier(AccessibilityIdentifiers.debugMenu)
             .submenu(setupDebugMenu(featureFlagger: featureFlagger, historyCoordinator: historyCoordinator))
 #else
         if internalUserDecider.isInternalUser {
@@ -901,7 +903,9 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu())
 #endif
             if AppVersion.runType.requiresEnvironment {
-                NSMenuItem(title: "SAD/ATT Prompts (Default Browser/Add to Dock)").submenu(DefaultBrowserAndDockPromptDebugMenu())
+                NSMenuItem(title: "SAD/ATT Prompts (Default Browser/Add to Dock)")
+                    .withAccessibilityIdentifier(AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.promptsDebugMenu)
+                    .submenu(DefaultBrowserAndDockPromptDebugMenu())
                 WinBackOfferDebugMenu(winbackOfferStore: Application.appDelegate.winbackOfferStore,
                                       keyValueStore: Application.appDelegate.keyValueStore)
             }

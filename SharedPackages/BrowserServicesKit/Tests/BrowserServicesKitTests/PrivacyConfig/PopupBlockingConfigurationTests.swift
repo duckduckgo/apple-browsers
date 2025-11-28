@@ -24,9 +24,12 @@ final class PopupBlockingConfigurationTests: XCTestCase {
     var mockEmbeddedData: MockEmbeddedDataProvider!
     var privacyConfigManager: PrivacyConfigurationManager!
 
+    @MainActor
     override func tearDown() {
         mockEmbeddedData = nil
         privacyConfigManager = nil
+        // Clear static cache to prevent test pollution
+        DefaultPopupBlockingConfiguration.clearCache()
         super.tearDown()
     }
 
@@ -210,5 +213,228 @@ final class PopupBlockingConfigurationTests: XCTestCase {
 
         // THEN
         XCTAssertEqual(popupConfig.userInitiatedPopupThreshold, 6.0)
+    }
+
+    // MARK: - Allowlist Tests
+
+    @MainActor
+    func testWhenAllowlistIsProvided_ThenReturnsSet() {
+        // GIVEN
+        let config = """
+        {
+            "features": {
+                "popupBlocking": {
+                    "state": "enabled",
+                    "settings": {
+                        "allowlist": ["example.com", "test.org", "sample.net"]
+                    }
+                }
+            }
+        }
+        """.data(using: .utf8)!
+
+        mockEmbeddedData = MockEmbeddedDataProvider(data: config, etag: "test")
+        privacyConfigManager = PrivacyConfigurationManager(
+            fetchedETag: nil,
+            fetchedData: nil,
+            embeddedDataProvider: mockEmbeddedData,
+            localProtection: MockDomainsProtectionStore(),
+            internalUserDecider: MockInternalUserDecider()
+        )
+
+        let popupConfig = DefaultPopupBlockingConfiguration(privacyConfigurationManager: privacyConfigManager)
+
+        // THEN
+        XCTAssertEqual(popupConfig.allowlist, Set(["example.com", "test.org", "sample.net"]))
+    }
+
+    @MainActor
+    func testWhenAllowlistIsEmpty_ThenReturnsEmptySet() {
+        // GIVEN
+        let config = """
+        {
+            "features": {
+                "popupBlocking": {
+                    "state": "enabled",
+                    "settings": {
+                        "allowlist": []
+                    }
+                }
+            }
+        }
+        """.data(using: .utf8)!
+
+        mockEmbeddedData = MockEmbeddedDataProvider(data: config, etag: "test")
+        privacyConfigManager = PrivacyConfigurationManager(
+            fetchedETag: nil,
+            fetchedData: nil,
+            embeddedDataProvider: mockEmbeddedData,
+            localProtection: MockDomainsProtectionStore(),
+            internalUserDecider: MockInternalUserDecider()
+        )
+
+        let popupConfig = DefaultPopupBlockingConfiguration(privacyConfigurationManager: privacyConfigManager)
+
+        // THEN
+        XCTAssertTrue(popupConfig.allowlist.isEmpty)
+    }
+
+    @MainActor
+    func testWhenAllowlistIsNotSet_ThenReturnsEmptySet() {
+        // GIVEN
+        let config = """
+        {
+            "features": {
+                "popupBlocking": {
+                    "state": "enabled",
+                    "settings": {}
+                }
+            }
+        }
+        """.data(using: .utf8)!
+
+        mockEmbeddedData = MockEmbeddedDataProvider(data: config, etag: "test")
+        privacyConfigManager = PrivacyConfigurationManager(
+            fetchedETag: nil,
+            fetchedData: nil,
+            embeddedDataProvider: mockEmbeddedData,
+            localProtection: MockDomainsProtectionStore(),
+            internalUserDecider: MockInternalUserDecider()
+        )
+
+        let popupConfig = DefaultPopupBlockingConfiguration(privacyConfigurationManager: privacyConfigManager)
+
+        // THEN
+        XCTAssertTrue(popupConfig.allowlist.isEmpty)
+    }
+
+    // MARK: - Caching Tests
+
+    @MainActor
+    func testWhenAllowlistAccessedMultipleTimes_ThenCacheIsUsed() {
+        // GIVEN
+        let config = """
+        {
+            "features": {
+                "popupBlocking": {
+                    "state": "enabled",
+                    "settings": {
+                        "allowlist": ["example.com", "test.org"]
+                    }
+                }
+            }
+        }
+        """.data(using: .utf8)!
+
+        mockEmbeddedData = MockEmbeddedDataProvider(data: config, etag: "test-etag-1")
+        privacyConfigManager = PrivacyConfigurationManager(
+            fetchedETag: nil,
+            fetchedData: nil,
+            embeddedDataProvider: mockEmbeddedData,
+            localProtection: MockDomainsProtectionStore(),
+            internalUserDecider: MockInternalUserDecider()
+        )
+
+        let popupConfig = DefaultPopupBlockingConfiguration(privacyConfigurationManager: privacyConfigManager)
+
+        // WHEN - Access allowlist multiple times
+        let firstAccess = popupConfig.allowlist
+        let secondAccess = popupConfig.allowlist
+        let thirdAccess = popupConfig.allowlist
+
+        // THEN - All accesses return the same cached Set instance
+        XCTAssertEqual(firstAccess, Set(["example.com", "test.org"]))
+        XCTAssertEqual(secondAccess, Set(["example.com", "test.org"]))
+        XCTAssertEqual(thirdAccess, Set(["example.com", "test.org"]))
+    }
+
+    @MainActor
+    func testWhenConfigChanges_ThenCacheIsInvalidated() {
+        // GIVEN - Initial config
+        let initialConfig = """
+        {
+            "features": {
+                "popupBlocking": {
+                    "state": "enabled",
+                    "settings": {
+                        "allowlist": ["example.com"]
+                    }
+                }
+            }
+        }
+        """.data(using: .utf8)!
+
+        mockEmbeddedData = MockEmbeddedDataProvider(data: initialConfig, etag: "etag-1")
+        privacyConfigManager = PrivacyConfigurationManager(
+            fetchedETag: nil,
+            fetchedData: nil,
+            embeddedDataProvider: mockEmbeddedData,
+            localProtection: MockDomainsProtectionStore(),
+            internalUserDecider: MockInternalUserDecider()
+        )
+
+        let popupConfig = DefaultPopupBlockingConfiguration(privacyConfigurationManager: privacyConfigManager)
+
+        // WHEN - Access initial allowlist
+        let initialAllowlist = popupConfig.allowlist
+        XCTAssertEqual(initialAllowlist, Set(["example.com"]))
+
+        // Update config with different etag and allowlist
+        let updatedConfig = """
+        {
+            "features": {
+                "popupBlocking": {
+                    "state": "enabled",
+                    "settings": {
+                        "allowlist": ["newsite.com", "anothersite.org"]
+                    }
+                }
+            }
+        }
+        """.data(using: .utf8)!
+
+        privacyConfigManager.reload(etag: "etag-2", data: updatedConfig)
+
+        // THEN - Cache is invalidated and new allowlist is returned
+        let updatedAllowlist = popupConfig.allowlist
+        XCTAssertEqual(updatedAllowlist, Set(["newsite.com", "anothersite.org"]))
+        XCTAssertNotEqual(updatedAllowlist, initialAllowlist)
+    }
+
+    @MainActor
+    func testWhenConfigReloadsWithSameEtag_ThenCacheIsReused() {
+        // GIVEN
+        let config = """
+        {
+            "features": {
+                "popupBlocking": {
+                    "state": "enabled",
+                    "settings": {
+                        "allowlist": ["example.com"]
+                    }
+                }
+            }
+        }
+        """.data(using: .utf8)!
+
+        mockEmbeddedData = MockEmbeddedDataProvider(data: config, etag: "same-etag")
+        privacyConfigManager = PrivacyConfigurationManager(
+            fetchedETag: "same-etag",
+            fetchedData: config,
+            embeddedDataProvider: mockEmbeddedData,
+            localProtection: MockDomainsProtectionStore(),
+            internalUserDecider: MockInternalUserDecider()
+        )
+
+        let popupConfig = DefaultPopupBlockingConfiguration(privacyConfigurationManager: privacyConfigManager)
+
+        // WHEN - Access allowlist, reload with same etag, access again
+        let beforeReload = popupConfig.allowlist
+        privacyConfigManager.reload(etag: "same-etag", data: config)
+        let afterReload = popupConfig.allowlist
+
+        // THEN - Cache is still valid and returns same set
+        XCTAssertEqual(beforeReload, Set(["example.com"]))
+        XCTAssertEqual(afterReload, Set(["example.com"]))
     }
 }

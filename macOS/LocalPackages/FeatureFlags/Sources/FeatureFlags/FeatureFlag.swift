@@ -83,12 +83,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866474590440
     case privacyProAuthV2
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717504694
-    case visualUpdates
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866616568109
-    case visualUpdatesInternalOnly
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614764239
     case tabCrashDebugging
 
@@ -289,13 +283,16 @@ public enum FeatureFlag: String, CaseIterable {
     /// Show popup permission button in inactive state when temporary allowance is active
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212017701300919?focus=true
     case popupPermissionButtonPersistence
+
+    /// Tab closing event recreation (failsafe for removing private API)
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212206087745586?focus=true
+    case tabClosingEventRecreation
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
     public var defaultValue: Bool {
         switch self {
-        case .visualUpdatesInternalOnly,
-                .importChromeShortcuts,
+        case .importChromeShortcuts,
                 .updateSafariBookmarksImport,
                 .updateFirefoxBookmarksImport,
                 .supportsAlternateStripePaymentFlow,
@@ -314,7 +311,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .allowPopupsForCurrentPage,
                 .extendedUserInitiatedPopupTimeout,
                 .suppressEmptyPopUpsOnApproval,
-                .popupPermissionButtonPersistence:
+                .popupPermissionButtonPersistence,
+                .tabClosingEventRecreation:
             true
         default:
             false
@@ -341,8 +339,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .updatesWontAutomaticallyRestartApp,
                 .privacyProAuthV2,
                 .scamSiteProtection,
-                .visualUpdates,
-                .visualUpdatesInternalOnly,
                 .tabCrashDebugging,
                 .maliciousSiteProtection,
                 .delayedWebviewPresentation,
@@ -416,7 +412,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .credentialsImportPromotionForExistingUsers,
                 .scheduledSetDefaultBrowserAndAddToDockPrompts,
                 .fireDialogIndividualSitesLink,
-                .scheduledDefaultBrowserAndDockPromptsInactiveUser:
+                .scheduledDefaultBrowserAndDockPromptsInactiveUser,
+                .tabClosingEventRecreation:
             return false
         }
     }
@@ -465,10 +462,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPrompts))
         case .privacyProAuthV2:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
-        case .visualUpdates:
-            return .remoteReleasable(.subfeature(ExperimentalThemingSubfeature.visualUpdates))
-        case .visualUpdatesInternalOnly:
-            return .internalOnly()
         case .tabCrashDebugging:
             return .disabled
         case .delayedWebviewPresentation:
@@ -568,7 +561,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .dataImportNewExperience:
             return .disabled
         case .scheduledDefaultBrowserAndDockPromptsInactiveUser:
-            return .remoteDevelopment(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPromptsInactiveUser))
+            return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPromptsInactiveUser))
         case .tabProgressIndicator:
             return .internalOnly()
         case .attributedMetrics:
@@ -595,6 +588,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PopupBlockingSubfeature.allowPopupsForCurrentPage))
         case .popupPermissionButtonPersistence:
             return .remoteReleasable(.subfeature(PopupBlockingSubfeature.popupPermissionButtonPersistence))
+        case .tabClosingEventRecreation:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.tabClosingEventRecreation))
         }
     }
 }

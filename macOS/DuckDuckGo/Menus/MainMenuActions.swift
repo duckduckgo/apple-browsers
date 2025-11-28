@@ -29,6 +29,7 @@ import os.log
 import PixelKit
 import Subscription
 import SwiftUI
+import Utilities
 import WebKit
 
 // Actions are sent to objects of responder chain
@@ -333,6 +334,7 @@ extension AppDelegate {
 
         let controller = ReportProblemFormViewController(rootView: formView)
         window = NSWindow(contentViewController: controller)
+            .withAccessibilityIdentifier(AccessibilityIdentifiers.Feedback.reportAProblem)
 
         guard let window = window else { return }
 

@@ -50,19 +50,16 @@ public struct PixelFireExpectations {
         if let nsError = error as? NSError {
             parameters[PixelKit.Parameters.errorCode] = String(nsError.code)
             parameters[PixelKit.Parameters.errorDomain] = nsError.domain
-            parameters[PixelKit.Parameters.errorDescription] = nsError.description
         }
 
         for (index, error) in underlyingErrors.enumerated() {
             let levelString = (index == 0 ? "" : String(index + 1))
             let errorCodeParameterName = PixelKit.Parameters.underlyingErrorCode + levelString
             let errorDomainParameterName = PixelKit.Parameters.underlyingErrorDomain + levelString
-            let errorDescriptionParameterName = PixelKit.Parameters.underlyingErrorDescription + levelString
             let nsError = error as NSError
 
             parameters[errorCodeParameterName] = String(nsError.code)
             parameters[errorDomainParameterName] = nsError.domain
-            parameters[errorDescriptionParameterName] = nsError.description
         }
 
         return parameters

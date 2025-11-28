@@ -98,11 +98,18 @@ class PinnedTabsTests: UITestCase {
         assertCurrentPageCanBePinned()
     }
 
-    func testPinnedTabCannotBeDraggedIntoNew() {
+    func testPinnedTabCannotBeDraggedIntoNewWindow() {
         app.openNewTab()
         pinCurrentPage()
 
         dragFirstPinnedTabAboveWindow()
+        assertSingleWindowScenario()
+    }
+
+    func testDraggingOnlyTabAboveWindowDoesNotResultInNewWindowBeingCreated() {
+        app.openSite(pageTitle: "Page #1")
+
+        dragLastUnpinnedTabAboveWindow()
         assertSingleWindowScenario()
     }
 
@@ -275,8 +282,9 @@ class PinnedTabsTests: UITestCase {
     }
 
     private func dragTabElementAboveWindow(_ tabElement: XCUIElement) {
+        let dragAboveWindowOffset: CGFloat = -100
         let tabCoordinate = tabElement.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        let aboveWindow = tabCoordinate.withOffset(CGVector(dx: 0, dy: -100))
+        let aboveWindow = tabCoordinate.withOffset(CGVector(dx: 0, dy: dragAboveWindowOffset))
 
         tabCoordinate.press(forDuration: 0.5, thenDragTo: aboveWindow)
     }

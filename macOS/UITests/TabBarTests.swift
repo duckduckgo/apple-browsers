@@ -154,12 +154,6 @@ class TabBarTests: UITestCase {
         XCTAssertTrue(contextMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Context menu should appear on control click")
     }
 
-    func testDraggingOnlyTabAboveWindowDoesNotResultInNewWindowBeingCreated() {
-        app.openSite(pageTitle: "Page #1")
-        dragLastUnpinnedTabAboveWindow()
-        assertSingleWindowScenario()
-    }
-
     // MARK: - Utilities
 
     private func resetPinnedTabs() {
@@ -204,23 +198,5 @@ class TabBarTests: UITestCase {
             app.windows.firstMatch.webViews["Privacy Test Pages - Home"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
-    }
-
-    private func dragLastUnpinnedTabAboveWindow() {
-        let unpinnedTabs = app.tabGroups.matching(identifier: "Tabs").radioButtons
-        let lastUnpinnedTab = unpinnedTabs.element(boundBy: unpinnedTabs.count - 1)
-
-        dragTabElementAboveWindow(lastUnpinnedTab)
-    }
-
-    private func dragTabElementAboveWindow(_ tabElement: XCUIElement) {
-        let tabCoordinate = tabElement.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        let aboveWindow = tabCoordinate.withOffset(CGVector(dx: 0, dy: -100))
-
-        tabCoordinate.press(forDuration: 0.5, thenDragTo: aboveWindow)
-    }
-
-    private func assertSingleWindowScenario() {
-        XCTAssertEqual(app.windows.count, 1)
     }
 }

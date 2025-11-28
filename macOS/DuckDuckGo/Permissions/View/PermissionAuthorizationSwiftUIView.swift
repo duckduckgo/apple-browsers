@@ -63,17 +63,17 @@ struct PermissionAuthorizationSwiftUIView: View {
     var body: some View {
         VStack(spacing: 20) {
             Text(promptText)
-                .font(.system(size: 13))
+                .font(.system(size: 13, weight: .medium))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
 
             HStack(spacing: 12) {
                 Button(action: denyAction) {
                     Text(denyButtonTitle)
-                        .font(.system(size: 13, weight: .light))
+                        .font(.system(size: 13))
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                         .frame(maxWidth: .infinity)
                         .frame(height: 32)
@@ -85,7 +85,7 @@ struct PermissionAuthorizationSwiftUIView: View {
 
                 Button(action: allowAction) {
                     Text(allowButtonTitle)
-                        .font(.system(size: 13, weight: .light))
+                        .font(.system(size: 13))
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                         .frame(maxWidth: .infinity)
                         .frame(height: 32)
@@ -95,10 +95,10 @@ struct PermissionAuthorizationSwiftUIView: View {
                 .buttonStyle(PlainButtonStyle())
                 .accessibilityIdentifier("PermissionAuthorizationSwiftUIView.allowButton")
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 20)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
         }
-        .frame(width: 400)
+        .frame(width: 360)
         .background(Color(designSystemColor: .containerFillPrimary))
     }
 }

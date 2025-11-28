@@ -49,6 +49,13 @@ class PinnedTabsTests: UITestCase {
         assertPinnedTabsRestoredState()
     }
 
+    func testPinnedStateCanBeEffectivelySetAndUnset() {
+        app.openNewTab()
+        pinCurrentPage()
+        unpinCurrentPage()
+        assertCurrentPageCanBePinned()
+    }
+
     func testSettingsCanBePinned() {
         app.openSettings()
         pinCurrentPage()
@@ -137,6 +144,10 @@ class PinnedTabsTests: UITestCase {
 
     private func pinCurrentPage() {
         app.menuItems["Pin Tab"].tap()
+    }
+
+    private func unpinCurrentPage() {
+        app.menuItems["Unpin Tab"].tap()
     }
 
     private func assertsPageTwoIsPinned() {

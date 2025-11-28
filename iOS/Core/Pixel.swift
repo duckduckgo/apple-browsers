@@ -353,6 +353,7 @@ extension Dictionary where Key == String, Value == String {
 
         self[PixelParameters.errorCode] = "\(nsError.code)"
         self[PixelParameters.errorDomain] = nsError.domain
+        // WARNING: Avoid adding error.description to prevent leaking personal information.
 
         let underlyingErrorParameters = underlyingErrorParameters(for: error as NSError)
         self.merge(underlyingErrorParameters) { first, _ in first }
@@ -367,6 +368,7 @@ extension Dictionary where Key == String, Value == String {
             let currentUnderlyingErrorParameters = [
                 errorCodeParameterName: "\(underlyingError.code)",
                 errorDomainParameterName: underlyingError.domain
+                // WARNING: Avoid adding error.description to prevent leaking personal information.
             ]
 
             let additionalParameters = underlyingErrorParameters(for: underlyingError, level: level + 1)

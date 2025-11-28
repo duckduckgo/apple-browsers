@@ -724,7 +724,7 @@ internal extension Dictionary where Key == String, Value == String {
         var params = [String: String]()
         params[PixelKit.Parameters.errorCode] = "\(error.code)"
         params[PixelKit.Parameters.errorDomain] = error.domain
-        params[PixelKit.Parameters.errorDescription] = error.description
+        // WARNING: Avoid adding error.description to prevent leaking personal information.
 
         let underlyingErrorParameters = self.underlyingErrorParameters(for: error)
         params.merge(underlyingErrorParameters) { first, _ in
@@ -749,11 +749,11 @@ internal extension Dictionary where Key == String, Value == String {
             let levelString = (level == 0 ? "" : String(level + 1))
             let errorCodeParameterName = PixelKit.Parameters.underlyingErrorCode + levelString
             let errorDomainParameterName = PixelKit.Parameters.underlyingErrorDomain + levelString
-            let errorDescriptionParameterName = PixelKit.Parameters.underlyingErrorDescription + levelString
+
             let currentUnderlyingErrorParameters = [
                 errorCodeParameterName: "\(underlyingError.code)",
-                errorDomainParameterName: underlyingError.domain,
-                errorDescriptionParameterName: underlyingError.description
+                errorDomainParameterName: underlyingError.domain
+                // WARNING: Avoid adding error.description to prevent leaking personal information.
             ]
 
             // Check if the underlying error has an underlying error of its own

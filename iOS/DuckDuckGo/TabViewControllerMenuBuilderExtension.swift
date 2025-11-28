@@ -716,7 +716,6 @@ extension TabViewController {
     }
 
     private func onOpenVPNAction(with vpnPromoHelper: VPNSubscriptionPromotionHelper) {
-        vpnPromoHelper.fireTapPixel()
         switch vpnPromoHelper.subscriptionPromoStatus {
         case .promo, .noPromo:
             let urlComponents = vpnPromoHelper.subscriptionURLComponents()

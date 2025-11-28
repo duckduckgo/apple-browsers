@@ -55,11 +55,6 @@ final class WideEventService {
             Task {
                 await self.sendAbandonedSubscriptionRestorePixels()
                 
-                if !shouldSendSubscriptionPurchaseWidePixel && !shouldSendVPNConnectionWidePixel {
-                    DispatchQueue.main.async { completion() }
-                    return
-                }
-                
                 if shouldSendSubscriptionPurchaseWidePixel {
                     await self.sendAbandonedSubscriptionPurchasePixels()
                 }
@@ -84,11 +79,6 @@ final class WideEventService {
 
             Task {
                 await self.sendDelayedSubscriptionRestorePixels()
-                
-                if !shouldSendSubscriptionPurchaseWidePixel && !shouldSendVPNConnectionWidePixel {
-                    DispatchQueue.main.async { completion() }
-                    return
-                }
                 
                 if shouldSendSubscriptionPurchaseWidePixel {
                     await self.sendDelayedSubscriptionPurchasePixels()

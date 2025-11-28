@@ -81,8 +81,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         // Then
         XCTAssertNotNil(configValues)
         XCTAssertEqual(configValues?.supportsURLChatIDRestoration, true)
-        XCTAssertEqual(configValues?.isAIChatTopToolBarHidden, true)
-        XCTAssertEqual(configValues?.isAIChatModelPickerInChatInput, true)
+        XCTAssertEqual(configValues?.supportsAIChatFullMode, true)
         XCTAssertEqual(configValues?.supportsHomePageEntryPoint, true)
     }
     
@@ -96,8 +95,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         // Then
         XCTAssertNotNil(configValues)
         XCTAssertEqual(configValues?.supportsURLChatIDRestoration, AIChatNativeConfigValues.defaultValues.supportsURLChatIDRestoration)
-        XCTAssertEqual(configValues?.isAIChatTopToolBarHidden, AIChatNativeConfigValues.defaultValues.isAIChatTopToolBarHidden)
-        XCTAssertEqual(configValues?.isAIChatModelPickerInChatInput, AIChatNativeConfigValues.defaultValues.isAIChatModelPickerInChatInput)
+        XCTAssertEqual(configValues?.supportsAIChatFullMode, false)
         XCTAssertEqual(configValues?.supportsHomePageEntryPoint, AIChatNativeConfigValues.defaultValues.supportsHomePageEntryPoint)
     }
 

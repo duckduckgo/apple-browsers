@@ -239,13 +239,23 @@ extension UITestCase {
 
     // MARK: - File Management Methods
 
-    /// Track a file path for cleanup after the test completes
+    /// Track a file path for cleanup after the test completes.
+    /// 
+    /// UI tests run in a sandboxed environment and cannot directly read or delete files
+    /// from user directories using standard FileManager calls. This method tracks files
+    /// for automatic cleanup via the local test server in tearDown().
+    /// 
     /// - Parameter path: The absolute file path to track for cleanup
     func trackForCleanup(_ path: String) {
         cleanupPaths.insert(path)
     }
 
-    /// Read a file via the local test server to bypass permission issues
+    /// Read a file via the local test server to bypass permission issues.
+    /// 
+    /// This is required because UI tests run in a sandboxed environment and cannot
+    /// directly read files from user directories using standard FileManager calls.
+    /// The local test server provides a proxy that can read files on behalf of the test.
+    /// 
     /// - Parameter filePath: The absolute file path to read
     /// - Returns: The file data
     /// - Throws: Error if the file cannot be read or server request fails

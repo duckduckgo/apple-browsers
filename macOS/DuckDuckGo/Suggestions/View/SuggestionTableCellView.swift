@@ -63,7 +63,7 @@ final class SuggestionTableCellView: NSTableCellView {
     private lazy var keyboardShortcutView: KeyboardShortcutView = {
         let view = KeyboardShortcutView()
         view.translatesAutoresizingMaskIntoConstraints = false
-        view.configure(with: ["⌥", "↩"])
+        view.configure(with: ["⌃", "⏎"])
         return view
     }()
 
@@ -88,7 +88,7 @@ final class SuggestionTableCellView: NSTableCellView {
     static let searchTheWebAttributedString: NSAttributedString = {
         let text = UserText.searchTheWeb
         let attributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 11, weight: .regular),
+            .font: NSFont.systemFont(ofSize: 11, weight: .semibold),
             .kern: 0.06,
         ]
 
@@ -100,7 +100,7 @@ final class SuggestionTableCellView: NSTableCellView {
     static let chatWithAIAttributedString: NSAttributedString = {
         let text = UserText.aiChatChatWithAITooltip
         let attributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 11, weight: .regular),
+            .font: NSFont.systemFont(ofSize: 11, weight: .semibold),
             .kern: 0.06,
         ]
 
@@ -108,15 +108,6 @@ final class SuggestionTableCellView: NSTableCellView {
     }()
     private static let chatWithAITextWidth: CGFloat = chatWithAIAttributedString.size().width
     private static let chatWithAIBoxWidth: CGFloat = chatWithAITextWidth + Constants.switchToTabExtraSpace
-
-    static func visitAttributedString(host: String) -> NSAttributedString {
-        let text = "\(UserText.addressBarVisitSuffix) \(host)"
-        let attributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 11, weight: .regular),
-            .kern: 0.06,
-        ]
-        return NSAttributedString(string: text, attributes: attributes)
-    }
 
     private func setupKeyboardShortcutView() {
         guard keyboardShortcutView.superview == nil else { return }
@@ -208,8 +199,7 @@ final class SuggestionTableCellView: NSTableCellView {
         self.suggestion = nil
 
         let attributes: [NSAttributedString.Key: Any] = [
-            .font: NSFont.systemFont(ofSize: 13),
-            .foregroundColor: Constants.textColor
+            .font: NSFont.systemFont(ofSize: 13)
         ]
         attributedString = NSAttributedString(string: userText, attributes: attributes)
         iconImageView.image = icon
@@ -227,10 +217,8 @@ final class SuggestionTableCellView: NSTableCellView {
             switchToTabArrowView.isHidden = false
             setupKeyboardShortcutView()
         case .visit(let host):
-            suffixTextField.stringValue = ""
-            switchToTabBox.isHidden = frame.size.width <= 272
-            switchToTabLabel.attributedStringValue = Self.visitAttributedString(host: host)
-            switchToTabArrowView.isHidden = false
+            suffixTextField.stringValue = " – \(UserText.addressBarVisitSuffix) \(host)"
+            switchToTabBox.isHidden = true
         case .default:
             suffixTextField.stringValue = ""
             switchToTabBox.isHidden = true
@@ -259,20 +247,20 @@ final class SuggestionTableCellView: NSTableCellView {
         if isSelected {
             textField?.attributedStringValue = attributedString
             textField?.textColor = Constants.selectedTintColor
-            suffixTextField.textColor = Constants.selectedTintColor
-            switchToTabLabel.textColor = Constants.selectedTintColor
-            switchToTabArrowView.contentTintColor = Constants.selectedTintColor
+            suffixTextField.textColor = theme?.palette.accentContentSecondary ?? Constants.selectedTintColor
+            switchToTabLabel.textColor = theme?.palette.accentContentSecondary ?? Constants.selectedTintColor
+            switchToTabArrowView.contentTintColor = theme?.palette.accentContentSecondary ?? Constants.selectedTintColor
             switchToTabBox.backgroundColor = usesTransparentBox ? .clear : .white.withAlphaComponent(0.09)
         } else {
             textField?.attributedStringValue = attributedString
             textField?.textColor = theme?.colorsProvider.addressBarTextFieldColor ?? Constants.textColor
-            switchToTabLabel.textColor = Constants.textColor
-            switchToTabArrowView.contentTintColor = Constants.textColor
+            switchToTabLabel.textColor = theme?.palette.accentPrimary ?? Constants.textColor
+            switchToTabArrowView.contentTintColor = theme?.palette.accentPrimary ?? Constants.textColor
             switchToTabBox.backgroundColor = usesTransparentBox ? .clear : .buttonMouseOver
             if isBurner {
                 suffixTextField.textColor = Constants.burnerSuffixColor
             } else {
-                suffixTextField.textColor = theme?.colorsProvider.addressBarSuffixTextColor ?? Constants.suffixColor
+                suffixTextField.textColor = theme?.palette.accentPrimary ?? Constants.suffixColor
             }
         }
 
@@ -316,18 +304,16 @@ final class SuggestionTableCellView: NSTableCellView {
                 boxWidth = Self.searchTheWebBoxWidth
             case .aiChat:
                 boxWidth = Self.chatWithAIBoxWidth + keyboardShortcutsWidth
-            case .visit(let host):
-                let visitAttrString = Self.visitAttributedString(host: host)
-                boxWidth = visitAttrString.size().width + Constants.switchToTabExtraSpace
-            case .default:
+            case .visit, .default:
                 boxWidth = Self.switchToTabBoxWidth
             }
 
             let alwaysAnchorToTrailing: Bool
-            if case .default = cellStyle {
-                alwaysAnchorToTrailing = false
-            } else {
+            switch cellStyle {
+            case .search, .aiChat:
                 alwaysAnchorToTrailing = true
+            case .visit, .default:
+                alwaysAnchorToTrailing = false
             }
 
             if alwaysAnchorToTrailing {

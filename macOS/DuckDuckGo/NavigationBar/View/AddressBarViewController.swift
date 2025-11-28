@@ -677,7 +677,20 @@ final class AddressBarViewController: NSViewController {
 
     private func setupAddressBarPlaceHolder() {
         let isNewTab = tabViewModel?.tab.content == .newtab
-        let addressBarPlaceholder = isNewTab ? UserText.addressBarPlaceholder : ""
+        let addressBarPlaceholder: String
+
+        let shouldShowDuckAIHint = isFirstResponder
+        && featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+        && aiChatSettings.isAIFeaturesEnabled
+        && aiChatSettings.showSearchAndDuckAIToggle
+
+        if shouldShowDuckAIHint {
+            addressBarPlaceholder = UserText.addressBarPlaceholderWithDuckAI
+        } else if isNewTab {
+            addressBarPlaceholder = UserText.addressBarPlaceholder
+        } else {
+            addressBarPlaceholder = ""
+        }
 
         let font = NSFont.systemFont(ofSize: isNewTab ? theme.addressBarStyleProvider.newTabOrHomePageAddressBarFontSize : theme.addressBarStyleProvider.defaultAddressBarFontSize, weight: .regular)
         let attributes: [NSAttributedString.Key: Any] = [
@@ -875,6 +888,8 @@ final class AddressBarViewController: NSViewController {
         case .activeWithAIChat:
             break
         }
+
+        setupAddressBarPlaceHolder()
     }
 
     // MARK: - Event handling

@@ -32,11 +32,13 @@ final class SubscriptionExternalLinkViewModel: ObservableObject {
     
     @Published var canNavigateBack: Bool = false
     
-    init(url: URL, allowedDomains: [String]? = nil) {
+    init(url: URL,
+         allowedDomains: [String]? = nil,
+         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies) {
         let webViewSettings = AsyncHeadlessWebViewSettings(bounces: false,
                                                            allowedDomains: allowedDomains,
-                                                           contentBlocking: true)
-                
+                                                           userScriptsDependencies: userScriptsDependencies)
+
         self.url = url
         self.webViewModel = AsyncHeadlessWebViewViewModel(settings: webViewSettings)
     }

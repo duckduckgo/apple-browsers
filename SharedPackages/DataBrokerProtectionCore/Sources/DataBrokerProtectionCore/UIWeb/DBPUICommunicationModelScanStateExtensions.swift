@@ -224,7 +224,7 @@ private extension Array where Element == BrokerProfileQueryData {
             return [uiDataBroker] + uiMirrorSites
         }
 
-        let uniqued = brokers.uniqued()
+        let uniqued = brokers.uniqued(on: \.name)
         return uniqued.map { $0 }
     }
 
@@ -250,7 +250,7 @@ private extension Array where Element == BrokerProfileQueryData {
             return [uiDataBroker] + uiMirrorSites
         }
 
-        let uniqued = brokers.uniqued()
+        let uniqued = brokers.uniqued(on: \.name)
         return uniqued.map { $0 }
     }
 

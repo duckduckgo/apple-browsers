@@ -86,6 +86,13 @@ public enum DataStorageError: DDGError {
             return false
         }
     }
+
+    public var underlyingError: Error? {
+        switch self {
+        case .encodingFailed(let error): return error
+        case .decodingFailed(let error): return error
+        }
+    }
 }
 
 /// UserDefaults-backed implementation for storing attributed metric data.

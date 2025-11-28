@@ -4,8 +4,12 @@
 <dict>
 	<key>AGENT_BUNDLE_ID</key>
 	<string>$(AGENT_BUNDLE_ID)</string>
+	<key>SYSEX_BUNDLE_ID</key>
+	<string>$(SYSEX_BUNDLE_ID)</string>
 	<key>AGENT_PRODUCT_NAME</key>
 	<string>$(AGENT_PRODUCT_NAME)</string>
+	<key>PROXY_SYSEX_BUNDLE_ID</key>
+	<string>$(PROXY_SYSEX_BUNDLE_ID)</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDocumentTypes</key>

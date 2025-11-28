@@ -806,7 +806,7 @@ struct UserText {
     static let problemCategoryBrokenWebsite = NSLocalizedString("feedback.problem-category.broken-website", value: "Report broken website", comment: "Problem category for broken website reports")
     static let problemCategoryAdsIssues = NSLocalizedString("feedback.problem-category.ads-issues", value: "Ads causing issues", comment: "Problem category for advertising-related problems")
     static let problemCategoryPasswordIssues = NSLocalizedString("feedback.problem-category.password-issues", value: "Password issues", comment: "Problem category for password-related problems")
-    static let problemCategorySomethingElse = NSLocalizedString("feedback.problem-category.something-else", value: "Something else", comment: "Problem category for other issues")
+    static let problemCategoryOtherFeedback = NSLocalizedString("feedback.problem-category.other-feedback", value: "Other feedback", comment: "Problem category for other issues")
 
     // Problem subcategories - Performance
     static let problemSubcategoryBrowserStartsSlowly = NSLocalizedString("feedback.problem-subcategory.browser-starts-slowly", value: "Browser starts slowly", comment: "Problem subcategory for slow browser startup")
@@ -825,6 +825,7 @@ struct UserText {
     static let problemSubcategoryTooManyCaptchas = NSLocalizedString("feedback.problem-subcategory.too-many-captchas", value: "Too many CAPTCHAs", comment: "Problem subcategory for excessive CAPTCHA prompts")
     static let problemSubcategoryVideoAudioPlaysAutomatically = NSLocalizedString("feedback.problem-subcategory.video-audio-plays-automatically", value: "Video/audio plays automatically", comment: "Problem subcategory for unwanted autoplay")
     static let problemSubcategoryVideoDoesntPlay = NSLocalizedString("feedback.problem-subcategory.video-doesnt-play", value: "Video doesn't play", comment: "Problem subcategory for video playback issues")
+    static let problemSubcategoryPopupWindowsNotOpening = NSLocalizedString("feedback.problem-subcategory.popup-windows-not-opening", value: "Pop-ups don't open", comment: "Problem subcategory for popup windows being blocked")
 
     // Problem subcategories - Install & Updates
     static let problemSubcategoryBrowserVersionIssues = NSLocalizedString("feedback.problem-subcategory.browser-version-issues", value: "Browser version issues", comment: "Problem subcategory for version-related problems")
@@ -1884,7 +1885,7 @@ struct UserText {
     static let addToDockPopoverPromptMessage = NSLocalizedString("sad.att.add-to-dock.popover.message", value: "Get quick access to protected browsing when you add DuckDuckGo to your Dock.", comment: "Body of the popover that invites users to add DuckDuckGo to their Dock")
     static let addToDockBannerPromptMessage = NSLocalizedString("sat.att.add-to-dock.banner.message", value: "Get quick access to protected browsing", comment: "Body of the banner view that invites users to add DuckDuckGo to their Dock")
     static let addToDockPopoverPrimaryAction = NSLocalizedString("sad.att.add-to-dock.popover.primary", value: "Add To Dock", comment: "Button primary action title that appears on a popover inviting users to add DuckDuckGo to their Dock")
-    static let addToDockInactiveUserPromptMessage = NSLocalizedString("sad.att.add-to-dock.inactive-user.message", value: "Add DuckDuckGo to your dock for quick access to protections other browsers don't provide.", comment: "Body of a modal view inviting inactive users to add DuckDuckGo to their Dock")
+    static let addToDockInactiveUserPromptMessage = NSLocalizedString("sad.att.add-to-dock.inactive-user.message", value: "Add DuckDuckGo to your Dock for quick access to protections other browsers don't provide.", comment: "Body of a modal view inviting inactive users to add DuckDuckGo to their Dock")
     static let addToDockInactiveUserPrimaryAction = NSLocalizedString("sad.att.add-to-dock.inactive-user.primary", value: "Add To Dock", comment: "Button primary action title that appears on a modal inviting inactive users to add DuckDuckGo to their Dock")
 
     /// Strings for SAD only

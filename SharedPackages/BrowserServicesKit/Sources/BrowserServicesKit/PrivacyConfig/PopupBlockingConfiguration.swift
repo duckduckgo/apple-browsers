@@ -24,6 +24,17 @@ public protocol PopupBlockingConfiguration {
     /// Set to 0 or negative to disable the timeout check entirely.
     /// Default: 6.0
     var userInitiatedPopupThreshold: TimeInterval { get }
+
+    /// Set of domains that are allowed to open popups without user permission.
+    ///
+    /// Supports two formats:
+    /// - Exact domain match: `"example.com"` (only matches example.com exactly)
+    /// - Wildcard eTLD+1: `"*.example.com"` (matches example.com and all subdomains like accounts.example.com)
+    ///
+    /// The matching logic:
+    /// 1. First checks for exact domain match
+    /// 2. Then extracts eTLD+1 from the source domain and checks for `"*.etld+1"` pattern
+    @MainActor var allowlist: Set<String> { get }
 }
 
 /// Default implementation of PopupBlockingConfiguration that reads from privacy config.
@@ -35,13 +46,25 @@ public final class DefaultPopupBlockingConfiguration: PopupBlockingConfiguration
     /// Keys used for popup blocking configuration settings.
     public enum PopupBlockingConfigurationKeys {
         public static let userInitiatedPopupThreshold = "userInitiatedPopupThreshold"
+        public static let allowlist = "allowlist"
     }
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
 
+    // Static cache for allowlist to avoid repeated array-to-set conversion
+    // Shared across all instances and survives instance recreation
+    @MainActor private static var cachedAllowlist: Set<String>?
+    @MainActor private static var cachedConfigIdentifier: String?
+
 #if DEBUG
     var assertionHandler: (Bool, String) -> Void = { condition, message in
         assert(condition, message)
+    }
+
+    // For testing: clear the static cache to prevent test pollution
+    @MainActor static func clearCache() {
+        cachedAllowlist = nil
+        cachedConfigIdentifier = nil
     }
 #else
     @inlinable
@@ -80,5 +103,34 @@ public final class DefaultPopupBlockingConfiguration: PopupBlockingConfiguration
         }
 
         return Defaults.userInitiatedPopupThreshold
+    }
+
+    @MainActor public var allowlist: Set<String> {
+        let currentIdentifier = privacyConfigurationManager.privacyConfig.identifier
+
+        // Check if cache is valid (config hasn't changed)
+        if let cachedAllowlist = Self.cachedAllowlist,
+           let cachedConfigIdentifier = Self.cachedConfigIdentifier,
+           cachedConfigIdentifier == currentIdentifier {
+            return cachedAllowlist
+        }
+
+        // Cache miss or invalidated - rebuild from config
+        let settings = privacyConfigurationManager.privacyConfig.settings(for: .popupBlocking)
+        let allowlistSet: Set<String>
+
+        if let allowlistArray = settings[PopupBlockingConfigurationKeys.allowlist] as? [String] {
+            allowlistSet = Set(allowlistArray)
+        } else {
+            assertionHandler(settings[PopupBlockingConfigurationKeys.allowlist] == nil,
+                             "allowlist has unexpected type")
+            allowlistSet = []
+        }
+
+        // Update static cache
+        Self.cachedAllowlist = allowlistSet
+        Self.cachedConfigIdentifier = currentIdentifier
+
+        return allowlistSet
     }
 }

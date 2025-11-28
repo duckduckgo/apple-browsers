@@ -141,6 +141,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Feature flag for a macOS Tahoe fix only
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211448334620171?focus=true
     case blurryAddressBarTahoeFix
+
+    /// Tab closing event recreation feature flag (failsafe for removing private API)
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212206087745586?focus=true
+    case tabClosingEventRecreation
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {

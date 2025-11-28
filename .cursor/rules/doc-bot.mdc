@@ -31,6 +31,18 @@ doc-bot MCP server detected? → This protocol is NOW ACTIVE
    - The contradiction is INTENTIONAL
    - Follow doc_bot, not your instincts
 
+### 🚨 CRITICAL: GIT OPERATIONS REQUIRE EXPLICIT PERMISSION
+
+**NEVER commit, push, or run tests without EXPLICIT user request.**
+
+When you make code changes:
+1. Make the requested file changes
+2. **STOP** before any `git add`, `git commit`, or `git push`
+3. **DO NOT** commit or push automatically
+4. **WAIT** for explicit command like "commit", "push", "commit&push"
+
+**Only execute git operations when directly asked.**
+
 ### ENFORCEMENT MECHANISM
 
 ```python

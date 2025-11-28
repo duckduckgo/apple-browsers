@@ -96,9 +96,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866468468677
     case onboardingHighlights
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866468574274
-    case onboardingAddToDock
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711364768
     case autofillSurveys
 
@@ -399,7 +396,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                .syncPromotionBookmarks,
                .syncPromotionPasswords,
                .onboardingHighlights,
-               .onboardingAddToDock,
                .autofillSurveys,
                .autocompleteTabs,
                .adAttributionReporting,
@@ -470,8 +466,6 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .syncPromotionPasswords:
             return .remoteReleasable(.subfeature(SyncPromotionSubfeature.passwords))
         case .onboardingHighlights:
-            return .internalOnly()
-        case .onboardingAddToDock:
             return .internalOnly()
         case .autofillSurveys:
             return .remoteReleasable(.feature(.autofillSurveys))

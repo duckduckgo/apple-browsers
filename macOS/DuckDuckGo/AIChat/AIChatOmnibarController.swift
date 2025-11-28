@@ -104,7 +104,7 @@ final class AIChatOmnibarController {
         currentText = ""
         delegate?.aiChatOmnibarControllerDidSubmit(self)
     }
-    
+
     /// Checks if the input text is a navigable URL (not a search query).
     /// Returns the URL if it should be navigated to, nil if it should be treated as an AI chat query.
     private func classifyAsNavigableURL(_ text: String) -> URL? {

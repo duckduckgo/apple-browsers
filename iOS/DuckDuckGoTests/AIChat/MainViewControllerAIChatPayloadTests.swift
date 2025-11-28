@@ -99,7 +99,6 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
                                     bookmarksDatabase: db,
                                     historyManager: historyManager,
                                     syncService: syncService,
-                                    userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
                                     contentBlockingAssetsPublisher: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
                                     subscriptionDataReporter: subscriptionDataReporter,
                                     contextualOnboardingPresenter: contextualOnboardingPresenter,
@@ -118,13 +117,7 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
                                     daxDialogsManager: DummyDaxDialogsManager(),
                                     aiChatSettings: MockAIChatSettingsProvider()
         )
-
-        let mockScriptDependencies = DefaultScriptSourceProvider.Dependencies(appSettings: AppSettingsMock(),
-                                                                              privacyConfigurationManager: configMock,
-                                                                              contentBlockingManager: ContentBlockerRulesManagerMock(),
-                                                                              fireproofing: fireproofing,
-                                                                              contentScopeExperimentsManager: MockContentScopeExperimentManager())
-
+        
         sut = TestableMainViewController(
             privacyConfigurationManager: configMock,
             bookmarksDatabase: db,
@@ -133,7 +126,6 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
             homePageConfiguration: homePageConfiguration,
             syncService: syncService,
             syncDataProviders: dataProviders,
-            userScriptsDependencies: mockScriptDependencies,
             contentBlockingAssetsPublisher: PassthroughSubject<ContentBlockingUpdating.NewContent, Never>().eraseToAnyPublisher(),
             appSettings: AppSettingsMock(),
             previewsSource: MockTabPreviewsSource(),

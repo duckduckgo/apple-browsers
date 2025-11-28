@@ -145,6 +145,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Pinned Tabs AppKit Rewrite Feature Flag
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1209949983074592?focus=true
     case pinnedTabsViewRewrite
+
+    /// Tab closing event recreation feature flag (failsafe for removing private API)
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212206087745586?focus=true
+    case tabClosingEventRecreation
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -467,7 +471,6 @@ public enum MaliciousSiteProtectionSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .maliciousSiteProtection }
     case onByDefault // Rollout feature
     case scamProtection
-    case removeWWWInCanonicalization
 }
 
 public enum SetAsDefaultAndAddToDockSubfeature: String, PrivacySubfeature {

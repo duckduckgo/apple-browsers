@@ -105,7 +105,7 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     ///   - pixelFiring: The pixel firing utility for analytics.
     ///   - dailyPixelFiring: The daily pixel firing utility for analytics.
     ///   - tabNavigationHandler: The tab navigation handler delegate.
-    init(duckPlayer: DuckPlayerControlling,
+    init(duckPlayer: DuckPlayerControlling = DuckPlayer(),
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          appSettings: AppSettings,
          tabNavigationHandler: DuckPlayerTabNavigationHandling? = nil,

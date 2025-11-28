@@ -97,8 +97,7 @@ extension AIChatMessageHandler {
                                             supportsURLChatIDRestoration: true,
                                             supportsFullChatRestoration: true,
                                             supportsPageContext: featureFlagger.isFeatureOn(.aiChatPageContext),
-                                            isAIChatTopToolBarHidden: false,
-                                            isAIChatModelPickerInChatInput: false,
+                                            supportsAIChatFullMode: false,
                                             appVersion: appVersion,
                                             supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint)
         } else {
@@ -111,8 +110,7 @@ extension AIChatMessageHandler {
                                             supportsURLChatIDRestoration: defaults.supportsURLChatIDRestoration,
                                             supportsFullChatRestoration: defaults.supportsFullChatRestoration,
                                             supportsPageContext: defaults.supportsPageContext,
-                                            isAIChatTopToolBarHidden: defaults.isAIChatTopToolBarHidden,
-                                            isAIChatModelPickerInChatInput: defaults.isAIChatModelPickerInChatInput,
+                                            supportsAIChatFullMode: defaults.supportsAIChatFullMode,
                                             appVersion: appVersion,
                                             supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint)
         }

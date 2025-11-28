@@ -17,6 +17,7 @@
 //
 
 import XCTest
+import Utilities
 
 // Enum to represent bookmark modes
 enum BookmarkMode {
@@ -814,6 +815,10 @@ extension XCUIApplication {
 
     var bookmarkDialogBookmarkFolderDropdown: XCUIElement {
         popUpButtons[XCUIApplication.AccessibilityIdentifiers.addBookmarkFolderDropdown]
+    }
+
+    var debugMenu: XCUIElement {
+        menuBarItems[Utilities.AccessibilityIdentifiers.debugMenu]
     }
 
 }

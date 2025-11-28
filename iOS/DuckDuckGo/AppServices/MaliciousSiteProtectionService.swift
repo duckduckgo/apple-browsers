@@ -59,10 +59,6 @@ final class MaliciousSiteProtectionService {
             return isScamProtectionEnabled ? ThreatKind.allCases : ThreatKind.allCases.filter { $0 != .scam }
         }
 
-        let shouldRemoveWWWInCanonicalization = {
-            return featureFlagger.isFeatureOn(.removeWWWInCanonicalizationInThreatProtection)
-        }
-
         let updateManager = MaliciousSiteProtection.UpdateManager(
             apiEnvironment: maliciousSiteProtectionAPI.environment,
             service: maliciousSiteProtectionAPI.service,
@@ -84,8 +80,7 @@ final class MaliciousSiteProtectionService {
             dataManager: maliciousSiteProtectionDataManager,
             preferencesManager: preferencesManager,
             maliciousSiteProtectionFeatureFlagger: maliciousSiteProtectionFeatureFlagger,
-            supportedThreatsProvider: supportedThreatsProvider,
-            shouldRemoveWWWInCanonicalization: shouldRemoveWWWInCanonicalization
+            supportedThreatsProvider: supportedThreatsProvider
         )
 
         Task { @MainActor in

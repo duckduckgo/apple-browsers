@@ -339,7 +339,7 @@ final class AddressBarTextField: NSTextField {
         hideSuggestionWindow()
     }
 
-    private func openAIChatWithPrompt() {
+    func openAIChatWithPrompt() {
         let prompt = stringValueWithoutSuffix
 
         let behavior = LinkOpenBehavior(

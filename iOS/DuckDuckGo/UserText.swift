@@ -1125,7 +1125,19 @@ public struct UserText {
 
     public static let omnibarNotificationCookiesManaged = NSLocalizedString("omnibar.notification.cookies-managed", value:"Cookies Managed", comment: "Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it")
     public static let omnibarNotificationPopupHidden = NSLocalizedString("omnibar.notification.popup-hidden", value:"Pop-up Hidden", comment: "Text displayed on notification appearing in the address bar when the browser  hides a cookie popup")
+    private static let omnibarNotificationTrackersBlockedFormat = NSLocalizedString("omnibar.notification.trackers-blocked", value:"%d Trackers", comment: "Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict.")
 
+    public static func omnibarNotificationTrackersBlocked(count: Int) -> String {
+        // In English + Display Zoom mode, use shorter text to fit the UI
+        let isDisplayZoomed = UIScreen.main.scale != UIScreen.main.nativeScale
+        let isEnglish = Locale.current.languageCode == "en"
+
+        if isDisplayZoomed && isEnglish {
+            return count == 1 ? "\(count) Tracker" : "\(count) Trackers"
+        }
+
+        return String.localizedStringWithFormat(omnibarNotificationTrackersBlockedFormat, count)
+    }
     // MARK: Sync
 
     public static let syncUserUserAuthenticationReason = NSLocalizedString("sync.user.auth.reason", value:"Unlock device to set up Sync & Backup", comment: "Reason for auth when setting up Sync")

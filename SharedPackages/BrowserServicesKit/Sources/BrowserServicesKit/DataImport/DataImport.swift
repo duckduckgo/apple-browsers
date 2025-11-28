@@ -40,12 +40,12 @@ public enum DataImport {
         case tor
         case vivaldi
         case yandex
+        case csv
+        case bookmarksHTML
         case onePassword8
         case onePassword7
         case bitwarden
         case lastPass
-        case csv
-        case bookmarksHTML
 
         static let preferredSources: [Self] = [.chrome, .safari]
 

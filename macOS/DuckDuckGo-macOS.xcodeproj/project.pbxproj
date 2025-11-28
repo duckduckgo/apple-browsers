@@ -96,6 +96,8 @@
 		1D4B03DA2CA55DDF00224E99 /* BookmarkUrlExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D4B03D82CA55DDF00224E99 /* BookmarkUrlExtensionTests.swift */; };
 		1D532BB42ED8D3D300D219FA /* PermissionAuthorizationSwiftUIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D532BB32ED8D3D300D219FA /* PermissionAuthorizationSwiftUIView.swift */; };
 		1D532BB52ED8D3D300D219FA /* PermissionAuthorizationSwiftUIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D532BB32ED8D3D300D219FA /* PermissionAuthorizationSwiftUIView.swift */; };
+		1D532BC92EDA1DF800D219FA /* SystemPermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D532BC82EDA1DF200D219FA /* SystemPermissionManager.swift */; };
+		1D532BCA2EDA1DF800D219FA /* SystemPermissionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D532BC82EDA1DF200D219FA /* SystemPermissionManager.swift */; };
 		1D5C1AF12CFF58220073ED65 /* Logger+WebExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D5C1AF02CFF58170073ED65 /* Logger+WebExtensions.swift */; };
 		1D6216B229069BBF00386B2C /* BWKeyStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D6216B129069BBF00386B2C /* BWKeyStorage.swift */; };
 		1D638D612C44F2BA00530DD5 /* ApplicationUpdateDetectorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D638D602C44F2BA00530DD5 /* ApplicationUpdateDetectorTests.swift */; };
@@ -2934,8 +2936,6 @@
 		B643BF1427ABF772000BACEC /* NSWorkspaceExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B643BF1327ABF772000BACEC /* NSWorkspaceExtension.swift */; };
 		B644B43D29D56829003FA9AB /* SearchNonexistentDomainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B644B43929D565DB003FA9AB /* SearchNonexistentDomainTests.swift */; };
 		B644B43E29D5682B003FA9AB /* SearchNonexistentDomainTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B644B43929D565DB003FA9AB /* SearchNonexistentDomainTests.swift */; };
-		B6F6B0022F1E1C2C00A1B2C3 /* WindowOpenSecurityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6F6B0012F1E1C2C00A1B2C3 /* WindowOpenSecurityTests.swift */; };
-		B6F6B0032F1E1C2C00A1B2C3 /* WindowOpenSecurityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6F6B0012F1E1C2C00A1B2C3 /* WindowOpenSecurityTests.swift */; };
 		B645D8F629FA95440024461F /* WKProcessPoolExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B645D8F529FA95440024461F /* WKProcessPoolExtension.swift */; };
 		B645D8F729FA95440024461F /* WKProcessPoolExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B645D8F529FA95440024461F /* WKProcessPoolExtension.swift */; };
 		B647EFBB2922584B00BA628D /* AdClickAttributionTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B647EFBA2922584B00BA628D /* AdClickAttributionTabExtension.swift */; };
@@ -3203,6 +3203,8 @@
 		B6F1B02F2BCE6B47005E863C /* TunnelControllerProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6F1B02D2BCE6B47005E863C /* TunnelControllerProvider.swift */; };
 		B6F1C80B2761C45400334924 /* LocalUnprotectedDomains.swift in Sources */ = {isa = PBXBuildFile; fileRef = 336B39E22726B4B700C417D3 /* LocalUnprotectedDomains.swift */; };
 		B6F41031264D2B23003DA42C /* ProgressExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6F41030264D2B23003DA42C /* ProgressExtension.swift */; };
+		B6F6B0022F1E1C2C00A1B2C3 /* WindowOpenSecurityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6F6B0012F1E1C2C00A1B2C3 /* WindowOpenSecurityTests.swift */; };
+		B6F6B0032F1E1C2C00A1B2C3 /* WindowOpenSecurityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6F6B0012F1E1C2C00A1B2C3 /* WindowOpenSecurityTests.swift */; };
 		B6F7127E29F6779000594A45 /* QRSharingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6F7127D29F6779000594A45 /* QRSharingService.swift */; };
 		B6F7127F29F6779000594A45 /* QRSharingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6F7127D29F6779000594A45 /* QRSharingService.swift */; };
 		B6F7128129F681EB00594A45 /* QuickLookUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B6F7128029F681EB00594A45 /* QuickLookUI.framework */; };
@@ -4259,6 +4261,7 @@
 		1D4B03D52CA4431C00224E99 /* BookmarkUrlExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkUrlExtension.swift; sourceTree = "<group>"; };
 		1D4B03D82CA55DDF00224E99 /* BookmarkUrlExtensionTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarkUrlExtensionTests.swift; sourceTree = "<group>"; };
 		1D532BB32ED8D3D300D219FA /* PermissionAuthorizationSwiftUIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionAuthorizationSwiftUIView.swift; sourceTree = "<group>"; };
+		1D532BC82EDA1DF200D219FA /* SystemPermissionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemPermissionManager.swift; sourceTree = "<group>"; };
 		1D5C1AF02CFF58170073ED65 /* Logger+WebExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+WebExtensions.swift"; sourceTree = "<group>"; };
 		1D6216B129069BBF00386B2C /* BWKeyStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BWKeyStorage.swift; sourceTree = "<group>"; };
 		1D638D602C44F2BA00530DD5 /* ApplicationUpdateDetectorTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ApplicationUpdateDetectorTests.swift; sourceTree = "<group>"; };
@@ -5609,7 +5612,6 @@
 		B642738127B65BAC0005DFD1 /* SecureVaultReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureVaultReporter.swift; sourceTree = "<group>"; };
 		B643BF1327ABF772000BACEC /* NSWorkspaceExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSWorkspaceExtension.swift; sourceTree = "<group>"; };
 		B644B43929D565DB003FA9AB /* SearchNonexistentDomainTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchNonexistentDomainTests.swift; sourceTree = "<group>"; };
-		B6F6B0012F1E1C2C00A1B2C3 /* WindowOpenSecurityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowOpenSecurityTests.swift; sourceTree = "<group>"; };
 		B645D8F529FA95440024461F /* WKProcessPoolExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WKProcessPoolExtension.swift; sourceTree = "<group>"; };
 		B647EFBA2922584B00BA628D /* AdClickAttributionTabExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdClickAttributionTabExtension.swift; sourceTree = "<group>"; };
 		B64C84DD2692D7400048FEBE /* PermissionAuthorization.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = PermissionAuthorization.storyboard; sourceTree = "<group>"; };
@@ -5805,6 +5807,7 @@
 		B6F1B0292BCE675C005E863C /* NetworkProtectionControllerTabExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionControllerTabExtension.swift; sourceTree = "<group>"; };
 		B6F1B02D2BCE6B47005E863C /* TunnelControllerProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TunnelControllerProvider.swift; sourceTree = "<group>"; };
 		B6F41030264D2B23003DA42C /* ProgressExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressExtension.swift; sourceTree = "<group>"; };
+		B6F6B0012F1E1C2C00A1B2C3 /* WindowOpenSecurityTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WindowOpenSecurityTests.swift; sourceTree = "<group>"; };
 		B6F7127D29F6779000594A45 /* QRSharingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRSharingService.swift; sourceTree = "<group>"; };
 		B6F7128029F681EB00594A45 /* QuickLookUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickLookUI.framework; path = System/Library/Frameworks/QuickLookUI.framework; sourceTree = SDKROOT; };
 		B6F9BDDB2B45B7EE00677B33 /* WebsiteInfo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebsiteInfo.swift; sourceTree = "<group>"; };
@@ -10900,6 +10903,7 @@
 				845F57282E97FCC900C7F78A /* PermissionManagerMock.swift */,
 				B64C853726944B880048FEBE /* StoredPermission.swift */,
 				B64C853C26944B940048FEBE /* PermissionStore.swift */,
+				1D532BC82EDA1DF200D219FA /* SystemPermissionManager.swift */,
 				B64C852E26943BC10048FEBE /* Permissions.xcdatamodeld */,
 			);
 			path = Model;
@@ -14014,6 +14018,7 @@
 				3706FB95293F65D500E42796 /* PermissionType.swift in Sources */,
 				3706FB96293F65D500E42796 /* RecentlyClosedWindow.swift in Sources */,
 				4B9DB0242A983B24000927DB /* WaitlistRequest.swift in Sources */,
+				1D532BCA2EDA1DF800D219FA /* SystemPermissionManager.swift in Sources */,
 				B690152D2ACBF4DA00AD0BAB /* MenuPreview.swift in Sources */,
 				1D36F4252A3B85C50052B527 /* TabCleanupPreparer.swift in Sources */,
 				BD7090D72C540D5D009EED82 /* EmptyMetadataCollector.swift in Sources */,
@@ -15968,6 +15973,7 @@
 				B6DB3CFB26A17CB800D459B7 /* PermissionModel.swift in Sources */,
 				4B92929C26670D2A00AD2C21 /* PasteboardFolder.swift in Sources */,
 				B5AE99542E84A5D900F45912 /* ThemeName.swift in Sources */,
+				1D532BC92EDA1DF800D219FA /* SystemPermissionManager.swift in Sources */,
 				EEA3EEB32B24EC0600E8333A /* VPNLocationViewModel.swift in Sources */,
 				B6106BAB26A7BF1D0013B453 /* PermissionType.swift in Sources */,
 				9F08B3112DE5A55400C68C0E /* DefaultBrowserAndDockPromptDebugMenu.swift in Sources */,

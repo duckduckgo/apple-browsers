@@ -56,6 +56,8 @@ extension Array where Element == PermissionType {
 
 final class PermissionAuthorizationViewController: NSViewController {
 
+    let systemPermissionManager = SystemPermissionManager()
+
     @IBOutlet var descriptionLabel: NSTextField!
     @IBOutlet var domainNameLabel: NSTextField!
     @IBOutlet var alwaysAllowCheckbox: NSButton!

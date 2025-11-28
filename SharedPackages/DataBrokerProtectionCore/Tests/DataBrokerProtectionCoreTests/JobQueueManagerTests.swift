@@ -29,7 +29,7 @@ final class JobQueueManagerTests: XCTestCase {
     private var mockOperationsCreator: MockDataBrokerOperationsCreator!
     private var mockEmailConfirmationJobProvider: MockEmailConfirmationJobProvider!
     private var mockDatabase: MockDatabase!
-    private var mockPixelHandler: MockPixelHandler!
+    private var mockPixelHandler: MockDataBrokerProtectionPixelsHandler!
     private var mockMismatchCalculator: MockMismatchCalculator!
     private var mockSchedulerConfig = BrokerJobExecutionConfig()
     private var mockScanRunner: MockScanSubJobWebRunner!
@@ -43,7 +43,7 @@ final class JobQueueManagerTests: XCTestCase {
         mockOperationsCreator = MockDataBrokerOperationsCreator()
         mockEmailConfirmationJobProvider = MockEmailConfirmationJobProvider()
         mockDatabase = MockDatabase()
-        mockPixelHandler = MockPixelHandler()
+        mockPixelHandler = MockDataBrokerProtectionPixelsHandler()
         mockMismatchCalculator = MockMismatchCalculator(database: mockDatabase, pixelHandler: mockPixelHandler)
         mockScanRunner = MockScanSubJobWebRunner()
         mockOptOutRunner = MockOptOutSubJobWebRunner()

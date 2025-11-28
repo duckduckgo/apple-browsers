@@ -917,9 +917,19 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
 public class MockDataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels> {
 
     public static var lastPixelsFired = [DataBrokerProtectionSharedPixels]()
+    public var lastFiredEvent: DataBrokerProtectionSharedPixels?
+    public var lastPassedParameters: [String: String]?
 
     public init() {
-        super.init { event, _, _, _ in
+        var mockMapping: Mapping! = nil
+
+        super.init { event, error, params, onComplete in
+            mockMapping(event, error, params, onComplete)
+        }
+
+        mockMapping = { [weak self] event, _, params, _ in
+            self?.lastFiredEvent = event
+            self?.lastPassedParameters = params
             MockDataBrokerProtectionPixelsHandler.lastPixelsFired.append(event)
         }
     }
@@ -930,6 +940,8 @@ public class MockDataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProte
 
     public func clear() {
         MockDataBrokerProtectionPixelsHandler.lastPixelsFired.removeAll()
+        lastFiredEvent = nil
+        lastPassedParameters = nil
     }
 }
 
@@ -1953,7 +1965,7 @@ public final class MockBrokerProfileJobDependencies: BrokerProfileJobDependencyP
         self.privacyConfig = PrivacyConfigurationManagingMock()
         self.executionConfig = BrokerJobExecutionConfig(intervalBetweenSameBrokerJobs: 0)
         self.notificationCenter = .default
-        self.pixelHandler = MockPixelHandler()
+        self.pixelHandler = MockDataBrokerProtectionPixelsHandler()
         self.eventsHandler = MockOperationEventsHandler()
         self.dataBrokerProtectionSettings = DataBrokerProtectionSettings(defaults: .standard)
         self.emailConfirmationDataService = MockEmailConfirmationDataServiceProvider()

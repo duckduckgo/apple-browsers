@@ -34,7 +34,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
     private var mockQueueManager: MockJobQueueManager!
     private var mockDataManager: MockDataBrokerProtectionDataManager!
     private var mockIPCServer: MockIPCServer!
-    private var mockSharedPixelsHandler: DataBrokerProtectionCoreTestsUtils.MockPixelHandler!
+    private var mockSharedPixelsHandler: DataBrokerProtectionCoreTestsUtils.MockDataBrokerProtectionPixelsHandler!
     private var mockPixelHandler: MockPixelHandler!
     private var mockDependencies: MockBrokerProfileJobDependencies!
     private var mockProfile: DataBrokerProtectionProfile!
@@ -49,7 +49,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
 
     override func setUpWithError() throws {
 
-        mockSharedPixelsHandler = DataBrokerProtectionCoreTestsUtils.MockPixelHandler()
+        mockSharedPixelsHandler = DataBrokerProtectionCoreTestsUtils.MockDataBrokerProtectionPixelsHandler()
         mockPixelHandler = MockPixelHandler()
         mockActivityScheduler = MockDataBrokerProtectionBackgroundActivityScheduler()
         mockEventsHandler = MockOperationEventsHandler()

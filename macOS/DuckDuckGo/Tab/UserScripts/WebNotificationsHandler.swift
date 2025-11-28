@@ -53,7 +53,7 @@ extension UNUserNotificationCenter: WebNotificationService {}
 final class WebNotificationsHandler: NSObject, Subfeature {
 
     let messageOriginPolicy: MessageOriginPolicy = .all
-    let featureName: String = "webNotifications"
+    let featureName: String = "webCompat"
 
     weak var broker: UserScriptMessageBroker?
 

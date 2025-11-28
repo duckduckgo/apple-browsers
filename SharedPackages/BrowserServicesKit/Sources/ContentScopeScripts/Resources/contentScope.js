@@ -1383,12 +1383,11 @@
       "autofillImport",
       "favicon",
       "webTelemetry",
-      "pageContext",
-      "webNotifications"
+      "pageContext"
     ]
   );
   var platformSupport = {
-    apple: ["webCompat", "duckPlayerNative", ...baseFeatures, "webInterferenceDetection", "duckAiDataClearing", "pageContext", "webNotifications"],
+    apple: ["webCompat", "duckPlayerNative", ...baseFeatures, "webInterferenceDetection", "duckAiDataClearing", "pageContext"],
     "apple-isolated": [
       "duckPlayer",
       "duckPlayerNative",
@@ -4772,7 +4771,7 @@
     }
     return dataToSend;
   }
-  var _activeShareRequest, _activeScreenLockRequest;
+  var _activeShareRequest, _activeScreenLockRequest, _webNotifications;
   var WebCompat = class extends ContentFeature {
     constructor() {
       super(...arguments);
@@ -4780,6 +4779,8 @@
       __privateAdd(this, _activeShareRequest, null);
       /** @type {Promise<any> | null} */
       __privateAdd(this, _activeScreenLockRequest, null);
+      /** @type {Map<string, object>} */
+      __privateAdd(this, _webNotifications, /* @__PURE__ */ new Map());
       // Opt in to receive configuration updates from initial ping responses
       __publicField(this, "listenForConfigUpdates", true);
     }
@@ -4798,6 +4799,9 @@
       }
       if (this.getFeatureSettingEnabled("notification")) {
         this.notificationFix();
+      }
+      if (this.getFeatureSettingEnabled("webNotifications")) {
+        this.webNotificationsFix();
       }
       if (this.getFeatureSettingEnabled("permissions")) {
         const settings = this.getFeatureSetting("permissions");
@@ -4932,6 +4936,144 @@
         configurable: true,
         enumerable: true
       });
+    }
+    /**
+     * Web Notifications polyfill that communicates with native code for permission
+     * management and notification display.
+     */
+    webNotificationsFix() {
+      var _id;
+      console.log("[webNotificationsFix] Starting - will override Notification API");
+      console.log("[webNotificationsFix] Current Notification exists:", !!globalThis.Notification);
+      const feature = this;
+      class NotificationPolyfill {
+        /**
+         * @param {string} title
+         * @param {NotificationOptions} [options]
+         */
+        constructor(title, options = {}) {
+          /** @type {string} */
+          __privateAdd(this, _id);
+          /** @type {string} */
+          __publicField(this, "title");
+          /** @type {string} */
+          __publicField(this, "body");
+          /** @type {string} */
+          __publicField(this, "icon");
+          /** @type {string} */
+          __publicField(this, "tag");
+          /** @type {any} */
+          __publicField(this, "data");
+          // Event handlers
+          /** @type {((this: Notification, ev: Event) => any) | null} */
+          __publicField(this, "onclick", null);
+          /** @type {((this: Notification, ev: Event) => any) | null} */
+          __publicField(this, "onclose", null);
+          /** @type {((this: Notification, ev: Event) => any) | null} */
+          __publicField(this, "onerror", null);
+          /** @type {((this: Notification, ev: Event) => any) | null} */
+          __publicField(this, "onshow", null);
+          __privateSet(this, _id, crypto.randomUUID());
+          this.title = String(title);
+          this.body = options.body ? String(options.body) : "";
+          this.icon = options.icon ? String(options.icon) : "";
+          this.tag = options.tag ? String(options.tag) : "";
+          this.data = options.data;
+          __privateGet(feature, _webNotifications).set(__privateGet(this, _id), this);
+          feature.notify("showNotification", {
+            id: __privateGet(this, _id),
+            title: this.title,
+            body: this.body,
+            icon: this.icon,
+            tag: this.tag
+          });
+        }
+        /**
+         * @returns {'default' | 'denied' | 'granted'}
+         */
+        static get permission() {
+          console.log("[webNotificationsFix] permission getter called, returning granted");
+          return "granted";
+        }
+        /**
+         * @param {NotificationPermissionCallback} [deprecatedCallback]
+         * @returns {Promise<NotificationPermission>}
+         */
+        static async requestPermission(deprecatedCallback) {
+          console.log("[webNotificationsFix] requestPermission called");
+          try {
+            const result = await feature.request("requestPermission", {});
+            console.log("[webNotificationsFix] requestPermission result from native:", result);
+            const permission = result?.permission || "granted";
+            console.log("[webNotificationsFix] requestPermission returning:", permission);
+            if (deprecatedCallback) {
+              deprecatedCallback(permission);
+            }
+            return permission;
+          } catch (e) {
+            console.log("[webNotificationsFix] requestPermission error:", e);
+            const fallback = "granted";
+            if (deprecatedCallback) {
+              deprecatedCallback(fallback);
+            }
+            return fallback;
+          }
+        }
+        /**
+         * @returns {number}
+         */
+        static get maxActions() {
+          return 2;
+        }
+        close() {
+          feature.notify("closeNotification", { id: __privateGet(this, _id) });
+          __privateGet(feature, _webNotifications).delete(__privateGet(this, _id));
+        }
+      }
+      _id = new WeakMap();
+      const wrappedNotification = wrapToString(NotificationPolyfill, NotificationPolyfill, "function Notification() { [native code] }");
+      const wrappedRequestPermission = wrapToString(
+        NotificationPolyfill.requestPermission.bind(NotificationPolyfill),
+        NotificationPolyfill.requestPermission,
+        "function requestPermission() { [native code] }"
+      );
+      this.subscribe("notificationEvent", (data) => {
+        const notification = __privateGet(this, _webNotifications).get(data.id);
+        if (!notification) return;
+        const eventName = `on${data.event}`;
+        if (typeof notification[eventName] === "function") {
+          try {
+            notification[eventName](new Event(data.event));
+          } catch (e) {
+          }
+        }
+        if (data.event === "close") {
+          __privateGet(this, _webNotifications).delete(data.id);
+        }
+      });
+      this.defineProperty(globalThis, "Notification", {
+        value: wrappedNotification,
+        writable: true,
+        configurable: true,
+        enumerable: false
+      });
+      this.defineProperty(globalThis.Notification, "permission", {
+        get: () => "granted",
+        configurable: true,
+        enumerable: true
+      });
+      this.defineProperty(globalThis.Notification, "maxActions", {
+        get: () => 2,
+        configurable: true,
+        enumerable: true
+      });
+      this.defineProperty(globalThis.Notification, "requestPermission", {
+        value: wrappedRequestPermission,
+        writable: true,
+        configurable: true,
+        enumerable: true
+      });
+      console.log("[webNotificationsFix] Polyfill installed. Notification.permission:", globalThis.Notification.permission);
     }
     cleanIframeValue() {
       function cleanValueData(val) {
@@ -5498,6 +5640,7 @@
   };
   _activeShareRequest = new WeakMap();
   _activeScreenLockRequest = new WeakMap();
+  _webNotifications = new WeakMap();
   var web_compat_default = WebCompat;
 
   // src/features/duck-player-native.js
@@ -9798,158 +9941,6 @@ ${iframeContent}
   _cachedTimestamp = new WeakMap();
   _delayedRecheckTimer = new WeakMap();
 
-  // src/features/web-notifications.js
-  init_define_import_meta_trackerLookup();
-  var _notifications, _WebNotifications_instances, initNotificationPolyfill_fn;
-  var WebNotifications = class extends ContentFeature {
-    constructor() {
-      super(...arguments);
-      __privateAdd(this, _WebNotifications_instances);
-      /** @type {Map<string, object>} */
-      __privateAdd(this, _notifications, /* @__PURE__ */ new Map());
-    }
-    init() {
-      console.log("[WebNotifications] init() called");
-      __privateMethod(this, _WebNotifications_instances, initNotificationPolyfill_fn).call(this);
-      console.log("[WebNotifications] Notification polyfill installed");
-    }
-  };
-  _notifications = new WeakMap();
-  _WebNotifications_instances = new WeakSet();
-  initNotificationPolyfill_fn = function() {
-    var _id;
-    const feature = this;
-    class NotificationPolyfill {
-      /**
-       * @param {string} title
-       * @param {NotificationOptions} [options]
-       */
-      constructor(title, options = {}) {
-        /** @type {string} */
-        __privateAdd(this, _id);
-        /** @type {string} */
-        __publicField(this, "title");
-        /** @type {string} */
-        __publicField(this, "body");
-        /** @type {string} */
-        __publicField(this, "icon");
-        /** @type {string} */
-        __publicField(this, "tag");
-        /** @type {any} */
-        __publicField(this, "data");
-        // Event handlers
-        /** @type {((this: Notification, ev: Event) => any) | null} */
-        __publicField(this, "onclick", null);
-        /** @type {((this: Notification, ev: Event) => any) | null} */
-        __publicField(this, "onclose", null);
-        /** @type {((this: Notification, ev: Event) => any) | null} */
-        __publicField(this, "onerror", null);
-        /** @type {((this: Notification, ev: Event) => any) | null} */
-        __publicField(this, "onshow", null);
-        __privateSet(this, _id, crypto.randomUUID());
-        this.title = String(title);
-        this.body = options.body ? String(options.body) : "";
-        this.icon = options.icon ? String(options.icon) : "";
-        this.tag = options.tag ? String(options.tag) : "";
-        this.data = options.data;
-        __privateGet(feature, _notifications).set(__privateGet(this, _id), this);
-        feature.notify("showNotification", {
-          id: __privateGet(this, _id),
-          title: this.title,
-          body: this.body,
-          icon: this.icon,
-          tag: this.tag
-        });
-      }
-      /**
-       * @returns {'default' | 'denied' | 'granted'}
-       */
-      static get permission() {
-        return "granted";
-      }
-      /**
-       * @param {NotificationPermissionCallback} [deprecatedCallback]
-       * @returns {Promise<NotificationPermission>}
-       */
-      static async requestPermission(deprecatedCallback) {
-        try {
-          const result = await feature.request("requestPermission", {});
-          const permission = result?.permission || "granted";
-          if (deprecatedCallback) {
-            deprecatedCallback(permission);
-          }
-          return permission;
-        } catch (e) {
-          feature.log.error("requestPermission failed:", e);
-          const fallback = "granted";
-          if (deprecatedCallback) {
-            deprecatedCallback(fallback);
-          }
-          return fallback;
-        }
-      }
-      /**
-       * @returns {number}
-       */
-      static get maxActions() {
-        return 2;
-      }
-      close() {
-        feature.notify("closeNotification", { id: __privateGet(this, _id) });
-        __privateGet(feature, _notifications).delete(__privateGet(this, _id));
-      }
-    }
-    _id = new WeakMap();
-    const wrappedNotification = wrapToString(
-      NotificationPolyfill,
-      NotificationPolyfill,
-      "function Notification() { [native code] }"
-    );
-    const wrappedRequestPermission = wrapToString(
-      NotificationPolyfill.requestPermission.bind(NotificationPolyfill),
-      NotificationPolyfill.requestPermission,
-      "function requestPermission() { [native code] }"
-    );
-    this.subscribe("notificationEvent", (data) => {
-      const notification = __privateGet(this, _notifications).get(data.id);
-      if (!notification) return;
-      const eventName = `on${data.event}`;
-      if (typeof notification[eventName] === "function") {
-        try {
-          notification[eventName].call(notification, new Event(data.event));
-        } catch (e) {
-          feature.log.error(`Error in ${eventName} handler:`, e);
-        }
-      }
-      if (data.event === "close") {
-        __privateGet(this, _notifications).delete(data.id);
-      }
-    });
-    this.defineProperty(globalThis, "Notification", {
-      value: wrappedNotification,
-      writable: true,
-      configurable: true,
-      enumerable: false
-    });
-    this.defineProperty(globalThis.Notification, "permission", {
-      get: () => "granted",
-      // For now, always return 'granted' - Project 5 will query native
-      configurable: true,
-      enumerable: true
-    });
-    this.defineProperty(globalThis.Notification, "maxActions", {
-      get: () => 2,
-      configurable: true,
-      enumerable: true
-    });
-    this.defineProperty(globalThis.Notification, "requestPermission", {
-      value: wrappedRequestPermission,
-      writable: true,
-      configurable: true,
-      enumerable: true
-    });
-  };
-
   // ddg:platformFeatures:ddg:platformFeatures
   var ddg_platformFeatures_default = {
     ddg_feature_webCompat: web_compat_default,
@@ -9969,8 +9960,7 @@ ${iframeContent}
     ddg_feature_apiManipulation: ApiManipulation,
     ddg_feature_webInterferenceDetection: WebInterferenceDetection,
     ddg_feature_duckAiDataClearing: duck_ai_data_clearing_default,
-    ddg_feature_pageContext: PageContext,
-    ddg_feature_webNotifications: WebNotifications
+    ddg_feature_pageContext: PageContext
   };
 
   // src/url-change.js
@@ -10043,10 +10033,6 @@ ${iframeContent}
     };
     const bundledFeatureNames = typeof importConfig.injectName === "string" ? platformSupport[importConfig.injectName] : [];
     const featuresToLoad = isGloballyDisabled(args) ? platformSpecificFeatures : args.site.enabledFeatures || bundledFeatureNames;
-    console.log("[CSS DEBUG] bundledFeatureNames:", bundledFeatureNames);
-    console.log("[CSS DEBUG] featuresToLoad:", featuresToLoad);
-    console.log("[CSS DEBUG] webNotifications in featuresToLoad:", featuresToLoad.includes("webNotifications"));
-    console.log("[CSS DEBUG] site.enabledFeatures:", args.site?.enabledFeatures);
     for (const featureName of bundledFeatureNames) {
       if (featuresToLoad.includes(featureName)) {
         const ContentFeature2 = ddg_platformFeatures_default["ddg_feature_" + featureName];

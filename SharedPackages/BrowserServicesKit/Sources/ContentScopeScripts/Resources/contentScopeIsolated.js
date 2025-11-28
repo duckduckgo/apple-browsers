@@ -2079,12 +2079,11 @@
       "autofillImport",
       "favicon",
       "webTelemetry",
-      "pageContext",
-      "webNotifications"
+      "pageContext"
     ]
   );
   var platformSupport = {
-    apple: ["webCompat", "duckPlayerNative", ...baseFeatures, "webInterferenceDetection", "duckAiDataClearing", "pageContext", "webNotifications"],
+    apple: ["webCompat", "duckPlayerNative", ...baseFeatures, "webInterferenceDetection", "duckAiDataClearing", "pageContext"],
     "apple-isolated": [
       "duckPlayer",
       "duckPlayerNative",
@@ -15823,10 +15822,6 @@ ul.messages {
     };
     const bundledFeatureNames = typeof importConfig.injectName === "string" ? platformSupport[importConfig.injectName] : [];
     const featuresToLoad = isGloballyDisabled(args) ? platformSpecificFeatures : args.site.enabledFeatures || bundledFeatureNames;
-    console.log("[CSS DEBUG] bundledFeatureNames:", bundledFeatureNames);
-    console.log("[CSS DEBUG] featuresToLoad:", featuresToLoad);
-    console.log("[CSS DEBUG] webNotifications in featuresToLoad:", featuresToLoad.includes("webNotifications"));
-    console.log("[CSS DEBUG] site.enabledFeatures:", args.site?.enabledFeatures);
     for (const featureName of bundledFeatureNames) {
       if (featuresToLoad.includes(featureName)) {
         const ContentFeature2 = ddg_platformFeatures_default["ddg_feature_" + featureName];

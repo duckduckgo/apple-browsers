@@ -1008,7 +1008,7 @@
                                     </button>
                                     <button hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="7f7-ob-zog" customClass="AddressBarButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
                                         <rect key="frame" x="0.0" y="0.0" width="24" height="32"/>
-                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="PermissionCenterIcon" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="AK6-34-TQm">
+                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="Globe-Color-16" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="AK6-34-TQm">
                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                             <font key="font" metaFont="system"/>
                                         </buttonCell>
@@ -1268,12 +1268,12 @@
         <image name="Forward" width="16" height="16"/>
         <image name="Geolocation-Active" width="16" height="16"/>
         <image name="Geolocation-Icon" width="16" height="16"/>
+        <image name="Globe-Color-16" width="16" height="16"/>
         <image name="Home-16" width="16" height="16"/>
         <image name="HomePageLogo" width="56" height="56"/>
         <image name="Microphone-Active" width="12" height="16"/>
         <image name="Microphone-Icon" width="12" height="16"/>
         <image name="PasswordManagement" width="16" height="16"/>
-        <image name="PermissionCenterIcon" width="12" height="12"/>
         <image name="PopupBlocked" width="16" height="16"/>
         <image name="Refresh" width="16" height="16"/>
         <image name="Search" width="14" height="14"/>

@@ -689,8 +689,7 @@ final class AddressBarButtonsViewController: NSViewController {
         })
 
         permissionCenterButton.isShown = (shouldShowWhileFocused ||
-                                          (!isTextFieldEditorFirstResponder && hasRequestedPermission) ||
-                                          isAnyPermissionPresent)
+                                          (!isTextFieldEditorFirstResponder && isAnyPermissionPresent))
         && !isAnyTrackerAnimationPlaying
         && !tabViewModel.isShowingErrorPage
 
@@ -703,9 +702,9 @@ final class AddressBarButtonsViewController: NSViewController {
         }
 
         if showBell {
-            permissionCenterButton.image = .permissionCenterBell
+            permissionCenterButton.image = DesignSystemImages.Color.Size16.heart
         } else {
-            permissionCenterButton.image = .permissionCenterIcon
+            permissionCenterButton.image = DesignSystemImages.Color.Size16.globe
         }
     }
 

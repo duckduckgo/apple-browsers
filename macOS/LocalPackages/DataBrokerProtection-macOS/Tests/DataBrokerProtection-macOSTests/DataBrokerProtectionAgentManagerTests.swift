@@ -43,6 +43,8 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
     private var mockPrivacyConfigurationManager: DBPPrivacyConfigurationManager!
     private var mockAuthenticationManager: MockAuthenticationManager!
     private var mockFreemiumDBPUserStateManager: MockFreemiumDBPUserStateManager!
+    private var mockEngagementPixelRepository: DataBrokerProtectionCoreTestsUtils.MockDataBrokerProtectionEngagementPixelsRepository!
+    private var mockEventPixelRepository: MockDataBrokerProtectionEventPixelsRepository!
     private var mockStatsPixelRepository: MockDataBrokerProtectionStatsPixelsRepository!
     private var mockBrokerUpdater: MockBrokerJSONService!
     private var mockInternalUserDecider: InternalUserDecider!
@@ -61,6 +63,8 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         let mockInternalUserStore = InternalUserDeciderStoreMock(isInternalUser: false)
         mockInternalUserDecider = DefaultInternalUserDecider(store: mockInternalUserStore)
         mockPrivacyConfigurationManager = DBPPrivacyConfigurationManager(internalUserDecider: mockInternalUserDecider)
+        mockEngagementPixelRepository = MockDataBrokerProtectionEngagementPixelsRepository()
+        mockEventPixelRepository = MockDataBrokerProtectionEventPixelsRepository()
         mockStatsPixelRepository = MockDataBrokerProtectionStatsPixelsRepository()
         mockBrokerUpdater = MockBrokerJSONService()
 
@@ -104,6 +108,8 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
             statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
@@ -151,6 +157,8 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
             statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
@@ -203,6 +211,8 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
             statsPixelRepository: mockStatsPixelRepository,
             agentStopper: agentStopper,
             configurationManager: mockConfigurationManager,
@@ -244,6 +254,8 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
             statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
@@ -289,6 +301,8 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
             statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
@@ -325,6 +339,8 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
             statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
@@ -360,6 +376,8 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
             statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
@@ -395,6 +413,8 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
             statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
@@ -430,6 +450,8 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
             statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
@@ -459,6 +481,8 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
             statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
@@ -488,6 +512,8 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
             statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
@@ -518,6 +544,8 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
             statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
@@ -548,6 +576,8 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
             statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
@@ -578,6 +608,8 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
             statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
@@ -613,6 +645,8 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
             statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
@@ -647,6 +681,8 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
             statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
@@ -677,6 +713,8 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            engagementPixelRepository: mockEngagementPixelRepository,
+            eventPixelRepository: mockEventPixelRepository,
             statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,

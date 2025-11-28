@@ -2280,6 +2280,80 @@ public final class MockDataBrokerProtectionStatsPixelsRepository: DataBrokerProt
     }
 }
 
+public final class MockDataBrokerProtectionEngagementPixelsRepository: DataBrokerProtectionEngagementPixelsRepository {
+    public var wasDailyPixelSent = false
+    public var wasWeeklyPixelSent = false
+    public var wasMonthlyPixelSent = false
+    public var wasGetLatestDailyPixelCalled = false
+    public var wasGetLatestWeeklyPixelCalled = false
+    public var wasGetLatestMonthlyPixelCalled = false
+    public var setLatestDailyPixel: Date?
+    public var setLatestWeeklyPixel: Date?
+    public var setLatestMonthlyPixel: Date?
+
+    public init() {}
+
+    public func markDailyPixelSent() {
+        wasDailyPixelSent = true
+    }
+
+    public func markWeeklyPixelSent() {
+        wasWeeklyPixelSent = true
+    }
+
+    public func markMonthlyPixelSent() {
+        wasMonthlyPixelSent = true
+    }
+
+    public func getLatestDailyPixel() -> Date? {
+        wasGetLatestDailyPixelCalled = true
+        return setLatestDailyPixel
+    }
+
+    public func getLatestWeeklyPixel() -> Date? {
+        wasGetLatestWeeklyPixelCalled = true
+        return setLatestWeeklyPixel
+    }
+
+    public func getLatestMonthlyPixel() -> Date? {
+        wasGetLatestMonthlyPixelCalled = true
+        return setLatestMonthlyPixel
+    }
+
+    public func clear() {
+        wasDailyPixelSent = false
+        wasWeeklyPixelSent = false
+        wasMonthlyPixelSent = false
+        wasGetLatestDailyPixelCalled = false
+        wasGetLatestWeeklyPixelCalled = false
+        wasGetLatestMonthlyPixelCalled = false
+        setLatestDailyPixel = nil
+        setLatestWeeklyPixel = nil
+        setLatestMonthlyPixel = nil
+    }
+}
+
+public final class MockDataBrokerProtectionEventPixelsRepository: DataBrokerProtectionEventPixelsRepository {
+
+    public var wasMarkWeeklyPixelSentCalled = false
+    public var customGetLatestWeeklyPixel: Date?
+
+    public init() {}
+
+    public func markWeeklyPixelSent() {
+        wasMarkWeeklyPixelSentCalled = true
+    }
+
+    public func getLatestWeeklyPixel() -> Date? {
+        return customGetLatestWeeklyPixel
+    }
+
+    public func clear() {
+        wasMarkWeeklyPixelSentCalled = false
+        customGetLatestWeeklyPixel = nil
+    }
+}
+
 public final class MockDataBrokerProtectionCustomOptOutStatsProvider: DataBrokerProtectionCustomOptOutStatsProvider {
 
     var customStatsWasCalled = false

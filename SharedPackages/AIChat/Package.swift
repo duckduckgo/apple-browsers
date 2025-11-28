@@ -22,6 +22,7 @@ import PackageDescription
 
 let package = Package(
     name: "AIChat",
+    defaultLocalization: "en",
     platforms: [
         .iOS("15.0"),
         .macOS("11.4")
@@ -48,7 +49,7 @@ let package = Package(
                 .product(name: "UserScript", package: "BrowserServicesKit")
             ],
             resources: [
-                .process("Resources/Assets.xcassets")
+                .process("Resources")
             ]
         ),
         .testTarget(

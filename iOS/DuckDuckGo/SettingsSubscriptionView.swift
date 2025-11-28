@@ -50,6 +50,7 @@ struct SettingsSubscriptionView: View {
         SubscriptionContainerViewFactory.makeRestoreFlow(navigationCoordinator: subscriptionNavigationCoordinator,
                                                          subscriptionManager: AppDependencyProvider.shared.subscriptionManager!,
                                                          subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
+                                                         userScriptsDependencies: settingsViewModel.userScriptsDependencies,
                                                          internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                          dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider)
     }
@@ -58,6 +59,7 @@ struct SettingsSubscriptionView: View {
         SubscriptionContainerViewFactory.makeRestoreFlowV2(navigationCoordinator: subscriptionNavigationCoordinator,
                                                            subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
                                                            subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
+                                                           userScriptsDependencies: settingsViewModel.userScriptsDependencies,
                                                            internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                            wideEvent: AppDependencyProvider.shared.wideEvent,
                                                            dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider)
@@ -238,6 +240,7 @@ struct SettingsSubscriptionView: View {
         // Renew Subscription (Expired)
         if !settingsViewModel.isAuthV2Enabled {
             let settingsView = SubscriptionSettingsView(configuration: SubscriptionSettingsViewConfiguration.expired,
+                                                        viewModel: SubscriptionSettingsViewModel(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
                                                         settingsViewModel: settingsViewModel,
                                                         viewPlans: {
                 subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
@@ -253,6 +256,7 @@ struct SettingsSubscriptionView: View {
             }
         } else {
             let settingsView = SubscriptionSettingsViewV2(configuration: SubscriptionSettingsViewConfiguration.expired,
+                                                          viewModel: SubscriptionSettingsViewModelV2(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
                                                           settingsViewModel: settingsViewModel,
                                                           viewPlans: {
                 subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
@@ -277,6 +281,7 @@ struct SettingsSubscriptionView: View {
         // Subscribe with Win-back offer
         if !settingsViewModel.isAuthV2Enabled {
             let settingsView = SubscriptionSettingsView(configuration: SubscriptionSettingsViewConfiguration.expired,
+                                                        viewModel: SubscriptionSettingsViewModel(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
                                                         settingsViewModel: settingsViewModel,
                                                         takeWinBackOffer: {
                 Pixel.fire(pixel: .subscriptionWinBackOfferSubscriptionSettingsCTAClicked)
@@ -296,6 +301,7 @@ struct SettingsSubscriptionView: View {
             }
         } else {
             let settingsView = SubscriptionSettingsViewV2(configuration: SubscriptionSettingsViewConfiguration.expired,
+                                                          viewModel: SubscriptionSettingsViewModelV2(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
                                                           settingsViewModel: settingsViewModel,
                                                           takeWinBackOffer: {
                 Pixel.fire(pixel: .subscriptionWinBackOfferSubscriptionSettingsCTAClicked)
@@ -327,6 +333,7 @@ struct SettingsSubscriptionView: View {
         // Renew Subscription (Expired)
         if !settingsViewModel.isAuthV2Enabled {
             let settingsView = SubscriptionSettingsView(configuration: SubscriptionSettingsViewConfiguration.activating,
+                                                        viewModel: SubscriptionSettingsViewModel(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
                                                         settingsViewModel: settingsViewModel,
                                                         viewPlans: {
                 subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
@@ -341,6 +348,7 @@ struct SettingsSubscriptionView: View {
             }
         } else {
             let settingsView = SubscriptionSettingsViewV2(configuration: SubscriptionSettingsViewConfiguration.activating,
+                                                          viewModel: SubscriptionSettingsViewModelV2(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
                                                           settingsViewModel: settingsViewModel,
                                                           viewPlans: {
                 subscriptionNavigationCoordinator.shouldPushSubscriptionWebView = true
@@ -420,7 +428,11 @@ struct SettingsSubscriptionView: View {
         if subscriptionFeatures.contains(.identityTheftRestoration) || subscriptionFeatures.contains(.identityTheftRestorationGlobal) {
             let hasITREntitlement = userEntitlements.contains(.identityTheftRestoration) || userEntitlements.contains(.identityTheftRestorationGlobal)
 
-            NavigationLink(destination: LazyView(SubscriptionITPView()), isActive: $isShowingITP) {
+            let model = SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+                                                 userScriptsDependencies: settingsViewModel.userScriptsDependencies,
+                                                 isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser,
+                                                 isAuthV2Enabled: AppDependencyProvider.shared.isUsingAuthV2)
+            NavigationLink(destination: LazyView(SubscriptionITPView(viewModel: model)), isActive: $isShowingITP) {
                 SettingsCellView(
                     label: UserText.settingsPProITRTitle,
                     image: Image(uiImage: DesignSystemImages.Color.Size24.identityTheftRestoration),
@@ -435,13 +447,17 @@ struct SettingsSubscriptionView: View {
         let configuration: SubscriptionSettingsViewConfiguration = isActiveTrialOffer ? .trial : .subscribed
 
         if !settingsViewModel.isAuthV2Enabled {
-            NavigationLink(destination: LazyView(SubscriptionSettingsView(configuration: configuration, settingsViewModel: settingsViewModel))
+            NavigationLink(destination: LazyView(SubscriptionSettingsView(configuration: configuration,
+                                                                          viewModel: SubscriptionSettingsViewModel(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
+                                                                          settingsViewModel: settingsViewModel))
                 .environmentObject(subscriptionNavigationCoordinator)
             ) {
                 SettingsCustomCell(content: { manageSubscriptionView })
             }
         } else {
-            NavigationLink(destination: LazyView(SubscriptionSettingsViewV2(configuration: configuration, settingsViewModel: settingsViewModel))
+            NavigationLink(destination: LazyView(SubscriptionSettingsViewV2(configuration: configuration,
+                                                                            viewModel: SubscriptionSettingsViewModelV2(userScriptsDependencies: settingsViewModel.userScriptsDependencies),
+                                                                            settingsViewModel: settingsViewModel))
                 .environmentObject(subscriptionNavigationCoordinator)
             ) {
                 SettingsCustomCell(content: { manageSubscriptionView })

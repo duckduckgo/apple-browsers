@@ -82,6 +82,29 @@ extension TabViewController {
         buildShortcutsEntries(state: .newTab)
     }
 
+    func buildSheetBrowsingMenu(context: BrowsingMenuContext,
+                                with bookmarksInterface: MenuBookmarksInteracting,
+                                mobileCustomization: MobileCustomization,
+                                browsingMenuSheetCapability: BrowsingMenuSheetCapable,
+                                clearTabsAndData: @escaping () -> Void) -> BrowsingMenuModel? {
+        
+        let builder = makeVariantBuilder(for: browsingMenuSheetCapability.variant)
+        
+        return builder.buildMenu(
+            context: context,
+            bookmarksInterface: bookmarksInterface,
+            mobileCustomization: mobileCustomization,
+            clearTabsAndData: clearTabsAndData
+        )
+    }
+    
+    private func makeVariantBuilder(for variant: BrowsingMenuClusteringVariant) -> BrowsingMenuVariantBuilder {
+        switch variant {
+        case .a:
+            return BrowsingMenuVariantABuilder(entryBuilder: self)
+        }
+    }
+
     func buildBrowsingMenu(with bookmarksInterface: MenuBookmarksInteracting,
                            mobileCustomization: MobileCustomization,
                            clearTabsAndData: @escaping () -> Void) -> [BrowsingMenuEntry] {
@@ -731,4 +754,33 @@ extension TabViewController {
         }
     }
 
+}
+
+// MARK: - BrowsingMenuEntryBuilding
+
+extension TabViewController: BrowsingMenuEntryBuilding {
+    
+    func makeShortcutsMenu() -> [BrowsingMenuEntry] {
+        buildShortcutsMenu()
+    }
+    
+    func makeAITabMenu() -> [BrowsingMenuEntry] {
+        buildAITabMenu()
+    }
+    
+    func makeAITabMenuHeaderContent() -> [BrowsingMenuEntry] {
+        buildAITabMenuHeaderContent()
+    }
+    
+    func makeBrowsingMenu(with bookmarksInterface: MenuBookmarksInteracting,
+                          mobileCustomization: MobileCustomization,
+                          clearTabsAndData: @escaping () -> Void) -> [BrowsingMenuEntry] {
+        buildBrowsingMenu(with: bookmarksInterface,
+                         mobileCustomization: mobileCustomization,
+                         clearTabsAndData: clearTabsAndData)
+    }
+    
+    func makeBrowsingMenuHeaderContent() -> [BrowsingMenuEntry] {
+        buildBrowsingMenuHeaderContent()
+    }
 }

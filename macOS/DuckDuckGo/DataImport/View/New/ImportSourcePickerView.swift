@@ -72,7 +72,7 @@ struct ImportSourcePickerView: View {
                         HoverButtonView {
                             viewModel.showTypeSelectionSheet()
                         } content: {
-                            HStack(alignment: .lastTextBaseline, spacing: 1) {
+                            HStack(alignment: .center, spacing: 4) {
                                 Text(viewModel.typeButtonTitle)
                                     .font(.system(size: 13, weight: .semibold))
                                 Image(nsImage: DesignSystemImages.Glyphs.Size16.chevronRight)
@@ -80,6 +80,7 @@ struct ImportSourcePickerView: View {
                                     .resizable()
                                     .frame(width: 10, height: 10)
                                     .rotationEffect(.degrees(90))
+                                    .offset(y: 1)
                             }
                         }
                     }

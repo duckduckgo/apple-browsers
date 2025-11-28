@@ -206,4 +206,5 @@ public enum RemotePlaceholder: String, Codable, CaseIterable {
     case imageAI = "RemoteImageAI"
     case radar = "RemoteRadar"
     case keyImport = "RemoteKeyImport"
+    case mobileCustomization = "RemoteMobileCustomization"
 }

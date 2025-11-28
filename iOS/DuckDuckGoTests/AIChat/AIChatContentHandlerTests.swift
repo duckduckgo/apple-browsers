@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import BrowserServicesKitTestsUtils
 import XCTest
 import WebKit
 @testable import DuckDuckGo
@@ -37,7 +38,8 @@ final class AIChatContentHandlerTests: XCTestCase {
         handler = AIChatContentHandler(
             aiChatSettings: mockSettings,
             payloadHandler: mockPayloadHandler,
-            pixelMetricHandler: mockMetricHandler
+            pixelMetricHandler: mockMetricHandler,
+            featureDiscovery: MockFeatureDiscovery()
         )
     }
 
@@ -255,17 +257,17 @@ final class AIChatContentHandlerTests: XCTestCase {
         XCTAssertEqual(mockUserScript.submitOpenSettingsActionCallCount, 1)
     }
     
-    func testSubmitOpenHistoryActionCallsUserScript() throws {
+    func testSubmitToggleSidebarActionCallsUserScript() throws {
         // Given
         let mockUserScript = MockAIChatUserScript()
         let mockWebView = WKWebView()
         handler.setup(with: mockUserScript, webView: mockWebView)
 
         // When
-        handler.submitOpenHistoryAction()
+        handler.submitToggleSidebarAction()
 
         // Then
-        XCTAssertEqual(mockUserScript.submitOpenHistoryActionCallCount, 1)
+        XCTAssertEqual(mockUserScript.submitToggleSidebarActionCallCount, 1)
     }
 }
 
@@ -291,7 +293,7 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
     var payloadHandlerSet = false
     var submitStartChatActionCallCount = 0
     var submitOpenSettingsActionCallCount = 0
-    var submitOpenHistoryActionCallCount = 0
+    var submitToggleSidebarActionCallCount = 0
 
     func setPayloadHandler(_ payloadHandler: any AIChat.AIChatConsumableDataHandling) {
         payloadHandlerSet = true
@@ -305,7 +307,7 @@ final class MockAIChatUserScript: AIChatUserScriptProviding {
         submitOpenSettingsActionCallCount += 1
     }
 
-    func submitOpenHistoryAction() {
-        submitOpenHistoryActionCallCount += 1
+    func submitToggleSidebarAction() {
+        submitToggleSidebarActionCallCount += 1
     }
 }

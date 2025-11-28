@@ -68,7 +68,6 @@ final class SettingsViewModel: ObservableObject {
     var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
     weak var autoClearActionDelegate: SettingsAutoClearActionDelegate?
     let mobileCustomization: MobileCustomization
-    let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
 
     // Subscription Dependencies
     let isAuthV2Enabled: Bool
@@ -106,9 +105,6 @@ final class SettingsViewModel: ObservableObject {
     private var appDataClearingObserver: Any?
     private var textZoomObserver: Any?
     private var appForegroundObserver: Any?
-
-    // Subscription Free Trials
-    private let subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let keyValueStore: ThrowingKeyValueStoring
@@ -658,7 +654,6 @@ final class SettingsViewModel: ObservableObject {
          duckPlayerSettings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
          duckPlayerPixelHandler: DuckPlayerPixelFiring.Type = DuckPlayerPixelHandler.self,
          featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
-         subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper(),
          urlOpener: URLOpener = UIApplication.shared,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          keyValueStore: ThrowingKeyValueStoring,
@@ -666,8 +661,7 @@ final class SettingsViewModel: ObservableObject {
          runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
-         mobileCustomization: MobileCustomization,
-         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
+         mobileCustomization: MobileCustomization
     ) {
 
         self.state = SettingsState.defaults
@@ -691,7 +685,6 @@ final class SettingsViewModel: ObservableObject {
         self.duckPlayerSettings = duckPlayerSettings
         self.duckPlayerPixelHandler = duckPlayerPixelHandler
         self.featureDiscovery = featureDiscovery
-        self.subscriptionFreeTrialsHelper = subscriptionFreeTrialsHelper
         self.urlOpener = urlOpener
         self.privacyConfigurationManager = privacyConfigurationManager
         self.keyValueStore = keyValueStore
@@ -700,7 +693,6 @@ final class SettingsViewModel: ObservableObject {
         self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.mobileCustomization = mobileCustomization
-        self.userScriptsDependencies = userScriptsDependencies
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
     }
@@ -727,7 +719,7 @@ extension SettingsViewModel {
             appThemeStyle: appSettings.currentThemeStyle,
             appIcon: AppIconManager.shared.appIcon,
             fireButtonAnimation: appSettings.currentFireButtonAnimation,
-            textZoom: SettingsState.TextZoom(enabled: textZoomCoordinator.isEnabled, level: appSettings.defaultTextZoomLevel),
+            textZoom: SettingsState.TextZoom(level: appSettings.defaultTextZoomLevel),
             addressBar: SettingsState.AddressBar(enabled: !isPad, position: appSettings.currentAddressBarPosition),
             showsFullURL: appSettings.showFullSiteAddress,
             isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
@@ -748,7 +740,7 @@ extension SettingsViewModel {
             showCreditCardManagement: false,
             version: versionProvider.versionAndBuildNumber,
             crashCollectionOptInStatus: appSettings.crashCollectionOptInStatus,
-            debugModeEnabled: featureFlagger.isFeatureOn(.debugMenu) || isDebugBuild,
+            debugModeEnabled: isInternalUser || isDebugBuild,
             voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled,
             speechRecognitionAvailable: voiceSearchHelper.isSpeechRecognizerAvailable,
             loginsEnabled: featureFlagger.isFeatureOn(.autofillAccessCredentialManagement),
@@ -1300,7 +1292,7 @@ extension SettingsViewModel {
                                                                   object: nil,
                                                                   queue: .main, using: { [weak self] _ in
             guard let self = self else { return }
-            self.state.textZoom = SettingsState.TextZoom(enabled: true, level: self.appSettings.defaultTextZoomLevel)
+            self.state.textZoom = SettingsState.TextZoom(level: self.appSettings.defaultTextZoomLevel)
         })
 
         if #available(iOS 18.2, *) {
@@ -1420,7 +1412,6 @@ extension SettingsViewModel {
     /// Checks if the user is eligible for a free trial subscription offer.
     /// - Returns: `true` if free trials are available and the user is eligible for a free trial, `false` otherwise.
     private func isUserEligibleForTrialOffer() async -> Bool {
-        guard subscriptionFreeTrialsHelper.areFreeTrialsEnabled else { return false }
         if isAuthV2Enabled {
             return await subscriptionManagerV2?.storePurchaseManager().isUserEligibleForFreeTrial() ?? false
         } else {

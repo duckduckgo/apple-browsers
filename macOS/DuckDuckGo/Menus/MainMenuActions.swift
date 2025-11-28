@@ -29,6 +29,7 @@ import os.log
 import PixelKit
 import Subscription
 import SwiftUI
+import Utilities
 import WebKit
 
 // Actions are sent to objects of responder chain
@@ -333,6 +334,7 @@ extension AppDelegate {
 
         let controller = ReportProblemFormViewController(rootView: formView)
         window = NSWindow(contentViewController: controller)
+            .withAccessibilityIdentifier(AccessibilityIdentifiers.Feedback.reportAProblem)
 
         guard let window = window else { return }
 
@@ -857,7 +859,7 @@ extension MainViewController {
     /// Finds currently active Tab even if it‘s playing a Full Screen video
     private func getActiveTabAndIndex() -> (tab: Tab, index: TabIndex)? {
         var tab: Tab? {
-            // popup windows don‘t get to lastKeyMainWindowController so try getting their WindowController directly fron a key window
+            // popup windows don‘t get to lastKeyMainWindowController so try getting their WindowController directly from a key window
             if let window = self.view.window,
                let mainWindowController = window.nextResponder as? MainWindowController,
                let tab = mainWindowController.activeTab {

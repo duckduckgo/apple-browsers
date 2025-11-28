@@ -19,6 +19,10 @@
 import Cocoa
 import PixelKit
 
+protocol SharingMenuDelegate: AnyObject {
+    @MainActor func sharingMenuRequestsSharingData() -> SharingMenu.SharingData?
+}
+
 final class SharingMenu: NSMenu {
 
     enum Location: Equatable {
@@ -26,9 +30,11 @@ final class SharingMenu: NSMenu {
     }
 
     let location: Location
+    weak var sharingDelegate: SharingMenuDelegate?
 
-    init(title: String, location: Location) {
+    init(title: String, location: Location, delegate: SharingMenuDelegate) {
         self.location = location
+        self.sharingDelegate = delegate
         super.init(title: title)
 
         self.autoenablesItems = true
@@ -54,14 +60,14 @@ final class SharingMenu: NSMenu {
     typealias SharingData = (title: String?, items: [Any])
     @MainActor
     private func sharingData() -> SharingData? {
-        guard let tabViewModel = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.selectedTabViewModel,
-              tabViewModel.canReload,
-              !tabViewModel.isShowingErrorPage,
-              let url = tabViewModel.tab.content.userEditableUrl else { return nil }
+        guard let delegateData = sharingDelegate?.sharingMenuRequestsSharingData() else { return nil }
 
-        let sharingData = NSApp.delegateTyped.duckPlayer.sharingData(for: tabViewModel.title, url: url) ?? (tabViewModel.title, url)
-
-        return (sharingData.title, [sharingData.url])
+        // Apply DuckPlayer handling to delegate data if it contains a URL
+        if let url = delegateData.items.first(where: { $0 is URL }) as? URL {
+            let duckPlayerData = NSApp.delegateTyped.duckPlayer.sharingData(for: delegateData.title, url: url) ?? (delegateData.title, url)
+            return (duckPlayerData.title, [duckPlayerData.url])
+        }
+        return delegateData
     }
 
     @objc func openSharingPreferences(_ sender: NSMenuItem) {

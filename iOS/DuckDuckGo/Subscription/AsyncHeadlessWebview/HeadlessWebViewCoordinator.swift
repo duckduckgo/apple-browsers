@@ -55,7 +55,7 @@ final class HeadlessWebViewCoordinator: NSObject {
          onContentType: ((String) -> Void)?,
          onNavigationError: ((Error?) -> Void)?,
          allowedDomains: [String]? = nil,
-         settings: AsyncHeadlessWebViewSettings) {
+         settings: AsyncHeadlessWebViewSettings = AsyncHeadlessWebViewSettings()) {
         self.parent = parent
         self.presenter = presenter
         self.onScroll = onScroll

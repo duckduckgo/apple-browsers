@@ -1,6 +1,6 @@
 ---
 alwaysApply: true
-title: "DuckDuckGo Browser Development Overview"
+title: "DuckDuckGo Browser Development Overview (general.md)"
 description: "General project overview and development guidelines for DuckDuckGo browser development across iOS and macOS platforms"
 keywords: ["Swift", "iOS", "macOS", "MVVM", "SwiftUI", "privacy", "architecture", "dependency injection", "design system"]
 ---

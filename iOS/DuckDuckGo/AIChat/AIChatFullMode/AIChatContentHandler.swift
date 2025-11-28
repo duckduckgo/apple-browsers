@@ -18,6 +18,7 @@
 //
 
 import AIChat
+import BrowserServicesKit
 import Foundation
 import WebKit
 
@@ -28,7 +29,7 @@ protocol AIChatUserScriptProviding: AnyObject {
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling)
     func submitStartChatAction()
     func submitOpenSettingsAction()
-    func submitOpenHistoryAction()
+    func submitToggleSidebarAction()
 }
 
 extension AIChatUserScript: AIChatUserScriptProviding { }
@@ -62,8 +63,11 @@ protocol AIChatContentHandling {
     /// Submits an open settings action to open the AI Chat settings.
     func submitOpenSettingsAction()
     
-    /// Submits an open history action to open the AI Chat history.
-    func submitOpenHistoryAction()
+    /// Submits a toggle sidebar action to open/close the sidebar.
+    func submitToggleSidebarAction()
+    
+    /// Fires 'chat open' pixel and sets the AI Chat features as 'used before'
+    func fireChatOpenPixelAndSetWasUsed()
 }
 
 final class AIChatContentHandler: AIChatContentHandling {
@@ -72,6 +76,8 @@ final class AIChatContentHandler: AIChatContentHandling {
     private let aiChatSettings: AIChatSettingsProvider
     private var payloadHandler: AIChatPayloadHandler
     private let pixelMetricHandler: (any AIChatPixelMetricHandling)?
+    private let featureDiscovery: FeatureDiscovery
+    
     private var userScript: AIChatUserScriptProviding?
     
     // MARK: - Public API
@@ -80,10 +86,12 @@ final class AIChatContentHandler: AIChatContentHandling {
     
     init(aiChatSettings: AIChatSettingsProvider,
          payloadHandler: AIChatPayloadHandler = AIChatPayloadHandler(),
-         pixelMetricHandler: any AIChatPixelMetricHandling = AIChatPixelMetricHandler()) {
+         pixelMetricHandler: any AIChatPixelMetricHandling = AIChatPixelMetricHandler(),
+         featureDiscovery: FeatureDiscovery) {
         self.aiChatSettings = aiChatSettings
         self.payloadHandler = payloadHandler
         self.pixelMetricHandler = pixelMetricHandler
+        self.featureDiscovery = featureDiscovery
     }
     
     /// Configures the user script and WebView for AIChat interaction.
@@ -139,9 +147,15 @@ final class AIChatContentHandler: AIChatContentHandling {
         userScript?.submitOpenSettingsAction()
     }
 
-    /// Submits an open history action to open the AI Chat history.
-    func submitOpenHistoryAction() {
-        userScript?.submitOpenHistoryAction()
+    /// Submits a toggle sidebar action to open/close the sidebar.
+    func submitToggleSidebarAction() {
+        userScript?.submitToggleSidebarAction()
+    }
+    
+    /// Fires 'chat open' pixel and sets the AI Chat features as 'used before'
+    func fireChatOpenPixelAndSetWasUsed() {
+        pixelMetricHandler?.fireOpenAIChat()
+        featureDiscovery.setWasUsedBefore(.aiChat)
     }
 }
 
@@ -160,6 +174,11 @@ extension AIChatContentHandler: AIChatUserScriptDelegate {
     }
 
     func aiChatUserScript(_ userScript: AIChatUserScript, didReceiveMetric metric: AIChatMetric) {
+        if metric.metricName == .userDidSubmitPrompt
+            || metric.metricName == .userDidSubmitFirstPrompt {
+            NotificationCenter.default.post(name: .aiChatUserDidSubmitPrompt, object: nil)
+        }
+        
         pixelMetricHandler?.firePixelWithMetric(metric)
     }
 }

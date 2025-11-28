@@ -2241,13 +2241,17 @@ public final class MockDataBrokerProtectionStatsPixelsRepository: DataBrokerProt
 
     public var didSetCustomStatsPixelsLastSentTimestamp = false
     public var didGetCustomStatsPixelsLastSentTimestamp = false
+    public var getCount = 0
+    public var setCount = 0
     public var _customStatsPixelsLastSentTimestamp: Date?
 
     public var customStatsPixelsLastSentTimestamp: Date? {
         get {
-            defer { didGetCustomStatsPixelsLastSentTimestamp = true }
+            getCount += 1
+            didGetCustomStatsPixelsLastSentTimestamp = true
             return _customStatsPixelsLastSentTimestamp
         } set {
+            setCount += 1
             didSetCustomStatsPixelsLastSentTimestamp = true
             _customStatsPixelsLastSentTimestamp = newValue
         }
@@ -2257,6 +2261,9 @@ public final class MockDataBrokerProtectionStatsPixelsRepository: DataBrokerProt
 
     func clear() {
         didSetCustomStatsPixelsLastSentTimestamp = false
+        didGetCustomStatsPixelsLastSentTimestamp = false
+        getCount = 0
+        setCount = 0
         customStatsPixelsLastSentTimestamp = nil
 
     }

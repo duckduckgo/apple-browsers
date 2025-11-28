@@ -496,7 +496,7 @@ final class JobQueueManagerTests: XCTestCase {
                               mismatchCalculator: mockMismatchCalculator,
                               pixelHandler: mockPixelHandler)
 
-        mockPixelHandler.resetCapturedData()
+        mockPixelHandler.clear()
         let error = DataBrokerProtectionError.actionFailed(actionID: "action-id", message: "something happened")
 
         // When
@@ -534,7 +534,7 @@ final class JobQueueManagerTests: XCTestCase {
                               mismatchCalculator: mockMismatchCalculator,
                               pixelHandler: mockPixelHandler)
 
-        mockPixelHandler.resetCapturedData()
+        mockPixelHandler.clear()
         let error = DataBrokerProtectionError.actionFailed(actionID: "id", message: "msg")
 
         // When

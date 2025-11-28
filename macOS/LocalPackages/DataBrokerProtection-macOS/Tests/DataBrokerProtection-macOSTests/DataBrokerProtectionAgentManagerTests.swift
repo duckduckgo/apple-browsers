@@ -43,6 +43,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
     private var mockPrivacyConfigurationManager: DBPPrivacyConfigurationManager!
     private var mockAuthenticationManager: MockAuthenticationManager!
     private var mockFreemiumDBPUserStateManager: MockFreemiumDBPUserStateManager!
+    private var mockStatsPixelRepository: MockDataBrokerProtectionStatsPixelsRepository!
     private var mockBrokerUpdater: MockBrokerJSONService!
     private var mockInternalUserDecider: InternalUserDecider!
     private var mockEmailConfirmationDataService: MockEmailConfirmationDataService!
@@ -60,6 +61,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         let mockInternalUserStore = InternalUserDeciderStoreMock(isInternalUser: false)
         mockInternalUserDecider = DefaultInternalUserDecider(store: mockInternalUserStore)
         mockPrivacyConfigurationManager = DBPPrivacyConfigurationManager(internalUserDecider: mockInternalUserDecider)
+        mockStatsPixelRepository = MockDataBrokerProtectionStatsPixelsRepository()
         mockBrokerUpdater = MockBrokerJSONService()
 
         let mockDatabase = MockDatabase()
@@ -102,6 +104,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -148,6 +151,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -199,6 +203,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: agentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -239,6 +244,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -283,6 +289,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -318,6 +325,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -352,6 +360,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -386,6 +395,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -420,6 +430,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -448,6 +459,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -476,6 +488,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -505,6 +518,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -534,6 +548,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -563,6 +578,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -597,6 +613,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -630,6 +647,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,
@@ -659,6 +677,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
+            statsPixelRepository: mockStatsPixelRepository,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
             brokerUpdater: mockBrokerUpdater,

@@ -26,7 +26,7 @@ protocol ProductSurfaceTelemetry {
 
 }
 
-struct PixelProductSurfaceTelemtry: ProductSurfaceTelemetry {
+struct PixelProductSurfaceTelemetry: ProductSurfaceTelemetry {
 
      private let featureFlagger: FeatureFlagger
      private let dailyPixelFiring: DailyPixelFiring.Type

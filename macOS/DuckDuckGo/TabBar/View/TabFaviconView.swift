@@ -27,7 +27,7 @@ enum FaviconPlaceholderStyle {
 final class TabFaviconView: NSView {
 
     private let loadingPolicy = DefaultLoadingIndicatorPolicy()
-    private let imageView = NSImageView()
+    private let imageView = FaviconImageView()
     private let placeholderView = LetterView()
     private let spinnerView = SpinnerView()
 

@@ -95,10 +95,11 @@ extension XCUIApplication {
         static let fireproofDomainsDoneButton = "FireproofDomainsViewController.doneButton"
         static let fireButton = "TabBarViewController.fireButton"
         static let fakeFireButton = "FireViewController.fakeFireButton"
+        static let homeButton = "NavigationBarViewController.HomeButton"
     }
 
     static func setUp(environment: [String: String]? = nil,
-                      featureFlags: [String: Bool] = ["visualUpdates": true],
+                      featureFlags: [String: Bool] = [:],
                       arguments: [String]? = nil) -> XCUIApplication {
         let app = XCUIApplication()
         if let environment {
@@ -819,6 +820,28 @@ extension XCUIApplication {
 
     var debugMenu: XCUIElement {
         menuBarItems[Utilities.AccessibilityIdentifiers.debugMenu]
+    }
+
+    var homeButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.homeButton]
+    }
+
+    /// Shows the home button in the toolbar (right of reload button)
+    /// Opens the View menu and selects "Show Right of the Reload Button"
+    func showHomeButtonInToolbar() {
+        let viewMenu = menuBars.menuBarItems["View"]
+        XCTAssertTrue(
+            viewMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "View menu item didn't become available in a reasonable timeframe."
+        )
+        viewMenu.click()
+
+        let menuItem = menuItems["Show Right of the Reload Button"].firstMatch
+        XCTAssertTrue(
+            menuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Show Right of the Reload Button menu item didn't become available in a reasonable timeframe."
+        )
+        menuItem.click()
     }
 
 }

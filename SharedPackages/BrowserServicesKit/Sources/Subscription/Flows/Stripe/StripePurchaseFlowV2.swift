@@ -115,7 +115,9 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
     public func subscriptionTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, StripePurchaseFlowError> {
         Logger.subscriptionStripePurchaseFlow.log("[StripePurchaseFlowV2] Getting subscription tier options for Stripe (includeProTier: \(includeProTier))")
 
-        let regionParameter: String? = isUSRegion() ? "us" : "row"
+        // For now we always send the us product and the FE decides what to show based on the IP address
+        // This will change when will introduce Stripe internationally
+        let regionParameter = "us"
 
         guard let productsResponse = try? await subscriptionManager.getTierProducts(region: regionParameter, platform: SubscriptionPlatformName.stripe.rawValue),
               !productsResponse.products.isEmpty else {
@@ -150,10 +152,6 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
 
         Logger.subscriptionStripePurchaseFlow.log("[StripePurchaseFlowV2] Tiers products created \(tiers.count)")
         return .success(SubscriptionTierOptions(platform: .stripe, products: tiers))
-    }
-
-    private func isUSRegion() -> Bool {
-        return Locale.current.regionCode == "US"
     }
 
     private func createTier(from product: TierProduct) -> SubscriptionTier? {

@@ -679,24 +679,13 @@ final class AddressBarButtonsViewController: NSViewController {
             return
         }
 
-        // Show permission buttons when there's a requested permission on NTP even if address bar is focused,
-        // since NTP has the address bar focused by default
-        let hasRequestedPermission = tabViewModel.usedPermissions.values.contains(where: { $0.isRequested
-        })
-        let shouldShowWhileFocused = (tabViewModel.tab.content == .newtab) && hasRequestedPermission
-        let isAnyPermissionPresent = tabViewModel.usedPermissions.values.contains(where: {
-            !$0.isReloading
-        })
-
-        permissionCenterButton.isShown = (shouldShowWhileFocused ||
-                                          (!isTextFieldEditorFirstResponder && isAnyPermissionPresent))
-        && !isAnyTrackerAnimationPlaying
-        && !tabViewModel.isShowingErrorPage
+        permissionCenterButton.isShown = tabViewModel.shouldShowPermissionCenterButton(isTextFieldEditorFirstResponder: isTextFieldEditorFirstResponder,
+                                                                                       isAnyTrackerAnimationPlaying: isAnyTrackerAnimationPlaying)
 
         showOrHidePermissionCenterPopoverIfNeeded()
     }
 
-    private func updatePermissionCenterButtonIcon(showBell: Bool) {
+    private func updatePermissionCenterButtonIcon(showBell: Bool = false) {
         guard featureFlagger.isFeatureOn(.newPermissionView) else {
             return
         }
@@ -998,6 +987,7 @@ final class AddressBarButtonsViewController: NSViewController {
         geolocationButton.defaultImage = addressBarButtonsIconsProvider.locationIcon
         externalSchemeButton.defaultImage = addressBarButtonsIconsProvider.externalSchemeIcon
         popupsButton.defaultImage = addressBarButtonsIconsProvider.popupsIcon
+        updatePermissionCenterButtonIcon()
     }
 
     private func updateBookmarkButtonVisibility() {
@@ -2290,4 +2280,23 @@ extension URL {
         }
         return false
     }
+}
+
+extension TabViewModel {
+
+    func shouldShowPermissionCenterButton(isTextFieldEditorFirstResponder: Bool, isAnyTrackerAnimationPlaying: Bool) -> Bool {
+        // Show permission buttons when there's a requested permission on NTP even if address bar is focused,
+        // since NTP has the address bar focused by default
+        let hasRequestedPermission = usedPermissions.values.contains(where: { $0.isRequested
+        })
+        let shouldShowWhileFocused = (tab.content == .newtab) && hasRequestedPermission
+        let isAnyPermissionPresent = usedPermissions.values.contains(where: {
+            !$0.isReloading
+        })
+
+        return (shouldShowWhileFocused || (!isTextFieldEditorFirstResponder && isAnyPermissionPresent))
+        && !isAnyTrackerAnimationPlaying
+        && !isShowingErrorPage
+    }
+
 }

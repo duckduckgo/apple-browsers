@@ -68,6 +68,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertNotNil(configValues)
         XCTAssertEqual(configValues?.isAIChatHandoffEnabled, true)
         XCTAssertEqual(configValues?.platform, "ios")
+        XCTAssertEqual(configValues?.supportsHomePageEntryPoint, true)
     }
     
     func testGetAIChatNativeConfigValuesWithFullModeFeatureAvailable() {
@@ -80,6 +81,8 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         // Then
         XCTAssertNotNil(configValues)
         XCTAssertEqual(configValues?.supportsURLChatIDRestoration, true)
+        XCTAssertEqual(configValues?.supportsAIChatFullMode, true)
+        XCTAssertEqual(configValues?.supportsHomePageEntryPoint, true)
     }
     
     func testGetAIChatNativeConfigValuesWithFullModeFeatureUnavailable() {
@@ -92,6 +95,8 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         // Then
         XCTAssertNotNil(configValues)
         XCTAssertEqual(configValues?.supportsURLChatIDRestoration, AIChatNativeConfigValues.defaultValues.supportsURLChatIDRestoration)
+        XCTAssertEqual(configValues?.supportsAIChatFullMode, false)
+        XCTAssertEqual(configValues?.supportsHomePageEntryPoint, AIChatNativeConfigValues.defaultValues.supportsHomePageEntryPoint)
     }
 
     func testGetAIChatNativeHandoffData() {

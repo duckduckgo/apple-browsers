@@ -238,7 +238,7 @@ enum SubscriptionErrorPixel: PixelKitEvent {
         case .subscriptionKeychainAccessError(let accessType, let accessError, let source, let authVersion):
             return [
                 "access_type": accessType.rawValue,
-                "error": accessError.errorDescription ?? "Unknown",
+                "error": accessError.description,
                 "source": source.rawValue,
                 "authVersion": authVersion.rawValue
             ]

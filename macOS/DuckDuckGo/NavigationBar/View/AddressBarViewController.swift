@@ -75,7 +75,7 @@ final class AddressBarViewController: NSViewController {
     }
 
     @IBOutlet var addressBarTextField: AddressBarTextField!
-    @IBOutlet var passiveTextField: NSTextField!
+    @IBOutlet var passiveTextField: PassiveAddressBarTextField!
     @IBOutlet var inactiveBackgroundView: ColorView!
     @IBOutlet var activeBackgroundView: ColorView!
     @IBOutlet var activeOuterBorderView: ColorView!
@@ -272,6 +272,8 @@ final class AddressBarViewController: NSViewController {
         setupAddressBarPlaceHolder()
         addressBarTextField.setAccessibilityIdentifier("AddressBarViewController.addressBarTextField")
 
+        passiveTextField.isSelectable = !isInPopUpWindow
+
         switchToTabBox.isHidden = true
         switchToTabLabel.attributedStringValue = SuggestionTableCellView.switchToTabAttributedString
 
@@ -322,6 +324,7 @@ final class AddressBarViewController: NSViewController {
             subscribeToFirstResponder()
         }
         addressBarTextField.tabCollectionViewModel = tabCollectionViewModel
+        passiveTextField.tabCollectionViewModel = tabCollectionViewModel
 
         subscribeToSelectedTabViewModel()
         subscribeToAddressBarValue()
@@ -339,6 +342,7 @@ final class AddressBarViewController: NSViewController {
     override func viewWillDisappear() {
         cancellables.removeAll()
         addressBarTextField.tabCollectionViewModel = nil
+        passiveTextField.tabCollectionViewModel = nil
     }
 
     override func viewDidLayout() {
@@ -673,7 +677,20 @@ final class AddressBarViewController: NSViewController {
 
     private func setupAddressBarPlaceHolder() {
         let isNewTab = tabViewModel?.tab.content == .newtab
-        let addressBarPlaceholder = isNewTab ? UserText.addressBarPlaceholder : ""
+        let addressBarPlaceholder: String
+
+        let shouldShowDuckAIHint = isFirstResponder
+        && featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+        && aiChatSettings.isAIFeaturesEnabled
+        && aiChatSettings.showSearchAndDuckAIToggle
+
+        if shouldShowDuckAIHint {
+            addressBarPlaceholder = UserText.addressBarPlaceholderWithDuckAI
+        } else if isNewTab {
+            addressBarPlaceholder = UserText.addressBarPlaceholder
+        } else {
+            addressBarPlaceholder = ""
+        }
 
         let font = NSFont.systemFont(ofSize: isNewTab ? theme.addressBarStyleProvider.newTabOrHomePageAddressBarFontSize : theme.addressBarStyleProvider.defaultAddressBarFontSize, weight: .regular)
         let attributes: [NSAttributedString.Key: Any] = [
@@ -871,6 +888,8 @@ final class AddressBarViewController: NSViewController {
         case .activeWithAIChat:
             break
         }
+
+        setupAddressBarPlaceHolder()
     }
 
     // MARK: - Event handling
@@ -895,12 +914,13 @@ final class AddressBarViewController: NSViewController {
     }
 
     override func mouseEntered(with event: NSEvent) {
+        guard !isInPopUpWindow else { return }
         NSCursor.iBeam.set()
         super.mouseEntered(with: event)
     }
 
     override func mouseMoved(with event: NSEvent) {
-        guard event.window === self.view.window else { return }
+        guard event.window === self.view.window, !isInPopUpWindow else { return }
 
         let point = self.view.convert(event.locationInWindow, from: nil)
         let view = self.view.hitTest(point)

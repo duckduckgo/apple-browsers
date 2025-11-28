@@ -21,9 +21,6 @@ import Foundation
 import BrowserServicesKit
 
 public enum FeatureFlag: String {
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866466606715
-    case debugMenu
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866605041091
     case sync
 
@@ -120,12 +117,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711635701
     case crashReportOptInStatusResetting
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866469242236
-    case privacyProFreeTrialJan25
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866469329722
-    case webViewStateRestoration
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866706505415
     case syncSeamlessAccountSwitching
 
@@ -135,9 +126,6 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711861627
     case scamSiteProtection
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866710757097
-    case removeWWWInCanonicalizationInThreatProtection
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866469645735
     case privacyProAuthV2
@@ -156,9 +144,6 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866611816519
     case canScanUrlBasedSyncSetupBarcodes
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866470253328
-    case privacyProFreeTrial
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866470360367
     case autofillPasswordVariantCategorization
@@ -227,9 +212,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866714634010
     case newDeviceSyncPrompt
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866463258596
-    case subscriptionRestoreWidePixelMeasurement
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866712760347
     case embeddedSERPSettings
 
@@ -263,7 +245,8 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614122594
     case fullDuckAIMode
 
-    /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053
+    /// macOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015252281641
+    /// iOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015250423471
     case attributedMetrics
 
     /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1211652685709099?focus=true
@@ -304,14 +287,12 @@ extension FeatureFlag: FeatureFlagDescribing {
         switch self {
         case .canScanUrlBasedSyncSetupBarcodes,
              .canInterceptSyncSetupUrls,
-             .removeWWWInCanonicalizationInThreatProtection,
              .supportsAlternateStripePaymentFlow,
              .setAsDefaultBrowserPiPVideoTutorial,
              .createFireproofFaviconUpdaterSecureVaultInBackground,
              .daxEasterEggLogos,
              .subscriptionPurchaseWidePixelMeasurement,
              .newDeviceSyncPrompt,
-             .subscriptionRestoreWidePixelMeasurement,
              .authV2WideEventEnabled,
              .embeddedSERPSettings,
              .syncCreditCards,
@@ -327,8 +308,6 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var cohortType: (any FeatureFlagCohortDescribing.Type)? {
         switch self {
-        case .privacyProFreeTrialJan25:
-            PrivacyProFreeTrialExperimentCohort.self
         default:
             nil
         }
@@ -344,8 +323,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .autocompleteAttributeSupport,
              .privacyProOnboardingPromotion,
              .duckPlayerNativeUI,
-             .removeWWWInCanonicalizationInThreatProtection,
-             .privacyProFreeTrial,
              .autofillPasswordVariantCategorization,
              .syncSetupBarcodeIsUrlBased,
              .canScanUrlBasedSyncSetupBarcodes,
@@ -365,7 +342,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .dbpRemoteBrokerDelivery,
              .subscriptionPurchaseWidePixelMeasurement,
              .showAIChatAddressBarChoiceScreen,
-             .subscriptionRestoreWidePixelMeasurement,
              .embeddedSERPSettings,
              .authV2WideEventEnabled,
              .winBackOffer,
@@ -396,8 +372,7 @@ extension FeatureFlag: FeatureFlagDescribing {
             } else {
                 return false
             }
-        case .debugMenu,
-               .sync,
+        case .sync,
                .autofillCredentialInjecting,
                .autofillCredentialsSaving,
                .autofillInlineIconCredentials,
@@ -424,8 +399,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                .autocompleteTabs,
                .adAttributionReporting,
                .crashReportOptInStatusResetting,
-               .privacyProFreeTrialJan25,
-               .webViewStateRestoration,
                .syncSeamlessAccountSwitching,
                .experimentalAddressBar,
                .aiChatKeepSession,
@@ -441,8 +414,6 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var source: FeatureFlagSource {
         switch self {
-        case .debugMenu:
-            return .internalOnly()
         case .sync:
             return .remoteReleasable(.subfeature(SyncSubfeature.level0ShowSync))
         case .autofillCredentialInjecting:
@@ -509,10 +480,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DBPSubfeature.emailConfirmationDecoupling))
         case .crashReportOptInStatusResetting:
             return .internalOnly()
-        case .privacyProFreeTrialJan25:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrialJan25))
-        case .webViewStateRestoration:
-            return .remoteReleasable(.feature(.webViewStateRestoration))
         case .syncSeamlessAccountSwitching:
             return .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching))
         case .maliciousSiteProtection:
@@ -533,10 +500,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.syncSetupBarcodeIsUrlBased))
         case .canScanUrlBasedSyncSetupBarcodes:
             return .remoteReleasable(.subfeature(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
-        case .removeWWWInCanonicalizationInThreatProtection:
-            return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.removeWWWInCanonicalization))
-        case .privacyProFreeTrial:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrial))
         case .autofillPasswordVariantCategorization:
             return .remoteReleasable(.subfeature(AutofillSubfeature.passwordVariantCategorization))
         case .paidAIChat:
@@ -573,8 +536,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.showAIChatAddressBarChoiceScreen))
         case .newDeviceSyncPrompt:
             return .remoteReleasable(.subfeature(SyncSubfeature.newDeviceSyncPrompt))
-        case .subscriptionRestoreWidePixelMeasurement:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRestoreWidePixelMeasurement))
         case .embeddedSERPSettings:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.embeddedSERPSettings))
         case .authV2WideEventEnabled:
@@ -631,11 +592,4 @@ extension FeatureFlagger {
     public func isFeatureOn(_ featureFlag: FeatureFlag) -> Bool {
         return isFeatureOn(for: featureFlag)
     }
-}
-
-public enum PrivacyProFreeTrialExperimentCohort: String, FeatureFlagCohortDescribing {
-    /// Control cohort with no changes applied.
-    case control
-    /// Treatment cohort where the experiment modifications are applied.
-    case treatment
 }

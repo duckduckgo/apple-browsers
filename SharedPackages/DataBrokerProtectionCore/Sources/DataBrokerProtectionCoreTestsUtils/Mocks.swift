@@ -2277,8 +2277,8 @@ public final class MockActionsHandler: ActionsHandler {
 
     public var didCallNextAction = false
 
-    public init() {
-        let step = Step(type: .scan, actions: [])
+    public init(stepType: StepType = .scan) {
+        let step = Step(type: stepType, actions: [])
         super.init(stepType: step.type, actions: step.actions)
     }
 

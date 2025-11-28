@@ -24,9 +24,16 @@ import DesignResourcesKitIcons
 final class DefaultOmniBarSearchView: UIView {
 
     let privacyInfoContainer: PrivacyInfoContainerView! = {
-        return PrivacyInfoContainerView.load(nibName: "PrivacyInfoContainer")
+        let container = PrivacyInfoContainerView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        return container
     }()
-    let notificationContainer: OmniBarNotificationContainerView! = OmniBarNotificationContainerView()
+    let notificationContainer: OmniBarNotificationContainerView! = {
+        let container = OmniBarNotificationContainerView()
+        container.translatesAutoresizingMaskIntoConstraints = false
+        container.isUserInteractionEnabled = false  // Start disabled, only enable when showing notification
+        return container
+    }()
 
     let loupeIconView = UIImageView()
     let customIconView = UIImageView()
@@ -86,13 +93,13 @@ final class DefaultOmniBarSearchView: UIView {
 
         leftIconContainerPlaceholder.addSubview(leftIconContainer)
 
-        mainStackView.addSubview(notificationContainer)
-
         mainStackView.addArrangedSubview(leftIconContainerPlaceholder)
         mainStackView.addArrangedSubview(textField)
         mainStackView.addArrangedSubview(trailingItemsContainer)
 
         mainStackView.addSubview(privacyInfoContainer)
+
+        mainStackView.addSubview(notificationContainer)
 
         trailingItemsContainer.addArrangedSubview(clearButton)
         trailingItemsContainer.addArrangedSubview(voiceSearchButton)
@@ -108,7 +115,6 @@ final class DefaultOmniBarSearchView: UIView {
 
     private func setUpConstraints() {
         mainStackView.translatesAutoresizingMaskIntoConstraints = false
-        notificationContainer.translatesAutoresizingMaskIntoConstraints = false
         leftIconContainer.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
@@ -128,7 +134,9 @@ final class DefaultOmniBarSearchView: UIView {
             leftIconContainerPlaceholder.bottomAnchor.constraint(equalTo: leftIconContainer.bottomAnchor),
 
             privacyInfoContainer.leadingAnchor.constraint(equalTo: leftIconContainerPlaceholder.leadingAnchor, constant: 10),
-            privacyInfoContainer.centerYAnchor.constraint(equalTo: textField.centerYAnchor)
+            privacyInfoContainer.centerYAnchor.constraint(equalTo: textField.centerYAnchor),
+            privacyInfoContainer.widthAnchor.constraint(equalToConstant: 28),
+            privacyInfoContainer.heightAnchor.constraint(equalToConstant: 28)
         ])
 
         DefaultOmniBarView.activateItemSizeConstraints(for: voiceSearchButton)

@@ -87,7 +87,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     var subscriptionEnvironment: SubscriptionEnvironment!
 
     var subscriptionFeatureMappingCache: SubscriptionFeatureMappingCacheMock!
-    private var mockFeatureFlagger: MockFeatureFlagger!
 
     var appStorePurchaseFlow: AppStorePurchaseFlow!
     var appStoreRestoreFlow: AppStoreRestoreFlow!
@@ -144,7 +143,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                                              settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))
 
         subscriptionFeatureMappingCache = SubscriptionFeatureMappingCacheMock()
-        mockFeatureFlagger = MockFeatureFlagger()
 
         // Real AccountManager
         accountManager = DefaultAccountManager(storage: accountStorage,
@@ -194,8 +192,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                                           uiHandler: uiHandler,
                                                           subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                           freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager,
-                                                          dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
-                                                          featureFlagger: mockFeatureFlagger)
+                                                          dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler)
         feature.with(broker: broker)
     }
 
@@ -230,7 +227,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         feature = nil
 
         broker = nil
-        mockFeatureFlagger = nil
         mockFreemiumDBPUserStateManager = nil
         mockPixelHandler = nil
         pixelKit = nil
@@ -1059,67 +1055,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
         // Then
         XCTAssertNil(result)
-    }
-
-    // MARK: - Free Trials
-
-    func testGetSubscriptionOptions_FreeTrialFlagOn_AndFreeTrialOptionsAvailable_ReturnsFreeTrialOptions() async throws {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.privacyProFreeTrial]
-        subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
-
-        let freeTrialOptions = SubscriptionOptions(
-            platform: .macos,
-            options: [SubscriptionOption(id: "free-trial-monthly-from-store-manager", cost: SubscriptionOptionCost(displayPrice: "0 USD", recurrence: "monthly"))],
-            features: [SubscriptionFeature(name: .networkProtection)]
-        )
-
-        storePurchaseManager.freeTrialSubscriptionOptionsResult = freeTrialOptions
-        storePurchaseManager.subscriptionOptionsResult = Constants.subscriptionOptions
-
-        // When
-        let result = try await feature.getSubscriptionOptions(params: Constants.mockParams, original: Constants.mockScriptMessage)
-
-        // Then
-        let subscriptionOptionsResult = try XCTUnwrap(result as? SubscriptionOptions)
-        XCTAssertEqual(subscriptionOptionsResult, freeTrialOptions)
-    }
-
-    func testGetSubscriptionOptions_FreeTrialFlagOn_AndFreeTrialReturnsNil_ReturnsRegularOptions() async throws {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags = [.privacyProFreeTrial]
-        subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
-
-        storePurchaseManager.freeTrialSubscriptionOptionsResult = nil
-        storePurchaseManager.subscriptionOptionsResult = Constants.subscriptionOptions
-
-        // When
-        let result = try await feature.getSubscriptionOptions(params: Constants.mockParams, original: Constants.mockScriptMessage)
-
-        // Then
-        let subscriptionOptionsResult = try XCTUnwrap(result as? SubscriptionOptions)
-        XCTAssertEqual(subscriptionOptionsResult, Constants.subscriptionOptions)
-    }
-
-    func testGetSubscriptionOptions_FreeTrialFlagOff_AndFreeTrialOptionsAvailable_ReturnsRegularOptions() async throws {
-        // Given
-        subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
-
-        let freeTrialOptions = SubscriptionOptions(
-            platform: .macos,
-            options: [SubscriptionOption(id: "free-trial-monthly-from-store-manager", cost: SubscriptionOptionCost(displayPrice: "0 USD", recurrence: "monthly"))],
-            features: [SubscriptionFeature(name: .networkProtection)]
-        )
-
-        storePurchaseManager.freeTrialSubscriptionOptionsResult = freeTrialOptions
-        storePurchaseManager.subscriptionOptionsResult = Constants.subscriptionOptions
-
-        // When
-        let result = try await feature.getSubscriptionOptions(params: Constants.mockParams, original: Constants.mockScriptMessage)
-
-        // Then
-        let subscriptionOptionsResult = try XCTUnwrap(result as? SubscriptionOptions)
-        XCTAssertEqual(subscriptionOptionsResult, Constants.subscriptionOptions)
     }
 }
 

@@ -89,9 +89,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private let bookmarkManager: BookmarkManager
     private let fireproofDomains: FireproofDomains
     private let featureFlagger: FeatureFlagger
-    private var pinnedTabsViewModel: PinnedTabsViewModel?
-    private var pinnedTabsView: PinnedTabsView?
-    private var pinnedTabsHostingView: PinnedTabsHostingView?
     private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
     private var pinnedTabsDiscoveryPopover: NSPopover?
     private weak var crashPopoverViewController: PopoverMessageViewController?
@@ -205,30 +202,15 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         super.init(coder: coder)
 
-        initializePinnedTabs(themeManager: themeManager)
+        initializePinnedTabs()
     }
 
-    private func initializePinnedTabs(themeManager: ThemeManager) {
-        guard !tabCollectionViewModel.isBurner, let pinnedTabCollection = tabCollectionViewModel.pinnedTabsManager?.tabCollection else {
-            return
-        }
-
-        guard featureFlagger.isFeatureOn(.pinnedTabsViewRewrite) || [.unitTests, .integrationTests].contains(AppVersion.runType) else {
-            initializePinnedTabsLegacyView(pinnedTabCollection: pinnedTabCollection, themeManager: themeManager)
+    private func initializePinnedTabs() {
+        guard !tabCollectionViewModel.isBurner else {
             return
         }
 
         initializePinnedTabsAppKitView()
-    }
-
-    private func initializePinnedTabsLegacyView(pinnedTabCollection: TabCollection, themeManager: ThemeManager) {
-        let pinnedTabsViewModel = PinnedTabsViewModel(collection: pinnedTabCollection, fireproofDomains: fireproofDomains, bookmarkManager: bookmarkManager)
-        let pinnedTabsView = PinnedTabsView(model: pinnedTabsViewModel, themeManager: themeManager)
-        let pinnedTabsHostingView = PinnedTabsHostingView(rootView: pinnedTabsView)
-
-        self.pinnedTabsViewModel = pinnedTabsViewModel
-        self.pinnedTabsView = pinnedTabsView
-        self.pinnedTabsHostingView = pinnedTabsHostingView
     }
 
     private func initializePinnedTabsAppKitView() {
@@ -340,19 +322,13 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
                     return
                 }
 
-                if featureFlagger.isFeatureOn(.pinnedTabsViewRewrite) {
-                    subscribeToPinnedTabsCollection()
-                }
-
+                subscribeToPinnedTabsCollection()
                 updatePinnedTabsViewModel()
             }.store(in: &cancellables)
     }
 
     private func updatePinnedTabsViewModel() {
-        guard let pinnedTabCollection = tabCollectionViewModel.pinnedTabsCollection else { return }
-
-        // Replace collection
-        pinnedTabsViewModel?.replaceCollection(with: pinnedTabCollection)
+        guard tabCollectionViewModel.pinnedTabsCollection != nil else { return }
 
         // Refresh tab selection
         if let selectionIndex = tabCollectionViewModel.selectionIndex {
@@ -492,37 +468,13 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     // MARK: - Pinned Tabs
 
     private func setupPinnedTabsView() {
-        if featureFlagger.isFeatureOn(.pinnedTabsViewRewrite) {
-            layoutPinnedTabsCollectionView()
-            subscribeToPinnedTabsCollection()
+        layoutPinnedTabsCollectionView()
+        subscribeToPinnedTabsCollection()
 
-            pinnedTabsWindowDraggingView.isHidden = true
+        pinnedTabsWindowDraggingView.isHidden = true
 
-            pinnedTabsCollectionView?.dataSource = self
-            pinnedTabsCollectionView?.delegate = self
-
-        } else {
-            layoutPinnedTabsView()
-            subscribeToPinnedTabsHostingView()
-            subscribeToPinnedTabsViewModelOutputs()
-            subscribeToPinnedTabsViewModelInputs()
-        }
-    }
-
-    private func layoutPinnedTabsView() {
-        guard let pinnedTabsHostingView = pinnedTabsHostingView else { return }
-
-        pinnedTabsHostingView.translatesAutoresizingMaskIntoConstraints = false
-        pinnedTabsContainerView.addSubview(pinnedTabsHostingView)
-
-        let trailingConstant: CGFloat = theme.tabStyleProvider.shouldShowSShapedTab ? 12 : 0
-
-        NSLayoutConstraint.activate([
-            pinnedTabsHostingView.leadingAnchor.constraint(equalTo: pinnedTabsContainerView.leadingAnchor),
-            pinnedTabsHostingView.topAnchor.constraint(lessThanOrEqualTo: pinnedTabsContainerView.topAnchor),
-            pinnedTabsHostingView.bottomAnchor.constraint(equalTo: pinnedTabsContainerView.bottomAnchor),
-            pinnedTabsHostingView.trailingAnchor.constraint(equalTo: pinnedTabsContainerView.trailingAnchor, constant: trailingConstant)
-        ])
+        pinnedTabsCollectionView?.dataSource = self
+        pinnedTabsCollectionView?.delegate = self
     }
 
     private func layoutPinnedTabsCollectionView() {
@@ -549,98 +501,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             }
     }
 
-    private func subscribeToPinnedTabsViewModelInputs() {
-        guard let pinnedTabsViewModel = pinnedTabsViewModel else { return }
-
-        tabCollectionViewModel.$selectionIndex
-            .map { [weak self] selectedTabIndex -> Tab? in
-                switch selectedTabIndex {
-                case .pinned(let index):
-                    return self?.pinnedTabsViewModel?.items[safe: index]
-                default:
-                    return nil
-                }
-            }
-            .assign(to: \.selectedItem, onWeaklyHeld: pinnedTabsViewModel)
-            .store(in: &cancellables)
-
-        Publishers.CombineLatest(tabCollectionViewModel.$selectionIndex, $tabMode)
-            .map { selectedTabIndex, tabMode -> Bool in
-                if case .unpinned(0) = selectedTabIndex, tabMode == .divided {
-                    return false
-                }
-                return true
-            }
-            .assign(to: \.shouldDrawLastItemSeparator, onWeaklyHeld: pinnedTabsViewModel)
-            .store(in: &cancellables)
-    }
-
-    private func subscribeToPinnedTabsViewModelOutputs() {
-        guard let pinnedTabsViewModel = pinnedTabsViewModel else { return }
-
-        pinnedTabsViewModel.tabsDidReorderPublisher
-            .sink { [weak self] tabs in
-                self?.tabCollectionViewModel.pinnedTabsManager?.tabCollection.reorderTabs(tabs)
-            }
-            .store(in: &cancellables)
-
-        pinnedTabsViewModel.$selectedItemIndex.dropFirst().removeDuplicates()
-            .compactMap { $0 }
-            .sink { [weak self] index in
-                self?.deselectTabAndSelectPinnedTab(at: index)
-            }
-            .store(in: &cancellables)
-
-        pinnedTabsViewModel.$hoveredItemIndex.dropFirst().removeDuplicates()
-            .debounce(for: 0.05, scheduler: DispatchQueue.main)
-            .sink { [weak self] index in
-                self?.pinnedTabsViewDidUpdateHoveredItem(to: index)
-            }
-            .store(in: &cancellables)
-
-        pinnedTabsViewModel.contextMenuActionPublisher
-            .sink { [weak self] action in
-                self?.handlePinnedTabContextMenuAction(action)
-            }
-            .store(in: &cancellables)
-
-        pinnedTabsViewModel.$dragMovesWindow.map(!)
-            .assign(to: \.pinnedTabsWindowDraggingView.isHidden, onWeaklyHeld: self)
-            .store(in: &cancellables)
-    }
-
-    private func subscribeToPinnedTabsHostingView() {
-        pinnedTabsHostingView?.middleClickPublisher
-            .compactMap { [weak self] in self?.pinnedTabsView?.index(forItemAt: $0) }
-            .sink { [weak self] index in
-                self?.tabCollectionViewModel.remove(at: .pinned(index))
-            }
-            .store(in: &cancellables)
-
-        pinnedTabsWindowDraggingView.mouseDownPublisher
-            .sink { [weak self] _ in
-                self?.pinnedTabsViewModel?.selectedItem = self?.pinnedTabsViewModel?.items.first
-            }
-            .store(in: &cancellables)
-    }
-
-    private func pinnedTabsViewDidUpdateHoveredItem(to index: Int?) {
-        if let index {
-            showPinnedTabPreview(at: index)
-        } else if !shouldDisplayTabPreviews {
-            hideTabPreview(allowQuickRedisplay: true)
-        }
-    }
-
-    private func deselectTabAndSelectPinnedTab(at index: Int) {
-        hideTabPreview()
-        if tabCollectionViewModel.selectionIndex != .pinned(index), tabCollectionViewModel.select(at: .pinned(index)) {
-            let previousSelection = collectionView.selectionIndexPaths
-            clearSelection(animated: true)
-            collectionView.reloadItems(at: previousSelection)
-        }
-    }
-
     // MARK: - Actions
 
     @objc func addButtonAction(_ sender: NSButton) {
@@ -655,51 +515,14 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         collectionView.scrollToBeginning()
     }
 
-    private func handlePinnedTabContextMenuAction(_ action: PinnedTabsViewModel.ContextMenuAction) {
-        switch action {
-        case let .unpin(index):
-            tabCollectionViewModel.unpinTab(at: index)
-        case let .duplicate(index):
-            duplicateTab(at: .pinned(index))
-        case let .bookmark(tab):
-            guard let tabViewModel = tabCollectionViewModel.pinnedTabsManager?.tabViewModels[tab] else {
-                Logger.general.debug("TabBarViewController: Failed to get tabViewModel for pinned tab")
-                return
-            }
-            addBookmark(for: tabViewModel)
-        case let .removeBookmark(tab):
-            guard let url = tab.url else {
-                Logger.general.debug("TabBarViewController: Failed to get url from tab")
-                return
-            }
-            deleteBookmark(with: url)
-        case let .fireproof(tab):
-            fireproof(tab)
-        case let .removeFireproofing(tab):
-            removeFireproofing(from: tab)
-        case let .close(index):
-            tabCollectionViewModel.remove(at: .pinned(index))
-        case let .muteOrUnmute(tab):
-            tab.muteUnmuteTab()
-        }
-    }
-
     private func reloadSelection() {
         let isPinnedTab = tabCollectionViewModel.selectionIndex?.isPinnedTab == true
 
-        let collectionView: TabBarCollectionView?
-        let shouldContinue: Bool
-        if featureFlagger.isFeatureOn(.pinnedTabsViewRewrite) {
-            shouldContinue = true
-            collectionView = isPinnedTab ? pinnedTabsCollectionView : self.collectionView
-        } else {
-            shouldContinue = !isPinnedTab
-            collectionView = self.collectionView
-        }
+        let collectionView: TabBarCollectionView? = isPinnedTab ? pinnedTabsCollectionView : self.collectionView
 
         bringSelectedTabCollectionToFront()
 
-        guard shouldContinue, let collectionView else {
+        guard let collectionView else {
             return
         }
 
@@ -729,7 +552,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private func refreshPinnedTabsLastSeparator() {
-        guard featureFlagger.isFeatureOn(.pinnedTabsViewRewrite), let pinnedTabsCollectionView else {
+        guard let pinnedTabsCollectionView else {
             return
         }
 
@@ -759,14 +582,13 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private func selectTab(with event: NSEvent) {
         let locationInWindow = event.locationInWindow
 
-        if let point = pinnedTabsHostingView?.mouseLocationInsideBounds(locationInWindow),
-           let index = pinnedTabsView?.index(forItemAt: point) {
-
-            tabCollectionViewModel.select(at: .pinned(index))
-
-        } else if let point = collectionView.mouseLocationInsideBounds(locationInWindow),
-                  let indexPath = collectionView.indexPathForItem(at: point) {
+        if let indexPath = collectionView.indexPathForItemAtMouseLocation(locationInWindow) {
             tabCollectionViewModel.select(at: .unpinned(indexPath.item))
+            return
+        }
+
+        if let indexPath = pinnedTabsCollectionView?.indexPathForItemAtMouseLocation(locationInWindow) {
+            tabCollectionViewModel.select(at: .pinned(indexPath.item))
         }
     }
 
@@ -930,14 +752,16 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         }
 
         // show Tab Preview when mouse was moved over a tab when the Tab Preview was hidden before
-        guard !tabPreviewWindowController.isPresented else { return }
-
-        if let indexPath = collectionView.withMouseLocationInViewCoordinates(convert: { self.collectionView.indexPathForItem(at: $0) }),
-           let tabBarViewItem = collectionView.item(at: indexPath) as? TabBarViewItem {
-            showTabPreview(for: tabBarViewItem)
-        } else if let pinnedTabIndex = pinnedTabsViewModel?.hoveredItemIndex {
-            showPinnedTabPreview(at: pinnedTabIndex)
+        guard !tabPreviewWindowController.isPresented else {
+            return
         }
+
+        let locationInWindow = event.locationInWindow
+        guard let tabBarViewItem = collectionView.tabBarItemAtMouseLocation(locationInWindow) ?? pinnedTabsCollectionView?.tabBarItemAtMouseLocation(locationInWindow) else {
+            return
+        }
+
+        showTabPreview(for: tabBarViewItem)
     }
 
     override func mouseExited(with event: NSEvent) {
@@ -1006,12 +830,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         /// we need to do the same with the left side scroll view (when on overflow), if not the pinned tabs container
         /// will overlap the arrow button.
         let shouldShowSShapedTabs = theme.tabStyleProvider.shouldShowSShapedTab
-        let noPinnedTabs = pinnedTabsViewModel?.items.isEmpty ?? true
         let isLeftScrollButtonVisible = !leftScrollButton.isHidden
 
-        if !noPinnedTabs && shouldShowSShapedTabs && isLeftScrollButtonVisible {
-            leftSideStackLeadingConstraint.constant = 12
-        } else if noPinnedTabs && shouldShowSShapedTabs && !isLeftScrollButtonVisible {
+        if shouldShowSShapedTabs && !isLeftScrollButtonVisible {
             leftSideStackLeadingConstraint.constant = -12
         } else {
             leftSideStackLeadingConstraint.constant = 0
@@ -1138,17 +959,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             let position = scrollView.frame.minX + tabBarViewItem.view.frame.minX - clipView.bounds.origin.x
             showTabPreview(for: tabViewModel, from: position)
         }
-    }
-
-    private func showPinnedTabPreview(at index: Int) {
-        guard let tabViewModel = tabCollectionViewModel.pinnedTabsManager?.tabViewModel(at: index) else {
-            Logger.general.error("TabBarViewController: Showing pinned tab preview window failed")
-            return
-        }
-
-        let pinnedTabWidth = theme.tabStyleProvider.pinnedTabWidth
-        let position = pinnedTabsContainerView.frame.minX + pinnedTabWidth * CGFloat(index)
-        showTabPreview(for: tabViewModel, from: position)
     }
 
     private func showTabPreview(for tabViewModel: TabViewModel, from xPosition: CGFloat) {
@@ -1596,10 +1406,9 @@ extension TabBarViewController: NSCollectionViewDelegate {
         let tabIndex: TabIndex = collectionView == pinnedTabsCollectionView ? .pinned(proposedDropIndexPath.pointee.item) : .unpinned(proposedDropIndexPath.pointee.item)
 
         // move tab within one window if needed: bail out if we're outside the CollectionView Bounds!
-        let isPinnedTabsRewriteEnabled = featureFlagger.isFeatureOn(.pinnedTabsViewRewrite)
         let locationInView = collectionView.convert(draggingInfo.draggingLocation, from: nil)
 
-        guard collectionView.frame.contains(locationInView) || !isPinnedTabsRewriteEnabled else {
+        guard collectionView.frame.contains(locationInView) else {
             return .none
         }
 
@@ -1762,7 +1571,8 @@ extension TabBarViewController: TabBarViewItemDelegate {
     func tabBarViewItem(_ tabBarViewItem: TabBarViewItem, isMouseOver: Bool) {
         if isMouseOver {
             // Show tab preview for visible tab bar items
-            if collectionView.visibleRect.intersects(tabBarViewItem.view.frame) {
+            let sourceCollectionView = tabBarViewItem.isPinned ? pinnedTabsCollectionView : collectionView
+            if sourceCollectionView?.visibleRect.intersects(tabBarViewItem.view.frame) == true {
                 showTabPreview(for: tabBarViewItem)
             }
         } else if !shouldDisplayTabPreviews {
@@ -1868,7 +1678,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
 
             self.pinnedTabsDiscoveryPopover = popover
 
-            guard let view = self.pinnedTabsHostingView else { return }
+            guard let view = self.pinnedTabsCollectionView else { return }
             let pinnedTabWidth = theme.tabStyleProvider.pinnedTabWidth
             popover.show(relativeTo: NSRect(x: view.bounds.maxX - pinnedTabWidth,
                                             y: view.bounds.minY,

@@ -46,7 +46,7 @@ final class UpdateControllerTests: XCTestCase {
         XCTAssertEqual(updateController.sparkleUpdaterErrorReason(from: "Unexpected installer error format"), "unknown")
     }
 
-    func testUpdaterWillRelaunchApplication_completesWideEventWithSuccess() {
+    func testUpdaterWillRelaunchApplication_setsRestartingToUpdateStep() {
         // Given
         let mockWideEventManager = WideEventMock()
         let mockWideEvent = SparkleUpdateWideEvent(
@@ -72,21 +72,14 @@ final class UpdateControllerTests: XCTestCase {
         // When
         updateController.updaterWillRelaunchApplication(mockUpdater)
 
-        // Then - verify the wide event was completed with success
-        XCTAssertEqual(mockWideEventManager.completions.count, 1)
-        let (completedData, status) = mockWideEventManager.completions[0]
+        // Then - verify the step was set to restartingToUpdate (flow not completed yet)
+        XCTAssertEqual(mockWideEventManager.completions.count, 0)
 
-        // Verify it's a success status with the correct reason
-        if case .success(let reason) = status {
-            XCTAssertEqual(reason, "restarting_to_update")
-        } else {
-            XCTFail("Expected success status with restarting_to_update reason, got \(status)")
-        }
-
-        // Verify the data includes version info
-        let pixelParams = (completedData as? UpdateWideEventData)?.pixelParameters() ?? [:]
-        XCTAssertEqual(pixelParams["feature.data.ext.to_version"], "1.1.0")
-        XCTAssertEqual(pixelParams["feature.data.ext.to_build"], "110")
+        // Verify the flow data has the correct step
+        let flowData = mockWideEvent.getCurrentFlowData()
+        XCTAssertEqual(flowData?.lastKnownStep, .restartingToUpdate)
+        XCTAssertEqual(flowData?.toVersion, "1.1.0")
+        XCTAssertEqual(flowData?.toBuild, "110")
     }
 
     func testDidFinishUpdateCycleFor_withNoUpdateFound_completesWideEvent() {

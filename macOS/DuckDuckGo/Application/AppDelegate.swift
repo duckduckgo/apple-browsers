@@ -55,6 +55,7 @@ import Utilities
 import VPN
 import VPNAppState
 import WebKit
+import AttributedMetric
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
@@ -150,8 +151,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let recentlyClosedCoordinator: RecentlyClosedCoordinating
     let downloadManager: FileDownloadManagerProtocol
     let downloadListCoordinator: DownloadListCoordinator
-
     let autoconsentManagement = AutoconsentManagement()
+    let attributedMetricManager: AttributedMetricManager
 
     private var updateProgressCancellable: AnyCancellable?
 
@@ -196,6 +197,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let remoteMessagingClient: RemoteMessagingClient!
     let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
     let defaultBrowserAndDockPromptService: DefaultBrowserAndDockPromptService
+    let userChurnScheduler: UserChurnBackgroundActivityScheduler
     lazy var vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
         subscriptionManager: subscriptionAuthV1toV2Bridge,
         featureFlagger: featureFlagger,
@@ -540,13 +542,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
         bookmarkDragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
 
-#if DEBUG || REVIEW
-        let defaultBrowserAndDockPromptDebugStore = DefaultBrowserAndDockPromptDebugStore()
-        let defaultBrowserAndDockPromptDateProvider: () -> Date = { defaultBrowserAndDockPromptDebugStore.simulatedTodayDate ?? Date() }
-#else
-        let defaultBrowserAndDockPromptDateProvider: () -> Date = Date.init
-#endif
-
         // MARK: - Subscription configuration
 
         subscriptionUIHandler = SubscriptionUIHandler(windowControllersManagerProvider: {
@@ -676,8 +671,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 purchasePlatform: subscriptionAuthV1toV2Bridge.currentEnvironment.purchasePlatform,
                 paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) },
                 supportsAlternateStripePaymentFlowStatusProvider: { featureFlagger.isFeatureOn(.supportsAlternateStripePaymentFlow) },
-                isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement) },
-                isSubscriptionRestoreWidePixelMeasurementEnabledProvider: { featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) }
+                isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement) }
             ),
             internalUserDecider: internalUserDecider,
             featureFlagger: featureFlagger
@@ -974,6 +968,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         )
 
+        userChurnScheduler = UserChurnBackgroundActivityScheduler(
+            defaultBrowserProvider: SystemDefaultBrowserProvider(),
+            keyValueStore: keyValueStore,
+            pixelFiring: PixelKit.shared,
+            atbProvider: { LocalStatisticsStore().atb }
+        )
+
+        // AttributedMetric initialisation
+
+        let errorHandler = AttributedMetricErrorHandler(pixelKit: PixelKit.shared)
+        let attributedMetricDataStorage = AttributedMetricDataStorage(userDefaults: .appConfiguration,
+                                                                      errorHandler: errorHandler)
+        let settingsProvider = DefaultAttributedMetricSettingsProvider(privacyConfig: privacyConfigurationManager.privacyConfig)
+        let subscriptionStateProvider = DefaultSubscriptionStateProvider(subscriptionManager: subscriptionAuthV1toV2Bridge)
+        let defaultBrowserProvider = SystemDefaultBrowserProvider()
+        self.attributedMetricManager = AttributedMetricManager(pixelKit: PixelKit.shared,
+                                                               dataStoring: attributedMetricDataStorage,
+                                                               featureFlagger: featureFlagger,
+                                                               originProvider: AttributedMetricOriginFileProvider(),
+                                                               defaultBrowserProviding: defaultBrowserProvider,
+                                                               subscriptionStateProvider: subscriptionStateProvider,
+                                                               settingsProvider: settingsProvider)
+        self.attributedMetricManager.addNotificationsObserver()
+
         super.init()
 
         appContentBlocking?.userContentUpdating.userScriptDependenciesProvider = self
@@ -1079,13 +1097,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if [.normal, .uiTests].contains(AppVersion.runType) {
             stateRestorationManager.applicationDidFinishLaunching()
         }
+        let urlEventHandlerResult = urlEventHandler.applicationDidFinishLaunching()
 
         setUpAutoClearHandler()
 
         BWManager.shared.initCommunication()
 
-        if WindowsManager.windows.first(where: { $0 is MainWindow }) == nil,
-           case .normal = AppVersion.runType {
+        if case .normal = AppVersion.runType,
+           !urlEventHandlerResult.willOpenWindows && WindowsManager.windows.first(where: { $0 is MainWindow }) == nil {
             // Use startup window preferences if not restoring previous session
             if !startupPreferences.restorePreviousSession {
                 let burnerMode = startupPreferences.startupBurnerMode(featureFlagger: featureFlagger)
@@ -1132,7 +1151,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             await crashReporter.checkForNewReports()
         }
 #endif
-        urlEventHandler.applicationDidFinishLaunching()
 
         subscribeToEmailProtectionStatusNotifications()
         subscribeToDataImportCompleteNotification()
@@ -1179,6 +1197,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Task(priority: .utility) {
             await wideEventService.sendPendingEvents()
         }
+
+        userChurnScheduler.start()
 
         PixelKit.fire(NonStandardEvent(GeneralPixel.launch))
     }

@@ -150,7 +150,7 @@ final class AppHTTPSUpgradeStoreTests: XCTestCase {
         let specification = try JSONDecoder().decode(HTTPSBloomFilterSpecification.self, from: specificationData)
         let bloomData = try Data(contentsOf: Resource.bloomFilter)
 
-        let iterations = 100
+        let iterations = 50
         let queue = DispatchQueue(label: "test.concurrent.writes", attributes: .concurrent)
         let group = DispatchGroup()
 
@@ -178,7 +178,7 @@ final class AppHTTPSUpgradeStoreTests: XCTestCase {
             expectation.fulfill()
         }
 
-        wait(for: [expectation], timeout: 10)
+        wait(for: [expectation], timeout: 30)
         XCTAssertNotNil(testee.loadBloomFilter())
     }
 

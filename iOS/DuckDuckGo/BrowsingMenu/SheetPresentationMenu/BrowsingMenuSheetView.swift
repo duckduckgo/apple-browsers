@@ -38,14 +38,12 @@ struct BrowsingMenuSheetView: View {
     private let onDismiss: () -> Void
 
     @State private var highlightTag: BrowsingMenuModel.Entry.Tag?
-
-    @State private var actionToPerform: () -> Void
+    @State private var actionToPerform: () -> Void = {}
 
     init(model: BrowsingMenuModel, highlightRowWithTag: BrowsingMenuModel.Entry.Tag? = nil, onDismiss: @escaping () -> Void) {
         self.model = model
         self.onDismiss = onDismiss
-        self.highlightTag = highlightRowWithTag
-        self.actionToPerform = { }
+        _highlightTag = State(initialValue: highlightRowWithTag)
     }
 
     var body: some View {

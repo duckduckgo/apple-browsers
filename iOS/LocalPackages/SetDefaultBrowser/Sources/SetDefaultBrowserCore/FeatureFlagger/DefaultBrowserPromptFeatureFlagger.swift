@@ -19,14 +19,6 @@
 
 import Foundation
 
-public protocol DefaultBrowserPromptInactiveUserFeatureFlagProvider {
-    /// A Boolean value indicating whether Set Default Browser Prompts are enabled for inactive users.
-    /// - Returns: `true` if the feature is enabled; otherwise, `false`.
-    var isDefaultBrowserPromptsForInactiveUsersFeatureEnabled: Bool { get }
-}
-
-public typealias DefaultBrowserPromptFeatureFlagProvider = DefaultBrowserPromptInactiveUserFeatureFlagProvider
-
 public protocol DefaultBrowserPromptFeatureFlagSettingsProvider {
     // A dictionary representing the settings for the feature.
     var defaultBrowserPromptFeatureSettings: [String: Any] { get }
@@ -65,7 +57,7 @@ package protocol DefaultBrowserPromptActiveUserFeatureFlagger {
     var subsequentActiveModalRepeatIntervalDays: Int { get }
 }
 
-package protocol DefaultBrowserPromptInactiveUserFeatureFlagger: DefaultBrowserPromptInactiveUserFeatureFlagProvider {
+package protocol DefaultBrowserPromptInactiveUserFeatureFlagger {
     /// The setting for the number of days to wait after app installation before showing the modal to inactive users. Default to 28.
     var inactiveModalNumberOfDaysSinceInstall: Int { get }
     /// The setting for the number of inactive days to wait before showing the modal to inactive users. Default to 7.
@@ -76,21 +68,15 @@ package typealias DefaultBrowserPromptFeatureFlagger = DefaultBrowserPromptActiv
 
 package final class DefaultBrowserPromptFeatureFlag {
     private let settingsProvider: DefaultBrowserPromptFeatureFlagSettingsProvider
-    private let featureFlagProvider: DefaultBrowserPromptFeatureFlagProvider
 
-    package init(settingsProvider: DefaultBrowserPromptFeatureFlagSettingsProvider, featureFlagProvider: DefaultBrowserPromptFeatureFlagProvider) {
+    package init(settingsProvider: DefaultBrowserPromptFeatureFlagSettingsProvider) {
         self.settingsProvider = settingsProvider
-        self.featureFlagProvider = featureFlagProvider
     }
 }
 
 // MARK: - DefaultBrowserPromptFeatureFlagger
 
 extension DefaultBrowserPromptFeatureFlag: DefaultBrowserPromptFeatureFlagger {
-
-    public var isDefaultBrowserPromptsForInactiveUsersFeatureEnabled: Bool {
-        featureFlagProvider.isDefaultBrowserPromptsForInactiveUsersFeatureEnabled
-    }
 
     package var firstActiveModalDelayDays: Int {
         getSettings(.firstActiveModalDelayDays)

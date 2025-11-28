@@ -163,9 +163,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866463389447
     case showSettingsCompleteSetupSection
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866470962985
-    case scheduledSetDefaultBrowserPromptsForInactiveUsers
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866607644644
     case canPromoteImportPasswordsInPasswordManagement
 
@@ -334,7 +331,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .supportsAlternateStripePaymentFlow,
              .personalInformationRemoval,
              .createFireproofFaviconUpdaterSecureVaultInBackground,
-             .scheduledSetDefaultBrowserPromptsForInactiveUsers,
              .duckAISearchParameter,
              .inactivityNotification,
              .daxEasterEggLogos,
@@ -513,8 +509,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.keepSession))
         case .showSettingsCompleteSetupSection:
             return .remoteReleasable(.subfeature(OnboardingSubfeature.showSettingsCompleteSetupSection))
-        case .scheduledSetDefaultBrowserPromptsForInactiveUsers:
-            return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserPromptsInactiveUser))
         case .supportsAlternateStripePaymentFlow:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
         case .personalInformationRemoval:

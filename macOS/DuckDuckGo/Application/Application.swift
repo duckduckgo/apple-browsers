@@ -110,7 +110,7 @@ final class Application: NSApplication {
     /// https://app.asana.com/1/137249556945/project/1177771139624306/task/1202049975066624?focus=true
     /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1209477403052191?focus=true
     @MainActor
-    var shouldResetClickCountForNextEventOfType: NSEvent.EventType?
+    var shouldResetClickCountForNextEventOfTypes: Set<NSEvent.EventType>?
 
     override func sendEvent(_ event: NSEvent) {
 #if DEBUG
@@ -124,7 +124,7 @@ final class Application: NSApplication {
 
         // Handle the hack to reset the click count to 1 for the next incoming mouse event of the given type.
         var event = event
-        if let expectedEventType = shouldResetClickCountForNextEventOfType, event.type == expectedEventType,
+        if let expectedEventType = shouldResetClickCountForNextEventOfTypes, expectedEventType.contains(event.type),
            featureFlagger.isFeatureOn(.tabClosingEventRecreation) {
             if event.clickCount > 1 {
                 event = {
@@ -133,7 +133,7 @@ final class Application: NSApplication {
                     return NSEvent(cgEvent: cg) ?? event
                 }()
             }
-            shouldResetClickCountForNextEventOfType = nil
+            shouldResetClickCountForNextEventOfTypes = nil
         }
         super.sendEvent(event)
     }

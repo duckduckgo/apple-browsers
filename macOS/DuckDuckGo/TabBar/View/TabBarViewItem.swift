@@ -910,7 +910,7 @@ final class TabBarViewItem: NSCollectionViewItem {
         // https://app.asana.com/1/137249556945/project/1177771139624306/task/1202049975066624?focus=true
         // https://app.asana.com/1/137249556945/project/1201048563534612/task/1209477403052191?focus=true
         if let event = NSApp.currentEvent, [.leftMouseDown, .leftMouseUp].contains(event.type) {
-            (NSApp as? Application)?.shouldResetClickCountForNextEventOfType = event.type
+            (NSApp as? Application)?.shouldResetClickCountForNextEventOfTypes = [.leftMouseDown, .leftMouseUp]
         }
 
         guard let indexPath = self.collectionView?.indexPath(for: self) else {
@@ -1482,7 +1482,7 @@ extension TabBarViewItem: MouseClickViewDelegate {
         // for the next incoming mouse event of the given type to consequently close tabs.
         // https://app.asana.com/1/137249556945/project/1177771139624306/task/1202049975066624?focus=true
         // https://app.asana.com/1/137249556945/project/1201048563534612/task/1209477403052191?focus=true
-        (NSApp as? Application)?.shouldResetClickCountForNextEventOfType = otherMouseDownEvent.type
+        (NSApp as? Application)?.shouldResetClickCountForNextEventOfTypes = [otherMouseDownEvent.type]
         guard let indexPath = self.collectionView?.indexPath(for: self) else {
             // doubleclick event arrived at point when we're already removed
             // pass the closeButton action to the next TabBarViewItem

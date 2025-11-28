@@ -40,11 +40,9 @@ public struct PixelParameters {
 
     static let errorCode = "e"
     static let errorDomain = "d"
-    static let errorDescription = "ed"
     static let errorCount = "c"
     static let underlyingErrorCode = "ue"
     static let underlyingErrorDomain = "ud"
-    static let underlyingErrorDescription = "ued"
 
     static let coreDataErrorCode = "coreDataCode"
     static let coreDataErrorDomain = "coreDataDomain"
@@ -346,8 +344,6 @@ private extension Pixel.Event {
         }
         return false
     }
-    
-    
 }
 
 extension Dictionary where Key == String, Value == String {
@@ -357,7 +353,6 @@ extension Dictionary where Key == String, Value == String {
 
         self[PixelParameters.errorCode] = "\(nsError.code)"
         self[PixelParameters.errorDomain] = nsError.domain
-        self[PixelParameters.errorDescription] = nsError.description
 
         let underlyingErrorParameters = underlyingErrorParameters(for: error as NSError)
         self.merge(underlyingErrorParameters) { first, _ in first }
@@ -368,12 +363,10 @@ extension Dictionary where Key == String, Value == String {
             let levelString = (level == 0 ? "" : String(level + 1))
             let errorCodeParameterName = PixelParameters.underlyingErrorCode + levelString
             let errorDomainParameterName = PixelParameters.underlyingErrorDomain + levelString
-            let errorDescriptionParameterName = PixelParameters.underlyingErrorDescription + levelString
 
             let currentUnderlyingErrorParameters = [
                 errorCodeParameterName: "\(underlyingError.code)",
-                errorDomainParameterName: underlyingError.domain,
-                errorDescriptionParameterName: underlyingError.description
+                errorDomainParameterName: underlyingError.domain
             ]
 
             let additionalParameters = underlyingErrorParameters(for: underlyingError, level: level + 1)

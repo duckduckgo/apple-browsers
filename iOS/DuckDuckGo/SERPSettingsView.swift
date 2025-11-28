@@ -26,8 +26,7 @@ struct SERPSettingsView: View {
     /// Used to show the right settings screen on SERP
     let page: Page
     
-    let webViewModel = AsyncHeadlessWebViewViewModel(settings: AsyncHeadlessWebViewSettings(bounces: false,
-                                                                                            userScriptsDependencies: nil))
+    let webViewModel = AsyncHeadlessWebViewViewModel(settings: AsyncHeadlessWebViewSettings(bounces: false, contentBlocking: false))
 
     var body: some View {
         AsyncHeadlessWebView(viewModel: webViewModel)

@@ -157,13 +157,73 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Заблокирован %1$d трекер</string>
+			<string>Пресечена загрузка %1$d трекера</string>
 			<key>few</key>
-			<string>Заблокировано %1$d трекера</string>
+			<string>Пресечена загрузка %1$d трекеров</string>
 			<key>many</key>
-			<string>Заблокировано %1$d трекеров</string>
+			<string>Пресечена загрузка %1$d трекеров</string>
 			<key>other</key>
-			<string>Заблокированы %1$d трекеры</string>
+			<string>Пресечена загрузка трекеров (%1$d)</string>
+		</dict>
+	</dict>
+	<key>omnibar.notification.trackers-blocked</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d трекер</string>
+			<key>few</key>
+			<string>%1$d трекера</string>
+			<key>many</key>
+			<string>%1$d трекеров</string>
+			<key>other</key>
+			<string>%1$d трекера</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.other.domains.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Загружен еще %1$d домен</string>
+			<key>few</key>
+			<string>Загружено еще %1$d домена</string>
+			<key>many</key>
+			<string>Загружено еще %1$d доменов</string>
+			<key>other</key>
+			<string>Загружены еще домены (%1$d)</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.first.party.trackers.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d собственный трекер сайта (загружен)</string>
+			<key>few</key>
+			<string>%1$d собственных трекера сайта (загружены)</string>
+			<key>many</key>
+			<string>%1$d собственных трекеров сайта (загружены)</string>
+			<key>other</key>
+			<string>Загружено собственных трекеров сайта: %1$d</string>
 		</dict>
 	</dict>
 	<key>number.of.tabs</key>

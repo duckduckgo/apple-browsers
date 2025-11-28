@@ -118,7 +118,7 @@ public class ReferrerTrimming {
     }
 
     public func trimReferrer(for request: URLRequest, originUrl: URL?) -> URLRequest? {
-        guard let originUrl = originUrl else {
+        guard let originUrl else {
             return nil
         }
         guard let destUrl = request.url else {

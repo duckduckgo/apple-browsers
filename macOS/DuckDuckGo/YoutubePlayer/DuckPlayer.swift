@@ -437,12 +437,12 @@ extension DuckPlayer {
         return url.isDuckPlayer ? DuckPlayer.commonName : nil
     }
 
-    func sharingData(for title: String, url: URL) -> (title: String, url: URL)? {
+    func sharingData(for title: String?, url: URL) -> (title: String?, url: URL)? {
         guard isAvailable, mode != .disabled, url.isDuckURLScheme, let (videoID, timestamp) = url.youtubeVideoParams else {
             return nil
         }
 
-        let title = title.dropping(prefix: Self.websiteTitlePrefix)
+        let title = title?.dropping(prefix: Self.websiteTitlePrefix)
         let sharingURL = URL.youtube(videoID, timestamp: timestamp)
 
         return (title, sharingURL)

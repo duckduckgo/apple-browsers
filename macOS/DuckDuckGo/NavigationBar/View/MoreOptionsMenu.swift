@@ -76,7 +76,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     private let passwordManagerCoordinator: PasswordManagerCoordinating
     private let internalUserDecider: InternalUserDecider
     @MainActor
-    private lazy var sharingMenu: NSMenu = SharingMenu(title: UserText.shareMenuItem, location: .moreOptionsMenu)
+    private lazy var sharingMenu: NSMenu = SharingMenu(title: UserText.shareMenuItem, location: .moreOptionsMenu, delegate: self)
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let isUsingAuthV2: Bool
     private let freemiumDBPUserStateManager: FreemiumDBPUserStateManager
@@ -1378,6 +1378,19 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
         refreshAvailabilityBasedOnEntitlements()
     }
 
+}
+
+// MARK: - SharingMenuDelegate
+extension MoreOptionsMenu: SharingMenuDelegate {
+    @MainActor
+    func sharingMenuRequestsSharingData() -> SharingMenu.SharingData? {
+        guard let selectedTabViewModel = tabCollectionViewModel.selectedTabViewModel,
+              selectedTabViewModel.canReload,
+              !selectedTabViewModel.isShowingErrorPage,
+              let url = selectedTabViewModel.tab.content.userEditableUrl else { return nil }
+
+        return (selectedTabViewModel.title, [url])
+    }
 }
 
 extension MoreOptionsMenu: EmailManagerRequestDelegate {}

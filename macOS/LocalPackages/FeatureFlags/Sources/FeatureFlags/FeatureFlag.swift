@@ -83,12 +83,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866474590440
     case privacyProAuthV2
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717504694
-    case visualUpdates
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866616568109
-    case visualUpdatesInternalOnly
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614764239
     case tabCrashDebugging
 
@@ -112,9 +106,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866617269950
     case paidAIChat
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866617356615
-    case removeWWWInCanonicalizationInThreatProtection
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717945014
     case aiChatSidebar
@@ -300,9 +291,7 @@ public enum FeatureFlag: String, CaseIterable {
 extension FeatureFlag: FeatureFlagDescribing {
     public var defaultValue: Bool {
         switch self {
-        case .removeWWWInCanonicalizationInThreatProtection,
-                .visualUpdatesInternalOnly,
-                .importChromeShortcuts,
+        case .importChromeShortcuts,
                 .updateSafariBookmarksImport,
                 .updateFirefoxBookmarksImport,
                 .supportsAlternateStripePaymentFlow,
@@ -349,8 +338,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .updatesWontAutomaticallyRestartApp,
                 .privacyProAuthV2,
                 .scamSiteProtection,
-                .visualUpdates,
-                .visualUpdatesInternalOnly,
                 .tabCrashDebugging,
                 .maliciousSiteProtection,
                 .delayedWebviewPresentation,
@@ -358,7 +345,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .paidAIChat,
                 .exchangeKeysToSyncWithAnotherDevice,
                 .canScanUrlBasedSyncSetupBarcodes,
-                .removeWWWInCanonicalizationInThreatProtection,
                 .osSupportForceUnsupportedMessage,
                 .osSupportForceWillSoonDropSupportMessage,
                 .willSoonDropBigSurSupport,
@@ -475,10 +461,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPrompts))
         case .privacyProAuthV2:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
-        case .visualUpdates:
-            return .remoteReleasable(.subfeature(ExperimentalThemingSubfeature.visualUpdates))
-        case .visualUpdatesInternalOnly:
-            return .internalOnly()
         case .tabCrashDebugging:
             return .disabled
         case .delayedWebviewPresentation:
@@ -495,8 +477,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
         case .paidAIChat:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.paidAIChat))
-        case .removeWWWInCanonicalizationInThreatProtection:
-            return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.removeWWWInCanonicalization))
         case .aiChatSidebar:
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebar))
         case .aiChatTextSummarization:
@@ -580,7 +560,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .dataImportNewExperience:
             return .disabled
         case .scheduledDefaultBrowserAndDockPromptsInactiveUser:
-            return .remoteDevelopment(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPromptsInactiveUser))
+            return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPromptsInactiveUser))
         case .pinnedTabsViewRewrite:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.pinnedTabsViewRewrite))
         case .tabProgressIndicator:

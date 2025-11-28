@@ -113,7 +113,7 @@ private extension TabTitleView {
 
     func setupTextFields() {
         titleTextField.textColor = .labelColor
-        previousTextField.textColor = .labelColor.withAlphaComponent(0.6)
+        previousTextField.textColor = .labelColor
     }
 
     func buildTitleTextField() -> NSTextField {
@@ -149,10 +149,9 @@ private extension TabTitleView {
             return
         }
 
-        let fromAlpha = Float(titleTextField.alphaValue)
         let animationGroup = CAAnimationGroup()
         animationGroup.animations = [
-            CASpringAnimation.buildFadeOutAnimation(duration: TitleAnimation.duration, fromAlpha: fromAlpha),
+            CASpringAnimation.buildFadeOutAnimation(duration: TitleAnimation.duration, fromAlpha: TitleAnimation.previousTitleAlpha),
             CASpringAnimation.buildTranslationXAnimation(duration: TitleAnimation.duration, fromValue: TitleAnimation.slidingOutStartX, toValue: TitleAnimation.slidingOutLastX)
         ]
 
@@ -174,7 +173,7 @@ private extension TabTitleView {
             return
         }
 
-        let animation = CASpringAnimation.buildFadeAnimation(duration: TitleAnimation.duration, fromValue: Float(fromAlpha), toValue: Float(toAlpha))
+        let animation = CASpringAnimation.buildFadeAnimation(duration: TitleAnimation.duration, fromAlpha: Float(fromAlpha), toAlpha: Float(toAlpha))
         titleLayer.add(animation, forKey: TitleAnimation.alphaKey)
     }
 }
@@ -184,6 +183,7 @@ private enum TitleAnimation {
     static let slideInKey = "slideIn"
     static let alphaKey = "alpha"
     static let duration: TimeInterval = 0.2
+    static let previousTitleAlpha = Float(0.6)
     static let slidingOutStartX = CGFloat(0)
     static let slidingOutLastX = CGFloat(-4)
     static let slidingInStartX = CGFloat(-4)

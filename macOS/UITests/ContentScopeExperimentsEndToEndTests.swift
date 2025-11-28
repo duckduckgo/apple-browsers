@@ -30,9 +30,9 @@ final class ContentScopeExperimentsEndToEndTests: UITestCase {
         if internalUserMenuItem.exists {
             internalUserMenuItem.click()
         }
-        menuBarsQuery.menuBarItems["Debug"].click()
-        menuBarsQuery.menuItems["Remote Configuration"].click()
-        menuBarsQuery.menuItems["Set custom configuration URL…"].click()
+        app.debugMenu.click()
+        app.debugMenu.menuItems["Remote Configuration"].click()
+        app.debugMenu.menuItems["Set custom configuration URL…"].click()
 
         let configURL = URL(string: "https://privacy-test-pages.site/content-scope-scripts/infra/config/conditional-matching-experiments.json")!
         let textField = app.dialogs["alert"].children(matching: .textField).element

@@ -31,6 +31,15 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Dodaj";
 
+/* Open AI Chat history action in the menu list */
+"action.title.aiChat.history" = "Klepeti Duck.ai";
+
+/* Start new AI Chat action in the menu list */
+"action.title.aiChat.new" = "Klepet z umetno inteligenco";
+
+/* Open AI Chat settings action in the menu list */
+"action.title.aiChat.settings" = "Nastavitve Duck.ai";
+
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Gesla";
 

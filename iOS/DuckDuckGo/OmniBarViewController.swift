@@ -64,9 +64,51 @@ class OmniBarViewController: UIViewController, OmniBar {
         dependencies.featureFlagger.isFeatureOn(.unifiedURLPredictor)
     }
     var dismissButtonAnimator: UIViewPropertyAnimator?
-    private var privacyIconAndTrackersAnimator = PrivacyIconAndTrackersAnimator()
     private var notificationAnimator = OmniBarNotificationAnimator()
     private let privacyIconContextualOnboardingAnimator = PrivacyIconContextualOnboardingAnimator()
+
+    // Animation timing constants
+    private enum AnimationTiming {
+        static let pageLoadNotificationDelay: TimeInterval = 0    // Delay after page load before processing notifications
+        static let highPriorityDelay: TimeInterval = 0.0          // Delay for high-priority notifications (trackers)
+        static let lowPriorityDelay: TimeInterval = 1.2           // Delay for low-priority notifications (cookies)
+        static let betweenAnimationsDelay: TimeInterval = 0.5     // Delay between consecutive animations
+    }
+
+    // Animation queue state
+    private enum AnimationState {
+        case idle, animating
+    }
+
+    private enum AnimationPriority: Int {
+        case high = 0  // Higher priority (sorted first)
+        case low = 1   // Lower priority (sorted last)
+
+        var delay: TimeInterval {
+            switch self {
+            case .high: return AnimationTiming.highPriorityDelay
+            case .low: return AnimationTiming.lowPriorityDelay
+            }
+        }
+    }
+
+    private struct QueuedAnimation {
+        let priority: AnimationPriority
+        let block: () -> Void
+    }
+
+    // Thread-safe animation state (all access must be on main actor)
+    @MainActor
+    private var animationState: AnimationState = .idle
+    @MainActor
+    private var animationQueue: [QueuedAnimation] = []
+    @MainActor
+    private var isPageLoading: Bool = false
+    @MainActor
+    private var pendingNotifications: [(priority: AnimationPriority, block: () -> Void)] = []
+
+    // Work item for cancellable delayed notification processing
+    private var pendingNotificationWorkItem: DispatchWorkItem?
 
     // MARK: - Constraints
 
@@ -187,9 +229,6 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.onRefreshPressed = { [weak self] in
             self?.onRefreshPressed()
         }
-        barView.onRefreshPressed = { [weak self] in
-            self?.onRefreshPressed()
-        }
         barView.onCustomizableButtonPressed = { [weak self] in
             self?.onCustomizableButtonPressed()
         }
@@ -259,11 +298,35 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     func startLoading() {
+        // Cancel any pending animations when page starts loading
+        cancelAllAnimations()
+
+        // Cancel any pending notification processing work item to prevent timer leak
+        // This is critical when navigating rapidly between pages
+        pendingNotificationWorkItem?.cancel()
+        pendingNotificationWorkItem = nil
+
+        isPageLoading = true
+        pendingNotifications.removeAll()
         refreshState(state.withLoading())
     }
 
     func stopLoading() {
         refreshState(state.withoutLoading())
+
+        // Cancel any existing pending work before scheduling new one
+        pendingNotificationWorkItem?.cancel()
+
+        // Wait briefly after page load completes before processing notifications
+        // This allows tracker and cookie notifications to arrive before animation starts
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            self.isPageLoading = false
+            self.processPendingNotifications()
+        }
+
+        pendingNotificationWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + AnimationTiming.pageLoadNotificationDelay, execute: workItem)
     }
 
     func cancel() {
@@ -322,9 +385,11 @@ class OmniBarViewController: UIViewController, OmniBar {
     func showOrScheduleCookiesManagedNotification(isCosmetic: Bool) {
         let type: OmniBarNotificationType = isCosmetic ? .cookiePopupHidden : .cookiePopupManaged
 
-        enqueueAnimationIfNeeded { [weak self] in
+        enqueueAnimationIfNeeded(priority: .low) { [weak self] in
             guard let self else { return }
-            self.notificationAnimator.showNotification(type, in: barView, viewController: self)
+            self.notificationAnimator.showNotification(type, in: barView, viewController: self) { [weak self] in
+                self?.completeCurrentAnimation()
+            }
         }
     }
 
@@ -332,6 +397,8 @@ class OmniBarViewController: UIViewController, OmniBar {
         enqueueAnimationIfNeeded { [weak self] in
             guard let self else { return }
             self.privacyIconContextualOnboardingAnimator.showPrivacyIconAnimation(in: barView)
+            // Onboarding animation completes immediately
+            self.completeCurrentAnimation()
         }
     }
 
@@ -340,25 +407,58 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     func startTrackersAnimation(_ privacyInfo: PrivacyInfo, forDaxDialog: Bool) {
-        guard state.allowsTrackersAnimation, !barView.privacyInfoContainer.isAnimationPlaying else { return }
+        guard state.allowsTrackersAnimation else { return }
 
-        privacyIconAndTrackersAnimator.configure(barView.privacyInfoContainer, with: privacyInfo)
+        let trackerCount = privacyInfo.trackerInfo.trackersBlocked.count
+        let privacyIcon = PrivacyIconLogic.privacyIcon(for: privacyInfo)
 
-        if TrackerAnimationLogic.shouldAnimateTrackers(for: privacyInfo.trackerInfo) {
-            if forDaxDialog {
-                privacyIconAndTrackersAnimator.startAnimationForDaxDialog(in: barView, with: privacyInfo)
-            } else {
-                privacyIconAndTrackersAnimator.startAnimating(in: barView, with: privacyInfo)
+        // Don't show notification on SERP pages (DuckDuckGo search)
+        guard !privacyInfo.url.isDuckDuckGoSearch else {
+            barView.privacyInfoContainer.privacyIcon.updateIcon(privacyIcon)
+            return
+        }
+
+        // Show tracker count notification and animation if any trackers were blocked
+        if trackerCount > 0 {
+            enqueueAnimationIfNeeded(priority: .high) { [weak self] in
+                guard let self else { return }
+
+                // Show notification, then play privacy icon animation
+                self.notificationAnimator.showNotification(.trackersBlocked(count: trackerCount), in: barView, viewController: self) { [weak self] in
+                    guard let self else { return }
+
+                    // After notification completes, animate the privacy icon
+                    self.barView.privacyInfoContainer.privacyIcon.prepareForAnimation(for: privacyIcon)
+                    let shieldAnimation = self.barView.privacyInfoContainer.privacyIcon.shieldAnimationView(for: privacyIcon)
+
+                    // Play from start to just before the end to avoid any end-frame blink
+                    if let animation = shieldAnimation?.animation {
+                        let endFrame = animation.endFrame - 2  // Stop 2 frames before the end
+                        shieldAnimation?.play(fromFrame: animation.startFrame, toFrame: endFrame, loopMode: .playOnce) { [weak self] completed in
+                            guard let self, completed else { return }
+
+                            // Update to final icon state after animation completes
+                            self.barView.privacyInfoContainer.privacyIcon.updateIcon(privacyIcon)
+
+                            // Animation complete, process next in queue
+                            self.completeCurrentAnimation()
+                        }
+                    } else {
+                        // Fallback if animation not loaded
+                        self.barView.privacyInfoContainer.privacyIcon.updateIcon(privacyIcon)
+                        self.completeCurrentAnimation()
+                    }
+                }
             }
         } else {
-            privacyIconAndTrackersAnimator.completeForNoAnimation()
+            // No trackers blocked, just update icon without animation
+            barView.privacyInfoContainer.privacyIcon.updateIcon(privacyIcon)
         }
     }
 
     func updatePrivacyIcon(for privacyInfo: PrivacyInfo?) {
         guard let privacyInfo = privacyInfo,
-              !barView.privacyInfoContainer.isAnimationPlaying,
-              !privacyIconAndTrackersAnimator.isAnimatingForDaxDialog
+              !barView.privacyInfoContainer.isAnimationPlaying
         else { return }
 
         if privacyInfo.url.isDuckPlayer {
@@ -390,6 +490,11 @@ class OmniBarViewController: UIViewController, OmniBar {
         }
     }
 
+    func completeAnimationForDaxDialog() {
+        // When Dax Dialog appears, cancel any running animations and clear the queue
+        cancelAllAnimations()
+    }
+
     func refreshCustomizableButton() {
         applyCustomization()
     }
@@ -408,22 +513,94 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     func cancelAllAnimations() {
-        privacyIconAndTrackersAnimator.cancelAnimations(in: barView)
+        // Cancel pending notification work item to prevent delayed processing
+        pendingNotificationWorkItem?.cancel()
+        pendingNotificationWorkItem = nil
+
+        // Clear pending notifications
+        pendingNotifications.removeAll()
+
+        // Cancel running animations
         notificationAnimator.cancelAnimations(in: barView)
         privacyIconContextualOnboardingAnimator.dismissPrivacyIconAnimation(barView.privacyInfoContainer.privacyIcon)
-    }
 
-    func completeAnimationForDaxDialog() {
-        privacyIconAndTrackersAnimator.completeAnimationForDaxDialog(in: barView)
+        // Clear animation queue
+        animationState = .idle
+        animationQueue.removeAll()
     }
 
     // MARK: - Private/animation
 
-    private func enqueueAnimationIfNeeded(_ block: @escaping () -> Void) {
-        if privacyIconAndTrackersAnimator.state == .completed {
-            block()
-        } else {
-            privacyIconAndTrackersAnimator.onAnimationCompletion(block)
+    private func enqueueAnimationIfNeeded(priority: AnimationPriority = .high, _ block: @escaping () -> Void) {
+        // If page is still loading, store notification to be processed after page completes
+        if isPageLoading {
+            pendingNotifications.append((priority: priority, block: block))
+            return
+        }
+
+        // Apply delay BEFORE enqueueing based on priority
+        // This ensures high-priority items (0.3s) enter queue before low-priority items (1.2s)
+        DispatchQueue.main.asyncAfter(deadline: .now() + priority.delay) { [weak self] in
+            guard let self else { return }
+
+            // CRITICAL: Check animation state after delay to prevent race condition
+            // Multiple delayed blocks can fire simultaneously, but only the first should
+            // trigger processNextAnimation() if we're idle
+            let shouldProcessImmediately = self.animationState == .idle && self.animationQueue.isEmpty
+
+            let queuedAnimation = QueuedAnimation(priority: priority, block: block)
+            self.animationQueue.append(queuedAnimation)
+
+            // Sort queue by priority (high priority first)
+            self.animationQueue.sort { $0.priority.rawValue < $1.priority.rawValue }
+
+            // Only process if we were idle before adding this item
+            if shouldProcessImmediately {
+                self.processNextAnimation()
+            }
+        }
+    }
+
+    private func processPendingNotifications() {
+        guard !pendingNotifications.isEmpty else { return }
+
+        // Sort by priority (high priority first)
+        let sortedNotifications = pendingNotifications.sorted { $0.priority.rawValue < $1.priority.rawValue }
+        pendingNotifications.removeAll()
+
+        // Add all notifications directly to queue without priority delays
+        // since we've already sorted them by priority
+        for notification in sortedNotifications {
+            let queuedAnimation = QueuedAnimation(priority: notification.priority, block: notification.block)
+            animationQueue.append(queuedAnimation)
+        }
+
+        // Re-sort entire queue to maintain priority guarantee
+        // This ensures newly added notifications are properly ordered with existing items
+        animationQueue.sort { $0.priority.rawValue < $1.priority.rawValue }
+
+        // Start processing if we're idle
+        if animationState == .idle {
+            processNextAnimation()
+        }
+    }
+
+    private func processNextAnimation() {
+        guard animationState == .idle, !animationQueue.isEmpty else { return }
+
+        animationState = .animating
+        let nextQueuedAnimation = animationQueue.removeFirst()
+
+        // Execute immediately - delay was already applied before adding to queue
+        nextQueuedAnimation.block()
+    }
+
+    private func completeCurrentAnimation() {
+        animationState = .idle
+
+        // Wait before processing next animation to ensure smooth transitions
+        DispatchQueue.main.asyncAfter(deadline: .now() + AnimationTiming.betweenAnimationsDelay) { [weak self] in
+            self?.processNextAnimation()
         }
     }
 
@@ -734,10 +911,8 @@ extension OmniBarViewController: UITextFieldDelegate {
     
     /// Get the current frame of the logo, accounting for device rotation and scale transforms
     func getCurrentLogoFrame() -> CGRect? {
-        guard let imageView = barView.privacyInfoContainer.privacyIcon?.staticImageView,
-              !imageView.isHidden else { return nil }
-        
-        return imageView.convert(imageView.bounds, to: nil)
+        // Dax logo easter eggs no longer supported
+        return nil
     }
 }
 
@@ -754,25 +929,15 @@ extension OmniBarViewController {
 extension OmniBarViewController {
 
     private func decorate() {
-        privacyIconAndTrackersAnimator.resetImageProvider()
-
         if let url = textField.text.flatMap({ URL(trimmedAddressBarString: $0.trimmingWhitespace(), useUnifiedLogic: isUsingUnifiedPredictor) }) {
             textField.attributedText = AddressDisplayHelper.addressForDisplay(url: url, showsFullURL: textField.isEditing)
-        }
-    }
-
-    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
-        super.traitCollectionDidChange(previousTraitCollection)
-
-        if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
-            privacyIconAndTrackersAnimator.resetImageProvider()
         }
     }
 }
 
 // MARK: - PrivacyInfoContainerViewDelegate
+
 extension OmniBarViewController: PrivacyInfoContainerViewDelegate {
-    
     func privacyInfoContainerViewDidTapDaxLogo(_ view: PrivacyInfoContainerView, logoURL: URL?, currentImage: UIImage?, sourceFrame: CGRect) {
         DailyPixel.fireDailyAndCount(pixel: .daxEasterEggLogoTapped)
         

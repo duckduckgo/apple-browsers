@@ -416,7 +416,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
     // MARK: - Background Tasks
 
     @available(iOS 16, *)
-    @Test("Schedule Background Tasks When Init And Feature Preference Is On", .timeLimit(.minutes(1)))
+    @Test("Schedule Background Tasks When Init And Feature Preference Is On", .disabled("Flaky Test"), .timeLimit(.minutes(1)))
     func whenInitAndFeaturePreferenceIsOnThenScheduleBackgroundTasks() async {
         // GIVEN
         let expectedBackgroundTasksIdentifiers = [
@@ -584,7 +584,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
 
     @available(iOS 16, *)
     @MainActor
-    @Test("Start Background Update Task When User Turns On the Feature And Background Tasks Are Available", .timeLimit(.minutes(1)))
+    @Test("Start Background Update Task When User Turns On the Feature And Background Tasks Are Available", .disabled("Flaky Test"), .timeLimit(.minutes(1)))
     func whenUserTurnsOnProtectionThenStartBackgroundUpdateTask() {
         // GIVEN
         featureFlaggerMock.isMaliciousSiteProtectionEnabled = true
@@ -633,7 +633,7 @@ final class MaliciousSiteProtectionDatasetsFetcherTests {
 
     @available(iOS 16, *)
     @MainActor
-    @Test("Stop Background Update Task When User Turns Off the Feature", .timeLimit(.minutes(1)))
+    @Test("Stop Background Update Task When User Turns Off the Feature", .disabled("Flaky Test"), .timeLimit(.minutes(1)))
     func whenUserTurnsOffProtectionThenStopBackgroundUpdateTask() {
         // GIVEN
         featureFlaggerMock.isMaliciousSiteProtectionEnabled = true

@@ -42515,14 +42515,14 @@
         }
       }
     },
-    "import.choose-source.show-more-button.title" : {
+    "import.choose-source.more-button.title" : {
       "comment" : "Button text for showing more import options in the data import view",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Show More"
+            "value" : "More"
           }
         }
       }

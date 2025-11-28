@@ -190,15 +190,23 @@ final class PermissionAuthorizationViewController: NSViewController {
     // MARK: - SwiftUI View Setup
 
     private func setupSwiftUIView() {
-        guard newPermissionView, let query = query else { return }
+        guard newPermissionView, let query = query, let permissionType = query.permissions.first else { return }
 
-        // Remove existing hosting view if any
-        swiftUIHostingView?.removeFromSuperview()
+        // Remove all existing subviews to ensure clean state
+        view.subviews.forEach { $0.removeFromSuperview() }
+        swiftUIHostingView = nil
 
         let swiftUIView = PermissionAuthorizationSwiftUIView(
             domain: query.domain,
-            onNeverAllow: { [weak self] in
-                self?.handleNeverAllow()
+            permissionType: permissionType,
+            onDeny: { [weak self] in
+                self?.handleDeny()
+            },
+            onAlwaysDeny: { [weak self] in
+                self?.handleAlwaysDeny()
+            },
+            onAllow: { [weak self] in
+                self?.handleAllow()
             },
             onAlwaysAllow: { [weak self] in
                 self?.handleAlwaysAllow()
@@ -219,9 +227,19 @@ final class PermissionAuthorizationViewController: NSViewController {
         swiftUIHostingView = hostingView
     }
 
-    private func handleNeverAllow() {
+    private func handleDeny() {
         dismiss()
-        query?.handleDecision(grant: false)
+        query?.handleDecision(grant: false, remember: nil)
+    }
+
+    private func handleAlwaysDeny() {
+        dismiss()
+        query?.handleDecision(grant: false, remember: true)
+    }
+
+    private func handleAllow() {
+        dismiss()
+        query?.handleDecision(grant: true, remember: nil)
     }
 
     private func handleAlwaysAllow() {

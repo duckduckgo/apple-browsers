@@ -163,9 +163,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866463389447
     case showSettingsCompleteSetupSection
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866611125558
-    case scheduledSetDefaultBrowserPrompts
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866470962985
     case scheduledSetDefaultBrowserPromptsForInactiveUsers
 
@@ -337,7 +334,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .supportsAlternateStripePaymentFlow,
              .personalInformationRemoval,
              .createFireproofFaviconUpdaterSecureVaultInBackground,
-             .scheduledSetDefaultBrowserPrompts,
              .scheduledSetDefaultBrowserPromptsForInactiveUsers,
              .duckAISearchParameter,
              .inactivityNotification,
@@ -517,8 +513,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.keepSession))
         case .showSettingsCompleteSetupSection:
             return .remoteReleasable(.subfeature(OnboardingSubfeature.showSettingsCompleteSetupSection))
-        case .scheduledSetDefaultBrowserPrompts:
-            return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserPrompts))
         case .scheduledSetDefaultBrowserPromptsForInactiveUsers:
             return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserPromptsInactiveUser))
         case .supportsAlternateStripePaymentFlow:

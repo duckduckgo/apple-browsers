@@ -27,19 +27,6 @@ struct DefaultBrowserPromptFeatureFlaggerTests {
     let mockFeatureFlagSettingsProvider = MockDefaultBrowserPromptFeatureFlagSettingsProvider()
     let mockFeatureFlagProvider = MockDefaultBrowserPromptFeatureFlagProvider()
 
-    @Test("Check Feature Flag For Active Users Returns The Correct Value", arguments: [true, false])
-    func isDefaultBrowserPromptForActiveUsersFeatureEnabledThenReturnTheCorrectValue(_ isEnabled: Bool) {
-        // GIVEN
-        mockFeatureFlagProvider.isDefaultBrowserPromptsForActiveUsersFeatureEnabled = isEnabled
-        let sut = DefaultBrowserPromptFeatureFlag(settingsProvider: mockFeatureFlagSettingsProvider, featureFlagProvider: mockFeatureFlagProvider)
-
-        // WHEN
-        let result = sut.isDefaultBrowserPromptsForActiveUsersFeatureEnabled
-
-        // THEN
-        #expect(result == isEnabled)
-    }
-
     @Test("Check Feature Flag For Inactive Users Returns The Correct Value", arguments: [true, false])
     func isDefaultBrowserPromptForInactiveUsersFeatureEnabledThenReturnTheCorrectValue(_ isEnabled: Bool) {
         // GIVEN

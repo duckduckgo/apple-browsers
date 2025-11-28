@@ -81,7 +81,7 @@ final class DefaultBrowserPromptService {
 
     private func shouldRecordActivity() -> Bool {
         // True if either active/inactive prompt features is enabled
-        featureFlagAdapter.isDefaultBrowserPromptsForActiveUsersFeatureEnabled || featureFlagAdapter.isDefaultBrowserPromptsForInactiveUsersFeatureEnabled
+        featureFlagAdapter.isDefaultBrowserPromptsForInactiveUsersFeatureEnabled
     }
 }
 

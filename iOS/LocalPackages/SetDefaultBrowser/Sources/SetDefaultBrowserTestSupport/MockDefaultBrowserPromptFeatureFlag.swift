@@ -23,8 +23,6 @@ import SetDefaultBrowserCore
 public final class MockDefaultBrowserPromptFeatureFlag: DefaultBrowserPromptFeatureFlagger {
     public init() {}
 
-    public var isDefaultBrowserPromptsForActiveUsersFeatureEnabled: Bool = true
-
     public var isDefaultBrowserPromptsForInactiveUsersFeatureEnabled: Bool = true
 
     public var firstActiveModalDelayDays: Int = 1
@@ -39,8 +37,6 @@ public final class MockDefaultBrowserPromptFeatureFlag: DefaultBrowserPromptFeat
 }
 
 package final class MockDefaultBrowserPromptFeatureFlagProvider: DefaultBrowserPromptFeatureFlagProvider {
-    package var isDefaultBrowserPromptsForActiveUsersFeatureEnabled: Bool = true
-
     package var isDefaultBrowserPromptsForInactiveUsersFeatureEnabled: Bool = true
 
     package init() {}

@@ -19,19 +19,13 @@
 
 import Foundation
 
-public protocol DefaultBrowserPromptActiveUserFeatureFlagProvider {
-    /// A Boolean value indicating whether Set Default Browser Prompts are enabled for active users.
-    /// - Returns: `true` if the feature is enabled; otherwise, `false`.
-    var isDefaultBrowserPromptsForActiveUsersFeatureEnabled: Bool { get }
-}
-
 public protocol DefaultBrowserPromptInactiveUserFeatureFlagProvider {
     /// A Boolean value indicating whether Set Default Browser Prompts are enabled for inactive users.
     /// - Returns: `true` if the feature is enabled; otherwise, `false`.
     var isDefaultBrowserPromptsForInactiveUsersFeatureEnabled: Bool { get }
 }
 
-public typealias DefaultBrowserPromptFeatureFlagProvider = DefaultBrowserPromptActiveUserFeatureFlagProvider & DefaultBrowserPromptInactiveUserFeatureFlagProvider
+public typealias DefaultBrowserPromptFeatureFlagProvider = DefaultBrowserPromptInactiveUserFeatureFlagProvider
 
 public protocol DefaultBrowserPromptFeatureFlagSettingsProvider {
     // A dictionary representing the settings for the feature.
@@ -62,7 +56,7 @@ public enum DefaultBrowserPromptFeatureSettings: String {
     }
 }
 
-package protocol DefaultBrowserPromptActiveUserFeatureFlagger: DefaultBrowserPromptActiveUserFeatureFlagProvider {
+package protocol DefaultBrowserPromptActiveUserFeatureFlagger {
     /// The number of active days to wait after app installation before showing the first modal for active users. Default is 1.
     var firstActiveModalDelayDays: Int { get }
     /// The number of active days to wait after the first modal has been shown before displaying the second modal for active users. Default is 4.
@@ -93,10 +87,6 @@ package final class DefaultBrowserPromptFeatureFlag {
 // MARK: - DefaultBrowserPromptFeatureFlagger
 
 extension DefaultBrowserPromptFeatureFlag: DefaultBrowserPromptFeatureFlagger {
-
-    public var isDefaultBrowserPromptsForActiveUsersFeatureEnabled: Bool {
-        featureFlagProvider.isDefaultBrowserPromptsForActiveUsersFeatureEnabled
-    }
 
     public var isDefaultBrowserPromptsForInactiveUsersFeatureEnabled: Bool {
         featureFlagProvider.isDefaultBrowserPromptsForInactiveUsersFeatureEnabled

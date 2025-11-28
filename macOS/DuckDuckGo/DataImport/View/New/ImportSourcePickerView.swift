@@ -126,7 +126,7 @@ struct ImportSourcePickerView: View {
                     .padding(.horizontal, 12)
                     .padding(.vertical, 14)
                     .frame(width: 380, alignment: .center)
-                    .background((Color(designSystemColor: .surfacePrimary)))
+                    .background((Color(designSystemColor: .surfaceSecondary)))
                     .cornerRadius(10)
                 }
                 .buttonStyle(.plain)

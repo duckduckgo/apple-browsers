@@ -26,8 +26,7 @@ import UIKit
 public protocol BookmarksStateValidation {
 
     func validateInitialState(context: NSManagedObjectContext,
-                              validationError: BookmarksStateValidator.ValidationError,
-                              isBackground: Bool) -> Bool
+                              validationError: BookmarksStateValidator.ValidationError) -> Bool
 
     func validateBookmarksStructure(context: NSManagedObjectContext)
 }
@@ -55,20 +54,14 @@ public class BookmarksStateValidator: BookmarksStateValidation {
     }
 
     public func validateInitialState(context: NSManagedObjectContext,
-                                     validationError: ValidationError,
-                                     isBackground: Bool) -> Bool {
+                                     validationError: ValidationError) -> Bool {
         guard keyValueStore.object(forKey: Constants.bookmarksDBIsInitialized) != nil else { return true }
 
         let fetch = BookmarkEntity.fetchRequest()
         do {
             let count = try context.count(for: fetch)
             if count == 0 {
-                switch validationError {
-                case .bookmarksStructureLost:
-                    errorHandler(.bookmarksStructureLost, ["is-background": String(isBackground)])
-                default:
-                    errorHandler(validationError, nil)
-                }
+                errorHandler(validationError, nil)
                 return false
             }
         } catch {

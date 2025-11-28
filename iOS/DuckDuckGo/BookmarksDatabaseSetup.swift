@@ -24,6 +24,10 @@ import Bookmarks
 import Persistence
 import Common
 
+public extension BoolFileMarker.Name {
+    static let hasSuccessfullySetupBookmarksDatabaseBefore = BoolFileMarker.Name(rawValue: "bookmarks-db-setup-successfully")
+}
+
 struct BookmarksDatabaseSetup {
 
     enum Result {
@@ -37,25 +41,21 @@ struct BookmarksDatabaseSetup {
         self.migrationAssertion = migrationAssertion
     }
 
-    static func makeValidator() -> BookmarksStateValidator {
+    static func makeValidator(counterStore: ThrowingKeyValueStoring? = nil, isBookmarksDBFilePresent: Bool = false) -> BookmarksStateValidator {
         return BookmarksStateValidator(keyValueStore: UserDefaults.app) { validationError, additionalParams in
             switch validationError {
             case .bookmarksStructureLost:
                 var enhancedParams = additionalParams ?? [:]
                 
-                // Add app group access diagnostics to help identify the root cause
-                let appGroupStatus = AppGroupContainerValidator.checkAppGroupAccessStatus()
-                switch appGroupStatus {
-                case .containerUnavailable:
-                    enhancedParams["app-group-container-available"] = "false"
-                case .markerMissing:
-                    enhancedParams["app-group-container-available"] = "true"
-                    enhancedParams["app-group-marker-present"] = "false"
-                case .accessible:
-                    enhancedParams["app-group-container-available"] = "true"
-                    enhancedParams["app-group-marker-present"] = "true"
+                // Track frequency of structure lost events (temporary debugging, capped at 5 for privacy)
+                if let store = counterStore {
+                    let currentCount = (try? store.object(forKey: "bookmarks_structure_lost_count") as? Int) ?? 0
+                    let newCount = min(currentCount + 1, 5)
+                    try? store.set(newCount, forKey: "bookmarks_structure_lost_count")
+                    enhancedParams["occurrence-count"] = String(newCount)
                 }
-                
+                enhancedParams["is-bookmarks-db-file-present"] = String(isBookmarksDBFilePresent)
+
                 DailyPixel.fireDailyAndCount(pixel: .debugBookmarksStructureLost,
                                 withAdditionalParameters: enhancedParams)
             case .bookmarksStructureNotRecovered:
@@ -75,16 +75,7 @@ struct BookmarksDatabaseSetup {
     func loadStoreAndMigrate(bookmarksDatabase: CoreDataStoring,
                              formFactorFavoritesMigrator: BookmarkFormFactorFavoritesMigrating = BookmarkFormFactorFavoritesMigration(),
                              validator: BookmarksStateValidation = Self.makeValidator(),
-                             isBackground: Bool = false) throws {
-
-        // Check if bookmarks database file exists before attempting to load
-        let dbFileURL = BookmarksDatabase.defaultDBFileURL
-        let dbFileExists = FileManager.default.fileExists(atPath: dbFileURL.path)
-        
-        if !dbFileExists {
-            DailyPixel.fireDailyAndCount(pixel: .debugBookmarksDatabaseFileMissing)
-        }
-
+                             isBookmarksDBFilePresent: Bool = false) throws {
         let oldFavoritesOrder: [String]?
         do {
             oldFavoritesOrder = try formFactorFavoritesMigrator.getFavoritesOrderFromPreV4Model(
@@ -105,7 +96,7 @@ struct BookmarksDatabaseSetup {
             }
 
             // Perform pre-setup/migration validation
-            let isMissingStructure = !validator.validateInitialState(context: context, validationError: .bookmarksStructureLost, isBackground: isBackground)
+            let isMissingStructure = !validator.validateInitialState(context: context, validationError: .bookmarksStructureLost)
             do {
                 try self.migrateFromLegacyCoreDataStorageIfNeeded(context)
                 migrationHappened = try self.migrateToFormFactorSpecificFavorites(context, oldFavoritesOrder)
@@ -116,8 +107,7 @@ struct BookmarksDatabaseSetup {
 
             if isMissingStructure {
                 _ = validator.validateInitialState(context: context,
-                                                   validationError: .bookmarksStructureNotRecovered,
-                                                   isBackground: isBackground)
+                                                   validationError: .bookmarksStructureNotRecovered)
             }
 
             // Add new migrations and set migrationHappened flag above this comment. Only the last migration is relevant.
@@ -136,9 +126,8 @@ struct BookmarksDatabaseSetup {
             validator.validateBookmarksStructure(context: contextForValidation)
             repairDeletedFlag(context: contextForValidation)
         }
-        
-        // Create app group access marker for future validation (first launch only)
-        AppGroupContainerValidator.createMarkerFileAfterFirstSuccessfulAccess()
+
+        BoolFileMarker(name: .hasSuccessfullySetupBookmarksDatabaseBefore)?.mark()
 
         if migrationHappened {
             do {

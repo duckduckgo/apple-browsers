@@ -53,13 +53,16 @@ final class LegacyCrashReport: CrashReport {
     }()
 
     let url: URL
+    private let fileManager: FileManager
 
-    init(url: URL) {
+    init(url: URL, fileManager: FileManager = .default) {
         self.url = url
+        self.fileManager = fileManager
     }
 
     lazy var content: String? = {
-        guard var fileContents = try? String(contentsOf: url)
+        guard let data = fileManager.contents(atPath: url.path),
+              var fileContents = String(data: data, encoding: .utf8)?
             .components(separatedBy: "\n")
             .filter({ line in
                 for headerItemToFilter in Self.headerItemsToFilter where line.hasPrefix(headerItemToFilter) {
@@ -110,13 +113,16 @@ final class JSONCrashReport: CrashReport {
     }()
 
     let url: URL
+    private let fileManager: FileManager
 
-    init(url: URL) {
+    init(url: URL, fileManager: FileManager = .default) {
         self.url = url
+        self.fileManager = fileManager
     }
 
     lazy var content: String? = {
-        guard var fileContents = try? String(contentsOf: self.url) else { return nil }
+        guard let data = fileManager.contents(atPath: url.path),
+              var fileContents = String(data: data, encoding: .utf8) else { return nil }
 
         for itemToFilter in Self.headerItemsToFilter {
             let patternToReplace = "\"\(itemToFilter)\"\\s*:\\s*\"[^\"]*\""

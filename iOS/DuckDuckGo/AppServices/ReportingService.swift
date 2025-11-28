@@ -28,6 +28,7 @@ import Combine
 import AIChat
 import SetDefaultBrowserCore
 import ContentBlocking
+import os.log
 
 /// Reporting service for various metrics:
 /// - AttributedMetric: https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053
@@ -64,7 +65,7 @@ final class ReportingService {
         // AttributedMetric initialisation
         let errorHandler = AttributedMetricErrorHandler(pixelKit: pixelKit)
         let attributedMetricDataStorage = AttributedMetricDataStorage(userDefaults: userDefaults, errorHandler: errorHandler)
-        let bucketsSettingsProvider = DefaultBucketsSettingsProvider(privacyConfig: privacyConfigurationManager.privacyConfig)
+        let settingsProvider = DefaultAttributedMetricSettingsProvider(privacyConfig: privacyConfigurationManager.privacyConfig)
         let subscriptionStateProvider = DefaultSubscriptionStateProvider(subscriptionManager: appDependencies.subscriptionAuthV1toV2Bridge)
         let defaultBrowserProvider = AttributedMetricDefaultBrowserProvider()
         self.attributedMetricManager = AttributedMetricManager(pixelKit: pixelKit,
@@ -73,7 +74,7 @@ final class ReportingService {
                                                                originProvider: nil,
                                                                defaultBrowserProviding: defaultBrowserProvider,
                                                                subscriptionStateProvider: subscriptionStateProvider,
-                                                               bucketsSettingsProvider: bucketsSettingsProvider)
+                                                               settingsProvider: settingsProvider)
         addNotificationsObserver()
     }
 
@@ -238,11 +239,21 @@ private extension ReportingService {
     }
 }
 
-struct DefaultBucketsSettingsProvider: BucketsSettingsProviding {
+struct DefaultAttributedMetricSettingsProvider: AttributedMetricSettingsProviding {
     let privacyConfig: PrivacyConfiguration
 
     var bucketsSettings: [String: Any] {
         privacyConfig.settings(for: .attributedMetrics)
+    }
+
+    var originSendList: [String] {
+        guard let originSettingString = privacyConfig.settings(for: AttributedMetricsSubfeature.sendOriginParam),
+              let settingsData = originSettingString.data(using: .utf8),
+              let settings = try? JSONDecoder().decode(OriginSettings.self, from: settingsData) else {
+            Logger.attributedMetric.error("Failed to decode origin settings, returning empty list")
+            return []
+        }
+        return settings.originCampaignSubstrings
     }
 }
 

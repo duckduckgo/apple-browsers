@@ -306,19 +306,19 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         switch self {
         case .httpError(_, let code, let dataBroker, let version):
             return ["code": String(code),
-                    "dataBroker": dataBroker,
-                    "version": version]
+                    Consts.dataBrokerParamKey: dataBroker,
+                    Consts.dataBrokerVersionKey: version]
         case .actionFailedError(_, let actionId, let message, let dataBroker, let version, let stepType, let dataBrokerParent):
             return ["actionID": actionId,
                     "message": message,
-                    "dataBroker": dataBroker,
-                    "version": version,
+                    Consts.dataBrokerParamKey: dataBroker,
+                    Consts.dataBrokerVersionKey: version,
                     "stepType": stepType?.rawValue ?? "unknown",
                     Consts.parentKey: dataBrokerParent ?? ""]
         case .otherError(let error, let dataBroker, let version):
             return ["kind": (error as? DataBrokerProtectionError)?.name ?? "unknown",
-                    "dataBroker": dataBroker,
-                    "version": version]
+                    Consts.dataBrokerParamKey: dataBroker,
+                    Consts.dataBrokerVersionKey: version]
         case .databaseError(_, let functionOccurredIn),
                 .cocoaError(_, let functionOccurredIn),
                 .miscError(_, let functionOccurredIn):

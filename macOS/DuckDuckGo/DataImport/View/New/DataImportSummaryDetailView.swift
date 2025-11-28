@@ -276,6 +276,7 @@ struct DataImportSummaryDetailView: View {
     private enum Metrics {
         static let sectionInnerPadding: CGFloat = 10
         static let mainStackViewSpacing: CGFloat = 20
+        static let outerPadding: CGFloat = 20
         static let iconSize: CGFloat = 16.0
         static let sectionHeaderHeight: CGFloat = 44.0
         static let innerRowSpacing: CGFloat = 8.0

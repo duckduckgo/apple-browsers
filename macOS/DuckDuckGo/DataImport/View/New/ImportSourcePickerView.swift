@@ -101,7 +101,7 @@ struct ImportSourcePickerView: View {
                         viewModel.toggleExpansion()
                     } content: {
                         Text(UserText.importChooseSourceShowMoreButtonTitle)
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.system(size: 13, weight: .semibold))
                             .multilineTextAlignment(.center)
                     }
                     .padding(.top, 10)

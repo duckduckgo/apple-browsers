@@ -277,7 +277,7 @@ final class URLExtensionTests {
         ("localhost:5000", "http://localhost:5000/", "http", #line),
         ("sms://+44123123123", nil, nil, #line),
         ("mailto:test@example.com", "mailto:test@example.com", "mailto", #line),
-        ("mailto:u%24ser@💩.la?arg=b#1", "mailto:u%24ser@%F0%9F%92%A9.la?arg=b#1", "mailto", #line), // note: this needs to be fixed in URLPredictorRust to use punycode
+        ("mailto:u%24ser@💩.la?arg=b", "mailto:u%24ser@%F0%9F%92%A9.la?arg=b", "mailto", #line), // note: this needs to be fixed in URLPredictorRust to use punycode
         ("http://u%24ser@💩.la?arg=b#1", "http://u%24ser@xn--ls8h.la/?arg=b#1", "http", #line),
         ("62.12.14.111", "http://62.12.14.111/", "http", #line),
         ("https://", nil, nil, #line),

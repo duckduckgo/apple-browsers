@@ -37,6 +37,7 @@ final class PopupHandlingTabExtension {
     private let newWindowPolicyDecisionMakers: () -> [NewWindowPolicyDecisionMaking]?
     private let featureFlagger: FeatureFlagger
     private let popupBlockingConfig: PopupBlockingConfiguration
+    private let tld: TLD
     private let machAbsTimeProvider: () -> TimeInterval
 
     // Navigation hotkey handler properties
@@ -76,6 +77,7 @@ final class PopupHandlingTabExtension {
          newWindowPolicyDecisionMakers: @escaping () -> [NewWindowPolicyDecisionMaking]?,
          featureFlagger: FeatureFlagger,
          popupBlockingConfig: PopupBlockingConfiguration,
+         tld: TLD,
          machAbsTimeProvider: @escaping () -> TimeInterval = CACurrentMediaTime,
          interactionEventsPublisher: some Publisher<WebViewInteractionEvent, Never>,
          isTabPinned: @escaping () -> Bool,
@@ -88,6 +90,7 @@ final class PopupHandlingTabExtension {
         self.newWindowPolicyDecisionMakers = newWindowPolicyDecisionMakers
         self.featureFlagger = featureFlagger
         self.popupBlockingConfig = popupBlockingConfig
+        self.tld = tld
         self.machAbsTimeProvider = machAbsTimeProvider
         self.isTabPinned = isTabPinned
         self.isBurner = isBurner
@@ -286,6 +289,16 @@ final class PopupHandlingTabExtension {
             return .userInitiated(reason)
         }
 
+        // Check if the source domain is in the allowlist
+        if let sourceFrame = navigationAction.safeSourceFrame {
+            let allowlist = popupBlockingConfig.allowlist
+            let sourceHost = sourceFrame.securityOrigin.host
+            if isDomainInAllowlist(sourceHost, allowlist: allowlist) {
+                Logger.general.debug("Pop-up allowed: source domain \(sourceHost) is in allowlist")
+                return .allowlistedDomain(sourceHost)
+            }
+        }
+
         let url = navigationAction.request.url ?? .empty
         // Check if pop-ups temporarily allowed for the current page with the "Only allow pop-ups for this visit" option selected:
         // Either for empty/about: URLs specifically with `suppressEmptyPopUpsOnApproval` feature flag enabled,
@@ -327,6 +340,37 @@ final class PopupHandlingTabExtension {
             return .extendedTimeout(eventTimestamp: lastUserInteractionEvent.timestamp, currentTime: currentTime)
         }
         return nil
+    }
+
+    /// Checks if a domain matches any entry in the allowlist
+    /// If "x.example.com" is in the allowlist, it will match "x.example.com" and any subdomain like "sub.x.example.com"
+    private func isDomainInAllowlist(_ domain: String, allowlist: Set<String>) -> Bool {
+        // Normalize: drop www prefix and lowercase for case-insensitive comparison
+        let normalizedDomain = domain.lowercased().droppingWwwPrefix()
+
+        // Get eTLD+1 for the domain to know when to stop stripping components
+        guard let domainETLDplus1 = tld.eTLDplus1(normalizedDomain) else {
+            return false
+        }
+
+        // Check the normalized domain and all parent domains up to eTLD+1
+        var currentDomain = normalizedDomain
+        repeat {
+            // Check if current domain is in allowlist
+            if allowlist.contains(currentDomain) {
+                return true
+            }
+
+            // Strip the first component to get parent domain
+            if currentDomain.count > domainETLDplus1.count,
+               let dotIndex = currentDomain.firstIndex(of: ".") {
+                currentDomain = String(currentDomain[currentDomain.index(after: dotIndex)...])
+            } else {
+                break
+            }
+        } while true
+
+        return false
     }
 
 }

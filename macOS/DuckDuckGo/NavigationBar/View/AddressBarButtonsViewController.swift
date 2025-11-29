@@ -1089,7 +1089,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private var isAskAIChatButtonExpanded: Bool = false
 
     private func updateAskAIChatButtonVisibility(isSidebarOpen: Bool? = nil) {
-        let isToggleFeatureEnabled = isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+        let isToggleFeatureEnabled = isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatSettings.isAIFeaturesEnabled
 
         if isTextFieldEditorFirstResponder {
             if isToggleFeatureEnabled {
@@ -1563,7 +1563,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
         stopAnimationsAfterFocus()
 
-        let isToggleFeatureEnabled = isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+        let isToggleFeatureEnabled = isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatSettings.isAIFeaturesEnabled
         let shouldShowToggle = isToggleFeatureEnabled && aiChatSettings.showSearchAndDuckAIToggle
 
         // Update key view chain when toggle visibility changes

@@ -118,7 +118,7 @@ final class WebDuckPlayerNavigationHandler: NSObject {
     ///   - pixelFiring: The pixel firing utility for analytics.
     ///   - dailyPixelFiring: The daily pixel firing utility for analytics.
     ///   - tabNavigationHandler: The tab navigation handler delegate.
-    init(duckPlayer: DuckPlayerControlling = DuckPlayer(),
+    init(duckPlayer: DuckPlayerControlling,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          appSettings: AppSettings,
          pixelFiring: PixelFiring.Type = Pixel.self,

@@ -50,7 +50,7 @@ final class AddressBarSharedTextState: ObservableObject {
         hasUserInteractedWithTextAfterSwitchingModes = value
     }
 
-    func resetuserInteractionAfterSwitchingModes() {
+    func resetUserInteractionAfterSwitchingModes() {
         hasUserInteractedWithTextAfterSwitchingModes = false
     }
 

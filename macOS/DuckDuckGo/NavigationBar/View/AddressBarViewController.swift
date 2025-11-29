@@ -1116,6 +1116,9 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
             updateMode()
             addressBarTextField.makeMeFirstResponder()
 
+            /// Force layout update after becoming first responder to update in case the window was resized
+            layoutTextFields(withMinX: addressBarButtonsViewController.buttonsWidth)
+
             if shouldRestoreFromSharedState {
                 addressBarTextField.setCursorPositionAfterRestore()
             }

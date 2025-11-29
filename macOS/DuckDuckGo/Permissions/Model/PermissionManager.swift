@@ -22,7 +22,6 @@ import Combine
 import Common
 import FeatureFlags
 import os.log
-import AppKit
 
 protocol PermissionManagerProtocol: AnyObject {
 
@@ -48,7 +47,7 @@ final class PermissionManager: PermissionManagerProtocol {
     private let permissionSubject = PassthroughSubject<PublishedPermission, Never>()
     var permissionPublisher: AnyPublisher<PublishedPermission, Never> { permissionSubject.eraseToAnyPublisher() }
 
-    init(store: PermissionStore, featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+    init(store: PermissionStore, featureFlagger: FeatureFlagger) {
         self.store = store
         self.featureFlagger = featureFlagger
         loadPermissions()
@@ -82,10 +81,8 @@ final class PermissionManager: PermissionManagerProtocol {
 
     func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType) {
 
-        if !featureFlagger.isFeatureOn(.newPermissionView) {
-            assert(permissionType.canPersistGrantedDecision || decision != .allow)
-            assert(permissionType.canPersistDeniedDecision || decision != .deny)
-        }
+        assert(permissionType.canPersistGrantedDecision(featureFlagger: featureFlagger) || decision != .allow)
+        assert(permissionType.canPersistDeniedDecision(featureFlagger: featureFlagger) || decision != .deny)
 
         let storedPermission: StoredPermission
         let domain = domain.droppingWwwPrefix()

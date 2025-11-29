@@ -102,9 +102,9 @@ final class PrivacyDashboardPermissionHandler {
             // don't show Permanently Allow if can't persist Granted Decision
             switch decision {
             case .grant:
-                guard item.permission.canPersistGrantedDecision else { return nil }
+                guard item.permission.canPersistGrantedDecision() else { return nil }
             case .deny:
-                guard item.permission.canPersistDeniedDecision else { return nil }
+                guard item.permission.canPersistDeniedDecision() else { return nil }
             case .ask: break
             }
             return [

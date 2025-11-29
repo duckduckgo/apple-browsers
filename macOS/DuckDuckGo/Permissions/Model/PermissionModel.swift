@@ -17,8 +17,10 @@
 //
 
 import AVFoundation
+import BrowserServicesKit
 import Combine
 import CoreLocation
+import FeatureFlags
 import Foundation
 import Navigation
 import WebKit
@@ -36,6 +38,7 @@ final class PermissionModel {
 
     private let permissionManager: PermissionManagerProtocol
     private let geolocationService: GeolocationServiceProtocol
+    private let featureFlagger: FeatureFlagger
     weak var webView: WKWebView? {
         didSet {
             guard let webView = webView else { return }
@@ -48,9 +51,11 @@ final class PermissionModel {
 
     init(webView: WKWebView? = nil,
          permissionManager: PermissionManagerProtocol,
-         geolocationService: GeolocationServiceProtocol = GeolocationService.shared) {
+         geolocationService: GeolocationServiceProtocol = GeolocationService.shared,
+         featureFlagger: FeatureFlagger) {
         self.permissionManager = permissionManager
         self.geolocationService = geolocationService
+        self.featureFlagger = featureFlagger
         if let webView {
             self.webView = webView
             self.subscribe(to: webView)
@@ -268,9 +273,9 @@ final class PermissionModel {
         for permission in permissions {
             var grant: PersistedPermissionDecision
             let stored = permissionManager.permission(forDomain: domain, permissionType: permission)
-            if case .allow = stored, permission.canPersistGrantedDecision {
+            if case .allow = stored, permission.canPersistGrantedDecision(featureFlagger: featureFlagger) {
                 grant = .allow
-            } else if case .deny = stored, permission.canPersistDeniedDecision {
+            } else if case .deny = stored, permission.canPersistDeniedDecision(featureFlagger: featureFlagger) {
                 grant = .deny
             } else if let state = self.permissions[permission] {
                 switch state {

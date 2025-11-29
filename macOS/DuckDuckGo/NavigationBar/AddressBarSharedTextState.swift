@@ -32,7 +32,7 @@ final class AddressBarSharedTextState: ObservableObject {
     /// Whether the user has typed anything (triggers text sharing between modes)
     @Published private(set) var hasUserInteractedWithText: Bool = false
 
-    /// Wheater the user has type anything after switching modes
+    /// Whether the user has type anything after switching modes
     private(set) var hasUserInteractedWithTextAfterSwitchingModes: Bool = false
 
     /// Resets the shared state to initial values

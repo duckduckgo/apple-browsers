@@ -20,7 +20,6 @@ import AppLauncher
 import BrowserServicesKit
 import Common
 import LoginItems
-import NetworkExtension
 import VPN
 import NetworkProtectionIPC
 import NetworkProtectionUI

@@ -143,6 +143,7 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     case blurryAddressBarTahoeFix
 
     /// New permission center
+    /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1211985993948718?focus=true
     case newPermissionView
 
     /// Tab closing event recreation feature flag (failsafe for removing private API)

@@ -74,10 +74,8 @@ extension PermissionType {
     func canPersistGrantedDecision(featureFlagger: FeatureFlagger? = nil) -> Bool {
         if let featureFlagger, featureFlagger.isFeatureOn(.newPermissionView) {
             switch self {
-            case .camera, .microphone, .externalScheme, .popups:
+            case .camera, .microphone, .externalScheme, .popups, .geolocation:
                 return true
-            case .geolocation:
-                return false
             }
         } else {
             switch self {

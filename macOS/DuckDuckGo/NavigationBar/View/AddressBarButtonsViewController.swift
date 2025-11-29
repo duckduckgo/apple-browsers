@@ -2290,9 +2290,7 @@ extension TabViewModel {
         let hasRequestedPermission = usedPermissions.values.contains(where: { $0.isRequested
         })
         let shouldShowWhileFocused = (tab.content == .newtab) && hasRequestedPermission
-        let isAnyPermissionPresent = usedPermissions.values.contains(where: {
-            !$0.isReloading
-        })
+        let isAnyPermissionPresent = !usedPermissions.values.isEmpty
 
         return (shouldShowWhileFocused || (!isTextFieldEditorFirstResponder && isAnyPermissionPresent))
         && !isAnyTrackerAnimationPlaying

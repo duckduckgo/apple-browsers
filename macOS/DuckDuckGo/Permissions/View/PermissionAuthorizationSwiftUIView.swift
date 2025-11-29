@@ -16,8 +16,10 @@
 //  limitations under the License.
 //
 
-import SwiftUI
 import Combine
+import SwiftUI
+
+// MARK: - PermissionAuthorizationSwiftUIView
 
 struct PermissionAuthorizationSwiftUIView: View {
     let domain: String
@@ -28,7 +30,7 @@ struct PermissionAuthorizationSwiftUIView: View {
     let onAlwaysAllow: () -> Void
     let systemPermissionManager: SystemPermissionManagerProtocol
 
-    /// State for the system permission step in two-step geolocation flow
+    /// State for the system permission step in two-step flow
     enum SystemPermissionState {
         case initial
         case waiting
@@ -39,10 +41,12 @@ struct PermissionAuthorizationSwiftUIView: View {
     @State private var systemPermissionState: SystemPermissionState = .initial
     @State private var authorizationCancellable: AnyCancellable?
 
-    /// Whether to show the two-step UI (only for geolocation when system permission not granted)
+    // MARK: - Computed Properties
+
+    /// Whether to show the two-step UI
     private var showsTwoStepUI: Bool {
-        guard case .geolocation = permissionType else { return false }
-        return systemPermissionManager.isGeolocationAuthorizationRequired || systemPermissionState != .initial
+        guard permissionType.requiresSystemPermission else { return false }
+        return systemPermissionManager.isAuthorizationRequired(for: permissionType) || systemPermissionState != .initial
     }
 
     private var promptText: String {
@@ -62,17 +66,37 @@ struct PermissionAuthorizationSwiftUIView: View {
         }
     }
 
+    // MARK: - Button Titles & Actions
+
+    private var denyButtonTitle: String {
+        permissionType.usesPermanentDecisions ? UserText.permissionPopupAlwaysDenyButton : UserText.permissionPopupDenyButton
+    }
+
+    private var allowButtonTitle: String {
+        permissionType.usesPermanentDecisions ? UserText.permissionPopupAlwaysAllowButton : UserText.permissionPopupAllowButton
+    }
+
+    private var denyAction: () -> Void {
+        permissionType.usesPermanentDecisions ? onAlwaysDeny : onDeny
+    }
+
+    private var allowAction: () -> Void {
+        permissionType.usesPermanentDecisions ? onAlwaysAllow : onAllow
+    }
+
+    // MARK: - Body
+
     var body: some View {
         if showsTwoStepUI {
-            twoStepGeolocationView
+            twoStepPermissionView
         } else {
             standardPermissionView
         }
     }
 
-    // MARK: - Two-Step Geolocation View
+    // MARK: - Two-Step Permission View
 
-    private var twoStepGeolocationView: some View {
+    private var twoStepPermissionView: some View {
         VStack(spacing: 16) {
             // Prompt text
             Text(promptText)
@@ -104,7 +128,7 @@ struct PermissionAuthorizationSwiftUIView: View {
             switch systemPermissionState {
             case .initial:
                 Button(action: requestSystemPermission) {
-                    Text(UserText.permissionSystemLocationEnable)
+                    Text(permissionType.systemPermissionEnableText)
                         .font(.system(size: 13))
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
@@ -113,10 +137,10 @@ struct PermissionAuthorizationSwiftUIView: View {
                         .cornerRadius(8)
                 }
                 .buttonStyle(PlainButtonStyle())
-                .accessibilityIdentifier("PermissionAuthorizationSwiftUIView.enableSystemLocationButton")
+                .accessibilityIdentifier("PermissionAuthorizationSwiftUIView.enableSystemPermissionButton")
 
             case .waiting:
-                Text(UserText.permissionSystemLocationWaiting)
+                Text(permissionType.systemPermissionWaitingText)
                     .font(.system(size: 13))
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     .frame(maxWidth: .infinity)
@@ -130,7 +154,7 @@ struct PermissionAuthorizationSwiftUIView: View {
                         .foregroundColor(Color(NSColor.systemGreen))
                         .font(.system(size: 20))
 
-                    Text(UserText.permissionSystemLocationEnabled)
+                    Text(permissionType.systemPermissionEnabledText)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(Color(NSColor.systemGreen))
                 }
@@ -143,7 +167,7 @@ struct PermissionAuthorizationSwiftUIView: View {
                         .foregroundColor(Color(NSColor.systemRed))
                         .font(.system(size: 20))
 
-                    Text(UserText.permissionSystemLocationDenied)
+                    Text(permissionType.systemPermissionDeniedText)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(Color(NSColor.systemRed))
                 }
@@ -211,7 +235,7 @@ struct PermissionAuthorizationSwiftUIView: View {
     private func requestSystemPermission() {
         systemPermissionState = .waiting
 
-        authorizationCancellable = systemPermissionManager.requestGeolocationAuthorization { state in
+        authorizationCancellable = systemPermissionManager.requestAuthorization(for: permissionType) { state in
             DispatchQueue.main.async {
                 switch state {
                 case .authorized:
@@ -238,8 +262,8 @@ struct PermissionAuthorizationSwiftUIView: View {
                 .padding(.top, 16)
 
             HStack(spacing: 12) {
-                Button(action: standardDenyAction) {
-                    Text(standardDenyButtonTitle)
+                Button(action: denyAction) {
+                    Text(denyButtonTitle)
                         .font(.system(size: 13))
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                         .frame(maxWidth: .infinity)
@@ -250,8 +274,8 @@ struct PermissionAuthorizationSwiftUIView: View {
                 .buttonStyle(PlainButtonStyle())
                 .accessibilityIdentifier("PermissionAuthorizationSwiftUIView.denyButton")
 
-                Button(action: standardAllowAction) {
-                    Text(standardAllowButtonTitle)
+                Button(action: allowAction) {
+                    Text(allowButtonTitle)
                         .font(.system(size: 13))
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                         .frame(maxWidth: .infinity)
@@ -267,22 +291,6 @@ struct PermissionAuthorizationSwiftUIView: View {
         }
         .frame(width: 360)
         .background(Color(designSystemColor: .containerFillPrimary))
-    }
-
-    private var standardDenyButtonTitle: String {
-        permissionType == .geolocation ? UserText.permissionPopupDenyButton : UserText.permissionPopupAlwaysDenyButton
-    }
-
-    private var standardAllowButtonTitle: String {
-        permissionType == .geolocation ? UserText.permissionPopupAllowButton : UserText.permissionPopupAlwaysAllowButton
-    }
-
-    private var standardDenyAction: () -> Void {
-        permissionType == .geolocation ? onDeny : onAlwaysDeny
-    }
-
-    private var standardAllowAction: () -> Void {
-        permissionType == .geolocation ? onAllow : onAlwaysAllow
     }
 }
 
@@ -304,6 +312,71 @@ extension PermissionAuthorizationSwiftUIView {
         self.onAllow = onAllow
         self.onAlwaysAllow = onAlwaysAllow
         self.systemPermissionManager = SystemPermissionManager()
+    }
+}
+
+// MARK: - PermissionType extension
+
+extension PermissionType {
+
+    /// Whether this permission type requires a two-step authorization flow (system permission first, then website permission)
+    var requiresSystemPermission: Bool {
+        switch self {
+        case .geolocation:
+            return true
+        case .camera, .microphone, .popups, .externalScheme:
+            return false
+        }
+    }
+
+    /// Whether this permission uses permanent decisions ("Always Allow" / "Never Allow") vs one-time decisions ("Allow" / "Deny")
+    var usesPermanentDecisions: Bool {
+        switch self {
+        case .camera, .microphone, .popups, .externalScheme, .geolocation:
+            return true
+        }
+    }
+
+    // MARK: - Two-Step UI Localized Strings
+
+    /// Button text for enabling system permission (Step 1)
+    var systemPermissionEnableText: String {
+        switch self {
+        case .geolocation:
+            return UserText.permissionSystemLocationEnable
+        case .camera, .microphone, .popups, .externalScheme:
+            return "" // Not used for these types
+        }
+    }
+
+    /// Text shown while waiting for system permission response
+    var systemPermissionWaitingText: String {
+        switch self {
+        case .geolocation:
+            return UserText.permissionSystemLocationWaiting
+        case .camera, .microphone, .popups, .externalScheme:
+            return ""
+        }
+    }
+
+    /// Text shown when system permission is granted
+    var systemPermissionEnabledText: String {
+        switch self {
+        case .geolocation:
+            return UserText.permissionSystemLocationEnabled
+        case .camera, .microphone, .popups, .externalScheme:
+            return ""
+        }
+    }
+
+    /// Text shown when system permission is denied
+    var systemPermissionDeniedText: String {
+        switch self {
+        case .geolocation:
+            return UserText.permissionSystemLocationDenied
+        case .camera, .microphone, .popups, .externalScheme:
+            return ""
+        }
     }
 }
 
@@ -332,3 +405,4 @@ struct PermissionAuthorizationSwiftUIView_Previews: PreviewProvider {
     }
 }
 #endif
+

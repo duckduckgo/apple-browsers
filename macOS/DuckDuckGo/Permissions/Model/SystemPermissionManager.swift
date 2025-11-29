@@ -59,6 +59,19 @@ protocol SystemPermissionManagerProtocol: AnyObject {
     /// Requests geolocation authorization from the system using async/await
     /// - Returns: The authorization state after the user responds
     func requestGeolocationAuthorization() async -> SystemPermissionAuthorizationState
+
+    // MARK: - Generic Permission Methods
+
+    /// Returns true if system authorization is required for the given permission type
+    func isAuthorizationRequired(for permissionType: PermissionType) -> Bool
+
+    /// Requests system authorization for the given permission type
+    /// - Parameters:
+    ///   - permissionType: The permission type to request authorization for
+    ///   - completion: Called with the resulting authorization state
+    /// - Returns: A cancellable that can be used to cancel the observation (for permissions that support it)
+    @discardableResult
+    func requestAuthorization(for permissionType: PermissionType, completion: @escaping (SystemPermissionAuthorizationState) -> Void) -> AnyCancellable?
 }
 
 /// Manages system-level permissions required before website permissions can be granted
@@ -166,6 +179,31 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
                 continuation.resume(returning: state)
                 cancellable?.cancel()
             }
+        }
+    }
+
+    // MARK: - Generic Permission Methods
+
+    /// Returns true if system authorization is required for the given permission type
+    func isAuthorizationRequired(for permissionType: PermissionType) -> Bool {
+        switch permissionType {
+        case .geolocation:
+            return isGeolocationAuthorizationRequired
+        case .camera, .microphone, .popups, .externalScheme:
+            return false // These don't require system permission through our two-step flow
+        }
+    }
+
+    /// Requests system authorization for the given permission type
+    @discardableResult
+    func requestAuthorization(for permissionType: PermissionType, completion: @escaping (SystemPermissionAuthorizationState) -> Void) -> AnyCancellable? {
+        switch permissionType {
+        case .geolocation:
+            return requestGeolocationAuthorization(completion: completion)
+        case .camera, .microphone, .popups, .externalScheme:
+            // These don't require system permission through our two-step flow
+            completion(.authorized)
+            return nil
         }
     }
 }

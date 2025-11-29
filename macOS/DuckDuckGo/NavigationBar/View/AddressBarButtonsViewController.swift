@@ -928,7 +928,6 @@ final class AddressBarButtonsViewController: NSViewController {
             return
         }
 
-        // Hide bookmark button when address bar is focused and aichatOmnibarToggle is enabled
         if isTextFieldEditorFirstResponder && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
             bookmarkButton.isShown = false
             updateAIChatDividerVisibility()

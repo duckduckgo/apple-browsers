@@ -62,6 +62,9 @@ protocol SystemPermissionManagerProtocol: AnyObject {
 
     // MARK: - Generic Permission Methods
 
+    /// Returns the current authorization state for the given permission type
+    func authorizationState(for permissionType: PermissionType) -> SystemPermissionAuthorizationState
+
     /// Returns true if system authorization is required for the given permission type
     func isAuthorizationRequired(for permissionType: PermissionType) -> Bool
 
@@ -183,6 +186,16 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
     }
 
     // MARK: - Generic Permission Methods
+
+    /// Returns the current authorization state for the given permission type
+    func authorizationState(for permissionType: PermissionType) -> SystemPermissionAuthorizationState {
+        switch permissionType {
+        case .geolocation:
+            return geolocationAuthorizationState
+        case .camera, .microphone, .popups, .externalScheme:
+            return .authorized // These don't require system permission through our two-step flow
+        }
+    }
 
     /// Returns true if system authorization is required for the given permission type
     func isAuthorizationRequired(for permissionType: PermissionType) -> Bool {

@@ -991,7 +991,9 @@ struct UserText {
     static let permissionSystemLocationEnable = NSLocalizedString("permission.system.location.enable", value: "Enable System Location", comment: "Button to enable system location services")
     static let permissionSystemLocationWaiting = NSLocalizedString("permission.system.location.waiting", value: "Waiting for system permission…", comment: "Text shown while waiting for user to respond to system location permission dialog")
     static let permissionSystemLocationEnabled = NSLocalizedString("permission.system.location.enabled", value: "System location enabled!", comment: "Text shown after system location permission has been granted")
-    static let permissionSystemLocationDenied = NSLocalizedString("permission.system.location.denied", value: "System location denied", comment: "Text shown after system location permission has been denied")
+    static let permissionSystemLocationDisabled = NSLocalizedString("permission.system.location.disabled", value: "System location disabled. Turn it on in ", comment: "Text shown when system location was previously denied. Followed by a link to System Settings")
+    static let permissionSystemSettingsLocation = NSLocalizedString("permission.system.settings.location", value: "System Settings → Privacy", comment: "Link text to open System Settings Privacy section for location")
+    static let permissionRestartApp = NSLocalizedString("permission.restart.app", value: "Restart the DuckDuckGo application", comment: "Text shown when app restart is required for permission changes to take effect")
     static let permissionGeolocationPromptFormat = NSLocalizedString("permission.geolocation.prompt.format", value: "Allow %@ to use your current location?", comment: "Prompt asking if domain %@ can use location")
     static let permissionPopupNeverAllowButton = NSLocalizedString("permission.popup.never.allow.button", value: "Never Allow", comment: "Button that denies permission and remembers the decision for future requests")
 

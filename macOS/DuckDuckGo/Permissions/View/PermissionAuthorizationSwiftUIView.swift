@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Combine
 import SwiftUI
 
@@ -36,6 +37,8 @@ struct PermissionAuthorizationSwiftUIView: View {
         case waiting
         case authorized
         case denied
+        /// Permission was already denied/restricted/disabled before showing the UI
+        case alreadyDenied
     }
 
     @State private var systemPermissionState: SystemPermissionState = .initial
@@ -118,6 +121,24 @@ struct PermissionAuthorizationSwiftUIView: View {
         }
         .frame(width: 360)
         .background(Color(designSystemColor: .containerFillPrimary))
+        .onAppear {
+            initializeSystemPermissionState()
+        }
+    }
+
+    /// Check if system permission was already denied before showing the UI
+    private func initializeSystemPermissionState() {
+        guard systemPermissionState == .initial else { return }
+
+        let authState = systemPermissionManager.authorizationState(for: permissionType)
+        switch authState {
+        case .denied, .restricted, .systemDisabled:
+            systemPermissionState = .alreadyDenied
+        case .authorized:
+            systemPermissionState = .authorized
+        case .notDetermined:
+            break // Keep initial state
+        }
     }
 
     @ViewBuilder
@@ -161,55 +182,74 @@ struct PermissionAuthorizationSwiftUIView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .frame(height: 36)
 
-            case .denied:
-                HStack(spacing: 8) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(Color(NSColor.systemRed))
-                        .font(.system(size: 20))
-
-                    Text(permissionType.systemPermissionDeniedText)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(Color(NSColor.systemRed))
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .frame(height: 36)
+            case .alreadyDenied, .denied:
+                systemPermissionDisabledView
             }
         }
+    }
+
+    /// View shown when system permission was already denied - displays link to System Settings
+    private var systemPermissionDisabledView: some View {
+        (Text(permissionType.systemPermissionDisabledText)
+            .font(.system(size: 13))
+            .foregroundColor(Color(designSystemColor: .textPrimary))
+        + Text(permissionType.systemSettingsLinkText)
+            .font(.system(size: 13))
+            .foregroundColor(.accentColor))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .fixedSize(horizontal: false, vertical: true)
+            .onTapGesture {
+                openSystemSettings()
+            }
+    }
+
+    private func openSystemSettings() {
+        guard let url = permissionType.systemSettingsURL else { return }
+        NSWorkspace.shared.open(url)
     }
 
     @ViewBuilder
     private var stepTwoView: some View {
         let isEnabled = systemPermissionState == .authorized
+        let requiresRestart = systemPermissionState == .alreadyDenied || systemPermissionState == .denied
 
         HStack(spacing: 12) {
             stepIndicator(step: 2, isActive: isEnabled)
 
-            HStack(spacing: 8) {
-                Button(action: onAlwaysDeny) {
-                    Text(UserText.permissionPopupNeverAllowButton)
-                        .font(.system(size: 13))
-                        .foregroundColor(isEnabled ? Color(designSystemColor: .textPrimary) : Color(designSystemColor: .textSecondary))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 36)
-                        .background(isEnabled ? Color(designSystemColor: .controlsFillPrimary) : Color(designSystemColor: .controlsFillSecondary))
-                        .cornerRadius(8)
-                }
-                .buttonStyle(PlainButtonStyle())
-                .disabled(!isEnabled)
-                .accessibilityIdentifier("PermissionAuthorizationSwiftUIView.neverAllowButton")
+            if requiresRestart {
+                Text(UserText.permissionRestartApp)
+                    .font(.system(size: 13))
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(height: 36)
+            } else {
+                HStack(spacing: 8) {
+                    Button(action: onAlwaysDeny) {
+                        Text(UserText.permissionPopupNeverAllowButton)
+                            .font(.system(size: 13))
+                            .foregroundColor(isEnabled ? Color(designSystemColor: .textPrimary) : Color(designSystemColor: .textSecondary))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 36)
+                            .background(isEnabled ? Color(designSystemColor: .controlsFillPrimary) : Color(designSystemColor: .controlsFillSecondary))
+                            .cornerRadius(8)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .disabled(!isEnabled)
+                    .accessibilityIdentifier("PermissionAuthorizationSwiftUIView.neverAllowButton")
 
-                Button(action: onAlwaysAllow) {
-                    Text(UserText.permissionPopupAlwaysAllowButton)
-                        .font(.system(size: 13))
-                        .foregroundColor(isEnabled ? Color(designSystemColor: .textPrimary) : Color(designSystemColor: .textSecondary))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 36)
-                        .background(isEnabled ? Color(designSystemColor: .controlsFillPrimary) : Color(designSystemColor: .controlsFillSecondary))
-                        .cornerRadius(8)
+                    Button(action: onAlwaysAllow) {
+                        Text(UserText.permissionPopupAlwaysAllowButton)
+                            .font(.system(size: 13))
+                            .foregroundColor(isEnabled ? Color(designSystemColor: .textPrimary) : Color(designSystemColor: .textSecondary))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 36)
+                            .background(isEnabled ? Color(designSystemColor: .controlsFillPrimary) : Color(designSystemColor: .controlsFillSecondary))
+                            .cornerRadius(8)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .disabled(!isEnabled)
+                    .accessibilityIdentifier("PermissionAuthorizationSwiftUIView.alwaysAllowButton")
                 }
-                .buttonStyle(PlainButtonStyle())
-                .disabled(!isEnabled)
-                .accessibilityIdentifier("PermissionAuthorizationSwiftUIView.alwaysAllowButton")
             }
         }
     }
@@ -369,13 +409,33 @@ extension PermissionType {
         }
     }
 
-    /// Text shown when system permission is denied
-    var systemPermissionDeniedText: String {
+    /// Text shown when system permission was previously disabled (prefix before link)
+    var systemPermissionDisabledText: String {
         switch self {
         case .geolocation:
-            return UserText.permissionSystemLocationDenied
+            return UserText.permissionSystemLocationDisabled
         case .camera, .microphone, .popups, .externalScheme:
             return ""
+        }
+    }
+
+    /// Link text for opening System Settings
+    var systemSettingsLinkText: String {
+        switch self {
+        case .geolocation:
+            return UserText.permissionSystemSettingsLocation
+        case .camera, .microphone, .popups, .externalScheme:
+            return ""
+        }
+    }
+
+    /// URL to open the relevant System Settings pane
+    var systemSettingsURL: URL? {
+        switch self {
+        case .geolocation:
+            return URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices")
+        case .camera, .microphone, .popups, .externalScheme:
+            return nil
         }
     }
 }

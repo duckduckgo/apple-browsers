@@ -300,6 +300,10 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         view.window?.makeFirstResponder(textView)
     }
 
+    func insertNewline() {
+        textView.insertNewlineIgnoringFieldEditor(nil)
+    }
+
     func updateScrollingBehavior(maxHeight: CGFloat) {
         let desiredHeight = calculateDesiredPanelHeight()
         let effectiveMaxHeight = min(maxHeight, Constants.maximumPanelHeight)

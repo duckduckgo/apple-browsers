@@ -684,10 +684,12 @@ final class AddressBarViewController: NSViewController {
         && aiChatSettings.isAIFeaturesEnabled
         && aiChatSettings.showSearchAndDuckAIToggle
 
-        if shouldShowDuckAIHint {
-            addressBarPlaceholder = UserText.addressBarPlaceholderWithDuckAI
-        } else if isNewTab {
-            addressBarPlaceholder = UserText.addressBarPlaceholder
+        if isNewTab {
+            if shouldShowDuckAIHint {
+                addressBarPlaceholder = UserText.addressBarPlaceholderWithDuckAI
+            } else {
+                addressBarPlaceholder = UserText.addressBarPlaceholder
+            }
         } else {
             addressBarPlaceholder = ""
         }
@@ -871,6 +873,8 @@ final class AddressBarViewController: NSViewController {
             delegate?.resizeAddressBarForHomePage(self)
             addressBarButtonsViewController?.setupButtonPaddings(isFocused: false)
         }
+
+        setupAddressBarPlaceHolder()
     }
 
     private func handleFirstResponderChange() {

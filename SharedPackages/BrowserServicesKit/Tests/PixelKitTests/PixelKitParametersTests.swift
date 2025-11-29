@@ -44,18 +44,24 @@ final class PixelKitParametersTests: XCTestCase {
     /// are properly included in the pixel.
     ///
     func testUnderlyingErrorInformationParameters() {
-        let underlyingError3 = NSError(domain: "test", code: 3)
+        let underlyingError3 = NSError(domain: "test",
+                                       code: 3,
+                                       userInfo: [
+                                           NSLocalizedDescriptionKey: "underlyingError3"
+                                       ])
         let underlyingError2 = NSError(
             domain: "test",
             code: 2,
             userInfo: [
-                NSUnderlyingErrorKey: underlyingError3 as NSError
+                NSUnderlyingErrorKey: underlyingError3 as NSError,
+                NSLocalizedDescriptionKey: "underlyingError2"
             ])
         let topLevelError = NSError(
             domain: "test",
             code: 1,
             userInfo: [
-                NSUnderlyingErrorKey: underlyingError2 as NSError
+                NSUnderlyingErrorKey: underlyingError2 as NSError,
+                NSLocalizedDescriptionKey: "topLevelError"
             ])
 
         fire(TestEvent.errorEvent(error: topLevelError),

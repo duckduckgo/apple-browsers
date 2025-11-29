@@ -25,7 +25,7 @@ class CrashReportTests: XCTestCase {
         let bundle = Bundle(for: CrashReportTests.self)
         let url = bundle.resourceURL!.appendingPathComponent("DuckDuckGo-ExampleCrash.ips")
 
-        let report = JSONCrashReport(url: url)
+        let report = JSONCrashReport(url: url, fileManager: .default)
 
         XCTAssertNotNil(report.content)
         XCTAssertNotNil(report.contentData)

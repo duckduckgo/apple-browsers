@@ -197,6 +197,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let remoteMessagingClient: RemoteMessagingClient!
     let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
     let defaultBrowserAndDockPromptService: DefaultBrowserAndDockPromptService
+    let userChurnScheduler: UserChurnBackgroundActivityScheduler
     lazy var vpnUpsellPopoverPresenter = DefaultVPNUpsellPopoverPresenter(
         subscriptionManager: subscriptionAuthV1toV2Bridge,
         featureFlagger: featureFlagger,
@@ -670,8 +671,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 purchasePlatform: subscriptionAuthV1toV2Bridge.currentEnvironment.purchasePlatform,
                 paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) },
                 supportsAlternateStripePaymentFlowStatusProvider: { featureFlagger.isFeatureOn(.supportsAlternateStripePaymentFlow) },
-                isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement) },
-                isSubscriptionRestoreWidePixelMeasurementEnabledProvider: { featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) }
+                isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement) }
             ),
             internalUserDecider: internalUserDecider,
             featureFlagger: featureFlagger
@@ -968,6 +968,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         )
 
+        userChurnScheduler = UserChurnBackgroundActivityScheduler(
+            defaultBrowserProvider: SystemDefaultBrowserProvider(),
+            keyValueStore: keyValueStore,
+            pixelFiring: PixelKit.shared,
+            atbProvider: { LocalStatisticsStore().atb }
+        )
+
         // AttributedMetric initialisation
 
         let errorHandler = AttributedMetricErrorHandler(pixelKit: PixelKit.shared)
@@ -1190,6 +1197,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Task(priority: .utility) {
             await wideEventService.sendPendingEvents()
         }
+
+        userChurnScheduler.start()
 
         PixelKit.fire(NonStandardEvent(GeneralPixel.launch))
     }

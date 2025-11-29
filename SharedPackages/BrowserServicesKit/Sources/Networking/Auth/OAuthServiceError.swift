@@ -45,16 +45,11 @@ public enum OAuthServiceError: DDGError {
 
     public var errorCode: Int {
         switch self {
-        case .authAPIError:
-            return 11200
-        case .apiServiceError:
-            return 11201
-        case .invalidRequest:
-            return 11202
-        case .invalidResponseCode:
-            return 11203
-        case .missingResponseValue:
-            return 11204
+        case .authAPIError: 11200
+        case .apiServiceError: 11201
+        case .invalidRequest: 11202
+        case .invalidResponseCode: 11203
+        case .missingResponseValue: 11204
         }
     }
 

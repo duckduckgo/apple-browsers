@@ -1095,7 +1095,7 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
         if isAIChatMode {
             if mode.isEditing {
                 let text = addressBarTextField.stringValueWithoutSuffix
-                if !text.isEmpty {
+                if !text.isEmpty && sharedTextState.hasUserInteractedWithTextAfterSwitchingModes == true {
                     sharedTextState.updateText(text, markInteraction: false)
                 }
             }
@@ -1105,6 +1105,7 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
             if isFirstResponder {
                 view.window?.makeFirstResponder(nil)
             }
+            sharedTextState.resetuserInteractionAfterSwitchingModes()
         } else {
             selectionState = .active
             let shouldRestoreFromSharedState = sharedTextState.hasUserInteractedWithText
@@ -1119,7 +1120,7 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
                 addressBarTextField.setCursorPositionAfterRestore()
             }
         }
-
+        sharedTextState.resetuserInteractionAfterSwitchingModes()
         delegate?.addressBarViewControllerSearchModeToggleChanged(self, isAIChatMode: isAIChatMode)
     }
 

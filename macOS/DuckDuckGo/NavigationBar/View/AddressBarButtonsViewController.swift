@@ -691,9 +691,9 @@ final class AddressBarButtonsViewController: NSViewController {
         }
 
         if showBell {
-            permissionCenterButton.image = DesignSystemImages.Color.Size16.heart
+            permissionCenterButton.image = DesignSystemImages.Glyphs.Size16.permissionsNotification
         } else {
-            permissionCenterButton.image = DesignSystemImages.Color.Size16.globe
+            permissionCenterButton.image = DesignSystemImages.Glyphs.Size16.permissions
         }
     }
 

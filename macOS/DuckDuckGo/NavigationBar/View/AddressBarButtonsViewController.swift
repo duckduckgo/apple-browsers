@@ -1608,7 +1608,6 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBAction func permissionCenterButtonAction(_ sender: Any) {
         guard featureFlagger.isFeatureOn(.newPermissionView) else { return }
         guard let tabViewModel else { return }
-        guard let sender = sender as? NSView else { return }
 
         // Close existing popover if shown
         if let existingPopover = permissionCenterPopover, existingPopover.isShown {
@@ -1629,7 +1628,7 @@ final class AddressBarButtonsViewController: NSViewController {
         let popover = PermissionCenterPopover(viewModel: viewModel)
         permissionCenterPopover = popover
 
-        popover.show(relativeTo: sender.bounds, of: sender, preferredEdge: .maxY)
+        popover.show(relativeTo: permissionCenterButton.bounds, of: permissionCenterButton, preferredEdge: .maxY)
     }
 
     @IBAction func cameraButtonAction(_ sender: NSButton) {

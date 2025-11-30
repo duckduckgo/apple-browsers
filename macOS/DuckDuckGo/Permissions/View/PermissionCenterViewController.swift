@@ -19,19 +19,44 @@
 import AppKit
 import SwiftUI
 
-final class PermissionCenterViewController: NSHostingController<PermissionCenterView> {
+final class PermissionCenterViewController: NSViewController {
 
     let viewModel: PermissionCenterViewModel
+    private var hostingView: NSHostingView<PermissionCenterView>?
 
     init(viewModel: PermissionCenterViewModel) {
         self.viewModel = viewModel
-        let view = PermissionCenterView(viewModel: viewModel)
-        super.init(rootView: view)
+        super.init(nibName: nil, bundle: nil)
     }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    override func loadView() {
+        view = NSView()
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupHostingView()
+    }
+
+    private func setupHostingView() {
+        let swiftUIView = PermissionCenterView(viewModel: viewModel)
+        let hostingView = NSHostingView(rootView: swiftUIView)
+        hostingView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(hostingView)
+
+        NSLayoutConstraint.activate([
+            hostingView.topAnchor.constraint(equalTo: view.topAnchor),
+            hostingView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            hostingView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            hostingView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+
+        self.hostingView = hostingView
     }
 }
 

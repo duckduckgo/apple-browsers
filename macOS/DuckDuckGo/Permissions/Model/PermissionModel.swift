@@ -231,6 +231,25 @@ final class PermissionModel {
         }
     }
 
+    /// Removes a permission completely (revokes and removes from tracking)
+    func remove(_ permission: PermissionType) {
+        // First revoke the permission
+        switch permission {
+        case .camera, .microphone, .geolocation:
+            webView?.revokePermissions([permission])
+        case .popups, .externalScheme:
+            break
+        }
+
+        // Remove from dictionary (will trigger @Published update)
+        permissions[permission] = nil
+
+        // Remove from persisted storage
+        if let domain = webView?.url?.host {
+            permissionManager.removePermission(forDomain: domain, permissionType: permission)
+        }
+    }
+
     // MARK: - WebView delegated methods
 
     // Called before requestMediaCapturePermissionFor: to validate System Permissions

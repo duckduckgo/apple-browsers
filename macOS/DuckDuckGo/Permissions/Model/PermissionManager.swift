@@ -35,6 +35,9 @@ protocol PermissionManagerProtocol: AnyObject {
     func burnPermissions(except fireproofDomains: FireproofDomains, completion: @escaping @MainActor () -> Void)
     func burnPermissions(of baseDomains: Set<String>, tld: TLD, completion: @escaping @MainActor () -> Void)
 
+    /// Removes a specific permission for a domain (clears from storage)
+    func removePermission(forDomain domain: String, permissionType: PermissionType)
+
     var persistedPermissionTypes: Set<PermissionType> { get }
 }
 
@@ -131,6 +134,21 @@ final class PermissionManager: PermissionManagerProtocol {
         }), completionHandler: { _ in
             completion()
         })
+    }
+
+    func removePermission(forDomain domain: String, permissionType: PermissionType) {
+        let domain = domain.droppingWwwPrefix()
+
+        guard let storedPermission = permissions[domain]?[permissionType] else { return }
+
+        // Remove from in-memory cache
+        permissions[domain]?[permissionType] = nil
+
+        // Remove from persistent storage
+        store.remove(objectWithId: storedPermission.id)
+
+        // Notify subscribers
+        permissionSubject.send((domain, permissionType, .ask))
     }
 
 }

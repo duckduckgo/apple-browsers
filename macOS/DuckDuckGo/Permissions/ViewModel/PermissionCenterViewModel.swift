@@ -44,7 +44,11 @@ final class PermissionCenterViewModel: ObservableObject {
     private let permissionManager: PermissionManagerProtocol
     private let systemPermissionManager: SystemPermissionManagerProtocol
     private let usedPermissions: Permissions
+    private let removePermissionFromTab: (PermissionType) -> Void
+    private let reloadPage: () -> Void
+    private let dismissPopover: () -> Void
     private var cancellables = Set<AnyCancellable>()
+    private var removedPermissions = Set<PermissionType>()
 
     // MARK: - Initialization
 
@@ -52,11 +56,17 @@ final class PermissionCenterViewModel: ObservableObject {
         domain: String,
         usedPermissions: Permissions,
         permissionManager: PermissionManagerProtocol,
+        removePermission: @escaping (PermissionType) -> Void,
+        reloadPage: @escaping () -> Void,
+        dismissPopover: @escaping () -> Void,
         systemPermissionManager: SystemPermissionManagerProtocol = SystemPermissionManager()
     ) {
         self.domain = domain
         self.usedPermissions = usedPermissions
         self.permissionManager = permissionManager
+        self.removePermissionFromTab = removePermission
+        self.reloadPage = reloadPage
+        self.dismissPopover = dismissPopover
         self.systemPermissionManager = systemPermissionManager
 
         loadPermissions()
@@ -70,25 +80,39 @@ final class PermissionCenterViewModel: ObservableObject {
         permissionManager.setPermission(decision, forDomain: domain, permissionType: permissionType)
     }
 
-    /// Removes the permission (resets to "ask")
+    /// Removes the permission completely (from webview, tracking, and storage)
     func removePermission(_ permissionType: PermissionType) {
-        setDecision(.ask, for: permissionType)
+        // Track removed permissions to prevent re-adding on reload
+        removedPermissions.insert(permissionType)
+        removePermissionFromTab(permissionType)
+        // Also remove from UI immediately
+        permissionItems.removeAll { $0.permissionType == permissionType }
+
+        // Reload page to ensure website loses access
+        reloadPage()
+
+        // Dismiss popover if no permissions left
+        if permissionItems.isEmpty {
+            dismissPopover()
+        }
     }
 
     // MARK: - Private Methods
 
     private func loadPermissions() {
-        permissionItems = usedPermissions.keys.map { permissionType in
-            let decision = permissionManager.permission(forDomain: domain, permissionType: permissionType)
-            let isSystemDisabled = checkSystemDisabled(for: permissionType)
+        permissionItems = usedPermissions.keys
+            .filter { !removedPermissions.contains($0) }
+            .map { permissionType in
+                let decision = permissionManager.permission(forDomain: domain, permissionType: permissionType)
+                let isSystemDisabled = checkSystemDisabled(for: permissionType)
 
-            return PermissionCenterItem(
-                id: permissionType,
-                permissionType: permissionType,
-                decision: decision,
-                isSystemDisabled: isSystemDisabled
-            )
-        }.sorted { $0.permissionType.rawValue < $1.permissionType.rawValue }
+                return PermissionCenterItem(
+                    id: permissionType,
+                    permissionType: permissionType,
+                    decision: decision,
+                    isSystemDisabled: isSystemDisabled
+                )
+            }.sorted { $0.permissionType.rawValue < $1.permissionType.rawValue }
     }
 
     private func checkSystemDisabled(for permissionType: PermissionType) -> Bool {

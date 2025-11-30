@@ -80,7 +80,7 @@ final class DBPService: NSObject {
     }
 
     func resume() {
-        Task {
+        Task { @MainActor in
             await dbpIOSManager?.appDidBecomeActive()
         }
     }

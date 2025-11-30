@@ -31,11 +31,12 @@ struct PermissionCenterView: View {
             Text(String(format: UserText.permissionCenterTitle, viewModel.domain))
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
-                .padding(.horizontal, 16)
+                .padding(.leading, 20)
+                .padding(.trailing, 16)
                 .padding(.top, 16)
                 .padding(.bottom, 12)
 
-            // Permission rows
+            // Permission rows in a rounded container
             VStack(spacing: 0) {
                 ForEach(viewModel.permissionItems) { item in
                     PermissionRowView(
@@ -50,10 +51,15 @@ struct PermissionCenterView: View {
 
                     if item.id != viewModel.permissionItems.last?.id {
                         Divider()
-                            .padding(.leading, 52)
                     }
                 }
             }
+            .background(Color(designSystemColor: .containerFillTertiary))
+            .cornerRadius(8)
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color(NSColor.separatorColor), lineWidth: 1)
+            )
             .padding(.horizontal, 16)
             .padding(.bottom, 16)
         }
@@ -69,6 +75,16 @@ struct PermissionRowView: View {
     let item: PermissionCenterItem
     let onDecisionChanged: (PersistedPermissionDecision) -> Void
     let onRemove: () -> Void
+
+    @State private var isRemoveButtonHovered = false
+    @State private var currentDecision: PersistedPermissionDecision
+
+    init(item: PermissionCenterItem, onDecisionChanged: @escaping (PersistedPermissionDecision) -> Void, onRemove: @escaping () -> Void) {
+        self.item = item
+        self.onDecisionChanged = onDecisionChanged
+        self.onRemove = onRemove
+        self._currentDecision = State(initialValue: item.decision)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -86,25 +102,38 @@ struct PermissionRowView: View {
                 Spacer()
 
                 // Decision dropdown
-                decisionPicker
+                decisionPopUpButton
 
-                // Remove button
+                // Remove button with hover effect
                 Button(action: onRemove) {
                     Image(systemName: "xmark")
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundColor(Color(designSystemColor: .textSecondary))
                 }
                 .buttonStyle(PlainButtonStyle())
-                .frame(width: 20, height: 20)
+                .frame(width: 16, height: 16)
+                .background(
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(isRemoveButtonHovered ? Color(.buttonMouseOver) : Color.clear)
+                )
+                .onHover { hovering in
+                    isRemoveButtonHovered = hovering
+                }
             }
+            .padding(.leading, 16)
+            .padding(.trailing, 12)
             .padding(.vertical, 12)
 
             // System disabled warning (if applicable)
             if item.isSystemDisabled {
                 systemDisabledWarning
-                    .padding(.leading, 36)
+                    .padding(.leading, 52)
+                    .padding(.trailing, 12)
                     .padding(.bottom, 8)
             }
+        }
+        .onChange(of: currentDecision) { newValue in
+            onDecisionChanged(newValue)
         }
     }
 
@@ -131,37 +160,25 @@ struct PermissionRowView: View {
         }
     }
 
-    private var decisionPicker: some View {
-        Menu {
-            Button(UserText.permissionCenterAlwaysAsk) {
-                onDecisionChanged(.ask)
+    private var decisionPopUpButton: some View {
+        NSPopUpButtonView(selection: $currentDecision) {
+            let button = NSPopUpButton()
+            button.bezelStyle = .accessoryBarAction
+            button.isBordered = true
+            button.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+
+            for decision in [PersistedPermissionDecision.ask, .allow, .deny] {
+                let item = button.menu?.addItem(withTitle: decisionDisplayText(for: decision), action: nil, keyEquivalent: "")
+                item?.representedObject = decision
             }
-            Button(UserText.permissionCenterAlwaysAllow) {
-                onDecisionChanged(.allow)
-            }
-            Button(UserText.permissionCenterNeverAllow) {
-                onDecisionChanged(.deny)
-            }
-        } label: {
-            HStack(spacing: 4) {
-                Text(decisionDisplayText)
-                    .font(.system(size: 12))
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-                Image(systemName: "chevron.down")
-                    .font(.system(size: 8, weight: .semibold))
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(Color(designSystemColor: .controlsFillSecondary))
-            .cornerRadius(6)
+
+            return button
         }
-        .menuStyle(BorderlessButtonMenuStyle())
         .fixedSize()
     }
 
-    private var decisionDisplayText: String {
-        switch item.decision {
+    private func decisionDisplayText(for decision: PersistedPermissionDecision) -> String {
+        switch decision {
         case .ask:
             return UserText.permissionCenterAlwaysAsk
         case .allow:

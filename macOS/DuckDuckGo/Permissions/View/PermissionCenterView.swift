@@ -128,10 +128,11 @@ struct PermissionRowView: View {
             if item.isSystemDisabled {
                 systemDisabledWarning
                     .padding(.leading, 52)
-                    .padding(.trailing, 12)
-                    .padding(.bottom, 8)
+                    .padding(.trailing, 16)
+                    .padding(.bottom, 12)
             }
         }
+        .background(item.isSystemDisabled ? Color(.permissionWarningBackground) : Color.clear)
         .onChange(of: currentDecision) { newValue in
             onDecisionChanged(newValue)
         }
@@ -189,22 +190,17 @@ struct PermissionRowView: View {
     }
 
     private var systemDisabledWarning: some View {
-        HStack(spacing: 0) {
-            Text(item.permissionType.systemPermissionDisabledText)
-                .font(.system(size: 11))
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-
-            Button(action: openSystemSettings) {
-                Text(item.permissionType.systemSettingsLinkText)
-                    .font(.system(size: 11))
-                    .foregroundColor(.accentColor)
+        (Text(item.permissionType.systemPermissionDisabledText)
+            .font(.system(size: 12))
+            .foregroundColor(Color(designSystemColor: .textSecondary))
+        + Text(item.permissionType.systemSettingsLinkText)
+            .font(.system(size: 12))
+            .foregroundColor(.accentColor))
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .onTapGesture {
+                openSystemSettings()
             }
-            .buttonStyle(PlainButtonStyle())
-        }
-        .padding(8)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.yellow.opacity(0.2))
-        .cornerRadius(6)
     }
 
     private func openSystemSettings() {

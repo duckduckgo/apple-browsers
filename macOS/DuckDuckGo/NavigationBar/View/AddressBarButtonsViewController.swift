@@ -70,6 +70,8 @@ final class AddressBarButtonsViewController: NSViewController {
         }()
     }
 
+    private var permissionCenterPopover: PermissionCenterPopover?
+
     private var popupBlockedPopover: PopupBlockedPopover?
     private func popupBlockedPopoverCreatingIfNeeded() -> PopupBlockedPopover {
         return popupBlockedPopover ?? {
@@ -1604,7 +1606,30 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     @IBAction func permissionCenterButtonAction(_ sender: Any) {
+        guard featureFlagger.isFeatureOn(.newPermissionView) else { return }
+        guard let tabViewModel else { return }
+        guard let sender = sender as? NSView else { return }
 
+        // Close existing popover if shown
+        if let existingPopover = permissionCenterPopover, existingPopover.isShown {
+            existingPopover.close()
+            permissionCenterPopover = nil
+            return
+        }
+
+        let url = tabViewModel.tab.content.urlForWebView ?? .empty
+        let domain = url.isFileURL ? .localhost : (url.host ?? "")
+
+        let viewModel = PermissionCenterViewModel(
+            domain: domain,
+            usedPermissions: tabViewModel.usedPermissions,
+            permissionManager: permissionManager
+        )
+
+        let popover = PermissionCenterPopover(viewModel: viewModel)
+        permissionCenterPopover = popover
+
+        popover.show(relativeTo: sender.bounds, of: sender, preferredEdge: .maxY)
     }
 
     @IBAction func cameraButtonAction(_ sender: NSButton) {

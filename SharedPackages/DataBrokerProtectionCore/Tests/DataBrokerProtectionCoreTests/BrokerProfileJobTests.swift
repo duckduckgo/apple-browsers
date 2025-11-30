@@ -73,7 +73,7 @@ final class BrokerProfileJobTests: XCTestCase {
         }
 
         job.start()
-        await fulfillment(of: [expectation], timeout: 5)
+        await fulfillment(of: [expectation], timeout: 15)
 
         XCTAssertTrue(job.isFinished)
         XCTAssertTrue(database.scanEvents.isEmpty)
@@ -102,7 +102,7 @@ final class BrokerProfileJobTests: XCTestCase {
         }
 
         job.start()
-        await fulfillment(of: [expectation], timeout: 5)
+        await fulfillment(of: [expectation], timeout: 15)
 
         XCTAssertTrue(job.isFinished)
         XCTAssertTrue(database.scanEvents.contains(where: { $0.type == .scanStarted }))

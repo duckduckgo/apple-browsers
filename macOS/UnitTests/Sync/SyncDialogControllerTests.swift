@@ -61,6 +61,7 @@ final class SyncDialogControllerTests: XCTestCase {
     var cancellables: Set<AnyCancellable>!
 
     override func setUp() {
+        super.setUp()
         cancellables = []
         scheduler = CapturingScheduler()
         managementDialogModel = ManagementDialogModel()
@@ -94,6 +95,7 @@ final class SyncDialogControllerTests: XCTestCase {
         managementDialogModel = nil
         scheduler = nil
         authenticator = nil
+        super.tearDown()
     }
 
     func testOnPresentRecoverSyncAccountDialogThenRecoverAccountDialogShown() async {

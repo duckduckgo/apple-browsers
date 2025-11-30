@@ -213,4 +213,8 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
     private func loggerContext(for action: Action? = nil) -> PIRActionLogContext {
         .init(stepType: .optOut, broker: context.dataBroker, attemptId: stageCalculator.attemptId, action: action)
     }
+
+    public func onInterferenceDetected(result: InterferenceDetectionResult) async {
+        Logger.action.log("[InterferenceDetection] OptOut detected interference: \(result.botDetection?.detected ?? false, privacy: .public)")
+    }
 }

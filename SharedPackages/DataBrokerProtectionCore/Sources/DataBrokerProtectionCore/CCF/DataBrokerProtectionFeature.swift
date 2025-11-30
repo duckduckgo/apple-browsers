@@ -31,15 +31,19 @@ public protocol CCFCommunicationDelegate: AnyObject {
     func success(actionId: String, actionType: ActionType) async
     func conditionSuccess(actions: [Action]) async
     func onError(error: Error) async
+    func onInterferenceDetected(result: InterferenceDetectionResult) async
 }
 
 public enum CCFSubscribeActionName: String {
     case onActionReceived
+    case detectInterference
 }
 
 public enum CCFReceivedMethodName: String {
     case actionCompleted
     case actionError
+    case interferenceDetected
+    case interferenceDetectionError
 }
 
 public class DataBrokerProtectionFeature: Subfeature {
@@ -75,6 +79,8 @@ public class DataBrokerProtectionFeature: Subfeature {
             switch actionResult {
             case .actionCompleted: return onActionCompleted
             case .actionError: return onActionError
+            case .interferenceDetected: return onInterferenceDetected
+            case .interferenceDetectionError: return onInterferenceDetectionError
             }
         } else {
             Logger.action.log("Cant parse method: \(methodName, privacy: .public)")
@@ -82,10 +88,17 @@ public class DataBrokerProtectionFeature: Subfeature {
         }
     }
 
+    private func detectWebInterference(webView: WKWebView) {
+        let params = DetectInterferenceParams(types: ["botDetection"])
+        push(method: .detectInterference, params: params, for: self, into: webView)
+    }
+
     func onActionCompleted(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         removeTimers()
 
         Logger.action.log("Action completed")
+
+        detectWebInterference(webView: original.webView!)
 
         await parseActionCompleted(params: params)
         return nil
@@ -140,7 +153,43 @@ public class DataBrokerProtectionFeature: Subfeature {
         let error = DataBrokerProtectionError.parse(params: params)
         Logger.action.log("Action Error: \(String(describing: error.localizedDescription), privacy: .public)")
 
+        detectWebInterference(webView: original.webView!)
+
         await delegate?.onError(error: error)
+        return nil
+    }
+
+    func onInterferenceDetected(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        Logger.action.log("[InterferenceDetection] Received interference detection result from C-S-S")
+
+        guard let data = try? JSONSerialization.data(withJSONObject: params) else {
+            Logger.action.log("[InterferenceDetection] Failed to serialize params")
+            return nil
+        }
+
+        if let jsonString = String(data: data, encoding: .utf8) {
+            Logger.action.log("[InterferenceDetection] Result: \(jsonString, privacy: .public)")
+        }
+
+        // Parse detection results
+        do {
+            let detectionResult = try JSONDecoder().decode(InterferenceDetectionResult.self, from: data)
+            await delegate?.onInterferenceDetected(result: detectionResult)
+        } catch {
+            Logger.action.log("[InterferenceDetection] Failed to parse detection result: \(error.localizedDescription, privacy: .public)")
+        }
+
+        return nil
+    }
+
+    func onInterferenceDetectionError(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        Logger.action.log("[InterferenceDetection] Detection error from C-S-S")
+
+        if let errorDict = params as? [String: Any],
+           let error = errorDict["error"] as? String {
+            Logger.action.log("[InterferenceDetection] Error: \(error, privacy: .public)")
+        }
+
         return nil
     }
 
@@ -166,6 +215,13 @@ public class DataBrokerProtectionFeature: Subfeature {
         broker.push(method: method.rawValue, params: params, for: self, into: webView)
 
         installActionTimer(for: (params as? Params)?.state.action)
+    }
+
+    private func push(method: CCFSubscribeActionName, params: Encodable, for subfeature: Subfeature, into webView: WKWebView) {
+        guard let broker = broker else {
+            return
+        }
+        broker.push(method: method.rawValue, params: params, for: subfeature, into: webView)
     }
 
     private func installActionTimer(for action: Action?) {
@@ -213,4 +269,28 @@ public class DataBrokerProtectionFeature: Subfeature {
         taskCancellationTimer?.invalidate()
         taskCancellationTimer = nil
     }
+}
+
+// MARK: - Interference Detection Data Models
+
+public struct InterferenceDetectionResult: Codable {
+    public let botDetection: BotDetectionResult?
+
+    enum CodingKeys: String, CodingKey {
+        case botDetection
+    }
+}
+
+public struct BotDetectionResult: Codable {
+    public let detected: Bool
+    public let interferenceType: String
+    public let results: [VendorDetectionResult]
+    public let timestamp: TimeInterval
+}
+
+public struct VendorDetectionResult: Codable {
+    public let vendor: String
+    public let detected: Bool
+    public let challengeType: String?
+    public let challengeState: String?
 }

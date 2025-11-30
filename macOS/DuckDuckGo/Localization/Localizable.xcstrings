@@ -19826,6 +19826,59 @@
         }
       }
     },
+    "Display progress" : {
+      "extractionState" : "stale",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fortschritt anzeigen"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar progreso"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher la progression"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Visualizza i progressi"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voortgang weergeven"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyświetl postęp"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar progresso"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показывать степень выполнения"
+          }
+        }
+      }
+    },
     "domain-is-fireproof" : {
       "comment" : "Domain fireproof status",
       "extractionState" : "extracted_with_value",
@@ -33290,7 +33343,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Chiudi le schede, cancella i dati e le chat"
+            "value" : "Chiudi le schede e cancella i dati e le chat"
           }
         },
         "nl" : {
@@ -39063,7 +39116,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Websites"
+            "value" : "Seiten"
           }
         },
         "en" : {
@@ -72415,58 +72468,10 @@
       "comment" : "Checkbox option to sync the app icon with the selected theme",
       "extractionState" : "extracted_with_value",
       "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "App-Symbol an das Design anpassen"
-          }
-        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Change app icon to match theme"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cambia el icono de la aplicación para que coincida con el tema"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Changer l'icône de l'application pour qu'elle corresponde au thème"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cambia l'icona dell'app per abbinarla al tema"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "App-pictogram aanpassen aan thema"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zmień ikonę aplikacji, aby pasowała do motywu"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Alterar o ícone da aplicação para combinar com o tema"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Изменить значок приложения, чтобы он соответствовал теме"
           }
         }
       }
@@ -86579,49 +86584,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "today"
+            "value" : "heute"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "today"
+            "value" : "hoy"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "today"
+            "value" : "aujourd'hui"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "today"
+            "value" : "oggi"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "today"
+            "value" : "vandaag"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "today"
+            "value" : "dzisiaj"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "today"
+            "value" : "hoje"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "today"
+            "value" : "сегодня"
           }
         }
       }
@@ -96588,49 +96593,49 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "yesterday"
+            "value" : "gestern"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "yesterday"
+            "value" : "ayer"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "yesterday"
+            "value" : "hier"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "yesterday"
+            "value" : "ieri"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "yesterday"
+            "value" : "gisteren"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "yesterday"
+            "value" : "wczoraj"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "yesterday"
+            "value" : "ontem"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "yesterday"
+            "value" : "вчера"
           }
         }
       }

@@ -88,3 +88,7 @@ struct ActionRequest: Encodable {
 struct Params: Encodable {
     let state: ActionRequest
 }
+
+struct DetectInterferenceParams: Encodable {
+    let types: [String]
+}

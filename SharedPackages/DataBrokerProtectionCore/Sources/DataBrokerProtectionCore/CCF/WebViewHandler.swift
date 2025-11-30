@@ -33,6 +33,7 @@ public protocol WebViewHandler: NSObject {
     func execute(action: Action, ofType stepType: StepType?, data: CCFRequestData) async
     func evaluateJavaScript(_ javaScript: String) async throws
     func setCookies(_ cookies: [HTTPCookie]) async
+    func detectWebInterference() async
 }
 
 @MainActor
@@ -156,6 +157,24 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
 
     func evaluateJavaScript(_ javaScript: String) async throws {
         try await webView?.evaluateJavaScript(javaScript) as Void?
+    }
+
+    func detectWebInterference() async {
+        Logger.action.log("[InterferenceDetection] Triggering detection from native")
+
+        guard let webView = webView,
+              let dataBrokerFeature = userContentController?.dataBrokerUserScripts?.dataBrokerFeature else {
+            Logger.action.log("[InterferenceDetection] No webView or feature available")
+            return
+        }
+
+        let params = DetectInterferenceParams(types: ["bot_detection"])
+
+        dataBrokerFeature.pushAction(
+            method: .detectInterference,
+            webView: webView,
+            params: params
+        )
     }
 
     func takeSnaphost(path: String, fileName: String) async throws {

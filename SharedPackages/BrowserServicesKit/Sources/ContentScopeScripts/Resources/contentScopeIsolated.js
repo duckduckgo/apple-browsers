@@ -2027,7 +2027,7 @@
   function isGloballyDisabled(args) {
     return args.site.allowlisted || args.site.isBroken;
   }
-  var platformSpecificFeatures = ["navigatorInterface", "windowsPermissionUsage", "messageBridge", "favicon"];
+  var platformSpecificFeatures = ["navigatorInterface", "duckAiListener", "windowsPermissionUsage", "messageBridge", "favicon"];
   function isPlatformSpecificFeature(featureName) {
     return platformSpecificFeatures.includes(featureName);
   }
@@ -2068,6 +2068,7 @@
       "messageBridge",
       "duckPlayer",
       "duckPlayerNative",
+      "duckAiListener",
       "duckAiDataClearing",
       "harmfulApis",
       "webCompat",
@@ -2082,7 +2083,7 @@
     ]
   );
   var platformSupport = {
-    apple: ["webCompat", "duckPlayerNative", ...baseFeatures, "duckAiDataClearing", "pageContext"],
+    apple: ["webCompat", "duckPlayerNative", ...baseFeatures, "duckAiListener", "duckAiDataClearing", "pageContext"],
     "apple-isolated": [
       "duckPlayer",
       "duckPlayerNative",
@@ -2118,6 +2119,7 @@
       "messageBridge",
       "webCompat",
       "pageContext",
+      "duckAiListener",
       "duckAiDataClearing"
     ],
     firefox: ["cookie", ...baseFeatures, "clickToLoad"],
@@ -12172,6 +12174,419 @@ ul.messages {
     return { result: lastResult, exceptions };
   }
 
+  // src/services/web-interference-detection/detector-service.js
+  init_define_import_meta_trackerLookup();
+
+  // src/services/web-interference-detection/detections/bot-detection.js
+  init_define_import_meta_trackerLookup();
+
+  // src/services/web-interference-detection/utils/detection-utils.js
+  init_define_import_meta_trackerLookup();
+  function checkSelectors(selectors) {
+    if (!selectors || !Array.isArray(selectors)) {
+      return false;
+    }
+    return selectors.some((selector) => document.querySelector(selector));
+  }
+  function checkSelectorsWithVisibility(selectors) {
+    if (!selectors || !Array.isArray(selectors)) {
+      return false;
+    }
+    return selectors.some((selector) => {
+      const element = document.querySelector(selector);
+      return element && isVisible(element);
+    });
+  }
+  function checkWindowProperties(properties) {
+    if (!properties || !Array.isArray(properties)) {
+      return false;
+    }
+    return properties.some((prop) => typeof window?.[prop] !== "undefined");
+  }
+  function isVisible(element) {
+    const computedStyle = getComputedStyle(element);
+    const rect = element.getBoundingClientRect();
+    return rect.width > 0.5 && rect.height > 0.5 && computedStyle.display !== "none" && computedStyle.visibility !== "hidden" && +computedStyle.opacity > 0.05;
+  }
+  function getTextContent(element, sources) {
+    if (!sources || sources.length === 0) {
+      return element.textContent || "";
+    }
+    return sources.map((source) => element[source] || "").join(" ");
+  }
+  function matchesSelectors(selectors) {
+    if (!selectors || !Array.isArray(selectors)) {
+      return false;
+    }
+    const elements = queryAllSelectors(selectors);
+    return elements.length > 0;
+  }
+  function matchesTextPatterns(element, patterns, sources) {
+    if (!patterns || !Array.isArray(patterns)) {
+      return false;
+    }
+    const text2 = getTextContent(element, sources);
+    return patterns.some((pattern) => {
+      const regex = new RegExp(pattern, "i");
+      return regex.test(text2);
+    });
+  }
+  function checkTextPatterns(patterns, sources) {
+    if (!patterns || !Array.isArray(patterns)) {
+      return false;
+    }
+    return matchesTextPatterns(document.body, patterns, sources);
+  }
+  function queryAllSelectors(selectors, root = document) {
+    if (!selectors || !Array.isArray(selectors) || selectors.length === 0) {
+      return [];
+    }
+    const elements = root.querySelectorAll(selectors.join(","));
+    return Array.from(elements);
+  }
+
+  // src/services/web-interference-detection/detections/bot-detection.js
+  var BotDetection = class {
+    /**
+     * @param {BotDetectionConfig} config
+     */
+    constructor(config2) {
+      this.config = config2;
+    }
+    /**
+     * @returns {TypeDetectionResult}
+     */
+    detect() {
+      const results = Object.entries(this.config || {}).filter(([_2, challengeConfig]) => challengeConfig.state === "enabled").map(([challengeId, challengeConfig]) => {
+        const detected = checkSelectors(challengeConfig.selectors) || checkWindowProperties(challengeConfig.windowProperties || []);
+        if (!detected) {
+          return null;
+        }
+        const challengeStatus = this._findStatus(challengeConfig.statusSelectors);
+        return {
+          detected: true,
+          vendor: challengeConfig.vendor,
+          challengeType: challengeId,
+          challengeStatus
+        };
+      }).filter((result) => result !== null);
+      return {
+        detected: results.length > 0,
+        interferenceType: "botDetection",
+        results,
+        timestamp: Date.now()
+      };
+    }
+    /**
+     * @param {StatusSelectorConfig[]} [statusSelectors]
+     * @returns {string|null}
+     */
+    _findStatus(statusSelectors) {
+      if (!statusSelectors || !Array.isArray(statusSelectors)) {
+        return null;
+      }
+      return statusSelectors.find((statusConfig) => {
+        const { status, selectors, textPatterns, textSources } = statusConfig;
+        const hasMatch = matchesSelectors(selectors) || matchesTextPatterns(document.body, textPatterns, textSources);
+        return hasMatch ? status : null;
+      })?.status || null;
+    }
+  };
+
+  // src/services/web-interference-detection/detections/fraud-detection.js
+  init_define_import_meta_trackerLookup();
+  var FraudDetection = class {
+    /**
+     * @param {AntiFraudConfig} config
+     */
+    constructor(config2) {
+      this.config = config2;
+    }
+    /**
+     * @returns {TypeDetectionResult}
+     */
+    detect() {
+      const results = Object.entries(this.config || {}).filter(([_2, alertConfig]) => alertConfig.state === "enabled").map(([alertId, alertConfig]) => {
+        const detected = checkSelectorsWithVisibility(alertConfig.selectors) || checkTextPatterns(alertConfig.textPatterns, alertConfig.textSources);
+        if (!detected) {
+          return null;
+        }
+        return {
+          detected: true,
+          alertId,
+          type: alertConfig.type
+        };
+      }).filter((result) => result !== null);
+      return {
+        detected: results.length > 0,
+        interferenceType: "fraudDetection",
+        results,
+        timestamp: Date.now()
+      };
+    }
+  };
+
+  // src/services/web-interference-detection/detections/youtube-ads-detection.js
+  init_define_import_meta_trackerLookup();
+
+  // src/services/web-interference-detection/detections/detection-base.js
+  init_define_import_meta_trackerLookup();
+  var DetectionBase = class {
+    /**
+     * @param {object} config
+     * @param {((result: TypeDetectionResult) => void)|null} [onInterferenceChange]
+     */
+    constructor(config2, onInterferenceChange = null) {
+      this.config = config2;
+      this.onInterferenceChange = onInterferenceChange;
+      this.isRunning = false;
+      this.root = null;
+      this.pollTimer = null;
+      if (this.onInterferenceChange) {
+        this.start();
+      }
+    }
+    start() {
+      if (this.isRunning) {
+        return;
+      }
+      this.isRunning = true;
+      this.root = this.findRoot();
+      if (!this.root) {
+        setTimeout(() => this.start(), 500);
+        return;
+      }
+      if (this.config.pollInterval) {
+        this.pollTimer = setInterval(() => this.checkForInterference(), this.config.pollInterval);
+      }
+      this.checkForInterference();
+    }
+    stop() {
+      if (!this.isRunning) {
+        return;
+      }
+      this.isRunning = false;
+      if (this.pollTimer) {
+        clearInterval(this.pollTimer);
+        this.pollTimer = null;
+      }
+    }
+    /**
+     * @returns {TypeDetectionResult}
+     */
+    detect() {
+      throw new Error("detect() must be implemented by subclass");
+    }
+    /**
+     * @returns {Element|null}
+     */
+    findRoot() {
+      return document.body;
+    }
+    checkForInterference() {
+    }
+  };
+
+  // src/services/web-interference-detection/utils/result-factory.js
+  init_define_import_meta_trackerLookup();
+  function createEmptyResult(type) {
+    return {
+      detected: false,
+      interferenceType: type,
+      results: [],
+      timestamp: Date.now()
+    };
+  }
+
+  // src/services/web-interference-detection/detections/youtube-ads-detection.js
+  var YouTubeAdsDetection = class extends DetectionBase {
+    /**
+     * @param {YouTubeAdsConfig} config
+     * @param {((result: TypeDetectionResult) => void)|null} [onInterferenceChange]
+     */
+    constructor(config2, onInterferenceChange = null) {
+      super(config2, onInterferenceChange);
+      this.adCurrentlyPlaying = false;
+    }
+    /**
+     * @returns {TypeDetectionResult}
+     */
+    detect() {
+      const root = this.findRoot();
+      if (!root) {
+        return createEmptyResult("youtubeAds");
+      }
+      const hasAdClass = this.config.adClasses.some((cls) => root.classList.contains(cls));
+      const adElements = queryAllSelectors(this.config.selectors, root);
+      const hasVisibleAdElement = adElements.some((el) => isVisible(el));
+      const detected = hasAdClass || hasVisibleAdElement;
+      return {
+        detected,
+        interferenceType: "youtubeAds",
+        results: detected ? [
+          {
+            adCurrentlyPlaying: true,
+            adType: "video-ad",
+            source: "one-time-detection"
+          }
+        ] : [],
+        timestamp: Date.now()
+      };
+    }
+    findRoot() {
+      return document.querySelector(this.config.rootSelector);
+    }
+    checkForInterference() {
+      if (!this.root) {
+        return;
+      }
+      const hadAd = this.adCurrentlyPlaying;
+      const hasAdClass = this.config.adClasses.some((cls) => this.root && this.root.classList.contains(cls));
+      this.adCurrentlyPlaying = hasAdClass;
+      if (this.onInterferenceChange && hadAd !== this.adCurrentlyPlaying) {
+        this.onInterferenceChange(
+          this.adCurrentlyPlaying ? {
+            detected: true,
+            interferenceType: "youtubeAds",
+            results: [
+              {
+                adCurrentlyPlaying: true,
+                adType: "video-ad",
+                source: "detector"
+              }
+            ],
+            timestamp: Date.now()
+          } : createEmptyResult("youtubeAds")
+        );
+      }
+    }
+  };
+
+  // src/services/web-interference-detection/detector-service.js
+  var detectionClassMap = {
+    botDetection: BotDetection,
+    fraudDetection: FraudDetection,
+    youtubeAds: YouTubeAdsDetection
+  };
+  var WebInterferenceDetectionService = class {
+    /**
+     * @param {DetectInterferenceParams} params
+     */
+    constructor(params) {
+      const { interferenceConfig, onDetectionChange } = params;
+      this.interferenceConfig = interferenceConfig;
+      this.onDetectionChange = onDetectionChange;
+      this.activeDetections = [];
+    }
+    /**
+     * @param {InterferenceDetectionRequest} request
+     * @returns {DetectionResults}
+     */
+    detect(request) {
+      const { types } = request;
+      const results = (
+        /** @type {DetectionResults} */
+        {}
+      );
+      types.forEach((type) => {
+        const config2 = this.interferenceConfig.settings?.[type];
+        const { observeDOMChanges } = config2 ?? {};
+        const DetectionClass = detectionClassMap[type];
+        if (!DetectionClass || !config2) {
+          results[type] = createEmptyResult(type);
+          return;
+        }
+        const callback = observeDOMChanges && this.onDetectionChange ? (result) => this.onDetectionChange?.({ [type]: result }) : null;
+        const detection = (
+          /** @type {InterferenceDetector} */
+          new DetectionClass(config2, callback)
+        );
+        results[type] = detection.detect();
+        if (callback && typeof detection.stop === "function") {
+          this.activeDetections.push(detection);
+        }
+      });
+      return results;
+    }
+    cleanup() {
+      this.activeDetections.forEach((detection) => detection.stop());
+    }
+  };
+  function createWebInterferenceService(params) {
+    return new WebInterferenceDetectionService(params);
+  }
+
+  // src/services/web-interference-detection/default-config.js
+  init_define_import_meta_trackerLookup();
+  var DEFAULT_INTERFERENCE_CONFIG = Object.freeze(
+    /** @type {InterferenceConfig} */
+    {
+      settings: {
+        botDetection: {
+          cloudflareTurnstile: {
+            state: "enabled",
+            vendor: "cloudflare",
+            selectors: [".cf-turnstile", 'script[src*="challenges.cloudflare.com"]'],
+            windowProperties: ["turnstile"],
+            statusSelectors: [
+              {
+                status: "solved",
+                selectors: ['[data-state="success"]']
+              },
+              {
+                status: "failed",
+                selectors: ['[data-state="error"]']
+              }
+            ]
+          },
+          cloudflareChallengePage: {
+            state: "enabled",
+            vendor: "cloudflare",
+            selectors: ["#challenge-form", ".cf-browser-verification", "#cf-wrapper", 'script[src*="challenges.cloudflare.com"]'],
+            windowProperties: ["_cf_chl_opt", "__CF$cv$params", "cfjsd"]
+          },
+          hcaptcha: {
+            state: "enabled",
+            vendor: "hcaptcha",
+            selectors: [
+              ".h-captcha",
+              "[data-hcaptcha-widget-id]",
+              'script[src*="hcaptcha.com"]',
+              'script[src*="assets.hcaptcha.com"]'
+            ],
+            windowProperties: ["hcaptcha"]
+          }
+        },
+        fraudDetection: {
+          phishingWarning: {
+            state: "enabled",
+            type: "phishing",
+            selectors: [".warning-banner", "#security-alert"],
+            textPatterns: ["suspicious.*activity", "unusual.*login", "verify.*account"],
+            textSources: ["innerText"]
+          },
+          accountSuspension: {
+            state: "enabled",
+            type: "suspension",
+            selectors: [".account-suspended", "#suspension-notice"],
+            textPatterns: ["account.*suspended", "access.*restricted"],
+            textSources: ["innerText"]
+          }
+        },
+        youtubeAds: {
+          rootSelector: "#movie_player",
+          watchAttributes: ["class", "style", "aria-label"],
+          selectors: [".ytp-ad-text", ".ytp-ad-skip-button", ".ytp-ad-preview-text"],
+          adClasses: ["ad-showing", "ad-interrupting"],
+          textPatterns: ["skip ad", "sponsored"],
+          textSources: ["innerText", "ariaLabel"],
+          pollInterval: 2e3,
+          rerootInterval: 1e3
+        }
+      }
+    }
+  );
+
   // src/features/broker-protection.js
   var ActionExecutorBase = class extends ContentFeature {
     /**
@@ -12238,9 +12653,21 @@ ul.messages {
   };
   var BrokerProtection = class extends ActionExecutorBase {
     init() {
+      const interferenceConfig = this.getFeatureAttr("interferenceTypes", DEFAULT_INTERFERENCE_CONFIG);
+      const service = createWebInterferenceService({ interferenceConfig });
       this.messaging.subscribe("onActionReceived", async (params) => {
         const { action, data: data2 } = params.state;
         return await this.processActionAndNotify(action, data2);
+      });
+      this.messaging.subscribe("detectInterference", (request) => {
+        try {
+          const detectionResults = service.detect(request);
+          console.log("[BrokerProtection] Detection results:", detectionResults);
+          return this.messaging.notify("interferenceDetected", detectionResults);
+        } catch (error) {
+          console.error("[BrokerProtection] Error detecting interference:", error);
+          return this.messaging.notify("interferenceDetectionError", { error: error.toString() });
+        }
       });
     }
     /**

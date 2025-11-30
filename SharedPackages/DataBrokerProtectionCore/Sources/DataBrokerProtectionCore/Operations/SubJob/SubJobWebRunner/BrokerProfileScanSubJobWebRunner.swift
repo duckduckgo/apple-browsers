@@ -166,4 +166,8 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     private func loggerContext(for action: Action? = nil) -> PIRActionLogContext {
         .init(stepType: .scan, broker: context.dataBroker, attemptId: stageCalculator.attemptId, action: action)
     }
+
+    public func onInterferenceDetected(result: InterferenceDetectionResult) async {
+        Logger.action.log("[InterferenceDetection] Scan detected interference: \(result.botDetection?.detected ?? false, privacy: .public)")
+    }
 }

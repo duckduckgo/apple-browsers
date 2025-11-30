@@ -215,6 +215,10 @@ final class DebugScanJob: SubJobWebRunning {
         }
     }
 
+    public func onInterferenceDetected(result: InterferenceDetectionResult) async {
+        Logger.action.log("[InterferenceDetection] Debug scan detected interference: \(result.botDetection?.detected ?? false, privacy: .public)")
+    }
+
     deinit {
         Logger.action.debug("DebugScanOperation Deinit")
     }

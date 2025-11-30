@@ -60414,6 +60414,30 @@
         }
       }
     },
+    "permission.center.external.apps" : {
+      "comment" : "Permission center header for external app permissions",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "External Apps"
+          }
+        }
+      }
+    },
+    "permission.center.external.scheme.description" : {
+      "comment" : "Description for external scheme permission, first %@ is domain, second %@ is scheme name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ to open \"%2$@\" links"
+          }
+        }
+      }
+    },
     "permission.center.never.allow" : {
       "comment" : "Permission center dropdown option to never allow permission",
       "extractionState" : "extracted_with_value",

@@ -23,11 +23,21 @@ import Foundation
 struct PermissionCenterItem: Identifiable {
     let id: PermissionType
     let permissionType: PermissionType
+    let domain: String
     var decision: PersistedPermissionDecision
     var isSystemDisabled: Bool
 
     var displayName: String {
-        permissionType.localizedDescription
+        if case .externalScheme = permissionType {
+            return UserText.permissionCenterExternalApps
+        }
+        return permissionType.localizedDescription
+    }
+
+    /// Additional description for external schemes (e.g., "zoom.us to open "zoomus" links")
+    var externalSchemeDescription: String? {
+        guard case .externalScheme(let scheme) = permissionType else { return nil }
+        return String(format: UserText.permissionCenterExternalSchemeDescription, domain, scheme)
     }
 }
 
@@ -109,6 +119,7 @@ final class PermissionCenterViewModel: ObservableObject {
                 return PermissionCenterItem(
                     id: permissionType,
                     permissionType: permissionType,
+                    domain: domain,
                     decision: decision,
                     isSystemDisabled: isSystemDisabled
                 )

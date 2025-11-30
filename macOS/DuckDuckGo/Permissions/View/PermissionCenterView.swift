@@ -89,7 +89,7 @@ struct PermissionRowView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Main row
-            HStack(spacing: 12) {
+            HStack(spacing: 8) {
                 // Icon
                 permissionIcon
                     .frame(width: 24, height: 24)
@@ -120,15 +120,25 @@ struct PermissionRowView: View {
                     isRemoveButtonHovered = hovering
                 }
             }
-            .padding(.leading, 16)
+            .padding(.leading, 12)
             .padding(.trailing, 12)
             .padding(.vertical, 12)
+
+            // External scheme description (if applicable)
+            if let description = item.externalSchemeDescription {
+                Text(description)
+                    .font(.system(size: 12))
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .padding(.leading, 44)
+                    .padding(.trailing, 12)
+                    .padding(.bottom, 12)
+            }
 
             // System disabled warning (if applicable)
             if item.isSystemDisabled {
                 systemDisabledWarning
-                    .padding(.leading, 52)
-                    .padding(.trailing, 16)
+                    .padding(.leading, 44)
+                    .padding(.trailing, 12)
                     .padding(.bottom, 12)
             }
         }

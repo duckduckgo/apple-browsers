@@ -613,7 +613,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             stageDurationCalculator: mockStageCalculator,
-            pixelHandler: MockPixelHandler(),
+            pixelHandler: MockDataBrokerProtectionPixelsHandler(),
             executionConfig: BrokerJobExecutionConfig(),
             shouldRunNextStep: { true }
         )

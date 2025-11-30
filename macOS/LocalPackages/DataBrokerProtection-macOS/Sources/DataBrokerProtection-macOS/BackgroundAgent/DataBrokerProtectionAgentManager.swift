@@ -49,6 +49,9 @@ public class DataBrokerProtectionAgentManagerProvider {
         }
         let pixelHandler = DataBrokerProtectionMacOSPixelsHandler()
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
+        let engagementPixelRepository = DataBrokerProtectionEngagementPixelsUserDefaults()
+        let eventPixelRepository = DataBrokerProtectionEventPixelsUserDefaults()
+        let statsPixelRepository = DataBrokerProtectionStatsPixelsUserDefaults()
 
         let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
         let schedulingConfig = DataBrokerMacOSSchedulingConfig(mode: dbpSettings.runType == .integrationTests ? .fastForIntegrationTests : .normal)
@@ -162,6 +165,9 @@ public class DataBrokerProtectionAgentManagerProvider {
             jobDependencies: jobDependencies,
             sharedPixelsHandler: sharedPixelsHandler,
             pixelHandler: pixelHandler,
+            engagementPixelRepository: engagementPixelRepository,
+            eventPixelRepository: eventPixelRepository,
+            statsPixelRepository: statsPixelRepository,
             agentStopper: agentstopper,
             configurationManager: configurationManager,
             brokerUpdater: brokerUpdater,
@@ -191,6 +197,9 @@ public final class DataBrokerProtectionAgentManager {
     private let jobDependencies: BrokerProfileJobDependencyProviding
     private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>
+    private let engagementPixelRepository: DataBrokerProtectionEngagementPixelsRepository
+    private let eventPixelRepository: DataBrokerProtectionEventPixelsRepository
+    private let statsPixelRepository: DataBrokerProtectionStatsPixelsRepository
     private let agentStopper: DataBrokerProtectionAgentStopper
     private let configurationManger: DefaultConfigurationManager
     private let brokerUpdater: BrokerJSONServiceProvider
@@ -213,6 +222,9 @@ public final class DataBrokerProtectionAgentManager {
          jobDependencies: BrokerProfileJobDependencyProviding,
          sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>,
          pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>,
+         engagementPixelRepository: DataBrokerProtectionEngagementPixelsRepository,
+         eventPixelRepository: DataBrokerProtectionEventPixelsRepository,
+         statsPixelRepository: DataBrokerProtectionStatsPixelsRepository,
          agentStopper: DataBrokerProtectionAgentStopper,
          configurationManager: DefaultConfigurationManager,
          brokerUpdater: BrokerJSONServiceProvider,
@@ -230,6 +242,9 @@ public final class DataBrokerProtectionAgentManager {
         self.jobDependencies = jobDependencies
         self.sharedPixelsHandler = sharedPixelsHandler
         self.pixelHandler = pixelHandler
+        self.engagementPixelRepository = engagementPixelRepository
+        self.eventPixelRepository = eventPixelRepository
+        self.statsPixelRepository = statsPixelRepository
         self.agentStopper = agentStopper
         self.configurationManger = configurationManager
         self.brokerUpdater = brokerUpdater
@@ -280,9 +295,9 @@ extension DataBrokerProtectionAgentManager {
         guard await authenticationManager.isUserAuthenticated else { return }
 
         let database = jobDependencies.database
-        let engagementPixels = DataBrokerProtectionEngagementPixels(database: database, handler: sharedPixelsHandler)
-        let eventPixels = DataBrokerProtectionEventPixels(database: database, handler: sharedPixelsHandler)
-        let statsPixels = DataBrokerProtectionStatsPixels(database: database, handler: sharedPixelsHandler)
+        let engagementPixels = DataBrokerProtectionEngagementPixels(database: database, handler: sharedPixelsHandler, repository: engagementPixelRepository)
+        let eventPixels = DataBrokerProtectionEventPixels(database: database, repository: eventPixelRepository, handler: sharedPixelsHandler)
+        let statsPixels = DataBrokerProtectionStatsPixels(database: database, handler: sharedPixelsHandler, repository: statsPixelRepository)
 
         // This will fire the DAU/WAU/MAU pixels,
         engagementPixels.fireEngagementPixel()

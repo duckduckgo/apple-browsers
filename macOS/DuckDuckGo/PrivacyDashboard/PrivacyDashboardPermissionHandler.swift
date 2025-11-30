@@ -18,17 +18,23 @@
 
 import Foundation
 import Combine
+import FeatureFlags
 import PrivacyDashboard
+import BrowserServicesKit
+import AppKit
 
 typealias PrivacyDashboardPermissionAuthorizationState = [(permission: PermissionType, state: PermissionAuthorizationState)]
 
 final class PrivacyDashboardPermissionHandler {
 
-    init(permissionManager: PermissionManagerProtocol) {
+    init(permissionManager: PermissionManagerProtocol,
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.permissionManager = permissionManager
+        self.featureFlagger = featureFlagger
     }
 
     private let permissionManager: PermissionManagerProtocol
+    private let featureFlagger: FeatureFlagger
     private weak var tabViewModel: TabViewModel?
     private var onPermissionChange: (([AllowedPermission]) -> Void)?
     private var cancellables = Set<AnyCancellable>()
@@ -61,6 +67,13 @@ final class PrivacyDashboardPermissionHandler {
     }
 
     private func updatePermissions() {
+        // Skip permission updates when new permission view is enabled
+        // Permission management is handled by the new Permission Center
+        if featureFlagger.isFeatureOn(.newPermissionView) {
+            onPermissionChange?([])
+            return
+        }
+
         guard let usedPermissions = tabViewModel?.usedPermissions else {
             assertionFailure("PrivacyDashboardViewController: tabViewModel not set")
             return

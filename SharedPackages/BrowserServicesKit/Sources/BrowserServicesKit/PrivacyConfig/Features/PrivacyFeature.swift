@@ -284,6 +284,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the omnibar toggle for AI Chat
     case omnibarToggle
 
+    /// Enables the omnibar cluster for AI Chat
+    case omnibarCluster
+
     /// Controls showing the Hide AI section in Settings -> AI Features
     case showHideAiGeneratedImages
 }

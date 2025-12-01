@@ -128,6 +128,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212016242789291
     case aiChatOmnibarToggle
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212227266479719
+    case aiChatOmnibarCluster
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866476152134
     case osSupportForceUnsupportedMessage
 
@@ -354,6 +357,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatImprovements,
                 .aiChatKeepSession,
                 .aiChatOmnibarToggle,
+                .aiChatOmnibarCluster,
                 .updateSafariBookmarksImport,
                 .updateFirefoxBookmarksImport,
                 .disableFireAnimation,
@@ -488,6 +492,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.keepSession))
         case .aiChatOmnibarToggle:
             return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarToggle))
+        case .aiChatOmnibarCluster:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.omnibarCluster))
         case .osSupportForceUnsupportedMessage:
             return .disabled
         case .osSupportForceWillSoonDropSupportMessage:

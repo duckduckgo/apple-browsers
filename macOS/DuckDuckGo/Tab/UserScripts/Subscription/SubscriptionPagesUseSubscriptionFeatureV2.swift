@@ -65,7 +65,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
     let subscriptionManager: SubscriptionManagerV2
     var subscriptionPlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
     let stripePurchaseFlow: any StripePurchaseFlowV2
-    let subscriptionEventReporter = DefaultSubscriptionEventReporter()
+    let subscriptionEventReporter: SubscriptionEventReporter
     let subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandling
     let uiHandler: SubscriptionUIHandling
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
@@ -91,7 +91,8 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                 notificationCenter: NotificationCenter = .default,
                 dataBrokerProtectionFreemiumPixelHandler: EventMapping<DataBrokerProtectionFreemiumPixels> = DataBrokerProtectionFreemiumPixelHandler(),
                 aiChatURL: URL,
-                wideEvent: WideEventManaging) {
+                wideEvent: WideEventManaging,
+                subscriptionEventReporter: SubscriptionEventReporter = DefaultSubscriptionEventReporter()) {
         self.subscriptionManager = subscriptionManager
         self.stripePurchaseFlow = stripePurchaseFlow
         self.subscriptionSuccessPixelHandler = subscriptionSuccessPixelHandler
@@ -102,6 +103,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         self.notificationCenter = notificationCenter
         self.dataBrokerProtectionFreemiumPixelHandler = dataBrokerProtectionFreemiumPixelHandler
         self.wideEvent = wideEvent
+        self.subscriptionEventReporter = subscriptionEventReporter
     }
 
     func with(broker: UserScriptMessageBroker) {

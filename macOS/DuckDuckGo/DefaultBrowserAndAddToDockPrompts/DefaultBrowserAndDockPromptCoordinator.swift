@@ -203,18 +203,14 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         let isDefaultBrowser = defaultBrowserProvider.isDefault
         let isAddedToDock = dockCustomization.isAddedToDock
 
-        if isSparkleBuild {
-            if isDefaultBrowser && isAddedToDock {
-                return nil
-            } else if isDefaultBrowser && !isAddedToDock {
-                return .addToDockPrompt
-            } else if !isDefaultBrowser && isAddedToDock {
-                return .setAsDefaultPrompt
-            } else {
-                return .bothDefaultBrowserAndDockPrompt
-            }
+        if isDefaultBrowser && isAddedToDock {
+            return nil
+        } else if isDefaultBrowser && !isAddedToDock {
+            return .addToDockPrompt
+        } else if !isDefaultBrowser && isAddedToDock {
+            return .setAsDefaultPrompt
         } else {
-            return isDefaultBrowser ? nil : .setAsDefaultPrompt
+            return .bothDefaultBrowserAndDockPrompt
         }
     }
 

@@ -119,7 +119,6 @@ extension NewTabPageDataModel {
         case subscription = "PrivacyPro"
         case duckai = "DuckAi"
         case pir = "PIR"
-        case radar = "Radar"
         case radarNew = "RadarNew"
         case radarCheck = "RadarCheck"
         case subscriptionIcon = "Subscription"
@@ -140,8 +139,6 @@ extension NewTabPageDataModel {
                 self = .duckai
             case .pir:
                 self = .pir
-            case .radar:
-                self = .radar
             case .radarNew:
                 self = .radarNew
             case .radarCheck:

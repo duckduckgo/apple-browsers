@@ -132,14 +132,14 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     private let navigationBarHeightForHomePage: CGFloat = 52
     private let navigationBarHeightForPopUpWindow: CGFloat = 42
     private let addressBarTopPaddingForDefault: CGFloat = 7
-    private let addressBarTopPaddingForDefaultFocusedWithAIChat: CGFloat = 4
+    private let addressBarTopPaddingForDefaultFocusedWithAIChat: CGFloat = 3
     private let addressBarTopPaddingForHomePage: CGFloat = 7
-    private let addressBarTopPaddingForHomePageFocusedWithAIChat: CGFloat = 4
+    private let addressBarTopPaddingForHomePageFocusedWithAIChat: CGFloat = 3
     private let addressBarTopPaddingForPopUpWindow: CGFloat = 7
     private let addressBarBottomPaddingForDefault: CGFloat = 7
-    private let addressBarBottomPaddingForDefaultFocusedWithAIChat: CGFloat = 4
+    private let addressBarBottomPaddingForDefaultFocusedWithAIChat: CGFloat = 3
     private let addressBarBottomPaddingForHomePage: CGFloat = 7
-    private let addressBarBottomPaddingForHomePageFocusedWithAIChat: CGFloat = 4
+    private let addressBarBottomPaddingForHomePageFocusedWithAIChat: CGFloat = 3
     private let addressBarBottomPaddingForPopUpWindow: CGFloat = 7
 
     private let featureFlagger: FeatureFlagger

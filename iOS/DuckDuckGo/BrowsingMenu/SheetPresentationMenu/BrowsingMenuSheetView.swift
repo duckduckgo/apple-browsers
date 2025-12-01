@@ -133,7 +133,7 @@ extension BrowsingMenuModel.Entry {
         case .separator:
             assertionFailure(#function + " should not be called for .separator")
 
-            self.init(name: "", accessibilityLabel: nil, image: UIImage(), showNotificationDot: false, customDotColor: nil, action: {}, tag: tag)
+            return nil
 
         case .regular(let name, let accessibilityLabel, let image, let showNotificationDot, let customDotColor, let action):
             self.init(

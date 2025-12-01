@@ -135,6 +135,10 @@ extension Pixel {
 
         case experimentalBrowsingMenuEnabled
         case experimentalBrowsingMenuDisabled
+        case experimentalBrowsingMenuUsed
+        case experimentalBrowsingMenuDisplayed
+        case experimentalBrowsingMenuDisplayedNTP
+
         case browsingMenuOpened
         case browsingMenuOpenedNewTabPage
         case browsingMenuNewTab
@@ -1601,6 +1605,9 @@ extension Pixel.Event {
             
         case .experimentalBrowsingMenuEnabled: return "m_experimental-browsing-menu_enabled"
         case .experimentalBrowsingMenuDisabled: return "m_experimental-browsing-menu_disabled"
+        case .experimentalBrowsingMenuUsed: return "m_experimental-browsing-menu_used"
+        case .experimentalBrowsingMenuDisplayed: return "m_experimental-browsing-menu_displayed"
+        case .experimentalBrowsingMenuDisplayedNTP: return "m_experimental-browsing-menu_displayed_ntp"
         case .browsingMenuOpened: return "mb"
         case .browsingMenuOpenedNewTabPage: return "m_nav_menu_ntp"
         case .browsingMenuNewTab: return "mb_tb"

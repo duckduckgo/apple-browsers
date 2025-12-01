@@ -29,7 +29,6 @@ class SwitchBarTextEntryView: UIView {
         static let maxHeight: CGFloat = 120
         static let minHeight: CGFloat = 44
         static let minHeightAIChat: CGFloat = 68
-        static let minHeightBottomBar: CGFloat = 96
         static let fontSize: CGFloat = 16
 
         // Text container insets
@@ -64,11 +63,11 @@ class SwitchBarTextEntryView: UIView {
             return Constants.minHeight
         }
 
-        if handler.isUsingExpandedBottomBarHeight {
-            return Constants.minHeightBottomBar
+        if currentMode == .aiChat && !handler.isUsingExpandedBottomBarHeight {
+            return Constants.minHeightAIChat
         }
 
-        return currentMode == .aiChat ? Constants.minHeightAIChat : Constants.minHeight
+        return Constants.minHeight
     }
 
     private var isUsingBottomBarIncreasedHeight: Bool {

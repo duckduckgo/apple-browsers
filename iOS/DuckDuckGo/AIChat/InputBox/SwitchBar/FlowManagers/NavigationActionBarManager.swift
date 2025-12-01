@@ -89,7 +89,7 @@ final class NavigationActionBarManager {
             actionBarViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
 
-        if !isFloating && !switchBarHandler.isUsingFadeOutAnimation {
+        if !isFloating {
             actionBarViewController.view.topAnchor.constraint(equalTo: view.topAnchor).isActive = true
         }
 

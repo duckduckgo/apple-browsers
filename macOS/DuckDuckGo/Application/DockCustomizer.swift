@@ -21,6 +21,7 @@ import Combine
 import Common
 import os.log
 import Persistence
+import AppKit
 
 protocol DockCustomization {
     var isAddedToDock: Bool { get }
@@ -63,9 +64,20 @@ final class DockCustomizer: DockCustomization {
         startTimer()
     }
 
-    private var dockPlistURL: URL = URL(fileURLWithPath: NSString(string: "~/Library/Preferences/com.apple.dock.plist").expandingTildeInPath)
+    private var dockPlistURL: URL? = {
+        guard let user = ProcessInfo().environment["USER"] else {
+            return nil
+        }
+
+        guard let usersDir = FileManager.default.urls(for: .userDirectory, in: .localDomainMask).first else {
+            return nil
+        }
+
+        return usersDir.appendingPathComponent(user).appendingPathComponent("Library/Preferences/com.apple.dock.plist")
+    }()
 
     private var dockPlistDict: [String: AnyObject]? {
+        guard let dockPlistURL else { return nil }
         return NSDictionary(contentsOf: dockPlistURL) as? [String: AnyObject]
     }
 
@@ -122,6 +134,7 @@ final class DockCustomizer: DockCustomization {
         let appPath = Bundle.main.bundleURL.path
         guard !isAddedToDock,
               let bundleIdentifier = Bundle.main.bundleIdentifier,
+              let dockPlistURL,
               var dockPlistDict = dockPlistDict else {
             return false
         }
@@ -169,10 +182,36 @@ final class DockCustomizer: DockCustomization {
     }
 
     private func restartDock() {
-        let task = Process()
-        task.launchPath = "/usr/bin/killall"
-        task.arguments = ["Dock"]
-        task.launch()
+        let bundleID = "com.apple.dock"
+        var targetDesc = AEAddressDesc()
+        var event = AppleEvent()
+        var reply = AppleEvent()
+
+        // Create target descriptor for the Dock using bundle identifier
+        var status = AECreateDesc(
+            typeApplicationBundleID,
+            bundleID,
+            bundleID.utf8.count,
+            &targetDesc
+        )
+        guard status == noErr else { return }
+        defer { AEDisposeDesc(&targetDesc) }
+
+        // Create the quit application event
+        status = AECreateAppleEvent(
+            kCoreEventClass,
+            kAEQuitApplication,
+            &targetDesc,
+            AEReturnID(kAutoGenerateReturnID),
+            AETransactionID(kAnyTransactionID),
+            &event
+        )
+        guard status == noErr else { return }
+        defer { AEDisposeDesc(&event) }
+
+        // Send the event (no reply needed)
+        _ = AESendMessage(&event, &reply, AESendMode(kAENoReply), kAEDefaultTimeout)
+        AEDisposeDesc(&reply)
     }
 
     private func makeAppURLs(from persistentApps: [[String: AnyObject]]) -> [URL] {

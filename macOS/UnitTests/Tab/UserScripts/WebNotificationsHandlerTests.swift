@@ -16,11 +16,13 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import UserNotifications
 import WebKit
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
+@testable import FeatureFlags
 
 // MARK: - Mock Dependencies
 
@@ -101,6 +103,35 @@ final class MockUserScriptMessageBroker {
     }
 }
 
+/// Mock feature flagger for testing.
+final class MockFeatureFlagger: FeatureFlagger {
+    var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStore())
+    var localOverrides: FeatureFlagLocalOverriding?
+
+    private var enabledFlags: Set<String> = []
+
+    func setFeatureOn(_ flag: FeatureFlag, enabled: Bool) {
+        if enabled {
+            enabledFlags.insert(flag.rawValue)
+        } else {
+            enabledFlags.remove(flag.rawValue)
+        }
+    }
+
+    func isFeatureOn<F: FeatureFlagDescribing>(for featureFlag: F, allowOverride: Bool) -> Bool {
+        guard let flag = featureFlag as? FeatureFlag else { return false }
+        return enabledFlags.contains(flag.rawValue)
+    }
+
+    func getCohortIfEnabled(_ subfeature: any PrivacySubfeature) -> CohortID? { nil }
+    func getCohortIfEnabled<Flag>(for featureFlag: Flag) -> (any FlagCohort)? where Flag: FeatureFlagExperimentDescribing { nil }
+    func getAllActiveExperiments() -> Experiments { [:] }
+}
+
+private class MockInternalUserStore: InternalUserStoring {
+    var isInternalUser: Bool = false
+}
+
 // MARK: - Test Case
 
 /// Tests for WebNotificationsHandler with isolated mocks.
@@ -109,21 +140,26 @@ final class WebNotificationsHandlerTests: XCTestCase {
 
     var mockNotificationService: MockWebNotificationService!
     var mockIconFetcher: MockNotificationIconFetcher!
+    var mockFeatureFlagger: MockFeatureFlagger!
     var handler: WebNotificationsHandler!
 
     override func setUp() {
         super.setUp()
         mockNotificationService = MockWebNotificationService()
         mockIconFetcher = MockNotificationIconFetcher()
+        mockFeatureFlagger = MockFeatureFlagger()
+        mockFeatureFlagger.setFeatureOn(.webNotifications, enabled: true)
         handler = WebNotificationsHandler(
             notificationService: mockNotificationService,
-            iconFetcher: mockIconFetcher)
+            iconFetcher: mockIconFetcher,
+            featureFlagger: mockFeatureFlagger)
     }
 
     override func tearDown() {
         handler = nil
         mockIconFetcher = nil
         mockNotificationService = nil
+        mockFeatureFlagger = nil
         super.tearDown()
     }
 
@@ -234,6 +270,22 @@ final class WebNotificationsHandlerTests: XCTestCase {
 
         let handlerFunc = handler.handler(forMethodNamed: "requestPermission")
         let result = try await handlerFunc?(params, mockMessage)
+
+        guard let response = result as? WebNotificationsHandler.RequestPermissionResponse else {
+            XCTFail("Expected RequestPermissionResponse")
+            return
+        }
+        XCTAssertEqual(response.permission, "denied")
+    }
+
+    func testWhenFeatureFlagDisabledThenRequestPermissionReturnsDenied() async {
+        mockFeatureFlagger.setFeatureOn(.webNotifications, enabled: false)
+        mockNotificationService.authorizationStatusToReturn = .authorized
+        let params: [String: Any] = [:]
+        let mockMessage = MockWKScriptMessage(name: "webCompat", body: params)
+
+        let handlerFunc = handler.handler(forMethodNamed: "requestPermission")
+        let result = try? await handlerFunc?(params, mockMessage)
 
         guard let response = result as? WebNotificationsHandler.RequestPermissionResponse else {
             XCTFail("Expected RequestPermissionResponse")

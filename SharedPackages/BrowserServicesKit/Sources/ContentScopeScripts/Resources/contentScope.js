@@ -1377,6 +1377,7 @@
       "webCompat",
       "webInterferenceDetection",
       "windowsPermissionUsage",
+      "uaChBrands",
       "brokerProtection",
       "performanceMetrics",
       "breakageReporting",
@@ -1418,6 +1419,7 @@
       "webInterferenceDetection",
       "webTelemetry",
       "windowsPermissionUsage",
+      "uaChBrands",
       "duckPlayer",
       "brokerProtection",
       "breakageReporting",
@@ -1530,6 +1532,24 @@
       }
       return Reflect.get(target, prop, receiver);
     };
+  }
+  function wrapFunction(functionValue, realTarget) {
+    return new Proxy(realTarget, {
+      get(target, prop, receiver) {
+        if (prop === "toString") {
+          const method = Reflect.get(target, prop, receiver).bind(target);
+          Object.defineProperty(method, "toString", {
+            value: functionToString.bind(functionToString),
+            enumerable: false
+          });
+          return method;
+        }
+        return Reflect.get(target, prop, receiver);
+      },
+      apply(_2, thisArg, argumentsList) {
+        return Reflect.apply(functionValue, thisArg, argumentsList);
+      }
+    });
   }
   function wrapProperty(object, propertyName, descriptor, definePropertyFn) {
     if (!object) {
@@ -4943,9 +4963,18 @@
      */
     webNotificationsFix() {
       var _id;
-      console.log("[webNotificationsFix] Starting - will override Notification API");
-      console.log("[webNotificationsFix] Current Notification exists:", !!globalThis.Notification);
+      if (!globalThis.isSecureContext) {
+        return;
+      }
       const feature = this;
+      const settings = this.getFeatureSetting("webNotifications") || {};
+      const nativeEnabled = settings.nativeEnabled !== false;
+      const nativeNotify = nativeEnabled ? (name, data) => feature.notify(name, data) : () => {
+      };
+      const nativeRequest = nativeEnabled ? (name, data) => feature.request(name, data) : () => Promise.resolve({ permission: "denied" });
+      const nativeSubscribe = nativeEnabled ? (name, cb) => feature.subscribe(name, cb) : () => () => {
+      };
+      let permission = nativeEnabled ? "default" : "denied";
       class NotificationPolyfill {
         /**
          * @param {string} title
@@ -4980,7 +5009,7 @@
           this.tag = options.tag ? String(options.tag) : "";
           this.data = options.data;
           __privateGet(feature, _webNotifications).set(__privateGet(this, _id), this);
-          feature.notify("showNotification", {
+          nativeNotify("showNotification", {
             id: __privateGet(this, _id),
             title: this.title,
             body: this.body,
@@ -4992,31 +5021,30 @@
          * @returns {'default' | 'denied' | 'granted'}
          */
         static get permission() {
-          console.log("[webNotificationsFix] permission getter called, returning granted");
-          return "granted";
+          return permission;
         }
         /**
          * @param {NotificationPermissionCallback} [deprecatedCallback]
          * @returns {Promise<NotificationPermission>}
          */
         static async requestPermission(deprecatedCallback) {
-          console.log("[webNotificationsFix] requestPermission called");
           try {
-            const result = await feature.request("requestPermission", {});
-            console.log("[webNotificationsFix] requestPermission result from native:", result);
-            const permission = result?.permission || "granted";
-            console.log("[webNotificationsFix] requestPermission returning:", permission);
+            const result = await nativeRequest("requestPermission", {});
+            const resultPermission = (
+              /** @type {NotificationPermission} */
+              result?.permission || "denied"
+            );
+            permission = resultPermission;
             if (deprecatedCallback) {
-              deprecatedCallback(permission);
+              deprecatedCallback(resultPermission);
             }
-            return permission;
+            return resultPermission;
           } catch (e) {
-            console.log("[webNotificationsFix] requestPermission error:", e);
-            const fallback = "granted";
+            permission = "denied";
             if (deprecatedCallback) {
-              deprecatedCallback(fallback);
+              deprecatedCallback("denied");
             }
-            return fallback;
+            return "denied";
           }
         }
         /**
@@ -5026,18 +5054,27 @@
           return 2;
         }
         close() {
-          feature.notify("closeNotification", { id: __privateGet(this, _id) });
+          if (!__privateGet(feature, _webNotifications).has(__privateGet(this, _id))) {
+            return;
+          }
+          nativeNotify("closeNotification", { id: __privateGet(this, _id) });
           __privateGet(feature, _webNotifications).delete(__privateGet(this, _id));
+          if (typeof this.onclose === "function") {
+            try {
+              this.onclose(new Event("close"));
+            } catch (e) {
+            }
+          }
         }
       }
       _id = new WeakMap();
-      const wrappedNotification = wrapToString(NotificationPolyfill, NotificationPolyfill, "function Notification() { [native code] }");
+      const wrappedNotification = wrapFunction(NotificationPolyfill, NotificationPolyfill);
       const wrappedRequestPermission = wrapToString(
         NotificationPolyfill.requestPermission.bind(NotificationPolyfill),
         NotificationPolyfill.requestPermission,
         "function requestPermission() { [native code] }"
       );
-      this.subscribe("notificationEvent", (data) => {
+      nativeSubscribe("notificationEvent", (data) => {
         const notification = __privateGet(this, _webNotifications).get(data.id);
         if (!notification) return;
         const eventName = `on${data.event}`;
@@ -5058,7 +5095,7 @@
         enumerable: false
       });
       this.defineProperty(globalThis.Notification, "permission", {
-        get: () => "granted",
+        get: () => permission,
         configurable: true,
         enumerable: true
       });
@@ -5073,7 +5110,6 @@
         configurable: true,
         enumerable: true
       });
-      console.log("[webNotificationsFix] Polyfill installed. Notification.permission:", globalThis.Notification.permission);
     }
     cleanIframeValue() {
       function cleanValueData(val) {

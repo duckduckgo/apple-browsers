@@ -16,7 +16,9 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Common
+import FeatureFlags
 import Foundation
 import OSLog
 import UserNotifications
@@ -61,13 +63,16 @@ final class WebNotificationsHandler: NSObject, Subfeature {
 
     private let notificationService: WebNotificationService
     private let iconFetcher: NotificationIconFetching
+    private let featureFlagger: FeatureFlagger
 
     // MARK: - Initialization
 
     init(notificationService: WebNotificationService = UNUserNotificationCenter.current(),
-         iconFetcher: NotificationIconFetching = NotificationIconFetcher()) {
+         iconFetcher: NotificationIconFetching = NotificationIconFetcher(),
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.notificationService = notificationService
         self.iconFetcher = iconFetcher
+        self.featureFlagger = featureFlagger
         super.init()
     }
 
@@ -259,6 +264,11 @@ final class WebNotificationsHandler: NSObject, Subfeature {
 
         if await isFireWindow(original) {
             Logger.general.debug("WebNotificationsHandler: Permission denied in Fire Window")
+            return RequestPermissionResponse(permission: Permission.denied.rawValue)
+        }
+
+        guard featureFlagger.isFeatureOn(.webNotifications) else {
+            Logger.general.debug("WebNotificationsHandler: Permission denied - feature flag disabled")
             return RequestPermissionResponse(permission: Permission.denied.rawValue)
         }
 

@@ -32,6 +32,7 @@ import MaliciousSiteProtection
 import PersistenceTestingUtils
 @testable import DuckDuckGo
 import Combine
+@testable import Core
 
 // swiftlint:disable force_try
 
@@ -168,7 +169,8 @@ extension TabViewController {
             featureDiscovery: MockFeatureDiscovery(),
             keyValueStore: try! MockKeyValueFileStore(),
             daxDialogsManager: DummyDaxDialogsManager(),
-            aiChatSettings: MockAIChatSettingsProvider()
+            aiChatSettings: MockAIChatSettingsProvider(),
+            productSurfaceTelemetry: MockProductSurfaceTelemetry()
         )
         tab.attachWebView(configuration: WKWebViewConfiguration.nonPersistent(), andLoadRequest: nil as URLRequest?, consumeCookies: false, customWebView: customWebView)
         return tab

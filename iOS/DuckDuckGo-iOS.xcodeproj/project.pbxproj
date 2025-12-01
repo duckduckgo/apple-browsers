@@ -645,6 +645,10 @@
 		85449EFD23FDA71F00512AAF /* KeyboardSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85449EFC23FDA71F00512AAF /* KeyboardSettings.swift */; };
 		8544C37C250B827300A0FE73 /* UserText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8544C37A250B823600A0FE73 /* UserText.swift */; };
 		8544C9802EDDE5E1001E1DB4 /* ProductSurfaceTelemetryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8544C97F2EDDE5DA001E1DB4 /* ProductSurfaceTelemetryTests.swift */; };
+		8544C9852EDDE952001E1DB4 /* MockProductSurfaceTelemetry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8544C9812EDDE8E1001E1DB4 /* MockProductSurfaceTelemetry.swift */; };
+		8544C9862EDDE952001E1DB4 /* MockProductSurfaceTelemetry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8544C9812EDDE8E1001E1DB4 /* MockProductSurfaceTelemetry.swift */; };
+		8544C9872EDDE952001E1DB4 /* MockProductSurfaceTelemetry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8544C9812EDDE8E1001E1DB4 /* MockProductSurfaceTelemetry.swift */; };
+		8544C9882EDDE952001E1DB4 /* MockProductSurfaceTelemetry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8544C9812EDDE8E1001E1DB4 /* MockProductSurfaceTelemetry.swift */; };
 		8546A54A2A672959003929BF /* MainViewController+Email.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8546A5492A672959003929BF /* MainViewController+Email.swift */; };
 		85482D8D2462DCD100EDEDD1 /* ActionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85482D8C2462DCD100EDEDD1 /* ActionViewController.swift */; };
 		85482D902462DCD100EDEDD1 /* MainInterface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 85482D8E2462DCD100EDEDD1 /* MainInterface.storyboard */; };
@@ -2761,6 +2765,7 @@
 		85449EFC23FDA71F00512AAF /* KeyboardSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyboardSettings.swift; sourceTree = "<group>"; };
 		8544C37A250B823600A0FE73 /* UserText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserText.swift; sourceTree = "<group>"; };
 		8544C97F2EDDE5DA001E1DB4 /* ProductSurfaceTelemetryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductSurfaceTelemetryTests.swift; sourceTree = "<group>"; };
+		8544C9812EDDE8E1001E1DB4 /* MockProductSurfaceTelemetry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockProductSurfaceTelemetry.swift; sourceTree = "<group>"; };
 		8546A5492A672959003929BF /* MainViewController+Email.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MainViewController+Email.swift"; sourceTree = "<group>"; };
 		85481A6A2BA46AFB00F9EFB0 /* AppRatingPrompt 2.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "AppRatingPrompt 2.xcdatamodel"; sourceTree = "<group>"; };
 		85482D882462DCD100EDEDD1 /* OpenAction.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = OpenAction.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -6396,6 +6401,7 @@
 			isa = PBXGroup;
 			children = (
 				8544C97F2EDDE5DA001E1DB4 /* ProductSurfaceTelemetryTests.swift */,
+				8544C9812EDDE8E1001E1DB4 /* MockProductSurfaceTelemetry.swift */,
 			);
 			path = Telemetry;
 			sourceTree = "<group>";
@@ -11698,6 +11704,7 @@
 				652CEDE62D89B71300235B4C /* FaviconsHelperTests.swift in Sources */,
 				9F2D99E42EA9F9EE003950CC /* DefaultBrowserModalPromptProviderTests.swift in Sources */,
 				31C138AC27A403CB00FFD4B2 /* DownloadManagerTests.swift in Sources */,
+				8544C9852EDDE952001E1DB4 /* MockProductSurfaceTelemetry.swift in Sources */,
 				BDE219EA2C457B46005D5884 /* SubscriptionDataReporterTests.swift in Sources */,
 				9FA0AF232EB8358100713387 /* MockWhatsNewDisplayModelMapper.swift in Sources */,
 				EEFE9C732A603CE9005B0A26 /* NetworkProtectionStatusViewModelTests.swift in Sources */,
@@ -12142,6 +12149,7 @@
 				36F2CA622E6098F800C7039D /* InactivityNotificationSchedulerServiceIntegrationTests.swift in Sources */,
 				98E564302DE8B32D00E6E75F /* OnboardingPixelReporterMock.swift in Sources */,
 				98E564312DE8B32D00E6E75F /* ContextualOnboardingPresenterMock.swift in Sources */,
+				8544C9862EDDE952001E1DB4 /* MockProductSurfaceTelemetry.swift in Sources */,
 				98E563392DE8B04D00E6E75F /* TestDataLoader.swift in Sources */,
 				98E564392DE8B6BF00E6E75F /* PrivacyConfigurationManagerMock.swift in Sources */,
 				9F387E082EA9A29A006861F8 /* MockNewAddressBarPickerDisplayValidator.swift in Sources */,
@@ -12235,6 +12243,7 @@
 				98E563C02DE8B32D00E6E75F /* MockUserAgent.swift in Sources */,
 				98E563C12DE8B32D00E6E75F /* MockVoiceSearchHelper.swift in Sources */,
 				98E563C22DE8B32D00E6E75F /* MockTextZoomCoordinator.swift in Sources */,
+				8544C9872EDDE952001E1DB4 /* MockProductSurfaceTelemetry.swift in Sources */,
 				98E563C42DE8B32D00E6E75F /* MockWebsiteDataManager.swift in Sources */,
 				98E563C52DE8B32D00E6E75F /* OnboardingFirePixelMock.swift in Sources */,
 				9F387E0F2EA9A30B006861F8 /* MockNewAddressBarPickerStorage.swift in Sources */,
@@ -12343,6 +12352,7 @@
 				98E5645C2DE8DDDC00E6E75F /* MockTextZoomCoordinator.swift in Sources */,
 				98E5645D2DE8DDDC00E6E75F /* MockBookmarksCoreDataStorage.swift in Sources */,
 				98E564992DE8E8D300E6E75F /* OnboardingDaxFavouritesTests.swift in Sources */,
+				8544C9882EDDE952001E1DB4 /* MockProductSurfaceTelemetry.swift in Sources */,
 				98E5645E2DE8DDDC00E6E75F /* MockTabInteractionStateSource.swift in Sources */,
 				98E5645F2DE8DDDC00E6E75F /* MockTabDelegate.swift in Sources */,
 				9F387E0D2EA9A30B006861F8 /* MockNewAddressBarPickerStorage.swift in Sources */,

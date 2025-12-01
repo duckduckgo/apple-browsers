@@ -22,6 +22,155 @@ import XCTest
 
 final class ProductSurfaceTelemetryTests: XCTestCase {
 
-    
+    override func setUp() {
+        super.setUp()
+        PixelFiringMock.tearDown()
+    }
+
+    override func tearDown() {
+        PixelFiringMock.tearDown()
+        super.tearDown()
+    }
+
+    // MARK: - Helpers
+
+    private func makeTelemetry(enabled: Bool) -> ProductSurfaceTelemetry {
+        let flagger = MockFeatureFlagger(enabledFeatureFlags: enabled ? [.productTelemeterySurfaceUsage] : [])
+        return PixelProductSurfaceTelemetry(featureFlagger: flagger, dailyPixelFiring: PixelFiringMock.self)
+    }
+
+    // MARK: - Feature disabled
+
+    func testWhenFeatureDisabled_NoPixelsAreFired() {
+        let telemetry = makeTelemetry(enabled: false)
+
+        telemetry.menuUsed()
+        telemetry.dailyActiveUser()
+        telemetry.iPadUsed(isPad: true)
+        telemetry.landscapeModeUsed()
+        telemetry.keyboardActive()
+        telemetry.autocompleteUsed()
+        telemetry.navigationCompleted(url: URL(string: "https://example.com"))
+        telemetry.duckAIUsed()
+        telemetry.tabManagerUsed()
+        telemetry.dataClearingUsed()
+        telemetry.newTabPageUsed()
+        telemetry.settingsUsed()
+        telemetry.bookmarksPageUsed(isRootFolder: true)
+        telemetry.passwordsPageUsed()
+
+        XCTAssertNil(PixelFiringMock.lastDailyPixelInfo)
+    }
+
+    // MARK: - Individual events
+
+    func testMenuUsed_FiresExpectedPixel() {
+        let telemetry = makeTelemetry(enabled: true)
+        telemetry.menuUsed()
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.productTelemeterySurfaceUsageMenu.name)
+    }
+
+    func testDailyActiveUser_FiresExpectedPixel() {
+        let telemetry = makeTelemetry(enabled: true)
+        telemetry.dailyActiveUser()
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.productTelemeterySurfaceUsageDAU.name)
+    }
+
+    func testIPadUsed_FiresOnlyWhenIsPadTrue() {
+        let telemetry = makeTelemetry(enabled: true)
+        telemetry.iPadUsed(isPad: false)
+        XCTAssertNil(PixelFiringMock.lastDailyPixelInfo)
+
+        telemetry.iPadUsed(isPad: true)
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.productTelemeterySurfaceUsageIPad.name)
+    }
+
+    func testLandscapeModeUsed_FiresExpectedPixel() {
+        let telemetry = makeTelemetry(enabled: true)
+        telemetry.landscapeModeUsed()
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.productTelemeterySurfaceUsageLandscapeMode.name)
+    }
+
+    func testKeyboardActive_FiresExpectedPixel() {
+        let telemetry = makeTelemetry(enabled: true)
+        telemetry.keyboardActive()
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.productTelemeterySurfaceUsageKeyboardActive.name)
+    }
+
+    func testAutocompleteUsed_FiresExpectedPixel() {
+        let telemetry = makeTelemetry(enabled: true)
+        telemetry.autocompleteUsed()
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.productTelemeterySurfaceUsageAutocomplete.name)
+    }
+
+    func testNavigationCompleted_WithNilURL_DoesNotFire() {
+        let telemetry = makeTelemetry(enabled: true)
+        telemetry.navigationCompleted(url: nil)
+        XCTAssertNil(PixelFiringMock.lastDailyPixelInfo)
+    }
+
+    func testNavigationCompleted_WithSearchURL_FiresSERPPixel() {
+        let telemetry = makeTelemetry(enabled: true)
+        let searchURL = URL.makeSearchURL(query: "test query", forceSearchQuery: true)
+        telemetry.navigationCompleted(url: searchURL)
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.productTelemeterySurfaceUsageSERP.name)
+    }
+
+    func testNavigationCompleted_WithWebsiteURL_FiresWebsitePixel() {
+        let telemetry = makeTelemetry(enabled: true)
+        let websiteURL = URL(string: "https://example.com/path")!
+        telemetry.navigationCompleted(url: websiteURL)
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.productTelemeterySurfaceUsageWebsite.name)
+    }
+
+    func testDuckAIUsed_FiresExpectedPixel() {
+        let telemetry = makeTelemetry(enabled: true)
+        telemetry.duckAIUsed()
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.productTelemeterySurfaceUsageDuckAI.name)
+    }
+
+    func testTabManagerUsed_FiresExpectedPixel() {
+        let telemetry = makeTelemetry(enabled: true)
+        telemetry.tabManagerUsed()
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.productTelemeterySurfaceUsageTabManager.name)
+    }
+
+    func testDataClearingUsed_FiresExpectedPixel() {
+        let telemetry = makeTelemetry(enabled: true)
+        telemetry.dataClearingUsed()
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.productTelemeterySurfaceUsageDataClearing.name)
+    }
+
+    func testNewTabPageUsed_FiresExpectedPixel() {
+        let telemetry = makeTelemetry(enabled: true)
+        telemetry.newTabPageUsed()
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.productTelemeterySurfaceUsageNewTabPage.name)
+    }
+
+    func testSettingsUsed_FiresExpectedPixel() {
+        let telemetry = makeTelemetry(enabled: true)
+        telemetry.settingsUsed()
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.productTelemeterySurfaceUsageSettings.name)
+    }
+
+    func testBookmarksPageUsed_FiresOnlyForRootFolder() {
+        let telemetry = makeTelemetry(enabled: true)
+        telemetry.bookmarksPageUsed(isRootFolder: false)
+        XCTAssertNil(PixelFiringMock.lastDailyPixelInfo)
+
+        telemetry.bookmarksPageUsed(isRootFolder: true)
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.productTelemeterySurfaceUsageBookmarksPage.name)
+    }
+
+    func testPasswordsPageUsed_FiresExpectedPixel() {
+        let telemetry = makeTelemetry(enabled: true)
+        telemetry.passwordsPageUsed()
+        XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.productTelemeterySurfaceUsagePasswordsPage.name)
+    }
 
 }
+
+// MARK: - No-op stub
+
+
+

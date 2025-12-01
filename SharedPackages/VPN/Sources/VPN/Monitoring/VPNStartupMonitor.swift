@@ -73,6 +73,8 @@ public final class VPNStartupMonitor {
         _ tunnelManager: NETunnelProviderManager,
         timeout: TimeInterval = 10
     ) async throws {
+        try Task.checkCancellation()
+
         let statusChange = NSNotification.Name.NEVPNStatusDidChange
 
         try await withThrowingTaskGroup(of: Void.self) { group in
@@ -103,6 +105,8 @@ public final class VPNStartupMonitor {
                         continue
                     }
                 }
+
+                try Task.checkCancellation()
             }
 
             group.addTask {

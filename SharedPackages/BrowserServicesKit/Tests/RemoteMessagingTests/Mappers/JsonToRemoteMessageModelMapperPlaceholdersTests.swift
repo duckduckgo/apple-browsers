@@ -67,6 +67,10 @@ struct JsonToRemoteMessageModelMapperPlaceholdersIntegrationTests {
             ("11", .imageAI),
             ("12", .radar),
             ("13", .keyImport),
+            ("14", .radarNew),
+            ("15", .radarCheck),
+            ("16", .pir),
+            ("17", .subscription),
         ] as [(String, RemotePlaceholder)]
     )
     func placeholderIsMappedCorrectlyForMessages(id: String, expectedDomainValue: RemotePlaceholder) throws {
@@ -100,11 +104,15 @@ struct JsonToRemoteMessageModelMapperPlaceholdersIntegrationTests {
             ("11", .imageAI),
             ("12", .radar),
             ("13", .keyImport),
+            ("14", .radarNew),
+            ("15", .radarCheck),
+            ("16", .pir),
+            ("17", .subscription),
         ] as [(String, RemotePlaceholder)]
     )
     func placeholderIsMappedCorrectlyForItemsInList(itemId: String, expectedDomainValue: RemotePlaceholder) throws {
         // GIVEN
-        let messageId = "14"
+        let messageId = "18"
         let message = try #require(config.messages.first(where: { $0.id == messageId }))
         let listItems = try #require(message.content?.listItems)
 

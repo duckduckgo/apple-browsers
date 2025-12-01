@@ -114,9 +114,11 @@ final class DBPHomeViewController: NSViewController {
     override func viewDidAppear() {
         super.viewDidAppear()
 
-        if !dataBrokerProtectionManager.isUserAuthenticated() && !freemiumDBPFeature.isAvailable {
-            assertionFailure("This UI should never be presented if the user is not authenticated")
-            closeUI()
+        Task { @MainActor in
+            if !(await dataBrokerProtectionManager.isUserAuthenticated()) && !freemiumDBPFeature.isAvailable {
+                assertionFailure("This UI should never be presented if the user is not authenticated")
+                closeUI()
+            }
         }
     }
 

@@ -96,9 +96,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866468468677
     case onboardingHighlights
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866468574274
-    case onboardingAddToDock
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711364768
     case autofillSurveys
 
@@ -126,9 +123,6 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711861627
     case scamSiteProtection
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866710757097
-    case removeWWWInCanonicalizationInThreatProtection
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866469645735
     case privacyProAuthV2
@@ -215,9 +209,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866714634010
     case newDeviceSyncPrompt
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866463258596
-    case subscriptionRestoreWidePixelMeasurement
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866712760347
     case embeddedSERPSettings
 
@@ -251,7 +242,8 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614122594
     case fullDuckAIMode
 
-    /// https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053
+    /// macOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015252281641
+    /// iOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015250423471
     case attributedMetrics
 
     /// https://app.asana.com/1/137249556945/project/1211654189969294/task/1211652685709099?focus=true
@@ -292,14 +284,12 @@ extension FeatureFlag: FeatureFlagDescribing {
         switch self {
         case .canScanUrlBasedSyncSetupBarcodes,
              .canInterceptSyncSetupUrls,
-             .removeWWWInCanonicalizationInThreatProtection,
              .supportsAlternateStripePaymentFlow,
              .setAsDefaultBrowserPiPVideoTutorial,
              .createFireproofFaviconUpdaterSecureVaultInBackground,
              .daxEasterEggLogos,
              .subscriptionPurchaseWidePixelMeasurement,
              .newDeviceSyncPrompt,
-             .subscriptionRestoreWidePixelMeasurement,
              .authV2WideEventEnabled,
              .embeddedSERPSettings,
              .syncCreditCards,
@@ -330,7 +320,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .autocompleteAttributeSupport,
              .privacyProOnboardingPromotion,
              .duckPlayerNativeUI,
-             .removeWWWInCanonicalizationInThreatProtection,
              .autofillPasswordVariantCategorization,
              .syncSetupBarcodeIsUrlBased,
              .canScanUrlBasedSyncSetupBarcodes,
@@ -350,7 +339,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .dbpRemoteBrokerDelivery,
              .subscriptionPurchaseWidePixelMeasurement,
              .showAIChatAddressBarChoiceScreen,
-             .subscriptionRestoreWidePixelMeasurement,
              .embeddedSERPSettings,
              .authV2WideEventEnabled,
              .winBackOffer,
@@ -403,7 +391,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                .syncPromotionBookmarks,
                .syncPromotionPasswords,
                .onboardingHighlights,
-               .onboardingAddToDock,
                .autofillSurveys,
                .autocompleteTabs,
                .adAttributionReporting,
@@ -475,8 +462,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncPromotionSubfeature.passwords))
         case .onboardingHighlights:
             return .internalOnly()
-        case .onboardingAddToDock:
-            return .internalOnly()
         case .autofillSurveys:
             return .remoteReleasable(.feature(.autofillSurveys))
         case .autocompleteTabs:
@@ -509,8 +494,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.syncSetupBarcodeIsUrlBased))
         case .canScanUrlBasedSyncSetupBarcodes:
             return .remoteReleasable(.subfeature(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
-        case .removeWWWInCanonicalizationInThreatProtection:
-            return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.removeWWWInCanonicalization))
         case .autofillPasswordVariantCategorization:
             return .remoteReleasable(.subfeature(AutofillSubfeature.passwordVariantCategorization))
         case .paidAIChat:
@@ -547,8 +530,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.showAIChatAddressBarChoiceScreen))
         case .newDeviceSyncPrompt:
             return .remoteReleasable(.subfeature(SyncSubfeature.newDeviceSyncPrompt))
-        case .subscriptionRestoreWidePixelMeasurement:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRestoreWidePixelMeasurement))
         case .embeddedSERPSettings:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.embeddedSERPSettings))
         case .authV2WideEventEnabled:

@@ -356,10 +356,12 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
         _ = try await sut.subscriptionSelected(params: ["id": "yearly"], original: message)
 
-        XCTAssertEqual(mockWideEvent.started.count, 1)
-        XCTAssertEqual(mockWideEvent.completions.count, 1)
-        let started = try XCTUnwrap(mockWideEvent.started.first as? SubscriptionPurchaseWideEventData)
-        XCTAssertEqual(started.contextData.name, "funnel_appsettings_macos")
+        XCTAssertEqual(mockWideEvent.started.count, 2)
+        XCTAssertEqual(mockWideEvent.completions.count, 2)
+        let startedFirst = try XCTUnwrap(mockWideEvent.started.first as? SubscriptionPurchaseWideEventData)
+        let startedSecond = try XCTUnwrap(mockWideEvent.started.last as? SubscriptionRestoreWideEventData)
+        XCTAssertEqual(startedFirst.contextData.name, "funnel_appsettings_macos")
+        XCTAssertEqual(startedSecond.contextData.name, "funnel_onpurchasecheck_multiple")
     }
 
 }

@@ -123,9 +123,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsURLChatIDRestoration: aichatFullModeFeature.isAvailable ? true : defaults.supportsURLChatIDRestoration,
             supportsFullChatRestoration: defaults.supportsFullChatRestoration,
             supportsPageContext: defaults.supportsPageContext,
-            isAIChatTopToolBarHidden: aichatFullModeFeature.isAvailable ? true : defaults.isAIChatTopToolBarHidden,
-            isAIChatModelPickerInChatInput: aichatFullModeFeature.isAvailable ? true : defaults.isAIChatModelPickerInChatInput,
-            appVersion: AppVersion.shared.versionAndBuildNumber
+            supportsAIChatFullMode: aichatFullModeFeature.isAvailable ? true : defaults.supportsAIChatFullMode,
+            appVersion: AppVersion.shared.versionAndBuildNumber,
+            supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint
         )
     }
 

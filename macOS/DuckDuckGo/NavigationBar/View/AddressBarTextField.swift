@@ -324,12 +324,32 @@ final class AddressBarTextField: NSTextField {
     }
 
     func addressBarEnterPressed() {
+        let selectedRowContent = suggestionContainerViewModel?.selectedRowContent
         suggestionContainerViewModel?.clearUserStringValue()
+
+        if case .aiChatCell = selectedRowContent {
+            openAIChatWithPrompt()
+            hideSuggestionWindow()
+            return
+        }
 
         let suggestion = suggestionContainerViewModel?.selectedSuggestionViewModel?.suggestion
         navigate(suggestion: suggestion)
 
         hideSuggestionWindow()
+    }
+
+    func openAIChatWithPrompt() {
+        let prompt = stringValueWithoutSuffix
+
+        let behavior = LinkOpenBehavior(
+            modifierFlags: NSEvent.modifierFlags,
+            switchToNewTabWhenOpenedPreference: shouldSwitchToNewTabWhenOpened,
+            canOpenLinkInCurrentTab: true
+        )
+
+        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: .query(prompt, shouldAutoSubmit: true), behavior: behavior)
+        currentEditor()?.selectAll(self)
     }
 
     private func navigate(suggestion: Suggestion?) {
@@ -1284,6 +1304,15 @@ private extension NSMenuItem {
 extension AddressBarTextField: SuggestionViewControllerDelegate {
 
     func suggestionViewControllerDidConfirmSelection(_ suggestionViewController: SuggestionViewController) {
+        let selectedRowContent = suggestionContainerViewModel?.selectedRowContent
+        suggestionContainerViewModel?.clearUserStringValue()
+
+        if case .aiChatCell = selectedRowContent {
+            openAIChatWithPrompt()
+            hideSuggestionWindow()
+            return
+        }
+
         let suggestion = suggestionContainerViewModel?.selectedSuggestionViewModel?.suggestion
         navigate(suggestion: suggestion)
     }

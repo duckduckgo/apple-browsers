@@ -157,13 +157,73 @@ Boli zablokovaní!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Zablokovalo sa %1$d sledovacie zariadenie</string>
+			<string>Bolo zablokované %1$d načítanie sledovača</string>
 			<key>few</key>
-			<string>Zablokovali sa %1$d sledovacie zariadenia</string>
+			<string>Boli zablokované %1$d načítania sledovačov</string>
 			<key>many</key>
-			<string>Zablokovalo sa %1$d sledovacieho zariadenia</string>
+			<string>Bolo zablokovaných %1$d načítaní sledovačov</string>
 			<key>other</key>
-			<string>Zablokovalo sa %1$d sledovacích zariadení</string>
+			<string>Bolo zablokovaných %1$d načítaní sledovačov</string>
+		</dict>
+	</dict>
+	<key>omnibar.notification.trackers-blocked</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d Sledovanie</string>
+			<key>few</key>
+			<string>%1$d Sledovania</string>
+			<key>many</key>
+			<string>%1$d Sledovaní</string>
+			<key>other</key>
+			<string>%1$d Sledovaní</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.other.domains.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Bola načítaná %1$d ďalšia doména</string>
+			<key>few</key>
+			<string>Boli načítané %1$d ďalšie domény</string>
+			<key>many</key>
+			<string>Bolo načítaných %1$d ďalších domén</string>
+			<key>other</key>
+			<string>Bolo načítaných %1$d ďalších domén</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.first.party.trackers.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d %%d sledovač vlastnený touto stránkou (načítané)</string>
+			<key>few</key>
+			<string>%1$d %%d sledovačov vlastnených touto stránkou (načítané)</string>
+			<key>many</key>
+			<string>%1$d %%d sledovačov vlastnených touto stránkou (načítané)</string>
+			<key>other</key>
+			<string>%1$d %%d sledovačov vlastnených touto stránkou (načítané)</string>
 		</dict>
 	</dict>
 	<key>number.of.tabs</key>

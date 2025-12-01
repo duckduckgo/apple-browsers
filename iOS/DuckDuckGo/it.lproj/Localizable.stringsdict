@@ -121,9 +121,57 @@ Li ho bloccati!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%1$d sistema di tracciamento bloccato</string>
+			<string>Il caricamento di %1$d sistema di tracciamento è stato bloccato</string>
 			<key>other</key>
-			<string>%1$d sistemi di tracciamento bloccati</string>
+			<string>Il caricamento di %1$d sistemi di tracciamento è stato bloccato</string>
+		</dict>
+	</dict>
+	<key>omnibar.notification.trackers-blocked</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d Tracciamento</string>
+			<key>other</key>
+			<string>%1$d Tracciamento</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.other.domains.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d altro dominio caricato</string>
+			<key>other</key>
+			<string>Altri %1$d domini caricati</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.first.party.trackers.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d sistema di tracciamento di proprietà di questo sito (caricato)</string>
+			<key>other</key>
+			<string>%1$d sistemi di tracciamento di proprietà di questo sito (caricati)</string>
 		</dict>
 	</dict>
 	<key>number.of.tabs</key>

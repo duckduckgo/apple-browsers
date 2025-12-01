@@ -117,8 +117,8 @@ public final class DataBrokerProtectionManager {
         self.vpnBypassService = VPNBypassService()
     }
 
-    public func isUserAuthenticated() -> Bool {
-        authenticationManager.isUserAuthenticated
+    public func isUserAuthenticated() async -> Bool {
+        return await authenticationManager.isUserAuthenticated
     }
 
     // MARK: - Debugging Features
@@ -151,8 +151,8 @@ extension DataBrokerProtectionManager: DataBrokerProtectionDataManagerDelegate {
         try? await VPNControllerXPCClient.shared.command(.restartAdapter)
     }
 
-    public func isAuthenticatedUser() -> Bool {
-        isUserAuthenticated()
+    public func isAuthenticatedUser() async -> Bool {
+        return await isUserAuthenticated()
     }
 
     /// Returns whether the current user is eligible for a free trial of Data Broker Protection

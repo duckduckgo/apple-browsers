@@ -374,12 +374,11 @@ final public class HistoryCoordinator: HistoryCoordinating {
     }
 
     private func scheduleRegularCleaning() {
-        let timer = Timer(fireAt: .startOfDayTomorrow,
+        let timer = Timer(fire: .startOfDayTomorrow,
                           interval: .day,
-                          target: self,
-                          selector: #selector(cleanOld),
-                          userInfo: nil,
-                          repeats: true)
+                          repeats: true) { [weak self] _ in
+            self?.cleanOld()
+        }
         RunLoop.main.add(timer, forMode: RunLoop.Mode.common)
         regularCleaningTimer = timer
     }

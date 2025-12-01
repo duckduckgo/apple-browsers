@@ -86,6 +86,7 @@ final class AIChatMessageHandler: AIChatMessageHandling {
 extension AIChatMessageHandler {
     private func getNativeConfigValues() -> Encodable? {
         let appVersion = AppVersion.shared.versionAndBuildNumber
+        let defaults = AIChatNativeConfigValues.defaultValues
         if featureFlagger.isFeatureOn(.aiChatSidebar) {
             return AIChatNativeConfigValues(isAIChatHandoffEnabled: true,
                                             supportsClosingAIChat: true,
@@ -96,11 +97,10 @@ extension AIChatMessageHandler {
                                             supportsURLChatIDRestoration: true,
                                             supportsFullChatRestoration: true,
                                             supportsPageContext: featureFlagger.isFeatureOn(.aiChatPageContext),
-                                            isAIChatTopToolBarHidden: false,
-                                            isAIChatModelPickerInChatInput: false,
-                                            appVersion: appVersion)
+                                            supportsAIChatFullMode: false,
+                                            appVersion: appVersion,
+                                            supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint)
         } else {
-            let defaults = AIChatNativeConfigValues.defaultValues
             return AIChatNativeConfigValues(isAIChatHandoffEnabled: defaults.isAIChatHandoffEnabled,
                                             supportsClosingAIChat: defaults.supportsClosingAIChat,
                                             supportsOpeningSettings: defaults.supportsOpeningSettings,
@@ -110,9 +110,9 @@ extension AIChatMessageHandler {
                                             supportsURLChatIDRestoration: defaults.supportsURLChatIDRestoration,
                                             supportsFullChatRestoration: defaults.supportsFullChatRestoration,
                                             supportsPageContext: defaults.supportsPageContext,
-                                            isAIChatTopToolBarHidden: defaults.isAIChatTopToolBarHidden,
-                                            isAIChatModelPickerInChatInput: defaults.isAIChatModelPickerInChatInput,
-                                            appVersion: appVersion)
+                                            supportsAIChatFullMode: defaults.supportsAIChatFullMode,
+                                            appVersion: appVersion,
+                                            supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint)
         }
     }
 

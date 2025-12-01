@@ -277,6 +277,7 @@ class PinnedTabsTests: UITestCase {
     private func dragFirstPinnedTabAboveWindow() {
         let pinnedTabs = app.tabGroups.matching(identifier: "Pinned Tabs").radioButtons
         let firstPinnedTab = pinnedTabs.element(boundBy: .zero)
+        XCTAssertTrue(firstPinnedTab.waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
         dragTabElementAboveWindow(firstPinnedTab)
     }
@@ -284,15 +285,19 @@ class PinnedTabsTests: UITestCase {
     private func dragLastUnpinnedTabAboveWindow() {
         let unpinnedTabs = app.tabGroups.matching(identifier: "Tabs").radioButtons
         let lastUnpinnedTab = unpinnedTabs.element(boundBy: unpinnedTabs.count - 1)
+        XCTAssertTrue(lastUnpinnedTab.waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
         dragTabElementAboveWindow(lastUnpinnedTab)
     }
 
     private func dragTabElementAboveWindow(_ tabElement: XCUIElement) {
-        let dragAboveWindowOffset: CGFloat = -100
-        let tabCoordinate = tabElement.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        let aboveWindow = tabCoordinate.withOffset(CGVector(dx: 0, dy: dragAboveWindowOffset))
+        let frame = tabElement.frame
+        let tabCenterCoordinate = tabElement
+            .coordinate(withNormalizedOffset: .zero)
+            .withOffset(CGVector(dx: frame.width * 0.5, dy: frame.height * 0.5))
 
-        tabCoordinate.press(forDuration: 0.5, thenDragTo: aboveWindow)
+        let aboveWindow = tabCenterCoordinate.withOffset(CGVector(dx: 0, dy: -100))
+
+        tabCenterCoordinate.press(forDuration: 0.5, thenDragTo: aboveWindow)
     }
 }

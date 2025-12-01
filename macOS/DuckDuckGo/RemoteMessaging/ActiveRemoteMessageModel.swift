@@ -195,7 +195,7 @@ final class ActiveRemoteMessageModel: ObservableObject {
     }
 
     private func updateRemoteMessage() {
-        remoteMessage = store()?.fetchScheduledRemoteMessage(surfaces: [.newTabPage, .tabBar])
+        remoteMessage = store()?.fetchScheduledRemoteMessage(surfaces: .allCases)
     }
 
     private var cancellables = Set<AnyCancellable>()

@@ -113,7 +113,7 @@ final class SuggestionContainerViewModel {
 
     /// Whether to show the visit cell in the header (when user types a URL-like string).
     private var shouldShowVisitCell: Bool {
-        guard featureFlagger.isFeatureOn(.aiChatOmnibarToggle) else { return false }
+        guard featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && featureFlagger.isFeatureOn(.aiChatOmnibarCluster) else { return false }
         return userInputIsURL
     }
 

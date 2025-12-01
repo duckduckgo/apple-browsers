@@ -215,10 +215,13 @@ extension Preferences {
                         TextMenuItemCaption(UserText.homePageDescription)
 
                         Picker(selection: $startupModel.launchToCustomHomePage, label: EmptyView()) {
-                            Text(UserText.newTab).tag(false)
+                            Text(UserText.newTab)
+                                .tag(false)
+                                .accessibilityIdentifier("PreferencesGeneralView.homePage.newTab")
                             VStack(alignment: .leading, spacing: 0) {
                                 HStack(spacing: 15) {
                                     Text(UserText.specificPage)
+                                        .accessibilityIdentifier("PreferencesGeneralView.homePage.specificPage")
                                     Button(UserText.setPage) {
                                         showingCustomHomePageSheet.toggle()
                                     }.disabled(!startupModel.launchToCustomHomePage)

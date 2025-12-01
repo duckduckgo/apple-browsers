@@ -19,7 +19,8 @@
 import Foundation
 import BrowserServicesKit
 
-/// https://app.asana.com/1/137249556945/project/1113117197328546/task/1211362861225166?focus=true
+/// macOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015252281641
+/// iOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015250423471
 public enum AttributedMetricFeatureFlag: String {
     case attributedMetrics // general kill switch
 

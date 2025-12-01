@@ -167,8 +167,9 @@ struct RequestNewFeatureFormView: View {
     }
 
     private func featurePills() -> some View {
-        FlexibleView(
-            availableWidth: RequestNewFeatureFormViewController.Constants.width,
+        let horizontalPadding: CGFloat = 24
+        return FlexibleView(
+            availableWidth: RequestNewFeatureFormViewController.Constants.width - (horizontalPadding * 2),
             data: viewModel.availableFeatures,
             spacing: 8,
             alignment: .leading
@@ -182,7 +183,7 @@ struct RequestNewFeatureFormView: View {
                 }
             }
         }
-        .padding([.leading, .trailing], 24)
+        .padding([.leading, .trailing], horizontalPadding)
         .padding(.bottom, 24)
         .background(
             GeometryReader { geometry in

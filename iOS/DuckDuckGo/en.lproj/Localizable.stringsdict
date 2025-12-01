@@ -136,6 +136,22 @@ I blocked them!
 			<string>%d Trackers Blocked from Loading</string>
 		</dict>
 	</dict>
+	<key>omnibar.notification.trackers-blocked</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%d Tracker Blocked</string>
+			<key>other</key>
+			<string>%d Trackers Blocked</string>
+		</dict>
+	</dict>
 	<key>privacy.protection.other.domains.loaded</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

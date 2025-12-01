@@ -52,7 +52,7 @@ public class DBPIOSInterface {
 
     public protocol AppLifecycleEventsDelegate: AnyObject {
         func appDidEnterBackground()
-        func appDidBecomeActive()
+        func appDidBecomeActive() async
     }
 
     public protocol BackgroundTaskInformationDelegate: AnyObject {
@@ -73,7 +73,7 @@ public class DBPIOSInterface {
     }
 
     public protocol AuthenticationDelegate: AnyObject {
-        func isUserAuthenticated() -> Bool
+        func isUserAuthenticated() async -> Bool
     }
 
     public protocol RunPrerequisitesDelegate: AnyObject, AuthenticationDelegate {
@@ -234,14 +234,10 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
         scheduleBGProcessingTask()
     }
 
-    public func appDidBecomeActive() {
-        guard authenticationManager.isUserAuthenticated else { return }
-
+    public func appDidBecomeActive() async {
+        guard await authenticationManager.isUserAuthenticated else { return }
         fireMonitoringPixels()
-
-        Task {
-            await checkForEmailConfirmationData()
-        }
+        await checkForEmailConfirmationData()
     }
 
     func fireMonitoringPixels() {
@@ -255,8 +251,8 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
 }
 
 extension DataBrokerProtectionIOSManager: DBPIOSInterface.AuthenticationDelegate {
-    public func isUserAuthenticated() -> Bool {
-        authenticationManager.isUserAuthenticated
+    public func isUserAuthenticated() async -> Bool {
+        await authenticationManager.isUserAuthenticated
     }
 }
 
@@ -405,7 +401,9 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.RunPrerequisitesDelega
     }
 
     public var meetsAuthenticationRunPrequisite: Bool {
-        return authenticationManager.isUserAuthenticated
+        get async {
+            return await authenticationManager.isUserAuthenticated
+        }
     }
 
     public var meetsEntitlementRunPrequisite: Bool {
@@ -416,8 +414,13 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.RunPrerequisitesDelega
 
     public func validateRunPrerequisites() async -> Bool {
         do {
-            if !(try meetsProfileRunPrequisite) || !meetsAuthenticationRunPrequisite {
-                Logger.dataBrokerProtection.log("Prerequisites are invalid")
+            guard try meetsProfileRunPrequisite else {
+                Logger.dataBrokerProtection.log("Profile run prerequisites are invalid")
+                return false
+            }
+
+            guard await meetsAuthenticationRunPrequisite else {
+                Logger.dataBrokerProtection.log("Authentication run prerequisites are invalid")
                 return false
             }
 

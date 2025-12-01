@@ -101,6 +101,10 @@ final class WebNotificationsHandler: NSObject, Subfeature {
         static let originURL = "originURL"
     }
 
+    enum MethodName {
+        static let notificationEvent = "notificationEvent"
+    }
+
     // MARK: - Message Payloads
 
     struct ShowNotificationPayload: Decodable {
@@ -247,13 +251,13 @@ final class WebNotificationsHandler: NSObject, Subfeature {
 
         guard featureFlagger.isFeatureOn(.webNotifications) else {
             Logger.general.debug("WebNotificationsHandler: Blocked - feature flag disabled (ID: \(payload.id))")
-            await sendErrorEvent(id: payload.id, to: original.webView)
+            sendErrorEvent(id: payload.id, to: original.webView)
             return
         }
 
         guard await isSystemAuthorized() else {
             Logger.general.debug("WebNotificationsHandler: Blocked - not authorized (ID: \(payload.id))")
-            await sendErrorEvent(id: payload.id, to: original.webView)
+            sendErrorEvent(id: payload.id, to: original.webView)
             return
         }
 
@@ -305,7 +309,7 @@ final class WebNotificationsHandler: NSObject, Subfeature {
     ///   - webView: The webView to send the event to
     func sendNotificationEvent(id: String, event: String, to webView: WKWebView?) {
         guard let webView = webView else { return }
-        broker?.push(method: "notificationEvent", params: NotificationEventParams(id: id, event: event), for: self, into: webView)
+        broker?.push(method: MethodName.notificationEvent, params: NotificationEventParams(id: id, event: event), for: self, into: webView)
     }
 
     private func sendShowEvent(id: String, to webView: WKWebView?) {

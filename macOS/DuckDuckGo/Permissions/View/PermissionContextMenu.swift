@@ -468,6 +468,7 @@ private extension NSMenuItem {
         if isChecked {
             item.state = .on
         }
+        item.setAccessibilityIdentifier("PermissionContextMenu.allowPopupsForPage")
         return item
     }
 

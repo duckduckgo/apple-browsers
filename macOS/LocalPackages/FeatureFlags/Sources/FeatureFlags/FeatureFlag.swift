@@ -143,9 +143,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866618404342
     case updateSafariBookmarksImport
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715760013
-    case updateFirefoxBookmarksImport
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866618564878
     case disableFireAnimation
 
@@ -292,7 +289,6 @@ extension FeatureFlag: FeatureFlagDescribing {
     public var defaultValue: Bool {
         switch self {
         case .updateSafariBookmarksImport,
-                .updateFirefoxBookmarksImport,
                 .supportsAlternateStripePaymentFlow,
                 .refactorOfSyncPreferences,
                 .subscriptionPurchaseWidePixelMeasurement,
@@ -355,7 +351,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatKeepSession,
                 .aiChatOmnibarToggle,
                 .updateSafariBookmarksImport,
-                .updateFirefoxBookmarksImport,
                 .disableFireAnimation,
                 .newTabPageOmnibar,
                 .newTabPagePerTab,
@@ -498,8 +493,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.hangReporting))
         case .updateSafariBookmarksImport:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.updateSafariBookmarksImport))
-        case .updateFirefoxBookmarksImport:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.updateFirefoxBookmarksImport))
         case .disableFireAnimation:
             return .remoteReleasable(.feature(.disableFireAnimation))
         case .newTabPageOmnibar:

@@ -475,8 +475,7 @@ private func dataImporter(for source: DataImport.Source, fileDataType: DataImpor
                             primaryPassword: primaryPassword,
                             loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()),
                             bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
-                            faviconManager: NSApp.delegateTyped.faviconManager,
-                            featureFlagger: Application.appDelegate.featureFlagger)
+                            faviconManager: NSApp.delegateTyped.faviconManager)
     case .safari, .safariTechnologyPreview:
         if #available(macOS 15.2, *), Application.appDelegate.featureFlagger.isFeatureOn(.dataImportNewSafariFilePicker), !source.archiveImportSupportedFiles.isEmpty {
             SafariArchiveImporter(archiveURL: url,

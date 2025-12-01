@@ -68,6 +68,8 @@ final class SettingsViewModel: ObservableObject {
     var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
     weak var autoClearActionDelegate: SettingsAutoClearActionDelegate?
     let mobileCustomization: MobileCustomization
+    let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
+    var browsingMenuSheetCapability: BrowsingMenuSheetCapable
 
     // Subscription Dependencies
     let isAuthV2Enabled: Bool
@@ -155,10 +157,6 @@ final class SettingsViewModel: ObservableObject {
 
     var isUpdatedAIFeaturesSettingsEnabled: Bool {
         featureFlagger.isFeatureOn(.aiFeaturesSettingsUpdate)
-    }
-
-    var embedSERPSettings: Bool {
-        featureFlagger.isFeatureOn(.embeddedSERPSettings)
     }
 
     var isDuckAiDataClearingEnabled: Bool {
@@ -275,7 +273,19 @@ final class SettingsViewModel: ObservableObject {
             }
         )
     }
-    
+
+    var sheetBrowsingMenuVariantBinding: Binding<BrowsingMenuClusteringVariant> {
+        Binding<BrowsingMenuClusteringVariant>(
+            get: {
+                self.state.sheetMenuVariant
+            },
+            set: {
+                self.browsingMenuSheetCapability.variant = $0
+                self.state.sheetMenuVariant = $0
+            }
+        )
+    }
+
     var refreshButtonPositionBinding: Binding<RefreshButtonPosition> {
         Binding<RefreshButtonPosition>(
             get: {
@@ -295,12 +305,8 @@ final class SettingsViewModel: ObservableObject {
                 self.state.showMenuInSheet
             },
             set: {
-                if let overrides = self.featureFlagger.localOverrides,
-                    overrides.override(for: FeatureFlag.browsingMenuSheetPresentation) != $0 {
-
-                    overrides.toggleOverride(for: FeatureFlag.browsingMenuSheetPresentation)
-                    self.state.showMenuInSheet = $0
-                }
+                let value = self.browsingMenuSheetCapability.setEnabled($0)
+                self.state.showMenuInSheet = value
             }
         )
     }
@@ -661,7 +667,9 @@ final class SettingsViewModel: ObservableObject {
          runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
-         mobileCustomization: MobileCustomization
+         mobileCustomization: MobileCustomization,
+         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
+         browsingMenuSheetCapability: BrowsingMenuSheetCapable
     ) {
 
         self.state = SettingsState.defaults
@@ -693,6 +701,8 @@ final class SettingsViewModel: ObservableObject {
         self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.mobileCustomization = mobileCustomization
+        self.userScriptsDependencies = userScriptsDependencies
+        self.browsingMenuSheetCapability = browsingMenuSheetCapability
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
     }
@@ -725,7 +735,8 @@ extension SettingsViewModel {
             isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
             refreshButtonPosition: appSettings.currentRefreshButtonPosition,
             mobileCustomization: mobileCustomization.state,
-            showMenuInSheet: featureFlagger.isFeatureOn(.browsingMenuSheetPresentation),
+            showMenuInSheet: browsingMenuSheetCapability.isEnabled,
+            sheetMenuVariant: browsingMenuSheetCapability.variant,
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
             autoclearDataEnabled: AutoClearSettingsModel(settings: appSettings) != nil,

@@ -253,14 +253,21 @@ final class SuggestionContainerViewModel {
     func selectRow(at rowIndex: Int) {
         guard rowIndex >= 0, rowIndex < numberOfRows else {
             Logger.general.error("SuggestionContainerViewModel: Row index out of bounds")
-            selectedRowIndex = nil
+            if selectedRowIndex != nil {
+                selectedRowIndex = nil
+                selectionIndex = nil
+            }
             return
         }
+
+        guard selectedRowIndex != rowIndex else { return }
+
         selectedRowIndex = rowIndex
         selectionIndex = selectionIndex(forRow: rowIndex)
     }
 
     func clearRowSelection() {
+        guard selectedRowIndex != nil || selectionIndex != nil else { return }
         selectedRowIndex = nil
         selectionIndex = nil
     }
@@ -402,8 +409,7 @@ final class SuggestionContainerViewModel {
             nextRow += 1
         }
 
-        // At the end of the list, cancel the selection
-        clearRowSelection()
+        wrapAroundOrClearSelection(using: firstSelectableRow)
     }
 
     func selectPreviousIfPossible() {
@@ -423,7 +429,16 @@ final class SuggestionContainerViewModel {
             prevRow -= 1
         }
 
-        clearRowSelection()
+        wrapAroundOrClearSelection(using: lastSelectableRow)
+    }
+
+    /// Wraps around to the given row when aiChatOmnibarToggle is on, otherwise clears selection
+    private func wrapAroundOrClearSelection(using selectableRow: () -> Int?) {
+        if featureFlagger.isFeatureOn(.aiChatOmnibarToggle), let row = selectableRow() {
+            selectRow(at: row)
+        } else {
+            clearRowSelection()
+        }
     }
 
     private func firstSelectableRow() -> Int? {

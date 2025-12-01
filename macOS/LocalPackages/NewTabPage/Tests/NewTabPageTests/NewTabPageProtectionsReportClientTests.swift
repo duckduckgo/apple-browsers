@@ -35,8 +35,8 @@ final class NewTabPageProtectionsReportClientTests: XCTestCase {
     private var userScript: NewTabPageUserScript!
     private var messageHelper: MessageHelper<NewTabPageProtectionsReportClient.MessageName>!
 
-    override func setUp() async throws {
-        try await super.setUp()
+    override func setUp() {
+        super.setUp()
 
         privacyStats = CapturingPrivacyStats()
         autoconsentStats = CapturingAutoconsentStats()

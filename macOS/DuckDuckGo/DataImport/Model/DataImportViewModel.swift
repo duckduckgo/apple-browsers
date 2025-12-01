@@ -465,8 +465,7 @@ private func dataImporter(for source: DataImport.Source, fileDataType: DataImpor
     case .brave, .chrome, .chromium, .coccoc, .edge, .opera, .operaGX, .vivaldi:
         ChromiumDataImporter(profile: profile,
                              loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()),
-                             bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
-                             featureFlagger: Application.appDelegate.featureFlagger)
+                             bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager))
     case .yandex:
         YandexDataImporter(profile: profile,
                            bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),

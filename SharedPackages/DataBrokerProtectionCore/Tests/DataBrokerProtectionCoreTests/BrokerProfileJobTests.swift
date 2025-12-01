@@ -73,7 +73,8 @@ final class BrokerProfileJobTests: XCTestCase {
         }
 
         job.start()
-        await fulfillment(of: [expectation], timeout: 5)
+        // Uses an extended timeout to allow for WebKit to warm up
+        await fulfillment(of: [expectation], timeout: 15)
 
         XCTAssertTrue(job.isFinished)
         XCTAssertTrue(database.scanEvents.isEmpty)
@@ -102,7 +103,8 @@ final class BrokerProfileJobTests: XCTestCase {
         }
 
         job.start()
-        await fulfillment(of: [expectation], timeout: 5)
+        // Uses an extended timeout to allow for WebKit to warm up
+        await fulfillment(of: [expectation], timeout: 15)
 
         XCTAssertTrue(job.isFinished)
         XCTAssertTrue(database.scanEvents.contains(where: { $0.type == .scanStarted }))
@@ -159,7 +161,8 @@ final class BrokerProfileJobTests: XCTestCase {
         }
 
         job.start()
-        await fulfillment(of: [expectation], timeout: 5)
+        // Uses an extended timeout to allow for WebKit to warm up
+        await fulfillment(of: [expectation], timeout: 15)
 
         XCTAssertTrue(job.isFinished)
         XCTAssertTrue(database.scanEvents.contains(where: { $0.type == .scanStarted }))

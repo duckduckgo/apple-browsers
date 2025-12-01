@@ -677,7 +677,22 @@ final class AddressBarViewController: NSViewController {
 
     private func setupAddressBarPlaceHolder() {
         let isNewTab = tabViewModel?.tab.content == .newtab
-        let addressBarPlaceholder = isNewTab ? UserText.addressBarPlaceholder : ""
+        let addressBarPlaceholder: String
+
+        let shouldShowDuckAIHint = isFirstResponder
+        && featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+        && aiChatSettings.isAIFeaturesEnabled
+        && aiChatSettings.showSearchAndDuckAIToggle
+
+        if isNewTab {
+            if shouldShowDuckAIHint {
+                addressBarPlaceholder = UserText.addressBarPlaceholderWithDuckAI
+            } else {
+                addressBarPlaceholder = UserText.addressBarPlaceholder
+            }
+        } else {
+            addressBarPlaceholder = ""
+        }
 
         let font = NSFont.systemFont(ofSize: isNewTab ? theme.addressBarStyleProvider.newTabOrHomePageAddressBarFontSize : theme.addressBarStyleProvider.defaultAddressBarFontSize, weight: .regular)
         let attributes: [NSAttributedString.Key: Any] = [
@@ -858,6 +873,8 @@ final class AddressBarViewController: NSViewController {
             delegate?.resizeAddressBarForHomePage(self)
             addressBarButtonsViewController?.setupButtonPaddings(isFocused: false)
         }
+
+        setupAddressBarPlaceHolder()
     }
 
     private func handleFirstResponderChange() {
@@ -875,6 +892,8 @@ final class AddressBarViewController: NSViewController {
         case .activeWithAIChat:
             break
         }
+
+        setupAddressBarPlaceHolder()
     }
 
     // MARK: - Event handling
@@ -1076,7 +1095,7 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
         if isAIChatMode {
             if mode.isEditing {
                 let text = addressBarTextField.stringValueWithoutSuffix
-                if !text.isEmpty {
+                if !text.isEmpty && sharedTextState.hasUserInteractedWithTextAfterSwitchingModes == true {
                     sharedTextState.updateText(text, markInteraction: false)
                 }
             }
@@ -1096,11 +1115,14 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
             updateMode()
             addressBarTextField.makeMeFirstResponder()
 
+            /// Force layout update after becoming first responder to update in case the window was resized
+            layoutTextFields(withMinX: addressBarButtonsViewController.buttonsWidth)
+
             if shouldRestoreFromSharedState {
                 addressBarTextField.setCursorPositionAfterRestore()
             }
         }
-
+        sharedTextState.resetUserInteractionAfterSwitchingModes()
         delegate?.addressBarViewControllerSearchModeToggleChanged(self, isAIChatMode: isAIChatMode)
     }
 

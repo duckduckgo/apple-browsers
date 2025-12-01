@@ -368,7 +368,9 @@ extension MainViewController {
                                                   runPrerequisitesDelegate: dbpIOSPublicInterface,
                                                   dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,
                                                   winBackOfferVisibilityManager: winBackOfferVisibilityManager,
-                                                  mobileCustomization: mobileCustomization)
+                                                  mobileCustomization: mobileCustomization,
+                                                  userScriptsDependencies: userScriptsDependencies,
+                                                  browsingMenuSheetCapability: BrowsingMenuSheetCapability.create(using: featureFlagger, keyValueStore: keyValueStore))
 
         settingsViewModel.autoClearActionDelegate = self
         Pixel.fire(pixel: .settingsPresented)

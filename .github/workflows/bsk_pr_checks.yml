@@ -101,7 +101,7 @@ jobs:
 
       - name: Run tests
         id: run-unit-tests
-        run: set -o pipefail && swift test | tee -a build-log.txt | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml
+        run: set -o pipefail && swift test --enable-swift-testing | tee -a build-log.txt | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml
 
       - name: Send Unit Tests Status Pixel
         if: always() && github.ref_name == 'main'

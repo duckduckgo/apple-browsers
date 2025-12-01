@@ -29918,6 +29918,66 @@
         }
       }
     },
+    "feedback.problem-subcategory.popup-windows-not-opening" : {
+      "comment" : "Problem subcategory for popup windows being blocked",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pop-ups öffnen sich nicht"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Pop-ups don't open"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los pop-ups no se abren"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les pop-ups ne s'ouvrent pas"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I pop-up non si aprono"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pop-ups openen niet"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyskakujące okienka się nie otwierają"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pop-ups não abrem"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Всплывающие окна не открываются"
+          }
+        }
+      }
+    },
     "feedback.problem-subcategory.passwords-management" : {
       "comment" : "Problem subcategory for general password management issues",
       "extractionState" : "extracted_with_value",

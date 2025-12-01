@@ -199,7 +199,7 @@ private extension SpinnerView {
     func buildGradientLayer() -> CAGradientLayer {
         let gradient = CAGradientLayer()
         gradient.type = .conic
-        gradient.locations = [0, 0.6, 1]
+        gradient.locations = [0, 1]
         gradient.startPoint = CGPoint(x: 0.5, y: 0.5)
         gradient.endPoint = CGPoint(x: 0.5, y: 0)
         gradient.frame = bounds

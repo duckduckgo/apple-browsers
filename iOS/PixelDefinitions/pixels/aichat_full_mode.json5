@@ -4,56 +4,56 @@
         "description": "Fires when user taps the fire button while in full Duck.ai mode",
         "owners": ["aataraxiaa"],
         "triggers": ["other"],
-        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
     "m_aichat_omnibar_sidebar_button_tapped": {
         "description": "Fires when user taps the sidebar button in the omnibar while in full Duck.ai mode",
         "owners": ["aataraxiaa"],
         "triggers": ["other"],
-        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
     "m_aichat_omnibar_new_chat_button_tapped": {
         "description": "Fires when user taps the new chat button in the omnibar while in full Duck.ai mode",
         "owners": ["aataraxiaa"],
         "triggers": ["other"],
-        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
     "m_aichat_settings_menu_opened": {
         "description": "Fires when user opens the Duck.ai settings menu",
         "owners": ["aataraxiaa"],
         "triggers": ["other"],
-        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
     "m_aichat_settings_menu_sidebar_tapped": {
         "description": "Fires when user taps the sidebar option in the Duck.ai settings menu",
         "owners": ["aataraxiaa"],
         "triggers": ["other"],
-        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
     "m_aichat_settings_menu_aichat_settings_tapped": {
         "description": "Fires when user taps the AI Chat settings option in the Duck.ai settings menu",
         "owners": ["aataraxiaa"],
         "triggers": ["other"],
-        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
     "m_aichat_settings_menu_new_chat_tab_tapped": {
         "description": "Fires when user taps the new chat tab option in the Duck.ai settings menu",
         "owners": ["aataraxiaa"],
         "triggers": ["other"],
-        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
     "m_aichat_tab_switcher_opened": {
         "description": "Fires when user opens the tab switcher while in full Duck.ai mode",
         "owners": ["aataraxiaa"],
         "triggers": ["other"],
-        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     }
 }

@@ -132,7 +132,9 @@ extension Pixel {
         case settingsAutoconsentShown
         case settingsAutoconsentOn
         case settingsAutoconsentOff
-        
+
+        case experimentalBrowsingMenuEnabled
+        case experimentalBrowsingMenuDisabled
         case browsingMenuOpened
         case browsingMenuOpenedNewTabPage
         case browsingMenuNewTab
@@ -1597,7 +1599,8 @@ extension Pixel.Event {
         case .settingsRefreshButtonPositionAddressBar: return "m_settings_refresh_button_position_address_bar"
         case .settingsRefreshButtonPositionMenu: return "m_settings_refresh_button_position_menu"
             
-
+        case .experimentalBrowsingMenuEnabled: return "m_experimental-browsing-menu_enabled"
+        case .experimentalBrowsingMenuDisabled: return "m_experimental-browsing-menu_disabled"
         case .browsingMenuOpened: return "mb"
         case .browsingMenuOpenedNewTabPage: return "m_nav_menu_ntp"
         case .browsingMenuNewTab: return "mb_tb"

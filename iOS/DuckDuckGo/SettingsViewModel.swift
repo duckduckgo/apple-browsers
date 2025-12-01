@@ -309,6 +309,12 @@ final class SettingsViewModel: ObservableObject {
                 self.state.showMenuInSheet
             },
             set: {
+                if $0 {
+                    DailyPixel.fireDaily(.experimentalBrowsingMenuEnabled)
+                } else {
+                    DailyPixel.fireDaily(.experimentalBrowsingMenuDisabled)
+                }
+
                 let value = self.browsingMenuSheetCapability.setEnabled($0)
                 self.state.showMenuInSheet = value
             }

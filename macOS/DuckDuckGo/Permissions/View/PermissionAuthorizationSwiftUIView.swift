@@ -20,11 +20,154 @@ import AppKit
 import Combine
 import SwiftUI
 
+// MARK: - PermissionAuthorizationType
+
+/// UI-only permission type for the authorization SwiftUI view.
+/// This handles the combined camera+microphone case without modifying the model layer.
+enum PermissionAuthorizationType {
+    case camera
+    case microphone
+    case cameraAndMicrophone
+    case geolocation
+    case popups
+    case externalScheme(scheme: String)
+
+    /// Creates the appropriate type from an array of PermissionType
+    init(from permissions: [PermissionType]) {
+        if Set(permissions) == Set([.camera, .microphone]) {
+            self = .cameraAndMicrophone
+        } else if let first = permissions.first {
+            switch first {
+            case .camera: self = .camera
+            case .microphone: self = .microphone
+            case .geolocation: self = .geolocation
+            case .popups: self = .popups
+            case .externalScheme(let scheme): self = .externalScheme(scheme: scheme)
+            }
+        } else {
+            self = .camera // fallback, shouldn't happen
+        }
+    }
+
+    var localizedDescription: String {
+        switch self {
+        case .camera:
+            return UserText.permissionCamera
+        case .microphone:
+            return UserText.permissionMicrophone
+        case .cameraAndMicrophone:
+            return UserText.permissionCameraAndMicrophone
+        case .geolocation:
+            return UserText.permissionGeolocation
+        case .popups:
+            return UserText.permissionPopups
+        case .externalScheme(scheme: let scheme):
+            guard let url = URL(string: scheme + URL.NavigationalScheme.separator),
+                  let app = NSWorkspace.shared.application(toOpen: url)
+            else { return scheme }
+            return app
+        }
+    }
+
+    /// Whether this permission type requires a two-step authorization flow (system permission first, then website permission)
+    var requiresSystemPermission: Bool {
+        switch self {
+        case .geolocation:
+            return true
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
+            return false
+        }
+    }
+
+    /// Whether this permission uses permanent decisions ("Always Allow" / "Never Allow") vs one-time decisions ("Allow" / "Deny")
+    var usesPermanentDecisions: Bool {
+        switch self {
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme, .geolocation:
+            return true
+        }
+    }
+
+    // MARK: - Two-Step UI Localized Strings
+
+    /// Button text for enabling system permission (Step 1)
+    var systemPermissionEnableText: String {
+        switch self {
+        case .geolocation:
+            return UserText.permissionSystemLocationEnable
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
+            return "" // Not used for these types
+        }
+    }
+
+    /// Text shown while waiting for system permission response
+    var systemPermissionWaitingText: String {
+        switch self {
+        case .geolocation:
+            return UserText.permissionSystemLocationWaiting
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
+            return ""
+        }
+    }
+
+    /// Text shown when system permission is granted
+    var systemPermissionEnabledText: String {
+        switch self {
+        case .geolocation:
+            return UserText.permissionSystemLocationEnabled
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
+            return ""
+        }
+    }
+
+    /// Text shown when system permission was previously disabled (prefix before link)
+    var systemPermissionDisabledText: String {
+        switch self {
+        case .geolocation:
+            return UserText.permissionSystemLocationDisabled
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
+            return ""
+        }
+    }
+
+    /// Link text for opening System Settings
+    var systemSettingsLinkText: String {
+        switch self {
+        case .geolocation:
+            return UserText.permissionSystemSettingsLocation
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
+            return ""
+        }
+    }
+
+    /// URL to open the relevant System Settings pane
+    var systemSettingsURL: URL? {
+        switch self {
+        case .geolocation:
+            return URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices")
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
+            return nil
+        }
+    }
+
+    /// Converts back to a single PermissionType for system permission checks.
+    /// For cameraAndMicrophone, returns .camera as both require the same system permission flow.
+    var asPermissionType: PermissionType {
+        switch self {
+        case .camera: return .camera
+        case .microphone: return .microphone
+        case .cameraAndMicrophone: return .camera // Use camera for system permission checks
+        case .geolocation: return .geolocation
+        case .popups: return .popups
+        case .externalScheme(let scheme): return .externalScheme(scheme: scheme)
+        }
+    }
+}
+
 // MARK: - PermissionAuthorizationSwiftUIView
 
 struct PermissionAuthorizationSwiftUIView: View {
     let domain: String
-    let permissionType: PermissionType
+    let permissionType: PermissionAuthorizationType
     let onDeny: () -> Void
     let onAlwaysDeny: () -> Void
     let onAllow: () -> Void
@@ -49,14 +192,14 @@ struct PermissionAuthorizationSwiftUIView: View {
     /// Whether to show the two-step UI
     private var showsTwoStepUI: Bool {
         guard permissionType.requiresSystemPermission else { return false }
-        return systemPermissionManager.isAuthorizationRequired(for: permissionType) || systemPermissionState != .initial
+        return systemPermissionManager.isAuthorizationRequired(for: permissionType.asPermissionType) || systemPermissionState != .initial
     }
 
     private var promptText: String {
         switch permissionType {
         case .geolocation:
             return String(format: UserText.permissionGeolocationPromptFormat, domain)
-        case .camera, .microphone:
+        case .camera, .microphone, .cameraAndMicrophone:
             return String(format: UserText.devicePermissionAuthorizationFormat, domain, permissionType.localizedDescription.lowercased())
         case .popups:
             return String(format: UserText.popupWindowsPermissionAuthorizationFormat, domain, permissionType.localizedDescription.lowercased())
@@ -130,7 +273,7 @@ struct PermissionAuthorizationSwiftUIView: View {
     private func initializeSystemPermissionState() {
         guard systemPermissionState == .initial else { return }
 
-        let authState = systemPermissionManager.authorizationState(for: permissionType)
+        let authState = systemPermissionManager.authorizationState(for: permissionType.asPermissionType)
         switch authState {
         case .denied, .restricted, .systemDisabled:
             systemPermissionState = .alreadyDenied
@@ -275,7 +418,7 @@ struct PermissionAuthorizationSwiftUIView: View {
     private func requestSystemPermission() {
         systemPermissionState = .waiting
 
-        authorizationCancellable = systemPermissionManager.requestAuthorization(for: permissionType) { state in
+        authorizationCancellable = systemPermissionManager.requestAuthorization(for: permissionType.asPermissionType) { state in
             DispatchQueue.main.async {
                 switch state {
                 case .authorized:
@@ -339,7 +482,7 @@ struct PermissionAuthorizationSwiftUIView: View {
 extension PermissionAuthorizationSwiftUIView {
     init(
         domain: String,
-        permissionType: PermissionType,
+        permissionType: PermissionAuthorizationType,
         onDeny: @escaping () -> Void,
         onAlwaysDeny: @escaping () -> Void,
         onAllow: @escaping () -> Void,
@@ -355,7 +498,7 @@ extension PermissionAuthorizationSwiftUIView {
     }
 }
 
-// MARK: - PermissionType extension
+// MARK: - PermissionType UI Extensions
 
 extension PermissionType {
 
@@ -366,46 +509,6 @@ extension PermissionType {
             return true
         case .camera, .microphone, .popups, .externalScheme:
             return false
-        }
-    }
-
-    /// Whether this permission uses permanent decisions ("Always Allow" / "Never Allow") vs one-time decisions ("Allow" / "Deny")
-    var usesPermanentDecisions: Bool {
-        switch self {
-        case .camera, .microphone, .popups, .externalScheme, .geolocation:
-            return true
-        }
-    }
-
-    // MARK: - Two-Step UI Localized Strings
-
-    /// Button text for enabling system permission (Step 1)
-    var systemPermissionEnableText: String {
-        switch self {
-        case .geolocation:
-            return UserText.permissionSystemLocationEnable
-        case .camera, .microphone, .popups, .externalScheme:
-            return "" // Not used for these types
-        }
-    }
-
-    /// Text shown while waiting for system permission response
-    var systemPermissionWaitingText: String {
-        switch self {
-        case .geolocation:
-            return UserText.permissionSystemLocationWaiting
-        case .camera, .microphone, .popups, .externalScheme:
-            return ""
-        }
-    }
-
-    /// Text shown when system permission is granted
-    var systemPermissionEnabledText: String {
-        switch self {
-        case .geolocation:
-            return UserText.permissionSystemLocationEnabled
-        case .camera, .microphone, .popups, .externalScheme:
-            return ""
         }
     }
 
@@ -461,7 +564,17 @@ struct PermissionAuthorizationSwiftUIView_Previews: PreviewProvider {
             onAllow: {},
             onAlwaysAllow: {}
         )
-        .previewDisplayName("Camera (Always Deny / Always Allow)")
+        .previewDisplayName("Camera")
+
+        PermissionAuthorizationSwiftUIView(
+            domain: "apple.com",
+            permissionType: .cameraAndMicrophone,
+            onDeny: {},
+            onAlwaysDeny: {},
+            onAllow: {},
+            onAlwaysAllow: {}
+        )
+        .previewDisplayName("Camera and Microphone")
     }
 }
 #endif

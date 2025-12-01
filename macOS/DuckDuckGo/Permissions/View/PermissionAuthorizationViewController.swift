@@ -192,12 +192,13 @@ final class PermissionAuthorizationViewController: NSViewController {
     // MARK: - SwiftUI View Setup
 
     private func setupSwiftUIView() {
-        guard newPermissionView, let query = query, let permissionType = query.permissions.first else { return }
+        guard newPermissionView, let query = query, !query.permissions.isEmpty else { return }
 
         // Remove all existing subviews to ensure clean state
         view.subviews.forEach { $0.removeFromSuperview() }
         swiftUIHostingView = nil
 
+        let permissionType = PermissionAuthorizationType(from: query.permissions)
         let swiftUIView = PermissionAuthorizationSwiftUIView(
             domain: query.domain,
             permissionType: permissionType,

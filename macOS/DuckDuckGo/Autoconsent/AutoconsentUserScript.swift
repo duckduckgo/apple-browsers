@@ -31,6 +31,7 @@ protocol AutoconsentUserScriptDelegate: AnyObject {
 
 protocol UserScriptWithAutoconsent: UserScript {
     var delegate: AutoconsentUserScriptDelegate? { get set }
+    var tabExtension: AutoconsentProtocol? { get set }
 }
 
 final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, UserScriptWithAutoconsent {
@@ -55,6 +56,7 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     let source: String
     private let config: PrivacyConfiguration
     weak var delegate: AutoconsentUserScriptDelegate?
+    weak var tabExtension: AutoconsentProtocol?
 
     // Publisher for cookie popup managed events
     private let popupManagedSubject = PassthroughSubject<AutoconsentDoneMessage, Never>()
@@ -310,6 +312,18 @@ extension AutoconsentUserScript {
         let enableFilterList = config.isSubfeatureEnabled(AutoconsentSubfeature.filterlist) && !self.matchDomainList(domain: topURLDomain, domainsList: filterlistExceptions)
 #endif
 
+        var autoAction: String? = nil
+        if preferences.isAutoconsentEnabled == true {
+            // Check for reload loop and disable autoAction if detected
+            let shouldDisableAutoAction = tabExtension?.shouldDisableAutoActionForReloadLoop(url: messageData.url) ?? false
+            if shouldDisableAutoAction {
+                Logger.autoconsent.debug("Reload loop detected, disabling autoAction")
+            } else {
+                // normal case: autoconsent feature is enabled, and no reload loop detected
+                autoAction = "optOut"
+            }
+        }
+
         let autoconsentConfig = [
             "type": "initResp",
             "rules": [
@@ -317,7 +331,7 @@ extension AutoconsentUserScript {
             ],
             "config": [
                 "enabled": true,
-                "autoAction": preferences.isAutoconsentEnabled == true ? "optOut" : nil,
+                "autoAction": autoAction,
                 "disabledCmps": disabledCMPs,
                 "enablePrehide": true,
                 "enableCosmeticRules": true,
@@ -382,6 +396,13 @@ extension AutoconsentUserScript {
         Logger.autoconsent.debug("Cookie popup found: \(String(describing: messageData))")
         firePixel(pixel: .popupFound)
 
+        // Check for reload loop
+        let isReloadLoop = tabExtension?.recordPopupFound(cmpName: messageData.cmp, url: messageData.url) ?? false
+        if isReloadLoop {
+            Logger.autoconsent.debug("Reload loop detected for CMP: \(messageData.cmp)")
+            firePixel(pixel: .errorReloadLoop)
+        }
+
         // if popupFound is sent with "filterList", it indicates that cosmetic filterlist matched in the prehide stage,
         // but a real opt-out may still follow. See https://github.com/duckduckgo/autoconsent/blob/main/api.md#messaging-api
         if messageData.cmp == Constants.filterListCmpName {
@@ -436,6 +457,13 @@ extension AutoconsentUserScript {
 
         refreshDashboardState(consentManaged: true, cosmetic: messageData.isCosmetic, optoutFailed: false, selftestFailed: nil)
         firePixel(pixel: messageData.isCosmetic ? .doneCosmetic : .done)
+
+        // Record popup handled for reload loop detection
+        tabExtension?.recordPopupHandled(
+            url: messageData.url,
+            cmpName: messageData.cmp,
+            isCosmetic: messageData.isCosmetic
+        )
 
         popupManagedSubject.send(messageData)
 

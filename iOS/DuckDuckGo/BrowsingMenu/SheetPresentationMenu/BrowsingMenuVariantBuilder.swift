@@ -37,6 +37,26 @@ protocol BrowsingMenuEntryBuilding: AnyObject {
                           mobileCustomization: MobileCustomization,
                           clearTabsAndData: @escaping () -> Void) -> [BrowsingMenuEntry]
     func makeBrowsingMenuHeaderContent() -> [BrowsingMenuEntry]
+
+    func makeNewTabEntry() -> BrowsingMenuEntry
+    func makeChatEntry(withSmallIcon: Bool) -> BrowsingMenuEntry?
+    func makeSettingsEntry(useSmallIcon: Bool) -> BrowsingMenuEntry
+    func makeShareEntry(useSmallIcon: Bool) -> BrowsingMenuEntry
+    func makePrintEntry(withSmallIcon: Bool) -> BrowsingMenuEntry
+    func makeDownloadsEntry() -> BrowsingMenuEntry
+    func makeAutoFillEntry() -> BrowsingMenuEntry?
+    func makeVPNEntry() -> BrowsingMenuEntry?
+    func makeOpenBookmarksEntry() -> BrowsingMenuEntry
+    func makeBookmarkEntries(with bookmarksInterface: MenuBookmarksInteracting) -> (bookmark: BrowsingMenuEntry, favorite: BrowsingMenuEntry)?
+    func makeFindInPageEntry() -> BrowsingMenuEntry?
+    func makeZoomEntry() -> BrowsingMenuEntry?
+    func makeDesktopSiteEntry() -> BrowsingMenuEntry?
+    func makeReloadEntry() -> BrowsingMenuEntry?
+    func makeToggleProtectionEntry() -> BrowsingMenuEntry?
+    func makeReportBrokenSiteEntry() -> BrowsingMenuEntry?
+    func makeClearDataEntry(mobileCustomization: MobileCustomization, clearTabsAndData: @escaping () -> Void) -> BrowsingMenuEntry?
+    func makeUseNewDuckAddressEntry() -> BrowsingMenuEntry?
+    func makeKeepSignInEntry() -> BrowsingMenuEntry?
 }
 
 protocol BrowsingMenuVariantBuilder: AnyObject {

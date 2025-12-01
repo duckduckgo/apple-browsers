@@ -309,8 +309,8 @@ final class SettingsViewModel: ObservableObject {
                 self.state.showMenuInSheet
             },
             set: {
-                let value = self.browsingMenuSheetCapability.setEnabled($0)
-                self.state.showMenuInSheet = value
+                self.browsingMenuSheetCapability.setEnabled($0)
+                self.state.showMenuInSheet = self.browsingMenuSheetCapability.isEnabled
             }
         )
     }

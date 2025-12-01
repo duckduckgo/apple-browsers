@@ -73,6 +73,7 @@ final class BrokerProfileJobTests: XCTestCase {
         }
 
         job.start()
+        // Uses an extended timeout to allow for WebKit to warm up
         await fulfillment(of: [expectation], timeout: 15)
 
         XCTAssertTrue(job.isFinished)
@@ -102,6 +103,7 @@ final class BrokerProfileJobTests: XCTestCase {
         }
 
         job.start()
+        // Uses an extended timeout to allow for WebKit to warm up
         await fulfillment(of: [expectation], timeout: 15)
 
         XCTAssertTrue(job.isFinished)
@@ -159,6 +161,7 @@ final class BrokerProfileJobTests: XCTestCase {
         }
 
         job.start()
+        // Uses an extended timeout to allow for WebKit to warm up
         await fulfillment(of: [expectation], timeout: 15)
 
         XCTAssertTrue(job.isFinished)

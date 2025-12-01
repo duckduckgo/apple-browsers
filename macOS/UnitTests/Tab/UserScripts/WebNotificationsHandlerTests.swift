@@ -208,6 +208,21 @@ final class WebNotificationsHandlerTests: XCTestCase {
         XCTAssertEqual(response.permission, "granted")
     }
 
+    func testWhenProvisionallyAuthorizedThenRequestPermissionReturnsGranted() async {
+        mockNotificationService.authorizationStatusToReturn = .provisional
+        let params: [String: Any] = [:]
+        let mockMessage = MockWKScriptMessage(name: "webCompat", body: params)
+
+        let handlerFunc = handler.handler(forMethodNamed: "requestPermission")
+        let result = try? await handlerFunc?(params, mockMessage)
+
+        guard let response = result as? WebNotificationsHandler.RequestPermissionResponse else {
+            XCTFail("Expected RequestPermissionResponse")
+            return
+        }
+        XCTAssertEqual(response.permission, "granted")
+    }
+
     func testWhenSystemAuthorizationIsDeniedThenRequestPermissionReturnsDenied() async {
         mockNotificationService.authorizationStatusToReturn = .denied
         let params: [String: Any] = [:]
@@ -315,9 +330,25 @@ final class WebNotificationsHandlerTests: XCTestCase {
         XCTAssertEqual(addedRequest?.content.body, "Test Body")
     }
 
-    func testWhenNotAuthorizedAndNotDeterminedThenShowNotificationRequestsAuthorization() async {
+    func testWhenProvisionallyAuthorizedThenShowNotificationPosts() async {
+        mockNotificationService.authorizationStatusToReturn = .provisional
+        let params: [String: Any] = [
+            "id": "test-provisional",
+            "title": "Provisional Test"
+        ]
+        let mockMessage = MockWKScriptMessage(name: "webCompat", body: params)
+
+        let handlerFunc = handler.handler(forMethodNamed: "showNotification")
+        _ = try? await handlerFunc?(params, mockMessage)
+
+        XCTAssertEqual(mockNotificationService.addedRequests.count, 1)
+        XCTAssertEqual(mockNotificationService.addedRequests.first?.identifier, "test-provisional")
+    }
+
+    func testWhenNotDeterminedThenShowNotificationDoesNotPostOrPrompt() async {
+        // showNotification should only check authorization, not prompt
+        // If not yet determined, it should block without prompting
         mockNotificationService.authorizationStatusToReturn = .notDetermined
-        mockNotificationService.requestAuthorizationResult = true
         let params: [String: Any] = [
             "id": "test-id-456",
             "title": "Test Title"
@@ -327,8 +358,8 @@ final class WebNotificationsHandlerTests: XCTestCase {
         let handlerFunc = handler.handler(forMethodNamed: "showNotification")
         _ = try? await handlerFunc?(params, mockMessage)
 
-        XCTAssertTrue(mockNotificationService.requestAuthorizationCalled)
-        XCTAssertEqual(mockNotificationService.addedRequests.count, 1)
+        XCTAssertFalse(mockNotificationService.requestAuthorizationCalled)
+        XCTAssertTrue(mockNotificationService.addedRequests.isEmpty)
     }
 
     func testWhenAuthorizationDeniedThenShowNotificationDoesNotPost() async {
@@ -356,6 +387,21 @@ final class WebNotificationsHandlerTests: XCTestCase {
         config.websiteDataStore = .nonPersistent()
         let fireWindowWebView = WKWebView(frame: .zero, configuration: config)
         let mockMessage = MockWKScriptMessage(name: "webCompat", body: params, webView: fireWindowWebView)
+
+        let handlerFunc = handler.handler(forMethodNamed: "showNotification")
+        _ = try? await handlerFunc?(params, mockMessage)
+
+        XCTAssertTrue(mockNotificationService.addedRequests.isEmpty)
+    }
+
+    func testWhenFeatureFlagDisabledThenShowNotificationIsBlocked() async {
+        mockFeatureFlagger.setFeatureOn(.webNotifications, enabled: false)
+        mockNotificationService.authorizationStatusToReturn = .authorized
+        let params: [String: Any] = [
+            "id": "test-flag-disabled",
+            "title": "Flag Disabled Test"
+        ]
+        let mockMessage = MockWKScriptMessage(name: "webCompat", body: params)
 
         let handlerFunc = handler.handler(forMethodNamed: "showNotification")
         _ = try? await handlerFunc?(params, mockMessage)
@@ -425,6 +471,62 @@ final class WebNotificationsHandlerTests: XCTestCase {
         XCTAssertEqual(mockNotificationService.addedRequests.count, 1)
     }
 
+    func testWhenIconURLIsEmptyStringThenIconFetcherIsNotCalled() async {
+        mockNotificationService.authorizationStatusToReturn = .authorized
+        let params: [String: Any] = [
+            "id": "test-empty-icon",
+            "title": "Empty Icon Test",
+            "icon": ""
+        ]
+        let mockMessage = MockWKScriptMessage(name: "webCompat", body: params)
+
+        let handlerFunc = handler.handler(forMethodNamed: "showNotification")
+        _ = try? await handlerFunc?(params, mockMessage)
+
+        XCTAssertFalse(mockIconFetcher.fetchIconCalled)
+        XCTAssertEqual(mockNotificationService.addedRequests.count, 1)
+    }
+
+    func testShowNotificationIncludesAllProvidedFields() async {
+        mockNotificationService.authorizationStatusToReturn = .authorized
+        let params: [String: Any] = [
+            "id": "test-all-fields",
+            "title": "Full Title",
+            "body": "Full Body",
+            "tag": "test-tag"
+        ]
+        let mockMessage = MockWKScriptMessage(name: "webCompat", body: params)
+
+        let handlerFunc = handler.handler(forMethodNamed: "showNotification")
+        _ = try? await handlerFunc?(params, mockMessage)
+
+        XCTAssertEqual(mockNotificationService.addedRequests.count, 1)
+        let request = mockNotificationService.addedRequests.first
+        XCTAssertEqual(request?.identifier, "test-all-fields")
+        XCTAssertEqual(request?.content.title, "Full Title")
+        XCTAssertEqual(request?.content.body, "Full Body")
+        XCTAssertEqual(request?.content.threadIdentifier, "test-tag")
+    }
+
+    func testMultipleNotificationsPostWithUniqueIds() async {
+        mockNotificationService.authorizationStatusToReturn = .authorized
+        let mockMessage = MockWKScriptMessage(name: "webCompat", body: [:])
+
+        let handlerFunc = handler.handler(forMethodNamed: "showNotification")
+
+        let params1: [String: Any] = ["id": "notif-1", "title": "First"]
+        let params2: [String: Any] = ["id": "notif-2", "title": "Second"]
+        let params3: [String: Any] = ["id": "notif-3", "title": "Third"]
+
+        _ = try? await handlerFunc?(params1, mockMessage)
+        _ = try? await handlerFunc?(params2, mockMessage)
+        _ = try? await handlerFunc?(params3, mockMessage)
+
+        XCTAssertEqual(mockNotificationService.addedRequests.count, 3)
+        let ids = mockNotificationService.addedRequests.map { $0.identifier }
+        XCTAssertEqual(Set(ids), Set(["notif-1", "notif-2", "notif-3"]))
+    }
+
     // MARK: - closeNotification Tests
 
     func testCloseNotificationHandlerWithValidParams() async {
@@ -445,6 +547,18 @@ final class WebNotificationsHandlerTests: XCTestCase {
         let handlerFunc = handler.handler(forMethodNamed: "closeNotification")
         let result = try? await handlerFunc?(params, mockMessage)
 
+        XCTAssertNil(result)
+    }
+
+    func testWhenFeatureFlagDisabledThenCloseNotificationIsBlocked() async {
+        mockFeatureFlagger.setFeatureOn(.webNotifications, enabled: false)
+        let params: [String: Any] = ["id": "test-close-flag"]
+        let mockMessage = MockWKScriptMessage(name: "webCompat", body: params)
+
+        let handlerFunc = handler.handler(forMethodNamed: "closeNotification")
+        let result = try? await handlerFunc?(params, mockMessage)
+
+        // When feature flag is disabled, closeNotification should return early
         XCTAssertNil(result)
     }
 

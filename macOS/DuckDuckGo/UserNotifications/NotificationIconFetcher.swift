@@ -100,4 +100,3 @@ final class NotificationIconFetcher: NotificationIconFetching {
         return Constants.extensionPNG
     }
 }
-

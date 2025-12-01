@@ -106,7 +106,7 @@ final class PermissionAuthorizationViewController: NSViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        
+
         if newPermissionView {
             setupSwiftUIView()
         } else {
@@ -116,7 +116,7 @@ final class PermissionAuthorizationViewController: NSViewController {
 
     override func viewWillAppear() {
         guard !newPermissionView else { return }
-        
+
         alwaysAllowCheckbox.state = .off
         if query?.shouldShowCancelInsteadOfDeny == true {
             denyButton.title = UserText.cancel

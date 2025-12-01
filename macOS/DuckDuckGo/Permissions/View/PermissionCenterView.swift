@@ -218,4 +218,3 @@ struct PermissionRowView: View {
         NSWorkspace.shared.open(url)
     }
 }
-

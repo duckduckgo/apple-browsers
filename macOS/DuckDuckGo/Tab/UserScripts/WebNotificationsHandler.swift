@@ -76,6 +76,10 @@ final class WebNotificationsHandler: NSObject, Subfeature {
         super.init()
     }
 
+    func with(broker: UserScriptMessageBroker) {
+        self.broker = broker
+    }
+
     // MARK: - Constants
 
     enum MessageNames: String, CaseIterable {

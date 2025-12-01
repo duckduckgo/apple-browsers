@@ -62,11 +62,12 @@ enum SubscriptionError: LocalizedError {
     }
 }
 
-protocol SubscriptionErrorReporter {
+protocol SubscriptionEventReporter {
     func report(subscriptionActivationError: SubscriptionError)
+    func report(subscriptionTierOptionEvent: PixelKitEvent, platform: String,  error: Error?)
 }
 
-struct DefaultSubscriptionErrorReporter: SubscriptionErrorReporter {
+struct DefaultSubscriptionEventReporter: SubscriptionEventReporter {
 
     func report(subscriptionActivationError: SubscriptionError) {
 
@@ -95,5 +96,9 @@ struct DefaultSubscriptionErrorReporter: SubscriptionErrorReporter {
         case .otherRestoreError:
             PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseStoreFailureOther, frequency: .legacyDailyAndCount)
         }
+    }
+
+    func report(subscriptionTierOptionEvent: PixelKitEvent, platform: String,  error: Error?) {
+        PixelKit.fire(DebugEvent(subscriptionTierOptionEvent, error: error), withAdditionalParameters: ["platform": platform])
     }
 }

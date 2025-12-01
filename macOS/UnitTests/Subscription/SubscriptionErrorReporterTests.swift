@@ -31,7 +31,7 @@ final class SubscriptionErrorReporterTests: XCTestCase {
     var userDefaults: UserDefaults!
     var pixelKit: PixelKit!
 
-    var reporter: SubscriptionErrorReporter! = DefaultSubscriptionErrorReporter()
+    var reporter: SubscriptionEventReporter! = DefaultSubscriptionEventReporter()
 
     var pixelsFired = Set<String>()
 
@@ -48,7 +48,7 @@ final class SubscriptionErrorReporterTests: XCTestCase {
         pixelKit.clearFrequencyHistoryForAllPixels()
         PixelKit.setSharedForTesting(pixelKit: pixelKit)
 
-        reporter = DefaultSubscriptionErrorReporter()
+        reporter = DefaultSubscriptionEventReporter()
     }
 
     override func tearDown() async throws {

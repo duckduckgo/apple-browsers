@@ -48,7 +48,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     var subscriptionPlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
 
     let stripePurchaseFlow: StripePurchaseFlow
-    let subscriptionErrorReporter = DefaultSubscriptionErrorReporter()
+    let subscriptionErrorReporter = DefaultSubscriptionEventReporter()
     let subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandling
     let uiHandler: SubscriptionUIHandling
 

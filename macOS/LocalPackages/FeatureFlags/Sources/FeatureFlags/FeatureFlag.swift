@@ -77,9 +77,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866616130440
     case syncSeamlessAccountSwitching
 
-    /// SAD & ATT Prompts: https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866474521433
-    case scheduledSetDefaultBrowserAndAddToDockPrompts
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866474590440
     case privacyProAuthV2
 
@@ -411,7 +408,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .contextualOnboarding,
                 .unknownUsernameCategorization,
                 .credentialsImportPromotionForExistingUsers,
-                .scheduledSetDefaultBrowserAndAddToDockPrompts,
                 .fireDialogIndividualSitesLink,
                 .scheduledDefaultBrowserAndDockPromptsInactiveUser,
                 .tabClosingEventRecreation:
@@ -459,8 +455,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.syncIdentities))
         case .scamSiteProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.scamProtection))
-        case .scheduledSetDefaultBrowserAndAddToDockPrompts:
-            return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPrompts))
         case .privacyProAuthV2:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
         case .tabCrashDebugging:

@@ -76,7 +76,7 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
     init() {
         super.init(title: "")
 
-        guard defaultBrowserAndDockPromptFeatureFlagger.isDefaultBrowserAndDockPromptForActiveUsersFeatureEnabled || defaultBrowserAndDockPromptFeatureFlagger.isDefaultBrowserAndDockPromptForInactiveUsersFeatureEnabled else { return }
+        guard defaultBrowserAndDockPromptFeatureFlagger.isDefaultBrowserAndDockPromptForInactiveUsersFeatureEnabled else { return }
 
         overrideDateMenuItem.target = self
 

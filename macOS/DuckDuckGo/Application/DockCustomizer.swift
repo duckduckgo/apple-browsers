@@ -64,7 +64,7 @@ final class DockCustomizer: DockCustomization {
         startTimer()
     }
 
-    private var dockPlistURL: URL = URL.nonSandboxLibraryDirectoryURL.appending("/Preferences/com.apple.dock.plist")
+    private var dockPlistURL: URL = URL.nonSandboxLibraryDirectoryURL.appending("Preferences/com.apple.dock.plist")
 
     private var dockPlistDict: [String: AnyObject]? {
         return NSDictionary(contentsOf: dockPlistURL) as? [String: AnyObject]

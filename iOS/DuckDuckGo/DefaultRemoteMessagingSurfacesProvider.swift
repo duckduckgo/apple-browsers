@@ -25,7 +25,7 @@ struct DefaultRemoteMessagingSurfacesProvider: RemoteMessagingSurfacesProviding 
     func supportedSurfaces(for messageType: RemoteMessaging.RemoteMessageModelType) -> RemoteMessaging.RemoteMessageSurfaceType {
         switch messageType {
         case .small, .medium, .bigSingleAction, .bigTwoAction, .promoSingleAction:
-            return [.newTabPage, .tabBar]
+            return .newTabPage
         case .cardsList:
             return .modal
         }

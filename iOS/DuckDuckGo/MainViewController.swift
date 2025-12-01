@@ -632,7 +632,7 @@ class MainViewController: UIViewController {
                                          aiChatSettings: self.aiChatSettings,
                                          featureDiscovery: self.featureDiscovery,
                                          newTabPageDependencies: self.newTabPageDependencies,
-                                         productSurfaceTelemetry: self.productSurfaceTelemetry, 
+                                         productSurfaceTelemetry: self.productSurfaceTelemetry,
                                          hideBorder: false)
         }) else {
             assertionFailure()

@@ -38,3 +38,4 @@ public final class MockProductSurfaceTelemetry: ProductSurfaceTelemetry {
     public func bookmarksPageUsed(isRootFolder: Bool) {}
     public func passwordsPageUsed() {}
 }
+

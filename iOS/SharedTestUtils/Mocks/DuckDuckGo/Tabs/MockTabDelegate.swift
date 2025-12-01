@@ -23,7 +23,6 @@ import WebKit
 import BrowserServicesKit
 import BrowserServicesKitTestsUtils
 import PrivacyDashboard
-import Core
 import Persistence
 import Subscription
 import SubscriptionTestingUtilities

@@ -1,5 +1,5 @@
 //
-//  ProductSurfaceTelemtry.swift
+//  ProductSurfaceTelemetry.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.

@@ -170,7 +170,3 @@ final class ProductSurfaceTelemetryTests: XCTestCase {
 
 }
 
-// MARK: - No-op stub
-
-
-

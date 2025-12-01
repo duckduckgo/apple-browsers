@@ -445,22 +445,3 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
     #endif
 
 }
-
-final class MockDataBrokerProtectionEventPixelsRepository: DataBrokerProtectionEventPixelsRepository {
-
-    var wasMarkWeeklyPixelSentCalled = false
-    var customGetLatestWeeklyPixel: Date?
-
-    func markWeeklyPixelSent() {
-        wasMarkWeeklyPixelSentCalled = true
-    }
-
-    func getLatestWeeklyPixel() -> Date? {
-        return customGetLatestWeeklyPixel
-    }
-
-    func clear() {
-        wasMarkWeeklyPixelSentCalled = false
-        customGetLatestWeeklyPixel = nil
-    }
-}

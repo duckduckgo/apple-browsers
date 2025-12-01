@@ -1511,7 +1511,7 @@ extension Pixel {
         case productTelemeterySurfaceUsageDAU
         case productTelemeterySurfaceUsageIPad
         case productTelemeterySurfaceUsageLandscapeMode
-        case productTelemeterySurfaceUsageKeyboardFocused
+        case productTelemeterySurfaceUsageKeyboardActive
         case productTelemeterySurfaceUsageAutocomplete
         case productTelemeterySurfaceUsageSERP
         case productTelemeterySurfaceUsageWebsite
@@ -2966,7 +2966,7 @@ extension Pixel.Event {
         case .productTelemeterySurfaceUsageDAU: return "m_product_telemetry_surface_usage_dau"
         case .productTelemeterySurfaceUsageIPad: return "m_product_telemetry_surface_usage_ipad"
         case .productTelemeterySurfaceUsageLandscapeMode: return "m_product_telemetry_surface_usage_landscape"
-        case .productTelemeterySurfaceUsageKeyboardFocused: return "m_product_telemetry_surface_usage_keyboard_focused"
+        case .productTelemeterySurfaceUsageKeyboardActive: return "m_product_telemetry_surface_usage_keyboard_active"
         case .productTelemeterySurfaceUsageAutocomplete: return "m_product_telemetry_surface_usage_autocomplete"
         case .productTelemeterySurfaceUsageSERP: return "m_product_telemetry_surface_usage_serp"
         case .productTelemeterySurfaceUsageWebsite: return "m_product_telemetry_surface_usage_website_url"

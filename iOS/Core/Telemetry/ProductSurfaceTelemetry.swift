@@ -19,6 +19,7 @@
 
 import BrowserServicesKit
 
+/// Product surface telemetry sends anonymous pixels about areas of the app that are being used so that we can we make future product decisions.  These pixels are not linked to any identifiable data.  The pixels are also enabled / disabled by config and we only enable them during the periods of product roadmap development in order to assist decision making.
 public protocol ProductSurfaceTelemetry {
 
     ///  Called when the menu is used, either on new tab page or when browsing.
@@ -28,22 +29,19 @@ public protocol ProductSurfaceTelemetry {
     func dailyActiveUser()
 
     /// Indicates the app is running on iPad.
-    func iPadUsed()
+    func iPadUsed(isPad: Bool)
 
     /// Indicates device is in landscape mode.
     func landscapeModeUsed()
 
     /// Indicates keyboard is focused (visible).
-    func keyboardFocused()
+    func keyboardActive()
 
     /// Autocomplete surface used.
     func autocompleteUsed()
 
-    /// SERP surface used.
-    func serpUsed()
-
-    /// Website/URL surface used.
-    func websiteUsed()
+    /// Fires a pixel depending on the URL, either a search or a regular website
+    func navigationCompleted(url: URL?)
 
     /// Duck.ai surface used.
     func duckAIUsed()
@@ -69,8 +67,8 @@ public protocol ProductSurfaceTelemetry {
 
 public struct PixelProductSurfaceTelemetry: ProductSurfaceTelemetry {
 
-     private let featureFlagger: FeatureFlagger
-     private let dailyPixelFiring: DailyPixelFiring.Type
+    private let featureFlagger: FeatureFlagger
+    private let dailyPixelFiring: DailyPixelFiring.Type
 
     public init(featureFlagger: FeatureFlagger, dailyPixelFiring: DailyPixelFiring.Type) {
         self.featureFlagger = featureFlagger
@@ -78,77 +76,80 @@ public struct PixelProductSurfaceTelemetry: ProductSurfaceTelemetry {
     }
 
     public func menuUsed() {
-         guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
-         dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageMenu, error: nil, withAdditionalParameters: [:])
-     }
+        guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
+        dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageMenu, error: nil, withAdditionalParameters: [:])
+    }
 
     public func dailyActiveUser() {
-         guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
-         dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageDAU, error: nil, withAdditionalParameters: [:])
-     }
+        guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
+        dailyPixelFiring.fireDaily(.productTelemeterySurfaceUsageDAU)
+    }
 
-    public func iPadUsed() {
-         guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
-         dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageIPad, error: nil, withAdditionalParameters: [:])
-     }
+    public func iPadUsed(isPad: Bool) {
+        guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage),
+              isPad else { return }
+        dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageIPad, error: nil, withAdditionalParameters: [:])
+    }
 
     public func landscapeModeUsed() {
-         guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
-         dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageLandscapeMode, error: nil, withAdditionalParameters: [:])
-     }
+        guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
+        dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageLandscapeMode, error: nil, withAdditionalParameters: [:])
+    }
 
-    public func keyboardFocused() {
-         guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
-         dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageKeyboardFocused, error: nil, withAdditionalParameters: [:])
-     }
+    public func keyboardActive() {
+        guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
+        dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageKeyboardActive, error: nil, withAdditionalParameters: [:])
+    }
 
     public func autocompleteUsed() {
-         guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
-         dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageAutocomplete, error: nil, withAdditionalParameters: [:])
-     }
+        guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
+        dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageAutocomplete, error: nil, withAdditionalParameters: [:])
+    }
 
-    public func serpUsed() {
-         guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
-         dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageSERP, error: nil, withAdditionalParameters: [:])
-     }
+    public func navigationCompleted(url: URL?) {
+        guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage),
+              let url else { return }
 
-    public func websiteUsed() {
-         guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
-         dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageWebsite, error: nil, withAdditionalParameters: [:])
-     }
+        if url.isDuckDuckGoSearch {
+            dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageSERP, error: nil, withAdditionalParameters: [:])
+        } else {
+            // Regular DDG pages count as a websites too
+            dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageWebsite, error: nil, withAdditionalParameters: [:])
+        }
+    }
 
     public func duckAIUsed() {
-         guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
-         dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageDuckAI, error: nil, withAdditionalParameters: [:])
-     }
+        guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
+        dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageDuckAI, error: nil, withAdditionalParameters: [:])
+    }
 
     public func tabManagerUsed() {
-         guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
-         dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageTabManager, error: nil, withAdditionalParameters: [:])
-     }
+        guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
+        dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageTabManager, error: nil, withAdditionalParameters: [:])
+    }
 
     public func dataClearingUsed() {
-         guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
-         dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageDataClearing, error: nil, withAdditionalParameters: [:])
-     }
+        guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
+        dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageDataClearing, error: nil, withAdditionalParameters: [:])
+    }
 
     public func newTabPageUsed() {
-         guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
-         dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageNewTabPage, error: nil, withAdditionalParameters: [:])
-     }
+        guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
+        dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageNewTabPage, error: nil, withAdditionalParameters: [:])
+    }
 
     public func settingsUsed() {
-         guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
-         dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageSettings, error: nil, withAdditionalParameters: [:])
-     }
+        guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
+        dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageSettings, error: nil, withAdditionalParameters: [:])
+    }
 
     public func bookmarksPageUsed() {
-         guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
-         dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageBookmarksPage, error: nil, withAdditionalParameters: [:])
-     }
+        guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
+        dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageBookmarksPage, error: nil, withAdditionalParameters: [:])
+    }
 
     public func passwordsPageUsed() {
-         guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
-         dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsagePasswordsPage, error: nil, withAdditionalParameters: [:])
-     }
+        guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
+        dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsagePasswordsPage, error: nil, withAdditionalParameters: [:])
+    }
 }

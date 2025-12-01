@@ -86,12 +86,15 @@ struct Launching: LaunchingHandling {
         let configurationService = RemoteConfigurationService()
         let crashCollectionService = CrashCollectionService()
         let statisticsService = StatisticsService()
+
+        let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
         let reportingService = ReportingService(fireproofing: fireproofing,
                                                 featureFlagging: featureFlagger,
                                                 userDefaults: UserDefaults.app,
                                                 pixelKit: PixelKit.shared,
                                                 appDependencies: AppDependencyProvider.shared,
-                                                privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager)
+                                                privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
+                                                productSurfaceTelemetry: productSurfaceTelemetry)
         let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                       privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
                                       keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
@@ -158,8 +161,6 @@ struct Launching: LaunchingHandling {
 
         let mobileCustomization = MobileCustomization(isFeatureEnabled: featureFlagger.isFeatureOn(.mobileCustomization),
                                                       keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
-
-        let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
 
         // MARK: - Main Coordinator Setup
         // Initialize the main coordinator which manages the app's primary view controller

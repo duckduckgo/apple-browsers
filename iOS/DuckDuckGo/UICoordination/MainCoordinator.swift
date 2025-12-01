@@ -135,7 +135,8 @@ final class MainCoordinator {
                                 featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
                                 keyValueStore: keyValueStore,
                                 daxDialogsManager: daxDialogsManager,
-                                aiChatSettings: aiChatSettings)
+                                aiChatSettings: aiChatSettings,
+                                productSurfaceTelemetry: productSurfaceTelemetry)
         controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
                                         bookmarksDatabase: bookmarksDatabase,
                                         bookmarksDatabaseCleaner: syncService.syncDataProviders.bookmarksAdapter.databaseCleaner,

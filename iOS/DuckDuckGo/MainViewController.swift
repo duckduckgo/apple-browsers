@@ -407,7 +407,8 @@ class MainViewController: UIViewController {
             appSettings: appSettings,
             aiChatSettings: aiChatSettings,
             featureDiscovery: featureDiscovery,
-            newTabPageDependencies: newTabPageDependencies)
+            newTabPageDependencies: newTabPageDependencies,
+            productSurfaceTelemetry: productSurfaceTelemetry)
     }()
 
     override func viewDidLoad() {
@@ -494,6 +495,9 @@ class MainViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+
+        productSurfaceTelemetry.iPadUsed(isPad: isPad)
+
         defer {
             if let appDidFinishLaunchingStartTime {
                 let launchTime = CFAbsoluteTimeGetCurrent() - appDidFinishLaunchingStartTime
@@ -626,6 +630,7 @@ class MainViewController: UIViewController {
                                          aiChatSettings: self.aiChatSettings,
                                          featureDiscovery: self.featureDiscovery,
                                          newTabPageDependencies: self.newTabPageDependencies,
+                                         productSurfaceTelemetry: self.productSurfaceTelemetry, 
                                          hideBorder: false)
         }) else {
             assertionFailure()
@@ -730,6 +735,7 @@ class MainViewController: UIViewController {
     @objc
     private func keyboardDidShow() {
         keyboardShowing = true
+        productSurfaceTelemetry.keyboardActive()
     }
 
     @objc
@@ -1563,13 +1569,14 @@ class MainViewController: UIViewController {
     private func deferredFireOrientationPixel() {
         orientationPixelWorker?.cancel()
         orientationPixelWorker = nil
-        if UIDevice.current.orientation.isLandscape {
-            let worker = DispatchWorkItem {
-                Pixel.fire(pixel: .deviceOrientationLandscape)
-            }
-            DispatchQueue.global(qos: .default).asyncAfter(deadline: .now() + 3, execute: worker)
-            orientationPixelWorker = worker
+        guard UIDevice.current.orientation.isLandscape else { return }
+
+        let worker = DispatchWorkItem { [weak self] in
+            Pixel.fire(pixel: .deviceOrientationLandscape)
+            self?.productSurfaceTelemetry.landscapeModeUsed()
         }
+        DispatchQueue.global(qos: .default).asyncAfter(deadline: .now() + 3, execute: worker)
+        orientationPixelWorker = worker
     }
 
     private func applyWidth() {

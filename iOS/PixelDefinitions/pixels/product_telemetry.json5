@@ -1,13 +1,13 @@
 {
-	"m_product_telemetry_surface_usage_menu": {
-        "description": "Fires when the menu is used",
+    "m_product_telemetry_surface_usage_dau": {
+        "description": "Daily active user marker.  Only fires once per day.",
         "owners": ["brindy"],
         "triggers": ["other"],
-        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
-	"m_product_telemetry_surface_usage_dau": {
-        "description": "Daily active user marker",
+	"m_product_telemetry_surface_usage_menu": {
+        "description": "Fires when the menu is used",
         "owners": ["brindy"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor", "first_daily_count"],
@@ -27,8 +27,8 @@
         "suffixes": ["platform", "form_factor", "first_daily_count"],
         "parameters": ["appVersion"]
     },
-	"m_product_telemetry_surface_usage_keyboard_focused": {
-        "description": "Fires when keyboard is focused (visible)",
+	"m_product_telemetry_surface_usage_keyboard_active": {
+        "description": "Fires when keyboard is active (visible)",
         "owners": ["brindy"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor", "first_daily_count"],

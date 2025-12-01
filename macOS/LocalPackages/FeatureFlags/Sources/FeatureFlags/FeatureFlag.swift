@@ -279,6 +279,10 @@ public enum FeatureFlag: String, CaseIterable {
     /// Tab closing event recreation (failsafe for removing private API)
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212206087745586?focus=true
     case tabClosingEventRecreation
+
+    /// Shows a survey when quitting the app for the first time in a determined period
+    /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1212242893241885?focus=true
+    case firstTimeQuitSurvey
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -389,7 +393,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .allowPopupsForCurrentPage,
                 .popupPermissionButtonPersistence,
                 .webNotifications,
-                .newPermissionView:
+                .newPermissionView,
+                .firstTimeQuitSurvey:
             return true
         case .sslCertificatesBypass,
                 .appendAtbToSerpQueries,
@@ -570,6 +575,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.newPermissionView))
         case .tabClosingEventRecreation:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.tabClosingEventRecreation))
+        case .firstTimeQuitSurvey:
+            return .disabled
         }
 
     }

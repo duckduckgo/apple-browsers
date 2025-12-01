@@ -273,7 +273,7 @@ public final class DataBrokerProtectionAgentManager {
             await activityScheduler.startScheduler()
             didStartActivityScheduler = true
 
-            fireMonitoringPixels()
+            await fireMonitoringPixels()
             Logger.dataBrokerProtection.debug("PIR wide event sweep requested (agent launch)")
             sweepWideEvents()
             await checkForEmailConfirmationData()
@@ -290,9 +290,9 @@ public final class DataBrokerProtectionAgentManager {
 // MARK: - Regular monitoring pixels
 
 extension DataBrokerProtectionAgentManager {
-    func fireMonitoringPixels() {
+    func fireMonitoringPixels() async {
         // Only send pixels for authenticated users
-        guard authenticationManager.isUserAuthenticated else { return }
+        guard await authenticationManager.isUserAuthenticated else { return }
 
         let database = jobDependencies.database
         let engagementPixels = DataBrokerProtectionEngagementPixels(database: database, handler: sharedPixelsHandler, repository: engagementPixelRepository)
@@ -326,10 +326,12 @@ private extension DataBrokerProtectionAgentManager {
                                                         jobDependencies: BrokerProfileJobDependencyProviding,
                                                         errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                                         completion: (() -> Void)?) {
-        if authenticationManager.isUserAuthenticated {
-            queueManager.startScheduledAllOperationsIfPermitted(showWebView: showWebView, jobDependencies: jobDependencies, errorHandler: errorHandler, completion: completion)
-        } else {
-            queueManager.startScheduledScanOperationsIfPermitted(showWebView: showWebView, jobDependencies: jobDependencies, errorHandler: errorHandler, completion: completion)
+        Task {
+            if await authenticationManager.isUserAuthenticated {
+                queueManager.startScheduledAllOperationsIfPermitted(showWebView: showWebView, jobDependencies: jobDependencies, errorHandler: errorHandler, completion: completion)
+            } else {
+                queueManager.startScheduledScanOperationsIfPermitted(showWebView: showWebView, jobDependencies: jobDependencies, errorHandler: errorHandler, completion: completion)
+            }
         }
     }
 }
@@ -347,6 +349,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionBackgroundActivi
     }
 
     func startScheduledOperations() async {
+        await fireMonitoringPixels()
         await withCheckedContinuation { continuation in
             startScheduledOperations {
                 continuation.resume()
@@ -355,7 +358,6 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionBackgroundActivi
     }
 
     private func startScheduledOperations(completion: (() -> Void)?) {
-        fireMonitoringPixels()
         startFreemiumOrSubscriptionScheduledOperations(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
             completion?()
         }
@@ -385,7 +387,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
         let backgroundAgentInitialScanStartTime = Date()
 
         eventsHandler.fire(.profileSaved)
-        fireMonitoringPixels()
+        await fireMonitoringPixels()
         await checkForEmailConfirmationData()
 
         queueManager.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies) { [weak self] errors in
@@ -427,7 +429,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
     }
 
     public func appLaunched() async {
-        fireMonitoringPixels()
+        await fireMonitoringPixels()
         await checkForEmailConfirmationData()
 
         startFreemiumOrSubscriptionScheduledOperations(showWebView: false, jobDependencies: jobDependencies, errorHandler: { [weak self] errors in

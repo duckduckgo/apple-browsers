@@ -224,7 +224,8 @@ class MainViewController: UIViewController {
                                                   experimentalAIChatManager: .init(featureFlagger: featureFlagger),
                                                   featureFlagger: featureFlagger,
                                                   featureDiscovery: featureDiscovery,
-                                                  aiChatSettings: aiChatSettings)
+                                                  aiChatSettings: aiChatSettings,
+                                                  productSurfaceTelemetry: productSurfaceTelemetry)
         manager.delegate = self
         return manager
     }()
@@ -249,9 +250,9 @@ class MainViewController: UIViewController {
     
     let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     let mobileCustomization: MobileCustomization
-    
+    let productSurfaceTelemetry: ProductSurfaceTelemetry
+
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
-    private let productSurfaceTelemetry: ProductSurfaceTelemetry
 
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -1158,6 +1159,7 @@ class MainViewController: UIViewController {
 
     func fireNewTabPixels() {
         Pixel.fire(.homeScreenShown, withAdditionalParameters: [:])
+        productSurfaceTelemetry.newTabPageUsed()
         let favoritesCount = favoritesViewModel.favorites.count
         let bucket = HomePageDisplayDailyPixelBucket(favoritesCount: favoritesCount)
         DailyPixel.fire(pixel: .newTabPageDisplayedDaily, withAdditionalParameters: [
@@ -1684,7 +1686,8 @@ class MainViewController: UIViewController {
             bookmarksDatabase: self.bookmarksDatabase,
             favoritesDisplayMode: self.appSettings.favoritesDisplayMode,
             keyValueStore: self.keyValueStore,
-            extensionPromotionManager: extensionPromotionManager
+            extensionPromotionManager: extensionPromotionManager,
+            productSurfaceTelemetry: productSurfaceTelemetry
         )
         autofillLoginListViewController.delegate = self
         let navigationController = UINavigationController(rootViewController: autofillLoginListViewController)
@@ -3650,6 +3653,7 @@ extension MainViewController: AutoClearWorker {
     func forgetAllWithAnimation(transitionCompletion: (() -> Void)? = nil, showNextDaxDialog: Bool = false) {
         let spid = Instruments.shared.startTimedEvent(.clearingData)
         Pixel.fire(pixel: .forgetAllExecuted)
+        productSurfaceTelemetry.dataClearingUsed()
 
         tabManager.prepareAllTabsExceptCurrentForDataClearing()
         

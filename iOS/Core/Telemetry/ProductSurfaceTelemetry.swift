@@ -59,7 +59,7 @@ public protocol ProductSurfaceTelemetry {
     func settingsUsed()
 
     /// Bookmarks page used.
-    func bookmarksPageUsed()
+    func bookmarksPageUsed(isRootFolder: Bool)
 
     /// Passwords page used.
     func passwordsPageUsed()
@@ -143,8 +143,9 @@ public struct PixelProductSurfaceTelemetry: ProductSurfaceTelemetry {
         dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageSettings, error: nil, withAdditionalParameters: [:])
     }
 
-    public func bookmarksPageUsed() {
-        guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage) else { return }
+    public func bookmarksPageUsed(isRootFolder: Bool) {
+        guard featureFlagger.isFeatureOn(.productTelemeterySurfaceUsage),
+            isRootFolder else { return }
         dailyPixelFiring.fireDailyAndCount(.productTelemeterySurfaceUsageBookmarksPage, error: nil, withAdditionalParameters: [:])
     }
 

@@ -26,13 +26,16 @@ class SettingsHostingController: UIHostingController<AnyView> {
     var viewModel: SettingsViewModel
     var viewProvider: SettingsLegacyViewProvider
 
+    let productSurfaceTelemetry: ProductSurfaceTelemetry
+
     public var isDeepLinking: Bool {
         return viewModel.deepLinkTarget != nil
     }
 
-    init(viewModel: SettingsViewModel, viewProvider: SettingsLegacyViewProvider) {
+    init(viewModel: SettingsViewModel, viewProvider: SettingsLegacyViewProvider, productSurfaceTelemetry: ProductSurfaceTelemetry) {
         self.viewModel = viewModel
         self.viewProvider = viewProvider
+        self.productSurfaceTelemetry = productSurfaceTelemetry
         super.init(rootView: AnyView(EmptyView()))
 
         viewModel.onRequestPushLegacyView = { [weak self] vc in
@@ -58,6 +61,8 @@ class SettingsHostingController: UIHostingController<AnyView> {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+
+        productSurfaceTelemetry.settingsUsed()
 
         // If this is not called, settings navigation bar (UIKIt) is going wild with colors after reopening settings (?!)
         // Root cause will be investigated later as part of https://app.asana.com/0/414235014887631/1207098219526666/f

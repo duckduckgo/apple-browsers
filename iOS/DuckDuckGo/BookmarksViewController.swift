@@ -53,6 +53,8 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
     private let syncDataProviders: SyncDataProviders
     private let appSettings: AppSettings
     private let keyValueStore: ThrowingKeyValueStoring
+    private let productSurfaceTelemetry: ProductSurfaceTelemetry
+
     private var localUpdatesCancellable: AnyCancellable?
     private var syncUpdatesCancellable: AnyCancellable?
     private var favoritesDisplayModeCancellable: AnyCancellable?
@@ -182,7 +184,8 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
                    syncService: DDGSyncing,
                    syncDataProviders: SyncDataProviders,
                    appSettings: AppSettings,
-                   keyValueStore: ThrowingKeyValueStoring
+                   keyValueStore: ThrowingKeyValueStoring,
+                   productSurfaceTelemetry: ProductSurfaceTelemetry
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.searchDataSource = SearchBookmarksDataSource(searchEngine: bookmarksSearch)
@@ -197,6 +200,8 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
         self.syncDataProviders = syncDataProviders
         self.appSettings = appSettings
         self.keyValueStore = keyValueStore
+        self.productSurfaceTelemetry = productSurfaceTelemetry
+
         super.init(coder: coder)
 
         bindSyncService()
@@ -262,6 +267,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        productSurfaceTelemetry.bookmarksPageUsed(isRootFolder: viewModel.currentFolder?.isRoot == true)
         tableView.reloadData()
     }
 
@@ -324,7 +330,8 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
                                                      syncService: self.syncService,
                                                      syncDataProviders: self.syncDataProviders,
                                                      appSettings: self.appSettings,
-                                                     keyValueStore: self.keyValueStore)
+                                                     keyValueStore: self.keyValueStore,
+                                                     productSurfaceTelemetry: self.productSurfaceTelemetry)
             controller?.delegate = self.delegate
             return controller
         })

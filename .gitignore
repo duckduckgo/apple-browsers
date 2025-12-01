@@ -72,3 +72,4 @@ buildServer.json
 .compile
 /macOS/LocalPackages/PerformanceTest/Sources/PerformanceTest/SafariTestRunner/src/constants/metricsScript.js
 content-scope-scripts/
+privacy-configuration/

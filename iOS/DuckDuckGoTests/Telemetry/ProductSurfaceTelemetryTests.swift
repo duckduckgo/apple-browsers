@@ -169,4 +169,3 @@ final class ProductSurfaceTelemetryTests: XCTestCase {
     }
 
 }
-

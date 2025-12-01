@@ -123,7 +123,18 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         XCTAssertEqual(sut.evaluatePromptEligibility, .bothDefaultBrowserAndDockPrompt)
     }
 
-    func testEvaluatePromptEligibility_AppStoreBuild_DefaultBrowser_ReturnsNil() {
+    func testEvaluatePromptEligibility_AppStoreBuild_DefaultBrowserAndAddedToDock_ReturnsNil() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = false
+        defaultBrowserProviderMock.isDefault = true
+        dockCustomizerMock.dockStatus = true
+        let sut = makeSUT()
+
+        // THEN
+        XCTAssertNil(sut.evaluatePromptEligibility)
+    }
+
+    func testEvaluatePromptEligibility_AppStoreBuild_DefaultBrowserAndNotAddedToDock_ReturnsAddToDockPrompt() {
         // GIVEN
         applicationBuildTypeMock.isSparkleBuild = false
         defaultBrowserProviderMock.isDefault = true
@@ -131,10 +142,21 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT()
 
         // THEN
-        XCTAssertNil(sut.evaluatePromptEligibility)
+        XCTAssertEqual(sut.evaluatePromptEligibility, .addToDockPrompt)
     }
 
-    func testEvaluatePromptEligibility_AppStoreBuild_NotDefaultBrowser_ReturnsSetAsDefaultPrompt() {
+    func testEvaluatePromptEligibility_AppStoreBuild_NotDefaultBrowserAndAddedToDock_ReturnsSetAsDefaultPrompt() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = false
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = true
+        let sut = makeSUT()
+
+        // THEN
+        XCTAssertEqual(sut.evaluatePromptEligibility, .setAsDefaultPrompt)
+    }
+
+    func testEvaluatePromptEligibility_AppStoreBuild_NotDefaultBrowserAndNotAddedToDock_ReturnsBothDefaultBrowserAndDockPrompt() {
         // GIVEN
         applicationBuildTypeMock.isSparkleBuild = false
         defaultBrowserProviderMock.isDefault = false
@@ -142,8 +164,9 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT()
 
         // THEN
-        XCTAssertEqual(sut.evaluatePromptEligibility, .setAsDefaultPrompt)
+        XCTAssertEqual(sut.evaluatePromptEligibility, .bothDefaultBrowserAndDockPrompt)
     }
+
 
     // MARK: - Get prompt type tests
 

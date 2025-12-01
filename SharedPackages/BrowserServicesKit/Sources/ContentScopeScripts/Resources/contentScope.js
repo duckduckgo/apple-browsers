@@ -1375,7 +1375,9 @@
       "duckAiDataClearing",
       "harmfulApis",
       "webCompat",
+      "webInterferenceDetection",
       "windowsPermissionUsage",
+      "uaChBrands",
       "brokerProtection",
       "performanceMetrics",
       "breakageReporting",
@@ -1386,7 +1388,7 @@
     ]
   );
   var platformSupport = {
-    apple: ["webCompat", "duckPlayerNative", ...baseFeatures, "duckAiDataClearing", "pageContext"],
+    apple: ["webCompat", "duckPlayerNative", ...baseFeatures, "webInterferenceDetection", "duckAiDataClearing", "pageContext"],
     "apple-isolated": [
       "duckPlayer",
       "duckPlayerNative",
@@ -1397,7 +1399,7 @@
       "messageBridge",
       "favicon"
     ],
-    android: [...baseFeatures, "webCompat", "breakageReporting", "duckPlayer", "messageBridge"],
+    android: [...baseFeatures, "webCompat", "webInterferenceDetection", "breakageReporting", "duckPlayer", "messageBridge"],
     "android-broker-protection": ["brokerProtection"],
     "android-autofill-import": ["autofillImport"],
     "android-adsjs": [
@@ -1414,8 +1416,10 @@
     windows: [
       "cookie",
       ...baseFeatures,
+      "webInterferenceDetection",
       "webTelemetry",
       "windowsPermissionUsage",
+      "uaChBrands",
       "duckPlayer",
       "brokerProtection",
       "breakageReporting",
@@ -1425,8 +1429,8 @@
       "duckAiDataClearing"
     ],
     firefox: ["cookie", ...baseFeatures, "clickToLoad"],
-    chrome: ["cookie", ...baseFeatures, "clickToLoad"],
-    "chrome-mv3": ["cookie", ...baseFeatures, "clickToLoad"],
+    chrome: ["cookie", ...baseFeatures, "clickToLoad", "webInterferenceDetection", "breakageReporting"],
+    "chrome-mv3": ["cookie", ...baseFeatures, "clickToLoad", "webInterferenceDetection", "breakageReporting"],
     integration: [...baseFeatures, ...otherFeatures]
   };
 
@@ -1528,6 +1532,24 @@
       }
       return Reflect.get(target, prop, receiver);
     };
+  }
+  function wrapFunction(functionValue, realTarget) {
+    return new Proxy(realTarget, {
+      get(target, prop, receiver) {
+        if (prop === "toString") {
+          const method = Reflect.get(target, prop, receiver).bind(target);
+          Object.defineProperty(method, "toString", {
+            value: functionToString.bind(functionToString),
+            enumerable: false
+          });
+          return method;
+        }
+        return Reflect.get(target, prop, receiver);
+      },
+      apply(_2, thisArg, argumentsList) {
+        return Reflect.apply(functionValue, thisArg, argumentsList);
+      }
+    });
   }
   function wrapProperty(object, propertyName, descriptor, definePropertyFn) {
     if (!object) {
@@ -4769,7 +4791,7 @@
     }
     return dataToSend;
   }
-  var _activeShareRequest, _activeScreenLockRequest;
+  var _activeShareRequest, _activeScreenLockRequest, _webNotifications;
   var WebCompat = class extends ContentFeature {
     constructor() {
       super(...arguments);
@@ -4777,6 +4799,8 @@
       __privateAdd(this, _activeShareRequest, null);
       /** @type {Promise<any> | null} */
       __privateAdd(this, _activeScreenLockRequest, null);
+      /** @type {Map<string, object>} */
+      __privateAdd(this, _webNotifications, /* @__PURE__ */ new Map());
       // Opt in to receive configuration updates from initial ping responses
       __publicField(this, "listenForConfigUpdates", true);
     }
@@ -4795,6 +4819,9 @@
       }
       if (this.getFeatureSettingEnabled("notification")) {
         this.notificationFix();
+      }
+      if (this.getFeatureSettingEnabled("webNotifications")) {
+        this.webNotificationsFix();
       }
       if (this.getFeatureSettingEnabled("permissions")) {
         const settings = this.getFeatureSetting("permissions");
@@ -4924,6 +4951,160 @@
         "function requestPermission() { [native code] }"
       );
       this.defineProperty(window.Notification, "requestPermission", {
+        value: wrappedRequestPermission,
+        writable: true,
+        configurable: true,
+        enumerable: true
+      });
+    }
+    /**
+     * Web Notifications polyfill that communicates with native code for permission
+     * management and notification display.
+     */
+    webNotificationsFix() {
+      var _id;
+      if (!globalThis.isSecureContext) {
+        return;
+      }
+      const feature = this;
+      const settings = this.getFeatureSetting("webNotifications") || {};
+      const nativeEnabled = settings.nativeEnabled !== false;
+      const nativeNotify = nativeEnabled ? (name, data) => feature.notify(name, data) : () => {
+      };
+      const nativeRequest = nativeEnabled ? (name, data) => feature.request(name, data) : () => Promise.resolve({ permission: "denied" });
+      const nativeSubscribe = nativeEnabled ? (name, cb) => feature.subscribe(name, cb) : () => () => {
+      };
+      let permission = nativeEnabled ? "default" : "denied";
+      class NotificationPolyfill {
+        /**
+         * @param {string} title
+         * @param {NotificationOptions} [options]
+         */
+        constructor(title, options = {}) {
+          /** @type {string} */
+          __privateAdd(this, _id);
+          /** @type {string} */
+          __publicField(this, "title");
+          /** @type {string} */
+          __publicField(this, "body");
+          /** @type {string} */
+          __publicField(this, "icon");
+          /** @type {string} */
+          __publicField(this, "tag");
+          /** @type {any} */
+          __publicField(this, "data");
+          // Event handlers
+          /** @type {((this: Notification, ev: Event) => any) | null} */
+          __publicField(this, "onclick", null);
+          /** @type {((this: Notification, ev: Event) => any) | null} */
+          __publicField(this, "onclose", null);
+          /** @type {((this: Notification, ev: Event) => any) | null} */
+          __publicField(this, "onerror", null);
+          /** @type {((this: Notification, ev: Event) => any) | null} */
+          __publicField(this, "onshow", null);
+          __privateSet(this, _id, crypto.randomUUID());
+          this.title = String(title);
+          this.body = options.body ? String(options.body) : "";
+          this.icon = options.icon ? String(options.icon) : "";
+          this.tag = options.tag ? String(options.tag) : "";
+          this.data = options.data;
+          __privateGet(feature, _webNotifications).set(__privateGet(this, _id), this);
+          nativeNotify("showNotification", {
+            id: __privateGet(this, _id),
+            title: this.title,
+            body: this.body,
+            icon: this.icon,
+            tag: this.tag
+          });
+        }
+        /**
+         * @returns {'default' | 'denied' | 'granted'}
+         */
+        static get permission() {
+          return permission;
+        }
+        /**
+         * @param {NotificationPermissionCallback} [deprecatedCallback]
+         * @returns {Promise<NotificationPermission>}
+         */
+        static async requestPermission(deprecatedCallback) {
+          try {
+            const result = await nativeRequest("requestPermission", {});
+            const resultPermission = (
+              /** @type {NotificationPermission} */
+              result?.permission || "denied"
+            );
+            permission = resultPermission;
+            if (deprecatedCallback) {
+              deprecatedCallback(resultPermission);
+            }
+            return resultPermission;
+          } catch (e) {
+            permission = "denied";
+            if (deprecatedCallback) {
+              deprecatedCallback("denied");
+            }
+            return "denied";
+          }
+        }
+        /**
+         * @returns {number}
+         */
+        static get maxActions() {
+          return 2;
+        }
+        close() {
+          if (!__privateGet(feature, _webNotifications).has(__privateGet(this, _id))) {
+            return;
+          }
+          nativeNotify("closeNotification", { id: __privateGet(this, _id) });
+          __privateGet(feature, _webNotifications).delete(__privateGet(this, _id));
+          if (typeof this.onclose === "function") {
+            try {
+              this.onclose(new Event("close"));
+            } catch (e) {
+            }
+          }
+        }
+      }
+      _id = new WeakMap();
+      const wrappedNotification = wrapFunction(NotificationPolyfill, NotificationPolyfill);
+      const wrappedRequestPermission = wrapToString(
+        NotificationPolyfill.requestPermission.bind(NotificationPolyfill),
+        NotificationPolyfill.requestPermission,
+        "function requestPermission() { [native code] }"
+      );
+      nativeSubscribe("notificationEvent", (data) => {
+        const notification = __privateGet(this, _webNotifications).get(data.id);
+        if (!notification) return;
+        const eventName = `on${data.event}`;
+        if (typeof notification[eventName] === "function") {
+          try {
+            notification[eventName](new Event(data.event));
+          } catch (e) {
+          }
+        }
+        if (data.event === "close") {
+          __privateGet(this, _webNotifications).delete(data.id);
+        }
+      });
+      this.defineProperty(globalThis, "Notification", {
+        value: wrappedNotification,
+        writable: true,
+        configurable: true,
+        enumerable: false
+      });
+      this.defineProperty(globalThis.Notification, "permission", {
+        get: () => permission,
+        configurable: true,
+        enumerable: true
+      });
+      this.defineProperty(globalThis.Notification, "maxActions", {
+        get: () => 2,
+        configurable: true,
+        enumerable: true
+      });
+      this.defineProperty(globalThis.Notification, "requestPermission", {
         value: wrappedRequestPermission,
         writable: true,
         configurable: true,
@@ -5495,6 +5676,7 @@
   };
   _activeShareRequest = new WeakMap();
   _activeScreenLockRequest = new WeakMap();
+  _webNotifications = new WeakMap();
   var web_compat_default = WebCompat;
 
   // src/features/duck-player-native.js
@@ -8751,9 +8933,16 @@ ul.messages {
     let selector = "";
     rules.forEach((rule, i) => {
       if (i !== rules.length - 1) {
-        selector = selector.concat(rule.selector, ",");
+        selector = selector.concat(
+          /** @type {ElementHidingRuleHide | ElementHidingRuleModify} */
+          rule.selector,
+          ","
+        );
       } else {
-        selector = selector.concat(rule.selector);
+        selector = selector.concat(
+          /** @type {ElementHidingRuleHide | ElementHidingRuleModify} */
+          rule.selector
+        );
       }
     });
     const styleTagProperties = "display:none!important;min-height:0!important;height:0!important;";
@@ -8764,7 +8953,10 @@ ul.messages {
   function hideAdNodes(rules) {
     const document2 = globalThis.document;
     rules.forEach((rule) => {
-      const selector = forgivingSelector(rule.selector);
+      const selector = forgivingSelector(
+        /** @type {ElementHidingRuleHide | ElementHidingRuleModify} */
+        rule.selector
+      );
       const matchingElementArray = [...document2.querySelectorAll(selector)];
       matchingElementArray.forEach((element) => {
         collapseDomNode(element, rule);
@@ -8792,11 +8984,14 @@ ul.messages {
       }
       let activeRules;
       const globalRules = this.getFeatureSetting("rules");
-      adLabelStrings = this.getFeatureSetting("adLabelStrings");
-      shouldInjectStyleTag = this.getFeatureSetting("useStrictHideStyleTag");
+      adLabelStrings = this.getFeatureSetting("adLabelStrings") || [];
+      shouldInjectStyleTag = this.getFeatureSetting("useStrictHideStyleTag") || false;
       hideTimeouts = this.getFeatureSetting("hideTimeouts") || hideTimeouts;
       unhideTimeouts = this.getFeatureSetting("unhideTimeouts") || unhideTimeouts;
-      mediaAndFormSelectors = this.getFeatureSetting("mediaAndFormSelectors") || mediaAndFormSelectors;
+      mediaAndFormSelectors = this.getFeatureSetting("mediaAndFormSelectors");
+      if (!mediaAndFormSelectors) {
+        mediaAndFormSelectors = "video,canvas,embed,object,audio,map,form,input,textarea,select,option,button";
+      }
       if (shouldInjectStyleTag) {
         shouldInjectStyleTag = this.matchConditionalFeatureSetting("styleTagExceptions").length === 0;
       }
@@ -8836,9 +9031,7 @@ ul.messages {
     }
     /**
      * Apply relevant hiding rules to page at set intervals
-     * @param {Object[]} rules
-     * @param {string} rules[].selector
-     * @param {string} rules[].type
+     * @param {ElementHidingRule[]} rules
      */
     applyRules(rules) {
       const timeoutRules = extractTimeoutRules(rules);
@@ -9026,20 +9219,166 @@ ul.messages {
     }
   };
 
+  // src/features/web-interference-detection.js
+  init_define_import_meta_trackerLookup();
+
+  // src/detectors/detections/bot-detection.js
+  init_define_import_meta_trackerLookup();
+
+  // src/detectors/utils/detection-utils.js
+  init_define_import_meta_trackerLookup();
+  function checkSelectors(selectors) {
+    if (!selectors || !Array.isArray(selectors)) {
+      return false;
+    }
+    return selectors.some((selector) => document.querySelector(selector));
+  }
+  function checkSelectorsWithVisibility(selectors) {
+    if (!selectors || !Array.isArray(selectors)) {
+      return false;
+    }
+    return selectors.some((selector) => {
+      const element = document.querySelector(selector);
+      return element && isVisible(element);
+    });
+  }
+  function checkWindowProperties(properties) {
+    if (!properties || !Array.isArray(properties)) {
+      return false;
+    }
+    return properties.some((prop) => typeof window?.[prop] !== "undefined");
+  }
+  function isVisible(element) {
+    const computedStyle = getComputedStyle(element);
+    const rect = element.getBoundingClientRect();
+    return rect.width > 0.5 && rect.height > 0.5 && computedStyle.display !== "none" && computedStyle.visibility !== "hidden" && +computedStyle.opacity > 0.05;
+  }
+  function getTextContent(element, sources) {
+    if (!sources || sources.length === 0) {
+      return element.textContent || "";
+    }
+    return sources.map((source) => element[source] || "").join(" ");
+  }
+  function matchesSelectors(selectors) {
+    if (!selectors || !Array.isArray(selectors)) {
+      return false;
+    }
+    const elements = queryAllSelectors(selectors);
+    return elements.length > 0;
+  }
+  function matchesTextPatterns(element, patterns, sources) {
+    if (!patterns || !Array.isArray(patterns)) {
+      return false;
+    }
+    const text = getTextContent(element, sources);
+    return patterns.some((pattern) => {
+      const regex = new RegExp(pattern, "i");
+      return regex.test(text);
+    });
+  }
+  function checkTextPatterns(patterns, sources) {
+    if (!patterns || !Array.isArray(patterns)) {
+      return false;
+    }
+    return matchesTextPatterns(document.body, patterns, sources);
+  }
+  function queryAllSelectors(selectors, root = document) {
+    if (!selectors || !Array.isArray(selectors) || selectors.length === 0) {
+      return [];
+    }
+    const elements = root.querySelectorAll(selectors.join(","));
+    return Array.from(elements);
+  }
+
+  // src/detectors/detections/bot-detection.js
+  function runBotDetection(config = {}) {
+    const results = Object.entries(config).filter(([_2, challengeConfig]) => challengeConfig?.state === "enabled").map(([challengeId, challengeConfig]) => {
+      const detected = checkSelectors(challengeConfig.selectors) || checkWindowProperties(challengeConfig.windowProperties || []);
+      if (!detected) {
+        return null;
+      }
+      const challengeStatus = findStatus(challengeConfig.statusSelectors);
+      return {
+        detected: true,
+        vendor: challengeConfig.vendor,
+        challengeType: challengeId,
+        challengeStatus
+      };
+    }).filter(Boolean);
+    return {
+      detected: results.length > 0,
+      type: "botDetection",
+      results
+    };
+  }
+  function findStatus(statusSelectors) {
+    if (!Array.isArray(statusSelectors)) {
+      return null;
+    }
+    const match = statusSelectors.find((statusConfig) => {
+      const { selectors, textPatterns, textSources } = statusConfig;
+      return matchesSelectors(selectors) || matchesTextPatterns(document.body, textPatterns, textSources);
+    });
+    return match?.status ?? null;
+  }
+
+  // src/detectors/detections/fraud-detection.js
+  init_define_import_meta_trackerLookup();
+  function runFraudDetection(config = {}) {
+    const results = Object.entries(config).filter(([_2, alertConfig]) => alertConfig?.state === "enabled").map(([alertId, alertConfig]) => {
+      const detected = checkSelectorsWithVisibility(alertConfig.selectors) || checkTextPatterns(alertConfig.textPatterns, alertConfig.textSources);
+      if (!detected) {
+        return null;
+      }
+      return {
+        detected: true,
+        alertId,
+        category: alertConfig.type
+      };
+    }).filter(Boolean);
+    return {
+      detected: results.length > 0,
+      type: "fraudDetection",
+      results
+    };
+  }
+
+  // src/features/web-interference-detection.js
+  var WebInterferenceDetection = class extends ContentFeature {
+    init() {
+      const settings = this.getFeatureSetting("interferenceTypes");
+      this.messaging.subscribe("detectInterference", (params) => {
+        const { types = [] } = (
+          /** @type {DetectInterferenceParams} */
+          params ?? {}
+        );
+        const results = {};
+        if (types.includes("botDetection")) {
+          results.botDetection = runBotDetection(settings?.botDetection);
+        }
+        if (types.includes("fraudDetection")) {
+          results.fraudDetection = runFraudDetection(settings?.fraudDetection);
+        }
+        return results;
+      });
+    }
+  };
+
   // src/features/duck-ai-data-clearing.js
   init_define_import_meta_trackerLookup();
   var DuckAiDataClearing = class extends ContentFeature {
     init() {
       this.messaging.subscribe("duckAiClearData", (_2) => this.clearData());
+      this.notify("duckAiClearDataReady");
     }
     async clearData() {
-      let success = true;
+      let lastError = null;
       const localStorageKeys = this.getFeatureSetting("chatsLocalStorageKeys");
       for (const localStorageKey of localStorageKeys) {
         try {
           this.clearSavedAIChats(localStorageKey);
         } catch (error) {
-          success = false;
+          lastError = error;
           this.log.error("Error clearing saved chats:", error);
         }
       }
@@ -9048,14 +9387,16 @@ ul.messages {
         try {
           await this.clearChatImagesStore(indexDbName, objectStoreName);
         } catch (error) {
-          success = false;
+          lastError = error;
           this.log.error("Error clearing saved chat images:", error);
         }
       }
-      if (success) {
+      if (lastError === null) {
         this.notify("duckAiClearDataCompleted");
       } else {
-        this.notify("duckAiClearDataFailed");
+        this.notify("duckAiClearDataFailed", {
+          error: lastError?.message
+        });
       }
     }
     clearSavedAIChats(localStorageKey) {
@@ -9653,6 +9994,7 @@ ${iframeContent}
     ddg_feature_elementHiding: ElementHiding,
     ddg_feature_exceptionHandler: ExceptionHandler,
     ddg_feature_apiManipulation: ApiManipulation,
+    ddg_feature_webInterferenceDetection: WebInterferenceDetection,
     ddg_feature_duckAiDataClearing: duck_ai_data_clearing_default,
     ddg_feature_pageContext: PageContext
   };

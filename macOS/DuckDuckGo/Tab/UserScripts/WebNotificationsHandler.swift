@@ -203,6 +203,10 @@ final class WebNotificationsHandler: NSObject, Subfeature {
         content.sound = .default
         content.userInfo = [UserInfoKey.notificationId: payload.id, UserInfoKey.originURL: originURL]
 
+        if let tag = payload.tag {
+            content.threadIdentifier = tag
+        }
+
         if let iconURLString = payload.icon, let iconURL = URL(string: iconURLString) {
             if let attachment = await iconFetcher.fetchIcon(from: iconURL) {
                 content.attachments = [attachment]

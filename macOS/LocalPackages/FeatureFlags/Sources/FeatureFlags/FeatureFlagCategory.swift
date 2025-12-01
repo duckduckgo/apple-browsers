@@ -84,7 +84,6 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .paidAIChat,
                 .supportsAlternateStripePaymentFlow,
                 .subscriptionPurchaseWidePixelMeasurement,
-                .subscriptionRestoreWidePixelMeasurement,
                 .authV2WideEventEnabled,
                 .vpnConnectionWidePixelMeasurement,
                 .blackFridayCampaign,

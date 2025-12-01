@@ -909,7 +909,7 @@
                                 </customSpacing>
                             </stackView>
                             <stackView distribution="equalSpacing" orientation="horizontal" alignment="centerY" spacing="0.0" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="HEu-ro-RSA">
-                                <rect key="frame" x="0.0" y="1" width="189" height="32"/>
+                                <rect key="frame" x="0.0" y="1" width="61" height="32"/>
                                 <subviews>
                                     <button hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="nOW-iY-XmO" customClass="MouseOverAnimationButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
                                         <rect key="frame" x="0.0" y="0.0" width="32" height="32"/>
@@ -1006,8 +1006,31 @@
                                             <action selector="zoomButtonAction:" target="mcr-nj-GmC" id="xCK-4c-baX"/>
                                         </connections>
                                     </button>
-                                    <stackView distribution="fill" orientation="horizontal" alignment="centerY" spacing="2" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="8UU-A8-1nD">
-                                        <rect key="frame" x="61" y="0.0" width="128" height="32"/>
+                                    <button hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="7f7-ob-zog" customClass="AddressBarButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
+                                        <rect key="frame" x="0.0" y="0.0" width="24" height="32"/>
+                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="Permissions-16" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="AK6-34-TQm">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                            <font key="font" metaFont="system"/>
+                                        </buttonCell>
+                                        <color key="contentTintColor" name="ButtonColor"/>
+                                        <constraints>
+                                            <constraint firstAttribute="height" constant="32" id="I0h-6q-AY4"/>
+                                            <constraint firstAttribute="width" constant="24" id="vbX-0P-lVk"/>
+                                        </constraints>
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseOverColor">
+                                                <color key="value" name="ButtonMouseOverColor"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseDownColor">
+                                                <color key="value" name="ButtonMouseDownColor"/>
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <action selector="permissionCenterButtonAction:" target="mcr-nj-GmC" id="9iB-Op-Gco"/>
+                                        </connections>
+                                    </button>
+                                    <stackView hidden="YES" distribution="fill" orientation="horizontal" alignment="centerY" spacing="2" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="8UU-A8-1nD">
+                                        <rect key="frame" x="0.0" y="0.0" width="128" height="32"/>
                                         <subviews>
                                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="CN6-fJ-o2J" userLabel="Geolocation Button" customClass="PermissionButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
                                                 <rect key="frame" x="0.0" y="0.0" width="24" height="32"/>
@@ -1147,8 +1170,10 @@
                                     <integer value="1000"/>
                                     <integer value="1000"/>
                                     <integer value="1000"/>
+                                    <integer value="1000"/>
                                 </visibilityPriorities>
                                 <customSpacing>
+                                    <real value="3.4028234663852886e+38"/>
                                     <real value="3.4028234663852886e+38"/>
                                     <real value="3.4028234663852886e+38"/>
                                     <real value="3.4028234663852886e+38"/>
@@ -1201,7 +1226,10 @@
                         <outlet property="microphoneButton" destination="uao-nC-0co" id="UHu-oA-rTl"/>
                         <outlet property="microphoneButtonHeightConstraint" destination="0aM-UZ-dCe" id="Kgq-0q-iNz"/>
                         <outlet property="notificationAnimationView" destination="1qw-sL-vFK" id="b5X-px-pwG"/>
+                        <outlet property="permissionButtonHeightConstraint" destination="I0h-6q-AY4" id="BbX-2y-p3L"/>
                         <outlet property="permissionButtons" destination="8UU-A8-1nD" id="gYJ-VW-MEG"/>
+                        <outlet property="permissionCenterButton" destination="7f7-ob-zog" id="gbs-S4-xCe"/>
+                        <outlet property="permissionCenterButtonWidthConstraint" destination="vbX-0P-lVk" id="dzi-E4-ax7"/>
                         <outlet property="popupsButton" destination="qqY-h9-UQ7" id="1QY-I6-oNC"/>
                         <outlet property="popupsButtonHeightConstraint" destination="Lys-Hh-cYc" id="aif-wm-FWV"/>
                         <outlet property="privacyDashboardButton" destination="nOW-iY-XmO" id="r0A-EO-srN"/>
@@ -1245,6 +1273,7 @@
         <image name="Microphone-Active" width="12" height="16"/>
         <image name="Microphone-Icon" width="12" height="16"/>
         <image name="PasswordManagement" width="16" height="16"/>
+        <image name="Permissions-16" width="16" height="16"/>
         <image name="PopupBlocked" width="16" height="16"/>
         <image name="Refresh" width="16" height="16"/>
         <image name="Search" width="14" height="14"/>

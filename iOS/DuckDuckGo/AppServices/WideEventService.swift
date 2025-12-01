@@ -47,23 +47,16 @@ final class WideEventService {
     // the flow, or the app crashing.
     func sendAbandonedPixels(completion: @escaping () -> Void) {
         let shouldSendSubscriptionPurchaseWidePixel = featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement)
-        let shouldSendSubscriptionRestoreWidePixel = featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement)
         let shouldSendVPNConnectionWidePixel = featureFlagger.isFeatureOn(.vpnConnectionWidePixelMeasurement)
-
-        if !shouldSendSubscriptionPurchaseWidePixel && !shouldSendSubscriptionRestoreWidePixel && !shouldSendVPNConnectionWidePixel {
-            completion()
-            return
-        }
         
         sendQueue.async { [weak self] in
             guard let self else { return }
 
             Task {
+                await self.sendAbandonedSubscriptionRestorePixels()
+                
                 if shouldSendSubscriptionPurchaseWidePixel {
                     await self.sendAbandonedSubscriptionPurchasePixels()
-                }
-                if shouldSendSubscriptionRestoreWidePixel {
-                    await self.sendAbandonedSubscriptionRestorePixels()
                 }
                 if shouldSendVPNConnectionWidePixel {
                     await self.sendAbandonedVPNConnectionPixels()
@@ -79,23 +72,16 @@ final class WideEventService {
     // Sends pixels which are currently incomplete but may complete later.
     func sendDelayedPixels(completion: @escaping () -> Void) {
         let shouldSendSubscriptionPurchaseWidePixel = featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement)
-        let shouldSendSubscriptionRestoreWidePixel = featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement)
         let shouldSendVPNConnectionWidePixel = featureFlagger.isFeatureOn(.vpnConnectionWidePixelMeasurement)
-
-        if !shouldSendSubscriptionPurchaseWidePixel && !shouldSendSubscriptionRestoreWidePixel && !shouldSendVPNConnectionWidePixel {
-            completion()
-            return
-        }
 
         sendQueue.async { [weak self] in
             guard let self else { return }
 
             Task {
+                await self.sendDelayedSubscriptionRestorePixels()
+                
                 if shouldSendSubscriptionPurchaseWidePixel {
                     await self.sendDelayedSubscriptionPurchasePixels()
-                }
-                if shouldSendSubscriptionRestoreWidePixel {
-                    await self.sendDelayedSubscriptionRestorePixels()
                 }
                 if shouldSendVPNConnectionWidePixel {
                     await self.sendDelayedVPNConnectionPixels()

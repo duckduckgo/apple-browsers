@@ -67,19 +67,11 @@ struct PrivateSearchViewSettings: View {
 
         Section {
             // More Search Settings
-            if viewModel.embedSERPSettings {
-                NavigationLink(destination: SERPSettingsView(page: .general).environmentObject(viewModel)) {
-                    SettingsCellView(label: UserText.moreSearchSettings,
-                                     subtitle: UserText.moreSearchSettingsExplanation)
-                }
-                .listRowBackground(Color(designSystemColor: .surface))
-            } else {
+            NavigationLink(destination: SERPSettingsView(page: .general).environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.moreSearchSettings,
-                                 subtitle: UserText.moreSearchSettingsExplanation,
-                                 action: { viewModel.openMoreSearchSettings() },
-                                 webLinkIndicator: true,
-                                 isButton: true)
+                                 subtitle: UserText.moreSearchSettingsExplanation)
             }
+            .listRowBackground(Color(designSystemColor: .surface))
         }
     }
 }

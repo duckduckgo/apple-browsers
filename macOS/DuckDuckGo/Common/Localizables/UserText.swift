@@ -625,6 +625,8 @@ struct UserText {
     static let aiChatSearchTheWebTooltip = NSLocalizedString("aichat.search-the-web.tooltip", value: "Search the Web", comment: "Tooltip for the search the web segment in the toggle control")
     static let aiChatChatWithAITooltip = NSLocalizedString("aichat.chat-with-ai.tooltip", value: "Chat with AI", comment: "Tooltip for the chat with AI segment in the toggle control")
     static let aiChatSendButtonTooltip = NSLocalizedString("aichat.send-button.tooltip", value: "Send", comment: "Tooltip for the send button in AI chat omnibar")
+    static let addressBarPlaceholderWithDuckAI = NSLocalizedString("address.bar.placeholder.with-duckai", value: "⇥ Press tab then enter to ask Duck.ai", comment: "Address bar placeholder when Duck.ai toggle is available")
+    static let aiChatOmnibarPlaceholder = NSLocalizedString("aichat.omnibar.placeholder", value: "Chat Privately", comment: "Placeholder text shown in the Duck.ai chat input field")
     static let moreSearchSettings = NSLocalizedString("settings.more-search-settings", value: "More Search Settings", comment: "The button name in preferences for More Search Settings")
     static let moreSearchSettingsDescription = NSLocalizedString("settings.more-search-settings.description", value: "Customize your language, region, and more.", comment: "Subtitle of the 'More Search Settings' button")
     static let moreSearchSettingsLink = NSLocalizedString("settings.more-search-settings.link", value: "Open DuckDuckGo Search Settings", comment: "Button to open Search Settings on duckduckgo.com")

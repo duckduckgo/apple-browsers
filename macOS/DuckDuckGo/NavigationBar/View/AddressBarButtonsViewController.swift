@@ -1756,7 +1756,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func setupSearchModeToggleControl() {
-        let toggleControl = CustomToggleControl(frame: NSRect(x: 0, y: 0, width: 72, height: 28))
+        let toggleControl = CustomToggleControl(frame: NSRect(x: 0, y: 0, width: 70, height: 28))
         toggleControl.translatesAutoresizingMaskIntoConstraints = false
 
         toggleControl.setSelectedImage(DesignSystemImages.Color.Size16.searchFindToggle, forSegment: 0)
@@ -1776,7 +1776,7 @@ final class AddressBarButtonsViewController: NSViewController {
         toggleControl.isHidden = true
 
         NSLayoutConstraint.activate([
-            toggleControl.widthAnchor.constraint(equalToConstant: 72),
+            toggleControl.widthAnchor.constraint(equalToConstant: 70),
             toggleControl.heightAnchor.constraint(equalToConstant: 28)
         ])
 

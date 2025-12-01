@@ -87,7 +87,7 @@ struct SettingsAppearanceView: View {
 
             if viewModel.browsingMenuSheetCapability.isAvailable {
                 Section {
-                    SettingsCellView(label: "Sheet menu presentation",
+                    SettingsCellView(label: UserText.settingsExperimentalMenu,
                                      accessory: .toggle(isOn: viewModel.showMenuInSheetBinding))
 
                     SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,

@@ -253,14 +253,21 @@ final class SuggestionContainerViewModel {
     func selectRow(at rowIndex: Int) {
         guard rowIndex >= 0, rowIndex < numberOfRows else {
             Logger.general.error("SuggestionContainerViewModel: Row index out of bounds")
-            selectedRowIndex = nil
+            if selectedRowIndex != nil {
+                selectedRowIndex = nil
+                selectionIndex = nil
+            }
             return
         }
+
+        guard selectedRowIndex != rowIndex else { return }
+
         selectedRowIndex = rowIndex
         selectionIndex = selectionIndex(forRow: rowIndex)
     }
 
     func clearRowSelection() {
+        guard selectedRowIndex != nil || selectionIndex != nil else { return }
         selectedRowIndex = nil
         selectionIndex = nil
     }

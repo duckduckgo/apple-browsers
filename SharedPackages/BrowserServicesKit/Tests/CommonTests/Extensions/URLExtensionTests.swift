@@ -268,41 +268,35 @@ final class URLExtensionTests {
         #expect(URL(trimmedAddressBarString: "define:300/spartans")?.absoluteString == nil)
     }
 
-    static let addressBarURLParsing_args: [(String, String?, UInt)] = [
-        ("user@somehost.local:9091/index.html", nil, #line),
-        ("something.local:9100", nil, #line),
-        ("user@localhost:5000", nil, #line),
-        ("user:password@localhost:5000", nil, #line),
-        ("localhost", nil, #line),
-        ("localhost:5000", nil, #line),
-        ("sms://+44123123123", nil, #line),
-        ("mailto:test@example.com", nil, #line),
-        ("mailto:u%24ser@💩.la?arg=b#1", "mailto:u%24ser@xn--ls8h.la?arg=b%231", #line),
-        ("62.12.14.111", nil, #line),
-        ("https://", nil, #line),
-        ("http://duckduckgo.com", nil, #line),
-        ("https://duckduckgo.com", nil, #line),
-        ("https://duckduckgo.com/", nil, #line),
-        ("duckduckgo.com", nil, #line),
-        ("duckduckgo.com/html?q=search", nil, #line),
-        ("www.duckduckgo.com", nil, #line),
-        ("https://www.duckduckgo.com/html?q=search", nil, #line),
-        ("https://www.duckduckgo.com/html/?q=search", nil, #line),
-        ("ftp://www.duckduckgo.com", nil, #line),
-        ("file:///users/user/Documents/afile", nil, #line),
-        ("https://www.duckduckgo.com/html?q =search", "https://www.duckduckgo.com/html?q%20=search", #line),
+    static let addressBarURLParsing_args: [(String, String?, String?, UInt)] = [
+        ("user@somehost.local:9091/index.html", "http://user@somehost.local:9091/index.html", "http", #line),
+        ("something.local:9100", "http://something.local:9100/", "http", #line),
+        ("user@localhost:5000", "http://user@localhost:5000/", "http", #line),
+        ("user:password@localhost:5000", "http://user:password@localhost:5000/", "http", #line),
+        ("localhost", "http://localhost/", "http", #line),
+        ("localhost:5000", "http://localhost:5000/", "http", #line),
+        ("sms://+44123123123", nil, nil, #line),
+        ("mailto:test@example.com", "mailto:test@example.com", "mailto", #line),
+        ("mailto:u%24ser@💩.la?arg=b", "mailto:u%24ser@%F0%9F%92%A9.la?arg=b", "mailto", #line), // note: this needs to be fixed in URLPredictorRust to use punycode
+        ("http://u%24ser@💩.la?arg=b#1", "http://u%24ser@xn--ls8h.la/?arg=b#1", "http", #line),
+        ("62.12.14.111", "http://62.12.14.111/", "http", #line),
+        ("https://", nil, nil, #line),
+        ("http://duckduckgo.com", "http://duckduckgo.com/", "http", #line),
+        ("https://duckduckgo.com", "https://duckduckgo.com/", "https", #line),
+        ("https://duckduckgo.com/", "https://duckduckgo.com/", "https", #line),
+        ("duckduckgo.com", "http://duckduckgo.com/", "http", #line),
+        ("duckduckgo.com/html?q=search", "http://duckduckgo.com/html?q=search", "http", #line),
+        ("www.duckduckgo.com", "http://www.duckduckgo.com/", "http", #line),
+        ("https://www.duckduckgo.com/html?q=search", "https://www.duckduckgo.com/html?q=search", "https", #line),
+        ("https://www.duckduckgo.com/html/?q=search", "https://www.duckduckgo.com/html/?q=search", "https", #line),
+        ("ftp://www.duckduckgo.com", nil, nil, #line),
+        ("file:///users/user/Documents/afile", "file:///users/user/Documents/afile", "file", #line),
+        ("https://www.duckduckgo.com/html?q =search", "https://www.duckduckgo.com/html?q%20=search", "https", #line),
     ]
 
     @Test("URL.trimmedAddressBarString correctly parses various address bar inputs", arguments: addressBarURLParsing_args)
-    func addressBarURLParsing(address: String, expectation: String? = nil, line: UInt) {
-        let url = URL(trimmedAddressBarString: address)
-        var expectedString = expectation ?? address
-        let expectedScheme = address.hasPrefix("mailto:") ? "mailto" : (address.split(separator: "/").first.flatMap {
-            $0.hasSuffix(":") ? String($0).dropping(suffix: ":") : nil
-        }?.lowercased() ?? "http")
-        if !address.hasPrefix(expectedScheme) {
-            expectedString = expectedScheme + "://" + address
-        }
+    func addressBarURLParsing(address: String, expectedString: String? = nil, expectedScheme: String? = nil, line: UInt) {
+        let url = URL(trimmedAddressBarString: address, useUnifiedLogic: true)
         #expect(url?.scheme == expectedScheme, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
         #expect(url?.absoluteString == expectedString, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
     }

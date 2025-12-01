@@ -370,3 +370,12 @@ extension BrowsingMenuViewController {
         }
     }
 }
+
+extension BrowsingMenuEntry {
+    var isSeparator: Bool {
+        switch self {
+        case .separator: return true
+        default: return false
+        }
+    }
+}

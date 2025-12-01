@@ -92,8 +92,8 @@ public final class DBPUIViewModel {
 }
 
 extension DBPUIViewModel: DBPUICommunicationDelegate {
-    public func getHandshakeUserData() -> DBPUIHandshakeUserData? {
-        let isUserAuthenticated = authenticationDelegate?.isUserAuthenticated() ?? false
+    public func getHandshakeUserData() async -> DBPUIHandshakeUserData? {
+        let isUserAuthenticated = (await authenticationDelegate?.isUserAuthenticated()) ?? false
         return DBPUIHandshakeUserData(isAuthenticatedUser: isUserAuthenticated)
     }
     

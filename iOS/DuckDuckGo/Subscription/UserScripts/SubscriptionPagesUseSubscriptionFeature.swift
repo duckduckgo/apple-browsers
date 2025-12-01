@@ -1086,14 +1086,14 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 private extension DefaultSubscriptionPagesUseSubscriptionFeatureV2 {
     
     func markEmailAddressRestoreWideEventFlowAsSuccess() {
-        guard subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled, let restoreWideEventData = self.subscriptionRestoreEmailAddressWideEventData else { return }
+        guard let restoreWideEventData = self.subscriptionRestoreEmailAddressWideEventData else { return }
         restoreWideEventData.emailAddressRestoreDuration?.complete()
         wideEvent.completeFlow(restoreWideEventData, status: .success, onComplete: { _, _ in })
         self.subscriptionRestoreEmailAddressWideEventData = nil
     }
     
     func markEmailAddressRestoreWideEventFlowAsFailed(with error: Error?) {
-        guard subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled, let restoreWideEventData = self.subscriptionRestoreEmailAddressWideEventData else { return }
+        guard let restoreWideEventData = self.subscriptionRestoreEmailAddressWideEventData else { return }
         restoreWideEventData.emailAddressRestoreDuration?.complete()
         if let error {
             restoreWideEventData.errorData = .init(error: error)

@@ -171,8 +171,7 @@ enum SubscriptionContainerViewFactory {
         let appStorePurchaseFlow = DefaultAppStorePurchaseFlowV2(subscriptionManager: subscriptionManager,
                                                                  storePurchaseManager: subscriptionManager.storePurchaseManager(),
                                                                  appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                 wideEvent: wideEvent,
-                                                                 isSubscriptionRestoreWidePixelMeasurementEnabled: subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled)
+                                                                 wideEvent: wideEvent)
 
         let redirectPurchaseURL: URL? = {
             guard let redirectURLComponents else { return nil }
@@ -216,8 +215,7 @@ enum SubscriptionContainerViewFactory {
         let appStorePurchaseFlow = DefaultAppStorePurchaseFlowV2(subscriptionManager: subscriptionManager,
                                                                  storePurchaseManager: subscriptionManager.storePurchaseManager(),
                                                                  appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                 wideEvent: wideEvent,
-                                                                 isSubscriptionRestoreWidePixelMeasurementEnabled: subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled)
+                                                                 wideEvent: wideEvent)
         let subscriptionPagesUseSubscriptionFeature = DefaultSubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
                                                                                                        subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                                                                        subscriptionAttributionOrigin: nil,
@@ -250,8 +248,7 @@ enum SubscriptionContainerViewFactory {
         let appStorePurchaseFlow = DefaultAppStorePurchaseFlowV2(subscriptionManager: subscriptionManager,
                                                                  storePurchaseManager: subscriptionManager.storePurchaseManager(),
                                                                  appStoreRestoreFlow: appStoreRestoreFlow,
-                                                                 wideEvent: wideEvent,
-                                                                 isSubscriptionRestoreWidePixelMeasurementEnabled: subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled)
+                                                                 wideEvent: wideEvent)
         let viewModel = SubscriptionContainerViewModel(
             subscriptionManager: subscriptionManager,
             isInternalUser: internalUserDecider.isInternalUser,

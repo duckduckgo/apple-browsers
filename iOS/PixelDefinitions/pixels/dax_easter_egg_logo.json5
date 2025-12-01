@@ -3,14 +3,14 @@
         "description": "Fired when the Dax Easter Egg logo is displayed in the privacy icon",
         "owners": ["aataraxiaa"],
         "triggers": ["other"],
-        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
     "m_dax_easter_egg_logo_tapped": {
         "description": "Fired when the user taps the Dax Easter Egg logo in the privacy icon",
         "owners": ["aataraxiaa"],
         "triggers": ["other"],
-        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     }
 }

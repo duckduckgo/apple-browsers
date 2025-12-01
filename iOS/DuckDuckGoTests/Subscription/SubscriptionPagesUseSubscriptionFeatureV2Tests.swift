@@ -242,7 +242,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         )
         
         let mockStorePurchaseManager = StorePurchaseManagerMockV2()
-        mockStorePurchaseManager.subscriptionTierOptionsResult = expectedTierOptions
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(expectedTierOptions)
         mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
 
         // When
@@ -283,7 +283,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         )
         
         let mockStorePurchaseManager = StorePurchaseManagerMockV2()
-        mockStorePurchaseManager.subscriptionTierOptionsResult = tierOptionsWithPurchase
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(tierOptionsWithPurchase)
         mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
 
         // When
@@ -322,7 +322,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         )
         
         let mockStorePurchaseManager = StorePurchaseManagerMockV2()
-        mockStorePurchaseManager.subscriptionTierOptionsResult = tierOptionsWithPurchase
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(tierOptionsWithPurchase)
         mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
 
         // When
@@ -343,7 +343,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     func testGetSubscriptionTierOptions_WhenNoOptionsAvailable_ReturnsEmpty() async throws {
         // Given
         let mockStorePurchaseManager = StorePurchaseManagerMockV2()
-        mockStorePurchaseManager.subscriptionTierOptionsResult = nil
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .failure(.noProductsAvailable)
         mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
 
         // When

@@ -189,7 +189,7 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
         }
     }
 
-    func testSubscriptionTierOptionsFailureNoProducts() async throws {
+    func testSubscriptionTierOptionsFailureEmptyProductsFromAPI() async throws {
         // Given
         subscriptionManager.tierProductsResponse = .success(GetTierProductsResponse(products: []))
 
@@ -201,7 +201,7 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
         case .success:
             XCTFail("Expected failure but got success")
         case .failure(let error):
-            XCTAssertEqual(error, .noProductsFound)
+            XCTAssertEqual(error, .emptyProductsFromAPI)
         }
     }
 
@@ -217,7 +217,7 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
         case .success:
             XCTFail("Expected failure but got success")
         case .failure(let error):
-            XCTAssertEqual(error, .noProductsFound)
+            XCTAssertEqual(error, .apiCallFailed(SubscriptionEndpointServiceError.noData))
         }
     }
 

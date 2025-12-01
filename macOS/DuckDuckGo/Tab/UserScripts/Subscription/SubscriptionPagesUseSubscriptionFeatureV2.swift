@@ -248,26 +248,44 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
     }
 
     func getSubscriptionTierOptions(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        var subscriptionTierOptions: SubscriptionTierOptions?
+        PixelKit.fire(SubscriptionPixel.subscriptionTierOptionsRequested)
+        
+        let result: Result<SubscriptionTierOptions, Error>
 
         switch subscriptionPlatform {
         case .appStore:
-            guard #available(macOS 12.0, *) else { break }
-            subscriptionTierOptions = await subscriptionManager.storePurchaseManager().subscriptionTierOptions(includeProTier: subscriptionFeatureAvailability.isProTierPurchaseEnabled)
+            guard #available(macOS 12.0, *) else { return SubscriptionTierOptions.empty }
+            result = await subscriptionManager.storePurchaseManager()
+                .subscriptionTierOptions(includeProTier: subscriptionFeatureAvailability.isProTierPurchaseEnabled)
+                .mapError { $0 as Error }
+
         case .stripe:
-            switch await stripePurchaseFlow.subscriptionTierOptions(includeProTier: subscriptionFeatureAvailability.isProTierPurchaseEnabled) {
-            case .success(let tierOptions):
-                subscriptionTierOptions = tierOptions
-            case .failure(let error):
-                Logger.subscription.error("Failed to get Stripe tier options: \(String(describing: error), privacy: .public)")
-                subscriptionTierOptions = nil
-            }
+            result = await stripePurchaseFlow
+                .subscriptionTierOptions(includeProTier: subscriptionFeatureAvailability.isProTierPurchaseEnabled)
+                .mapError { $0 as Error }
         }
 
-        if let subscriptionTierOptions {
+        switch result {
+        case .success(let subscriptionTierOptions):
+            // TEMPORARY: Check if Pro tier was unexpectedly returned
+            let hasProTier = subscriptionTierOptions.products.contains { $0.tier.lowercased() == "pro" }
+            if hasProTier {
+                PixelKit.fire(SubscriptionPixel.subscriptionTierOptionsUnexpectedProTier, 
+                            withAdditionalParameters: ["platform": subscriptionPlatform.rawValue])
+            }
+            
+            PixelKit.fire(SubscriptionPixel.subscriptionTierOptionsSuccess,
+                        withAdditionalParameters: ["platform": subscriptionPlatform.rawValue])
+            
             guard subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed else { return subscriptionTierOptions.withoutPurchaseOptions() }
             return subscriptionTierOptions
-        } else {
+            
+        case .failure(let error):
+            Logger.subscription.error("Failed to get tier options: \(String(describing: error), privacy: .public)")
+            
+            PixelKit.fire(DebugEvent(SubscriptionPixel.subscriptionTierOptionsFailure, error: error),
+                        withAdditionalParameters: ["platform": subscriptionPlatform.rawValue])
+            
             return SubscriptionTierOptions.empty
         }
     }
@@ -507,7 +525,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
             case .failure(let error):
                 await showSomethingWentWrongAlert()
                 switch error {
-                case .noProductsFound:
+                case .noProductsFound, .apiCallFailed, .emptyProductsFromAPI, .emptyAfterFiltering, .tierCreationFailed, .invalidProductData:
                     subscriptionErrorReporter.report(subscriptionActivationError: .failedToGetSubscriptionOptions)
                 case .accountCreationFailed(let creationError):
                     subscriptionErrorReporter.report(subscriptionActivationError: .accountCreationFailed(creationError))

@@ -542,16 +542,21 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
 
     // MARK: - Subscription Tier Options Tests
 
-    func testSubscriptionTierOptionsReturnsNilWhenNoProductsExist() async {
+    func testSubscriptionTierOptionsReturnsFailureWhenNoProductsExist() async {
         // Given
         mockProductFetcher.mockProducts = []
         await sut.updateAvailableProducts()
 
         // When
-        let tierOptions = await sut.subscriptionTierOptions(includeProTier: false)
+        let result = await sut.subscriptionTierOptions(includeProTier: false)
 
         // Then
-        XCTAssertNil(tierOptions)
+        switch result {
+        case .success:
+            XCTFail("Expected failure but got success")
+        case .failure(let error):
+            XCTAssertEqual(error, .noProductsAvailable)
+        }
     }
 
     func testSubscriptionTierOptionsReturnsPlusTierOnly() async {
@@ -582,13 +587,17 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         mockCache.tierMapping = ["com.test.monthly": plusFeatures]
 
         // When
-        let tierOptions = await sut.subscriptionTierOptions(includeProTier: false)
+        let result = await sut.subscriptionTierOptions(includeProTier: false)
 
         // Then
-        XCTAssertNotNil(tierOptions)
-        XCTAssertEqual(tierOptions?.products.count, 1)
+        guard case .success(let tierOptions) = result else {
+            XCTFail("Expected success but got failure")
+            return
+        }
+        
+        XCTAssertEqual(tierOptions.products.count, 1)
 
-        let plusTier = tierOptions?.products.first
+        let plusTier = tierOptions.products.first
         XCTAssertEqual(plusTier?.tier, "Plus")
         XCTAssertEqual(plusTier?.features.count, 4)
         XCTAssertEqual(plusTier?.options.count, 2)
@@ -652,21 +661,25 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         ]
 
         // When
-        let tierOptions = await sut.subscriptionTierOptions(includeProTier: true)
+        let result = await sut.subscriptionTierOptions(includeProTier: true)
 
         // Then
-        XCTAssertNotNil(tierOptions)
-        XCTAssertEqual(tierOptions?.products.count, 2)
+        guard case .success(let tierOptions) = result else {
+            XCTFail("Expected success but got failure")
+            return
+        }
+        
+        XCTAssertEqual(tierOptions.products.count, 2)
 
         // Verify Plus tier
-        let plusTier = tierOptions?.products.first { $0.tier == "Plus" }
+        let plusTier = tierOptions.products.first { $0.tier == "Plus" }
         XCTAssertNotNil(plusTier)
         XCTAssertEqual(plusTier?.features.count, 2)
         XCTAssertEqual(plusTier?.options.count, 2)
         XCTAssertTrue(plusTier?.features.allSatisfy { $0.name == "plus" } ?? false)
 
         // Verify Pro tier
-        let proTier = tierOptions?.products.first { $0.tier == "Pro" }
+        let proTier = tierOptions.products.first { $0.tier == "Pro" }
         XCTAssertNotNil(proTier)
         XCTAssertEqual(proTier?.features.count, 4)
         XCTAssertEqual(proTier?.options.count, 2)
@@ -717,11 +730,15 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         mockCache.tierMapping = ["com.test.monthly.trial": plusFeatures]
 
         // When
-        let tierOptions = await sut.subscriptionTierOptions(includeProTier: false)
+        let result = await sut.subscriptionTierOptions(includeProTier: false)
 
         // Then
-        XCTAssertNotNil(tierOptions)
-        let plusTier = tierOptions?.products.first
+        guard case .success(let tierOptions) = result else {
+            XCTFail("Expected success but got failure")
+            return
+        }
+        
+        let plusTier = tierOptions.products.first
         XCTAssertNotNil(plusTier)
 
         // Verify trial offers are included in options
@@ -753,15 +770,19 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         mockCache.tierMapping = ["com.test.monthly": plusFeatures]
 
         // When
-        let tierOptions = await sut.subscriptionTierOptions(includeProTier: false)
+        let result = await sut.subscriptionTierOptions(includeProTier: false)
 
         // Then
-        XCTAssertNotNil(tierOptions)
-        XCTAssertEqual(tierOptions?.products.count, 1)
-        XCTAssertEqual(tierOptions?.products.first?.tier, "Plus")
+        guard case .success(let tierOptions) = result else {
+            XCTFail("Expected success but got failure")
+            return
+        }
+        
+        XCTAssertEqual(tierOptions.products.count, 1)
+        XCTAssertEqual(tierOptions.products.first?.tier, "Plus")
 
         // Verify no Pro tier products in options
-        let allOptionIds = tierOptions?.products.flatMap { $0.options.map { $0.id } } ?? []
+        let allOptionIds = tierOptions.products.flatMap { $0.options.map { $0.id } }
         XCTAssertFalse(allOptionIds.contains("com.test.monthly.pro"))
         XCTAssertFalse(allOptionIds.contains("com.test.yearly.pro"))
     }
@@ -779,14 +800,18 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         mockCache.tierMapping = ["com.test.monthly": features]
 
         // When
-        let tierOptions = await sut.subscriptionTierOptions(includeProTier: false)
+        let result = await sut.subscriptionTierOptions(includeProTier: false)
 
         // Then
-        XCTAssertNotNil(tierOptions)
+        guard case .success(let tierOptions) = result else {
+            XCTFail("Expected success but got failure")
+            return
+        }
+        
         #if os(iOS)
-        XCTAssertEqual(tierOptions?.platform, .ios)
+        XCTAssertEqual(tierOptions.platform, .ios)
         #else
-        XCTAssertEqual(tierOptions?.platform, .macos)
+        XCTAssertEqual(tierOptions.platform, .macos)
         #endif
     }
 
@@ -799,13 +824,18 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         await sut.updateAvailableProducts()
 
         // Setup empty features map (features not fetched successfully)
-        mockCache.tierMapping = [:]
+        mockCache.shouldThrowError = SubscriptionEndpointServiceError.invalidRequest
 
         // When
-        let tierOptions = await sut.subscriptionTierOptions(includeProTier: false)
+        let result = await sut.subscriptionTierOptions(includeProTier: false)
 
         // Then
-        XCTAssertNil(tierOptions, "Should return nil when features cannot be fetched")
+        switch result {
+        case .success:
+            XCTFail("Expected failure but got success")
+        case .failure(let error):
+            XCTAssertEqual(error, .featureAPIFailed(SubscriptionEndpointServiceError.invalidRequest))
+        }
     }
 
     func testSubscriptionTierOptionsFetchesOnlyOneProductPerTier() async {
@@ -827,10 +857,14 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         ]
 
         // When
-        let tierOptions = await sut.subscriptionTierOptions(includeProTier: true)
+        let result = await sut.subscriptionTierOptions(includeProTier: true)
 
         // Then
-        XCTAssertNotNil(tierOptions)
+        guard case .success(let tierOptions) = result else {
+            XCTFail("Expected success but got failure")
+            return
+        }
+        
         // Verify that cache was called with only representative products (one per tier)
         // Both monthly products should have been used as representatives
         XCTAssertNotNil(mockCache.tierMapping["com.test.monthly"])

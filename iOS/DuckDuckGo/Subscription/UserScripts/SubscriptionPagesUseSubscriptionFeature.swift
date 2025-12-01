@@ -760,14 +760,35 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
     }
 
     func getSubscriptionTierOptions(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        let subscriptionTierOptions = await subscriptionManager.storePurchaseManager().subscriptionTierOptions(includeProTier: subscriptionFeatureAvailability.isProTierPurchaseEnabled)
+        Pixel.fire(pixel: .subscriptionTierOptionsRequested)
+        
+        let subscriptionTierOptionsResponse = await subscriptionManager.storePurchaseManager().subscriptionTierOptions(includeProTier: subscriptionFeatureAvailability.isProTierPurchaseEnabled)
 
-        if let subscriptionTierOptions {
+        switch subscriptionTierOptionsResponse {
+        case .success(let subscriptionTierOptions):
+            // Check if Pro tier was unexpectedly returned
+            let hasProTier = subscriptionTierOptions.products.contains { $0.tier.lowercased() == "pro" }
+            if hasProTier {
+                Pixel.fire(pixel: .subscriptionTierOptionsUnexpectedProTier,
+                         withAdditionalParameters: ["platform": "app_store"])
+            }
+            
+            // Fire success pixel
+            Pixel.fire(pixel: .subscriptionTierOptionsSuccess,
+                     withAdditionalParameters: ["platform": "app_store"])
+            
             guard subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed else { return subscriptionTierOptions.withoutPurchaseOptions() }
             return subscriptionTierOptions
-        } else {
+            
+        case .failure(let error):
             Logger.subscription.error("Failed to obtain subscription tier options")
             setTransactionError(.failedToGetSubscriptionOptions)
+            
+            // Fire failure pixel with error details using error parameter
+            Pixel.fire(pixel: .subscriptionTierOptionsFailure,
+                     error: error,
+                     withAdditionalParameters: ["platform": "app_store"])
+            
             return SubscriptionTierOptions.empty
         }
     }

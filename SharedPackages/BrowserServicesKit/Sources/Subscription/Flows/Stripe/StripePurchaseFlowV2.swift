@@ -26,11 +26,21 @@ import PixelKit
 public enum StripePurchaseFlowError: DDGError {
     case noProductsFound
     case accountCreationFailed(Error)
+    case apiCallFailed(Error)
+    case emptyProductsFromAPI
+    case emptyAfterFiltering
+    case tierCreationFailed
+    case invalidProductData
 
     public var description: String {
         switch self {
         case .noProductsFound: "No products found."
         case .accountCreationFailed(let error): "Account creation failed: \(error)"
+        case .apiCallFailed(let error): "API call failed: \(error)"
+        case .emptyProductsFromAPI: "API returned empty products."
+        case .emptyAfterFiltering: "No products after filtering."
+        case .tierCreationFailed: "Failed to create tiers."
+        case .invalidProductData: "Invalid product data."
         }
     }
 
@@ -40,12 +50,18 @@ public enum StripePurchaseFlowError: DDGError {
         switch self {
         case .noProductsFound: 12700
         case .accountCreationFailed: 12701
+        case .apiCallFailed: 12702
+        case .emptyProductsFromAPI: 12703
+        case .emptyAfterFiltering: 12704
+        case .tierCreationFailed: 12705
+        case .invalidProductData: 12706
         }
     }
 
     public var underlyingError: (any Error)? {
         switch self {
         case .accountCreationFailed(let error): error
+        case .apiCallFailed(let error): error
         default: nil
         }
     }
@@ -56,6 +72,16 @@ public enum StripePurchaseFlowError: DDGError {
             return true
         case let (.accountCreationFailed(lhsError), .accountCreationFailed(rhsError)):
             return String(describing: lhsError) == String(describing: rhsError)
+        case let (.apiCallFailed(lhsError), .apiCallFailed(rhsError)):
+            return String(describing: lhsError) == String(describing: rhsError)
+        case (.emptyProductsFromAPI, .emptyProductsFromAPI):
+            return true
+        case (.emptyAfterFiltering, .emptyAfterFiltering):
+            return true
+        case (.tierCreationFailed, .tierCreationFailed):
+            return true
+        case (.invalidProductData, .invalidProductData):
+            return true
         default:
             return false
         }
@@ -119,10 +145,17 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
         // This will change when will introduce Stripe internationally
         let regionParameter = "us"
 
-        guard let productsResponse = try? await subscriptionManager.getTierProducts(region: regionParameter, platform: SubscriptionPlatformName.stripe.rawValue),
-              !productsResponse.products.isEmpty else {
-            Logger.subscriptionStripePurchaseFlow.error("[StripePurchaseFlowV2] Failed to obtain products from v2 API")
-            return .failure(.noProductsFound)
+        let productsResponse: GetTierProductsResponse
+        do {
+            productsResponse = try await subscriptionManager.getTierProducts(region: regionParameter, platform: SubscriptionPlatformName.stripe.rawValue)
+        } catch {
+            Logger.subscriptionStripePurchaseFlow.error("[StripePurchaseFlowV2] API call failed: \(String(describing: error), privacy: .public)")
+            return .failure(.apiCallFailed(error))
+        }
+
+        guard !productsResponse.products.isEmpty else {
+            Logger.subscriptionStripePurchaseFlow.error("[StripePurchaseFlowV2] API returned empty products")
+            return .failure(.emptyProductsFromAPI)
         }
 
         // Filter pro tier products based on feature flag
@@ -132,7 +165,7 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
 
         guard !filteredProducts.isEmpty else {
             Logger.subscriptionStripePurchaseFlow.error("[StripePurchaseFlowV2] No products available after filtering")
-            return .failure(.noProductsFound)
+            return .failure(.emptyAfterFiltering)
         }
 
         var tiers: [SubscriptionTier] = []
@@ -147,7 +180,7 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
 
         guard !tiers.isEmpty else {
             Logger.subscriptionStripePurchaseFlow.error("[StripePurchaseFlowV2] No tiers created")
-            return .failure(.noProductsFound)
+            return .failure(.tierCreationFailed)
         }
 
         Logger.subscriptionStripePurchaseFlow.log("[StripePurchaseFlowV2] Tiers products created \(tiers.count)")

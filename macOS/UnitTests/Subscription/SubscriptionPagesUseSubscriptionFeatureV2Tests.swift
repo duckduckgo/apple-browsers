@@ -420,7 +420,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             ]
         )
 
-        mockStorePurchaseManager.subscriptionTierOptionsResult = expectedTierOptions
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(expectedTierOptions)
 
         // When
         let result = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
@@ -459,7 +459,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             ]
         )
 
-        mockStorePurchaseManager.subscriptionTierOptionsResult = tierOptionsWithPurchase
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(tierOptionsWithPurchase)
 
         // When
         let result = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
@@ -496,7 +496,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             ]
         )
 
-        mockStorePurchaseManager.subscriptionTierOptionsResult = tierOptionsWithPurchase
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(tierOptionsWithPurchase)
 
         // When
         let result = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
@@ -515,7 +515,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
     func testGetSubscriptionTierOptions_WhenNoOptionsAvailable_ReturnsEmpty() async throws {
         // Given
-        mockStorePurchaseManager.subscriptionTierOptionsResult = nil
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .failure(.noProductsAvailable)
 
         // When
         let result = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))

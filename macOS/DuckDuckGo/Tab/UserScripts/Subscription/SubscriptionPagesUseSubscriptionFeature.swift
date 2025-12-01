@@ -330,7 +330,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             case .failure(let error):
                 await showSomethingWentWrongAlert()
                 switch error {
-                case .noProductsFound:
+                case .noProductsFound, .apiCallFailed, .emptyProductsFromAPI, .emptyAfterFiltering, .tierCreationFailed, .invalidProductData:
                     subscriptionErrorReporter.report(subscriptionActivationError: .failedToGetSubscriptionOptions)
                 case .accountCreationFailed(let creationError):
                     subscriptionErrorReporter.report(subscriptionActivationError: .accountCreationFailed(creationError))

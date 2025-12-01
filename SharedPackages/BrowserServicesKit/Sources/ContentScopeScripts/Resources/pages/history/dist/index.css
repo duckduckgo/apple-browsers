@@ -70,6 +70,7 @@
   --color-white: #fff;
   --color-black-at-1: rgba(0, 0, 0, 0.01);
   --color-black-at-3: rgba(0, 0, 0, 0.03);
+  --color-black-at-4: rgba(0, 0, 0, 0.04);
   --color-black-at-6: rgba(0, 0, 0, 0.06);
   --color-black-at-9: rgba(0, 0, 0, 0.09);
   --color-black-at-12: rgba(0, 0, 0, 0.12);
@@ -81,6 +82,7 @@
   --color-black-at-48: rgba(0, 0, 0, 0.48);
   --color-black-at-50: rgba(0, 0, 0, 0.5);
   --color-black-at-60: rgba(0, 0, 0, 0.6);
+  --color-black-at-66: rgba(0, 0, 0, 0.66);
   --color-black-at-72: rgba(0, 0, 0, 0.72);
   --color-black-at-80: rgba(0, 0, 0, 0.8);
   --color-black-at-84: rgba(0, 0, 0, 0.84);
@@ -99,6 +101,7 @@
   --color-white-at-42: rgba(255, 255, 255, 0.42);
   --color-white-at-50: rgba(255, 255, 255, 0.5);
   --color-white-at-60: rgba(255, 255, 255, 0.6);
+  --color-white-at-66: rgba(255, 255, 255, 0.66);
   --color-white-at-70: rgba(255, 255, 255, 0.7);
   --color-white-at-80: rgba(255, 255, 255, 0.8);
   --color-white-at-84: rgba(255, 255, 255, 0.84);

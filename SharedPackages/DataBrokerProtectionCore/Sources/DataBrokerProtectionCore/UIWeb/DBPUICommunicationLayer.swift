@@ -36,7 +36,7 @@ public struct DBPUIFeatureConfigurationResponse: Encodable {
 }
 
 public protocol DBPUICommunicationDelegate: AnyObject {
-    func getHandshakeUserData() -> DBPUIHandshakeUserData?
+    func getHandshakeUserData() async -> DBPUIHandshakeUserData?
     func saveProfile() async throws
     func getUserProfile() -> DBPUIUserProfile?
     func deleteProfileData() throws
@@ -151,7 +151,7 @@ public struct DBPUICommunicationLayer: Subfeature {
         }
 
         // Attempt to get handshake user data, but fallback to a default
-        let userData = delegate?.getHandshakeUserData() ?? DBPUIHandshakeUserData(isAuthenticatedUser: true)
+        let userData = (await delegate?.getHandshakeUserData()) ?? DBPUIHandshakeUserData(isAuthenticatedUser: true)
 
         if result.version != Constants.version {
             Logger.dataBrokerProtection.log("Incorrect protocol version presented by UI")

@@ -153,6 +153,13 @@ final class WebNotificationsHandler: NSObject, Subfeature {
 
     // MARK: - System Authorization
 
+    /// Checks if system notification authorization is granted (without prompting).
+    /// - Returns: `true` if already authorized, `false` otherwise.
+    private func isSystemAuthorized() async -> Bool {
+        let status = await notificationService.authorizationStatus()
+        return status == .authorized || status == .provisional
+    }
+
     /// Checks system notification authorization, requesting permission if not yet determined.
     /// - Returns: `true` if authorized to show notifications, `false` otherwise.
     private func ensureSystemAuthorization() async -> Bool {
@@ -238,7 +245,14 @@ final class WebNotificationsHandler: NSObject, Subfeature {
             return
         }
 
-        guard await ensureSystemAuthorization() else {
+        guard featureFlagger.isFeatureOn(.webNotifications) else {
+            Logger.general.debug("WebNotificationsHandler: Blocked - feature flag disabled (ID: \(payload.id))")
+            await sendErrorEvent(id: payload.id, to: original.webView)
+            return
+        }
+
+        guard await isSystemAuthorized() else {
+            Logger.general.debug("WebNotificationsHandler: Blocked - not authorized (ID: \(payload.id))")
             await sendErrorEvent(id: payload.id, to: original.webView)
             return
         }
@@ -251,6 +265,11 @@ final class WebNotificationsHandler: NSObject, Subfeature {
     private func handleCloseNotification(params: Any, original: WKScriptMessage) {
         guard let payload: CloseNotificationPayload = DecodableHelper.decode(from: params) else {
             Logger.general.error("WebNotificationsHandler: Invalid closeNotification payload")
+            return
+        }
+
+        guard featureFlagger.isFeatureOn(.webNotifications) else {
+            Logger.general.debug("WebNotificationsHandler: Close blocked - feature flag disabled (ID: \(payload.id))")
             return
         }
 

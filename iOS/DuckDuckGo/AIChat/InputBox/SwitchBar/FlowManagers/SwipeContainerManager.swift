@@ -54,7 +54,7 @@ final class SwipeContainerManager: NSObject {
         set { swipeContainerViewController.delegate = newValue }
     }
 
-    var fadeoutDelegate: FadeoutContainerViewControllerDelegate? {
+    var fadeOutDelegate: FadeoutContainerViewControllerDelegate? {
         get { fadeoutContainerViewController.delegate }
         set { fadeoutContainerViewController.delegate = newValue }
     }

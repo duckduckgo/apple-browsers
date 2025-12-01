@@ -271,7 +271,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         let manager = SwipeContainerManager(switchBarHandler: switchBarHandler)
         manager.installInViewController(self, asSubviewOf: contentContainerView, barView: switchBarVC.view, isTopBarPosition: isUsingTopBarPosition)
         manager.delegate = self
-        manager.fadeoutDelegate = self
+        manager.fadeOutDelegate = self
         swipeContainerManager = manager
     }
 

@@ -249,6 +249,13 @@ final class WebNotificationsHandler: NSObject, Subfeature {
             return
         }
 
+        // Block notifications from iframes to prevent content spoofing attacks
+        guard original.frameInfo.isMainFrame else {
+            Logger.general.debug("WebNotificationsHandler: Blocked notification from iframe (ID: \(payload.id))")
+            sendErrorEvent(id: payload.id, to: original.webView)
+            return
+        }
+
         guard featureFlagger.isFeatureOn(.webNotifications) else {
             Logger.general.debug("WebNotificationsHandler: Blocked - feature flag disabled (ID: \(payload.id))")
             sendErrorEvent(id: payload.id, to: original.webView)
@@ -287,6 +294,12 @@ final class WebNotificationsHandler: NSObject, Subfeature {
 
         if await isFireWindow(original) {
             Logger.general.debug("WebNotificationsHandler: Permission denied in Fire Window")
+            return RequestPermissionResponse(permission: Permission.denied.rawValue)
+        }
+
+        // Block permission requests from iframes to prevent spoofing
+        guard original.frameInfo.isMainFrame else {
+            Logger.general.debug("WebNotificationsHandler: Permission denied from iframe")
             return RequestPermissionResponse(permission: Permission.denied.rawValue)
         }
 

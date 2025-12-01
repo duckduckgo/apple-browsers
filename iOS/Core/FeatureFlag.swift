@@ -209,9 +209,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866714634010
     case newDeviceSyncPrompt
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866712760347
-    case embeddedSERPSettings
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866611049398
     case authV2WideEventEnabled
 
@@ -291,7 +288,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .subscriptionPurchaseWidePixelMeasurement,
              .newDeviceSyncPrompt,
              .authV2WideEventEnabled,
-             .embeddedSERPSettings,
              .syncCreditCards,
              .unifiedURLPredictor,
              .forgetAllInSettings,
@@ -339,7 +335,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .dbpRemoteBrokerDelivery,
              .subscriptionPurchaseWidePixelMeasurement,
              .showAIChatAddressBarChoiceScreen,
-             .embeddedSERPSettings,
              .authV2WideEventEnabled,
              .winBackOffer,
              .syncCreditCards,
@@ -530,8 +525,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.showAIChatAddressBarChoiceScreen))
         case .newDeviceSyncPrompt:
             return .remoteReleasable(.subfeature(SyncSubfeature.newDeviceSyncPrompt))
-        case .embeddedSERPSettings:
-            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.embeddedSERPSettings))
         case .authV2WideEventEnabled:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.authV2WideEventEnabled))
         case .winBackOffer:

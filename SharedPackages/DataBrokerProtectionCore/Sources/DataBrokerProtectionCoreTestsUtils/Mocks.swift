@@ -917,9 +917,19 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
 public class MockDataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels> {
 
     public static var lastPixelsFired = [DataBrokerProtectionSharedPixels]()
+    public var lastFiredEvent: DataBrokerProtectionSharedPixels?
+    public var lastPassedParameters: [String: String]?
 
     public init() {
-        super.init { event, _, _, _ in
+        var mockMapping: Mapping! = nil
+
+        super.init { event, error, params, onComplete in
+            mockMapping(event, error, params, onComplete)
+        }
+
+        mockMapping = { [weak self] event, _, params, _ in
+            self?.lastFiredEvent = event
+            self?.lastPassedParameters = params
             MockDataBrokerProtectionPixelsHandler.lastPixelsFired.append(event)
         }
     }
@@ -930,6 +940,8 @@ public class MockDataBrokerProtectionPixelsHandler: EventMapping<DataBrokerProte
 
     public func clear() {
         MockDataBrokerProtectionPixelsHandler.lastPixelsFired.removeAll()
+        lastFiredEvent = nil
+        lastPassedParameters = nil
     }
 }
 
@@ -1953,7 +1965,7 @@ public final class MockBrokerProfileJobDependencies: BrokerProfileJobDependencyP
         self.privacyConfig = PrivacyConfigurationManagingMock()
         self.executionConfig = BrokerJobExecutionConfig(intervalBetweenSameBrokerJobs: 0)
         self.notificationCenter = .default
-        self.pixelHandler = MockPixelHandler()
+        self.pixelHandler = MockDataBrokerProtectionPixelsHandler()
         self.eventsHandler = MockOperationEventsHandler()
         self.dataBrokerProtectionSettings = DataBrokerProtectionSettings(defaults: .standard)
         self.emailConfirmationDataService = MockEmailConfirmationDataServiceProvider()
@@ -2241,13 +2253,17 @@ public final class MockDataBrokerProtectionStatsPixelsRepository: DataBrokerProt
 
     public var didSetCustomStatsPixelsLastSentTimestamp = false
     public var didGetCustomStatsPixelsLastSentTimestamp = false
+    public var getCount = 0
+    public var setCount = 0
     public var _customStatsPixelsLastSentTimestamp: Date?
 
     public var customStatsPixelsLastSentTimestamp: Date? {
         get {
-            defer { didGetCustomStatsPixelsLastSentTimestamp = true }
+            getCount += 1
+            didGetCustomStatsPixelsLastSentTimestamp = true
             return _customStatsPixelsLastSentTimestamp
         } set {
+            setCount += 1
             didSetCustomStatsPixelsLastSentTimestamp = true
             _customStatsPixelsLastSentTimestamp = newValue
         }
@@ -2257,8 +2273,84 @@ public final class MockDataBrokerProtectionStatsPixelsRepository: DataBrokerProt
 
     func clear() {
         didSetCustomStatsPixelsLastSentTimestamp = false
+        didGetCustomStatsPixelsLastSentTimestamp = false
         customStatsPixelsLastSentTimestamp = nil
+        getCount = 0
+        setCount = 0
+    }
+}
 
+public final class MockDataBrokerProtectionEngagementPixelsRepository: DataBrokerProtectionEngagementPixelsRepository {
+    public var wasDailyPixelSent = false
+    public var wasWeeklyPixelSent = false
+    public var wasMonthlyPixelSent = false
+    public var wasGetLatestDailyPixelCalled = false
+    public var wasGetLatestWeeklyPixelCalled = false
+    public var wasGetLatestMonthlyPixelCalled = false
+    public var setLatestDailyPixel: Date?
+    public var setLatestWeeklyPixel: Date?
+    public var setLatestMonthlyPixel: Date?
+
+    public init() {}
+
+    public func markDailyPixelSent() {
+        wasDailyPixelSent = true
+    }
+
+    public func markWeeklyPixelSent() {
+        wasWeeklyPixelSent = true
+    }
+
+    public func markMonthlyPixelSent() {
+        wasMonthlyPixelSent = true
+    }
+
+    public func getLatestDailyPixel() -> Date? {
+        wasGetLatestDailyPixelCalled = true
+        return setLatestDailyPixel
+    }
+
+    public func getLatestWeeklyPixel() -> Date? {
+        wasGetLatestWeeklyPixelCalled = true
+        return setLatestWeeklyPixel
+    }
+
+    public func getLatestMonthlyPixel() -> Date? {
+        wasGetLatestMonthlyPixelCalled = true
+        return setLatestMonthlyPixel
+    }
+
+    public func clear() {
+        wasDailyPixelSent = false
+        wasWeeklyPixelSent = false
+        wasMonthlyPixelSent = false
+        wasGetLatestDailyPixelCalled = false
+        wasGetLatestWeeklyPixelCalled = false
+        wasGetLatestMonthlyPixelCalled = false
+        setLatestDailyPixel = nil
+        setLatestWeeklyPixel = nil
+        setLatestMonthlyPixel = nil
+    }
+}
+
+public final class MockDataBrokerProtectionEventPixelsRepository: DataBrokerProtectionEventPixelsRepository {
+
+    public var wasMarkWeeklyPixelSentCalled = false
+    public var customGetLatestWeeklyPixel: Date?
+
+    public init() {}
+
+    public func markWeeklyPixelSent() {
+        wasMarkWeeklyPixelSentCalled = true
+    }
+
+    public func getLatestWeeklyPixel() -> Date? {
+        return customGetLatestWeeklyPixel
+    }
+
+    public func clear() {
+        wasMarkWeeklyPixelSentCalled = false
+        customGetLatestWeeklyPixel = nil
     }
 }
 

@@ -1107,7 +1107,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
            !urlEventHandlerResult.willOpenWindows && WindowsManager.windows.first(where: { $0 is MainWindow }) == nil {
             // Use startup window preferences if not restoring previous session
             if !startupPreferences.restorePreviousSession {
-                let burnerMode = startupPreferences.startupBurnerMode(featureFlagger: featureFlagger)
+                let burnerMode = startupPreferences.startupBurnerMode()
                 WindowsManager.openNewWindow(burnerMode: burnerMode, lazyLoadTabs: true)
             } else {
                 WindowsManager.openNewWindow(lazyLoadTabs: true)
@@ -1339,7 +1339,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if Application.appDelegate.windowControllersManager.mainWindowControllers.isEmpty,
            case .normal = AppVersion.runType {
             // Use startup window preferences when reopening from dock
-            let burnerMode = startupPreferences.startupBurnerMode(featureFlagger: featureFlagger)
+            let burnerMode = startupPreferences.startupBurnerMode()
             WindowsManager.openNewWindow(burnerMode: burnerMode)
             return true
         }

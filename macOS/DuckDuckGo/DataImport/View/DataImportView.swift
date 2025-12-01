@@ -196,7 +196,7 @@ struct DataImportView: ModalView {
     @State private var showPasswordsExplainerPopover = false
 
     private func passwordsExplainerView() -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 8) {
             Image(nsImage: DesignSystemImages.Glyphs.Size16.lock)
                 .renderingMode(.template)
                 .foregroundColor(Color(designSystemColor: showPasswordsExplainerPopover ? .iconsPrimary : .iconsTertiary))

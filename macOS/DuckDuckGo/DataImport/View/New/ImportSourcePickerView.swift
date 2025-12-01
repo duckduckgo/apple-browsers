@@ -72,7 +72,7 @@ struct ImportSourcePickerView: View {
                         HoverButtonView {
                             viewModel.showTypeSelectionSheet()
                         } content: {
-                            HStack(alignment: .lastTextBaseline, spacing: 1) {
+                            HStack(alignment: .center, spacing: 4) {
                                 Text(viewModel.typeButtonTitle)
                                     .font(.system(size: 13, weight: .semibold))
                                 Image(nsImage: DesignSystemImages.Glyphs.Size16.chevronRight)
@@ -80,6 +80,7 @@ struct ImportSourcePickerView: View {
                                     .resizable()
                                     .frame(width: 10, height: 10)
                                     .rotationEffect(.degrees(90))
+                                    .offset(y: 1)
                             }
                         }
                     }
@@ -100,7 +101,7 @@ struct ImportSourcePickerView: View {
                         viewModel.toggleExpansion()
                     } content: {
                         Text(UserText.importChooseSourceShowMoreButtonTitle)
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.system(size: 13, weight: .semibold))
                             .multilineTextAlignment(.center)
                     }
                     .padding(.top, 10)
@@ -125,7 +126,7 @@ struct ImportSourcePickerView: View {
                     .padding(.horizontal, 12)
                     .padding(.vertical, 14)
                     .frame(width: 380, alignment: .center)
-                    .background((Color(designSystemColor: .surfacePrimary)))
+                    .background((Color(designSystemColor: .surfaceSecondary)))
                     .cornerRadius(10)
                 }
                 .buttonStyle(.plain)

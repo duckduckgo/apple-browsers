@@ -30,6 +30,7 @@ protocol WebViewContextMenuDelegate: AnyObject {
 
 enum WebViewInteractionEvent {
     case mouseDown(NSEvent)
+    case middleMouseDown(NSEvent)
     case keyDown(NSEvent)
     case scrollWheel(NSEvent)
 }
@@ -184,6 +185,13 @@ final class WebView: WKWebView {
     override func mouseDown(with event: NSEvent) {
         super.mouseDown(with: event)
         interactionEventsPublisher.send(.mouseDown(event))
+    }
+
+    override func otherMouseDown(with event: NSEvent) {
+        super.otherMouseDown(with: event)
+        if case .middle = event.button {
+            interactionEventsPublisher.send(.middleMouseDown(event))
+        }
     }
 
     override func keyDown(with event: NSEvent) {

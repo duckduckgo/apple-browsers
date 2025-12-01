@@ -61,9 +61,14 @@ struct Launching: LaunchingHandling {
         // Initialize configuration with the key-value store
         configuration = AppConfiguration(appKeyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
 
+        var isBookmarksDBFilePresent: Bool = true
+        if BoolFileMarker(name: .hasSuccessfullySetupBookmarksDatabaseBefore)?.isPresent ?? false {
+            isBookmarksDBFilePresent = FileManager.default.fileExists(atPath: BookmarksDatabase.defaultDBFileURL.path)
+        }
+
         // MARK: - Application Setup
         // Handles one-time application setup during launch
-        try configuration.start()
+        try configuration.start(isBookmarksDBFilePresent: isBookmarksDBFilePresent)
 
         // MARK: - Service Initialization (continued)
         // Create and initialize remaining core services
@@ -84,7 +89,7 @@ struct Launching: LaunchingHandling {
         let reportingService = ReportingService(fireproofing: fireproofing,
                                                 featureFlagging: featureFlagger,
                                                 userDefaults: UserDefaults.app,
-                                                pixelKit: PixelKit.shared!,
+                                                pixelKit: PixelKit.shared,
                                                 appDependencies: AppDependencyProvider.shared,
                                                 privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager)
         let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,

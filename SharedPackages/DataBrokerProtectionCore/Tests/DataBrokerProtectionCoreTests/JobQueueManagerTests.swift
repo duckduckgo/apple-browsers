@@ -29,7 +29,7 @@ final class JobQueueManagerTests: XCTestCase {
     private var mockOperationsCreator: MockDataBrokerOperationsCreator!
     private var mockEmailConfirmationJobProvider: MockEmailConfirmationJobProvider!
     private var mockDatabase: MockDatabase!
-    private var mockPixelHandler: MockPixelHandler!
+    private var mockPixelHandler: MockDataBrokerProtectionPixelsHandler!
     private var mockMismatchCalculator: MockMismatchCalculator!
     private var mockSchedulerConfig = BrokerJobExecutionConfig()
     private var mockScanRunner: MockScanSubJobWebRunner!
@@ -43,7 +43,7 @@ final class JobQueueManagerTests: XCTestCase {
         mockOperationsCreator = MockDataBrokerOperationsCreator()
         mockEmailConfirmationJobProvider = MockEmailConfirmationJobProvider()
         mockDatabase = MockDatabase()
-        mockPixelHandler = MockPixelHandler()
+        mockPixelHandler = MockDataBrokerProtectionPixelsHandler()
         mockMismatchCalculator = MockMismatchCalculator(database: mockDatabase, pixelHandler: mockPixelHandler)
         mockScanRunner = MockScanSubJobWebRunner()
         mockOptOutRunner = MockOptOutSubJobWebRunner()
@@ -496,7 +496,7 @@ final class JobQueueManagerTests: XCTestCase {
                               mismatchCalculator: mockMismatchCalculator,
                               pixelHandler: mockPixelHandler)
 
-        mockPixelHandler.resetCapturedData()
+        mockPixelHandler.clear()
         let error = DataBrokerProtectionError.actionFailed(actionID: "action-id", message: "something happened")
 
         // When
@@ -534,7 +534,7 @@ final class JobQueueManagerTests: XCTestCase {
                               mismatchCalculator: mockMismatchCalculator,
                               pixelHandler: mockPixelHandler)
 
-        mockPixelHandler.resetCapturedData()
+        mockPixelHandler.clear()
         let error = DataBrokerProtectionError.actionFailed(actionID: "id", message: "msg")
 
         // When

@@ -32,7 +32,7 @@ enum ToolbarContentState: Equatable {
         case (.newTab, .newTab):
             return true
         case (.pageLoaded(let lhsTab), .pageLoaded(let rhsTab)):
-            return lhsTab.canGoBack == rhsTab.canGoBack && lhsTab.canGoForward == rhsTab.canGoForward
+            return lhsTab === rhsTab && lhsTab.canGoBack == rhsTab.canGoBack && lhsTab.canGoForward == rhsTab.canGoForward
         default:
             return false
         }

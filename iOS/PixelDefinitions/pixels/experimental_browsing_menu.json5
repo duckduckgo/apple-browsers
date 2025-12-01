@@ -5,7 +5,7 @@
         "triggers": ["other"],
         "suffixes": ["daily", "platform", "form_factor"],
         "parameters": ["appVersion"],
-        "expires": "2025-01-12"
+        "expires": "2026-01-12"
     },
     "m_experimental-browsing-menu_displayed": {
         "description": "Fires when the experimental browsing menu is displayed to the user",
@@ -13,7 +13,7 @@
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
-        "expires": "2025-01-12"
+        "expires": "2026-01-12"
     },
     "m_experimental-browsing-menu_displayed_ntp": {
         "description": "Fires when the experimental browsing menu is displayed to the user on the new tab page",
@@ -21,7 +21,7 @@
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"],
-        "expires": "2025-01-12"
+        "expires": "2026-01-12"
     },
     "m_experimental-browsing-menu_disabled": {
         "description": "Fires when the experimental browsing menu feature is disabled",
@@ -29,7 +29,7 @@
         "triggers": ["other"],
         "suffixes": ["daily", "platform", "form_factor"],
         "parameters": ["appVersion"],
-        "expires": "2025-01-12"
+        "expires": "2026-01-12"
     },
     "m_experimental-browsing-menu_enabled": {
         "description": "Fires when the experimental browsing menu feature is enabled",
@@ -37,6 +37,6 @@
         "triggers": ["other"],
         "suffixes": ["daily", "platform", "form_factor"],
         "parameters": ["appVersion"],
-        "expires": "2025-01-12"
+        "expires": "2026-01-12"
     }
 }

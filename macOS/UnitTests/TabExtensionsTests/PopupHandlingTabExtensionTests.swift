@@ -2225,6 +2225,10 @@ class TestPermissionManager: PermissionManagerProtocol {
         }
     }
 
+    func removePermission(forDomain domain: String, permissionType: PermissionType) {
+        persistedPermissions[domain]?[permissionType] = nil
+    }
+
     var persistedPermissionTypes: Set<PermissionType> { return [] }
 }
 

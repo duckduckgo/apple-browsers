@@ -31,7 +31,6 @@ public final class SubscriptionFeatureAvailabilityMock: SubscriptionFeatureAvail
     public var isPaidAIChatEnabled: Bool = true
     public var isSupportsAlternateStripePaymentFlowEnabled: Bool = false
     public var isSubscriptionPurchaseWidePixelMeasurementEnabled: Bool = true
-    public var isSubscriptionRestoreWidePixelMeasurementEnabled: Bool = false
     public var isTierMessagingEnabled: Bool = false
     public var isProTierPurchaseEnabled: Bool = false
 

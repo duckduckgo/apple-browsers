@@ -243,7 +243,7 @@ final class SubscriptionEmailViewModel: ObservableObject {
                 if self?.isCurrentURL(matching: .welcome) ?? false {
                     self?.state.viewTitle = UserText.subscriptionTitle
                 }
-                if self?.featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) ?? false, let data = self?.restoreWideEventData, let currentURL = self?.webViewModel.url, let emailRestoreURL = SubscriptionRestoreWideEventData.EmailAddressRestoreURL.from(currentURL) {
+                if let data = self?.restoreWideEventData, let currentURL = self?.webViewModel.url, let emailRestoreURL = SubscriptionRestoreWideEventData.EmailAddressRestoreURL.from(currentURL) {
                     data.emailAddressRestoreLastURL = emailRestoreURL
                     self?.wideEvent.updateFlow(data)
                 }
@@ -285,7 +285,7 @@ final class SubscriptionEmailViewModel: ObservableObject {
     }
     
     private func setupSubscriptionRestoreWideEventData() {
-        guard featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) && state.currentFlow == .restoreFlow else { return }
+        guard state.currentFlow == .restoreFlow else { return }
         let data = SubscriptionRestoreWideEventData(
             restorePlatform: .emailAddress,
             contextData: WideEventContextData(name: SubscriptionRestoreFunnelOrigin.appSettings.rawValue)

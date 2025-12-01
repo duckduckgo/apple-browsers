@@ -40,8 +40,6 @@ struct SubscriptionPageFeatureFlagAdapter: SubscriptionPageFeatureFlagProviding 
             return featureFlagger.isFeatureOn(.supportsAlternateStripePaymentFlow)
         case .subscriptionPurchaseWidePixelMeasurement:
             return featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement)
-        case .subscriptionRestoreWidePixelMeasurement:
-            return featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement)
         }
     }
 }

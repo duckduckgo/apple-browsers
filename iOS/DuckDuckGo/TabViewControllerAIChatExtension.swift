@@ -31,8 +31,8 @@ protocol AITabController {
     /// Submits an open settings action to open the AI Chat settings.
     func submitOpenSettingsAction()
     
-    /// Submits an open history action to open the AI Chat history.
-    func submitOpenHistoryAction()
+    /// Submits a toggle sidebar action to open/close the sidebar.
+    func submitToggleSidebarAction()
     
     /// Opens a new AI chat in a new tab.
     func openNewChatInNewTab()
@@ -47,6 +47,9 @@ extension TabViewController: AITabController {
         aiChatContentHandler.setPayload(payload: payload)
 
         let queryURL = aiChatContentHandler.buildQueryURL(query: query, autoSend: autoSend, tools: tools)
+        
+        aiChatContentHandler.fireChatOpenPixelAndSetWasUsed()
+        
         load(url: queryURL)
     }
     
@@ -60,9 +63,9 @@ extension TabViewController: AITabController {
         aiChatContentHandler.submitOpenSettingsAction()
     }
 
-    /// Submits an open history action to open the AI Chat history.
-    func submitOpenHistoryAction() {
-        aiChatContentHandler.submitOpenHistoryAction()
+    /// Submits a toggle sidebar action to open/close the sidebar.
+    func submitToggleSidebarAction() {
+        aiChatContentHandler.submitToggleSidebarAction()
     }
     
     /// Opens a new AI chat in a new tab.

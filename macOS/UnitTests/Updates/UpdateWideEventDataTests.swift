@@ -36,7 +36,7 @@ final class UpdateWideEventDataTests: XCTestCase {
             updateType: .regular,
             initiationType: .automatic,
             updateConfiguration: .automatic,
-            lastKnownStep: .readyToInstall,
+            lastKnownStep: .restartingToUpdate,
             isInternalUser: false,
             osVersion: "macOS 14.0",
             timeSinceLastUpdateBucket: .lessThan1Month,
@@ -60,7 +60,7 @@ final class UpdateWideEventDataTests: XCTestCase {
         XCTAssertEqual(params["feature.data.ext.update_type"], "regular")
         XCTAssertEqual(params["feature.data.ext.initiation_type"], "automatic")
         XCTAssertEqual(params["feature.data.ext.update_configuration"], "automatic")
-        XCTAssertEqual(params["feature.data.ext.last_known_step"], "readyToInstall")
+        XCTAssertEqual(params["feature.data.ext.last_known_step"], "restartingToUpdate")
         XCTAssertEqual(params["feature.data.ext.is_internal_user"], "false")
         XCTAssertEqual(params["feature.data.ext.os_version"], "macOS 14.0")
         XCTAssertEqual(params["feature.data.ext.time_since_last_update"], "<1M")
@@ -264,7 +264,7 @@ final class UpdateWideEventDataTests: XCTestCase {
             .updateCheckStarted,
             .downloadStarted,
             .extractionStarted,
-            .readyToInstall
+            .restartingToUpdate
         ]
 
         for step in steps {

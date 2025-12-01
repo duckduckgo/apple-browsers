@@ -33,11 +33,12 @@ extension DefaultSubscriptionManager: @retroactive AccountManagerKeychainAccessD
         }
 
         let parameters = [PixelParameters.subscriptionKeychainAccessType: accessType.rawValue,
-                          PixelParameters.subscriptionKeychainError: expectedError.errorDescription ?? "Unknown",
+                          PixelParameters.subscriptionKeychainError: expectedError.description,
                           PixelParameters.source: KeychainErrorSource.browser.rawValue,
                           PixelParameters.authVersion: KeychainErrorAuthVersion.v1.rawValue]
         DailyPixel.fireDailyAndCount(pixel: .subscriptionKeychainAccessError,
                                      pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
+                                     error: expectedError,
                                      withAdditionalParameters: parameters)
     }
 }

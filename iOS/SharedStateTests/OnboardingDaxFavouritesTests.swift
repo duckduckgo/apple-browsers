@@ -75,7 +75,6 @@ import Combine
         let onboardingPixelReporter = OnboardingPixelReporterMock()
         let tabsPersistence = TabsModelPersistence(store: keyValueStore, legacyStore: MockKeyValueStore())
         let variantManager = MockVariantManager()
-        let interactionStateSource = WebViewStateRestorationManager(featureFlagger: featureFlagger).isFeatureEnabled ? TabInteractionStateDiskSource() : nil
         let daxDialogsFactory = ExperimentContextualDaxDialogsFactory(contextualOnboardingLogic: contextualOnboardingLogicMock,
                                                                       contextualOnboardingPixelReporter: onboardingPixelReporter)
         let contextualOnboardingPresenter = ContextualOnboardingPresenter(variantManager: variantManager, daxDialogsFactory: daxDialogsFactory)
@@ -90,7 +89,7 @@ import Combine
         let tabManager = TabManager(model: tabsModel,
                                     persistence: tabsPersistence,
                                     previewsSource: MockTabPreviewsSource(),
-                                    interactionStateSource: interactionStateSource,
+                                    interactionStateSource: nil,
                                     privacyConfigurationManager: mockConfigManager,
                                     bookmarksDatabase: db,
                                     historyManager: historyManager,

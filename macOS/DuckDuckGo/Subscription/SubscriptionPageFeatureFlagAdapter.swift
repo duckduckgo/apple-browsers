@@ -43,3 +43,4 @@ struct SubscriptionPageFeatureFlagAdapter: SubscriptionPageFeatureFlagProviding 
         }
     }
 }
+

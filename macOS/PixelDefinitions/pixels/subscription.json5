@@ -60,6 +60,146 @@
             }
         ]
     },
+    // Tier Options Pixels - Direct Distribution
+    "m_mac_direct_privacy-pro_tier-options_requested": {
+        "description": "Fired when subscription tier options are requested from the purchase page (direct distribution)",
+        "owners": ["sabrinatardio"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "platform",
+                "type": "string",
+                "description": "The purchase platform (appStore or stripe)",
+                "enum": ["appStore", "stripe"]
+            }
+        ]
+    },
+    "m_mac_direct_privacy-pro_tier-options_success": {
+        "description": "Fired when subscription tier options are successfully retrieved (direct distribution)",
+        "owners": ["sabrinatardio"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "platform",
+                "type": "string",
+                "description": "The purchase platform (appStore or stripe)",
+                "enum": ["appStore", "stripe"]
+            }
+        ]
+    },
+    "m_mac_direct_privacy-pro_tier-options_failure": {
+        "description": "Fired when subscription tier options fail to be retrieved (direct distribution)",
+        "owners": ["sabrinatardio"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "e",
+            "d",
+            "ue",
+            "ud",
+            {
+                "key": "platform",
+                "type": "string",
+                "description": "The purchase platform (appStore or stripe)",
+                "enum": ["appStore", "stripe"]
+            }
+        ]
+    },
+    "m_mac_direct_privacy-pro_tier-options_unexpected-pro-tier": {
+        "description": "Fired when Pro tier products are unexpectedly returned when they should be filtered out (direct distribution)",
+        "owners": ["sabrinatardio"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "platform",
+                "type": "string",
+                "description": "The purchase platform (appStore or stripe)",
+                "enum": ["appStore", "stripe"]
+            }
+        ]
+    },
+
+    // Tier Options Pixels - App Store Distribution
+    "m_mac_store_privacy-pro_tier-options_requested": {
+        "description": "Fired when subscription tier options are requested from the purchase page (App Store distribution)",
+        "owners": ["sabrinatardio"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "platform",
+                "type": "string",
+                "description": "The purchase platform (appStore or stripe)",
+                "enum": ["appStore", "stripe"]
+            }
+        ]
+    },
+    "m_mac_store_privacy-pro_tier-options_success": {
+        "description": "Fired when subscription tier options are successfully retrieved (App Store distribution)",
+        "owners": ["sabrinatardio"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "platform",
+                "type": "string",
+                "description": "The purchase platform (appStore or stripe)",
+                "enum": ["appStore", "stripe"]
+            }
+        ]
+    },
+    "m_mac_store_privacy-pro_tier-options_failure": {
+        "description": "Fired when subscription tier options fail to be retrieved (App Store distribution)",
+        "owners": ["sabrinatardio"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "e",
+            "d",
+            "ue",
+            "ud",
+            {
+                "key": "platform",
+                "type": "string",
+                "description": "The purchase platform (appStore or stripe)",
+                "enum": ["appStore", "stripe"]
+            }
+        ]
+    },
+    "m_mac_store_privacy-pro_tier-options_unexpected-pro-tier": {
+        "description": "Fired when Pro tier products are unexpectedly returned when they should be filtered out (App Store distribution)",
+        "owners": ["sabrinatardio"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "platform",
+                "type": "string",
+                "description": "The purchase platform (appStore or stripe)",
+                "enum": ["appStore", "stripe"]
+            }
+        ]
+    },
+
     "m_mac_store_privacy-pro_app_subscription-purchase_failure": {
         "description": "The error encountered when an App Store subscription purchase fails",
         "owners": ["federicocappelli"],

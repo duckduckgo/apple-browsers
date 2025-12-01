@@ -97,6 +97,7 @@ public struct AccessTokenValue: Codable {
     let accessToken: String
 }
 
+
 protocol SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObject {
     var transactionStatusPublisher: Published<SubscriptionTransactionStatus>.Publisher { get }
     var transactionStatus: SubscriptionTransactionStatus { get }
@@ -772,10 +773,10 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             // Check if Pro tier was unexpectedly returned
             let hasProTier = subscriptionTierOptions.products.contains { $0.tier.lowercased() == "pro" }
             if hasProTier {
-                tierEventReporter.reportTierOptionsUnexpectedProTier(platform: "app_store")
+                tierEventReporter.reportTierOptionsUnexpectedProTier()
             }
 
-            tierEventReporter.reportTierOptionsSuccess(platform: "app_store")
+            tierEventReporter.reportTierOptionsSuccess()
 
             guard subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed else { return subscriptionTierOptions.withoutPurchaseOptions() }
             return subscriptionTierOptions
@@ -784,7 +785,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             Logger.subscription.error("Failed to obtain subscription tier options")
             setTransactionError(.failedToGetSubscriptionOptions)
 
-            tierEventReporter.reportTierOptionsFailure(platform: "app_store", error: error)
+            tierEventReporter.reportTierOptionsFailure(error: error)
 
             return SubscriptionTierOptions.empty
         }

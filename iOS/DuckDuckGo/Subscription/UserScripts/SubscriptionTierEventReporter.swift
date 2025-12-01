@@ -22,9 +22,9 @@ import Core
 
 protocol SubscriptionTierEventReporting {
     func reportTierOptionsRequested()
-    func reportTierOptionsSuccess(platform: String)
-    func reportTierOptionsFailure(platform: String, error: Error)
-    func reportTierOptionsUnexpectedProTier(platform: String)
+    func reportTierOptionsSuccess()
+    func reportTierOptionsFailure(error: Error)
+    func reportTierOptionsUnexpectedProTier()
 }
 
 final class DefaultSubscriptionTierEventReporter: SubscriptionTierEventReporting {
@@ -32,15 +32,15 @@ final class DefaultSubscriptionTierEventReporter: SubscriptionTierEventReporting
         Pixel.fire(pixel: .subscriptionTierOptionsRequested)
     }
 
-    func reportTierOptionsSuccess(platform: String) {
-        Pixel.fire(pixel: .subscriptionTierOptionsSuccess, withAdditionalParameters: ["platform": platform])
+    func reportTierOptionsSuccess() {
+        Pixel.fire(pixel: .subscriptionTierOptionsSuccess)
     }
 
-    func reportTierOptionsFailure(platform: String, error: Error) {
-        Pixel.fire(pixel: .subscriptionTierOptionsFailure, error: error, withAdditionalParameters: ["platform": platform])
+    func reportTierOptionsFailure(error: Error) {
+        Pixel.fire(pixel: .subscriptionTierOptionsFailure, error: error)
     }
 
-    func reportTierOptionsUnexpectedProTier(platform: String) {
-        Pixel.fire(pixel: .subscriptionTierOptionsUnexpectedProTier, withAdditionalParameters: ["platform": platform])
+    func reportTierOptionsUnexpectedProTier() {
+        Pixel.fire(pixel: .subscriptionTierOptionsUnexpectedProTier)
     }
 }

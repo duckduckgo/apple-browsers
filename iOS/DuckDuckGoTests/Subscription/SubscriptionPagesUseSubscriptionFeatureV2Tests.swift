@@ -409,7 +409,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
         // Then
         XCTAssertTrue(mockTierEventReporter.successCalled, "Should fire success pixel")
-        XCTAssertEqual(mockTierEventReporter.successPlatform, "app_store", "Platform should be app_store")
         XCTAssertFalse(mockTierEventReporter.failureCalled, "Should not fire failure pixel on success")
     }
 
@@ -424,7 +423,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
         // Then
         XCTAssertTrue(mockTierEventReporter.failureCalled, "Should fire failure pixel")
-        XCTAssertEqual(mockTierEventReporter.failurePlatform, "app_store", "Platform should be app_store")
         XCTAssertNotNil(mockTierEventReporter.failureError, "Should include error in failure pixel")
         XCTAssertFalse(mockTierEventReporter.successCalled, "Should not fire success pixel on failure")
     }
@@ -455,7 +453,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
         // Then
         XCTAssertTrue(mockTierEventReporter.unexpectedProTierCalled, "Should fire unexpected pro tier pixel")
-        XCTAssertEqual(mockTierEventReporter.unexpectedProTierPlatform, "app_store", "Platform should be app_store")
     }
 
     func testGetSubscriptionTierOptions_WithoutProTier_DoesNotFireUnexpectedProTierPixel() async throws {
@@ -599,34 +596,25 @@ final class MockURLWebView: WKWebView {
 
 final class MockSubscriptionTierEventReporter: SubscriptionTierEventReporting {
     var requestedCalled = false
-
     var successCalled = false
-    var successPlatform: String?
-
     var failureCalled = false
-    var failurePlatform: String?
     var failureError: Error?
-
     var unexpectedProTierCalled = false
-    var unexpectedProTierPlatform: String?
 
     func reportTierOptionsRequested() {
         requestedCalled = true
     }
 
-    func reportTierOptionsSuccess(platform: String) {
+    func reportTierOptionsSuccess() {
         successCalled = true
-        successPlatform = platform
     }
 
-    func reportTierOptionsFailure(platform: String, error: Error) {
+    func reportTierOptionsFailure(error: Error) {
         failureCalled = true
-        failurePlatform = platform
         failureError = error
     }
 
-    func reportTierOptionsUnexpectedProTier(platform: String) {
+    func reportTierOptionsUnexpectedProTier() {
         unexpectedProTierCalled = true
-        unexpectedProTierPlatform = platform
     }
 }

@@ -64,20 +64,9 @@ final class DockCustomizer: DockCustomization {
         startTimer()
     }
 
-    private var dockPlistURL: URL? = {
-        guard let user = ProcessInfo().environment["USER"] else {
-            return nil
-        }
-
-        guard let usersDir = FileManager.default.urls(for: .userDirectory, in: .localDomainMask).first else {
-            return nil
-        }
-
-        return usersDir.appendingPathComponent(user).appendingPathComponent("Library/Preferences/com.apple.dock.plist")
-    }()
+    private var dockPlistURL: URL = URL.nonSandboxLibraryDirectoryURL.appending("/Preferences/com.apple.dock.plist")
 
     private var dockPlistDict: [String: AnyObject]? {
-        guard let dockPlistURL else { return nil }
         return NSDictionary(contentsOf: dockPlistURL) as? [String: AnyObject]
     }
 
@@ -134,7 +123,6 @@ final class DockCustomizer: DockCustomization {
         let appPath = Bundle.main.bundleURL.path
         guard !isAddedToDock,
               let bundleIdentifier = Bundle.main.bundleIdentifier,
-              let dockPlistURL,
               var dockPlistDict = dockPlistDict else {
             return false
         }

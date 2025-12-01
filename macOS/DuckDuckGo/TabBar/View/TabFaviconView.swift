@@ -245,8 +245,3 @@ private enum FaviconAnimation {
     static let animationTimingFunction = CAMediaTimingFunction(controlPoints: 0.25, 0.1, 0.25, 1.0)
     static let scaleDownRatio: CGFloat = 0.75
 }
-
-private enum FaviconPlaceholder {
-    static let imageSize = FaviconMetrics.imageSize
-    static let foregroundColorName: DesignSystemColor = .placeholderShade12
-}

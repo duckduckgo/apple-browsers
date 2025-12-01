@@ -133,28 +133,35 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
             return AnyCancellable {}
         }
 
-        var locationCancellable: AnyCancellable?
+        // Use a holder class to ensure proper capture semantics
+        // This avoids the issue of capturing a nil variable before assignment
+        let cancellableHolder = CancellableHolder()
 
         // Subscribe to authorization status publisher to observe changes
         let authorizationCancellable = geolocationService.authorizationStatusPublisher
             .dropFirst() // Skip initial value, we want to observe changes
             .first() // Only need the first change
-            .sink { [weak self] _ in
+            .sink { [weak self, cancellableHolder] _ in
                 let state = self?.geolocationAuthorizationState ?? .notDetermined
                 // Cancel location subscription once we have the authorization result
-                locationCancellable?.cancel()
+                cancellableHolder.cancellable?.cancel()
                 completion(state)
             }
 
         // Subscribe to location publisher to trigger authorization request
         // The GeolocationService calls requestWhenInUseAuthorization() when first subscribed
         // We keep this subscription alive until authorization is determined
-        locationCancellable = geolocationService.locationPublisher
+        cancellableHolder.cancellable = geolocationService.locationPublisher
             .sink { _ in }
 
         return AnyCancellable {
             authorizationCancellable.cancel()
-            locationCancellable?.cancel()
+            cancellableHolder.cancellable?.cancel()
         }
     }
+}
+
+/// Helper class to hold a cancellable reference for proper capture semantics in closures
+private final class CancellableHolder {
+    var cancellable: AnyCancellable?
 }

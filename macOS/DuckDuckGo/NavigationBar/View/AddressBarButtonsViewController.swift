@@ -1623,7 +1623,7 @@ final class AddressBarButtonsViewController: NSViewController {
         }
 
         let url = tabViewModel.tab.content.urlForWebView ?? .empty
-        let domain = url.isFileURL ? .localhost : (url.host ?? "")
+        let domain = (url.isFileURL ? .localhost : (url.host ?? "")).droppingWwwPrefix()
 
         let viewModel = PermissionCenterViewModel(
             domain: domain,

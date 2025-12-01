@@ -567,6 +567,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
     private let subscriptionDataReporter: SubscriptionDataReporting?
     private let internalUserDecider: InternalUserDecider
     private let wideEvent: WideEventManaging
+    private let tierEventReporter: SubscriptionTierEventReporting
     private var wideEventData: SubscriptionPurchaseWideEventData?
     private var subscriptionRestoreWideEventData: SubscriptionRestoreWideEventData?
 
@@ -577,7 +578,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
          appStoreRestoreFlow: AppStoreRestoreFlowV2,
          subscriptionDataReporter: SubscriptionDataReporting? = nil,
          internalUserDecider: InternalUserDecider,
-         wideEvent: WideEventManaging) {
+         wideEvent: WideEventManaging,
+         tierEventReporter: SubscriptionTierEventReporting = DefaultSubscriptionTierEventReporter()) {
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.appStorePurchaseFlow = appStorePurchaseFlow
@@ -586,6 +588,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         self.subscriptionDataReporter = subscriptionAttributionOrigin != nil ? subscriptionDataReporter : nil
         self.internalUserDecider = internalUserDecider
         self.wideEvent = wideEvent
+        self.tierEventReporter = tierEventReporter
     }
 
     // Transaction Status and errors are observed from ViewModels to handle errors in the UI
@@ -760,8 +763,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
     }
 
     func getSubscriptionTierOptions(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        Pixel.fire(pixel: .subscriptionTierOptionsRequested)
-        
+        tierEventReporter.reportTierOptionsRequested()
+
         let subscriptionTierOptionsResponse = await subscriptionManager.storePurchaseManager().subscriptionTierOptions(includeProTier: subscriptionFeatureAvailability.isProTierPurchaseEnabled)
 
         switch subscriptionTierOptionsResponse {
@@ -769,26 +772,20 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             // Check if Pro tier was unexpectedly returned
             let hasProTier = subscriptionTierOptions.products.contains { $0.tier.lowercased() == "pro" }
             if hasProTier {
-                Pixel.fire(pixel: .subscriptionTierOptionsUnexpectedProTier,
-                         withAdditionalParameters: ["platform": "app_store"])
+                tierEventReporter.reportTierOptionsUnexpectedProTier(platform: "app_store")
             }
-            
-            // Fire success pixel
-            Pixel.fire(pixel: .subscriptionTierOptionsSuccess,
-                     withAdditionalParameters: ["platform": "app_store"])
-            
+
+            tierEventReporter.reportTierOptionsSuccess(platform: "app_store")
+
             guard subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed else { return subscriptionTierOptions.withoutPurchaseOptions() }
             return subscriptionTierOptions
-            
+
         case .failure(let error):
             Logger.subscription.error("Failed to obtain subscription tier options")
             setTransactionError(.failedToGetSubscriptionOptions)
-            
-            // Fire failure pixel with error details using error parameter
-            Pixel.fire(pixel: .subscriptionTierOptionsFailure,
-                     error: error,
-                     withAdditionalParameters: ["platform": "app_store"])
-            
+
+            tierEventReporter.reportTierOptionsFailure(platform: "app_store", error: error)
+
             return SubscriptionTierOptions.empty
         }
     }

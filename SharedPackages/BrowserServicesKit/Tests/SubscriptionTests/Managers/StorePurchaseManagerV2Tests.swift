@@ -838,6 +838,52 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         }
     }
 
+    func testSubscriptionTierOptionsReturnsNoTiersCreatedWhenFeaturesAreEmpty() async {
+        // Given
+        let monthlyProduct = MockSubscriptionProduct(id: "com.test.monthly", isMonthly: true)
+        let yearlyProduct = MockSubscriptionProduct(id: "com.test.yearly", isYearly: true)
+
+        mockProductFetcher.mockProducts = [monthlyProduct, yearlyProduct]
+        await sut.updateAvailableProducts()
+
+        // Setup empty features for the product (API returns empty features)
+        mockCache.tierMapping = ["com.test.monthly": []]
+
+        // When
+        let result = await sut.subscriptionTierOptions(includeProTier: false)
+
+        // Then
+        switch result {
+        case .success:
+            XCTFail("Expected failure but got success")
+        case .failure(let error):
+            XCTAssertEqual(error, .noTiersCreated)
+        }
+    }
+
+    func testSubscriptionTierOptionsReturnsNoTiersCreatedWhenFeaturesNotFoundForProduct() async {
+        // Given
+        let monthlyProduct = MockSubscriptionProduct(id: "com.test.monthly", isMonthly: true)
+        let yearlyProduct = MockSubscriptionProduct(id: "com.test.yearly", isYearly: true)
+
+        mockProductFetcher.mockProducts = [monthlyProduct, yearlyProduct]
+        await sut.updateAvailableProducts()
+
+        // Setup features for a different product ID (not found for the representative product)
+        mockCache.tierMapping = ["com.test.other": [TierFeature(product: .networkProtection, name: "plus")]]
+
+        // When
+        let result = await sut.subscriptionTierOptions(includeProTier: false)
+
+        // Then
+        switch result {
+        case .success:
+            XCTFail("Expected failure but got success")
+        case .failure(let error):
+            XCTAssertEqual(error, .noTiersCreated)
+        }
+    }
+
     func testSubscriptionTierOptionsFetchesOnlyOneProductPerTier() async {
         // Given
         let plusMonthly = MockSubscriptionProduct(id: "com.test.monthly", isMonthly: true)

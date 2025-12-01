@@ -38,6 +38,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     var mockNotificationCenter: NotificationCenter!
     var mockWideEvent: WideEventMock!
     var mockInternalUserDecider: MockInternalUserDecider!
+    var mockTierEventReporter: MockSubscriptionTierEventReporter!
 
     @MainActor
     override func setUp() {
@@ -49,6 +50,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         mockNotificationCenter = NotificationCenter()
         mockWideEvent = WideEventMock()
         mockInternalUserDecider = MockInternalUserDecider(isInternalUser: true)
+        mockTierEventReporter = MockSubscriptionTierEventReporter()
 
         sut = DefaultSubscriptionPagesUseSubscriptionFeatureV2(
             subscriptionManager: mockSubscriptionManager,
@@ -58,7 +60,8 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
             subscriptionDataReporter: nil,
             internalUserDecider: mockInternalUserDecider,
-            wideEvent: mockWideEvent)
+            wideEvent: mockWideEvent,
+            tierEventReporter: mockTierEventReporter)
     }
     
     override func tearDown() {
@@ -68,6 +71,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         mockSubscriptionFeatureAvailability = nil
         mockNotificationCenter = nil
         mockWideEvent = nil
+        mockTierEventReporter = nil
         super.tearDown()
     }
     
@@ -359,6 +363,124 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         XCTAssertTrue(tierOptions.products.isEmpty, "Should return empty tier options when none are available")
     }
 
+    // MARK: - Tier Options Pixel Tests
+
+    func testGetSubscriptionTierOptions_AlwaysFiresRequestedPixel() async throws {
+        // Given
+        let expectedTierOptions = SubscriptionTierOptions(
+            platform: .ios,
+            products: [
+                SubscriptionTier(
+                    tier: "plus",
+                    features: [TierFeature(product: .networkProtection, name: "plus")],
+                    options: []
+                )
+            ]
+        )
+        let mockStorePurchaseManager = StorePurchaseManagerMockV2()
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(expectedTierOptions)
+        mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
+
+        // When
+        _ = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
+
+        // Then
+        XCTAssertTrue(mockTierEventReporter.requestedCalled, "Should fire requested pixel")
+    }
+
+    func testGetSubscriptionTierOptions_OnSuccess_FiresSuccessPixel() async throws {
+        // Given
+        let expectedTierOptions = SubscriptionTierOptions(
+            platform: .ios,
+            products: [
+                SubscriptionTier(
+                    tier: "plus",
+                    features: [TierFeature(product: .networkProtection, name: "plus")],
+                    options: []
+                )
+            ]
+        )
+        let mockStorePurchaseManager = StorePurchaseManagerMockV2()
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(expectedTierOptions)
+        mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
+
+        // When
+        _ = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
+
+        // Then
+        XCTAssertTrue(mockTierEventReporter.successCalled, "Should fire success pixel")
+        XCTAssertEqual(mockTierEventReporter.successPlatform, "app_store", "Platform should be app_store")
+        XCTAssertFalse(mockTierEventReporter.failureCalled, "Should not fire failure pixel on success")
+    }
+
+    func testGetSubscriptionTierOptions_OnFailure_FiresFailurePixel() async throws {
+        // Given
+        let mockStorePurchaseManager = StorePurchaseManagerMockV2()
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .failure(.noProductsAvailable)
+        mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
+
+        // When
+        _ = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
+
+        // Then
+        XCTAssertTrue(mockTierEventReporter.failureCalled, "Should fire failure pixel")
+        XCTAssertEqual(mockTierEventReporter.failurePlatform, "app_store", "Platform should be app_store")
+        XCTAssertNotNil(mockTierEventReporter.failureError, "Should include error in failure pixel")
+        XCTAssertFalse(mockTierEventReporter.successCalled, "Should not fire success pixel on failure")
+    }
+
+    func testGetSubscriptionTierOptions_WithProTierPresent_FiresUnexpectedProTierPixel() async throws {
+        // Given
+        let tierOptionsWithProTier = SubscriptionTierOptions(
+            platform: .ios,
+            products: [
+                SubscriptionTier(
+                    tier: "plus",
+                    features: [TierFeature(product: .networkProtection, name: "plus")],
+                    options: []
+                ),
+                SubscriptionTier(
+                    tier: "pro",
+                    features: [TierFeature(product: .networkProtection, name: "pro")],
+                    options: []
+                )
+            ]
+        )
+        let mockStorePurchaseManager = StorePurchaseManagerMockV2()
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(tierOptionsWithProTier)
+        mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
+
+        // When
+        _ = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
+
+        // Then
+        XCTAssertTrue(mockTierEventReporter.unexpectedProTierCalled, "Should fire unexpected pro tier pixel")
+        XCTAssertEqual(mockTierEventReporter.unexpectedProTierPlatform, "app_store", "Platform should be app_store")
+    }
+
+    func testGetSubscriptionTierOptions_WithoutProTier_DoesNotFireUnexpectedProTierPixel() async throws {
+        // Given
+        let tierOptionsWithoutProTier = SubscriptionTierOptions(
+            platform: .ios,
+            products: [
+                SubscriptionTier(
+                    tier: "plus",
+                    features: [TierFeature(product: .networkProtection, name: "plus")],
+                    options: []
+                )
+            ]
+        )
+        let mockStorePurchaseManager = StorePurchaseManagerMockV2()
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(tierOptionsWithoutProTier)
+        mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
+
+        // When
+        _ = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
+
+        // Then
+        XCTAssertFalse(mockTierEventReporter.unexpectedProTierCalled, "Should not fire unexpected pro tier pixel")
+    }
+
     @MainActor
     func testAppStoreSuccess_EmitsWidePixelWithContextAndDurations() async throws {
         let originURL = URL(string: "https://duckduckgo.com/subscriptions?origin=funnel_appsettings_ios")!
@@ -473,4 +595,38 @@ final class MockURLWebView: WKWebView {
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     override var url: URL? { mockedURL }
+}
+
+final class MockSubscriptionTierEventReporter: SubscriptionTierEventReporting {
+    var requestedCalled = false
+
+    var successCalled = false
+    var successPlatform: String?
+
+    var failureCalled = false
+    var failurePlatform: String?
+    var failureError: Error?
+
+    var unexpectedProTierCalled = false
+    var unexpectedProTierPlatform: String?
+
+    func reportTierOptionsRequested() {
+        requestedCalled = true
+    }
+
+    func reportTierOptionsSuccess(platform: String) {
+        successCalled = true
+        successPlatform = platform
+    }
+
+    func reportTierOptionsFailure(platform: String, error: Error) {
+        failureCalled = true
+        failurePlatform = platform
+        failureError = error
+    }
+
+    func reportTierOptionsUnexpectedProTier(platform: String) {
+        unexpectedProTierCalled = true
+        unexpectedProTierPlatform = platform
+    }
 }

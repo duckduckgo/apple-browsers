@@ -192,6 +192,69 @@ final class SubscriptionErrorReporterTests: XCTestCase {
                                      SubscriptionPixel.subscriptionPurchaseFailureOther.name + "_c"])
     }
 
+    // MARK: - Tests for Subscription Tier Option Events
+
+    func testReporterForTierOptionsRequested() async throws {
+        // Given
+        let event = SubscriptionPixel.subscriptionTierOptionsRequested
+        let platform = "appStore"
+
+        // When
+        reporter.report(subscriptionTierOptionEvent: event, platform: platform, error: nil)
+
+        // Then
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.subscriptionTierOptionsRequested.name])
+    }
+
+    func testReporterForTierOptionsSuccess() async throws {
+        // Given
+        let event = SubscriptionPixel.subscriptionTierOptionsSuccess
+        let platform = "appStore"
+
+        // When
+        reporter.report(subscriptionTierOptionEvent: event, platform: platform, error: nil)
+
+        // Then
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.subscriptionTierOptionsSuccess.name])
+    }
+
+    func testReporterForTierOptionsFailure() async throws {
+        // Given
+        let event = SubscriptionPixel.subscriptionTierOptionsFailure
+        let platform = "appStore"
+        let error = NSError(domain: "TestError", code: 123)
+
+        // When
+        reporter.report(subscriptionTierOptionEvent: event, platform: platform, error: error)
+
+        // Then
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.subscriptionTierOptionsFailure.name])
+    }
+
+    func testReporterForTierOptionsUnexpectedProTier() async throws {
+        // Given
+        let event = SubscriptionPixel.subscriptionTierOptionsUnexpectedProTier
+        let platform = "appStore"
+
+        // When
+        reporter.report(subscriptionTierOptionEvent: event, platform: platform, error: nil)
+
+        // Then
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.subscriptionTierOptionsUnexpectedProTier.name])
+    }
+
+    func testReporterForTierOptionsWithStripePlatform() async throws {
+        // Given
+        let event = SubscriptionPixel.subscriptionTierOptionsRequested
+        let platform = "stripe"
+
+        // When
+        reporter.report(subscriptionTierOptionEvent: event, platform: platform, error: nil)
+
+        // Then
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.subscriptionTierOptionsRequested.name])
+    }
+
     public func XCTAssertPrivacyPixelsFired(_ pixels: [String], file: StaticString = #file, line: UInt = #line) {
         let pixelsFired = Set(pixelsFired)
         let expectedPixels = Set(pixels)

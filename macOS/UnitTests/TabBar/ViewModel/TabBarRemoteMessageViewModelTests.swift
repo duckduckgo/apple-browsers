@@ -104,8 +104,8 @@ class TabBarRemoteMessageViewModelTests: XCTestCase {
                                                                                   placeholder: .announce,
                                                                                   primaryActionText: "Tell Us What You Think",
                                                                                   primaryAction: .survey(value: "www.survey.com"))
-        return RemoteMessageModel(id: TabBarRemoteMessage.tabBarPermanentSurveyRemoteMessageId,
-                                  surfaces: .newTabPage, // TabBar Surface not handled yet in macOS
+        return RemoteMessageModel(id: "tab_bar_message",
+                                  surfaces: .tabBar,
                                   content: tabBarRemoteMessageContent,
                                   matchingRules: [Int](),
                                   exclusionRules: [Int](),
@@ -118,8 +118,8 @@ class TabBarRemoteMessageViewModelTests: XCTestCase {
                                                                                   placeholder: .announce,
                                                                                   primaryActionText: "Tell Us What You Think",
                                                                                   primaryAction: .appStore)
-        return RemoteMessageModel(id: TabBarRemoteMessage.tabBarPermanentSurveyRemoteMessageId,
-                                  surfaces: .newTabPage, // TabBar Surface not handled yet in macOS
+        return RemoteMessageModel(id: "tab_bar_message",
+                                  surfaces: .tabBar,
                                   content: tabBarRemoteMessageContent,
                                   matchingRules: [Int](),
                                   exclusionRules: [Int](),
@@ -133,7 +133,7 @@ class TabBarRemoteMessageViewModelTests: XCTestCase {
                                                                                   primaryActionText: "Primary!",
                                                                                   primaryAction: .survey(value: "www.survey.com"))
         return RemoteMessageModel(id: "other_id",
-                                  surfaces: .newTabPage, // TabBar Surface not handled yet in macOS
+                                  surfaces: .newTabPage,
                                   content: tabBarRemoteMessageContent,
                                   matchingRules: [Int](),
                                   exclusionRules: [Int](),

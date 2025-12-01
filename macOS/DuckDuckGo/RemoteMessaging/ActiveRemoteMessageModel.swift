@@ -195,9 +195,7 @@ final class ActiveRemoteMessageModel: ObservableObject {
     }
 
     private func updateRemoteMessage() {
-        // Once we support multiple surfaces this could become [.newTabPage, .tabBar]
-        // and modify isForTabBar: Bool { surfaces.contains(.tabBar) }
-        remoteMessage = store()?.fetchScheduledRemoteMessage(surfaces: .newTabPage)
+        remoteMessage = store()?.fetchScheduledRemoteMessage(surfaces: [.newTabPage, .tabBar])
     }
 
     private var cancellables = Set<AnyCancellable>()
@@ -218,6 +216,10 @@ extension RemoteMessageModelType {
 private extension RemoteMessageModel {
 
     var isForTabBar: Bool {
+        if surfaces.contains(.tabBar) {
+            return true
+        }
+        // Temporary fallback for legacy configs targeting the tab bar by ID only.
         return id == TabBarRemoteMessage.tabBarPermanentSurveyRemoteMessageId
     }
 }

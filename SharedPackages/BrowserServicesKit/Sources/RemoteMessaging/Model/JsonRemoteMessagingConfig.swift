@@ -86,6 +86,7 @@ public enum RemoteMessageResponse {
         case modal
         // Used for 'What's New' (macOS)
         case dedicatedTab = "dedicated_tab"
+        case tabBar = "tab_bar"
     }
 
     struct JsonMessageAction: Decodable {

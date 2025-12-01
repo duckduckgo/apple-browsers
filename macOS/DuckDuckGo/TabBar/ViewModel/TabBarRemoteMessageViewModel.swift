@@ -63,7 +63,9 @@ private extension RemoteMessageModel {
     var shouldShowTabBarRemoteMessage: Bool {
         guard let modelType = content else { return false }
 
-        return modelType.isSupported
+        let canShowOnTabBar = surfaces.contains(.tabBar) || id == TabBarRemoteMessage.tabBarPermanentSurveyRemoteMessageId
+
+        return canShowOnTabBar && modelType.isSupported
     }
 
     func mapToTabBarRemoteMessage() -> TabBarRemoteMessage? {

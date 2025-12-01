@@ -146,6 +146,8 @@ struct JsonToRemoteMessageModelMapper {
                     .modal
             case .dedicatedTab:
                     .dedicatedTab
+            case .tabBar:
+                    .tabBar
             }
         }
 
@@ -176,6 +178,9 @@ struct JsonToRemoteMessageModelMapper {
         // If surface is not defined set to supportedSurfacesForMessage for backward compatibility (e.g. `.small` -> `newTabPage`, `promoList` -> `[.modal, .dedicatedTab]`)
         guard let jsonSurfaces else {
             Logger.remoteMessaging.debug("No surfaces declared for message \(messageId, privacy: .public)")
+            if supportedSurfacesForMessage.contains(.newTabPage) {
+                return .newTabPage
+            }
             return supportedSurfacesForMessage
         }
 
@@ -471,7 +476,7 @@ private extension JsonToRemoteMessageModelMapper {
     static func supportedSurfaces(for messageType: RemoteMessageModelType) -> Set<RemoteMessageResponse.JsonSurface> {
         switch messageType {
         case .small, .medium, .bigSingleAction, .bigTwoAction, .promoSingleAction:
-            return [.newTabPage]
+            return [.newTabPage, .tabBar]
         case .cardsList:
             return [.modal, .dedicatedTab]
         }

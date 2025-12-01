@@ -32,7 +32,7 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
         store = MockRemoteMessagingStore()
         message = RemoteMessageModel(
             id: "1",
-            surfaces: .newTabPage, // Surface not handled yet in macOS
+            surfaces: .newTabPage,
             content: .small(titleText: "test", descriptionText: "desc"), matchingRules: [], exclusionRules: [], isMetricsEnabled: false
         )
     }
@@ -95,9 +95,9 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
     }
 
     func testWhenMessageIsForTabBar_thenCorrectPublisherIsSet() {
-        let tabBarRemoteMessage = RemoteMessageModel(
-            id: TabBarRemoteMessage.tabBarPermanentSurveyRemoteMessageId,
-            surfaces: .newTabPage, // Surface not handled yet in macOS
+        store.scheduledRemoteMessage = RemoteMessageModel(
+            id: "tab_bar_message",
+            surfaces: .tabBar,
             content: .bigSingleAction(titleText: "Help Us Improve!",
                                       descriptionText: "Description",
                                       placeholder: .announce,
@@ -107,7 +107,6 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
             exclusionRules: [],
             isMetricsEnabled: false
         )
-        store.scheduledRemoteMessage = tabBarRemoteMessage
         model = ActiveRemoteMessageModel(
             remoteMessagingStore: self.store,
             remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
@@ -148,7 +147,31 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
 
         // THEN
         XCTAssertEqual(store.fetchScheduledRemoteMessageCalls, 1)
-        XCTAssertEqual(store.capturedSurfaces, .newTabPage)
+        XCTAssertEqual(store.capturedSurfaces, [.newTabPage, .tabBar])
+    }
+
+    func testWhenLegacyTabBarMessageIsScheduled_thenFallbackIsUsed() {
+        store.scheduledRemoteMessage = RemoteMessageModel(
+            id: TabBarRemoteMessage.tabBarPermanentSurveyRemoteMessageId,
+            surfaces: .newTabPage,
+            content: .bigSingleAction(titleText: "Help Us Improve!",
+                                      descriptionText: "Description",
+                                      placeholder: .announce,
+                                      primaryActionText: "Test",
+                                      primaryAction: .survey(value: "www.survey.com")),
+            matchingRules: [],
+            exclusionRules: [],
+            isMetricsEnabled: false
+        )
+        model = ActiveRemoteMessageModel(
+            remoteMessagingStore: self.store,
+            remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
+            openURLHandler: { _ in },
+            navigateToFeedbackHandler: { }
+        )
+
+        XCTAssertNotNil(model.tabBarRemoteMessage)
+        XCTAssertNil(model.newTabPageRemoteMessage)
     }
 
 }

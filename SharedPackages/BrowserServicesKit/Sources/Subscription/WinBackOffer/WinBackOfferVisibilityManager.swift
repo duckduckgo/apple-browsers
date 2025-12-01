@@ -179,7 +179,7 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
 
             hasActiveSubscription = currentSubscription.status.isActive
 
-            storeChurnDateIfNeeded(newStatus: currentSubscription.status)
+            storeChurnDateIfNeeded(subscription: currentSubscription)
         }
     }
 
@@ -206,35 +206,36 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
 
             hasActiveSubscription = isNowActive
 
-            storeChurnDateIfNeeded(newStatus: newSubscription.status)
+            storeChurnDateIfNeeded(subscription: newSubscription)
         }
     }
 
-    private func storeChurnDateIfNeeded(newStatus: DuckDuckGoSubscription.Status) {
-        guard newStatus == .expired else {
+    private func storeChurnDateIfNeeded(subscription: DuckDuckGoSubscription) {
+        guard subscription.status == .expired else {
+            return
+        }
+
+        let expiryDate = subscription.expiresOrRenewsAt
+
+        guard let lastStoredChurnDate = winbackOfferStore.getChurnDate() else {
+            // No stored churn date, mark churn.
+            resetOffer(using: expiryDate)
             return
         }
 
         let now = dateProvider()
-
-        guard let lastStoredChurnDate = winbackOfferStore.getChurnDate() else {
-            // No stored churn date, mark churn.
-            resetOffer(using: now)
-            return
-        }
-
         let timeSinceLastChurn = now.timeIntervalSince(lastStoredChurnDate)
         let cooldownHasPassed = timeSinceLastChurn > Constants.cooldownPeriod
 
         if cooldownHasPassed {
             // Cooldown period has passed, mark churn.
-            resetOffer(using: now)
+            resetOffer(using: expiryDate)
             return
         }
 
         // Mark new churn date if previous offer was redeemed.
         if winbackOfferStore.hasRedeemedOffer() {
-            winbackOfferStore.storeChurnDate(now)
+            winbackOfferStore.storeChurnDate(expiryDate)
         }
     }
 

@@ -103,7 +103,6 @@
                 "description": "Error type: com.duckduckgo.subscription.StoreError",
                 "type": "string"
             },
-            "appVersion",
             {
                 "key": "e",
                 "description": "Error code: 12201, 12202, 12203, 12204, 12205, 12206",

@@ -114,6 +114,11 @@ extension XCUIApplication {
             app.launchArguments.append(contentsOf: arguments)
         }
         app.launch()
+
+        // Fail early if the app isn't able to launch:
+        XCTAssertTrue(app.wait(for: .runningForeground, timeout: 60), "App did not reach runningForeground within 60s")
+        XCTAssertTrue(app.windows.firstMatch.waitForExistence(timeout: 10), "No window appeared after launch")
+
         return app
     }
 

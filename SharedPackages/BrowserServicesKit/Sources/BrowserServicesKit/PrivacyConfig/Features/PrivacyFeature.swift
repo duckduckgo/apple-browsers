@@ -86,6 +86,7 @@ public enum PrivacyFeature: String {
     case duckAiDataClearing
     case serp
     case popupBlocking
+    case tabProgressIndicator
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.

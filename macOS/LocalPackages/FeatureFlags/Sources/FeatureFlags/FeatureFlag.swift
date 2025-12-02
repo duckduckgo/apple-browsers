@@ -544,7 +544,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .scheduledDefaultBrowserAndDockPromptsInactiveUser:
             return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPromptsInactiveUser))
         case .tabProgressIndicator:
-            return .internalOnly()
+            return .remoteReleasable(.feature(.tabProgressIndicator))
         case .attributedMetrics:
             return .remoteReleasable(.feature(.attributedMetrics))
         case .vpnConnectionWidePixelMeasurement:

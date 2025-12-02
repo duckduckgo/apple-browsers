@@ -1701,7 +1701,6 @@ private extension FeatureFlagLocalOverrides {
             if currentValue(for: featureFlag)! != value {
                 toggleOverride(for: featureFlag)
             }
-            fatalError("Simulate fatalError when applying feature flags")
         }
     }
 

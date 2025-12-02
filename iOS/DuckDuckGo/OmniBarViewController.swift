@@ -669,7 +669,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         let state = dependencies.mobileCustomization.state
         guard state.isEnabled else {
             barView.customizableButton.setImage(DesignSystemImages.Glyphs.Size24.shareApple, for: .normal)
-            barView.isCustomizableButtonHidden = false
+            barView.isCustomizableButtonHidden = !self.state.showCustomizableButton
             return
         }
 

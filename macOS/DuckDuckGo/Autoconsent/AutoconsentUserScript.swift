@@ -607,7 +607,7 @@ extension AutoconsentUserScript {
 
         if lastHandledCMPName != cmpName {
             // The last handled CMP is different from the current one, so we need to clear the reload loop state
-            Logger.autoconsent.debug("Last handled CMP is different from the current one, clearing reload loop state")
+            Logger.autoconsent.debug("Last handled CMP is changed from \(self.lastHandledCMPName) to \(cmpName), clearing reload loop state")
             clearReloadLoopState()
         }
         Logger.autoconsent.debug("Recording popup handled: CMP \(cmpName) on \(String(describing: self.topUrl))")

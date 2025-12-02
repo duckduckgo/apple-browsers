@@ -64,7 +64,7 @@
                 "description": "How the VPN setup or connection was initiated",
                 "enum": ["automatic_on_demand", "manual_by_main_app", "manual_by_the_system"]
             },
-            // As of iOS 7.197.0, `is_setup` uses the normalized values "yes", "no", and "unknown".
+            // As of iOS 7.198.0, `is_setup` uses the normalized values "yes", "no", and "unknown".
             // Previous versions may still report legacy values ("true", "false").
             {
                 "key": "feature.data.ext.is_setup",

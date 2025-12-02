@@ -51,8 +51,6 @@ extension WinBackOfferVisibilityManager {
     enum Constants {
         // After redeeming the offer and churning again, the offer will be available again after 270 days
         static let cooldownPeriod = 270 * TimeInterval.day
-        // Offer will be available 3 days after the last churn date
-        static let daysBeforeOfferAvailability = 3 * TimeInterval.day
         // Offer will be available for 5 days
         static let offerAvailabilityPeriod = 5 * TimeInterval.day
     }
@@ -65,6 +63,8 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     private var winbackOfferFeatureFlagProvider: any WinBackOfferFeatureFlagProvider
     private let calendar: Calendar
     private let dateProvider: () -> Date
+    // The amount of time to wait before user is eligible after initial churn
+    private let timeBeforeOfferAvailability: TimeInterval
 
     private var hasActiveSubscription: Bool = false
     private var observer: NSObjectProtocol?
@@ -73,12 +73,14 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
                 winbackOfferStore: any WinbackOfferStoring,
                 winbackOfferFeatureFlagProvider: any WinBackOfferFeatureFlagProvider,
                 calendar: Calendar = Calendar.current,
-                dateProvider: @escaping () -> Date = Date.init) {
+                dateProvider: @escaping () -> Date = Date.init,
+                timeBeforeOfferAvailability: TimeInterval = 3 * TimeInterval.day) {
         self.subscriptionManager = subscriptionManager
         self.winbackOfferStore = winbackOfferStore
         self.winbackOfferFeatureFlagProvider = winbackOfferFeatureFlagProvider
         self.calendar = calendar
         self.dateProvider = dateProvider
+        self.timeBeforeOfferAvailability = timeBeforeOfferAvailability
 
         observeSubscriptionDidChange()
         checkCachedSubscription()
@@ -114,7 +116,7 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
             return false
         }
 
-        let eligibilityDate = churnDate.addingTimeInterval(Constants.daysBeforeOfferAvailability)
+        let eligibilityDate = churnDate.addingTimeInterval(timeBeforeOfferAvailability)
         return dateProvider() >= eligibilityDate
     }
 
@@ -162,7 +164,7 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     }
 
     private func offerStartDate(churnDate: Date) -> Date {
-        return churnDate.addingTimeInterval(Constants.daysBeforeOfferAvailability)
+        return churnDate.addingTimeInterval(timeBeforeOfferAvailability)
     }
 
     private func isLastDayOfOffer(startDate: Date) -> Bool {
@@ -179,7 +181,7 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
 
             hasActiveSubscription = currentSubscription.status.isActive
 
-            storeChurnDateIfNeeded(newStatus: currentSubscription.status)
+            storeChurnDateIfNeeded(subscription: currentSubscription)
         }
     }
 
@@ -206,35 +208,36 @@ public final class WinBackOfferVisibilityManager: WinBackOfferVisibilityManaging
 
             hasActiveSubscription = isNowActive
 
-            storeChurnDateIfNeeded(newStatus: newSubscription.status)
+            storeChurnDateIfNeeded(subscription: newSubscription)
         }
     }
 
-    private func storeChurnDateIfNeeded(newStatus: DuckDuckGoSubscription.Status) {
-        guard newStatus == .expired else {
+    private func storeChurnDateIfNeeded(subscription: DuckDuckGoSubscription) {
+        guard subscription.status == .expired else {
+            return
+        }
+
+        let expiryDate = subscription.expiresOrRenewsAt
+
+        guard let lastStoredChurnDate = winbackOfferStore.getChurnDate() else {
+            // No stored churn date, mark churn.
+            resetOffer(using: expiryDate)
             return
         }
 
         let now = dateProvider()
-
-        guard let lastStoredChurnDate = winbackOfferStore.getChurnDate() else {
-            // No stored churn date, mark churn.
-            resetOffer(using: now)
-            return
-        }
-
         let timeSinceLastChurn = now.timeIntervalSince(lastStoredChurnDate)
         let cooldownHasPassed = timeSinceLastChurn > Constants.cooldownPeriod
 
         if cooldownHasPassed {
             // Cooldown period has passed, mark churn.
-            resetOffer(using: now)
+            resetOffer(using: expiryDate)
             return
         }
 
         // Mark new churn date if previous offer was redeemed.
         if winbackOfferStore.hasRedeemedOffer() {
-            winbackOfferStore.storeChurnDate(now)
+            winbackOfferStore.storeChurnDate(expiryDate)
         }
     }
 

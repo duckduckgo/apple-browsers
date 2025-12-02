@@ -62,7 +62,7 @@ struct DataImportView: ModalView {
         return (!model.errors.isEmpty && isInternalUser)
 #endif
     }
-    
+
     private var dialogWidth: CGFloat {
         switch model.screen {
         case .passwordEntryHelp:

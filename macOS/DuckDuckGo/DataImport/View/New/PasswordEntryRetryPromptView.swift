@@ -45,14 +45,14 @@ struct PasswordEntryRetryPromptView: View {
         }
         .padding(.top, 40)
     }
-    
+
     private var titleSection: some View {
         Text(UserText.passwordEntryHelpTitle)
             .font(.title2)
             .fontWeight(.semibold)
             .foregroundColor(.primary)
     }
-    
+
     @ViewBuilder
     private var instructionsText: some View {
         if #available(macOS 12, *), let instructionsAttr = try? AttributedString(markdown: UserText.passwordEntryHelpInstructions) {
@@ -67,7 +67,7 @@ struct PasswordEntryRetryPromptView: View {
                 .multilineTextAlignment(.leading)
         }
     }
-    
+
     private var showMessageButton: some View {
         Button {
             onRetry()
@@ -78,7 +78,7 @@ struct PasswordEntryRetryPromptView: View {
         .buttonStyle(DefaultActionButtonStyle(enabled: true))
         .padding(.bottom, 8)
     }
-    
+
     private var keychainPromptExample: some View {
         PasswordEntryExampleView(helpText: UserText.passwordEntryHelpDialogExampleText)
             .padding(.bottom, 40)

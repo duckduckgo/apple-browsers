@@ -158,7 +158,7 @@ struct DataImportViewModel {
             return false
         }
     }
-    
+
     var shouldHideFooter: Bool {
         switch screen {
         case .moreInfo:

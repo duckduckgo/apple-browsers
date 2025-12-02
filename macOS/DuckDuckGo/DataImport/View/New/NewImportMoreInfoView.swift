@@ -84,12 +84,12 @@ private struct ProgrammaticallyDismissedPopover<Content: View>: NSViewRepresenta
             if context.coordinator.popover == nil {
                 let hostingController = NSHostingController(rootView: content())
                 hostingController.view.frame = CGRect(origin: .zero, size: hostingController.view.intrinsicContentSize)
-                
+
                 let popover = NSPopover()
                 popover.contentViewController = hostingController
                 popover.behavior = .applicationDefined
                 popover.animates = true
-                
+
                 context.coordinator.popover = popover
                 popover.show(relativeTo: nsView.bounds, of: nsView, preferredEdge: .minY)
             }

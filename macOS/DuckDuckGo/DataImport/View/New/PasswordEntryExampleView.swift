@@ -26,7 +26,7 @@ struct PasswordEntryExampleView: View {
     init(helpText: String? = nil) {
         self.helpText = helpText
     }
-    
+
     var body: some View {
         ZStack(alignment: .topLeading) {
             promptImage
@@ -40,11 +40,11 @@ struct PasswordEntryExampleView: View {
         }
         .frame(width: Metrics.containerImageWidth, height: Metrics.containerImageHeight)
     }
-    
+
     private var promptImage: some View {
         Image(.importKeychainPromptContainer)
     }
-    
+
     private func helpTextView(_ text: String) -> some View {
         Text(text)
             .font(.body)
@@ -55,7 +55,7 @@ struct PasswordEntryExampleView: View {
             .padding(.top, 28)
             .padding(.leading, 104)
     }
-    
+
     private var textPlaceholders: some View {
         VStack(alignment: .leading, spacing: 12) {
             textPlaceholder(width: 244)
@@ -64,7 +64,7 @@ struct PasswordEntryExampleView: View {
         .padding(.top, 28)
         .padding(.leading, 104)
     }
-    
+
     private var buttonArea: some View {
         HStack(spacing: Metrics.spacing) {
             placeholderButton
@@ -74,18 +74,18 @@ struct PasswordEntryExampleView: View {
         .padding(.trailing, Metrics.spacing * 2)
         .padding(.bottom, 35)
     }
-    
+
     private var cursor: some View {
         Image(.chromiumImportCursor)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
             .padding(.trailing, 0)
             .padding(.bottom, 0)
     }
-    
+
     private var placeholderButton: some View {
         placeholderRect(width: 80, cornerRadius: Metrics.buttonCornerRadius)
     }
-    
+
     private var allowButton: some View {
         Text(UserText.importChromeAllowButtonTitle)
             .padding(.horizontal, Metrics.spacing)
@@ -94,11 +94,11 @@ struct PasswordEntryExampleView: View {
                 placeholderRect(cornerRadius: Metrics.buttonCornerRadius)
             )
     }
-    
+
     private func textPlaceholder(width: CGFloat) -> some View {
         placeholderRect(width: width, cornerRadius: Metrics.itemHeight / 2.0)
     }
-    
+
     private func placeholderRect(width: CGFloat? = nil, cornerRadius: CGFloat) -> some View {
         RoundedRectangle(cornerRadius: cornerRadius)
             .fill(Color(designSystemColor: .containerFillTertiary))
@@ -121,8 +121,7 @@ private extension PasswordEntryExampleView {
 #Preview {
     VStack(spacing: 20) {
         PasswordEntryExampleView()
-        
+
         PasswordEntryExampleView(helpText: UserText.passwordEntryHelpDialogExampleText)
     }
 }
-

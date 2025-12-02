@@ -241,21 +241,23 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func updateKeyboardConfiguration() {
-        guard handler.isUsingFadeOutAnimation else {
-            textView.keyboardType = .webSearch
-            textView.returnKeyType = currentMode == .search ? .search : .go
-            return
-        }
-
         switch currentMode {
         case .search:
             textView.keyboardType = .webSearch
             textView.returnKeyType = .search
         case .aiChat:
-            textView.keyboardType = .default
-            textView.returnKeyType = .default
+            if handler.isUsingFadeOutAnimation {
+                textView.keyboardType = .default
+                textView.returnKeyType = .default
+            } else {
+                textView.keyboardType = .webSearch
+                textView.returnKeyType = .go
+            }
         }
-        textView.reloadInputViews()
+
+        if handler.isUsingFadeOutAnimation {
+            textView.reloadInputViews()
+        }
     }
 
     private func updatePlaceholderVisibility() {

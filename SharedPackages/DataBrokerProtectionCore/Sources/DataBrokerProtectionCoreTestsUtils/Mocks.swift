@@ -1695,7 +1695,6 @@ public extension OptOutJobData {
 }
 
 public final class MockJobQueueManager: JobQueueManaging {
-    
     public var delegate: JobQueueManagerDelegate?
 
     public var debugRunningStatusString: String { return "" }

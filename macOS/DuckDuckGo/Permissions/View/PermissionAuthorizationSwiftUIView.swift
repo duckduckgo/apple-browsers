@@ -45,6 +45,7 @@ enum PermissionAuthorizationType {
             case .externalScheme(let scheme): self = .externalScheme(scheme: scheme)
             }
         } else {
+            assertionFailure("Unexpected permission types combination")
             self = .camera // fallback, shouldn't happen
         }
     }

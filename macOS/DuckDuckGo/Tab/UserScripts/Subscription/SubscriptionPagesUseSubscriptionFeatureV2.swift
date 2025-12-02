@@ -247,7 +247,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
     }
 
     func getSubscriptionTierOptions(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        subscriptionEventReporter.report(subscriptionTierOptionEvent: SubscriptionPixel.subscriptionTierOptionsRequested, platform: subscriptionPlatform.rawValue)
+        subscriptionEventReporter.report(subscriptionTierOptionEvent: SubscriptionPixel.subscriptionTierOptionsRequested)
 
         let result: Result<SubscriptionTierOptions, Error>
 
@@ -269,10 +269,10 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
             // TEMPORARY: Check if Pro tier was unexpectedly returned
             let hasProTier = subscriptionTierOptions.products.contains { $0.tier.lowercased() == "pro" }
             if hasProTier {
-                subscriptionEventReporter.report(subscriptionTierOptionEvent: SubscriptionPixel.subscriptionTierOptionsUnexpectedProTier, platform: subscriptionPlatform.rawValue)
+                subscriptionEventReporter.report(subscriptionTierOptionEvent: SubscriptionPixel.subscriptionTierOptionsUnexpectedProTier)
             }
 
-            subscriptionEventReporter.report(subscriptionTierOptionEvent: SubscriptionPixel.subscriptionTierOptionsSuccess, platform: subscriptionPlatform.rawValue)
+            subscriptionEventReporter.report(subscriptionTierOptionEvent: SubscriptionPixel.subscriptionTierOptionsSuccess)
             
             guard subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed else { return subscriptionTierOptions.withoutPurchaseOptions() }
             return subscriptionTierOptions
@@ -280,7 +280,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         case .failure(let error):
             Logger.subscription.error("Failed to get tier options: \(String(describing: error), privacy: .public)")
 
-            subscriptionEventReporter.report(subscriptionTierOptionEvent: SubscriptionPixel.subscriptionTierOptionsFailure(error: error), platform: subscriptionPlatform.rawValue)
+            subscriptionEventReporter.report(subscriptionTierOptionEvent: SubscriptionPixel.subscriptionTierOptionsFailure(error: error))
 
             return SubscriptionTierOptions.empty
         }

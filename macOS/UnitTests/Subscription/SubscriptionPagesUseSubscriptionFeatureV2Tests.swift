@@ -789,28 +789,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         XCTAssertFalse(mockEventReporter.reportedTierOptionEvents.contains { $0.eventName == SubscriptionPixel.subscriptionTierOptionsUnexpectedProTier.name })
     }
 
-    func testGetSubscriptionTierOptions_IncludesPlatformInPixel() async throws {
-        // Given
-        let expectedTierOptions = SubscriptionTierOptions(
-            platform: .macos,
-            products: [
-                SubscriptionTier(
-                    tier: "plus",
-                    features: [TierFeature(product: .networkProtection, name: "plus")],
-                    options: []
-                )
-            ]
-        )
-        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(expectedTierOptions)
-
-        // When
-        _ = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
-
-        // Then
-        let requestedEvent = mockEventReporter.reportedTierOptionEvents.first { $0.eventName == SubscriptionPixel.subscriptionTierOptionsRequested.name }
-        XCTAssertEqual(requestedEvent?.platform, "appStore", "Platform should be included in pixel")
-    }
-
 }
 
 // MARK: - Mocks
@@ -819,7 +797,6 @@ final class MockSubscriptionEventReporter: SubscriptionEventReporter {
 
     struct TierOptionEventRecord {
         let eventName: String
-        let platform: String
     }
 
     var reportedActivationErrors: [SubscriptionError] = []
@@ -829,8 +806,8 @@ final class MockSubscriptionEventReporter: SubscriptionEventReporter {
         reportedActivationErrors.append(subscriptionActivationError)
     }
 
-    func report(subscriptionTierOptionEvent: PixelKitEvent, platform: String) {
-        reportedTierOptionEvents.append(TierOptionEventRecord(eventName: subscriptionTierOptionEvent.name, platform: platform))
+    func report(subscriptionTierOptionEvent: PixelKitEvent) {
+        reportedTierOptionEvents.append(TierOptionEventRecord(eventName: subscriptionTierOptionEvent.name))
     }
 }
 

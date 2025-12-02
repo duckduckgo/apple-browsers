@@ -97,7 +97,6 @@ public struct AccessTokenValue: Codable {
     let accessToken: String
 }
 
-
 protocol SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObject {
     var transactionStatusPublisher: Published<SubscriptionTransactionStatus>.Publisher { get }
     var transactionStatus: SubscriptionTransactionStatus { get }

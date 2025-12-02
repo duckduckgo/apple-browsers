@@ -42,6 +42,7 @@ final class SuggestionViewController: NSViewController {
     @IBOutlet weak var tableViewHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var pixelPerfectConstraint: NSLayoutConstraint!
     @IBOutlet weak var backgroundViewTopConstraint: NSLayoutConstraint!
+    @IBOutlet weak var topSeparatorView: NSView!
 
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
@@ -86,6 +87,10 @@ final class SuggestionViewController: NSViewController {
         subscribeToThemeChanges()
 
         applyThemeStyle()
+
+        if Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
+            topSeparatorView?.isHidden = true
+        }
     }
 
     override func viewWillAppear() {

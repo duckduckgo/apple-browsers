@@ -170,8 +170,10 @@ final class FadeOutContainerViewController: UIViewController {
         }
 
         let completion: (Bool) -> Void = { [weak self] finished in
+            self?.stopDisplayLink()
+
             guard let self, finished else { return }
-            self.stopDisplayLink()
+
             self.updateTransitionProgress(self.targetProgress)
             let newMode: TextEntryMode = isSearchMode ? .search : .aiChat
             self.delegate?.fadeOutContainerViewController(self, didTransitionToMode: newMode)

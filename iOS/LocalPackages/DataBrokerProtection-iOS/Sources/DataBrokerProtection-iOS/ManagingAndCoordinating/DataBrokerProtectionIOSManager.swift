@@ -240,8 +240,27 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
         fireMonitoringPixels()
 
         Task {
-            await checkForEmailConfirmationData()
+            await startImmediateScanOperations()
         }
+        /*
+        could be as simple as runing startImmediateScanOperationsIfPermitted
+        there's some background assertion stuff on the saveProfile stuff. So we probs need to do that
+
+            as far as I can tell, startImmediateScanOperationsIfPermitted doesn't enforce just running scans
+            I think if we call it a second time it will include whatever opt outs have been created
+
+         I think that should change
+
+         so would need to modify job provider
+
+         easiest would be to change fetchAllBrokerProfileQueryData to not fetch opt outs
+
+         oh it's fine, I forgot how insane everything is, it's handled way down the stack
+         Christ we need to get rid of this cocnept of a broker profile job
+
+         */
+
+
     }
 
     func fireMonitoringPixels() {
@@ -616,5 +635,24 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.BackgroundTaskHandling
 
         // Otherwise → clamp to [minBackgroundTaskWaitTime, maxBackgroundTaskWaitTime]
         return min(max(jobDate, minBackgroundTaskWaitDate), maxBackgroundTaskWaitDate)
+    }
+}
+
+// MARK: - Immediate scans
+
+private extension DataBrokerProtectionIOSManager {
+
+    @MainActor
+    func startImmediateScanOperations() async {
+        let backgroundAssertion = QRunInBackgroundAssertion(name: "DataBrokerProtectionIOSManager", application: .shared) {
+            self.queueManager.stop()
+        }
+
+        await checkForEmailConfirmationData()
+        queueManager.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
+            DispatchQueue.main.async {
+                backgroundAssertion.release()
+            }
+        }
     }
 }

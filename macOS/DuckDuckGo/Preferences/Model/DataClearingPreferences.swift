@@ -79,10 +79,6 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
         featureFlagger.isFeatureOn(.disableFireAnimation)
     }
 
-    var shouldShowOpenFirewindowByDefaultSection: Bool {
-        featureFlagger.isFeatureOn(.openFireWindowByDefault)
-    }
-
     @objc func toggleWarnBeforeClearing() {
         isWarnBeforeClearingEnabled.toggle()
     }

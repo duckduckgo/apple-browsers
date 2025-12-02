@@ -572,7 +572,6 @@ final class JobQueueManagerTests: XCTestCase {
         mockOperationsCreator.operationCollections = mockOperationsWithError + mockOperations
         var errorCollection: DataBrokerProtectionJobsErrorCollection!
 
-        // When
         sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
         } completion: {
@@ -581,6 +580,7 @@ final class JobQueueManagerTests: XCTestCase {
 
         mockQueue.completeOperationsUpTo(index: 2)
 
+        // When
         sut.stopScheduledOperationsOnly()
 
         // Then
@@ -594,7 +594,6 @@ final class JobQueueManagerTests: XCTestCase {
             completionCalled.toggle()
         }
 
-        // Then
         XCTAssertEqual((errorCollection.oneTimeError as? BrokerProfileJobQueueError), expectedError)
         XCTAssert(completionCalled)
     }

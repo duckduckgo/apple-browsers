@@ -49,25 +49,23 @@ extension Preferences {
                 }
 
                 // SECTION 2: Fire Window Default
-                if model.shouldShowOpenFirewindowByDefaultSection {
-                    PreferencePaneSection(UserText.fireWindow) {
-                        PreferencePaneSubSection {
-                            ToggleMenuItem(UserText.openFireWindowByDefault, isOn: $model.shouldOpenFireWindowByDefault)
-                                .accessibilityIdentifier("PreferencesDataClearingView.openFireWindowByDefault")
+                PreferencePaneSection(UserText.fireWindow) {
+                    PreferencePaneSubSection {
+                        ToggleMenuItem(UserText.openFireWindowByDefault, isOn: $model.shouldOpenFireWindowByDefault)
+                            .accessibilityIdentifier("PreferencesDataClearingView.openFireWindowByDefault")
 
-                            if model.shouldOpenFireWindowByDefault && startupModel.restorePreviousSession {
-                                VStack(alignment: .leading, spacing: 1) {
-                                    TextMenuItemCaption(UserText.fireWindowSessionRestoreWarning)
-                                    TextButton(UserText.showStartupSettings) {
-                                        model.show(url: .settingsPane(.general))
-                                    }
-                                }
-                                .padding(.leading, 19)
-                            }
-
+                        if model.shouldOpenFireWindowByDefault && startupModel.restorePreviousSession {
                             VStack(alignment: .leading, spacing: 1) {
-                                TextMenuItemCaption(UserText.openFireWindowByDefaultExplanation(newFireWindowShortcut: "⌘N", newRegularWindowShortcut: "⇧⌘N"))
+                                TextMenuItemCaption(UserText.fireWindowSessionRestoreWarning)
+                                TextButton(UserText.showStartupSettings) {
+                                    model.show(url: .settingsPane(.general))
+                                }
                             }
+                            .padding(.leading, 19)
+                        }
+
+                        VStack(alignment: .leading, spacing: 1) {
+                            TextMenuItemCaption(UserText.openFireWindowByDefaultExplanation(newFireWindowShortcut: "⌘N", newRegularWindowShortcut: "⇧⌘N"))
                         }
                     }
                 }

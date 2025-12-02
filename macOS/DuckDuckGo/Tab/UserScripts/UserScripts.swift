@@ -61,6 +61,7 @@ final class UserScripts: UserScriptsProvider {
     let newTabPageUserScript: NewTabPageUserScript?
     let serpSettingsUserScript: SERPSettingsUserScript?
     let faviconScript = FaviconUserScript()
+    let webNotificationsHandler = WebNotificationsHandler()
 
     private let contentScopePreferences: ContentScopePreferences
 
@@ -100,7 +101,7 @@ final class UserScripts: UserScriptsProvider {
                                            featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig),
                                            currentCohorts: currentCohorts)
         do {
-            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, allowedNonisolatedFeatures: [PageContextUserScript.featureName], privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
+            contentScopeUserScript = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, allowedNonisolatedFeatures: [PageContextUserScript.featureName, "webCompat"], privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
             contentScopeUserScriptIsolated = try ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, isIsolated: true, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: sourceProvider.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
         } catch {
             if let error = error as? UserScriptError {
@@ -208,6 +209,8 @@ final class UserScripts: UserScriptsProvider {
             }
             userScripts.append(specialPages)
         }
+
+        contentScopeUserScript.registerSubfeature(delegate: webNotificationsHandler)
 
         var delegate: Subfeature
         if !Application.appDelegate.isUsingAuthV2 {

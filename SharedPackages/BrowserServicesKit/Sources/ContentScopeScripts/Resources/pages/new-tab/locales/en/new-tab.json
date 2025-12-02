@@ -78,10 +78,18 @@
     "note": "Placeholder to indicate that no tracking activity was blocked in the last 7 days"
   },
   "stats_countBlockedSingular": {
+    "title": "Tracking attempt blocked",
+    "note": "The sub headline indicating that a single tracker was blocked. This sub headline starts with a capital letter"
+  },
+  "stats_countBlockedSingularLegacy": {
     "title": "1 tracking attempt blocked",
     "note": "The main headline indicating that a single tracker was blocked"
   },
   "stats_countBlockedPlural": {
+    "title": "Tracking attempts blocked",
+    "note": "The sub headline indicating that more than 1 tracker has been blocked. This sub headline starts with a capital letter"
+  },
+  "stats_countBlockedPluralLegacy": {
     "title": "{count} tracking attempts blocked",
     "note": "The main headline indicating that more than 1 attempt has been blocked. Eg: '2 tracking attempts blocked'"
   },
@@ -93,13 +101,25 @@
     "title": "Protections active",
     "note": "Placeholder to indicate that no ads or tracking activity was blocked in the last 7 days"
   },
-  "stats_countBlockedAdsAndTrackersSingular": {
+  "stats_countBlockedAdsAndTrackersSingularLegacy": {
     "title": "<b>1</b> advertising & tracking attempt blocked",
     "note": "The main headline indicating that a single ad or tracking attempt was blocked"
   },
-  "stats_countBlockedAdsAndTrackersPlural": {
+  "stats_countBlockedAdsAndTrackersPluralLegacy": {
     "title": "<b>{count}</b> advertising & tracking attempts blocked",
     "note": "The main headline indicating that more than 1 ad or tracking attempt has been blocked. Eg: '2 advertising & tracking attempts blocked"
+  },
+  "stats_totalCookiePopUpsBlockedSingular": {
+    "title": "Cookie pop-up blocked",
+    "note": "The heading indicating that a single cookie pop-up was handled by the CPM"
+  },
+  "stats_totalCookiePopUpsBlockedPlural": {
+    "title": "Cookie pop-ups blocked",
+    "note": "The heading indicating multiple cookie pop-ups were handled by the CPM"
+  },
+  "stats_protectionsReportInfo": {
+    "title": "Displays tracking attempts blocked in the last 7 days, and the number of cookie pop-ups blocked since you started using the browser. <span>You can reset these stats using the Fire Button.</span>",
+    "note": "Text explaining how to reset the protections stats"
   },
   "stats_feedCountBlockedSingular": {
     "title": "1 attempt blocked by DuckDuckGo in the last 7 days",
@@ -410,8 +430,20 @@
     "note": "Placeholder message indicating that no trackers are blocked"
   },
   "activity_countBlockedPlural": {
+    "title": "{count} Tracking attempts blocked",
+    "note": "New pill text indicating that more than 1 attempt has been blocked. Eg: '2 Tracking attempts blocked'. Uppercase T is by design"
+  },
+  "activity_countBlockedPluralLegacy": {
     "title": "<b>{count}</b> tracking attempts blocked",
     "note": "The main headline indicating that more than 1 attempt has been blocked. Eg: '2 tracking attempts blocked'"
+  },
+  "activity_countBlockedSingular": {
+    "title": "{count} Tracking attempt blocked",
+    "note": "Pill text indicating that 1 attempt has been blocked. Eg: '1 Tracking attempt blocked'"
+  },
+  "activity_cookiePopUpBlocked": {
+    "title": "Cookie pop-up blocked",
+    "note": "Pill text indicating that we have blocked cookie pop-ups"
   },
   "activity_noRecentAdsAndTrackers_subtitle": {
     "title": "Recently visited sites will appear here. Keep browsing to see how many ads and trackers we block.",

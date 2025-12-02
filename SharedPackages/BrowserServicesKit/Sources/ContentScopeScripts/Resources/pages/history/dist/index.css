@@ -70,6 +70,7 @@
   --color-white: #fff;
   --color-black-at-1: rgba(0, 0, 0, 0.01);
   --color-black-at-3: rgba(0, 0, 0, 0.03);
+  --color-black-at-4: rgba(0, 0, 0, 0.04);
   --color-black-at-6: rgba(0, 0, 0, 0.06);
   --color-black-at-9: rgba(0, 0, 0, 0.09);
   --color-black-at-12: rgba(0, 0, 0, 0.12);
@@ -81,6 +82,7 @@
   --color-black-at-48: rgba(0, 0, 0, 0.48);
   --color-black-at-50: rgba(0, 0, 0, 0.5);
   --color-black-at-60: rgba(0, 0, 0, 0.6);
+  --color-black-at-66: rgba(0, 0, 0, 0.66);
   --color-black-at-72: rgba(0, 0, 0, 0.72);
   --color-black-at-80: rgba(0, 0, 0, 0.8);
   --color-black-at-84: rgba(0, 0, 0, 0.84);
@@ -99,6 +101,7 @@
   --color-white-at-42: rgba(255, 255, 255, 0.42);
   --color-white-at-50: rgba(255, 255, 255, 0.5);
   --color-white-at-60: rgba(255, 255, 255, 0.6);
+  --color-white-at-66: rgba(255, 255, 255, 0.66);
   --color-white-at-70: rgba(255, 255, 255, 0.7);
   --color-white-at-80: rgba(255, 255, 255, 0.8);
   --color-white-at-84: rgba(255, 255, 255, 0.84);
@@ -270,6 +273,34 @@ body {
   --history-text-normal: var(--color-white-at-84);
   --history-text-invert: var(--color-black-at-84);
   --history-text-muted: var(--color-white-at-60);
+}
+[data-theme-variant=coolGray] {
+  --default-light-background-color: #d2d5e3;
+  --default-dark-background-color: #2b2f45;
+}
+[data-theme-variant=slateBlue] {
+  --default-light-background-color: #d2e5f3;
+  --default-dark-background-color: #1e3347;
+}
+[data-theme-variant=green] {
+  --default-light-background-color: #e3eee1;
+  --default-dark-background-color: #203b30;
+}
+[data-theme-variant=violet] {
+  --default-light-background-color: #e7e4f5;
+  --default-dark-background-color: #2e2158;
+}
+[data-theme-variant=rose] {
+  --default-light-background-color: #f8ebf5;
+  --default-dark-background-color: #5b194b;
+}
+[data-theme-variant=orange] {
+  --default-light-background-color: #fcedd8;
+  --default-dark-background-color: #54240c;
+}
+[data-theme-variant=desert] {
+  --default-light-background-color: #eee9e1;
+  --default-dark-background-color: #3c3833;
 }
 
 /* pages/history/app/components/App.module.css */

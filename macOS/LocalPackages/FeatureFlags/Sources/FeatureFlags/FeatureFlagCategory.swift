@@ -29,6 +29,7 @@ public enum FeatureFlagCategory: String, CaseIterable, Comparable {
     case sync = "Sync"
     case updates = "Updates"
     case vpn = "VPN"
+    case webNotifications = "Web Notifications"
 
     public static func < (lhs: FeatureFlagCategory, rhs: FeatureFlagCategory) -> Bool {
         guard lhs != rhs else {
@@ -96,6 +97,8 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .allowPopupsForCurrentPage,
                 .popupPermissionButtonPersistence:
             return .popupBlocking
+        case .webNotifications:
+            return .webNotifications
         default:
             return .other
         }

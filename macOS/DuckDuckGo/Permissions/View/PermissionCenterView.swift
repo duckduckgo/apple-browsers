@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import DesignResourcesKitIcons
 import SwiftUI
 
 // MARK: - PermissionCenterView
@@ -174,22 +175,42 @@ struct PermissionRowView: View {
 
     @ViewBuilder
     private var permissionIcon: some View {
+        let iconColor: Color = item.isInUse ? Color(NSColor.systemRed) : Color(designSystemColor: .textSecondary)
+
         switch item.permissionType {
         case .camera:
-            Image(systemName: "video.fill")
-                .foregroundColor(Color(NSColor.systemRed))
+            // Use filled icon if allowed or in use, outline otherwise
+            if item.isAllowed {
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.videoSolid)
+                    .foregroundColor(iconColor)
+            } else {
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.video)
+                    .foregroundColor(iconColor)
+            }
         case .microphone:
-            Image(systemName: "mic.fill")
-                .foregroundColor(Color(designSystemColor: .textSecondary))
+            if item.isAllowed {
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.microphoneSolid)
+                    .foregroundColor(iconColor)
+            } else {
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.microphone)
+                    .foregroundColor(iconColor)
+            }
         case .geolocation:
-            Image(systemName: "location.fill")
-                .foregroundColor(Color(designSystemColor: .textSecondary))
+            if item.isAllowed {
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.permissionsLocationSolid)
+                    .foregroundColor(iconColor)
+            } else {
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.permissionsLocation)
+                    .foregroundColor(iconColor)
+            }
         case .popups:
-            Image(systemName: "rectangle.on.rectangle")
-                .foregroundColor(Color(designSystemColor: .textSecondary))
+            // Popups only have outline icon
+            Image(nsImage: DesignSystemImages.Glyphs.Size16.popupBlocked)
+                .foregroundColor(iconColor)
         case .externalScheme:
-            Image(systemName: "arrow.up.forward.app")
-                .foregroundColor(Color(designSystemColor: .textSecondary))
+            // External apps only have outline icon
+            Image(nsImage: DesignSystemImages.Glyphs.Size16.openIn)
+                .foregroundColor(iconColor)
         }
     }
 
@@ -279,7 +300,7 @@ struct PopupPermissionRowView: View {
             // Main row with icon, name, dropdown, and remove button
             HStack(spacing: 8) {
                 // Icon
-                Image(systemName: "rectangle.on.rectangle")
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.popupBlocked)
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     .frame(width: 24, height: 24)
 

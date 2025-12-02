@@ -46,8 +46,30 @@ struct PermissionCenterItem: Identifiable {
     let domain: String
     var decision: PersistedPermissionDecision
     var isSystemDisabled: Bool
+    /// Current state of the permission (active, inactive, etc.)
+    var state: PermissionState
     /// For popups: the list of blocked popup URLs and their queries
     var blockedPopups: [BlockedPopup]
+
+    /// Whether the permission is currently in use (e.g., camera/mic actively recording)
+    var isInUse: Bool {
+        state == .active
+    }
+
+    /// Whether the permission is allowed (granted or user selected "Always Allow")
+    var isAllowed: Bool {
+        // Check persisted decision first
+        if decision == .allow {
+            return true
+        }
+        // Also check runtime state
+        switch state {
+        case .active, .inactive, .paused:
+            return true
+        default:
+            return false
+        }
+    }
 
     var displayName: String {
         if case .externalScheme = permissionType {
@@ -229,6 +251,7 @@ final class PermissionCenterViewModel: ObservableObject {
             .map { permissionType in
                 let decision = permissionManager.permission(forDomain: domain, permissionType: permissionType)
                 let isSystemDisabled = checkSystemDisabled(for: permissionType)
+                let state = usedPermissions[permissionType] ?? .inactive
 
                 // For popups, populate the blocked popup URLs from queries
                 let blockedPopups: [BlockedPopup]
@@ -246,6 +269,7 @@ final class PermissionCenterViewModel: ObservableObject {
                     domain: domain,
                     decision: decision,
                     isSystemDisabled: isSystemDisabled,
+                    state: state,
                     blockedPopups: blockedPopups
                 )
             }.sorted { $0.permissionType.rawValue < $1.permissionType.rawValue }

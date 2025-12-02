@@ -39,6 +39,8 @@ final class PermissionModel {
     private let permissionManager: PermissionManagerProtocol
     private let geolocationService: GeolocationServiceProtocol
     private let featureFlagger: FeatureFlagger
+    /// Tracks if geolocation was ever activated during this session (for new permission view)
+    private var geolocationWasActivated = false
     weak var webView: WKWebView? {
         didSet {
             guard let webView = webView else { return }
@@ -104,6 +106,7 @@ final class PermissionModel {
             permissions[permission].willReload()
         }
         authorizationQueries = []
+        geolocationWasActivated = false
     }
 
     private func updatePermissions() {
@@ -124,7 +127,22 @@ final class PermissionModel {
                     permissions.geolocation
                         .systemAuthorizationDenied(systemWide: !geolocationService.locationServicesEnabled())
                 } else {
-                    permissions.geolocation.update(with: webView.geolocationState)
+                    let currentState = webView.geolocationState
+
+                    // Track if geolocation was ever activated
+                    if currentState == .active {
+                        geolocationWasActivated = true
+                    }
+
+                    // With new permission view, keep geolocation as active once it's been used
+                    if featureFlagger.isFeatureOn(.newPermissionView),
+                       geolocationWasActivated,
+                       currentState == .none,
+                       permissions.geolocation == .active || permissions.geolocation == .inactive {
+                        permissions.geolocation = .active
+                    } else {
+                        permissions.geolocation.update(with: currentState)
+                    }
                 }
             case .popups, .externalScheme:
                 continue

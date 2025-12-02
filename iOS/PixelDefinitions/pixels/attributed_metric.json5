@@ -1,6 +1,6 @@
 {
     "m_attributed_metric_retention_week": {
-        "description": "Tracks user retention on a weekly basis for attribution analysis",
+        "description": "Measures retention on a weekly basis for attribution analysis",
         "owners": ["fcappelli"],
         "triggers": ["other"],
         "suffixes": [],
@@ -34,7 +34,7 @@
         ]
     },
     "m_attributed_metric_retention_month": {
-        "description": "Tracks user retention on a monthly basis for attribution analysis",
+        "description": "Measures retention on a monthly basis for attribution analysis",
         "owners": ["fcappelli"],
         "triggers": ["other"],
         "suffixes": [],
@@ -68,7 +68,7 @@
         ]
     },
     "m_attributed_metric_active_past_week": {
-        "description": "Tracks the number of active days in the past week for attribution analysis",
+        "description": "Measures the number of active days in the past week for attribution analysis",
         "owners": ["fcappelli"],
         "triggers": ["other"],
         "suffixes": [],
@@ -101,7 +101,7 @@
         ]
     },
     "m_attributed_metric_average_searches_past_week_first_month": {
-        "description": "Tracks average search count during the first month for new users",
+        "description": "Measures average search count during the first month",
         "owners": ["fcappelli"],
         "triggers": ["other"],
         "suffixes": [],
@@ -129,7 +129,7 @@
         ]
     },
     "m_attributed_metric_average_searches_past_week": {
-        "description": "Tracks average search count in the past week for attribution analysis",
+        "description": "Measures average search count in the past week for attribution analysis",
         "owners": ["fcappelli"],
         "triggers": ["other"],
         "suffixes": [],
@@ -157,7 +157,7 @@
         ]
     },
     "m_attributed_metric_average_ad_clicks_past_week": {
-        "description": "Tracks average ad clicks in the past week for attribution analysis",
+        "description": "Measures average ad clicks in the past week for attribution analysis",
         "owners": ["fcappelli"],
         "triggers": ["other"],
         "suffixes": [],
@@ -185,7 +185,7 @@
         ]
     },
     "m_attributed_metric_average_duck_ai_usage_past_week": {
-        "description": "Tracks average Duck AI usage in the past week for attribution analysis",
+        "description": "Measures average Duck AI usage in the past week for attribution analysis",
         "owners": ["fcappelli"],
         "triggers": ["other"],
         "suffixes": [],
@@ -213,7 +213,7 @@
         ]
     },
     "m_attributed_metric_subscribed": {
-        "description": "Tracks subscription events for attribution analysis",
+        "description": "Measures subscription events for attribution analysis",
         "owners": ["fcappelli"],
         "triggers": ["other"],
         "suffixes": [],
@@ -241,7 +241,7 @@
         ]
     },
     "m_attributed_metric_synced_device": {
-        "description": "Tracks device sync events for attribution analysis",
+        "description": "Measures device sync events for attribution analysis",
         "owners": ["fcappelli"],
         "triggers": ["other"],
         "suffixes": [],
@@ -269,7 +269,7 @@
         ]
     },
     "m_attributed_metric_data_store_error": {
-        "description": "Tracks data store errors in the attributed metrics system",
+        "description": "Reports data store errors in the attributed metrics system",
         "owners": ["fcappelli"],
         "triggers": ["other"],
         "suffixes": [],

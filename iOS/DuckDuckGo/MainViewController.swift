@@ -2521,7 +2521,7 @@ extension MainViewController: BrowserChromeDelegate {
         viewCoordinator.omniBar.cancel()
         switch suggestion {
         case .phrase(phrase: let phrase):
-            if let url = URL.makeSearchURL(query: phrase, useUnifiedLogic: isUnifiedURLPredictionEnabled) {
+            if let url = URL.makeSearchURL(query: phrase, useUnifiedLogic: isUnifiedURLPredictionEnabled, forceSearchQuery: true) {
                 loadUrl(url)
             } else {
                 Logger.lifecycle.error("Couldn't form URL for suggestion: \(phrase, privacy: .public)")
@@ -2685,9 +2685,16 @@ extension MainViewController: OmniBarDelegate {
         switch context {
         case .newTabPage:
             Pixel.fire(pixel: .browsingMenuOpenedNewTabPage)
+            if browsingMenuSheetCapability.isEnabled {
+                Pixel.fire(pixel: .experimentalBrowsingMenuDisplayedNTP)
+            }
         case .aiChatTab, .website:
             Pixel.fire(pixel: .browsingMenuOpened)
-            
+
+            if browsingMenuSheetCapability.isEnabled {
+                Pixel.fire(pixel: .experimentalBrowsingMenuDisplayed)
+            }
+
             performActionIfAITab { DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuOpened) }
         }
     }
@@ -2757,7 +2764,14 @@ extension MainViewController: OmniBarDelegate {
                                             })
         )
 
-        controller.modalPresentationStyle = .pageSheet
+        let isiPad = UIDevice.current.userInterfaceIdiom == .pad
+        controller.modalPresentationStyle = isiPad ? .popover : .pageSheet
+
+        if let popoverController = controller.popoverPresentationController  {
+            popoverController.sourceView = omniBar.barView.menuButton
+            controller.additionalSafeAreaInsets = UIEdgeInsets(top: 0, left: 0, bottom: 16, right: 0)
+        }
+
         if let sheet = controller.sheetPresentationController {
             sheet.detents = [.medium(), .large()]
             sheet.prefersGrabberVisible = true
@@ -2765,6 +2779,8 @@ extension MainViewController: OmniBarDelegate {
         }
 
         self.present(controller, animated: true)
+
+        DailyPixel.fireDailyAndCount(pixel: .experimentalBrowsingMenuUsed)
     }
 
     @objc func onBookmarksPressed() {

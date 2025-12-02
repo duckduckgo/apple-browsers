@@ -384,7 +384,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
     @MainActor
     func testWhenAIChatToggleEnabledAndNoAutoSelection_ThenSearchAndAIChatCellsAppearAtTop() {
         // Setup with AI chat toggle enabled and AI features enabled
-        featureFlagger.enabledFeatureFlags = [.autocompleteTabs, .aiChatOmnibarToggle]
+        featureFlagger.enabledFeatureFlags = [.autocompleteTabs, .aiChatOmnibarToggle, .aiChatOmnibarCluster]
         let aiChatStorage = MockAIChatPreferencesStorage()
         aiChatStorage.isAIFeaturesEnabled = true
 
@@ -417,7 +417,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
     @MainActor
     func testWhenAIChatToggleEnabledAndHasAutoSelectedSuggestion_ThenAIChatCellAppearsAtBottom() {
         // Setup with AI chat toggle enabled and AI features enabled
-        featureFlagger.enabledFeatureFlags = [.autocompleteTabs, .aiChatOmnibarToggle]
+        featureFlagger.enabledFeatureFlags = [.autocompleteTabs, .aiChatOmnibarToggle, .aiChatOmnibarCluster]
         let aiChatStorage = MockAIChatPreferencesStorage()
         aiChatStorage.isAIFeaturesEnabled = true
 
@@ -453,7 +453,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
     @MainActor
     func testWhenAIChatToggleEnabledAndUserInputIsURL_ThenVisitCellAtTopAndAIChatCellAtBottom() {
         // Setup with AI chat toggle enabled and AI features enabled
-        featureFlagger.enabledFeatureFlags = [.autocompleteTabs, .aiChatOmnibarToggle]
+        featureFlagger.enabledFeatureFlags = [.autocompleteTabs, .aiChatOmnibarToggle, .aiChatOmnibarCluster]
         let aiChatStorage = MockAIChatPreferencesStorage()
         aiChatStorage.isAIFeaturesEnabled = true
 
@@ -518,7 +518,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
     @MainActor
     func testWhenAIChatToggleEnabledButAIFeaturesDisabled_ThenOnlySearchCellAppears() {
         // Setup with AI chat toggle enabled but AI features disabled
-        featureFlagger.enabledFeatureFlags = [.autocompleteTabs, .aiChatOmnibarToggle]
+        featureFlagger.enabledFeatureFlags = [.autocompleteTabs, .aiChatOmnibarToggle, .aiChatOmnibarCluster]
         let aiChatStorage = MockAIChatPreferencesStorage()
         aiChatStorage.isAIFeaturesEnabled = false
 

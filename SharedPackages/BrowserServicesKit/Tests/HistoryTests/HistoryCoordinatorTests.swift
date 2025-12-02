@@ -416,27 +416,32 @@ class HistoryCoordinatorTests: XCTestCase {
     func testWhenCookiePopupBlockedIsCalled_ThenFlagIsSetAndAutoCommitted() async {
         let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
 
+        // Add an initial visit, and wait for it to complete:
         let url = URL(string: "https://example.com")!
         historyCoordinator.addVisit(of: url)
+
+        let expectation1 = XCTestExpectation(description: "Changes auto-committed")
+        historyStoringMock.saveCompletion = { expectation1.fulfill() }
+        await fulfillment(of: [expectation1], timeout: 5.0)
 
         // Reset save state after initial visit
         historyStoringMock.saveCalled = false
         historyStoringMock.savedHistoryEntries.removeAll()
 
-        let expectation = XCTestExpectation(description: "Changes auto-committed")
-        historyStoringMock.saveCompletion = {
-            expectation.fulfill()
-        }
-
+        // Perform the cookie-popup block visit:
+        let expectation2 = XCTestExpectation(description: "Changes auto-committed")
+        historyStoringMock.saveCompletion = { expectation2.fulfill() }
         historyCoordinator.cookiePopupBlocked(on: url)
 
-        await fulfillment(of: [expectation], timeout: 1.0)
+        await fulfillment(of: [expectation2], timeout: 5.0)
 
         // Verify flag is set in memory
         XCTAssertTrue(historyCoordinator.history!.first?.cookiePopupBlocked ?? false)
+
         // Verify save was called
         XCTAssertTrue(historyStoringMock.saveCalled)
-        XCTAssertTrue(historyStoringMock.savedHistoryEntries.last?.cookiePopupBlocked ?? false)
+        XCTAssertEqual(historyStoringMock.savedHistoryEntries.count, 1)
+        XCTAssertEqual(historyStoringMock.savedHistoryEntries.last?.cookiePopupBlocked, true)
     }
 
     @MainActor

@@ -342,7 +342,11 @@ final class SuggestionTableCellView: NSTableCellView {
             }
         }
 
-        iconImageViewLeadingConstraint.constant = theme?.addressBarStyleProvider.suggestionIconViewLeadingPadding ?? Constants.iconImageViewLeadingSpace
+        var iconLeadingPadding = theme?.addressBarStyleProvider.suggestionIconViewLeadingPadding ?? Constants.iconImageViewLeadingSpace
+        if Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
+            iconLeadingPadding += 8
+        }
+        iconImageViewLeadingConstraint.constant = iconLeadingPadding
         searchSuggestionTextFieldLeadingConstraint.constant = theme?.addressBarStyleProvider.suggestionTextFieldLeadingPadding ?? Constants.suggestionTextFieldLeadingSpace
 
         super.layout()

@@ -153,6 +153,7 @@ final class AutoconsentStatsPopoverCoordinator {
 
         //        if let newTabPageViewModel = windowControllersManager.mainWindowController?.mainViewController.browserTabViewController.newTabPageWebViewModel {
         //            NSApp.delegateTyped.newTabPageCustomizationModel.customizerOpener.openSettings(for: newTabPageViewModel.webView)
+//                    NSApp.delegateTyped.protectionsReportModel.scroller.scroll(for: webView)
         //        }
     }
 

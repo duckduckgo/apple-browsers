@@ -79,6 +79,8 @@ public final class NewTabPageProtectionsReportModel {
     let statsUpdatePublisher: AnyPublisher<Void, Never>
     let isAutoconsentEnabled: () -> Bool
 
+    let scroller = NewTabPageProtectionsReportScroller()
+
     @Published var shouldShowBurnAnimation: Bool
 
     @Published var isViewExpanded: Bool {

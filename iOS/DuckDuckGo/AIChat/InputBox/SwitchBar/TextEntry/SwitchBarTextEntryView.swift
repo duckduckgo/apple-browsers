@@ -27,6 +27,7 @@ class SwitchBarTextEntryView: UIView {
 
     private enum Constants {
         static let maxHeight: CGFloat = 120
+        static let maxHeightWhenUsingFadeOutAnimation: CGFloat = 132
         static let minHeight: CGFloat = 44
         static let minHeightAIChat: CGFloat = 68
         static let fontSize: CGFloat = 16
@@ -68,6 +69,10 @@ class SwitchBarTextEntryView: UIView {
         }
 
         return Constants.minHeight
+    }
+
+    private var currentMaxHeight: CGFloat {
+        handler.isUsingFadeOutAnimation ? Constants.maxHeightWhenUsingFadeOutAnimation : Constants.maxHeight
     }
 
     private var isUsingBottomBarIncreasedHeight: Bool {
@@ -333,25 +338,25 @@ class SwitchBarTextEntryView: UIView {
 
             /// When empty (or showing an unexpanded URL), size to one line  to avoid clipping at larger accessibility sizes.
             let requiredEmptyStateHeight = requiredHeightForSingleLineContent()
-            heightConstraint?.constant = max(currentMinHeight, min(Constants.maxHeight, requiredEmptyStateHeight))
+            heightConstraint?.constant = max(currentMinHeight, min(currentMaxHeight, requiredEmptyStateHeight))
             textView.isScrollEnabled = false
             textView.showsVerticalScrollIndicator = false
             textView.textContainer.lineBreakMode = .byTruncatingTail
         } else if isExpandable {
             let contentHeight = getCurrentContentHeight()
-            let contentExceedsMaxHeight = contentHeight > Constants.maxHeight
+            let contentExceedsMaxHeight = contentHeight > currentMaxHeight
 
             let newHeight: CGFloat
             if isUsingBottomBarIncreasedHeight {
                 let singleLineHeight = requiredHeightForSingleLineContent()
                 let textRequiresMultipleLines = contentHeight > singleLineHeight + 1
                 if textRequiresMultipleLines {
-                    newHeight = max(currentMinHeight, min(Constants.maxHeight, contentHeight))
+                    newHeight = max(currentMinHeight, min(currentMaxHeight, contentHeight))
                 } else {
                     newHeight = currentMinHeight
                 }
             } else {
-                newHeight = max(currentMinHeight, min(Constants.maxHeight, contentHeight))
+                newHeight = max(currentMinHeight, min(currentMaxHeight, contentHeight))
             }
 
             heightConstraint?.constant = newHeight

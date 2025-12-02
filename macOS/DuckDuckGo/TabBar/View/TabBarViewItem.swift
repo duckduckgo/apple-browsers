@@ -1189,7 +1189,7 @@ final class TabBarViewItem: NSCollectionViewItem {
 
         /// When using `faviconView`, we'll never display `faviconPlaceholderView`.
         if cell.displaysTabsProgressIndicator {
-            cell.faviconView.displayFavicon(favicon: favicon, placeholderStyle: faviconPlaceholderStyle)
+            cell.faviconView.displayFavicon(favicon: favicon, url: tabViewModel?.url)
             return
         }
 
@@ -1201,14 +1201,6 @@ final class TabBarViewItem: NSCollectionViewItem {
         } else {
             cell.faviconPlaceholderView.isHidden = true
         }
-    }
-
-    private var faviconPlaceholderStyle: FaviconPlaceholderStyle {
-        guard isPinned else {
-            return .dot
-        }
-
-        return .domainPrefix(tabViewModel?.url)
     }
 
     private func displayTabTitle(_ title: String) {

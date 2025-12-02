@@ -58,7 +58,7 @@ public struct SubscriptionMockFactory {
     public static let tierProductsResponse = GetTierProductsResponse(products: [
         TierProduct(
             productName: "Plus Subscription",
-            tier: "plus",
+            tier: .plus,
             regions: ["us", "row"],
             entitlements: [
                 TierFeature(product: .networkProtection, name: .plus),

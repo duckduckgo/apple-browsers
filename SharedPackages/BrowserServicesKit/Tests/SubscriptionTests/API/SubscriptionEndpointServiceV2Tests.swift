@@ -261,7 +261,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
         let tierProducts = [
             TierProduct(
                 productName: "Plus Plan",
-                tier: "plus",
+                tier: .plus,
                 regions: ["us"],
                 entitlements: [
                     TierFeature(product: .networkProtection, name: .plus),
@@ -281,7 +281,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
 
         let result = try await endpointService.getTierProducts(region: "us", platform: "stripe")
         XCTAssertEqual(result.products.count, 1)
-        XCTAssertEqual(result.products[0].tier, "plus")
+        XCTAssertEqual(result.products[0].tier, .plus)
         XCTAssertEqual(result.products[0].productName, "Plus Plan")
         XCTAssertEqual(result.products[0].billingCycles.count, 1)
     }

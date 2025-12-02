@@ -411,7 +411,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             platform: .macos,
             products: [
                 SubscriptionTier(
-                    tier: "plus",
+                    tier: .plus,
                     features: [TierFeature(product: .networkProtection, name: .plus)],
                     options: [
                         SubscriptionOptionV2(id: "1",
@@ -437,7 +437,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
         XCTAssertEqual(tierOptions.platform, .macos)
         XCTAssertEqual(tierOptions.products.count, 1)
-        XCTAssertEqual(tierOptions.products[0].tier, "plus")
+        XCTAssertEqual(tierOptions.products[0].tier, .plus)
         XCTAssertFalse(tierOptions.products[0].options.isEmpty, "Should have purchase options when purchase is allowed")
     }
 
@@ -450,7 +450,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             platform: .macos,
             products: [
                 SubscriptionTier(
-                    tier: "plus",
+                    tier: .plus,
                     features: [TierFeature(product: .networkProtection, name: .plus)],
                     options: [
                         SubscriptionOptionV2(id: "1",
@@ -487,7 +487,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             platform: .macos,
             products: [
                 SubscriptionTier(
-                    tier: "plus",
+                    tier: .plus,
                     features: [TierFeature(product: .networkProtection, name: .plus)],
                     options: [
                         SubscriptionOptionV2(id: "1",
@@ -544,7 +544,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             platform: .stripe,
             products: [
                 SubscriptionTier(
-                    tier: "plus",
+                    tier: .plus,
                     features: [TierFeature(product: .networkProtection, name: .plus)],
                     options: [
                         SubscriptionOptionV2(id: "stripe-monthly-plus",
@@ -605,7 +605,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             platform: .stripe,
             products: [
                 SubscriptionTier(
-                    tier: "plus",
+                    tier: .plus,
                     features: [TierFeature(product: .networkProtection, name: .plus)],
                     options: [
                         SubscriptionOptionV2(id: "stripe-monthly-plus",

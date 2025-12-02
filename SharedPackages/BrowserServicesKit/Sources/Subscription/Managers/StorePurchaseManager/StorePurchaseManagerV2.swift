@@ -302,7 +302,7 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
         if let plusProductId,
            let plusProductFeatures = tierFeaturesMap[plusProductId],
            !plusProductFeatures.isEmpty,
-           let plusTier = await createTier(from: plusProducts, tierName: "Plus", features: plusProductFeatures) {
+           let plusTier = await createTier(from: plusProducts, tierName: .plus, features: plusProductFeatures) {
             tiers.append(plusTier)
         }
 
@@ -310,7 +310,7 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
         if let proProductId = proProductId,
            let proProductFeatures = tierFeaturesMap[proProductId],
            !proProductFeatures.isEmpty,
-           let proTier = await createTier(from: proProducts, tierName: "Pro", features: proProductFeatures) {
+           let proTier = await createTier(from: proProducts, tierName: .pro, features: proProductFeatures) {
             tiers.append(proTier)
         }
 
@@ -322,7 +322,7 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
         return SubscriptionTierOptions(platform: platform, products: tiers)
     }
 
-    private func createTier(from products: [any SubscriptionProduct], tierName: String, features: [TierFeature]) async -> SubscriptionTier? {
+    private func createTier(from products: [any SubscriptionProduct], tierName: TierName, features: [TierFeature]) async -> SubscriptionTier? {
         // Create options for available products (monthly and/or yearly)
         var options: [SubscriptionOptionV2] = []
 
@@ -333,7 +333,7 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
         }
 
         guard !options.isEmpty else {
-            Logger.subscription.debug("[AppStorePurchaseFlow] No options created for \(tierName) tier")
+            Logger.subscription.debug("[AppStorePurchaseFlow] No options created for \(tierName.rawValue) tier")
             return nil
         }
 

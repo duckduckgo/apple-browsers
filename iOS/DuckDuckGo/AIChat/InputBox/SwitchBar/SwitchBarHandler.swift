@@ -99,11 +99,11 @@ final class SwitchBarHandler: SwitchBarHandling {
     private(set) var isTopBarPosition: Bool = true
 
     var isUsingExpandedBottomBarHeight: Bool {
-        featureFlagger.isFeatureOn(.fadeoutOnToggle) && !isTopBarPosition
+        featureFlagger.isFeatureOn(.fadeOutOnToggle) && !isTopBarPosition
     }
 
     var isUsingFadeOutAnimation: Bool {
-        featureFlagger.isFeatureOn(.fadeoutOnToggle)
+        featureFlagger.isFeatureOn(.fadeOutOnToggle)
     }
 
     var isVoiceSearchEnabled: Bool {

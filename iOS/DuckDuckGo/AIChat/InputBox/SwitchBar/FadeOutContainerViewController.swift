@@ -1,5 +1,5 @@
 //
-//  FadeoutContainerViewController.swift
+//  FadeOutContainerViewController.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -21,14 +21,14 @@ import UIKit
 import Combine
 import BrowserServicesKit
 
-protocol FadeoutContainerViewControllerDelegate: AnyObject {
-    func fadeoutContainerViewController(_ controller: FadeoutContainerViewController, didTransitionToMode mode: TextEntryMode)
-    func fadeoutContainerViewController(_ controller: FadeoutContainerViewController, didUpdateTransitionProgress progress: CGFloat)
-    func fadeoutContainerViewControllerIsShowingSuggestions(_ controller: FadeoutContainerViewController) -> Bool
+protocol FadeOutContainerViewControllerDelegate: AnyObject {
+    func fadeOutContainerViewController(_ controller: FadeOutContainerViewController, didTransitionToMode mode: TextEntryMode)
+    func fadeOutContainerViewController(_ controller: FadeOutContainerViewController, didUpdateTransitionProgress progress: CGFloat)
+    func fadeOutContainerViewControllerIsShowingSuggestions(_ controller: FadeOutContainerViewController) -> Bool
 }
 
-final class FadeoutContainerViewController: UIViewController {
-    weak var delegate: FadeoutContainerViewControllerDelegate?
+final class FadeOutContainerViewController: UIViewController {
+    weak var delegate: FadeOutContainerViewControllerDelegate?
 
     @Published private(set) var transitionProgress: CGFloat = 0.0
 
@@ -83,7 +83,7 @@ final class FadeoutContainerViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .removeDuplicates()
             .sink { [weak self] _ in
-                guard let self, featureFlagger.isFeatureOn(.fadeoutOnToggle) else { return }
+                guard let self, featureFlagger.isFeatureOn(.fadeOutOnToggle) else { return }
                 self.updateVisibility(animated: true)
             }
             .store(in: &cancellables)
@@ -136,9 +136,9 @@ final class FadeoutContainerViewController: UIViewController {
         guard meetsVelocityThreshold || meetsTranslationThreshold else { return }
 
         if velocity.x < 0 && currentMode == .search {
-            delegate?.fadeoutContainerViewController(self, didTransitionToMode: .aiChat)
+            delegate?.fadeOutContainerViewController(self, didTransitionToMode: .aiChat)
         } else if velocity.x > 0 && currentMode == .aiChat {
-            delegate?.fadeoutContainerViewController(self, didTransitionToMode: .search)
+            delegate?.fadeOutContainerViewController(self, didTransitionToMode: .search)
         }
     }
 
@@ -155,7 +155,7 @@ final class FadeoutContainerViewController: UIViewController {
         let isSearchMode = switchBarHandler.currentToggleState == .search
         targetProgress = isSearchMode ? 0.0 : 1.0
 
-        let isShowingSuggestions = delegate?.fadeoutContainerViewControllerIsShowingSuggestions(self) ?? false
+        let isShowingSuggestions = delegate?.fadeOutContainerViewControllerIsShowingSuggestions(self) ?? false
         let shouldHideSearchImmediately = !isSearchMode && isShowingSuggestions
 
         if shouldHideSearchImmediately {
@@ -174,7 +174,7 @@ final class FadeoutContainerViewController: UIViewController {
             self.stopDisplayLink()
             self.updateTransitionProgress(self.targetProgress)
             let newMode: TextEntryMode = isSearchMode ? .search : .aiChat
-            self.delegate?.fadeoutContainerViewController(self, didTransitionToMode: newMode)
+            self.delegate?.fadeOutContainerViewController(self, didTransitionToMode: newMode)
         }
 
         if animated {
@@ -208,13 +208,13 @@ final class FadeoutContainerViewController: UIViewController {
 
     private func updateTransitionProgress(_ progress: CGFloat) {
         transitionProgress = progress
-        delegate?.fadeoutContainerViewController(self, didUpdateTransitionProgress: progress)
+        delegate?.fadeOutContainerViewController(self, didUpdateTransitionProgress: progress)
     }
 }
 
 // MARK: - UIGestureRecognizerDelegate
 
-extension FadeoutContainerViewController: UIGestureRecognizerDelegate {
+extension FadeOutContainerViewController: UIGestureRecognizerDelegate {
 
     func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
         guard let panGesture = gestureRecognizer as? UIPanGestureRecognizer else {

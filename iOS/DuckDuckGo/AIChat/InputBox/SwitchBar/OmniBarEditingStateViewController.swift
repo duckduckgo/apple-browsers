@@ -480,7 +480,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         let isHomeDaxVisible = !shouldDisplaySuggestionTray && !shouldDisplayFavoritesOverlay && !isHorizontallyCompactLayoutEnabled
 
         let isAIDaxVisible: Bool
-        if featureFlagger.isFeatureOn(.fadeoutOnToggle) {
+        if featureFlagger.isFeatureOn(.fadeOutOnToggle) {
             isAIDaxVisible = !isHorizontallyCompactLayoutEnabled
         } else {
             isAIDaxVisible = !shouldDisplaySuggestionTray && !isHorizontallyCompactLayoutEnabled
@@ -519,22 +519,22 @@ extension OmniBarEditingStateViewController: SwipeContainerViewControllerDelegat
     }
 }
 
-// MARK: - FadeoutContainerViewControllerDelegate
+// MARK: - FadeOutContainerViewControllerDelegate
 
-extension OmniBarEditingStateViewController: FadeoutContainerViewControllerDelegate {
+extension OmniBarEditingStateViewController: FadeOutContainerViewControllerDelegate {
 
-    func fadeoutContainerViewController(_ controller: FadeoutContainerViewController, didTransitionToMode mode: TextEntryMode) {
+    func fadeOutContainerViewController(_ controller: FadeOutContainerViewController, didTransitionToMode mode: TextEntryMode) {
         switchBarHandler.setToggleState(mode)
     }
 
-    func fadeoutContainerViewController(_ controller: FadeoutContainerViewController, didUpdateTransitionProgress progress: CGFloat) {
+    func fadeOutContainerViewController(_ controller: FadeOutContainerViewController, didUpdateTransitionProgress progress: CGFloat) {
         // Forward the transition progress to the switch bar to animate the toggle
         switchBarVC.updateScrollProgress(progress)
 
         daxLogoManager.updateSwipeProgress(progress)
     }
 
-    func fadeoutContainerViewControllerIsShowingSuggestions(_ controller: FadeoutContainerViewController) -> Bool {
+    func fadeOutContainerViewControllerIsShowingSuggestions(_ controller: FadeOutContainerViewController) -> Bool {
         return suggestionTrayManager?.shouldDisplaySuggestionTray ?? false
     }
 }

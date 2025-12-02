@@ -31,22 +31,22 @@ final class SwipeContainerManager: NSObject {
     private let featureFlagger: FeatureFlagger
 
     private var isUsingFadeOutAnimation: Bool {
-        featureFlagger.isFeatureOn(.fadeoutOnToggle)
+        featureFlagger.isFeatureOn(.fadeOutOnToggle)
     }
 
     var searchPageContainer: UIView {
         if isUsingFadeOutAnimation {
-            return fadeoutContainerViewController.searchPageContainer
+            return fadeOutContainerViewController.searchPageContainer
         } else {
             return swipeContainerViewController.searchPageContainer
         }
     }
 
     private lazy var swipeContainerViewController = SwipeContainerViewController(switchBarHandler: switchBarHandler)
-    private lazy var fadeoutContainerViewController = FadeoutContainerViewController(switchBarHandler: switchBarHandler, featureFlagger: featureFlagger)
+    private lazy var fadeOutContainerViewController = FadeOutContainerViewController(switchBarHandler: switchBarHandler, featureFlagger: featureFlagger)
 
     var containerViewController: UIViewController {
-        isUsingFadeOutAnimation ? fadeoutContainerViewController : swipeContainerViewController
+        isUsingFadeOutAnimation ? fadeOutContainerViewController : swipeContainerViewController
     }
 
     var delegate: SwipeContainerViewControllerDelegate? {
@@ -54,9 +54,9 @@ final class SwipeContainerManager: NSObject {
         set { swipeContainerViewController.delegate = newValue }
     }
 
-    var fadeOutDelegate: FadeoutContainerViewControllerDelegate? {
-        get { fadeoutContainerViewController.delegate }
-        set { fadeoutContainerViewController.delegate = newValue }
+    var fadeOutDelegate: FadeOutContainerViewControllerDelegate? {
+        get { fadeOutContainerViewController.delegate }
+        set { fadeOutContainerViewController.delegate = newValue }
     }
 
     // MARK: - Initialization

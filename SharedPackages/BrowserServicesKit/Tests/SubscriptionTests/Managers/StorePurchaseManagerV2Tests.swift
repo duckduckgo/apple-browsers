@@ -574,10 +574,10 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
 
         // Setup mock features
         let plusFeatures = [
-            EntitlementPayload(product: .networkProtection, name: "plus"),
-            EntitlementPayload(product: .dataBrokerProtection, name: "plus"),
-            EntitlementPayload(product: .identityTheftRestoration, name: "plus"),
-            EntitlementPayload(product: .paidAIChat, name: "plus")
+            TierFeature(product: .networkProtection, name: .plus),
+            TierFeature(product: .dataBrokerProtection, name: .plus),
+            TierFeature(product: .identityTheftRestoration, name: .plus),
+            TierFeature(product: .paidAIChat, name: .plus)
         ]
         mockCache.tierMapping = ["com.test.monthly": plusFeatures]
 
@@ -589,15 +589,15 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         XCTAssertEqual(tierOptions?.products.count, 1)
 
         let plusTier = tierOptions?.products.first
-        XCTAssertEqual(plusTier?.tier, "Plus")
+        XCTAssertEqual(plusTier?.tier, .plus)
         XCTAssertEqual(plusTier?.features.count, 4)
         XCTAssertEqual(plusTier?.options.count, 2)
 
         // Verify features
-        XCTAssertTrue(plusTier?.features.contains(where: { $0.product == .networkProtection && $0.name == "plus" }) ?? false)
-        XCTAssertTrue(plusTier?.features.contains(where: { $0.product == .dataBrokerProtection && $0.name == "plus" }) ?? false)
-        XCTAssertTrue(plusTier?.features.contains(where: { $0.product == .identityTheftRestoration && $0.name == "plus" }) ?? false)
-        XCTAssertTrue(plusTier?.features.contains(where: { $0.product == .paidAIChat && $0.name == "plus" }) ?? false)
+        XCTAssertTrue(plusTier?.features.contains(where: { $0.product == .networkProtection && $0.name == .plus }) ?? false)
+        XCTAssertTrue(plusTier?.features.contains(where: { $0.product == .dataBrokerProtection && $0.name == .plus }) ?? false)
+        XCTAssertTrue(plusTier?.features.contains(where: { $0.product == .identityTheftRestoration && $0.name == .plus }) ?? false)
+        XCTAssertTrue(plusTier?.features.contains(where: { $0.product == .paidAIChat && $0.name == .plus }) ?? false)
 
         // Verify options
         let optionIds = plusTier?.options.map { $0.id } ?? []
@@ -637,14 +637,14 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
 
         // Setup mock features
         let plusFeatures = [
-            EntitlementPayload(product: .networkProtection, name: "plus"),
-            EntitlementPayload(product: .dataBrokerProtection, name: "plus")
+            TierFeature(product: .networkProtection, name: .plus),
+            TierFeature(product: .dataBrokerProtection, name: .plus)
         ]
         let proFeatures = [
-            EntitlementPayload(product: .networkProtection, name: "pro"),
-            EntitlementPayload(product: .dataBrokerProtection, name: "pro"),
-            EntitlementPayload(product: .identityTheftRestoration, name: "pro"),
-            EntitlementPayload(product: .paidAIChat, name: "pro")
+            TierFeature(product: .networkProtection, name: .pro),
+            TierFeature(product: .dataBrokerProtection, name: .pro),
+            TierFeature(product: .identityTheftRestoration, name: .pro),
+            TierFeature(product: .paidAIChat, name: .pro)
         ]
         mockCache.tierMapping = [
             "com.test.monthly": plusFeatures,
@@ -659,18 +659,18 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         XCTAssertEqual(tierOptions?.products.count, 2)
 
         // Verify Plus tier
-        let plusTier = tierOptions?.products.first { $0.tier == "Plus" }
+        let plusTier = tierOptions?.products.first { $0.tier == .plus }
         XCTAssertNotNil(plusTier)
         XCTAssertEqual(plusTier?.features.count, 2)
         XCTAssertEqual(plusTier?.options.count, 2)
-        XCTAssertTrue(plusTier?.features.allSatisfy { $0.name == "plus" } ?? false)
+        XCTAssertTrue(plusTier?.features.allSatisfy { $0.name == .plus } ?? false)
 
         // Verify Pro tier
-        let proTier = tierOptions?.products.first { $0.tier == "Pro" }
+        let proTier = tierOptions?.products.first { $0.tier == .pro }
         XCTAssertNotNil(proTier)
         XCTAssertEqual(proTier?.features.count, 4)
         XCTAssertEqual(proTier?.options.count, 2)
-        XCTAssertTrue(proTier?.features.allSatisfy { $0.name == "pro" } ?? false)
+        XCTAssertTrue(proTier?.features.allSatisfy { $0.name == .pro } ?? false)
 
         // Verify Pro tier has more features
         XCTAssertGreaterThan(proTier?.features.count ?? 0, plusTier?.features.count ?? 0)
@@ -712,7 +712,7 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
 
         // Setup mock features
         let plusFeatures = [
-            EntitlementPayload(product: .networkProtection, name: "plus")
+            TierFeature(product: .networkProtection, name: .plus)
         ]
         mockCache.tierMapping = ["com.test.monthly.trial": plusFeatures]
 
@@ -749,7 +749,7 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         await sut.updateAvailableProducts()
 
         // Setup mock features
-        let plusFeatures = [EntitlementPayload(product: .networkProtection, name: "plus")]
+        let plusFeatures = [TierFeature(product: .networkProtection, name: .plus)]
         mockCache.tierMapping = ["com.test.monthly": plusFeatures]
 
         // When
@@ -758,7 +758,7 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         // Then
         XCTAssertNotNil(tierOptions)
         XCTAssertEqual(tierOptions?.products.count, 1)
-        XCTAssertEqual(tierOptions?.products.first?.tier, "Plus")
+        XCTAssertEqual(tierOptions?.products.first?.tier, .plus)
 
         // Verify no Pro tier products in options
         let allOptionIds = tierOptions?.products.flatMap { $0.options.map { $0.id } } ?? []
@@ -775,7 +775,7 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         await sut.updateAvailableProducts()
 
         // Setup mock features
-        let features = [EntitlementPayload(product: .networkProtection, name: "plus")]
+        let features = [TierFeature(product: .networkProtection, name: .plus)]
         mockCache.tierMapping = ["com.test.monthly": features]
 
         // When
@@ -819,8 +819,8 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         await sut.updateAvailableProducts()
 
         // Setup mock features for both representative products
-        let plusFeatures = [EntitlementPayload(product: .networkProtection, name: "plus")]
-        let proFeatures = [EntitlementPayload(product: .paidAIChat, name: "pro")]
+        let plusFeatures = [TierFeature(product: .networkProtection, name: .plus)]
+        let proFeatures = [TierFeature(product: .paidAIChat, name: .pro)]
         mockCache.tierMapping = [
             "com.test.monthly": plusFeatures,
             "com.test.monthly.pro": proFeatures

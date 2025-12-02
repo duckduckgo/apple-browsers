@@ -32,7 +32,7 @@ extension DefaultSubscriptionEndpointServiceV2: SubscriptionFeatureMappingCacheV
         }
     }
 
-    public func subscriptionTierFeatures(for subscriptionIdentifiers: [String]) async -> [String: [EntitlementPayload]] {
+    public func subscriptionTierFeatures(for subscriptionIdentifiers: [String]) async -> [String: [TierFeature]] {
         do {
             let response = try await getSubscriptionTierFeatures(for: subscriptionIdentifiers)
             return response.features
@@ -40,8 +40,8 @@ extension DefaultSubscriptionEndpointServiceV2: SubscriptionFeatureMappingCacheV
             Logger.subscription.error("Failed to get subscription tier features: \(error)")
             // Return fallback features with "plus" tier name
             let fallbackFeatures: [SubscriptionEntitlement] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat]
-            let fallbackPayload = fallbackFeatures.map { EntitlementPayload(product: $0, name: "plus") }
-            var result: [String: [EntitlementPayload]] = [:]
+            let fallbackPayload = fallbackFeatures.map { TierFeature(product: $0, name: .plus) }
+            var result: [String: [TierFeature]] = [:]
             for identifier in subscriptionIdentifiers {
                 result[identifier] = fallbackPayload
             }

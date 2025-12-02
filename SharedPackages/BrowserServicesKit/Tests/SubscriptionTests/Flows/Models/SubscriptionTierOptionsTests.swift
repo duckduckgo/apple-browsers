@@ -30,10 +30,10 @@ struct SubscriptionTierOptionsTests {
         let monthlySubscriptionOffer = SubscriptionOptionOffer(type: .freeTrial, id: "1", durationInDays: 7, isUserEligible: true)
         let yearlySubscriptionOffer = SubscriptionOptionOffer(type: .freeTrial, id: "2", durationInDays: 7, isUserEligible: true)
 
-        let plusTier = SubscriptionTierOptions.Tier(
-            tier: "plus",
-            features: [EntitlementPayload(product: .paidAIChat, name: "plus"),
-                       EntitlementPayload(product: .networkProtection, name: "plus")],
+        let plusTier = SubscriptionTier(
+            tier: .plus,
+            features: [TierFeature(product: .paidAIChat, name: .plus),
+                       TierFeature(product: .networkProtection, name: .plus)],
             options: [
                 SubscriptionOptionV2(id: "1",
                                    cost: SubscriptionOptionCost(displayPrice: "5 USD", recurrence: "monthly"),
@@ -41,10 +41,10 @@ struct SubscriptionTierOptionsTests {
             ]
         )
 
-        let proTier = SubscriptionTierOptions.Tier(
-            tier: "pro",
-            features: [EntitlementPayload(product: .paidAIChat, name: "pro"),
-                       EntitlementPayload(product: .networkProtection, name: "plus")],
+        let proTier = SubscriptionTier(
+            tier: .pro,
+            features: [TierFeature(product: .paidAIChat, name: .pro),
+                       TierFeature(product: .networkProtection, name: .plus)],
             options: [
                 SubscriptionOptionV2(id: "2",
                                    cost: SubscriptionOptionCost(displayPrice: "9 USD", recurrence: "monthly"),
@@ -157,9 +157,9 @@ struct SubscriptionTierOptionsTests {
 
     @Test("Remove purchase options while preserving tier data")
     func withoutPurchaseOptions() {
-        let plusTier = SubscriptionTierOptions.Tier(
-            tier: "plus",
-            features: [EntitlementPayload(product: .networkProtection, name: "plus")],
+        let plusTier = SubscriptionTier(
+            tier: .plus,
+            features: [TierFeature(product: .networkProtection, name: .plus)],
             options: [
                 SubscriptionOptionV2(id: "1",
                                    cost: SubscriptionOptionCost(displayPrice: "5 USD", recurrence: "monthly"),
@@ -167,11 +167,11 @@ struct SubscriptionTierOptionsTests {
             ]
         )
 
-        let proTier = SubscriptionTierOptions.Tier(
-            tier: "pro",
-            features: [EntitlementPayload(product: .identityTheftRestoration, name: "plus"),
-                       EntitlementPayload(product: .dataBrokerProtection, name: "plus"),
-                       EntitlementPayload(product: .networkProtection, name: "plus")],
+        let proTier = SubscriptionTier(
+            tier: .pro,
+            features: [TierFeature(product: .identityTheftRestoration, name: .plus),
+                       TierFeature(product: .dataBrokerProtection, name: .plus),
+                       TierFeature(product: .networkProtection, name: .plus)],
             options: [
                 SubscriptionOptionV2(id: "2",
                                    cost: SubscriptionOptionCost(displayPrice: "9 USD", recurrence: "monthly"),
@@ -192,15 +192,15 @@ struct SubscriptionTierOptionsTests {
         #expect(withoutOptions.products.count == 2)
 
         // Verify first tier (plus)
-        #expect(withoutOptions.products[0].tier == "plus")
-        #expect(withoutOptions.products[0].features == [EntitlementPayload(product: .networkProtection, name: "plus")])
+        #expect(withoutOptions.products[0].tier == .plus)
+        #expect(withoutOptions.products[0].features == [TierFeature(product: .networkProtection, name: .plus)])
         #expect(withoutOptions.products[0].options.isEmpty, "Plus tier should have no purchase options")
 
         // Verify second tier (pro)
-        #expect(withoutOptions.products[1].tier == "pro")
-        #expect(withoutOptions.products[1].features == [EntitlementPayload(product: .identityTheftRestoration, name: "plus"),
-                                                        EntitlementPayload(product: .dataBrokerProtection, name: "plus"),
-                                                        EntitlementPayload(product: .networkProtection, name: "plus")])
+        #expect(withoutOptions.products[1].tier == .pro)
+        #expect(withoutOptions.products[1].features == [TierFeature(product: .identityTheftRestoration, name: .plus),
+                                                        TierFeature(product: .dataBrokerProtection, name: .plus),
+                                                        TierFeature(product: .networkProtection, name: .plus)])
         #expect(withoutOptions.products[1].options.isEmpty, "Pro tier should have no purchase options")
     }
 

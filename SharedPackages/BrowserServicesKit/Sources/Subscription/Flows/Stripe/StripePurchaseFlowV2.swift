@@ -115,7 +115,9 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
     public func subscriptionTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, StripePurchaseFlowError> {
         Logger.subscriptionStripePurchaseFlow.log("[StripePurchaseFlowV2] Getting subscription tier options for Stripe (includeProTier: \(includeProTier))")
 
-        let regionParameter: String? = isUSRegion() ? "us" : "row"
+        // For now we always send the us product and the FE decides what to show based on the IP address
+        // This will change when will introduce Stripe internationally
+        let regionParameter = "us"
 
         guard let productsResponse = try? await subscriptionManager.getTierProducts(region: regionParameter, platform: SubscriptionPlatformName.stripe.rawValue),
               !productsResponse.products.isEmpty else {
@@ -126,18 +128,18 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
         // Filter pro tier products based on feature flag
         let filteredProducts = includeProTier
             ? productsResponse.products
-            : productsResponse.products.filter { $0.tier.lowercased() != "pro" }
+        : productsResponse.products.filter { $0.tier != .pro }
 
         guard !filteredProducts.isEmpty else {
             Logger.subscriptionStripePurchaseFlow.error("[StripePurchaseFlowV2] No products available after filtering")
             return .failure(.noProductsFound)
         }
 
-        var tiers: [SubscriptionTierOptions.Tier] = []
+        var tiers: [SubscriptionTier] = []
 
         for product in filteredProducts {
             guard let tier = createTier(from: product) else {
-                Logger.subscriptionStripePurchaseFlow.warning("[StripePurchaseFlowV2] Failed to create tier for \(product.tier)")
+                Logger.subscriptionStripePurchaseFlow.warning("[StripePurchaseFlowV2] Failed to create tier for \(product.tier.rawValue)")
                 continue
             }
             tiers.append(tier)
@@ -152,11 +154,7 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
         return .success(SubscriptionTierOptions(platform: .stripe, products: tiers))
     }
 
-    private func isUSRegion() -> Bool {
-        return Locale.current.regionCode == "US"
-    }
-
-    private func createTier(from product: TierProduct) -> SubscriptionTierOptions.Tier? {
+    private func createTier(from product: TierProduct) -> SubscriptionTier? {
         var options: [SubscriptionOptionV2] = []
 
         for billingCycle in product.billingCycles {
@@ -187,7 +185,7 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
             return nil
         }
 
-        return SubscriptionTierOptions.Tier(
+        return SubscriptionTier(
             tier: product.tier,
             features: product.entitlements,
             options: options

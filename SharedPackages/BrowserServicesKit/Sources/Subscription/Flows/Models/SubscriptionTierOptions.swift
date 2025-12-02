@@ -21,9 +21,9 @@ import Networking
 
 public struct SubscriptionTierOptions: Encodable, Equatable {
     public let platform: SubscriptionPlatformName
-    public let products: [Tier]
+    public let products: [SubscriptionTier]
 
-    public init(platform: SubscriptionPlatformName, products: [Tier]) {
+    public init(platform: SubscriptionPlatformName, products: [SubscriptionTier]) {
         self.platform = platform
         self.products = products
     }
@@ -40,23 +40,31 @@ public struct SubscriptionTierOptions: Encodable, Equatable {
 
     public func withoutPurchaseOptions() -> Self {
         // Return tiers with features but empty options (no purchase allowed)
-        let tiersWithoutOptions = products.map { tier in
-            Tier(tier: tier.tier, features: tier.features, options: [])
+        let tiersWithoutOptions = products.map { subscriptionTier in
+            SubscriptionTier(tier: subscriptionTier.tier, features: subscriptionTier.features, options: [])
         }
         return SubscriptionTierOptions(platform: platform, products: tiersWithoutOptions)
     }
+}
 
-    // MARK: - Nested Types
+public struct SubscriptionTier: Encodable, Equatable {
+    public let tier: TierName
+    public let features: [TierFeature]
+    public let options: [SubscriptionOptionV2]
 
-    public struct Tier: Encodable, Equatable {
-        public let tier: String
-        public let features: [EntitlementPayload]
-        public let options: [SubscriptionOptionV2]
-
-        public init(tier: String, features: [EntitlementPayload], options: [SubscriptionOptionV2]) {
-            self.tier = tier
-            self.features = features
-            self.options = options
-        }
+    public init(tier: TierName, features: [TierFeature], options: [SubscriptionOptionV2]) {
+        self.tier = tier
+        self.features = features
+        self.options = options
     }
+}
+
+public struct TierFeature: Codable, Equatable {
+    public let product: SubscriptionEntitlement
+    public let name: TierName
+}
+
+public enum TierName: String, Codable {
+    case plus
+    case pro
 }

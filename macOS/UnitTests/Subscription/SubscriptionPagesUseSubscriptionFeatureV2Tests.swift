@@ -410,9 +410,9 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         let expectedTierOptions = SubscriptionTierOptions(
             platform: .macos,
             products: [
-                SubscriptionTierOptions.Tier(
-                    tier: "plus",
-                    features: [EntitlementPayload(product: .networkProtection, name: "plus")],
+                SubscriptionTier(
+                    tier: .plus,
+                    features: [TierFeature(product: .networkProtection, name: .plus)],
                     options: [
                         SubscriptionOptionV2(id: "1",
                                            cost: SubscriptionOptionCost(displayPrice: "5 USD", recurrence: "monthly"),
@@ -437,7 +437,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
         XCTAssertEqual(tierOptions.platform, .macos)
         XCTAssertEqual(tierOptions.products.count, 1)
-        XCTAssertEqual(tierOptions.products[0].tier, "plus")
+        XCTAssertEqual(tierOptions.products[0].tier, .plus)
         XCTAssertFalse(tierOptions.products[0].options.isEmpty, "Should have purchase options when purchase is allowed")
     }
 
@@ -449,9 +449,9 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         let tierOptionsWithPurchase = SubscriptionTierOptions(
             platform: .macos,
             products: [
-                SubscriptionTierOptions.Tier(
-                    tier: "plus",
-                    features: [EntitlementPayload(product: .networkProtection, name: "plus")],
+                SubscriptionTier(
+                    tier: .plus,
+                    features: [TierFeature(product: .networkProtection, name: .plus)],
                     options: [
                         SubscriptionOptionV2(id: "1",
                                            cost: SubscriptionOptionCost(displayPrice: "5 USD", recurrence: "monthly"),
@@ -486,9 +486,9 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         let tierOptionsWithPurchase = SubscriptionTierOptions(
             platform: .macos,
             products: [
-                SubscriptionTierOptions.Tier(
-                    tier: "plus",
-                    features: [EntitlementPayload(product: .networkProtection, name: "plus")],
+                SubscriptionTier(
+                    tier: .plus,
+                    features: [TierFeature(product: .networkProtection, name: .plus)],
                     options: [
                         SubscriptionOptionV2(id: "1",
                                            cost: SubscriptionOptionCost(displayPrice: "5 USD", recurrence: "monthly"),
@@ -543,9 +543,9 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         let expectedTierOptions = SubscriptionTierOptions(
             platform: .stripe,
             products: [
-                SubscriptionTierOptions.Tier(
-                    tier: "plus",
-                    features: [EntitlementPayload(product: .networkProtection, name: "plus")],
+                SubscriptionTier(
+                    tier: .plus,
+                    features: [TierFeature(product: .networkProtection, name: .plus)],
                     options: [
                         SubscriptionOptionV2(id: "stripe-monthly-plus",
                                            cost: SubscriptionOptionCost(displayPrice: "9.99 USD", recurrence: "monthly"),
@@ -604,9 +604,9 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         let expectedTierOptions = SubscriptionTierOptions(
             platform: .stripe,
             products: [
-                SubscriptionTierOptions.Tier(
-                    tier: "plus",
-                    features: [EntitlementPayload(product: .networkProtection, name: "plus")],
+                SubscriptionTier(
+                    tier: .plus,
+                    features: [TierFeature(product: .networkProtection, name: .plus)],
                     options: [
                         SubscriptionOptionV2(id: "stripe-monthly-plus",
                                            cost: SubscriptionOptionCost(displayPrice: "9.99 USD", recurrence: "monthly"),

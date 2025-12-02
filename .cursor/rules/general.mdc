@@ -4,51 +4,6 @@ alwaysApply: true
 
 # DuckDuckGo Browser Development Rules Overview
 
-## 🛑 CRITICAL: STOP IMMEDIATELY WHEN TOLD
-
-**MANDATORY BEHAVIOR**: When user says ANY of:
-- "stop"
-- "wtf" 
-- "u doing wrong"
-- "what u doing now"
-- "why [doing something]"
-- Any variation indicating to stop or questioning current action
-
-**IMMEDIATELY STOP** the current action:
-1. Do NOT continue with tool calls
-2. Do NOT continue explanations  
-3. Do NOT try to "fix" things
-4. Just acknowledge briefly and wait for new instructions
-
-## 📝 DOCUMENTATION EDITING RULE
-
-**CRITICAL: When updating coding rules and documentation:**
-- **ALWAYS edit markdown files directly using file editing tools**
-- **NEVER use MCP tools to create or update documentation**
-- **This ensures proper version control and maintains documentation integrity**
-
-## 🔍 DOCUMENTATION LOOKUP PROTOCOL
-
-**MANDATORY: Always follow this exact sequence when looking for documentation:**
-
-1. **FIRST**: Call `doc_bot()` for any task - this is non-negotiable
-2. **SECOND**: Call `get_document_index()` to see ALL available documents with exact filenames
-3. **THIRD**: Use `read_specific_document("exact-filename.md")` with the EXACT filename from the index
-4. **NEVER**: Make claims about "documentation says" without actually reading the full document
-5. **NEVER**: Use search snippets alone - always read the complete relevant documentation
-
-**Common Mistake Pattern to Avoid:**
-```
-❌ WRONG: search_documentation() → assume content → make statements
-✅ CORRECT: doc_bot() → get_document_index() → read_specific_document() → accurate information
-```
-
-**Why This Protocol Exists:**
-- Search results show document **titles**, not **filenames**
-- Document titles like "Development Commands & Build Instructions" have filenames like `development-commands.md`
-- Reading incomplete search snippets leads to wrong conclusions
-- The document index shows the exact filenames needed for `read_specific_document()`
-
 ## Project Context
 This is the DuckDuckGo browser for iOS and macOS, built with privacy-first principles, modern Swift patterns, and cross-platform architecture.
 

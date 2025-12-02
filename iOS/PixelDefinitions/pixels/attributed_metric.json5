@@ -1,7 +1,7 @@
 {
-    "m_mac_attributed_metric_retention_week": {
+    "m_attributed_metric_retention_week": {
         "description": "Tracks user retention on a weekly basis for attribution analysis",
-        "owners": ["fcappelli"]
+        "owners": ["fcappelli"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -33,9 +33,9 @@
             }
         ]
     },
-    "m_mac_attributed_metric_retention_month": {
+    "m_attributed_metric_retention_month": {
         "description": "Tracks user retention on a monthly basis for attribution analysis",
-        "owners": ["fcappelli"]
+        "owners": ["fcappelli"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -67,9 +67,9 @@
             }
         ]
     },
-    "m_mac_attributed_metric_active_past_week": {
+    "m_attributed_metric_active_past_week": {
         "description": "Tracks the number of active days in the past week for attribution analysis",
-        "owners": ["fcappelli"]
+        "owners": ["fcappelli"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -100,9 +100,9 @@
             }
         ]
     },
-    "m_mac_attributed_metric_average_searches_past_week_first_month": {
+    "m_attributed_metric_average_searches_past_week_first_month": {
         "description": "Tracks average search count during the first month for new users",
-        "owners": ["fcappelli"]
+        "owners": ["fcappelli"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -128,9 +128,9 @@
             }
         ]
     },
-    "m_mac_attributed_metric_average_searches_past_week": {
+    "m_attributed_metric_average_searches_past_week": {
         "description": "Tracks average search count in the past week for attribution analysis",
-        "owners": ["fcappelli"]
+        "owners": ["fcappelli"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -156,9 +156,9 @@
             }
         ]
     },
-    "m_mac_attributed_metric_average_ad_clicks_past_week": {
+    "m_attributed_metric_average_ad_clicks_past_week": {
         "description": "Tracks average ad clicks in the past week for attribution analysis",
-        "owners": ["fcappelli"]
+        "owners": ["fcappelli"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -184,9 +184,9 @@
             }
         ]
     },
-    "m_mac_attributed_metric_average_duck_ai_usage_past_week": {
+    "m_attributed_metric_average_duck_ai_usage_past_week": {
         "description": "Tracks average Duck AI usage in the past week for attribution analysis",
-        "owners": ["fcappelli"]
+        "owners": ["fcappelli"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -212,9 +212,9 @@
             }
         ]
     },
-    "m_mac_attributed_metric_subscribed": {
+    "m_attributed_metric_subscribed": {
         "description": "Tracks subscription events for attribution analysis",
-        "owners": ["fcappelli"]
+        "owners": ["fcappelli"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -240,9 +240,9 @@
             }
         ]
     },
-    "m_mac_attributed_metric_synced_device": {
+    "m_attributed_metric_synced_device": {
         "description": "Tracks device sync events for attribution analysis",
-        "owners": ["fcappelli"]
+        "owners": ["fcappelli"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": [
@@ -268,9 +268,9 @@
             }
         ]
     },
-    "m_mac_attributed_metric_data_store_error": {
+    "m_attributed_metric_data_store_error": {
         "description": "Tracks data store errors in the attributed metrics system",
-        "owners": ["fcappelli"]
+        "owners": ["fcappelli"],
         "triggers": ["other"],
         "suffixes": [],
         "parameters": ["errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]

@@ -118,7 +118,7 @@
                 "key": "ue",
                 "description": "Undelying Error code: 12300, 12301, 12302",
                 "type": "string"
-            },
+            }
         ]
     },
     "m_subscription_tier-options_unexpected-pro-tier": {

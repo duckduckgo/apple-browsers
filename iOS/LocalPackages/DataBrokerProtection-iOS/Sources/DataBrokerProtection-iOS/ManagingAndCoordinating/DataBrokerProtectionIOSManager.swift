@@ -269,6 +269,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.UserEventsDelegate {
     
     public func dashboardDidClose() {
         Logger.dataBrokerProtection.log("Stopping operations as dashboard closed")
+        // We don't want to stop immediate scans if they are running
         self.queueManager.stopScheduledOperationsOnly()
     }
 }

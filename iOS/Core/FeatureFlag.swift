@@ -262,6 +262,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1201462886803403/task/1211326076710245?focus=true
     case migrateKeychainAccessibility
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212229431540900
+    case granularFireButtonOptions
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -340,7 +343,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .browsingMenuSheetPresentation,
              .autofillExtensionSettings,
              .canPromoteAutofillExtensionInBrowser,
-             .canPromoteAutofillExtensionInPasswordManagement:
+             .canPromoteAutofillExtensionInPasswordManagement,
+             .granularFireButtonOptions:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -546,6 +550,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AutofillSubfeature.canPromoteAutofillExtensionInPasswordManagement))
         case .migrateKeychainAccessibility:
             return .remoteReleasable(.subfeature(AutofillSubfeature.migrateKeychainAccessibility))
+        case .granularFireButtonOptions:
+            return .disabled
         }
     }
 }

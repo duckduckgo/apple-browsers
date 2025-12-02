@@ -217,7 +217,7 @@ final class AddressBarTextField: NSTextField {
             let barStyleProvider = themeManager.theme.addressBarStyleProvider
             let newTabFontSize = barStyleProvider.newTabOrHomePageAddressBarFontSize
             let defaultFontSize = barStyleProvider.defaultAddressBarFontSize
-            let hideSuffix = Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+            let hideSuffix = Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarCluster)
 
             if let attributedString = value.toAttributedString(size: isHomePage ? newTabFontSize : defaultFontSize, isBurner: isBurner, hideSuffix: hideSuffix) {
                 self.attributedStringValue = attributedString

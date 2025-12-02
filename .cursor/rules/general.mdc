@@ -11,7 +11,6 @@ This is the DuckDuckGo browser for iOS and macOS, built with privacy-first princ
 - `iOS/` - iOS browser app (UIKit + SwiftUI hybrid)
 - `macOS/` - macOS browser app (AppKit + SwiftUI hybrid) 
 - `SharedPackages/` - Cross-platform Swift packages
-- `doc-bot/` - Development rules and guidelines
 
 ## Architecture Summary
 - **Pattern**: MVVM + Coordinators + Dependency Injection

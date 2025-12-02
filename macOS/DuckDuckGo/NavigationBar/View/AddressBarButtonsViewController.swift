@@ -75,7 +75,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private var popupBlockedPopover: PopupBlockedPopover?
     private func popupBlockedPopoverCreatingIfNeeded() -> PopupBlockedPopover {
         return popupBlockedPopover ?? {
-            let popover = PopupBlockedPopover()
+            let popover = PopupBlockedPopover(featureFlagger: featureFlagger)
             popover.delegate = self
             self.popupBlockedPopover = popover
             return popover
@@ -1525,6 +1525,7 @@ final class AddressBarButtonsViewController: NSViewController {
         button.backgroundColor = .buttonMouseDown
         button.mouseOverColor = .buttonMouseDown
         (popover.contentViewController as? PermissionAuthorizationViewController)?.query = query
+        (popover.contentViewController as? PopupBlockedViewController)?.query = query
         query.wasShownOnce = true
 
         // Wait for the button appearance animation to complete before showing popover

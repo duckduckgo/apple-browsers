@@ -61158,6 +61158,18 @@
         }
       }
     },
+    "permission.popup.blocked.popover.new" : {
+      "comment" : "Text of popover warning the user that a pop-up has been blocked (new design)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Pop-up Blocked"
+          }
+        }
+      }
+    },
     "permission.popup.deny.button" : {
       "comment" : "Button that denies permission for this request only",
       "extractionState" : "extracted_with_value",
@@ -61238,6 +61250,18 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Never Allow"
+          }
+        }
+      }
+    },
+    "permission.popup.open.button" : {
+      "comment" : "Button to open a blocked pop-up",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open"
           }
         }
       }

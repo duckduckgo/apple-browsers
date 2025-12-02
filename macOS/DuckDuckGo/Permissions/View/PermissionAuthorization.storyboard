@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="22505" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
+<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="24412" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="22505"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="24412"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -11,22 +11,22 @@
             <objects>
                 <viewController storyboardIdentifier="PermissionAuthorizationViewController" id="1ds-EH-Sa3" customClass="PermissionAuthorizationViewController" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="6Y6-ej-1GX">
-                        <rect key="frame" x="0.0" y="0.0" width="320" height="140"/>
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="144"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <box boxType="custom" borderType="none" cornerRadius="4" title="Box" translatesAutoresizingMaskIntoConstraints="NO" id="b80-GE-9ca">
-                                <rect key="frame" x="0.0" y="0.0" width="320" height="160"/>
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="164"/>
                                 <view key="contentView" id="rpW-0t-1gZ">
-                                    <rect key="frame" x="0.0" y="0.0" width="320" height="160"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="320" height="164"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 </view>
                                 <color key="fillColor" name="PopoverBackgroundColor"/>
                             </box>
                             <stackView distribution="fill" orientation="vertical" alignment="centerX" spacing="16" horizontalStackHuggingPriority="750" verticalStackHuggingPriority="750" horizontalHuggingPriority="752" verticalHuggingPriority="752" horizontalCompressionResistancePriority="249" verticalCompressionResistancePriority="250" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="DDy-au-YqK">
-                                <rect key="frame" x="16" y="12" width="288" height="108"/>
+                                <rect key="frame" x="16" y="12" width="288" height="112"/>
                                 <subviews>
                                     <textField focusRingType="none" horizontalHuggingPriority="751" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="7nK-UI-YT3">
-                                        <rect key="frame" x="-2" y="76" width="292" height="32"/>
+                                        <rect key="frame" x="-2" y="80" width="292" height="32"/>
                                         <textFieldCell key="cell" alignment="center" title="Allow “longname.chat.somewebsite.com” to use your Camera and Microphone?" id="z9s-AY-68S">
                                             <font key="font" metaFont="systemBold"/>
                                             <color key="textColor" name="labelColor" catalog="System" colorSpace="catalog"/>
@@ -34,10 +34,10 @@
                                         </textFieldCell>
                                     </textField>
                                     <stackView distribution="fill" orientation="horizontal" alignment="top" spacing="0.0" horizontalStackHuggingPriority="250" verticalStackHuggingPriority="750" horizontalHuggingPriority="752" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="5JO-km-2KL">
-                                        <rect key="frame" x="0.0" y="44" width="288" height="16"/>
+                                        <rect key="frame" x="0.0" y="48" width="288" height="16"/>
                                         <subviews>
                                             <button horizontalHuggingPriority="750" verticalHuggingPriority="750" horizontalCompressionResistancePriority="751" translatesAutoresizingMaskIntoConstraints="NO" id="4Qg-BR-C50">
-                                                <rect key="frame" x="-2" y="-1" width="122" height="18"/>
+                                                <rect key="frame" x="0.0" y="0.0" width="118" height="16"/>
                                                 <buttonCell key="cell" type="check" title="Always allow on" bezelStyle="regularSquare" imagePosition="left" state="on" inset="2" id="Mak-WM-Obe">
                                                     <behavior key="behavior" changeContents="YES" doesNotDimImage="YES" lightByContents="YES"/>
                                                     <font key="font" metaFont="system"/>
@@ -47,10 +47,10 @@
                                                 </connections>
                                             </button>
                                             <customView translatesAutoresizingMaskIntoConstraints="NO" id="PEB-5b-R8e">
-                                                <rect key="frame" x="120" y="0.0" width="168" height="16"/>
+                                                <rect key="frame" x="118" y="0.0" width="170" height="16"/>
                                                 <subviews>
                                                     <textField focusRingType="none" horizontalHuggingPriority="751" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Qnx-0b-4zc">
-                                                        <rect key="frame" x="-2" y="0.0" width="172" height="16"/>
+                                                        <rect key="frame" x="-2" y="0.0" width="174" height="16"/>
                                                         <constraints>
                                                             <constraint firstAttribute="width" relation="lessThanOrEqual" constant="550" id="qpi-AI-9P3"/>
                                                         </constraints>
@@ -61,7 +61,7 @@
                                                         </textFieldCell>
                                                     </textField>
                                                     <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="G5q-Z6-RNg">
-                                                        <rect key="frame" x="0.0" y="0.0" width="168" height="16"/>
+                                                        <rect key="frame" x="0.0" y="0.0" width="170" height="16"/>
                                                         <buttonCell key="cell" type="bevel" bezelStyle="rounded" alignment="center" transparent="YES" imageScaling="proportionallyDown" inset="2" id="jsw-nv-RIO">
                                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                             <font key="font" metaFont="system"/>
@@ -93,19 +93,19 @@
                                         </customSpacing>
                                     </stackView>
                                     <stackView distribution="fill" orientation="vertical" alignment="centerX" spacing="0.0" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="FDy-Cn-myW" userLabel="Buttons Stack View">
-                                        <rect key="frame" x="0.0" y="4" width="288" height="24"/>
+                                        <rect key="frame" x="0.0" y="4" width="288" height="28"/>
                                         <subviews>
                                             <customView translatesAutoresizingMaskIntoConstraints="NO" id="qrT-Sz-DGV">
-                                                <rect key="frame" x="0.0" y="20" width="288" height="4"/>
+                                                <rect key="frame" x="0.0" y="24" width="288" height="4"/>
                                                 <constraints>
                                                     <constraint firstAttribute="height" constant="4" id="12a-JC-HBp"/>
                                                 </constraints>
                                             </customView>
                                             <stackView distribution="fill" orientation="horizontal" alignment="top" spacing="12" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="YPs-5a-aAQ">
-                                                <rect key="frame" x="0.0" y="0.0" width="288" height="20"/>
+                                                <rect key="frame" x="0.0" y="0.0" width="288" height="24"/>
                                                 <subviews>
                                                     <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="nJj-cz-fYJ">
-                                                        <rect key="frame" x="-7" y="-7" width="152" height="32"/>
+                                                        <rect key="frame" x="0.0" y="0.0" width="138" height="24"/>
                                                         <buttonCell key="cell" type="push" title="Cancel" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="tHA-lk-nXO">
                                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                             <font key="font" metaFont="system"/>
@@ -119,7 +119,7 @@ Gw
                                                         </connections>
                                                     </button>
                                                     <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="STv-Br-1F5">
-                                                        <rect key="frame" x="143" y="-7" width="152" height="32"/>
+                                                        <rect key="frame" x="150" y="0.0" width="138" height="24"/>
                                                         <buttonCell key="cell" type="push" title="Allow" bezelStyle="rounded" alignment="center" borderStyle="border" imageScaling="proportionallyDown" inset="2" id="eOa-90-vwm">
                                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                             <font key="font" metaFont="system"/>

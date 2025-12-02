@@ -772,8 +772,10 @@ extension DataImportViewModel {
             switch screen {
             case .sourceAndDataTypesPicker:
                 return .cancel
-            case .archiveImport, .profilePicker, .moreInfo, .passwordEntryHelp:
+            case .archiveImport, .profilePicker, .moreInfo:
                 return .back
+            case .passwordEntryHelp:
+                return .cancel
             case .fileImport(_, let summary):
                 return summary.isEmpty ? .back : nil
             case .summary:
@@ -833,9 +835,13 @@ extension DataImportViewModel {
             skipImportOrDismiss(using: dismiss)
 
         case .cancel:
-            importTask?.cancel()
-            onCancelled()
-            self.dismiss(using: dismiss)
+            if screen == .passwordEntryHelp {
+                goBack()
+            } else {
+                importTask?.cancel()
+                onCancelled()
+                self.dismiss(using: dismiss)
+            }
 
         case .submit:
             submitReport()

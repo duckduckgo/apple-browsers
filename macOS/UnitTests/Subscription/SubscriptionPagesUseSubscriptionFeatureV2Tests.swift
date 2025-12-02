@@ -702,7 +702,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
         // Then
         XCTAssertTrue(mockEventReporter.reportedTierOptionEvents.contains { $0.eventName == SubscriptionPixel.subscriptionTierOptionsSuccess.name })
-        XCTAssertFalse(mockEventReporter.reportedTierOptionEvents.contains { $0.eventName == SubscriptionPixel.subscriptionTierOptionsFailure.name })
+        XCTAssertFalse(mockEventReporter.reportedTierOptionEvents.contains { $0.eventName == SubscriptionPixel.subscriptionTierOptionsFailure(error: NSError(domain: "test", code: 0)).name })
     }
 
     func testGetSubscriptionTierOptions_OnFailure_FiresFailurePixel() async throws {
@@ -713,11 +713,11 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         _ = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
 
         // Then
-        XCTAssertTrue(mockEventReporter.reportedTierOptionEvents.contains { $0.eventName == SubscriptionPixel.subscriptionTierOptionsFailure.name })
+        XCTAssertTrue(mockEventReporter.reportedTierOptionEvents.contains { $0.eventName == SubscriptionPixel.subscriptionTierOptionsFailure(error: NSError(domain: "test", code: 0)).name })
         XCTAssertFalse(mockEventReporter.reportedTierOptionEvents.contains { $0.eventName == SubscriptionPixel.subscriptionTierOptionsSuccess.name })
     }
 
-    func testGetSubscriptionTierOptions_OnFailure_IncludesErrorInPixel() async throws {
+    func testGetSubscriptionTierOptions_OnFailure_FiresFailurePixelWithError() async throws {
         // Given
         mockStorePurchaseManager.subscriptionTierOptionsResult = .failure(.noProductsAvailable)
 
@@ -725,8 +725,9 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         _ = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
 
         // Then
-        let failureEvent = mockEventReporter.reportedTierOptionEvents.first { $0.eventName == SubscriptionPixel.subscriptionTierOptionsFailure.name }
-        XCTAssertNotNil(failureEvent?.error, "Failure pixel should include error")
+        // The error is now embedded in the pixel enum (SubscriptionPixel.subscriptionTierOptionsFailure(error:))
+        let failureEvent = mockEventReporter.reportedTierOptionEvents.first { $0.eventName == SubscriptionPixel.subscriptionTierOptionsFailure(error: NSError(domain: "test", code: 0)).name }
+        XCTAssertNotNil(failureEvent, "Failure pixel should be fired")
         XCTAssertFalse(mockEventReporter.reportedTierOptionEvents.contains { $0.eventName == SubscriptionPixel.subscriptionTierOptionsSuccess.name })
     }
 
@@ -819,7 +820,6 @@ final class MockSubscriptionEventReporter: SubscriptionEventReporter {
     struct TierOptionEventRecord {
         let eventName: String
         let platform: String
-        let error: Error?
     }
 
     var reportedActivationErrors: [SubscriptionError] = []
@@ -829,8 +829,8 @@ final class MockSubscriptionEventReporter: SubscriptionEventReporter {
         reportedActivationErrors.append(subscriptionActivationError)
     }
 
-    func report(subscriptionTierOptionEvent: PixelKitEvent, platform: String, error: Error?) {
-        reportedTierOptionEvents.append(TierOptionEventRecord(eventName: subscriptionTierOptionEvent.name, platform: platform, error: error))
+    func report(subscriptionTierOptionEvent: PixelKitEvent, platform: String) {
+        reportedTierOptionEvents.append(TierOptionEventRecord(eventName: subscriptionTierOptionEvent.name, platform: platform))
     }
 }
 

@@ -76,7 +76,7 @@ enum SubscriptionPixel: PixelKitEvent {
     // Tier Options
     case subscriptionTierOptionsRequested
     case subscriptionTierOptionsSuccess
-    case subscriptionTierOptionsFailure
+    case subscriptionTierOptionsFailure(error: Error)
     case subscriptionTierOptionsUnexpectedProTier
     // Auth v2
     case subscriptionInvalidRefreshTokenDetected(SubscriptionPixelHandler.Source)

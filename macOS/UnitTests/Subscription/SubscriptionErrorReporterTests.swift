@@ -200,7 +200,7 @@ final class SubscriptionErrorReporterTests: XCTestCase {
         let platform = "appStore"
 
         // When
-        reporter.report(subscriptionTierOptionEvent: event, platform: platform, error: nil)
+        reporter.report(subscriptionTierOptionEvent: event, platform: platform)
 
         // Then
         XCTAssertPrivacyPixelsFired([SubscriptionPixel.subscriptionTierOptionsRequested.name])
@@ -212,7 +212,7 @@ final class SubscriptionErrorReporterTests: XCTestCase {
         let platform = "appStore"
 
         // When
-        reporter.report(subscriptionTierOptionEvent: event, platform: platform, error: nil)
+        reporter.report(subscriptionTierOptionEvent: event, platform: platform)
 
         // Then
         XCTAssertPrivacyPixelsFired([SubscriptionPixel.subscriptionTierOptionsSuccess.name])
@@ -220,15 +220,15 @@ final class SubscriptionErrorReporterTests: XCTestCase {
 
     func testReporterForTierOptionsFailure() async throws {
         // Given
-        let event = SubscriptionPixel.subscriptionTierOptionsFailure
         let platform = "appStore"
         let error = NSError(domain: "TestError", code: 123)
+        let event = SubscriptionPixel.subscriptionTierOptionsFailure(error: error)
 
         // When
-        reporter.report(subscriptionTierOptionEvent: event, platform: platform, error: error)
+        reporter.report(subscriptionTierOptionEvent: event, platform: platform)
 
         // Then
-        XCTAssertPrivacyPixelsFired([SubscriptionPixel.subscriptionTierOptionsFailure.name])
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.subscriptionTierOptionsFailure(error: error).name])
     }
 
     func testReporterForTierOptionsUnexpectedProTier() async throws {
@@ -237,7 +237,7 @@ final class SubscriptionErrorReporterTests: XCTestCase {
         let platform = "appStore"
 
         // When
-        reporter.report(subscriptionTierOptionEvent: event, platform: platform, error: nil)
+        reporter.report(subscriptionTierOptionEvent: event, platform: platform)
 
         // Then
         XCTAssertPrivacyPixelsFired([SubscriptionPixel.subscriptionTierOptionsUnexpectedProTier.name])
@@ -249,7 +249,7 @@ final class SubscriptionErrorReporterTests: XCTestCase {
         let platform = "stripe"
 
         // When
-        reporter.report(subscriptionTierOptionEvent: event, platform: platform, error: nil)
+        reporter.report(subscriptionTierOptionEvent: event, platform: platform)
 
         // Then
         XCTAssertPrivacyPixelsFired([SubscriptionPixel.subscriptionTierOptionsRequested.name])

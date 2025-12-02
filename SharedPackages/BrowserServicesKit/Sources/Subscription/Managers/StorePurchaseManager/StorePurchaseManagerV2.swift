@@ -58,6 +58,13 @@ public enum StoreError: DDGError {
         }
     }
 
+    public var underlyingError: (any Error)? {
+        switch self {
+        case .featureAPIFailed(let error): error
+        default: nil
+        }
+    }
+
     public static func == (lhs: StoreError, rhs: StoreError) -> Bool {
         switch (lhs, rhs) {
         case (.failedVerification, .failedVerification):

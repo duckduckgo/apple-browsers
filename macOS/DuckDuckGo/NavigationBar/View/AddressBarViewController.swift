@@ -23,6 +23,7 @@ import Lottie
 import Common
 import AIChat
 import UIComponents
+import PixelKit
 
 protocol AddressBarViewControllerDelegate: AnyObject {
     func resizeAddressBarForHomePage(_ addressBarViewController: AddressBarViewController)
@@ -875,6 +876,7 @@ final class AddressBarViewController: NSViewController {
         case .inactive:
             if isFirstResponder {
                 selectionState = .active
+                fireAddressBarActivatedPixelIfNeeded()
             }
         case .active:
             if !isFirstResponder && !isToggleFocused {
@@ -885,6 +887,17 @@ final class AddressBarViewController: NSViewController {
         }
 
         setupAddressBarPlaceHolder()
+    }
+
+    private func fireAddressBarActivatedPixelIfNeeded() {
+        guard featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
+              aiChatSettings.isAIFeaturesEnabled else {
+            return
+        }
+
+        let isToggleSettingOn = aiChatSettings.showSearchAndDuckAIToggle
+        let pixel: AIChatPixel = isToggleSettingOn ? .aiChatAddressBarActivatedToggleOn : .aiChatAddressBarActivatedToggleOff
+        PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
     }
 
     // MARK: - Event handling

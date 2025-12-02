@@ -63,7 +63,6 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     }
 
     // Reload loop detection state (per-tab)
-    private var lastHandledURL: String = ""
     private var lastHandledCMPName: String = ""
     private var reloadLoopDetected: Bool = false
 
@@ -288,6 +287,13 @@ extension AutoconsentUserScript {
         }
 
         if message.frameInfo.isMainFrame {
+            Logger.autoconsent.debug("Main frame navigated from \(String(describing: self.topUrl)) to \(String(describing: url))")
+            let urlChanged = !urlsMatchIgnoringQuery(url, topUrl)
+            if urlChanged {
+                // Main frame navigated to a different page, clear state
+                Logger.autoconsent.debug("Main frame navigated to a different page \(url), clearing reload loop state")
+                clearReloadLoopState()
+            }
             topUrl = url
             // reset dashboard state
             refreshDashboardState(
@@ -317,10 +323,10 @@ extension AutoconsentUserScript {
 
         var autoAction: String?
         if preferences.isAutoconsentEnabled == true {
-            // Check for reload loop and disable autoAction if detected
-            let shouldDisableAutoAction = shouldDisableAutoActionForReloadLoop(url: messageData.url)
-            if shouldDisableAutoAction {
-                Logger.autoconsent.debug("Reload loop detected, disabling autoAction")
+            // Check for reload loop and disable autoAction if needed
+            if reloadLoopDetected {
+                // prevent further reloads
+                Logger.autoconsent.debug("Reload loop prevention: disabling autoAction for \(messageData.url)")
             } else {
                 // normal case: autoconsent feature is enabled, and no reload loop detected
                 autoAction = "optOut"
@@ -400,11 +406,7 @@ extension AutoconsentUserScript {
         firePixel(pixel: .popupFound)
 
         // Check for reload loop
-        let isReloadLoop = recordPopupFound(cmpName: messageData.cmp, url: messageData.url)
-        if isReloadLoop {
-            Logger.autoconsent.debug("Reload loop detected for CMP: \(messageData.cmp)")
-            firePixel(pixel: .errorReloadLoop)
-        }
+        detectReloadLoop(cmpName: messageData.cmp)
 
         // if popupFound is sent with "filterList", it indicates that cosmetic filterlist matched in the prehide stage,
         // but a real opt-out may still follow. See https://github.com/duckduckgo/autoconsent/blob/main/api.md#messaging-api
@@ -461,9 +463,8 @@ extension AutoconsentUserScript {
         refreshDashboardState(consentManaged: true, cosmetic: messageData.isCosmetic, optoutFailed: false, selftestFailed: nil)
         firePixel(pixel: messageData.isCosmetic ? .doneCosmetic : .done)
 
-        // Record popup handled for reload loop detection
-        recordPopupHandled(
-            url: messageData.url,
+        // Remember the last handled CMP for reload loop detection
+        rememberLastHandledCMP(
             cmpName: messageData.cmp,
             isCosmetic: messageData.isCosmetic
         )
@@ -503,7 +504,7 @@ extension AutoconsentUserScript {
                 }
             )
         } else {
-            Logger.autoconsent.error("no self-test scheduled in this tab")
+            Logger.autoconsent.debug("no self-test scheduled in this tab")
         }
         selfTestWebView = nil
         selfTestFrameInfo = nil
@@ -577,37 +578,18 @@ extension AutoconsentUserScript {
 
     // MARK: - Reload Loop Detection
 
-    /// Checks if the given URL matches the last handled URL and returns whether to disable autoAction
-    /// - Parameter url: The current page URL
-    /// - Returns: True if autoAction should be disabled (reload loop detected), false otherwise
-    private func shouldDisableAutoActionForReloadLoop(url: String) -> Bool {
-        let urlMatches = urlsMatchIgnoringQuery(url, lastHandledURL)
-        var result = false
-        if !urlMatches {
-            // Navigated to a different page, clear state
-            Logger.autoconsent.debug("Navigated to a different page \(url), clearing reload loop state")
-            clearReloadLoopState()
-        } else if reloadLoopDetected {
-            // prevent further reloads
-            Logger.autoconsent.debug("Reload loop prevention: disabling autoAction for \(url)")
-            result = true
-        }
-        return result
-    }
-
-    /// Records that a popup was found with the given CMP name
+    /// Detects a reload loop
     /// - Parameters:
     ///   - cmpName: The name of the CMP that was detected
-    ///   - url: The current page URL
-    /// - Returns: True if a reload loop was detected (should fire pixel), false otherwise
-    private func recordPopupFound(cmpName: String, url: String) -> Bool {
-        if cmpName == lastHandledCMPName && !reloadLoopDetected {
+    private func detectReloadLoop(cmpName: String) {
+        // Reload loop is when we catch the same CMP from the same top URL without a navigation in between.
+        // At this point we know that the top URL hasn't changed (that's tracked in handleInit), so we can just check the CMP name.
+        if !reloadLoopDetected && cmpName == lastHandledCMPName {
             // Same CMP detected on same URL after it was already handled - reload loop detected
-            Logger.autoconsent.debug("Reload loop detected: CMP \(cmpName) on \(url)")
+            Logger.autoconsent.debug("Reload loop detected: CMP \(cmpName) on \(String(describing: self.topUrl))")
             reloadLoopDetected = true
-            return true
+            firePixel(pixel: .errorReloadLoop)
         }
-        return false
     }
 
     /// Stores the URL and CMP name after a popup was successfully handled
@@ -615,22 +597,25 @@ extension AutoconsentUserScript {
     ///   - url: The URL where the popup was handled
     ///   - cmpName: The name of the CMP that was handled
     ///   - isCosmetic: Whether this was a cosmetic rule (cosmetic rules don't trigger reload loops)
-    private func recordPopupHandled(url: String, cmpName: String, isCosmetic: Bool) {
+    private func rememberLastHandledCMP(cmpName: String, isCosmetic: Bool) {
         if isCosmetic {
             // Cosmetic rules can trigger on every page load and never cause reload loops
             Logger.autoconsent.debug("Cosmetic rule handled, not storing for reload loop detection")
+            clearReloadLoopState()
             return
         }
 
-        Logger.autoconsent.debug("Recording popup handled: CMP \(cmpName) on \(url)")
-        lastHandledURL = url
+        if lastHandledCMPName != cmpName {
+            // The last handled CMP is different from the current one, so we need to clear the reload loop state
+            Logger.autoconsent.debug("Last handled CMP is different from the current one, clearing reload loop state")
+            clearReloadLoopState()
+        }
+        Logger.autoconsent.debug("Recording popup handled: CMP \(cmpName) on \(String(describing: self.topUrl))")
         lastHandledCMPName = cmpName
-        // Don't reset reloadLoopDetected here - it stays true if already set
     }
 
     /// Clears the reload loop detection state
     private func clearReloadLoopState() {
-        lastHandledURL = ""
         lastHandledCMPName = ""
         reloadLoopDetected = false
     }
@@ -640,15 +625,12 @@ extension AutoconsentUserScript {
     ///   - url1: First URL string
     ///   - url2: Second URL string
     /// - Returns: True if protocol, host, and path match, false otherwise
-    private func urlsMatchIgnoringQuery(_ url1: String, _ url2: String) -> Bool {
-        guard let parsedUrl1 = URL(string: url1),
-              let parsedUrl2 = URL(string: url2) else {
-            // If we can't parse URLs, fall back to exact string comparison
-            return url1 == url2
+    private func urlsMatchIgnoringQuery(_ url1: URL?, _ url2: URL?) -> Bool {
+        guard let url1 = url1, let url2 = url2 else {
+            return false
         }
-
-        return parsedUrl1.scheme == parsedUrl2.scheme &&
-               parsedUrl1.host == parsedUrl2.host &&
-               parsedUrl1.path == parsedUrl2.path
+        return url1.scheme == url2.scheme &&
+               url1.host == url2.host &&
+               url1.path == url2.path
     }
 }

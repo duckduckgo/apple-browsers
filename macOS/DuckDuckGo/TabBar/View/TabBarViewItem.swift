@@ -17,7 +17,10 @@
 //
 
 import AppKit
+import BrowserServicesKit
 import Combine
+import DesignResourcesKitIcons
+import FeatureFlags
 import WebKit
 
 struct OtherTabBarViewItemsState {
@@ -770,6 +773,13 @@ final class TabBarViewItem: NSCollectionViewItem {
     private var currentURL: URL?
     private var cancellables = Set<AnyCancellable>()
 
+    // MARK: - Active Permission Icons (replaces favicon when permissions are in use)
+    private let featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger
+    private var activePermissionIconTimer: Timer?
+    private var activePermissionTypes: [PermissionType] = []
+    private var currentActivePermissionIndex = 0
+    private var currentFavicon: NSImage?
+
     let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
     var themeUpdateCancellable: AnyCancellable?
 
@@ -827,6 +837,7 @@ final class TabBarViewItem: NSCollectionViewItem {
         if let eventMonitor {
             NSEvent.removeMonitor(eventMonitor)
         }
+        activePermissionIconTimer?.invalidate()
     }
 
     override var isSelected: Bool {
@@ -1037,6 +1048,10 @@ final class TabBarViewItem: NSCollectionViewItem {
 
     func clear() {
         clearSubscriptions()
+        stopActivePermissionIconTimer()
+        activePermissionTypes = []
+        currentActivePermissionIndex = 0
+        currentFavicon = nil
         usedPermissions = Permissions()
         isLeftToSelected = false
         cell.clear()
@@ -1114,7 +1129,10 @@ final class TabBarViewItem: NSCollectionViewItem {
 
         updateSeparatorView()
 
-        // Adjust colors for burner window
+        // Adjust colors for burner window (but don't override active permission icon color)
+        let isShowingActivePermissionIcon = featureFlagger.isFeatureOn(.newPermissionView) && !activePermissionTypes.isEmpty
+        guard !isShowingActivePermissionIcon else { return }
+
         let isBurnerTab = isBurner && cell.displaysBurnerHomeTitle
         let tintColor: NSColor? = isBurnerTab ? .textColor : nil
 
@@ -1128,6 +1146,7 @@ final class TabBarViewItem: NSCollectionViewItem {
     private var usedPermissions = Permissions() {
         didSet {
             updateUsedPermissions()
+            updateActivePermissionIcons()
         }
     }
     private func updateUsedPermissions() {
@@ -1167,6 +1186,123 @@ final class TabBarViewItem: NSCollectionViewItem {
         cell.permissionButton.isHidden = false
     }
 
+    // MARK: - Active Permission Icons in Favicon
+
+    private func updateActivePermissionIcons() {
+        guard featureFlagger.isFeatureOn(.newPermissionView) else {
+            stopActivePermissionIconTimer()
+            return
+        }
+
+        // Collect all active permissions (camera, microphone, geolocation)
+        var activeTypes: [PermissionType] = []
+        if usedPermissions.camera.isActive {
+            activeTypes.append(.camera)
+        }
+        if usedPermissions.microphone.isActive {
+            activeTypes.append(.microphone)
+        }
+        if usedPermissions.geolocation.isActive {
+            activeTypes.append(.geolocation)
+        }
+
+        let previousActiveTypes = activePermissionTypes
+        activePermissionTypes = activeTypes
+
+        if activeTypes.isEmpty {
+            // No active permissions - restore favicon
+            stopActivePermissionIconTimer()
+            if !previousActiveTypes.isEmpty {
+                // Was showing permission icons, now restore favicon
+                displayCurrentFavicon()
+            }
+        } else if activeTypes.count == 1 {
+            // Single active permission - show its icon, no timer needed
+            stopActivePermissionIconTimer()
+            currentActivePermissionIndex = 0
+            displayActivePermissionIcon()
+        } else {
+            // Multiple active permissions - start rotating timer
+            currentActivePermissionIndex = 0
+            displayActivePermissionIcon()
+            startActivePermissionIconTimer()
+        }
+    }
+
+    private func startActivePermissionIconTimer() {
+        guard activePermissionIconTimer == nil else { return }
+
+        activePermissionIconTimer = Timer.scheduledTimer(withTimeInterval: 4.0, repeats: true) { [weak self] _ in
+            self?.rotateActivePermissionIcon()
+        }
+    }
+
+    private func stopActivePermissionIconTimer() {
+        activePermissionIconTimer?.invalidate()
+        activePermissionIconTimer = nil
+    }
+
+    private func rotateActivePermissionIcon() {
+        guard !activePermissionTypes.isEmpty else { return }
+
+        currentActivePermissionIndex = (currentActivePermissionIndex + 1) % activePermissionTypes.count
+        displayActivePermissionIcon()
+    }
+
+    private func displayActivePermissionIcon() {
+        guard currentActivePermissionIndex < activePermissionTypes.count else { return }
+
+        let permissionType = activePermissionTypes[currentActivePermissionIndex]
+        let icon = activePermissionIcon(for: permissionType)
+
+        cell.needsLayout = true
+        if cell.displaysTabsProgressIndicator {
+            cell.faviconView.displayFavicon(favicon: icon, placeholderStyle: .dot)
+            cell.faviconView.imageTintColor = .systemRed
+        } else {
+            cell.faviconImageView.isHidden = false
+            cell.faviconImageView.image = icon
+            cell.faviconImageView.contentTintColor = .systemRed
+            cell.faviconPlaceholderView.isHidden = true
+        }
+    }
+
+    private func displayCurrentFavicon() {
+        cell.needsLayout = true
+
+        // Reset tint color when showing normal favicon
+        let isBurnerTab = isBurner && cell.displaysBurnerHomeTitle
+        let tintColor: NSColor? = isBurnerTab ? .textColor : nil
+
+        if cell.displaysTabsProgressIndicator {
+            cell.faviconView.imageTintColor = tintColor
+            cell.faviconView.displayFavicon(favicon: currentFavicon, placeholderStyle: faviconPlaceholderStyle)
+        } else {
+            cell.faviconImageView.contentTintColor = tintColor
+            cell.faviconImageView.isHidden = (currentFavicon == nil)
+            cell.faviconImageView.image = currentFavicon
+            if isPinned && cell.faviconImageView.isHidden {
+                cell.faviconPlaceholderView.isHidden = false
+                cell.faviconPlaceholderView.displayURL(tabViewModel?.tabContent.urlForWebView)
+            } else {
+                cell.faviconPlaceholderView.isHidden = true
+            }
+        }
+    }
+
+    private func activePermissionIcon(for permissionType: PermissionType) -> NSImage {
+        switch permissionType {
+        case .camera:
+            return DesignSystemImages.Glyphs.Size16.videoSolid
+        case .microphone:
+            return DesignSystemImages.Glyphs.Size16.microphoneSolid
+        case .geolocation:
+            return DesignSystemImages.Glyphs.Size16.permissionsLocationSolid
+        default:
+            return DesignSystemImages.Glyphs.Size16.videoSolid
+        }
+    }
+
     private func updateSeparatorView() {
         let shouldHideForHover = theme.tabStyleProvider.isRoundedBackgroundPresentOnHover && isMouseOver
         let rightItemIsHighlighted = delegate?.tabBarViewItemShouldHideSeparator(self) ?? false
@@ -1185,6 +1321,14 @@ final class TabBarViewItem: NSCollectionViewItem {
     }
 
     private func updateFavicon(_ favicon: NSImage?) {
+        // Store the favicon for later restoration
+        currentFavicon = favicon
+
+        // If we have active permissions and feature flag is on, show permission icon instead
+        if featureFlagger.isFeatureOn(.newPermissionView), !activePermissionTypes.isEmpty {
+            return // Don't update favicon display, we're showing permission icons
+        }
+
         cell.needsLayout = true
 
         /// When using `faviconView`, we'll never display `faviconPlaceholderView`.

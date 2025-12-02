@@ -113,6 +113,20 @@ final class NewTabPageCoordinatorTests: XCTestCase {
                                               windowControllersManager: windowControllersManager,
                                               pixelFiring: nil,
                                               historyProvider: MockHistoryViewDataProvider())
+        let cookiePopupProtectionPreferences = CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager)
+        let visualizeFireAnimationDecider = MockVisualizeFireAnimationDecider()
+        let settingsMigrator = NewTabPageProtectionsReportSettingsMigrator(legacyKeyValueStore: UserDefaultsWrapper<Any>.sharedDefaults)
+        let protectionsReportModel = NewTabPageProtectionsReportModel(
+            privacyStats: MockPrivacyStats(),
+            autoconsentStats: MockAutoconsentStats(),
+            keyValueStore: keyValueStore,
+            burnAnimationSettingChanges: visualizeFireAnimationDecider.shouldShowFireAnimationPublisher,
+            showBurnAnimation: visualizeFireAnimationDecider.shouldShowFireAnimation,
+            isAutoconsentEnabled: { cookiePopupProtectionPreferences.isAutoconsentEnabled },
+            getLegacyIsViewExpandedSetting: settingsMigrator.isViewExpanded,
+            getLegacyActiveFeedSetting: settingsMigrator.activeFeed
+        )
+
         coordinator = NewTabPageCoordinator(
             appearancePreferences: appearancePreferences,
             customizationModel: customizationModel,
@@ -130,7 +144,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             fireproofDomains: MockFireproofDomains(domains: []),
             privacyStats: MockPrivacyStats(),
             autoconsentStats: MockAutoconsentStats(),
-            cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
             freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator(
                 freemiumDBPUserStateManager: MockFreemiumDBPUserStateManager(),
                 freemiumDBPFeature: MockFreemiumDBPFeature(),
@@ -143,12 +157,13 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             fireCoordinator: fireCoordinator,
             keyValueStore: keyValueStore,
             notificationCenter: notificationCenter,
-            visualizeFireAnimationDecider: MockVisualizeFireAnimationDecider(),
+            visualizeFireAnimationDecider: visualizeFireAnimationDecider,
             featureFlagger: featureFlagger,
             windowControllersManager: windowControllersManager,
             tabsPreferences: tabsPreferences,
             newTabPageAIChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(),
             winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator(winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager()),
+            protectionsReportModel: protectionsReportModel,
             fireDailyPixel: { self.firePixelCalls.append($0) }
         )
     }

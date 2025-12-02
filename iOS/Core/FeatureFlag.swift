@@ -576,7 +576,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .migrateKeychainAccessibility:
             return .remoteReleasable(.subfeature(AutofillSubfeature.migrateKeychainAccessibility))
         case .granularFireButtonOptions:
-            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.granularFireButtonOptions))
+            return .disabled
         }
     }
 }

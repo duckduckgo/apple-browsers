@@ -138,7 +138,7 @@ enum AttributedMetricPixel: PixelKitEvent {
             return nil
         }
     }
-    
+
     func addBaseParamFor(dictionary: inout [String: String], origin: String?, installDate: String?) {
         if let origin {
             dictionary[ConstantKeys.origin] = origin

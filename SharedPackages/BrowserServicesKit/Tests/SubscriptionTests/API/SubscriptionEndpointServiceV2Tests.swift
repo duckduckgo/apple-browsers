@@ -325,7 +325,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
         XCTAssertEqual(result.features.count, 2)
         XCTAssertEqual(result.features["monthly-plus"]?.count, 2)
         XCTAssertEqual(result.features["yearly-plus"]?.count, 2)
-        XCTAssertEqual(result.features["monthly-plus"]?[0].name, "plus")
+        XCTAssertEqual(result.features["monthly-plus"]?[0].name, .plus)
     }
 
     func testGetSubscriptionTierFeaturesWithEmptyArrayReturnsEmptyResponse() async throws {

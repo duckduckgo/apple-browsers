@@ -613,6 +613,7 @@ private extension DataBrokerProtectionIOSManager {
 
     @MainActor
     func startImmediateScanOperations() async {
+        Logger.dataBrokerProtection.log("Starting immediate scan operations")
         let backgroundAssertion = QRunInBackgroundAssertion(name: "DataBrokerProtectionIOSManager", application: .shared) {
             self.queueManager.stop()
         }

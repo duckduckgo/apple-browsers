@@ -3,7 +3,7 @@
         "description": "Fires when the user uses the experimental browsing menu",
         "owners": ["dus7"],
         "triggers": ["other"],
-        "suffixes": ["daily", "platform", "form_factor"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-01-12"
     },
@@ -27,7 +27,7 @@
         "description": "Fires when the experimental browsing menu feature is disabled",
         "owners": ["dus7"],
         "triggers": ["other"],
-        "suffixes": ["daily", "platform", "form_factor"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-01-12"
     },
@@ -35,7 +35,7 @@
         "description": "Fires when the experimental browsing menu feature is enabled",
         "owners": ["dus7"],
         "triggers": ["other"],
-        "suffixes": ["daily", "platform", "form_factor"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-01-12"
     }

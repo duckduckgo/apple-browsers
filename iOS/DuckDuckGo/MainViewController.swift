@@ -2773,7 +2773,7 @@ extension MainViewController: OmniBarDelegate {
 
         self.present(controller, animated: true)
 
-        DailyPixel.fireDaily(.experimentalBrowsingMenuUsed)
+        DailyPixel.fireDailyAndCount(pixel: .experimentalBrowsingMenuUsed)
     }
 
     @objc func onBookmarksPressed() {

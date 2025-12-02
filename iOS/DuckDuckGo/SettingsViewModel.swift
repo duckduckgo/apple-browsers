@@ -310,9 +310,9 @@ final class SettingsViewModel: ObservableObject {
             },
             set: {
                 if $0 {
-                    DailyPixel.fireDaily(.experimentalBrowsingMenuEnabled)
+                    DailyPixel.fireDailyAndCount(pixel: .experimentalBrowsingMenuEnabled)
                 } else {
-                    DailyPixel.fireDaily(.experimentalBrowsingMenuDisabled)
+                    DailyPixel.fireDailyAndCount(pixel: .experimentalBrowsingMenuDisabled)
                 }
 
                 let value = self.browsingMenuSheetCapability.setEnabled($0)

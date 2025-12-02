@@ -264,8 +264,8 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
                 tier: "plus",
                 regions: ["us"],
                 entitlements: [
-                    TierFeature(product: .networkProtection, name: "plus"),
-                    TierFeature(product: .dataBrokerProtection, name: "plus")
+                    TierFeature(product: .networkProtection, name: .plus),
+                    TierFeature(product: .dataBrokerProtection, name: .plus)
                 ],
                 billingCycles: [
                     BillingCycle(productId: "monthly-plus", period: "Monthly", price: "9.99", currency: "USD")
@@ -306,12 +306,12 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
     func testGetSubscriptionTierFeaturesReturnsFeatures() async throws {
         let features: [String: [TierFeature]] = [
             "monthly-plus": [
-                TierFeature(product: .networkProtection, name: "plus"),
-                TierFeature(product: .dataBrokerProtection, name: "plus")
+                TierFeature(product: .networkProtection, name: .plus),
+                TierFeature(product: .dataBrokerProtection, name: .plus)
             ],
             "yearly-plus": [
-                TierFeature(product: .networkProtection, name: "plus"),
-                TierFeature(product: .dataBrokerProtection, name: "plus")
+                TierFeature(product: .networkProtection, name: .plus),
+                TierFeature(product: .dataBrokerProtection, name: .plus)
             ]
         ]
         let response = GetSubscriptionTierFeaturesResponse(features: features)
@@ -325,7 +325,7 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
         XCTAssertEqual(result.features.count, 2)
         XCTAssertEqual(result.features["monthly-plus"]?.count, 2)
         XCTAssertEqual(result.features["yearly-plus"]?.count, 2)
-        XCTAssertEqual(result.features["monthly-plus"]?[0].name, "plus")
+        XCTAssertEqual(result.features["monthly-plus"]?[0].name, .plus)
     }
 
     func testGetSubscriptionTierFeaturesWithEmptyArrayReturnsEmptyResponse() async throws {

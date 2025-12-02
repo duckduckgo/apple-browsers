@@ -106,14 +106,20 @@ final class SuggestionContainerViewModel {
     }
 
     /// Whether to show the AI chat cell in the footer section.
-    /// Footer AI chat is shown when a suggestion is auto-selected OR when user input is a URL.
+    /// Footer AI chat is shown when:
+    /// - aiChatOmnibarCluster is OFF: always show at bottom (never at top)
+    /// - aiChatOmnibarCluster is ON: show when a suggestion is auto-selected OR when user input is a URL
     private var shouldShowAIChatCellInFooter: Bool {
-        (hasAutoSelectedSuggestion || userInputIsURL) && shouldShowAIChatCellBase
+        guard shouldShowAIChatCellBase else { return false }
+        if !featureFlagger.isFeatureOn(.aiChatOmnibarCluster) {
+            return true
+        }
+        return hasAutoSelectedSuggestion || userInputIsURL
     }
 
     /// Whether to show the visit cell in the header (when user types a URL-like string).
     private var shouldShowVisitCell: Bool {
-        guard featureFlagger.isFeatureOn(.aiChatOmnibarToggle) else { return false }
+        guard featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && featureFlagger.isFeatureOn(.aiChatOmnibarCluster) else { return false }
         return userInputIsURL
     }
 
@@ -221,7 +227,7 @@ final class SuggestionContainerViewModel {
     }
 
     private var shouldShowSearchCellBase: Bool {
-        guard featureFlagger.isFeatureOn(.aiChatOmnibarToggle) else { return false }
+        guard featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && featureFlagger.isFeatureOn(.aiChatOmnibarCluster) else { return false }
         guard let userStringValue, !userStringValue.isEmpty else { return false }
         return true
     }
@@ -238,7 +244,8 @@ final class SuggestionContainerViewModel {
     }
 
     var shouldShowAIChatCell: Bool {
-        shouldShowHeaderSection && shouldShowAIChatCellBase
+        guard featureFlagger.isFeatureOn(.aiChatOmnibarCluster) else { return false }
+        return shouldShowHeaderSection && shouldShowAIChatCellBase
     }
 
     // MARK: - Row Selection (includes prefix rows)

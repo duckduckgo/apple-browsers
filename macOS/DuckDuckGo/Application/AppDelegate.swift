@@ -278,7 +278,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         winBackOfferVisibilityManager = WinBackOfferVisibilityManager(subscriptionManager: subscriptionAuthV1toV2Bridge,
                                                                       winbackOfferStore: winbackOfferStore,
                                                                       winbackOfferFeatureFlagProvider: winbackOfferFeatureFlagProvider,
-                                                                      dateProvider: dateProvider)
+                                                                      dateProvider: dateProvider,
+                                                                      timeBeforeOfferAvailability: .seconds(5))
 #else
         winBackOfferVisibilityManager = WinBackOfferVisibilityManager(subscriptionManager: subscriptionAuthV1toV2Bridge,
                                                                       winbackOfferStore: winbackOfferStore,

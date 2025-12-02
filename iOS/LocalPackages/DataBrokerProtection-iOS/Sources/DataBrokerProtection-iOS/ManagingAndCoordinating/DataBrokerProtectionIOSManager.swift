@@ -55,6 +55,11 @@ public class DBPIOSInterface {
         func appDidBecomeActive()
     }
 
+    public protocol UserEventsDelegate: AnyObject {
+        func dashboardDidOpen()
+        func dashboardDidClose()
+    }
+
     public protocol BackgroundTaskInformationDelegate: AnyObject {
         var hasScheduledBackgroundTask: Bool { get async }
     }
@@ -254,6 +259,20 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
     }
 }
 
+extension DataBrokerProtectionIOSManager: DBPIOSInterface.UserEventsDelegate {
+    public func dashboardDidOpen() {
+        Logger.dataBrokerProtection.log("Starting all operations whilst dashboard open")
+        queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
+            Logger.dataBrokerProtection.log("All operations completed whilst dashboard open")
+        }
+    }
+    
+    public func dashboardDidClose() {
+        Logger.dataBrokerProtection.log("Stopping operations as dashboard closed")
+        self.queueManager.stop()
+    }
+}
+
 extension DataBrokerProtectionIOSManager: DBPIOSInterface.AuthenticationDelegate {
     public func isUserAuthenticated() -> Bool {
         authenticationManager.isUserAuthenticated
@@ -421,6 +440,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DataBrokerProtectionVi
     public func dataBrokerProtectionViewController() -> DataBrokerProtectionViewController {
         return DataBrokerProtectionViewController(authenticationDelegate: self,
                                                   databaseDelegate: self,
+                                                  userEventsDelegate: self,
                                                   privacyConfigManager: self.privacyConfigManager,
                                                   contentScopeProperties: self.jobDependencies.contentScopeProperties,
                                                   webUISettings: DataBrokerProtectionWebUIURLSettings(.dbp),

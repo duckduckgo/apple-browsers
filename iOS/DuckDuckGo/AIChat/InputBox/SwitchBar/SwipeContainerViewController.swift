@@ -75,10 +75,6 @@ final class SwipeContainerViewController: UIViewController {
         }
     }
 
-    func setMode(_ mode: TextEntryMode) {
-        updateScrollViewPosition(animated: true)
-    }
-
     // MARK: - Private
 
     /// Updates the scroll view position and content size when bounds change

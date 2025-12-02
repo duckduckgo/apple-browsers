@@ -151,7 +151,7 @@ enum AttributedMetricPixel: PixelKitEvent {
                 .userSubscribed,
                 .userSyncedDevice,
                 .dataStoreError:
-            return [.pixelSource]
+            return [] // pixelSource is not included for AttributedMetric pixels
         }
     }
 

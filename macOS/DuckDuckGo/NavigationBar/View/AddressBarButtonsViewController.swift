@@ -1625,10 +1625,15 @@ final class AddressBarButtonsViewController: NSViewController {
         let url = tabViewModel.tab.content.urlForWebView ?? .empty
         let domain = (url.isFileURL ? .localhost : (url.host ?? "")).droppingWwwPrefix()
 
+        // Get popup queries for the Permission Center
+        let popupQueries = tabViewModel.tab.permissions.authorizationQueries.filter { $0.permissions.contains(.popups) }
+
         let viewModel = PermissionCenterViewModel(
             domain: domain,
             usedPermissions: tabViewModel.usedPermissions,
+            popupQueries: popupQueries,
             permissionManager: permissionManager,
+            featureFlagger: featureFlagger,
             removePermission: { [weak tabViewModel] permissionType in
                 tabViewModel?.tab.permissions.remove(permissionType)
             },
@@ -1638,7 +1643,17 @@ final class AddressBarButtonsViewController: NSViewController {
             dismissPopover: { [weak self] in
                 self?.permissionCenterPopover?.close()
                 self?.permissionCenterPopover = nil
-            }
+            },
+            openPopup: { [weak tabViewModel] query in
+                tabViewModel?.tab.permissions.allow(query)
+            },
+            setTemporaryPopupAllowance: { [weak tabViewModel] in
+                tabViewModel?.tab.popupHandling?.setPopupAllowanceForCurrentPage()
+            },
+            resetTemporaryPopupAllowance: { [weak tabViewModel] in
+                tabViewModel?.tab.popupHandling?.clearPopupAllowanceForCurrentPage()
+            },
+            hasTemporaryPopupAllowance: tabViewModel.tab.popupHandling?.popupsTemporarilyAllowedForCurrentPage ?? false
         )
 
         let popover = PermissionCenterPopover(viewModel: viewModel)

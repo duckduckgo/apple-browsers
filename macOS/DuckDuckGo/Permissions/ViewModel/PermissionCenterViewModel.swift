@@ -16,8 +16,28 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Combine
+import FeatureFlags
 import Foundation
+
+/// Represents a blocked popup URL for the Permission Center
+struct BlockedPopup: Identifiable {
+    let id = UUID()
+    let url: URL?
+    let query: PermissionAuthorizationQuery
+
+    var displayURL: String {
+        guard let url = url, !url.isEmpty else { return "" }
+        return url.absoluteString
+    }
+
+    /// Whether this popup has an empty or about: URL (should be grouped, not shown individually)
+    var isEmptyOrAboutURL: Bool {
+        guard let url = url else { return true }
+        return url.isEmpty || url.navigationalScheme == .about
+    }
+}
 
 /// Represents a permission item displayed in the Permission Center
 struct PermissionCenterItem: Identifiable {
@@ -26,6 +46,8 @@ struct PermissionCenterItem: Identifiable {
     let domain: String
     var decision: PersistedPermissionDecision
     var isSystemDisabled: Bool
+    /// For popups: the list of blocked popup URLs and their queries
+    var blockedPopups: [BlockedPopup]
 
     var displayName: String {
         if case .externalScheme = permissionType {
@@ -39,6 +61,30 @@ struct PermissionCenterItem: Identifiable {
         guard case .externalScheme(let scheme) = permissionType else { return nil }
         return String(format: UserText.permissionCenterExternalSchemeDescription, domain, scheme)
     }
+
+    /// Header text for popups (e.g., "Blocked 2 pop-ups")
+    var blockedPopupsHeaderText: String? {
+        guard permissionType == .popups, !blockedPopups.isEmpty else { return nil }
+        return UserText.permissionPopupTitle(count: blockedPopups.count)
+    }
+
+    /// Popups with actual URLs that should be shown as clickable links
+    /// (excludes empty/about: URLs which are grouped and handled via "Only allow for this visit")
+    var visibleBlockedPopups: [BlockedPopup] {
+        blockedPopups.filter { !$0.isEmptyOrAboutURL }
+    }
+
+    /// Popups with empty/about: URLs that are grouped (not shown individually)
+    var groupedEmptyPopups: [BlockedPopup] {
+        blockedPopups.filter { $0.isEmptyOrAboutURL }
+    }
+}
+
+/// Popup decision options for the Permission Center dropdown
+enum PopupDecision: Hashable {
+    case allowForThisVisit
+    case notify
+    case alwaysAllow
 }
 
 /// ViewModel for the Permission Center popover
@@ -53,30 +99,53 @@ final class PermissionCenterViewModel: ObservableObject {
 
     private let permissionManager: PermissionManagerProtocol
     private let systemPermissionManager: SystemPermissionManagerProtocol
+    private let featureFlagger: FeatureFlagger
     private let usedPermissions: Permissions
+    private let popupQueries: [PermissionAuthorizationQuery]
     private let removePermissionFromTab: (PermissionType) -> Void
     private let reloadPage: () -> Void
     private let dismissPopover: () -> Void
+    private let openPopup: ((PermissionAuthorizationQuery) -> Void)?
+    private let setTemporaryPopupAllowance: (() -> Void)?
+    private let resetTemporaryPopupAllowance: (() -> Void)?
     private var cancellables = Set<AnyCancellable>()
     private var removedPermissions = Set<PermissionType>()
+    private(set) var hasTemporaryPopupAllowance: Bool
+
+    /// Whether "Only allow pop-ups for this visit" option should be shown (based on feature flags)
+    var showAllowPopupsForThisVisitOption: Bool {
+        featureFlagger.isFeatureOn(.popupBlocking) && featureFlagger.isFeatureOn(.allowPopupsForCurrentPage)
+    }
 
     // MARK: - Initialization
 
     init(
         domain: String,
         usedPermissions: Permissions,
+        popupQueries: [PermissionAuthorizationQuery] = [],
         permissionManager: PermissionManagerProtocol,
+        featureFlagger: FeatureFlagger,
         removePermission: @escaping (PermissionType) -> Void,
         reloadPage: @escaping () -> Void,
         dismissPopover: @escaping () -> Void,
+        openPopup: ((PermissionAuthorizationQuery) -> Void)? = nil,
+        setTemporaryPopupAllowance: (() -> Void)? = nil,
+        resetTemporaryPopupAllowance: (() -> Void)? = nil,
+        hasTemporaryPopupAllowance: Bool = false,
         systemPermissionManager: SystemPermissionManagerProtocol = SystemPermissionManager()
     ) {
         self.domain = domain
         self.usedPermissions = usedPermissions
+        self.popupQueries = popupQueries
         self.permissionManager = permissionManager
+        self.featureFlagger = featureFlagger
         self.removePermissionFromTab = removePermission
         self.reloadPage = reloadPage
         self.dismissPopover = dismissPopover
+        self.openPopup = openPopup
+        self.setTemporaryPopupAllowance = setTemporaryPopupAllowance
+        self.resetTemporaryPopupAllowance = resetTemporaryPopupAllowance
+        self.hasTemporaryPopupAllowance = hasTemporaryPopupAllowance
         self.systemPermissionManager = systemPermissionManager
 
         loadPermissions()
@@ -90,6 +159,46 @@ final class PermissionCenterViewModel: ObservableObject {
         permissionManager.setPermission(decision, forDomain: domain, permissionType: permissionType)
     }
 
+    /// Updates the popup decision (special handling for popups)
+    func setPopupDecision(_ decision: PopupDecision) {
+        switch decision {
+        case .allowForThisVisit:
+            // Allow only the grouped empty/about URL popups (non-empty ones are opened via individual links)
+            let emptyUrlQueries = popupQueries.filter { query in
+                guard let url = query.url else { return true }
+                return url.isEmpty || url.navigationalScheme == .about
+            }
+            for query in emptyUrlQueries {
+                openPopup?(query)
+            }
+            permissionManager.setPermission(.ask, forDomain: domain, permissionType: .popups)
+            setTemporaryPopupAllowance?()
+        case .notify:
+            permissionManager.setPermission(.ask, forDomain: domain, permissionType: .popups)
+            resetTemporaryPopupAllowance?()
+        case .alwaysAllow:
+            permissionManager.setPermission(.allow, forDomain: domain, permissionType: .popups)
+            resetTemporaryPopupAllowance?()
+        }
+    }
+
+    /// Returns the current popup decision based on persisted permission and temporary allowance
+    func currentPopupDecision() -> PopupDecision {
+        let persistedValue = permissionManager.permission(forDomain: domain, permissionType: .popups)
+        if hasTemporaryPopupAllowance && persistedValue == .ask {
+            return .allowForThisVisit
+        } else if persistedValue == .allow {
+            return .alwaysAllow
+        } else {
+            return .notify
+        }
+    }
+
+    /// Opens a specific blocked popup
+    func openBlockedPopup(_ popup: BlockedPopup) {
+        openPopup?(popup.query)
+    }
+
     /// Removes the permission completely (from webview, tracking, and storage)
     func removePermission(_ permissionType: PermissionType) {
         // Track removed permissions to prevent re-adding on reload
@@ -97,6 +206,11 @@ final class PermissionCenterViewModel: ObservableObject {
         removePermissionFromTab(permissionType)
         // Also remove from UI immediately
         permissionItems.removeAll { $0.permissionType == permissionType }
+
+        // Reset temporary popup allowance when removing popup permission
+        if permissionType == .popups {
+            resetTemporaryPopupAllowance?()
+        }
 
         // Reload page to ensure website loses access
         reloadPage()
@@ -116,12 +230,23 @@ final class PermissionCenterViewModel: ObservableObject {
                 let decision = permissionManager.permission(forDomain: domain, permissionType: permissionType)
                 let isSystemDisabled = checkSystemDisabled(for: permissionType)
 
+                // For popups, populate the blocked popup URLs from queries
+                let blockedPopups: [BlockedPopup]
+                if permissionType == .popups {
+                    blockedPopups = popupQueries.map { query in
+                        BlockedPopup(url: query.url, query: query)
+                    }
+                } else {
+                    blockedPopups = []
+                }
+
                 return PermissionCenterItem(
                     id: permissionType,
                     permissionType: permissionType,
                     domain: domain,
                     decision: decision,
-                    isSystemDisabled: isSystemDisabled
+                    isSystemDisabled: isSystemDisabled,
+                    blockedPopups: blockedPopups
                 )
             }.sorted { $0.permissionType.rawValue < $1.permissionType.rawValue }
     }

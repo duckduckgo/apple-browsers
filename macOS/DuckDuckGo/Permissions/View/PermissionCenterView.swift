@@ -25,6 +25,11 @@ struct PermissionCenterView: View {
 
     @ObservedObject var viewModel: PermissionCenterViewModel
 
+    /// Use a wider popover when popup permissions are present due to longer dropdown options
+    private var popoverWidth: CGFloat {
+        viewModel.permissionItems.contains { $0.permissionType == .popups } ? 450 : 360
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // Header
@@ -39,15 +44,32 @@ struct PermissionCenterView: View {
             // Permission rows in a rounded container
             VStack(spacing: 0) {
                 ForEach(viewModel.permissionItems) { item in
-                    PermissionRowView(
-                        item: item,
-                        onDecisionChanged: { decision in
-                            viewModel.setDecision(decision, for: item.permissionType)
-                        },
-                        onRemove: {
-                            viewModel.removePermission(item.permissionType)
-                        }
-                    )
+                    if item.permissionType == .popups {
+                        PopupPermissionRowView(
+                            item: item,
+                            currentDecision: viewModel.currentPopupDecision(),
+                            showAllowForThisVisitOption: viewModel.showAllowPopupsForThisVisitOption,
+                            onDecisionChanged: { decision in
+                                viewModel.setPopupDecision(decision)
+                            },
+                            onOpenPopup: { popup in
+                                viewModel.openBlockedPopup(popup)
+                            },
+                            onRemove: {
+                                viewModel.removePermission(item.permissionType)
+                            }
+                        )
+                    } else {
+                        PermissionRowView(
+                            item: item,
+                            onDecisionChanged: { decision in
+                                viewModel.setDecision(decision, for: item.permissionType)
+                            },
+                            onRemove: {
+                                viewModel.removePermission(item.permissionType)
+                            }
+                        )
+                    }
 
                     if item.id != viewModel.permissionItems.last?.id {
                         Divider()
@@ -63,7 +85,7 @@ struct PermissionCenterView: View {
             .padding(.horizontal, 16)
             .padding(.bottom, 16)
         }
-        .frame(width: 360)
+        .frame(width: popoverWidth)
         .background(Color(designSystemColor: .containerFillPrimary))
     }
 }
@@ -216,5 +238,151 @@ struct PermissionRowView: View {
     private func openSystemSettings() {
         guard let url = item.permissionType.systemSettingsURL else { return }
         NSWorkspace.shared.open(url)
+    }
+}
+
+// MARK: - PopupPermissionRowView
+
+struct PopupPermissionRowView: View {
+
+    let item: PermissionCenterItem
+    let currentDecision: PopupDecision
+    let showAllowForThisVisitOption: Bool
+    let onDecisionChanged: (PopupDecision) -> Void
+    let onOpenPopup: (BlockedPopup) -> Void
+    let onRemove: () -> Void
+
+    @State private var isRemoveButtonHovered = false
+    @State private var selectedDecision: PopupDecision
+
+    init(
+        item: PermissionCenterItem,
+        currentDecision: PopupDecision,
+        showAllowForThisVisitOption: Bool,
+        onDecisionChanged: @escaping (PopupDecision) -> Void,
+        onOpenPopup: @escaping (BlockedPopup) -> Void,
+        onRemove: @escaping () -> Void
+    ) {
+        self.item = item
+        self.currentDecision = currentDecision
+        self.showAllowForThisVisitOption = showAllowForThisVisitOption
+        self.onDecisionChanged = onDecisionChanged
+        self.onOpenPopup = onOpenPopup
+        self.onRemove = onRemove
+        // If "allow for this visit" option is not available and that was the current decision, fall back to notify
+        let effectiveDecision = (!showAllowForThisVisitOption && currentDecision == .allowForThisVisit) ? .notify : currentDecision
+        self._selectedDecision = State(initialValue: effectiveDecision)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Main row with icon, name, dropdown, and remove button
+            HStack(spacing: 8) {
+                // Icon
+                Image(systemName: "rectangle.on.rectangle")
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .frame(width: 24, height: 24)
+
+                // Permission name
+                Text(item.displayName)
+                    .font(.system(size: 13))
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+
+                Spacer()
+
+                // Decision dropdown
+                popupDecisionPopUpButton
+
+                // Remove button with hover effect
+                Button(action: onRemove) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                }
+                .buttonStyle(PlainButtonStyle())
+                .frame(width: 16, height: 16)
+                .background(
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(isRemoveButtonHovered ? Color(.buttonMouseOver) : Color.clear)
+                )
+                .onHover { hovering in
+                    isRemoveButtonHovered = hovering
+                }
+            }
+            .padding(.leading, 12)
+            .padding(.trailing, 12)
+            .padding(.vertical, 12)
+
+            // Blocked popups section (if any)
+            if !item.blockedPopups.isEmpty {
+                VStack(alignment: .leading, spacing: 4) {
+                    // Header: "Blocked X pop-ups"
+                    if let headerText = item.blockedPopupsHeaderText {
+                        Text(headerText)
+                            .font(.system(size: 11))
+                            .foregroundColor(Color(designSystemColor: .textSecondary))
+                            .padding(.bottom, 4)
+                    }
+
+                    // Links to open each blocked popup (only show non-empty URLs)
+                    // Empty/about: URLs are grouped and handled via "Only allow for this visit"
+                    ForEach(item.visibleBlockedPopups) { popup in
+                        Button(action: { onOpenPopup(popup) }) {
+                            Text(popupLinkText(for: popup))
+                                .font(.system(size: 12))
+                                .foregroundColor(.accentColor)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                        }
+                        .buttonStyle(PlainButtonStyle())
+                        .onHover { hovering in
+                            if hovering {
+                                NSCursor.pointingHand.push()
+                            } else {
+                                NSCursor.pop()
+                            }
+                        }
+                    }
+                }
+                .padding(.leading, 44)
+                .padding(.trailing, 12)
+                .padding(.bottom, 12)
+            }
+        }
+        .onChange(of: selectedDecision) { newValue in
+            onDecisionChanged(newValue)
+        }
+    }
+
+    private func popupLinkText(for popup: BlockedPopup) -> String {
+        let urlString = popup.displayURL.isEmpty ? "" : popup.displayURL
+        return String(format: UserText.permissionPopupOpenFormat, urlString)
+    }
+
+    private var popupDecisionPopUpButton: some View {
+        NSPopUpButtonView(selection: $selectedDecision) {
+            let button = NSPopUpButton()
+            button.bezelStyle = .accessoryBarAction
+            button.isBordered = true
+            button.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+
+            var decisions: [(PopupDecision, String)] = []
+
+            // Only show "allow for this visit" when feature flags are enabled
+            if showAllowForThisVisitOption {
+                decisions.append((.allowForThisVisit, UserText.permissionPopupAllowPopupsForPage))
+            }
+
+            decisions.append((.notify, UserText.privacyDashboardPopupsAlwaysAsk))
+            decisions.append((.alwaysAllow, UserText.privacyDashboardPermissionAlwaysAllow))
+
+            for (decision, title) in decisions {
+                let menuItem = button.menu?.addItem(withTitle: title, action: nil, keyEquivalent: "")
+                menuItem?.representedObject = decision
+            }
+
+            return button
+        }
+        .fixedSize()
     }
 }

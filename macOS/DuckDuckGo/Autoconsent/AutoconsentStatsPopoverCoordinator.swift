@@ -151,10 +151,11 @@ final class AutoconsentStatsPopoverCoordinator {
     private func openNewTabWithSpecialAction() {
         windowControllersManager.showTab(with: .newtab)
 
-        //        if let newTabPageViewModel = windowControllersManager.mainWindowController?.mainViewController.browserTabViewController.newTabPageWebViewModel {
-        //            NSApp.delegateTyped.newTabPageCustomizationModel.customizerOpener.openSettings(for: newTabPageViewModel.webView)
-//                    NSApp.delegateTyped.protectionsReportModel.scroller.scroll(for: webView)
-        //        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            if let newTabPageViewModel = self.windowControllersManager.mainWindowController?.mainViewController.browserTabViewController.newTabPageWebViewModel {
+                NSApp.delegateTyped.newTabPageProtectionsReportModel.scroller.scroll(for: newTabPageViewModel.webView)
+            }
+        }
     }
 
     func dismissDialogDueToNewTabBeingShown() {

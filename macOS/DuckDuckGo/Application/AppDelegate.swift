@@ -189,7 +189,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         windowControllersManager: windowControllersManager,
         tabsPreferences: tabsPreferences,
         newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration),
-        winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator
+        winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
+        protectionsReportModel: newTabPageProtectionsReportModel
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
@@ -204,6 +205,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let autoconsentStats: AutoconsentStatsCollecting
     let activeRemoteMessageModel: ActiveRemoteMessageModel
     let newTabPageCustomizationModel: NewTabPageCustomizationModel
+    private(set) lazy var newTabPageProtectionsReportModel: NewTabPageProtectionsReportModel = NewTabPageProtectionsReportModel(
+        privacyStats: privacyStats,
+        autoconsentStats: autoconsentStats,
+        keyValueStore: keyValueStore,
+        burnAnimationSettingChanges: visualizeFireSettingsDecider.shouldShowFireAnimationPublisher,
+        showBurnAnimation: visualizeFireSettingsDecider.shouldShowFireAnimation,
+        isAutoconsentEnabled: { self.cookiePopupProtectionPreferences.isAutoconsentEnabled },
+        getLegacyIsViewExpandedSetting: settingsMigrator.isViewExpanded,
+        getLegacyActiveFeedSetting: settingsMigrator.activeFeed
+    )
+    private let settingsMigrator = NewTabPageProtectionsReportSettingsMigrator(legacyKeyValueStore: UserDefaultsWrapper<Any>.sharedDefaults)
+
     let remoteMessagingClient: RemoteMessagingClient!
     let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
     let defaultBrowserAndDockPromptService: DefaultBrowserAndDockPromptService
@@ -1695,7 +1708,8 @@ extension AppDelegate: UserScriptDependenciesProviding {
             windowControllersManager: windowControllersManager,
             tabsPreferences: tabsPreferences,
             newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration),
-            winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator
+            winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
+            protectionsReportModel: newTabPageProtectionsReportModel
         )
     }
 }

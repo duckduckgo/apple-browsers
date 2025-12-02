@@ -95,6 +95,13 @@ extension PermissionType {
         return false
     }
 
+    var isPopups: Bool {
+        if case .popups = self {
+            return true
+        }
+        return false
+    }
+
 }
 
 extension Array where Element == PermissionType {

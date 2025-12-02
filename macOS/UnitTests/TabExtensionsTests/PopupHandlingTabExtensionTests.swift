@@ -92,10 +92,26 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             newWindowPolicyDecisionMakers: { nil },
             featureFlagger: mockFeatureFlagger,
             popupBlockingConfig: mockPopupBlockingConfig,
+            tld: TLD(),
             machAbsTimeProvider: { [weak self] in self!.mockMachAbsTime! },
             interactionEventsPublisher: webView.interactionEventsPublisher.eraseToAnyPublisher(),
             isTabPinned: { isTabPinned },
             isBurner: isBurner
+        )
+    }
+
+    private func makeMockNavigationAction(url: URL, isUserInitiated: Bool = false) -> WKNavigationAction {
+        let sourceFrame = WKFrameInfoMock(
+            webView: webView,
+            securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://example.com")!),
+            request: URLRequest(url: URL(string: "https://example.com")!),
+            isMainFrame: true
+        )
+        return MockWKNavigationAction(
+            request: URLRequest(url: url),
+            targetFrame: nil,
+            sourceFrame: sourceFrame,
+            isUserInitiated: isUserInitiated
         )
     }
 
@@ -1667,12 +1683,512 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             "Middle-click should return .allow with tab policy and selected = false"
         )
     }
+
+        // MARK: - Allowlist Tests
+
+    @MainActor
+    func testWhenSourceDomainExactMatchInAllowlist_ThenPopupAllowedWithoutPermission() {
+        // GIVEN - Exact domain match in allowlist
+        mockPopupBlockingConfig.allowlist = ["example.com"]
+        popupHandlingExtension = createExtension()
+
+        let popupExpectation = expectation(description: "Popup created")
+        createChildTab = { _, _, _ in
+            popupExpectation.fulfill()
+            return nil
+        }
+
+        // WHEN - Non-user-initiated popup from exact allowlisted domain
+        let sourceFrame = WKFrameInfoMock(
+            webView: webView,
+            securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://example.com")!),
+            request: URLRequest(url: URL(string: "https://example.com")!),
+            isMainFrame: true
+        )
+        let navigationAction = MockWKNavigationAction(
+            request: URLRequest(url: URL(string: "https://popup.com")!),
+            targetFrame: nil,
+            sourceFrame: sourceFrame,
+            isUserInitiated: false
+        )
+        _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
+
+        // THEN - Popup allowed immediately without permission request
+        wait(for: [popupExpectation], timeout: 0.5)
+    }
+
+    @MainActor
+    func testWhenSourceSubdomainMatchesAllowlistedETLDplus1_ThenPopupAllowed() {
+        // GIVEN - Allowlist contains eTLD+1
+        mockPopupBlockingConfig.allowlist = ["google.com"]
+        popupHandlingExtension = createExtension()
+
+        let popupExpectation = expectation(description: "Popup created")
+        createChildTab = { _, _, _ in
+            popupExpectation.fulfill()
+            return nil
+        }
+
+        // WHEN - Popup from subdomain (accounts.google.com)
+        let sourceFrame = WKFrameInfoMock(
+            webView: webView,
+            securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://accounts.google.com")!),
+            request: URLRequest(url: URL(string: "https://accounts.google.com")!),
+            isMainFrame: true
+        )
+        let navigationAction = MockWKNavigationAction(
+            request: URLRequest(url: URL(string: "https://popup.com")!),
+            targetFrame: nil,
+            sourceFrame: sourceFrame,
+            isUserInitiated: false
+        )
+        _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
+
+        // THEN - Popup allowed (strips to parent domain google.com which is in allowlist)
+        wait(for: [popupExpectation], timeout: 0.5)
+    }
+
+    @MainActor
+    func testWhenSourceApexDomainInAllowlist_ThenPopupAllowed() {
+        // GIVEN - Allowlist contains eTLD+1
+        mockPopupBlockingConfig.allowlist = ["google.com"]
+        popupHandlingExtension = createExtension()
+
+        let popupExpectation = expectation(description: "Popup created")
+        createChildTab = { _, _, _ in
+            popupExpectation.fulfill()
+            return nil
+        }
+
+        // WHEN - Popup from apex domain (google.com itself)
+        let sourceFrame = WKFrameInfoMock(
+            webView: webView,
+            securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://google.com")!),
+            request: URLRequest(url: URL(string: "https://google.com")!),
+            isMainFrame: true
+        )
+        let navigationAction = MockWKNavigationAction(
+            request: URLRequest(url: URL(string: "https://popup.com")!),
+            targetFrame: nil,
+            sourceFrame: sourceFrame,
+            isUserInitiated: false
+        )
+        _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
+
+        // THEN - Popup allowed (google.com is in allowlist)
+        wait(for: [popupExpectation], timeout: 0.5)
+    }
+
+    @MainActor
+    func testWhenSourceDomainNotInAllowlist_ThenPopupRequiresPermission() {
+        // GIVEN
+        mockPopupBlockingConfig.allowlist = ["example.com"]
+        popupHandlingExtension = createExtension()
+        testPermissionManager.setPermission(.deny, forDomain: "other.com", permissionType: .popups)
+
+        let popupCreatedExpectation = expectation(description: "Popup not created")
+        popupCreatedExpectation.isInverted = true
+        createChildTab = { _, _, _ in
+            popupCreatedExpectation.fulfill()
+            return nil
+        }
+
+        // WHEN - Popup from non-allowlisted domain
+        let sourceFrame = WKFrameInfoMock(
+            webView: webView,
+            securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://other.com")!),
+            request: URLRequest(url: URL(string: "https://other.com")!),
+            isMainFrame: true
+        )
+        let navigationAction = MockWKNavigationAction(
+            request: URLRequest(url: URL(string: "https://popup.com")!),
+            targetFrame: nil,
+            sourceFrame: sourceFrame,
+            isUserInitiated: false
+        )
+        _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
+
+        // THEN - Popup blocked (requires permission)
+        wait(for: [popupCreatedExpectation], timeout: 0.5)
+    }
+
+    @MainActor
+    func testWhenMultipleDomainsInAllowlist_ThenAllAreAllowed() {
+        // GIVEN - Multiple domains in allowlist
+        mockPopupBlockingConfig.allowlist = ["github.com", "reddit.com", "zoom.us"]
+        popupHandlingExtension = createExtension()
+
+        // Test exact match: github.com
+        let githubExpectation = expectation(description: "GitHub popup created")
+        createChildTab = { _, _, _ in
+            githubExpectation.fulfill()
+            return nil
+        }
+
+        let githubFrame = WKFrameInfoMock(
+            webView: webView,
+            securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://github.com")!),
+            request: URLRequest(url: URL(string: "https://github.com")!),
+            isMainFrame: true
+        )
+        let githubAction = MockWKNavigationAction(
+            request: URLRequest(url: URL(string: "https://popup.com")!),
+            targetFrame: nil,
+            sourceFrame: githubFrame,
+            isUserInitiated: false
+        )
+        _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: githubAction, windowFeatures: windowFeatures)
+        wait(for: [githubExpectation], timeout: 0.5)
+
+        // Test parent domain match: oauth.reddit.com matches reddit.com
+        let redditExpectation = expectation(description: "Reddit popup created")
+        createChildTab = { _, _, _ in
+            redditExpectation.fulfill()
+            return nil
+        }
+
+        let redditFrame = WKFrameInfoMock(
+            webView: webView,
+            securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://oauth.reddit.com")!),
+            request: URLRequest(url: URL(string: "https://oauth.reddit.com")!),
+            isMainFrame: true
+        )
+        let redditAction = MockWKNavigationAction(
+            request: URLRequest(url: URL(string: "https://popup.com")!),
+            targetFrame: nil,
+            sourceFrame: redditFrame,
+            isUserInitiated: false
+        )
+        _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: redditAction, windowFeatures: windowFeatures)
+        wait(for: [redditExpectation], timeout: 0.5)
+    }
+
+    @MainActor
+    func testWhenParentDomainInAllowlist_ThenSubdomainsAreAlsoAllowed() {
+        // GIVEN - Parent domain in allowlist
+        mockPopupBlockingConfig.allowlist = ["subdomain.example.com"]
+        popupHandlingExtension = createExtension()
+        testPermissionManager.setPermission(.deny, forDomain: "deep.subdomain.example.com", permissionType: .popups)
+
+        let popupCreatedExpectation = expectation(description: "Popup created")
+        createChildTab = { _, _, _ in
+            popupCreatedExpectation.fulfill()
+            return nil
+        }
+
+        // WHEN - Popup from deep.subdomain.example.com (child of allowlisted subdomain.example.com)
+        let sourceFrame = WKFrameInfoMock(
+            webView: webView,
+            securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://deep.subdomain.example.com")!),
+            request: URLRequest(url: URL(string: "https://deep.subdomain.example.com")!),
+            isMainFrame: true
+        )
+        let navigationAction = MockWKNavigationAction(
+            request: URLRequest(url: URL(string: "https://popup.com")!),
+            targetFrame: nil,
+            sourceFrame: sourceFrame,
+            isUserInitiated: false
+        )
+        _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
+
+        // THEN - Popup allowed (parent domain matches)
+        wait(for: [popupCreatedExpectation], timeout: 0.5)
+    }
+
+    @MainActor
+    func testWhenETLDplus1InAllowlist_ThenAllSubdomainsAreAllowed() {
+        // GIVEN - eTLD+1 (apex domain) in allowlist
+        mockPopupBlockingConfig.allowlist = ["example.com"]
+        popupHandlingExtension = createExtension()
+        testPermissionManager.setPermission(.deny, forDomain: "deep.sub.example.com", permissionType: .popups)
+
+        let popupCreatedExpectation = expectation(description: "Popup created")
+        createChildTab = { _, _, _ in
+            popupCreatedExpectation.fulfill()
+            return nil
+        }
+
+        // WHEN - Popup from deep.sub.example.com (child of allowlisted example.com)
+        let sourceFrame = WKFrameInfoMock(
+            webView: webView,
+            securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://deep.sub.example.com")!),
+            request: URLRequest(url: URL(string: "https://deep.sub.example.com")!),
+            isMainFrame: true
+        )
+        let navigationAction = MockWKNavigationAction(
+            request: URLRequest(url: URL(string: "https://popup.com")!),
+            targetFrame: nil,
+            sourceFrame: sourceFrame,
+            isUserInitiated: false
+        )
+        _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
+
+        // THEN - Popup allowed (eTLD+1 matches)
+        wait(for: [popupCreatedExpectation], timeout: 0.5)
+    }
+
+    @MainActor
+    func testWhenDeepSubdomainInAllowlist_ThenVeryDeepSubdomainsAreAllowed() {
+        // GIVEN - Deep subdomain in allowlist
+        mockPopupBlockingConfig.allowlist = ["x.example.com"]
+        popupHandlingExtension = createExtension()
+        testPermissionManager.setPermission(.deny, forDomain: "a.b.c.x.example.com", permissionType: .popups)
+
+        let popupCreatedExpectation = expectation(description: "Popup created")
+        createChildTab = { _, _, _ in
+            popupCreatedExpectation.fulfill()
+            return nil
+        }
+
+        // WHEN - Popup from very deep subdomain
+        let sourceFrame = WKFrameInfoMock(
+            webView: webView,
+            securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://a.b.c.x.example.com")!),
+            request: URLRequest(url: URL(string: "https://a.b.c.x.example.com")!),
+            isMainFrame: true
+        )
+        let navigationAction = MockWKNavigationAction(
+            request: URLRequest(url: URL(string: "https://popup.com")!),
+            targetFrame: nil,
+            sourceFrame: sourceFrame,
+            isUserInitiated: false
+        )
+        _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
+
+        // THEN - Popup allowed (parent domain x.example.com matches)
+        wait(for: [popupCreatedExpectation], timeout: 0.5)
+    }
+
+    @MainActor
+    func testWhenOnlyChildDomainInAllowlist_ThenParentDomainNotAllowed() {
+        // GIVEN - Only child domain in allowlist (not parent)
+        mockPopupBlockingConfig.allowlist = ["child.example.com"]
+        popupHandlingExtension = createExtension()
+        testPermissionManager.setPermission(.deny, forDomain: "example.com", permissionType: .popups)
+
+        let popupCreatedExpectation = expectation(description: "Popup not created")
+        popupCreatedExpectation.isInverted = true
+        createChildTab = { _, _, _ in
+            popupCreatedExpectation.fulfill()
+            return nil
+        }
+
+        // WHEN - Popup from parent domain (example.com) not in allowlist
+        let sourceFrame = WKFrameInfoMock(
+            webView: webView,
+            securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://example.com")!),
+            request: URLRequest(url: URL(string: "https://example.com")!),
+            isMainFrame: true
+        )
+        let navigationAction = MockWKNavigationAction(
+            request: URLRequest(url: URL(string: "https://popup.com")!),
+            targetFrame: nil,
+            sourceFrame: sourceFrame,
+            isUserInitiated: false
+        )
+        _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
+
+        // THEN - Popup blocked (parent not in allowlist)
+        wait(for: [popupCreatedExpectation], timeout: 0.5)
+    }
+
+    @MainActor
+    func testWhenOnlyChildDomainInAllowlist_ThenSiblingDomainNotAllowed() {
+        // GIVEN - Only one subdomain in allowlist
+        mockPopupBlockingConfig.allowlist = ["allowed.example.com"]
+        popupHandlingExtension = createExtension()
+        testPermissionManager.setPermission(.deny, forDomain: "notallowed.example.com", permissionType: .popups)
+
+        let popupCreatedExpectation = expectation(description: "Popup not created")
+        popupCreatedExpectation.isInverted = true
+        createChildTab = { _, _, _ in
+            popupCreatedExpectation.fulfill()
+            return nil
+        }
+
+        // WHEN - Popup from sibling domain (notallowed.example.com) not in allowlist
+        let sourceFrame = WKFrameInfoMock(
+            webView: webView,
+            securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://notallowed.example.com")!),
+            request: URLRequest(url: URL(string: "https://notallowed.example.com")!),
+            isMainFrame: true
+        )
+        let navigationAction = MockWKNavigationAction(
+            request: URLRequest(url: URL(string: "https://popup.com")!),
+            targetFrame: nil,
+            sourceFrame: sourceFrame,
+            isUserInitiated: false
+        )
+        _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
+
+        // THEN - Popup blocked (sibling domain not in allowlist)
+        wait(for: [popupCreatedExpectation], timeout: 0.5)
+    }
+
+    @MainActor
+    func testWhenSourceDomainIsInvalidTLD_ThenPopupNotAllowedByAllowlist() {
+        // GIVEN
+        mockPopupBlockingConfig.allowlist = ["example.com"]
+        popupHandlingExtension = createExtension()
+        testPermissionManager.setPermission(.deny, forDomain: "invalidtld", permissionType: .popups)
+
+        let popupCreatedExpectation = expectation(description: "Popup not created")
+        popupCreatedExpectation.isInverted = true
+        createChildTab = { _, _, _ in
+            popupCreatedExpectation.fulfill()
+            return nil
+        }
+
+        // WHEN - Popup from invalid domain
+        let sourceFrame = WKFrameInfoMock(
+            webView: webView,
+            securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://invalidtld")!),
+            request: URLRequest(url: URL(string: "https://invalidtld")!),
+            isMainFrame: true
+        )
+        let navigationAction = MockWKNavigationAction(
+            request: URLRequest(url: URL(string: "https://popup.com")!),
+            targetFrame: nil,
+            sourceFrame: sourceFrame,
+            isUserInitiated: false
+        )
+        _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
+
+        // THEN - Popup blocked
+        wait(for: [popupCreatedExpectation], timeout: 0.5)
+    }
+
+    @MainActor
+    func testWhenSourceDomainHasDifferentCasing_ThenExactMatchStillWorks() {
+        // GIVEN - Allowlist with lowercase domain
+        mockPopupBlockingConfig.allowlist = ["github.com"]
+        popupHandlingExtension = createExtension()
+
+        let popupExpectation = expectation(description: "Popup created")
+        createChildTab = { _, _, _ in
+            popupExpectation.fulfill()
+            return nil
+        }
+
+        // WHEN - Popup from domain with mixed casing (GiThUb.CoM)
+        let sourceFrame = WKFrameInfoMock(
+            webView: webView,
+            securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://GiThUb.CoM")!),
+            request: URLRequest(url: URL(string: "https://GiThUb.CoM")!),
+            isMainFrame: true
+        )
+        let navigationAction = MockWKNavigationAction(
+            request: URLRequest(url: URL(string: "https://popup.com")!),
+            targetFrame: nil,
+            sourceFrame: sourceFrame,
+            isUserInitiated: false
+        )
+        _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
+
+        // THEN - Popup allowed (case-insensitive match)
+        wait(for: [popupExpectation], timeout: 0.5)
+    }
+
+    @MainActor
+    func testWhenSourceDomainHasWwwPrefix_ThenExactMatchStillWorks() {
+        // GIVEN - Allowlist with domain without www
+        mockPopupBlockingConfig.allowlist = ["github.com"]
+        popupHandlingExtension = createExtension()
+
+        let popupExpectation = expectation(description: "Popup created")
+        createChildTab = { _, _, _ in
+            popupExpectation.fulfill()
+            return nil
+        }
+
+        // WHEN - Popup from www subdomain
+        let sourceFrame = WKFrameInfoMock(
+            webView: webView,
+            securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://www.github.com")!),
+            request: URLRequest(url: URL(string: "https://www.github.com")!),
+            isMainFrame: true
+        )
+        let navigationAction = MockWKNavigationAction(
+            request: URLRequest(url: URL(string: "https://popup.com")!),
+            targetFrame: nil,
+            sourceFrame: sourceFrame,
+            isUserInitiated: false
+        )
+        _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
+
+        // THEN - Popup allowed (www prefix stripped)
+        wait(for: [popupExpectation], timeout: 0.5)
+    }
+
+    @MainActor
+    func testWhenSourceDomainHasBothWwwAndDifferentCasing_ThenMatchStillWorks() {
+        // GIVEN - Allowlist with lowercase domain
+        mockPopupBlockingConfig.allowlist = ["reddit.com"]
+        popupHandlingExtension = createExtension()
+
+        let popupExpectation = expectation(description: "Popup created")
+        createChildTab = { _, _, _ in
+            popupExpectation.fulfill()
+            return nil
+        }
+
+        // WHEN - Popup from www subdomain with mixed casing (www.ReDdIt.CoM)
+        let sourceFrame = WKFrameInfoMock(
+            webView: webView,
+            securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://www.ReDdIt.CoM")!),
+            request: URLRequest(url: URL(string: "https://www.ReDdIt.CoM")!),
+            isMainFrame: true
+        )
+        let navigationAction = MockWKNavigationAction(
+            request: URLRequest(url: URL(string: "https://popup.com")!),
+            targetFrame: nil,
+            sourceFrame: sourceFrame,
+            isUserInitiated: false
+        )
+        _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
+
+        // THEN - Popup allowed (www prefix stripped, case-insensitive, parent domain matches)
+        wait(for: [popupExpectation], timeout: 0.5)
+    }
+
+    @MainActor
+    func testWhenAllowlistAndSourceHasMixedCasing_ThenMatchWorks() {
+        // GIVEN - Allowlist entry
+        mockPopupBlockingConfig.allowlist = ["google.com"]
+        popupHandlingExtension = createExtension()
+
+        let popupExpectation = expectation(description: "Popup created")
+        createChildTab = { _, _, _ in
+            popupExpectation.fulfill()
+            return nil
+        }
+
+        // WHEN - Popup from subdomain with mixed casing (AcCoUnTs.GoOgLe.CoM)
+        let sourceFrame = WKFrameInfoMock(
+            webView: webView,
+            securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://AcCoUnTs.GoOgLe.CoM")!),
+            request: URLRequest(url: URL(string: "https://AcCoUnTs.GoOgLe.CoM")!),
+            isMainFrame: true
+        )
+        let navigationAction = MockWKNavigationAction(
+            request: URLRequest(url: URL(string: "https://popup.com")!),
+            targetFrame: nil,
+            sourceFrame: sourceFrame,
+            isUserInitiated: false
+        )
+        _ = popupHandlingExtension.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
+
+        // THEN - Popup allowed (parent domain matching handles case-insensitivity)
+        wait(for: [popupExpectation], timeout: 0.5)
+    }
+
 }
 
 // MARK: - Mock Objects
 
 class MockPopupBlockingConfiguration: PopupBlockingConfiguration {
     var userInitiatedPopupThreshold: TimeInterval = 6.0
+    var allowlist: Set<String> = []
 }
 
 class TestPermissionManager: PermissionManagerProtocol {

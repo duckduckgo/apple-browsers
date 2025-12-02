@@ -1009,7 +1009,11 @@ extension MainViewController {
         if flags.contains(.shift) || flags.contains(.option),
            featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
            let buttonsViewController = navigationBarViewController.addressBarViewController?.addressBarButtonsViewController {
+            let isSwitchingToAIChatMode = buttonsViewController.searchModeToggleControl?.selectedSegment == 0
             buttonsViewController.toggleSearchMode()
+            if isSwitchingToAIChatMode {
+                self.aiChatOmnibarTextContainerViewController.insertNewline()
+            }
             return true
         } else if flags.contains(.control),
                   featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
@@ -1211,6 +1215,11 @@ extension MainViewController: BrowserTabViewControllerDelegate {
 extension MainViewController: AIChatOmnibarControllerDelegate {
     func aiChatOmnibarControllerDidSubmit(_ controller: AIChatOmnibarController) {
         updateAIChatOmnibarContainerVisibility(visible: false, shouldKeepSelection: false)
+    }
+
+    func aiChatOmnibarController(_ controller: AIChatOmnibarController, didRequestNavigationToURL url: URL) {
+        updateAIChatOmnibarContainerVisibility(visible: false, shouldKeepSelection: false)
+        browserTabViewController.loadURLInCurrentTab(url)
     }
 }
 

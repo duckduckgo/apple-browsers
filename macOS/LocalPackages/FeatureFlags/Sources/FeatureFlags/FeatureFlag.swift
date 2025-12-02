@@ -140,14 +140,8 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866475316806
     case hangReporting
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866476547580
-    case importChromeShortcuts
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866618404342
     case updateSafariBookmarksImport
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866715760013
-    case updateFirefoxBookmarksImport
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866618564878
     case disableFireAnimation
@@ -197,9 +191,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720696560
     case unifiedURLPredictor
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866619862984?focus=true
-    case subscriptionRestoreWidePixelMeasurement
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866619917130
     case authV2WideEventEnabled
 
@@ -239,9 +230,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866721275379
     case scheduledDefaultBrowserAndDockPromptsInactiveUser
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866478113546
-    case pinnedTabsViewRewrite
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866479296718
     case tabProgressIndicator
@@ -286,18 +274,24 @@ public enum FeatureFlag: String, CaseIterable {
     /// Show popup permission button in inactive state when temporary allowance is active
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212017701300919?focus=true
     case popupPermissionButtonPersistence
+
+    /// New permission management view
+    /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1211985993948718?focus=true
+    case newPermissionView
+
+    /// Tab closing event recreation (failsafe for removing private API)
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212206087745586?focus=true
+    case tabClosingEventRecreation
+
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
     public var defaultValue: Bool {
         switch self {
-        case .importChromeShortcuts,
-                .updateSafariBookmarksImport,
-                .updateFirefoxBookmarksImport,
+        case .updateSafariBookmarksImport,
                 .supportsAlternateStripePaymentFlow,
                 .refactorOfSyncPreferences,
                 .subscriptionPurchaseWidePixelMeasurement,
-                .subscriptionRestoreWidePixelMeasurement,
                 .authV2WideEventEnabled,
                 .syncCreditCards,
                 .syncIdentities,
@@ -306,12 +300,12 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .fireDialogIndividualSitesLink,
                 .historyViewSitesSection,
                 .blurryAddressBarTahoeFix,
-                .pinnedTabsViewRewrite,
                 .vpnConnectionWidePixelMeasurement,
                 .allowPopupsForCurrentPage,
                 .extendedUserInitiatedPopupTimeout,
                 .suppressEmptyPopUpsOnApproval,
-                .popupPermissionButtonPersistence:
+                .popupPermissionButtonPersistence,
+                .tabClosingEventRecreation:
             true
         default:
             false
@@ -356,9 +350,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatImprovements,
                 .aiChatKeepSession,
                 .aiChatOmnibarToggle,
-                .importChromeShortcuts,
                 .updateSafariBookmarksImport,
-                .updateFirefoxBookmarksImport,
                 .disableFireAnimation,
                 .newTabPageOmnibar,
                 .newTabPagePerTab,
@@ -372,7 +364,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .dbpEmailConfirmationDecoupling,
                 .dbpRemoteBrokerDelivery,
                 .subscriptionPurchaseWidePixelMeasurement,
-                .subscriptionRestoreWidePixelMeasurement,
                 .syncFeatureLevel3,
                 .themes,
                 .appStoreUpdateFlow,
@@ -388,7 +379,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .storeSerpSettings,
                 .blurryAddressBarTahoeFix,
                 .dataImportNewExperience,
-                .pinnedTabsViewRewrite,
                 .tabProgressIndicator,
                 .attributedMetrics,
                 .vpnConnectionWidePixelMeasurement,
@@ -402,7 +392,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .extendedUserInitiatedPopupTimeout,
                 .suppressEmptyPopUpsOnApproval,
                 .allowPopupsForCurrentPage,
-                .popupPermissionButtonPersistence:
+                .popupPermissionButtonPersistence,
+                .newPermissionView:
             return true
         case .sslCertificatesBypass,
                 .appendAtbToSerpQueries,
@@ -412,7 +403,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .credentialsImportPromotionForExistingUsers,
                 .scheduledSetDefaultBrowserAndAddToDockPrompts,
                 .fireDialogIndividualSitesLink,
-                .scheduledDefaultBrowserAndDockPromptsInactiveUser:
+                .scheduledDefaultBrowserAndDockPromptsInactiveUser,
+                .tabClosingEventRecreation:
             return false
         }
     }
@@ -499,12 +491,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.willSoonDropBigSurSupport))
         case .hangReporting:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.hangReporting))
-        case .importChromeShortcuts:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.importChromeShortcuts))
         case .updateSafariBookmarksImport:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.updateSafariBookmarksImport))
-        case .updateFirefoxBookmarksImport:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.updateFirefoxBookmarksImport))
         case .disableFireAnimation:
             return .remoteReleasable(.feature(.disableFireAnimation))
         case .newTabPageOmnibar:
@@ -543,8 +531,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.authV2WideEventEnabled))
         case .webKitPerformanceReporting:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webKitPerformanceReporting))
-        case .subscriptionRestoreWidePixelMeasurement:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionRestoreWidePixelMeasurement))
         case .winBackOffer:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.winBackOffer))
         case .blackFridayCampaign:
@@ -561,8 +547,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .scheduledDefaultBrowserAndDockPromptsInactiveUser:
             return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPromptsInactiveUser))
-        case .pinnedTabsViewRewrite:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.pinnedTabsViewRewrite))
         case .tabProgressIndicator:
             return .internalOnly()
         case .attributedMetrics:
@@ -589,7 +573,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PopupBlockingSubfeature.allowPopupsForCurrentPage))
         case .popupPermissionButtonPersistence:
             return .remoteReleasable(.subfeature(PopupBlockingSubfeature.popupPermissionButtonPersistence))
+
+        case .newPermissionView:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.newPermissionView))
+
+        case .tabClosingEventRecreation:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.tabClosingEventRecreation))
         }
+
     }
 }
 

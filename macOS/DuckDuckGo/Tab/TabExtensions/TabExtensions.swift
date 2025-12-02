@@ -213,6 +213,7 @@ extension TabExtensionsBuilder {
                                       newWindowPolicyDecisionMakers: args.newWindowPolicyDecisionMakers,
                                       featureFlagger: dependencies.featureFlagger,
                                       popupBlockingConfig: DefaultPopupBlockingConfiguration(privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager),
+                                      tld: dependencies.privacyFeatures.contentBlocking.tld,
                                       interactionEventsPublisher: args.interactionEventsPublisher,
                                       isTabPinned: args.isTabPinned,
                                       isBurner: args.isTabBurner)

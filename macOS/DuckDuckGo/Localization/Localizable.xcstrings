@@ -45839,6 +45839,54 @@
         }
       }
     },
+    "import.password.entry.help.dialog.example.text" : {
+      "comment" : "Explanatory text shown on an example of a system prompt that asks for the user's password.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo wants to use your confidential information stored in your keychain."
+          }
+        }
+      }
+    },
+    "import.password.entry.help.instructions" : {
+      "comment" : "Instructions for password entry help",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Click **Show macOS Message** and select **Allow** when the macOS message appears."
+          }
+        }
+      }
+    },
+    "import.password.entry.help.show.macos.message.button" : {
+      "comment" : "Button text to trigger the macOS keychain prompt",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show macOS Message"
+          }
+        }
+      }
+    },
+    "import.password.entry.help.title" : {
+      "comment" : "Title for the password entry help screen",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Want to try again? macOS needs your permission to finish importing."
+          }
+        }
+      }
+    },
     "import.passwords.from.source.automatic.error" : {
       "comment" : "Error text saying that passwords could not be automatically imported from a particular source (e.g Chrome, Firefox)",
       "extractionState" : "extracted_with_value",

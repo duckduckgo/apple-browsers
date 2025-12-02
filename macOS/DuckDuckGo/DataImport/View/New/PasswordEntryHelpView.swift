@@ -18,17 +18,69 @@
 
 import Foundation
 import SwiftUI
+import DesignResourcesKit
+import DesignResourcesKitIcons
+import SwiftUIExtensions
 
 struct PasswordEntryHelpView: View {
+    let onRetry: () -> Void
+
     var body: some View {
-        VStack(alignment: .center) {
-            Text("Password entry help")
-                .font(.title2)
-                .fontWeight(.semibold)
-                .foregroundColor(.primary)
+        HStack(alignment: .top, spacing: 0) {
+            VStack(alignment: .center) {
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.exclamationRecolorableInvert)
+                    .resizable()
+                    .frame(width: 16, height: 16)
+                    .offset(y: 1)
+            }
+            .frame(width: 50)
+
+            VStack(alignment: .leading, spacing: 20) {
+                titleSection
+                instructionsText
+                showMessageButton
+                keychainPromptExample
+            }
+            .padding(.trailing, 50)
         }
-        .padding(.vertical, 40)
-        .padding(.horizontal, 20)
+        .padding(.top, 40)
+    }
+    
+    private var titleSection: some View {
+        Text(UserText.passwordEntryHelpTitle)
+            .font(.title2)
+            .fontWeight(.semibold)
+            .foregroundColor(.primary)
+    }
+    
+    @ViewBuilder
+    private var instructionsText: some View {
+        if #available(macOS 12, *), let instructionsAttr = try? AttributedString(markdown: UserText.passwordEntryHelpInstructions) {
+            Text(instructionsAttr)
+                .font(.body)
+                .foregroundColor(.primary)
+                .multilineTextAlignment(.leading)
+        } else {
+            Text(UserText.passwordEntryHelpInstructions)
+                .font(.body)
+                .foregroundColor(.primary)
+                .multilineTextAlignment(.leading)
+        }
+    }
+    
+    private var showMessageButton: some View {
+        Button {
+            onRetry()
+        } label: {
+            Text(UserText.passwordEntryHelpShowMacOSMessageButton)
+                .padding(.horizontal, 12)
+        }
+        .buttonStyle(DefaultActionButtonStyle(enabled: true))
+        .padding(.bottom, 8)
+    }
+    
+    private var keychainPromptExample: some View {
+        PasswordEntryExampleView(helpText: UserText.passwordEntryHelpDialogExampleText)
+            .padding(.bottom, 40)
     }
 }
-

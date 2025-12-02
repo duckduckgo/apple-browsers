@@ -21,17 +21,17 @@ import SwiftUI
 import DesignResourcesKit
 
 struct PasswordEntryExampleView: View {
-    let customText: String?
-    
-    init(customText: String? = nil) {
-        self.customText = customText
+    let helpText: String?
+
+    init(helpText: String? = nil) {
+        self.helpText = helpText
     }
     
     var body: some View {
         ZStack(alignment: .topLeading) {
             promptImage
-            if let customText = customText {
-                customTextView(customText)
+            if let helpText {
+                helpTextView(helpText)
             } else {
                 textPlaceholders
             }
@@ -45,9 +45,9 @@ struct PasswordEntryExampleView: View {
         Image(.importKeychainPromptContainer)
     }
     
-    private func customTextView(_ text: String) -> some View {
+    private func helpTextView(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 13))
+            .font(.body)
             .foregroundColor(Color(designSystemColor: .textPrimary))
             .multilineTextAlignment(.leading)
             .fixedSize(horizontal: false, vertical: true)
@@ -122,7 +122,7 @@ private extension PasswordEntryExampleView {
     VStack(spacing: 20) {
         PasswordEntryExampleView()
         
-        PasswordEntryExampleView(customText: "DuckDuckGo wants to use your confidential information stored in your keychain.")
+        PasswordEntryExampleView(helpText: UserText.passwordEntryHelpDialogExampleText)
     }
 }
 

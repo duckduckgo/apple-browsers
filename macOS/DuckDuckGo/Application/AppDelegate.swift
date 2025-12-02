@@ -110,6 +110,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var appIconChanger: AppIconChanger!
     private var autoClearHandler: AutoClearHandler!
     private(set) var autofillPixelReporter: AutofillPixelReporter?
+    private(set) var quitSurveyDecider: QuitSurveyDeciding?
 
     private(set) var syncDataProviders: SyncDataProvidersSource?
     private(set) var syncService: DDGSyncing?
@@ -1100,6 +1101,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let urlEventHandlerResult = urlEventHandler.applicationDidFinishLaunching()
 
         setUpAutoClearHandler()
+        setUpQuitSurveyDecider()
 
         BWManager.shared.initCommunication()
 
@@ -1292,8 +1294,28 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        // Show quit survey for first-time quitters (new users within 14 days)
+        if let decider = quitSurveyDecider, decider.shouldShowQuitSurvey {
+            let alert = NSAlert()
+            alert.messageText = "Quit DuckDuckGo?"
+            alert.informativeText = "This is your first time quitting the application."
+            alert.alertStyle = .informational
+            alert.addButton(withTitle: "Quit Now")
+            alert.addButton(withTitle: "Cancel")
+
+            let response = alert.runModal()
+
+            // Mark as shown regardless of user choice
+            decider.markQuitSurveyShown()
+
+            if response == .alertSecondButtonReturn {
+                // User clicked "Cancel"
+                return .terminateCancel
+            }
+        }
+
         if !downloadManager.downloads.isEmpty {
-            // if there‘re downloads without location chosen yet (save dialog should display) - ignore them
+            // if there're downloads without location chosen yet (save dialog should display) - ignore them
             let activeDownloads = Set(downloadManager.downloads.filter { $0.state.isDownloading })
             if !activeDownloads.isEmpty {
                 let alert = NSAlert.activeDownloadsTerminationAlert(for: downloadManager.downloads)
@@ -1598,6 +1620,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 NSApplication.shared.reply(toApplicationShouldTerminate: true)
             }
         }
+    }
+
+    @MainActor
+    private func setUpQuitSurveyDecider() {
+        quitSurveyDecider = QuitSurveyDecider(
+            featureFlagger: featureFlagger,
+            dataClearingPreferences: dataClearingPreferences,
+            downloadManager: downloadManager,
+            installDate: AppDelegate.firstLaunchDate
+        )
     }
 
     private func setUpAutofillPixelReporter() {

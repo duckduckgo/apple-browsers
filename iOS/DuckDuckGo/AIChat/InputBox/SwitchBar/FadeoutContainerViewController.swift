@@ -51,7 +51,6 @@ final class FadeoutContainerViewController: UIViewController {
         self.switchBarHandler = switchBarHandler
         self.featureFlagger = featureFlagger
         super.init(nibName: nil, bundle: nil)
-        setupBindings()
     }
 
     @available(*, unavailable)
@@ -70,6 +69,7 @@ final class FadeoutContainerViewController: UIViewController {
         setupConstraints()
         setupSwipeGestures()
         configureInitialState()
+        setupBindings()
     }
 
     func setMode(_ mode: TextEntryMode) {
@@ -150,6 +150,8 @@ final class FadeoutContainerViewController: UIViewController {
     }
 
     private func updateVisibility(animated: Bool) {
+        guard searchPageContainer != nil, chatPageContainer != nil else { return }
+
         let isSearchMode = switchBarHandler.currentToggleState == .search
         targetProgress = isSearchMode ? 0.0 : 1.0
 

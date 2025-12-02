@@ -150,9 +150,18 @@ struct DataImportViewModel {
 
     private var userReportText: String = ""
 
-    var shouldHideProgressAndFooter: Bool {
+    var shouldHideProgress: Bool {
         switch screen {
         case .moreInfo, .passwordEntryHelp:
+            return true
+        default:
+            return false
+        }
+    }
+    
+    var shouldHideFooter: Bool {
+        switch screen {
+        case .moreInfo:
             return true
         default:
             return false
@@ -161,7 +170,7 @@ struct DataImportViewModel {
 
     var shouldHidePasswordExplainerView: Bool {
         switch screen {
-        case .moreInfo, .profilePicker, .passwordEntryHelp:
+        case .moreInfo, .profilePicker:
             return true
         default:
             return false

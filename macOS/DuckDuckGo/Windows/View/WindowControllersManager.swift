@@ -588,7 +588,40 @@ extension WindowControllersManagerProtocol {
         })
     }
 
+    // MARK: - Web Notifications Support
+
+    /// Finds a tab by its UUID across all windows.
+    /// - Parameter uuid: The tab's UUID.
+    /// - Returns: The tab if found, nil otherwise.
+    func findTab(byUUID uuid: String) -> Tab? {
+        for windowController in mainWindowControllers {
+            let tabCollectionViewModel = windowController.mainViewController.tabCollectionViewModel
+            if let tab = tabCollectionViewModel.tabCollection.tabs.first(where: { $0.uuid == uuid }) {
+                return tab
+            }
+        }
+        return nil
+    }
+
+    /// Focuses the window containing the given tab and selects the tab.
+    /// - Parameter tab: The tab to focus.
+    func focusTab(_ tab: Tab) {
+        guard let windowController = windowController(for: tab),
+              let index = windowController.mainViewController.tabCollectionViewModel.indexInAllTabs(of: tab) else {
+            return
+        }
+        windowController.window?.makeKeyAndOrderFront(nil)
+        windowController.mainViewController.tabCollectionViewModel.select(at: index)
+    }
+
+    /// Focuses the most recently active browser window.
+    func focusBrowser() {
+        lastKeyMainWindowController?.window?.makeKeyAndOrderFront(nil)
+    }
+
 }
+
+extension WindowControllersManager: WebNotificationTabFinding {}
 
 extension WindowControllersManager: OnboardingNavigating {
     @MainActor

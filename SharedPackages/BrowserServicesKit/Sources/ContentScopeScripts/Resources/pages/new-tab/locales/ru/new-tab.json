@@ -77,10 +77,18 @@
     "note" : "Placeholder to indicate that no tracking activity was blocked in the last 7 days"
   },
   "stats_countBlockedSingular" : {
+    "title" : "Попытка отслеживания заблокирована",
+    "note" : "The sub headline indicating that a single tracker was blocked. This sub headline starts with a capital letter"
+  },
+  "stats_countBlockedSingularLegacy" : {
     "title" : "Пресечено попыток отслеживания: 1",
     "note" : "The main headline indicating that a single tracker was blocked"
   },
   "stats_countBlockedPlural" : {
+    "title" : "заблокировано (попытки отслеживания)",
+    "note" : "The sub headline indicating that more than 1 tracker has been blocked. This sub headline starts with a capital letter"
+  },
+  "stats_countBlockedPluralLegacy" : {
     "title" : "Пресечено попыток отслеживания: {count}",
     "note" : "The main headline indicating that more than 1 attempt has been blocked. Eg: '2 tracking attempts blocked'"
   },
@@ -92,13 +100,25 @@
     "title" : "Защита включена",
     "note" : "Placeholder to indicate that no ads or tracking activity was blocked in the last 7 days"
   },
-  "stats_countBlockedAdsAndTrackersSingular" : {
+  "stats_countBlockedAdsAndTrackersSingularLegacy" : {
     "title" : "Заблокирована <b>1</b> попытка рекламы и отслеживания",
     "note" : "The main headline indicating that a single ad or tracking attempt was blocked"
   },
-  "stats_countBlockedAdsAndTrackersPlural" : {
+  "stats_countBlockedAdsAndTrackersPluralLegacy" : {
     "title" : "Заблокировано рекламы и попыток отслеживания: <b>{count}</b>",
     "note" : "The main headline indicating that more than 1 ad or tracking attempt has been blocked. Eg: '2 advertising & tracking attempts blocked"
+  },
+  "stats_totalCookiePopUpsBlockedSingular" : {
+    "title" : "Всплывающее окно куки заблокировано",
+    "note" : "The heading indicating that a single cookie pop-up was handled by the CPM"
+  },
+  "stats_totalCookiePopUpsBlockedPlural" : {
+    "title" : "заблокировано (всплывающие окна куки)",
+    "note" : "The heading indicating multiple cookie pop-ups were handled by the CPM"
+  },
+  "stats_protectionsReportInfo" : {
+    "title" : "Отображает попытки отслеживания, заблокированные за последние 7 дней, а также количество всплывающих окон куки, заблокированных с начала использования браузера. <span>Эту статистику можно сбросить с помощью кнопки Fire Button.</span>",
+    "note" : "Text explaining how to reset the protections stats"
   },
   "stats_feedCountBlockedSingular" : {
     "title" : "За последние 7 дней DuckDuckGo заблокировал попыток: 1",
@@ -409,8 +429,20 @@
     "note" : "Placeholder message indicating that no trackers are blocked"
   },
   "activity_countBlockedPlural" : {
+    "title" : "Пресечено попыток отслеживания: {count}",
+    "note" : "New pill text indicating that more than 1 attempt has been blocked. Eg: '2 Tracking attempts blocked'. Uppercase T is by design"
+  },
+  "activity_countBlockedPluralLegacy" : {
     "title" : "Пресечено попыток отслеживания: <b>{count}</b>",
     "note" : "The main headline indicating that more than 1 attempt has been blocked. Eg: '2 tracking attempts blocked'"
+  },
+  "activity_countBlockedSingular" : {
+    "title" : "Пресечено попыток отслеживания: {count}",
+    "note" : "Pill text indicating that 1 attempt has been blocked. Eg: '1 Tracking attempt blocked'"
+  },
+  "activity_cookiePopUpBlocked" : {
+    "title" : "Всплывающее окно куки заблокировано",
+    "note" : "Pill text indicating that we have blocked cookie pop-ups"
   },
   "activity_noRecentAdsAndTrackers_subtitle" : {
     "title" : "Недавно посещенные сайты появятся здесь. Продолжайте бродить по интернету и узнайте, сколько трекеров и рекламы поймал DuckDuckGo!",

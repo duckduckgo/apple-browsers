@@ -197,6 +197,11 @@ public extension DesignSystemImages {
             public static var openIn: DesignSystemImage { .init(resource: .openIn16) }
             public static var options: DesignSystemImage { .init(resource: .options16) }
             public static var paste: DesignSystemImage { .init(resource: .paste16) }
+            public static var permissions: DesignSystemImage { .init(resource: .permissions16) }
+            public static var permissionsLocation: DesignSystemImage { .init(resource: .permissionsLocation16) }
+            public static var permissionsLocationSolid: DesignSystemImage { .init(resource: .permissionsLocationSolid16) }
+            public static var permissionsNotification: DesignSystemImage { .init(resource: .permissionsNotifications16) }
+            public static var permissionsNotificationSolid: DesignSystemImage { .init(resource: .permissionsNotificationsSolid16) }
             public static var pin: DesignSystemImage { .init(resource: .pin16) }
             public static var platformApple: DesignSystemImage { .init(resource: .platformApple16) }
             public static var platformMacOS: DesignSystemImage { .init(resource: .platformMacOS16) }

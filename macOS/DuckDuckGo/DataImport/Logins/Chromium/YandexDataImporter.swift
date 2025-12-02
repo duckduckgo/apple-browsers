@@ -26,8 +26,7 @@ final class YandexDataImporter: ChromiumDataImporter {
         super.init(profile: profile,
                    loginImporter: nil,
                    bookmarkImporter: bookmarkImporter,
-                   faviconManager: NSApp.delegateTyped.faviconManager,
-                   featureFlagger: featureFlagger)
+                   faviconManager: NSApp.delegateTyped.faviconManager)
     }
 
     override var importableTypes: [DataImport.DataType] {

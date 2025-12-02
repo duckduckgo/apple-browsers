@@ -679,17 +679,8 @@ final class AddressBarViewController: NSViewController {
         let isNewTab = tabViewModel?.tab.content == .newtab
         let addressBarPlaceholder: String
 
-        let shouldShowDuckAIHint = isFirstResponder
-        && featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
-        && aiChatSettings.isAIFeaturesEnabled
-        && aiChatSettings.showSearchAndDuckAIToggle
-
         if isNewTab {
-            if shouldShowDuckAIHint {
-                addressBarPlaceholder = UserText.addressBarPlaceholderWithDuckAI
-            } else {
-                addressBarPlaceholder = UserText.addressBarPlaceholder
-            }
+            addressBarPlaceholder = UserText.addressBarPlaceholder
         } else {
             addressBarPlaceholder = ""
         }

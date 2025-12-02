@@ -22,6 +22,9 @@ import os.log
 public struct CodableHelper {
 
     public static func decode<Input: Any, T: Decodable>(from input: Input) -> T? {
+        guard JSONSerialization.isValidJSONObject(input) else {
+            return nil
+        }
         do {
             let json = try JSONSerialization.data(withJSONObject: input)
             return try JSONDecoder().decode(T.self, from: json)

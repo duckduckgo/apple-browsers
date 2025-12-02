@@ -1,5 +1,5 @@
 //
-//  PasswordEntryHelpView.swift
+//  PasswordEntryRetryPromptView.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -22,7 +22,7 @@ import DesignResourcesKit
 import DesignResourcesKitIcons
 import SwiftUIExtensions
 
-struct PasswordEntryHelpView: View {
+struct PasswordEntryRetryPromptView: View {
     let onRetry: () -> Void
 
     var body: some View {

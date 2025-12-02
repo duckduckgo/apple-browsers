@@ -126,7 +126,7 @@ struct DataImportView: ModalView {
             case .moreInfo:
                 NewImportMoreInfoView()
             case .passwordEntryHelp:
-                PasswordEntryHelpView(
+                PasswordEntryRetryPromptView(
                     onRetry: {
                         model.initiateImport()
                     }

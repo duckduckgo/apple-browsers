@@ -575,7 +575,7 @@ final class JobQueueManagerTests: XCTestCase {
         sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
             errorCollection = errors
         } completion: {
-            XCTFail()
+            XCTFail("Completion should not be called")
         }
 
         mockQueue.completeOperationsUpTo(index: 2)

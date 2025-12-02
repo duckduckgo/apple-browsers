@@ -55,7 +55,6 @@ final class PermissionCenterViewModel: ObservableObject {
     private let systemPermissionManager: SystemPermissionManagerProtocol
     private let usedPermissions: Permissions
     private let removePermissionFromTab: (PermissionType) -> Void
-    private let reloadPage: () -> Void
     private let dismissPopover: () -> Void
     private var cancellables = Set<AnyCancellable>()
     private var removedPermissions = Set<PermissionType>()
@@ -67,7 +66,6 @@ final class PermissionCenterViewModel: ObservableObject {
         usedPermissions: Permissions,
         permissionManager: PermissionManagerProtocol,
         removePermission: @escaping (PermissionType) -> Void,
-        reloadPage: @escaping () -> Void,
         dismissPopover: @escaping () -> Void,
         systemPermissionManager: SystemPermissionManagerProtocol = SystemPermissionManager()
     ) {
@@ -75,7 +73,6 @@ final class PermissionCenterViewModel: ObservableObject {
         self.usedPermissions = usedPermissions
         self.permissionManager = permissionManager
         self.removePermissionFromTab = removePermission
-        self.reloadPage = reloadPage
         self.dismissPopover = dismissPopover
         self.systemPermissionManager = systemPermissionManager
 
@@ -97,9 +94,6 @@ final class PermissionCenterViewModel: ObservableObject {
         removePermissionFromTab(permissionType)
         // Also remove from UI immediately
         permissionItems.removeAll { $0.permissionType == permissionType }
-
-        // Reload page to ensure website loses access
-        reloadPage()
 
         // Dismiss popover if no permissions left
         if permissionItems.isEmpty {

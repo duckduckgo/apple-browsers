@@ -234,7 +234,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             platform: .ios,
             products: [
                 SubscriptionTier(
-                    tier: "plus",
+                    tier: .plus,
                     features: [TierFeature(product: .networkProtection, name: .plus)],
                     options: [
                         SubscriptionOptionV2(id: "1",
@@ -262,7 +262,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
         XCTAssertEqual(tierOptions.platform, .ios)
         XCTAssertEqual(tierOptions.products.count, 1)
-        XCTAssertEqual(tierOptions.products[0].tier, "plus")
+        XCTAssertEqual(tierOptions.products[0].tier, .plus)
         XCTAssertFalse(tierOptions.products[0].options.isEmpty, "Should have purchase options when purchase is allowed")
     }
 
@@ -275,7 +275,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             platform: .ios,
             products: [
                 SubscriptionTier(
-                    tier: "plus",
+                    tier: .plus,
                     features: [TierFeature(product: .networkProtection, name: .plus)],
                     options: [
                         SubscriptionOptionV2(id: "1",
@@ -314,7 +314,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             platform: .ios,
             products: [
                 SubscriptionTier(
-                    tier: "plus",
+                    tier: .plus,
                     features: [TierFeature(product: .networkProtection, name: .plus)],
                     options: [
                         SubscriptionOptionV2(id: "1",

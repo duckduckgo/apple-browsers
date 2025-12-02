@@ -52,7 +52,7 @@ public struct GetTierProductsResponse: Codable {
 
 public struct TierProduct: Codable, Equatable {
     public let productName: String
-    public let tier: String
+    public let tier: TierName
     public let regions: [String]
     public let entitlements: [TierFeature]
     public let billingCycles: [BillingCycle]

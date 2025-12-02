@@ -86,7 +86,7 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
             XCTAssertEqual(success.products.count, 1)
 
             let tier = success.products[0]
-            XCTAssertEqual(tier.tier, "plus")
+            XCTAssertEqual(tier.tier, .plus)
             XCTAssertEqual(tier.features.count, 4)
             XCTAssertEqual(tier.options.count, 2)
 
@@ -109,7 +109,7 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
         let responseWithProTier = GetTierProductsResponse(products: [
             TierProduct(
                 productName: "Plus Subscription",
-                tier: "plus",
+                tier: .plus,
                 regions: ["us", "row"],
                 entitlements: [
                     TierFeature(product: .networkProtection, name: .plus)
@@ -120,7 +120,7 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
             ),
             TierProduct(
                 productName: "Pro Subscription",
-                tier: "pro",
+                tier: .pro,
                 regions: ["us", "row"],
                 entitlements: [
                     TierFeature(product: .networkProtection, name: .pro),
@@ -140,7 +140,7 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
         switch result {
         case .success(let success):
             XCTAssertEqual(success.products.count, 1)
-            XCTAssertEqual(success.products[0].tier, "plus")
+            XCTAssertEqual(success.products[0].tier, .plus)
         case .failure(let error):
             XCTFail("Unexpected failure: \(error)")
         }
@@ -151,7 +151,7 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
         let responseWithProTier = GetTierProductsResponse(products: [
             TierProduct(
                 productName: "Plus Subscription",
-                tier: "plus",
+                tier: .plus,
                 regions: ["us", "row"],
                 entitlements: [
                     TierFeature(product: .networkProtection, name: .plus)
@@ -162,7 +162,7 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
             ),
             TierProduct(
                 productName: "Pro Subscription",
-                tier: "pro",
+                tier: .pro,
                 regions: ["us", "row"],
                 entitlements: [
                     TierFeature(product: .networkProtection, name: .pro),
@@ -182,8 +182,8 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
         switch result {
         case .success(let success):
             XCTAssertEqual(success.products.count, 2)
-            XCTAssertTrue(success.products.contains(where: { $0.tier == "plus" }))
-            XCTAssertTrue(success.products.contains(where: { $0.tier == "pro" }))
+            XCTAssertTrue(success.products.contains(where: { $0.tier == .plus }))
+            XCTAssertTrue(success.products.contains(where: { $0.tier == .pro }))
         case .failure(let error):
             XCTFail("Unexpected failure: \(error)")
         }

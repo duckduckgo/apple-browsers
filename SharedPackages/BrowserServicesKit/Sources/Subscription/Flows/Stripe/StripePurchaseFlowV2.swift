@@ -161,7 +161,7 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
         // Filter pro tier products based on feature flag
         let filteredProducts = includeProTier
             ? productsResponse.products
-            : productsResponse.products.filter { $0.tier.lowercased() != "pro" }
+        : productsResponse.products.filter { $0.tier != .pro }
 
         guard !filteredProducts.isEmpty else {
             Logger.subscriptionStripePurchaseFlow.error("[StripePurchaseFlowV2] No products available after filtering")
@@ -172,7 +172,7 @@ public final class DefaultStripePurchaseFlowV2: StripePurchaseFlowV2 {
 
         for product in filteredProducts {
             guard let tier = createTier(from: product) else {
-                Logger.subscriptionStripePurchaseFlow.warning("[StripePurchaseFlowV2] Failed to create tier for \(product.tier)")
+                Logger.subscriptionStripePurchaseFlow.warning("[StripePurchaseFlowV2] Failed to create tier for \(product.tier.rawValue)")
                 continue
             }
             tiers.append(tier)

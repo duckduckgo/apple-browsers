@@ -31,7 +31,7 @@ struct SubscriptionTierOptionsTests {
         let yearlySubscriptionOffer = SubscriptionOptionOffer(type: .freeTrial, id: "2", durationInDays: 7, isUserEligible: true)
 
         let plusTier = SubscriptionTier(
-            tier: "plus",
+            tier: .plus,
             features: [TierFeature(product: .paidAIChat, name: .plus),
                        TierFeature(product: .networkProtection, name: .plus)],
             options: [
@@ -42,7 +42,7 @@ struct SubscriptionTierOptionsTests {
         )
 
         let proTier = SubscriptionTier(
-            tier: "pro",
+            tier: .pro,
             features: [TierFeature(product: .paidAIChat, name: .pro),
                        TierFeature(product: .networkProtection, name: .plus)],
             options: [
@@ -158,7 +158,7 @@ struct SubscriptionTierOptionsTests {
     @Test("Remove purchase options while preserving tier data")
     func withoutPurchaseOptions() {
         let plusTier = SubscriptionTier(
-            tier: "plus",
+            tier: .plus,
             features: [TierFeature(product: .networkProtection, name: .plus)],
             options: [
                 SubscriptionOptionV2(id: "1",
@@ -168,7 +168,7 @@ struct SubscriptionTierOptionsTests {
         )
 
         let proTier = SubscriptionTier(
-            tier: "pro",
+            tier: .pro,
             features: [TierFeature(product: .identityTheftRestoration, name: .plus),
                        TierFeature(product: .dataBrokerProtection, name: .plus),
                        TierFeature(product: .networkProtection, name: .plus)],
@@ -198,7 +198,7 @@ struct SubscriptionTierOptionsTests {
 
         // Verify second tier (pro)
         #expect(withoutOptions.products[1].tier == .pro)
-        #expect(withoutOptions.products[1].features == [TierFeature(product: .identityTheftRestoration, name: "plus"),
+        #expect(withoutOptions.products[1].features == [TierFeature(product: .identityTheftRestoration, name: .plus),
                                                         TierFeature(product: .dataBrokerProtection, name: .plus),
                                                         TierFeature(product: .networkProtection, name: .plus)])
         #expect(withoutOptions.products[1].options.isEmpty, "Pro tier should have no purchase options")

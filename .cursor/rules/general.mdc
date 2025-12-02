@@ -19,54 +19,79 @@ This is the DuckDuckGo browser for iOS and macOS, built with privacy-first princ
 - **Design**: DesignResourcesKit for colors/icons (MANDATORY)
 - **Testing**: >80% coverage required
 
-## Rule Files Reference
+## Available Rules (`.cursor/rules/`)
 
-### Core Development Rules (Apply to All Code)
-- `anti-patterns.md` - What NOT to do (memory leaks, force unwrapping, etc.)
-- `code-style.md` - Swift style guide and conventions
-- `privacy-security.md` - Privacy requirements (ALWAYS applies)
+Development rules are stored in `.cursor/rules/`.
+You MUST list all the available rules and you MUST consult the appropriate rule file before starting any work!
+
+### Core (Always Apply)
+- `anti-patterns.mdc` - What NOT to do; use with ViewModels, testing, WebView work
+- `code-style.mdc` - Swift style guide
+- `privacy-security.mdc` - Privacy requirements; use with network calls, analytics, credentials
+- `import-hygiene.mdc` - Import management and SwiftUI preview scoping
+- `logging-guidelines.mdc` - Logger usage (never print())
 
 ### Architecture & Patterns
-- `architecture.md` - MVVM, DI, and structural patterns
-- `property-wrappers.md` - @UserDefaultsWrapper and custom property wrappers
-- `feature-flags.md` - Type-safe feature flags and A/B testing
+- `architecture.mdc` - MVVM, DI patterns; use for new ViewModels
+- `project-structure.mdc` - Directory layout
+- `browserserviceskit-integration.mdc` - BSK integration; use for cross-platform code
+- `shared-packages.mdc` - Cross-platform packages; use for cross-platform code
+- `subscription-architecture.mdc` - Privacy Pro subscription
+
+### Feature Development
+- `feature-flags.mdc` + `feature-flags-addition.mdc` - Feature flags
+- `abn-experiment-framework.mdc` - A/B testing
+- `user-defaults-storage.mdc` - UserDefaults, @UserDefaultsWrapper; use for settings/preferences
 
 ### UI Development
-- `swiftui-style.md` - SwiftUI + DesignResourcesKit integration
-- `swiftui-advanced.md` - Advanced SwiftUI patterns and techniques
-- `webkit-browser.md` - WebView and browser-specific patterns
+- `swiftui-style.mdc` - SwiftUI + DesignResourcesKit; use for new ViewModels, UI work
+- `swiftui-advanced.mdc` - Advanced SwiftUI patterns
+- `design-system-designresourceskit.mdc` - Colors, typography, icons (MANDATORY)
+- `webkit-browser.mdc` - WebView patterns
 
-### Platform-Specific Rules
-- `ios-architecture.md` - iOS AppDependencyProvider, MainCoordinator, UIKit patterns
-- `macos-window-management.md` - macOS window management and AppKit patterns
-- `macos-system-integration.md` - macOS system services and extensions
+### Platform-Specific
+- `ios-architecture.mdc` - iOS AppDependencyProvider, MainCoordinator, UIKit
+- `ios-tracker-blocking-implementation.mdc` - iOS content blocking
+- `macos-window-management.mdc` - macOS windows
+- `macos-system-integration.mdc` - macOS system services
+- `macos-singletons-removal.mdc` - Removing singletons from macOS
 
-### Specialized Development
-- `testing.md` - Testing patterns and requirements and xcodebuild commands
-- `ui-testing.md` - UI testing guidelines and best practices for macOS browser
-- `performance-optimization.md` - Performance best practices
-- `shared-packages.md` - Cross-platform package development
-- `analytics-patterns.md` - Pixel analytics and event tracking
+### Feature-Specific
+- `duckplayer.mdc` + `duckplayer-userscript-integration.mdc` - DuckPlayer
+- `securevault-guidelines.mdc` - Credentials/vault storage
+- `app-lifecycle-state-machine.mdc` - App state management
+- `network-quality-*.mdc` (4 files) - Network quality assessment
+
+### Testing & Quality
+- `testing.mdc` - Testing patterns, xcodebuild commands
+- `ui-testing.mdc` - UI testing for macOS browser
+- `maestro-device-selection.mdc` - Maestro test device config
+- `performance-optimization.mdc` - Performance; use with network calls
+
+### Workflow & Process
+- `development-commands.mdc` - Build commands
+- `pull-request.mdc` + `branch-naming-conventions.mdc` - PRs and git workflow
+- `analytics-patterns.mdc` - Pixel analytics
 
 ## Quick Start Checklist
 
 ### Before Writing Any Code:
-1. ✅ Read `privacy-security.md` - Privacy is non-negotiable
-2. ✅ Check platform rules (`ios-architecture.md` or `macos-architecture.md`)
-3. ✅ Review `anti-patterns.md` - Avoid common mistakes
+1. ✅ Read `privacy-security.mdc` - Privacy is non-negotiable
+2. ✅ Check platform rules (`ios-architecture.mdc` or `macos-system-integration.mdc`)
+3. ✅ Review `anti-patterns.mdc` - Avoid common mistakes
 4. ✅ REMEMBER: NEVER commit, push, or run tests without explicit user permission or unless explicitly asked to
 
 ### For UI Development:
-1. ✅ Use `swiftui-style.md` for SwiftUI components
+1. ✅ Use `swiftui-style.mdc` for SwiftUI components
 2. ✅ MUST use DesignResourcesKit colors: `Color(designSystemColor: .textPrimary)`
 3. ✅ MUST use DesignResourcesKit icons: `DesignSystemImages.Glyphs.Size16.add`
 
 ### For New Features:
-1. ✅ Follow `architecture.md` for MVVM + DI patterns
+1. ✅ Follow `architecture.mdc` for MVVM + DI patterns
 2. ✅ Use AppDependencyProvider (iOS) or equivalent (macOS)
-3. ✅ Write tests per `testing.md` requirements
+3. ✅ Write tests per `testing.mdc` requirements
 
-## Critical Don'ts (from anti-patterns.md)
+## Critical Don'ts (from anti-patterns.mdc)
 - ❌ NEVER commit, push changes, create or delete branches on git or trigger github actions without EXPLICIT user permission
 - ❌ NEVER run tests without EXPLICIT user permission or if user explicitly asked to in their prompt
 - ❌ NEVER use `.shared` singletons - use dependency injection instead
@@ -100,27 +125,14 @@ This is the DuckDuckGo browser for iOS and macOS, built with privacy-first princ
 ## Design System Usage (MANDATORY)
 **Example:** See [design-system-usage.swift](general/design-system-usage.swift)
 
-## When to Consult Specific Rules
-- **New ViewModels**: `architecture.md` + `swiftui-style.md` + `anti-patterns.md`
-- **Network calls**: `performance-optimization.md` + `privacy-security.md`
-- **Settings/Preferences**: Platform-specific rules + `property-wrappers.md`
-- **Feature flags**: `feature-flags.md`
-- **Analytics/Tracking**: `analytics-patterns.md` + `privacy-security.md`
-- **Advanced SwiftUI**: `swiftui-advanced.md`
-- **Testing**: `testing.md` + `anti-patterns.md`
-- **UI Testing**: `ui-testing.md` + `testing.md`
-- **Cross-platform code**: `shared-packages.md`
-- **WebView integration**: `webkit-browser.md` + `anti-patterns.md`
-- **macOS windows**: `macos-window-management.md` + `anti-patterns.md`
-- **macOS system features**: `macos-system-integration.md`
-
 ## Code Review Checklist
-1. Privacy implications assessed (`privacy-security.md`)
-2. Design system properly used (`swiftui-style.md`)
+1. Privacy implications assessed (`privacy-security.mdc`)
+2. Design system properly used (`design-system-designresourceskit.mdc`)
 3. Architecture patterns followed (platform-specific rules)
-4. Anti-patterns avoided (`anti-patterns.md`)
-5. Tests written and passing (`testing.md`)
-6. Performance considered (`performance-optimization.md`)
+4. Anti-patterns avoided (`anti-patterns.mdc`)
+5. Tests written and passing (`testing.mdc`)
+6. Performance considered (`performance-optimization.mdc`)
+7. PR template followed (`pull-request.mdc`)
 
 ## Git & Testing Workflow Rules
 

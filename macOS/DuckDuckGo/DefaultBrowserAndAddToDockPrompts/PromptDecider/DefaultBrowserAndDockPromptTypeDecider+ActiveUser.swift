@@ -56,9 +56,6 @@ extension DefaultBrowserAndDockPromptTypeDecider {
         ///    - Condition: `hasSeenBanner && daysSinceBannerShown >= 14`
         ///    - Stops if user clicks "Never Ask Again" (checked in parent)
         ///
-        /// **Feature Flag:**
-        /// - `FeatureFlag.scheduledSetDefaultBrowserAndAddToDockPrompts` must be enabled
-        ///
         /// **Debug:**
         /// - Use Debug menu → "SAD/ATT Prompts" → "Simulate Today's Date" to fast-forward time
         /// - Use "Advance by 14 Days" to jump forward by the default delay interval
@@ -68,10 +65,8 @@ extension DefaultBrowserAndDockPromptTypeDecider {
         /// - `DefaultBrowserAndDockPromptFeatureFlagger` - timing values and feature flags
         /// - `DefaultBrowserAndDockPromptDebugMenu` - debug tools for testing
         func promptType() -> DefaultBrowserAndDockPromptPresentationType? {
-            // If Feature is disabled return nil
-            guard featureFlagger.isDefaultBrowserAndDockPromptForActiveUsersFeatureEnabled else { return nil }
 
-            // If the user has not seen the popover and if they have installed the app at least `bannerAfterPopoverDelayDays` ago, show the popover.
+            // If the user has not seen the popover and if they have installed the app at least `firstPopoverDelayDays` ago, show the popover.
             // If the user has seen the popover but they have not seen the banner and they have seen the popover at least `bannerAfterPopoverDelayDays
             // If the user has seen not dismissed permanently the banner and the have seen the banner at least `bannerRepeatIntervalDays`, show the banner again.
             if !store.hasSeenPopover && daysSinceInstallProvider() >= featureFlagger.firstPopoverDelayDays {

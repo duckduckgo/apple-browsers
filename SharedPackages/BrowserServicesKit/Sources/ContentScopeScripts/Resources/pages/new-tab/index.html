@@ -4,12 +4,9 @@
     <title>New Tab Page</title>
     <style>
         body {
-            background-color: #fafafa;
-        }
-        @media (prefers-color-scheme: dark) {
-            body {
-                background-color: #333;
-            }
+            /* Token is replaced by native browser so background isn't white while NTP initializes */
+            --loading-color: $LOADING_COLOR$;
+            background: var(--loading-color);
         }
     </style>
     <meta name="robots" content="noindex,nofollow">

@@ -221,7 +221,7 @@ final class SuggestionViewModelTests: XCTestCase {
         let url = URL(string: urlString)!
         let suggestion = Suggestion.website(url: url)
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.aiChatOmnibarToggle]
+        featureFlagger.enabledFeatureFlags = [.aiChatOmnibarToggle, .aiChatOmnibarCluster]
 
         let suggestionViewModel = SuggestionViewModel(
             isHomePage: false,
@@ -257,7 +257,7 @@ final class SuggestionViewModelTests: XCTestCase {
         let url = URL(string: urlString)!
         let suggestion = Suggestion.website(url: url)
         let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags = [.aiChatOmnibarToggle]
+        featureFlagger.enabledFeatureFlags = [.aiChatOmnibarToggle, .aiChatOmnibarCluster]
 
         let suggestionViewModel = SuggestionViewModel(
             isHomePage: false,

@@ -42,6 +42,7 @@ final class SuggestionViewController: NSViewController {
     @IBOutlet weak var tableViewHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var pixelPerfectConstraint: NSLayoutConstraint!
     @IBOutlet weak var backgroundViewTopConstraint: NSLayoutConstraint!
+    @IBOutlet weak var topSeparatorView: NSView!
 
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
@@ -65,10 +66,13 @@ final class SuggestionViewController: NSViewController {
     }
 
     private var suggestionResultCancellable: AnyCancellable?
-    private var selectionIndexCancellable: AnyCancellable?
+    private var selectionSyncCancellable: AnyCancellable?
 
     private var eventMonitorCancellables = Set<AnyCancellable>()
     private var appObserver: Any?
+
+    /// Flag to prevent re-entrancy when programmatically updating table selection
+    private var isUpdatingTableSelection = false
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -79,10 +83,14 @@ final class SuggestionViewController: NSViewController {
         setupTableView()
         addTrackingArea()
         subscribeToSuggestionResult()
-        subscribeToSelectionIndex()
+        subscribeToSelectionSync()
         subscribeToThemeChanges()
 
         applyThemeStyle()
+
+        if Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
+            topSeparatorView?.isHidden = true
+        }
     }
 
     override func viewWillAppear() {
@@ -157,11 +165,14 @@ final class SuggestionViewController: NSViewController {
             }
     }
 
-    private func subscribeToSelectionIndex() {
-        selectionIndexCancellable = suggestionContainerViewModel.$selectedRowIndex.receive(on: DispatchQueue.main).sink { [weak self] selectedRowIndex in
-            guard let self else { return }
-            self.selectTableRow(at: selectedRowIndex)
-        }
+    /// Subscribes to view model selection changes (e.g., from keyboard navigation)
+    private func subscribeToSelectionSync() {
+        selectionSyncCancellable = suggestionContainerViewModel.$selectedRowIndex
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self, !self.isUpdatingTableSelection else { return }
+                self.syncTableSelectionWithViewModel()
+            }
     }
 
     private func displayNewSuggestions() {
@@ -185,24 +196,32 @@ final class SuggestionViewController: NSViewController {
                 suggestionContainerViewModel.selectRow(at: selectedRowCache)
             }
 
-            self.selectTableRow(at: self.suggestionContainerViewModel.selectedRowIndex)
+            syncTableSelectionWithViewModel()
         }
+    }
+
+    func syncTableSelectionWithViewModel() {
+        selectTableRow(at: suggestionContainerViewModel.selectedRowIndex)
     }
 
     private func selectTableRow(at rowIndex: Int?) {
         if tableView.selectedRow == rowIndex {
             if let rowIndex, let cell = tableView.view(atColumn: 0, row: rowIndex, makeIfNecessary: false) as? SuggestionTableCellView {
-                // Show the delete button if necessary
                 cell.updateDeleteImageViewVisibility()
             }
             return
         }
+
+        isUpdatingTableSelection = true
+        defer { isUpdatingTableSelection = false }
 
         guard let rowIndex,
               rowIndex >= 0,
               rowIndex < suggestionContainerViewModel.numberOfRows else {
             if let defaultRow = suggestionContainerViewModel.defaultSelectedRow {
                 tableView.selectRowIndexes(IndexSet(integer: defaultRow), byExtendingSelection: false)
+                // Sync view model with the default selection so keyboard navigation works correctly
+                suggestionContainerViewModel.selectRow(at: defaultRow)
             } else {
                 self.clearSelection()
             }
@@ -218,6 +237,7 @@ final class SuggestionViewController: NSViewController {
 
         guard tableRow >= 0 else {
             suggestionContainerViewModel.clearRowSelection()
+            syncTableSelectionWithViewModel()
             return
         }
 
@@ -226,6 +246,7 @@ final class SuggestionViewController: NSViewController {
         }
 
         suggestionContainerViewModel.selectRow(at: tableRow)
+        syncTableSelectionWithViewModel()
     }
 
     private func clearSelection() {
@@ -424,6 +445,8 @@ extension SuggestionViewController: NSTableViewDelegate {
     }
 
     func tableViewSelectionDidChange(_ notification: Notification) {
+        guard !isUpdatingTableSelection else { return }
+
         if tableView.selectedRow == -1 {
             suggestionContainerViewModel.clearRowSelection()
             return

@@ -53,7 +53,9 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
     private let syncDataProviders: SyncDataProviders
     private let appSettings: AppSettings
     private let keyValueStore: ThrowingKeyValueStoring
-    private let productSurfaceTelemetry: ProductSurfaceTelemetry
+
+    // Is set to nil once used as it should only be fired once per access
+    private var productSurfaceTelemetry: ProductSurfaceTelemetry?
 
     private var localUpdatesCancellable: AnyCancellable?
     private var syncUpdatesCancellable: AnyCancellable?
@@ -185,7 +187,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
                    syncDataProviders: SyncDataProviders,
                    appSettings: AppSettings,
                    keyValueStore: ThrowingKeyValueStoring,
-                   productSurfaceTelemetry: ProductSurfaceTelemetry
+                   productSurfaceTelemetry: ProductSurfaceTelemetry?
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.searchDataSource = SearchBookmarksDataSource(searchEngine: bookmarksSearch)
@@ -267,7 +269,11 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        productSurfaceTelemetry.bookmarksPageUsed(isRootFolder: viewModel.currentFolder?.isRoot == true)
+
+        // We only want to call this once per access to bookmarks page
+        productSurfaceTelemetry?.bookmarksPageUsed()
+        productSurfaceTelemetry = nil
+
         tableView.reloadData()
     }
 

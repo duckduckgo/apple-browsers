@@ -56,7 +56,7 @@ final class ProductSurfaceTelemetryTests: XCTestCase {
         telemetry.dataClearingUsed()
         telemetry.newTabPageUsed()
         telemetry.settingsUsed()
-        telemetry.bookmarksPageUsed(isRootFolder: true)
+        telemetry.bookmarksPageUsed()
         telemetry.passwordsPageUsed()
 
         XCTAssertNil(PixelFiringMock.lastDailyPixelInfo)
@@ -153,12 +153,9 @@ final class ProductSurfaceTelemetryTests: XCTestCase {
         XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.productTelemeterySurfaceUsageSettings.name)
     }
 
-    func testBookmarksPageUsed_FiresOnlyForRootFolder() {
+    func testBookmarksPageUsed_FireExpectedPixel() {
         let telemetry = makeTelemetry(enabled: true)
-        telemetry.bookmarksPageUsed(isRootFolder: false)
-        XCTAssertNil(PixelFiringMock.lastDailyPixelInfo)
-
-        telemetry.bookmarksPageUsed(isRootFolder: true)
+        telemetry.bookmarksPageUsed()
         XCTAssertEqual(PixelFiringMock.lastDailyPixelInfo?.pixelName, Pixel.Event.productTelemeterySurfaceUsageBookmarksPage.name)
     }
 

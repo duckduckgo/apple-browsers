@@ -35,6 +35,6 @@ public final class MockProductSurfaceTelemetry: ProductSurfaceTelemetry {
     public func dataClearingUsed() {}
     public func newTabPageUsed() {}
     public func settingsUsed() {}
-    public func bookmarksPageUsed(isRootFolder: Bool) {}
+    public func bookmarksPageUsed() {}
     public func passwordsPageUsed() {}
 }

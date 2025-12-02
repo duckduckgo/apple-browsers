@@ -43,13 +43,13 @@ final class SpinnerView: NSView {
         }
     }
 
-    var progressStartColor: NSColor = NSColor(designSystemColor: .iconsTertiary) {
+    var progressStartColor: NSColor = NSColor(designSystemColor: .spinnerStart) {
         didSet {
             refreshGradientColors()
         }
     }
 
-    var progressFinalColor: NSColor = NSColor(designSystemColor: .spinner) {
+    var progressFinalColor: NSColor = NSColor(designSystemColor: .spinnerFinal) {
         didSet {
             refreshGradientColors()
         }
@@ -199,7 +199,7 @@ private extension SpinnerView {
     func buildGradientLayer() -> CAGradientLayer {
         let gradient = CAGradientLayer()
         gradient.type = .conic
-        gradient.locations = [0, 0.6, 1]
+        gradient.locations = [0, 1]
         gradient.startPoint = CGPoint(x: 0.5, y: 0.5)
         gradient.endPoint = CGPoint(x: 0.5, y: 0)
         gradient.frame = bounds
@@ -243,12 +243,16 @@ private struct SpinnerGradientColors {
     private func gradient(baseColor: NSColor) -> [CGColor] {
         [
             baseColor.cgColor,
-            baseColor.withAlphaComponent(0.5).cgColor,
-            NSColor.clear.cgColor
+            baseColor.withAlphaComponent(0).cgColor
         ]
     }
 
     func gradientColors(rendered: Bool) -> [CGColor] {
-        rendered ? gradient(baseColor: finalColor) : gradient(baseColor: startColor)
+        var output: [CGColor] = []
+        NSAppearance.withAppAppearance {
+            output = rendered ? gradient(baseColor: finalColor) : gradient(baseColor: startColor)
+        }
+
+        return output
     }
 }

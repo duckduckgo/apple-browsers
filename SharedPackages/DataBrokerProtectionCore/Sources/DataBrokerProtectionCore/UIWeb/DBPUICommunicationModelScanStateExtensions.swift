@@ -146,8 +146,9 @@ public extension DBPUIScanAndOptOutMaintenanceState {
                                                                      laterDate: eightDaysAfterToday)
 
         let earliestScanPreferredRunDate = nonRemovedBrokerProfileQueryData.earliestScanPreferredRunDate() ?? currentDate
+        let displayDate = max(earliestScanPreferredRunDate, currentDate)
 
-        return DBPUIScanDate(date: earliestScanPreferredRunDate.timeIntervalSince1970, dataBrokers: brokers)
+        return DBPUIScanDate(date: displayDate.timeIntervalSince1970, dataBrokers: brokers)
     }
 }
 

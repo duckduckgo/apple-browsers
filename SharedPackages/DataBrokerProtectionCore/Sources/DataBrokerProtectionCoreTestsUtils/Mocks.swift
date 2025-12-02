@@ -1683,6 +1683,7 @@ public extension OptOutJobData {
 }
 
 public final class MockJobQueueManager: JobQueueManaging {
+    
     public var delegate: JobQueueManagerDelegate?
 
     public var debugRunningStatusString: String { return "" }
@@ -1721,6 +1722,9 @@ public final class MockJobQueueManager: JobQueueManaging {
     }
 
     public func stop() {
+    }
+
+    public func stopScheduledOperationsOnly() {
     }
 
     public func addEmailConfirmationJobs(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding) {

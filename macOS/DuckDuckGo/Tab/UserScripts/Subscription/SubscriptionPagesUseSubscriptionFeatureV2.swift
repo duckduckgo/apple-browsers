@@ -268,15 +268,15 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         case .success(let subscriptionTierOptions):
             // TEMPORARY: Check if Pro tier was unexpectedly returned
             let hasProTier = subscriptionTierOptions.products.contains { $0.tier.lowercased() == "pro" }
-            if hasProTier {
+            if hasProTier && !subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed {
                 subscriptionEventReporter.report(subscriptionTierOptionEvent: SubscriptionPixel.subscriptionTierOptionsUnexpectedProTier)
             }
 
             subscriptionEventReporter.report(subscriptionTierOptionEvent: SubscriptionPixel.subscriptionTierOptionsSuccess)
-            
+
             guard subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed else { return subscriptionTierOptions.withoutPurchaseOptions() }
             return subscriptionTierOptions
-            
+
         case .failure(let error):
             Logger.subscription.error("Failed to get tier options: \(String(describing: error), privacy: .public)")
 

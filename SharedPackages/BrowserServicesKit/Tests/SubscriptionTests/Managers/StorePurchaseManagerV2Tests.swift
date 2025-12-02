@@ -594,7 +594,7 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
             XCTFail("Expected success but got failure")
             return
         }
-        
+
         XCTAssertEqual(tierOptions.products.count, 1)
 
         let plusTier = tierOptions.products.first
@@ -668,7 +668,7 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
             XCTFail("Expected success but got failure")
             return
         }
-        
+
         XCTAssertEqual(tierOptions.products.count, 2)
 
         // Verify Plus tier
@@ -737,7 +737,7 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
             XCTFail("Expected success but got failure")
             return
         }
-        
+
         let plusTier = tierOptions.products.first
         XCTAssertNotNil(plusTier)
 
@@ -777,7 +777,7 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
             XCTFail("Expected success but got failure")
             return
         }
-        
+
         XCTAssertEqual(tierOptions.products.count, 1)
         XCTAssertEqual(tierOptions.products.first?.tier, "Plus")
 
@@ -807,7 +807,7 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
             XCTFail("Expected success but got failure")
             return
         }
-        
+
         #if os(iOS)
         XCTAssertEqual(tierOptions.platform, .ios)
         #else
@@ -910,7 +910,7 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
             XCTFail("Expected success but got failure")
             return
         }
-        
+
         // Verify that cache was called with only representative products (one per tier)
         // Both monthly products should have been used as representatives
         XCTAssertNotNil(mockCache.tierMapping["com.test.monthly"])

@@ -256,10 +256,10 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
         let responseWithNoBillingCycles = GetTierProductsResponse(products: [
             TierProduct(
                 productName: "Plus Subscription",
-                tier: "plus",
+                tier: .plus,
                 regions: ["us", "row"],
                 entitlements: [
-                    TierFeature(product: .networkProtection, name: "plus")
+                    TierFeature(product: .networkProtection, name: .plus)
                 ],
                 billingCycles: [] // No billing cycles = tier creation fails
             )

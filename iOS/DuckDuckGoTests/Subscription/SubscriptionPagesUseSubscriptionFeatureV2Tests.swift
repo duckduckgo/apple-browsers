@@ -371,8 +371,8 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             platform: .ios,
             products: [
                 SubscriptionTier(
-                    tier: "plus",
-                    features: [TierFeature(product: .networkProtection, name: "plus")],
+                    tier: .plus,
+                    features: [TierFeature(product: .networkProtection, name: .plus)],
                     options: []
                 )
             ]
@@ -394,8 +394,8 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             platform: .ios,
             products: [
                 SubscriptionTier(
-                    tier: "plus",
-                    features: [TierFeature(product: .networkProtection, name: "plus")],
+                    tier: .plus,
+                    features: [TierFeature(product: .networkProtection, name: .plus)],
                     options: []
                 )
             ]
@@ -433,13 +433,13 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             platform: .ios,
             products: [
                 SubscriptionTier(
-                    tier: "plus",
-                    features: [TierFeature(product: .networkProtection, name: "plus")],
+                    tier: .plus,
+                    features: [TierFeature(product: .networkProtection, name: .plus)],
                     options: []
                 ),
                 SubscriptionTier(
-                    tier: "pro",
-                    features: [TierFeature(product: .networkProtection, name: "pro")],
+                    tier: .pro,
+                    features: [TierFeature(product: .networkProtection, name: .pro)],
                     options: []
                 )
             ]
@@ -461,8 +461,8 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             platform: .ios,
             products: [
                 SubscriptionTier(
-                    tier: "plus",
-                    features: [TierFeature(product: .networkProtection, name: "plus")],
+                    tier: .plus,
+                    features: [TierFeature(product: .networkProtection, name: .plus)],
                     options: []
                 )
             ]

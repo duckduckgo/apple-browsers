@@ -770,8 +770,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         switch subscriptionTierOptionsResponse {
         case .success(let subscriptionTierOptions):
             // Check if Pro tier was unexpectedly returned
-            let hasProTier = subscriptionTierOptions.products.contains { $0.tier.lowercased() == "pro" }
-            if hasProTier && !subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed{
+            let hasProTier = subscriptionTierOptions.products.contains { $0.tier == .pro }
+            if hasProTier && !subscriptionFeatureAvailability.isProTierPurchaseEnabled {
                 tierEventReporter.reportTierOptionsUnexpectedProTier()
             }
 

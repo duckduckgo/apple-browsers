@@ -870,7 +870,7 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         await sut.updateAvailableProducts()
 
         // Setup features for a different product ID (not found for the representative product)
-        mockCache.tierMapping = ["com.test.other": [TierFeature(product: .networkProtection, name: "plus")]]
+        mockCache.tierMapping = ["com.test.other": [TierFeature(product: .networkProtection, name: .plus)]]
 
         // When
         let result = await sut.subscriptionTierOptions(includeProTier: false)

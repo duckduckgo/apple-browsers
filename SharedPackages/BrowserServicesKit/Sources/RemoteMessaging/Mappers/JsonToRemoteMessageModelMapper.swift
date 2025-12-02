@@ -342,6 +342,8 @@ struct JsonToRemoteMessageModelMapper {
             return .radar
         case .keyImport:
             return .keyImport
+        case .mobileCustomization:
+            return .mobileCustomization
         case .none:
             return .announce
         }

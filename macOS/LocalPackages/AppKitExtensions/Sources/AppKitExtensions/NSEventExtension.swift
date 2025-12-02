@@ -64,9 +64,9 @@ public extension NSEvent {
     }
 
     /// is NSEvent representing right mouse down event or cntrl+mouse down event
-    static func isContextClick(_ event: NSEvent) -> Bool {
-        let isControlClick = event.type == .leftMouseDown && (event.modifierFlags.rawValue & NSEvent.ModifierFlags.control.rawValue != 0)
-        let isRightClick = event.type == .rightMouseDown
+    var isContextClick: Bool {
+        let isControlClick = type == .leftMouseDown && (modifierFlags.rawValue & NSEvent.ModifierFlags.control.rawValue != 0)
+        let isRightClick = type == .rightMouseDown
         return isControlClick || isRightClick
     }
 

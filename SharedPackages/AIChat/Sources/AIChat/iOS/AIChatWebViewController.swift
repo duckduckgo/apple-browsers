@@ -24,6 +24,7 @@ import WebKit
 protocol AIChatWebViewControllerDelegate: AnyObject {
     @MainActor func aiChatWebViewController(_ viewController: AIChatWebViewController, didRequestToLoad url: URL)
     @MainActor func aiChatWebViewController(_ viewController: AIChatWebViewController, didRequestOpenDownloadWithFileName fileName: String)
+    @MainActor func aiChatWebViewControllerWillStartDownload(_ viewController: AIChatWebViewController)
 }
 
 final class AIChatWebViewController: UIViewController {
@@ -189,6 +190,7 @@ extension AIChatWebViewController: WKNavigationDelegate {
     }
 
     func webView(_ webView: WKWebView, navigationResponse: WKNavigationResponse, didBecome download: WKDownload) {
+        delegate?.aiChatWebViewControllerWillStartDownload(self)
         download.delegate = downloadHandler
     }
 

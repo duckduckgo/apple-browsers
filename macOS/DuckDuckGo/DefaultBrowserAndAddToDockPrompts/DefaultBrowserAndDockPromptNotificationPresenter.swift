@@ -28,7 +28,6 @@ import AppKit
 // MARK: - Protocol
 
 protocol DefaultBrowserAndDockPromptNotificationPresenting: AnyObject {
-    func requestAuthorization()
     func showInactiveUserPromptNotification()
     func handleNotificationResponse(for identifier: DefaultBrowserAndDockPromptNotificationIdentifier) async
 }
@@ -49,15 +48,9 @@ final class DefaultBrowserAndDockPromptNotificationPresenter: NSObject, DefaultB
         self.userNotificationCenter = userNotificationCenter
         self.reportABrowserProblemPresenter = reportABrowserProblemPresenter
         super.init()
-
-        requestAuthorization()
     }
 
     // MARK: Authorization
-
-    func requestAuthorization() {
-        requestAlertAuthorization()
-    }
 
     private func requestAlertAuthorization(completionHandler: ((Bool) -> Void)? = nil) {
         userNotificationCenter.requestAuthorization(options: .alert) { authorized, _ in

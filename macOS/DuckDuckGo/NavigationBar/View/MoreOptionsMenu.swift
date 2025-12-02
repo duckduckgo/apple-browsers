@@ -76,7 +76,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     private let passwordManagerCoordinator: PasswordManagerCoordinating
     private let internalUserDecider: InternalUserDecider
     @MainActor
-    private lazy var sharingMenu: NSMenu = SharingMenu(title: UserText.shareMenuItem, location: .moreOptionsMenu)
+    private lazy var sharingMenu: NSMenu = SharingMenu(title: UserText.shareMenuItem, location: .moreOptionsMenu, delegate: self)
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let isUsingAuthV2: Bool
     private let freemiumDBPUserStateManager: FreemiumDBPUserStateManager
@@ -200,7 +200,6 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                                                    featureFlagger: featureFlagger)
         addItem(feedbackMenuItem)
 
-#if SPARKLE
         if let dockCustomizer = self.dockCustomizer {
             if dockCustomizer.isAddedToDock == false {
                 if dockCustomizer.shouldShowNotification {
@@ -223,7 +222,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                 }
             }
         }
-#endif
+
         if !defaultBrowserPreferences.isDefault {
             let setAsDefaultMenuItem = NSMenuItem(title: UserText.setAsDefaultBrowser, action: #selector(setAsDefault(_:)))
                 .targetting(self)
@@ -1378,6 +1377,19 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
         refreshAvailabilityBasedOnEntitlements()
     }
 
+}
+
+// MARK: - SharingMenuDelegate
+extension MoreOptionsMenu: SharingMenuDelegate {
+    @MainActor
+    func sharingMenuRequestsSharingData() -> SharingMenu.SharingData? {
+        guard let selectedTabViewModel = tabCollectionViewModel.selectedTabViewModel,
+              selectedTabViewModel.canReload,
+              !selectedTabViewModel.isShowingErrorPage,
+              let url = selectedTabViewModel.tab.content.userEditableUrl else { return nil }
+
+        return (selectedTabViewModel.title, [url])
+    }
 }
 
 extension MoreOptionsMenu: EmailManagerRequestDelegate {}

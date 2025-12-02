@@ -63,7 +63,6 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet var addressBarStack: NSStackView!
 
     @IBOutlet private(set) var menuButtons: NSStackView!
-
     @IBOutlet private var addressBarLeftToNavButtonsConstraint: NSLayoutConstraint!
     @IBOutlet private var addressBarProportionalWidthConstraint: NSLayoutConstraint!
     @IBOutlet private var navigationBarRightToMenuButtonsConstraint: NSLayoutConstraint!
@@ -77,7 +76,6 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet private var backgroundBaseColorView: ColorView!
 
     private var fireWindowBackgroundView: NSImageView?
-
     @IBOutlet private var goBackButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet private var goBackButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet private var goForwardButtonWidthConstraint: NSLayoutConstraint!
@@ -768,7 +766,6 @@ final class NavigationBarViewController: NSViewController {
             return
         }
 #endif
-
         if LocalPinningManager.shared.isPinned(.downloads) && !isInPopUpWindow {
             downloadsButton.isShown = true
             return
@@ -1324,7 +1321,7 @@ final class NavigationBarViewController: NSViewController {
     // MARK: - Actions
 
     override func mouseDown(with event: NSEvent) {
-        if let menu = view.menu, NSEvent.isContextClick(event) {
+        if let menu = view.menu, event.isContextClick {
             NSMenu.popUpContextMenu(menu, with: event, for: view)
             return
         }
@@ -1438,9 +1435,7 @@ final class NavigationBarViewController: NSViewController {
         let internalUserDecider = NSApp.delegateTyped.internalUserDecider
         let freemiumDBPFeature = Application.appDelegate.freemiumDBPFeature
         var dockCustomization: DockCustomization?
-#if SPARKLE
         dockCustomization = Application.appDelegate.dockCustomization
-#endif
         let menu = MoreOptionsMenu(tabCollectionViewModel: tabCollectionViewModel,
                                    bookmarkManager: bookmarkManager,
                                    historyCoordinator: historyCoordinator,
@@ -1490,7 +1485,7 @@ final class NavigationBarViewController: NSViewController {
     }
 
     @IBAction func shareButtonAction(_ sender: NSButton) {
-        let sharingMenu = SharingMenu(title: UserText.shareMenuItem, location: .navigationBar)
+        let sharingMenu = SharingMenu(title: UserText.shareMenuItem, location: .navigationBar, delegate: self)
         let location = NSPoint(x: -sharingMenu.size.width + sender.bounds.width, y: sender.bounds.height + 4)
         sharingMenu.popUp(positioning: nil, at: location, in: sender)
         PixelKit.fire(NavigationBarPixel.shareButtonClicked, frequency: .daily)
@@ -2265,6 +2260,19 @@ extension NavigationBarViewController {
 
 }
 #endif
+
+// MARK: - SharingMenuDelegate
+extension NavigationBarViewController: SharingMenuDelegate {
+    func sharingMenuRequestsSharingData() -> SharingMenu.SharingData? {
+        guard let selectedTabViewModel = tabCollectionViewModel.selectedTabViewModel,
+              selectedTabViewModel.canReload,
+              !selectedTabViewModel.isShowingErrorPage,
+              let url = selectedTabViewModel.tab.content.userEditableUrl else { return nil }
+
+        return (selectedTabViewModel.title, [url])
+    }
+}
+
 // MARK: -
 extension Notification.Name {
     static let ToggleNetworkProtectionInMainWindow = Notification.Name("com.duckduckgo.vpn.toggle-popover-in-main-window")

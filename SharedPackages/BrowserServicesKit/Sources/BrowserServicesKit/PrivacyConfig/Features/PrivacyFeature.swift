@@ -105,14 +105,8 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlySubfeatureForTests
 
-    // Import Chrome's new tab shortcuts when bookmarks are imported
-    case importChromeShortcuts
-
     // Import Safari's bookmarks and favorites to better match Safari's behavior
     case updateSafariBookmarksImport
-
-    // Import Firefox's bookmarks and new tab shortcuts to better match Firefox's behavior
-    case updateFirefoxBookmarksImport
 
     /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
     case willSoonDropBigSurSupport
@@ -142,9 +136,13 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1211448334620171?focus=true
     case blurryAddressBarTahoeFix
 
-    /// Pinned Tabs AppKit Rewrite Feature Flag
-    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1209949983074592?focus=true
-    case pinnedTabsViewRewrite
+    /// New permission center
+    /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1211985993948718?focus=true
+    case newPermissionView
+
+    /// Tab closing event recreation feature flag (failsafe for removing private API)
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212206087745586?focus=true
+    case tabClosingEventRecreation
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -155,18 +153,11 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlySubfeatureForTests
 
-    // Shows a PiP video when the user is redirect to the system settings to set DDG as the default browser.
-    // https://app.asana.com/1/137249556945/project/1206329551987282/task/1210806442029191?focus=true
-    case defaultBrowserTutorial
-
     case widgetReporting
 
     // Local inactivity provisional notifications delivered to Notification Center.
     // https://app.asana.com/1/137249556945/project/72649045549333/task/1211003501974970?focus=true
     case inactivityNotification
-
-    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1210659895188821?focus=true
-    case embeddedSERPSettings
 
     /// https://app.asana.com/1/137249556945/project/715106103902962/task/1210997282929955?focus=true
     case unifiedURLPredictor
@@ -176,6 +167,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211660503405838?focus=true
     case forgetAllInSettings
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212229431540900
+    case granularFireButtonOptions
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -286,6 +280,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the omnibar toggle for AI Chat
     case omnibarToggle
 
+    /// Enables the omnibar cluster for AI Chat
+    case omnibarCluster
+
     /// Controls showing the Hide AI section in Settings -> AI Features
     case showHideAiGeneratedImages
 }
@@ -380,7 +377,6 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case vpnToolbarUpsell
     case supportsAlternateStripePaymentFlow
     case subscriptionPurchaseWidePixelMeasurement
-    case subscriptionRestoreWidePixelMeasurement
     case vpnConnectionWidePixelMeasurement
     case authV2WideEventEnabled
     case winBackOffer
@@ -467,23 +463,13 @@ public enum MaliciousSiteProtectionSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .maliciousSiteProtection }
     case onByDefault // Rollout feature
     case scamProtection
-    case removeWWWInCanonicalization
 }
 
 public enum SetAsDefaultAndAddToDockSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .setAsDefaultAndAddToDock }
 
-    // https://app.asana.com/1/137249556945/project/1206329551987282/task/1210225579353384?focus=true
-    case scheduledDefaultBrowserAndDockPrompts // macOS
-
     // https://app.asana.com/1/137249556945/project/492600419927320/task/1210863200265479?focus=true
     case scheduledDefaultBrowserAndDockPromptsInactiveUser // macOS
-
-    // https://app.asana.com/1/137249556945/project/1206329551987282/task/1209304767941984?focus=true
-    case scheduledDefaultBrowserPrompts // iOS
-
-    // https://app.asana.com/1/137249556945/project/1206329551987282/task/1210716028790591?focus=true
-    case scheduledDefaultBrowserPromptsInactiveUser // iOS
 }
 
 public enum OnboardingSubfeature: String, PrivacySubfeature {
@@ -516,6 +502,7 @@ public enum AttributedMetricsSubfeature: String, PrivacySubfeature {
     case canEmitSubscriptionRetention
     case syncDevices
     case canEmitSyncDevices
+    case sendOriginParam
 }
 
 public enum DataImportSubfeature: String, PrivacySubfeature {

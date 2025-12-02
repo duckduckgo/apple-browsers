@@ -51,6 +51,10 @@ public enum LatestReleaseError: DDGError {
         }
     }
 
+    public static var errorDomain: String {
+        "com.duckduckgo.LatestReleaseError"
+    }
+
     public var underlyingError: (any Error)? {
         switch self {
         case .networkError(let error): return error

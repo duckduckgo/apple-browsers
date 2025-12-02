@@ -17,15 +17,18 @@
 //
 
 import AppKit
-import Common
-import Foundation
+import BrowserServicesKit
 import Combine
+import Common
+import FeatureFlags
+import Foundation
 
 @objc(Application)
 final class Application: NSApplication {
 
     public static var appDelegate: AppDelegate! // swiftlint:disable:this weak_delegate
     private var fireWindowPreferenceCancellable: AnyCancellable?
+    private var featureFlagger: FeatureFlagger { delegateTyped.featureFlagger }
 
     override init() {
         super.init()
@@ -99,14 +102,40 @@ final class Application: NSApplication {
         }
         return testIgnoredEvents
     }()
+#endif
+
+    /// This is used to reset the click count to 1 for the next incoming mouse event of the given type.
+    /// The hack is used to allow quickly closing tabs by clicking on the close button multiple times
+    /// or middle-clicking multiple times to close tabs.
+    /// https://app.asana.com/1/137249556945/project/1177771139624306/task/1202049975066624?focus=true
+    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1209477403052191?focus=true
+    @MainActor
+    var shouldResetClickCountForNextEventOfTypes: Set<NSEvent.EventType>?
+
     override func sendEvent(_ event: NSEvent) {
+#if DEBUG
         // Ignore user events when running Tests
         if [.unitTests, .integrationTests].contains(AppVersion.runType),
            testIgnoredEvents.contains(event.type),
            (NSClassFromString("TestRunHelper") as? NSObject.Type)!.value(forKey: "allowAppSendUserEvents") as? Bool != true {
             return
         }
+#endif
+
+        // Handle the hack to reset the click count to 1 for the next incoming mouse event of the given type.
+        var event = event
+        if let expectedEventType = shouldResetClickCountForNextEventOfTypes, expectedEventType.contains(event.type),
+           featureFlagger.isFeatureOn(.tabClosingEventRecreation) {
+            if event.clickCount > 1 {
+                event = {
+                    guard let cg = event.cgEvent?.copy() else { return event }
+                    cg.setIntegerValueField(.mouseEventClickState, value: 1) // Reset clickCount to 1 to consequently close tabs
+                    return NSEvent(cgEvent: cg) ?? event
+                }()
+            }
+            shouldResetClickCountForNextEventOfTypes = nil
+        }
         super.sendEvent(event)
     }
-#endif
+
 }

@@ -18,33 +18,109 @@
 
 import Foundation
 import SwiftUI
+import DesignResourcesKit
 
 struct NewImportMoreInfoView: View {
     @State private var showPopover = false
 
     var body: some View {
         VStack(alignment: .center) {
-            Image(.chromiumImportKeychainInfo) // Requires localization
-                .popover(isPresented: $showPopover, arrowEdge: .bottom) {
-                    if #available(macOS 12, *), let attr = try? AttributedString(markdown: UserText.importChromeAllowKeychainIntructions) {
-                        Text(attr)
-                            .padding()
-                            .frame(width: 280)
-                    } else {
-                        Text(UserText.importChromeAllowKeychainIntructions) // fallback
-                            .padding()
-                            .frame(width: 280)
-                    }
-
+            ZStack(alignment: .topLeading) {
+                promptImage
+                textPlaceholders
+                buttonArea
+                cursor
+            }
+            .frame(width: Metrics.containerImageWidth)
+            .padding(EdgeInsets(top: Metrics.largeOuterPadding, leading: Metrics.largeOuterPadding, bottom: Metrics.itemHeight, trailing: Metrics.largeOuterPadding))
+            .popover(isPresented: $showPopover, arrowEdge: .bottom) {
+                if #available(macOS 12, *), let attr = try? AttributedString(markdown: UserText.importChromeAllowKeychainIntructions) {
+                    Text(attr)
+                        .padding()
+                        .frame(width: Metrics.popoverContentWidth)
+                } else {
+                    Text(UserText.importChromeAllowKeychainIntructions)
+                        .padding()
+                        .frame(width: Metrics.popoverContentWidth)
                 }
-                .padding(.horizontal, 70)
-                .padding(.top, 70)
-                .padding(.bottom, 140)
+            }
         }
+        .padding(.bottom, Metrics.imageBottomPadding)
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 showPopover = true
             }
         }
     }
+
+    private var promptImage: some View {
+        Image(.importKeychainPromptContainer)
+    }
+
+    private var textPlaceholders: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            textPlaceholder(width: 244)
+            textPlaceholder(width: 183)
+        }
+        .padding(.top, 28)
+        .padding(.leading, 104)
+    }
+
+    private var buttonArea: some View {
+        HStack(spacing: Metrics.spacing) {
+            placeholderButton
+            allowButton
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+        .padding(.trailing, Metrics.spacing * 2)
+        .padding(.bottom, 35)
+    }
+
+    private var cursor: some View {
+        Image(.chromiumImportCursor)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
+            .padding(.trailing, 0)
+            .padding(.bottom, 0)
+    }
+
+    private var placeholderButton: some View {
+        placeholderRect(width: 80, cornerRadius: Metrics.buttonCornerRadius)
+    }
+
+    private var allowButton: some View {
+        Text(UserText.importChromeAllowButtonTitle)
+            .padding(.horizontal, Metrics.spacing)
+            .frame(height: Metrics.itemHeight)
+            .background(
+                placeholderRect(cornerRadius: Metrics.buttonCornerRadius)
+            )
+    }
+
+    private func textPlaceholder(width: CGFloat) -> some View {
+        placeholderRect(width: width, cornerRadius: Metrics.itemHeight / 2.0)
+    }
+
+    private func placeholderRect(width: CGFloat? = nil, cornerRadius: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: cornerRadius)
+            .fill(Color(designSystemColor: .containerFillTertiary))
+            .frame(width: width, height: Metrics.itemHeight)
+    }
+}
+
+// MARK: - Metrics
+
+private extension NewImportMoreInfoView {
+    enum Metrics {
+        static let itemHeight: CGFloat = 20
+        static let largeOuterPadding: CGFloat = 70
+        static let imageBottomPadding: CGFloat = 120
+        static let spacing: CGFloat = 16
+        static let buttonCornerRadius: CGFloat = 5
+        static let containerImageWidth: CGFloat = 380
+        static let popoverContentWidth: CGFloat = 280
+    }
+}
+
+#Preview {
+    NewImportMoreInfoView()
 }

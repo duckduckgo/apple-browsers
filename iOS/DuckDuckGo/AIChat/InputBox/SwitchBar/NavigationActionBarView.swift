@@ -347,7 +347,9 @@ final class NavigationActionBarView: UIView {
             shouldShowSearchButton = hasText
         }
         searchButton.isHidden = !shouldShowSearchButton
-        searchButton.alpha = shouldShowSearchButton ? (hasText ? 1.0 : 0.5) : 0.0
+
+        let useInactiveStyle = isUsingFadeOutAnimation && !hasText
+        searchButton.alpha = shouldShowSearchButton ? (hasText ? 1.0 : (useInactiveStyle ? 1.0 : 0.5)) : 0.0
     }
 
     // MARK: - Touch Handling

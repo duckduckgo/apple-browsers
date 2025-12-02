@@ -158,10 +158,10 @@ enum SubscriptionPixel: PixelKitEvent {
         case .subscriptionAddEmailSuccess: return "m_mac_\(appDistribution)_privacy-pro_app_add-email_success_u"
         case .subscriptionWelcomeFAQClick: return "m_mac_\(appDistribution)_privacy-pro_welcome_faq_click_u"
             // Tier Options
-        case .subscriptionTierOptionsRequested: return "m_mac_\(appDistribution)_privacy-pro_tier-options_requested"
-        case .subscriptionTierOptionsSuccess: return "m_mac_\(appDistribution)_privacy-pro_tier-options_success"
-        case .subscriptionTierOptionsFailure: return "m_mac_\(appDistribution)_privacy-pro_tier-options_failure"
-        case .subscriptionTierOptionsUnexpectedProTier: return "m_mac_\(appDistribution)_privacy-pro_tier-options_unexpected-pro-tier"
+        case .subscriptionTierOptionsRequested: return "m_mac_\(appDistribution)_subscription_tier-options_requested"
+        case .subscriptionTierOptionsSuccess: return "m_mac_\(appDistribution)_subscription_tier-options_success"
+        case .subscriptionTierOptionsFailure: return "m_mac_\(appDistribution)_subscription_tier-options_failure"
+        case .subscriptionTierOptionsUnexpectedProTier: return "m_mac_\(appDistribution)_subscription_tier-options_unexpected-pro-tier"
             // Auth v2
         case .subscriptionInvalidRefreshTokenDetected: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_detected"
         case .subscriptionInvalidRefreshTokenSignedOut: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_signed_out"

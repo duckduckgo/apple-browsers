@@ -2606,10 +2606,10 @@ extension Pixel.Event {
         case .subscriptionWelcomeFAQClick: return "m_privacy-pro_welcome_faq_click_u"
         
         // Tier Options
-        case .subscriptionTierOptionsRequested: return "m_privacy-pro_tier-options_requested"
-        case .subscriptionTierOptionsSuccess: return "m_privacy-pro_tier-options_success"
-        case .subscriptionTierOptionsFailure: return "m_privacy-pro_tier-options_failure"
-        case .subscriptionTierOptionsUnexpectedProTier: return "m_privacy-pro_tier-options_unexpected-pro-tier"
+        case .subscriptionTierOptionsRequested: return "m_subscription_tier-options_requested"
+        case .subscriptionTierOptionsSuccess: return "m_subscription_tier-options_success"
+        case .subscriptionTierOptionsFailure: return "m_subscription_tier-options_failure"
+        case .subscriptionTierOptionsUnexpectedProTier: return "m_subscription_tier-options_unexpected-pro-tier"
         case .networkProtectionFailureRecoveryStarted: return "m_netp_ev_failure_recovery_started"
         case .networkProtectionFailureRecoveryFailed: return "m_netp_ev_failure_recovery_failed"
         case .networkProtectionFailureRecoveryCompletedHealthy: return "m_netp_ev_failure_recovery_completed_server_healthy"

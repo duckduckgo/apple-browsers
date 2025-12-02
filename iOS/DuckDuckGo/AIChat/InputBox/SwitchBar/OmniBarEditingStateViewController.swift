@@ -480,7 +480,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         let isHomeDaxVisible = !shouldDisplaySuggestionTray && !shouldDisplayFavoritesOverlay && !isHorizontallyCompactLayoutEnabled
 
         let isAIDaxVisible: Bool
-        if featureFlagger.isFeatureOn(.fadeOutOnToggle) {
+        if switchBarHandler.isUsingFadeOutAnimation {
             isAIDaxVisible = !isHorizontallyCompactLayoutEnabled
         } else {
             isAIDaxVisible = !shouldDisplaySuggestionTray && !isHorizontallyCompactLayoutEnabled

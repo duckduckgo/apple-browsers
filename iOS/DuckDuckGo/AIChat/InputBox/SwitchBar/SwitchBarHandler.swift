@@ -24,6 +24,7 @@ import Core
 import UIKit
 import AIChat
 import BrowserServicesKit
+import enum Common.DevicePlatform
 
 // MARK: - TextEntryMode Enum
 public enum TextEntryMode: String, CaseIterable {
@@ -99,11 +100,11 @@ final class SwitchBarHandler: SwitchBarHandling {
     private(set) var isTopBarPosition: Bool = true
 
     var isUsingExpandedBottomBarHeight: Bool {
-        featureFlagger.isFeatureOn(.fadeOutOnToggle) && !isTopBarPosition
+        isUsingFadeOutAnimation && !isTopBarPosition
     }
 
     var isUsingFadeOutAnimation: Bool {
-        featureFlagger.isFeatureOn(.fadeOutOnToggle)
+        featureFlagger.isFeatureOn(.fadeOutOnToggle) && DevicePlatform.isIphone
     }
 
     var isVoiceSearchEnabled: Bool {
@@ -150,19 +151,22 @@ final class SwitchBarHandler: SwitchBarHandling {
     private let microphoneButtonTappedSubject = PassthroughSubject<Void, Never>()
     private let clearButtonTappedSubject = PassthroughSubject<Void, Never>()
     private var backgroundObserver: NSObjectProtocol?
+    private let devicePlatform: DevicePlatformProviding.Type
 
     init(voiceSearchHelper: VoiceSearchHelperProtocol,
          storage: KeyValueStoring,
          aiChatSettings: AIChatSettingsProvider,
          funnelState: SwitchBarFunnelProviding = SwitchBarFunnel(storage: UserDefaults.standard),
          sessionStateMetrics: SessionStateMetricsProviding,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
         self.voiceSearchHelper = voiceSearchHelper
         self.storage = storage
         self.aiChatSettings = aiChatSettings
         self.funnelState = funnelState
         self.sessionStateMetrics = sessionStateMetrics
         self.featureFlagger = featureFlagger
+        self.devicePlatform = devicePlatform
 
         // Set up app lifecycle observers to reset session flags
         backgroundObserver = NotificationCenter.default.addObserver(

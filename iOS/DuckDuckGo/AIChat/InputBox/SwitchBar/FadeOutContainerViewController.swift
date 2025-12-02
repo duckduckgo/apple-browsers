@@ -83,7 +83,7 @@ final class FadeOutContainerViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .removeDuplicates()
             .sink { [weak self] _ in
-                guard let self, featureFlagger.isFeatureOn(.fadeOutOnToggle) else { return }
+                guard let self, switchBarHandler.isUsingFadeOutAnimation else { return }
                 self.updateVisibility(animated: true)
             }
             .store(in: &cancellables)

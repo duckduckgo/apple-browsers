@@ -186,7 +186,7 @@ final class FadeoutContainerViewController: UIViewController {
         }
     }
 
-    // MARK: - Display Link for Smooth Toggle transitionss
+    // MARK: - Display Link for Smooth Toggle transitions
 
     private func startDisplayLink() {
         stopDisplayLink()

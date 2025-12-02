@@ -226,11 +226,11 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
         let responseWithOnlyProTier = GetTierProductsResponse(products: [
             TierProduct(
                 productName: "Pro Subscription",
-                tier: "pro",
+                tier: .pro,
                 regions: ["us", "row"],
                 entitlements: [
-                    TierFeature(product: .networkProtection, name: "pro"),
-                    TierFeature(product: .paidAIChat, name: "pro")
+                    TierFeature(product: .networkProtection, name: .pro),
+                    TierFeature(product: .paidAIChat, name: .pro)
                 ],
                 billingCycles: [
                     BillingCycle(productId: "monthly-pro", period: "Monthly", price: "19.99", currency: "USD")

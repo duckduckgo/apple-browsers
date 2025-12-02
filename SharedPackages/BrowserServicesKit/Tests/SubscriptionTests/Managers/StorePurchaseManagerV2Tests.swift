@@ -597,7 +597,7 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
 
         XCTAssertEqual(tierOptions.products.count, 1)
 
-        let plusTier = tierOptions?.products.first
+        let plusTier = tierOptions.products.first
         XCTAssertEqual(plusTier?.tier, .plus)
         XCTAssertEqual(plusTier?.features.count, 4)
         XCTAssertEqual(plusTier?.options.count, 2)
@@ -672,14 +672,14 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         XCTAssertEqual(tierOptions.products.count, 2)
 
         // Verify Plus tier
-        let plusTier = tierOptions?.products.first { $0.tier == .plus }
+        let plusTier = tierOptions.products.first { $0.tier == .plus }
         XCTAssertNotNil(plusTier)
         XCTAssertEqual(plusTier?.features.count, 2)
         XCTAssertEqual(plusTier?.options.count, 2)
         XCTAssertTrue(plusTier?.features.allSatisfy { $0.name == .plus } ?? false)
 
         // Verify Pro tier
-        let proTier = tierOptions?.products.first { $0.tier == .pro }
+        let proTier = tierOptions.products.first { $0.tier == .pro }
         XCTAssertNotNil(proTier)
         XCTAssertEqual(proTier?.features.count, 4)
         XCTAssertEqual(proTier?.options.count, 2)
@@ -779,7 +779,7 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         }
 
         XCTAssertEqual(tierOptions.products.count, 1)
-        XCTAssertEqual(tierOptions?.products.first?.tier, .plus)
+        XCTAssertEqual(tierOptions.products.first?.tier, .plus)
 
         // Verify no Pro tier products in options
         let allOptionIds = tierOptions.products.flatMap { $0.options.map { $0.id } }

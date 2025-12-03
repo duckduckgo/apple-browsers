@@ -162,8 +162,8 @@ public protocol StorePurchaseManagerV2 {
     func subscriptionOptions() async -> SubscriptionOptionsV2?
 
     /// Returns the available subscription tier options.
-    /// - Returns: A `SubscriptionTierOptions` object containing the available subscription tier plans and pricing,
-    ///           or `nil` if no options are available or cannot be fetched.
+    /// - Returns: A `Result<SubscriptionTierOptions, StoreError>` where `.success` contains the available subscription tier plans and pricing,
+    ///           and `.failure` contains a `StoreError` if no options are available or cannot be fetched.
     func subscriptionTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, StoreError>
 
     var purchasedProductIDs: [String] { get }

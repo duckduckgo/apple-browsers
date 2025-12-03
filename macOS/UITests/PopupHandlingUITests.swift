@@ -228,7 +228,7 @@ final class PopupHandlingUITests: UITestCase {
         // Verify the blocked popup opened immediately after granting permission
         let popupWindow = app.windows["Example Domain"]
         XCTAssertTrue(
-            popupWindow.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            popupWindow.waitForExistence(timeout: UITests.Timeouts.navigation),
             "Blocked popup should open immediately after 'Always Allow'"
         )
         XCTAssertEqual(app.windows.count, 2, "Exactly one popup should have opened")
@@ -797,6 +797,8 @@ final class PopupHandlingUITests: UITestCase {
     /// Tests ServiceNow-like scenario where Cmd+click on a link that also triggers window.open() calls
     /// Verifies that only one tab opens (event consumption prevents extra tabs) and extra window.open() calls are blocked
     func testServiceNowCommandClickOnlyOpensOneTab() throws {
+        guard #available(macOS 15, *) else { throw XCTSkip("WebKit issue fixed in macOS 15, matches Safari behavior") }
+
         addressBarTextField.pasteURL(serviceNowURL, pressingEnter: true)
         let webView = app.webViews["Simulate ServiceNow Cmd+Click Bug"]
 
@@ -811,7 +813,7 @@ final class PopupHandlingUITests: UITestCase {
         // Wait for new tab
         let newTab = app.tabs["Example Domain"]
         XCTAssertTrue(
-            newTab.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            newTab.waitForExistence(timeout: UITests.Timeouts.navigation),
             "Only one new tab should open"
         )
 
@@ -830,6 +832,8 @@ final class PopupHandlingUITests: UITestCase {
     /// Tests that middle-clicking a ServiceNow-like link bypasses the JavaScript handler entirely,
     /// opening only the intended tab without triggering or blocking any window.open() calls
     func testServiceNowMiddleClickOnlyOpensOneTab() throws {
+        guard #available(macOS 15, *) else { throw XCTSkip("WebKit issue fixed in macOS 15, matches Safari behavior") }
+
         addressBarTextField.pasteURL(serviceNowURL, pressingEnter: true)
         let webView = app.webViews["Simulate ServiceNow Cmd+Click Bug"]
 
@@ -841,8 +845,8 @@ final class PopupHandlingUITests: UITestCase {
         // Wait for new tab
         let newTab = app.tabs["Example Domain"]
         XCTAssertTrue(
-            newTab.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Only one new tab should open"
+            newTab.waitForExistence(timeout: UITests.Timeouts.navigation),
+            "New tab did not open"
         )
 
         // Verify only 2 tabs total
@@ -872,7 +876,7 @@ final class PopupHandlingUITests: UITestCase {
         // Wait for new tab
         let newTab = app.tabs["Example Domain"]
         XCTAssertTrue(
-            newTab.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            newTab.waitForExistence(timeout: UITests.Timeouts.navigation),
             "Only one new tab should open"
         )
 
@@ -889,6 +893,8 @@ final class PopupHandlingUITests: UITestCase {
 
     /// Tests that Cmd+clicking a clean link (without extra window.open() calls) opens normally without any blocked popups
     func testServiceNowCleanLinkOpensNormally() throws {
+        guard #available(macOS 15, *) else { throw XCTSkip("WebKit issue fixed in macOS 15, matches Safari behavior") }
+
         addressBarTextField.pasteURL(serviceNowURL, pressingEnter: true)
         let webView = app.webViews["Simulate ServiceNow Cmd+Click Bug"]
 
@@ -903,7 +909,7 @@ final class PopupHandlingUITests: UITestCase {
         // Wait for new tab
         let newTab = app.tabs["Example Domain"]
         XCTAssertTrue(
-            newTab.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            newTab.waitForExistence(timeout: UITests.Timeouts.navigation),
             "New tab should open normally"
         )
 

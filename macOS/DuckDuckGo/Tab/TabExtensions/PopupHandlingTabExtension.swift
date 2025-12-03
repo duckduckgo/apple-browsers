@@ -97,6 +97,7 @@ final class PopupHandlingTabExtension {
 
         interactionEventsPublisher
             .filter { event in
+                Logger.navigation.debug("PopupHandlingTabExtension.interactionEventsPublisher.filter: event: \(String(describing: event))")
                 guard featureFlagger.isFeatureOn(.popupBlocking),
                       featureFlagger.isFeatureOn(.extendedUserInitiatedPopupTimeout) else { return false }
 
@@ -432,6 +433,7 @@ extension PopupHandlingTabExtension: NavigationResponder {
         } else {
             NSApp.currentEvent
         }
+        Logger.navigation.debug("PopupHandlingTabExtension.decidePolicy: userInteractionEvent: \(userInteractionEvent ??? "<nil>") currentEvent: \(NSApp.currentEvent ??? "<nil>")")
 
         let linkOpenBehavior = LinkOpenBehavior(button: navigationAction.navigationType.isMiddleButtonClick ? .middle : .left,
                                                 modifierFlags: userInteractionEvent?.modifierFlags ?? [],

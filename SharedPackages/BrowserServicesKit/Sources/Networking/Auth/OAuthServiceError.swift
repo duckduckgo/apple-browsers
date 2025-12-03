@@ -29,7 +29,7 @@ public enum OAuthServiceError: DDGError {
     public var description: String {
         switch self {
         case .authAPIError(let apiError):
-            "Auth API responded with error \(apiError.description))"
+            "Auth API responded with error \(apiError.description)"
         case .apiServiceError(let error):
             "API service error - \(String(describing: error))"
         case .invalidRequest:

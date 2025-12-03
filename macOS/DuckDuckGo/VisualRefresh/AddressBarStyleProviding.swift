@@ -30,6 +30,7 @@ protocol AddressBarStyleProviding {
     func shouldShowOutlineBorder(isHomePage: Bool) -> Bool
     func sizeForSuggestionRow(isHomePage: Bool) -> CGFloat
 
+    var navigationBarBackgroundTopPadding: CGFloat { get }
     var defaultAddressBarFontSize: CGFloat { get }
     var newTabOrHomePageAddressBarFontSize: CGFloat { get }
     var shouldShowNewSearchIcon: Bool { get }
@@ -64,6 +65,7 @@ final class LegacyAddressBarStyleProvider: AddressBarStyleProviding {
     private let addressBarBottomPaddingForHomePage: CGFloat = 8
     private let addressBarBottomPaddingForPopUpWindow: CGFloat = 0
 
+    let navigationBarBackgroundTopPadding: CGFloat = 0
     let defaultAddressBarFontSize: CGFloat = 13
     let newTabOrHomePageAddressBarFontSize: CGFloat = 15
     let addressBarButtonsCornerRadius: CGFloat = 0
@@ -128,8 +130,16 @@ final class LegacyAddressBarStyleProvider: AddressBarStyleProviding {
 }
 
 final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
-    private let navigationBarHeightForDefault: CGFloat = 52
-    private let navigationBarHeightForHomePage: CGFloat = 52
+    let navigationBarBackgroundTopPadding: CGFloat = {
+        if #available(macOS 26.0, *) {
+            return 2
+        } else {
+            return 0
+        }
+    }()
+
+    private let navigationBarHeightForDefault: CGFloat
+    private let navigationBarHeightForHomePage: CGFloat
     private let navigationBarHeightForPopUpWindow: CGFloat = 42
     private let addressBarTopPaddingForDefault: CGFloat = 7
     private let addressBarTopPaddingForDefaultFocusedWithAIChat: CGFloat = 3
@@ -150,6 +160,8 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
 
     init(featureFlagger: FeatureFlagger) {
         self.featureFlagger = featureFlagger
+        self.navigationBarHeightForDefault = 52 + navigationBarBackgroundTopPadding
+        self.navigationBarHeightForHomePage = 52 + navigationBarBackgroundTopPadding
     }
 
     let defaultAddressBarFontSize: CGFloat = 13

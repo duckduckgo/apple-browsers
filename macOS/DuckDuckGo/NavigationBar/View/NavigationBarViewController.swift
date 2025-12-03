@@ -74,6 +74,7 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet private var logoWidthConstraint: NSLayoutConstraint!
     @IBOutlet private var backgroundColorView: MouseOverView!
     @IBOutlet private var backgroundBaseColorView: ColorView!
+    @IBOutlet private var backgroundTopConstraint: NSLayoutConstraint!
 
     private var fireWindowBackgroundView: NSImageView?
     @IBOutlet private var goBackButtonWidthConstraint: NSLayoutConstraint!
@@ -1128,6 +1129,7 @@ final class NavigationBarViewController: NSViewController {
             backgroundBaseColorView.backgroundColor = colorsProvider.navigationBackgroundColor
             backgroundColorView.isHidden = true
         }
+        backgroundTopConstraint.constant = theme.addressBarStyleProvider.navigationBarBackgroundTopPadding
     }
 
     private func addFireWindowBackgroundViewIfNeeded() {

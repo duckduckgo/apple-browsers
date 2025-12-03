@@ -22,9 +22,11 @@ import DesignResourcesKit
 
 struct PasswordEntryExampleView: View {
     let helpText: String?
+    let scale: CGFloat
 
-    init(helpText: String? = nil) {
+    init(helpText: String? = nil, scale: CGFloat = 1.0) {
         self.helpText = helpText
+        self.scale = scale
     }
 
     var body: some View {
@@ -38,71 +40,73 @@ struct PasswordEntryExampleView: View {
             buttonArea
             cursor
         }
-        .frame(width: Metrics.containerImageWidth, height: Metrics.containerImageHeight)
+        .frame(width: Metrics.containerImageWidth * scale, height: Metrics.containerImageHeight * scale)
     }
 
     private var promptImage: some View {
         Image(.importKeychainPromptContainer)
+            .resizable()
+            .frame(width: Metrics.containerImageWidth * scale, height: Metrics.containerImageHeight * scale)
     }
 
     private func helpTextView(_ text: String) -> some View {
         Text(text)
-            .font(.body)
+            .font(.system(size: 13 * scale))
             .foregroundColor(Color(designSystemColor: .textPrimary))
             .multilineTextAlignment(.leading)
             .fixedSize(horizontal: false, vertical: true)
-            .frame(width: 244, alignment: .leading)
-            .padding(.top, 28)
-            .padding(.leading, 104)
+            .frame(width: 244 * scale, alignment: .leading)
+            .padding(.top, 28 * scale)
+            .padding(.leading, 104 * scale)
     }
 
     private var textPlaceholders: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            textPlaceholder(width: 244)
-            textPlaceholder(width: 183)
+        VStack(alignment: .leading, spacing: 12 * scale) {
+            textPlaceholder(width: 244 * scale)
+            textPlaceholder(width: 183 * scale)
         }
-        .padding(.top, 28)
-        .padding(.leading, 104)
+        .padding(.top, 28 * scale)
+        .padding(.leading, 104 * scale)
     }
 
     private var buttonArea: some View {
-        HStack(spacing: Metrics.spacing) {
+        HStack(spacing: Metrics.spacing * scale) {
             placeholderButton
             allowButton
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-        .padding(.trailing, Metrics.spacing * 2)
-        .padding(.bottom, 35)
+        .padding(.trailing, Metrics.spacing * 2 * scale)
+        .padding(.bottom, 35 * scale)
     }
 
     private var cursor: some View {
         Image(.chromiumImportCursor)
+            .scaleEffect(scale, anchor: .bottomTrailing)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-            .padding(.trailing, 0)
-            .padding(.bottom, 0)
     }
 
     private var placeholderButton: some View {
-        placeholderRect(width: 80, cornerRadius: Metrics.buttonCornerRadius)
+        placeholderRect(width: 80 * scale, cornerRadius: Metrics.buttonCornerRadius * scale)
     }
 
     private var allowButton: some View {
         Text(UserText.importChromeAllowButtonTitle)
-            .padding(.horizontal, Metrics.spacing)
-            .frame(height: Metrics.itemHeight)
+            .font(.system(size: 13 * scale))
+            .padding(.horizontal, Metrics.spacing * scale)
+            .frame(height: Metrics.itemHeight * scale)
             .background(
-                placeholderRect(cornerRadius: Metrics.buttonCornerRadius)
+                placeholderRect(cornerRadius: Metrics.buttonCornerRadius * scale)
             )
     }
 
     private func textPlaceholder(width: CGFloat) -> some View {
-        placeholderRect(width: width, cornerRadius: Metrics.itemHeight / 2.0)
+        placeholderRect(width: width, cornerRadius: Metrics.itemHeight * scale / 2.0)
     }
 
     private func placeholderRect(width: CGFloat? = nil, cornerRadius: CGFloat) -> some View {
         RoundedRectangle(cornerRadius: cornerRadius)
             .fill(Color(designSystemColor: .containerFillTertiary))
-            .frame(width: width, height: Metrics.itemHeight)
+            .frame(width: width, height: Metrics.itemHeight * scale)
     }
 }
 
@@ -121,7 +125,13 @@ private extension PasswordEntryExampleView {
 #Preview {
     VStack(spacing: 20) {
         PasswordEntryExampleView()
+        
+        PasswordEntryExampleView(scale: 0.75)
+        
+        PasswordEntryExampleView(scale: 0.5)
 
         PasswordEntryExampleView(helpText: UserText.passwordEntryHelpDialogExampleText)
+        
+        PasswordEntryExampleView(helpText: UserText.passwordEntryHelpDialogExampleText, scale: 0.75)
     }
 }

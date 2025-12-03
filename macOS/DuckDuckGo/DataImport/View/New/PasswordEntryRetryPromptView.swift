@@ -30,20 +30,21 @@ struct PasswordEntryRetryPromptView: View {
             VStack(alignment: .center) {
                 Image(nsImage: DesignSystemImages.Glyphs.Size16.exclamationRecolorableInvert)
                     .resizable()
-                    .frame(width: 16, height: 16)
+                    .frame(width: Metrics.iconSize, height: Metrics.iconSize)
                     .offset(y: 1)
             }
-            .frame(width: 50)
+            .frame(width: Metrics.iconColumnWidth)
 
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: Metrics.contentSpacing) {
                 titleSection
                 instructionsText
                 showMessageButton
                 keychainPromptExample
             }
-            .padding(.trailing, 50)
         }
-        .padding(.top, 40)
+        .padding(.leading, Metrics.leadingPadding)
+        .padding(.trailing, Metrics.trailingPadding)
+        .padding(.top, Metrics.verticalPadding)
     }
 
     private var titleSection: some View {
@@ -80,7 +81,28 @@ struct PasswordEntryRetryPromptView: View {
     }
 
     private var keychainPromptExample: some View {
-        PasswordEntryExampleView(helpText: UserText.passwordEntryHelpDialogExampleText)
-            .padding(.bottom, 40)
+        PasswordEntryExampleView(helpText: UserText.passwordEntryHelpDialogExampleText, scale: Metrics.exampleViewScale)
+            .padding(.bottom, Metrics.verticalPadding)
+    }
+}
+
+// MARK: - Metrics
+
+private extension PasswordEntryRetryPromptView {
+    enum Metrics {
+        static let dialogWidth: CGFloat = 420   // Defined in DataImportView
+
+        static let leadingPadding: CGFloat = 8
+        static let trailingPadding: CGFloat = 20
+        static let verticalPadding: CGFloat = 40
+
+        static let iconSize: CGFloat = 16
+        static let iconColumnWidth: CGFloat = 40
+
+        static let contentSpacing: CGFloat = 20
+
+        private static let exampleViewBaseWidth: CGFloat = 380
+        private static let availableWidth: CGFloat = dialogWidth - leadingPadding - iconColumnWidth - trailingPadding
+        static let exampleViewScale: CGFloat = availableWidth / exampleViewBaseWidth
     }
 }

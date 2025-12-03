@@ -594,7 +594,6 @@ extension AutoconsentUserScript {
 
     /// Stores the URL and CMP name after a popup was successfully handled
     /// - Parameters:
-    ///   - url: The URL where the popup was handled
     ///   - cmpName: The name of the CMP that was handled
     ///   - isCosmetic: Whether this was a cosmetic rule (cosmetic rules don't trigger reload loops)
     private func rememberLastHandledCMP(cmpName: String, isCosmetic: Bool) {

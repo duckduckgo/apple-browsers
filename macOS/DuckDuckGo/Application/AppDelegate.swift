@@ -668,9 +668,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability(
                 privacyConfigurationManager: privacyConfigurationManager,
                 purchasePlatform: subscriptionAuthV1toV2Bridge.currentEnvironment.purchasePlatform,
-                paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) },
-                supportsAlternateStripePaymentFlowStatusProvider: { featureFlagger.isFeatureOn(.supportsAlternateStripePaymentFlow) },
-                isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement) }
+                featureFlagProvider: SubscriptionPageFeatureFlagAdapter(featureFlagger: featureFlagger)
             ),
             internalUserDecider: internalUserDecider,
             featureFlagger: featureFlagger

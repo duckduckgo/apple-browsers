@@ -67,7 +67,7 @@ public enum OAuthServiceError: DDGError {
         case .invalidResponseCode(let httpStatusCode):
             return NSError(domain: "com.duckduckgo.networking.HTTPStatusCode", code: httpStatusCode.rawValue)
         case .invalidRequest,
-            .missingResponseValue(_):
+            .missingResponseValue:
             return nil
         }
     }

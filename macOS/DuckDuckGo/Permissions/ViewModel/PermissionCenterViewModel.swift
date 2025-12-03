@@ -105,7 +105,7 @@ final class PermissionCenterViewModel: ObservableObject {
 
     private func loadPermissions() {
         permissionItems = usedPermissions.keys
-            .filter { !removedPermissions.contains($0) }
+            .filter { !removedPermissions.contains($0) && $0 != .notification }
             .map { permissionType in
                 let decision = permissionManager.permission(forDomain: domain, permissionType: permissionType)
                 let isSystemDisabled = checkSystemDisabled(for: permissionType)

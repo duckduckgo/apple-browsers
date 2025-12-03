@@ -50,8 +50,8 @@ extension UNUserNotificationCenter: WebNotificationService {}
 /// Bridges the JavaScript `Notification` API polyfill to native macOS notifications.
 ///
 /// This handler receives messages from ContentScopeScripts' webNotifications feature and
-/// translates them into `UNUserNotificationCenter` calls. Notifications are blocked in
-/// Fire Windows to preserve privacy.
+/// translates them into `UNUserNotificationCenter` calls. Permission decisions are stored
+/// via `PermissionManager` and cleared on burn for Fire Windows.
 final class WebNotificationsHandler: NSObject, Subfeature {
 
     let messageOriginPolicy: MessageOriginPolicy = .all
@@ -65,6 +65,7 @@ final class WebNotificationsHandler: NSObject, Subfeature {
     private let notificationService: WebNotificationService
     private let iconFetcher: NotificationIconFetching
     private let featureFlagger: FeatureFlagger
+    private let permissionManager: PermissionManagerProtocol
 
     /// The webView associated with this handler's tab, set by `WebNotificationsTabExtension`.
     weak var webView: WKWebView?
@@ -74,11 +75,13 @@ final class WebNotificationsHandler: NSObject, Subfeature {
     init(tabUUID: String,
          notificationService: WebNotificationService = UNUserNotificationCenter.current(),
          iconFetcher: NotificationIconFetching = NotificationIconFetcher(),
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+         permissionManager: PermissionManagerProtocol = NSApp.delegateTyped.permissionManager) {
         self.tabUUID = tabUUID
         self.notificationService = notificationService
         self.iconFetcher = iconFetcher
         self.featureFlagger = featureFlagger
+        self.permissionManager = permissionManager
         super.init()
     }
 
@@ -157,13 +160,12 @@ final class WebNotificationsHandler: NSObject, Subfeature {
         }
     }
 
-    // MARK: - Fire Window Detection
+    // MARK: - Domain Extraction
 
-    /// Detects if the message originates from a Fire Window by checking websiteDataStore persistence.
+    /// Extracts the domain from the webView's URL for permission storage.
     @MainActor
-    private func isFireWindow(_ message: WKScriptMessage) -> Bool {
-        guard let webView = message.webView else { return false }
-        return webView.configuration.websiteDataStore.isPersistent == false
+    private func domain(from message: WKScriptMessage) -> String? {
+        return message.webView?.url?.host
     }
 
     // MARK: - System Authorization
@@ -263,11 +265,6 @@ final class WebNotificationsHandler: NSObject, Subfeature {
             return
         }
 
-        if await isFireWindow(original) {
-            Logger.general.debug("WebNotificationsHandler: Blocked in Fire Window (ID: \(payload.id))")
-            return
-        }
-
         // Block notifications from iframes to prevent content spoofing attacks
         guard original.frameInfo.isMainFrame else {
             Logger.general.debug("WebNotificationsHandler: Blocked notification from iframe (ID: \(payload.id))")
@@ -279,6 +276,16 @@ final class WebNotificationsHandler: NSObject, Subfeature {
             Logger.general.debug("WebNotificationsHandler: Blocked - feature flag disabled (ID: \(payload.id))")
             sendErrorEvent(id: payload.id, to: original.webView)
             return
+        }
+
+        // Check stored permission (Fire Windows use same storage, cleared on burn)
+        if let domain = await domain(from: original) {
+            let storedDecision = permissionManager.permission(forDomain: domain, permissionType: .notification)
+            if storedDecision == .deny {
+                Logger.general.debug("WebNotificationsHandler: Blocked - stored denial (ID: \(payload.id))")
+                sendErrorEvent(id: payload.id, to: original.webView)
+                return
+            }
         }
 
         guard await isSystemAuthorized() else {
@@ -311,11 +318,6 @@ final class WebNotificationsHandler: NSObject, Subfeature {
     private func handleRequestPermission(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.general.debug("WebNotificationsHandler: Permission request received")
 
-        if await isFireWindow(original) {
-            Logger.general.debug("WebNotificationsHandler: Permission denied in Fire Window")
-            return RequestPermissionResponse(permission: Permission.denied.rawValue)
-        }
-
         // Block permission requests from iframes to prevent spoofing
         guard original.frameInfo.isMainFrame else {
             Logger.general.debug("WebNotificationsHandler: Permission denied from iframe")
@@ -327,7 +329,26 @@ final class WebNotificationsHandler: NSObject, Subfeature {
             return RequestPermissionResponse(permission: Permission.denied.rawValue)
         }
 
+        let domain = await domain(from: original)
+
+        // Check stored permission (Fire Windows use same storage, cleared on burn)
+        if let domain = domain {
+            let storedDecision = permissionManager.permission(forDomain: domain, permissionType: .notification)
+            if storedDecision == .deny {
+                Logger.general.debug("WebNotificationsHandler: Permission denied - stored decision")
+                return RequestPermissionResponse(permission: Permission.denied.rawValue)
+            }
+        }
+
+        // Check/request system authorization
         let authorized = await ensureSystemAuthorization()
+
+        // Store the decision (Fire Windows cleared on burn via burnPermissions())
+        if authorized, let domain = domain {
+            permissionManager.setPermission(.allow, forDomain: domain, permissionType: .notification)
+            Logger.general.debug("WebNotificationsHandler: Stored allow permission for \(domain)")
+        }
+
         let permission = authorized ? Permission.granted : Permission.denied
         return RequestPermissionResponse(permission: permission.rawValue)
     }

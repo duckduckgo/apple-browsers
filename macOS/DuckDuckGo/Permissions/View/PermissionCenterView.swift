@@ -171,6 +171,9 @@ struct PermissionRowView: View {
         case .popups:
             Image(systemName: "rectangle.on.rectangle")
                 .foregroundColor(Color(designSystemColor: .textSecondary))
+        case .notification:
+            Image(systemName: "bell.fill")
+                .foregroundColor(Color(designSystemColor: .textSecondary))
         case .externalScheme:
             Image(systemName: "arrow.up.forward.app")
                 .foregroundColor(Color(designSystemColor: .textSecondary))

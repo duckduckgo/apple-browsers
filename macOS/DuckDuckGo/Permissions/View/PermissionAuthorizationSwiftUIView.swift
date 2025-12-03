@@ -30,6 +30,7 @@ enum PermissionAuthorizationType {
     case cameraAndMicrophone
     case geolocation
     case popups
+    case notification
     case externalScheme(scheme: String)
 
     /// Creates the appropriate type from an array of PermissionType
@@ -42,6 +43,7 @@ enum PermissionAuthorizationType {
             case .microphone: self = .microphone
             case .geolocation: self = .geolocation
             case .popups: self = .popups
+            case .notification: self = .notification
             case .externalScheme(let scheme): self = .externalScheme(scheme: scheme)
             }
         } else {
@@ -62,6 +64,8 @@ enum PermissionAuthorizationType {
             return UserText.permissionGeolocation
         case .popups:
             return UserText.permissionPopups
+        case .notification:
+            return UserText.permissionNotification
         case .externalScheme(scheme: let scheme):
             guard let url = URL(string: scheme + URL.NavigationalScheme.separator),
                   let app = NSWorkspace.shared.application(toOpen: url)
@@ -75,7 +79,7 @@ enum PermissionAuthorizationType {
         switch self {
         case .geolocation:
             return true
-        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .notification, .externalScheme:
             return false
         }
     }
@@ -83,7 +87,7 @@ enum PermissionAuthorizationType {
     /// Whether this permission uses permanent decisions ("Always Allow" / "Never Allow") vs one-time decisions ("Allow" / "Deny")
     var usesPermanentDecisions: Bool {
         switch self {
-        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme, .geolocation:
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .notification, .externalScheme, .geolocation:
             return true
         }
     }
@@ -95,7 +99,7 @@ enum PermissionAuthorizationType {
         switch self {
         case .geolocation:
             return UserText.permissionSystemLocationEnable
-        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .notification, .externalScheme:
             return "" // Not used for these types
         }
     }
@@ -105,7 +109,7 @@ enum PermissionAuthorizationType {
         switch self {
         case .geolocation:
             return UserText.permissionSystemLocationWaiting
-        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .notification, .externalScheme:
             return ""
         }
     }
@@ -115,7 +119,7 @@ enum PermissionAuthorizationType {
         switch self {
         case .geolocation:
             return UserText.permissionSystemLocationEnabled
-        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .notification, .externalScheme:
             return ""
         }
     }
@@ -125,7 +129,7 @@ enum PermissionAuthorizationType {
         switch self {
         case .geolocation:
             return UserText.permissionSystemLocationDisabled
-        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .notification, .externalScheme:
             return ""
         }
     }
@@ -135,7 +139,7 @@ enum PermissionAuthorizationType {
         switch self {
         case .geolocation:
             return UserText.permissionSystemSettingsLocation
-        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .notification, .externalScheme:
             return ""
         }
     }
@@ -145,7 +149,7 @@ enum PermissionAuthorizationType {
         switch self {
         case .geolocation:
             return URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices")
-        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .notification, .externalScheme:
             return nil
         }
     }
@@ -159,6 +163,7 @@ enum PermissionAuthorizationType {
         case .cameraAndMicrophone: return .camera // Use camera for system permission checks
         case .geolocation: return .geolocation
         case .popups: return .popups
+        case .notification: return .notification
         case .externalScheme(let scheme): return .externalScheme(scheme: scheme)
         }
     }
@@ -204,6 +209,8 @@ struct PermissionAuthorizationSwiftUIView: View {
             return String(format: UserText.devicePermissionAuthorizationFormat, domain, permissionType.localizedDescription.lowercased())
         case .popups:
             return String(format: UserText.popupWindowsPermissionAuthorizationFormat, domain, permissionType.localizedDescription.lowercased())
+        case .notification:
+            return String(format: UserText.devicePermissionAuthorizationFormat, domain, permissionType.localizedDescription.lowercased())
         case .externalScheme:
             if domain.isEmpty {
                 return String(format: UserText.externalSchemePermissionAuthorizationNoDomainFormat, permissionType.localizedDescription)
@@ -508,7 +515,7 @@ extension PermissionType {
         switch self {
         case .geolocation:
             return true
-        case .camera, .microphone, .popups, .externalScheme:
+        case .camera, .microphone, .popups, .notification, .externalScheme:
             return false
         }
     }
@@ -518,7 +525,7 @@ extension PermissionType {
         switch self {
         case .geolocation:
             return UserText.permissionSystemLocationDisabled
-        case .camera, .microphone, .popups, .externalScheme:
+        case .camera, .microphone, .popups, .notification, .externalScheme:
             return ""
         }
     }
@@ -528,7 +535,7 @@ extension PermissionType {
         switch self {
         case .geolocation:
             return UserText.permissionSystemSettingsLocation
-        case .camera, .microphone, .popups, .externalScheme:
+        case .camera, .microphone, .popups, .notification, .externalScheme:
             return ""
         }
     }
@@ -538,7 +545,7 @@ extension PermissionType {
         switch self {
         case .geolocation:
             return URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices")
-        case .camera, .microphone, .popups, .externalScheme:
+        case .camera, .microphone, .popups, .notification, .externalScheme:
             return nil
         }
     }

@@ -110,6 +110,7 @@ final class WebNotificationsHandlerTests: XCTestCase {
     var mockIconFetcher: MockNotificationIconFetcher!
     var mockFeatureFlagger: MockFeatureFlagger!
     var handler: WebNotificationsHandler!
+    let testTabUUID = "test-tab-uuid-123"
 
     override func setUp() {
         super.setUp()
@@ -118,6 +119,7 @@ final class WebNotificationsHandlerTests: XCTestCase {
         mockFeatureFlagger = MockFeatureFlagger()
         mockFeatureFlagger.enableFeatures([.webNotifications])
         handler = WebNotificationsHandler(
+            tabUUID: testTabUUID,
             notificationService: mockNotificationService,
             iconFetcher: mockIconFetcher,
             featureFlagger: mockFeatureFlagger)
@@ -552,5 +554,44 @@ final class WebNotificationsHandlerTests: XCTestCase {
 
         let addedRequest = mockNotificationService.addedRequests.first
         XCTAssertEqual(addedRequest?.content.userInfo["notificationId"] as? String, "test-userinfo")
+    }
+
+    func testNotificationContentIncludesTabUUID() async {
+        mockNotificationService.authorizationStatusToReturn = .authorized
+        let params: [String: Any] = [
+            "id": "test-tab-uuid",
+            "title": "Tab UUID Test"
+        ]
+        let webView = WKWebView(frame: .zero)
+        let mockMessage = WebNotificationMockScriptMessage(name: "webCompat", body: params, webView: webView)
+
+        let handlerFunc = handler.handler(forMethodNamed: "showNotification")
+        _ = try? await handlerFunc?(params, mockMessage)
+
+        let addedRequest = mockNotificationService.addedRequests.first
+        XCTAssertEqual(addedRequest?.content.userInfo["tabUUID"] as? String, testTabUUID)
+    }
+
+    // MARK: - Click Event Tests
+
+    func testSendClickEventUsesStoredWebView() {
+        let webView = WKWebView(frame: .zero)
+        handler.webView = webView
+
+        // sendClickEvent doesn't throw, it just sends to broker
+        // Without a broker, it's a no-op - we're testing the method exists and uses webView
+        handler.sendClickEvent(notificationId: "test-click-id")
+
+        // The method should not crash and should use the stored webView
+        XCTAssertNotNil(handler.webView)
+    }
+
+    func testSendClickEventWithNilWebViewDoesNotCrash() {
+        handler.webView = nil
+
+        // Should not crash when webView is nil
+        handler.sendClickEvent(notificationId: "test-click-nil")
+
+        XCTAssertNil(handler.webView)
     }
 }

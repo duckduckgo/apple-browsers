@@ -211,6 +211,12 @@ final class AIChatSettings: AIChatSettingsProvider {
     func enableAIChatFullModeSetting(enable: Bool) {
         keyValueStore.set(enable, forKey: .isAIChatFullModeEnabledKey)
         triggerSettingsChangedNotification()
+        
+        if enable {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsFullModeEnabled)
+        } else {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsFullModeDisabled)
+        }
     }
     
     /// Process the settings view funnels step

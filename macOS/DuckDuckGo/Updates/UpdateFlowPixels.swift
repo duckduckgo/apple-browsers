@@ -188,4 +188,18 @@ enum UpdateFlowPixels: PixelKitEvent {
         case moreOptionsMenu = "more_options"
         case aboutMenu = "about"
     }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .checkForUpdate,
+                .updateNotificationShown,
+                .updateNotificationTapped,
+                .updateDuckDuckGoButtonTapped,
+                .releaseMetadataFetchFailed,
+                .updateApplicationSuccess,
+                .updateApplicationFailure,
+                .updateApplicationUnexpected:
+            return [.pixelSource]
+        }
+    }
 }

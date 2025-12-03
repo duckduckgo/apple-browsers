@@ -27,8 +27,7 @@ protocol BrowsingMenuSheetCapable {
     var isEnabled: Bool { get }
     var variant: BrowsingMenuClusteringVariant { get set }
 
-    @discardableResult
-    func setEnabled(_ enabled: Bool) -> Bool
+    func setEnabled(_ enabled: Bool)
 }
 
 enum BrowsingMenuClusteringVariant: String, CaseIterable, CustomStringConvertible {
@@ -66,8 +65,8 @@ struct BrowsingMenuSheetUnavailableCapability: BrowsingMenuSheetCapable {
     let isEnabled: Bool = false
     var variant: BrowsingMenuClusteringVariant = .a
 
-    func setEnabled(_ enabled: Bool) -> Bool {
-        false
+    func setEnabled(_ enabled: Bool) {
+        // no-op
     }
 }
 
@@ -82,13 +81,15 @@ struct BrowsingMenuSheetDefaultCapability: BrowsingMenuSheetCapable {
     }
 
     var isAvailable: Bool {
-        return featureFlagger.internalUserDecider.isInternalUser
+        featureFlagger.isFeatureOn(.browsingMenuSheetPresentation)
     }
 
     var isEnabled: Bool {
-        guard isAvailable else { return false }
+        get {
+            guard isAvailable else { return false }
 
-        return featureFlagger.isFeatureOn(.browsingMenuSheetPresentation)
+            return (try? keyValueStore.object(forKey: StorageKey.experimentalBrowsingMenuEnabled) as? Bool) ?? false
+        }
     }
 
     var variant: BrowsingMenuClusteringVariant {
@@ -104,21 +105,12 @@ struct BrowsingMenuSheetDefaultCapability: BrowsingMenuSheetCapable {
         }
     }
 
-    func setEnabled(_ enabled: Bool) -> Bool {
-
-        guard isAvailable else { return false }
-
-        let flag = FeatureFlag.browsingMenuSheetPresentation
-        if let overrides = self.featureFlagger.localOverrides,
-           overrides.override(for: flag) != enabled {
-
-            overrides.toggleOverride(for: flag)
-        }
-
-        return isEnabled
+    func setEnabled(_ enabled: Bool) {
+        try? keyValueStore.set(enabled, forKey: StorageKey.experimentalBrowsingMenuEnabled)
     }
 
     private struct StorageKey {
         static let menuVariant = "browsingMenuVariantKey"
+        static let experimentalBrowsingMenuEnabled = "com_duckduckgo_experimentalBrowsingMenu_enabled"
     }
 }

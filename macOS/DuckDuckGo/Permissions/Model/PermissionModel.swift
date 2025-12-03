@@ -39,8 +39,10 @@ final class PermissionModel {
     private let permissionManager: PermissionManagerProtocol
     private let geolocationService: GeolocationServiceProtocol
     private let featureFlagger: FeatureFlagger
+
     /// Tracks if geolocation was ever activated during this session (for new permission view)
     private var geolocationWasActivated = false
+
     weak var webView: WKWebView? {
         didSet {
             guard let webView = webView else { return }
@@ -50,6 +52,12 @@ final class PermissionModel {
         }
     }
     private var cancellables = Set<AnyCancellable>()
+
+    /// Returns the domain for the current webView URL, mapping file URLs to "localhost"
+    private var currentDomain: String? {
+        guard let url = webView?.url else { return nil }
+        return url.isFileURL ? .localhost : url.host
+    }
 
     init(webView: WKWebView? = nil,
          permissionManager: PermissionManagerProtocol,
@@ -235,7 +243,7 @@ final class PermissionModel {
     }
 
     func revoke(_ permission: PermissionType) {
-        if let domain = webView?.url?.host,
+        if let domain = currentDomain,
            case .allow = permissionManager.permission(forDomain: domain, permissionType: permission) {
             permissionManager.setPermission(.ask, forDomain: domain, permissionType: permission)
         }
@@ -263,8 +271,10 @@ final class PermissionModel {
         permissions[permission] = nil
 
         // Remove from persisted storage
-        if let domain = webView?.url?.host {
+        if let domain = currentDomain {
             permissionManager.removePermission(forDomain: domain, permissionType: permission)
+        } else {
+            assertionFailure("webView URL should not be nil when removing a permission")
         }
     }
 

@@ -71,8 +71,8 @@ extension PermissionType {
         return [.camera, .microphone, .geolocation]
     }
 
-    func canPersistGrantedDecision(featureFlagger: FeatureFlagger? = nil) -> Bool {
-        if let featureFlagger, featureFlagger.isFeatureOn(.newPermissionView) {
+    func canPersistGrantedDecision(featureFlagger: FeatureFlagger) -> Bool {
+        if featureFlagger.isFeatureOn(.newPermissionView) {
             switch self {
             case .camera, .microphone, .externalScheme, .popups, .geolocation:
                 return true
@@ -87,8 +87,8 @@ extension PermissionType {
         }
     }
 
-    func canPersistDeniedDecision(featureFlagger: FeatureFlagger? = nil) -> Bool {
-        if let featureFlagger, featureFlagger.isFeatureOn(.newPermissionView) {
+    func canPersistDeniedDecision(featureFlagger: FeatureFlagger) -> Bool {
+        if featureFlagger.isFeatureOn(.newPermissionView) {
             switch self {
             case .camera, .microphone, .geolocation, .externalScheme:
                 return true

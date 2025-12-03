@@ -248,7 +248,9 @@ public final class WideEvent: WideEventManaging {
         }
 
         let finalPixelName = Self.generatePixelName(for: pixelName)
-        let event = WideEventPixelKitEvent(name: finalPixelName, parameters: parameters)
+
+        // Omit pixel source as it is included in the wide event body when necessary
+        let event = WideEventPixelKitEvent(name: finalPixelName, parameters: parameters, standardParameters: [])
 
         pixelKit.fire(
             event,
@@ -257,7 +259,6 @@ public final class WideEvent: WideEventManaging {
             withAdditionalParameters: nil,
             allowedQueryReservedCharacters: nil,
             includeAppVersionParameter: true,
-            includePixelSourceParameter: false,
             onComplete: { success, error in
                 if success {
                     Self.logger.info("Daily wide event pixel fired successfully: \(finalPixelName, privacy: .public)")
@@ -277,7 +278,6 @@ public final class WideEvent: WideEventManaging {
             withAdditionalParameters: nil,
             allowedQueryReservedCharacters: nil,
             includeAppVersionParameter: true,
-            includePixelSourceParameter: false,
             onComplete: { success, error in
                 if success {
                     Self.logger.info("Wide event fired successfully: \(finalPixelName, privacy: .public)")
@@ -318,9 +318,11 @@ public final class WideEvent: WideEventManaging {
 struct WideEventPixelKitEvent: PixelKitEvent {
     let name: String
     let parameters: [String: String]?
+    let standardParameters: [PixelKitStandardParameter]?
 
-    init(name: String, parameters: [String: String]) {
+    init(name: String, parameters: [String: String], standardParameters: [PixelKitStandardParameter]?) {
         self.name = name
         self.parameters = parameters
+        self.standardParameters = standardParameters
     }
 }

@@ -77,6 +77,16 @@ public enum VPNSubscriptionStatusPixel: PixelKitEvent, PixelKitEventWithCustomPr
         }
     }
 
+    public var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .vpnFeatureEnabled,
+                .vpnFeatureDisabled,
+                .signedIn,
+                .signedOut:
+            return [.pixelSource]
+        }
+    }
+
     static func sourceClass(from sourceObject: Any?) -> String {
         guard let sourceObject else {
             return "nil"

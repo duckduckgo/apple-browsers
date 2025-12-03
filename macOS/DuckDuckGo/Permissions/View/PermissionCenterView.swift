@@ -169,6 +169,12 @@ struct PermissionRowView: View {
         .onChange(of: currentDecision) { newValue in
             onDecisionChanged(newValue)
         }
+        .onChange(of: item.decision) { newValue in
+            // Sync local state when the item's decision changes from external source
+            if currentDecision != newValue {
+                currentDecision = newValue
+            }
+        }
     }
 
     // MARK: - Subviews

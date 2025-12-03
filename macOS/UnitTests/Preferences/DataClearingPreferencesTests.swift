@@ -99,25 +99,6 @@ class DataClearingPreferencesTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenFeatureFlagIsOffThenFireShouldShowDisableFireAnimationSectionIsFalse() {
-        let mockPersistor = MockFireButtonPreferencesPersistor()
-        let featureFlaggerMock = MockFeatureFlagger()
-        let sut = DataClearingPreferences(persistor: mockPersistor, featureFlagger: featureFlaggerMock)
-
-        XCTAssertFalse(sut.shouldShowDisableFireAnimationSection)
-    }
-
-    @MainActor
-    func testWhenFeatureFlagIsOnThenFireShouldShowDisableFireAnimationSectionIsTrue() {
-        let mockPersistor = MockFireButtonPreferencesPersistor()
-        let featureFlaggerMock = MockFeatureFlagger()
-        featureFlaggerMock.enabledFeatureFlags = [.disableFireAnimation]
-        let sut = DataClearingPreferences(persistor: mockPersistor, featureFlagger: featureFlaggerMock)
-
-        XCTAssertTrue(sut.shouldShowDisableFireAnimationSection)
-    }
-
-    @MainActor
     func testWhenAIChatHistoryCleanerDisplayOptionIsTrue_thenShouldShowAutoClearAIChatHistorySettingIsTrue() {
         let mockPersistor = MockFireButtonPreferencesPersistor()
         let mockAIChatHistoryCleaner = MockAIChatHistoryCleaner()

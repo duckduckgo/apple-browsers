@@ -53,10 +53,12 @@ final class DefaultBrowserAndDockPromptsUITests: UITestCase {
         app.confirmButton.click()
         XCTAssertTrue(app.inactiveUserPrompt.waitForNonExistence(timeout: UITests.Timeouts.elementExistence), "Inactive user prompt should be dismissed after clicking confirm button")
 
-        // Dismiss the default browser dialog to prevent interference with other tests
+        // Dismiss the default browser dialog, if needed, to prevent interference with other tests
         let coreServicesUIAgent = XCUIApplication(bundleIdentifier: "com.apple.coreservices.uiagent")
         let defaultBrowserDialog = coreServicesUIAgent.dialogs.firstMatch
-        defaultBrowserDialog.buttons.element(boundBy: 1).clickAfterExistenceTestSucceeds()
+        if defaultBrowserDialog.waitForExistence(timeout: UITests.Timeouts.elementExistence) {
+            defaultBrowserDialog.buttons.element(boundBy: 1).click()
+        }
     }
 
     // Note that this test only covers the behavior in the app under test, not the system behavior.

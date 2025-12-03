@@ -1257,7 +1257,7 @@ final class TabBarViewItem: NSCollectionViewItem {
 
         cell.needsLayout = true
         if cell.displaysTabsProgressIndicator {
-            cell.faviconView.displayFavicon(favicon: icon, placeholderStyle: .dot)
+            cell.faviconView.displayFavicon(favicon: icon, url: nil)
             cell.faviconView.imageTintColor = .systemRed
         } else {
             cell.faviconImageView.isHidden = false
@@ -1276,7 +1276,7 @@ final class TabBarViewItem: NSCollectionViewItem {
 
         if cell.displaysTabsProgressIndicator {
             cell.faviconView.imageTintColor = tintColor
-            cell.faviconView.displayFavicon(favicon: currentFavicon, placeholderStyle: faviconPlaceholderStyle)
+            cell.faviconView.displayFavicon(favicon: currentFavicon, url: tabViewModel?.url)
         } else {
             cell.faviconImageView.contentTintColor = tintColor
             cell.faviconImageView.isHidden = (currentFavicon == nil)
@@ -1333,7 +1333,7 @@ final class TabBarViewItem: NSCollectionViewItem {
 
         /// When using `faviconView`, we'll never display `faviconPlaceholderView`.
         if cell.displaysTabsProgressIndicator {
-            cell.faviconView.displayFavicon(favicon: favicon, placeholderStyle: faviconPlaceholderStyle)
+            cell.faviconView.displayFavicon(favicon: favicon, url: tabViewModel?.url)
             return
         }
 
@@ -1345,14 +1345,6 @@ final class TabBarViewItem: NSCollectionViewItem {
         } else {
             cell.faviconPlaceholderView.isHidden = true
         }
-    }
-
-    private var faviconPlaceholderStyle: FaviconPlaceholderStyle {
-        guard isPinned else {
-            return .dot
-        }
-
-        return .domainPrefix(tabViewModel?.url)
     }
 
     private func displayTabTitle(_ title: String) {

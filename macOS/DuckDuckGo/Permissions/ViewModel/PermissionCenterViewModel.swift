@@ -46,6 +46,7 @@ struct PermissionCenterItem: Identifiable {
     let domain: String
     var decision: PersistedPermissionDecision
     var isSystemDisabled: Bool
+
     /// Current state of the permission (active, inactive, etc.)
     var state: PermissionState
     /// For popups: the list of blocked popup URLs and their queries
@@ -107,6 +108,7 @@ enum PopupDecision: Hashable {
     case allowForThisVisit
     case notify
     case alwaysAllow
+
 }
 
 /// ViewModel for the Permission Center popover

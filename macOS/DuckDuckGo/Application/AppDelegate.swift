@@ -110,7 +110,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var appIconChanger: AppIconChanger!
     private var autoClearHandler: AutoClearHandler!
     private(set) var autofillPixelReporter: AutofillPixelReporter?
-    private(set) var quitSurveyDecider: QuitSurveyDeciding?
 
     private(set) var syncDataProviders: SyncDataProvidersSource?
     private(set) var syncService: DDGSyncing?
@@ -1101,7 +1100,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let urlEventHandlerResult = urlEventHandler.applicationDidFinishLaunching()
 
         setUpAutoClearHandler()
-        setUpQuitSurveyDecider()
 
         BWManager.shared.initCommunication()
 
@@ -1295,7 +1293,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         // Show quit survey for first-time quitters (new users within 14 days)
-        if let decider = quitSurveyDecider, decider.shouldShowQuitSurvey {
+        let decider = QuitSurveyDecider(
+            featureFlagger: featureFlagger,
+            dataClearingPreferences: dataClearingPreferences,
+            downloadManager: downloadManager,
+            installDate: AppDelegate.firstLaunchDate
+        )
+
+        if decider.shouldShowQuitSurvey {
             let alert = NSAlert()
             alert.messageText = "Quit DuckDuckGo?"
             alert.informativeText = "This is your first time quitting the application."
@@ -1620,16 +1625,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 NSApplication.shared.reply(toApplicationShouldTerminate: true)
             }
         }
-    }
-
-    @MainActor
-    private func setUpQuitSurveyDecider() {
-        quitSurveyDecider = QuitSurveyDecider(
-            featureFlagger: featureFlagger,
-            dataClearingPreferences: dataClearingPreferences,
-            downloadManager: downloadManager,
-            installDate: AppDelegate.firstLaunchDate
-        )
     }
 
     private func setUpAutofillPixelReporter() {

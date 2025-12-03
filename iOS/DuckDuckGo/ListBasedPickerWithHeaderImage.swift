@@ -69,8 +69,10 @@ struct ListBasedPickerWithHeaderImage<T: Hashable>: View {
                         iconProvider?(option)
 
                         Text(verbatim: descriptionForOption(option))
+                            .daxBodyRegular()
                             .lineLimit(2)
                             .layoutPriority(1)
+                            .foregroundColor(Color(designSystemColor: .textPrimary))
 
                         if selectedOption == option {
                             Spacer()

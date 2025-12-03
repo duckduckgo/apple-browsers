@@ -122,4 +122,3 @@ final class WebNotificationClickHandlerTests: XCTestCase {
         XCTAssertNil(mockTabFinder.focusTabCalledWithTab)
     }
 }
-

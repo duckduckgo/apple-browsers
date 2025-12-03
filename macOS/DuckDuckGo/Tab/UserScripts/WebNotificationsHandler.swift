@@ -70,6 +70,9 @@ final class WebNotificationsHandler: NSObject, Subfeature {
     /// The webView associated with this handler's tab, set by `WebNotificationsTabExtension`.
     weak var webView: WKWebView?
 
+    /// The webView associated with this handler's tab, set by `WebNotificationsTabExtension`.
+    weak var webView: WKWebView?
+
     // MARK: - Initialization
 
     init(tabUUID: String,

@@ -27,7 +27,9 @@ class SwitchBarTextEntryView: UIView {
 
     private enum Constants {
         static let maxHeight: CGFloat = 120
+        static let maxHeightWhenUsingFadeOutAnimation: CGFloat = 132
         static let minHeight: CGFloat = 44
+        static let minHeightAIChat: CGFloat = 68
         static let fontSize: CGFloat = 16
 
         // Text container insets
@@ -56,6 +58,27 @@ class SwitchBarTextEntryView: UIView {
     private var currentMode: TextEntryMode {
         handler.currentToggleState
     }
+
+    private var currentMinHeight: CGFloat {
+        guard handler.isUsingFadeOutAnimation else {
+            return Constants.minHeight
+        }
+
+        if currentMode == .aiChat && !handler.isUsingExpandedBottomBarHeight {
+            return Constants.minHeightAIChat
+        }
+
+        return Constants.minHeight
+    }
+
+    private var currentMaxHeight: CGFloat {
+        handler.isUsingFadeOutAnimation ? Constants.maxHeightWhenUsingFadeOutAnimation : Constants.maxHeight
+    }
+
+    private var isUsingBottomBarIncreasedHeight: Bool {
+        handler.isUsingExpandedBottomBarHeight
+    }
+
     private var cancellables = Set<AnyCancellable>()
 
     private var heightConstraint: NSLayoutConstraint?
@@ -138,7 +161,7 @@ class SwitchBarTextEntryView: UIView {
         textView.translatesAutoresizingMaskIntoConstraints = false
         placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
 
-        heightConstraint = heightAnchor.constraint(equalToConstant: Constants.minHeight)
+        heightConstraint = heightAnchor.constraint(equalToConstant: currentMinHeight)
         heightConstraint?.isActive = true
 
         setupConstraints()
@@ -198,18 +221,14 @@ class SwitchBarTextEntryView: UIView {
     // MARK: - UI Updates
 
     private func updateForCurrentMode() {
-        textView.keyboardType = .webSearch
-
         switch currentMode {
         case .search:
             placeholderLabel.text = UserText.searchDuckDuckGo
-            textView.returnKeyType = .search
             textView.autocapitalizationType = .none
             textView.autocorrectionType = .no
             textView.spellCheckingType = .no
         case .aiChat:
             placeholderLabel.text = UserText.searchInputFieldPlaceholderDuckAI
-            textView.returnKeyType = .go
             textView.autocapitalizationType = .sentences
             textView.autocorrectionType = .default
             textView.spellCheckingType = .default
@@ -220,10 +239,30 @@ class SwitchBarTextEntryView: UIView {
                 self?.textView.becomeFirstResponder()
             }
         }
-
+        updateKeyboardConfiguration()
         updatePlaceholderVisibility()
         updateButtonState()
         updateTextViewHeight()
+    }
+
+    private func updateKeyboardConfiguration() {
+        switch currentMode {
+        case .search:
+            textView.keyboardType = .webSearch
+            textView.returnKeyType = .search
+        case .aiChat:
+            if handler.isUsingFadeOutAnimation {
+                textView.keyboardType = .default
+                textView.returnKeyType = .default
+            } else {
+                textView.keyboardType = .webSearch
+                textView.returnKeyType = .go
+            }
+        }
+
+        if handler.isUsingFadeOutAnimation {
+            textView.reloadInputViews()
+        }
     }
 
     private func updatePlaceholderVisibility() {
@@ -299,22 +338,33 @@ class SwitchBarTextEntryView: UIView {
 
             /// When empty (or showing an unexpanded URL), size to one line  to avoid clipping at larger accessibility sizes.
             let requiredEmptyStateHeight = requiredHeightForSingleLineContent()
-            heightConstraint?.constant = max(Constants.minHeight, min(Constants.maxHeight, requiredEmptyStateHeight))
+            heightConstraint?.constant = max(currentMinHeight, min(currentMaxHeight, requiredEmptyStateHeight))
             textView.isScrollEnabled = false
             textView.showsVerticalScrollIndicator = false
             textView.textContainer.lineBreakMode = .byTruncatingTail
         } else if isExpandable {
             let contentHeight = getCurrentContentHeight()
-            let contentExceedsMaxHeight = contentHeight > Constants.maxHeight
-            
-            let newHeight = max(Constants.minHeight, min(Constants.maxHeight, contentHeight))
+            let contentExceedsMaxHeight = contentHeight > currentMaxHeight
+
+            let newHeight: CGFloat
+            if isUsingBottomBarIncreasedHeight {
+                let singleLineHeight = requiredHeightForSingleLineContent()
+                let textRequiresMultipleLines = contentHeight > singleLineHeight + 1
+                if textRequiresMultipleLines {
+                    newHeight = max(currentMinHeight, min(currentMaxHeight, contentHeight))
+                } else {
+                    newHeight = currentMinHeight
+                }
+            } else {
+                newHeight = max(currentMinHeight, min(currentMaxHeight, contentHeight))
+            }
 
             heightConstraint?.constant = newHeight
 
             textView.isScrollEnabled = contentExceedsMaxHeight
             textView.showsVerticalScrollIndicator = contentExceedsMaxHeight
         } else {
-            heightConstraint?.constant = Constants.minHeight
+            heightConstraint?.constant = currentMinHeight
             textView.isScrollEnabled = true
             textView.showsVerticalScrollIndicator = true
             return
@@ -367,7 +417,17 @@ class SwitchBarTextEntryView: UIView {
             .receive(on: DispatchQueue.main)
             .removeDuplicates()
             .sink { [weak self] _ in
-                self?.updateForCurrentMode()
+                guard let self else { return }
+
+                if self.handler.isUsingFadeOutAnimation {
+                    self.window?.layoutIfNeeded()
+                    self.updateForCurrentMode()
+                    UIView.animate(withDuration: 0.25) {
+                        self.window?.layoutIfNeeded()
+                    }
+                } else {
+                    self.updateForCurrentMode()
+                }
             }
             .store(in: &cancellables)
 
@@ -436,6 +496,10 @@ extension SwitchBarTextEntryView: UITextViewDelegate {
 
     func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
         if text == "\n" {
+            if handler.isUsingFadeOutAnimation && currentMode == .aiChat {
+                return true
+            }
+
             fireKeyboardGoPressedPixel()
             /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1210629837418046?focus=true
             let currentText = textView.text ?? ""

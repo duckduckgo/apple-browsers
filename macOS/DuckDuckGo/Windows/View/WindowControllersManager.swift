@@ -596,8 +596,9 @@ extension WindowControllersManagerProtocol {
     func findTab(byUUID uuid: String) -> Tab? {
         for windowController in mainWindowControllers {
             let tabCollectionViewModel = windowController.mainViewController.tabCollectionViewModel
-            if let tab = tabCollectionViewModel.tabCollection.tabs.first(where: { $0.uuid == uuid }) {
-                return tab
+
+            if let index = tabCollectionViewModel.indexInAllTabs(where: { $0.uuid == uuid }) {
+                return tabCollectionViewModel.tabViewModel(at: index)?.tab
             }
         }
         return nil
@@ -606,12 +607,14 @@ extension WindowControllersManagerProtocol {
     /// Focuses the window containing the given tab and selects the tab.
     /// - Parameter tab: The tab to focus.
     func focusTab(_ tab: Tab) {
-        guard let windowController = windowController(for: tab),
-              let index = windowController.mainViewController.tabCollectionViewModel.indexInAllTabs(of: tab) else {
-            return
+        for windowController in mainWindowControllers {
+            let tabCollectionViewModel = windowController.mainViewController.tabCollectionViewModel
+            if let index = tabCollectionViewModel.indexInAllTabs(of: tab) {
+                windowController.window?.makeKeyAndOrderFront(nil)
+                tabCollectionViewModel.select(at: index)
+                return
+            }
         }
-        windowController.window?.makeKeyAndOrderFront(nil)
-        windowController.mainViewController.tabCollectionViewModel.select(at: index)
     }
 
     /// Focuses the most recently active browser window.

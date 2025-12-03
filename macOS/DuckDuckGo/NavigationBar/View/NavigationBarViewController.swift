@@ -1435,7 +1435,9 @@ final class NavigationBarViewController: NSViewController {
         let internalUserDecider = NSApp.delegateTyped.internalUserDecider
         let freemiumDBPFeature = Application.appDelegate.freemiumDBPFeature
         var dockCustomization: DockCustomization?
+#if SPARKLE
         dockCustomization = Application.appDelegate.dockCustomization
+#endif
         let menu = MoreOptionsMenu(tabCollectionViewModel: tabCollectionViewModel,
                                    bookmarkManager: bookmarkManager,
                                    historyCoordinator: historyCoordinator,

@@ -75,4 +75,3 @@ extension TabExtensions {
         resolve(WebNotificationsTabExtension.self)
     }
 }
-

@@ -54,4 +54,3 @@ final class WebNotificationClickHandler {
         tab.webNotifications?.sendClickEvent(notificationId: notificationId)
     }
 }
-

@@ -351,7 +351,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .autofillExtensionSettings,
              .canPromoteAutofillExtensionInBrowser,
              .canPromoteAutofillExtensionInPasswordManagement,
-                .granularFireButtonOptions,
+             .granularFireButtonOptions,
              .fullDuckAIModeExperimentalSetting:
             return true
         case .showSettingsCompleteSetupSection:

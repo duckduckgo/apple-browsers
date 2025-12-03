@@ -85,6 +85,7 @@ final class PopupBlockedViewController: NSViewController {
 
     private var swiftUIHostingView: NSHostingView<PopupBlockedSwiftUIView>?
     private let newPermissionView: Bool
+    private var dismissWorkItem: DispatchWorkItem?
 
     weak var query: PermissionAuthorizationQuery? {
         didSet {
@@ -127,11 +128,22 @@ final class PopupBlockedViewController: NSViewController {
     }
 
     override func viewDidAppear() {
+        // Cancel any existing work item to prevent multiple timers
+        dismissWorkItem?.cancel()
+
         // New UI with Open button needs more time for user interaction
         let dismissDelay: TimeInterval = newPermissionView ? 4.0 : 2.0
-        DispatchQueue.main.asyncAfter(deadline: .now() + dismissDelay) { [weak self] in
+        let workItem = DispatchWorkItem { [weak self] in
             self?.dismiss()
         }
+        dismissWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + dismissDelay, execute: workItem)
+    }
+
+    override func viewWillDisappear() {
+        super.viewWillDisappear()
+        dismissWorkItem?.cancel()
+        dismissWorkItem = nil
     }
 
     private func setupSwiftUIView() {

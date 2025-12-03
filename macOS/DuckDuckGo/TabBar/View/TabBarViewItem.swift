@@ -1277,9 +1277,10 @@ final class TabBarViewItem: NSCollectionViewItem {
             return DesignSystemImages.Glyphs.Size16.microphoneSolid
         case .geolocation:
             return DesignSystemImages.Glyphs.Size16.permissionsLocationSolid
+        case .popups, .externalScheme:
+            assertionFailure("Unexpected permission type for active icon: \(permissionType)")
+            return DesignSystemImages.Glyphs.Size16.videoSolid
         }
-        assertionFailure("Unexpected permission type: \(permissionType)")
-        return DesignSystemImages.Glyphs.Size16.videoSolid
     }
 
     private func updateSeparatorView() {

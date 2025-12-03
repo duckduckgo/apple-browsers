@@ -257,6 +257,7 @@ struct PermissionRowView: View {
             .foregroundColor(.accentColor))
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
+            .cursor(.pointingHand)
             .onTapGesture {
                 openSystemSettings()
             }
@@ -362,13 +363,7 @@ struct PopupPermissionRowView: View {
                                 .truncationMode(.middle)
                         }
                         .buttonStyle(PlainButtonStyle())
-                        .onHover { hovering in
-                            if hovering {
-                                NSCursor.pointingHand.push()
-                            } else {
-                                NSCursor.pop()
-                            }
-                        }
+                        .cursor(.pointingHand)
                     }
                 }
                 .padding(.leading, 44)

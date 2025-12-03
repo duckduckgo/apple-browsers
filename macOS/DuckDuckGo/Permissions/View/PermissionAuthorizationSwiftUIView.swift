@@ -314,6 +314,7 @@ struct PermissionAuthorizationSwiftUIView: View {
             .foregroundColor(.accentColor))
             .frame(maxWidth: .infinity, alignment: .leading)
             .fixedSize(horizontal: false, vertical: true)
+            .cursor(.pointingHand)
             .onTapGesture {
                 openSystemSettings()
             }

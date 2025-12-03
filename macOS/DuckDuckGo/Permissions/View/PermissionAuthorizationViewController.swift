@@ -205,14 +205,8 @@ final class PermissionAuthorizationViewController: NSViewController {
             onDeny: { [weak self] in
                 self?.handleDeny()
             },
-            onAlwaysDeny: { [weak self] in
-                self?.handleAlwaysDeny()
-            },
             onAllow: { [weak self] in
                 self?.handleAllow()
-            },
-            onAlwaysAllow: { [weak self] in
-                self?.handleAlwaysAllow()
             },
             systemPermissionManager: systemPermissionManager
         )
@@ -236,18 +230,8 @@ final class PermissionAuthorizationViewController: NSViewController {
         query?.handleDecision(grant: false, remember: nil)
     }
 
-    private func handleAlwaysDeny() {
-        dismiss()
-        query?.handleDecision(grant: false, remember: true)
-    }
-
     private func handleAllow() {
         dismiss()
         query?.handleDecision(grant: true, remember: nil)
-    }
-
-    private func handleAlwaysAllow() {
-        dismiss()
-        query?.handleDecision(grant: true, remember: true)
     }
 }

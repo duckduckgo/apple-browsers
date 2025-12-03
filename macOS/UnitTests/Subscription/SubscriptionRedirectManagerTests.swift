@@ -32,7 +32,6 @@ final class SubscriptionRedirectManagerTests: XCTestCase {
 
     var subscriptionManager: SubscriptionManagerMock!
 
-    private var hasAppStoreProductsAvailable: Bool = true
     private var mockInternalUserStoring: MockInternalUserStoring! = MockInternalUserStoring()
 
     private var sut: SubscriptionRedirectManager!
@@ -75,7 +74,7 @@ final class SubscriptionRedirectManagerTests: XCTestCase {
         let url = try XCTUnwrap(URL(string: "https://www.duckduckgo.com/pro?origin=test"))
 
         // WHEN
-        self.hasAppStoreProductsAvailable = false
+        subscriptionManager.hasAppStoreProductsAvailable = false
         let result = sut.redirectURL(for: url)
 
         // THEN

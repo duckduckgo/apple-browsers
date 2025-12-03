@@ -25,9 +25,7 @@ final class PopupHandlingUITests: UITestCase {
     /// User-initiated popup timeout threshold (reduced to 2s for faster testing)
     /// Production default is 6s, but tests override to 2s in setUp
     private enum PopupTimeout {
-        static let threshold: TimeInterval = 2.0
-        static let withinThreshold: TimeInterval = 1.0  // Less than threshold (1s < 2s)
-        static let beyondThreshold: TimeInterval = 3.0  // More than threshold (3s > 2s)
+        static let testingThreshold: TimeInterval = 2.0
     }
 
     private enum AccessibilityIdentifiers {
@@ -49,7 +47,7 @@ final class PopupHandlingUITests: UITestCase {
         // Enable all popup blocking features and set reduced timeout for faster testing
         app = XCUIApplication.setUp(
             environment: [
-                "POPUP_TIMEOUT_OVERRIDE": "2.0"  // Reduce from 6s to 2s for faster tests
+                "POPUP_TIMEOUT_OVERRIDE": String(PopupTimeout.testingThreshold)  // Reduce from 6s to 2s for faster tests
             ],
             featureFlags: [
                 "popupBlocking": true,
@@ -135,7 +133,7 @@ final class PopupHandlingUITests: UITestCase {
         let popupWindow = app.windows["Delayed User Popup"]
         XCTAssertTrue(
             popupWindow.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "Popup should open without permission within \(PopupTimeout.threshold)s timeout window"
+            "Popup should open without permission within \(PopupTimeout.testingThreshold)s timeout window"
         )
 
         // Verify popup content loaded correctly

@@ -67,4 +67,12 @@ public struct TierFeature: Codable, Equatable {
 public enum TierName: String, Codable {
     case plus
     case pro
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let rawValue = try container.decode(String.self)
+
+        // Default to .plus if rawValue doesn't match any case
+        self = TierName(rawValue: rawValue) ?? .plus
+    }
 }

@@ -61,87 +61,24 @@ struct ImportSourcePickerView: View {
     var body: some View {
         VStack(spacing: 20) {
             VStack {
-                VStack(spacing: 4) {
-                    Text(UserText.importChooseSourceTitle)
-                        .font(.title2.weight(.semibold))
-                        .padding(.top, 20)
-                    if viewModel.selectedSource.isSafari {
-                        Text(UserText.importDataImportTypeTitleSelected)
-                            .font(.body)
-                            .foregroundColor(Color(designSystemColor: .textSecondary))
-                    } else {
-                        HoverButtonView {
-                            viewModel.showTypeSelectionSheet()
-                        } content: {
-                            HStack(alignment: .center, spacing: 4) {
-                                Text(viewModel.typeButtonTitle)
-                                    .font(.body)
-                                    .foregroundColor(Color(designSystemColor: .textSecondary))
-                                Image(nsImage: DesignSystemImages.Glyphs.Size16.chevronRight)
-                                    .renderingMode(.template)
-                                    .resizable()
-                                    .frame(width: 10, height: 10)
-                                    .rotationEffect(.degrees(90))
-                                    .offset(y: 1)
-                                    .foregroundColor(Color(designSystemColor: .textSecondary))
-                            }
-                        }
+                headerSection
+                    .sheet(isPresented: $viewModel.isTypePickerSheetVisible) {
+                        NewImportTypePickerView(
+                            items: $viewModel.importTypeItems,
+                            doneAction: viewModel.typeSelectionDone,
+                            cancelAction: viewModel.typeSelectionCancelled,
+                            isDoneDisabled: $viewModel.isDoneButtonDisabled
+                        )
                     }
-                }
-                .sheet(isPresented: $viewModel.isTypePickerSheetVisible) {
-                    NewImportTypePickerView(
-                        items: $viewModel.importTypeItems,
-                        doneAction: viewModel.typeSelectionDone,
-                        cancelAction: viewModel.typeSelectionCancelled,
-                        isDoneDisabled: $viewModel.isDoneButtonDisabled
-                    )
-                }
-                .padding(.top, 20)
-                .padding(.bottom, 16)
+                    .padding(.top, 20)
+                    .padding(.bottom, 16)
                 RadioGridPicker(viewModel: viewModel)
                 if viewModel.shouldShowExpandButton {
-                    HoverButtonView {
-                        viewModel.toggleExpansion()
-                    } content: {
-                        HStack(alignment: .center, spacing: 4) {
-                            Text(UserText.importChooseSourceShowMoreButtonTitle)
-                                .font(.body)
-                                .foregroundColor(Color(designSystemColor: .textSecondary))
-                            Image(nsImage: DesignSystemImages.Glyphs.Size16.chevronRight)
-                                .renderingMode(.template)
-                                .resizable()
-                                .frame(width: 10, height: 10)
-                                .rotationEffect(.degrees(90))
-                                .offset(y: 1)
-                                .foregroundColor(Color(designSystemColor: .textSecondary))
-                        }
-                        
-                    }
-                    .padding(.top, 10)
+                    expandButton
                 }
             }
             if viewModel.shouldShowSyncButton {
-                Button(action: viewModel.syncSelected) {
-                    HStack(alignment: .center) {
-                        Text(UserText.importChooseSourceSyncButtonTitle)
-                            .font(.system(size: 13))
-                            .foregroundColor(Color(designSystemColor: .textSecondary))
-                        Spacer()
-                        Text(UserText.importChooseSourceSyncButtonAction)
-                            .font(.system(size: 13))
-                            .foregroundColor(Color(designSystemColor: .textSecondary))
-                        Image(nsImage: DesignSystemImages.Glyphs.Size16.chevronRight)
-                            .renderingMode(.template)
-                            .resizable()
-                            .frame(width: 10, height: 10)
-                            .foregroundColor(Color(designSystemColor: .textTertiary))
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 14)
-                    .frame(width: 380, alignment: .center)
-                    .borderedBackground(cornerRadius: 10)
-                }
-                .buttonStyle(.plain)
+                syncButton
             }
         }
         .padding(.horizontal, 20)
@@ -156,21 +93,82 @@ struct ImportSourcePickerView: View {
             onExpandedStateChanged(newValue)
         }
     }
-}
 
-private struct HoverButtonView<Content>: View where Content: View {
-    let action: () -> Void
-    @ViewBuilder let content: () -> Content
-
-    @State var isHovering: Bool = false
-
-    var body: some View {
-        Button(action: action) {
-            content()
-            .foregroundColor(isHovering ? Color(designSystemColor: .textPrimary) : Color(designSystemColor: .textTertiary))
-            .onHover {
-                isHovering = $0
+    @ViewBuilder
+    private var headerSection: some View {
+        VStack(spacing: 4) {
+            Text(UserText.importChooseSourceTitle)
+                .font(.title2.weight(.semibold))
+                .padding(.top, 20)
+            if viewModel.selectedSource.isSafari {
+                Text(UserText.importDataImportTypeTitleSelected)
+                    .font(.body)
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+            } else {
+                typeSelectionButton
             }
+        }
+    }
+
+    private var typeSelectionButton: some View {
+        Button {
+            viewModel.showTypeSelectionSheet()
+        } label: {
+            HStack(alignment: .center, spacing: 4) {
+                Text(viewModel.typeButtonTitle)
+                    .font(.body)
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.chevronRight)
+                    .renderingMode(.template)
+                    .resizable()
+                    .frame(width: 10, height: 10)
+                    .rotationEffect(.degrees(90))
+                    .offset(y: 1)
+            }
+        }
+        .foregroundColor(Color(designSystemColor: .textSecondary))
+        .buttonStyle(.plain)
+    }
+
+    private var expandButton: some View {
+        Button {
+            viewModel.toggleExpansion()
+        } label: {
+            HStack(alignment: .center, spacing: 4) {
+                Text(UserText.importChooseSourceShowMoreButtonTitle)
+                    .font(.body)
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.chevronRight)
+                    .renderingMode(.template)
+                    .resizable()
+                    .frame(width: 10, height: 10)
+                    .rotationEffect(.degrees(90))
+                    .offset(y: 1)
+            }
+        }
+        .foregroundColor(Color(designSystemColor: .textSecondary))
+        .buttonStyle(.plain)
+        .padding(.top, 10)
+    }
+
+    private var syncButton: some View {
+        Button(action: viewModel.syncSelected) {
+            HStack(alignment: .center) {
+                Text(UserText.importChooseSourceSyncButtonTitle)
+                    .font(.system(size: 13))
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                Spacer()
+                Text(UserText.importChooseSourceSyncButtonAction)
+                    .font(.system(size: 13))
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.chevronRight)
+                    .renderingMode(.template)
+                    .resizable()
+                    .frame(width: 10, height: 10)
+                    .foregroundColor(Color(designSystemColor: .textTertiary))
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 14)
+            .frame(width: 380, alignment: .center)
+            .borderedBackground(cornerRadius: 10)
         }
         .buttonStyle(.plain)
     }

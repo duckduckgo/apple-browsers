@@ -252,7 +252,7 @@ private struct FloatingToolbarModifier: ViewModifier {
                         Color(designSystemColor: .surface)
                     ]
                     LinearGradient(colors: colors, startPoint: .top, endPoint: .bottom)
-                    // This makes the gradient extend into the bottom safe area.
+                    // This makes the gradient extend to the full width and into the bottom safe area.
                         .ignoresSafeArea(edges: [.horizontal, .bottom])
                     // Together with previous modifier, this guarantees 8pt above the content of `safeAreaInset` below.
                         .frame(height: 8, alignment: .bottom)

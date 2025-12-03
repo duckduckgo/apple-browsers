@@ -676,10 +676,12 @@ final class DataImportViewModelTests: XCTestCase {
         model = DataImportViewModel(importSource: .chrome, screen: .moreInfo, syncFeatureVisibility: .hide)
 
         // WHEN
-        let shouldHide = model.shouldHideProgressAndFooter
+        let shouldHideFooter = model.shouldHideFooter
+        let shouldHideProgress = model.shouldHideProgress
 
         // THEN
-        XCTAssertTrue(shouldHide)
+        XCTAssertTrue(shouldHideFooter)
+        XCTAssertTrue(shouldHideProgress)
     }
 
     func testShouldHideProgressAndFooter_falseForOtherScreens() {
@@ -696,10 +698,12 @@ final class DataImportViewModelTests: XCTestCase {
             model = DataImportViewModel(importSource: .chrome, screen: screen, syncFeatureVisibility: .hide)
 
             // WHEN
-            let shouldHide = model.shouldHideProgressAndFooter
+            let shouldHideFooter = model.shouldHideFooter
+            let shouldHideProgress = model.shouldHideProgress
 
             // THEN
-            XCTAssertFalse(shouldHide, "Expected \(screen) to not hide progress and footer")
+            XCTAssertFalse(shouldHideFooter, "Expected \(screen) to not hide footer")
+            XCTAssertFalse(shouldHideProgress, "Expected \(screen) to not hide progress")
         }
     }
 

@@ -42563,6 +42563,18 @@
         }
       }
     },
+    "import.chrome.allow-keychain.allow.button.title" : {
+      "comment" : "Button title of example dialog demonstrating to the user what to click when the system needs to access their Keychain.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow"
+          }
+        }
+      }
+    },
     "import.chrome.allow-keychain.instructions" : {
       "comment" : "Instructions shown to the user when Chrome needs to access their Keychain. Contains markdown for bold text.",
       "extractionState" : "extracted_with_value",
@@ -45823,6 +45835,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Чтобы узнать версию своего приложения, выберите на панели меню **%1$s → Сведения о %2$s**."
+          }
+        }
+      }
+    },
+    "import.password.entry.help.dialog.example.text" : {
+      "comment" : "Explanatory text shown on an example of a system prompt that asks for the user's password.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo wants to use your confidential information stored in your keychain."
+          }
+        }
+      }
+    },
+    "import.password.entry.help.instructions" : {
+      "comment" : "Instructions for password entry help",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Click **Show macOS Message** and select **Allow** when the macOS message appears."
+          }
+        }
+      }
+    },
+    "import.password.entry.help.show.macos.message.button" : {
+      "comment" : "Button text to trigger the macOS keychain prompt",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show macOS Message"
+          }
+        }
+      }
+    },
+    "import.password.entry.help.title" : {
+      "comment" : "Title for the password entry help screen",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Want to try again? macOS needs your permission to finish importing."
           }
         }
       }

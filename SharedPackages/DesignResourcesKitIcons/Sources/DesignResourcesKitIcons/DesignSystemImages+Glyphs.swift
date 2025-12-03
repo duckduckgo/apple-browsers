@@ -141,6 +141,7 @@ public extension DesignSystemImages {
             public static var emailUnlocked: DesignSystemImage { .init(resource: .emailUnlocked16) }
             public static var exclamation: DesignSystemImage { .init(resource: .exclamation16) }
             public static var exclamationRecolorable: DesignSystemImage { .init(resource: .exclamationRecolorable16) }
+            public static var exclamationRecolorableInvert: DesignSystemImage { .init(resource: .exclamationRecolorableInvert16) }
             public static var expand: DesignSystemImage { .init(resource: .expand16) }
             public static var export: DesignSystemImage { .init(resource: .export16) }
             public static var exportRight: DesignSystemImage { .init(resource: .exportRight16) }

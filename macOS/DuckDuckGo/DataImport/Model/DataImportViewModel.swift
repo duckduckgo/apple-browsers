@@ -69,6 +69,7 @@ struct DataImportViewModel {
         case sourceAndDataTypesPicker
         case profilePicker
         case moreInfo
+        case passwordEntryHelp
         case fileImport(dataType: DataType, summary: DataImportSummary = [:])
         case archiveImport(dataTypes: Set<DataType>, summary: DataImportSummary? = nil)
         case summary(DataImportSummary)
@@ -149,7 +150,16 @@ struct DataImportViewModel {
 
     private var userReportText: String = ""
 
-    var shouldHideProgressAndFooter: Bool {
+    var shouldHideProgress: Bool {
+        switch screen {
+        case .moreInfo, .passwordEntryHelp:
+            return true
+        default:
+            return false
+        }
+    }
+
+    var shouldHideFooter: Bool {
         switch screen {
         case .moreInfo:
             return true
@@ -380,8 +390,13 @@ struct DataImportViewModel {
                 // chromium user denied keychain prompt error
             case let error as ChromiumLoginReader.ImportError where error.type == .userDeniedKeychainPrompt:
                 PixelKit.fire(GeneralPixel.passwordImportKeychainPromptDenied)
-                goBack()
-                // stay on the same screen
+                if screen == .passwordEntryHelp {
+                    // User already saw help, go back to start
+                    goBack()
+                } else {
+                    // First time seeing the error, show help
+                    screen = .passwordEntryHelp
+                }
                 return true
 
                 // firefox passwords db is main-password protected: request password
@@ -730,6 +745,8 @@ extension DataImportViewModel {
             return .continue
         case .moreInfo:
             return initiateImport()
+        case .passwordEntryHelp:
+            return nil
 
         case .archiveImport:
             return nil
@@ -757,6 +774,8 @@ extension DataImportViewModel {
                 return .cancel
             case .archiveImport, .profilePicker, .moreInfo:
                 return .back
+            case .passwordEntryHelp:
+                return .cancel
             case .fileImport(_, let summary):
                 return summary.isEmpty ? .back : nil
             case .summary:
@@ -816,9 +835,13 @@ extension DataImportViewModel {
             skipImportOrDismiss(using: dismiss)
 
         case .cancel:
-            importTask?.cancel()
-            onCancelled()
-            self.dismiss(using: dismiss)
+            if screen == .passwordEntryHelp {
+                goBack()
+            } else {
+                importTask?.cancel()
+                onCancelled()
+                self.dismiss(using: dismiss)
+            }
 
         case .submit:
             submitReport()

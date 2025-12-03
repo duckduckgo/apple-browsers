@@ -63,6 +63,15 @@ struct DataImportView: ModalView {
 #endif
     }
 
+    private var dialogWidth: CGFloat {
+        switch model.screen {
+        case .passwordEntryHelp:
+            return 500
+        default:
+            return 420
+        }
+    }
+
     var body: some View {
         VStack(alignment: .center, spacing: 0) {
             switch model.screen {
@@ -116,6 +125,12 @@ struct DataImportView: ModalView {
                 )
             case .moreInfo:
                 NewImportMoreInfoView()
+            case .passwordEntryHelp:
+                PasswordEntryRetryPromptView(
+                    onRetry: {
+                        model.initiateImport()
+                    }
+                )
             case .summary(let summary):
                 NewImportSummaryView(
                     summary: summary,
@@ -134,7 +149,7 @@ struct DataImportView: ModalView {
             }
 
             // if import in progress…
-            if let importProgress = model.importProgress, !model.shouldHideProgressAndFooter {
+            if let importProgress = model.importProgress, !model.shouldHideProgress {
                 progressView(importProgress)
                     .padding(.leading, 20)
                     .padding(.trailing, 20)
@@ -150,7 +165,7 @@ struct DataImportView: ModalView {
             }
         }
         .font(.system(size: 13))
-        .frame(width: 420)
+        .frame(width: dialogWidth)
         .fixedSize()
         .onReceive(internalUserDecider.isInternalUserPublisher.removeDuplicates()) {
             isInternalUser = $0
@@ -190,7 +205,7 @@ struct DataImportView: ModalView {
                 .disabled(model.buttons[idx].isDisabled)
             }
         }
-        .opacity(model.shouldHideProgressAndFooter ? 0 : 1)
+        .opacity(model.shouldHideFooter ? 0 : 1)
     }
 
     @State private var showPasswordsExplainerPopover = false

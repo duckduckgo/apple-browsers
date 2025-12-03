@@ -36,7 +36,7 @@ class TabURLInterceptorDefaultTests: XCTestCase {
         mockInternalUserStoring.isInternalUser = false
         mockAIChatFullModeFeature = MockAIChatFullModeFeatureProviding()
         urlInterceptor = TabURLInterceptorDefault(featureFlagger: MockFeatureFlagger(internalUserDecider: DefaultInternalUserDecider(store: mockInternalUserStoring)),
-                                                  purchaseEligibility: { true },
+                                                  canPurchase: { true },
                                                   aichatFullModeFeature: mockAIChatFullModeFeature)
     }
     
@@ -117,7 +117,7 @@ class TabURLInterceptorDefaultTests: XCTestCase {
     func testNotificationForInterceptedAIChatPathWhenFeatureFlagIsOn() {
         mockAIChatFullModeFeature.isAvailable = false
         urlInterceptor = TabURLInterceptorDefault(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
-                                                  purchaseEligibility: { true },
+                                                  canPurchase: { true },
                                                   aichatFullModeFeature: mockAIChatFullModeFeature)
 
         _ = self.expectation(forNotification: .urlInterceptAIChat, object: nil, handler: nil)
@@ -137,7 +137,7 @@ class TabURLInterceptorDefaultTests: XCTestCase {
     func testDoesNotAllowNavigationForAIChatPath() {
         mockAIChatFullModeFeature.isAvailable = false
         urlInterceptor = TabURLInterceptorDefault(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
-                                                  purchaseEligibility: { true },
+                                                  canPurchase: { true },
                                                   aichatFullModeFeature: mockAIChatFullModeFeature)
 
         let url = URL(string: "https://duckduckgo.com/?ia=chat")!
@@ -148,7 +148,7 @@ class TabURLInterceptorDefaultTests: XCTestCase {
         // Given
         mockAIChatFullModeFeature.isAvailable = true
         urlInterceptor = TabURLInterceptorDefault(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
-                                                  purchaseEligibility: { true },
+                                                  canPurchase: { true },
                                                   aichatFullModeFeature: mockAIChatFullModeFeature)
         
         // When
@@ -163,7 +163,7 @@ class TabURLInterceptorDefaultTests: XCTestCase {
         // Given
         mockAIChatFullModeFeature.isAvailable = true
         urlInterceptor = TabURLInterceptorDefault(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []),
-                                                  purchaseEligibility: { true },
+                                                  canPurchase: { true },
                                                   aichatFullModeFeature: mockAIChatFullModeFeature)
         
         let notificationExpectation = expectation(forNotification: .urlInterceptAIChat, object: nil, handler: nil)

@@ -60,14 +60,15 @@ final class AutoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinat
          windowControllersManager: WindowControllersManagerProtocol,
          cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
          appearancePreferences: AppearancePreferences,
-         featureFlagger: FeatureFlagger) {
+         featureFlagger: FeatureFlagger,
+         presenter: AutoconsentStatsPopoverPresenting? = nil) {
         self.autoconsentStats = autoconsentStats
         self.keyValueStore = keyValueStore
         self.windowControllersManager = windowControllersManager
         self.cookiePopupProtectionPreferences = cookiePopupProtectionPreferences
         self.appearancePreferences = appearancePreferences
         self.featureFlagger = featureFlagger
-        self.presenter = AutoconsentStatsPopoverPresenter(
+        self.presenter = presenter ?? AutoconsentStatsPopoverPresenter(
             autoconsentStats: autoconsentStats,
             windowControllersManager: windowControllersManager
         )

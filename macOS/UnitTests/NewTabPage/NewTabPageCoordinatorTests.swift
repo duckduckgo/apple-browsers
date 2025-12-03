@@ -46,10 +46,15 @@ final class MockAutoconsentStats: AutoconsentStatsCollecting {
     let statsUpdatePublisher: AnyPublisher<Void, Never> = Empty<Void, Never>().eraseToAnyPublisher()
 
     func recordAutoconsentAction(clicksMade: Int64, timeSpent: TimeInterval) async {}
-    func fetchTotalCookiePopUpsBlocked() async -> Int64 { 0 }
+
+    var totalCookiePopUpsBlocked: Int64 = 0
+    func fetchTotalCookiePopUpsBlocked() async -> Int64 {
+        return totalCookiePopUpsBlocked
+    }
+
     func fetchAutoconsentDailyUsagePack() async -> AutoconsentDailyUsagePack {
         AutoconsentDailyUsagePack(
-            totalCookiePopUpsBlocked: 0,
+            totalCookiePopUpsBlocked: totalCookiePopUpsBlocked,
             totalClicksMadeBlockingCookiePopUps: 0,
             totalTotalTimeSpentBlockingCookiePopUps: 0
         )

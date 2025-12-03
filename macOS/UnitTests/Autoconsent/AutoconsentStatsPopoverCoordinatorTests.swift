@@ -1,0 +1,320 @@
+//
+//  AutoconsentStatsPopoverCoordinatorTests.swift
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import AutoconsentStats
+import BrowserServicesKit
+import Combine
+import Common
+import FeatureFlags
+import PersistenceTestingUtils
+import PixelKit
+import XCTest
+@testable import DuckDuckGo_Privacy_Browser
+
+@MainActor
+final class MockAutoconsentStatsPopoverPresenter: AutoconsentStatsPopoverPresenting {
+    var isPopoverBeingPresentedValue = false
+    var showPopoverCalled = false
+    var showPopoverOnClose: (() -> Void)?
+    var showPopoverOnClick: (() -> Void)?
+    var showPopoverOnAutoDismiss: (() -> Void)?
+    var dismissPopoverCalled = false
+
+    func isPopoverBeingPresented() -> Bool {
+        return isPopoverBeingPresentedValue
+    }
+
+    func showPopover(onClose: @escaping () -> Void,
+                     onClick: @escaping () -> Void,
+                     onAutoDismiss: (() -> Void)?) async {
+        showPopoverCalled = true
+        showPopoverOnClose = onClose
+        showPopoverOnClick = onClick
+        showPopoverOnAutoDismiss = onAutoDismiss
+    }
+
+    func dismissPopover() {
+        dismissPopoverCalled = true
+        isPopoverBeingPresentedValue = false
+    }
+}
+
+@MainActor
+final class AutoconsentStatsPopoverCoordinatorTests: XCTestCase {
+    var coordinator: AutoconsentStatsPopoverCoordinator!
+    var mockKeyValueStore: MockKeyValueFileStore!
+    var mockWindowControllersManager: WindowControllersManagerMock!
+    var mockCookiePopupProtectionPreferences: CookiePopupProtectionPreferences!
+    var mockAppearancePreferences: AppearancePreferences!
+    var mockFeatureFlagger: MockFeatureFlagger!
+    var mockAutoconsentStats: MockAutoconsentStats!
+    var mockPresenter: MockAutoconsentStatsPopoverPresenter!
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+
+        mockKeyValueStore = try MockKeyValueFileStore()
+        mockWindowControllersManager = WindowControllersManagerMock()
+        mockFeatureFlagger = MockFeatureFlagger()
+        mockAutoconsentStats = MockAutoconsentStats()
+
+        let cookiePopupProtectionPreferencesPersistor = MockCookiePopupProtectionPreferencesPersistor()
+        mockCookiePopupProtectionPreferences = CookiePopupProtectionPreferences(
+            persistor: cookiePopupProtectionPreferencesPersistor,
+            windowControllersManager: mockWindowControllersManager
+        )
+        mockCookiePopupProtectionPreferences.isAutoconsentEnabled = true
+
+        let persistor = MockTabsPreferencesPersistor()
+        let tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: PinnedTabsManagerProvidingMock(),
+                                                            tabsPreferences: TabsPreferences(persistor: persistor, windowControllersManager: WindowControllersManagerMock()))
+        tabCollectionViewModel.append(tab: Tab(uuid: "tab1", content: .url(URL.duckDuckGo, source: .ui)))
+        tabCollectionViewModel.append(tab: Tab(uuid: "tab2", content: .url(URL.duckDuckGo, source: .ui)))
+
+        mockWindowControllersManager.customAllTabCollectionViewModels = [tabCollectionViewModel]
+
+        let appearancePreferencesPersistor = AppearancePreferencesPersistorMock()
+        mockAppearancePreferences = AppearancePreferences(
+            persistor: appearancePreferencesPersistor,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            featureFlagger: mockFeatureFlagger
+        )
+        mockAppearancePreferences.isProtectionsReportVisible = true
+
+        mockFeatureFlagger.featuresStub[FeatureFlag.newTabPageAutoconsentStats.rawValue] = true
+
+        mockPresenter = MockAutoconsentStatsPopoverPresenter()
+    }
+
+    override func tearDown() {
+        coordinator = nil
+        mockKeyValueStore = nil
+        mockWindowControllersManager = nil
+        mockCookiePopupProtectionPreferences = nil
+        mockAppearancePreferences = nil
+        mockFeatureFlagger = nil
+        mockAutoconsentStats = nil
+        mockPresenter = nil
+        super.tearDown()
+    }
+
+    func makeCoordinator() -> AutoconsentStatsPopoverCoordinator {
+        return AutoconsentStatsPopoverCoordinator(
+            autoconsentStats: mockAutoconsentStats,
+            keyValueStore: mockKeyValueStore,
+            windowControllersManager: mockWindowControllersManager,
+            cookiePopupProtectionPreferences: mockCookiePopupProtectionPreferences,
+            appearancePreferences: mockAppearancePreferences,
+            featureFlagger: mockFeatureFlagger,
+            presenter: mockPresenter
+        )
+    }
+
+    @MainActor
+    func testCheckAndShowDialogIfNeeded_DoesNotShow_WhenFeatureFlagDisabled() async {
+        mockFeatureFlagger.featuresStub[FeatureFlag.newTabPageAutoconsentStats.rawValue] = false
+        coordinator = makeCoordinator()
+        mockAutoconsentStats.totalCookiePopUpsBlocked = 10
+
+        await coordinator.checkAndShowDialogIfNeeded()
+
+        XCTAssertFalse(mockPresenter.showPopoverCalled)
+    }
+
+    @MainActor
+    func testCheckAndShowDialogIfNeeded_DoesNotShow_WhenPopoverAlreadyPresented() async {
+        coordinator = makeCoordinator()
+        mockPresenter.isPopoverBeingPresentedValue = true
+        mockAutoconsentStats.totalCookiePopUpsBlocked = 10
+
+        await coordinator.checkAndShowDialogIfNeeded()
+
+        XCTAssertFalse(mockPresenter.showPopoverCalled)
+    }
+
+    @MainActor
+    func testCheckAndShowDialogIfNeeded_DoesNotShow_WhenCPMDisabled() async {
+        coordinator = makeCoordinator()
+        mockCookiePopupProtectionPreferences.isAutoconsentEnabled = false
+        mockAutoconsentStats.totalCookiePopUpsBlocked = 10
+
+        await coordinator.checkAndShowDialogIfNeeded()
+
+        XCTAssertFalse(mockPresenter.showPopoverCalled)
+    }
+
+    @MainActor
+    func testCheckAndShowDialogIfNeeded_DoesNotShow_WhenOnNewTabPage() async {
+        coordinator = makeCoordinator()
+        let tabCollectionViewModel = TabCollectionViewModel(isPopup: false, windowControllersManager: mockWindowControllersManager)
+        tabCollectionViewModel.appendNewTab(with: .newtab)
+        mockWindowControllersManager.customAllTabCollectionViewModels = [tabCollectionViewModel]
+        mockAutoconsentStats.totalCookiePopUpsBlocked = 10
+
+        await coordinator.checkAndShowDialogIfNeeded()
+
+        XCTAssertFalse(mockPresenter.showPopoverCalled)
+    }
+
+    @MainActor
+    func testCheckAndShowDialogIfNeeded_DoesNotShow_WhenProtectionsReportDisabled() async {
+        coordinator = makeCoordinator()
+        mockAppearancePreferences.isProtectionsReportVisible = false
+        mockAutoconsentStats.totalCookiePopUpsBlocked = 10
+
+        await coordinator.checkAndShowDialogIfNeeded()
+
+        XCTAssertFalse(mockPresenter.showPopoverCalled)
+    }
+
+    @MainActor
+    func testCheckAndShowDialogIfNeeded_DoesNotShow_WhenAlreadyPresented() async throws {
+        coordinator = makeCoordinator()
+        try mockKeyValueStore.set(true, forKey: "com.duckduckgo.autoconsent.blocked.cookies.popover.seen")
+        mockAutoconsentStats.totalCookiePopUpsBlocked = 10
+
+        await coordinator.checkAndShowDialogIfNeeded()
+
+        XCTAssertFalse(mockPresenter.showPopoverCalled)
+    }
+
+    @MainActor
+    func testCheckAndShowDialogIfNeeded_DoesNotShow_WhenNotEnoughCookiePopupsBlocked() async {
+        coordinator = makeCoordinator()
+        mockAutoconsentStats.totalCookiePopUpsBlocked = 3
+
+        await coordinator.checkAndShowDialogIfNeeded()
+
+        XCTAssertFalse(mockPresenter.showPopoverCalled)
+    }
+
+    @MainActor
+    func testCheckAndShowDialogIfNeeded_ShowsDialog_WhenAllConditionsMet() async {
+        coordinator = makeCoordinator()
+        mockAutoconsentStats.totalCookiePopUpsBlocked = 10
+
+        await coordinator.checkAndShowDialogIfNeeded()
+
+        XCTAssertTrue(mockPresenter.showPopoverCalled)
+        XCTAssertNotNil(mockPresenter.showPopoverOnClose)
+        XCTAssertNotNil(mockPresenter.showPopoverOnClick)
+        XCTAssertNotNil(mockPresenter.showPopoverOnAutoDismiss)
+    }
+
+    @MainActor
+    func testDismissDialogDueToNewTabBeingShown_Dismisses_WhenPopoverPresented() {
+        coordinator = makeCoordinator()
+        mockPresenter.isPopoverBeingPresentedValue = true
+
+        coordinator.dismissDialogDueToNewTabBeingShown()
+
+        XCTAssertTrue(mockPresenter.dismissPopoverCalled)
+    }
+
+    @MainActor
+    func testDismissDialogDueToNewTabBeingShown_DoesNotDismiss_WhenPopoverNotPresented() {
+        coordinator = makeCoordinator()
+        mockPresenter.isPopoverBeingPresentedValue = false
+
+        coordinator.dismissDialogDueToNewTabBeingShown()
+
+        XCTAssertFalse(mockPresenter.dismissPopoverCalled)
+    }
+
+    @MainActor
+    func testDismissDialogDueToNewTabBeingShown_SavesFlag() throws {
+        coordinator = makeCoordinator()
+        mockPresenter.isPopoverBeingPresentedValue = true
+
+        coordinator.dismissDialogDueToNewTabBeingShown()
+
+        let flag = try mockKeyValueStore.object(forKey: "com.duckduckgo.autoconsent.blocked.cookies.popover.seen") as? Bool
+        XCTAssertEqual(flag, true)
+    }
+
+    @MainActor
+    func testShowDialogForDebug_ShowsDialog_WhenPopoverNotPresented() async {
+        coordinator = makeCoordinator()
+        mockPresenter.isPopoverBeingPresentedValue = false
+
+        await coordinator.showDialogForDebug()
+
+        XCTAssertTrue(mockPresenter.showPopoverCalled)
+    }
+
+    @MainActor
+    func testShowDialogForDebug_DoesNotShow_WhenPopoverAlreadyPresented() async {
+        coordinator = makeCoordinator()
+        mockPresenter.isPopoverBeingPresentedValue = true
+
+        await coordinator.showDialogForDebug()
+
+        XCTAssertFalse(mockPresenter.showPopoverCalled)
+    }
+
+    @MainActor
+    func testClearBlockedCookiesPopoverSeenFlag_RemovesFlag() throws {
+        coordinator = makeCoordinator()
+        try mockKeyValueStore.set(true, forKey: "com.duckduckgo.autoconsent.blocked.cookies.popover.seen")
+
+        coordinator.clearBlockedCookiesPopoverSeenFlag()
+
+        let flag = try? mockKeyValueStore.object(forKey: "com.duckduckgo.autoconsent.blocked.cookies.popover.seen") as? Bool
+        XCTAssertNil(flag)
+    }
+
+    @MainActor
+    func testShowPopoverOnClose_SavesFlag() async {
+        coordinator = makeCoordinator()
+        mockAutoconsentStats.totalCookiePopUpsBlocked = 10
+
+        await coordinator.checkAndShowDialogIfNeeded()
+
+        mockPresenter.showPopoverOnClose?()
+
+        let flag = try? mockKeyValueStore.object(forKey: "com.duckduckgo.autoconsent.blocked.cookies.popover.seen") as? Bool
+        XCTAssertEqual(flag, true)
+    }
+
+    @MainActor
+    func testShowPopoverOnClick_SavesFlag() async {
+        coordinator = makeCoordinator()
+        mockAutoconsentStats.totalCookiePopUpsBlocked = 10
+
+        await coordinator.checkAndShowDialogIfNeeded()
+
+        mockPresenter.showPopoverOnClick?()
+
+        let flag = try? mockKeyValueStore.object(forKey: "com.duckduckgo.autoconsent.blocked.cookies.popover.seen") as? Bool
+        XCTAssertEqual(flag, true)
+    }
+
+    @MainActor
+    func testShowPopoverOnAutoDismiss_SavesFlag() async {
+        coordinator = makeCoordinator()
+        mockAutoconsentStats.totalCookiePopUpsBlocked = 10
+
+        await coordinator.checkAndShowDialogIfNeeded()
+
+        mockPresenter.showPopoverOnAutoDismiss?()
+
+        let flag = try? mockKeyValueStore.object(forKey: "com.duckduckgo.autoconsent.blocked.cookies.popover.seen") as? Bool
+        XCTAssertEqual(flag, true)
+    }
+}
+

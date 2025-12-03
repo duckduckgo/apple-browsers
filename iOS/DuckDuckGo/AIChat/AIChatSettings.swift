@@ -131,6 +131,10 @@ final class AIChatSettings: AIChatSettingsProvider {
         keyValueStore.bool(.showAIChatExperimentalSearchInputKey, defaultValue: .showAIChatExperimentalSearchInputDefaultValue)
                             && isAIChatEnabled && featureFlagger.isFeatureOn(.experimentalAddressBar)
     }
+    
+    var isAIChatFullModeEnabled: Bool {
+        keyValueStore.bool(.isAIChatFullModeEnabledKey, defaultValue: .isAIChatFullModeEnabledDefaultValue)
+    }
 
     func enableAIChat(enable: Bool) {
         keyValueStore.set(enable, forKey: .isAIChatEnabledKey)
@@ -204,6 +208,11 @@ final class AIChatSettings: AIChatSettingsProvider {
         }
     }
     
+    func enableAIChatFullModeSetting(enable: Bool) {
+        keyValueStore.set(enable, forKey: .isAIChatFullModeEnabledKey)
+        triggerSettingsChangedNotification()
+    }
+    
     /// Process the settings view funnels step
     func processSettingsViewedFunnelStep() {
         if !isAIChatSearchInputUserSettingsEnabled {
@@ -241,6 +250,7 @@ private extension String {
     static let showAIChatVoiceSearchKey = "aichat.settings.showAIChatVoiceSearch"
     static let showAIChatTabSwitcherKey = "aichat.settings.showAIChatTabSwitcher"
     static let showAIChatExperimentalSearchInputKey = "aichat.settings.showAIChatExperimentalSearchInput"
+    static let isAIChatFullModeEnabledKey = "aichat.settings.isAIChatFullModeEnabled"
 }
 
 enum LegacyAiChatUserDefaultsKeys {
@@ -264,6 +274,7 @@ private extension Bool {
     static let showAIChatVoiceSearchDefaultValue = true
     static let showAIChatTabSwitcherDefaultValue = true
     static let showAIChatExperimentalSearchInputDefaultValue = false
+    static let isAIChatFullModeEnabledDefaultValue = false
 
 }
 

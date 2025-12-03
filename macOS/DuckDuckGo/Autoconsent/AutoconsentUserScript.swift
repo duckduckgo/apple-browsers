@@ -63,7 +63,7 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     }
 
     // Reload loop detection state (per-tab)
-    private var lastHandledCMPName: String = ""
+    private var lastHandledCMPName: String?
     private var reloadLoopDetected: Bool = false
 
     init(config: PrivacyConfiguration,
@@ -302,7 +302,7 @@ extension AutoconsentUserScript {
                 optoutFailed: nil,
                 selftestFailed: nil,
                 consentReloadLoop: reloadLoopDetected,
-                consentRule: lastHandledCMPName
+                consentRule: nil
             )
             firePixel(pixel: .acInit)
         }
@@ -608,7 +608,7 @@ extension AutoconsentUserScript {
 
         if lastHandledCMPName != cmpName {
             // The last handled CMP is different from the current one, so we need to clear the reload loop state
-            Logger.autoconsent.debug("Last handled CMP is changed from \(self.lastHandledCMPName) to \(cmpName), clearing reload loop state")
+            Logger.autoconsent.debug("Last handled CMP is changed from \(String(describing: self.lastHandledCMPName)) to \(cmpName), clearing reload loop state")
             clearReloadLoopState()
         }
         Logger.autoconsent.debug("Recording popup handled: CMP \(cmpName) on \(String(describing: self.topUrl))")
@@ -617,7 +617,7 @@ extension AutoconsentUserScript {
 
     /// Clears the reload loop detection state
     private func clearReloadLoopState() {
-        lastHandledCMPName = ""
+        lastHandledCMPName = nil
         reloadLoopDetected = false
     }
 

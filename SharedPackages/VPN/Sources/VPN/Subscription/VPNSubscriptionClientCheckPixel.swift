@@ -99,4 +99,13 @@ public enum VPNSubscriptionClientCheckPixel: PixelKitEvent, PixelKitEventWithCus
         }
     }
 
+    public var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .vpnFeatureEnabled,
+                .vpnFeatureDisabled,
+                .failed:
+            return [.pixelSource]
+        }
+    }
+
 }

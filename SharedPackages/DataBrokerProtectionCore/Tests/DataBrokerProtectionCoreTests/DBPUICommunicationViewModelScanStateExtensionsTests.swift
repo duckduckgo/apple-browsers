@@ -409,6 +409,20 @@ final class DBPUICommunicationViewModelScanStateExtensionsTests: XCTestCase {
         XCTAssertTrue(areDatesEqualsOnDayMonthAndYear(date1: Date().tomorrow, date2: Date(timeIntervalSince1970: result.scanSchedule.nextScan.date)))
     }
 
+    func testNextScans_whenPreferredRunDateIsInThePast_thenDisplayDateIsClampedToNow() {
+        let pastPreferredRunDate = Date().addingTimeInterval(-3600)
+        let now = Date()
+
+        let brokerProfileQueryData: [BrokerProfileQueryData] = [
+            .mock(dataBrokerName: "Broker #1", url: "broker1.com", preferredRunDate: pastPreferredRunDate)
+        ]
+
+        let result = DBPUIScanAndOptOutMaintenanceState(from: brokerProfileQueryData)
+
+        let nextScanDate = Date(timeIntervalSince1970: result.scanSchedule.nextScan.date)
+        XCTAssertGreaterThanOrEqual(nextScanDate, now)
+    }
+
     func testBrokersWithMixedScanProgress_areOrderedByLastRunDate_andHaveCorrectStatus() {
 
         // Given

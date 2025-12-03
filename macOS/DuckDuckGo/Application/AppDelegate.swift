@@ -278,7 +278,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         winBackOfferVisibilityManager = WinBackOfferVisibilityManager(subscriptionManager: subscriptionAuthV1toV2Bridge,
                                                                       winbackOfferStore: winbackOfferStore,
                                                                       winbackOfferFeatureFlagProvider: winbackOfferFeatureFlagProvider,
-                                                                      dateProvider: dateProvider)
+                                                                      dateProvider: dateProvider,
+                                                                      timeBeforeOfferAvailability: .seconds(5))
 #else
         winBackOfferVisibilityManager = WinBackOfferVisibilityManager(subscriptionManager: subscriptionAuthV1toV2Bridge,
                                                                       winbackOfferStore: winbackOfferStore,
@@ -321,9 +322,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var didFinishLaunching = false
 
     var updateController: UpdateController!
-#if SPARKLE
     var dockCustomization: DockCustomization?
-#endif
 
     @UserDefaultsWrapper(key: .firstLaunchDate, defaultValue: Date.monthAgo)
     static var firstLaunchDate: Date
@@ -1085,9 +1084,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             // MARK: perform first time launch logic here
         }
 
-        #if SPARKLE
         dockCustomization = DockCustomizer()
-        #endif
 
         let statisticsLoader = AppVersion.runType.requiresEnvironment ? StatisticsLoader.shared : nil
         statisticsLoader?.load()
@@ -1107,7 +1104,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
            !urlEventHandlerResult.willOpenWindows && WindowsManager.windows.first(where: { $0 is MainWindow }) == nil {
             // Use startup window preferences if not restoring previous session
             if !startupPreferences.restorePreviousSession {
-                let burnerMode = startupPreferences.startupBurnerMode(featureFlagger: featureFlagger)
+                let burnerMode = startupPreferences.startupBurnerMode()
                 WindowsManager.openNewWindow(burnerMode: burnerMode, lazyLoadTabs: true)
             } else {
                 WindowsManager.openNewWindow(lazyLoadTabs: true)
@@ -1256,9 +1253,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func fireDailyActiveUserPixels() {
         PixelKit.fire(NonStandardEvent(GeneralPixel.dailyActiveUser), frequency: .legacyDaily)
         PixelKit.fire(NonStandardEvent(GeneralPixel.dailyDefaultBrowser(isDefault: defaultBrowserPreferences.isDefault)), frequency: .daily)
-#if SPARKLE
         PixelKit.fire(NonStandardEvent(GeneralPixel.dailyAddedToDock(isAddedToDock: DockCustomizer().isAddedToDock)), frequency: .daily)
-#endif
     }
 
     private func fireDailyFireWindowConfigurationPixels() {
@@ -1339,7 +1334,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if Application.appDelegate.windowControllersManager.mainWindowControllers.isEmpty,
            case .normal = AppVersion.runType {
             // Use startup window preferences when reopening from dock
-            let burnerMode = startupPreferences.startupBurnerMode(featureFlagger: featureFlagger)
+            let burnerMode = startupPreferences.startupBurnerMode()
             WindowsManager.openNewWindow(burnerMode: burnerMode)
             return true
         }

@@ -454,6 +454,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
         pinnedTabsCollectionView?.setAccessibilityIdentifier("PinnedTabsView")
         pinnedTabsCollectionView?.setAccessibilityRole(.tabGroup)
+        pinnedTabsCollectionView?.setAccessibilitySubrole(nil)
         pinnedTabsCollectionView?.setAccessibilityTitle("Pinned Tabs")
 
         addTabButton.cell?.setAccessibilityParent(collectionView)

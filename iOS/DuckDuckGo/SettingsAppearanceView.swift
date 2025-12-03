@@ -90,12 +90,16 @@ struct SettingsAppearanceView: View {
                     SettingsCellView(label: "Sheet menu presentation",
                                      accessory: .toggle(isOn: viewModel.showMenuInSheetBinding))
 
-                    SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,
-                                           label: "Menu variant",
-                                           options: BrowsingMenuClusteringVariant.allCases,
-                                           selectedOption: viewModel.sheetBrowsingMenuVariantBinding)
+                    if viewModel.isInternalUser {
+                        SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,
+                                               label: "Menu variant",
+                                               options: BrowsingMenuClusteringVariant.allCases,
+                                               selectedOption: viewModel.sheetBrowsingMenuVariantBinding)
+                    }
                 } footer: {
-                    Text(verbatim: "This setting is experimental and available only for internal users")
+                    if viewModel.isInternalUser {
+                        Text(verbatim: "This setting is experimental and available only for internal users")
+                    }
                 }
             }
 

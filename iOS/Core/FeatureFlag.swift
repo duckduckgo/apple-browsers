@@ -93,9 +93,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866468401462
     case syncPromotionPasswords
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866468468677
-    case onboardingHighlights
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711364768
     case autofillSurveys
 
@@ -127,9 +124,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866469645735
     case privacyProAuthV2
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866610578312
-    case setAsDefaultBrowserPiPVideoTutorial
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866470028133
     case experimentalAddressBar
 
@@ -159,12 +153,6 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866463389447
     case showSettingsCompleteSetupSection
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866611125558
-    case scheduledSetDefaultBrowserPrompts
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866470962985
-    case scheduledSetDefaultBrowserPromptsForInactiveUsers
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866607644644
     case canPromoteImportPasswordsInPasswordManagement
@@ -274,6 +262,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1201462886803403/task/1211326076710245?focus=true
     case migrateKeychainAccessibility
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212229431540900
+    case granularFireButtonOptions
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -282,7 +273,6 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .canScanUrlBasedSyncSetupBarcodes,
              .canInterceptSyncSetupUrls,
              .supportsAlternateStripePaymentFlow,
-             .setAsDefaultBrowserPiPVideoTutorial,
              .createFireproofFaviconUpdaterSecureVaultInBackground,
              .daxEasterEggLogos,
              .subscriptionPurchaseWidePixelMeasurement,
@@ -322,12 +312,9 @@ extension FeatureFlag: FeatureFlagDescribing {
              .paidAIChat,
              .canInterceptSyncSetupUrls,
              .exchangeKeysToSyncWithAnotherDevice,
-             .setAsDefaultBrowserPiPVideoTutorial,
              .supportsAlternateStripePaymentFlow,
              .personalInformationRemoval,
              .createFireproofFaviconUpdaterSecureVaultInBackground,
-             .scheduledSetDefaultBrowserPrompts,
-             .scheduledSetDefaultBrowserPromptsForInactiveUsers,
              .duckAISearchParameter,
              .inactivityNotification,
              .daxEasterEggLogos,
@@ -356,7 +343,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .browsingMenuSheetPresentation,
              .autofillExtensionSettings,
              .canPromoteAutofillExtensionInBrowser,
-             .canPromoteAutofillExtensionInPasswordManagement:
+             .canPromoteAutofillExtensionInPasswordManagement,
+             .granularFireButtonOptions:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -385,7 +373,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                .sslCertificatesBypass,
                .syncPromotionBookmarks,
                .syncPromotionPasswords,
-               .onboardingHighlights,
                .autofillSurveys,
                .autocompleteTabs,
                .adAttributionReporting,
@@ -455,8 +442,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncPromotionSubfeature.bookmarks))
         case .syncPromotionPasswords:
             return .remoteReleasable(.subfeature(SyncPromotionSubfeature.passwords))
-        case .onboardingHighlights:
-            return .internalOnly()
         case .autofillSurveys:
             return .remoteReleasable(.feature(.autofillSurveys))
         case .autocompleteTabs:
@@ -477,8 +462,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.scamProtection))
         case .privacyProAuthV2:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
-        case .setAsDefaultBrowserPiPVideoTutorial:
-            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.defaultBrowserTutorial))
         case .widgetReporting:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.widgetReporting))
         case .experimentalAddressBar:
@@ -501,10 +484,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.keepSession))
         case .showSettingsCompleteSetupSection:
             return .remoteReleasable(.subfeature(OnboardingSubfeature.showSettingsCompleteSetupSection))
-        case .scheduledSetDefaultBrowserPrompts:
-            return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserPrompts))
-        case .scheduledSetDefaultBrowserPromptsForInactiveUsers:
-            return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserPromptsInactiveUser))
         case .supportsAlternateStripePaymentFlow:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
         case .personalInformationRemoval:
@@ -562,7 +541,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .allowProTierPurchase:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.allowProTierPurchase))
         case .browsingMenuSheetPresentation:
-            return .disabled
+            return .internalOnly()
         case .autofillExtensionSettings:
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillExtensionSettings))
         case .canPromoteAutofillExtensionInBrowser:
@@ -571,6 +550,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AutofillSubfeature.canPromoteAutofillExtensionInPasswordManagement))
         case .migrateKeychainAccessibility:
             return .remoteReleasable(.subfeature(AutofillSubfeature.migrateKeychainAccessibility))
+        case .granularFireButtonOptions:
+            return .disabled
         }
     }
 }

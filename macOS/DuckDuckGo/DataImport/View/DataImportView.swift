@@ -63,15 +63,6 @@ struct DataImportView: ModalView {
 #endif
     }
 
-    private var dialogWidth: CGFloat {
-        switch model.screen {
-        case .passwordEntryHelp:
-            return 500
-        default:
-            return 420
-        }
-    }
-
     var body: some View {
         VStack(alignment: .center, spacing: 0) {
             switch model.screen {
@@ -165,7 +156,7 @@ struct DataImportView: ModalView {
             }
         }
         .font(.system(size: 13))
-        .frame(width: dialogWidth)
+        .frame(width: 420)
         .fixedSize()
         .onReceive(internalUserDecider.isInternalUserPublisher.removeDuplicates()) {
             isInternalUser = $0

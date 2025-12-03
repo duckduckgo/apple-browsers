@@ -31,7 +31,7 @@ public enum AccountKeychainAccessError: DDGError {
 
     public var description: String {
         switch self {
-        case .failedToDecodeKeychainData: 
+        case .failedToDecodeKeychainData:
             return "failedToDecodeKeychainData"
         case .failedToDecodeKeychainValueAsData:
             return "failedToDecodeKeychainValueAsData"
@@ -84,7 +84,7 @@ public enum AccountKeychainAccessError: DDGError {
         case .keychainSaveFailure(let oSStatus),
                 .keychainDeleteFailure(let oSStatus),
                 .keychainLookupFailure(let oSStatus):
-            return NSError(domain: AccountKeychainAccessError.errorDomain , code: Int(oSStatus))
+            return NSError(domain: AccountKeychainAccessError.errorDomain, code: Int(oSStatus))
         }
     }
 }

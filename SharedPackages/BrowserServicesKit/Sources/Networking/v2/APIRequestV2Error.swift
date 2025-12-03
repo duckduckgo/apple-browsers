@@ -74,7 +74,7 @@ public enum APIRequestV2Error: DDGError {
         case .urlSession(let error):
             return error
         case .invalidStatusCode(let code):
-            return NSError(domain: APIRequestV2Error.errorDomain , code: code)
+            return NSError(domain: APIRequestV2Error.errorDomain, code: code)
         case .invalidResponse,
                 .unsatisfiedRequirement,
                 .invalidDataType,

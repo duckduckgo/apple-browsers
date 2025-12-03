@@ -1320,7 +1320,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         if !downloadManager.downloads.isEmpty {
-            // if there're downloads without location chosen yet (save dialog should display) - ignore them
+            // if there‘re downloads without location chosen yet (save dialog should display) - ignore them
             let activeDownloads = Set(downloadManager.downloads.filter { $0.state.isDownloading })
             if !activeDownloads.isEmpty {
                 let alert = NSAlert.activeDownloadsTerminationAlert(for: downloadManager.downloads)

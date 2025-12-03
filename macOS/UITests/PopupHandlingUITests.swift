@@ -723,7 +723,7 @@ final class PopupHandlingUITests: UITestCase {
         addressBarTextField.pasteURL(popupDelayedURL, pressingEnter: true)
         let webView1 = app.webViews["Popup Delayed Test"]
 
-        let button = webView1.buttons["Open Popup (Beyond Timeout)"]
+        let button = webView1.links["Open Popup (Beyond Timeout)"]
         XCTAssertTrue(button.waitForExistence(timeout: UITests.Timeouts.localTestServer))
         button.click()
 
@@ -775,7 +775,7 @@ final class PopupHandlingUITests: UITestCase {
         addressBar2.pasteURL(popupDelayedURL, pressingEnter: true)
         let webView2 = app.webViews["Popup Delayed Test"].firstMatch
 
-        let button2 = webView2.buttons["Open Popup (Beyond Timeout)"]
+        let button2 = webView2.links["Open Popup (Beyond Timeout)"]
         XCTAssertTrue(button2.waitForExistence(timeout: UITests.Timeouts.localTestServer))
         button2.click()
 

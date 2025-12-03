@@ -120,6 +120,7 @@ enum AutoconsentPixel: PixelKitEvent {
                 .detectedOnlyRules,
                 .selfTestOk,
                 .selfTestFail,
+                .errorReloadLoop,
                 .summary,
                 .usageStats:
             return [.pixelSource]

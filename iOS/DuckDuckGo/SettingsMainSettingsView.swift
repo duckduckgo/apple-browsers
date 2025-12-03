@@ -74,7 +74,7 @@ struct SettingsMainSettingsView: View {
             AnyView(NavigationLink(destination: SettingsAIFeaturesView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.settingsAiFeatures,
                                  image: Image(uiImage: DesignSystemImages.Color.Size24.aiGeneral),
-                                 isNew: viewModel.isUpdatedAIFeaturesSettingsEnabled)
+                                 optionalBadgeText: viewModel.isUpdatedAIFeaturesSettingsEnabled ? UserText.settingsItemNewBadge : nil)
             })
         }
 

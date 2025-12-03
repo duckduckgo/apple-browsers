@@ -60,9 +60,9 @@ final class AuthServiceTests: XCTestCase {
             _ = try await authService.authorize(codeChallenge: "")
         } catch {
             switch error {
-            case OAuthServiceError.authAPIError(let code):
-                XCTAssertEqual(code.rawValue, "invalid_authorization_request")
-                XCTAssertEqual(code.description, "One or more of the required parameters are missing or any provided parameters have invalid values")
+            case OAuthServiceError.authAPIError(let apiError):
+                XCTAssertEqual(apiError.bodyErrorCode.rawValue, "invalid_authorization_request")
+                XCTAssertEqual(apiError.bodyErrorCode.description, "One or more of the required parameters are missing or any provided parameters have invalid values")
             default:
                 XCTFail("Wrong error")
             }

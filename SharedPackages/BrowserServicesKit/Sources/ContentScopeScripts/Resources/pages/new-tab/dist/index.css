@@ -1995,7 +1995,7 @@ body:not([data-background-kind=default]) .TabSwitcher_tabSwitcher {
   --background: rgba(255, 255, 255, 0.09);
 }
 .Protections_block {
-  margin-top: 32px;
+  margin-top: 16px;
 }
 .Protections_blockLegacy {
   margin-top: 24px;
@@ -2090,6 +2090,7 @@ body:not([data-background-kind=default]) .TabSwitcher_tabSwitcher {
   height: 16px;
   display: inline-block;
   vertical-align: middle;
+  margin-top: 2px;
 }
 .PrivacyStats_widgetExpander {
   position: relative;
@@ -2958,7 +2959,7 @@ body:not([data-background-kind=default]) .TabSwitcher_tabSwitcher {
   align-items: center;
   gap: 6px;
   padding: 8px 10px;
-  border-radius: 100px;
+  border-radius: 1000px;
   background-color: var(--color-white-at-3);
   border: 1px solid var(--color-white-at-12);
   height: 20px;
@@ -2982,8 +2983,8 @@ body:not([data-background-kind=default]) .TabSwitcher_tabSwitcher {
   white-space: nowrap;
 }
 [data-theme=light] .TickPill_tickPill {
-  background-color: var(--color-black-at-4);
-  border: 1px solid var(--color-black-at-12);
+  background-color: var(--color-black-at-1);
+  border: 1px solid var(--color-black-at-9);
 }
 [data-theme=light] .TickPill_text {
   color: var(--color-black-at-84);

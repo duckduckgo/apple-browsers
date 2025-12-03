@@ -167,6 +167,16 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
         }
     }
 
+    public var tierProductsResponse: Result<GetTierProductsResponse, Error>?
+    public func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse {
+        switch tierProductsResponse! {
+        case .success(let result):
+            return result
+        case .failure(let error):
+            throw error
+        }
+    }
+
     public func adopt(tokenContainer: Networking.TokenContainer) async throws {
         self.resultTokenContainer = tokenContainer
     }

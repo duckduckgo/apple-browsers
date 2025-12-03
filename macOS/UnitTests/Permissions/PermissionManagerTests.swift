@@ -22,17 +22,20 @@ import XCTest
 
 final class PermissionManagerTests: XCTestCase {
     var store: PermissionStoreMock!
+    var featureFlagger: MockFeatureFlagger!
     lazy var manager: PermissionManager! = {
-        PermissionManager(store: store)
+        PermissionManager(store: store, featureFlagger: featureFlagger)
     }()
 
     override func setUp() {
         store = PermissionStoreMock()
+        featureFlagger = MockFeatureFlagger()
     }
 
     override func tearDown() {
         manager = nil
         store = nil
+        featureFlagger = nil
     }
 
     func testWhenPermissionManagerInitializedThenPermissionsAreLoaded() {

@@ -143,6 +143,7 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Tab closing event recreation feature flag (failsafe for removing private API)
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212206087745586?focus=true
     case tabClosingEventRecreation
+
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {

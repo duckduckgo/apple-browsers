@@ -702,16 +702,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if AppVersion.runType.requiresEnvironment {
             fireproofDomains = FireproofDomains(store: FireproofDomainsStore(database: database.db, tableName: "FireproofDomains"), tld: tld)
             faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains)
-            permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db))
+            permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db), featureFlagger: featureFlagger)
         } else {
             fireproofDomains = FireproofDomains(store: FireproofDomainsStore(context: nil), tld: tld)
             faviconManager = FaviconManager(cacheType: .inMemory, bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains)
-            permissionManager = PermissionManager(store: LocalPermissionStore(database: nil))
+            permissionManager = PermissionManager(store: LocalPermissionStore(database: nil), featureFlagger: featureFlagger)
         }
 #else
         fireproofDomains = FireproofDomains(store: FireproofDomainsStore(database: database.db, tableName: "FireproofDomains"), tld: tld)
         faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains)
-        permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db))
+        permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db), featureFlagger: featureFlagger)
 #endif
 
         webCacheManager = WebCacheManager(fireproofDomains: fireproofDomains)
@@ -1102,7 +1102,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
            !urlEventHandlerResult.willOpenWindows && WindowsManager.windows.first(where: { $0 is MainWindow }) == nil {
             // Use startup window preferences if not restoring previous session
             if !startupPreferences.restorePreviousSession {
-                let burnerMode = startupPreferences.startupBurnerMode(featureFlagger: featureFlagger)
+                let burnerMode = startupPreferences.startupBurnerMode()
                 WindowsManager.openNewWindow(burnerMode: burnerMode, lazyLoadTabs: true)
             } else {
                 WindowsManager.openNewWindow(lazyLoadTabs: true)
@@ -1332,7 +1332,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if Application.appDelegate.windowControllersManager.mainWindowControllers.isEmpty,
            case .normal = AppVersion.runType {
             // Use startup window preferences when reopening from dock
-            let burnerMode = startupPreferences.startupBurnerMode(featureFlagger: featureFlagger)
+            let burnerMode = startupPreferences.startupBurnerMode()
             WindowsManager.openNewWindow(burnerMode: burnerMode)
             return true
         }

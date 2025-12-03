@@ -219,4 +219,21 @@ struct SubscriptionTierOptionsTests {
 #endif
         #expect(withoutOptions.platform == platform)
     }
+
+    @Test("TierName defaults to plus when decoding unknown value")
+    func tierNameDefaultsToPlusForUnknownValue() throws {
+        // JSON with an unknown tier name
+        let json = """
+        {
+            "product": "Network Protection",
+            "name": "unknown_tier"
+        }
+        """
+        let data = try #require(json.data(using: .utf8))
+
+        let decoder = JSONDecoder()
+        let tierFeature = try decoder.decode(TierFeature.self, from: data)
+
+        #expect(tierFeature.name == .plus, "Unknown tier name should default to .plus")
+    }
 }

@@ -135,6 +135,9 @@ class SwitchBarViewController: UIViewController {
     }
 
     private func updateLayouts() {
+        // Skip layoutIfNeeded() here because layout updates are animated in SwitchBarTextEntryView
+        guard !switchBarHandler.isUsingFadeOutAnimation else { return }
+        
         self.view.layoutIfNeeded()
     }
 

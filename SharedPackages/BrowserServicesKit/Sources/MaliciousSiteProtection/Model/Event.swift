@@ -89,4 +89,17 @@ public enum Event: PixelKitEvent {
             ]
         }
     }
+
+    public var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .errorPageShown,
+                .visitSite,
+                .iframeLoaded,
+                .settingToggled,
+                .matchesApiTimeout,
+                .matchesApiFailure,
+                .failedToDownloadInitialDataSets:
+            return [.pixelSource]
+        }
+    }
 }

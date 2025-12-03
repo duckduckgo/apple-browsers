@@ -2764,7 +2764,14 @@ extension MainViewController: OmniBarDelegate {
                                             })
         )
 
-        controller.modalPresentationStyle = .pageSheet
+        let isiPad = UIDevice.current.userInterfaceIdiom == .pad
+        controller.modalPresentationStyle = isiPad ? .popover : .pageSheet
+
+        if let popoverController = controller.popoverPresentationController  {
+            popoverController.sourceView = omniBar.barView.menuButton
+            controller.additionalSafeAreaInsets = UIEdgeInsets(top: 0, left: 0, bottom: 16, right: 0)
+        }
+
         if let sheet = controller.sheetPresentationController {
             sheet.detents = [.medium(), .large()]
             sheet.prefersGrabberVisible = true

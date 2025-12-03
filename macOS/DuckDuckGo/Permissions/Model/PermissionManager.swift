@@ -17,8 +17,10 @@
 //
 
 import Foundation
+import BrowserServicesKit
 import Combine
 import Common
+import FeatureFlags
 import os.log
 
 protocol PermissionManagerProtocol: AnyObject {
@@ -33,19 +35,24 @@ protocol PermissionManagerProtocol: AnyObject {
     func burnPermissions(except fireproofDomains: FireproofDomains, completion: @escaping @MainActor () -> Void)
     func burnPermissions(of baseDomains: Set<String>, tld: TLD, completion: @escaping @MainActor () -> Void)
 
+    /// Removes a specific permission for a domain (clears from storage)
+    func removePermission(forDomain domain: String, permissionType: PermissionType)
+
     var persistedPermissionTypes: Set<PermissionType> { get }
 }
 
 final class PermissionManager: PermissionManagerProtocol {
 
     private let store: PermissionStore
+    private let featureFlagger: FeatureFlagger
     private var permissions = [String: [PermissionType: StoredPermission]]()
 
     private let permissionSubject = PassthroughSubject<PublishedPermission, Never>()
     var permissionPublisher: AnyPublisher<PublishedPermission, Never> { permissionSubject.eraseToAnyPublisher() }
 
-    init(store: PermissionStore) {
+    init(store: PermissionStore, featureFlagger: FeatureFlagger) {
         self.store = store
+        self.featureFlagger = featureFlagger
         loadPermissions()
     }
 
@@ -76,8 +83,6 @@ final class PermissionManager: PermissionManagerProtocol {
     }
 
     func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType) {
-        assert(permissionType.canPersistGrantedDecision || decision != .allow)
-        assert(permissionType.canPersistDeniedDecision || decision != .deny)
 
         let storedPermission: StoredPermission
         let domain = domain.droppingWwwPrefix()
@@ -126,6 +131,21 @@ final class PermissionManager: PermissionManagerProtocol {
         }), completionHandler: { _ in
             completion()
         })
+    }
+
+    func removePermission(forDomain domain: String, permissionType: PermissionType) {
+        let domain = domain.droppingWwwPrefix()
+
+        guard let storedPermission = permissions[domain]?[permissionType] else { return }
+
+        // Remove from in-memory cache
+        permissions[domain]?[permissionType] = nil
+
+        // Remove from persistent storage
+        store.remove(objectWithId: storedPermission.id)
+
+        // Notify subscribers
+        permissionSubject.send((domain, permissionType, .ask))
     }
 
 }

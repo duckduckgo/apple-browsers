@@ -139,4 +139,29 @@ enum MoreOptionsMenuPixel: PixelKitEvent {
         nil
     }
 
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .feedbackActionClicked,
+                .newTabActionClicked,
+                .newWindowActionClicked,
+                .newBurnerWindowActionClicked,
+                .zoomActionClicked,
+                .bookmarksActionClicked,
+                .downloadsActionClicked,
+                .passwordsActionClicked,
+                .deleteBrowsingDataActionClicked,
+                .emailProtectionActionClicked,
+                .subscriptionActionClicked,
+                .dataBrokerProtectionActionClicked,
+                .fireproofSiteActionClicked,
+                .findInPageActionClicked,
+                .shareActionClicked,
+                .printActionClicked,
+                .helpActionClicked,
+                .updateActionClicked,
+                .settingsActionClicked:
+            return [.pixelSource]
+        }
+    }
+
 }

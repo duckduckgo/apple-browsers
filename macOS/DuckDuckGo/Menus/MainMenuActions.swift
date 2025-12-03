@@ -576,7 +576,8 @@ extension AppDelegate {
         appearancePreferences.isContinueSetUpCardsViewOutdated = false
         appearancePreferences.continueSetUpCardsClosed = false
         appearancePreferences.isContinueSetUpVisible = true
-        HomePage.Models.ContinueSetUpModel.Settings().clear()
+        let homePageContinueSetUpModelPersistor = HomePageContinueSetUpModelPersistor(keyValueStore: keyValueStore)
+        homePageContinueSetUpModelPersistor.clear()
         NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: NSApp)
     }
 
@@ -678,13 +679,7 @@ extension AppDelegate {
     }
 
     @objc func resetMakeDuckDuckGoYoursUserSettings(_ sender: Any?) {
-        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowAllFeatures.rawValue)
-        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowMakeDefault.rawValue)
-        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowImport.rawValue)
-        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowDuckPlayer.rawValue)
-        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowEmailProtection.rawValue)
-        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowSubscription.rawValue)
-        UserDefaults.standard.set(false, forKey: UserDefaultsWrapper<Bool>.Key.homePageUserHadSubscription.rawValue)
+        homePageContinueSetUpModelPersistor.clear()
     }
 
     @objc func resetOnboarding(_ sender: Any?) {
@@ -1302,7 +1297,8 @@ extension MainViewController {
         NSApp.delegateTyped.appearancePreferences.isContinueSetUpCardsViewOutdated = false
         NSApp.delegateTyped.appearancePreferences.continueSetUpCardsClosed = false
         NSApp.delegateTyped.appearancePreferences.isContinueSetUpVisible = true
-        HomePage.Models.ContinueSetUpModel.Settings().clear()
+        let homePageContinueSetUpModelPersistor = HomePageContinueSetUpModelPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
+        homePageContinueSetUpModelPersistor.clear()
         NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: NSApp)
     }
 

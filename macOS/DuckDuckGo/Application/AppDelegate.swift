@@ -180,7 +180,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         tabsPreferences: tabsPreferences,
         newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration),
         winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
-        subscriptionManager: subscriptionAuthV1toV2Bridge
+        subscriptionManager: subscriptionAuthV1toV2Bridge,
+        homePageContinueSetUpModelPersistor: homePageContinueSetUpModelPersistor
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
@@ -260,6 +261,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     lazy var vpnUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersistor = {
         return VPNUpsellUserDefaultsPersistor(keyValueStore: keyValueStore)
+    }()
+
+    // MARK: - Home Page Continue Set Up Model
+
+    lazy var homePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersistor = {
+        return HomePageContinueSetUpModelPersistor(keyValueStore: keyValueStore)
     }()
 
     // MARK: - DBP
@@ -1721,7 +1728,8 @@ extension AppDelegate: UserScriptDependenciesProviding {
             tabsPreferences: tabsPreferences,
             newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration),
             winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
-            subscriptionManager: subscriptionAuthV1toV2Bridge
+            subscriptionManager: subscriptionAuthV1toV2Bridge,
+            homePageContinueSetUpModelPersistor: homePageContinueSetUpModelPersistor
         )
     }
 }

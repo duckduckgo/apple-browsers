@@ -55,7 +55,8 @@ extension NewTabPageActionsManager {
         tabsPreferences: TabsPreferences,
         newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
         winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator,
-        subscriptionManager: any SubscriptionAuthV1toV2Bridge
+        subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+        homePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersisting
     ) {
         let settingsMigrator = NewTabPageProtectionsReportSettingsMigrator(legacyKeyValueStore: legacyKeyValueStore)
         let protectionsReportModel = NewTabPageProtectionsReportModel(
@@ -92,7 +93,8 @@ extension NewTabPageActionsManager {
             tabsPreferences: tabsPreferences,
             newTabPageAIChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider,
             winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
-            subscriptionManager: subscriptionManager
+            subscriptionManager: subscriptionManager,
+            homePageContinueSetUpModelPersistor: homePageContinueSetUpModelPersistor
         )
     }
 
@@ -120,7 +122,8 @@ extension NewTabPageActionsManager {
         tabsPreferences: TabsPreferences,
         newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
         winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator,
-        subscriptionManager: any SubscriptionAuthV1toV2Bridge
+        subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+        homePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersisting
     ) {
         let availabilityProvider = NewTabPageSectionsAvailabilityProvider(featureFlagger: featureFlagger)
         let favoritesPublisher = bookmarkManager.listPublisher.map({ $0?.favoriteBookmarks ?? [] }).eraseToAnyPublisher()
@@ -195,7 +198,8 @@ extension NewTabPageActionsManager {
                         dataImportProvider: BookmarksAndPasswordsImportStatusProvider(bookmarkManager: bookmarkManager),
                         tabOpener: NewTabPageTabOpener(),
                         privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
-                        subscriptionManager: subscriptionManager
+                        subscriptionManager: subscriptionManager,
+                        persistor: homePageContinueSetUpModelPersistor
                     ),
                     appearancePreferences: appearancePreferences
                 )

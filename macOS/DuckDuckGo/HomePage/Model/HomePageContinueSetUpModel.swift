@@ -87,45 +87,7 @@ extension HomePage.Models {
         private var cancellables: Set<AnyCancellable> = []
         let shouldShowAllFeaturesPublisher: AnyPublisher<Bool, Never>
         private let shouldShowAllFeaturesSubject = PassthroughSubject<Bool, Never>()
-
-        struct Settings {
-            @UserDefaultsWrapper(key: .homePageShowMakeDefault, defaultValue: true)
-            var shouldShowMakeDefaultSetting: Bool
-
-            @UserDefaultsWrapper(key: .homePageShowAddToDock, defaultValue: true)
-            var shouldShowAddToDockSetting: Bool
-
-            @UserDefaultsWrapper(key: .homePageShowImport, defaultValue: true)
-            var shouldShowImportSetting: Bool
-
-            @UserDefaultsWrapper(key: .homePageShowDuckPlayer, defaultValue: true)
-            var shouldShowDuckPlayerSetting: Bool
-
-            @UserDefaultsWrapper(key: .homePageShowEmailProtection, defaultValue: true)
-            var shouldShowEmailProtectionSetting: Bool
-
-            @UserDefaultsWrapper(key: .homePageIsFirstSession, defaultValue: true)
-            var isFirstSession: Bool
-
-            @UserDefaultsWrapper(key: .homePageShowSubscription, defaultValue: true)
-            var shouldShowSubscriptionSetting: Bool
-
-            @UserDefaultsWrapper(key: .homePageUserHadSubscription, defaultValue: false)
-            var userHadSubscription: Bool
-
-            func clear() {
-                _shouldShowMakeDefaultSetting.clear()
-                _shouldShowAddToDockSetting.clear()
-                _shouldShowImportSetting.clear()
-                _shouldShowDuckPlayerSetting.clear()
-                _shouldShowEmailProtectionSetting.clear()
-                _isFirstSession.clear()
-                _shouldShowSubscriptionSetting.clear()
-                _userHadSubscription.clear()
-            }
-        }
-
-        private let settings: Settings
+        private var persistor: HomePageContinueSetUpModelPersisting
 
         var isMoreOrLessButtonNeeded: Bool {
             return featuresMatrix.count > itemsRowCountWhenCollapsed
@@ -135,7 +97,7 @@ extension HomePage.Models {
             return !featuresMatrix.isEmpty
         }
 
-        lazy var listOfFeatures = settings.isFirstSession ? firstRunFeatures : randomisedFeatures
+        lazy var listOfFeatures = persistor.isFirstSession ? firstRunFeatures : randomisedFeatures
 
         @Published var featuresMatrix: [[FeatureType]] = [[]] {
             didSet {
@@ -155,6 +117,7 @@ extension HomePage.Models {
              duckPlayerPreferences: DuckPlayerPreferencesPersistor = DuckPlayerPreferencesUserDefaultsPersistor(),
              privacyConfigurationManager: PrivacyConfigurationManaging,
              subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+             persistor: HomePageContinueSetUpModelPersisting,
              pixelHandler: @escaping (PixelKitEvent, Bool) -> Void = { PixelKit.fire($0, includeAppVersionParameter: $1) }) {
 
             self.defaultBrowserProvider = defaultBrowserProvider
@@ -166,7 +129,7 @@ extension HomePage.Models {
             self.privacyConfigurationManager = privacyConfigurationManager
             self.subscriptionManager = subscriptionManager
             self.pixelHandler = pixelHandler
-            self.settings = .init()
+            self.persistor = persistor
 
             shouldShowAllFeaturesPublisher = shouldShowAllFeaturesSubject.removeDuplicates().eraseToAnyPublisher()
 
@@ -189,7 +152,7 @@ extension HomePage.Models {
                 let currentSubscription = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
                 if currentSubscription != nil {
                     // Prevent card from showing again if the user has any kind of subscription.
-                    settings.userHadSubscription = true
+                    persistor.userHadSubscription = true
                 }
                 refreshFeaturesMatrix()
             }
@@ -199,7 +162,7 @@ extension HomePage.Models {
             observer = NotificationCenter.default.addObserver(forName: .subscriptionDidChange, object: nil, queue: .main) { [weak self] _ in
                 guard let self else { return }
                 // Prevent card from showing again if the user has any kind of subscription.
-                settings.userHadSubscription = true
+                persistor.userHadSubscription = true
                 refreshFeaturesMatrix()
             }
         }
@@ -267,18 +230,18 @@ extension HomePage.Models {
         func removeItem(for featureType: FeatureType) {
             switch featureType {
             case .defaultBrowser:
-                settings.shouldShowMakeDefaultSetting = false
+                persistor.shouldShowMakeDefaultSetting = false
             case .dock:
-                settings.shouldShowAddToDockSetting = false
+                persistor.shouldShowAddToDockSetting = false
             case .importBookmarksAndPasswords:
-                settings.shouldShowImportSetting = false
+                persistor.shouldShowImportSetting = false
             case .duckplayer:
-                settings.shouldShowDuckPlayerSetting = false
+                persistor.shouldShowDuckPlayerSetting = false
             case .emailProtection:
-                settings.shouldShowEmailProtectionSetting = false
+                persistor.shouldShowEmailProtectionSetting = false
             case .subscription:
                 pixelHandler(SubscriptionPixel.subscriptionNewTabPageNextStepsCardDismissed, true)
-                settings.shouldShowSubscriptionSetting = false
+                persistor.shouldShowSubscriptionSetting = false
             }
             refreshFeaturesMatrix()
         }
@@ -318,14 +281,14 @@ extension HomePage.Models {
         // Helper Functions
         @MainActor
         @objc private func newTabOpenNotification(_ notification: Notification) {
-            if !settings.isFirstSession {
+            if !persistor.isFirstSession {
                 listOfFeatures = randomisedFeatures
             }
 #if DEBUG
-            settings.isFirstSession = false
+            persistor.isFirstSession = false
 #endif
             if OnboardingActionsManager.isOnboardingFinished {
-                settings.isFirstSession = false
+                persistor.isFirstSession = false
             }
         }
 
@@ -364,31 +327,31 @@ extension HomePage.Models {
         }
 
         private var shouldMakeDefaultCardBeVisible: Bool {
-            settings.shouldShowMakeDefaultSetting && !defaultBrowserProvider.isDefault
+            persistor.shouldShowMakeDefaultSetting && !defaultBrowserProvider.isDefault
         }
 
         private var shouldDockCardBeVisible: Bool {
 #if !APPSTORE
-            settings.shouldShowAddToDockSetting && !dockCustomizer.isAddedToDock
+            persistor.shouldShowAddToDockSetting && !dockCustomizer.isAddedToDock
 #else
             return false
 #endif
         }
 
         private var shouldImportCardBeVisible: Bool {
-            settings.shouldShowImportSetting && !dataImportProvider.didImport
+            persistor.shouldShowImportSetting && !dataImportProvider.didImport
         }
 
         private var shouldDuckPlayerCardBeVisible: Bool {
-            settings.shouldShowDuckPlayerSetting && duckPlayerPreferences.duckPlayerModeBool == nil && !duckPlayerPreferences.youtubeOverlayAnyButtonPressed
+            persistor.shouldShowDuckPlayerSetting && duckPlayerPreferences.duckPlayerModeBool == nil && !duckPlayerPreferences.youtubeOverlayAnyButtonPressed
         }
 
         private var shouldEmailProtectionCardBeVisible: Bool {
-            settings.shouldShowEmailProtectionSetting && !emailManager.isSignedIn
+            persistor.shouldShowEmailProtectionSetting && !emailManager.isSignedIn
         }
 
         private var shouldSubscriptionCardBeVisible: Bool {
-            settings.shouldShowSubscriptionSetting && !settings.userHadSubscription
+            persistor.shouldShowSubscriptionSetting && !persistor.userHadSubscription
         }
 
         deinit {

@@ -1186,18 +1186,6 @@
         }
       }
     },
-    "address.bar.placeholder.with-duckai" : {
-      "comment" : "Address bar placeholder when Duck.ai toggle is available",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "⇥ Press tab then enter to ask Duck.ai"
-          }
-        }
-      }
-    },
     "address.bar.search.open.tab.suffix" : {
       "comment" : "Suffix of DuckDuckGo Search open tab suggestion. Example: cats – DuckDuckGo Search",
       "extractionState" : "extracted_with_value",
@@ -60830,6 +60818,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@: приостановить доступ на сайте %2$@"
+          }
+        }
+      }
+    },
+    "permission.notification" : {
+      "comment" : "Web notifications permission access name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Notifications"
           }
         }
       }

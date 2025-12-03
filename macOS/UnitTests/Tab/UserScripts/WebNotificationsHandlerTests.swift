@@ -175,7 +175,7 @@ final class WebNotificationsHandlerTests: XCTestCase {
     func testWhenSystemAuthorizationIsGrantedThenRequestPermissionReturnsGranted() async {
         mockNotificationService.authorizationStatusToReturn = .authorized
         let params: [String: Any] = [:]
-        let mockMessage = WebNotificationMockScriptMessage(name: "webCompat", body: params)
+        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params)
 
         let handlerFunc = handler.handler(forMethodNamed: "requestPermission")
         let result = try? await handlerFunc?(params, mockMessage)
@@ -190,7 +190,7 @@ final class WebNotificationsHandlerTests: XCTestCase {
     func testWhenProvisionallyAuthorizedThenRequestPermissionReturnsGranted() async {
         mockNotificationService.authorizationStatusToReturn = .provisional
         let params: [String: Any] = [:]
-        let mockMessage = WebNotificationMockScriptMessage(name: "webCompat", body: params)
+        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params)
 
         let handlerFunc = handler.handler(forMethodNamed: "requestPermission")
         let result = try? await handlerFunc?(params, mockMessage)
@@ -205,7 +205,7 @@ final class WebNotificationsHandlerTests: XCTestCase {
     func testWhenSystemAuthorizationIsDeniedThenRequestPermissionReturnsDenied() async {
         mockNotificationService.authorizationStatusToReturn = .denied
         let params: [String: Any] = [:]
-        let mockMessage = WebNotificationMockScriptMessage(name: "webCompat", body: params)
+        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params)
 
         let handlerFunc = handler.handler(forMethodNamed: "requestPermission")
         let result = try? await handlerFunc?(params, mockMessage)
@@ -221,7 +221,7 @@ final class WebNotificationsHandlerTests: XCTestCase {
         mockNotificationService.authorizationStatusToReturn = .notDetermined
         mockNotificationService.requestAuthorizationResult = true
         let params: [String: Any] = [:]
-        let mockMessage = WebNotificationMockScriptMessage(name: "webCompat", body: params)
+        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params)
 
         let handlerFunc = handler.handler(forMethodNamed: "requestPermission")
         let result = try? await handlerFunc?(params, mockMessage)
@@ -240,7 +240,7 @@ final class WebNotificationsHandlerTests: XCTestCase {
         mockNotificationService.authorizationStatusToReturn = .notDetermined
         mockNotificationService.requestAuthorizationError = NSError(domain: "test", code: 1)
         let params: [String: Any] = [:]
-        let mockMessage = WebNotificationMockScriptMessage(name: "webCompat", body: params)
+        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params)
 
         let handlerFunc = handler.handler(forMethodNamed: "requestPermission")
         let result = try? await handlerFunc?(params, mockMessage)
@@ -257,10 +257,10 @@ final class WebNotificationsHandlerTests: XCTestCase {
         mockNotificationService.authorizationStatusToReturn = .authorized
         let params: [String: Any] = [:]
 
-        let config = WKWebViewConfiguration()
+        let config = await WKWebViewConfiguration()
         config.websiteDataStore = .nonPersistent()
-        let fireWindowWebView = WKWebView(frame: .zero, configuration: config)
-        let mockMessage = WebNotificationMockScriptMessage(name: "webCompat", body: params, webView: fireWindowWebView)
+        let fireWindowWebView = await WKWebView(frame: .zero, configuration: config)
+        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params, webView: fireWindowWebView)
 
         let handlerFunc = handler.handler(forMethodNamed: "requestPermission")
         let result = try await handlerFunc?(params, mockMessage)
@@ -277,10 +277,10 @@ final class WebNotificationsHandlerTests: XCTestCase {
         mockNotificationService.authorizationStatusToReturn = .denied
         let params: [String: Any] = [:]
 
-        let config = WKWebViewConfiguration()
+        let config = await WKWebViewConfiguration()
         config.websiteDataStore = .nonPersistent()
-        let fireWindowWebView = WKWebView(frame: .zero, configuration: config)
-        let mockMessage = WebNotificationMockScriptMessage(name: "webCompat", body: params, webView: fireWindowWebView)
+        let fireWindowWebView = await WKWebView(frame: .zero, configuration: config)
+        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params, webView: fireWindowWebView)
 
         let handlerFunc = handler.handler(forMethodNamed: "requestPermission")
         let result = try await handlerFunc?(params, mockMessage)
@@ -296,7 +296,7 @@ final class WebNotificationsHandlerTests: XCTestCase {
         mockFeatureFlagger.enableFeatures([])
         mockNotificationService.authorizationStatusToReturn = .authorized
         let params: [String: Any] = [:]
-        let mockMessage = WebNotificationMockScriptMessage(name: "webCompat", body: params)
+        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params)
 
         let handlerFunc = handler.handler(forMethodNamed: "requestPermission")
         let result = try? await handlerFunc?(params, mockMessage)
@@ -317,7 +317,7 @@ final class WebNotificationsHandlerTests: XCTestCase {
             "title": "Test Title",
             "body": "Test Body"
         ]
-        let mockMessage = WebNotificationMockScriptMessage(name: "webCompat", body: params)
+        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params)
 
         let handlerFunc = handler.handler(forMethodNamed: "showNotification")
         _ = try? await handlerFunc?(params, mockMessage)
@@ -335,7 +335,7 @@ final class WebNotificationsHandlerTests: XCTestCase {
             "id": "test-provisional",
             "title": "Provisional Test"
         ]
-        let mockMessage = WebNotificationMockScriptMessage(name: "webCompat", body: params)
+        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params)
 
         let handlerFunc = handler.handler(forMethodNamed: "showNotification")
         _ = try? await handlerFunc?(params, mockMessage)
@@ -352,7 +352,7 @@ final class WebNotificationsHandlerTests: XCTestCase {
             "id": "test-id-456",
             "title": "Test Title"
         ]
-        let mockMessage = WebNotificationMockScriptMessage(name: "webCompat", body: params)
+        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params)
 
         let handlerFunc = handler.handler(forMethodNamed: "showNotification")
         _ = try? await handlerFunc?(params, mockMessage)
@@ -367,7 +367,7 @@ final class WebNotificationsHandlerTests: XCTestCase {
             "id": "test-id-789",
             "title": "Test Title"
         ]
-        let mockMessage = WebNotificationMockScriptMessage(name: "webCompat", body: params)
+        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params)
 
         let handlerFunc = handler.handler(forMethodNamed: "showNotification")
         _ = try? await handlerFunc?(params, mockMessage)
@@ -403,10 +403,10 @@ final class WebNotificationsHandlerTests: XCTestCase {
             "title": "Fire Window Test"
         ]
 
-        let config = WKWebViewConfiguration()
+        let config = await WKWebViewConfiguration()
         config.websiteDataStore = .nonPersistent()
-        let fireWindowWebView = WKWebView(frame: .zero, configuration: config)
-        let mockMessage = WebNotificationMockScriptMessage(name: "webCompat", body: params, webView: fireWindowWebView)
+        let fireWindowWebView = await WKWebView(frame: .zero, configuration: config)
+        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params, webView: fireWindowWebView)
 
         let handlerFunc = handler.handler(forMethodNamed: "showNotification")
         _ = try? await handlerFunc?(params, mockMessage)
@@ -421,7 +421,7 @@ final class WebNotificationsHandlerTests: XCTestCase {
             "id": "test-flag-disabled",
             "title": "Flag Disabled Test"
         ]
-        let mockMessage = WebNotificationMockScriptMessage(name: "webCompat", body: params)
+        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params)
 
         let handlerFunc = handler.handler(forMethodNamed: "showNotification")
         _ = try? await handlerFunc?(params, mockMessage)
@@ -467,7 +467,7 @@ final class WebNotificationsHandlerTests: XCTestCase {
             "title": "Icon Fail Test",
             "icon": "https://example.com/icon.png"
         ]
-        let mockMessage = WebNotificationMockScriptMessage(name: "webCompat", body: params)
+        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params)
 
         let handlerFunc = handler.handler(forMethodNamed: "showNotification")
         _ = try? await handlerFunc?(params, mockMessage)
@@ -482,7 +482,7 @@ final class WebNotificationsHandlerTests: XCTestCase {
             "id": "test-no-icon",
             "title": "No Icon Test"
         ]
-        let mockMessage = WebNotificationMockScriptMessage(name: "webCompat", body: params)
+        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params)
 
         let handlerFunc = handler.handler(forMethodNamed: "showNotification")
         _ = try? await handlerFunc?(params, mockMessage)
@@ -498,7 +498,7 @@ final class WebNotificationsHandlerTests: XCTestCase {
             "title": "Empty Icon Test",
             "icon": ""
         ]
-        let mockMessage = WebNotificationMockScriptMessage(name: "webCompat", body: params)
+        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params)
 
         let handlerFunc = handler.handler(forMethodNamed: "showNotification")
         _ = try? await handlerFunc?(params, mockMessage)
@@ -515,7 +515,7 @@ final class WebNotificationsHandlerTests: XCTestCase {
             "body": "Full Body",
             "tag": "test-tag"
         ]
-        let mockMessage = WebNotificationMockScriptMessage(name: "webCompat", body: params)
+        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params)
 
         let handlerFunc = handler.handler(forMethodNamed: "showNotification")
         _ = try? await handlerFunc?(params, mockMessage)
@@ -530,7 +530,7 @@ final class WebNotificationsHandlerTests: XCTestCase {
 
     func testMultipleNotificationsPostWithUniqueIds() async {
         mockNotificationService.authorizationStatusToReturn = .authorized
-        let mockMessage = WebNotificationMockScriptMessage(name: "webCompat", body: [:])
+        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: [:])
 
         let handlerFunc = handler.handler(forMethodNamed: "showNotification")
 
@@ -551,7 +551,7 @@ final class WebNotificationsHandlerTests: XCTestCase {
 
     func testCloseNotificationHandlerWithValidParams() async {
         let params: [String: Any] = ["id": "test-close-id"]
-        let mockMessage = WebNotificationMockScriptMessage(name: "webCompat", body: params)
+        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params)
 
         let handlerFunc = handler.handler(forMethodNamed: "closeNotification")
         let result = try? await handlerFunc?(params, mockMessage)
@@ -562,7 +562,7 @@ final class WebNotificationsHandlerTests: XCTestCase {
 
     func testCloseNotificationHandlerWithInvalidParams() async {
         let params: [String: Any] = [:] // Missing required id
-        let mockMessage = WebNotificationMockScriptMessage(name: "webCompat", body: params)
+        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params)
 
         let handlerFunc = handler.handler(forMethodNamed: "closeNotification")
         let result = try? await handlerFunc?(params, mockMessage)
@@ -573,7 +573,7 @@ final class WebNotificationsHandlerTests: XCTestCase {
     func testWhenFeatureFlagDisabledThenCloseNotificationIsBlocked() async {
         mockFeatureFlagger.enableFeatures([])
         let params: [String: Any] = ["id": "test-close-flag"]
-        let mockMessage = WebNotificationMockScriptMessage(name: "webCompat", body: params)
+        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params)
 
         let handlerFunc = handler.handler(forMethodNamed: "closeNotification")
         let result = try? await handlerFunc?(params, mockMessage)
@@ -590,8 +590,8 @@ final class WebNotificationsHandlerTests: XCTestCase {
             "id": "test-userinfo",
             "title": "UserInfo Test"
         ]
-        let webView = WKWebView(frame: .zero)
-        let mockMessage = WebNotificationMockScriptMessage(name: "webCompat", body: params, webView: webView)
+        let webView = await WKWebView(frame: .zero)
+        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params, webView: webView)
 
         let handlerFunc = handler.handler(forMethodNamed: "showNotification")
         _ = try? await handlerFunc?(params, mockMessage)
@@ -606,8 +606,8 @@ final class WebNotificationsHandlerTests: XCTestCase {
             "id": "test-tab-uuid",
             "title": "Tab UUID Test"
         ]
-        let webView = WKWebView(frame: .zero)
-        let mockMessage = WebNotificationMockScriptMessage(name: "webCompat", body: params, webView: webView)
+        let webView = await WKWebView(frame: .zero)
+        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params, webView: webView)
 
         let handlerFunc = handler.handler(forMethodNamed: "showNotification")
         _ = try? await handlerFunc?(params, mockMessage)
@@ -646,13 +646,13 @@ final class WebNotificationsHandlerTests: XCTestCase {
         mockNotificationService.authorizationStatusToReturn = .authorized
         let testURL = URL(string: "https://example.com/page")!
 
-        let webView = WKWebView(frame: .zero)
-        webView.load(URLRequest(url: testURL))
+        let webView = await WKWebView(frame: .zero)
+        await webView.load(URLRequest(url: testURL))
         // Wait a moment for the URL to be set
         try? await Task.sleep(nanoseconds: 100_000_000)
 
         let params: [String: Any] = [:]
-        let mockMessage = WebNotificationMockScriptMessage(name: "webCompat", body: params, webView: webView)
+        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params, webView: webView)
 
         let handlerFunc = handler.handler(forMethodNamed: "requestPermission")
         _ = try? await handlerFunc?(params, mockMessage)
@@ -672,12 +672,12 @@ final class WebNotificationsHandlerTests: XCTestCase {
         mockPermissionManager.savedPermissions["example.com"] = [.notification: false] // deny
 
         let testURL = URL(string: "https://example.com/page")!
-        let webView = WKWebView(frame: .zero)
-        webView.load(URLRequest(url: testURL))
+        let webView = await WKWebView(frame: .zero)
+        await webView.load(URLRequest(url: testURL))
         try? await Task.sleep(nanoseconds: 100_000_000)
 
         let params: [String: Any] = [:]
-        let mockMessage = WebNotificationMockScriptMessage(name: "webCompat", body: params, webView: webView)
+        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params, webView: webView)
 
         let handlerFunc = handler.handler(forMethodNamed: "requestPermission")
         let result = try? await handlerFunc?(params, mockMessage)
@@ -695,15 +695,15 @@ final class WebNotificationsHandlerTests: XCTestCase {
         mockPermissionManager.savedPermissions["example.com"] = [.notification: false] // deny
 
         let testURL = URL(string: "https://example.com/page")!
-        let webView = WKWebView(frame: .zero)
-        webView.load(URLRequest(url: testURL))
+        let webView = await WKWebView(frame: .zero)
+        await webView.load(URLRequest(url: testURL))
         try? await Task.sleep(nanoseconds: 100_000_000)
 
         let params: [String: Any] = [
             "id": "test-denied-notif",
             "title": "Should be blocked"
         ]
-        let mockMessage = WebNotificationMockScriptMessage(name: "webCompat", body: params, webView: webView)
+        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params, webView: webView)
 
         let handlerFunc = handler.handler(forMethodNamed: "showNotification")
         _ = try? await handlerFunc?(params, mockMessage)

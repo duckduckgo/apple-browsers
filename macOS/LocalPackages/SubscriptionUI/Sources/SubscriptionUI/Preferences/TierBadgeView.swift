@@ -16,14 +16,19 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKit
 import SwiftUI
-import Subscription
 
 struct TierBadgeView: View {
-    let tier: TierName
+    enum Variant: String {
+        case plus = "PLUS"
+        case pro = "PRO"
+    }
+
+    let variant: Variant
 
     var body: some View {
-        Text(tier.rawValue.uppercased())
+        Text(variant.rawValue)
             .font(.system(size: 11, weight: .bold))
             .foregroundColor(textColor)
             .padding(.horizontal, 8)
@@ -33,29 +38,28 @@ struct TierBadgeView: View {
     }
 
     private var backgroundColor: Color {
-        switch tier {
+        switch variant {
         case .plus:
-            return Color("ColorSystemBlue0", bundle: .module)
+            return Color(baseColor: .blue0)
         case .pro:
-            return Color("ColorSystemYellow40", bundle: .module)
+            return Color(baseColor: .yellow40)
         }
     }
 
     private var textColor: Color {
-        switch tier {
+        switch variant {
         case .plus:
-            return Color("ColorSystemBlue90", bundle: .module)
+            return Color(baseColor: .blue90)
         case .pro:
-            return Color("ColorSystemYellow100", bundle: .module)
+            return Color(baseColor: .yellow100)
         }
     }
 }
 
 #Preview {
     VStack(spacing: 16) {
-        TierBadgeView(tier: .plus)
-        TierBadgeView(tier: .pro)
+        TierBadgeView(variant: .plus)
+        TierBadgeView(variant: .pro)
     }
     .padding()
 }
-

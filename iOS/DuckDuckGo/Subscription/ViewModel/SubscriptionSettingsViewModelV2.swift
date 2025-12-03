@@ -74,12 +74,15 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
 
     @Published var showRebrandingMessage: Bool = false
 
-    /// Returns the tier to display in the badge, or nil if badge should not be shown
+    /// Returns the tier badge variant to display, or nil if badge should not be shown
     /// Shows badge if tier is Pro, or if Pro tier purchase feature flag is enabled
-    var tierBadgeToDisplay: TierName? {
+    var tierBadgeToDisplay: TierBadgeView.Variant? {
         guard let tier = state.subscriptionInfo?.tier else { return nil }
         guard tier == .pro || isProTierPurchaseEnabled() else { return nil }
-        return tier
+        switch tier {
+        case .plus: return .plus
+        case .pro: return .pro
+        }
     }
 
     private let keyValueStorage: KeyValueStoring

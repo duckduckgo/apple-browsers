@@ -33,12 +33,15 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
     @Published private(set) var subscriptionTier: TierName?
     private var subscriptionPlatform: DuckDuckGoSubscription.Platform?
 
-    /// Returns the tier to display in the badge, or nil if badge should not be shown
+    /// Returns the tier badge variant to display, or nil if badge should not be shown
     /// Shows badge if tier is Pro, or if Pro tier purchase feature flag is enabled
-    var tierBadgeToDisplay: TierName? {
+    var tierBadgeToDisplay: TierBadgeView.Variant? {
         guard let tier = subscriptionTier else { return nil }
         guard tier == .pro || isProTierPurchaseEnabled() else { return nil }
-        return tier
+        switch tier {
+        case .plus: return .plus
+        case .pro: return .pro
+        }
     }
 
     @Published var email: String?

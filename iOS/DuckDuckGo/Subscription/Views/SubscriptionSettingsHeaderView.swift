@@ -18,7 +18,6 @@
 //
 
 import SwiftUI
-import Subscription
 
 struct SubscriptionSettingsHeaderView: View {
 
@@ -30,9 +29,9 @@ struct SubscriptionSettingsHeaderView: View {
     }
 
     let state: HeaderState
-    let tierBadge: TierName?
+    let tierBadge: TierBadgeView.Variant?
 
-    init(state: HeaderState, tierBadge: TierName? = nil) {
+    init(state: HeaderState, tierBadge: TierBadgeView.Variant? = nil) {
         self.state = state
         self.tierBadge = tierBadge
     }
@@ -60,8 +59,8 @@ struct SubscriptionSettingsHeaderView: View {
                             .daxBodyRegular()
                             .foregroundColor(Color(designSystemColor: .textSecondary))
                     }
-                    if let tier = tierBadge {
-                        TierBadgeView(tier: tier)
+                    if let variant = tierBadge {
+                        TierBadgeView(variant: variant)
                     }
                 }
             case .expired(let details):

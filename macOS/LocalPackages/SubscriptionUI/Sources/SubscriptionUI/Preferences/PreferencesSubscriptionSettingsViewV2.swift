@@ -98,8 +98,8 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
     private var subscriptionActiveHeader: some View {
         HStack(alignment: .center, spacing: 8) {
             StatusIndicatorView(status: .custom(UserText.subscribedStatusIndicator, Color(designSystemColor: .alertGreen)), isLarge: true)
-            if let tier = model.tierBadgeToDisplay {
-                TierBadgeView(tier: tier)
+            if let variant = model.tierBadgeToDisplay {
+                TierBadgeView(variant: variant)
             }
         }
     }
@@ -108,8 +108,8 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
     private var subscriptionFreeTrialActiveHeader: some View {
         HStack(alignment: .center, spacing: 8) {
             StatusIndicatorView(status: .custom(UserText.freeTrialActiveStatusIndicator, Color(designSystemColor: .alertGreen)), isLarge: true)
-            if let tier = model.tierBadgeToDisplay {
-                TierBadgeView(tier: tier)
+            if let variant = model.tierBadgeToDisplay {
+                TierBadgeView(variant: variant)
             }
         }
     }

@@ -45,6 +45,9 @@ enum SubscriptionFunnelOrigin: String {
 
     /// User entered via win-back offer in New Tab Page
     case winBackNewTabPage = "funnel_newtab_macos_winback"
+    
+    /// User entered the funnel via the onboarding dialog screen.
+    case onboarding = "funnel_onboarding_macos"
 }
 
 /// Represents the origin point from which the user enters the subscription restore funnel in the macOS app.

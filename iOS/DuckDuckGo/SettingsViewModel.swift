@@ -1504,6 +1504,18 @@ extension SettingsViewModel {
             }
         )
     }
+    
+    var isAIChatFullModeEnabled: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.aiChatSettings.isAIChatFullModeEnabled },
+            set: { newValue in
+                withAnimation {
+                    self.objectWillChange.send()
+                    self.aiChatSettings.enableAIChatFullModeSetting(enable: newValue)
+                }
+            }
+        )
+    }
 
     func launchAIFeaturesLearnMore() {
         urlOpener.open(URL.aiFeaturesLearnMore)

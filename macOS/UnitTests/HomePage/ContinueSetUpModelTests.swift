@@ -19,6 +19,10 @@
 import XCTest
 import BrowserServicesKit
 import Common
+import PixelKit
+import SubscriptionTestingUtilities
+
+@testable import Subscription
 @testable import DuckDuckGo_Privacy_Browser
 
 final class ContinueSetUpModelTests: XCTestCase {
@@ -34,6 +38,10 @@ final class ContinueSetUpModelTests: XCTestCase {
     var privacyConfigManager: MockPrivacyConfigurationManager!
     var dockCustomizer: DockCustomization!
     var userDefaults: UserDefaults! = UserDefaults(suiteName: "\(Bundle.main.bundleIdentifier!).\(AppVersion.runType)")!
+    var subscriptionManager: SubscriptionAuthV1toV2BridgeMock!
+    var homePageContinueSetUpModelPersisting: MockHomePageContinueSetUpModelPersisting!
+
+    var firedPixels: [PixelKitEvent] = []
 
     @MainActor override func setUp() {
         UserDefaultsWrapper<Any>.clearAll()
@@ -48,6 +56,11 @@ final class ContinueSetUpModelTests: XCTestCase {
         let config = MockPrivacyConfiguration()
         privacyConfigManager.mockPrivacyConfig = config
         dockCustomizer = DockCustomizerMock()
+        subscriptionManager = SubscriptionAuthV1toV2BridgeMock()
+        homePageContinueSetUpModelPersisting = MockHomePageContinueSetUpModelPersisting()
+        subscriptionManager.returnSubscription = .failure(SubscriptionManagerError.noTokenAvailable)
+
+        firedPixels = []
 
         vm = HomePage.Models.ContinueSetUpModel(
             defaultBrowserProvider: capturingDefaultBrowserProvider,
@@ -56,7 +69,12 @@ final class ContinueSetUpModelTests: XCTestCase {
             tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: tabCollectionVM),
             emailManager: emailManager,
             duckPlayerPreferences: duckPlayerPreferences,
-            privacyConfigurationManager: privacyConfigManager
+            privacyConfigurationManager: privacyConfigManager,
+            subscriptionManager: subscriptionManager,
+            persistor: homePageContinueSetUpModelPersisting,
+            pixelHandler: { pixel, _ in
+                self.firedPixels.append(pixel)
+            }
         )
     }
 
@@ -72,11 +90,13 @@ final class ContinueSetUpModelTests: XCTestCase {
         duckPlayerPreferences = nil
         privacyConfigManager = nil
         userDefaults = nil
+        subscriptionManager = nil
+        homePageContinueSetUpModelPersisting = nil
+        firedPixels = []
     }
 
     func testModelReturnsCorrectStrings() {
         XCTAssertEqual(vm.itemsPerRow, HomePage.Models.ContinueSetUpModel.Const.featuresPerRow)
-        XCTAssertEqual(vm.deleteActionTitle, UserText.newTabSetUpRemoveItemAction)
     }
 
     func testModelReturnsCorrectDimensions() {
@@ -94,6 +114,7 @@ final class ContinueSetUpModelTests: XCTestCase {
         capturingDefaultBrowserProvider.isDefault = true
         capturingDataImportProvider.didImport = true
         duckPlayerPreferences.youtubeOverlayAnyButtonPressed = true
+        homePageContinueSetUpModelPersisting.userHadSubscription = true
 
         vm = HomePage.Models.ContinueSetUpModel(
             defaultBrowserProvider: capturingDefaultBrowserProvider,
@@ -102,15 +123,19 @@ final class ContinueSetUpModelTests: XCTestCase {
             tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: tabCollectionVM),
             emailManager: emailManager,
             duckPlayerPreferences: duckPlayerPreferences,
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            subscriptionManager: subscriptionManager,
+            persistor: homePageContinueSetUpModelPersisting,
+            pixelHandler: { pixel, _ in
+                self.firedPixels.append(pixel)
+            }
         )
 
         XCTAssertFalse(vm.isMoreOrLessButtonNeeded)
     }
 
     @MainActor func testWhenInitializedForTheFirstTimeTheMatrixHasAllElementsInTheRightOrder() {
-        let homePageIsFirstSession = UserDefaultsWrapper<Bool>(key: .homePageIsFirstSession, defaultValue: true)
-        homePageIsFirstSession.wrappedValue = true
+        homePageContinueSetUpModelPersisting.isFirstSession = true
         var expectedMatrix = [[HomePage.Models.FeatureType.duckplayer, .emailProtection]]
         vm = HomePage.Models.ContinueSetUpModel(
             defaultBrowserProvider: capturingDefaultBrowserProvider,
@@ -119,7 +144,9 @@ final class ContinueSetUpModelTests: XCTestCase {
             tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: tabCollectionVM),
             emailManager: emailManager,
             duckPlayerPreferences: duckPlayerPreferences,
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            subscriptionManager: subscriptionManager,
+            persistor: homePageContinueSetUpModelPersisting
         )
 
         XCTAssertEqual(vm.visibleFeaturesMatrix, expectedMatrix)
@@ -132,9 +159,8 @@ final class ContinueSetUpModelTests: XCTestCase {
     }
 
     @MainActor func testWhenInitializedNotForTheFirstTimeTheMatrixHasAllElementsInTheRightOrder() {
-        let homePageIsFirstSession = UserDefaultsWrapper<Bool>(key: .homePageIsFirstSession, defaultValue: true)
-        homePageIsFirstSession.wrappedValue = false
-        vm = HomePage.Models.ContinueSetUpModel.fixture(appGroupUserDefaults: userDefaults)
+        homePageContinueSetUpModelPersisting.isFirstSession = false
+        vm = HomePage.Models.ContinueSetUpModel.fixture(persistor: homePageContinueSetUpModelPersisting)
         vm.shouldShowAllFeatures = true
 
         XCTAssertEqual(vm.visibleFeaturesMatrix[0][0], HomePage.Models.FeatureType.defaultBrowser)
@@ -173,7 +199,7 @@ final class ContinueSetUpModelTests: XCTestCase {
         let expectedMatrix = expectedFeatureMatrixWithout(types: [.defaultBrowser])
 
         capturingDefaultBrowserProvider.isDefault = true
-        vm = HomePage.Models.ContinueSetUpModel.fixture(defaultBrowserProvider: capturingDefaultBrowserProvider, appGroupUserDefaults: userDefaults)
+        vm = HomePage.Models.ContinueSetUpModel.fixture(defaultBrowserProvider: capturingDefaultBrowserProvider, persistor: homePageContinueSetUpModelPersisting)
 
         vm.shouldShowAllFeatures = true
 
@@ -202,7 +228,7 @@ final class ContinueSetUpModelTests: XCTestCase {
         let expectedMatrix = expectedFeatureMatrixWithout(types: [.importBookmarksAndPasswords])
 
         capturingDataImportProvider.didImport = true
-        vm = HomePage.Models.ContinueSetUpModel.fixture(dataImportProvider: capturingDataImportProvider, appGroupUserDefaults: userDefaults)
+        vm = HomePage.Models.ContinueSetUpModel.fixture(dataImportProvider: capturingDataImportProvider, persistor: homePageContinueSetUpModelPersisting)
 
         vm.shouldShowAllFeatures = true
 
@@ -224,7 +250,7 @@ final class ContinueSetUpModelTests: XCTestCase {
         let expectedMatrix = expectedFeatureMatrixWithout(types: [.emailProtection])
 
         emailStorage.isEmailProtectionEnabled = true
-        vm = HomePage.Models.ContinueSetUpModel.fixture(emailManager: emailManager, appGroupUserDefaults: userDefaults)
+        vm = HomePage.Models.ContinueSetUpModel.fixture(emailManager: emailManager, persistor: homePageContinueSetUpModelPersisting)
 
         vm.shouldShowAllFeatures = true
 
@@ -247,7 +273,7 @@ final class ContinueSetUpModelTests: XCTestCase {
 
         duckPlayerPreferences.youtubeOverlayAnyButtonPressed = false
         duckPlayerPreferences.duckPlayerModeBool = true
-        vm = HomePage.Models.ContinueSetUpModel.fixture(duckPlayerPreferences: duckPlayerPreferences, appGroupUserDefaults: userDefaults)
+        vm = HomePage.Models.ContinueSetUpModel.fixture(duckPlayerPreferences: duckPlayerPreferences, persistor: homePageContinueSetUpModelPersisting)
 
         vm.shouldShowAllFeatures = true
 
@@ -264,7 +290,7 @@ final class ContinueSetUpModelTests: XCTestCase {
 
         duckPlayerPreferences.youtubeOverlayAnyButtonPressed = false
         duckPlayerPreferences.duckPlayerModeBool = false
-        vm = HomePage.Models.ContinueSetUpModel.fixture(duckPlayerPreferences: duckPlayerPreferences, appGroupUserDefaults: userDefaults)
+        vm = HomePage.Models.ContinueSetUpModel.fixture(duckPlayerPreferences: duckPlayerPreferences, persistor: homePageContinueSetUpModelPersisting)
 
         vm.shouldShowAllFeatures = true
 
@@ -281,7 +307,7 @@ final class ContinueSetUpModelTests: XCTestCase {
 
         duckPlayerPreferences.youtubeOverlayAnyButtonPressed = false
         duckPlayerPreferences.duckPlayerModeBool = nil
-        vm = HomePage.Models.ContinueSetUpModel.fixture(duckPlayerPreferences: duckPlayerPreferences, appGroupUserDefaults: userDefaults)
+        vm = HomePage.Models.ContinueSetUpModel.fixture(duckPlayerPreferences: duckPlayerPreferences, persistor: homePageContinueSetUpModelPersisting)
 
         vm.shouldShowAllFeatures = true
 
@@ -298,7 +324,7 @@ final class ContinueSetUpModelTests: XCTestCase {
 
         duckPlayerPreferences.youtubeOverlayAnyButtonPressed = true
         duckPlayerPreferences.duckPlayerModeBool = nil
-        vm = HomePage.Models.ContinueSetUpModel.fixture(duckPlayerPreferences: duckPlayerPreferences, appGroupUserDefaults: userDefaults)
+        vm = HomePage.Models.ContinueSetUpModel.fixture(duckPlayerPreferences: duckPlayerPreferences, persistor: homePageContinueSetUpModelPersisting)
 
         vm.shouldShowAllFeatures = true
 
@@ -315,6 +341,7 @@ final class ContinueSetUpModelTests: XCTestCase {
         emailStorage.isEmailProtectionEnabled = true
         duckPlayerPreferences.youtubeOverlayAnyButtonPressed = true
         capturingDataImportProvider.didImport = true
+        homePageContinueSetUpModelPersisting.userHadSubscription = true
         dockCustomizer.addToDock()
 
         vm = HomePage.Models.ContinueSetUpModel(
@@ -324,15 +351,16 @@ final class ContinueSetUpModelTests: XCTestCase {
             tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: tabCollectionVM),
             emailManager: emailManager,
             duckPlayerPreferences: duckPlayerPreferences,
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            subscriptionManager: subscriptionManager,
+            persistor: homePageContinueSetUpModelPersisting
         )
 
         XCTAssertEqual(vm.visibleFeaturesMatrix, [[]])
     }
 
     @MainActor func testDismissedItemsAreRemovedFromVisibleMatrixAndChoicesArePersisted() {
-        let homePageIsFirstSession = UserDefaultsWrapper<Bool>(key: .homePageIsFirstSession, defaultValue: true)
-        homePageIsFirstSession.wrappedValue = true
+        homePageContinueSetUpModelPersisting.isFirstSession = true
         vm = HomePage.Models.ContinueSetUpModel(
             defaultBrowserProvider: capturingDefaultBrowserProvider,
             dockCustomizer: dockCustomizer,
@@ -340,7 +368,9 @@ final class ContinueSetUpModelTests: XCTestCase {
             tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: tabCollectionVM),
             emailManager: emailManager,
             duckPlayerPreferences: duckPlayerPreferences,
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            subscriptionManager: subscriptionManager,
+            persistor: homePageContinueSetUpModelPersisting
         )
         vm.shouldShowAllFeatures = true
         let expectedMatrix = expectedFeatureMatrixWithout(types: [])
@@ -358,17 +388,20 @@ final class ContinueSetUpModelTests: XCTestCase {
         vm.removeItem(for: .emailProtection)
         XCTAssertFalse(vm.visibleFeaturesMatrix.flatMap { $0 }.contains(.emailProtection))
 
+        vm.removeItem(for: .subscription)
+        XCTAssertFalse(vm.visibleFeaturesMatrix.flatMap { $0 }.contains(.subscription))
+
 #if !APPSTORE
         vm.removeItem(for: .dock)
         XCTAssertFalse(vm.visibleFeaturesMatrix.flatMap { $0 }.contains(.dock))
 #endif
 
-        let vm2 = HomePage.Models.ContinueSetUpModel.fixture(appGroupUserDefaults: userDefaults)
+        let vm2 = HomePage.Models.ContinueSetUpModel.fixture(persistor: homePageContinueSetUpModelPersisting)
         XCTAssertTrue(vm2.visibleFeaturesMatrix.flatMap { $0 }.isEmpty)
     }
 
     @MainActor func testShowAllFeatureUserPreferencesIsPersisted() {
-        let vm2 = HomePage.Models.ContinueSetUpModel.fixture(appGroupUserDefaults: userDefaults)
+        let vm2 = HomePage.Models.ContinueSetUpModel.fixture(persistor: homePageContinueSetUpModelPersisting)
         vm2.shouldShowAllFeatures = true
         vm.shouldShowAllFeatures = false
 
@@ -396,7 +429,7 @@ final class ContinueSetUpModelTests: XCTestCase {
 #if !APPSTORE
         let dockCustomizer = DockCustomizerMock()
 
-        let vm = HomePage.Models.ContinueSetUpModel.fixture(appGroupUserDefaults: userDefaults, dockCustomizer: dockCustomizer)
+        let vm = HomePage.Models.ContinueSetUpModel.fixture(persistor: homePageContinueSetUpModelPersisting, dockCustomizer: dockCustomizer)
         vm.shouldShowAllFeatures = true
 
         XCTAssert(vm.visibleFeaturesMatrix.reduce([], +).contains(HomePage.Models.FeatureType.dock))
@@ -407,12 +440,86 @@ final class ContinueSetUpModelTests: XCTestCase {
         let dockCustomizer = DockCustomizerMock()
         dockCustomizer.addToDock()
 
-        let vm = HomePage.Models.ContinueSetUpModel.fixture(appGroupUserDefaults: userDefaults, dockCustomizer: dockCustomizer)
+        let vm = HomePage.Models.ContinueSetUpModel.fixture(persistor: homePageContinueSetUpModelPersisting, dockCustomizer: dockCustomizer)
         vm.shouldShowAllFeatures = true
 
         XCTAssertFalse(vm.visibleFeaturesMatrix.reduce([], +).contains(HomePage.Models.FeatureType.dock))
     }
 
+    @MainActor func test_WhenUserHasSubscription_ItSavesTheUserHadSubscriptionFlag() {
+        let startedAt = Date().startOfDay
+        let expiresAt = Date().startOfDay.daysAgo(-10)
+        let subscription = DuckDuckGoSubscription(
+            productId: "test",
+            name: "test",
+            billingPeriod: .yearly,
+            startedAt: startedAt,
+            expiresOrRenewsAt: expiresAt,
+            platform: .stripe,
+            status: .autoRenewable,
+            activeOffers: []
+        )
+        subscriptionManager.returnSubscription = .success(subscription)
+
+        vm = HomePage.Models.ContinueSetUpModel(
+            defaultBrowserProvider: capturingDefaultBrowserProvider,
+            dockCustomizer: dockCustomizer,
+            dataImportProvider: capturingDataImportProvider,
+            tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: tabCollectionVM),
+            emailManager: emailManager,
+            duckPlayerPreferences: duckPlayerPreferences,
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            subscriptionManager: subscriptionManager,
+            persistor: homePageContinueSetUpModelPersisting
+        )
+
+        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+
+        XCTAssertTrue(homePageContinueSetUpModelPersisting.userHadSubscription)
+    }
+
+    @MainActor func test_WhenUserHasSubscription_ItDoesNotShowTheSubscriptionCard() {
+        let startedAt = Date().startOfDay
+        let expiresAt = Date().startOfDay.daysAgo(-10)
+        let subscription = DuckDuckGoSubscription(
+            productId: "test",
+            name: "test",
+            billingPeriod: .yearly,
+            startedAt: startedAt,
+            expiresOrRenewsAt: expiresAt,
+            platform: .stripe,
+            status: .autoRenewable,
+            activeOffers: []
+        )
+        subscriptionManager.returnSubscription = .success(subscription)
+        let vm = HomePage.Models.ContinueSetUpModel.fixture(persistor: homePageContinueSetUpModelPersisting)
+
+        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+
+        XCTAssertFalse(vm.visibleFeaturesMatrix.flatMap { $0 }.contains(.subscription))
+    }
+
+    @MainActor func testWhenAskedToPerformActionForSubscriptionThenItOpensSubscriptionSite() {
+        vm.performAction(for: .subscription)
+
+        let expectedURL = SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.onboarding.rawValue)?.url
+
+        XCTAssertEqual(tabCollectionVM.tabs[1].url, expectedURL)
+    }
+
+    @MainActor func testWhenAskedToPerformActionForSubscriptionThenItFiresPixel() {
+        vm.performAction(for: .subscription)
+
+        XCTAssertEqual(firedPixels.count, 1)
+        XCTAssertEqual(firedPixels.first?.name, SubscriptionPixel.subscriptionNewTabPageNextStepsCardClicked.name)
+    }
+
+    @MainActor func testWhenDismissingSubscriptionCardThenItFiresPixel() {
+        vm.removeItem(for: .subscription)
+
+        XCTAssertEqual(firedPixels.count, 1)
+        XCTAssertEqual(firedPixels.first?.name, SubscriptionPixel.subscriptionNewTabPageNextStepsCardDismissed.name)
+    }
 }
 
 extension HomePage.Models.ContinueSetUpModel {
@@ -422,14 +529,16 @@ extension HomePage.Models.ContinueSetUpModel {
         emailManager: EmailManager = EmailManager(storage: MockEmailStorage()),
         duckPlayerPreferences: DuckPlayerPreferencesPersistor = DuckPlayerPreferencesPersistorMock(),
         privacyConfig: MockPrivacyConfiguration = MockPrivacyConfiguration(),
-        appGroupUserDefaults: UserDefaults,
-        dockCustomizer: DockCustomization = DockCustomizerMock()
+        persistor: HomePageContinueSetUpModelPersisting = MockHomePageContinueSetUpModelPersisting(),
+        dockCustomizer: DockCustomization = DockCustomizerMock(),
+        subscriptionManager: SubscriptionAuthV1toV2BridgeMock = SubscriptionAuthV1toV2BridgeMock()
     ) -> HomePage.Models.ContinueSetUpModel {
         privacyConfig.featureSettings = [
             "networkProtection": "disabled"
         ] as! [String: String]
         let manager = MockPrivacyConfigurationManager()
         manager.mockPrivacyConfig = privacyConfig
+        subscriptionManager.returnSubscription = .failure(SubscriptionManagerError.noTokenAvailable)
 
         return HomePage.Models.ContinueSetUpModel(
             defaultBrowserProvider: defaultBrowserProvider,
@@ -438,6 +547,9 @@ extension HomePage.Models.ContinueSetUpModel {
             tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: TabCollectionViewModel(isPopup: false)),
             emailManager: emailManager,
             duckPlayerPreferences: duckPlayerPreferences,
-            privacyConfigurationManager: manager)
+            privacyConfigurationManager: manager,
+            subscriptionManager: subscriptionManager,
+            persistor: persistor
+        )
     }
 }

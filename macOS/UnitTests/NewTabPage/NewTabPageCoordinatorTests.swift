@@ -29,6 +29,7 @@ import PrivacyStats
 import SharedTestUtilities
 import XCTest
 import RemoteMessagingTestsUtils
+import SubscriptionTestingUtilities
 @testable import DuckDuckGo_Privacy_Browser
 
 final class MockPrivacyStats: PrivacyStatsCollecting {
@@ -69,11 +70,16 @@ final class NewTabPageCoordinatorTests: XCTestCase {
     var featureFlagger: FeatureFlagger!
     var windowControllersManager: (WindowControllersManagerProtocol & AIChatTabManaging)!
     var tabsPreferences: TabsPreferences!
+    var subscriptionManager: SubscriptionAuthV1toV2BridgeMock!
+    var homePageContinueSetUpModelPersisting: MockHomePageContinueSetUpModelPersisting!
 
     @MainActor
     override func setUp() async throws {
         try await super.setUp()
 
+        subscriptionManager = SubscriptionAuthV1toV2BridgeMock()
+        subscriptionManager.returnSubscription = .none
+        homePageContinueSetUpModelPersisting = MockHomePageContinueSetUpModelPersisting()
         notificationCenter = NotificationCenter()
         keyValueStore = try MockKeyValueFileStore()
         firePixelCalls.removeAll()
@@ -149,6 +155,8 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             tabsPreferences: tabsPreferences,
             newTabPageAIChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(),
             winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator(winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager()),
+            subscriptionManager: subscriptionManager,
+            homePageContinueSetUpModelPersistor: homePageContinueSetUpModelPersisting,
             fireDailyPixel: { self.firePixelCalls.append($0) }
         )
     }
@@ -164,6 +172,8 @@ final class NewTabPageCoordinatorTests: XCTestCase {
         tabsPreferences = nil
         themeManager = nil
         windowControllersManager = nil
+        subscriptionManager = nil
+        homePageContinueSetUpModelPersisting = nil
     }
 
     func testWhenNewTabPageAppearsThenPixelIsSent() {

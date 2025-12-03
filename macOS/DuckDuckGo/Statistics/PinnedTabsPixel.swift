@@ -45,4 +45,14 @@ enum PinnedTabsPixel: PixelKitEvent {
         nil
     }
 
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .userPinnedTab,
+                .userUnpinnedTab,
+                .userSwitchedToPerWindowPinnedTabs,
+                .userSwitchedToSharedPinnedTabs:
+            return [.pixelSource]
+        }
+    }
+
 }

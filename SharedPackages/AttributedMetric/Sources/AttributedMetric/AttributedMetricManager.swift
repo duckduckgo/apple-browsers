@@ -252,8 +252,7 @@ public final class AttributedMetricManager {
                                                                    count: bucket.value,
                                                                    bucketVersion: bucket.version),
                            frequency: .legacyDailyNoSuffix,
-                           includeAppVersionParameter: false,
-                           includePixelSourceParameter: false)
+                           includeAppVersionParameter: false)
         case .months(let month):
             Logger.attributedMetric.log("\(month, privacy: .public) month(s) from installation")
             guard let bucket = try? bucketModifier.bucket(value: month, pixelName: .userRetentionMonth) else {
@@ -266,8 +265,7 @@ public final class AttributedMetricManager {
                                                                     count: bucket.value,
                                                                     bucketVersion: bucket.version),
                            frequency: .legacyDailyNoSuffix,
-                           includeAppVersionParameter: false,
-                           includePixelSourceParameter: false)
+                           includeAppVersionParameter: false)
         }
     }
 
@@ -308,8 +306,7 @@ public final class AttributedMetricManager {
                                                                 daysSinceInstalled: addDaysSinceInstalled ? daysSinceInstalled : nil,
                                                                 bucketVersion: bucket.version),
                        frequency: .legacyDailyNoSuffix,
-                       includeAppVersionParameter: false,
-                       includePixelSourceParameter: false)
+                       includeAppVersionParameter: false)
     }
 
     // MARK: - Average searches
@@ -337,8 +334,7 @@ public final class AttributedMetricManager {
                                                                                        count: bucket.value,
                                                                                        bucketVersion: bucket.version),
                            frequency: .legacyDailyNoSuffix,
-                           includeAppVersionParameter: false,
-                           includePixelSourceParameter: false)
+                           includeAppVersionParameter: false)
         case .months:
             guard let bucket = try? bucketModifier.bucket(value: average, pixelName: .userAverageSearchesPastWeek) else {
                 Logger.attributedMetric.error("Failed to bucket average search count value")
@@ -350,8 +346,7 @@ public final class AttributedMetricManager {
                                                                              count: bucket.value,
                                                                              bucketVersion: bucket.version),
                            frequency: .legacyDailyNoSuffix,
-                           includeAppVersionParameter: false,
-                           includePixelSourceParameter: false)
+                           includeAppVersionParameter: false)
         }
     }
 
@@ -382,8 +377,7 @@ public final class AttributedMetricManager {
                                                                          count: bucket.value,
                                                                          bucketVersion: bucket.version),
                        frequency: .legacyDailyNoSuffix,
-                       includeAppVersionParameter: false,
-                       includePixelSourceParameter: false)
+                       includeAppVersionParameter: false)
     }
 
     // MARK: - Average Duck.ai chats
@@ -413,8 +407,7 @@ public final class AttributedMetricManager {
                                                                             count: bucket.value,
                                                                             bucketVersion: bucket.version),
                        frequency: .legacyDailyNoSuffix,
-                       includeAppVersionParameter: false,
-                       includePixelSourceParameter: false)
+                       includeAppVersionParameter: false)
     }
 
     // MARK: - Subscription
@@ -444,8 +437,7 @@ public final class AttributedMetricManager {
                                                                 month: bucket.value,
                                                                 bucketVersion: bucket.version),
                            frequency: .legacyDailyNoSuffix,
-                           includeAppVersionParameter: false,
-                           includePixelSourceParameter: false)
+                           includeAppVersionParameter: false)
         }
     }
 
@@ -474,8 +466,7 @@ public final class AttributedMetricManager {
                                                                         month: bucket.value,
                                                                         bucketVersion: bucket.version),
                                    frequency: .legacyDailyNoSuffix,
-                                   includeAppVersionParameter: false,
-                                   includePixelSourceParameter: false)
+                                   includeAppVersionParameter: false)
                     dataStorage.subscriptionMonth1Fired = true
                 } catch {
                     Logger.attributedMetric.error("Failed to bucket length value: \(error, privacy: .public)")
@@ -490,8 +481,7 @@ public final class AttributedMetricManager {
                                                                         month: bucket.value,
                                                                         bucketVersion: bucket.version),
                                    frequency: .legacyDailyNoSuffix,
-                                   includeAppVersionParameter: false,
-                                   includePixelSourceParameter: false)
+                                   includeAppVersionParameter: false)
                 } catch {
                     Logger.attributedMetric.error("Failed to bucket length value: \(error, privacy: .public)")
                 }
@@ -529,7 +519,6 @@ public final class AttributedMetricManager {
                                                               devices: bucket.value,
                                                               bucketVersion: bucket.version),
                        frequency: .standard,
-                       includeAppVersionParameter: false,
-                       includePixelSourceParameter: false)
+                       includeAppVersionParameter: false)
     }
 }

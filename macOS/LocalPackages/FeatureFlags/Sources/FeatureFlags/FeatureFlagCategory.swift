@@ -58,6 +58,7 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .aiChatKeepSession,
                 .aiChatDataClearing,
                 .aiChatOmnibarToggle,
+                .aiChatOmnibarCluster,
                 .standaloneMigration:
             return .duckAI
         case .osSupportForceUnsupportedMessage,

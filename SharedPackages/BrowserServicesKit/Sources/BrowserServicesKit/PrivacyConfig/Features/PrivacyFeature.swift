@@ -167,6 +167,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211660503405838?focus=true
     case forgetAllInSettings
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212229431540900
+    case granularFireButtonOptions
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -276,6 +279,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Enables the omnibar toggle for AI Chat
     case omnibarToggle
+
+    /// Enables the omnibar cluster for AI Chat
+    case omnibarCluster
 
     /// Controls showing the Hide AI section in Settings -> AI Features
     case showHideAiGeneratedImages

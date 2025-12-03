@@ -41,6 +41,14 @@ final class PixelKitTests: XCTestCase {
             return nil
         }
 
+        var standardParameters: [PixelKitStandardParameter]? {
+            switch self {
+            case .testEventPrefixed,
+                    .testEvent:
+                return [.pixelSource]
+            }
+        }
+
     }
 
     private enum TestEventV2: String, PixelKitEvent {
@@ -80,6 +88,20 @@ final class PixelKitTests: XCTestCase {
                 return .daily
             case .dailyAndContinuousEvent, .dailyAndContinuousEventWithoutParameters:
                 return .legacyDailyAndCount
+            }
+        }
+
+        var standardParameters: [PixelKitStandardParameter]? {
+            switch self {
+            case .testEvent,
+                    .testEventWithoutParameters,
+                    .dailyEvent,
+                    .dailyEventWithoutParameters,
+                    .dailyAndContinuousEvent,
+                    .dailyAndContinuousEventWithoutParameters,
+                    .uniqueEvent,
+                    .nameWithDot:
+                return [.pixelSource]
             }
         }
     }

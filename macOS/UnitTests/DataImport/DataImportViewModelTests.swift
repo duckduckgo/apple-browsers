@@ -2112,6 +2112,99 @@ final class DataImportViewModelTests: XCTestCase {
         }
     }
 
+    func testHandleErrors_showsPasswordEntryHelp_onFirstKeychainPromptDenial() async {
+        // GIVEN
+        await MainActor.run {
+            setupModel(with: .chrome, dataImporterFactory: { _, _, _, _ in
+                ImporterMock(
+                    accessValidator: { _, _ in
+                        [.passwords: ChromiumLoginReader.ImportError(type: .userDeniedKeychainPrompt)]
+                    },
+                    importTask: { _, _ in [:] }
+                )
+            })
+            model.initiateImport(fileURL: .testProfile)
+        }
+
+        // WHEN
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        // THEN
+        await MainActor.run {
+            XCTAssertEqual(model.screen, .passwordEntryHelp, "First denial should show password entry help screen")
+        }
+    }
+
+    func testHandleErrors_goesBackToSourcePicker_onSecondKeychainPromptDenial() async {
+        // GIVEN
+        await MainActor.run {
+            setupModel(
+                with: .chrome,
+                screen: .passwordEntryHelp,
+                dataImporterFactory: { _, _, _, _ in
+                    ImporterMock(
+                        accessValidator: { _, _ in
+                            [.passwords: ChromiumLoginReader.ImportError(type: .userDeniedKeychainPrompt)]
+                        },
+                        importTask: { _, _ in [:] }
+                    )
+                }
+            )
+            model.initiateImport(fileURL: .testProfile)
+        }
+
+        // WHEN
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        // THEN
+        await MainActor.run {
+            XCTAssertEqual(model.screen, .sourceAndDataTypesPicker, "Second denial from password entry help should go back to source picker")
+        }
+    }
+
+    func testHandleErrors_successfullyRetriesFromPasswordEntryHelp() async {
+        // GIVEN
+        let importCount = ImportCounter()
+        await MainActor.run {
+            setupModel(
+                with: .chrome,
+                screen: .passwordEntryHelp,
+                dataImporterFactory: { _, _, _, _ in
+                    ImporterMock(
+                        accessValidator: { _, _ in
+                            // No error on retry - user granted access
+                            nil
+                        },
+                        importTask: { _, _ in
+                            await importCount.increment()
+                            return [
+                                .bookmarks: .success(.init(successful: 10, duplicate: 0, failed: 0)),
+                                .passwords: .success(.init(successful: 5, duplicate: 0, failed: 0))
+                            ]
+                        }
+                    )
+                }
+            )
+            model.initiateImport(fileURL: .testProfile)
+        }
+
+        // WHEN
+        await fulfillImport()
+
+        // THEN
+        let count = await importCount.value
+        await MainActor.run {
+            XCTAssertEqual(count, 1, "Import should have been called once")
+            XCTAssertTrue(model.isDataTypeSuccessfullyImported(.bookmarks))
+            XCTAssertTrue(model.isDataTypeSuccessfullyImported(.passwords))
+            if case .summary = model.screen {
+                // Expected - should show summary after successful import
+            } else {
+                XCTFail("Expected summary screen after successful import, got \(model.screen)")
+            }
+        }
+    }
+
     // MARK: - ImportProgress AsyncStream Tests
 
     func testImportProgress_returnsNil_whenNoImportTask() {

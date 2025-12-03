@@ -2957,8 +2957,8 @@ body:not([data-background-kind=default]) .TabSwitcher_tabSwitcher {
 .TickPill_tickPill {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 10px;
+  gap: 4px;
+  padding: 8px 8px;
   border-radius: 1000px;
   background-color: var(--color-white-at-3);
   border: 1px solid var(--color-white-at-12);

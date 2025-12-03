@@ -2225,15 +2225,12 @@
           });
         }
         disableBroadcast() {
-          console.log("[Service] disableBroadcast called");
           this._broadcast = false;
         }
         enableBroadcast() {
-          console.log("[Service] enableBroadcast called");
           this._broadcast = true;
         }
         flush() {
-          console.log("[Service] flush called, has data:", this.data !== null);
           if (this.data) this._accept(this.data, "manual");
         }
         /**
@@ -2259,11 +2256,6 @@
          * @private
          */
         _accept(data2, source) {
-          console.log("[Service] _accept called:", {
-            source,
-            broadcast: this._broadcast,
-            hasData: data2 !== null
-          });
           if (this.accept && source !== "initial") {
             this.data = /** @type {NonNullable<Data>} */
             this.accept(
@@ -2278,11 +2270,7 @@
           }
           if (source === "initial") return;
           this.clearDebounceTimer();
-          if (!this._broadcast) {
-            console.warn("[Service] NOT broadcasting - broadcast is disabled. Source:", source);
-            return;
-          }
-          console.log("[Service] Broadcasting data event. Source:", source);
+          if (!this._broadcast) return console.warn("not broadcasting");
           const dataEvent = new CustomEvent("data", {
             detail: {
               data: this.data,
@@ -9625,284 +9613,6 @@
     }
   });
 
-  // pages/new-tab/app/activity/batched-activity.service.js
-  var BatchedActivityService;
-  var init_batched_activity_service = __esm({
-    "pages/new-tab/app/activity/batched-activity.service.js"() {
-      "use strict";
-      init_service();
-      BatchedActivityService = class {
-        INITIAL = 5;
-        CHUNK_SIZE = 10;
-        isFetchingNext = false;
-        /**
-         * @param {import("../../src/index.js").NewTabPage} ntp - The internal data feed, expected to have a `subscribe` method.
-         * @param {boolean} batched
-         * @internal
-         */
-        constructor(ntp, batched = false) {
-          this.ntp = ntp;
-          this.batched = batched;
-          this.dataService = new Service({
-            initial: async (params) => {
-              if (this.batched) {
-                if (params && Array.isArray(params.urls) && this.dataService.data?.urls) {
-                  const data2 = await this.ntp.messaging.request("activity_getDataForUrls", {
-                    urls: params.urls
-                  });
-                  return {
-                    activity: data2.activity,
-                    totalTrackers: this.dataService.data.totalTrackers,
-                    urls: this.dataService.data.urls
-                  };
-                } else {
-                  const urlsResponse = await this.ntp.messaging.request("activity_getUrls");
-                  const data2 = await this.ntp.messaging.request("activity_getDataForUrls", {
-                    urls: urlsResponse.urls.slice(0, this.INITIAL)
-                  });
-                  return { activity: data2.activity, urls: urlsResponse.urls, totalTrackers: urlsResponse.totalTrackersBlocked };
-                }
-              } else {
-                const data2 = await this.ntp.messaging.request("activity_getData");
-                return {
-                  activity: data2.activity,
-                  urls: data2.activity.map((x3) => x3.url),
-                  totalTrackers: data2.activity.reduce((acc, item) => acc + item.trackingStatus.totalCount, 0)
-                };
-              }
-            },
-            subscribe: (cb) => {
-              const sub1 = ntp.messaging.subscribe("activity_onDataUpdate", (params) => {
-                console.log("[BatchedActivity] activity_onDataUpdate received:", {
-                  activityCount: params.activity.length,
-                  totalTrackers: params.activity.reduce((acc, item) => acc + item.trackingStatus.totalCount, 0),
-                  urls: params.activity.map((x3) => x3.url)
-                });
-                cb({
-                  activity: params.activity,
-                  urls: params.activity.map((x3) => x3.url),
-                  totalTrackers: params.activity.reduce((acc, item) => acc + item.trackingStatus.totalCount, 0)
-                });
-              });
-              const sub2 = ntp.messaging.subscribe("activity_onDataPatch", (params) => {
-                const totalTrackers = params.totalTrackersBlocked;
-                console.log("[BatchedActivity] activity_onDataPatch received:", {
-                  hasPatch: "patch" in params && params.patch !== null,
-                  totalTrackers,
-                  urls: params.urls,
-                  patchUrl: params.patch?.url
-                });
-                if ("patch" in params && params.patch !== null) {
-                  cb({ activity: [
-                    /** @type {DomainActivity} */
-                    params.patch
-                  ], urls: params.urls, totalTrackers });
-                } else {
-                  cb({ activity: [], urls: params.urls, totalTrackers });
-                }
-              });
-              return () => {
-                sub1();
-                sub2();
-              };
-            }
-          }).withUpdater((old, next, source) => {
-            if (source === "manual") {
-              return next;
-            }
-            if (this.batched) {
-              return {
-                activity: old.activity.concat(next.activity),
-                urls: next.urls,
-                totalTrackers: next.totalTrackers
-              };
-            }
-            return next;
-          });
-          this.burns = new EventTarget();
-          this.burnUnsub = this.ntp.messaging.subscribe("activity_onBurnComplete", () => {
-            console.log("[BatchedActivity] activity_onBurnComplete received from native");
-            this.burns?.dispatchEvent(new CustomEvent("activity_onBurnComplete"));
-          });
-        }
-        name() {
-          return "BatchedActivity";
-        }
-        /**
-         * @returns {Promise<ActivityData>}
-         * @internal
-         */
-        async getInitial() {
-          return await this.dataService.fetchInitial();
-        }
-        /**
-         * @internal
-         */
-        destroy() {
-          this.dataService.destroy();
-          this.burnUnsub();
-          this.burns = null;
-        }
-        /**
-         * @param {string[]} urls
-         */
-        next(urls) {
-          if (urls.length === 0) return;
-          this.isFetchingNext = true;
-          this.dataService.triggerFetch({ urls });
-        }
-        /**
-         * @param {(evt: {data: Incoming, source: InvocationSource}) => void} cb
-         * @internal
-         */
-        onData(cb) {
-          return this.dataService.onData((data2) => {
-            this.isFetchingNext = false;
-            cb(data2);
-          });
-        }
-        /**
-         * @param {string[]} [urls] - optional subset to refresh
-         */
-        triggerDataFetch(urls) {
-          if (urls) {
-            this.dataService.triggerFetch({ urls });
-          } else {
-            this.dataService.triggerFetch();
-          }
-        }
-        /**
-         * @param {string} url
-         */
-        addFavorite(url8) {
-          this.dataService.update((old) => {
-            return {
-              ...old,
-              activity: old.activity.map((item) => {
-                if (item.url === url8) return { ...item, favorite: true };
-                return item;
-              })
-            };
-          });
-          this.ntp.messaging.notify("activity_addFavorite", { url: url8 });
-        }
-        /**
-         * @param {string} url
-         */
-        removeFavorite(url8) {
-          this.dataService.update((old) => {
-            return {
-              ...old,
-              activity: old.activity.map((item) => {
-                if (item.url === url8) return { ...item, favorite: false };
-                return item;
-              })
-            };
-          });
-          this.ntp.messaging.notify("activity_removeFavorite", { url: url8 });
-        }
-        /**
-         * @param {string} url
-         * @return {Promise<import('../../types/new-tab.js').ConfirmBurnResponse>}
-         */
-        confirmBurn(url8) {
-          return this.ntp.messaging.request("activity_confirmBurn", { url: url8 });
-        }
-        /**
-         * @param {string} url
-         */
-        remove(url8) {
-          this.dataService.update((old) => {
-            return {
-              ...old,
-              activity: old.activity.filter((item) => {
-                return item.url !== url8;
-              }),
-              urls: old.urls.filter((x3) => x3 !== url8)
-            };
-          });
-          this.ntp.messaging.notify("activity_removeItem", { url: url8 });
-        }
-        /**
-         * @param {string} url
-         * @param {import('../../types/new-tab.js').OpenTarget} target
-         */
-        openUrl(url8, target) {
-          this.ntp.messaging.notify("activity_open", { url: url8, target });
-        }
-        onBurnComplete(cb) {
-          if (!this.burns) throw new Error("unreachable");
-          this.burns.addEventListener("activity_onBurnComplete", cb);
-          return () => {
-            if (!this.burns) throw new Error("unreachable");
-            this.burns.removeEventListener("activity_onBurnComplete", cb);
-          };
-        }
-        enableBroadcast() {
-          console.log("[BatchedActivity] enableBroadcast called");
-          this.dataService.enableBroadcast();
-          this.dataService.flush();
-        }
-        disableBroadcast() {
-          console.log("[BatchedActivity] disableBroadcast called");
-          this.dataService.disableBroadcast();
-        }
-      };
-    }
-  });
-
-  // pages/new-tab/app/activity/ActivityProvider.js
-  function ActivityProvider(props) {
-    const initial = (
-      /** @type {State} */
-      {
-        status: "idle",
-        data: null,
-        config: null
-      }
-    );
-    const [state, dispatch] = h2(reducer, initial);
-    const batched = useBatchedActivityApi();
-    const service = useService5(batched);
-    useInitialData({ dispatch, service });
-    return /* @__PURE__ */ _(ActivityContext.Provider, { value: { state } }, /* @__PURE__ */ _(ActivityServiceContext.Provider, { value: service.current }, props.children));
-  }
-  function useService5(useBatched) {
-    const service = A2(
-      /** @type {BatchedActivityService|null} */
-      null
-    );
-    const ntp = useMessaging();
-    y2(() => {
-      const stats = new BatchedActivityService(ntp, useBatched);
-      service.current = stats;
-      return () => {
-        stats.destroy();
-      };
-    }, [ntp, useBatched]);
-    return service;
-  }
-  var ActivityContext, ActivityServiceContext;
-  var init_ActivityProvider = __esm({
-    "pages/new-tab/app/activity/ActivityProvider.js"() {
-      "use strict";
-      init_preact_module();
-      init_hooks_module();
-      init_types();
-      init_service_hooks();
-      init_settings_provider();
-      init_batched_activity_service();
-      ActivityContext = K({
-        /** @type {State} */
-        state: { status: "idle", data: null, config: null }
-      });
-      ActivityServiceContext = K(
-        /** @type {BatchedActivityService|null} */
-        {}
-      );
-    }
-  });
-
   // pages/new-tab/app/protections/components/ProtectionsProvider.js
   function ProtectionsProvider(props) {
     const initial = (
@@ -9914,13 +9624,9 @@
       }
     );
     const [state, dispatch] = h2(reducer, initial);
-    const service = useService6();
+    const service = useService5();
     useInitialDataAndConfig({ dispatch, service });
     useConfigSubscription({ dispatch, service });
-    const burnCompleteTimeRef = A2(
-      /** @type {number | null} */
-      null
-    );
     const toggle = q2(() => {
       service.current?.toggleExpansion();
     }, [service]);
@@ -9930,9 +9636,9 @@
       },
       [service]
     );
-    return /* @__PURE__ */ _(ProtectionsContext.Provider, { value: { state, toggle, setFeed } }, /* @__PURE__ */ _(ProtectionsServiceContext.Provider, { value: service.current }, /* @__PURE__ */ _(BurnCompleteTimeContext.Provider, { value: burnCompleteTimeRef }, props.children)));
+    return /* @__PURE__ */ _(ProtectionsContext.Provider, { value: { state, toggle, setFeed } }, /* @__PURE__ */ _(ProtectionsServiceContext.Provider, { value: service.current }, props.children));
   }
-  function useService6() {
+  function useService5() {
     const service = A2(
       /** @type {ProtectionsService|null} */
       null
@@ -9949,73 +9655,25 @@
   }
   function useBlockedCount(initial) {
     const service = x2(ProtectionsServiceContext);
-    const burnCompleteTimeRef = x2(BurnCompleteTimeContext);
-    const activityService = x2(ActivityServiceContext);
     const signal = useSignal(initial);
-    const skipAnimationSignal = useSignal(false);
-    y2(() => {
-      if (!activityService?.burns) return;
-      const handleBurnComplete = () => {
-        console.log("[ProtectionsProvider.useBlockedCount] Burn complete event received, setting burnCompleteTimeRef");
-        burnCompleteTimeRef.current = Date.now();
-      };
-      const burns = activityService.burns;
-      burns.addEventListener("activity_onBurnComplete", handleBurnComplete);
-      return () => {
-        burns?.removeEventListener("activity_onBurnComplete", handleBurnComplete);
-      };
-    }, [activityService, burnCompleteTimeRef]);
     useSignalEffect(() => {
       return service?.onData((evt) => {
-        const newValue = evt.data.totalCount;
-        const previousValue = signal.value;
-        console.log("[ProtectionsProvider.useBlockedCount] Protections data update received:", {
-          source: evt.source,
-          previousValue,
-          newValue,
-          totalCookiePopUpsBlocked: evt.data.totalCookiePopUpsBlocked,
-          burnCompleteTimeSet: burnCompleteTimeRef.current !== null
-        });
-        if (newValue === 0 && previousValue > 0 && burnCompleteTimeRef.current !== null) {
-          const timeSinceBurn = Date.now() - burnCompleteTimeRef.current;
-          console.log("[ProtectionsProvider.useBlockedCount] Checking burn all condition:", {
-            timeSinceBurn,
-            willSkipAnimation: timeSinceBurn < 1e3
-          });
-          if (timeSinceBurn < 1e3) {
-            skipAnimationSignal.value = true;
-            signal.value = newValue;
-            setTimeout(() => {
-              skipAnimationSignal.value = false;
-              burnCompleteTimeRef.current = null;
-            }, 500);
-            return;
-          }
-        }
-        skipAnimationSignal.value = false;
-        signal.value = newValue;
+        signal.value = evt.data.totalCount;
       });
     });
-    return { signal, skipAnimation: skipAnimationSignal };
+    return signal;
   }
   function useCookiePopUpsBlockedCount(initial) {
     const service = x2(ProtectionsServiceContext);
     const signal = useSignal(initial);
     useSignalEffect(() => {
       return service?.onData((evt) => {
-        const previousValue = signal.value;
-        const newValue = evt.data.totalCookiePopUpsBlocked;
-        console.log("[ProtectionsProvider.useCookiePopUpsBlockedCount] Cookie pop-ups count update:", {
-          source: evt.source,
-          previousValue,
-          newValue
-        });
-        signal.value = newValue;
+        signal.value = evt.data.totalCookiePopUpsBlocked;
       });
     });
     return signal;
   }
-  var ProtectionsContext, ProtectionsServiceContext, BurnCompleteTimeContext;
+  var ProtectionsContext, ProtectionsServiceContext;
   var init_ProtectionsProvider = __esm({
     "pages/new-tab/app/protections/components/ProtectionsProvider.js"() {
       "use strict";
@@ -10025,7 +9683,6 @@
       init_service_hooks();
       init_protections_service();
       init_signals_module();
-      init_ActivityProvider();
       ProtectionsContext = K({
         /** @type {State} */
         state: { status: "idle", data: null, config: null },
@@ -10041,10 +9698,6 @@
       ProtectionsServiceContext = K(
         /** @type {ProtectionsService|null} */
         {}
-      );
-      BurnCompleteTimeContext = K(
-        /** @type {import("preact").RefObject<number | null>} */
-        { current: null }
       );
     }
   });
@@ -10261,17 +9914,8 @@
   });
 
   // pages/new-tab/app/protections/utils/useAnimatedCount.js
-  function useAnimatedCount(targetValue, elementRef, skipAnimation = false) {
+  function useAnimatedCount(targetValue, elementRef) {
     const [animatedValue, setAnimatedValue] = d2(0);
-    const isSignal = typeof skipAnimation === "object" && "value" in skipAnimation;
-    const [shouldSkipAnimation, setShouldSkipAnimation] = d2(
-      isSignal ? skipAnimation.value : skipAnimation
-    );
-    useSignalEffect(() => {
-      if (isSignal) {
-        setShouldSkipAnimation(skipAnimation.value);
-      }
-    });
     const animatedValueRef = A2(
       /** @type {number} */
       0
@@ -10330,23 +9974,14 @@
       const becameVisible = isCurrentlyVisible && !wasVisible;
       const isReturningToNTP = becameVisible && lastSeenValueRef.current !== null;
       wasVisibleRef.current = isCurrentlyVisible;
-      const currentSkipAnimation = isSignal ? skipAnimation.value : shouldSkipAnimation;
       if (isCurrentlyVisible) {
-        if (currentSkipAnimation) {
-          cancelAnimation();
-          setAnimatedValue(targetValue);
-          animatedValueRef.current = targetValue;
-          hasAnimatedRef.current = true;
-          lastSeenValueRef.current = targetValue;
-        } else {
-          let startValue = animatedValueRef.current;
-          if (isReturningToNTP && lastSeenValueRef.current !== null && lastSeenValueRef.current !== targetValue) {
-            startValue = lastSeenValueRef.current;
-            hasAnimatedRef.current = false;
-          }
-          cancelAnimation = animateCount(targetValue, updateAnimatedCount, void 0, startValue);
-          hasAnimatedRef.current = true;
+        let startValue = animatedValueRef.current;
+        if (isReturningToNTP && lastSeenValueRef.current !== null && lastSeenValueRef.current !== targetValue) {
+          startValue = lastSeenValueRef.current;
+          hasAnimatedRef.current = false;
         }
+        cancelAnimation = animateCount(targetValue, updateAnimatedCount, void 0, startValue);
+        hasAnimatedRef.current = true;
       } else {
         if (wasVisible) {
           lastSeenValueRef.current = animatedValueRef.current;
@@ -10363,23 +9998,14 @@
         const isReturningToNTPNow = becameVisibleNow && lastSeenValueRef.current !== null;
         wasVisibleRef.current = isNowVisible;
         if (isNowVisible) {
-          const currentSkipAnimation2 = isSignal ? skipAnimation.value : shouldSkipAnimation;
-          if (currentSkipAnimation2) {
-            cancelAnimation();
-            setAnimatedValue(targetValue);
-            animatedValueRef.current = targetValue;
-            hasAnimatedRef.current = true;
-            lastSeenValueRef.current = targetValue;
-          } else {
-            let startValue = animatedValueRef.current;
-            if (isReturningToNTPNow && lastSeenValueRef.current !== null && lastSeenValueRef.current !== targetValue) {
-              startValue = lastSeenValueRef.current;
-              hasAnimatedRef.current = false;
-            }
-            cancelAnimation();
-            cancelAnimation = animateCount(targetValue, updateAnimatedCount, void 0, startValue);
-            hasAnimatedRef.current = true;
+          let startValue = animatedValueRef.current;
+          if (isReturningToNTPNow && lastSeenValueRef.current !== null && lastSeenValueRef.current !== targetValue) {
+            startValue = lastSeenValueRef.current;
+            hasAnimatedRef.current = false;
           }
+          cancelAnimation();
+          cancelAnimation = animateCount(targetValue, updateAnimatedCount, void 0, startValue);
+          hasAnimatedRef.current = true;
         } else if (document.visibilityState === "hidden") {
           cancelAnimation();
           if (hasAnimatedRef.current) {
@@ -10394,14 +10020,13 @@
         cancelAnimation();
         document.removeEventListener("visibilitychange", handleVisibilityChange);
       };
-    }, [targetValue, updateAnimatedCount, isInViewport, shouldSkipAnimation]);
+    }, [targetValue, updateAnimatedCount, isInViewport]);
     return animatedValue;
   }
   var init_useAnimatedCount = __esm({
     "pages/new-tab/app/protections/utils/useAnimatedCount.js"() {
       "use strict";
       init_hooks_module();
-      init_signals_module();
       init_animateCount();
     }
   });
@@ -10411,7 +10036,6 @@
     expansion,
     canExpand,
     blockedCountSignal,
-    skipAnimationSignal,
     onToggle,
     buttonAttrs = {},
     totalCookiePopUpsBlockedSignal
@@ -10432,8 +10056,8 @@
     const totalTrackersBlocked = blockedCountSignal.value;
     const totalCookiePopUpsBlockedValue = totalCookiePopUpsBlockedSignal.value;
     const totalCookiePopUpsBlocked = typeof totalCookiePopUpsBlockedValue === "number" && Number.isFinite(totalCookiePopUpsBlockedValue) ? Math.max(0, Math.floor(totalCookiePopUpsBlockedValue)) : 0;
-    const animatedTrackersBlocked = useAnimatedCount(totalTrackersBlocked, counterContainerRef, skipAnimationSignal);
-    const animatedCookiePopUpsBlocked = useAnimatedCount(totalCookiePopUpsBlocked, counterContainerRef, skipAnimationSignal);
+    const animatedTrackersBlocked = useAnimatedCount(totalTrackersBlocked, counterContainerRef);
+    const animatedCookiePopUpsBlocked = useAnimatedCount(totalCookiePopUpsBlocked, counterContainerRef);
     y2(() => {
       return ntp.messaging.subscribe("protections_scroll", () => {
         headingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -10553,7 +10177,6 @@
     expansion = "expanded",
     children,
     blockedCountSignal,
-    skipAnimationSignal,
     feed,
     toggle,
     setFeed,
@@ -10582,7 +10205,6 @@
       ProtectionsHeading,
       {
         blockedCountSignal,
-        skipAnimationSignal,
         onToggle: toggle,
         expansion,
         canExpand: true,
@@ -10640,6 +10262,270 @@
       init_ProtectionsHeading();
       init_types();
       init_ProtectionsHeadingLegacy();
+    }
+  });
+
+  // pages/new-tab/app/activity/batched-activity.service.js
+  var BatchedActivityService;
+  var init_batched_activity_service = __esm({
+    "pages/new-tab/app/activity/batched-activity.service.js"() {
+      "use strict";
+      init_service();
+      BatchedActivityService = class {
+        INITIAL = 5;
+        CHUNK_SIZE = 10;
+        isFetchingNext = false;
+        /**
+         * @param {import("../../src/index.js").NewTabPage} ntp - The internal data feed, expected to have a `subscribe` method.
+         * @param {boolean} batched
+         * @internal
+         */
+        constructor(ntp, batched = false) {
+          this.ntp = ntp;
+          this.batched = batched;
+          this.dataService = new Service({
+            initial: async (params) => {
+              if (this.batched) {
+                if (params && Array.isArray(params.urls) && this.dataService.data?.urls) {
+                  const data2 = await this.ntp.messaging.request("activity_getDataForUrls", {
+                    urls: params.urls
+                  });
+                  return {
+                    activity: data2.activity,
+                    totalTrackers: this.dataService.data.totalTrackers,
+                    urls: this.dataService.data.urls
+                  };
+                } else {
+                  const urlsResponse = await this.ntp.messaging.request("activity_getUrls");
+                  const data2 = await this.ntp.messaging.request("activity_getDataForUrls", {
+                    urls: urlsResponse.urls.slice(0, this.INITIAL)
+                  });
+                  return { activity: data2.activity, urls: urlsResponse.urls, totalTrackers: urlsResponse.totalTrackersBlocked };
+                }
+              } else {
+                const data2 = await this.ntp.messaging.request("activity_getData");
+                return {
+                  activity: data2.activity,
+                  urls: data2.activity.map((x3) => x3.url),
+                  totalTrackers: data2.activity.reduce((acc, item) => acc + item.trackingStatus.totalCount, 0)
+                };
+              }
+            },
+            subscribe: (cb) => {
+              const sub1 = ntp.messaging.subscribe("activity_onDataUpdate", (params) => {
+                cb({
+                  activity: params.activity,
+                  urls: params.activity.map((x3) => x3.url),
+                  totalTrackers: params.activity.reduce((acc, item) => acc + item.trackingStatus.totalCount, 0)
+                });
+              });
+              const sub2 = ntp.messaging.subscribe("activity_onDataPatch", (params) => {
+                const totalTrackers = params.totalTrackersBlocked;
+                if ("patch" in params && params.patch !== null) {
+                  cb({ activity: [
+                    /** @type {DomainActivity} */
+                    params.patch
+                  ], urls: params.urls, totalTrackers });
+                } else {
+                  cb({ activity: [], urls: params.urls, totalTrackers });
+                }
+              });
+              return () => {
+                sub1();
+                sub2();
+              };
+            }
+          }).withUpdater((old, next, source) => {
+            if (source === "manual") {
+              return next;
+            }
+            if (this.batched) {
+              return {
+                activity: old.activity.concat(next.activity),
+                urls: next.urls,
+                totalTrackers: next.totalTrackers
+              };
+            }
+            return next;
+          });
+          this.burns = new EventTarget();
+          this.burnUnsub = this.ntp.messaging.subscribe("activity_onBurnComplete", () => {
+            this.burns?.dispatchEvent(new CustomEvent("activity_onBurnComplete"));
+          });
+        }
+        name() {
+          return "BatchedActivity";
+        }
+        /**
+         * @returns {Promise<ActivityData>}
+         * @internal
+         */
+        async getInitial() {
+          return await this.dataService.fetchInitial();
+        }
+        /**
+         * @internal
+         */
+        destroy() {
+          this.dataService.destroy();
+          this.burnUnsub();
+          this.burns = null;
+        }
+        /**
+         * @param {string[]} urls
+         */
+        next(urls) {
+          if (urls.length === 0) return;
+          this.isFetchingNext = true;
+          this.dataService.triggerFetch({ urls });
+        }
+        /**
+         * @param {(evt: {data: Incoming, source: InvocationSource}) => void} cb
+         * @internal
+         */
+        onData(cb) {
+          return this.dataService.onData((data2) => {
+            this.isFetchingNext = false;
+            cb(data2);
+          });
+        }
+        /**
+         * @param {string[]} [urls] - optional subset to refresh
+         */
+        triggerDataFetch(urls) {
+          if (urls) {
+            this.dataService.triggerFetch({ urls });
+          } else {
+            this.dataService.triggerFetch();
+          }
+        }
+        /**
+         * @param {string} url
+         */
+        addFavorite(url8) {
+          this.dataService.update((old) => {
+            return {
+              ...old,
+              activity: old.activity.map((item) => {
+                if (item.url === url8) return { ...item, favorite: true };
+                return item;
+              })
+            };
+          });
+          this.ntp.messaging.notify("activity_addFavorite", { url: url8 });
+        }
+        /**
+         * @param {string} url
+         */
+        removeFavorite(url8) {
+          this.dataService.update((old) => {
+            return {
+              ...old,
+              activity: old.activity.map((item) => {
+                if (item.url === url8) return { ...item, favorite: false };
+                return item;
+              })
+            };
+          });
+          this.ntp.messaging.notify("activity_removeFavorite", { url: url8 });
+        }
+        /**
+         * @param {string} url
+         * @return {Promise<import('../../types/new-tab.js').ConfirmBurnResponse>}
+         */
+        confirmBurn(url8) {
+          return this.ntp.messaging.request("activity_confirmBurn", { url: url8 });
+        }
+        /**
+         * @param {string} url
+         */
+        remove(url8) {
+          this.dataService.update((old) => {
+            return {
+              ...old,
+              activity: old.activity.filter((item) => {
+                return item.url !== url8;
+              }),
+              urls: old.urls.filter((x3) => x3 !== url8)
+            };
+          });
+          this.ntp.messaging.notify("activity_removeItem", { url: url8 });
+        }
+        /**
+         * @param {string} url
+         * @param {import('../../types/new-tab.js').OpenTarget} target
+         */
+        openUrl(url8, target) {
+          this.ntp.messaging.notify("activity_open", { url: url8, target });
+        }
+        onBurnComplete(cb) {
+          if (!this.burns) throw new Error("unreachable");
+          this.burns.addEventListener("activity_onBurnComplete", cb);
+          return () => {
+            if (!this.burns) throw new Error("unreachable");
+            this.burns.removeEventListener("activity_onBurnComplete", cb);
+          };
+        }
+        enableBroadcast() {
+          this.dataService.enableBroadcast();
+          this.dataService.flush();
+        }
+        disableBroadcast() {
+          this.dataService.disableBroadcast();
+        }
+      };
+    }
+  });
+
+  // pages/new-tab/app/activity/ActivityProvider.js
+  function ActivityProvider(props) {
+    const initial = (
+      /** @type {State} */
+      {
+        status: "idle",
+        data: null,
+        config: null
+      }
+    );
+    const [state, dispatch] = h2(reducer, initial);
+    const batched = useBatchedActivityApi();
+    const service = useService6(batched);
+    useInitialData({ dispatch, service });
+    return /* @__PURE__ */ _(ActivityContext.Provider, { value: { state } }, /* @__PURE__ */ _(ActivityServiceContext.Provider, { value: service.current }, props.children));
+  }
+  function useService6(useBatched) {
+    const service = A2(
+      /** @type {BatchedActivityService|null} */
+      null
+    );
+    const ntp = useMessaging();
+    y2(() => {
+      const stats = new BatchedActivityService(ntp, useBatched);
+      service.current = stats;
+      return () => {
+        stats.destroy();
+      };
+    }, [ntp, useBatched]);
+    return service;
+  }
+  var ActivityContext, ActivityServiceContext;
+  var init_ActivityProvider = __esm({
+    "pages/new-tab/app/activity/ActivityProvider.js"() {
+      "use strict";
+      init_preact_module();
+      init_hooks_module();
+      init_types();
+      init_service_hooks();
+      init_settings_provider();
+      init_batched_activity_service();
+      ActivityContext = K({
+        /** @type {State} */
+        state: { status: "idle", data: null, config: null }
+      });
+      ActivityServiceContext = K(
+        /** @type {BatchedActivityService|null} */
+        {}
+      );
     }
   });
 
@@ -11006,22 +10892,15 @@
       e4.stopImmediatePropagation();
       if (burning.value.length > 0 || exiting.value.length > 0) return;
       const value2 = button.value;
-      console.log("[BurnProvider] Starting burn for:", value2);
       const response = await service?.confirmBurn(value2);
-      if (response && response.action === "none") {
-        console.log("[BurnProvider] Burn cancelled by user");
-        return;
-      }
-      console.log("[BurnProvider] Disabling broadcast and marking as burning");
+      if (response && response.action === "none") return;
       service.disableBroadcast();
       burning.value = burning.value.concat(value2);
       const feSignals = any(reducedMotion(isReducedMotion), animationExit(), didChangeDocumentVisibility());
       const nativeSignal = didCompleteNatively(service);
       const required = all(feSignals, nativeSignal);
       const withTimer = any(required, timer(3e3));
-      console.log("[BurnProvider] Waiting for FE and native signals...");
       await toPromise(withTimer);
-      console.log("[BurnProvider] Burn complete, clearing state and re-enabling broadcast");
       r3(() => {
         exiting.value = [];
         burning.value = [];
@@ -11346,25 +11225,11 @@
         service
       );
       const unsub = src.onData((evt) => {
-        console.log("[NormalizeDataProvider] Received activity data update:", {
-          source: evt.source,
-          activityCount: evt.data.activity.length,
-          totalTrackers: evt.data.totalTrackers,
-          urls: evt.data.urls.slice(0, 5)
-          // Log first 5 URLs
-        });
         r3(() => {
-          const oldActivity = activity.value;
           activity.value = normalizeData(activity.value, {
             activity: evt.data.activity,
             urls: evt.data.urls,
             totalTrackers: evt.data.totalTrackers
-          });
-          console.log("[NormalizeDataProvider] Activity data normalized:", {
-            oldTotalTrackers: oldActivity.totalTrackers,
-            newTotalTrackers: activity.value.totalTrackers,
-            oldItemCount: Object.keys(oldActivity.items).length,
-            newItemCount: Object.keys(activity.value.items).length
           });
           const visible = keys.value;
           const all2 = activity.value.urls;
@@ -28657,78 +28522,21 @@
     }
     return null;
   }
-  function BurnToProtectionsDataBridge() {
-    const activityService = x2(ActivityServiceContext);
-    const protectionsService = x2(ProtectionsServiceContext);
-    y2(() => {
-      if (!activityService || !protectionsService) {
-        console.log("[BurnToProtectionsDataBridge] Missing service:", {
-          hasActivityService: !!activityService,
-          hasProtectionsService: !!protectionsService
-        });
-        return;
-      }
-      console.log("[BurnToProtectionsDataBridge] Setting up activity data listener to sync protections");
-      let burnInProgress = false;
-      const handleBurnStart = () => {
-        burnInProgress = true;
-        console.log("[BurnToProtectionsDataBridge] Burn started, waiting for activity data update...");
-      };
-      const unsubscribeActivityData = activityService.onData((evt) => {
-        if (!burnInProgress) return;
-        const activityTotalTrackers = evt.data.totalTrackers;
-        const activityTotalCookiePopUps = evt.data.activity.filter(
-          (domain) => domain.cookiePopUpBlocked === true
-        ).length;
-        const protectionsTotalCount = protectionsService.dataService?.data?.totalCount;
-        const protectionsTotalCookiePopUps = protectionsService.dataService?.data?.totalCookiePopUpsBlocked;
-        console.log("[BurnToProtectionsDataBridge] Activity data updated after burn:", {
-          activityTotalTrackers,
-          activityTotalCookiePopUps,
-          protectionsTotalCount,
-          protectionsTotalCookiePopUps,
-          needsTrackerSync: activityTotalTrackers !== protectionsTotalCount,
-          needsCookieSync: activityTotalCookiePopUps !== protectionsTotalCookiePopUps
-        });
-        if (activityTotalTrackers !== protectionsTotalCount || activityTotalCookiePopUps !== protectionsTotalCookiePopUps) {
-          console.log("[BurnToProtectionsDataBridge] Syncing protections data from activity data");
-          protectionsService.dataService.update((old) => ({
-            ...old,
-            totalCount: activityTotalTrackers,
-            totalCookiePopUpsBlocked: activityTotalCookiePopUps
-          }));
-        }
-        burnInProgress = false;
-      });
-      if (activityService.burns) {
-        activityService.burns.addEventListener("activity_onBurnComplete", handleBurnStart);
-      }
-      console.log("[BurnToProtectionsDataBridge] Bridge initialized");
-      return () => {
-        unsubscribeActivityData();
-        if (activityService.burns) {
-          activityService.burns.removeEventListener("activity_onBurnComplete", handleBurnStart);
-        }
-      };
-    }, [activityService, protectionsService]);
-    return null;
-  }
   function ProtectionsReadyState({ data: data2, config }) {
     const { toggle, setFeed } = x2(ProtectionsContext);
-    const { signal: blockedCountSignal, skipAnimation: skipAnimationSignal } = useBlockedCount(data2.totalCount);
+    const blockedCountSignal = useBlockedCount(data2.totalCount);
     const totalCookiePopUpsBlockedSignal = useCookiePopUpsBlockedCount(data2.totalCookiePopUpsBlocked);
     return /* @__PURE__ */ _(
       Protections,
       {
         blockedCountSignal,
-        skipAnimationSignal,
         expansion: config.expansion,
         toggle,
         feed: config.feed,
         setFeed,
         totalCookiePopUpsBlockedSignal
       },
-      config.feed === "activity" && /* @__PURE__ */ _(ActivityProvider, null, /* @__PURE__ */ _(BurnToProtectionsDataBridge, null), /* @__PURE__ */ _(
+      config.feed === "activity" && /* @__PURE__ */ _(ActivityProvider, null, /* @__PURE__ */ _(
         ActivityConsumer,
         {
           showBurnAnimation: config.showBurnAnimation ?? true,

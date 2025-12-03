@@ -48,8 +48,8 @@
         "suffixes": ["platform", "form_factor", "first_daily_count"],
         "parameters": ["appVersion"]
     },
-    "m_product_telemetry_surface_usage_website_url": {
-        "description": "Fires when website/URL surface is used",
+    "m_product_telemetry_surface_usage_website": {
+        "description": "Fires when website surface is used",
         "owners": ["brindy"],
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor", "first_daily_count"],

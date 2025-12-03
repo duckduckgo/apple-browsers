@@ -2979,7 +2979,7 @@ extension Pixel.Event {
         case .productTelemeterySurfaceUsageKeyboardActive: return "m_product_telemetry_surface_usage_keyboard_active"
         case .productTelemeterySurfaceUsageAutocomplete: return "m_product_telemetry_surface_usage_autocomplete"
         case .productTelemeterySurfaceUsageSERP: return "m_product_telemetry_surface_usage_serp"
-        case .productTelemeterySurfaceUsageWebsite: return "m_product_telemetry_surface_usage_website_url"
+        case .productTelemeterySurfaceUsageWebsite: return "m_product_telemetry_surface_usage_website"
         case .productTelemeterySurfaceUsageDuckAI: return "m_product_telemetry_surface_usage_duck_ai"
         case .productTelemeterySurfaceUsageTabManager: return "m_product_telemetry_surface_usage_tab_manager"
         case .productTelemeterySurfaceUsageDataClearing: return "m_product_telemetry_surface_usage_data_clearing"

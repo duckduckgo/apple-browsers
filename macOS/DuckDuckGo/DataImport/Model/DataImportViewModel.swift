@@ -781,7 +781,7 @@ extension DataImportViewModel {
             case .summary:
                 return .done
             case .summaryDetail:
-                return .close
+                return .back
             }
         } else {
             return .cancel

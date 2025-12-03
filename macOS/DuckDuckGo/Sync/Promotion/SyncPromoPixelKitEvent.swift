@@ -39,6 +39,15 @@ enum SyncPromoPixelKitEvent: PixelKitEvent {
     var withoutMacPrefix: NonStandardEvent {
         NonStandardEvent(self)
     }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .syncPromoDisplayed,
+                .syncPromoConfirmed,
+                .syncPromoDismissed:
+            return [.pixelSource]
+        }
+    }
 }
 
 enum SyncDeviceButtonTouchpoint: String {

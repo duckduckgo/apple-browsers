@@ -233,7 +233,8 @@ class MainViewController: UIViewController {
         return HistoryCleaner(featureFlagger: featureFlagger,
                              privacyConfig: privacyConfigurationManager)
     }()
-    
+    private lazy var browsingMenuSheetCapability = BrowsingMenuSheetCapability.create(using: featureFlagger, keyValueStore: keyValueStore)
+
     let isAuthV2Enabled: Bool
     let themeManager: ThemeManaging
     let keyValueStore: ThrowingKeyValueStoring
@@ -2520,7 +2521,7 @@ extension MainViewController: BrowserChromeDelegate {
         viewCoordinator.omniBar.cancel()
         switch suggestion {
         case .phrase(phrase: let phrase):
-            if let url = URL.makeSearchURL(query: phrase, useUnifiedLogic: isUnifiedURLPredictionEnabled) {
+            if let url = URL.makeSearchURL(query: phrase, useUnifiedLogic: isUnifiedURLPredictionEnabled, forceSearchQuery: true) {
                 loadUrl(url)
             } else {
                 Logger.lifecycle.error("Couldn't form URL for suggestion: \(phrase, privacy: .public)")
@@ -2663,72 +2664,125 @@ extension MainViewController: OmniBarDelegate {
             return
         }
 
+        // Determine context for menu building
+        let context: BrowsingMenuContext
+        if newTabPageViewController != nil {
+            context = .newTabPage
+        } else if aichatFullModeFeature.isAvailable && tab.isAITab {
+            context = .aiChatTab
+        } else {
+            context = .website
+        }
+        
+        if browsingMenuSheetCapability.isEnabled {
+            launchSheetBrowsingMenu(in: context, tabController: tab)
+        } else {
+            launchDefaultBrowsingMenu(in: context, tabController: tab)
+        }
+
+        tab.didLaunchBrowsingMenu()
+
+        switch context {
+        case .newTabPage:
+            Pixel.fire(pixel: .browsingMenuOpenedNewTabPage)
+            if browsingMenuSheetCapability.isEnabled {
+                Pixel.fire(pixel: .experimentalBrowsingMenuDisplayedNTP)
+            }
+        case .aiChatTab, .website:
+            Pixel.fire(pixel: .browsingMenuOpened)
+
+            if browsingMenuSheetCapability.isEnabled {
+                Pixel.fire(pixel: .experimentalBrowsingMenuDisplayed)
+            }
+
+            performActionIfAITab { DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuOpened) }
+        }
+    }
+
+    private func launchDefaultBrowsingMenu(in context: BrowsingMenuContext, tabController tab: TabViewController) {
         let menuEntries: [BrowsingMenuEntry]
         let headerEntries: [BrowsingMenuEntry]
 
-        if newTabPageViewController != nil {
+        switch context {
+        case .newTabPage:
             menuEntries = tab.buildShortcutsMenu()
             headerEntries = []
-        } else if aichatFullModeFeature.isAvailable && tab.isAITab {
+
+        case .aiChatTab:
             menuEntries = tab.buildAITabMenu()
             headerEntries = tab.buildAITabMenuHeaderContent()
-        } else {
+
+        case .website:
             menuEntries = tab.buildBrowsingMenu(with: menuBookmarksViewModel,
                                                 mobileCustomization: mobileCustomization,
                                                 clearTabsAndData: onFirePressed)
             headerEntries = tab.buildBrowsingMenuHeaderContent()
         }
 
-        let sheetPresentation = featureFlagger.isFeatureOn(.browsingMenuSheetPresentation)
-        let controller: UIViewController
-        let presentationCompletion: () -> Void
-
-        if sheetPresentation {
-            controller = BrowsingMenuSheetViewController(rootView: BrowsingMenuSheetView(headerItems: headerEntries, listItems: menuEntries, onDismiss: {
-                self.viewCoordinator.menuToolbarButton.isEnabled = true
-            }))
-            presentationCompletion = {
-                // TODO: Missing favorite entry highlight
-                // Wil be added in https://app.asana.com/1/137249556945/task/1212019161027836
-            }
-
-            controller.modalPresentationStyle = .pageSheet
-            if let sheet = controller.sheetPresentationController {
-                sheet.detents = [.medium(), .large()]
-                sheet.prefersGrabberVisible = true
-                sheet.widthFollowsPreferredContentSizeWhenEdgeAttached = true
-            }
-        } else {
-            let browsingMenu: BrowsingMenuViewController =
-            BrowsingMenuViewController.instantiate(headerEntries: headerEntries,
-                                                                    menuEntries: menuEntries,
-                                                                    daxDialogsManager: daxDialogsManager)
-            browsingMenu.onDismiss = {
-                self.viewCoordinator.menuToolbarButton.isEnabled = true
-            }
-            controller = browsingMenu
-            presentationCompletion = {
-                if self.canDisplayAddFavoriteVisualIndicator {
-                    browsingMenu.highlightCell(atIndex: IndexPath(row: tab.favoriteEntryIndex, section: 0))
-                }
-            }
-
-            controller.modalPresentationStyle = .custom
+        let browsingMenu: BrowsingMenuViewController =
+        BrowsingMenuViewController.instantiate(headerEntries: headerEntries,
+                                                                menuEntries: menuEntries,
+                                                                daxDialogsManager: daxDialogsManager)
+        browsingMenu.onDismiss = {
+            self.viewCoordinator.menuToolbarButton.isEnabled = true
         }
 
-        self.present(controller, animated: true, completion: presentationCompletion)
-
-        tab.didLaunchBrowsingMenu()
-
-        if newTabPageViewController != nil {
-            Pixel.fire(pixel: .browsingMenuOpenedNewTabPage)
-        } else {
-            Pixel.fire(pixel: .browsingMenuOpened)
-            
-            performActionIfAITab { DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuOpened) }
+        let controller = browsingMenu
+        let presentationCompletion = {
+            if self.canDisplayAddFavoriteVisualIndicator {
+                browsingMenu.highlightCell(atIndex: IndexPath(row: tab.favoriteEntryIndex, section: 0))
+            }
         }
+
+        controller.modalPresentationStyle = .custom
+
+        present(controller, animated: true, completion: presentationCompletion)
     }
-    
+
+    private func launchSheetBrowsingMenu(in context: BrowsingMenuContext, tabController tab: TabViewController) {
+        guard let model = tab.buildSheetBrowsingMenu(
+            context: context,
+            with: menuBookmarksViewModel,
+            mobileCustomization: mobileCustomization,
+            browsingMenuSheetCapability: browsingMenuSheetCapability,
+            clearTabsAndData: onFirePressed
+        ) else {
+            viewCoordinator.menuToolbarButton.isEnabled = true
+            return
+        }
+
+        var highlightTag: BrowsingMenuModel.Entry.Tag?
+        if canDisplayAddFavoriteVisualIndicator {
+            highlightTag = .favorite
+        }
+
+        let controller = BrowsingMenuSheetViewController(
+            rootView: BrowsingMenuSheetView(model: model,
+                                            highlightRowWithTag: highlightTag,
+                                            onDismiss: {
+                                                self.viewCoordinator.menuToolbarButton.isEnabled = true
+                                            })
+        )
+
+        let isiPad = UIDevice.current.userInterfaceIdiom == .pad
+        controller.modalPresentationStyle = isiPad ? .popover : .pageSheet
+
+        if let popoverController = controller.popoverPresentationController  {
+            popoverController.sourceView = omniBar.barView.menuButton
+            controller.additionalSafeAreaInsets = UIEdgeInsets(top: 0, left: 0, bottom: 16, right: 0)
+        }
+
+        if let sheet = controller.sheetPresentationController {
+            sheet.detents = [.medium(), .large()]
+            sheet.prefersGrabberVisible = true
+            sheet.widthFollowsPreferredContentSizeWhenEdgeAttached = true
+        }
+
+        self.present(controller, animated: true)
+
+        DailyPixel.fireDailyAndCount(pixel: .experimentalBrowsingMenuUsed)
+    }
+
     @objc func onBookmarksPressed() {
         if !daxDialogsManager.shouldShowFireButtonPulse {
             ViewHighlighter.hideAll()

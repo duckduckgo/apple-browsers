@@ -64,6 +64,13 @@ final class TunnelControllerIPCService {
         var parameters: [String: String]? {
             return nil
         }
+
+        var standardParameters: [PixelKitStandardParameter]? {
+            switch self {
+            case .udsServerStartFailure:
+                return [.pixelSource]
+            }
+        }
     }
 
     init(tunnelController: NetworkProtectionTunnelController,

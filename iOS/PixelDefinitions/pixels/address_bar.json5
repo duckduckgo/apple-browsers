@@ -4,19 +4,21 @@
         "description": "Fires when user cancels address bar input while on AI Chat",
         "owners": ["aataraxiaa"],
         "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
     "m_addressbar_click_aichat": {
         "description": "Fires when user clicks address bar while on AI Chat",
         "owners": ["aataraxiaa"],
         "triggers": ["other"],
-        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"]
     },
     "m_addressbar_focus_clear_entry_aichat": {
         "description": "Fires when user clears address bar entry while on AI Chat",
         "owners": ["aataraxiaa"],
         "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     }
 }

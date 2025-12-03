@@ -297,7 +297,11 @@ enum SubscriptionPixel: PixelKitEvent {
                 .subscriptionWinBackOfferSettingsPageCTAClicked,
                 .subscriptionWinBackOfferNewTabPageShown,
                 .subscriptionWinBackOfferNewTabPageCTAClicked,
-                .subscriptionWinBackOfferNewTabPageDismissed:
+                .subscriptionWinBackOfferNewTabPageDismissed,
+                .subscriptionTierOptionsRequested,
+                .subscriptionTierOptionsSuccess,
+                .subscriptionTierOptionsFailure,
+                .subscriptionTierOptionsUnexpectedProTier:
             return [.pixelSource]
         }
     }

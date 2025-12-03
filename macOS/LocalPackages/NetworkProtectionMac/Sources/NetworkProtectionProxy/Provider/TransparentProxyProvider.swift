@@ -519,5 +519,14 @@ extension TransparentProxyProvider {
             return nil
         }
 
+        public var standardParameters: [PixelKitStandardParameter]? {
+            switch self {
+            case .begin,
+                    .success,
+                    .failure:
+                return [.pixelSource]
+            }
+        }
+
     }
 }

@@ -45,4 +45,12 @@ enum ErrorPagePixel: PixelKitEvent {
             return nil
         }
     }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .errorPageShownOther,
+                .errorPageShownWebkitTermination:
+            return [.pixelSource]
+        }
+    }
 }

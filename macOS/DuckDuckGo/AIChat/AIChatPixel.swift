@@ -243,6 +243,41 @@ enum AIChatPixel: PixelKitEvent {
         }
     }
 
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .aichatApplicationMenuAppClicked,
+                .aichatApplicationMenuFileClicked,
+                .aichatNoRemoteSettingsFound,
+                .aiChatSettingsGlobalToggleTurnedOn,
+                .aiChatSettingsGlobalToggleTurnedOff,
+                .aiChatSettingsNewTabPageShortcutTurnedOn,
+                .aiChatSettingsNewTabPageShortcutTurnedOff,
+                .aiChatSettingsAddressBarShortcutTurnedOn,
+                .aiChatSettingsAddressBarShortcutTurnedOff,
+                .aiChatSettingsAddressBarTypingShortcutTurnedOn,
+                .aiChatSettingsAddressBarTypingShortcutTurnedOff,
+                .aiChatSettingsApplicationMenuShortcutTurnedOff,
+                .aiChatSettingsApplicationMenuShortcutTurnedOn,
+                .aiChatSettingsDisplayed,
+                .aiChatAutoClearHistorySettingToggled,
+                .aiChatAddressBarButtonClicked,
+                .aiChatSidebarOpened,
+                .aiChatSidebarClosed,
+                .aiChatSidebarExpanded,
+                .aiChatSidebarSettingChanged,
+                .aiChatSummarizeText,
+                .aiChatSummarizeSourceLinkClicked,
+                .aiChatTranslateText,
+                .aiChatTranslationSourceLinkClicked,
+                .aiChatPageContextAdded,
+                .aiChatPageContextRemoved,
+                .aiChatDeleteHistoryRequested,
+                .aiChatDeleteHistorySuccessful,
+                .aiChatDeleteHistoryFailed:
+            return [.pixelSource]
+        }
+    }
+
 }
 
 // MARK: - Parameter values

@@ -112,6 +112,22 @@ enum DefaultBrowserAndDockPromptPixelEvent: PixelKitEvent, Hashable {
             ]
         }
     }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .popoverImpression,
+                .popoverConfirmButtonClicked,
+                .popoverCloseButtonClicked,
+                .bannerImpression,
+                .bannerConfirmButtonClicked,
+                .bannerCloseButtonClicked,
+                .bannerNeverAskAgainButtonClicked,
+                .inactiveUserModalImpression,
+                .inactiveUserModalConfirmButtonClicked,
+                .inactiveUserModalDismissed:
+            return [.pixelSource]
+        }
+    }
 }
 
 // MARK: - Debug Pixels
@@ -184,6 +200,24 @@ enum DefaultBrowserAndDockPromptDebugPixelEvent: PixelKitEvent {
 
     var parameters: [String: String]? {
         nil
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .failedToSavePopoverSeenDate,
+                .failedToRetrievePopoverSeenDate,
+                .failedToSaveBannerSeenDate,
+                .failedToRetrieveBannerSeenDate,
+                .failedToSaveNumberOfBannerShown,
+                .failedToRetrieveNumberOfBannerShown,
+                .failedToSaveBannerPermanentlyDismissedValue,
+                .failedToRetrieveBannerPermanentlyDismissedValue,
+                .failedToSaveInactiveUserModalShown,
+                .failedToRetrieveInactiveUserModalShown,
+                .failedToSaveCurrentActivity,
+                .failedToRetrieveCurrentActivity:
+            return [.pixelSource]
+        }
     }
 
 }

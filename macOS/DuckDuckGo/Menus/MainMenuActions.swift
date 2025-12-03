@@ -683,6 +683,8 @@ extension AppDelegate {
         UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowImport.rawValue)
         UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowDuckPlayer.rawValue)
         UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowEmailProtection.rawValue)
+        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowSubscription.rawValue)
+        UserDefaults.standard.set(false, forKey: UserDefaultsWrapper<Bool>.Key.homePageUserHadSubscription.rawValue)
     }
 
     @objc func resetOnboarding(_ sender: Any?) {

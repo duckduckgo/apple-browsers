@@ -1642,6 +1642,12 @@ final class AddressBarButtonsViewController: NSViewController {
                 self?.permissionCenterPopover?.close()
                 self?.permissionCenterPopover = nil
             },
+            onPermissionRemoved: { [weak self] in
+                // Dispatch to next run loop to allow Combine publishers to propagate changes
+                DispatchQueue.main.async {
+                    self?.updateAllPermissionButtons()
+                }
+            },
             openPopup: { [weak tabViewModel] query in
                 tabViewModel?.tab.permissions.allow(query)
             },

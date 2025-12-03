@@ -43,6 +43,9 @@ final class PermissionModel {
     /// Tracks if geolocation was ever activated during this session (for new permission view)
     private var geolocationWasActivated = false
 
+    /// Tracks permissions that were explicitly removed by the user (to prevent re-adding via updatePermissions)
+    private var removedPermissions = Set<PermissionType>()
+
     weak var webView: WKWebView? {
         didSet {
             guard let webView = webView else { return }
@@ -115,11 +118,15 @@ final class PermissionModel {
         }
         authorizationQueries = []
         geolocationWasActivated = false
+        removedPermissions.removeAll()
     }
 
     private func updatePermissions() {
         guard let webView = webView else { return }
         for permissionType in PermissionType.permissionsUpdatedExternally {
+            // Skip permissions that were explicitly removed by the user
+            guard !removedPermissions.contains(permissionType) else { continue }
+
             switch permissionType {
             case .microphone:
                 permissions.microphone.update(with: webView.microphoneState)
@@ -259,6 +266,9 @@ final class PermissionModel {
 
     /// Removes a permission completely (revokes and removes from tracking)
     func remove(_ permission: PermissionType) {
+        // Track as explicitly removed to prevent re-adding via updatePermissions()
+        removedPermissions.insert(permission)
+
         // First revoke the permission
         switch permission {
         case .camera, .microphone, .geolocation:

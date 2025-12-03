@@ -128,6 +128,7 @@ final class PermissionCenterViewModel: ObservableObject {
     private let popupQueries: [PermissionAuthorizationQuery]
     private let removePermissionFromTab: (PermissionType) -> Void
     private let dismissPopover: () -> Void
+    private let onPermissionRemoved: (() -> Void)?
     private let openPopup: ((PermissionAuthorizationQuery) -> Void)?
     private let setTemporaryPopupAllowance: (() -> Void)?
     private let resetTemporaryPopupAllowance: (() -> Void)?
@@ -150,6 +151,7 @@ final class PermissionCenterViewModel: ObservableObject {
         featureFlagger: FeatureFlagger,
         removePermission: @escaping (PermissionType) -> Void,
         dismissPopover: @escaping () -> Void,
+        onPermissionRemoved: (() -> Void)? = nil,
         openPopup: ((PermissionAuthorizationQuery) -> Void)? = nil,
         setTemporaryPopupAllowance: (() -> Void)? = nil,
         resetTemporaryPopupAllowance: (() -> Void)? = nil,
@@ -163,6 +165,7 @@ final class PermissionCenterViewModel: ObservableObject {
         self.featureFlagger = featureFlagger
         self.removePermissionFromTab = removePermission
         self.dismissPopover = dismissPopover
+        self.onPermissionRemoved = onPermissionRemoved
         self.openPopup = openPopup
         self.setTemporaryPopupAllowance = setTemporaryPopupAllowance
         self.resetTemporaryPopupAllowance = resetTemporaryPopupAllowance
@@ -232,6 +235,9 @@ final class PermissionCenterViewModel: ObservableObject {
         if permissionType == .popups {
             resetTemporaryPopupAllowance?()
         }
+
+        // Notify that a permission was removed (to update UI like permission button visibility)
+        onPermissionRemoved?()
 
         // Dismiss popover if no permissions left
         if permissionItems.isEmpty {

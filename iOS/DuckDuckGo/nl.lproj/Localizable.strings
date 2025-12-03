@@ -2926,6 +2926,9 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Positie van adresbalk";
 
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Experimenteel browsermenu";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Links openen in bijbehorende apps";
 

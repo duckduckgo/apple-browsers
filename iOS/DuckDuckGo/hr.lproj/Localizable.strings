@@ -2926,6 +2926,9 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Položaj adresne trake";
 
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Eksperimentalni izbornik preglednika";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Otvori veze u povezanim aplikacijama";
 

@@ -2926,6 +2926,9 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Adreses joslas pozīcija";
 
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Eksperimentāla pārlūka izvēlne";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Atvērt saites saistītajās lietotnēs";
 

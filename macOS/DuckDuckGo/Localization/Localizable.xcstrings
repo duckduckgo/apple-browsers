@@ -45858,7 +45858,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Click **Show macOS Message** and select **Allow** when the macOS message appears."
+            "value" : "Click **'Show macOS Message'** and select **'Allow'** when the macOS message appears."
           }
         }
       }

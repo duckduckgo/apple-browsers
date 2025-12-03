@@ -1263,7 +1263,7 @@ struct UserText {
 
 
     static let passwordEntryHelpTitle = NSLocalizedString("import.password.entry.help.title", value: "Want to try again? macOS needs your permission to finish importing.", comment: "Title for the password entry help screen")
-    static let passwordEntryHelpInstructions = NSLocalizedString("import.password.entry.help.instructions", value: "Click **Show macOS Message** and select **Allow** when the macOS message appears.", comment: "Instructions for password entry help")
+    static let passwordEntryHelpInstructions = NSLocalizedString("import.password.entry.help.instructions", value: "Click **'Show macOS Message'** and select **'Allow'** when the macOS message appears.", comment: "Instructions for password entry help")
     static let passwordEntryHelpShowMacOSMessageButton = NSLocalizedString("import.password.entry.help.show.macos.message.button", value: "Show macOS Message", comment: "Button text to trigger the macOS keychain prompt")
     static let passwordEntryHelpDialogExampleText = NSLocalizedString("import.password.entry.help.dialog.example.text", value: "DuckDuckGo wants to use your confidential information stored in your keychain.", comment: "Explanatory text shown on an example of a system prompt that asks for the user's password.")
 

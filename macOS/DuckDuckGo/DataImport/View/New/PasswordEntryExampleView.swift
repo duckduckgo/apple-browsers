@@ -22,9 +22,11 @@ import DesignResourcesKit
 
 struct PasswordEntryExampleView: View {
     let helpText: String?
+    let scale: CGFloat
 
-    init(helpText: String? = nil) {
+    init(helpText: String? = nil, scale: CGFloat = 1.0) {
         self.helpText = helpText
+        self.scale = scale
     }
 
     var body: some View {
@@ -39,15 +41,19 @@ struct PasswordEntryExampleView: View {
             cursor
         }
         .frame(width: Metrics.containerImageWidth, height: Metrics.containerImageHeight)
+        .scaleEffect(scale)
+        .frame(width: Metrics.containerImageWidth * scale, height: Metrics.containerImageHeight * scale)
     }
 
     private var promptImage: some View {
         Image(.importKeychainPromptContainer)
+            .resizable()
+            .frame(width: Metrics.containerImageWidth, height: Metrics.containerImageHeight)
     }
 
     private func helpTextView(_ text: String) -> some View {
         Text(text)
-            .font(.body)
+            .font(.system(size: Metrics.fontSize))
             .foregroundColor(Color(designSystemColor: .textPrimary))
             .multilineTextAlignment(.leading)
             .fixedSize(horizontal: false, vertical: true)
@@ -78,8 +84,6 @@ struct PasswordEntryExampleView: View {
     private var cursor: some View {
         Image(.chromiumImportCursor)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-            .padding(.trailing, 0)
-            .padding(.bottom, 0)
     }
 
     private var placeholderButton: some View {
@@ -88,6 +92,7 @@ struct PasswordEntryExampleView: View {
 
     private var allowButton: some View {
         Text(UserText.importChromeAllowButtonTitle)
+            .font(.system(size: Metrics.fontSize))
             .padding(.horizontal, Metrics.spacing)
             .frame(height: Metrics.itemHeight)
             .background(
@@ -115,6 +120,7 @@ private extension PasswordEntryExampleView {
         static let buttonCornerRadius: CGFloat = 5
         static let containerImageWidth: CGFloat = 380
         static let containerImageHeight: CGFloat = 160
+        static let fontSize: CGFloat = 13
     }
 }
 
@@ -122,6 +128,12 @@ private extension PasswordEntryExampleView {
     VStack(spacing: 20) {
         PasswordEntryExampleView()
 
+        PasswordEntryExampleView(scale: 0.75)
+
+        PasswordEntryExampleView(scale: 0.5)
+
         PasswordEntryExampleView(helpText: UserText.passwordEntryHelpDialogExampleText)
+
+        PasswordEntryExampleView(helpText: UserText.passwordEntryHelpDialogExampleText, scale: 0.75)
     }
 }

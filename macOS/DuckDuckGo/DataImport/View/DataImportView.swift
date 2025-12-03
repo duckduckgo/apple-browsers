@@ -63,15 +63,6 @@ struct DataImportView: ModalView {
 #endif
     }
 
-    private var dialogWidth: CGFloat {
-        switch model.screen {
-        case .passwordEntryHelp:
-            return 500
-        default:
-            return 420
-        }
-    }
-
     var body: some View {
         VStack(alignment: .center, spacing: 0) {
             switch model.screen {
@@ -165,7 +156,7 @@ struct DataImportView: ModalView {
             }
         }
         .font(.system(size: 13))
-        .frame(width: dialogWidth)
+        .frame(width: 420)
         .fixedSize()
         .onReceive(internalUserDecider.isInternalUserPublisher.removeDuplicates()) {
             isInternalUser = $0
@@ -209,24 +200,46 @@ struct DataImportView: ModalView {
     }
 
     @State private var showPasswordsExplainerPopover = false
+    @State private var popoverCloseTask: Task<Void, Never>?
 
     private func passwordsExplainerView() -> some View {
         HStack(spacing: 8) {
-            Image(nsImage: DesignSystemImages.Glyphs.Size16.lock)
-                .renderingMode(.template)
-                .foregroundColor(Color(designSystemColor: showPasswordsExplainerPopover ? .iconsPrimary : .iconsTertiary))
-                .popover(isPresented: $showPasswordsExplainerPopover, arrowEdge: .bottom) {
-                    Text(model.isPasswordManagerAutolockEnabled ? UserText.importLoginsPasswordsExplainer : UserText.importLoginsPasswordsExplainerAutolockOff)
-                        .padding()
-                        .frame(width: 280)
-                }
+            ZStack(alignment: .center) {
+                // Invisible rectangle to push the popover away from the icon slightly
+                Rectangle()
+                    .fill(Color.clear)
+                    .frame(width: 16, height: 24)
+                    .popover(isPresented: $showPasswordsExplainerPopover, arrowEdge: .bottom) {
+                        Text(model.isPasswordManagerAutolockEnabled ? UserText.importLoginsPasswordsExplainer : UserText.importLoginsPasswordsExplainerAutolockOff)
+                            .padding()
+                            .frame(width: 280)
+                    }
+
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.lock)
+                    .renderingMode(.template)
+                    .foregroundColor(Color(designSystemColor: showPasswordsExplainerPopover ? .iconsPrimary : .iconsTertiary))
+            }
             Text(UserText.importLoginsPasswordsExplainerEncrypted)
                 .font(.system(size: 11))
                 .foregroundColor(Color(designSystemColor: showPasswordsExplainerPopover ? .iconsPrimary : .iconsTertiary))
 
         }
-        .onHover {
-            showPasswordsExplainerPopover = $0
+        .padding(8) // Increase the hit area of the view by 8px on all sides
+        .contentShape(Rectangle())
+        .padding(-8)
+        .onHover { isHovering in
+            popoverCloseTask?.cancel()
+
+            if isHovering {
+                showPasswordsExplainerPopover = true
+            } else {
+                popoverCloseTask = Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 600_000_000)
+                    if !Task.isCancelled {
+                        showPasswordsExplainerPopover = false
+                    }
+                }
+            }
         }
     }
 

@@ -103,7 +103,7 @@ private struct ProgrammaticallyDismissedPopover<Content: View>: NSViewRepresenta
         Coordinator()
     }
 
-    class Coordinator: NSObject {
+    final class Coordinator: NSObject {
         var popover: NSPopover?
     }
 }

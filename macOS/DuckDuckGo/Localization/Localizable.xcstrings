@@ -60409,7 +60409,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "External Apps"
+            "value" : "External apps"
           }
         }
       }
@@ -60422,6 +60422,18 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$@ to open \"%2$@\" links"
+          }
+        }
+      }
+    },
+    "permission.center.external.scheme.format" : {
+      "comment" : "Format for external scheme row, %@ is scheme name like mailto or sms",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open \"%@\" links"
           }
         }
       }

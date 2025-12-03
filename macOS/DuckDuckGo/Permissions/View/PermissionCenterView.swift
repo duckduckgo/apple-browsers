@@ -26,9 +26,16 @@ struct PermissionCenterView: View {
 
     @ObservedObject var viewModel: PermissionCenterViewModel
 
-    /// Use a wider popover when popup permissions are present due to longer dropdown options
+    /// Use a wider popover when popup or external app permissions are present due to longer content
     private var popoverWidth: CGFloat {
-        viewModel.permissionItems.contains { $0.permissionType == .popups } ? 450 : 360
+        let hasPopups = viewModel.permissionItems.contains { $0.permissionType == .popups }
+        let hasExternalApps = viewModel.permissionItems.contains { $0.isGroupedExternalApps }
+        if hasPopups {
+            return 450
+        } else if hasExternalApps {
+            return 380
+        }
+        return 360
     }
 
     var body: some View {
@@ -58,6 +65,16 @@ struct PermissionCenterView: View {
                             },
                             onRemove: {
                                 viewModel.removePermission(item.permissionType)
+                            }
+                        )
+                    } else if item.isGroupedExternalApps {
+                        ExternalAppsPermissionRowView(
+                            item: item,
+                            onDecisionChanged: { scheme, decision in
+                                viewModel.setExternalSchemeDecision(decision, for: scheme)
+                            },
+                            onRemoveScheme: { scheme in
+                                viewModel.removeExternalScheme(scheme)
                             }
                         )
                     } else {
@@ -146,16 +163,6 @@ struct PermissionRowView: View {
             .padding(.leading, 12)
             .padding(.trailing, 12)
             .padding(.vertical, 12)
-
-            // External scheme description (if applicable)
-            if let description = item.externalSchemeDescription {
-                Text(description)
-                    .font(.system(size: 12))
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
-                    .padding(.leading, 44)
-                    .padding(.trailing, 12)
-                    .padding(.bottom, 12)
-            }
 
             // System disabled warning (if applicable)
             if item.isSystemDisabled {
@@ -406,5 +413,142 @@ struct PopupPermissionRowView: View {
             return button
         }
         .fixedSize()
+    }
+}
+
+// MARK: - ExternalAppsPermissionRowView
+
+struct ExternalAppsPermissionRowView: View {
+
+    let item: PermissionCenterItem
+    let onDecisionChanged: (String, PersistedPermissionDecision) -> Void
+    let onRemoveScheme: (String) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            // Header row with icon and "External apps" title
+            HStack(spacing: 8) {
+                // Icon
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.openIn)
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .frame(width: 24, height: 24)
+
+                // Permission name
+                Text(item.displayName)
+                    .font(.system(size: 13))
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+
+                Spacer()
+            }
+            .padding(.leading, 12)
+            .padding(.trailing, 12)
+            .padding(.vertical, 12)
+
+            // Individual scheme rows
+            ForEach(item.externalSchemes) { schemeInfo in
+                ExternalSchemeRowView(
+                    schemeInfo: schemeInfo,
+                    onDecisionChanged: { decision in
+                        onDecisionChanged(schemeInfo.scheme, decision)
+                    },
+                    onRemove: {
+                        onRemoveScheme(schemeInfo.scheme)
+                    }
+                )
+            }
+            .padding(.bottom, 6)
+        }
+    }
+}
+
+// MARK: - ExternalSchemeRowView
+
+struct ExternalSchemeRowView: View {
+
+    let schemeInfo: ExternalSchemeInfo
+    let onDecisionChanged: (PersistedPermissionDecision) -> Void
+    let onRemove: () -> Void
+
+    @State private var isRemoveButtonHovered = false
+    @State private var currentDecision: PersistedPermissionDecision
+
+    init(
+        schemeInfo: ExternalSchemeInfo,
+        onDecisionChanged: @escaping (PersistedPermissionDecision) -> Void,
+        onRemove: @escaping () -> Void
+    ) {
+        self.schemeInfo = schemeInfo
+        self.onDecisionChanged = onDecisionChanged
+        self.onRemove = onRemove
+        self._currentDecision = State(initialValue: schemeInfo.decision)
+    }
+
+    var body: some View {
+        HStack(spacing: 8) {
+            // Description text
+            Text(schemeInfo.displayText)
+                .font(.system(size: 12))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+
+            Spacer()
+
+            // Decision dropdown
+            decisionPopUpButton
+
+            // Remove button with hover effect
+            Button(action: onRemove) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+            }
+            .buttonStyle(PlainButtonStyle())
+            .frame(width: 16, height: 16)
+            .background(
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(isRemoveButtonHovered ? Color(.buttonMouseOver) : Color.clear)
+            )
+            .onHover { hovering in
+                isRemoveButtonHovered = hovering
+            }
+        }
+        .padding(.leading, 44)
+        .padding(.trailing, 12)
+        .padding(.bottom, 6)
+        .onChange(of: currentDecision) { newValue in
+            onDecisionChanged(newValue)
+        }
+        .onChange(of: schemeInfo.decision) { newValue in
+            if currentDecision != newValue {
+                currentDecision = newValue
+            }
+        }
+    }
+
+    private var decisionPopUpButton: some View {
+        NSPopUpButtonView(selection: $currentDecision) {
+            let button = NSPopUpButton()
+            button.bezelStyle = .accessoryBarAction
+            button.isBordered = true
+            button.setContentHuggingPriority(.defaultHigh, for: .horizontal)
+
+            for decision in [PersistedPermissionDecision.ask, .allow, .deny] {
+                let item = button.menu?.addItem(withTitle: decisionDisplayText(for: decision), action: nil, keyEquivalent: "")
+                item?.representedObject = decision
+            }
+
+            return button
+        }
+        .fixedSize()
+    }
+
+    private func decisionDisplayText(for decision: PersistedPermissionDecision) -> String {
+        switch decision {
+        case .ask:
+            return UserText.permissionCenterAlwaysAsk
+        case .allow:
+            return UserText.permissionCenterAlwaysAllow
+        case .deny:
+            return UserText.permissionCenterNeverAllow
+        }
     }
 }

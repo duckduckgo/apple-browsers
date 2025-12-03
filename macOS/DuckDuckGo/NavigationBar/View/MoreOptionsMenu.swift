@@ -200,6 +200,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                                                    featureFlagger: featureFlagger)
         addItem(feedbackMenuItem)
 
+#if SPARKLE
         if let dockCustomizer = self.dockCustomizer {
             if dockCustomizer.isAddedToDock == false {
                 if dockCustomizer.shouldShowNotification {
@@ -222,7 +223,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                 }
             }
         }
-
+#endif
         if !defaultBrowserPreferences.isDefault {
             let setAsDefaultMenuItem = NSMenuItem(title: UserText.setAsDefaultBrowser, action: #selector(setAsDefault(_:)))
                 .targetting(self)

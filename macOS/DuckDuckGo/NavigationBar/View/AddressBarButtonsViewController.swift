@@ -1638,9 +1638,6 @@ final class AddressBarButtonsViewController: NSViewController {
             removePermission: { [weak tabViewModel] permissionType in
                 tabViewModel?.tab.permissions.remove(permissionType)
             },
-            reloadPage: { [weak tabViewModel] in
-                tabViewModel?.tab.reload()
-            },
             dismissPopover: { [weak self] in
                 self?.permissionCenterPopover?.close()
                 self?.permissionCenterPopover = nil

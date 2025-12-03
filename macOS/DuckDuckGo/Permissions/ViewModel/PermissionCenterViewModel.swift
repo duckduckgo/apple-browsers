@@ -127,7 +127,6 @@ final class PermissionCenterViewModel: ObservableObject {
     private let usedPermissions: Permissions
     private let popupQueries: [PermissionAuthorizationQuery]
     private let removePermissionFromTab: (PermissionType) -> Void
-    private let reloadPage: () -> Void
     private let dismissPopover: () -> Void
     private let openPopup: ((PermissionAuthorizationQuery) -> Void)?
     private let setTemporaryPopupAllowance: (() -> Void)?
@@ -150,7 +149,6 @@ final class PermissionCenterViewModel: ObservableObject {
         permissionManager: PermissionManagerProtocol,
         featureFlagger: FeatureFlagger,
         removePermission: @escaping (PermissionType) -> Void,
-        reloadPage: @escaping () -> Void,
         dismissPopover: @escaping () -> Void,
         openPopup: ((PermissionAuthorizationQuery) -> Void)? = nil,
         setTemporaryPopupAllowance: (() -> Void)? = nil,
@@ -164,7 +162,6 @@ final class PermissionCenterViewModel: ObservableObject {
         self.permissionManager = permissionManager
         self.featureFlagger = featureFlagger
         self.removePermissionFromTab = removePermission
-        self.reloadPage = reloadPage
         self.dismissPopover = dismissPopover
         self.openPopup = openPopup
         self.setTemporaryPopupAllowance = setTemporaryPopupAllowance
@@ -235,9 +232,6 @@ final class PermissionCenterViewModel: ObservableObject {
         if permissionType == .popups {
             resetTemporaryPopupAllowance?()
         }
-
-        // Reload page to ensure website loses access
-        reloadPage()
 
         // Dismiss popover if no permissions left
         if permissionItems.isEmpty {

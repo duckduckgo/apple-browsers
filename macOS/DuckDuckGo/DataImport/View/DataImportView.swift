@@ -214,7 +214,7 @@ struct DataImportView: ModalView {
                             .padding()
                             .frame(width: 280)
                     }
-                
+
                 Image(nsImage: DesignSystemImages.Glyphs.Size16.lock)
                     .renderingMode(.template)
                     .foregroundColor(Color(designSystemColor: showPasswordsExplainerPopover ? .iconsPrimary : .iconsTertiary))
@@ -229,7 +229,7 @@ struct DataImportView: ModalView {
         .padding(-8)
         .onHover { isHovering in
             popoverCloseTask?.cancel()
-            
+
             if isHovering {
                 showPasswordsExplainerPopover = true
             } else {

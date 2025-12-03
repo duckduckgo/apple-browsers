@@ -125,13 +125,13 @@ private extension PasswordEntryExampleView {
 #Preview {
     VStack(spacing: 20) {
         PasswordEntryExampleView()
-        
+
         PasswordEntryExampleView(scale: 0.75)
-        
+
         PasswordEntryExampleView(scale: 0.5)
 
         PasswordEntryExampleView(helpText: UserText.passwordEntryHelpDialogExampleText)
-        
+
         PasswordEntryExampleView(helpText: UserText.passwordEntryHelpDialogExampleText, scale: 0.75)
     }
 }

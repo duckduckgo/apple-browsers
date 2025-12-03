@@ -74,7 +74,7 @@ struct DataImportSummaryDetailView: View {
         HStack(spacing: 12) {
             RoundedRectangle(cornerRadius: 4, style: .continuous)
                 .fill(Color(.blackWhite5))
-                .frame(width: 24, height: 24)
+                .frame(width: Metrics.iconContainerSize, height: Metrics.iconContainerSize)
                 .overlay(
                     Image(nsImage: iconImage)
                         .resizable()
@@ -133,9 +133,8 @@ struct DataImportSummaryDetailView: View {
     ) -> some View {
         HStack(spacing: 8) {
             Image(nsImage: icon)
-                .frame(width: Metrics.iconSize, height: Metrics.iconSize)
+                .frame(width: Metrics.iconContainerSize, height: Metrics.iconSize)
                 .foregroundColor(.primary)
-                .padding(.leading, 10)
 
             content()
 
@@ -278,6 +277,7 @@ struct DataImportSummaryDetailView: View {
         static let mainStackViewSpacing: CGFloat = 20
         static let outerPadding: CGFloat = 20
         static let iconSize: CGFloat = 16.0
+        static let iconContainerSize: CGFloat = 24.0
         static let sectionHeaderHeight: CGFloat = 44.0
         static let innerRowSpacing: CGFloat = 8.0
         static let fontSize: CGFloat = 13.0

@@ -286,7 +286,7 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Controls showing the Hide AI section in Settings -> AI Features
     case showHideAiGeneratedImages
-    
+
     /// Controls showing the AI Chat as Tabs Experiment Setting in Settings -> AI Features
     case fullDuckAIModeExperimentalSetting
 }

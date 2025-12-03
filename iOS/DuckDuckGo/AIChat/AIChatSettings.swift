@@ -207,7 +207,7 @@ final class AIChatSettings: AIChatSettingsProvider {
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsTabManagerTurnedOff)
         }
     }
-    
+
     func enableAIChatFullModeSetting(enable: Bool) {
         keyValueStore.set(enable, forKey: .isAIChatFullModeEnabledKey)
         triggerSettingsChangedNotification()

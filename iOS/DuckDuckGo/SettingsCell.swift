@@ -195,7 +195,7 @@ struct SettingsCellView: View, Identifiable {
         if shouldShowWinBackOffer {
             BadgeView(text: UserText.winBackCampaignMenuBadgeText)
         } else if let optionalBadgeText {
-            BadgeView(text:optionalBadgeText)
+            BadgeView(text: optionalBadgeText)
         } else {
             EmptyView()
         }

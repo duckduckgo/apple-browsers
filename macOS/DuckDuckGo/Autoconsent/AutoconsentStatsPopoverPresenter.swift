@@ -22,7 +22,16 @@ import AutoconsentStats
 import PixelKit
 
 @MainActor
-final class AutoconsentStatsPopoverPresenter {
+protocol AutoconsentStatsPopoverPresenting: AnyObject {
+    func isPopoverBeingPresented() -> Bool
+    func showPopover(onClose: @escaping () -> Void,
+                     onClick: @escaping () -> Void,
+                     onAutoDismiss: (() -> Void)?) async
+    func dismissPopover()
+}
+
+@MainActor
+final class AutoconsentStatsPopoverPresenter: AutoconsentStatsPopoverPresenting {
 
     private enum Constants {
         static let autoDismissDuration: TimeInterval = 8.0

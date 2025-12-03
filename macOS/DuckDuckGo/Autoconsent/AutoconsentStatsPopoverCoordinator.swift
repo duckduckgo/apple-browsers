@@ -28,7 +28,15 @@ import BrowserServicesKit
 import PixelKit
 
 @MainActor
-final class AutoconsentStatsPopoverCoordinator {
+protocol AutoconsentStatsPopoverCoordinating: AnyObject {
+    func checkAndShowDialogIfNeeded() async
+    func dismissDialogDueToNewTabBeingShown()
+    func showDialogForDebug() async
+    func clearBlockedCookiesPopoverSeenFlag()
+}
+
+@MainActor
+final class AutoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinating {
 
     private let keyValueStore: ThrowingKeyValueStoring
     private let windowControllersManager: WindowControllersManagerProtocol
@@ -36,7 +44,7 @@ final class AutoconsentStatsPopoverCoordinator {
     private let appearancePreferences: AppearancePreferences
     private let featureFlagger: FeatureFlagger
     private let autoconsentStats: AutoconsentStatsCollecting
-    private let presenter: AutoconsentStatsPopoverPresenter
+    private let presenter: AutoconsentStatsPopoverPresenting
 
     private enum StorageKey {
         static let blockedCookiesPopoverSeen = "com.duckduckgo.autoconsent.blocked.cookies.popover.seen"

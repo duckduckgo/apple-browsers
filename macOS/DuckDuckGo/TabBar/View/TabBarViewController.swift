@@ -92,7 +92,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
     private var pinnedTabsDiscoveryPopover: NSPopover?
     private weak var crashPopoverViewController: PopoverMessageViewController?
-    private let autoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinator?
+    private let autoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinating?
 
     let themeManager: ThemeManaging
     private let tabDragAndDropManager: TabDragAndDropManager
@@ -159,7 +159,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         activeRemoteMessageModel: ActiveRemoteMessageModel,
         featureFlagger: FeatureFlagger,
         tabDragAndDropManager: TabDragAndDropManager,
-        autoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinator? = nil
+        autoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinating? = nil
     ) -> TabBarViewController {
         NSStoryboard(name: "TabBar", bundle: nil).instantiateInitialController { coder in
             self.init(
@@ -187,7 +187,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
           featureFlagger: FeatureFlagger,
           themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
           tabDragAndDropManager: TabDragAndDropManager,
-          autoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinator? = nil) {
+          autoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinating? = nil) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.fireproofDomains = fireproofDomains

@@ -57,7 +57,6 @@ final class DefaultBrowserPromptService {
         let promptActivityPixelHandler = DefaultBrowserPromptPixelHandler()
 
         presenter = DefaultBrowserPromptFactory.makeDefaultBrowserPromptPresenter(
-            featureFlagProvider: featureFlagAdapter,
             featureFlagSettingsProvider: featureFlagAdapter,
             promptActivityStore: promptTypeKeyValueFilesStore,
             userTypeProviding: userTypeManager,
@@ -74,15 +73,10 @@ final class DefaultBrowserPromptService {
 
     func resume() {
         // Application has been launched or brought to foreground.
-        guard shouldRecordActivity() else { return }
         Logger.defaultBrowserPrompt.debug("[Default Browser Prompt] - Record User Activity If Needed.")
         userActivityManager.recordActivity()
     }
 
-    private func shouldRecordActivity() -> Bool {
-        // True if either active/inactive prompt features is enabled
-        featureFlagAdapter.isDefaultBrowserPromptsForActiveUsersFeatureEnabled || featureFlagAdapter.isDefaultBrowserPromptsForInactiveUsersFeatureEnabled
-    }
 }
 
 // MARK: - Adapters

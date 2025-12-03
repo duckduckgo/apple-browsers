@@ -550,6 +550,86 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
             return params
         }
     }
+
+    public var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .httpError,
+                .actionFailedError,
+                .otherError,
+                .databaseError,
+                .cocoaError,
+                .miscError,
+                .secureVaultInitError,
+                .secureVaultKeyStoreReadError,
+                .secureVaultKeyStoreUpdateError,
+                .secureVaultError,
+                .secureVaultDatabaseRecreated,
+                .failedToOpenDatabase,
+                .parentChildMatches,
+                .optOutStart,
+                .optOutSubmitSuccess,
+                .optOutSuccess,
+                .optOutFailure,
+                .scanSuccess,
+                .scanNoResults,
+                .scanError,
+                .scanStage,
+                .optOutEmailGenerate,
+                .optOutCaptchaParse,
+                .optOutCaptchaSend,
+                .optOutCaptchaSolve,
+                .optOutSubmit,
+                .optOutEmailReceive,
+                .optOutEmailConfirm,
+                .optOutValidate,
+                .optOutFillForm,
+                .optOutConditionFound,
+                .optOutConditionNotFound,
+                .optOutFinish,
+                .dailyActiveUser,
+                .weeklyActiveUser,
+                .monthlyActiveUser,
+                .weeklyReportBackgroundTaskSession,
+                .weeklyReportStalledScans,
+                .weeklyReportStalledOptOuts,
+                .scanningEventNewMatch,
+                .scanningEventReAppearance,
+                .optOutJobAt7DaysConfirmed,
+                .optOutJobAt7DaysUnconfirmed,
+                .optOutJobAt14DaysConfirmed,
+                .optOutJobAt14DaysUnconfirmed,
+                .optOutJobAt21DaysConfirmed,
+                .optOutJobAt21DaysUnconfirmed,
+                .optOutJobAt42DaysConfirmed,
+                .optOutJobAt42DaysUnconfirmed,
+                .generateEmailHTTPErrorDaily,
+                .emptyAccessTokenDaily,
+                .initialScanTotalDuration,
+                .initialScanSiteLoadDuration,
+                .initialScanPostLoadingDuration,
+                .initialScanPreStartDuration,
+                .customDataBrokerStatsOptoutSubmit,
+                .customGlobalStatsOptoutSubmit,
+                .weeklyChildBrokerOrphanedOptOuts,
+                .userScriptLoadJSFailed,
+                .serviceEmailConfirmationLinkClientReceived,
+                .serviceEmailConfirmationLinkBackendStatusError,
+                .optOutStageSubmitAwaitingEmailConfirmation,
+                .serviceEmailConfirmationAttemptStart,
+                .serviceEmailConfirmationAttemptSuccess,
+                .serviceEmailConfirmationAttemptFailure,
+                .serviceEmailConfirmationMaxRetriesExceeded,
+                .serviceEmailConfirmationJobSuccess,
+                .updateDataBrokersSuccess,
+                .updateDataBrokersFailure:
+            return [.pixelSource]
+
+#if os(iOS)
+        case .scanStarted:
+            return [.pixelSource]
+#endif
+        }
+    }
 }
 
 public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels> {

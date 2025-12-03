@@ -159,10 +159,6 @@ final class SettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.aiFeaturesSettingsUpdate)
     }
 
-    var embedSERPSettings: Bool {
-        featureFlagger.isFeatureOn(.embeddedSERPSettings)
-    }
-
     var isDuckAiDataClearingEnabled: Bool {
         featureFlagger.isFeatureOn(.duckAiDataClearing)
     }
@@ -309,8 +305,14 @@ final class SettingsViewModel: ObservableObject {
                 self.state.showMenuInSheet
             },
             set: {
-                let value = self.browsingMenuSheetCapability.setEnabled($0)
-                self.state.showMenuInSheet = value
+                if $0 {
+                    DailyPixel.fireDailyAndCount(pixel: .experimentalBrowsingMenuEnabled)
+                } else {
+                    DailyPixel.fireDailyAndCount(pixel: .experimentalBrowsingMenuDisabled)
+                }
+                
+                self.browsingMenuSheetCapability.setEnabled($0)
+                self.state.showMenuInSheet = self.browsingMenuSheetCapability.isEnabled
             }
         )
     }

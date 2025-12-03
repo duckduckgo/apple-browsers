@@ -25,7 +25,6 @@ import UIKit
 public enum DefaultBrowserPromptFactory {
 
     public static func makeDefaultBrowserPromptPresenter(
-        featureFlagProvider: DefaultBrowserPromptFeatureFlagProvider,
         featureFlagSettingsProvider: DefaultBrowserPromptFeatureFlagSettingsProvider,
         promptActivityStore: DefaultBrowserPromptStorage,
         userTypeProviding: DefaultBrowserPromptUserTypeProviding,
@@ -40,8 +39,7 @@ public enum DefaultBrowserPromptFactory {
     ) -> DefaultBrowserPromptPresenting {
 
         let featureFlagger = DefaultBrowserPromptFeatureFlag(
-            settingsProvider: featureFlagSettingsProvider,
-            featureFlagProvider: featureFlagProvider
+            settingsProvider: featureFlagSettingsProvider
         )
 
         let defaultBrowserManager = DefaultBrowserManager(

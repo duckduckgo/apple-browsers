@@ -708,10 +708,8 @@ extension AppDelegate {
     }
 
     @objc func resetAddToDockFeatureNotification(_ sender: Any?) {
-#if SPARKLE
         guard let dockCustomizer = Application.appDelegate.dockCustomization else { return }
         dockCustomizer.resetData()
-#endif
     }
 
     @objc func resetLaunchDateToToday(_ sender: Any?) {

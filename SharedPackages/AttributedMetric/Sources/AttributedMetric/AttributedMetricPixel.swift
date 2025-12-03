@@ -149,9 +149,10 @@ enum AttributedMetricPixel: PixelKitEvent {
                 .userAverageAdClicksPastWeek,
                 .userAverageDuckAiUsagePastWeek,
                 .userSubscribed,
-                .userSyncedDevice,
-                .dataStoreError:
+                .userSyncedDevice:
             return [] // pixelSource is not included for AttributedMetric pixels
+        case .dataStoreError:
+            return [.pixelSource]
         }
     }
 

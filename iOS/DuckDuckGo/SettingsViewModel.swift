@@ -310,9 +310,9 @@ final class SettingsViewModel: ObservableObject {
                 } else {
                     DailyPixel.fireDailyAndCount(pixel: .experimentalBrowsingMenuDisabled)
                 }
-
-                let value = self.browsingMenuSheetCapability.setEnabled($0)
-                self.state.showMenuInSheet = value
+                
+                self.browsingMenuSheetCapability.setEnabled($0)
+                self.state.showMenuInSheet = self.browsingMenuSheetCapability.isEnabled
             }
         )
     }

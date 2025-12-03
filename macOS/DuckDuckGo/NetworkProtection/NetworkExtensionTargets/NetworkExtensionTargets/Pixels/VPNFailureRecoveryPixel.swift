@@ -57,4 +57,14 @@ public enum VPNFailureRecoveryPixel: PixelKitEvent {
     public var parameters: [String: String]? {
         nil
     }
+
+    public var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .vpnFailureRecoveryStarted,
+                .vpnFailureRecoveryFailed,
+                .vpnFailureRecoveryCompletedHealthy,
+                .vpnFailureRecoveryCompletedUnhealthy:
+            return [.pixelSource]
+        }
+    }
 }

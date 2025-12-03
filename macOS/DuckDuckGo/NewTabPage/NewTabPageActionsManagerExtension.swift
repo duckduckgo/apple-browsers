@@ -25,6 +25,7 @@ import History
 import NewTabPage
 import Persistence
 import PrivacyStats
+import Subscription
 
 extension NewTabPageActionsManager {
 
@@ -53,7 +54,8 @@ extension NewTabPageActionsManager {
         windowControllersManager: WindowControllersManagerProtocol & AIChatTabManaging,
         tabsPreferences: TabsPreferences,
         newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
-        winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator
+        winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator,
+        subscriptionManager: any SubscriptionAuthV1toV2Bridge
     ) {
         let settingsMigrator = NewTabPageProtectionsReportSettingsMigrator(legacyKeyValueStore: legacyKeyValueStore)
         let protectionsReportModel = NewTabPageProtectionsReportModel(
@@ -89,7 +91,8 @@ extension NewTabPageActionsManager {
             windowControllersManager: windowControllersManager,
             tabsPreferences: tabsPreferences,
             newTabPageAIChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider,
-            winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator
+            winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
+            subscriptionManager: subscriptionManager
         )
     }
 
@@ -116,7 +119,8 @@ extension NewTabPageActionsManager {
         windowControllersManager: WindowControllersManagerProtocol  & AIChatTabManaging,
         tabsPreferences: TabsPreferences,
         newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
-        winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator
+        winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator,
+        subscriptionManager: any SubscriptionAuthV1toV2Bridge
     ) {
         let availabilityProvider = NewTabPageSectionsAvailabilityProvider(featureFlagger: featureFlagger)
         let favoritesPublisher = bookmarkManager.listPublisher.map({ $0?.favoriteBookmarks ?? [] }).eraseToAnyPublisher()
@@ -190,7 +194,8 @@ extension NewTabPageActionsManager {
                     continueSetUpModel: HomePage.Models.ContinueSetUpModel(
                         dataImportProvider: BookmarksAndPasswordsImportStatusProvider(bookmarkManager: bookmarkManager),
                         tabOpener: NewTabPageTabOpener(),
-                        privacyConfigurationManager: contentBlocking.privacyConfigurationManager
+                        privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
+                        subscriptionManager: subscriptionManager
                     ),
                     appearancePreferences: appearancePreferences
                 )

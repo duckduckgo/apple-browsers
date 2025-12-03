@@ -60,7 +60,6 @@ extension HomePage.Models {
         let itemsPerRow = Const.featuresPerRow
         let itemsRowCountWhenCollapsed = Const.featureRowCountWhenCollapsed
         let gridWidth = FeaturesGridDimensions.width
-        let deleteActionTitle = UserText.newTabSetUpRemoveItemAction
         let privacyConfigurationManager: PrivacyConfigurationManaging
 
         var duckPlayerURL: String {
@@ -74,6 +73,8 @@ extension HomePage.Models {
         private let tabOpener: ContinueSetUpModelTabOpening
         private let emailManager: EmailManager
         private let duckPlayerPreferences: DuckPlayerPreferencesPersistor
+        private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+        private let pixelHandler: (PixelKitEvent, Bool) -> Void
 
         @UserDefaultsWrapper(key: .homePageShowAllFeatures, defaultValue: false)
         var shouldShowAllFeatures: Bool {
@@ -106,6 +107,12 @@ extension HomePage.Models {
             @UserDefaultsWrapper(key: .homePageIsFirstSession, defaultValue: true)
             var isFirstSession: Bool
 
+            @UserDefaultsWrapper(key: .homePageShowSubscription, defaultValue: true)
+            var shouldShowSubscriptionSetting: Bool
+
+            @UserDefaultsWrapper(key: .homePageUserHadSubscription, defaultValue: false)
+            var userHadSubscription: Bool
+
             func clear() {
                 _shouldShowMakeDefaultSetting.clear()
                 _shouldShowAddToDockSetting.clear()
@@ -113,6 +120,8 @@ extension HomePage.Models {
                 _shouldShowDuckPlayerSetting.clear()
                 _shouldShowEmailProtectionSetting.clear()
                 _isFirstSession.clear()
+                _shouldShowSubscriptionSetting.clear()
+                _userHadSubscription.clear()
             }
         }
 
@@ -136,13 +145,17 @@ extension HomePage.Models {
 
         @Published var visibleFeaturesMatrix: [[FeatureType]] = [[]]
 
+        private var observer: NSObjectProtocol?
+
         init(defaultBrowserProvider: DefaultBrowserProvider = SystemDefaultBrowserProvider(),
              dockCustomizer: DockCustomization = DockCustomizer(),
              dataImportProvider: DataImportStatusProviding,
              tabOpener: ContinueSetUpModelTabOpening,
              emailManager: EmailManager = EmailManager(),
              duckPlayerPreferences: DuckPlayerPreferencesPersistor = DuckPlayerPreferencesUserDefaultsPersistor(),
-             privacyConfigurationManager: PrivacyConfigurationManaging) {
+             privacyConfigurationManager: PrivacyConfigurationManaging,
+             subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+             pixelHandler: @escaping (PixelKitEvent, Bool) -> Void = { PixelKit.fire($0, includeAppVersionParameter: $1) }) {
 
             self.defaultBrowserProvider = defaultBrowserProvider
             self.dockCustomizer = dockCustomizer
@@ -151,6 +164,8 @@ extension HomePage.Models {
             self.emailManager = emailManager
             self.duckPlayerPreferences = duckPlayerPreferences
             self.privacyConfigurationManager = privacyConfigurationManager
+            self.subscriptionManager = subscriptionManager
+            self.pixelHandler = pixelHandler
             self.settings = .init()
 
             shouldShowAllFeaturesPublisher = shouldShowAllFeaturesSubject.removeDuplicates().eraseToAnyPublisher()
@@ -164,6 +179,29 @@ extension HomePage.Models {
             // (the notification in this case) to trigger a refresh.
             NotificationCenter.default.addObserver(self, selector: #selector(refreshFeaturesForHTMLNewTabPage(_:)), name: .newTabPageWebViewDidAppear, object: nil)
 
+            observeSubscriptionDidChange()
+            checkCachedSubscription()
+
+        }
+
+        private func checkCachedSubscription() {
+            Task { @MainActor in
+                let currentSubscription = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
+                if currentSubscription != nil {
+                    // Prevent card from showing again if the user has any kind of subscription.
+                    settings.userHadSubscription = true
+                }
+                refreshFeaturesMatrix()
+            }
+        }
+
+        private func observeSubscriptionDidChange() {
+            observer = NotificationCenter.default.addObserver(forName: .subscriptionDidChange, object: nil, queue: .main) { [weak self] _ in
+                guard let self else { return }
+                // Prevent card from showing again if the user has any kind of subscription.
+                settings.userHadSubscription = true
+                refreshFeaturesMatrix()
+            }
         }
 
         @MainActor func performAction(for featureType: FeatureType) {
@@ -178,12 +216,14 @@ extension HomePage.Models {
                 performDuckPlayerAction()
             case .emailProtection:
                 performEmailProtectionAction()
+            case .subscription:
+                performSubscriptionAction()
             }
         }
 
         private func performDefaultBrowserAction() {
             do {
-                PixelKit.fire(GeneralPixel.defaultRequestedFromHomepageSetupView)
+                pixelHandler(GeneralPixel.defaultRequestedFromHomepageSetupView, true)
                 try defaultBrowserProvider.presentDefaultBrowserPrompt()
             } catch {
                 defaultBrowserProvider.openSystemPreferences()
@@ -209,9 +249,19 @@ extension HomePage.Models {
         }
 
         func performDockAction() {
-            PixelKit.fire(GeneralPixel.userAddedToDockFromNewTabPageCard,
-                          includeAppVersionParameter: false)
+            pixelHandler(GeneralPixel.userAddedToDockFromNewTabPageCard, false)
             dockCustomizer.addToDock()
+        }
+
+        @MainActor
+        private func performSubscriptionAction() {
+            pixelHandler(SubscriptionPixel.subscriptionNewTabPageNextStepsCardClicked, true)
+            guard let url = SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.onboarding.rawValue)?.url else {
+                return
+            }
+
+            let tab = Tab(content: .url(url, source: .link), shouldLoadInBackground: true)
+            tabOpener.openTab(tab)
         }
 
         func removeItem(for featureType: FeatureType) {
@@ -226,6 +276,9 @@ extension HomePage.Models {
                 settings.shouldShowDuckPlayerSetting = false
             case .emailProtection:
                 settings.shouldShowEmailProtectionSetting = false
+            case .subscription:
+                pixelHandler(SubscriptionPixel.subscriptionNewTabPageNextStepsCardDismissed, true)
+                settings.shouldShowSubscriptionSetting = false
             }
             refreshFeaturesMatrix()
         }
@@ -257,6 +310,8 @@ extension HomePage.Models {
                 return shouldDuckPlayerCardBeVisible
             case .emailProtection:
                 return shouldEmailProtectionCardBeVisible
+            case .subscription:
+                return shouldSubscriptionCardBeVisible
             }
         }
 
@@ -332,6 +387,15 @@ extension HomePage.Models {
             settings.shouldShowEmailProtectionSetting && !emailManager.isSignedIn
         }
 
+        private var shouldSubscriptionCardBeVisible: Bool {
+            settings.shouldShowSubscriptionSetting && !settings.userHadSubscription
+        }
+
+        deinit {
+            if let observer {
+                NotificationCenter.default.removeObserver(observer)
+            }
+        }
     }
 
     // MARK: Feature Type
@@ -342,9 +406,9 @@ extension HomePage.Models {
         // included elsewhere.
         static var allCases: [HomePage.Models.FeatureType] {
 #if APPSTORE
-            [.duckplayer, .emailProtection, .defaultBrowser, .importBookmarksAndPasswords]
+            [.duckplayer, .emailProtection, .defaultBrowser, .importBookmarksAndPasswords, .subscription]
 #else
-            [.duckplayer, .emailProtection, .defaultBrowser, .dock, .importBookmarksAndPasswords]
+            [.duckplayer, .emailProtection, .defaultBrowser, .dock, .importBookmarksAndPasswords, .subscription]
 #endif
         }
 
@@ -353,77 +417,7 @@ extension HomePage.Models {
         case defaultBrowser
         case dock
         case importBookmarksAndPasswords
-
-        var title: String {
-            switch self {
-            case .defaultBrowser:
-                return UserText.newTabSetUpDefaultBrowserCardTitle
-            case .dock:
-                return UserText.newTabSetUpDockCardTitle
-            case .importBookmarksAndPasswords:
-                return UserText.newTabSetUpImportCardTitle
-            case .duckplayer:
-                return UserText.newTabSetUpDuckPlayerCardTitle
-            case .emailProtection:
-                return UserText.newTabSetUpEmailProtectionCardTitle
-            }
-        }
-
-        var summary: String {
-            switch self {
-            case .defaultBrowser:
-                return UserText.newTabSetUpDefaultBrowserSummary
-            case .dock:
-                return UserText.newTabSetUpDockSummary
-            case .importBookmarksAndPasswords:
-                return UserText.newTabSetUpImportSummary
-            case .duckplayer:
-                return UserText.newTabSetUpDuckPlayerSummary
-            case .emailProtection:
-                return UserText.newTabSetUpEmailProtectionSummary
-            }
-        }
-
-        var action: String {
-            switch self {
-            case .defaultBrowser:
-                return UserText.newTabSetUpDefaultBrowserAction
-            case .dock:
-                return UserText.newTabSetUpDockAction
-            case .importBookmarksAndPasswords:
-                return UserText.newTabSetUpImportAction
-            case .duckplayer:
-                return UserText.newTabSetUpDuckPlayerAction
-            case .emailProtection:
-                return UserText.newTabSetUpEmailProtectionAction
-            }
-        }
-
-        var confirmation: String? {
-            switch self {
-            case .dock:
-                return UserText.newTabSetUpDockConfirmation
-            default:
-                return nil
-            }
-        }
-
-        var icon: NSImage {
-            let iconSize = NSSize(width: 64, height: 48)
-
-            switch self {
-            case .defaultBrowser:
-                return .defaultApp128.resized(to: iconSize)
-            case .dock:
-                return .dock128.resized(to: iconSize)
-            case .importBookmarksAndPasswords:
-                return .import128.resized(to: iconSize)
-            case .duckplayer:
-                return .cleanTube128.resized(to: iconSize)
-            case .emailProtection:
-                return .inbox128.resized(to: iconSize)
-            }
-        }
+        case subscription
     }
 
     enum FeaturesGridDimensions {

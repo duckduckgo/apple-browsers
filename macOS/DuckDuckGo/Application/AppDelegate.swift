@@ -179,7 +179,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         windowControllersManager: windowControllersManager,
         tabsPreferences: tabsPreferences,
         newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration),
-        winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator
+        winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
+        subscriptionManager: subscriptionAuthV1toV2Bridge
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
@@ -1719,7 +1720,8 @@ extension AppDelegate: UserScriptDependenciesProviding {
             windowControllersManager: windowControllersManager,
             tabsPreferences: tabsPreferences,
             newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration),
-            winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator
+            winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
+            subscriptionManager: subscriptionAuthV1toV2Bridge
         )
     }
 }

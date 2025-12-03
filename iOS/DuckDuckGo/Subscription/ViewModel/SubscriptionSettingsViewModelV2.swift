@@ -74,13 +74,23 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
 
     @Published var showRebrandingMessage: Bool = false
 
+    /// Returns the tier to display in the badge, or nil if badge should not be shown
+    /// Shows badge if tier is Pro, or if Pro tier purchase feature flag is enabled
+    var tierBadgeToDisplay: TierName? {
+        guard let tier = state.subscriptionInfo?.tier else { return nil }
+        guard tier == .pro || isProTierPurchaseEnabled() else { return nil }
+        return tier
+    }
+
     private let keyValueStorage: KeyValueStoring
     private let bannerDismissedKey = "SubscriptionSettingsV2BannerDismissed"
+    private let isProTierPurchaseEnabled: () -> Bool
 
     init(subscriptionManager: SubscriptionManagerV2 = AppDependencyProvider.shared.subscriptionManagerV2!,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          keyValueStorage: KeyValueStoring = SubscriptionSettingsStore(),
-         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies) {
+         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
+         isProTierPurchaseEnabled: @escaping () -> Bool = { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.allowProTierPurchase) }) {
         self.subscriptionManager = subscriptionManager
         self.userScriptsDependencies = userScriptsDependencies
         let subscriptionFAQURL = subscriptionManager.url(for: .faq)
@@ -88,6 +98,7 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
         self.state = State(faqURL: subscriptionFAQURL, learnMoreURL: learnMoreURL, userScriptsDependencies: userScriptsDependencies)
         self.usesUnifiedFeedbackForm = subscriptionManager.isUserAuthenticated
         self.keyValueStorage = keyValueStorage
+        self.isProTierPurchaseEnabled = isProTierPurchaseEnabled
         let rebrandingMessageDismissed = keyValueStorage.object(forKey: bannerDismissedKey) as? Bool ?? false
         self.showRebrandingMessage = !rebrandingMessageDismissed
         setupNotificationObservers()

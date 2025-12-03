@@ -431,7 +431,7 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
     @MainActor
     public func purchaseSubscription(with identifier: String, externalID: String) async -> Result<TransactionJWS, StorePurchaseManagerError> {
 
-        guard let product = await getAvailableProducts().first(where: { $0.id == identifier }) else { return .failure(StorePurchaseManagerError.productNotFound) }
+        guard let product = await getAvailableProducts(includeProTier: true).first(where: { $0.id == identifier }) else { return .failure(StorePurchaseManagerError.productNotFound) }
 
         Logger.subscriptionStorePurchaseManager.log("Purchasing Subscription: \(product.displayName, privacy: .public) (\(externalID, privacy: .public))")
 

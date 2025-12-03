@@ -317,7 +317,14 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatPageContextRemoved,
                 .aiChatDeleteHistoryRequested,
                 .aiChatDeleteHistorySuccessful,
-                .aiChatDeleteHistoryFailed:
+                .aiChatDeleteHistoryFailed,
+                .aiChatAddressBarActivatedToggleOn,
+                .aiChatAddressBarActivatedToggleOff,
+                .aiChatAddressBarToggleChangedSearch,
+                .aiChatAddressBarAIChatSubmitPrompt,
+                .aiChatAddressBarAIChatSubmitURL,
+                .aiChatSuggestionAIChatSubmitted,
+                .aiChatAddressBarToggleChangedAIChat:
             return [.pixelSource]
         }
     }

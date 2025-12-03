@@ -90,9 +90,9 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     }
 
     @MainActor
-    func refreshDashboardState(consentManaged: Bool, cosmetic: Bool?, optoutFailed: Bool?, selftestFailed: Bool?) {
+    func refreshDashboardState(consentManaged: Bool, cosmetic: Bool?, optoutFailed: Bool?, selftestFailed: Bool?, consentReloadLoop: Bool?, consentRule: String?) {
         let consentStatus = CookieConsentInfo(
-            consentManaged: consentManaged, cosmetic: cosmetic, optoutFailed: optoutFailed, selftestFailed: selftestFailed, consentReloadLoop: reloadLoopDetected, consentRule: lastHandledCMPName
+            consentManaged: consentManaged, cosmetic: cosmetic, optoutFailed: optoutFailed, selftestFailed: selftestFailed, consentReloadLoop: consentReloadLoop, consentRule: consentRule
         )
         Logger.autoconsent.debug("Refreshing dashboard state: \(String(describing: consentStatus))")
         self.delegate?.autoconsentUserScript(consentStatus: consentStatus)
@@ -300,7 +300,9 @@ extension AutoconsentUserScript {
                 consentManaged: management.sitesNotifiedCache.contains(url.host ?? ""),
                 cosmetic: nil,
                 optoutFailed: nil,
-                selftestFailed: nil
+                selftestFailed: nil,
+                consentReloadLoop: reloadLoopDetected,
+                consentRule: lastHandledCMPName
             )
             firePixel(pixel: .acInit)
         }
@@ -411,7 +413,7 @@ extension AutoconsentUserScript {
         // if popupFound is sent with "filterList", it indicates that cosmetic filterlist matched in the prehide stage,
         // but a real opt-out may still follow. See https://github.com/duckduckgo/autoconsent/blob/main/api.md#messaging-api
         if messageData.cmp == Constants.filterListCmpName {
-            refreshDashboardState(consentManaged: true, cosmetic: true, optoutFailed: false, selftestFailed: nil)
+            refreshDashboardState(consentManaged: true, cosmetic: true, optoutFailed: false, selftestFailed: nil, consentReloadLoop: reloadLoopDetected, consentRule: messageData.cmp)
             // trigger animation, but do not cache it because it can still be overridden
             if !management.sitesNotifiedCache.contains(host) {
                 Logger.autoconsent.debug("Starting animation for cosmetic filters")
@@ -436,7 +438,7 @@ extension AutoconsentUserScript {
         Logger.autoconsent.debug("opt-out result: \(String(describing: messageData))")
 
         if !messageData.result {
-            refreshDashboardState(consentManaged: true, cosmetic: nil, optoutFailed: true, selftestFailed: nil)
+            refreshDashboardState(consentManaged: true, cosmetic: nil, optoutFailed: true, selftestFailed: nil, consentReloadLoop: reloadLoopDetected, consentRule: messageData.cmp)
             firePixel(pixel: .errorOptoutFailed)
         } else if messageData.scheduleSelfTest {
             // save a reference to the webview and frame for self-test
@@ -466,7 +468,7 @@ extension AutoconsentUserScript {
             isCosmetic: messageData.isCosmetic
         )
 
-        refreshDashboardState(consentManaged: true, cosmetic: messageData.isCosmetic, optoutFailed: false, selftestFailed: nil)
+        refreshDashboardState(consentManaged: true, cosmetic: messageData.isCosmetic, optoutFailed: false, selftestFailed: nil, consentReloadLoop: reloadLoopDetected, consentRule: messageData.cmp)
         firePixel(pixel: messageData.isCosmetic ? .doneCosmetic : .done)
 
         popupManagedSubject.send(messageData)
@@ -520,7 +522,7 @@ extension AutoconsentUserScript {
         }
         // store self-test result
         Logger.autoconsent.debug("self-test result: \(String(describing: messageData))")
-        refreshDashboardState(consentManaged: true, cosmetic: nil, optoutFailed: false, selftestFailed: messageData.result)
+        refreshDashboardState(consentManaged: true, cosmetic: nil, optoutFailed: false, selftestFailed: messageData.result, consentReloadLoop: reloadLoopDetected, consentRule: messageData.cmp)
         firePixel(pixel: messageData.result ? .selfTestOk : .selfTestFail)
         replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection
     }

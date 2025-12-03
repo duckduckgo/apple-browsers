@@ -110,12 +110,12 @@
             },
             {
                 "key": "ud",
-                "description": "Undelying Error type: com.duckduckgo.subscription.SubscriptionEndpointServiceError",
+                "description": "Underlying Error type: com.duckduckgo.subscription.SubscriptionEndpointServiceError",
                 "type": "string"
             },
             {
                 "key": "ue",
-                "description": "Undelying Error code: 12300, 12301, 12302",
+                "description": "Underlying Error code: 12300, 12301, 12302",
                 "type": "string"
             }
         ]

@@ -193,8 +193,8 @@ enum SubscriptionPixel: PixelKitEvent {
         case .subscriptionWinBackOfferNewTabPageDismissed: return "m_mac_\(appDistribution)_privacy-pro_winback_new_tab_page_dismissed"
 
             // New Tab Page Next Steps Card
-        case .subscriptionNewTabPageNextStepsCardClicked: return "m_mac_\(appDistribution)_privacy-pro_new_tab_page.next_steps.clicked"
-        case .subscriptionNewTabPageNextStepsCardDismissed: return "m_mac_\(appDistribution)_privacy-pro_new_tab_page.next_steps.dismissed"
+        case .subscriptionNewTabPageNextStepsCardClicked: return "m_mac_\(appDistribution)_privacy-pro_new_tab_page_next_steps_card_clicked"
+        case .subscriptionNewTabPageNextStepsCardDismissed: return "m_mac_\(appDistribution)_privacy-pro_new_tab_page_next_steps_dismissed"
         }
     }
 

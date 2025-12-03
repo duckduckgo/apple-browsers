@@ -40,73 +40,74 @@ struct PasswordEntryExampleView: View {
             buttonArea
             cursor
         }
+        .frame(width: Metrics.containerImageWidth, height: Metrics.containerImageHeight)
+        .scaleEffect(scale)
         .frame(width: Metrics.containerImageWidth * scale, height: Metrics.containerImageHeight * scale)
     }
 
     private var promptImage: some View {
         Image(.importKeychainPromptContainer)
             .resizable()
-            .frame(width: Metrics.containerImageWidth * scale, height: Metrics.containerImageHeight * scale)
+            .frame(width: Metrics.containerImageWidth, height: Metrics.containerImageHeight)
     }
 
     private func helpTextView(_ text: String) -> some View {
         Text(text)
-            .font(.system(size: 13 * scale))
+            .font(.system(size: Metrics.fontSize))
             .foregroundColor(Color(designSystemColor: .textPrimary))
             .multilineTextAlignment(.leading)
             .fixedSize(horizontal: false, vertical: true)
-            .frame(width: 244 * scale, alignment: .leading)
-            .padding(.top, 28 * scale)
-            .padding(.leading, 104 * scale)
+            .frame(width: 244, alignment: .leading)
+            .padding(.top, 28)
+            .padding(.leading, 104)
     }
 
     private var textPlaceholders: some View {
-        VStack(alignment: .leading, spacing: 12 * scale) {
-            textPlaceholder(width: 244 * scale)
-            textPlaceholder(width: 183 * scale)
+        VStack(alignment: .leading, spacing: 12) {
+            textPlaceholder(width: 244)
+            textPlaceholder(width: 183)
         }
-        .padding(.top, 28 * scale)
-        .padding(.leading, 104 * scale)
+        .padding(.top, 28)
+        .padding(.leading, 104)
     }
 
     private var buttonArea: some View {
-        HStack(spacing: Metrics.spacing * scale) {
+        HStack(spacing: Metrics.spacing) {
             placeholderButton
             allowButton
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-        .padding(.trailing, Metrics.spacing * 2 * scale)
-        .padding(.bottom, 35 * scale)
+        .padding(.trailing, Metrics.spacing * 2)
+        .padding(.bottom, 35)
     }
 
     private var cursor: some View {
         Image(.chromiumImportCursor)
-            .scaleEffect(scale, anchor: .bottomTrailing)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
     }
 
     private var placeholderButton: some View {
-        placeholderRect(width: 80 * scale, cornerRadius: Metrics.buttonCornerRadius * scale)
+        placeholderRect(width: 80, cornerRadius: Metrics.buttonCornerRadius)
     }
 
     private var allowButton: some View {
         Text(UserText.importChromeAllowButtonTitle)
-            .font(.system(size: 13 * scale))
-            .padding(.horizontal, Metrics.spacing * scale)
-            .frame(height: Metrics.itemHeight * scale)
+            .font(.system(size: Metrics.fontSize))
+            .padding(.horizontal, Metrics.spacing)
+            .frame(height: Metrics.itemHeight)
             .background(
-                placeholderRect(cornerRadius: Metrics.buttonCornerRadius * scale)
+                placeholderRect(cornerRadius: Metrics.buttonCornerRadius)
             )
     }
 
     private func textPlaceholder(width: CGFloat) -> some View {
-        placeholderRect(width: width, cornerRadius: Metrics.itemHeight * scale / 2.0)
+        placeholderRect(width: width, cornerRadius: Metrics.itemHeight / 2.0)
     }
 
     private func placeholderRect(width: CGFloat? = nil, cornerRadius: CGFloat) -> some View {
         RoundedRectangle(cornerRadius: cornerRadius)
             .fill(Color(designSystemColor: .containerFillTertiary))
-            .frame(width: width, height: Metrics.itemHeight * scale)
+            .frame(width: width, height: Metrics.itemHeight)
     }
 }
 
@@ -119,6 +120,7 @@ private extension PasswordEntryExampleView {
         static let buttonCornerRadius: CGFloat = 5
         static let containerImageWidth: CGFloat = 380
         static let containerImageHeight: CGFloat = 160
+        static let fontSize: CGFloat = 13
     }
 }
 

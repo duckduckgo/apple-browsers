@@ -84,9 +84,6 @@ final class PermissionManager: PermissionManagerProtocol {
 
     func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType) {
 
-        assert(permissionType.canPersistGrantedDecision(featureFlagger: featureFlagger) || decision != .allow)
-        assert(permissionType.canPersistDeniedDecision(featureFlagger: featureFlagger) || decision != .deny)
-
         let storedPermission: StoredPermission
         let domain = domain.droppingWwwPrefix()
         guard self.permission(forDomain: domain, permissionType: permissionType) != decision else { return }

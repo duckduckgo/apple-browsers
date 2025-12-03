@@ -97,7 +97,7 @@ extension FaviconManagement {
             return favicon
         }
 
-        if let domain = documentUrl.host?.dropSubdomain(), let favicon = getCachedFavicon(forDomainOrAnySubdomain: domain, sizeCategory: sizeCategory) {
+        if let domain = documentUrl.host?.dropSubdomain(), let favicon = getCachedFavicon(forDomainOrAnySubdomain: domain, sizeCategory: sizeCategory, fallBackToSmaller: fallBackToSmaller) {
             return favicon
         }
 

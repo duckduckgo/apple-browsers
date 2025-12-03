@@ -95,7 +95,7 @@ final class PopupHandlingUITests: UITestCase {
         let webView = app.webViews["Popup Delayed Test"]
 
         // Click button (user-initiated) - should open without permission
-        let button = webView.buttons["Open Popup (Immediate)"]
+        let button = webView.links["Open Popup (Immediate)"]
         XCTAssertTrue(button.waitForExistence(timeout: UITests.Timeouts.localTestServer))
         button.click()
 
@@ -127,7 +127,7 @@ final class PopupHandlingUITests: UITestCase {
         webView.click()
 
         // Click button for popup within timeout window
-        let button = webView.buttons["Open Popup (Within Timeout)"]
+        let button = webView.links["Open Popup (Within Timeout)"]
         XCTAssertTrue(button.waitForExistence(timeout: UITests.Timeouts.localTestServer))
         button.click()
 
@@ -157,7 +157,7 @@ final class PopupHandlingUITests: UITestCase {
         let webView = app.webViews["Popup Delayed Test"]
 
         // First: Trigger blocked about:blank popup (3s delay)
-        let blankButton = webView.buttons["Trigger Blocked about:blank"]
+        let blankButton = webView.links["Trigger Blocked about:blank"]
         XCTAssertTrue(blankButton.waitForExistence(timeout: UITests.Timeouts.localTestServer))
         blankButton.click()
 
@@ -166,7 +166,7 @@ final class PopupHandlingUITests: UITestCase {
         verifyPopupBlockedButton(count: 1, expectedOpenItems: 0, timeout: UITests.Timeouts.elementExistence)
 
         // Second: Click delayed cross-domain popup button (also 3s delay)
-        let beyondButton = webView.buttons["Open Popup (Beyond Timeout)"]
+        let beyondButton = webView.links["Open Popup (Beyond Timeout)"]
         XCTAssertTrue(beyondButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         beyondButton.click()
 
@@ -216,7 +216,7 @@ final class PopupHandlingUITests: UITestCase {
         addressBarTextField.pasteURL(popupDelayedURL, pressingEnter: true)
         let webView = app.webViews["Popup Delayed Test"]
 
-        let button = webView.buttons["Open Popup (Beyond Timeout)"]
+        let button = webView.links["Open Popup (Beyond Timeout)"]
         XCTAssertTrue(button.waitForExistence(timeout: UITests.Timeouts.localTestServer))
         button.click()
 
@@ -354,7 +354,7 @@ final class PopupHandlingUITests: UITestCase {
         let webView = app.webViews["Popup Delayed Test"]
 
         // Trigger page popup: opens 2 popups (first allowed, second blocked)
-        let button = webView.buttons["Trigger 2 Page Popups (1st Allowed, 2nd Blocked)"]
+        let button = webView.links["Trigger 2 Page Popups (1st Allowed, 2nd Blocked)"]
         XCTAssertTrue(button.waitForExistence(timeout: UITests.Timeouts.localTestServer))
         button.click()
 
@@ -407,7 +407,7 @@ final class PopupHandlingUITests: UITestCase {
         let webView = app.webViews["Popup Delayed Test"]
 
         // Trigger 6 popups: first opens (consumes interaction), remaining 5 blocked
-        let button = webView.buttons["Trigger 6 Page Popups (1st Allowed, 5 Blocked)"]
+        let button = webView.links["Trigger 6 Page Popups (1st Allowed, 5 Blocked)"]
         XCTAssertTrue(button.waitForExistence(timeout: UITests.Timeouts.localTestServer))
         button.click()
 
@@ -439,7 +439,7 @@ final class PopupHandlingUITests: UITestCase {
         addressBarTextField.pasteURL(popupDelayedURL, pressingEnter: true)
         let webView = app.webViews["Popup Delayed Test"]
 
-        let button = webView.buttons["Open Popup (Beyond Timeout)"]
+        let button = webView.links["Open Popup (Beyond Timeout)"]
         XCTAssertTrue(button.waitForExistence(timeout: UITests.Timeouts.localTestServer))
         button.click()
 
@@ -468,7 +468,7 @@ final class PopupHandlingUITests: UITestCase {
         let webView = app.webViews["Popup Delayed Test"]
 
         // Click button that opens about:blank (blocked because beyond timeout)
-        let blockedButton = webView.buttons["Trigger Blocked about:blank"]
+        let blockedButton = webView.links["Trigger Blocked about:blank"]
         XCTAssertTrue(blockedButton.waitForExistence(timeout: UITests.Timeouts.localTestServer))
         blockedButton.click()
 
@@ -482,7 +482,7 @@ final class PopupHandlingUITests: UITestCase {
         XCTAssertEqual(app.windows.count, 1, "Empty popup should be suppressed")
 
         // Click button that opens about:blank with "Expected to be opened" - should be allowed
-        let expectedButton = webView.buttons["Open about:blank (Expected to be opened)"]
+        let expectedButton = webView.links["Open about:blank (Expected to be opened)"]
         expectedButton.click()
 
         // Popup should open (permission granted)
@@ -506,7 +506,7 @@ final class PopupHandlingUITests: UITestCase {
         addressBarTextField.pasteURL(popupDelayedURL, pressingEnter: true)
         let webView = app.webViews["Popup Delayed Test"]
 
-        let button = webView.buttons["Trigger Blocked about:blank"]
+        let button = webView.links["Trigger Blocked about:blank"]
         XCTAssertTrue(button.waitForExistence(timeout: UITests.Timeouts.localTestServer))
         button.click()
 
@@ -516,7 +516,7 @@ final class PopupHandlingUITests: UITestCase {
         app.menuItems[AccessibilityIdentifiers.allowPopupsForPage].click()
 
         // Click button that opens popup that should be allowed
-        let expectedButton = webView.buttons["Open about:blank (Expected to be opened)"]
+        let expectedButton = webView.links["Open about:blank (Expected to be opened)"]
         expectedButton.click()
 
         let popupWindow = app.windows["Expected Popup"]
@@ -602,7 +602,7 @@ final class PopupHandlingUITests: UITestCase {
         let webView = app.webViews["Popup Delayed Test"]
 
         // Click button that opens popup without window features (should open as tab, not window)
-        let button = webView.buttons["Open Popup as Tab (Beyond Timeout)"]
+        let button = webView.links["Open Popup as Tab (Beyond Timeout)"]
         XCTAssertTrue(button.waitForExistence(timeout: UITests.Timeouts.localTestServer))
         button.click()
 
@@ -644,7 +644,7 @@ final class PopupHandlingUITests: UITestCase {
         let webView = app.webViews["Popup Delayed Test"]
 
         // Block first popup (example.com)
-        let exampleButton = webView.buttons["Open Popup (Beyond Timeout)"]
+        let exampleButton = webView.links["Open Popup (Beyond Timeout)"]
         XCTAssertTrue(exampleButton.waitForExistence(timeout: UITests.Timeouts.localTestServer))
         exampleButton.click()
 
@@ -657,7 +657,7 @@ final class PopupHandlingUITests: UITestCase {
         verifyPopupBlockedButton(count: 1, expectedOpenItems: 1)
 
         // Block second popup (duckduckgo.com)
-        let duckduckgoButton = webView.buttons["Open Popup Alt Domain (Beyond Timeout)"]
+        let duckduckgoButton = webView.links["Open Popup Alt Domain (Beyond Timeout)"]
         XCTAssertTrue(duckduckgoButton.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         duckduckgoButton.click()
 

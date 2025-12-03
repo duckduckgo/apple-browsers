@@ -20,6 +20,7 @@ import Cocoa
 import Combine
 import AIChat
 import URLPredictor
+import PixelKit
 
 protocol AIChatOmnibarControllerDelegate: AnyObject {
     func aiChatOmnibarControllerDidSubmit(_ controller: AIChatOmnibarController)
@@ -86,10 +87,13 @@ final class AIChatOmnibarController {
         let trimmedText = currentText.trimmingCharacters(in: .whitespacesAndNewlines)
 
         if let navigableURL = classifyAsNavigableURL(trimmedText) {
+            PixelKit.fire(AIChatPixel.aiChatAddressBarAIChatSubmitURL, frequency: .dailyAndCount, includeAppVersionParameter: true)
             currentText = ""
             delegate?.aiChatOmnibarController(self, didRequestNavigationToURL: navigableURL)
             return
         }
+
+        PixelKit.fire(AIChatPixel.aiChatAddressBarAIChatSubmitPrompt, frequency: .dailyAndCount, includeAppVersionParameter: true)
 
         let nativePrompt = AIChatNativePrompt.queryPrompt(trimmedText, autoSubmit: true)
         promptHandler.setData(nativePrompt)

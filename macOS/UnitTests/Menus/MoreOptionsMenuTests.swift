@@ -487,6 +487,7 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     // MARK: - Default Browser Action and Add To Dock
 
+#if SPARKLE
     @MainActor
     func testWhenBrowserIsNotAddedToDockThenMenuItemIsVisible() {
         dockCustomizer.dockStatus = false
@@ -508,6 +509,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertEqual(moreOptionsMenu.items[1].title, UserText.addDuckDuckGoToDock)
         XCTAssertEqual(moreOptionsMenu.items[2].title, UserText.setAsDefaultBrowser)
     }
+#endif
 
     @MainActor
     func testWhenBrowserIsAddedToDockThenMenuItemIsNotVisible() {

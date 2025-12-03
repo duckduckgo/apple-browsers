@@ -596,7 +596,6 @@ extension WindowControllersManagerProtocol {
     func findTab(byUUID uuid: String) -> Tab? {
         for windowController in mainWindowControllers {
             let tabCollectionViewModel = windowController.mainViewController.tabCollectionViewModel
-
             if let index = tabCollectionViewModel.indexInAllTabs(where: { $0.uuid == uuid }) {
                 return tabCollectionViewModel.tabViewModel(at: index)?.tab
             }

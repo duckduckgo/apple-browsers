@@ -1265,6 +1265,12 @@ final class TabBarViewItem: NSCollectionViewItem {
     }
 
     private func refreshFavicon() {
+        // Reset tint color that was set for active permission icons
+        if cell.displaysTabsProgressIndicator {
+            cell.faviconView.imageTintColor = nil
+        } else {
+            cell.faviconImageView.contentTintColor = nil
+        }
         // Re-apply the current favicon through normal flow
         updateFavicon(tabViewModel?.favicon)
     }

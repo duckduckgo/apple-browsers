@@ -64,7 +64,7 @@ public protocol AIChatSettingsProvider {
 
     /// Updates the user settings state for the AI Chat Search Input
     func enableAIChatSearchInputUserSettings(enable: Bool)
-    
+
     /// Updates the user settings state for the AI Chats as Tabs experimental feature
     func enableAIChatFullModeSetting(enable: Bool)
 }

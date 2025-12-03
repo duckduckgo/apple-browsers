@@ -1217,7 +1217,7 @@ extension SettingsViewModel {
         }
 
         // Update if can purchase based on App Store product availability
-        updatedSubscription.canPurchase = subscriptionAuthV1toV2Bridge.canPurchase
+        updatedSubscription.hasAppStoreProductsAvailable = subscriptionAuthV1toV2Bridge.hasAppStoreProductsAvailable
 
         // Update if user is signed in based on the presence of token
         updatedSubscription.isSignedIn = subscriptionAuthV1toV2Bridge.isUserAuthenticated

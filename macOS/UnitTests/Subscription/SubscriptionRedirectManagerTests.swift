@@ -32,7 +32,7 @@ final class SubscriptionRedirectManagerTests: XCTestCase {
 
     var subscriptionManager: SubscriptionManagerMock!
 
-    private var canPurchase: Bool = true
+    private var hasAppStoreProductsAvailable: Bool = true
     private var mockInternalUserStoring: MockInternalUserStoring! = MockInternalUserStoring()
 
     private var sut: SubscriptionRedirectManager!
@@ -63,7 +63,7 @@ final class SubscriptionRedirectManagerTests: XCTestCase {
 
         // WHEN
         subscriptionManager.urlForPurchaseFromRedirect = expectedURL
-        subscriptionManager.canPurchase = true
+        subscriptionManager.hasAppStoreProductsAvailable = true
         let result = sut.redirectURL(for: url)
 
         // THEN
@@ -75,7 +75,7 @@ final class SubscriptionRedirectManagerTests: XCTestCase {
         let url = try XCTUnwrap(URL(string: "https://www.duckduckgo.com/pro?origin=test"))
 
         // WHEN
-        self.canPurchase = false
+        self.hasAppStoreProductsAvailable = false
         let result = sut.redirectURL(for: url)
 
         // THEN
@@ -105,7 +105,7 @@ final class SubscriptionRedirectManagerTests: XCTestCase {
 
         // WHEN
         subscriptionManager.urlForPurchaseFromRedirect = expectedURL
-        subscriptionManager.canPurchase = true
+        subscriptionManager.hasAppStoreProductsAvailable = true
         let result = sut.redirectURL(for: url)
 
         // THEN

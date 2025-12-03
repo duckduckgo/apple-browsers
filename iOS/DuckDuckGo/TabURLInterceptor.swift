@@ -38,17 +38,17 @@ protocol TabURLInterceptor {
 }
 
 final class TabURLInterceptorDefault: TabURLInterceptor {
-    
-    typealias CanPurchaseUpdater = () -> Bool
-    private let canPurchase: CanPurchaseUpdater
+
+    typealias PurchaseEligibilityChecker = () -> Bool
+    private let isPurchaseEligible: PurchaseEligibilityChecker
     private let featureFlagger: FeatureFlagger
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
 
     init(featureFlagger: FeatureFlagger,
-         canPurchase: @escaping CanPurchaseUpdater,
+         purchaseEligibility: @escaping PurchaseEligibilityChecker,
          aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature()
     ) {
-        self.canPurchase = canPurchase
+        self.isPurchaseEligible = purchaseEligibility
         self.featureFlagger = featureFlagger
         self.aichatFullModeFeature = aichatFullModeFeature
     }
@@ -95,7 +95,7 @@ extension TabURLInterceptorDefault {
         switch interceptedURLType {
             // Opens the DuckDuckGo Subscription Purchase page (if user can purchase)
         case .subscription:
-            if canPurchase() {
+            if isPurchaseEligible() {
                 // We pass `interceptedURLComponents` to properly resolve final purchase URL
                 // and to capture `origin` query parameter as it is needed for the Pixel to track subscription attributions
                 var userInfo: [AnyHashable: Any]?

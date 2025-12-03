@@ -22,6 +22,7 @@ import DesignResourcesKitIcons
 import DesignResourcesKit
 import BrowserServicesKit
 import AppKit
+import UIComponents
 
 struct ImportSourcePickerView: View {
     @StateObject private var viewModel: ImportSourcePickerViewModel
@@ -66,21 +67,23 @@ struct ImportSourcePickerView: View {
                         .padding(.top, 20)
                     if viewModel.selectedSource.isSafari {
                         Text(UserText.importDataImportTypeTitleSelected)
-                            .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(Color(designSystemColor: .textTertiary))
+                            .font(.body)
+                            .foregroundColor(Color(designSystemColor: .textSecondary))
                     } else {
                         HoverButtonView {
                             viewModel.showTypeSelectionSheet()
                         } content: {
                             HStack(alignment: .center, spacing: 4) {
                                 Text(viewModel.typeButtonTitle)
-                                    .font(.system(size: 13, weight: .semibold))
+                                    .font(.body)
+                                    .foregroundColor(Color(designSystemColor: .textSecondary))
                                 Image(nsImage: DesignSystemImages.Glyphs.Size16.chevronRight)
                                     .renderingMode(.template)
                                     .resizable()
                                     .frame(width: 10, height: 10)
                                     .rotationEffect(.degrees(90))
                                     .offset(y: 1)
+                                    .foregroundColor(Color(designSystemColor: .textSecondary))
                             }
                         }
                     }
@@ -100,9 +103,19 @@ struct ImportSourcePickerView: View {
                     HoverButtonView {
                         viewModel.toggleExpansion()
                     } content: {
-                        Text(UserText.importChooseSourceShowMoreButtonTitle)
-                            .font(.system(size: 13, weight: .semibold))
-                            .multilineTextAlignment(.center)
+                        HStack(alignment: .center, spacing: 4) {
+                            Text(UserText.importChooseSourceShowMoreButtonTitle)
+                                .font(.body)
+                                .foregroundColor(Color(designSystemColor: .textSecondary))
+                            Image(nsImage: DesignSystemImages.Glyphs.Size16.chevronRight)
+                                .renderingMode(.template)
+                                .resizable()
+                                .frame(width: 10, height: 10)
+                                .rotationEffect(.degrees(90))
+                                .offset(y: 1)
+                                .foregroundColor(Color(designSystemColor: .textSecondary))
+                        }
+                        
                     }
                     .padding(.top, 10)
                 }
@@ -126,8 +139,7 @@ struct ImportSourcePickerView: View {
                     .padding(.horizontal, 12)
                     .padding(.vertical, 14)
                     .frame(width: 380, alignment: .center)
-                    .background((Color(designSystemColor: .surfaceSecondary)))
-                    .cornerRadius(10)
+                    .borderedBackground(cornerRadius: 10)
                 }
                 .buttonStyle(.plain)
             }

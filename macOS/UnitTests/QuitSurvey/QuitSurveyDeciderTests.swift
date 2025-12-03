@@ -266,4 +266,3 @@ private extension DataClearingPreferences {
         )
     }
 }
-

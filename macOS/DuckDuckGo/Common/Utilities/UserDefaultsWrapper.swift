@@ -273,7 +273,7 @@ public struct UserDefaultsWrapper<T> {
 
         // Win-back Offer Debug
         case debugWinBackOfferSimulatedTodayDate = "com.duckduckgo.debug.winBackOfferSimulatedTodayDate"
-        
+
         // First Quit Tracking
         case hasQuitAppBefore = "com.duckduckgo.app.has.quit.before"
     }

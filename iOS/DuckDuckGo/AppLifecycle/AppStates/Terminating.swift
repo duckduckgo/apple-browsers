@@ -167,9 +167,17 @@ struct Terminating: TerminatingHandling {
                                      error: errorToReport,
                                      withAdditionalParameters: additionalParams)
 
-        if case .immediately(let debugMessage) = mode {
+        switch mode {
+        case .immediately(let debugMessage):
             Thread.sleep(forTimeInterval: 1)
             fatalError(debugMessage)
+        case .afterAlert:
+            /// We do nothing here because the app jumps into the `Terminating` state
+            /// directly from `Launching` (something threw there). At this point
+            /// there is no window available. We need to wait for `scene(_:willConnectTo:)`
+            /// to be called - that's where `alertAndTerminate(window:)` will actually run.
+            /// See: `func respond(to event: AppEvent, in terminating: TerminatingHandling)` in `AppStateMachine`.
+            break
         }
     }
 

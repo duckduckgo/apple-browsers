@@ -357,7 +357,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
         XCTAssertFalse(result)
     }
 
-    // MARK: - Tests for canPurchasePublisher
+    // MARK: - Tests for hasAppStoreProductsAvailablePublisher
 
     func testCanPurchasePublisherEmitsValuesFromStorePurchaseManager() async throws {
         // Given
@@ -365,7 +365,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
         var receivedValue: Bool?
 
         // When
-        let cancellable = subscriptionManager.canPurchasePublisher
+        let cancellable = subscriptionManager.hasAppStoreProductsAvailablePublisher
             .sink { value in
                 receivedValue = value
                 expectation.fulfill()
@@ -389,7 +389,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
         var receivedValues: [Bool] = []
 
         // When
-        let cancellable = subscriptionManager.canPurchasePublisher
+        let cancellable = subscriptionManager.hasAppStoreProductsAvailablePublisher
             .sink { value in
                 receivedValues.append(value)
                 if receivedValues.count == 1 {

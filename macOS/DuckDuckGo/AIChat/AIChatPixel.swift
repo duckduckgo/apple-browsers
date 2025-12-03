@@ -320,11 +320,11 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatDeleteHistoryFailed,
                 .aiChatAddressBarActivatedToggleOn,
                 .aiChatAddressBarActivatedToggleOff,
+                .aiChatAddressBarToggleChangedAIChat,
                 .aiChatAddressBarToggleChangedSearch,
                 .aiChatAddressBarAIChatSubmitPrompt,
                 .aiChatAddressBarAIChatSubmitURL,
-                .aiChatSuggestionAIChatSubmitted,
-                .aiChatAddressBarToggleChangedAIChat:
+                .aiChatSuggestionAIChatSubmitted:
             return [.pixelSource]
         }
     }

@@ -540,7 +540,7 @@ class TabViewController: UIViewController {
         self.adClickExternalOpenDetector = adClickExternalOpenDetector
         self.daxDialogsManager = daxDialogsManager
         self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {
-            return AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.canPurchase
+            return AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.isSubscriptionPurchaseEligible
         }
         
         self.aiChatSettings = aiChatSettings

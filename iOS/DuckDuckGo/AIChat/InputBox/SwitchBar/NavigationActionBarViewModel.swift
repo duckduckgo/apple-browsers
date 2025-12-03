@@ -20,6 +20,7 @@
 import Foundation
 import Combine
 import SwiftUI
+import BrowserServicesKit
 
 // MARK: - NavigationActionBarViewModel
 
@@ -33,6 +34,10 @@ final class NavigationActionBarViewModel: ObservableObject {
     @Published var hasUserInteractedWithText: Bool = false
     @Published var isCurrentTextValidURL: Bool = false
     @Published var isKeyboardVisible: Bool = false
+
+    var isUsingFadeOutAnimation: Bool {
+        switchBarHandler.isUsingFadeOutAnimation
+    }
 
     // MARK: - Dependencies
     private let switchBarHandler: SwitchBarHandling

@@ -52,6 +52,7 @@ private struct Handlers {
     // ---
     static let backToSettings = "backToSettings"
     static let getSubscriptionOptions = "getSubscriptionOptions"
+    static let getSubscriptionTierOptions = "getSubscriptionTierOptions"
     static let subscriptionSelected = "subscriptionSelected"
     static let activateSubscription = "activateSubscription"
     static let featureSelected = "featureSelected"
@@ -89,6 +90,7 @@ public struct GetFeatureConfigurationResponse: Encodable {
     let useSubscriptionsAuthV2: Bool
     let usePaidDuckAi: Bool
     let useAlternateStripePaymentFlow: Bool
+    let useGetSubscriptionTierOptions: Bool
 }
 
 public struct AccessTokenValue: Codable {
@@ -625,6 +627,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         case Handlers.getAuthAccessToken: return getAuthAccessToken
         case Handlers.getFeatureConfig: return getFeatureConfig
         case Handlers.getSubscriptionOptions: return getSubscriptionOptions
+        case Handlers.getSubscriptionTierOptions: return getSubscriptionTierOptions
         case Handlers.subscriptionSelected: return subscriptionSelected
         case Handlers.activateSubscription: return activateSubscription
         case Handlers.featureSelected: return featureSelected
@@ -719,7 +722,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         return GetFeatureConfigurationResponse(
             useSubscriptionsAuthV2: true,
             usePaidDuckAi: subscriptionFeatureAvailability.isPaidAIChatEnabled,
-            useAlternateStripePaymentFlow: subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled
+            useAlternateStripePaymentFlow: subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled,
+            useGetSubscriptionTierOptions: subscriptionFeatureAvailability.isTierMessagingEnabled
         )
     }
 
@@ -752,6 +756,19 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             Logger.subscription.error("Failed to obtain subscription options")
             setTransactionError(.failedToGetSubscriptionOptions)
             return SubscriptionOptionsV2.empty
+        }
+    }
+
+    func getSubscriptionTierOptions(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        let subscriptionTierOptions = await subscriptionManager.storePurchaseManager().subscriptionTierOptions(includeProTier: subscriptionFeatureAvailability.isProTierPurchaseEnabled)
+
+        if let subscriptionTierOptions {
+            guard subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed else { return subscriptionTierOptions.withoutPurchaseOptions() }
+            return subscriptionTierOptions
+        } else {
+            Logger.subscription.error("Failed to obtain subscription tier options")
+            setTransactionError(.failedToGetSubscriptionOptions)
+            return SubscriptionTierOptions.empty
         }
     }
 

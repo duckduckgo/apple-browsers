@@ -460,14 +460,14 @@ extension AutoconsentUserScript {
 
         Logger.autoconsent.debug("opt-out successful: \(String(describing: messageData))")
 
-        refreshDashboardState(consentManaged: true, cosmetic: messageData.isCosmetic, optoutFailed: false, selftestFailed: nil)
-        firePixel(pixel: messageData.isCosmetic ? .doneCosmetic : .done)
-
         // Remember the last handled CMP for reload loop detection
         rememberLastHandledCMP(
             cmpName: messageData.cmp,
             isCosmetic: messageData.isCosmetic
         )
+
+        refreshDashboardState(consentManaged: true, cosmetic: messageData.isCosmetic, optoutFailed: false, selftestFailed: nil)
+        firePixel(pixel: messageData.isCosmetic ? .doneCosmetic : .done)
 
         popupManagedSubject.send(messageData)
 

@@ -35,7 +35,7 @@
 "action.title.aiChat.history" = "Klepeti Duck.ai";
 
 /* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "Klepet z umetno inteligenco";
+"action.title.aiChat.new" = "Novi klepet z umetno inteligenco";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Nastavitve Duck.ai";
@@ -89,7 +89,7 @@
 "action.title.newBackgroundTabForUrl" = "Odpri v ozadju";
 
 /* Create New Tab action */
-"action.title.newTabAction" = "Nov";
+"action.title.newTabAction" = "Nov zavihek";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Odpri v novem zavihku";

@@ -35,7 +35,7 @@
 "action.title.aiChat.history" = "Чаты Duck.ai";
 
 /* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "Чат с ИИ";
+"action.title.aiChat.new" = "Запустить AI Chat";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Настройки Duck.ai";

@@ -197,12 +197,15 @@ final class PermissionCenterViewModel: ObservableObject {
             }
             permissionManager.setPermission(.ask, forDomain: domain, permissionType: .popups)
             setTemporaryPopupAllowance?()
+            hasTemporaryPopupAllowance = true
         case .notify:
             permissionManager.setPermission(.ask, forDomain: domain, permissionType: .popups)
             resetTemporaryPopupAllowance?()
+            hasTemporaryPopupAllowance = false
         case .alwaysAllow:
             permissionManager.setPermission(.allow, forDomain: domain, permissionType: .popups)
             resetTemporaryPopupAllowance?()
+            hasTemporaryPopupAllowance = false
         }
     }
 
@@ -234,6 +237,7 @@ final class PermissionCenterViewModel: ObservableObject {
         // Reset temporary popup allowance when removing popup permission
         if permissionType == .popups {
             resetTemporaryPopupAllowance?()
+            hasTemporaryPopupAllowance = false
         }
 
         // Notify that a permission was removed (to update UI like permission button visibility)

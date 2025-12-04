@@ -2200,7 +2200,14 @@ extension NavigationBarViewController: MouseOverButtonDelegate {
 extension NavigationBarViewController: AddressBarViewControllerDelegate {
 
     func resizeAddressBarForHomePage(_ addressBarViewController: AddressBarViewController) {
-        let addressBarSizeClass: AddressBarSizeClass = tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab ? .homePage : .default
+        let addressBarSizeClass: AddressBarSizeClass
+        if isInPopUpWindow {
+            addressBarSizeClass = .popUpWindow
+        } else if tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab {
+            addressBarSizeClass = .homePage
+        } else {
+            addressBarSizeClass = .default
+        }
 
         if theme.addressBarStyleProvider.shouldShowNewSearchIcon {
             resizeAddressBar(for: addressBarSizeClass, animated: false)

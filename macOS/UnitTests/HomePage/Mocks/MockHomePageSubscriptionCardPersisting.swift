@@ -22,6 +22,5 @@ import Foundation
 final class MockHomePageSubscriptionCardPersisting: HomePageSubscriptionCardPersisting {
     var shouldShowSubscriptionSetting: Bool = true
     var userHadSubscription: Bool = false
-    
     func clear() { }
 }

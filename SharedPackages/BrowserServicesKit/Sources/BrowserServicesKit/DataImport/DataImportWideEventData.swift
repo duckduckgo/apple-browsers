@@ -204,7 +204,7 @@ extension WideEventParameter {
 
     public enum DataImportFeature {
         static let source = "feature.data.ext.source"
-        static let latency = "feature.data.ext.overall_latency_ms"
+        static let latency = "feature.data.ext.latency_ms"
 
         static func latency(for type: DataImportWideEventData.ImportType) -> String {
             "feature.data.ext.\(type.rawValue)_importer_latency_ms"

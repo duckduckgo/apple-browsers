@@ -164,7 +164,6 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     private let featureFlagger: DBPFeatureFlagging
 
     private class DebugDBPFeatureFlagger: DBPFeatureFlagging {
-        
         private let featureFlagger: FeatureFlagger
 
         var isRemoteBrokerDeliveryFeatureOn: Bool {

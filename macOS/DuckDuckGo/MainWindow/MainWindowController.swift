@@ -276,7 +276,7 @@ final class MainWindowController: NSWindowController {
         tabBarViewController.view.frame = newParentView.bounds
         tabBarViewController.view.translatesAutoresizingMaskIntoConstraints = false
 
-        let tabBarPaddingTop = theme.addressBarStyleProvider.navigationBarBackgroundTopPadding
+        let tabBarPaddingTop = theme.addressBarStyleProvider.tabBarBackgroundTopPadding
         let constraints = tabBarViewController.view.addConstraints(to: newParentView, [
             .leading: .leading(),
             .trailing: .trailing(),

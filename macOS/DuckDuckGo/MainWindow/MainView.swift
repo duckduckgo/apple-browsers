@@ -91,11 +91,11 @@ final class MainView: NSView {
     }
 
     private func addConstraints() {
-        let navigationBarTopPadding = themeManager.theme.addressBarStyleProvider.navigationBarBackgroundTopPadding
+        let tabBarTopPadding = themeManager.theme.addressBarStyleProvider.tabBarBackgroundTopPadding
 
         bookmarksBarHeightConstraint = bookmarksBarContainerView.heightAnchor.constraint(equalToConstant: Constants.bookmarksBarHeight)
         tabBarHeightConstraint = tabBarContainerView.heightAnchor.constraint(equalToConstant: Constants.tabBarHeight)
-        navigationBarTopConstraint = navigationBarContainerView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.tabBarHeight + navigationBarTopPadding)
+        navigationBarTopConstraint = navigationBarContainerView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.tabBarHeight + tabBarTopPadding)
         webContainerTopConstraint = webContainerView.topAnchor.constraint(equalTo: bannerContainerView.bottomAnchor)
         webContainerTopConstraintToNavigation = webContainerView.topAnchor.constraint(equalTo: navigationBarContainerView.bottomAnchor)
 

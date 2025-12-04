@@ -302,7 +302,7 @@ extension AutoconsentUserScript {
                 optoutFailed: nil,
                 selftestFailed: nil,
                 consentReloadLoop: reloadLoopDetected,
-                consentRule: nil
+                consentRule: lastHandledCMPName // this will be non-null in case of a reload loop
             )
             firePixel(pixel: .acInit)
         }

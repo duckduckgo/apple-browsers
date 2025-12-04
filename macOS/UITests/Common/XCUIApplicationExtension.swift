@@ -17,6 +17,7 @@
 //
 
 import XCTest
+import Utilities
 
 // Enum to represent bookmark modes
 enum BookmarkMode {
@@ -41,6 +42,7 @@ extension XCUIApplication {
         static let resetBookmarksMenuItem = "MainMenu.resetBookmarks"
         static let backButton = "NavigationBarViewController.BackButton"
         static let forwardButton = "NavigationBarViewController.ForwardButton"
+        static let reloadButton = "NavigationBarViewController.RefreshOrStopButton"
         static let downloadsButton = "NavigationBarViewController.downloadsButton"
         static let optionsButton = "NavigationBarViewController.optionsButton"
         static let bookmarksBar = "BookmarksBarViewController.bookmarksBarCollectionView"
@@ -94,16 +96,16 @@ extension XCUIApplication {
         static let fireproofDomainsDoneButton = "FireproofDomainsViewController.doneButton"
         static let fireButton = "TabBarViewController.fireButton"
         static let fakeFireButton = "FireViewController.fakeFireButton"
+        static let homeButton = "NavigationBarViewController.HomeButton"
     }
 
     static func setUp(environment: [String: String]? = nil,
-                      featureFlags: [String: Bool] = ["visualUpdates": true],
+                      featureFlags: [String: Bool] = [:],
                       arguments: [String]? = nil) -> XCUIApplication {
         let app = XCUIApplication()
+        app.launchEnvironment["UITEST_MODE"] = "1"
         if let environment {
             app.launchEnvironment = app.launchEnvironment.merging(environment, uniquingKeysWith: { $1 })
-        } else {
-            app.launchEnvironment["UITEST_MODE"] = "1"
         }
         if !featureFlags.isEmpty {
             app.launchEnvironment["FEATURE_FLAGS"] = featureFlags.map { "\($0)=\($1)" }.joined(separator: " ")
@@ -160,6 +162,9 @@ extension XCUIApplication {
     /// Closes current tab via keyboard shortcut
     func closeCurrentTab() {
         typeKey("w", modifierFlags: .command)
+    }
+    override func closeTab() throws {
+        closeCurrentTab()
     }
 
     /// Activate address bar for input
@@ -688,6 +693,10 @@ extension XCUIApplication {
         buttons[AccessibilityIdentifiers.forwardButton]
     }
 
+    var reloadButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.reloadButton]
+    }
+
     var downloadsButton: XCUIElement {
         buttons[AccessibilityIdentifiers.downloadsButton]
     }
@@ -814,6 +823,32 @@ extension XCUIApplication {
 
     var bookmarkDialogBookmarkFolderDropdown: XCUIElement {
         popUpButtons[XCUIApplication.AccessibilityIdentifiers.addBookmarkFolderDropdown]
+    }
+
+    var debugMenu: XCUIElement {
+        menuBarItems[Utilities.AccessibilityIdentifiers.debugMenu]
+    }
+
+    var homeButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.homeButton]
+    }
+
+    /// Shows the home button in the toolbar (right of reload button)
+    /// Opens the View menu and selects "Show Right of the Reload Button"
+    func showHomeButtonInToolbar() {
+        let viewMenu = menuBars.menuBarItems["View"]
+        XCTAssertTrue(
+            viewMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "View menu item didn't become available in a reasonable timeframe."
+        )
+        viewMenu.click()
+
+        let menuItem = menuItems["Show Right of the Reload Button"].firstMatch
+        XCTAssertTrue(
+            menuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Show Right of the Reload Button menu item didn't become available in a reasonable timeframe."
+        )
+        menuItem.click()
     }
 
 }

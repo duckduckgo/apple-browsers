@@ -25,6 +25,7 @@ import DDGSync
 import Common
 import os.log
 import BrowserServicesKit
+import AttributedMetric
 
 @MainActor
 class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
@@ -325,6 +326,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
         }.sorted(by: { lhs, _ in
             lhs.isThisDevice
         })
+        NotificationCenter.default.post(name: .syncDevicesUpdate, object: self, userInfo: [AttributedMetricNotificationParameter.syncCount.rawValue: devices.count])
     }
 
     private func startPairingIfNecessary() {

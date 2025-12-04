@@ -78,7 +78,7 @@ final class MoreOptionsMenuTests: XCTestCase {
                                                       storePurchaseManager: storePurchaseManager,
                                                       currentEnvironment: SubscriptionEnvironment(serviceEnvironment: .production,
                                                                                                   purchasePlatform: .appStore),
-                                                      canPurchase: false,
+                                                      hasAppStoreProductsAvailable: false,
                                                       subscriptionFeatureMappingCache: SubscriptionFeatureMappingCacheMock())
 
         mockFreemiumDBPFeature = MockFreemiumDBPFeature()
@@ -173,7 +173,7 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     @MainActor
     func testThatSubscriptionIsNotPresentWhenUnauthenticatedAndPurchaseNotAllowedOnAppStore() {
-        subscriptionManager.canPurchase = false
+        subscriptionManager.hasAppStoreProductsAvailable = false
         subscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
 
         setupMoreOptionsMenu()
@@ -184,7 +184,7 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     @MainActor
     func testThatSubscriptionIsPresentWhenUnauthenticatedAndPurchaseAllowedOnAppStore() {
-        subscriptionManager.canPurchase = true
+        subscriptionManager.hasAppStoreProductsAvailable = true
         subscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore)
 
         setupMoreOptionsMenu()
@@ -195,7 +195,7 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     @MainActor
     func testThatSubscriptionIsPresentDespiteCanPurchaseFlagOnStripe() {
-        subscriptionManager.canPurchase = false
+        subscriptionManager.hasAppStoreProductsAvailable = false
         subscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
 
         setupMoreOptionsMenu()
@@ -206,16 +206,14 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     @MainActor
     func testThatMoreOptionMenuHasTheExpectedItemsWhenFreemiumFeatureUnavailable() {
-        mockFeatureFlagger.enabledFeatureFlags = [.historyView]
-
-        subscriptionManager.canPurchase = true
+        subscriptionManager.hasAppStoreProductsAvailable = true
         subscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
         mockFreemiumDBPFeature.featureAvailable = false
 
         setupMoreOptionsMenu()
 
         XCTAssertFalse(subscriptionManager.accountManager.isUserAuthenticated)
-        XCTAssertTrue(subscriptionManager.canPurchase)
+        XCTAssertTrue(subscriptionManager.hasAppStoreProductsAvailable)
 
         XCTAssertEqual(moreOptionsMenu.items[0].title, UserText.sendFeedback)
         XCTAssertTrue(moreOptionsMenu.items[1].isSeparatorItem)
@@ -255,16 +253,14 @@ final class MoreOptionsMenuTests: XCTestCase {
 
     @MainActor
     func testThatMoreOptionMenuHasTheExpectedItemsWhenFreemiumFeatureAvailable() {
-        mockFeatureFlagger.enabledFeatureFlags = [.historyView]
-
-        subscriptionManager.canPurchase = true
+        subscriptionManager.hasAppStoreProductsAvailable = true
         subscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
         mockFreemiumDBPFeature.featureAvailable = true
 
         setupMoreOptionsMenu()
 
         XCTAssertFalse(subscriptionManager.accountManager.isUserAuthenticated)
-        XCTAssertTrue(subscriptionManager.canPurchase)
+        XCTAssertTrue(subscriptionManager.hasAppStoreProductsAvailable)
 
         XCTAssertEqual(moreOptionsMenu.items[0].title, UserText.sendFeedback)
         XCTAssertTrue(moreOptionsMenu.items[1].isSeparatorItem)
@@ -306,7 +302,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     @MainActor
     func testWhenClickingFreemiumDBPOptionThenFreemiumPresenterIsCalledAndNotificationIsPostedAndPixelFired() throws {
         // Given
-        subscriptionManager.canPurchase = true
+        subscriptionManager.hasAppStoreProductsAvailable = true
         subscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
         mockFreemiumDBPFeature.featureAvailable = true
         setupMoreOptionsMenu()
@@ -327,7 +323,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     func testWhenClickingFreemiumDBPOptionAndFreemiumActivatedThenFreemiumPresenterIsCalledAndNotificationIsPostedAndPixelFired() throws {
         // Given
         mockFreemiumDBPUserStateManager.didPostFirstProfileSavedNotification = true
-        subscriptionManager.canPurchase = true
+        subscriptionManager.hasAppStoreProductsAvailable = true
         subscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .stripe)
         mockFreemiumDBPFeature.featureAvailable = true
         setupMoreOptionsMenu()
@@ -348,7 +344,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     func testWhenClickingWinBackOfferPurchasePageThenActionDelegateIsCalled() throws {
         // Given
         mockWinBackOfferVisibilityManager.isOfferAvailable = true
-        subscriptionManager.canPurchase = true
+        subscriptionManager.hasAppStoreProductsAvailable = true
         setupMoreOptionsMenu()
 
         let subscriptionItemIndex = try XCTUnwrap(moreOptionsMenu.indexOfItem(with: #selector(MoreOptionsMenu.openWinBackOfferPurchasePage(_:))))
@@ -580,6 +576,20 @@ final class MoreOptionsMenuTests: XCTestCase {
     @MainActor
     func testWhenTabIsDuckDuckGoThenFireproofSiteItemIsPresentAndDisabled() throws {
         let url = try XCTUnwrap("https://duckduckgo.com".url)
+        let tab = Tab(content: .url(url, source: .link))
+        tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(tabs: [tab]))
+        tabCollectionViewModel.select(at: .unpinned(0), forceChange: true)
+
+        setupMoreOptionsMenu()
+        moreOptionsMenu.update()
+
+        let fireproofingItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.fireproofSite })
+        XCTAssertFalse(fireproofingItem.isEnabled)
+    }
+
+    @MainActor
+    func testWhenTabIsDuckAiThenFireproofSiteItemIsPresentAndDisabled() throws {
+        let url = try XCTUnwrap("https://duck.ai".url)
         let tab = Tab(content: .url(url, source: .link))
         tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(tabs: [tab]))
         tabCollectionViewModel.select(at: .unpinned(0), forceChange: true)
@@ -831,9 +841,8 @@ final class MoreOptionsMenuTests: XCTestCase {
         // Given
         let persistor = MockFreeTrialBadgePersistor(initialCount: 3, cap: 4)
 
-        subscriptionManager.canPurchase = true
+        subscriptionManager.hasAppStoreProductsAvailable = true
         subscriptionManager.isEligibleForFreeTrialResult = true
-        mockFeatureFlagger.enabledFeatureFlags = [.privacyProFreeTrial]
 
         setupMoreOptionsMenu(freeTrialBadgePersistor: persistor)
 
@@ -852,9 +861,8 @@ final class MoreOptionsMenuTests: XCTestCase {
         // Given
         let persistor = MockFreeTrialBadgePersistor(initialCount: 4, cap: 4)
 
-        subscriptionManager.canPurchase = true
+        subscriptionManager.hasAppStoreProductsAvailable = true
         subscriptionManager.isEligibleForFreeTrialResult = true
-        mockFeatureFlagger.enabledFeatureFlags = [.privacyProFreeTrial]
 
         setupMoreOptionsMenu(freeTrialBadgePersistor: persistor)
 
@@ -875,7 +883,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         // Given
         mockWinBackOfferVisibilityManager.isOfferAvailable = true
 
-        subscriptionManager.canPurchase = true
+        subscriptionManager.hasAppStoreProductsAvailable = true
 
         setupMoreOptionsMenu()
 
@@ -894,7 +902,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         // Given
         mockWinBackOfferVisibilityManager.isOfferAvailable = false
 
-        subscriptionManager.canPurchase = true
+        subscriptionManager.hasAppStoreProductsAvailable = true
 
         setupMoreOptionsMenu()
 

@@ -287,7 +287,7 @@
 "sync.with.another.device.footer" = "Dine data er fuldt krypterede, og DuckDuckGo har ikke adgang til krypteringsnøglen.";
 
 /* Message for syncing with another device */
-"sync.with.another.device.message" = "Synkroniser sikkert bogmærker og data til automatisk udfyldning mellem dine enheder.";
+"sync.with.another.device.message" = "Synkroniser sikkert bogmærker og adgangskoder mellem dine enheder.";
 
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Begynd synkronisering";

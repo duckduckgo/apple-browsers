@@ -1901,6 +1901,9 @@ extension PacketTunnelProvider {
         let data = VPNConnectionWideEventData(
             extensionType: .unknown,
             startupMethod: startupMethod == .automaticOnDemand ? .automaticOnDemand : .manualByTheSystem,
+            // User cannot onboard during this flow
+            isSetup: .no,
+            onboardingStatus: .completed,
             contextData: WideEventContextData(name: (startupMethod == .automaticOnDemand ? NetworkProtectionFunnelOrigin.others : NetworkProtectionFunnelOrigin.systemSettings).rawValue)
         )
         self.connectionWideEventData = data
@@ -1931,7 +1934,7 @@ extension PacketTunnelProvider {
             }
 
             let timeoutDate = start.addingTimeInterval(connectionTunnelTimeoutInterval)
-            let reason: VPNConnectionWideEventData.StatusReason = Date() >= timeoutDate ? .timeout : .partialData
+            let reason: VPNConnectionWideEventData.StatusReason = Date() >= timeoutDate ? .timeout : .retried
             wideEvent.completeFlow(data, status: .unknown(reason: reason.rawValue), onComplete: { _, _ in })
         }
     }

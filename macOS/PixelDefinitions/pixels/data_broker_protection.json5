@@ -20,25 +20,7 @@
         "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            {
-                "key": "data_broker",
-                "description": "The URL of the data broker that this opt-out attempt targets",
-                "type": "string"
-            },
-            {
-                "key": "parent",
-                "description": "The parent data broker of the one this opt-out attempt targets",
-                "type": "string"
-            },
-            {
-                "key": "attempt_id",
-                "description": "Client-generated ID of the opt-out attempt",
-                "type": "string"
-            }
-        ]
+        "parameters": ["appVersion", "pixelSource", "dbpDataBroker", "dbpParentBroker", "dbpAttemptId"]
     },
     "m_mac_dbp_optout_stage_email-generate": {
         "description": "Fired at the email generation stage of an opt-out attempt.",
@@ -48,41 +30,13 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "data_broker",
-                "description": "The URL of the data broker that this opt-out attempt targets",
-                "type": "string"
-            },
-            {
-                "key": "parent",
-                "description": "The parent data broker of the one this opt-out attempt targets",
-                "type": "string"
-            },
-            {
-                "key": "broker_version",
-                "description": "The version of the broker JSON file",
-                "type": "string"
-            },
-            {
-                "key": "attempt_id",
-                "description": "Client-generated ID of the opt-out attempt",
-                "type": "string"
-            },
-            {
-                "key": "duration",
-                "description": "Stage duration in milliseconds",
-                "type": "string"
-            },
-            {
-                "key": "tries",
-                "description": "The number of tries it took to complete the stage",
-                "type": "string"
-            },
-            {
-                "key": "action_id",
-                "description": "Predefined identifier of the broker action executed in this stage",
-                "type": "string"
-            }
+            "dbpDataBroker",
+            "dbpParentBroker",
+            "dbpBrokerVersion",
+            "dbpAttemptId",
+            "dbpStageDuration",
+            "dbpStageTries",
+            "dbpActionId"
         ]
     },
     "m_mac_dbp_optout_stage_captcha-parse": {
@@ -93,41 +47,13 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "data_broker",
-                "description": "The URL of the data broker that this opt-out attempt targets",
-                "type": "string"
-            },
-            {
-                "key": "parent",
-                "description": "The parent data broker of the one this opt-out attempt targets",
-                "type": "string"
-            },
-            {
-                "key": "broker_version",
-                "description": "The version of the broker JSON file",
-                "type": "string"
-            },
-            {
-                "key": "attempt_id",
-                "description": "Client-generated ID of the opt-out attempt",
-                "type": "string"
-            },
-            {
-                "key": "duration",
-                "description": "Stage duration in milliseconds",
-                "type": "string"
-            },
-            {
-                "key": "tries",
-                "description": "The number of tries it took to complete the stage",
-                "type": "string"
-            },
-            {
-                "key": "action_id",
-                "description": "Predefined identifier of the broker action executed in this stage",
-                "type": "string"
-            }
+            "dbpDataBroker",
+            "dbpParentBroker",
+            "dbpBrokerVersion",
+            "dbpAttemptId",
+            "dbpStageDuration",
+            "dbpStageTries",
+            "dbpActionId"
         ]
     },
     "m_mac_dbp_optout_stage_captcha-send": {
@@ -138,41 +64,13 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "data_broker",
-                "description": "The URL of the data broker that this opt-out attempt targets",
-                "type": "string"
-            },
-            {
-                "key": "parent",
-                "description": "The parent data broker of the one this opt-out attempt targets",
-                "type": "string"
-            },
-            {
-                "key": "broker_version",
-                "description": "The version of the broker JSON file",
-                "type": "string"
-            },
-            {
-                "key": "attempt_id",
-                "description": "Client-generated ID of the opt-out attempt",
-                "type": "string"
-            },
-            {
-                "key": "duration",
-                "description": "Stage duration in milliseconds",
-                "type": "string"
-            },
-            {
-                "key": "tries",
-                "description": "The number of tries it took to complete the stage",
-                "type": "string"
-            },
-            {
-                "key": "action_id",
-                "description": "Predefined identifier of the broker action executed in this stage",
-                "type": "string"
-            }
+            "dbpDataBroker",
+            "dbpParentBroker",
+            "dbpBrokerVersion",
+            "dbpAttemptId",
+            "dbpStageDuration",
+            "dbpStageTries",
+            "dbpActionId"
         ]
     },
     "m_mac_dbp_optout_stage_captcha-solve": {
@@ -183,41 +81,13 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "data_broker",
-                "description": "The URL of the data broker that this opt-out attempt targets",
-                "type": "string"
-            },
-            {
-                "key": "parent",
-                "description": "The parent data broker of the one this opt-out attempt targets",
-                "type": "string"
-            },
-            {
-                "key": "broker_version",
-                "description": "The version of the broker JSON file",
-                "type": "string"
-            },
-            {
-                "key": "attempt_id",
-                "description": "Client-generated ID of the opt-out attempt",
-                "type": "string"
-            },
-            {
-                "key": "duration",
-                "description": "Stage duration in milliseconds",
-                "type": "string"
-            },
-            {
-                "key": "tries",
-                "description": "The number of tries it took to complete the stage",
-                "type": "string"
-            },
-            {
-                "key": "action_id",
-                "description": "Predefined identifier of the broker action executed in this stage",
-                "type": "string"
-            }
+            "dbpDataBroker",
+            "dbpParentBroker",
+            "dbpBrokerVersion",
+            "dbpAttemptId",
+            "dbpStageDuration",
+            "dbpStageTries",
+            "dbpActionId"
         ]
     },
     "m_mac_dbp_optout_stage_submit": {
@@ -228,41 +98,13 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "data_broker",
-                "description": "The URL of the data broker that this opt-out attempt targets",
-                "type": "string"
-            },
-            {
-                "key": "parent",
-                "description": "The parent data broker of the one this opt-out attempt targets",
-                "type": "string"
-            },
-            {
-                "key": "broker_version",
-                "description": "The version of the broker JSON file",
-                "type": "string"
-            },
-            {
-                "key": "attempt_id",
-                "description": "Client-generated ID of the opt-out attempt",
-                "type": "string"
-            },
-            {
-                "key": "duration",
-                "description": "Stage duration in milliseconds",
-                "type": "string"
-            },
-            {
-                "key": "tries",
-                "description": "The number of tries it took to complete the stage",
-                "type": "string"
-            },
-            {
-                "key": "action_id",
-                "description": "Predefined identifier of the broker action executed in this stage",
-                "type": "string"
-            }
+            "dbpDataBroker",
+            "dbpParentBroker",
+            "dbpBrokerVersion",
+            "dbpAttemptId",
+            "dbpStageDuration",
+            "dbpStageTries",
+            "dbpActionId"
         ]
     },
     "m_mac_dbp_optout_stage_email-receive": {
@@ -273,41 +115,13 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "data_broker",
-                "description": "The URL of the data broker that this opt-out attempt targets",
-                "type": "string"
-            },
-            {
-                "key": "parent",
-                "description": "The parent data broker of the one this opt-out attempt targets",
-                "type": "string"
-            },
-            {
-                "key": "broker_version",
-                "description": "The version of the broker JSON file",
-                "type": "string"
-            },
-            {
-                "key": "attempt_id",
-                "description": "Client-generated ID of the opt-out attempt",
-                "type": "string"
-            },
-            {
-                "key": "duration",
-                "description": "Stage duration in milliseconds",
-                "type": "string"
-            },
-            {
-                "key": "tries",
-                "description": "The number of tries it took to complete the stage",
-                "type": "string"
-            },
-            {
-                "key": "action_id",
-                "description": "Predefined identifier of the broker action executed in this stage",
-                "type": "string"
-            }
+            "dbpDataBroker",
+            "dbpParentBroker",
+            "dbpBrokerVersion",
+            "dbpAttemptId",
+            "dbpStageDuration",
+            "dbpStageTries",
+            "dbpActionId"
         ]
     },
     "m_mac_dbp_optout_stage_email-confirm": {
@@ -318,41 +132,13 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "data_broker",
-                "description": "The URL of the data broker that this opt-out attempt targets",
-                "type": "string"
-            },
-            {
-                "key": "parent",
-                "description": "The parent data broker of the one this opt-out attempt targets",
-                "type": "string"
-            },
-            {
-                "key": "broker_version",
-                "description": "The version of the broker JSON file",
-                "type": "string"
-            },
-            {
-                "key": "attempt_id",
-                "description": "Client-generated ID of the opt-out attempt",
-                "type": "string"
-            },
-            {
-                "key": "duration",
-                "description": "Stage duration in milliseconds",
-                "type": "string"
-            },
-            {
-                "key": "tries",
-                "description": "The number of tries it took to complete the stage",
-                "type": "string"
-            },
-            {
-                "key": "action_id",
-                "description": "Predefined identifier of the broker action executed in this stage",
-                "type": "string"
-            }
+            "dbpDataBroker",
+            "dbpParentBroker",
+            "dbpBrokerVersion",
+            "dbpAttemptId",
+            "dbpStageDuration",
+            "dbpStageTries",
+            "dbpActionId"
         ]
     },
     "m_mac_dbp_optout_stage_validate": {
@@ -363,41 +149,13 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "data_broker",
-                "description": "The URL of the data broker that this opt-out attempt targets",
-                "type": "string"
-            },
-            {
-                "key": "parent",
-                "description": "The parent data broker of the one this opt-out attempt targets",
-                "type": "string"
-            },
-            {
-                "key": "broker_version",
-                "description": "The version of the broker JSON file",
-                "type": "string"
-            },
-            {
-                "key": "attempt_id",
-                "description": "Client-generated ID of the opt-out attempt",
-                "type": "string"
-            },
-            {
-                "key": "duration",
-                "description": "Stage duration in milliseconds",
-                "type": "string"
-            },
-            {
-                "key": "tries",
-                "description": "The number of tries it took to complete the stage",
-                "type": "string"
-            },
-            {
-                "key": "action_id",
-                "description": "Predefined identifier of the broker action executed in this stage",
-                "type": "string"
-            }
+            "dbpDataBroker",
+            "dbpParentBroker",
+            "dbpBrokerVersion",
+            "dbpAttemptId",
+            "dbpStageDuration",
+            "dbpStageTries",
+            "dbpActionId"
         ]
     },
     "m_mac_dbp_optout_stage_fill-form": {
@@ -408,41 +166,13 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "data_broker",
-                "description": "The URL of the data broker that this opt-out attempt targets",
-                "type": "string"
-            },
-            {
-                "key": "parent",
-                "description": "The parent data broker of the one this opt-out attempt targets",
-                "type": "string"
-            },
-            {
-                "key": "broker_version",
-                "description": "The version of the broker JSON file",
-                "type": "string"
-            },
-            {
-                "key": "attempt_id",
-                "description": "Client-generated ID of the opt-out attempt",
-                "type": "string"
-            },
-            {
-                "key": "duration",
-                "description": "Stage duration in milliseconds",
-                "type": "string"
-            },
-            {
-                "key": "tries",
-                "description": "The number of tries it took to complete the stage",
-                "type": "string"
-            },
-            {
-                "key": "action_id",
-                "description": "Predefined identifier of the broker action executed in this stage",
-                "type": "string"
-            }
+            "dbpDataBroker",
+            "dbpParentBroker",
+            "dbpBrokerVersion",
+            "dbpAttemptId",
+            "dbpStageDuration",
+            "dbpStageTries",
+            "dbpActionId"
         ]
     },
     "m_mac_dbp_optout_stage_finish": {
@@ -453,21 +183,9 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "data_broker",
-                "description": "The URL of the data broker that this opt-out attempt targets",
-                "type": "string"
-            },
-            {
-                "key": "parent",
-                "description": "The parent data broker of the one this opt-out attempt targets",
-                "type": "string"
-            },
-            {
-                "key": "attempt_id",
-                "description": "Client-generated ID of the opt-out attempt",
-                "type": "string"
-            },
+            "dbpDataBroker",
+            "dbpParentBroker",
+            "dbpAttemptId",
             {
                 "key": "duration",
                 "description": "Duration of the final stage in milliseconds",
@@ -483,26 +201,10 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "data_broker",
-                "description": "The URL of the data broker that this opt-out attempt targets",
-                "type": "string"
-            },
-            {
-                "key": "parent",
-                "description": "The parent data broker of the one this opt-out attempt targets",
-                "type": "string"
-            },
-            {
-                "key": "attempt_id",
-                "description": "Client-generated ID of the opt-out attempt",
-                "type": "string"
-            },
-            {
-                "key": "duration",
-                "description": "Total duration of the opt-out attempt in milliseconds",
-                "type": "string"
-            },
+            "dbpDataBroker",
+            "dbpParentBroker",
+            "dbpAttemptId",
+            "dbpAttemptDuration",
             {
                 "key": "tries",
                 "description": "The number of tries it took to submit successfully",
@@ -522,7 +224,7 @@
                 "key": "vpn_bypass",
                 "description": "VPN bypass status when the submission succeeded",
                 "type": "string",
-                "enum": ["on", "off", "unsupported"]
+                "enum": ["on", "off", "unsupported", "unknown"]
             }
         ]
     },
@@ -534,26 +236,10 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "data_broker",
-                "description": "The URL of the data broker that this opt-out attempt targets",
-                "type": "string"
-            },
-            {
-                "key": "parent",
-                "description": "The parent data broker of the one this opt-out attempt targets",
-                "type": "string"
-            },
-            {
-                "key": "attempt_id",
-                "description": "Client-generated ID of the opt-out attempt",
-                "type": "string"
-            },
-            {
-                "key": "duration",
-                "description": "Total duration of the opt-out attempt in milliseconds",
-                "type": "string"
-            },
+            "dbpDataBroker",
+            "dbpParentBroker",
+            "dbpAttemptId",
+            "dbpAttemptDuration",
             {
                 "key": "is_parent",
                 "description": "Whether the data broker is a parent (1) or child (0)",
@@ -569,7 +255,7 @@
                 "key": "vpn_bypass",
                 "description": "VPN bypass status when the attempt succeeded",
                 "type": "string",
-                "enum": ["on", "off", "unsupported"]
+                "enum": ["on", "off", "unsupported", "unknown"]
             }
         ]
     },
@@ -581,31 +267,11 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "data_broker",
-                "description": "The URL of the data broker that this opt-out attempt targets",
-                "type": "string"
-            },
-            {
-                "key": "parent",
-                "description": "The parent data broker of the one this opt-out attempt targets",
-                "type": "string"
-            },
-            {
-                "key": "broker_version",
-                "description": "The version of the broker JSON file",
-                "type": "string"
-            },
-            {
-                "key": "attempt_id",
-                "description": "Client-generated ID of the opt-out attempt",
-                "type": "string"
-            },
-            {
-                "key": "duration",
-                "description": "Total duration of the opt-out attempt in milliseconds",
-                "type": "string"
-            },
+            "dbpDataBroker",
+            "dbpParentBroker",
+            "dbpBrokerVersion",
+            "dbpAttemptId",
+            "dbpAttemptDuration",
             {
                 "key": "stage",
                 "description": "The stage where the failure occurred",
@@ -621,11 +287,7 @@
                 "description": "Email pattern used during the attempt, when available",
                 "type": "string"
             },
-            {
-                "key": "action_id",
-                "description": "Predefined identifier of the broker action that failed",
-                "type": "string"
-            },
+            "dbpActionId",
             {
                 "key": "action_type",
                 "description": "Type of action that failed",
@@ -639,7 +301,8 @@
                     "emailConfirmation",
                     "getCaptchaInfo",
                     "solveCaptcha",
-                    "condition"
+                    "condition",
+                    "unknown"
                 ]
             },
             {
@@ -651,7 +314,7 @@
                 "key": "vpn_bypass",
                 "description": "VPN bypass status when the failure happened",
                 "type": "string",
-                "enum": ["on", "off", "unsupported"]
+                "enum": ["on", "off", "unsupported", "unknown"]
             }
         ]
     },
@@ -660,30 +323,14 @@
         "owners": ["quanganhdo"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            {
-                "key": "data_broker",
-                "description": "The URL of the data broker the opt out was acting on",
-                "type": "string"
-            }
-        ]
+        "parameters": ["appVersion", "pixelSource", "dbpDataBroker"]
     },
     "m_mac_dbp_optoutjob_at-42-days_unconfirmed": {
         "description": "Fired when a successfully submitted opt-out reaches 42 days since submission and remains unconfirmed (record not removed).",
         "owners": ["quanganhdo"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            {
-                "key": "data_broker",
-                "description": "The URL of the data broker the opt out was acting on",
-                "type": "string"
-            }
-        ]
+        "parameters": ["appVersion", "pixelSource", "dbpDataBroker"]
     },
     "m_mac_dbp_optout_stage_condition-found": {
         "description": "Fired at the condition-found stage of an opt-out attempt.",
@@ -693,41 +340,13 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "tries",
-                "description": "The number of tries it took for the action to complete",
-                "type": "integer"
-            },
-            {
-                "key": "data_broker",
-                "description": "The URL of the data broker that this action was operating on",
-                "type": "string"
-            },
-            {
-                "key": "parent",
-                "description": "The parent data broker of the one this action was operating on",
-                "type": "string"
-            },
-            {
-                "key": "broker_version",
-                "description": "The version of the broker JSON file",
-                "type": "string"
-            },
-            {
-                "key": "attempt_id",
-                "description": "The ID of the opt out attempt",
-                "type": "string"
-            },
-            {
-                "key": "action_id",
-                "description": "The ID of the action, to disambiguate between multiple actions in the same opt out attempt",
-                "type": "string"
-            },
-            {
-                "key": "duration",
-                "description": "The duration of the action execution in milliseconds",
-                "type": "number"
-            }
+            "dbpActionTries",
+            "dbpDataBroker",
+            "dbpParentBroker",
+            "dbpBrokerVersion",
+            "dbpAttemptId",
+            "dbpActionId",
+            "dbpActionDuration"
         ]
     },
     "m_mac_dbp_optout_stage_condition-not-found": {
@@ -744,40 +363,71 @@
                 "type": "string",
                 "enum": ["true", "false"]
             },
+            "dbpActionTries",
+            "dbpDataBroker",
+            "dbpParentBroker",
+            "dbpBrokerVersion",
+            "dbpAttemptId",
+            "dbpActionId",
+            "dbpActionDuration"
+        ]
+    },
+    "m_mac_dbp_service_generate-email_http-error": {
+        "description": "Fired when the backend email generation request returns a non-2xx status code",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
             {
-                "key": "tries",
-                "description": "The number of tries it took for the action to complete",
-                "type": "integer"
+                "key": "environment",
+                "description": "DBP backend environment",
+                "type": "string",
+                "enum": ["production", "staging"]
+            },
+            {
+                "key": "http_code",
+                "description": "HTTP status code from backend email generation",
+                "type": "string"
+            }
+        ]
+    },
+    "m_mac_dbp_service_empty-auth-token": {
+        "description": "Fired when a backend DBP service call is attempted without an auth token",
+        "owners": ["quanganhdo"],
+        "triggers": ["other"],
+        "suffixes": ["legacy_daily_count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "environment",
+                "description": "DBP backend environment",
+                "type": "string",
+                "enum": ["production", "staging"]
+            },
+            {
+                "key": "backend_service_callsite",
+                "description": "Service call site that attempted to use the auth token",
+                "type": "string",
+                "enum": [
+                    "extractEmailLink",
+                    "getEmail",
+                    "submitCaptchaInformationRequest",
+                    "submitCaptchaToBeResolvedRequest",
+                    "fetchEmailData",
+                    "deleteEmailData"
+                ]
             },
             {
                 "key": "data_broker",
-                "description": "The URL of the data broker that this action was operating on",
-                "type": "string"
-            },
-            {
-                "key": "parent",
-                "description": "The parent data broker of the one this action was operating on",
+                "description": "The name of the data broker that this action was operating on (unknown when not available)",
                 "type": "string"
             },
             {
                 "key": "broker_version",
-                "description": "The version of the broker JSON file",
+                "description": "The version of the broker JSON file (unknown when not available)",
                 "type": "string"
-            },
-            {
-                "key": "attempt_id",
-                "description": "The ID of the opt out attempt",
-                "type": "string"
-            },
-            {
-                "key": "action_id",
-                "description": "The ID of the action, to disambiguate between multiple actions in the same opt out attempt",
-                "type": "string"
-            },
-            {
-                "key": "duration",
-                "description": "The duration of the action execution in milliseconds",
-                "type": "number"
             }
         ]
     },
@@ -789,16 +439,8 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "data_broker",
-                "description": "The URL of the data broker that this action was operating on",
-                "type": "string"
-            },
-            {
-                "key": "broker_version",
-                "description": "The version of the broker JSON file",
-                "type": "string"
-            },
+            "dbpDataBroker",
+            "dbpBrokerVersion",
             {
                 "key": "link_age_ms",
                 "description": "Time from when the link is received on BE till it's retrieved on the client (in milliseconds)",
@@ -814,16 +456,8 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "data_broker",
-                "description": "The URL of the data broker that this action was operating on",
-                "type": "string"
-            },
-            {
-                "key": "broker_version",
-                "description": "The version of the broker JSON file",
-                "type": "string"
-            },
+            "dbpDataBroker",
+            "dbpBrokerVersion",
             {
                 "key": "status",
                 "description": "Backend item status",
@@ -846,36 +480,12 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "data_broker",
-                "description": "The URL of the data broker that this action was operating on",
-                "type": "string"
-            },
-            {
-                "key": "broker_version",
-                "description": "The version of the broker JSON file",
-                "type": "string"
-            },
-            {
-                "key": "attempt_id",
-                "description": "The ID of the opt out attempt",
-                "type": "string"
-            },
-            {
-                "key": "action_id",
-                "description": "The ID of the action, to disambiguate between multiple actions in the same opt out attempt",
-                "type": "string"
-            },
-            {
-                "key": "duration",
-                "description": "The duration of the action execution in milliseconds",
-                "type": "number"
-            },
-            {
-                "key": "tries",
-                "description": "The number of tries it took for the action to complete",
-                "type": "integer"
-            }
+            "dbpDataBroker",
+            "dbpBrokerVersion",
+            "dbpAttemptId",
+            "dbpActionId",
+            "dbpActionDuration",
+            "dbpActionTries"
         ]
     },
     "m_mac_dbp_service_email-confirmation_attempt-start": {
@@ -886,31 +496,11 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "data_broker",
-                "description": "The URL of the data broker that this action was operating on",
-                "type": "string"
-            },
-            {
-                "key": "broker_version",
-                "description": "The version of the broker JSON file",
-                "type": "string"
-            },
-            {
-                "key": "attempt_number",
-                "description": "The confirmation attempt number (1..3)",
-                "type": "integer"
-            },
-            {
-                "key": "attempt_id",
-                "description": "The ID of the opt out attempt",
-                "type": "string"
-            },
-            {
-                "key": "action_id",
-                "description": "The ID of the action, to disambiguate between multiple actions in the same opt out attempt",
-                "type": "string"
-            }
+            "dbpDataBroker",
+            "dbpBrokerVersion",
+            "dbpConfirmationAttemptNumber",
+            "dbpAttemptId",
+            "dbpActionId"
         ]
     },
     "m_mac_dbp_service_email-confirmation_attempt-success": {
@@ -921,36 +511,12 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "data_broker",
-                "description": "The URL of the data broker that this action was operating on",
-                "type": "string"
-            },
-            {
-                "key": "broker_version",
-                "description": "The version of the broker JSON file",
-                "type": "string"
-            },
-            {
-                "key": "attempt_number",
-                "description": "The confirmation attempt number (1..3)",
-                "type": "integer"
-            },
-            {
-                "key": "duration",
-                "description": "The duration of the attempt in milliseconds",
-                "type": "number"
-            },
-            {
-                "key": "attempt_id",
-                "description": "The ID of the opt out attempt",
-                "type": "string"
-            },
-            {
-                "key": "action_id",
-                "description": "The ID of the action, to disambiguate between multiple actions in the same opt out attempt",
-                "type": "string"
-            }
+            "dbpDataBroker",
+            "dbpBrokerVersion",
+            "dbpConfirmationAttemptNumber",
+            "dbpAttemptDuration",
+            "dbpAttemptId",
+            "dbpActionId"
         ]
     },
     "m_mac_dbp_service_email-confirmation_attempt-failure": {
@@ -961,36 +527,12 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "data_broker",
-                "description": "The URL of the data broker that this action was operating on",
-                "type": "string"
-            },
-            {
-                "key": "broker_version",
-                "description": "The version of the broker JSON file",
-                "type": "string"
-            },
-            {
-                "key": "attempt_number",
-                "description": "The confirmation attempt number (1..3)",
-                "type": "integer"
-            },
-            {
-                "key": "duration",
-                "description": "The duration of the attempt in milliseconds",
-                "type": "number"
-            },
-            {
-                "key": "attempt_id",
-                "description": "The ID of the opt out attempt",
-                "type": "string"
-            },
-            {
-                "key": "action_id",
-                "description": "The ID of the action, to disambiguate between multiple actions in the same opt out attempt",
-                "type": "string"
-            }
+            "dbpDataBroker",
+            "dbpBrokerVersion",
+            "dbpConfirmationAttemptNumber",
+            "dbpAttemptDuration",
+            "dbpAttemptId",
+            "dbpActionId"
         ]
     },
     "m_mac_dbp_service_email-confirmation_max-retries-exceeded": {
@@ -998,30 +540,7 @@
         "owners": ["quanganhdo"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": [
-            "appVersion",
-            "pixelSource",
-            {
-                "key": "data_broker",
-                "description": "The URL of the data broker that this action was operating on",
-                "type": "string"
-            },
-            {
-                "key": "broker_version",
-                "description": "The version of the broker JSON file",
-                "type": "string"
-            },
-            {
-                "key": "attempt_id",
-                "description": "The ID of the opt out attempt",
-                "type": "string"
-            },
-            {
-                "key": "action_id",
-                "description": "The ID of the action, to disambiguate between multiple actions in the same opt out attempt",
-                "type": "string"
-            }
-        ]
+        "parameters": ["appVersion", "pixelSource", "dbpDataBroker", "dbpBrokerVersion", "dbpAttemptId", "dbpActionId"]
     },
     "m_mac_dbp_service_email-confirmation_job-success": {
         "description": "Fired when the email confirmation job finishes successfully (after any number of attempts).",
@@ -1037,16 +556,8 @@
                 "type": "string",
                 "enum": ["true", "false"]
             },
-            {
-                "key": "data_broker",
-                "description": "The URL of the data broker that this action was operating on",
-                "type": "string"
-            },
-            {
-                "key": "broker_version",
-                "description": "The version of the broker JSON file",
-                "type": "string"
-            }
+            "dbpDataBroker",
+            "dbpBrokerVersion"
         ]
     },
     "m_mac_dbp_update_databrokers_success": {
@@ -1102,6 +613,7 @@
             "wideEventType",
             "wideEventSampleRate",
             "wideEventFeatureStatus",
+            "wideEventFeatureStatusReason",
             "wideEventErrorDomain",
             "wideEventErrorCode",
             "wideEventUnderlyingErrorDomain",
@@ -1115,13 +627,9 @@
             {
                 "key": "feature.data.ext.data_broker",
                 "type": "string",
-                "description": "The URL of the data broker associated with this opt-out submission"
+                "description": "The name of the data broker associated with this opt-out submission"
             },
-            {
-                "key": "feature.data.ext.data_broker_version",
-                "type": "string",
-                "description": "Version of the broker JSON file"
-            },
+            "dbpFeatureDataBrokerVersion",
             {
                 "key": "feature.data.ext.submission_latency_ms",
                 "type": "string",
@@ -1142,6 +650,7 @@
             "wideEventType",
             "wideEventSampleRate",
             "wideEventFeatureStatus",
+            "wideEventFeatureStatusReason",
             "wideEventErrorDomain",
             "wideEventErrorCode",
             "wideEventUnderlyingErrorDomain",
@@ -1155,13 +664,9 @@
             {
                 "key": "feature.data.ext.data_broker",
                 "type": "string",
-                "description": "The URL of the data broker associated with this scan"
+                "description": "The name of the data broker associated with this scan"
             },
-            {
-                "key": "feature.data.ext.data_broker_version",
-                "type": "string",
-                "description": "Version of the broker JSON file"
-            },
+            "dbpFeatureDataBrokerVersion",
             {
                 "key": "feature.data.ext.scan.attempt_type",
                 "type": "string",
@@ -1193,6 +698,7 @@
             "wideEventType",
             "wideEventSampleRate",
             "wideEventFeatureStatus",
+            "wideEventFeatureStatusReason",
             "wideEventErrorDomain",
             "wideEventErrorCode",
             "wideEventUnderlyingErrorDomain",
@@ -1206,13 +712,9 @@
             {
                 "key": "feature.data.ext.data_broker",
                 "type": "string",
-                "description": "The URL of the data broker associated with this confirmation flow"
+                "description": "The name of the data broker associated with this confirmation flow"
             },
-            {
-                "key": "feature.data.ext.data_broker_version",
-                "type": "string",
-                "description": "Version of the broker JSON file"
-            },
+            "dbpFeatureDataBrokerVersion",
             {
                 "key": "feature.data.ext.confirmation_latency_ms",
                 "type": "string",
@@ -1228,21 +730,12 @@
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "data_broker",
-                "description": "The URL of the data broker the scan was operating on",
-                "type": "string"
-            },
-            {
-                "key": "broker_version",
-                "description": "The version of the broker JSON file",
-                "type": "string"
-            },
+            "dbpDataBroker",
+            "dbpBrokerVersion",
             {
                 "key": "duration",
                 "description": "Total duration of the scan in milliseconds",
-                "type": "string",
-                "pattern": "^[0-9]+(\\.[0-9]+)?$"
+                "type": "number"
             },
             {
                 "key": "error_category",
@@ -1270,18 +763,10 @@
                 "key": "vpn_bypass",
                 "description": "VPN bypass status when the error occurred",
                 "type": "string",
-                "enum": ["on", "off", "unsupported"]
+                "enum": ["on", "off", "unsupported", "unknown"]
             },
-            {
-                "key": "parent",
-                "description": "The parent data broker of the one this action was operating on",
-                "type": "string"
-            },
-            {
-                "key": "action_id",
-                "description": "Identifier of the action that was executing when the error occurred",
-                "type": "string"
-            },
+            "dbpParentBroker",
+            "dbpActionId",
             {
                 "key": "action_type",
                 "description": "Type of action that produced the error",
@@ -1295,7 +780,8 @@
                     "emailConfirmation",
                     "getCaptchaInfo",
                     "solveCaptcha",
-                    "condition"
+                    "condition",
+                    "unknown"
                 ]
             }
         ]
@@ -1304,20 +790,14 @@
         "description": "Fired when a scan or opt-out action fails while processing a data broker.",
         "owners": ["quanganhdo"],
         "triggers": ["other"],
-        "suffixes": [],
+        "suffixes": ["legacy_daily_count", "count"],
         "parameters": [
             "appVersion",
             "pixelSource",
-            {
-                "key": "data_broker",
-                "description": "The URL of the data broker that this action was operating on",
-                "type": "string"
-            },
-            {
-                "key": "broker_version",
-                "description": "The version of the broker JSON file",
-                "type": "string"
-            },
+            "dbpDataBroker",
+            "dbpBrokerVersion",
+            "errorDomain",
+            "errorCode",
             {
                 "key": "actionID",
                 "description": "The unique identifier of the action that failed",
@@ -1334,11 +814,7 @@
                 "type": "string",
                 "enum": ["scan", "optOut", "unknown"]
             },
-            {
-                "key": "parent",
-                "description": "The parent data broker of the one this action was operating on",
-                "type": "string"
-            }
+            "dbpParentBroker"
         ]
     }
 }

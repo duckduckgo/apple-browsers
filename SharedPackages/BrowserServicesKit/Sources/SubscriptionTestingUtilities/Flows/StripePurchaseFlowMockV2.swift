@@ -21,15 +21,25 @@ import Subscription
 
 public final class StripePurchaseFlowMockV2: StripePurchaseFlowV2 {
     public var subscriptionOptionsResult: Result<SubscriptionOptionsV2, StripePurchaseFlowError>
+    public var subscriptionTierOptionsResult: Result<SubscriptionTierOptions, StripePurchaseFlowError>?
     public var prepareSubscriptionPurchaseResult: Result<PrepareResult, StripePurchaseFlowError>
+    public var subscriptionTierOptionsIncludeProTierCalled: Bool?
 
-    public init(subscriptionOptionsResult: Result<SubscriptionOptionsV2, StripePurchaseFlowError>, prepareSubscriptionPurchaseResult: Result<PrepareResult, StripePurchaseFlowError>) {
+    public init(subscriptionOptionsResult: Result<SubscriptionOptionsV2, StripePurchaseFlowError>,
+                prepareSubscriptionPurchaseResult: Result<PrepareResult, StripePurchaseFlowError>,
+                subscriptionTierOptionsResult: Result<SubscriptionTierOptions, StripePurchaseFlowError>? = nil) {
         self.subscriptionOptionsResult = subscriptionOptionsResult
         self.prepareSubscriptionPurchaseResult = prepareSubscriptionPurchaseResult
+        self.subscriptionTierOptionsResult = subscriptionTierOptionsResult
     }
 
     public func subscriptionOptions() async -> Result<SubscriptionOptionsV2, StripePurchaseFlowError> {
         subscriptionOptionsResult
+    }
+
+    public func subscriptionTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, StripePurchaseFlowError> {
+        subscriptionTierOptionsIncludeProTierCalled = includeProTier
+        return subscriptionTierOptionsResult ?? .failure(.noProductsFound)
     }
 
     public func prepareSubscriptionPurchase(emailAccessToken: String?) async -> Result<PrepareResult, StripePurchaseFlowError> {

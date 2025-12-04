@@ -157,13 +157,73 @@ Zablokovali jsme je.
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Zablokován %1$d tracker</string>
+			<string>Zablokovali jsme načtení %1$d trackeru</string>
 			<key>few</key>
-			<string>Zablokovány %1$d trackery</string>
+			<string>Zablokovali jsme načtení %1$d trackerů</string>
 			<key>many</key>
-			<string>Zablokováno %1$d trackerů</string>
+			<string>Zablokovali jsme načtení %1$d trackerů</string>
 			<key>other</key>
-			<string>Zablokováno %1$d trackerů</string>
+			<string>Zablokovali jsme načtení %1$d trackerů</string>
+		</dict>
+	</dict>
+	<key>omnibar.notification.trackers-blocked</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d Tracker</string>
+			<key>few</key>
+			<string>%1$d Trackery</string>
+			<key>many</key>
+			<string>%1$d Trackery</string>
+			<key>other</key>
+			<string>%1$d Trackery</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.other.domains.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Načtena %1$d další doména</string>
+			<key>few</key>
+			<string>Načteny %1$d další domény</string>
+			<key>many</key>
+			<string>Načteno %1$d další domény</string>
+			<key>other</key>
+			<string>Načteno %1$d dalších domén</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.first.party.trackers.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d tracker vlastněný touhle stránkou (načtený)</string>
+			<key>few</key>
+			<string>%1$d trackery vlastněné touhle stránkou (načtené)</string>
+			<key>many</key>
+			<string>%1$d trackerů vlastněných touhle stránkou (načtených)</string>
+			<key>other</key>
+			<string>%1$d trackerů vlastněných touhle stránkou (načtených)</string>
 		</dict>
 	</dict>
 	<key>number.of.tabs</key>

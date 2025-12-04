@@ -121,9 +121,57 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Αποκλείστηκε %1$d παρακολούθηση</string>
+			<string>%1$d εφαρμογή παρακολούθησης αποκλείστηκε από τη φόρτωση</string>
 			<key>other</key>
-			<string>Αποκλείστηκαν %1$d παρακολουθήσεις</string>
+			<string>%1$d εφαρμογές παρακολούθησης αποκλείστηκαν από τη φόρτωση</string>
+		</dict>
+	</dict>
+	<key>omnibar.notification.trackers-blocked</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d Ιχνηλάτης</string>
+			<key>other</key>
+			<string>%1$d Ιχνηλάτης</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.other.domains.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d ακόμη τομέας φορτώθηκε</string>
+			<key>other</key>
+			<string>%1$d ακόμη τομείς φορτώθηκαν</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.first.party.trackers.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d εφαρμογή παρακολούθησης που ανήκει σε αυτόν τον ιστότοπο (φορτώθηκε)</string>
+			<key>other</key>
+			<string>%1$d εφαρμογές παρακολούθησης που ανήκουν σε αυτόν τον ιστότοπο (φορτώθηκε)</string>
 		</dict>
 	</dict>
 	<key>number.of.tabs</key>

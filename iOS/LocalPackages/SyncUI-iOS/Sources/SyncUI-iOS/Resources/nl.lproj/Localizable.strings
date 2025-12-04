@@ -287,7 +287,7 @@
 "sync.with.another.device.footer" = "Je gegevens zijn volledig versleuteld en DuckDuckGo heeft geen toegang tot de versleutelingscode.";
 
 /* Message for syncing with another device */
-"sync.with.another.device.message" = "Synchroniseer bladwijzers en gegevens voor automatisch aanvullen veilig tussen je apparaten.";
+"sync.with.another.device.message" = "Synchroniseer bladwijzers en wachtwoorden veilig tussen je apparaten.";
 
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Synchroniseren starten";

@@ -116,6 +116,8 @@ extension SharedColorPaletteDefinition {
             return containerFillSecondary
         case .containerFillTertiary:
             return containerFillTertiary
+        case .containerBorderTertiary:
+            return containerBorderTertiary
 
         /// Controls Colors
         case .controlsFillPrimary:
@@ -124,6 +126,10 @@ extension SharedColorPaletteDefinition {
             return controlsFillSecondary
         case .controlsFillTertiary:
             return controlsFillTertiary
+        case .controlsRaisedBackdrop:
+            return FigmaColorPalette.controlsRaisedBackdrop
+        case .controlsRaisedFillPrimary:
+            return FigmaColorPalette.controlsRaisedFillPrimary
 
         /// Destructive Colors
         case .destructiveContentPrimary:
@@ -159,17 +165,15 @@ extension SharedColorPaletteDefinition {
         case .iconsTertiary:
             return iconsTertiary
 
-        /// Placeholder
-        case .placeholderShade12:
-            // Non-specialized, we'll always use the default
-            return FigmaColorPalette.placeholderShade12
-
         /// System
         case .lines:
             return lines
-        case .spinner:
+        case .spinnerStart:
             // Non-specialized, we'll always use the default
-            return FigmaColorPalette.spinner
+            return FigmaColorPalette.spinnerStart
+        case .spinnerFinal:
+            // Non-specialized, we'll always use the default
+            return FigmaColorPalette.spinnerFinal
 
         /// Shadow Colors
         case .shadowPrimary:

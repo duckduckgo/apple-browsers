@@ -46,9 +46,7 @@ struct SettingsAppearanceView: View {
     func navigateToSubPageIfNeeded() {
         deepLinkTarget = viewModel.deepLinkTarget
 
-        // This just needs to be longer than the deep link logic in the View Model which uses a timer 🙄
-        //  otherwise this immediately gets popped.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) {
+        DispatchQueue.main.async {
             switch deepLinkTarget {
             case .customizeToolbarButton:
                 showToolbarSettings = true
@@ -85,6 +83,24 @@ struct SettingsAppearanceView: View {
                     }
             } else {
                 legacySettings()
+            }
+
+            if viewModel.browsingMenuSheetCapability.isAvailable {
+                Section {
+                    SettingsCellView(label: "Sheet menu presentation",
+                                     accessory: .toggle(isOn: viewModel.showMenuInSheetBinding))
+
+                    if viewModel.isInternalUser {
+                        SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,
+                                               label: "Menu variant",
+                                               options: BrowsingMenuClusteringVariant.allCases,
+                                               selectedOption: viewModel.sheetBrowsingMenuVariantBinding)
+                    }
+                } footer: {
+                    if viewModel.isInternalUser {
+                        Text(verbatim: "This setting is experimental and available only for internal users")
+                    }
+                }
             }
 
         }

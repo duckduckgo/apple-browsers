@@ -79,6 +79,9 @@ public struct AIChatNativeConfigValues: Codable {
     public let supportsFullChatRestoration: Bool
     public let supportsPageContext: Bool
     public let supportsStandaloneMigration: Bool
+    public let supportsAIChatFullMode: Bool
+    public let appVersion: String
+    public let supportsHomePageEntryPoint: Bool
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
@@ -90,7 +93,10 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsNativeChatInput: false,
                                         supportsURLChatIDRestoration: false,
                                         supportsFullChatRestoration: false,
-                                        supportsPageContext: false)
+                                        supportsPageContext: false,
+                                        supportsAIChatFullMode: false,
+                                        appVersion: "",
+                                        supportsHomePageEntryPoint: true)
 #endif
 
 #if os(macOS)
@@ -102,7 +108,10 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsNativeChatInput: false,
                                         supportsURLChatIDRestoration: false,
                                         supportsFullChatRestoration: false,
-                                        supportsPageContext: false)
+                                        supportsPageContext: false,
+                                        supportsAIChatFullMode: false,
+                                        appVersion: "",
+                                        supportsHomePageEntryPoint: true)
 #endif
     }
 
@@ -114,7 +123,10 @@ public struct AIChatNativeConfigValues: Codable {
                 supportsNativeChatInput: Bool,
                 supportsURLChatIDRestoration: Bool,
                 supportsFullChatRestoration: Bool,
-                supportsPageContext: Bool) {
+                supportsPageContext: Bool,
+                supportsAIChatFullMode: Bool,
+                appVersion: String,
+                supportsHomePageEntryPoint: Bool = true) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = Platform.name
         self.supportsClosingAIChat = supportsClosingAIChat
@@ -125,6 +137,9 @@ public struct AIChatNativeConfigValues: Codable {
         self.supportsFullChatRestoration = supportsFullChatRestoration
         self.supportsPageContext = supportsPageContext
         self.supportsStandaloneMigration = supportsStandaloneMigration
+        self.supportsAIChatFullMode = supportsAIChatFullMode
+        self.appVersion = appVersion
+        self.supportsHomePageEntryPoint = supportsHomePageEntryPoint
     }
 }
 

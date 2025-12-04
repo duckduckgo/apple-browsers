@@ -49,6 +49,13 @@ class PinnedTabsTests: UITestCase {
         assertPinnedTabsRestoredState()
     }
 
+    func testPinnedStateCanBeEffectivelySetAndUnset() {
+        app.openNewTab()
+        pinCurrentPage()
+        unpinCurrentPage()
+        assertCurrentPageCanBePinned()
+    }
+
     func testSettingsCanBePinned() {
         app.openSettings()
         pinCurrentPage()
@@ -77,6 +84,40 @@ class PinnedTabsTests: UITestCase {
         app.openHelp()
         app.openReleaseNotes()
         assertCurrentPageCannotBePinned()
+    }
+
+    func testUnpinnedTabCanBeDraggedIntoNewWindowAndMapsIntoAnUnpinnedTab() {
+        app.closeAllWindows()
+        app.openNewWindow()
+
+        app.openNewTab()
+        app.openNewTab()
+        pinCurrentPage()
+
+        dragLastUnpinnedTabAboveWindow()
+        waitForSecondWindow()
+
+        bringForemostWindowToForeground()
+        assertCurrentPageCanBePinned()
+    }
+
+    func testPinnedTabCannotBeDraggedIntoNewWindow() {
+        app.closeAllWindows()
+        app.openNewWindow()
+
+        app.openNewTab()
+        pinCurrentPage()
+
+        dragFirstPinnedTabAboveWindow()
+        assertSingleWindowScenario()
+    }
+
+    func testDraggingOnlyTabAboveWindowDoesNotResultInNewWindowBeingCreated() {
+        app.closeAllWindows()
+        app.openNewWindow()
+
+        dragLastUnpinnedTabAboveWindow()
+        assertSingleWindowScenario()
     }
 
     // MARK: - Utilities
@@ -117,6 +158,10 @@ class PinnedTabsTests: UITestCase {
 
     private func pinCurrentPage() {
         app.menuItems["Pin Tab"].tap()
+    }
+
+    private func unpinCurrentPage() {
+        app.menuItems["Unpin Tab"].tap()
     }
 
     private func assertsPageTwoIsPinned() {
@@ -196,6 +241,12 @@ class PinnedTabsTests: UITestCase {
         )
     }
 
+    private func assertCurrentPageCanBePinned() {
+        XCTAssertTrue(
+            app.menuItems["Pin Tab"].waitForExistence(timeout: UITests.Timeouts.elementExistence)
+        )
+    }
+
     private func assertCurrentPageCannotBePinned() {
         let pinItem = app.menuItems["Pin Tab"]
 
@@ -208,5 +259,45 @@ class PinnedTabsTests: UITestCase {
 
     private func waitForSite(pageTitle: String) {
         XCTAssertTrue(app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence))
+    }
+
+    private func waitForSecondWindow() {
+        XCTAssertTrue(app.windows.element(boundBy: 1).waitForExistence(timeout: UITests.Timeouts.elementExistence))
+        XCTAssertEqual(app.windows.count, 2)
+    }
+
+    private func assertSingleWindowScenario() {
+        XCTAssertEqual(app.windows.count, 1)
+    }
+
+    private func bringForemostWindowToForeground() {
+        app.windows.element(boundBy: 0).click()
+    }
+
+    private func dragFirstPinnedTabAboveWindow() {
+        let pinnedTabs = app.tabGroups.matching(identifier: "Pinned Tabs").radioButtons
+        let firstPinnedTab = pinnedTabs.element(boundBy: .zero)
+        XCTAssertTrue(firstPinnedTab.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
+        dragTabElementAboveWindow(firstPinnedTab)
+    }
+
+    private func dragLastUnpinnedTabAboveWindow() {
+        let unpinnedTabs = app.tabGroups.matching(identifier: "Tabs").radioButtons
+        let lastUnpinnedTab = unpinnedTabs.element(boundBy: unpinnedTabs.count - 1)
+        XCTAssertTrue(lastUnpinnedTab.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
+        dragTabElementAboveWindow(lastUnpinnedTab)
+    }
+
+    private func dragTabElementAboveWindow(_ tabElement: XCUIElement) {
+        let frame = tabElement.frame
+        let tabCenterCoordinate = tabElement
+            .coordinate(withNormalizedOffset: .zero)
+            .withOffset(CGVector(dx: frame.width * 0.5, dy: frame.height * 0.5))
+
+        let aboveWindow = tabCenterCoordinate.withOffset(CGVector(dx: 0, dy: -100))
+
+        tabCenterCoordinate.press(forDuration: 0.5, thenDragTo: aboveWindow)
     }
 }

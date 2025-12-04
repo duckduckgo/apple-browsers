@@ -48,10 +48,11 @@ final class ContentBlockingUpdatingTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        updating = ContentBlockingUpdating(appSettings: appSettings,
-                                           contentBlockerRulesManager: rulesManager,
-                                           privacyConfigurationManager: configManager,
-                                           fireproofing: FireproofingMock())
+        updating = ContentBlockingUpdating(userScriptsDependencies: .init(appSettings: appSettings,
+                                                                          privacyConfigurationManager: configManager,
+                                                                          contentBlockingManager: rulesManager,
+                                                                          fireproofing: FireproofingMock(),
+                                                                          contentScopeExperimentsManager: MockContentScopeExperimentManager()))
     }
 
     override static func setUp() {

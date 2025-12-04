@@ -75,7 +75,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         let variantManager = DefaultVariantManager()
         let subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
         let isDuckDuckGoSubscriber = subscriptionManager.isUserAuthenticated
-        let isSubscriptionEligibleUser = subscriptionManager.canPurchase
+        let isSubscriptionEligibleUser = subscriptionManager.isSubscriptionPurchaseEligible
 
         let activationDateStore = DefaultVPNActivationDateStore()
         let daysSinceNetworkProtectionEnabled = activationDateStore.daysSinceActivation() ?? -1

@@ -33,11 +33,7 @@ struct DefaultBrowserPromptDebugView: View {
     }
 
     var body: some View {
-        if model.isFeatureEnabled {
-            settingsView
-        } else {
-            Text(verbatim: "Feature Disabled. Ensure Internal user is On")
-        }
+        settingsView
     }
 
     @ViewBuilder
@@ -99,7 +95,6 @@ struct DefaultBrowserPromptDebugView: View {
                 }
             }
         }
-        .disabled(!model.isFeatureEnabled)
         .navigationTitle("Default Browser Prompt")
     }
 }
@@ -121,7 +116,6 @@ final class DefaultBrowserPromptDebugViewModel: ObservableObject {
         return formatter
     }()
 
-    @Published private(set) var isFeatureEnabled: Bool
     @Published private(set) var activeDaysCount: Int
     @Published private(set) var debugLog: DebugLog = .init()
     @Published var defaultBrowserPromptUserType: DefaultBrowserPromptUserType? {
@@ -155,7 +149,6 @@ final class DefaultBrowserPromptDebugViewModel: ObservableObject {
         currentDate = currentDateDebugStore.simulatedTodayDate
         formattedCurrentDate = Self.dateFormatter.string(from: currentDateDebugStore.simulatedTodayDate)
         activeDaysCount = userActivityStore.currentActivity().numberOfActiveDays
-        isFeatureEnabled = self.featureFlagger.isDefaultBrowserPromptsForActiveUsersFeatureEnabled
         makeDebugLog()
     }
 
@@ -180,7 +173,6 @@ final class DefaultBrowserPromptDebugViewModel: ObservableObject {
         defaultBrowserPromptUserType = userTypeDebugStore.userType()
         currentDate = currentDateDebugStore.simulatedTodayDate
         activeDaysCount = userActivityStore.currentActivity().numberOfActiveDays
-        isFeatureEnabled = self.featureFlagger.isDefaultBrowserPromptsForActiveUsersFeatureEnabled
         makeDebugLog()
     }
 

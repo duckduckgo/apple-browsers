@@ -31,6 +31,15 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Добавить";
 
+/* Open AI Chat history action in the menu list */
+"action.title.aiChat.history" = "Чаты Duck.ai";
+
+/* Start new AI Chat action in the menu list */
+"action.title.aiChat.new" = "Чат с ИИ";
+
+/* Open AI Chat settings action in the menu list */
+"action.title.aiChat.settings" = "Настройки Duck.ai";
+
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Пароли";
 
@@ -463,6 +472,51 @@
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Включите защиту электронной почты";
 
+/* Button title to dismiss the autofill extension activation view */
+"autofill.extension.activation.done.button.title" = "Готово";
+
+/* Title shown when the autofill extension activation succeeds */
+"autofill.extension.activation.title" = "Автозаполнение паролей включено!";
+
+/* Footer text describing what enabling the autofill extension does */
+"autofill.extension.footer" = "Использовать сохраненные в DuckDuckGo пароли во всех приложениях на устройстве.";
+
+/* Header text shown when the autofill extension is disabled */
+"autofill.extension.header.disabled" = "Автозаполнение в других приложениях";
+
+/* Header text shown when the autofill extension is enabled */
+"autofill.extension.header.enabled" = "Автозаполнение в других приложениях включено";
+
+/* Dismiss button title for the Autofill extension promotion */
+"autofill.extension.promo.button.dismiss.title" = "Настроить позже в настройках";
+
+/* CTA button title for the Autofill extension promotion */
+"autofill.extension.promo.button.title" = "Включить автозаполнение в других приложениях";
+
+/* Message for the Autofill extension promotion */
+"autofill.extension.promo.message" = "Использовать DuckDuckGo для безопасного автозаполнения паролей всех приложений.";
+
+/* Title for the Autofill extension promotion */
+"autofill.extension.promo.title" = "Быстрый вход в приложения без ввода паролей";
+
+/* Title for screen showing autofill extension settings */
+"autofill.extension.screen.title" = "Автозаполнение паролей в других приложениях";
+
+/* Status text when autofill extension is disabled */
+"autofill.extension.status.off" = "Включить";
+
+/* Status text when autofill extension is enabled */
+"autofill.extension.status.on" = "Включено";
+
+/* Title for autofill extension settings row */
+"autofill.extension.title" = "Автозаполнение в других приложениях";
+
+/* Button title that opens system settings to turn off the autofill extension */
+"autofill.extension.turn.off.button.title" = "Выключить в системных настройках...";
+
+/* Button title that triggers system prompt to turn on the autofill extension */
+"autofill.extension.turn.on.button.title" = "Включить...";
+
 /* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
 "autofill.hide-card-cvv" = "Скрыть CVV-код";
 
@@ -799,8 +853,8 @@
 /* Section header for the autofill settings screen */
 "autofill.settings.import-passwords.section-header" = "Импорт паролей";
 
-/* Section header for the autofill settings screen */
-"autofill.settings.options.section-header" = "Параметры";
+/* Section header for the autofill passwords options section of the settings screen */
+"autofill.settings.options.section-header" = "Параметры пароля";
 
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Сообщить о сбое автозаполнения";
@@ -2451,6 +2505,21 @@
 
 /* The title of the onboarding dialog popup */
 "onboarding.highlights.intro.title" = "Привет!\n\nБыстрый и надежный браузер заказывали?";
+
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.searchExperience.cta" = "Далее";
+
+/* The footer disclaimer text for the search experience onboarding screen. */
+"onboarding.highlights.searchExperience.footer" = "Функции на базе ИИ работают конфиденциально и предоставляются дополнительно. Их можно изменить в разделе «Настройки > Функции ИИ».";
+
+/* Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold). */
+"onboarding.highlights.searchExperience.footer.formatted" = "Функции на базе ИИ работают конфиденциально и предлагаются дополнительно. Их можно настроить в разделе %@.";
+
+/* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
+"onboarding.highlights.searchExperience.footer.settings-path-bold" = "Настройки > Функции ИИ";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Нужен удобный доступ к приватному чату с ИИ?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Поехали!";

@@ -55,13 +55,17 @@ struct ReportProblemFormFlowView: View {
     init(
         canReportBrokenSite: Bool,
         onReportBrokenSite: (() -> Void)?,
+        preselectedCategory: ProblemCategory? = nil,
+        preselectedSubCategory: SubCategory? = nil,
         onClose: @escaping () -> Void,
         onSeeWhatsNew: @escaping () -> Void,
         onResize: @escaping (CGFloat, CGFloat) -> Void
     ) {
         self._viewModel = StateObject(wrappedValue: ReportProblemFormViewModel(
             canReportBrokenSite: canReportBrokenSite,
-            onReportBrokenSite: onReportBrokenSite
+            onReportBrokenSite: onReportBrokenSite,
+            preselectedCategory: preselectedCategory,
+            preselectedSubCategory: preselectedSubCategory
         ))
         self.onClose = onClose
         self.onSeeWhatsNew = onSeeWhatsNew
@@ -366,8 +370,9 @@ struct ProblemDetailFormView: View {
     }
 
     private func optionsPills() -> some View {
-        FlexibleView(
-            availableWidth: ReportProblemFormViewController.Constants.width,
+        let horizontalPadding: CGFloat = 24
+        return FlexibleView(
+            availableWidth: ReportProblemFormViewController.Constants.width - (horizontalPadding * 2),
             data: viewModel.availableOptions,
             spacing: 8,
             alignment: .leading
@@ -379,7 +384,7 @@ struct ProblemDetailFormView: View {
                 viewModel.toggleOption(option.id)
             }
         }
-        .padding([.leading, .trailing], 24)
+        .padding([.leading, .trailing], horizontalPadding)
         .padding(.bottom, 24)
         .background(
             GeometryReader { geometry in

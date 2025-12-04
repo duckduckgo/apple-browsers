@@ -287,7 +287,7 @@
 "sync.with.another.device.footer" = "Данните Ви са изцяло криптирани и DuckDuckGo няма достъп до ключа за криптиране.";
 
 /* Message for syncing with another device */
-"sync.with.another.device.message" = "Сигурно синхронизиране на отметките и данните за автоматично попълване между отделни устройства.";
+"sync.with.another.device.message" = "Сигурно синхронизиране на отметките и паролите между отделни устройства.";
 
 /* Title for syncing with another device */
 "sync.with.another.device.title" = "Стартиране на синхронизиране";

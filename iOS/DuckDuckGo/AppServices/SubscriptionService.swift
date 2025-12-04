@@ -33,15 +33,13 @@ final class SubscriptionService {
     private var cancellables: Set<AnyCancellable> = []
 
     init(application: UIApplication = UIApplication.shared,
-         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+         privacyConfigurationManager: PrivacyConfigurationManaging,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
-        subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
-                                                                                 purchasePlatform: .appStore,
-                                                                                 paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) },
-                                                                                 supportsAlternateStripePaymentFlowStatusProvider: { featureFlagger.isFeatureOn(.supportsAlternateStripePaymentFlow) },
-                                                                                 isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement) },
-                                                                                 isSubscriptionRestoreWidePixelMeasurementEnabledProvider: {
-                                                                                    featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) })
+        subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(
+                    privacyConfigurationManager: privacyConfigurationManager,
+                    purchasePlatform: .appStore,
+                    featureFlagProvider: SubscriptionPageFeatureFlagAdapter(featureFlagger: featureFlagger)
+                )
         Task {
             await subscriptionManagerV1?.loadInitialData()
             await subscriptionManagerV2?.loadInitialData()

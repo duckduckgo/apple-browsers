@@ -159,14 +159,14 @@ enum Preferences {
                 case .autofill:
                     AutofillView(model: AutofillPreferencesModel())
                 case .accessibility:
-                    AccessibilityView(model: AccessibilityPreferences.shared)
+                    AccessibilityView(model: model.accessibilityPreferences)
                 case .duckPlayer:
-                    DuckPlayerView(model: .shared)
+                    DuckPlayerView(model: model.duckPlayerPreferences)
                 case .otherPlatforms:
                     // Opens a new tab
                     Spacer()
                 case .about:
-                    AboutView(model: AboutPreferences.shared)
+                    AboutView(model: model.aboutPreferences)
                 case .aiChat:
                     AIChatView(model: model.aiChatPreferences)
                 }
@@ -433,14 +433,14 @@ enum Preferences {
                 case .autofill:
                     AutofillView(model: AutofillPreferencesModel())
                 case .accessibility:
-                    AccessibilityView(model: AccessibilityPreferences.shared)
+                    AccessibilityView(model: model.accessibilityPreferences)
                 case .duckPlayer:
-                    DuckPlayerView(model: .shared)
+                    DuckPlayerView(model: model.duckPlayerPreferences)
                 case .otherPlatforms:
                     // Opens a new tab
                     Spacer()
                 case .about:
-                    AboutView(model: AboutPreferences.shared)
+                    AboutView(model: model.aboutPreferences)
                 case .aiChat:
                     AIChatView(model: model.aiChatPreferences)
                 }
@@ -476,10 +476,8 @@ enum Preferences {
                     )
                     showTab(.subscription(url))
 
-                    if featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) {
-                        subscriptionRestoreEmailSettingsWideEventData.emailAddressRestoreDuration = WideEvent.MeasuredInterval.startingNow()
-                        wideEvent.startFlow(subscriptionRestoreEmailSettingsWideEventData)
-                    }
+                    subscriptionRestoreEmailSettingsWideEventData.emailAddressRestoreDuration = WideEvent.MeasuredInterval.startingNow()
+                    wideEvent.startFlow(subscriptionRestoreEmailSettingsWideEventData)
                     PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
                 }, restorePurchases: {
                     if #available(macOS 12.0, *) {

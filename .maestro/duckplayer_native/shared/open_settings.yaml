@@ -12,6 +12,7 @@ appId: com.duckduckgo.mobile.ios
 - tapOn: ${output.settingsLabel}
 
 - scrollUntilVisible:
+    centerElement: true
     element: ${output.duckPlayerLabel}
     direction: DOWN
     

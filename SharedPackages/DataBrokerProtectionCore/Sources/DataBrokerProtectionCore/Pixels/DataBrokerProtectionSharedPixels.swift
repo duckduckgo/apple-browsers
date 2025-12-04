@@ -62,7 +62,6 @@ public enum DataBrokerProtectionSharedPixels {
         public static let parentKey = "parent"
         public static let actionIDKey = "action_id"
         public static let environmentKey = "environment"
-        public static let wasOnWaitlist = "was_on_waitlist"
         public static let httpCode = "http_code"
         public static let backendServiceCallSite = "backend_service_callsite"
         public static let isImmediateOperation = "is_manual_scan"
@@ -163,8 +162,8 @@ public enum DataBrokerProtectionSharedPixels {
     case optOutJobAt42DaysUnconfirmed(dataBroker: String)
 
     // Backend service errors
-    case generateEmailHTTPErrorDaily(statusCode: Int, environment: String, wasOnWaitlist: Bool)
-    case emptyAccessTokenDaily(environment: String, wasOnWaitlist: Bool, callSite: BackendServiceCallSite)
+    case generateEmailHTTPErrorDaily(statusCode: Int, environment: String)
+    case emptyAccessTokenDaily(environment: String, callSite: BackendServiceCallSite, dataBroker: String?, brokerVersion: String?)
 
     // Initial scans pixels
     // https://app.asana.com/0/1204006570077678/1206981742767458/f
@@ -307,19 +306,19 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         switch self {
         case .httpError(_, let code, let dataBroker, let version):
             return ["code": String(code),
-                    "dataBroker": dataBroker,
-                    "version": version]
+                    Consts.dataBrokerParamKey: dataBroker,
+                    Consts.dataBrokerVersionKey: version]
         case .actionFailedError(_, let actionId, let message, let dataBroker, let version, let stepType, let dataBrokerParent):
             return ["actionID": actionId,
                     "message": message,
-                    "dataBroker": dataBroker,
-                    "version": version,
+                    Consts.dataBrokerParamKey: dataBroker,
+                    Consts.dataBrokerVersionKey: version,
                     "stepType": stepType?.rawValue ?? "unknown",
                     Consts.parentKey: dataBrokerParent ?? ""]
         case .otherError(let error, let dataBroker, let version):
             return ["kind": (error as? DataBrokerProtectionError)?.name ?? "unknown",
-                    "dataBroker": dataBroker,
-                    "version": version]
+                    Consts.dataBrokerParamKey: dataBroker,
+                    Consts.dataBrokerVersionKey: version]
         case .databaseError(_, let functionOccurredIn),
                 .cocoaError(_, let functionOccurredIn),
                 .miscError(_, let functionOccurredIn):
@@ -466,14 +465,14 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
             return [:]
         case .secureVaultKeyStoreReadError(_, let field, _):
             return [Consts.keystoreField: field]
-        case .generateEmailHTTPErrorDaily(let statusCode, let environment, let wasOnWaitlist):
+        case .generateEmailHTTPErrorDaily(let statusCode, let environment):
             return [Consts.environmentKey: environment,
-                    Consts.httpCode: String(statusCode),
-                    Consts.wasOnWaitlist: String(wasOnWaitlist)]
-        case .emptyAccessTokenDaily(let environment, let wasOnWaitlist, let backendServiceCallSite):
+                    Consts.httpCode: String(statusCode)]
+        case .emptyAccessTokenDaily(let environment, let backendServiceCallSite, let dataBroker, let brokerVersion):
             return [Consts.environmentKey: environment,
-                    Consts.wasOnWaitlist: String(wasOnWaitlist),
-                    Consts.backendServiceCallSite: backendServiceCallSite.rawValue]
+                    Consts.backendServiceCallSite: backendServiceCallSite.rawValue,
+                    Consts.dataBrokerParamKey: dataBroker ?? "unknown",
+                    Consts.dataBrokerVersionKey: brokerVersion ?? "unknown"]
         case .initialScanTotalDuration(let duration, let profileQueries):
             return [Consts.durationInMs: String(duration), Consts.profileQueries: String(profileQueries)]
         case .initialScanSiteLoadDuration(let duration, let hasError, let brokerURL):
@@ -549,6 +548,86 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                 params[Consts.removedAtParamKey] = String(removedAt)
             }
             return params
+        }
+    }
+
+    public var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .httpError,
+                .actionFailedError,
+                .otherError,
+                .databaseError,
+                .cocoaError,
+                .miscError,
+                .secureVaultInitError,
+                .secureVaultKeyStoreReadError,
+                .secureVaultKeyStoreUpdateError,
+                .secureVaultError,
+                .secureVaultDatabaseRecreated,
+                .failedToOpenDatabase,
+                .parentChildMatches,
+                .optOutStart,
+                .optOutSubmitSuccess,
+                .optOutSuccess,
+                .optOutFailure,
+                .scanSuccess,
+                .scanNoResults,
+                .scanError,
+                .scanStage,
+                .optOutEmailGenerate,
+                .optOutCaptchaParse,
+                .optOutCaptchaSend,
+                .optOutCaptchaSolve,
+                .optOutSubmit,
+                .optOutEmailReceive,
+                .optOutEmailConfirm,
+                .optOutValidate,
+                .optOutFillForm,
+                .optOutConditionFound,
+                .optOutConditionNotFound,
+                .optOutFinish,
+                .dailyActiveUser,
+                .weeklyActiveUser,
+                .monthlyActiveUser,
+                .weeklyReportBackgroundTaskSession,
+                .weeklyReportStalledScans,
+                .weeklyReportStalledOptOuts,
+                .scanningEventNewMatch,
+                .scanningEventReAppearance,
+                .optOutJobAt7DaysConfirmed,
+                .optOutJobAt7DaysUnconfirmed,
+                .optOutJobAt14DaysConfirmed,
+                .optOutJobAt14DaysUnconfirmed,
+                .optOutJobAt21DaysConfirmed,
+                .optOutJobAt21DaysUnconfirmed,
+                .optOutJobAt42DaysConfirmed,
+                .optOutJobAt42DaysUnconfirmed,
+                .generateEmailHTTPErrorDaily,
+                .emptyAccessTokenDaily,
+                .initialScanTotalDuration,
+                .initialScanSiteLoadDuration,
+                .initialScanPostLoadingDuration,
+                .initialScanPreStartDuration,
+                .customDataBrokerStatsOptoutSubmit,
+                .customGlobalStatsOptoutSubmit,
+                .weeklyChildBrokerOrphanedOptOuts,
+                .userScriptLoadJSFailed,
+                .serviceEmailConfirmationLinkClientReceived,
+                .serviceEmailConfirmationLinkBackendStatusError,
+                .optOutStageSubmitAwaitingEmailConfirmation,
+                .serviceEmailConfirmationAttemptStart,
+                .serviceEmailConfirmationAttemptSuccess,
+                .serviceEmailConfirmationAttemptFailure,
+                .serviceEmailConfirmationMaxRetriesExceeded,
+                .serviceEmailConfirmationJobSuccess,
+                .updateDataBrokersSuccess,
+                .updateDataBrokersFailure:
+            return [.pixelSource]
+
+#if os(iOS)
+        case .scanStarted:
+            return [.pixelSource]
+#endif
         }
     }
 }

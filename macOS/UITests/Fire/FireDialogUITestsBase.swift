@@ -36,13 +36,12 @@ extension FireDialogUITests {
         continueAfterFailure = false
         // Enable feature flags for new Fire dialog, History view, and History view Sites section
         // TO DO: Enable Sites Section when C-S-S implementation is merged in
-        app = XCUIApplication.setUp(featureFlags: ["historyView": true, "fireDialog": true, /*"historyViewSitesSection": true*/])
+        app = XCUIApplication.setUp(featureFlags: ["fireDialog": true, /*"historyViewSitesSection": true*/])
         app.enforceSingleWindow()
 
         // Reset fireproof sites
-        let menuBarsQuery = app.menuBars
-        menuBarsQuery.menuBarItems["Debug"].click()
-        menuBarsQuery.menuItems["Reset Fireproof Sites"].click()
+        app.debugMenu.click()
+        app.debugMenu.menuItems["Reset Fireproof Sites"].click()
 
         // Clear state
         app.fireButton.click()
@@ -58,8 +57,7 @@ extension FireDialogUITests {
 
     func populateFakeHistoryFromDebugMenu(file: StaticString = #file, line: UInt = #line) {
         // Open Debug menu -> History submenu -> Populate fake history
-        let debugMenu = app.menuBars.menuBarItems["Debug"]
-        debugMenu.click()
+        app.debugMenu.click()
 
         let historySubmenu = app.menuItems["History"]
         XCTAssertTrue(historySubmenu.waitForExistence(timeout: UITests.Timeouts.elementExistence), "History submenu should exist", file: file, line: line)

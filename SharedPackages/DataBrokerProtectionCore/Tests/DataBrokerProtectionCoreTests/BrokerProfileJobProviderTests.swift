@@ -28,13 +28,13 @@ final class BrokerProfileJobProviderTests: XCTestCase {
     // Dependencies
     private var mockDatabase: MockDatabase!
     private var mockSchedulerConfig = BrokerJobExecutionConfig()
-    private var mockPixelHandler: MockPixelHandler!
+    private var mockPixelHandler: MockDataBrokerProtectionPixelsHandler!
     private var mockEventsHandler: MockOperationEventsHandler!
     var mockDependencies: BrokerProfileJobDependencies!
 
     override func setUpWithError() throws {
         mockDatabase = MockDatabase()
-        mockPixelHandler = MockPixelHandler()
+        mockPixelHandler = MockDataBrokerProtectionPixelsHandler()
         mockEventsHandler = MockOperationEventsHandler()
 
         mockDependencies = BrokerProfileJobDependencies(database: mockDatabase,

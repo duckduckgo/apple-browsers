@@ -31,6 +31,15 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Προσθήκη";
 
+/* Open AI Chat history action in the menu list */
+"action.title.aiChat.history" = "Συνομιλίες Duck.ai";
+
+/* Start new AI Chat action in the menu list */
+"action.title.aiChat.new" = "Συνομιλία με ΤΝ";
+
+/* Open AI Chat settings action in the menu list */
+"action.title.aiChat.settings" = "Ρυθμίσεις Duck.ai";
+
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Κωδικός πρόσβασης";
 
@@ -463,6 +472,51 @@
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Ενεργοποίηση Email Protection";
 
+/* Button title to dismiss the autofill extension activation view */
+"autofill.extension.activation.done.button.title" = "Ολοκληρώθηκε";
+
+/* Title shown when the autofill extension activation succeeds */
+"autofill.extension.activation.title" = "Η Αυτόματη συμπλήρωση κωδικών πρόσβασης ενεργοποιήθηκε!";
+
+/* Footer text describing what enabling the autofill extension does */
+"autofill.extension.footer" = "Χρησιμοποιήστε τους κωδικούς πρόσβασης που έχετε αποθηκεύσει στο DuckDuckGo σε όλες τις εφαρμογές της συσκευής σας.";
+
+/* Header text shown when the autofill extension is disabled */
+"autofill.extension.header.disabled" = "Αυτόματη συμπλήρωση σε άλλες εφαρμογές";
+
+/* Header text shown when the autofill extension is enabled */
+"autofill.extension.header.enabled" = "Ενεργοποιημένη η αυτόματη συμπλήρωση σε άλλες εφαρμογές";
+
+/* Dismiss button title for the Autofill extension promotion */
+"autofill.extension.promo.button.dismiss.title" = "Προσαρμόστε αργότερα από τις Ρυθμίσεις";
+
+/* CTA button title for the Autofill extension promotion */
+"autofill.extension.promo.button.title" = "Ενεργοποίηση της αυτόματης συμπλήρωσης σε άλλες εφαρμογές";
+
+/* Message for the Autofill extension promotion */
+"autofill.extension.promo.message" = "Χρησιμοποιήστε το DuckDuckGo για ασφαλή αυτόματη συμπλήρωση κωδικών πρόσβασης για όλες τις εφαρμογές σας.";
+
+/* Title for the Autofill extension promotion */
+"autofill.extension.promo.title" = "Συνδεθείτε γρήγορα στις εφαρμογές σας χωρίς να πληκτρολογείτε κωδικούς πρόσβασης";
+
+/* Title for screen showing autofill extension settings */
+"autofill.extension.screen.title" = "Αυτόματη συμπλήρωση κωδικών πρόσβασης σε άλλες εφαρμογές";
+
+/* Status text when autofill extension is disabled */
+"autofill.extension.status.off" = "Ενεργοποίηση";
+
+/* Status text when autofill extension is enabled */
+"autofill.extension.status.on" = "Ενεργό";
+
+/* Title for autofill extension settings row */
+"autofill.extension.title" = "Αυτόματη συμπλήρωση σε άλλες εφαρμογές";
+
+/* Button title that opens system settings to turn off the autofill extension */
+"autofill.extension.turn.off.button.title" = "Απενεργοποίηση στις Ρυθμίσεις συστήματος...";
+
+/* Button title that triggers system prompt to turn on the autofill extension */
+"autofill.extension.turn.on.button.title" = "Ενεργοποίηση...";
+
 /* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
 "autofill.hide-card-cvv" = "Απόκρυψη CVV";
 
@@ -799,8 +853,8 @@
 /* Section header for the autofill settings screen */
 "autofill.settings.import-passwords.section-header" = "Εισαγωγή κωδικών πρόσβασης";
 
-/* Section header for the autofill settings screen */
-"autofill.settings.options.section-header" = "Επιλογές";
+/* Section header for the autofill passwords options section of the settings screen */
+"autofill.settings.options.section-header" = "Επιλογές κωδικού πρόσβασης";
 
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Αναφέρετε ένα πρόβλημα με την Αυτόματη συμπλήρωση";
@@ -2451,6 +2505,21 @@
 
 /* The title of the onboarding dialog popup */
 "onboarding.highlights.intro.title" = "Γεια σας.\n\nΕίστε έτοιμοι για ένα ταχύτερο πρόγραμμα περιήγησης που σας διατηρεί προστατευμένους;";
+
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.searchExperience.cta" = "Επόμενο";
+
+/* The footer disclaimer text for the search experience onboarding screen. */
+"onboarding.highlights.searchExperience.footer" = "Οι λειτουργίες τεχνητής νοημοσύνης είναι ιδιωτικές και προαιρετικές. Μπορείς να κάνεις αλλαγές στις Ρυθμίσεις > Λειτουργίες τεχνητής νοημοσύνης.";
+
+/* Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold). */
+"onboarding.highlights.searchExperience.footer.formatted" = "Οι λειτουργίες τεχνητής νοημοσύνης είναι ιδιωτικές και προαιρετικές. Μπορείτε να κάνετε αλλαγές από το %@";
+
+/* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
+"onboarding.highlights.searchExperience.footer.settings-path-bold" = "Ρυθμίσεις > Λειτουργίες τεχνητής νοημοσύνης.";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Θέλετε πιο εύκολη πρόσβαση στο ιδιωτικό AI chat;";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Ας το δοκιμάσουμε!";

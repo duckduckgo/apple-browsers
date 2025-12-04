@@ -63,12 +63,60 @@
     },
     "NSAppDataUsageDescription" : {
       "comment" : "Privacy - Other Application Data Usage Description",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo wird sicher auf deinen Bitwarden-Tresor zugreifen, um deine Passwörter automatisch auszufüllen. Wenn du diesen Dialog in Zukunft nicht mehr angezeigt bekommen möchtest, gehe zu den Mac-Systemeinstellungen > Privatsphäre & Sicherheit > Vollständiger Festplattenzugriff und aktiviere DuckDuckGo oder wechsle zurück zum integrierten Passwort-Manager."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "DuckDuckGo will securely access your Bitwarden vault to autofill your passwords. To prevent this dialog in the future, go to Mac System Settings > Privacy & Security > Full Disk Access and toggle DuckDuckGo on, or switch back to the built-in password manager."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo accederá de forma segura a tu caja fuerte de Bitwarden para autocompletar tus contraseñas. Para evitar este diálogo en el futuro, ve a Configuración del sistema Mac > Privacidad y seguridad > Acceso total al disco y activa DuckDuckGo o vuelve al gestor de contraseñas integrado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo accédera en toute sécurité à votre coffre-fort Bitwarden pour remplir automatiquement vos mots de passe. Pour éviter cette boîte de dialogue à l'avenir, allez dans les Réglages système Mac > Confidentialité et sécurité > Accès complet au disque et activez DuckDuckGo, ou revenez au gestionnaire de mots de passe intégré."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo accederà in modo sicuro alla tua cassaforte di Bitwarden per inserire automaticamente le tue password. Per evitare che questa finestra di dialogo si ripeta in futuro, vai su Impostazioni di sistema del Mac > Privacy e Sicurezza > Accesso completo al disco e attiva DuckDuckGo, oppure torna al gestore di password integrato."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo maakt veilig verbinding met je Bitwarden-kluis om je wachtwoorden automatisch in te vullen. Als je dit dialoogvenster in de toekomst niet meer te zien wilt krijgen, ga je op je Mac naar Systeeminstellingen > Privacy en beveiliging > Volledige schijftoegang. Hier kun je DuckDuckGo inschakelen of terugschakelen naar de ingebouwde wachtwoordmanager."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo będzie bezpiecznie uzyskiwać dostęp do magazynu Bitwarden, aby automatycznie uzupełniać hasła. Aby wyłączyć ten komunikat w przyszłości, wybierz kolejno Ustawienia systemu Mac > Prywatność i bezpieczeństwo > Pełny dostęp do dysku i włącz DuckDuckGo lub przełącz z powrotem na wbudowany menedżer haseł."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A DuckDuckGo acederá de forma segura ao teu cofre Bitwarden para preencher automaticamente as tuas palavras-passe. Para evitar esta caixa de diálogo no futuro, vai às Definições do sistema do Mac > Privacidade e segurança > Acesso total ao disco e ativa a DuckDuckGo ou volta a utilizar o gestor de palavras-passe integrado."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Для автоматической вставки паролей DuckDuckGo будет безопасно извлекать их из вашего хранилища Bitwarden. Чтобы это окно не появлялось в будущем, откройте раздел «Системные настройки Mac > Конфиденциальность и безопасность > Полный доступ к диску» и переведите переключатель напротив DuckDuckGo в положение «включено». В противном случае, верните переключатель в прежнее положение, чтобы пользоваться встроенным диспетчером паролей."
           }
         }
       }

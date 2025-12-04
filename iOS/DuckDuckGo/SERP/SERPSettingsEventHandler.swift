@@ -26,6 +26,8 @@ enum SERPSettingsPixel: PixelKitEvent {
     case serpSettingsSerializationFailed
     case serpSettingsKeyValueStoreReadError
     case serpSettingsKeyValueStoreWriteError
+    case hideAIGeneratedImagesButtonClicked
+    case openDuckAIButtonClick
 
     var name: String {
         switch self {
@@ -35,11 +37,26 @@ enum SERPSettingsPixel: PixelKitEvent {
             return "m_serp_settings_keyvalue_store_read_error"
         case .serpSettingsKeyValueStoreWriteError:
             return "m_serp_settings_keyvalue_store_write_error"
+        case .hideAIGeneratedImagesButtonClicked:
+            return "m_aichat_hide_ai_generated_images_button_clicked"
+        case .openDuckAIButtonClick:
+            return "m_serp_settings_open_duck_ai_button_click"
         }
     }
 
     var parameters: [String: String]? {
         return nil
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .serpSettingsSerializationFailed,
+                .serpSettingsKeyValueStoreReadError,
+                .serpSettingsKeyValueStoreWriteError,
+                .hideAIGeneratedImagesButtonClicked,
+                .openDuckAIButtonClick:
+            return [.pixelSource]
+        }
     }
 }
 

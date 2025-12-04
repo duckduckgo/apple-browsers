@@ -31,6 +31,15 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Pridať";
 
+/* Open AI Chat history action in the menu list */
+"action.title.aiChat.history" = "Chaty Duck.ai";
+
+/* Start new AI Chat action in the menu list */
+"action.title.aiChat.new" = "AI Chat";
+
+/* Open AI Chat settings action in the menu list */
+"action.title.aiChat.settings" = "Nastavenia Duck.ai";
+
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Heslo";
 
@@ -463,6 +472,51 @@
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Povoliť ochranu e-mailu";
 
+/* Button title to dismiss the autofill extension activation view */
+"autofill.extension.activation.done.button.title" = "Hotovo";
+
+/* Title shown when the autofill extension activation succeeds */
+"autofill.extension.activation.title" = "Automatické dopĺňanie hesiel je aktivované!";
+
+/* Footer text describing what enabling the autofill extension does */
+"autofill.extension.footer" = "Používaj heslá uložené v  DuckDuckGo vo všetkých aplikáciách na tvojom zariadení.";
+
+/* Header text shown when the autofill extension is disabled */
+"autofill.extension.header.disabled" = "Automatické dopĺňanie v iných aplikáciách";
+
+/* Header text shown when the autofill extension is enabled */
+"autofill.extension.header.enabled" = "Automatické dopĺňanie v iných aplikáciách je povolené";
+
+/* Dismiss button title for the Autofill extension promotion */
+"autofill.extension.promo.button.dismiss.title" = "Nastaviť neskôr v nastaveniach";
+
+/* CTA button title for the Autofill extension promotion */
+"autofill.extension.promo.button.title" = "Zapnúť automatické dopĺňanie v iných aplikáciách";
+
+/* Message for the Autofill extension promotion */
+"autofill.extension.promo.message" = "Použi DuckDuckGo na bezpečné automatické dopĺňanie hesiel pre všetky tvoje aplikácie.";
+
+/* Title for the Autofill extension promotion */
+"autofill.extension.promo.title" = "Prihlasuj sa do svojich aplikácií rýchlo bez vypisovania hesiel";
+
+/* Title for screen showing autofill extension settings */
+"autofill.extension.screen.title" = "Automatické dopĺňanie hesiel v iných aplikáciách";
+
+/* Status text when autofill extension is disabled */
+"autofill.extension.status.off" = "Zapnúť";
+
+/* Status text when autofill extension is enabled */
+"autofill.extension.status.on" = "Zapnuté";
+
+/* Title for autofill extension settings row */
+"autofill.extension.title" = "Automatické dopĺňanie v iných aplikáciách";
+
+/* Button title that opens system settings to turn off the autofill extension */
+"autofill.extension.turn.off.button.title" = "Vypnúť v nastaveniach systému...";
+
+/* Button title that triggers system prompt to turn on the autofill extension */
+"autofill.extension.turn.on.button.title" = "Zapnúť...";
+
 /* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
 "autofill.hide-card-cvv" = "Skryť CVV";
 
@@ -799,8 +853,8 @@
 /* Section header for the autofill settings screen */
 "autofill.settings.import-passwords.section-header" = "Importovať heslá";
 
-/* Section header for the autofill settings screen */
-"autofill.settings.options.section-header" = "Možnosti";
+/* Section header for the autofill passwords options section of the settings screen */
+"autofill.settings.options.section-header" = "Možnosti pre heslá";
 
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Nahlásenie problému s funkciou Automatické dopĺňanie";
@@ -2451,6 +2505,21 @@
 
 /* The title of the onboarding dialog popup */
 "onboarding.highlights.intro.title" = "Dobrý deň.\n\nSte pripravení na rýchlejší prehliadač, ktorý vás ochráni?";
+
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.searchExperience.cta" = "Ďalšie";
+
+/* The footer disclaimer text for the search experience onboarding screen. */
+"onboarding.highlights.searchExperience.footer" = "Funkcie AI sú súkromné a voliteľné. Môžeš vykonať zmeny v Nastaveniach > Funkcie AI.";
+
+/* Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold). */
+"onboarding.highlights.searchExperience.footer.formatted" = "Funkcie AI sú súkromné a voliteľné. Zmeny môžeš vykonať v %@";
+
+/* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
+"onboarding.highlights.searchExperience.footer.settings-path-bold" = "Nastavenia > Funkcie AI.";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Chceš jednoduchší prístup k súkromnému AI chatu?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Poďme na to!";

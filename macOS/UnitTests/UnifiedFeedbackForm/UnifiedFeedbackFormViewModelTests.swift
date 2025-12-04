@@ -335,7 +335,7 @@ extension SubscriptionManagerMock {
                   storePurchaseManager: StorePurchaseManagerMock(),
                   currentEnvironment: SubscriptionEnvironment(serviceEnvironment: .production,
                                                               purchasePlatform: .appStore),
-                  canPurchase: false,
+                  hasAppStoreProductsAvailable: false,
                   subscriptionFeatureMappingCache: SubscriptionFeatureMappingCacheMock())
     }
 }

@@ -86,18 +86,24 @@ extension Preferences {
                         }
                         .visibility(model.shouldShowNewTabPageToggle ? .visible : .gone)
 
-                        ToggleMenuItem(UserText.aiChatShowInAddressBarWhenTypingLabel,
-                                       isOn: $model.showShortcutInAddressBarWhenTyping)
-                        .accessibilityIdentifier("Preferences.AIChat.showInAddressBarWhenTypingToggle")
-                        .onChange(of: model.showShortcutInAddressBarWhenTyping) { newValue in
-                            if newValue {
-                                PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarTypingShortcutTurnedOn,
-                                              frequency: .dailyAndCount,
-                                              includeAppVersionParameter: true)
-                            } else {
-                                PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarTypingShortcutTurnedOff,
-                                              frequency: .dailyAndCount,
-                                              includeAppVersionParameter: true)
+                        if model.shouldShowSearchAndDuckAIToggleOption {
+                            ToggleMenuItem(UserText.aiChatShowSearchAndDuckAIToggleLabel,
+                                           isOn: $model.showSearchAndDuckAIToggle)
+                            .accessibilityIdentifier("Preferences.AIChat.showSearchAndDuckAIToggleToggle")
+                        } else {
+                            ToggleMenuItem(UserText.aiChatShowInAddressBarWhenTypingLabel,
+                                           isOn: $model.showShortcutInAddressBarWhenTyping)
+                            .accessibilityIdentifier("Preferences.AIChat.showInAddressBarWhenTypingToggle")
+                            .onChange(of: model.showShortcutInAddressBarWhenTyping) { newValue in
+                                if newValue {
+                                    PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarTypingShortcutTurnedOn,
+                                                  frequency: .dailyAndCount,
+                                                  includeAppVersionParameter: true)
+                                } else {
+                                    PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarTypingShortcutTurnedOff,
+                                                  frequency: .dailyAndCount,
+                                                  includeAppVersionParameter: true)
+                                }
                             }
                         }
 
@@ -237,12 +243,13 @@ extension Preferences {
                     PreferencePaneSection {
                         VStack(alignment: .leading) {
                             TextAndImageMenuItemHeader(UserText.hideAIGeneratedImagesSettings,
-                                                       image: Image(nsImage: DesignSystemImages.Color.Size16.assist),
+                                                       image: Image(nsImage: DesignSystemImages.Color.Size16.hideAIGeneratedImages),
                                                        bottomPadding: 2)
 
                             TextMenuItemCaption(UserText.hideAIGeneratedImagesSettingsDescription)
                                 .padding(.bottom, 6)
                             Button {
+                                PixelKit.fire(GeneralPixel.hideAIGeneratedImagesButtonClicked, frequency: .dailyAndStandard)
                                 model.openSearchAssistSettings()
                             } label: {
                                 HStack {

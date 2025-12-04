@@ -31,6 +31,15 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Ajouter";
 
+/* Open AI Chat history action in the menu list */
+"action.title.aiChat.history" = "Chats Duck.ai";
+
+/* Start new AI Chat action in the menu list */
+"action.title.aiChat.new" = "Chat IA";
+
+/* Open AI Chat settings action in the menu list */
+"action.title.aiChat.settings" = "Paramètres Duck.ai";
+
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Mots de passe";
 
@@ -463,6 +472,51 @@
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Activez Email Protection";
 
+/* Button title to dismiss the autofill extension activation view */
+"autofill.extension.activation.done.button.title" = "Terminé";
+
+/* Title shown when the autofill extension activation succeeds */
+"autofill.extension.activation.title" = "Saisie automatique des mots de passe activée !";
+
+/* Footer text describing what enabling the autofill extension does */
+"autofill.extension.footer" = "Utilisez les mots de passe que vous avez enregistrés dans DuckDuckGo sur toutes les applications de votre appareil.";
+
+/* Header text shown when the autofill extension is disabled */
+"autofill.extension.header.disabled" = "Saisie automatique dans d'autres applications";
+
+/* Header text shown when the autofill extension is enabled */
+"autofill.extension.header.enabled" = "Saisie automatique activée dans les autres applications";
+
+/* Dismiss button title for the Autofill extension promotion */
+"autofill.extension.promo.button.dismiss.title" = "Configurer ultérieurement dans Réglages";
+
+/* CTA button title for the Autofill extension promotion */
+"autofill.extension.promo.button.title" = "Activer la saisie automatique dans les autres applications";
+
+/* Message for the Autofill extension promotion */
+"autofill.extension.promo.message" = "Utilisez DuckDuckGo pour remplir automatiquement et en toute sécurité les mots de passe de toutes vos applications.";
+
+/* Title for the Autofill extension promotion */
+"autofill.extension.promo.title" = "Connectez-vous rapidement à vos applications sans avoir à saisir de mot de passe";
+
+/* Title for screen showing autofill extension settings */
+"autofill.extension.screen.title" = "Saisie automatique des mots de passe dans les autres applications";
+
+/* Status text when autofill extension is disabled */
+"autofill.extension.status.off" = "Activer";
+
+/* Status text when autofill extension is enabled */
+"autofill.extension.status.on" = "Activé";
+
+/* Title for autofill extension settings row */
+"autofill.extension.title" = "Saisie automatique dans d'autres applications";
+
+/* Button title that opens system settings to turn off the autofill extension */
+"autofill.extension.turn.off.button.title" = "Désactiver dans les paramètres système...";
+
+/* Button title that triggers system prompt to turn on the autofill extension */
+"autofill.extension.turn.on.button.title" = "Activer...";
+
 /* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
 "autofill.hide-card-cvv" = "Masquer CVV";
 
@@ -799,8 +853,8 @@
 /* Section header for the autofill settings screen */
 "autofill.settings.import-passwords.section-header" = "Importer les mots de passe";
 
-/* Section header for the autofill settings screen */
-"autofill.settings.options.section-header" = "Options";
+/* Section header for the autofill passwords options section of the settings screen */
+"autofill.settings.options.section-header" = "Options de mot de passe";
 
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Signaler un problème de saisie automatique";
@@ -2451,6 +2505,21 @@
 
 /* The title of the onboarding dialog popup */
 "onboarding.highlights.intro.title" = "Bonjour.\n\nEnvie de profiter d'un navigateur plus rapide qui vous protège ?";
+
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.searchExperience.cta" = "Suivant";
+
+/* The footer disclaimer text for the search experience onboarding screen. */
+"onboarding.highlights.searchExperience.footer" = "Les fonctionnalités d'IA sont privées et facultatives. Vous pouvez apporter des modifications dans Paramètres > Fonctionnalités d'IA.";
+
+/* Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold). */
+"onboarding.highlights.searchExperience.footer.formatted" = "Les fonctionnalités d'IA sont privées et facultatives. Vous pouvez apporter des modifications dans %@";
+
+/* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
+"onboarding.highlights.searchExperience.footer.settings-path-bold" = "Paramètres > Fonctionnalités d'IA.";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Vous voulez accéder plus facilement au chat IA privé ?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "C'est parti !";

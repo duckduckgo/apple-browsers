@@ -242,8 +242,12 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
     public func appDidBecomeActive() async {
         guard await authenticationManager.isUserAuthenticated else { return }
         fireMonitoringPixels()
-        
-        await startImmediateScanOperations()
+
+        if featureFlagger.isForegroundRunningOnAppActiveFeatureOn {
+            await startImmediateScanOperations()
+        } else {
+            await checkForEmailConfirmationData()
+        }
     }
 
     func fireMonitoringPixels() {
@@ -258,6 +262,8 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
 
 extension DataBrokerProtectionIOSManager: DBPIOSInterface.UserEventsDelegate {
     public func dashboardDidOpen() {
+        guard featureFlagger.isForegroundRunningWhenDashboardOpenFeatureOn else { return }
+
         Logger.dataBrokerProtection.log("Starting all operations whilst dashboard open")
         queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
             Logger.dataBrokerProtection.log("All operations completed whilst dashboard open")
@@ -265,6 +271,8 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.UserEventsDelegate {
     }
     
     public func dashboardDidClose() {
+        guard featureFlagger.isForegroundRunningWhenDashboardOpenFeatureOn else { return }
+
         Logger.dataBrokerProtection.log("Stopping operations as dashboard closed")
         // We don't want to stop immediate scans if they are running
         self.queueManager.stopScheduledOperationsOnly()

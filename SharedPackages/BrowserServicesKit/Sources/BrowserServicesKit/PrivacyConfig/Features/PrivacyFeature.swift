@@ -219,6 +219,8 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case freemium
     case remoteBrokerDelivery
     case emailConfirmationDecoupling
+    case foregroundRunningOnAppActive
+    case foregroundRunningWhenDashboardOpen
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {

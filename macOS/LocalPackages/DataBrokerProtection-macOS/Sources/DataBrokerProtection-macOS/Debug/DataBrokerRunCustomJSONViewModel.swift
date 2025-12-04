@@ -164,6 +164,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     private let featureFlagger: DBPFeatureFlagging
 
     private class DebugDBPFeatureFlagger: DBPFeatureFlagging {
+        
         private let featureFlagger: FeatureFlagger
 
         var isRemoteBrokerDeliveryFeatureOn: Bool {
@@ -172,6 +173,16 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
         var isEmailConfirmationDecouplingFeatureOn: Bool {
             featureFlagger.isFeatureOn(.dbpEmailConfirmationDecoupling)
+        }
+
+        var isForegroundRunningOnAppActiveFeatureOn: Bool {
+            // Not relevant to macOS
+            return false
+        }
+
+        var isForegroundRunningWhenDashboardOpenFeatureOn: Bool {
+            // Not relevant to macOS
+            return false
         }
 
         init(privacyConfigManager: PrivacyConfigurationManaging) {

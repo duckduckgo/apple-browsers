@@ -87,6 +87,10 @@ public enum DataImport {
             self.duplicate = duplicate
             self.failed = failed
         }
+
+        public var isAllSuccessful: Bool {
+            duplicate == 0 && failed == 0
+        }
     }
 
     public enum ErrorType: String, CustomStringConvertible, CaseIterable {

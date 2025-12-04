@@ -220,7 +220,7 @@ extension WideEventParameter {
     }
 }
 
-fileprivate extension DataImport.DataType {
+public extension DataImport.DataType {
     var statusPath: WritableKeyPath<DataImportWideEventData, WideEventStatus?> {
         switch self {
         case .bookmarks: return \.bookmarkImportStatus

@@ -332,8 +332,9 @@ final class DataImportViewModel: ObservableObject {
                         completeAndCleanupWideEvent(with: .success(reason: DataImportWideEventData.StatusReason.partialData.rawValue))
                     }
                     delegate?.dataImportViewModelDidRequestPresentSummary(self, summary: summary)
+                } else {
+                    completeAndCleanupWideEvent(with: .failure)
                 }
-                completeAndCleanupWideEvent(with: .failure)
             } catch {
                 Logger.autofill.debug("Failed to import data: \(error)")
                 completeAndCleanupWideEvent(with: .failure, error: error, description: "Failed to import data")

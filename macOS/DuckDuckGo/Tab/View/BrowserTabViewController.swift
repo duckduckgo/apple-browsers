@@ -616,7 +616,7 @@ final class BrowserTabViewController: NSViewController {
             // we mark the flag for dialog dismissed
             wasContextualOnboardingDialogDismissed = true
             delegate?.dismissViewHighlight()
-            removeExistingDialog()
+            self.removeChild(in: self.containerStackView, webViewContainer: webViewContainer)
             if let lastDialog = onboardingDialogTypeProvider.lastDialog {
                 self.onboardingPixelReporter.measureDialogDismissed(dialogType: lastDialog)
             }
@@ -1770,7 +1770,7 @@ private extension NSViewController {
         animateStackViewChanges(stackView)
     }
 
-    func removeChild(in stackView: NSStackView, webViewContainer: NSView) {
+    func removeChild(in stackView: NSStackView, webViewContainer: NSView?) {
         stackView.arrangedSubviews.filter({ $0 != webViewContainer }).forEach {
             stackView.removeArrangedSubview($0)
             $0.removeFromSuperview()

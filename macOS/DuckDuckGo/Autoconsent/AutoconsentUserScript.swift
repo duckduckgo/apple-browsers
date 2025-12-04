@@ -255,6 +255,19 @@ extension AutoconsentUserScript {
     }
 
     @MainActor
+    private func checkMainFrameNavigation(message: WKScriptMessage, url: URL) {
+        guard message.frameInfo.isMainFrame else { return }
+
+        Logger.autoconsent.debug("Main frame navigated from \(String(describing: self.topUrl)) to \(String(describing: url))")
+        let urlChanged = !urlsMatchIgnoringQuery(url, topUrl)
+        if urlChanged {
+            Logger.autoconsent.debug("Main frame navigated to a different page \(url), clearing reload loop state")
+            clearReloadLoopState()
+        }
+        topUrl = url
+    }
+
+    @MainActor
     func handleInit(message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
         guard let messageData: InitMessage = decodeMessageBody(from: message.body),
               let url = URL(string: messageData.url) else {
@@ -277,16 +290,7 @@ extension AutoconsentUserScript {
         }
 
         // do the navigation check before checking if the domain is allowlisted
-        if message.frameInfo.isMainFrame {
-            Logger.autoconsent.debug("Main frame navigated from \(String(describing: self.topUrl)) to \(String(describing: url))")
-            let urlChanged = !urlsMatchIgnoringQuery(url, topUrl)
-            if urlChanged {
-                // Main frame navigated to a different page, clear state
-                Logger.autoconsent.debug("Main frame navigated to a different page \(url), clearing reload loop state")
-                clearReloadLoopState()
-            }
-            topUrl = url
-        }
+        checkMainFrameNavigation(message: message, url: url)
 
         let topURLDomain = message.webView?.url?.host
         guard config.isFeature(.autoconsent, enabledForDomain: topURLDomain) else {

@@ -838,7 +838,12 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     func makeChatEntry() -> BrowsingMenuEntry? {
         let settings = AIChatSettings(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
         guard settings.isAIChatBrowsingMenuUserSettingsEnabled else { return nil }
-        return buildChatEntry(withSmallIcon: false)
+        
+        if aiChatFullModeFeature.isAvailable {
+            return buildNewAIChatEntry(withSmallIcon: false)
+        } else {
+            return buildChatEntry(withSmallIcon: false)
+        }
     }
     
     func makeSettingsEntry() -> BrowsingMenuEntry {

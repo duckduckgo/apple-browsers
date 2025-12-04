@@ -86,6 +86,7 @@ excluded:
   - iOS/PacketTunnelProvider/ProxyServer
   - iOS/scripts
   - iOS/.ruby-lsp
+  - iOS/vendor
   - macOS/DuckDuckGo/Common/Localizables/UserText.swift
   - macOS/LocalPackages/*/Package.swift
   - macOS/LocalPackages/*/.build

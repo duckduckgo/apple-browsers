@@ -10774,7 +10774,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "echo \"SwiftLint disabled for now\"\n";
+			shellScript = "echo \"Running SwiftLint...\"\nMINT=\"/opt/homebrew/bin/mint\"\n\nif [ ! -x \"$MINT\" ]; then\n  echo \"warning: Mint not found at $MINT — skipping SwiftLint (opt-in).\"\n  exit 0\nfi\n\n# cd into root directory where Mintfile\ncd \"${SRCROOT}/..\" || exit 0\n\nSWIFTLINT_VERSION=$(\"$MINT\" run swiftlint --version 2>/dev/null)\n\nif [ -n \"$SWIFTLINT_VERSION\" ]; then\n  echo \"SwiftLint: $SWIFTLINT_VERSION\"\n  # Run lint, but don't fail the build if it exits non-zero\n  \"$MINT\" run swiftlint lint --strict --quiet || \\\n    echo \"warning: SwiftLint - Linting failed.\"\nelse\n  echo \"warning: SwiftLint not available — skipping lint (opt-in).\"\nfi\n";
 		};
 		CBCCF59B29940C3800C02DFE /* Assert Xcode version */ = {
 			isa = PBXShellScriptBuildPhase;

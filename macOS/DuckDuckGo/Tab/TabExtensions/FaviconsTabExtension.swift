@@ -61,9 +61,10 @@ final class FaviconsTabExtension {
     }
 
     @MainActor
-    func handleFavicon(oldValue: TabContent? = nil, error: Error? = nil) {
+    func loadCachedFavicon(oldValue: TabContent? = nil, isBurner: Bool, error: Error? = nil) {
         guard let content, content.isUrl, let url = content.urlForWebView, error == nil else {
-            favicon = nil
+            // Load default Favicon for SpecialURL(s) such as newtab
+            favicon = content?.displayedFavicon(error: error, isBurner: isBurner)
             return
         }
 
@@ -98,7 +99,7 @@ extension FaviconsTabExtension: NavigationResponder {
 
 protocol FaviconsTabExtensionProtocol: AnyObject, NavigationResponder {
     @MainActor
-    func handleFavicon(oldValue: TabContent?, error: Error?)
+    func loadCachedFavicon(oldValue: TabContent?, isBurner: Bool, error: Error?)
 
     var faviconPublisher: AnyPublisher<NSImage?, Never> { get }
 }

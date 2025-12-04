@@ -294,10 +294,6 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         backgroundView.stopListening()
     }
 
-    func cleanupText() {
-        omnibarController.cleanup()
-    }
-
     func focusTextView() {
         view.window?.makeFirstResponder(textView)
     }

@@ -40,6 +40,7 @@ public enum DataImport {
         case tor
         case vivaldi
         case yandex
+        case fileImport
         case csv
         case bookmarksHTML
         case onePassword8
@@ -51,6 +52,10 @@ public enum DataImport {
 
         public var isSafari: Bool {
             self == .safari || self == .safariTechnologyPreview
+        }
+
+        public var isAvailableForLegacyImports: Bool {
+            return self != .fileImport
         }
     }
 

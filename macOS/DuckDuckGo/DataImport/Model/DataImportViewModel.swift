@@ -213,6 +213,11 @@ struct DataImportViewModel {
          onFinished: @escaping () -> Void = {},
          onCancelled: @escaping () -> Void = {}) {
         let filteredAvailableSources = availableImportSources.filter {
+            // Filter out CSV and HTML as we're using the new combined file import option
+             if $0 == .bookmarksHTML || $0 == .csv {
+                 return false
+             }
+
             let browser = ThirdPartyBrowser.browser(for: $0)
             guard browser?.isWebBrowser == true else {
                 // Don't filter out password managers or file imports
@@ -221,6 +226,7 @@ struct DataImportViewModel {
             let profiles = browser.map(loadProfiles)
             return profiles?.defaultProfile != nil
         }
+
         self.availableImportSources = filteredAvailableSources
         let importSource = importSource ?? preferredImportSources.first(where: { filteredAvailableSources.contains($0) }) ?? filteredAvailableSources.first ?? .csv
 
@@ -458,11 +464,65 @@ struct DataImportViewModel {
 
         guard let url = openPanelCallback(dataTypes) else { return }
 
+        // If the source is .fileImport, detect the file type and switch to the appropriate source (.csv or .bookmarksHTML)
+        guard switchFromFileImportToSpecificSourceIfNeeded(fileURL: url) else { return }
+
         self.initiateImport(fileURL: url)
     }
 
+    /// Detects the data type (passwords or bookmarks) from a file URL
+    private func detectDataType(from url: URL) -> DataType? {
+        if let resourceValues = try? url.resourceValues(forKeys: [.typeIdentifierKey]),
+           let typeIdentifier = resourceValues.typeIdentifier,
+           let fileType = UTType(typeIdentifier) {
+            if fileType.conforms(to: .commaSeparatedText) {
+                return .passwords
+            } else if fileType.conforms(to: .html) {
+                return .bookmarks
+            }
+        }
+
+        // Fallback to file extension if UTType detection fails
+        let pathExtension = url.pathExtension.lowercased()
+        if pathExtension == "csv" {
+            return .passwords
+        } else if pathExtension == "html" || pathExtension == "htm" {
+            return .bookmarks
+        }
+
+        return nil
+    }
+
+    /// If using a source of `.fileImport`, this function detects the file type and switches to the appropriate specific source (.csv or .bookmarksHTML).
+    /// - Parameter fileURL: The URL of the selected file
+    /// - Returns: `true` if the operation succeeded or was not needed, `false` if detection failed
+    /// - Note: This will reset the screen to .sourceAndDataTypesPicker, which matches the behavior
+    ///   of the standalone CSV/HTML options so error handling works the same way.
+    @MainActor
+    private mutating func switchFromFileImportToSpecificSourceIfNeeded(fileURL: URL) -> Bool {
+        guard importSource == .fileImport else {
+            return true
+        }
+
+        // Detection should always succeed since the file picker filters to CSV/HTML files
+        guard let detectedDataType = detectDataType(from: fileURL) else {
+            assertionFailure("Failed to detect data type for file: \(fileURL.path). Expected only a CSV or HTML file.")
+            return false
+        }
+
+        let newSource: Source = detectedDataType == .passwords ? .csv : .bookmarksHTML
+
+        self.update(with: newSource)
+
+        if !selectedDataTypes.contains(detectedDataType) {
+            selectedDataTypes = [detectedDataType]
+        }
+
+        return true
+    }
+
     mutating func goBack() {
-        if case .summaryDetail(let summary, let dataType) = screen {
+        if case .summaryDetail(let summary, _) = screen {
             screen = .summary(summary)
         } else {
             screen = .sourceAndDataTypesPicker
@@ -503,7 +563,12 @@ private func dataImporter(for source: DataImport.Source, fileDataType: DataImpor
         /* any */_ where fileDataType == .bookmarks:
 
         BookmarkHTMLImporter(fileURL: url, bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager))
+    case .fileImport: {
+        assertionFailure("Unexpected .fileImport source in dataImporter. Source should have been switched to .csv or .bookmarksHTML earlier.")
 
+        // Fallback to CSV importer as a safety measure
+        return CSVImporter(fileURL: url, loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()), defaultColumnPositions: .init(source: .csv), reporter: SecureVaultReporter.shared, tld: Application.appDelegate.tld)
+    }()
     case .onePassword8, .onePassword7, .bitwarden, .lastPass, .csv,
         /* any */_ where fileDataType == .passwords:
         CSVImporter(fileURL: url, loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()), defaultColumnPositions: .init(source: source), reporter: SecureVaultReporter.shared, tld: Application.appDelegate.tld)
@@ -735,7 +800,7 @@ extension DataImportViewModel {
 
         switch screen {
         case .sourceAndDataTypesPicker:
-            if importSource == .csv || importSource == .bookmarksHTML {
+            if importSource == .csv || importSource == .bookmarksHTML || importSource == .fileImport {
                 return .selectFile
             } else {
                 return initiateImport()

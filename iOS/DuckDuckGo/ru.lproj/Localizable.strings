@@ -2926,6 +2926,9 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Положение адресной строки";
 
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Пробное меню браузера";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Открывать ссылки в связанных приложениях";
 

@@ -145,7 +145,8 @@ public final class AttributedMetricManager {
         guard let installDate = dataStorage.installDate else {
             return true
         }
-        return installDate.isLessThan(daysAgo: Constants.daysInAMonth * 6)
+        let days = Constants.daysInAMonth * 6
+        return installDate > self.dateProvider.now().addingTimeInterval(Double(-days) * TimeInterval.day)
     }
 
     var isSameDayOfInstallDate: Bool {

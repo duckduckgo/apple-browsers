@@ -49,6 +49,8 @@ final class MainView: NSView {
 
     let divider = ColorView(frame: .zero, backgroundColor: .separatorColor)
 
+    private let themeManager: ThemeManager = NSApp.delegateTyped.themeManager
+
     private var navigationBarTopConstraint: NSLayoutConstraint!
     private var bookmarksBarHeightConstraint: NSLayoutConstraint!
     private var webContainerTopConstraint: NSLayoutConstraint!
@@ -89,9 +91,11 @@ final class MainView: NSView {
     }
 
     private func addConstraints() {
+        let navigationBarTopPadding = themeManager.theme.addressBarStyleProvider.navigationBarBackgroundTopPadding
+
         bookmarksBarHeightConstraint = bookmarksBarContainerView.heightAnchor.constraint(equalToConstant: Constants.bookmarksBarHeight)
         tabBarHeightConstraint = tabBarContainerView.heightAnchor.constraint(equalToConstant: Constants.tabBarHeight)
-        navigationBarTopConstraint = navigationBarContainerView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.tabBarHeight)
+        navigationBarTopConstraint = navigationBarContainerView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.tabBarHeight + navigationBarTopPadding)
         webContainerTopConstraint = webContainerView.topAnchor.constraint(equalTo: bannerContainerView.bottomAnchor)
         webContainerTopConstraintToNavigation = webContainerView.topAnchor.constraint(equalTo: navigationBarContainerView.bottomAnchor)
 

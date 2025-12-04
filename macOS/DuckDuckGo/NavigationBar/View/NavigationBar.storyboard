@@ -403,12 +403,12 @@
                             <constraint firstItem="eEh-kf-smR" firstAttribute="leading" secondItem="hYV-nu-QIp" secondAttribute="leading" constant="12" id="MQ7-vv-adb"/>
                             <constraint firstAttribute="trailing" secondItem="aWu-Jm-Oaz" secondAttribute="trailing" constant="12" id="UeG-qO-bD2"/>
                             <constraint firstItem="bSB-ca-LaM" firstAttribute="leading" secondItem="hYV-nu-QIp" secondAttribute="leading" id="Vx4-mN-uKA"/>
-                            <constraint firstItem="bSB-ca-LaM" firstAttribute="bottom" secondItem="gIy-el-24l" secondAttribute="bottom" constant="6" id="Xaz-X5-bmg"/>
+                            <constraint firstAttribute="bottom" secondItem="gIy-el-24l" secondAttribute="bottom" constant="6" id="Xaz-X5-bmg"/>
                             <constraint firstItem="EQw-GG-GMA" firstAttribute="top" secondItem="hYV-nu-QIp" secondAttribute="top" id="ctd-w7-EMF"/>
                             <constraint firstItem="aWu-Jm-Oaz" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="gIy-el-24l" secondAttribute="trailing" constant="12" id="eSb-tj-UdD"/>
                             <constraint firstItem="eEh-kf-smR" firstAttribute="centerY" secondItem="Wba-nA-FYj" secondAttribute="centerY" id="fcj-rV-KVD"/>
                             <constraint firstItem="EQw-GG-GMA" firstAttribute="leading" secondItem="hYV-nu-QIp" secondAttribute="leading" id="hpe-5Y-XTJ"/>
-                            <constraint firstItem="gIy-el-24l" firstAttribute="top" secondItem="bSB-ca-LaM" secondAttribute="top" constant="6" id="km5-nE-hfK"/>
+                            <constraint firstItem="gIy-el-24l" firstAttribute="top" secondItem="hYV-nu-QIp" secondAttribute="top" constant="6" id="km5-nE-hfK"/>
                             <constraint firstAttribute="trailing" secondItem="EQw-GG-GMA" secondAttribute="trailing" id="oYK-XH-0iN"/>
                             <constraint firstItem="gIy-el-24l" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="eEh-kf-smR" secondAttribute="trailing" constant="12" id="rfA-3F-QAf"/>
                             <constraint firstItem="gIy-el-24l" firstAttribute="width" secondItem="hYV-nu-QIp" secondAttribute="width" multiplier="0.6" priority="250" id="rqL-Vd-lnY"/>
@@ -426,7 +426,6 @@
                         <outlet property="addressBarTopConstraint" destination="km5-nE-hfK" id="dR8-qN-sMa"/>
                         <outlet property="backgroundBaseColorView" destination="hYV-nu-QIp" id="9uD-tL-C95"/>
                         <outlet property="backgroundColorView" destination="bSB-ca-LaM" id="aZM-FK-hPw"/>
-                        <outlet property="backgroundTopConstraint" destination="uuJ-L8-bDw" id="2Ir-Eo-ihd"/>
                         <outlet property="bookmarkListButton" destination="4sj-qN-UUY" id="Fjs-KE-Lfp"/>
                         <outlet property="bookmarksButtonHeightConstraint" destination="Qzm-SN-RXg" id="ANa-CB-8eC"/>
                         <outlet property="bookmarksButtonWidthConstraint" destination="q0c-3z-K6Y" id="Z6V-BL-xd0"/>

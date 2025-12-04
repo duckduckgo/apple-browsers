@@ -138,8 +138,8 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
         }
     }()
 
-    private let navigationBarHeightForDefault: CGFloat
-    private let navigationBarHeightForHomePage: CGFloat
+    private let navigationBarHeightForDefault: CGFloat = 52
+    private let navigationBarHeightForHomePage: CGFloat = 52
     private let navigationBarHeightForPopUpWindow: CGFloat = 42
     private let addressBarTopPaddingForDefault: CGFloat = 7
     private let addressBarTopPaddingForDefaultFocusedWithAIChat: CGFloat = 3
@@ -160,8 +160,6 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
 
     init(featureFlagger: FeatureFlagger) {
         self.featureFlagger = featureFlagger
-        self.navigationBarHeightForDefault = 52 + navigationBarBackgroundTopPadding
-        self.navigationBarHeightForHomePage = 52 + navigationBarBackgroundTopPadding
     }
 
     let defaultAddressBarFontSize: CGFloat = 13

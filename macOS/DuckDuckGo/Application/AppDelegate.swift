@@ -110,6 +110,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let featureFlagOverridesPublishingHandler = FeatureFlagOverridesPublishingHandler<FeatureFlag>()
     private var appIconChanger: AppIconChanger!
     private var autoClearHandler: AutoClearHandler!
+    private(set) var warnBeforeQuitManager: WarnBeforeQuitManager!
     private(set) var autofillPixelReporter: AutofillPixelReporter?
 
     private(set) var syncDataProviders: SyncDataProvidersSource?
@@ -1130,6 +1131,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let urlEventHandlerResult = urlEventHandler.applicationDidFinishLaunching()
 
         setUpAutoClearHandler()
+        setUpWarnBeforeQuitManager()
 
         BWManager.shared.initCommunication()
 
@@ -1717,6 +1719,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DispatchQueue.main.async {
             autoClearHandler.handleAppLaunch()
         }
+    }
+
+    @MainActor
+    private func setUpWarnBeforeQuitManager() {
+        warnBeforeQuitManager = WarnBeforeQuitManager()
     }
 
     private func setUpAutofillPixelReporter() {

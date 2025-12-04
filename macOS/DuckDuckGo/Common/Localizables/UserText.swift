@@ -103,6 +103,12 @@ struct UserText {
     static let quit = NSLocalizedString("quit", value: "Quit", comment: "Quit button")
     static let uninstall = NSLocalizedString("uninstall", value: "Uninstall", comment: "Uninstall button")
     static let dontQuit = NSLocalizedString("dont.quit", value: "Don’t Quit", comment: "Don’t Quit button")
+
+    // Warn Before Quit
+    static let warnBeforeQuitTitle = NSLocalizedString("warn.before.quit.title", value: "Hold or press again to quit", comment: "Title shown in the warn before quit overlay")
+    static let warnBeforeQuitSubtitle = NSLocalizedString("warn.before.quit.subtitle", value: "Tabs will be saved for next time", comment: "Subtitle shown in the warn before quit overlay explaining that tabs will be restored")
+    static let warnBeforeQuitDontAskAgain = NSLocalizedString("warn.before.quit.dont.ask.again", value: "Don't ask again", comment: "Button to disable the warn before quit feature")
+
     static let next = NSLocalizedString("next", value: "Next", comment: "Next button")
     static let pasteAndGo = NSLocalizedString("paste.and.go", value: "Paste & Go", comment: "Paste & Go button")
     static let pasteAndSearch = NSLocalizedString("paste.and.search", value: "Paste & Search", comment: "Paste & Search button")

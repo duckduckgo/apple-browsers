@@ -1,5 +1,5 @@
 //
-//  BrowsingMenuVariantBBuilder.swift
+//  BrowsingMenuBuilder.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -21,8 +21,7 @@ import Foundation
 import Bookmarks
 import Core
 
-/// Variant B Builder: Custom structure with specific sections
-final class BrowsingMenuVariantBBuilder: BrowsingMenuVariantBuilder {
+final class BrowsingMenuBuilder: BrowsingMenuBuilding {
     weak var entryBuilder: BrowsingMenuEntryBuilding?
 
     init(entryBuilder: BrowsingMenuEntryBuilding) {
@@ -53,21 +52,27 @@ final class BrowsingMenuVariantBBuilder: BrowsingMenuVariantBuilder {
         }
     }
 
+    // MARK: - New Tab Page
+
     private func buildNewTabPageMenu(mobileCustomization: MobileCustomization,
                                      clearTabsAndData: @escaping () -> Void) -> BrowsingMenuModel? {
         guard let entryBuilder = entryBuilder else { return nil }
 
+        // MARK: Header
         let headerItems: [BrowsingMenuModel.Entry] = [
             .init(entryBuilder.makeNewTabEntry()),
-            .init(entryBuilder.makeChatEntry(withSmallIcon: false))
+            .init(entryBuilder.makeChatEntry(withSmallIcon: false)),
+            .init(entryBuilder.makeSettingsEntry(useSmallIcon: false))
         ].compactMap { $0 }
 
+        // MARK: Shortcuts group
         let shortcutsItems: [BrowsingMenuModel.Entry] = [
             .init(entryBuilder.makeOpenBookmarksEntry()),
             .init(entryBuilder.makeAutoFillEntry()),
             .init(entryBuilder.makeDownloadsEntry())
         ].compactMap { $0 }
 
+        // MARK: Privacy group
         let privacyItems: [BrowsingMenuModel.Entry] = [
             .init(entryBuilder.makeVPNEntry()),
             .init(entryBuilder.makeClearDataEntry(mobileCustomization: mobileCustomization, clearTabsAndData: clearTabsAndData))
@@ -78,16 +83,14 @@ final class BrowsingMenuVariantBBuilder: BrowsingMenuVariantBuilder {
             BrowsingMenuModel.Section(items: privacyItems)
         ]
 
-        let footerItems: [BrowsingMenuModel.Entry] = [
-            .init(entryBuilder.makeSettingsEntry(useSmallIcon: false))
-        ].compactMap { $0 }
-
         return BrowsingMenuModel(
             headerItems: headerItems,
             sections: sections,
-            footerItems: footerItems
+            footerItems: []
         )
     }
+
+    // MARK: - Website
 
     private func buildWebsiteMenu(
         bookmarksInterface: MenuBookmarksInteracting,
@@ -96,26 +99,26 @@ final class BrowsingMenuVariantBBuilder: BrowsingMenuVariantBuilder {
     ) -> BrowsingMenuModel? {
         guard let entryBuilder = entryBuilder else { return nil }
 
-        // Header: new tab, duck.ai (conditional)
+        // MARK: Header
         let headerItems: [BrowsingMenuModel.Entry] = [
             .init(entryBuilder.makeNewTabEntry()),
-            .init(entryBuilder.makeChatEntry(withSmallIcon: false))
+            .init(entryBuilder.makeChatEntry(withSmallIcon: false)),
+            .init(entryBuilder.makeSettingsEntry(useSmallIcon: false))
         ].compactMap { $0 }
 
-        // Sections
         var sections = [BrowsingMenuModel.Section]()
 
-        // Link section
+        // MARK: Bookmark group
         if let bookmarkEntries = entryBuilder.makeBookmarkEntries(with: bookmarksInterface) {
-            let linkItems: [BrowsingMenuModel.Entry] = [
+            let bookmarkGroupItems: [BrowsingMenuModel.Entry] = [
                 .init(bookmarkEntries.bookmark),
                 .init(bookmarkEntries.favorite, tag: .favorite),
                 .init(entryBuilder.makeShareEntry(useSmallIcon: true))
             ].compactMap { $0 }
-            sections.append(BrowsingMenuModel.Section(items: linkItems))
+            sections.append(BrowsingMenuModel.Section(items: bookmarkGroupItems))
         }
 
-        // Tab actions section
+        // MARK: Tab actions group
         let tabActionItems: [BrowsingMenuModel.Entry] = [
             .init(entryBuilder.makeFindInPageEntry()),
             .init(entryBuilder.makeZoomEntry()),
@@ -126,7 +129,7 @@ final class BrowsingMenuVariantBBuilder: BrowsingMenuVariantBuilder {
             sections.append(BrowsingMenuModel.Section(items: tabActionItems))
         }
 
-        // Shortcuts section
+        // MARK: Shortcuts group
         let shortcutItems: [BrowsingMenuModel.Entry] = [
             .init(entryBuilder.makeOpenBookmarksEntry()),
             .init(entryBuilder.makeAutoFillEntry()),
@@ -137,11 +140,10 @@ final class BrowsingMenuVariantBBuilder: BrowsingMenuVariantBuilder {
             sections.append(BrowsingMenuModel.Section(items: shortcutItems))
         }
 
-        // Privacy section
+        // MARK: Privacy group
         let privacyItems: [BrowsingMenuModel.Entry] = [
             .init(entryBuilder.makeVPNEntry()),
             .init(entryBuilder.makeUseNewDuckAddressEntry()),
-            .init(entryBuilder.makeToggleProtectionEntry()),
             .init(entryBuilder.makeKeepSignInEntry()),
             .init(entryBuilder.makeClearDataEntry(mobileCustomization: mobileCustomization, clearTabsAndData: clearTabsAndData))
         ].compactMap { $0 }
@@ -150,10 +152,11 @@ final class BrowsingMenuVariantBBuilder: BrowsingMenuVariantBuilder {
             sections.append(BrowsingMenuModel.Section(items: privacyItems))
         }
 
-        // Other section
+        // MARK: Actions group
         let otherItems: [BrowsingMenuModel.Entry] = [
             .init(entryBuilder.makeReloadEntry()),
             .init(entryBuilder.makeReportBrokenSiteEntry()),
+            .init(entryBuilder.makeToggleProtectionEntry()),
             .init(entryBuilder.makePrintEntry(withSmallIcon: true))
         ].compactMap { $0 }
 
@@ -161,15 +164,10 @@ final class BrowsingMenuVariantBBuilder: BrowsingMenuVariantBuilder {
             sections.append(BrowsingMenuModel.Section(items: otherItems))
         }
 
-        // Footer
-        let footerItems: [BrowsingMenuModel.Entry] = [
-            .init(entryBuilder.makeSettingsEntry(useSmallIcon: false))
-        ].compactMap { $0 }
-
         return BrowsingMenuModel(
             headerItems: headerItems,
             sections: sections,
-            footerItems: footerItems
+            footerItems: []
         )
     }
 }

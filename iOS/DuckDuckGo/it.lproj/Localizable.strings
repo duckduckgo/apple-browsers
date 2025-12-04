@@ -2926,6 +2926,9 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Posizione Barra degli indirizzi";
 
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Menu sperimentale del browser";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Apri i collegamenti nelle loro app associate";
 

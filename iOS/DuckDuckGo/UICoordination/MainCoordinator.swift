@@ -82,7 +82,8 @@ final class MainCoordinator {
          launchSourceManager: LaunchSourceManaging,
          winBackOfferService: WinBackOfferService,
          modalPromptCoordinationService: ModalPromptCoordinationService,
-         mobileCustomization: MobileCustomization
+         mobileCustomization: MobileCustomization,
+         productSurfaceTelemetry: ProductSurfaceTelemetry
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
@@ -134,7 +135,8 @@ final class MainCoordinator {
                                 featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
                                 keyValueStore: keyValueStore,
                                 daxDialogsManager: daxDialogsManager,
-                                aiChatSettings: aiChatSettings)
+                                aiChatSettings: aiChatSettings,
+                                productSurfaceTelemetry: productSurfaceTelemetry)
         controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
                                         bookmarksDatabase: bookmarksDatabase,
                                         bookmarksDatabaseCleaner: syncService.syncDataProviders.bookmarksAdapter.databaseCleaner,
@@ -170,7 +172,8 @@ final class MainCoordinator {
                                         launchSourceManager: launchSourceManager,
                                         winBackOfferVisibilityManager: winBackOfferService.visibilityManager,
                                         mobileCustomization: mobileCustomization,
-                                        remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler)
+                                        remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler,
+                                        productSurfaceTelemetry: productSurfaceTelemetry)
     }
 
     func start() {

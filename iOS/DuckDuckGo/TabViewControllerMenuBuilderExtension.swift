@@ -79,7 +79,7 @@ extension TabViewController {
                                 browsingMenuSheetCapability: BrowsingMenuSheetCapable,
                                 clearTabsAndData: @escaping () -> Void) -> BrowsingMenuModel? {
         
-        let builder = makeVariantBuilder(for: browsingMenuSheetCapability.variant)
+        let builder = BrowsingMenuBuilder(entryBuilder: self)
         
         return builder.buildMenu(
             context: context,
@@ -87,19 +87,6 @@ extension TabViewController {
             mobileCustomization: mobileCustomization,
             clearTabsAndData: clearTabsAndData
         )
-    }
-    
-    private func makeVariantBuilder(for variant: BrowsingMenuClusteringVariant) -> BrowsingMenuVariantBuilder {
-        switch variant {
-        case .a:
-            return BrowsingMenuVariantABuilder(entryBuilder: self)
-        case .b:
-            return BrowsingMenuVariantBBuilder(entryBuilder: self)
-        case .c:
-            return BrowsingMenuVariantCBuilder(entryBuilder: self)
-        case .d:
-            return BrowsingMenuVariantDBuilder(entryBuilder: self)
-        }
     }
 
     func buildBrowsingMenu(with bookmarksInterface: MenuBookmarksInteracting,

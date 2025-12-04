@@ -42582,7 +42582,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Click **Allow** to unlock your keychain using your Mac password (some devices might ask you twice). DuckDuckGo will not see your password."
+            "value" : "Enter your device password and click **Allow** to complete the import. DuckDuckGo won't see your password."
           }
         }
       }
@@ -45858,7 +45858,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Click **'Show macOS Message'** and select **'Allow'** when the macOS message appears."
+            "value" : "Click **Show macOS Message** and select **Allow** when the macOS message appears."
           }
         }
       }

@@ -45,9 +45,6 @@ public struct SubscriptionPixelHandler: SubscriptionPixelHandling {
             DailyPixel.fire(pixel: .subscriptionActive,
                             withAdditionalParameters: [AuthVersion.key: AuthVersion.v2.rawValue])
         case .migrationFailed(let error):
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionAuthV2MigrationFailed,
-                                         error: error,
-                                         withAdditionalParameters: sourceParam)
             DailyPixel.fireDailyAndCount(pixel: .subscriptionAuthV2MigrationFailed2,
                                          error: error,
                                          withAdditionalParameters: sourceParam)
@@ -55,9 +52,6 @@ public struct SubscriptionPixelHandler: SubscriptionPixelHandling {
             DailyPixel.fireDailyAndCount(pixel: .subscriptionAuthV2MigrationSucceeded,
                                          withAdditionalParameters: sourceParam)
         case .getTokensError(let policy, let error):
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionAuthV2GetTokensError,
-                                         error: error,
-                                         withAdditionalParameters: [Defaults.policyCacheKey: policy.description].merging(sourceParam) { $1 })
             DailyPixel.fireDailyAndCount(pixel: .subscriptionAuthV2GetTokensError2,
                                          error: error,
                                          withAdditionalParameters: [Defaults.policyCacheKey: policy.description].merging(sourceParam) { $1 })

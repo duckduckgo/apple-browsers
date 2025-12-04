@@ -921,7 +921,7 @@ final class AttributedMetricManagerTests: XCTestCase {
     /// - All data is cleared at 168 days (exactly 6 months)
     /// - Verifies: installDate, lastRetentionThreshold, subscriptionDate, subscription flags, syncDevicesCount
     /// - Trigger: Any trigger (using .appDidStart) calls process() which checks isLessThanSixMonths
-    func testDataStorageRemovalAfterSixMonthsAndOneDay() {
+    func testDataStorageRemovalAfterSixMonths() {
         let fixture = createTestFixture { _, _, _, _, _, _ in
             // No pixel expectations needed for this test
         }

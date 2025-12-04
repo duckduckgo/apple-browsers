@@ -22,7 +22,7 @@ import SecureStorage
 
 public enum DataImport {
 
-    public enum Source: String, RawRepresentable, CaseIterable, Equatable, Identifiable {
+    public enum Source: String, RawRepresentable, CaseIterable, Equatable, Identifiable, Codable {
         public var id: String {
             rawValue
         }

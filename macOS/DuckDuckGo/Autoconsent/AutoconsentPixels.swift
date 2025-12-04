@@ -35,6 +35,7 @@ enum AutoconsentPixel: PixelKitEvent {
     case detectedOnlyRules
     case selfTestOk
     case selfTestFail
+    case errorReloadLoop
 
     case summary(events: [String: Int])
     case usageStats(stats: [String: String])
@@ -54,7 +55,8 @@ enum AutoconsentPixel: PixelKitEvent {
         .detectedByBoth,
         .detectedOnlyRules,
         .selfTestOk,
-        .selfTestFail
+        .selfTestFail,
+        .errorReloadLoop
     ]
 
     var name: String {
@@ -74,6 +76,7 @@ enum AutoconsentPixel: PixelKitEvent {
         case .detectedOnlyRules: "autoconsent_detected-only-rules"
         case .selfTestOk: "autoconsent_self-test-ok"
         case .selfTestFail: "autoconsent_self-test-fail"
+        case .errorReloadLoop: "autoconsent_error_reload-loop"
         case .summary: "autoconsent_summary"
         case .usageStats: "autoconsent_usage-stats"
         }
@@ -117,6 +120,7 @@ enum AutoconsentPixel: PixelKitEvent {
                 .detectedOnlyRules,
                 .selfTestOk,
                 .selfTestFail,
+                .errorReloadLoop,
                 .summary,
                 .usageStats:
             return [.pixelSource]

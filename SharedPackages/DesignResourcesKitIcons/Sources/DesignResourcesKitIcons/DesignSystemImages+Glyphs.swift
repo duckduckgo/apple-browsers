@@ -394,6 +394,8 @@ public extension DesignSystemImages {
             public static var favorite: DesignSystemImage { .init(resource: .favorite24) }
             public static var favoriteRemove: DesignSystemImage { .init(resource: .favoriteRemove24) }
             public static var favoriteSolid: DesignSystemImage { .init(resource: .favoriteSolid24) }
+            public static var feedback: DesignSystemImage { .init(resource: .feedback24) }
+            public static var findInPage: DesignSystemImage { .init(resource: .findInPage24) }
             public static var findSearchSmall: DesignSystemImage { .init(resource: .findSearchSmall24) }
             public static var fire: DesignSystemImage { .init(resource: .fire24) }
             public static var fireSolid: DesignSystemImage { .init(resource: .fireSolid24) }
@@ -416,6 +418,7 @@ public extension DesignSystemImages {
             public static var info: DesignSystemImage { .init(resource: .info24) }
             public static var key: DesignSystemImage { .init(resource: .key24) }
             public static var linkSolid: DesignSystemImage { .init(resource: .linkSolid24) }
+            public static var list: DesignSystemImage { .init(resource: .list24) }
             public static var location: DesignSystemImage { .init(resource: .location24) }
             public static var locationBlocked: DesignSystemImage { .init(resource: .locationBlocked24) }
             public static var locationSolid: DesignSystemImage { .init(resource: .locationSolid24) }
@@ -444,6 +447,8 @@ public extension DesignSystemImages {
             public static var resetSites: DesignSystemImage { .init(resource: .resetSites24) }
             public static var settings: DesignSystemImage { .init(resource: .settings24) }
             public static var shapeCircle: DesignSystemImage { .init(resource: .shapeCircle24) }
+            public static var shield: DesignSystemImage { .init(resource: .shield24) }
+            public static var shieldBlocked: DesignSystemImage { .init(resource: .shieldBlocked24) }
             public static var shareAndroid: DesignSystemImage { .init(resource: .shareAndroid24) }
             public static var shareApple: DesignSystemImage { .init(resource: .shareApple24) }
             public static var shortcut: DesignSystemImage { .init(resource: .shortcut24) }
@@ -464,6 +469,7 @@ public extension DesignSystemImages {
             public static var trash: DesignSystemImage { .init(resource: .trash24) }
             public static var typeSize: DesignSystemImage { .init(resource: .typeSize24) }
             public static var vpn: DesignSystemImage { .init(resource: .VPN_24) }
+            public static var vpnUnlocked: DesignSystemImage { .init(resource: .vpnUnlocked24) }
             public static var video: DesignSystemImage { .init(resource: .video24) }
             public static var videoPlayer: DesignSystemImage { .init(resource: .videoPlayer24) }
             public static var videoSolid: DesignSystemImage { .init(resource: .videoSolid24) }

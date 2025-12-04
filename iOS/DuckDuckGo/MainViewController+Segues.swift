@@ -111,7 +111,8 @@ extension MainViewController {
                                     syncService: self.syncService,
                                     syncDataProviders: self.syncDataProviders,
                                     appSettings: self.appSettings,
-                                    keyValueStore: self.keyValueStore)
+                                    keyValueStore: self.keyValueStore,
+                                    productSurfaceTelemetry: self.productSurfaceTelemetry)
         }
         bookmarks.delegate = self
 
@@ -200,7 +201,8 @@ extension MainViewController {
                                       featureFlagger: self.featureFlagger,
                                       tabManager: self.tabManager,
                                       aiChatSettings: self.aiChatSettings,
-                                      appSettings: self.appSettings)
+                                      appSettings: self.appSettings,
+                                      productSurfaceTelemetry: self.productSurfaceTelemetry)
         }) else {
             assertionFailure()
             return
@@ -339,7 +341,8 @@ extension MainViewController {
                                                             keyValueStore: keyValueStore,
                                                             systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                                                             daxDialogsManager: daxDialogsManager,
-                                                            dbpIOSPublicInterface: dbpIOSPublicInterface)
+                                                            dbpIOSPublicInterface: dbpIOSPublicInterface,
+                                                            productSurfaceTelemetry: productSurfaceTelemetry)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
         let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings,
@@ -383,7 +386,9 @@ extension MainViewController {
             } else {
                 assert(self.presentedViewController == nil)
 
-                let settingsController = SettingsHostingController(viewModel: settingsViewModel, viewProvider: legacyViewProvider)
+                let settingsController = SettingsHostingController(viewModel: settingsViewModel,
+                                                                   viewProvider: legacyViewProvider,
+                                                                   productSurfaceTelemetry: self.productSurfaceTelemetry)
 
                 // We are still presenting legacy views, so use a Navcontroller
                 let navController = SettingsUINavigationController(rootViewController: settingsController)

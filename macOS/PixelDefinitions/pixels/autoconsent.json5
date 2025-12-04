@@ -105,6 +105,13 @@
         "suffixes": [],
         "parameters": ["appVersion", "pixelSource"]
     },
+    "m_mac_autoconsent_error_reload-loop_daily": {
+        "description": "Fires when the autoconsent reload loop is detected.",
+        "owners": ["muodov"],
+        "triggers": ["page_load"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
     "m_mac_autoconsent_summary": {
         "description": "Fires periodically with counts of autoconsent metrics.",
         "owners": ["sammacbeth"],
@@ -186,6 +193,11 @@
             {
                 "key": "self-test-fail",
                 "description": "Number of autoconsent self-test-fail pixels fired.",
+                "type": "number"
+            },
+            {
+                "key": "error_reload-loop",
+                "description": "Number of autoconsent error-reload-loop pixels fired.",
                 "type": "number"
             }
         ]

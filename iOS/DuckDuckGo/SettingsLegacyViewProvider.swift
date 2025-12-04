@@ -47,6 +47,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     let websiteDataManager: WebsiteDataManaging
     let customConfigurationURLProvider: CustomConfigurationURLProviding
     let keyValueStore: ThrowingKeyValueStoring
+    let productSurfaceTelemetry: ProductSurfaceTelemetry
     let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
     let daxDialogsManager: DaxDialogsManaging
     let dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?
@@ -63,7 +64,8 @@ class SettingsLegacyViewProvider: ObservableObject {
          keyValueStore: ThrowingKeyValueStoring,
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          daxDialogsManager: DaxDialogsManaging,
-         dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?) {
+         dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?,
+         productSurfaceTelemetry: ProductSurfaceTelemetry) {
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
         self.appSettings = appSettings
@@ -77,6 +79,7 @@ class SettingsLegacyViewProvider: ObservableObject {
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.daxDialogsManager = daxDialogsManager
         self.dbpIOSPublicInterface = dbpIOSPublicInterface
+        self.productSurfaceTelemetry = productSurfaceTelemetry
     }
     
     enum LegacyView {
@@ -183,7 +186,8 @@ class SettingsLegacyViewProvider: ObservableObject {
                                               source: source ?? .settings,
                                               bookmarksDatabase: self.bookmarksDatabase,
                                               favoritesDisplayMode: self.appSettings.favoritesDisplayMode,
-                                              keyValueStore: keyValueStore)
+                                              keyValueStore: keyValueStore,
+                                              productSurfaceTelemetry: self.productSurfaceTelemetry)
     }
 
     func importPasswords(delegate: DataImportViewControllerDelegate) -> DataImportViewController {

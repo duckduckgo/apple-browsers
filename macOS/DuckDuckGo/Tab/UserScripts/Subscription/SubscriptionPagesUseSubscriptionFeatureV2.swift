@@ -45,6 +45,7 @@ public struct GetFeatureValue: Encodable {
     let useSubscriptionsAuthV2: Bool
     let usePaidDuckAi: Bool
     let useAlternateStripePaymentFlow: Bool
+    let useGetSubscriptionTierOptions: Bool
 }
 
 /// Use Subscription sub-feature
@@ -113,6 +114,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         static let getFeatureConfig = "getFeatureConfig"
         static let backToSettings = "backToSettings"
         static let getSubscriptionOptions = "getSubscriptionOptions"
+        static let getSubscriptionTierOptions = "getSubscriptionTierOptions"
         static let subscriptionSelected = "subscriptionSelected"
         static let activateSubscription = "activateSubscription"
         static let featureSelected = "featureSelected"
@@ -136,6 +138,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         case Handlers.getFeatureConfig: return getFeatureConfig
         case Handlers.backToSettings: return backToSettings
         case Handlers.getSubscriptionOptions: return getSubscriptionOptions
+        case Handlers.getSubscriptionTierOptions: return getSubscriptionTierOptions
         case Handlers.subscriptionSelected: return subscriptionSelected
         case Handlers.activateSubscription: return activateSubscription
         case Handlers.featureSelected: return featureSelected
@@ -202,7 +205,8 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         return GetFeatureValue(
             useSubscriptionsAuthV2: true,
             usePaidDuckAi: subscriptionFeatureAvailability.isPaidAIChatEnabled,
-            useAlternateStripePaymentFlow: subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled
+            useAlternateStripePaymentFlow: subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled,
+            useGetSubscriptionTierOptions: subscriptionFeatureAvailability.isTierMessagingEnabled
         )
     }
 
@@ -237,6 +241,31 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
             return subscriptionOptions
         } else {
             return SubscriptionOptionsV2.empty
+        }
+    }
+
+    func getSubscriptionTierOptions(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        var subscriptionTierOptions: SubscriptionTierOptions?
+
+        switch subscriptionPlatform {
+        case .appStore:
+            guard #available(macOS 12.0, *) else { break }
+            subscriptionTierOptions = await subscriptionManager.storePurchaseManager().subscriptionTierOptions(includeProTier: subscriptionFeatureAvailability.isProTierPurchaseEnabled)
+        case .stripe:
+            switch await stripePurchaseFlow.subscriptionTierOptions(includeProTier: subscriptionFeatureAvailability.isProTierPurchaseEnabled) {
+            case .success(let tierOptions):
+                subscriptionTierOptions = tierOptions
+            case .failure(let error):
+                Logger.subscription.error("Failed to get Stripe tier options: \(String(describing: error), privacy: .public)")
+                subscriptionTierOptions = nil
+            }
+        }
+
+        if let subscriptionTierOptions {
+            guard subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed else { return subscriptionTierOptions.withoutPurchaseOptions() }
+            return subscriptionTierOptions
+        } else {
+            return SubscriptionTierOptions.empty
         }
     }
 

@@ -348,6 +348,7 @@ final class AddressBarTextField: NSTextField {
             canOpenLinkInCurrentTab: true
         )
 
+        PixelKit.fire(AIChatPixel.aiChatSuggestionAIChatSubmitted, frequency: .dailyAndCount, includeAppVersionParameter: true)
         NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: .query(prompt, shouldAutoSubmit: true), behavior: behavior)
         currentEditor()?.selectAll(self)
     }

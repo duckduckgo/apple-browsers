@@ -181,6 +181,7 @@ final class AutofillLoginListViewController: UIViewController {
     private let bookmarksDatabase: CoreDataDatabase
     private let favoritesDisplayMode: FavoritesDisplayMode
     private let keyValueStore: ThrowingKeyValueStoring
+    private let productSurfaceTelemetry: ProductSurfaceTelemetry
 
     init(appSettings: AppSettings,
          currentTabUrl: URL? = nil,
@@ -193,7 +194,8 @@ final class AutofillLoginListViewController: UIViewController {
          bookmarksDatabase: CoreDataDatabase,
          favoritesDisplayMode: FavoritesDisplayMode,
          keyValueStore: ThrowingKeyValueStoring,
-         extensionPromotionManager: AutofillExtensionPromotionManaging? = nil
+         extensionPromotionManager: AutofillExtensionPromotionManaging? = nil,
+         productSurfaceTelemetry: ProductSurfaceTelemetry
     ) {
         let secureVault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
         if secureVault == nil {
@@ -207,6 +209,8 @@ final class AutofillLoginListViewController: UIViewController {
         self.bookmarksDatabase = bookmarksDatabase
         self.favoritesDisplayMode = favoritesDisplayMode
         self.keyValueStore = keyValueStore
+        self.productSurfaceTelemetry = productSurfaceTelemetry
+
         super.init(nibName: nil, bundle: nil)
 
         authenticate()
@@ -251,6 +255,11 @@ final class AutofillLoginListViewController: UIViewController {
         updateViewState()
         configureNotification()
         registerForKeyboardNotifications()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        productSurfaceTelemetry.passwordsPageUsed()
     }
 
     override func viewWillDisappear(_ animated: Bool) {

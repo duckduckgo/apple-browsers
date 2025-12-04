@@ -32,6 +32,9 @@ public final class StorePurchaseManagerMockV2: StorePurchaseManagerV2 {
     public var currentStorefrontRegion: SubscriptionRegion = .usa
 
     public var subscriptionOptionsResult: SubscriptionOptionsV2?
+    public var subscriptionTierOptionsResult: SubscriptionTierOptions?
+    public var subscriptionTierOptionsIncludeProTierCalled: Bool?
+
     public var syncAppleIDAccountResultError: Error?
 
     public var mostRecentTransactionResult: String?
@@ -80,5 +83,10 @@ public final class StorePurchaseManagerMockV2: StorePurchaseManagerV2 {
 
     public func isUserEligibleForFreeTrial() -> Bool {
         isEligibleForFreeTrialResult
+    }
+
+    public func subscriptionTierOptions(includeProTier: Bool) async -> SubscriptionTierOptions? {
+        subscriptionTierOptionsIncludeProTierCalled = includeProTier
+        return subscriptionTierOptionsResult
     }
 }

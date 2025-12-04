@@ -2797,6 +2797,12 @@ Take back control of your personal information with the browser designed for dat
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Search Assist Settings";
 
+/* Settings screen cell subtitle for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.subtitle" = "Show new Duck.ai Chats as tabs in the browser";
+
+/* Settings screen cell title for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.title" = "Duck.ai Tabs Mode";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Hide AI-Generated Images";
 
@@ -2940,6 +2946,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Copy for budge on settings item to show an item is new */
 "settings.item.badge.new" = "New";
+
+/* Copy for budge on settings item to show an item is experimental */
+"settings.item.badge.preview" = "Preview";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Keyboard";

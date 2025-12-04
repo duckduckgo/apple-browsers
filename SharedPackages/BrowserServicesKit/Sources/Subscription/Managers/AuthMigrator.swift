@@ -62,7 +62,7 @@ public class AuthMigrator {
             Logger.subscription.log("V1 token migration completed")
         } catch OAuthClientError.authMigrationNotPerformed {
             Logger.subscription.log("V1 token migration not needed")
-        } catch OAuthServiceError.authAPIError(let code) where code == OAuthRequest.BodyErrorCode.invalidToken {
+        } catch OAuthServiceError.authAPIError(let apiError) where apiError.bodyErrorCode == OAuthRequest.BodyErrorCode.invalidToken {
             Logger.subscription.error("V1 token invalid during migration, logging out user")
             try? await oAuthClient.logout()
         } catch {

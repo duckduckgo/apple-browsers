@@ -26,6 +26,7 @@ public final class SubscriptionFeatureMappingCacheMockV2: SubscriptionFeatureMap
     public var lastCalledSubscriptionId: String?
 
     public var mapping: [String: [SubscriptionEntitlement]] = [:]
+    public var tierMapping: [String: [TierFeature]] = [:]
 
     public init() { }
 
@@ -33,5 +34,13 @@ public final class SubscriptionFeatureMappingCacheMockV2: SubscriptionFeatureMap
         didCallSubscriptionFeatures = true
         lastCalledSubscriptionId = subscriptionIdentifier
         return mapping[subscriptionIdentifier] ?? []
+    }
+
+    public func subscriptionTierFeatures(for subscriptionIdentifiers: [String]) async -> [String: [TierFeature]] {
+        var result: [String: [TierFeature]] = [:]
+        for identifier in subscriptionIdentifiers {
+            result[identifier] = tierMapping[identifier] ?? []
+        }
+        return result
     }
 }

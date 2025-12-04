@@ -1186,6 +1186,18 @@
         }
       }
     },
+    "address.bar.placeholder.with-duckai" : {
+      "comment" : "Address bar placeholder when Duck.ai toggle is available",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "⇥ Press tab then enter to ask Duck.ai"
+          }
+        }
+      }
+    },
     "address.bar.search.open.tab.suffix" : {
       "comment" : "Suffix of DuckDuckGo Search open tab suggestion. Example: cats – DuckDuckGo Search",
       "extractionState" : "extracted_with_value",
@@ -2087,6 +2099,18 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Chat with AI"
+          }
+        }
+      }
+    },
+    "aichat.omnibar.placeholder" : {
+      "comment" : "Placeholder text shown in the Duck.ai chat input field",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Chat Privately"
           }
         }
       }
@@ -29918,66 +29942,6 @@
         }
       }
     },
-    "feedback.problem-subcategory.popup-windows-not-opening" : {
-      "comment" : "Problem subcategory for popup windows being blocked",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pop-ups öffnen sich nicht"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Pop-ups don't open"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Los pop-ups no se abren"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les pop-ups ne s'ouvrent pas"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "I pop-up non si aprono"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pop-ups openen niet"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wyskakujące okienka się nie otwierają"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pop-ups não abrem"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Всплывающие окна не открываются"
-          }
-        }
-      }
-    },
     "feedback.problem-subcategory.passwords-management" : {
       "comment" : "Problem subcategory for general password management issues",
       "extractionState" : "extracted_with_value",
@@ -30034,6 +29998,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Управление паролями"
+          }
+        }
+      }
+    },
+    "feedback.problem-subcategory.popup-windows-not-opening" : {
+      "comment" : "Problem subcategory for popup windows being blocked",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pop-ups öffnen sich nicht"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Pop-ups don't open"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los pop-ups no se abren"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les pop-ups ne s'ouvrent pas"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "I pop-up non si aprono"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pop-ups openen niet"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyskakujące okienka się nie otwierają"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pop-ups não abrem"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Всплывающие окна не открываются"
           }
         }
       }
@@ -60366,6 +60390,78 @@
         }
       }
     },
+    "permission.center.always.allow" : {
+      "comment" : "Permission center dropdown option to always allow permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Always Allow"
+          }
+        }
+      }
+    },
+    "permission.center.always.ask" : {
+      "comment" : "Permission center dropdown option to always ask for permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Always Ask"
+          }
+        }
+      }
+    },
+    "permission.center.external.apps" : {
+      "comment" : "Permission center header for external app permissions",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "External Apps"
+          }
+        }
+      }
+    },
+    "permission.center.external.scheme.description" : {
+      "comment" : "Description for external scheme permission, first %@ is domain, second %@ is scheme name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ to open \"%2$@\" links"
+          }
+        }
+      }
+    },
+    "permission.center.never.allow" : {
+      "comment" : "Permission center dropdown option to never allow permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Never Allow"
+          }
+        }
+      }
+    },
+    "permission.center.title" : {
+      "comment" : "Title for permission center popover, %@ is the domain name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Permissions for \"%@\""
+          }
+        }
+      }
+    },
     "permission.disabled.app" : {
       "comment" : "The app (DuckDuckGo: %@ 2) has no access permission to (%@ 1) media device",
       "extractionState" : "extracted_with_value",
@@ -60602,6 +60698,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Местоположение"
+          }
+        }
+      }
+    },
+    "permission.geolocation.prompt.format" : {
+      "comment" : "Prompt asking if domain %@ can use location",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow %@ to use your current location?"
           }
         }
       }
@@ -60966,6 +61074,30 @@
         }
       }
     },
+    "permission.popup.always.allow.button" : {
+      "comment" : "Button that grants permission and remembers the decision for future requests",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Always Allow"
+          }
+        }
+      }
+    },
+    "permission.popup.always.deny.button" : {
+      "comment" : "Button that denies permission and remembers the decision for future requests",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Never Allow"
+          }
+        }
+      }
+    },
     "permission.popup.blocked.popover" : {
       "comment" : "Text of popover warning the user that a pop-up has been blocked",
       "extractionState" : "extracted_with_value",
@@ -61026,6 +61158,18 @@
         }
       }
     },
+    "permission.popup.deny.button" : {
+      "comment" : "Button that denies permission for this request only",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Deny"
+          }
+        }
+      }
+    },
     "permission.popup.learn-more.link" : {
       "comment" : "Text of link that leads to web page with more informations about location services.",
       "extractionState" : "extracted_with_value",
@@ -61082,6 +61226,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Подробнее о службах геолокации"
+          }
+        }
+      }
+    },
+    "permission.popup.never.allow.button" : {
+      "comment" : "Button that denies permission and remembers the decision for future requests",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Never Allow"
           }
         }
       }
@@ -61543,6 +61699,78 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Перезагрузите страницу, чтобы снова увидеть запрос"
+          }
+        }
+      }
+    },
+    "permission.restart.app" : {
+      "comment" : "Text shown when app restart is required for permission changes to take effect",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Restart the DuckDuckGo application"
+          }
+        }
+      }
+    },
+    "permission.system.location.disabled" : {
+      "comment" : "Text shown when system location was previously denied. Followed by a link to System Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "System location disabled. Turn it on in "
+          }
+        }
+      }
+    },
+    "permission.system.location.enable" : {
+      "comment" : "Button to enable system location services",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Enable System Location"
+          }
+        }
+      }
+    },
+    "permission.system.location.enabled" : {
+      "comment" : "Text shown after system location permission has been granted",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "System location enabled!"
+          }
+        }
+      }
+    },
+    "permission.system.location.waiting" : {
+      "comment" : "Text shown while waiting for user to respond to system location permission dialog",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Waiting for system permission…"
+          }
+        }
+      }
+    },
+    "permission.system.settings.location" : {
+      "comment" : "Link text to open System Settings Privacy section for location",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "System Settings → Privacy"
           }
         }
       }

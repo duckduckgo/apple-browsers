@@ -17,8 +17,10 @@
 //
 
 import AVFoundation
+import BrowserServicesKit
 import Combine
 import CoreLocation
+import FeatureFlags
 import Foundation
 import Navigation
 import WebKit
@@ -36,6 +38,7 @@ final class PermissionModel {
 
     private let permissionManager: PermissionManagerProtocol
     private let geolocationService: GeolocationServiceProtocol
+    private let featureFlagger: FeatureFlagger
     weak var webView: WKWebView? {
         didSet {
             guard let webView = webView else { return }
@@ -46,11 +49,19 @@ final class PermissionModel {
     }
     private var cancellables = Set<AnyCancellable>()
 
+    /// Returns the domain for the current webView URL, mapping file URLs to "localhost"
+    private var currentDomain: String? {
+        guard let url = webView?.url else { return nil }
+        return url.isFileURL ? .localhost : url.host
+    }
+
     init(webView: WKWebView? = nil,
          permissionManager: PermissionManagerProtocol,
-         geolocationService: GeolocationServiceProtocol = GeolocationService.shared) {
+         geolocationService: GeolocationServiceProtocol = GeolocationService.shared,
+         featureFlagger: FeatureFlagger) {
         self.permissionManager = permissionManager
         self.geolocationService = geolocationService
+        self.featureFlagger = featureFlagger
         if let webView {
             self.webView = webView
             self.subscribe(to: webView)
@@ -212,7 +223,7 @@ final class PermissionModel {
     }
 
     func revoke(_ permission: PermissionType) {
-        if let domain = webView?.url?.host,
+        if let domain = currentDomain,
            case .allow = permissionManager.permission(forDomain: domain, permissionType: permission) {
             permissionManager.setPermission(.ask, forDomain: domain, permissionType: permission)
         }
@@ -223,6 +234,27 @@ final class PermissionModel {
 
         case .popups, .externalScheme:
             self.permissions[permission].denied()
+        }
+    }
+
+    /// Removes a permission completely (revokes and removes from tracking)
+    func remove(_ permission: PermissionType) {
+        // First revoke the permission
+        switch permission {
+        case .camera, .microphone, .geolocation:
+            webView?.revokePermissions([permission])
+        case .popups, .externalScheme:
+            break
+        }
+
+        // Remove from dictionary (will trigger @Published update)
+        permissions[permission] = nil
+
+        // Remove from persisted storage
+        if let domain = currentDomain {
+            permissionManager.removePermission(forDomain: domain, permissionType: permission)
+        } else {
+            assertionFailure("webView URL should not be nil when removing a permission")
         }
     }
 
@@ -268,9 +300,9 @@ final class PermissionModel {
         for permission in permissions {
             var grant: PersistedPermissionDecision
             let stored = permissionManager.permission(forDomain: domain, permissionType: permission)
-            if case .allow = stored, permission.canPersistGrantedDecision {
+            if case .allow = stored, permission.canPersistGrantedDecision(featureFlagger: featureFlagger) {
                 grant = .allow
-            } else if case .deny = stored, permission.canPersistDeniedDecision {
+            } else if case .deny = stored, permission.canPersistDeniedDecision(featureFlagger: featureFlagger) {
                 grant = .deny
             } else if let state = self.permissions[permission] {
                 switch state {

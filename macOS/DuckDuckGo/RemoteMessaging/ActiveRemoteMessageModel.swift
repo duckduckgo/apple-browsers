@@ -195,7 +195,8 @@ final class ActiveRemoteMessageModel: ObservableObject {
     }
 
     private func updateRemoteMessage() {
-        remoteMessage = store()?.fetchScheduledRemoteMessage(surfaces: .allCases)
+        // Only new tab page and tab bar are supported on macOS.
+        remoteMessage = store()?.fetchScheduledRemoteMessage(surfaces: [.newTabPage, .tabBar])
     }
 
     private var cancellables = Set<AnyCancellable>()

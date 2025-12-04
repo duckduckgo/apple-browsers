@@ -901,7 +901,7 @@ final class AttributedMetricManagerTests: XCTestCase {
 
     // MARK: - Data Expiration Tests
 
-    /// Tests that all data in dataStorage is removed after 6 months and 1 day from installation
+    /// Tests that all data in dataStorage is removed at 6 months (168 days) from installation
     ///
     /// ## Input → Output Mapping
     ///

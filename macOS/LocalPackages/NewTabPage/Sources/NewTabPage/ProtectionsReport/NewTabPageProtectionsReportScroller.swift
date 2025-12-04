@@ -40,4 +40,3 @@ public final class NewTabPageProtectionsReportScroller {
     let scrollPublisher: AnyPublisher<WKWebView, Never>
     private let scrollSubject = PassthroughSubject<WKWebView, Never>()
 }
-

@@ -108,4 +108,3 @@ final class AutoconsentStatsPopoverPresenterTests: XCTestCase {
         XCTAssertFalse(onAutoDismissCalled)
     }
 }
-

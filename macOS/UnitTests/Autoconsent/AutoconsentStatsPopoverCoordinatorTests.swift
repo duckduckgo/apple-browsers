@@ -317,4 +317,3 @@ final class AutoconsentStatsPopoverCoordinatorTests: XCTestCase {
         XCTAssertEqual(flag, true)
     }
 }
-

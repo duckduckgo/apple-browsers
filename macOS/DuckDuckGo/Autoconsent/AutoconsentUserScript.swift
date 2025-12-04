@@ -276,6 +276,18 @@ extension AutoconsentUserScript {
             return
         }
 
+        // do the navigation check before checking if the domain is allowlisted
+        if message.frameInfo.isMainFrame {
+            Logger.autoconsent.debug("Main frame navigated from \(String(describing: self.topUrl)) to \(String(describing: url))")
+            let urlChanged = !urlsMatchIgnoringQuery(url, topUrl)
+            if urlChanged {
+                // Main frame navigated to a different page, clear state
+                Logger.autoconsent.debug("Main frame navigated to a different page \(url), clearing reload loop state")
+                clearReloadLoopState()
+            }
+            topUrl = url
+        }
+
         let topURLDomain = message.webView?.url?.host
         guard config.isFeature(.autoconsent, enabledForDomain: topURLDomain) else {
             Logger.autoconsent.info("disabled for site: \(String(describing: url.absoluteString))")
@@ -287,14 +299,6 @@ extension AutoconsentUserScript {
         }
 
         if message.frameInfo.isMainFrame {
-            Logger.autoconsent.debug("Main frame navigated from \(String(describing: self.topUrl)) to \(String(describing: url))")
-            let urlChanged = !urlsMatchIgnoringQuery(url, topUrl)
-            if urlChanged {
-                // Main frame navigated to a different page, clear state
-                Logger.autoconsent.debug("Main frame navigated to a different page \(url), clearing reload loop state")
-                clearReloadLoopState()
-            }
-            topUrl = url
             // reset dashboard state
             refreshDashboardState(
                 consentManaged: management.sitesNotifiedCache.contains(url.host ?? ""),

@@ -381,7 +381,8 @@ final class WireGuardAdapterTests: XCTestCase {
 
         packetTunnelProvider.setTunnelNetworkSettingsError = TestError.someError
         pathMonitor.emitStatus(.satisfied)
-        XCTAssertEqual(eventHandler.handledEvents.count, 1)
+        waitForHandledEventCount(1)
+
         if case .endTemporaryShutdownStateAttemptFailure(let error) = eventHandler.handledEvents[0] {
             guard let adapterError = error as? WireGuardAdapterError,
                   case .setNetworkSettings(let underlyingError) = adapterError else {
@@ -394,7 +395,7 @@ final class WireGuardAdapterTests: XCTestCase {
         }
 
         pathMonitor.emitStatus(.satisfied)
-        XCTAssertEqual(eventHandler.handledEvents.count, 2)
+        waitForHandledEventCount(2)
         if case .endTemporaryShutdownStateRecoveryFailure(let error) = eventHandler.handledEvents[1] {
             guard let adapterError = error as? WireGuardAdapterError,
                   case .setNetworkSettings(let underlyingError) = adapterError else {
@@ -408,7 +409,7 @@ final class WireGuardAdapterTests: XCTestCase {
 
         packetTunnelProvider.setTunnelNetworkSettingsError = nil
         pathMonitor.emitStatus(.satisfied)
-        XCTAssertEqual(eventHandler.handledEvents.count, 3)
+        waitForHandledEventCount(3)
         if case .endTemporaryShutdownStateRecoverySuccess = eventHandler.handledEvents[2] {
             // success
         } else {
@@ -454,6 +455,18 @@ final class WireGuardAdapterTests: XCTestCase {
         }
         wait(for: [startExpectation], timeout: 10.0)
         return startExpectation
+    }
+
+    private func waitForHandledEventCount(_ count: Int, timeout: TimeInterval = 5.0, file: StaticString = #file, line: UInt = #line) {
+        let predicate = NSPredicate { _, _ in
+            self.eventHandler.handledEvents.count >= count
+        }
+        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: nil)
+        let result = XCTWaiter.wait(for: [expectation], timeout: timeout)
+
+        if result != .completed {
+            XCTFail("Expected \(count) events, got \(eventHandler.handledEvents.count)", file: file, line: line)
+        }
     }
 
 }

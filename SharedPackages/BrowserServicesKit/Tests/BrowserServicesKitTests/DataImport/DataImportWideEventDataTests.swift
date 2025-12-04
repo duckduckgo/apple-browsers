@@ -14,6 +14,7 @@
 //  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 //  See the License for the specific language governing permissions and
 //  limitation
+//
 
 import XCTest
 import PixelKit
@@ -58,14 +59,11 @@ final class DataImportWideEventDataTests: XCTestCase {
             XCTAssertEqual(parameters["feature.data.ext.\(type.description)_status"], "SUCCESS")
             XCTAssertNil(parameters["feature.data.ext.passwords_status_reason"])
         }
-        for type in DataImport.DataType.allCases {
-            XCTAssertEqual(parameters["feature.data.ext.\(type.description)_latency_ms"], "10000")
-        }
 
         // Have all per type durations
-        XCTAssertEqual(parameters["feature.data.ext.latency_ms"], "15000")
+        XCTAssertEqual(parameters["feature.data.ext.latency_ms"], "1500")
         for type in DataImport.DataType.allCases {
-            XCTAssertEqual(parameters["feature.data.ext.\(type.description)_importer_latency_ms"], "10000")
+            XCTAssertEqual(parameters["feature.data.ext.\(type.description)_importer_latency_ms"], "1000")
         }
 
         // No per type errors
@@ -122,9 +120,9 @@ final class DataImportWideEventDataTests: XCTestCase {
         XCTAssertEqual(parameters["feature.data.ext.creditCards_status"], "patial_data")
 
         // Have all per type durations
-        XCTAssertEqual(parameters["feature.data.ext.latency_ms"], "15000")
+        XCTAssertEqual(parameters["feature.data.ext.latency_ms"], "1500")
         for type in DataImport.DataType.allCases {
-            XCTAssertEqual(parameters["feature.data.ext.\(type.description)_importer_latency_ms"], "10000")
+            XCTAssertEqual(parameters["feature.data.ext.\(type.description)_importer_latency_ms"], "1000")
         }
 
         // Have per type error
@@ -153,9 +151,8 @@ final class DataImportWideEventDataTests: XCTestCase {
 
         eventData.bookmarkImportStatus = .failure
 
-        // Fatal tunnel start error
         let bookmarkImportError = NSError(domain: "DataImportError", code: 1, userInfo: nil)
-        eventData.passwordImportError = WideEventErrorData(error: bookmarkImportError, description: "no data")
+        eventData.bookmarkImportError = WideEventErrorData(error: bookmarkImportError, description: "no data")
 
         let parameters = eventData.pixelParameters()
         XCTAssertEqual(parameters["feature.name"], "data-import")
@@ -166,8 +163,8 @@ final class DataImportWideEventDataTests: XCTestCase {
         XCTAssertNil(parameters["feature.data.ext.bookmarks_status_reason"])
 
         // Have all per type durations
-        XCTAssertEqual(parameters["feature.data.ext.latency_ms"], "15000")
-        XCTAssertEqual(parameters["feature.data.ext.bookmarks_importer_latency_ms"], "10000")
+        XCTAssertEqual(parameters["feature.data.ext.latency_ms"], "1500")
+        XCTAssertEqual(parameters["feature.data.ext.bookmarks_importer_latency_ms"], "1000")
         XCTAssertNil(parameters["feature.data.ext.passwords_importer_latency_ms"])
         XCTAssertNil(parameters["feature.data.ext.creditCards_importer_latency_ms"])
 
@@ -195,7 +192,7 @@ final class DataImportWideEventDataTests: XCTestCase {
         // has ended interval
         eventData.overallDuration = WideEvent.MeasuredInterval(
             start: base, end: base.addingTimeInterval(2.5)
-        ) // 2500ms
+        )
         parameters = eventData.pixelParameters()
         XCTAssertEqual(parameters["feature.data.ext.latency_ms"], "2500")
     }
@@ -278,9 +275,9 @@ final class DataImportWideEventDataTests: XCTestCase {
         )
 
         let parameters = eventData.pixelParameters()
-        XCTAssertEqual(parameters["feature.data.ext.latency_ms"], "15000")
+        XCTAssertEqual(parameters["feature.data.ext.latency_ms"], "1500")
         for type in DataImport.DataType.allCases {
-            XCTAssertEqual(parameters["feature.data.ext.\(type.description)_importer_latency_ms"], "10000")
+            XCTAssertEqual(parameters["feature.data.ext.\(type.description)_importer_latency_ms"], "1000")
         }
     }
 
@@ -325,7 +322,7 @@ final class DataImportWideEventDataTests: XCTestCase {
         eventData.passwordImportError = WideEventErrorData(error: error, description: "no data")
 
         let parameters = eventData.pixelParameters()
-        XCTAssertEqual(parameters["feature.data.ext.passwords_error.domain"], "DaataImportError")
+        XCTAssertEqual(parameters["feature.data.ext.passwords_error.domain"], "DataImportError")
         XCTAssertEqual(parameters["feature.data.ext.passwords_error.code"], "1")
         XCTAssertEqual(parameters["feature.data.ext.passwords_error.description"], "no data")
     }

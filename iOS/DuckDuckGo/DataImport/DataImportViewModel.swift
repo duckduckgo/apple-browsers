@@ -445,7 +445,7 @@ private extension DataImportViewModel {
     }
     
     func funnel(for importScreen: DataImportViewModel.ImportScreen) -> String? {
-        return "funnel_\(importScreen.rawValue)Import_ios"
+        return "funnel_\(importScreen.rawValue)_ios"
     }
 }
 

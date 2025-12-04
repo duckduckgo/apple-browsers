@@ -191,11 +191,7 @@ final class NavigationBarViewController: NSViewController {
     private let sessionRestorePromptCoordinator: SessionRestorePromptCoordinating
 
     var isInPopUpWindow: Bool {
-        guard let mainViewController = parent as? MainViewController else {
-            assert(view.window == nil, "NavigationBarViewController is not a child of MainViewController")
-            return false
-        }
-        return mainViewController.isInPopUpWindow
+        tabCollectionViewModel.isPopup
     }
 
     var controlsForUserPrevention: [NSControl?] {

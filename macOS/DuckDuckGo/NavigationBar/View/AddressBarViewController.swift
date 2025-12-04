@@ -164,11 +164,7 @@ final class AddressBarViewController: NSViewController {
     }
 
     var isInPopUpWindow: Bool {
-        guard let navigationBarViewController = parent as? NavigationBarViewController else {
-            assert(view.window == nil, "AddressBarViewController is not a child of NavigationBarViewController")
-            return false
-        }
-        return navigationBarViewController.isInPopUpWindow
+        tabCollectionViewModel.isPopup
     }
 
     private var accentColor: NSColor {
@@ -273,6 +269,8 @@ final class AddressBarViewController: NSViewController {
         addressBarTextField.setAccessibilityIdentifier("AddressBarViewController.addressBarTextField")
 
         passiveTextField.isSelectable = !isInPopUpWindow
+        passiveTextField.lineBreakMode = isInPopUpWindow ? .byTruncatingMiddle : .byTruncatingTail
+        passiveTextField.clipsToBounds = true
 
         switchToTabBox.isHidden = true
         switchToTabLabel.attributedStringValue = SuggestionTableCellView.switchToTabAttributedString
@@ -409,7 +407,6 @@ final class AddressBarViewController: NSViewController {
                 tabViewModelCancellables.removeAll()
 
                 subscribeToTabContent()
-                subscribeToPassiveAddressBarString()
                 subscribeToProgressEventsIfNeeded()
 
                 // don't resign first responder on tab switching
@@ -440,17 +437,6 @@ final class AddressBarViewController: NSViewController {
         tabViewModel?.tab.$content
             .map { $0 == .newtab }
             .assign(to: \.isHomePage, onWeaklyHeld: self)
-            .store(in: &tabViewModelCancellables)
-    }
-
-    private func subscribeToPassiveAddressBarString() {
-        guard let tabViewModel else {
-            passiveTextField.stringValue = ""
-            return
-        }
-        tabViewModel.$passiveAddressBarAttributedString
-            .receive(on: DispatchQueue.main)
-            .assign(to: \.attributedStringValue, onWeaklyHeld: passiveTextField)
             .store(in: &tabViewModelCancellables)
     }
 
@@ -846,6 +832,7 @@ final class AddressBarViewController: NSViewController {
 
     private func layoutTextFields(trailingWidth width: CGFloat) {
         addressBarTextTrailingConstraint.constant = width
+        passiveTextFieldTrailingConstraint.constant = width
     }
 
     private func firstResponderDidChange(_ notification: Notification) {

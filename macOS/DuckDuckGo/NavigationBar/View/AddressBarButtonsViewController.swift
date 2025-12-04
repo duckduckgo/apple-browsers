@@ -210,11 +210,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private var isInPopUpWindow: Bool {
-        guard let addressBarViewController = parent as? AddressBarViewController else {
-            assert(view.window == nil, "AddressBarButtonsViewController is not a child of AddressBarViewController")
-            return false
-        }
-        return addressBarViewController.isInPopUpWindow
+        tabCollectionViewModel.isPopup
     }
 
     private var cancellables = Set<AnyCancellable>()

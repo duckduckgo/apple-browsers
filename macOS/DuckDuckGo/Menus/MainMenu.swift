@@ -491,7 +491,11 @@ final class MainMenu: NSMenu {
     override func update() {
         super.update()
 
+#if SPARKLE
         addToDockMenuItem.isHidden = dockCustomizer.isAddedToDock
+#else
+        addToDockMenuItem.isHidden = true
+#endif
         setAsDefaultMenuItem.isHidden = defaultBrowserPreferences.isDefault
 
         // To be safe, hide the NetP shortcut menu item by default.

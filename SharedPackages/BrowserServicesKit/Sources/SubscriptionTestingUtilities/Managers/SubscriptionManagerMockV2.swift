@@ -25,7 +25,7 @@ import NetworkingTestingUtils
 
 public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
 
-    public var canPurchasePublisher: AnyPublisher<Bool, Never> = .init(Just(false))
+    public var hasAppStoreProductsAvailablePublisher: AnyPublisher<Bool, Never> = .init(Just(false))
 
     public var email: String?
 
@@ -57,7 +57,7 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
         return resultSubscription
     }
 
-    public var canPurchase: Bool = true
+    public var hasAppStoreProductsAvailable: Bool = true
 
     public var resultStorePurchaseManager: (any StorePurchaseManagerV2)?
     public func storePurchaseManager() -> any StorePurchaseManagerV2 {
@@ -160,6 +160,16 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
     public var productsResponse: Result<[GetProductsItem], Error>?
     public func getProducts() async throws -> [GetProductsItem] {
         switch productsResponse! {
+        case .success(let result):
+            return result
+        case .failure(let error):
+            throw error
+        }
+    }
+
+    public var tierProductsResponse: Result<GetTierProductsResponse, Error>?
+    public func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse {
+        switch tierProductsResponse! {
         case .success(let result):
             return result
         case .failure(let error):

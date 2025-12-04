@@ -330,12 +330,12 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                     refreshEventMapping?.fire(.tokenRefreshSucceeded(refreshID: refreshID))
 
                     return refreshedTokens
-                } catch OAuthServiceError.authAPIError(let code) where code == .invalidTokenRequest {
+                } catch OAuthServiceError.authAPIError(let apiError) where apiError.bodyErrorCode == .invalidTokenRequest {
                     Logger.OAuthClient.error("Failed to refresh token: invalidTokenRequest")
                     let error = OAuthClientError.invalidTokenRequest
                     refreshEventMapping?.fire(.tokenRefreshFailed(refreshID: refreshID, error: error))
                     throw error
-                } catch OAuthServiceError.authAPIError(let code) where code == .unknownAccount {
+                } catch OAuthServiceError.authAPIError(let apiError) where apiError.bodyErrorCode == .unknownAccount {
                     Logger.OAuthClient.error("Failed to refresh token: unknownAccount")
                     let error = OAuthClientError.unknownAccount
                     refreshEventMapping?.fire(.tokenRefreshFailed(refreshID: refreshID, error: error))

@@ -215,4 +215,25 @@ enum NewTabPagePixel: PixelKitEvent {
         case duckAI = "duck_ai"
     }
 
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .newTabPageShown,
+                .favoriteSectionHidden,
+                .privacyFeedHistoryLinkOpened,
+                .protectionsSectionHidden,
+                .blockedTrackingAttemptsShowLess,
+                .blockedTrackingAttemptsShowMore,
+                .privacyStatsCouldNotLoadDatabase,
+                .privacyStatsDatabaseError,
+                .newTabPageExceptionReported,
+                .searchSubmitted,
+                .promptSubmitted,
+                .omnibarModeChanged,
+                .omnibarHidden,
+                .omnibarShown,
+                .newTabPageLoadingTime:
+            return [.pixelSource]
+        }
+    }
+
 }

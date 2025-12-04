@@ -130,6 +130,15 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
     let source: UnifiedFeedbackSource
     private(set) var availableCategories: [UnifiedFeedbackCategory] = [.selectFeature, .subscription]
 
+    var availableSubscriptionSubcategories: [SubscriptionFeedbackSubcategory] {
+        var subcategories: [SubscriptionFeedbackSubcategory] = [.selectSubcategory, .otp]
+        if featureFlagger.isFeatureOn(.allowProTierPurchase) {
+            subcategories.append(.unableToAccessFeatures)
+        }
+        subcategories.append(.somethingElse)
+        return subcategories
+    }
+
     init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
          vpnMetadataCollector: any UnifiedMetadataCollector,
          dbpMetadataCollector: any UnifiedMetadataCollector,

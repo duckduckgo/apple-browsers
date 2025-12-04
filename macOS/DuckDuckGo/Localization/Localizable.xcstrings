@@ -69699,6 +69699,18 @@
         }
       }
     },
+    "ppro.feedback-form.category.unable-to-access-features" : {
+      "comment" : "Description for the feedback form when there is an issue with accessing Plus or Pro tier features",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Unable to access Plus or Pro tier features"
+          }
+        }
+      }
+    },
     "ppro.feedback-form.disclaimer" : {
       "comment" : "Text for the disclaimer of the PPro feedback form",
       "extractionState" : "extracted_with_value",

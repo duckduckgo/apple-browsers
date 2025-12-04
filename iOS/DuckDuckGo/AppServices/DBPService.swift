@@ -63,6 +63,7 @@ final class DBPService: NSObject {
                         vpnMetadataCollector: DefaultVPNMetadataCollector(),
                         dbpMetadataCollector: DefaultDBPMetadataCollector(),
                         isPaidAIChatFeatureEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.paidAIChat) },
+                        isProTierPurchaseEnabled: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.allowProTierPurchase) },
                         source: .pir)
                     let view = UnifiedFeedbackRootView(viewModel: viewModel)
                     return view

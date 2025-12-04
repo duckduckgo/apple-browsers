@@ -132,6 +132,11 @@ enum AutoconsentPixel: PixelKitEvent {
                 .detectedOnlyRules,
                 .selfTestOk,
                 .selfTestFail,
+                .popoverShown,
+                .popoverClosed,
+                .popoverClicked,
+                .popoverNewTabOpened,
+                .popoverAutoDismissed,
                 .summary,
                 .usageStats:
             return [.pixelSource]

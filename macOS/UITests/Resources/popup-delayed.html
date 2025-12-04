@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Popup Delayed Test</title>
+</head>
+<body>
+  <h1>Popup Delayed Test</h1>
+  <p>Tests for popup blocking with user interaction timing</p>
+
+  <ul>
+    <li><a href="#" id="popup-immediate">Open Popup (Immediate)</a></li>
+    <li><a href="#" id="popup-within">Open Popup (Within Timeout)</a></li>
+    <li><a href="#" id="popup-beyond">Open Popup (Beyond Timeout)</a></li>
+    <li><a href="#" id="popup-beyond-tab">Open Popup as Tab (Beyond Timeout)</a></li>
+    <li><a href="#" id="popup-beyond-alt">Open Popup Alt Domain (Beyond Timeout)</a></li>
+    <li><a href="#" id="popup-blank-blocked">Trigger Blocked about:blank</a></li>
+    <li><a href="#" id="popup-blank-expected">Open about:blank (Expected to be opened)</a></li>
+    <li><a href="#" id="trigger-page-popup">Trigger 2 Page Popups (1st Allowed, 2nd Blocked)</a></li>
+    <li><a href="#" id="open-5-popups">Trigger 6 Page Popups (1st Allowed, 5 Blocked)</a></li>
+  </ul>
+
+  <div id="status">Ready</div>
+
+  <script>
+    // Immediate user-initiated popup - click consumes user interaction
+    document.getElementById('popup-immediate').addEventListener('click', function(e) {
+      e.preventDefault();
+      document.getElementById('status').textContent = 'Opening immediately...';
+      var w = window.open('about:blank', '_blank', 'width=300,height=300');
+      if (w) {
+        w.document.write('<!DOCTYPE html><html><head><title>Immediate Popup</title></head><body><h1 id="popup-content">User-Initiated Popup Opened</h1></body></html>');
+        w.document.close();
+      }
+      document.getElementById('status').textContent = w ? 'Opened' : 'Blocked';
+    });
+
+    // User-initiated with 1s delay (within 2s threshold)
+    // The first window.open() consumes the user interaction, so this should be ALLOWED
+    document.getElementById('popup-within').addEventListener('click', function(e) {
+      e.preventDefault();
+      document.getElementById('status').textContent = 'Waiting 1s...';
+      setTimeout(function() {
+        var w = window.open('about:blank', '_blank', 'width=300,height=300');
+        if (w) {
+          w.document.write('<!DOCTYPE html><html><head><title>Delayed User Popup</title></head><body><h1 id="popup-content">Delayed User-Initiated Popup</h1><p>Opened 1 second after click (within threshold)</p></body></html>');
+          w.document.close();
+        }
+        document.getElementById('status').textContent = w ? 'Opened' : 'Blocked';
+      }, 1000);
+    });
+
+    // Popup beyond timeout (3s delay, beyond 2s threshold)
+    // The popup opens AFTER the user interaction timeout expires, so it should be BLOCKED
+    // Uses cross-domain URL so it won't be suppressed
+    document.getElementById('popup-beyond').addEventListener('click', function(e) {
+      e.preventDefault();
+      document.getElementById('status').textContent = 'Waiting 3s...';
+      setTimeout(function() {
+        var w = window.open('https://example.com', '_blank', 'width=300,height=300');
+        document.getElementById('status').textContent = w ? 'Opened' : 'Blocked';
+      }, 3000);
+    });
+
+    // Popup as tab (no window features) - delayed beyond threshold (3s > 2s threshold)
+    // Opens as tab instead of window because no window features specified
+    document.getElementById('popup-beyond-tab').addEventListener('click', function(e) {
+      e.preventDefault();
+      document.getElementById('status').textContent = 'Waiting 3s for tab popup...';
+      setTimeout(function() {
+        var w = window.open('https://example.com', '_blank');  // No window features = opens as tab
+        document.getElementById('status').textContent = w ? 'Opened' : 'Blocked';
+      }, 3000);
+    });
+
+    // Popup to alternative domain - delayed beyond threshold (3s > 2s threshold)
+    document.getElementById('popup-beyond-alt').addEventListener('click', function(e) {
+      e.preventDefault();
+      document.getElementById('status').textContent = 'Waiting 3s for alt domain...';
+      setTimeout(function() {
+        var w = window.open('https://duckduckgo.com', '_blank', 'width=300,height=300');
+        document.getElementById('status').textContent = w ? 'Opened' : 'Blocked';
+      }, 3000);
+    });
+
+    // Blocked about:blank - delayed beyond threshold (3s > 2s threshold)
+    document.getElementById('popup-blank-blocked').addEventListener('click', function(e) {
+      e.preventDefault();
+      document.getElementById('status').textContent = 'Waiting 3s for about:blank...';
+      // Wait beyond threshold so popup is blocked
+      setTimeout(function() {
+        var w = window.open('about:blank', '_blank', 'width=300,height=300');
+        if (w) {
+          w.document.write('<!DOCTYPE html><html><head><title>Blocked Blank</title></head><body><h1>Should be blocked</h1></body></html>');
+          w.document.close();
+        }
+        document.getElementById('status').textContent = w ? 'Opened' : 'Blocked';
+      }, 3000);
+    });
+
+    // about:blank expected to open - immediate user-initiated
+    document.getElementById('popup-blank-expected').addEventListener('click', function(e) {
+      e.preventDefault();
+      document.getElementById('status').textContent = 'Opening about:blank...';
+      var w = window.open('about:blank', '_blank', 'width=300,height=300');
+      if (w) {
+        w.document.write('<!DOCTYPE html><html><head><title>Expected Popup</title></head><body><h1 id="popup-content">Expected to be opened</h1></body></html>');
+        w.document.close();
+      }
+      document.getElementById('status').textContent = w ? 'Opened' : 'Blocked';
+    });
+
+    // Page-initiated popup: Opens first popup (consumes interaction), then second (blocked)
+    // Only the second (blocked) popup increments the blocked counter
+    document.getElementById('trigger-page-popup').addEventListener('click', function(e) {
+      e.preventDefault();
+      document.getElementById('status').textContent = 'Opening popups...';
+      // First popup - consumes user interaction
+      var w1 = window.open('about:blank', '_blank', 'width=300,height=300');
+      if (w1) {
+        w1.document.write('<!DOCTYPE html><html><head><title>First Popup Allowed</title></head><body><h1 id="popup-content">First Popup Allowed</h1><p>This consumed the user interaction</p></body></html>');
+        w1.document.close();
+      }
+      
+      // Second popup - should be blocked (interaction consumed)
+      setTimeout(function() {
+        var w2 = window.open('about:blank', '_blank', 'width=300,height=300');
+        if (w2) {
+          w2.document.write('<!DOCTYPE html><html><head><title>Second Popup</title></head><body><h1 id="popup-content">Second Popup Should Be Blocked</h1></body></html>');
+          w2.document.close();
+        }
+        document.getElementById('status').textContent = w2 ? 'Both opened' : '1 opened, 1 blocked';
+      }, 100);
+    });
+
+    // Multiple page-initiated popups: First consumes interaction, rest should be BLOCKED
+    document.getElementById('open-5-popups').addEventListener('click', function(e) {
+      e.preventDefault();
+      document.getElementById('status').textContent = 'Opening first popup...';
+      // First popup consumes user interaction
+      var w1 = window.open('about:blank', '_blank', 'width=300,height=300');
+      if (w1) {
+        w1.document.write('<!DOCTYPE html><html><head><title>First of Multiple</title></head><body><h1 id="popup-content">First Popup Allowed</h1><p>Consumed user interaction</p></body></html>');
+        w1.document.close();
+      }
+      
+      // After short delay, try to open 5 more (should all be blocked)
+      setTimeout(function() {
+        var count = w1 ? 1 : 0;
+        for (var i = 0; i < 5; i++) {
+          var w = window.open('', '_blank', 'width=300,height=300');
+          if (w) {
+            w.document.write('<!DOCTYPE html><html><head><title>Popup ' + (count+1) + '</title></head><body><h1 id="popup-content">Blocked Popup ' + (i+1) + '</h1></body></html>');
+            w.document.close();
+            count++;
+          }
+        }
+        document.getElementById('status').textContent = count + ' opened, ' + (6-count) + ' blocked';
+      }, 100);
+    });
+  </script>
+</body>
+</html>
+

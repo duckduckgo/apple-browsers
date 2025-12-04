@@ -537,7 +537,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .fullDuckAIMode:
             return .remoteReleasable(.subfeature(AIChatSubfeature.fullDuckAIMode))
         case .fadeOutOnToggle:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(AIChatSubfeature.fadeOutOnToggle))
         case .attributedMetrics:
             return .remoteReleasable(.feature(.attributedMetrics))
         case .vpnConnectionWidePixelMeasurement:

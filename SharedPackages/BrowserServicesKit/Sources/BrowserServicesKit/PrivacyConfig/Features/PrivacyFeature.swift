@@ -292,6 +292,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Controls showing the AI Chat as Tabs Experiment Setting in Settings -> AI Features
     case fullDuckAIModeExperimentalSetting
+
+    /// Controls different input sizes and fade out animation for toggle.
+    case fadeOutOnToggle
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

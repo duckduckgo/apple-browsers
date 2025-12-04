@@ -165,7 +165,7 @@ struct LegacyDataImportViewModel {
 
     init(importSource: Source? = nil,
          screen: Screen? = nil,
-         availableImportSources: [DataImport.Source] = DataImport.Source.allCases.filter { $0.canImportData && $0.isAvailableForLegacyImports },
+         availableImportSources: [DataImport.Source] = DataImport.Source.allCasesForLegacyImports.filter { $0.canImportData },
          preferredImportSources: [Source] = [.chrome, .firefox, .safari],
          summary: [DataTypeImportResult] = [],
          isPasswordManagerAutolockEnabled: Bool = AutofillPreferences().isAutoLockEnabled,

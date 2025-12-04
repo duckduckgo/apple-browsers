@@ -1319,7 +1319,7 @@ final class DataImportViewModelTests: XCTestCase {
             screen: .fileImport(dataType: .bookmarks, summary: [:]),
             summary: summaryArray
         )
-        
+
         // Ensure both data types are selected
         model.selectedDataTypes = [.bookmarks, .passwords]
 

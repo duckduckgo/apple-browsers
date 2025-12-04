@@ -1066,7 +1066,7 @@ final class LegacyDataImportViewModelTests: XCTestCase {
         for source in Source.allCasesForLegacyImports where source.legacyInitialScreen.isFileImport {
             // Skip .fileImport as it's not available for legacy imports
             guard source != .fileImport else { continue }
-            
+
             setupModel(with: source)
 
             guard case .fileImport(dataType: let dataType, summary: []) = model.screen else {

@@ -160,7 +160,7 @@ final class AutoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinat
     private func openNewTabWithSpecialAction() {
         windowControllersManager.showTab(with: .newtab)
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.75) {
             if let newTabPageViewModel = self.windowControllersManager.mainWindowController?.mainViewController.browserTabViewController.newTabPageWebViewModel {
                 NSApp.delegateTyped.newTabPageProtectionsReportModel.scroller.scroll(for: newTabPageViewModel.webView)
             }

@@ -1297,7 +1297,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             featureFlagger: featureFlagger,
             dataClearingPreferences: dataClearingPreferences,
             downloadManager: downloadManager,
-            installDate: AppDelegate.firstLaunchDate
+            installDate: AppDelegate.firstLaunchDate,
+            persistor: QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)
         )
 
         if decider.shouldShowQuitSurvey {

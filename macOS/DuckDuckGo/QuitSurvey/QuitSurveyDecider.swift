@@ -17,8 +17,11 @@
 //
 
 import BrowserServicesKit
+import Common
 import FeatureFlags
 import Foundation
+import os.log
+import Persistence
 
 /// Protocol for deciding whether to show the quit survey.
 @MainActor
@@ -60,7 +63,7 @@ final class QuitSurveyDecider: QuitSurveyDeciding {
         dataClearingPreferences: DataClearingPreferences,
         downloadManager: FileDownloadManagerProtocol,
         installDate: Date,
-        persistor: QuitSurveyPersistor = QuitSurveyUserDefaultsPersistor(),
+        persistor: QuitSurveyPersistor,
         dateProvider: @escaping () -> Date = { Date() }
     ) {
         self.featureFlagger = featureFlagger
@@ -109,7 +112,33 @@ protocol QuitSurveyPersistor {
     var hasQuitAppBefore: Bool { get set }
 }
 
-struct QuitSurveyUserDefaultsPersistor: QuitSurveyPersistor {
-    @UserDefaultsWrapper(key: .hasQuitAppBefore, defaultValue: false)
-    var hasQuitAppBefore: Bool
+final class QuitSurveyUserDefaultsPersistor: QuitSurveyPersistor {
+
+    private enum Key: String {
+        case hasQuitAppBefore = "quit-survey.has-quit-app-before"
+    }
+
+    private let keyValueStore: ThrowingKeyValueStoring
+
+    init(keyValueStore: ThrowingKeyValueStoring) {
+        self.keyValueStore = keyValueStore
+    }
+
+    var hasQuitAppBefore: Bool {
+        get {
+            do {
+                return try keyValueStore.object(forKey: Key.hasQuitAppBefore.rawValue) as? Bool ?? false
+            } catch {
+                Logger.general.error("Failed to read hasQuitAppBefore from keyValueStore: \(error)")
+                return false
+            }
+        }
+        set {
+            do {
+                try keyValueStore.set(newValue, forKey: Key.hasQuitAppBefore.rawValue)
+            } catch {
+                Logger.general.error("Failed to write hasQuitAppBefore to keyValueStore: \(error)")
+            }
+        }
+    }
 }

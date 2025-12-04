@@ -441,6 +441,8 @@ final class WireGuardAdapterTests: XCTestCase {
     }
     #endif
 
+    // MARK: - Test Helpers
+
     private static func makePublicKey() -> PublicKey {
         let hexKey = String(repeating: "ab", count: 32) // 32 bytes -> 64 hex characters
         return PublicKey(hexKey: hexKey)!
@@ -461,6 +463,7 @@ final class WireGuardAdapterTests: XCTestCase {
         let predicate = NSPredicate { _, _ in
             self.eventHandler.handledEvents.count >= count
         }
+
         let expectation = XCTNSPredicateExpectation(predicate: predicate, object: nil)
         let result = XCTWaiter.wait(for: [expectation], timeout: timeout)
 

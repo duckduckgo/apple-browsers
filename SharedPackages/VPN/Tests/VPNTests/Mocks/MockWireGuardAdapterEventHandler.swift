@@ -16,12 +16,22 @@
 //  limitations under the License.
 //
 
+import Foundation
 @testable import VPN
 
 final class MockWireGuardAdapterEventHandler: WireGuardAdapterEventHandling {
-    private(set) var handledEvents: [WireGuardAdapterEvent] = []
+    private let lock = NSLock()
+    private var _handledEvents: [WireGuardAdapterEvent] = []
+
+    var handledEvents: [WireGuardAdapterEvent] {
+        lock.lock()
+        defer { lock.unlock() }
+        return _handledEvents
+    }
 
     func handle(_ event: WireGuardAdapterEvent) {
-        handledEvents.append(event)
+        lock.lock()
+        defer { lock.unlock() }
+        _handledEvents.append(event)
     }
 }

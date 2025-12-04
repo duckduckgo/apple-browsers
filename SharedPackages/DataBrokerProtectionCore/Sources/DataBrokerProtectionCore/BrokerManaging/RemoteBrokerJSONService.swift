@@ -159,6 +159,11 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     }
 
     public func checkForUpdates(skipsLimiter: Bool) async throws {
+        if let runTypeProvider = self.settings as? AppRunTypeProviding, runTypeProvider.runType == .integrationTests {
+            Logger.dataBrokerProtection.log("Remote broker delivery not enabled due to run type")
+            return
+        }
+
         if !featureFlagger.isRemoteBrokerDeliveryFeatureOn {
             Logger.dataBrokerProtection.log("Remote broker delivery not enabled, skip to local fallback")
             try? await localBrokerProvider?.checkForUpdates()

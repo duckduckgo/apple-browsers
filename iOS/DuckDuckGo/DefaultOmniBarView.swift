@@ -421,7 +421,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         if let brandingView = aiChatBrandingView {
             NSLayoutConstraint.activate([
                 brandingView.centerXAnchor.constraint(equalTo: centerXAnchor),
-                brandingView.centerYAnchor.constraint(equalTo: centerYAnchor),
+                brandingView.centerYAnchor.constraint(equalTo: searchAreaView.centerYAnchor),
                 brandingView.leadingAnchor.constraint(greaterThanOrEqualTo: safeAreaLayoutGuide.leadingAnchor, constant: Metrics.textAreaHorizontalPadding),
                 brandingView.trailingAnchor.constraint(lessThanOrEqualTo: safeAreaLayoutGuide.trailingAnchor, constant: -Metrics.textAreaHorizontalPadding)
             ])

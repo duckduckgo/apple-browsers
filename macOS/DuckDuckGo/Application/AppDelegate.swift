@@ -1292,6 +1292,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        // Show quit survey for first-time quitters (new users within 14 days)
+        let decider = QuitSurveyDecider(
+            featureFlagger: featureFlagger,
+            dataClearingPreferences: dataClearingPreferences,
+            downloadManager: downloadManager,
+            installDate: AppDelegate.firstLaunchDate,
+            persistor: QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)
+        )
+
+        if decider.shouldShowQuitSurvey {
+            let alert = NSAlert()
+            alert.messageText = "Quit DuckDuckGo?"
+            alert.informativeText = "This is your first time quitting the application."
+            alert.alertStyle = .informational
+            alert.addButton(withTitle: "Quit Now")
+            alert.addButton(withTitle: "Cancel")
+
+            let response = alert.runModal()
+
+            // Mark as shown regardless of user choice
+            decider.markQuitSurveyShown()
+
+            if response == .alertSecondButtonReturn {
+                // User clicked "Cancel"
+                return .terminateCancel
+            }
+        }
+
         if !downloadManager.downloads.isEmpty {
             // if there‘re downloads without location chosen yet (save dialog should display) - ignore them
             let activeDownloads = Set(downloadManager.downloads.filter { $0.state.isDownloading })

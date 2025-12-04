@@ -70,6 +70,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         view = MouseOverView()
         view.wantsLayer = true
         view.layer?.masksToBounds = false
+        view.setAccessibilityIdentifier("AIChatOmnibarTextContainerViewController.view")
     }
 
     override func viewDidLoad() {
@@ -138,6 +139,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         textView.usesRuler = false
         textView.usesFontPanel = false
         textView.delegate = self
+        textView.setAccessibilityIdentifier("AIChatOmnibarTextContainerViewController.textView")
 
         placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
         placeholderLabel.stringValue = UserText.aiChatOmnibarPlaceholder

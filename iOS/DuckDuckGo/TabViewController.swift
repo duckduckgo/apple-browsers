@@ -487,6 +487,7 @@ class TabViewController: UIViewController {
     let keyValueStore: ThrowingKeyValueStoring
     let daxDialogsManager: DaxDialogsManaging
     let aiChatSettings: AIChatSettingsProvider
+    let aiChatFullModeFeature: AIChatFullModeFeatureProviding
     
     private(set) var aiChatContentHandler: AIChatContentHandling
 
@@ -517,7 +518,8 @@ class TabViewController: UIViewController {
                    daxDialogsManager: DaxDialogsManaging,
                    adClickExternalOpenDetector: AdClickExternalOpenDetector = AdClickExternalOpenDetector(),
                    aiChatSettings: AIChatSettingsProvider,
-                   productSurfaceTelemetry: ProductSurfaceTelemetry) {
+                   productSurfaceTelemetry: ProductSurfaceTelemetry,
+                   aiChatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature()) {
 
         self.tabModel = tabModel
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -549,6 +551,7 @@ class TabViewController: UIViewController {
         }
         
         self.aiChatSettings = aiChatSettings
+        self.aiChatFullModeFeature = aiChatFullModeFeature
         self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings, featureDiscovery: featureDiscovery)
 
         self.productSurfaceTelemetry = productSurfaceTelemetry

@@ -325,7 +325,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     private func addAIChatFullModeBrandingView() {
         let brandingView = AIChatFullModeOmniBrandingView()
         brandingView.translatesAutoresizingMaskIntoConstraints = false
-        addSubview(brandingView)
+        searchAreaContainerView.addSubview(brandingView)
 
         aiChatBrandingView = brandingView
 
@@ -415,13 +415,13 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         DefaultOmniBarView.activateItemSizeConstraints(for: aiChatLeftButton)
         DefaultOmniBarView.activateItemSizeConstraints(for: aiChatRightButton)
 
-        aiChatLeadingSpacingConstraint = searchAreaContainerView.leadingAnchor.constraint(equalTo: aiChatLeftButton.trailingAnchor, constant: Metrics.expandedSizeSpacing)
-        aiChatTrailingSpacingConstraint = searchAreaContainerView.trailingAnchor.constraint(equalTo: aiChatRightButton.leadingAnchor, constant: -Metrics.expandedSizeSpacing)
+        aiChatLeadingSpacingConstraint = searchAreaContainerView.leadingAnchor.constraint(equalTo: aiChatLeftButton.trailingAnchor, constant: Metrics.buttonToSearchContainerSpace)
+        aiChatTrailingSpacingConstraint = searchAreaContainerView.trailingAnchor.constraint(equalTo: aiChatRightButton.leadingAnchor, constant: -Metrics.buttonToSearchContainerSpace)
 
         if let brandingView = aiChatBrandingView {
             NSLayoutConstraint.activate([
-                brandingView.centerXAnchor.constraint(equalTo: centerXAnchor),
-                brandingView.centerYAnchor.constraint(equalTo: centerYAnchor),
+                brandingView.centerXAnchor.constraint(equalTo: searchAreaContainerView.centerXAnchor),
+                brandingView.centerYAnchor.constraint(equalTo: searchAreaContainerView.centerYAnchor),
                 brandingView.leadingAnchor.constraint(greaterThanOrEqualTo: safeAreaLayoutGuide.leadingAnchor, constant: Metrics.textAreaHorizontalPadding),
                 brandingView.trailingAnchor.constraint(lessThanOrEqualTo: safeAreaLayoutGuide.trailingAnchor, constant: -Metrics.textAreaHorizontalPadding)
             ])
@@ -490,7 +490,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         aiChatLeftButton.isHidden = true
         DefaultOmniBarView.setUpCommonProperties(for: aiChatLeftButton)
 
-        aiChatRightButton.setImage(DesignSystemImages.Glyphs.Size24.aiChatAdd, for: .normal)
+        aiChatRightButton.setImage(DesignSystemImages.Glyphs.Size24.add, for: .normal)
         aiChatRightButton.isHidden = true
         DefaultOmniBarView.setUpCommonProperties(for: aiChatRightButton)
 
@@ -702,6 +702,8 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         static let activeBorderWidth: CGFloat = 2
 
         static let textAreaHorizontalPadding: CGFloat = 16
+        
+        static let buttonToSearchContainerSpace: CGFloat = 4
 
         // Used when OmniBar is positioned on the bottom of the screen
         static let textAreaTopPaddingAdjustedSpacing: CGFloat = 10

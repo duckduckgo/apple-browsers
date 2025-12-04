@@ -1,5 +1,5 @@
 //
-//  BrowsingMenuVariantBuilder.swift
+//  BrowsingMenuBuilding.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -59,7 +59,7 @@ protocol BrowsingMenuEntryBuilding: AnyObject {
     func makeKeepSignInEntry() -> BrowsingMenuEntry?
 }
 
-protocol BrowsingMenuVariantBuilder: AnyObject {
+protocol BrowsingMenuBuilding: AnyObject {
     var entryBuilder: BrowsingMenuEntryBuilding? { get }
 
     func buildMenu(
@@ -72,7 +72,7 @@ protocol BrowsingMenuVariantBuilder: AnyObject {
 
 // MARK: - Default Implementation for AI Chat Menu
 
-extension BrowsingMenuVariantBuilder {
+extension BrowsingMenuBuilding {
     func buildAIChatMenu() -> BrowsingMenuModel? {
         guard let entryBuilder = entryBuilder else { return nil }
 

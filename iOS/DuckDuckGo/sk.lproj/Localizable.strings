@@ -35,7 +35,7 @@
 "action.title.aiChat.history" = "Chaty Duck.ai";
 
 /* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "AI Chat";
+"action.title.aiChat.new" = "Nový AI Chat";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Nastavenia Duck.ai";
@@ -89,7 +89,7 @@
 "action.title.newBackgroundTabForUrl" = "Otvoriť na pozadí";
 
 /* Create New Tab action */
-"action.title.newTabAction" = "Nové";
+"action.title.newTabAction" = "Nová karta";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Otvoriť v novej karte";
@@ -2925,6 +2925,9 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Poloha riadku s adresou";
+
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Experimentálna ponuka prehliadača";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Otvárať odkazy v pridružených aplikáciách";

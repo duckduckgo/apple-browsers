@@ -65,8 +65,8 @@ class SwitchBarTextEntryView: UIView {
             return Constants.minHeight
         }
 
-        if handler.isUsingSmallerBottomInput && currentMode == .search && !handler.isTopBarPosition {
-            return Constants.minHeight
+        if currentMode == .search && !handler.isTopBarPosition {
+            return handler.isUsingSmallerBottomInput ? Constants.minHeight : Constants.minHeightAIChatBottomBar
         }
 
         if currentMode == .aiChat {

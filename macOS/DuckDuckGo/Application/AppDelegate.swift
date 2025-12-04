@@ -274,7 +274,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }()
 
     lazy var homePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersistor = {
-        return HomePageContinueSetUpModelPersistor(keyValueStore: keyValueStore)
+        return HomePageContinueSetUpModelPersistor(keyValueStore: UserDefaultsWrapper<Any>.sharedDefaults)
     }()
 
     // MARK: - DBP

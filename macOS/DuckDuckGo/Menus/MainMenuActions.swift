@@ -1298,9 +1298,9 @@ extension MainViewController {
         NSApp.delegateTyped.appearancePreferences.isContinueSetUpCardsViewOutdated = false
         NSApp.delegateTyped.appearancePreferences.continueSetUpCardsClosed = false
         NSApp.delegateTyped.appearancePreferences.isContinueSetUpVisible = true
-        let homePageContinueSetUpModelPersistor = HomePageContinueSetUpModelPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
+        let homePageContinueSetUpModelPersistor = NSApp.delegateTyped.homePageContinueSetUpModelPersistor
         homePageContinueSetUpModelPersistor.clear()
-        let homePageSubscriptionCardPersistor = HomePageSubscriptionCardPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
+        let homePageSubscriptionCardPersistor = NSApp.delegateTyped.homePageSubscriptionCardPersistor
         homePageSubscriptionCardPersistor.clear()
         NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: NSApp)
     }

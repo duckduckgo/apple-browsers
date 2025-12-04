@@ -29,7 +29,7 @@ protocol HomePageContinueSetUpModelPersisting {
 }
 
 struct HomePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersisting {
-    private let keyValueStore: ThrowingKeyValueStoring
+    private let keyValueStore: KeyValueStoring
 
     enum Key: String {
         case homePageShowMakeDefault = "home.page.show.make.default"
@@ -40,46 +40,46 @@ struct HomePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersisting
         case homePageIsFirstSession = "home.page.is.first.session"
     }
 
-    init(keyValueStore: ThrowingKeyValueStoring) {
+    init(keyValueStore: KeyValueStoring) {
         self.keyValueStore = keyValueStore
     }
 
     var shouldShowMakeDefaultSetting: Bool {
-        get { (try? keyValueStore.object(forKey: Key.homePageShowMakeDefault.rawValue) as? Bool) ?? true }
-        set { try? keyValueStore.set(newValue, forKey: Key.homePageShowMakeDefault.rawValue) }
+        get { keyValueStore.object(forKey: Key.homePageShowMakeDefault.rawValue) as? Bool ?? true }
+        set { keyValueStore.set(newValue, forKey: Key.homePageShowMakeDefault.rawValue) }
     }
 
     var shouldShowAddToDockSetting: Bool {
-        get { (try? keyValueStore.object(forKey: Key.homePageShowAddToDock.rawValue) as? Bool) ?? true }
-        set { try? keyValueStore.set(newValue, forKey: Key.homePageShowAddToDock.rawValue) }
+        get { keyValueStore.object(forKey: Key.homePageShowAddToDock.rawValue) as? Bool ?? true }
+        set { keyValueStore.set(newValue, forKey: Key.homePageShowAddToDock.rawValue) }
     }
 
     var shouldShowImportSetting: Bool {
-        get { (try? keyValueStore.object(forKey: Key.homePageShowImport.rawValue) as? Bool) ?? true }
-        set { try? keyValueStore.set(newValue, forKey: Key.homePageShowImport.rawValue) }
+        get { keyValueStore.object(forKey: Key.homePageShowImport.rawValue) as? Bool ?? true }
+        set { keyValueStore.set(newValue, forKey: Key.homePageShowImport.rawValue) }
     }
 
     var shouldShowDuckPlayerSetting: Bool {
-        get { (try? keyValueStore.object(forKey: Key.homePageShowDuckPlayer.rawValue) as? Bool) ?? true }
-        set { try? keyValueStore.set(newValue, forKey: Key.homePageShowDuckPlayer.rawValue) }
+        get { keyValueStore.object(forKey: Key.homePageShowDuckPlayer.rawValue) as? Bool ?? true }
+        set { keyValueStore.set(newValue, forKey: Key.homePageShowDuckPlayer.rawValue) }
     }
 
     var shouldShowEmailProtectionSetting: Bool {
-        get { (try? keyValueStore.object(forKey: Key.homePageShowEmailProtection.rawValue) as? Bool) ?? true }
-        set { try? keyValueStore.set(newValue, forKey: Key.homePageShowEmailProtection.rawValue) }
+        get { keyValueStore.object(forKey: Key.homePageShowEmailProtection.rawValue) as? Bool ?? true }
+        set { keyValueStore.set(newValue, forKey: Key.homePageShowEmailProtection.rawValue) }
     }
 
     var isFirstSession: Bool {
-        get { (try? keyValueStore.object(forKey: Key.homePageIsFirstSession.rawValue) as? Bool) ?? true }
-        set { try? keyValueStore.set(newValue, forKey: Key.homePageIsFirstSession.rawValue) }
+        get { keyValueStore.object(forKey: Key.homePageIsFirstSession.rawValue) as? Bool ?? true }
+        set { keyValueStore.set(newValue, forKey: Key.homePageIsFirstSession.rawValue) }
     }
 
     func clear() {
-        try? keyValueStore.removeObject(forKey: Key.homePageShowMakeDefault.rawValue)
-        try? keyValueStore.removeObject(forKey: Key.homePageShowAddToDock.rawValue)
-        try? keyValueStore.removeObject(forKey: Key.homePageShowImport.rawValue)
-        try? keyValueStore.removeObject(forKey: Key.homePageShowDuckPlayer.rawValue)
-        try? keyValueStore.removeObject(forKey: Key.homePageShowEmailProtection.rawValue)
-        try? keyValueStore.removeObject(forKey: Key.homePageIsFirstSession.rawValue)
+        keyValueStore.removeObject(forKey: Key.homePageShowMakeDefault.rawValue)
+        keyValueStore.removeObject(forKey: Key.homePageShowAddToDock.rawValue)
+        keyValueStore.removeObject(forKey: Key.homePageShowImport.rawValue)
+        keyValueStore.removeObject(forKey: Key.homePageShowDuckPlayer.rawValue)
+        keyValueStore.removeObject(forKey: Key.homePageShowEmailProtection.rawValue)
+        keyValueStore.removeObject(forKey: Key.homePageIsFirstSession.rawValue)
     }
 }

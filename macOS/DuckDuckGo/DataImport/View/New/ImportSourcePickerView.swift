@@ -100,7 +100,7 @@ struct ImportSourcePickerView: View {
             Text(UserText.importChooseSourceTitle)
                 .font(.title2.weight(.semibold))
                 .padding(.top, 20)
-            if viewModel.selectedSource.isSafari {
+            if viewModel.selectedSource.isSafari || viewModel.selectedSource == .fileImport {
                 Text(UserText.importDataImportTypeTitleSelected)
                     .font(.body)
                     .foregroundColor(Color(designSystemColor: .textSecondary))
@@ -244,7 +244,8 @@ private struct RadioCard: View {
 
             Text(title)
                 .font(.system(size: 13))
-                .lineLimit(1)
+                .lineLimit(2)
+                .lineSpacing(1.2)
                 .truncationMode(.tail)
                 .minimumScaleFactor(0.75)
                 .layoutPriority(1)

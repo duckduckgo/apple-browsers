@@ -271,6 +271,11 @@ extension DataImport {
 
 extension DataImport.Source {
 
+    /// Sources available for legacy import flows (excludes .fileImport)
+    static var allCasesForLegacyImports: [Self] {
+        allCases.filter(\.isAvailableForLegacyImports)
+    }
+
     var importSourceName: String {
         switch self {
         case .brave:
@@ -311,6 +316,8 @@ extension DataImport.Source {
             return UserText.importLoginsCSVShort
         case .bookmarksHTML:
             return UserText.importBookmarksHTMLShort
+        case .fileImport:
+            return "\(UserText.importLoginsCSVShort)\n\(UserText.importBookmarksHTMLShort)"
         }
     }
 
@@ -318,6 +325,8 @@ extension DataImport.Source {
         switch self {
         case .brave, .chrome, .safari, .firefox, .bitwarden, .lastPass, .onePassword7, .onePassword8, .opera, .edge, .csv, .bookmarksHTML:
             return rawValue
+        case .fileImport:
+            return "fileImport"
         case .chromium, .coccoc, .tor, .yandex, .vivaldi:
             return "other"
         case .safariTechnologyPreview:
@@ -332,7 +341,7 @@ extension DataImport.Source {
             return ThirdPartyBrowser.browser(for: self)?.applicationIcon
         }
         switch self {
-        case .csv, .bookmarksHTML:
+        case .csv, .bookmarksHTML, .fileImport:
             return DesignSystemImages.Color.Size32.document
         default:
             break
@@ -364,7 +373,7 @@ extension DataImport.Source {
         }
 
         switch self {
-        case .csv, .bitwarden, .onePassword8, .onePassword7, .lastPass, .bookmarksHTML:
+        case .csv, .bitwarden, .onePassword8, .onePassword7, .lastPass, .bookmarksHTML, .fileImport:
             // Users can always import from exported files
             return true
         case .brave, .chrome, .chromium, .coccoc, .edge, .firefox, .opera, .operaGX, .safari, .safariTechnologyPreview, .tor, .vivaldi, .yandex:
@@ -377,7 +386,7 @@ extension DataImport.Source {
         switch self {
         case .brave, .chrome, .chromium, .coccoc, .edge, .firefox, .opera, .operaGX, .safari, .safariTechnologyPreview, .vivaldi, .yandex, .tor:
             return true
-        case .onePassword8, .onePassword7, .bitwarden, .lastPass, .csv, .bookmarksHTML:
+        case .onePassword8, .onePassword7, .bitwarden, .lastPass, .csv, .bookmarksHTML, .fileImport:
             return false
         }
     }
@@ -398,6 +407,8 @@ extension DataImport.Source {
             return [.passwords]
         case .bookmarksHTML:
             return [.bookmarks]
+        case .fileImport:
+            return [.bookmarks, .passwords]
         }
     }
 

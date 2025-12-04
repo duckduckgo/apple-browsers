@@ -1210,12 +1210,13 @@ final class DataImportViewModelTests: XCTestCase {
         let summaryArray: [DataImportViewModel.DataTypeImportResult] = [
             .init(.bookmarks, .failure(Failure(.bookmarks, .dataCorrupted)))
         ]
-        model = DataImportViewModel(
-            importSource: .chrome,
+        setupModel(
+            with: .chrome,
             screen: .fileImport(dataType: .bookmarks, summary: [:]),
-            summary: summaryArray,
-            syncFeatureVisibility: .hide
+            summary: summaryArray
         )
+        // Ensure both data types are selected
+        model.selectedDataTypes = [.bookmarks, .passwords]
 
         // WHEN
         model.skipImportOrDismiss(using: {})
@@ -1313,12 +1314,14 @@ final class DataImportViewModelTests: XCTestCase {
         let summaryArray: [DataImportViewModel.DataTypeImportResult] = [
             .init(.bookmarks, .failure(Failure(.bookmarks, .dataCorrupted)))
         ]
-        model = DataImportViewModel(
-            importSource: .chrome,
+        setupModel(
+            with: .chrome,
             screen: .fileImport(dataType: .bookmarks, summary: [:]),
-            summary: summaryArray,
-            syncFeatureVisibility: .hide
+            summary: summaryArray
         )
+
+        // Ensure both data types are selected
+        model.selectedDataTypes = [.bookmarks, .passwords]
 
         // WHEN
         model.performAction(for: .skip, dismiss: {})
@@ -2069,7 +2072,7 @@ final class DataImportViewModelTests: XCTestCase {
     func testHandleErrors_goesBack_whenKeychainPromptDenied() async {
         // GIVEN
         await MainActor.run {
-            setupModel(with: .chrome, dataImporterFactory: { _, _, _, _ in
+            setupModel(with: .chrome, screen: .passwordEntryHelp, dataImporterFactory: { _, _, _, _ in
                 ImporterMock(
                     accessValidator: { _, _ in
                         [.passwords: ChromiumLoginReader.ImportError(type: .userDeniedKeychainPrompt)]

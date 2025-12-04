@@ -47,7 +47,7 @@ func newFileImportMultipleTypeInstructionsBuilder(source: DataImport.Source) -> 
          .onePassword8, .onePassword7,
          .bitwarden, .lastPass,
          // file formats
-         .csv, .bookmarksHTML:
+         .csv, .bookmarksHTML, .fileImport:
         []
         assertionFailure("Invalid source for multi import")
     }
@@ -363,27 +363,16 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         source.importSourceName
 
     case (.csv, .passwords):
-        NSLocalizedString("import.csv.instructions.generic.new", value: """
-        The CSV importer will try to match column headers to their position.
-        If there is no header, it supports two formats:
-        %d URL, Username, Password
-        %d Title, URL, Username, Password
-        """, comment: """
-        Instructions to import a generic CSV passwords file.
-        %N$d - step number
-        **bold text**; _italic text_
-        """)
+        BookmarksPasswordsTextProvider.passwordsText
 
     case (.bookmarksHTML, .bookmarks):
-        NSLocalizedString("import.html.instructions.generic.new", value: """
-        %d Open your old browser → **Bookmark Manager**
-        %d **Export bookmarks to HTML…** and save the file
-        %d Upload the exported HTML file to DuckDuckGo
-        """, comment: """
-        Instructions to import a generic HTML Bookmarks file.
-        %N$d - step number
-        **bold text**; _italic text_
-        """)
+        BookmarksPasswordsTextProvider.bookmarksText
+
+    case (.fileImport, .passwords):
+        BookmarksPasswordsTextProvider.passwordsText
+
+    case (.fileImport, .bookmarks):
+        BookmarksPasswordsTextProvider.bookmarksText
 
     case (.bookmarksHTML, .passwords),
         (.tor, .passwords),
@@ -395,6 +384,33 @@ func newFileImportSingleTypeInstructionsBuilder(source: DataImport.Source, dataT
         (_, .creditCards):
         assertionFailure("Invalid source/dataType")
     }
+}
+
+private struct BookmarksPasswordsTextProvider {
+    static let bookmarksText: String = {
+        NSLocalizedString("import.html.instructions.generic.new", value: """
+        %d Open your old browser → **Bookmark Manager**
+        %d **Export bookmarks to HTML…** and save the file
+        %d Upload the exported HTML file to DuckDuckGo
+        """, comment: """
+        Instructions to import a generic HTML Bookmarks file.
+        %N$d - step number
+        **bold text**; _italic text_
+        """)
+    }()
+
+    static let passwordsText: String = {
+        NSLocalizedString("import.csv.instructions.generic.new", value: """
+        The CSV importer will try to match column headers to their position.
+        If there is no header, it supports two formats:
+        %d URL, Username, Password
+        %d Title, URL, Username, Password
+        """, comment: """
+        Instructions to import a generic CSV passwords file.
+        %N$d - step number
+        **bold text**; _italic text_
+        """)
+    }()
 }
 
 enum FilePickerMode {

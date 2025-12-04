@@ -108,6 +108,12 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866710074694
     case dbpEmailConfirmationDecoupling
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212258549430653
+    case dbpForegroundRunningOnAppActive
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212258549430659
+    case dbpForegroundRunningWhenDashboardOpen
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711635701
     case crashReportOptInStatusResetting
 
@@ -290,6 +296,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .subscriptionPurchaseWidePixelMeasurement,
              .newDeviceSyncPrompt,
              .authV2WideEventEnabled,
+             .dbpForegroundRunningOnAppActive,
+             .dbpForegroundRunningWhenDashboardOpen,
              .syncCreditCards,
              .unifiedURLPredictor,
              .forgetAllInSettings,
@@ -332,6 +340,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .daxEasterEggLogos,
              .dbpEmailConfirmationDecoupling,
              .dbpRemoteBrokerDelivery,
+             .dbpForegroundRunningOnAppActive,
+             .dbpForegroundRunningWhenDashboardOpen,
              .subscriptionPurchaseWidePixelMeasurement,
              .showAIChatAddressBarChoiceScreen,
              .authV2WideEventEnabled,
@@ -468,6 +478,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DBPSubfeature.remoteBrokerDelivery))
         case .dbpEmailConfirmationDecoupling:
             return .remoteReleasable(.subfeature(DBPSubfeature.emailConfirmationDecoupling))
+        case .dbpForegroundRunningOnAppActive:
+            return .remoteReleasable(.subfeature(DBPSubfeature.foregroundRunningOnAppActive))
+        case .dbpForegroundRunningWhenDashboardOpen:
+            return .remoteReleasable(.subfeature(DBPSubfeature.foregroundRunningWhenDashboardOpen))
         case .crashReportOptInStatusResetting:
             return .internalOnly()
         case .syncSeamlessAccountSwitching:

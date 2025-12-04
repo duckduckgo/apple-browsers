@@ -39,6 +39,10 @@ final class NavigationActionBarViewModel: ObservableObject {
         switchBarHandler.isUsingFadeOutAnimation
     }
 
+    var isUsingSmallerBottomInput: Bool {
+        switchBarHandler.isUsingSmallerBottomInput
+    }
+
     // MARK: - Dependencies
     private let switchBarHandler: SwitchBarHandling
     private var cancellables = Set<AnyCancellable>()

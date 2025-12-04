@@ -358,21 +358,30 @@ final class AddressBarTextField: NSTextField {
 
     func addressBarEnterPressed() {
         let selectedRowContent = suggestionContainerViewModel?.selectedRowContent
+        let selectedSuggestion = suggestionContainerViewModel?.selectedSuggestionViewModel?.suggestion
+        let selectedSuggestionCategory = selectedSuggestion.flatMap { AIChatSuggestionCategory(from: $0) }
         suggestionContainerViewModel?.clearUserStringValue()
 
         if case .aiChatCell = selectedRowContent {
-            openAIChatWithPrompt()
+            openAIChatWithPrompt(inputMethod: .keyboard, selectedSuggestionCategory: selectedSuggestionCategory)
             hideSuggestionWindow()
             return
         }
 
-        let suggestion = suggestionContainerViewModel?.selectedSuggestionViewModel?.suggestion
-        navigate(suggestion: suggestion)
+        fireSuggestionSubmittedPixel(inputMethod: .keyboard, selectedSuggestionCategory: selectedSuggestionCategory)
+        navigate(suggestion: selectedSuggestion)
 
         hideSuggestionWindow()
     }
 
+    /// Called from MainViewController when user presses Shift/Control + Enter (keyboard shortcut)
     func openAIChatWithPrompt() {
+        let selectedSuggestion = suggestionContainerViewModel?.selectedSuggestionViewModel?.suggestion
+        let selectedSuggestionCategory = selectedSuggestion.flatMap { AIChatSuggestionCategory(from: $0) }
+        openAIChatWithPrompt(inputMethod: .keyboard, selectedSuggestionCategory: selectedSuggestionCategory)
+    }
+
+    func openAIChatWithPrompt(inputMethod: SuggestionInputMethod, selectedSuggestionCategory: AIChatSuggestionCategory?) {
         let prompt = stringValueWithoutSuffix
 
         let behavior = LinkOpenBehavior(
@@ -381,9 +390,27 @@ final class AddressBarTextField: NSTextField {
             canOpenLinkInCurrentTab: true
         )
 
-        PixelKit.fire(AIChatPixel.aiChatSuggestionAIChatSubmitted, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        let pixel: AIChatPixel
+        switch inputMethod {
+        case .keyboard:
+            pixel = .aiChatSuggestionAIChatSubmittedKeyboard(suggestionCategory: selectedSuggestionCategory)
+        case .mouse:
+            pixel = .aiChatSuggestionAIChatSubmittedMouse(suggestionCategory: selectedSuggestionCategory)
+        }
+        PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
         NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: .query(prompt, shouldAutoSubmit: true), behavior: behavior)
         currentEditor()?.selectAll(self)
+    }
+
+    private func fireSuggestionSubmittedPixel(inputMethod: SuggestionInputMethod, selectedSuggestionCategory: AIChatSuggestionCategory?) {
+        let pixel: AIChatPixel
+        switch inputMethod {
+        case .keyboard:
+            pixel = .aiChatSuggestionSubmittedKeyboard(suggestionCategory: selectedSuggestionCategory)
+        case .mouse:
+            pixel = .aiChatSuggestionSubmittedMouse(suggestionCategory: selectedSuggestionCategory)
+        }
+        PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
     }
 
     private func navigate(suggestion: Suggestion?) {
@@ -1348,18 +1375,27 @@ extension AddressBarTextField: SuggestionViewControllerDelegate {
 
     func suggestionViewControllerDidConfirmSelection(_ suggestionViewController: SuggestionViewController) {
         let selectedRowContent = suggestionContainerViewModel?.selectedRowContent
+        let selectedSuggestion = suggestionContainerViewModel?.selectedSuggestionViewModel?.suggestion
+        let selectedSuggestionCategory = selectedSuggestion.flatMap { AIChatSuggestionCategory(from: $0) }
         suggestionContainerViewModel?.clearUserStringValue()
 
         if case .aiChatCell = selectedRowContent {
-            openAIChatWithPrompt()
+            openAIChatWithPrompt(inputMethod: .mouse, selectedSuggestionCategory: selectedSuggestionCategory)
             hideSuggestionWindow()
             return
         }
 
-        let suggestion = suggestionContainerViewModel?.selectedSuggestionViewModel?.suggestion
-        navigate(suggestion: suggestion)
+        fireSuggestionSubmittedPixel(inputMethod: .mouse, selectedSuggestionCategory: selectedSuggestionCategory)
+        navigate(suggestion: selectedSuggestion)
     }
 
+}
+
+// MARK: - Suggestion Input Method
+
+enum SuggestionInputMethod {
+    case keyboard
+    case mouse
 }
 
 fileprivate extension NSStoryboard {

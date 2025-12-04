@@ -18,6 +18,7 @@
 
 import Foundation
 import PixelKit
+import Suggestions
 
 /// This enum keeps pixels related to AI Chat (duck.ai)
 /// > Related links:
@@ -148,8 +149,17 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User submits URL from duck.ai panel
     case aiChatAddressBarAIChatSubmitURL
 
-    /// Event Trigger: User submits a prompt from the suggestion for duck.ai
-    case aiChatSuggestionAIChatSubmitted
+    /// Event Trigger: User submits a prompt from the suggestion for duck.ai by clicking with the mouse
+    case aiChatSuggestionAIChatSubmittedMouse(suggestionCategory: AIChatSuggestionCategory?)
+
+    /// Event Trigger: User submits a prompt from the suggestion for duck.ai by pressing enter
+    case aiChatSuggestionAIChatSubmittedKeyboard(suggestionCategory: AIChatSuggestionCategory?)
+
+    /// Event Trigger: User selects a suggestion by clicking with the mouse
+    case aiChatSuggestionSubmittedMouse(suggestionCategory: AIChatSuggestionCategory?)
+
+    /// Event Trigger: User selects a suggestion by pressing enter
+    case aiChatSuggestionSubmittedKeyboard(suggestionCategory: AIChatSuggestionCategory?)
 
     // MARK: -
 
@@ -229,8 +239,14 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_addressbar_aichat_submit_prompt"
         case .aiChatAddressBarAIChatSubmitURL:
             return "aichat_addressbar_aichat_submit_url"
-        case .aiChatSuggestionAIChatSubmitted:
-            return "aichat_suggestion_aichat_submitted"
+        case .aiChatSuggestionAIChatSubmittedMouse:
+            return "aichat_suggestion_aichat_submitted_mouse"
+        case .aiChatSuggestionAIChatSubmittedKeyboard:
+            return "aichat_suggestion_aichat_submitted_keyboard"
+        case .aiChatSuggestionSubmittedMouse:
+            return "aichat_suggestion_submitted_mouse"
+        case .aiChatSuggestionSubmittedKeyboard:
+            return "aichat_suggestion_submitted_keyboard"
         }
     }
 
@@ -264,8 +280,15 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarToggleChangedAIChat,
                 .aiChatAddressBarToggleChangedSearch,
                 .aiChatAddressBarAIChatSubmitPrompt,
-                .aiChatAddressBarAIChatSubmitURL,
-                .aiChatSuggestionAIChatSubmitted:
+                .aiChatAddressBarAIChatSubmitURL:
+            return nil
+        case .aiChatSuggestionAIChatSubmittedMouse(let category),
+             .aiChatSuggestionAIChatSubmittedKeyboard(let category),
+             .aiChatSuggestionSubmittedMouse(let category),
+             .aiChatSuggestionSubmittedKeyboard(let category):
+            if let category {
+                return ["suggestionCategory": category.rawValue]
+            }
             return nil
         case .aiChatAddressBarButtonClicked(let action):
             return ["action": action.rawValue]
@@ -324,7 +347,10 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarToggleChangedSearch,
                 .aiChatAddressBarAIChatSubmitPrompt,
                 .aiChatAddressBarAIChatSubmitURL,
-                .aiChatSuggestionAIChatSubmitted:
+                .aiChatSuggestionAIChatSubmittedMouse,
+                .aiChatSuggestionAIChatSubmittedKeyboard,
+                .aiChatSuggestionSubmittedMouse,
+                .aiChatSuggestionSubmittedKeyboard:
             return [.pixelSource]
         }
     }
@@ -332,6 +358,35 @@ enum AIChatPixel: PixelKitEvent {
 }
 
 // MARK: - Parameter values
+
+/// Category of the selected suggestion in the search box
+enum AIChatSuggestionCategory: String, CaseIterable {
+    case website = "website"
+    case bookmark = "bookmark"
+    case historyEntry = "history"
+    case openTab = "tab"
+    case phrase = "phrase"
+    case internalPage = "internal-page"
+
+    init?(from suggestion: Suggestion) {
+        switch suggestion {
+        case .website:
+            self = .website
+        case .bookmark:
+            self = .bookmark
+        case .historyEntry:
+            self = .historyEntry
+        case .openTab:
+            self = .openTab
+        case .phrase:
+            self = .phrase
+        case .internalPage:
+            self = .internalPage
+        case .unknown, .askAIChat:
+            return nil
+        }
+    }
+}
 
 /// Action performed when address bar button is clicked
 enum AIChatAddressBarAction: String, CaseIterable {

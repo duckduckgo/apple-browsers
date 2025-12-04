@@ -271,6 +271,11 @@ extension DataImport {
 
 extension DataImport.Source {
 
+    /// Sources available for legacy import flows (excludes .fileImport)
+    static var allCasesForLegacyImports: [Self] {
+        allCases.filter(\.isAvailableForLegacyImports)
+    }
+
     var importSourceName: String {
         switch self {
         case .brave:

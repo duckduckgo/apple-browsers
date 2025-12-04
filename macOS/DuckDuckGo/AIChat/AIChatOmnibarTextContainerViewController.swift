@@ -214,6 +214,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
                         let textLength = newText.count
                         self.textView.selectedRange = NSRange(location: textLength, length: 0)
                     }
+                    /// Update panel height when text changes programmatically (e.g., from paste)
+                    self.updatePanelHeight()
                 }
                 self.updatePlaceholderVisibility()
             }

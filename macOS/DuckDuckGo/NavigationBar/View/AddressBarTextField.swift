@@ -25,6 +25,8 @@ import PixelKit
 import Suggestions
 import Subscription
 import os.log
+import UIComponents
+import AIChat
 
 protocol AddressBarTextFieldFocusDelegate: AnyObject {
     func addressBarDidFocus(_ addressBarTextField: AddressBarTextField)
@@ -70,6 +72,8 @@ final class AddressBarTextField: NSTextField {
     weak var focusDelegate: AddressBarTextFieldFocusDelegate?
     weak var searchPreferences: SearchPreferences?
     weak var tabsPreferences: TabsPreferences?
+    var aiChatPreferences: AIChatPreferencesStorage?
+
     weak var sharedTextState: AddressBarSharedTextState? {
         didSet {
             subscribeToSharedTextState()
@@ -384,6 +388,26 @@ final class AddressBarTextField: NSTextField {
         PixelKit.fire(AIChatPixel.aiChatSuggestionAIChatSubmitted, frequency: .dailyAndCount, includeAppVersionParameter: true)
         NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: .query(prompt, shouldAutoSubmit: true), behavior: behavior)
         currentEditor()?.selectAll(self)
+    }
+
+    /// Handles paste of multiline text by switching to AI chat mode if conditions are met
+    /// - Parameter text: The pasted text containing newlines
+    /// - Returns: `true` if the text was handled by switching to AI chat mode, `false` otherwise
+    func handleMultilinePaste(_ text: String) -> Bool {
+        guard Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
+              let aiChatPreferences = aiChatPreferences,
+              aiChatPreferences.isAIFeaturesEnabled,
+              aiChatPreferences.showSearchAndDuckAIToggle,
+              let toggleControl = customToggleControl as? CustomToggleControl,
+              !toggleControl.isHidden,
+              toggleControl.isEnabled,
+              toggleControl.selectedSegment == 0 else {
+            return false
+        }
+
+        sharedTextState?.updateText(text, markInteraction: true)
+        toggleControl.selectedSegment = 1
+        return true
     }
 
     private func navigate(suggestion: Suggestion?) {

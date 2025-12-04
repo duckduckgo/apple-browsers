@@ -1145,10 +1145,8 @@ extension Pixel {
         case subscriptionInvalidRefreshTokenDetected
         case subscriptionInvalidRefreshTokenSignedOut
         case subscriptionInvalidRefreshTokenRecovered
-        case subscriptionAuthV2MigrationFailed
         case subscriptionAuthV2MigrationFailed2
         case subscriptionAuthV2MigrationSucceeded
-        case subscriptionAuthV2GetTokensError
         case subscriptionAuthV2GetTokensError2
 
         case settingsSubscriptionAccountWithNoSubscriptionFound

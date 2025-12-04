@@ -20,7 +20,7 @@ import XCTest
 import PixelKit
 @testable import BrowserServicesKit
 
-final class Dpatial: XCTestCase {
+final class DataImportWideEventDataTests: XCTestCase {
 
     func testPixelParameters_setupWithCompleteSuccessfulFlow() {
         let eventData = DataImportWideEventData(

@@ -20,7 +20,7 @@ import XCTest
 import PixelKit
 @testable import BrowserServicesKit
 
-final class DataImportWideEventDataTests: XCTestCase {
+final class Dpatial: XCTestCase {
 
     func testPixelParameters_setupWithCompleteSuccessfulFlow() {
         let eventData = DataImportWideEventData(
@@ -117,7 +117,7 @@ final class DataImportWideEventDataTests: XCTestCase {
         XCTAssertNil(parameters["feature.data.ext.passwords_status_reason"])
 
         XCTAssertEqual(parameters["feature.data.ext.creditCards_status"], "UNKNOWN")
-        XCTAssertEqual(parameters["feature.data.ext.creditCards_status"], "patial_data")
+        XCTAssertEqual(parameters["feature.data.ext.creditCards_status_reason"], "partial_data")
 
         // Have all per type durations
         XCTAssertEqual(parameters["feature.data.ext.latency_ms"], "1500")
@@ -231,9 +231,9 @@ final class DataImportWideEventDataTests: XCTestCase {
         XCTAssertNil(parameters["feature.data.ext.bookmarks_status_reason"])
 
         XCTAssertEqual(parameters["feature.data.ext.passwords_status"], "UNKNOWN")
-        XCTAssertEqual(parameters["feature.data.ext.passwords_status_reason"], "PARTIAL_DATA")
+        XCTAssertEqual(parameters["feature.data.ext.passwords_status_reason"], "partial_data")
 
-        XCTAssertEqual(parameters["feature.data.ext.credit_cards_status"], "FAILURE")
+        XCTAssertEqual(parameters["feature.data.ext.creditCards_status"], "FAILURE")
         XCTAssertNil(parameters["feature.data.ext.creditCards_status_reason"])
     }
 
@@ -399,13 +399,13 @@ final class DataImportWideEventDataTests: XCTestCase {
         eventData.passwordImportError = WideEventErrorData(error: error, description: "no data")
         parameters = eventData.pixelParameters()
         XCTAssertEqual(parameters["feature.data.ext.passwords_error.domain"], "DataImportError")
-        XCTAssertEqual(parameters["feature.data.ext.bpasswords_error.code"], "1")
+        XCTAssertEqual(parameters["feature.data.ext.passwords_error.code"], "1")
         XCTAssertEqual(parameters["feature.data.ext.passwords_error.description"], "no data")
 
         // No Description
         eventData.creditCardImportError = WideEventErrorData(error: error)
         parameters = eventData.pixelParameters()
-        XCTAssertEqual(parameters["feature.data.ext.creditCards_error.domain"], "TestDomain")
+        XCTAssertEqual(parameters["feature.data.ext.creditCards_error.domain"], "DataImportError")
         XCTAssertEqual(parameters["feature.data.ext.creditCards_error.code"], "1")
         XCTAssertNil(parameters["feature.data.ext.creditCards_error.description"])
     }

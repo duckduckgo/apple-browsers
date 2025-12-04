@@ -254,7 +254,7 @@ extension TabViewController {
 
         entries.append(buildDownloadsEntry())
 
-        if state == .newTab, featureFlagger.isFeatureOn(.vpnMenuItem), AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.canPurchase {
+        if state == .newTab, featureFlagger.isFeatureOn(.vpnMenuItem), AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.hasAppStoreProductsAvailable {
             entries.append(buildVPNEntry())
         }
 
@@ -856,7 +856,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     
     func makeVPNEntry() -> BrowsingMenuEntry? {
         guard featureFlagger.isFeatureOn(.vpnMenuItem),
-              AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.canPurchase else {
+              AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.hasAppStoreProductsAvailable else {
             return nil
         }
         return buildVPNEntry()

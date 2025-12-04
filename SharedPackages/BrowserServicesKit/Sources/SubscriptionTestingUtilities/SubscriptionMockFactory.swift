@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Networking
 @testable import Subscription
 
 /// Provides all mocks needed for testing subscription initialised with positive outcomes and basic configurations. All mocks can be partially reconfigured with failures or incorrect data
@@ -53,4 +54,22 @@ public struct SubscriptionMockFactory {
                                                                           billingPeriod: appleSubscription.billingPeriod.rawValue,
                                                                           price: "0.99",
                                                                           currency: "USD")]
+
+    public static let tierProductsResponse = GetTierProductsResponse(products: [
+        TierProduct(
+            productName: "Plus Subscription",
+            tier: .plus,
+            regions: ["us", "row"],
+            entitlements: [
+                TierFeature(product: .networkProtection, name: .plus),
+                TierFeature(product: .dataBrokerProtection, name: .plus),
+                TierFeature(product: .identityTheftRestoration, name: .plus),
+                TierFeature(product: .paidAIChat, name: .plus)
+            ],
+            billingCycles: [
+                BillingCycle(productId: "monthly-plus", period: "Monthly", price: "9.99", currency: "USD"),
+                BillingCycle(productId: "yearly-plus", period: "Yearly", price: "99.99", currency: "USD")
+            ]
+        )
+    ])
 }

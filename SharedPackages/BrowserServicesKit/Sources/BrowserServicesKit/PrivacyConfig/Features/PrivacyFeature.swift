@@ -143,6 +143,7 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Tab closing event recreation feature flag (failsafe for removing private API)
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212206087745586?focus=true
     case tabClosingEventRecreation
+
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -285,6 +286,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Controls showing the Hide AI section in Settings -> AI Features
     case showHideAiGeneratedImages
+
+    /// Controls showing the AI Chat as Tabs Experiment Setting in Settings -> AI Features
+    case fullDuckAIModeExperimentalSetting
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

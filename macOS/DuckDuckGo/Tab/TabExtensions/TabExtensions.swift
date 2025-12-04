@@ -173,6 +173,16 @@ extension TabExtensionsBuilder {
                                        contentScopeUserScriptPublisher: userScripts.compactMap(\.?.contentScopeUserScriptIsolated))
         }
 
+        if dependencies.featureFlagger.isFeatureOn(.webNotifications) {
+            add {
+                WebNotificationsTabExtension(
+                    tabUUID: args.tabID,
+                    contentScopeUserScriptPublisher: userScripts.compactMap(\.?.contentScopeUserScript),
+                    webViewPublisher: args.webViewFuture
+                )
+            }
+        }
+
         add {
             AdClickAttributionTabExtension(inheritedAttribution: args.inheritedAttribution,
                                            userContentControllerFuture: args.userContentControllerFuture,

@@ -87,7 +87,7 @@ final class SubscriptionAppStoreRestorerTests: XCTestCase {
                                                       authEndpointService: authService,
                                                       storePurchaseManager: storePurchaseManager,
                                                       currentEnvironment: subscriptionEnvironment,
-                                                      canPurchase: true,
+                                                      hasAppStoreProductsAvailable: true,
                                                       subscriptionFeatureMappingCache: subscriptionFeatureMappingCache)
         appStoreRestoreFlow = AppStoreRestoreFlowMock()
 

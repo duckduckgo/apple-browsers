@@ -144,6 +144,11 @@ final class TabBarItemCellView: NSView {
         static let trailingSpaceWithPermissionAndButton: CGFloat = 40
     }
 
+    private enum Metrics {
+        static let closeButtonWidth: CGFloat = 16
+        static let closeButtonHeight: CGFloat = 16
+    }
+
     let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
     var themeUpdateCancellable: AnyCancellable?
 
@@ -211,6 +216,7 @@ final class TabBarItemCellView: NSView {
 
     fileprivate lazy var closeButton = {
         let closeButton = MouseOverButton(image: .close, target: nil, action: #selector(TabBarViewItem.closeButtonAction))
+        closeButton.frame.size = NSSize(width: Metrics.closeButtonWidth, height: Metrics.closeButtonHeight)
         closeButton.bezelStyle = .shadowlessSquare
         closeButton.normalTintColor = .button
         closeButton.mouseDownColor = .buttonMouseDown
@@ -385,6 +391,13 @@ final class TabBarItemCellView: NSView {
 
     override func layout() {
         super.layout()
+
+        withoutAnimation {
+            layout(widthStage: widthStage)
+        }
+    }
+
+    private func layout(widthStage: WidthStage) {
         mouseOverView.frame = bounds
         if theme.tabStyleProvider.isRoundedBackgroundPresentOnHover {
             let padding: CGFloat = 4
@@ -445,7 +458,7 @@ final class TabBarItemCellView: NSView {
         }
         var maxX = bounds.maxX - 9
         if closeButton.isShown {
-            closeButton.frame = NSRect(x: maxX - 16, y: bounds.midY - 8, width: 16, height: 16)
+            closeButton.frame = NSRect(x: maxX - 16, y: bounds.midY - 8, width: Metrics.closeButtonWidth, height: Metrics.closeButtonHeight)
             maxX = closeButton.frame.minX - 4
         } else {
             maxX = max(maxX - 1 /* 28 title offset with favicon */, 12 /* without favicon */)
@@ -528,7 +541,7 @@ final class TabBarItemCellView: NSView {
         }
         if closeButton.isShown {
             // close button appears in place of favicon in compact mode
-            closeButton.frame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: 16, height: 16)
+            closeButton.frame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: Metrics.closeButtonWidth, height: Metrics.closeButtonHeight)
             x = closeButton.frame.maxX + spacing
         }
     }

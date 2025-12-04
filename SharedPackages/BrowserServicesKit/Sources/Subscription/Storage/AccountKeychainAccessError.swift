@@ -31,14 +31,22 @@ public enum AccountKeychainAccessError: DDGError {
 
     public var description: String {
         switch self {
-        case .failedToDecodeKeychainData: return "failedToDecodeKeychainData"
-        case .failedToDecodeKeychainValueAsData: return "failedToDecodeKeychainValueAsData"
-        case .failedToDecodeKeychainDataAsString: return "failedToDecodeKeychainDataAsString"
-        case .failedToEncodeKeychainData: return "failedToEncodeKeychainData"
-        case .keychainSaveFailure(let status): return "keychainSaveFailure(\(status) - \(status.humanReadableDescription))"
-        case .keychainDeleteFailure(let status): return "keychainDeleteFailure(\(status) - \(status.humanReadableDescription))"
-        case .keychainLookupFailure(let status): return "keychainLookupFailure(\(status) - \(status.humanReadableDescription))"
-        case .expectedTokenNotFound: return "expectedTokenNotFound"
+        case .failedToDecodeKeychainData:
+            return "failedToDecodeKeychainData"
+        case .failedToDecodeKeychainValueAsData:
+            return "failedToDecodeKeychainValueAsData"
+        case .failedToDecodeKeychainDataAsString:
+            return "failedToDecodeKeychainDataAsString"
+        case .failedToEncodeKeychainData:
+            return "failedToEncodeKeychainData"
+        case .keychainSaveFailure(let status):
+            return "keychainSaveFailure(\(status) - \(status.humanReadableDescription))"
+        case .keychainDeleteFailure(let status):
+            return "keychainDeleteFailure(\(status) - \(status.humanReadableDescription))"
+        case .keychainLookupFailure(let status):
+            return "keychainLookupFailure(\(status) - \(status.humanReadableDescription))"
+        case .expectedTokenNotFound:
+            return "expectedTokenNotFound"
         }
     }
 
@@ -46,14 +54,37 @@ public enum AccountKeychainAccessError: DDGError {
 
     public var errorCode: Int {
         switch self {
-        case .failedToDecodeKeychainData: 12400
-        case .failedToDecodeKeychainValueAsData: 12401
-        case .failedToDecodeKeychainDataAsString: 12402
-        case .failedToEncodeKeychainData: 12403
-        case .keychainSaveFailure: 12404
-        case .keychainDeleteFailure: 12405
-        case .keychainLookupFailure: 12406
-        case .expectedTokenNotFound: 12407
+        case .failedToDecodeKeychainData:
+            return 12400
+        case .failedToDecodeKeychainValueAsData:
+            return 12401
+        case .failedToDecodeKeychainDataAsString:
+            return 12402
+        case .failedToEncodeKeychainData:
+            return 12403
+        case .keychainSaveFailure:
+            return 12404
+        case .keychainDeleteFailure:
+            return 12405
+        case .keychainLookupFailure:
+            return 12406
+        case .expectedTokenNotFound:
+            return 12407
+        }
+    }
+
+    public var underlyingError: (any Error)? {
+        switch self {
+        case .failedToDecodeKeychainData,
+                .failedToDecodeKeychainValueAsData,
+                .failedToDecodeKeychainDataAsString,
+                .failedToEncodeKeychainData,
+                .expectedTokenNotFound:
+            return nil
+        case .keychainSaveFailure(let oSStatus),
+                .keychainDeleteFailure(let oSStatus),
+                .keychainLookupFailure(let oSStatus):
+            return NSError(domain: AccountKeychainAccessError.errorDomain, code: Int(oSStatus))
         }
     }
 }

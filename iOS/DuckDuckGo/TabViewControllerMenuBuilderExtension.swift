@@ -50,7 +50,13 @@ extension TabViewController {
         let copyEntry = buildCopyEntry()
 
         if shouldShowAIChatInMenu {
-            let chatEntry = buildChatEntry(withSmallIcon: false)
+            
+            var chatEntry: BrowsingMenuEntry
+            if aiChatFullModeFeature.isAvailable {
+                chatEntry = buildNewAIChatEntry()
+            } else {
+                chatEntry = buildChatEntry(withSmallIcon: false)
+            }
 
             entries.append(newTabEntry)
             entries.append(chatEntry)
@@ -226,7 +232,12 @@ extension TabViewController {
             }))
 
             if shouldShowAIChatInMenu {
-                let chatEntry = buildChatEntry(withSmallIcon: true)
+                var chatEntry: BrowsingMenuEntry
+                if aiChatFullModeFeature.isAvailable {
+                    chatEntry = buildNewAIChatEntry(withSmallIcon: true)
+                } else {
+                    chatEntry = buildChatEntry(withSmallIcon: true)
+                }
                 entries.append(chatEntry)
             }
 
@@ -449,10 +460,10 @@ extension TabViewController {
         })
     }
     
-    private func buildNewAIChatEntry() -> BrowsingMenuEntry {
+    private func buildNewAIChatEntry(withSmallIcon smallIcon: Bool = false) -> BrowsingMenuEntry {
         .regular(name: UserText.actionNewAIChat,
                  accessibilityLabel: UserText.actionNewAIChat,
-                 image: DesignSystemImages.Glyphs.Size24.aiChatAdd,
+                 image: smallIcon ? DesignSystemImages.Glyphs.Size16.aiChatAdd : DesignSystemImages.Glyphs.Size24.aiChatAdd,
                  action: { [weak self] in
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuNewChatTabTapped)
             self?.openNewChatInNewTab()

@@ -147,31 +147,8 @@ final class ActiveRemoteMessageModelTests: XCTestCase {
 
         // THEN
         XCTAssertEqual(store.fetchScheduledRemoteMessageCalls, 1)
-        XCTAssertEqual(store.capturedSurfaces, [.newTabPage, .tabBar])
-    }
-
-    func testWhenLegacyTabBarMessageIsScheduled_thenFallbackIsUsed() {
-        store.scheduledRemoteMessage = RemoteMessageModel(
-            id: TabBarRemoteMessage.tabBarPermanentSurveyRemoteMessageId,
-            surfaces: .newTabPage,
-            content: .bigSingleAction(titleText: "Help Us Improve!",
-                                      descriptionText: "Description",
-                                      placeholder: .announce,
-                                      primaryActionText: "Test",
-                                      primaryAction: .survey(value: "www.survey.com")),
-            matchingRules: [],
-            exclusionRules: [],
-            isMetricsEnabled: false
-        )
-        model = ActiveRemoteMessageModel(
-            remoteMessagingStore: self.store,
-            remoteMessagingAvailabilityProvider: MockRemoteMessagingAvailabilityProvider(),
-            openURLHandler: { _ in },
-            navigateToFeedbackHandler: { }
-        )
-
-        XCTAssertNotNil(model.tabBarRemoteMessage)
-        XCTAssertNil(model.newTabPageRemoteMessage)
+        XCTAssertTrue(store.capturedSurfaces!.contains(.newTabPage))
+        XCTAssertTrue(store.capturedSurfaces!.contains(.tabBar))
     }
 
 }

@@ -91,6 +91,13 @@ final class VPNAppEventsHandler {
         var parameters: [String: String]? {
             nil
         }
+
+        var standardParameters: [PixelKitStandardParameter]? {
+            switch self {
+            case .cannotStopVPN:
+                return [.pixelSource]
+            }
+        }
     }
 
     /// Checks whether the VNP login items need to be disabled

@@ -45,4 +45,11 @@ public enum SiteTroubleshootingPixel: VPNPixel {
             return [PixelKit.Parameters.domain: domain]
         }
     }
+
+    public var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .reportIssues:
+            return [.pixelSource]
+        }
+    }
 }

@@ -35,7 +35,7 @@
 "action.title.aiChat.history" = "Duck.ai Sohbetleri";
 
 /* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "Yapay Zeka Sohbeti";
+"action.title.aiChat.new" = "Yeni Yapay Zeka Sohbeti";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Duck.ai Ayarları";
@@ -89,7 +89,7 @@
 "action.title.newBackgroundTabForUrl" = "Arka Planda Aç";
 
 /* Create New Tab action */
-"action.title.newTabAction" = "Yeni";
+"action.title.newTabAction" = "Yeni Sekme";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Yeni Sekmede Aç";
@@ -2925,6 +2925,9 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Adres Çubuğu Konumu";
+
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Deneysel Tarayıcı Menüsü";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Bağlantıları İlişkili Uygulamalarda Aç";

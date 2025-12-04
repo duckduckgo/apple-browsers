@@ -50,4 +50,16 @@ enum AutofillPixelKitEvent: PixelKitEvent {
     var withoutMacPrefix: NonStandardEvent {
         NonStandardEvent(self)
     }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .importCredentialsFlowStarted,
+                .importCredentialsFlowCancelled,
+                .importCredentialsFlowHadCredentials,
+                .importCredentialsFlowEnded,
+                .autofillSettingsOpened,
+                .importCredentialsPromptNeverAgainClicked:
+            return [.pixelSource]
+        }
+    }
 }

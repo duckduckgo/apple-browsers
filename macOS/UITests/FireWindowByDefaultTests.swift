@@ -24,7 +24,7 @@ class FireWindowByDefaultTests: UITestCase {
         continueAfterFailure = false
 
         // Assume feature flag is on by default
-        app = XCUIApplication.setUp(featureFlags: ["openFireWindowByDefault": true])
+        app = XCUIApplication.setUp()
 
         app.enforceSingleWindow()
     }

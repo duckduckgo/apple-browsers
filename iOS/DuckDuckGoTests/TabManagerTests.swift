@@ -109,7 +109,8 @@ final class TabManagerTests: XCTestCase {
                           featureDiscovery: MockFeatureDiscovery(),
                           keyValueStore: try! MockKeyValueFileStore(),
                           daxDialogsManager: DummyDaxDialogsManager(),
-                          aiChatSettings: MockAIChatSettingsProvider())
+                          aiChatSettings: MockAIChatSettingsProvider(),
+                          productSurfaceTelemetry: MockProductSurfaceTelemetry())
     }
 
 }

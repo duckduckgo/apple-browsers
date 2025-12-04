@@ -146,5 +146,15 @@ extension VPNUninstaller {
             }
         }
 
+        var standardParameters: [PixelKitStandardParameter]? {
+            switch self {
+            case .begin,
+                    .success,
+                    .failure,
+                    .cancelled:
+                return [.pixelSource]
+            }
+        }
+
     }
 }

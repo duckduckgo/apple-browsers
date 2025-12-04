@@ -60,6 +60,7 @@ class TabManager {
     private let keyValueStore: ThrowingKeyValueStoring
     private let daxDialogsManager: DaxDialogsManaging
     private let aiChatSettings: AIChatSettingsProvider
+    private let productSurfaceTelemetry: ProductSurfaceTelemetry
 
     weak var delegate: TabDelegate?
     weak var aiChatContentDelegate: AIChatContentHandlingDelegate?
@@ -93,7 +94,8 @@ class TabManager {
          featureDiscovery: FeatureDiscovery,
          keyValueStore: ThrowingKeyValueStoring,
          daxDialogsManager: DaxDialogsManaging,
-         aiChatSettings: AIChatSettingsProvider
+         aiChatSettings: AIChatSettingsProvider,
+         productSurfaceTelemetry: ProductSurfaceTelemetry
     ) {
         self.model = model
         self.persistence = persistence
@@ -121,6 +123,7 @@ class TabManager {
         self.keyValueStore = keyValueStore
         self.daxDialogsManager = daxDialogsManager
         self.aiChatSettings = aiChatSettings
+        self.productSurfaceTelemetry = productSurfaceTelemetry
         registerForNotifications()
     }
 
@@ -163,7 +166,8 @@ class TabManager {
                                                               specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
                                                               featureDiscovery: featureDiscovery,
                                                               keyValueStore: keyValueStore,
-                                                              daxDialogsManager: daxDialogsManager, aiChatSettings: aiChatSettings)
+                                                              daxDialogsManager: daxDialogsManager, aiChatSettings: aiChatSettings,
+                                                              productSurfaceTelemetry: productSurfaceTelemetry)
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
                                  interactionStateData: interactionState,
@@ -261,7 +265,8 @@ class TabManager {
                                                               featureDiscovery: featureDiscovery,
                                                               keyValueStore: keyValueStore,
                                                               daxDialogsManager: daxDialogsManager,
-                                                              aiChatSettings: aiChatSettings)
+                                                              aiChatSettings: aiChatSettings,
+                                                              productSurfaceTelemetry: productSurfaceTelemetry)
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
                                  consumeCookies: !model.hasActiveTabs,

@@ -71,11 +71,9 @@ extension Preferences {
                 }
 
                 // SECTION 3: Enable/Disable Fire Animation
-                if model.shouldShowDisableFireAnimationSection {
-                    PreferencePaneSection(UserText.fireAnimationSectionHeader) {
-                        PreferencePaneSubSection {
-                            ToggleMenuItem(UserText.showFireAnimationToggleText, isOn: $model.isFireAnimationEnabled)
-                        }
+                PreferencePaneSection(UserText.fireAnimationSectionHeader) {
+                    PreferencePaneSubSection {
+                        ToggleMenuItem(UserText.showFireAnimationToggleText, isOn: $model.isFireAnimationEnabled)
                     }
                 }
 

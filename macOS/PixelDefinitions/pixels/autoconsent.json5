@@ -107,7 +107,7 @@
     },
     "m_mac_autoconsent_error_reload-loop_daily": {
         "description": "Fires when the autoconsent reload loop is detected.",
-        "owners": ["mtsoy"],
+        "owners": ["muodov"],
         "triggers": ["page_load"],
         "suffixes": [],
         "parameters": ["appVersion", "pixelSource"]

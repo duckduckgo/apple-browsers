@@ -69,7 +69,6 @@ struct SettingsState {
     var refreshButtonPosition: RefreshButtonPosition
     var mobileCustomization: MobileCustomization.State
     var showMenuInSheet: Bool
-    var sheetMenuVariant: BrowsingMenuClusteringVariant
 
     // Privacy properties
     var sendDoNotSell: Bool
@@ -134,7 +133,6 @@ struct SettingsState {
             refreshButtonPosition: .addressBar,
             mobileCustomization: .default,
             showMenuInSheet: false,
-            sheetMenuVariant: .a,
             sendDoNotSell: true,
             autoconsentEnabled: false,
             autoclearDataEnabled: false,

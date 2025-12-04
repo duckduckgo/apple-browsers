@@ -622,12 +622,12 @@ struct UserText {
     static let aiChatSidebarTitle = NSLocalizedString("aichat.sidebar.title", value: "Duck.ai", comment: "Title for the Duck.ai sidebar")
     static let aiChatSidebarExpandButtonTooltip = NSLocalizedString("aichat.sidebar.expand-button.tooltip", value: "Expand", comment: "Tooltip for button to open duck.ai chat from sidebar in a full tab")
     static let aiChatSidebarCloseButtonTooltip = NSLocalizedString("aichat.sidebar.close-button.tooltip", value: "Close", comment: "Tooltip for button to close the sidebar with the duck.ai chat")
-    static let aiChatSearchTheWebTooltip = NSLocalizedString("aichat.search-the-web.tooltip", value: "Search the Web", comment: "Tooltip for the search the web segment in the toggle control")
-    static let aiChatChatWithAITooltip = NSLocalizedString("aichat.chat-with-ai.tooltip", value: "Chat with AI", comment: "Tooltip for the chat with AI segment in the toggle control")
+    static let aiChatSearchTheWebTooltip = NSLocalizedString("aichat.search-privately.tooltip", value: "Search Privately", comment: "Tooltip for the search the web segment in the toggle control")
+    static let aiChatChatWithAITooltip = NSLocalizedString("aichat.ask-privately.tooltip", value: "Ask privately", comment: "Tooltip for the chat with AI segment in the toggle control")
     static let aiChatToggleSearchLabel = NSLocalizedString("aichat.toggle.search.label", value: "Search", comment: "Label for the search segment in the address bar toggle control")
     static let aiChatToggleAskLabel = NSLocalizedString("aichat.toggle.ask.label", value: "Duck.ai", comment: "Label for the ask AI segment in the address bar toggle control")
     static let aiChatSendButtonTooltip = NSLocalizedString("aichat.send-button.tooltip", value: "Send", comment: "Tooltip for the send button in AI chat omnibar")
-    static let aiChatOmnibarPlaceholder = NSLocalizedString("aichat.omnibar.placeholder", value: "Chat Privately", comment: "Placeholder text shown in the Duck.ai chat input field")
+    static let aiChatOmnibarPlaceholder = NSLocalizedString("aichat.omnibar.placeholder", value: "Ask privately", comment: "Placeholder text shown in the Duck.ai chat input field")
     static let moreSearchSettings = NSLocalizedString("settings.more-search-settings", value: "More Search Settings", comment: "The button name in preferences for More Search Settings")
     static let moreSearchSettingsDescription = NSLocalizedString("settings.more-search-settings.description", value: "Customize your language, region, and more.", comment: "Subtitle of the 'More Search Settings' button")
     static let moreSearchSettingsLink = NSLocalizedString("settings.more-search-settings.link", value: "Open DuckDuckGo Search Settings", comment: "Button to open Search Settings on duckduckgo.com")
@@ -2017,7 +2017,7 @@ struct UserText {
     static let removeSuggestionTooltip = NSLocalizedString("remove.suggestion.tooltip", value: "Remove from browsing history", comment: "Tooltip for the button which removes the history entry from the history")
 
     static let switchToTab = NSLocalizedString("switch.to.tab", value: "Switch to Tab", comment: "Suggestion to switch to an open tab button title")
-    static let searchTheWeb = NSLocalizedString("suggestion.search.the.web", value: "Search the web", comment: "Label shown on the search suggestion cell indicating the action will search the web")
+    static let searchTheWeb = NSLocalizedString("suggestion.search.privately", value: "Search privately", comment: "Label shown on the search suggestion cell indicating the action will search the web")
 
     // MARK: - Storage Access
 

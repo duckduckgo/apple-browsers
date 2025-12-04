@@ -2079,14 +2079,14 @@
         }
       }
     },
-    "aichat.chat-with-ai.tooltip" : {
+    "aichat.ask-privately.tooltip" : {
       "comment" : "Tooltip for the chat with AI segment in the toggle control",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Chat with AI"
+            "value" : "Ask privately"
           }
         }
       }
@@ -2098,19 +2098,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Chat Privately"
+            "value" : "Ask privately"
           }
         }
       }
     },
-    "aichat.search-the-web.tooltip" : {
+    "aichat.search-privately.tooltip" : {
       "comment" : "Tooltip for the search the web segment in the toggle control",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Search the Web"
+            "value" : "Search Privately"
           }
         }
       }
@@ -85329,14 +85329,14 @@
         }
       }
     },
-    "suggestion.search.the.web" : {
+    "suggestion.search.privately" : {
       "comment" : "Label shown on the search suggestion cell indicating the action will search the web",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Search the web"
+            "value" : "Search privately"
           }
         }
       }

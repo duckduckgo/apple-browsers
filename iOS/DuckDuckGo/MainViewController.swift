@@ -2779,18 +2779,35 @@ extension MainViewController: OmniBarDelegate {
                                             })
         )
 
+        func configureSheetPresentationController(_ sheet: UISheetPresentationController) {
+            if context == .newTabPage {
+                if #available(iOS 16.0, *) {
+                    let height = model.estimatedContentHeight
+                    sheet.detents = [.custom { _ in height }]
+                } else {
+                    sheet.detents = [.medium()]
+                }
+            } else {
+                sheet.detents = [.medium(), .large()]
+            }
+            sheet.prefersGrabberVisible = true
+            sheet.widthFollowsPreferredContentSizeWhenEdgeAttached = true
+            sheet.preferredCornerRadius = 24
+        }
+
         let isiPad = UIDevice.current.userInterfaceIdiom == .pad
         controller.modalPresentationStyle = isiPad ? .popover : .pageSheet
 
         if let popoverController = controller.popoverPresentationController  {
             popoverController.sourceView = omniBar.barView.menuButton
             controller.additionalSafeAreaInsets = UIEdgeInsets(top: 0, left: 0, bottom: 16, right: 0)
+            controller.preferredContentSize = CGSize(width: 320, height: model.estimatedContentHeight)
+
+            configureSheetPresentationController(popoverController.adaptiveSheetPresentationController)
         }
 
         if let sheet = controller.sheetPresentationController {
-            sheet.detents = [.medium(), .large()]
-            sheet.prefersGrabberVisible = true
-            sheet.widthFollowsPreferredContentSizeWhenEdgeAttached = true
+           configureSheetPresentationController(sheet)
         }
 
         self.present(controller, animated: true)

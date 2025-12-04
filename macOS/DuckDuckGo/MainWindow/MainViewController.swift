@@ -46,7 +46,6 @@ final class MainViewController: NSViewController {
     let bookmarksBarViewController: BookmarksBarViewController
     let aiChatOmnibarContainerViewController: AIChatOmnibarContainerViewController
     let aiChatOmnibarTextContainerViewController: AIChatOmnibarTextContainerViewController
-    let sharedTextState: AddressBarSharedTextState
     let featureFlagger: FeatureFlagger
     let fireCoordinator: FireCoordinator
     private let bookmarksBarVisibilityManager: BookmarksBarVisibilityManager
@@ -239,10 +238,6 @@ final class MainViewController: NSViewController {
             pixelFiring: pixelFiring
         )
 
-        // Create the shared text state for address bar mode switching
-        let sharedTextState = AddressBarSharedTextState()
-        self.sharedTextState = sharedTextState
-
         navigationBarViewController = NavigationBarViewController.create(tabCollectionViewModel: tabCollectionViewModel,
                                                                          downloadListCoordinator: downloadListCoordinator,
                                                                          bookmarkManager: bookmarkManager,
@@ -265,8 +260,7 @@ final class MainViewController: NSViewController {
                                                                          defaultBrowserPreferences: defaultBrowserPreferences,
                                                                          downloadsPreferences: downloadsPreferences,
                                                                          tabsPreferences: tabsPreferences,
-                                                                         accessibilityPreferences: accessibilityPreferences,
-                                                                         sharedTextState: sharedTextState)
+                                                                         accessibilityPreferences: accessibilityPreferences)
 
         findInPageViewController = FindInPageViewController.create()
         fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
@@ -279,7 +273,7 @@ final class MainViewController: NSViewController {
         // Create the shared AI Chat omnibar controller
         let aiChatOmnibarController = AIChatOmnibarController(
             aiChatTabOpener: aiChatTabOpener,
-            sharedTextState: sharedTextState
+            tabCollectionViewModel: tabCollectionViewModel
         )
 
         aiChatOmnibarContainerViewController = AIChatOmnibarContainerViewController(
@@ -288,7 +282,6 @@ final class MainViewController: NSViewController {
         )
         aiChatOmnibarTextContainerViewController = AIChatOmnibarTextContainerViewController(
             omnibarController: aiChatOmnibarController,
-            sharedTextState: sharedTextState,
             themeManager: themeManager
         )
         self.vpnUpsellPopoverPresenter = vpnUpsellPopoverPresenter
@@ -498,7 +491,7 @@ final class MainViewController: NSViewController {
             aiChatOmnibarTextContainerViewController.updateScrollingBehavior(maxHeight: maxHeight)
         } else {
             aiChatOmnibarContainerViewController.cleanup()
-            aiChatOmnibarTextContainerViewController.cleanup()
+            aiChatOmnibarTextContainerViewController.stopEventMonitoring()
         }
     }
 
@@ -915,6 +908,13 @@ final class MainViewController: NSViewController {
             return
         }
         let tabContent = tabContent ?? selectedTabViewModel.tab.content
+
+        /// Close AI Chat omnibar if visible before adjusting first responder
+        /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1212252449969913?focus=true
+        if mainView.isAIChatOmnibarContainerShown && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
+            updateAIChatOmnibarContainerVisibility(visible: false, shouldKeepSelection: false)
+            aiChatOmnibarContainerViewController.cleanup()
+        }
 
         if case .newtab = tabContent {
             navigationBarViewController.addressBarViewController?.addressBarTextField.makeMeFirstResponder()

@@ -40,7 +40,6 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     private let placeholderLabel = NSTextField(labelWithString: "")
     private let dividerView = ColorView(frame: .zero)
     private let omnibarController: AIChatOmnibarController
-    private let sharedTextState: AddressBarSharedTextState
     private var cancellables = Set<AnyCancellable>()
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
@@ -48,9 +47,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     weak var customToggleControl: NSControl?
     var heightDidChange: ((CGFloat) -> Void)?
 
-    init(omnibarController: AIChatOmnibarController, sharedTextState: AddressBarSharedTextState, themeManager: ThemeManaging) {
+    init(omnibarController: AIChatOmnibarController, themeManager: ThemeManaging) {
         self.omnibarController = omnibarController
-        self.sharedTextState = sharedTextState
         self.themeManager = themeManager
 
         textStorage.addLayoutManager(layoutManager)
@@ -292,7 +290,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         backgroundView.startListening()
     }
 
-    func cleanup() {
+    func stopEventMonitoring() {
         backgroundView.stopListening()
     }
 

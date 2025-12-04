@@ -17,7 +17,9 @@
 //
 
 import Foundation
+import BrowserServicesKit
 import CommonObjCExtensions
+import FeatureFlags
 import WebKit
 
 enum PermissionType: Hashable {
@@ -69,22 +71,37 @@ extension PermissionType {
         return [.camera, .microphone, .geolocation]
     }
 
-    var canPersistGrantedDecision: Bool {
-        switch self {
-        case .camera, .microphone, .externalScheme:
-            return true
-        case .geolocation:
-            return false
-        case .popups:
-            return true
+    func canPersistGrantedDecision(featureFlagger: FeatureFlagger) -> Bool {
+        if featureFlagger.isFeatureOn(.newPermissionView) {
+            switch self {
+            case .camera, .microphone, .externalScheme, .popups, .geolocation:
+                return true
+            }
+        } else {
+            switch self {
+            case .camera, .microphone, .externalScheme, .popups:
+                return true
+            case .geolocation:
+                return false
+            }
         }
     }
-    var canPersistDeniedDecision: Bool {
-        switch self {
-        case .camera, .microphone, .geolocation:
-            return true
-        case .popups, .externalScheme:
-            return false
+
+    func canPersistDeniedDecision(featureFlagger: FeatureFlagger) -> Bool {
+        if featureFlagger.isFeatureOn(.newPermissionView) {
+            switch self {
+            case .camera, .microphone, .geolocation, .externalScheme:
+                return true
+            case .popups:
+                return false
+            }
+        } else {
+            switch self {
+            case .camera, .microphone, .geolocation:
+                return true
+            case .popups, .externalScheme:
+                return false
+            }
         }
     }
 

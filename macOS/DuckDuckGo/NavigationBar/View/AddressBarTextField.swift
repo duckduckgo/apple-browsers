@@ -217,7 +217,7 @@ final class AddressBarTextField: NSTextField {
             let barStyleProvider = themeManager.theme.addressBarStyleProvider
             let newTabFontSize = barStyleProvider.newTabOrHomePageAddressBarFontSize
             let defaultFontSize = barStyleProvider.defaultAddressBarFontSize
-            let hideSuffix = Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+            let hideSuffix = Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarCluster)
 
             if let attributedString = value.toAttributedString(size: isHomePage ? newTabFontSize : defaultFontSize, isBurner: isBurner, hideSuffix: hideSuffix) {
                 self.attributedStringValue = attributedString
@@ -348,6 +348,7 @@ final class AddressBarTextField: NSTextField {
             canOpenLinkInCurrentTab: true
         )
 
+        PixelKit.fire(AIChatPixel.aiChatSuggestionAIChatSubmitted, frequency: .dailyAndCount, includeAppVersionParameter: true)
         NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: .query(prompt, shouldAutoSubmit: true), behavior: behavior)
         currentEditor()?.selectAll(self)
     }

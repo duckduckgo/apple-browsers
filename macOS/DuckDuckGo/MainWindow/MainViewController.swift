@@ -480,6 +480,11 @@ final class MainViewController: NSViewController {
     }
 
     func updateAIChatOmnibarContainerVisibility(visible: Bool, shouldKeepSelection: Bool = false) {
+        if visible {
+            let desiredHeight = aiChatOmnibarTextContainerViewController.calculateDesiredPanelHeight()
+            mainView.updateAIChatOmnibarContainerHeight(desiredHeight, animated: false)
+        }
+
         mainView.isAIChatOmnibarContainerShown = visible
 
         navigationBarViewController.addressBarViewController?.setAIChatOmnibarVisible(visible, shouldKeepSelection: shouldKeepSelection)
@@ -489,20 +494,11 @@ final class MainViewController: NSViewController {
             aiChatOmnibarTextContainerViewController.startEventMonitoring()
             aiChatOmnibarTextContainerViewController.focusTextView()
 
-            DispatchQueue.main.async { [weak self] in
-                guard let self = self else { return }
-                let desiredHeight = self.aiChatOmnibarTextContainerViewController.calculateDesiredPanelHeight()
-                self.mainView.updateAIChatOmnibarContainerHeight(desiredHeight, animated: false)
-
-                let maxHeight = self.mainView.calculateMaxAIChatOmnibarHeight()
-                self.aiChatOmnibarTextContainerViewController.updateScrollingBehavior(maxHeight: maxHeight)
-            }
+            let maxHeight = mainView.calculateMaxAIChatOmnibarHeight()
+            aiChatOmnibarTextContainerViewController.updateScrollingBehavior(maxHeight: maxHeight)
         } else {
             aiChatOmnibarContainerViewController.cleanup()
             aiChatOmnibarTextContainerViewController.cleanup()
-
-            /// Reset panel height to minimum to prevent size flash on next open
-            mainView.updateAIChatOmnibarContainerHeight(100, animated: false)
         }
     }
 

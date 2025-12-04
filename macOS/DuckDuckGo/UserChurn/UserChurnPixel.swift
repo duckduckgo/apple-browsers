@@ -41,6 +41,13 @@ enum UserChurnPixel: PixelKitEvent {
         }
     }
 
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .unsetAsDefault:
+            return [.pixelSource]
+        }
+    }
+
     private static func browserName(from bundleId: String?) -> String {
         guard let bundleId = bundleId?.lowercased() else {
             return "Other"

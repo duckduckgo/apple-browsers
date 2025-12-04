@@ -219,7 +219,7 @@ struct SettingsSubscriptionView: View {
                 image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat),
                 statusIndicator: StatusIndicatorView(status: .off),
                 isGreyedOut: true,
-                isNew: true
+                optionalBadgeText: UserText.settingsItemNewBadge
             )
         }
 
@@ -419,7 +419,7 @@ struct SettingsSubscriptionView: View {
                     image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat),
                     statusIndicator: StatusIndicatorView(status: (hasAIChatEntitlement && settingsViewModel.isAIChatEnabled) ? .on : .off),
                     isGreyedOut: !hasAIChatEntitlement,
-                    isNew: true
+                    optionalBadgeText: UserText.settingsItemNewBadge
                 )
             }
             .disabled(!hasAIChatEntitlement)
@@ -523,7 +523,7 @@ struct SettingsSubscriptionView: View {
             }
         }
         .onReceive(settingsViewModel.$state) { state in
-            isShowingSubscription = (state.subscription.isSignedIn || state.subscription.canPurchase)
+            isShowingSubscription = (state.subscription.isSignedIn || state.subscription.hasAppStoreProductsAvailable)
         }
     }
 }

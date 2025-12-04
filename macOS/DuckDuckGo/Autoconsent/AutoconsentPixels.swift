@@ -100,4 +100,27 @@ enum AutoconsentPixel: PixelKitEvent {
         }
     }
 
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .acInit,
+                .missedPopup,
+                .errorMultiplePopups,
+                .errorOptoutFailed,
+                .popupFound,
+                .done,
+                .doneCosmetic,
+                .animationShown,
+                .animationShownCosmetic,
+                .disabledForSite,
+                .detectedByPatterns,
+                .detectedByBoth,
+                .detectedOnlyRules,
+                .selfTestOk,
+                .selfTestFail,
+                .summary,
+                .usageStats:
+            return [.pixelSource]
+        }
+    }
+
 }

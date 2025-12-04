@@ -17,12 +17,17 @@
 //
 
 import Cocoa
+import SwiftUI
+import BrowserServicesKit
+import FeatureFlags
 
 final class PermissionAuthorizationPopover: NSPopover {
 
     @nonobjc private var didShow: Bool = false
+    private let featureFlagger: FeatureFlagger
 
-    override init() {
+    init(featureFlagger: FeatureFlagger) {
+        self.featureFlagger = featureFlagger
         super.init()
 
         behavior = .applicationDefined
@@ -42,15 +47,37 @@ final class PermissionAuthorizationPopover: NSPopover {
     }
 
     // swiftlint:disable force_cast
-    var viewController: PermissionAuthorizationViewController { contentViewController as! PermissionAuthorizationViewController }
+    var viewController: PermissionAuthorizationViewController {
+        get {
+            // Ensure content controller is set up
+            if contentViewController == nil {
+                setupContentController()
+            }
+            return contentViewController as! PermissionAuthorizationViewController
+        }
+    }
     // swiftlint:enable force_cast
 
-    // swiftlint:disable force_cast
     private func setupContentController() {
-        let storyboard = NSStoryboard(name: "PermissionAuthorization", bundle: nil)
-        let controller = storyboard
-            .instantiateController(withIdentifier: "PermissionAuthorizationViewController") as! PermissionAuthorizationViewController
+        let controller: PermissionAuthorizationViewController
+
+        if featureFlagger.isFeatureOn(.newPermissionView) {
+            // Create programmatically
+            controller = PermissionAuthorizationViewController(newPermissionView: true)
+
+        } else {
+            // Load from storyboard
+            controller = setupStoryboardController()
+        }
+
         contentViewController = controller
+    }
+
+    // swiftlint:disable force_cast
+    private func setupStoryboardController() -> PermissionAuthorizationViewController {
+        let storyboard = NSStoryboard(name: "PermissionAuthorization", bundle: nil)
+        return storyboard
+            .instantiateController(withIdentifier: "PermissionAuthorizationViewController") as! PermissionAuthorizationViewController
     }
     // swiftlint:enable force_cast
 

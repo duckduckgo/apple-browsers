@@ -132,7 +132,13 @@ extension Pixel {
         case settingsAutoconsentShown
         case settingsAutoconsentOn
         case settingsAutoconsentOff
-        
+
+        case experimentalBrowsingMenuEnabled
+        case experimentalBrowsingMenuDisabled
+        case experimentalBrowsingMenuUsed
+        case experimentalBrowsingMenuDisplayed
+        case experimentalBrowsingMenuDisplayedNTP
+
         case browsingMenuOpened
         case browsingMenuOpenedNewTabPage
         case browsingMenuNewTab
@@ -1366,6 +1372,8 @@ extension Pixel {
         case aiChatSettingsDisplayed
         case aiChatSettingsEnabled
         case aiChatSettingsDisabled
+        case aiChatSettingsFullModeEnabled
+        case aiChatSettingsFullModeDisabled
 
         case aiChatOpen
         case aiChatMetricStartNewConversation
@@ -1597,7 +1605,11 @@ extension Pixel.Event {
         case .settingsRefreshButtonPositionAddressBar: return "m_settings_refresh_button_position_address_bar"
         case .settingsRefreshButtonPositionMenu: return "m_settings_refresh_button_position_menu"
             
-
+        case .experimentalBrowsingMenuEnabled: return "m_experimental-browsing-menu_enabled"
+        case .experimentalBrowsingMenuDisabled: return "m_experimental-browsing-menu_disabled"
+        case .experimentalBrowsingMenuUsed: return "m_experimental-browsing-menu_used"
+        case .experimentalBrowsingMenuDisplayed: return "m_experimental-browsing-menu_displayed"
+        case .experimentalBrowsingMenuDisplayedNTP: return "m_experimental-browsing-menu_displayed_ntp"
         case .browsingMenuOpened: return "mb"
         case .browsingMenuOpenedNewTabPage: return "m_nav_menu_ntp"
         case .browsingMenuNewTab: return "mb_tb"
@@ -2752,6 +2764,8 @@ extension Pixel.Event {
         case .aiChatSettingsDisabled: return "m_aichat_settings_disabled"
         case .aiChatSettingsSearchInputTurnedOff: return "m_aichat_settings_search_input_turned_off"
         case .aiChatSettingsSearchInputTurnedOn: return "m_aichat_settings_search_input_turned_on"
+        case .aiChatSettingsFullModeEnabled: return "m_aichat_settings_full_mode_enabled"
+        case .aiChatSettingsFullModeDisabled: return "m_aichat_settings_full_mode_disabled"
 
         case .aiChatOpen: return "m_aichat_open"
         case .aiChatMetricStartNewConversation: return "m_aichat_start_new_conversation"

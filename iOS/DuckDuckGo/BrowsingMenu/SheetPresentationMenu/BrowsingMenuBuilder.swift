@@ -144,7 +144,6 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
         let privacyItems: [BrowsingMenuModel.Entry] = [
             .init(entryBuilder.makeVPNEntry()),
             .init(entryBuilder.makeUseNewDuckAddressEntry()),
-            .init(entryBuilder.makeToggleProtectionEntry()),
             .init(entryBuilder.makeKeepSignInEntry()),
             .init(entryBuilder.makeClearDataEntry(mobileCustomization: mobileCustomization, clearTabsAndData: clearTabsAndData))
         ].compactMap { $0 }
@@ -157,6 +156,7 @@ final class BrowsingMenuBuilder: BrowsingMenuBuilding {
         let otherItems: [BrowsingMenuModel.Entry] = [
             .init(entryBuilder.makeReloadEntry()),
             .init(entryBuilder.makeReportBrokenSiteEntry()),
+            .init(entryBuilder.makeToggleProtectionEntry()),
             .init(entryBuilder.makePrintEntry(withSmallIcon: true))
         ].compactMap { $0 }
 

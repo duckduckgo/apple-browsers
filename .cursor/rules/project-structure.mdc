@@ -12,7 +12,6 @@ DuckDuckGo.xcworkspace/          # Main workspace (ALWAYS open this)
 ├── iOS/                         # iOS app target
 ├── macOS/                       # macOS app target
 ├── SharedPackages/              # Cross-platform Swift packages
-├── doc-bot/                     # Development documentation
 ├── fastlane/                    # CI/CD automation
 └── README.md                    # Main project documentation
 ```

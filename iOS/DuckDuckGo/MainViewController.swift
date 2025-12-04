@@ -224,7 +224,8 @@ class MainViewController: UIViewController {
                                                   experimentalAIChatManager: .init(featureFlagger: featureFlagger),
                                                   featureFlagger: featureFlagger,
                                                   featureDiscovery: featureDiscovery,
-                                                  aiChatSettings: aiChatSettings)
+                                                  aiChatSettings: aiChatSettings,
+                                                  productSurfaceTelemetry: productSurfaceTelemetry)
         manager.delegate = self
         return manager
     }()
@@ -250,7 +251,8 @@ class MainViewController: UIViewController {
     
     let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     let mobileCustomization: MobileCustomization
-    
+    let productSurfaceTelemetry: ProductSurfaceTelemetry
+
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
 
     init(
@@ -295,7 +297,8 @@ class MainViewController: UIViewController {
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
         mobileCustomization: MobileCustomization,
-        remoteMessagingActionHandler: RemoteMessagingActionHandling
+        remoteMessagingActionHandler: RemoteMessagingActionHandling,
+        productSurfaceTelemetry: ProductSurfaceTelemetry
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -342,6 +345,8 @@ class MainViewController: UIViewController {
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.mobileCustomization = mobileCustomization
         self.aichatFullModeFeature = aichatFullModeFeature
+        self.productSurfaceTelemetry = productSurfaceTelemetry
+
         super.init(nibName: nil, bundle: nil)
         
         tabManager.delegate = self
@@ -404,7 +409,8 @@ class MainViewController: UIViewController {
             appSettings: appSettings,
             aiChatSettings: aiChatSettings,
             featureDiscovery: featureDiscovery,
-            newTabPageDependencies: newTabPageDependencies)
+            newTabPageDependencies: newTabPageDependencies,
+            productSurfaceTelemetry: productSurfaceTelemetry)
     }()
 
     override func viewDidLoad() {
@@ -491,6 +497,9 @@ class MainViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+
+        productSurfaceTelemetry.iPadUsed(isPad: isPad)
+
         defer {
             if let appDidFinishLaunchingStartTime {
                 let launchTime = CFAbsoluteTimeGetCurrent() - appDidFinishLaunchingStartTime
@@ -623,6 +632,7 @@ class MainViewController: UIViewController {
                                          aiChatSettings: self.aiChatSettings,
                                          featureDiscovery: self.featureDiscovery,
                                          newTabPageDependencies: self.newTabPageDependencies,
+                                         productSurfaceTelemetry: self.productSurfaceTelemetry,
                                          hideBorder: false)
         }) else {
             assertionFailure()
@@ -727,6 +737,7 @@ class MainViewController: UIViewController {
     @objc
     private func keyboardDidShow() {
         keyboardShowing = true
+        productSurfaceTelemetry.keyboardActive()
     }
 
     @objc
@@ -1149,6 +1160,7 @@ class MainViewController: UIViewController {
 
     func fireNewTabPixels() {
         Pixel.fire(.homeScreenShown, withAdditionalParameters: [:])
+        productSurfaceTelemetry.newTabPageUsed()
         let favoritesCount = favoritesViewModel.favorites.count
         let bucket = HomePageDisplayDailyPixelBucket(favoritesCount: favoritesCount)
         DailyPixel.fire(pixel: .newTabPageDisplayedDaily, withAdditionalParameters: [
@@ -1560,13 +1572,14 @@ class MainViewController: UIViewController {
     private func deferredFireOrientationPixel() {
         orientationPixelWorker?.cancel()
         orientationPixelWorker = nil
-        if UIDevice.current.orientation.isLandscape {
-            let worker = DispatchWorkItem {
-                Pixel.fire(pixel: .deviceOrientationLandscape)
-            }
-            DispatchQueue.global(qos: .default).asyncAfter(deadline: .now() + 3, execute: worker)
-            orientationPixelWorker = worker
+        guard UIDevice.current.orientation.isLandscape else { return }
+
+        let worker = DispatchWorkItem { [weak self] in
+            Pixel.fire(pixel: .deviceOrientationLandscape)
+            self?.productSurfaceTelemetry.landscapeModeUsed()
         }
+        DispatchQueue.global(qos: .default).asyncAfter(deadline: .now() + 3, execute: worker)
+        orientationPixelWorker = worker
     }
 
     private func applyWidth() {
@@ -1674,7 +1687,8 @@ class MainViewController: UIViewController {
             bookmarksDatabase: self.bookmarksDatabase,
             favoritesDisplayMode: self.appSettings.favoritesDisplayMode,
             keyValueStore: self.keyValueStore,
-            extensionPromotionManager: extensionPromotionManager
+            extensionPromotionManager: extensionPromotionManager,
+            productSurfaceTelemetry: productSurfaceTelemetry
         )
         autofillLoginListViewController.delegate = self
         let navigationController = UINavigationController(rootViewController: autofillLoginListViewController)
@@ -2721,8 +2735,9 @@ extension MainViewController: OmniBarDelegate {
 
         let browsingMenu: BrowsingMenuViewController =
         BrowsingMenuViewController.instantiate(headerEntries: headerEntries,
-                                                                menuEntries: menuEntries,
-                                                                daxDialogsManager: daxDialogsManager)
+                                               menuEntries: menuEntries,
+                                               daxDialogsManager: daxDialogsManager,
+                                               productSurfaceTelemetry: productSurfaceTelemetry)
         browsingMenu.onDismiss = {
             self.viewCoordinator.menuToolbarButton.isEnabled = true
         }
@@ -3692,6 +3707,7 @@ extension MainViewController: AutoClearWorker {
     func forgetAllWithAnimation(transitionCompletion: (() -> Void)? = nil, showNextDaxDialog: Bool = false) {
         let spid = Instruments.shared.startTimedEvent(.clearingData)
         Pixel.fire(pixel: .forgetAllExecuted)
+        productSurfaceTelemetry.dataClearingUsed()
 
         tabManager.prepareAllTabsExceptCurrentForDataClearing()
         

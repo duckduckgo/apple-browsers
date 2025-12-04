@@ -36,13 +36,15 @@ extension BrowsingMenuModel {
 
         // Footer text labels are only shown when there's fewer than 2 footer items
         let footerShowsLabels = footerItems.count < 2
-        let footerContentHeight = iconHeight + (footerShowsLabels ? rowFont.lineHeight : 0)
+
+        // `max` is used here because labels and icons are in HStack
+        let footerContentHeight = max(iconHeight, (footerShowsLabels ? rowFont.lineHeight : 0))
         let footerHeight = footerContentHeight + (Metrics.footerButtonVerticalPadding * 2)
 
         let itemCount = sections.reduce(0) { $0 + $1.items.count }
         let menuSectionCount = sections.count
 
-        // Section spacing count: when header items are present, there's an additional
+        // When header items are present, there's an additional
         // gap between the header section and the first menu section
         let sectionGapsCount = headerItems.isEmpty ? max(0, menuSectionCount - 1) : menuSectionCount
 

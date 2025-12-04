@@ -971,6 +971,10 @@ final class BrowserTabViewController: NSViewController {
         return tab
     }
 
+    func loadURLInCurrentTab(_ url: URL) {
+        tabCollectionViewModel.selectedTab?.setContent(.contentFromURL(url, source: .userEntered(url.absoluteString, downloadRequested: false)))
+    }
+
     // MARK: - Browser Tabs
 
     private func removeAllTabContent(includingWebView: Bool = true) {

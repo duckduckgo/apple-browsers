@@ -112,7 +112,9 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
     // MARK: - User Defaults
 
     @UserDefaultsWrapper(key: .networkProtectionOnboardingStatusRawValue, defaultValue: OnboardingStatus.default.rawValue, defaults: .netP)
-    private(set) var onboardingStatusRawValue: OnboardingStatus.RawValue
+    private(set) var onboardingStatusRawValue: OnboardingStatus.RawValue {
+        didSet { syncWideEventOnboardingStatus() }
+    }
 
     @UserDefaultsWrapper(key: .vpnConnectionWideEventBrowserStartTime, defaultValue: nil, defaults: .netP)
     private var vpnConnectionWideEventBrowserStartTime: Date?
@@ -988,7 +990,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
 // MARK: - Wide Event
 
-extension NetworkProtectionTunnelController {
+private extension NetworkProtectionTunnelController {
 
     func setupAndStartConnectionWideEvent() {
         guard isConnectionWideEventMeasurementEnabled else { return }
@@ -996,10 +998,12 @@ extension NetworkProtectionTunnelController {
         let data = VPNConnectionWideEventData(
             extensionType: .unknown,
             startupMethod: .manualByMainApp,
-            isSetup: self.onboardingStatusRawValue != OnboardingStatus.completed.rawValue,
+            isSetup: onboardingStatusRawValue == OnboardingStatus.completed.rawValue ? .no : .yes,
+            onboardingStatus: .init(from: onboardingStatusRawValue),
             contextData: WideEventContextData(name: NetworkProtectionFunnelOrigin.agent.rawValue)
         )
         self.connectionWideEventData = data
+        syncWideEventOnboardingStatus()
         prefillBrowserStartDataIfAvailable()
         wideEvent.startFlow(data)
         if data.overallDuration == nil {
@@ -1009,17 +1013,13 @@ extension NetworkProtectionTunnelController {
 
     func prefillBrowserStartDataIfAvailable() {
         guard let data = connectionWideEventData else { return }
-        guard vpnConnectionWideEventBrowserStartTime != nil || vpnConnectionWideEventOverallStartTime != nil else { return }
+        guard let vpnConnectionWideEventBrowserStartTime, let vpnConnectionWideEventOverallStartTime else { return }
         data.contextData = WideEventContextData(name: NetworkProtectionFunnelOrigin.appSettings.rawValue)
-        if let vpnConnectionWideEventBrowserStartTime {
-            data.browserStartDuration = WideEvent.MeasuredInterval(start: vpnConnectionWideEventBrowserStartTime)
-            data.browserStartDuration?.complete()
-        }
-        if let vpnConnectionWideEventOverallStartTime {
-            data.overallDuration = WideEvent.MeasuredInterval(start: vpnConnectionWideEventOverallStartTime)
-        }
-        vpnConnectionWideEventBrowserStartTime = nil
-        vpnConnectionWideEventOverallStartTime = nil
+        data.browserStartDuration = WideEvent.MeasuredInterval(start: vpnConnectionWideEventBrowserStartTime)
+        data.browserStartDuration?.complete()
+        data.overallDuration = WideEvent.MeasuredInterval(start: vpnConnectionWideEventOverallStartTime)
+        self.vpnConnectionWideEventBrowserStartTime = nil
+        self.vpnConnectionWideEventOverallStartTime = nil
     }
 
     func resetControllerStartWideEventMeasurement() {
@@ -1061,9 +1061,31 @@ extension NetworkProtectionTunnelController {
             }
 
             let timeoutDate = start.addingTimeInterval(connectionControllerTimeoutInterval)
-            let reason: VPNConnectionWideEventData.StatusReason = Date() >= timeoutDate ? .timeout : .partialData
+            let reason: VPNConnectionWideEventData.StatusReason = Date() >= timeoutDate ? .timeout : .retried
             wideEvent.completeFlow(data, status: .unknown(reason: reason.rawValue), onComplete: { _, _ in })
         }
+    }
+
+    func syncWideEventOnboardingStatus() {
+        connectionWideEventData?.onboardingStatus = .init(from: onboardingStatusRawValue)
+    }
+}
+
+fileprivate extension VPNConnectionWideEventData.MacOSOnboardingStatus {
+    init(from rawValue: OnboardingStatus.RawValue) {
+        if rawValue == OnboardingStatus.completed.rawValue {
+            self = .completed
+            return
+        }
+        if rawValue == OnboardingStatus.isOnboarding(step: .userNeedsToAllowExtension).rawValue {
+            self = .needsToAllowExtension
+            return
+        }
+        if rawValue == OnboardingStatus.isOnboarding(step: .userNeedsToAllowVPNConfiguration).rawValue {
+            self = .needsToAllowVPNConfiguration
+            return
+        }
+        self = .unknown
     }
 }
 

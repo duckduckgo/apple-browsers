@@ -218,6 +218,79 @@ enum SubscriptionPixel: PixelKitEvent {
             return nil
         }
     }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .subscriptionActive,
+                .subscriptionOfferScreenImpression,
+                .subscriptionPurchaseAttempt,
+                .subscriptionPurchaseFailureOther,
+                .subscriptionPurchaseFailureStoreError,
+                .subscriptionPurchaseFailureBackendError,
+                .subscriptionPurchaseFailureAccountNotCreated,
+                .subscriptionPurchaseSuccess,
+                .subscriptionRestorePurchaseOfferPageEntry,
+                .subscriptionRestorePurchaseClick,
+                .subscriptionRestorePurchaseSettingsMenuEntry,
+                .subscriptionRestorePurchaseEmailStart,
+                .subscriptionRestorePurchaseStoreStart,
+                .subscriptionRestorePurchaseEmailSuccess,
+                .subscriptionRestorePurchaseStoreSuccess,
+                .subscriptionRestorePurchaseStoreFailureNotFound,
+                .subscriptionRestorePurchaseStoreFailureOther,
+                .subscriptionRestoreAfterPurchaseAttempt,
+                .subscriptionActivated,
+                .subscriptionWelcomeAddDevice,
+                .subscriptionWelcomeVPN,
+                .subscriptionWelcomePersonalInformationRemoval,
+                .subscriptionWelcomeAIChat,
+                .subscriptionWelcomeIdentityRestoration,
+                .subscriptionSettings,
+                .subscriptionVPNSettings,
+                .subscriptionPersonalInformationRemovalSettings,
+                .subscriptionPersonalInformationRemovalSettingsImpression,
+                .subscriptionPaidAIChatSettings,
+                .subscriptionPaidAIChatSettingsImpression,
+                .subscriptionIdentityRestorationSettings,
+                .subscriptionIdentityRestorationSettingsImpression,
+                .subscriptionManagementEmail,
+                .subscriptionManagementPlanBilling,
+                .subscriptionManagementRemoval,
+                .subscriptionPurchaseStripeSuccess,
+                .subscriptionSuccessfulSubscriptionAttribution,
+                .subscriptionOfferMonthlyPriceClick,
+                .subscriptionOfferYearlyPriceClick,
+                .subscriptionAddEmailSuccess,
+                .subscriptionWelcomeFAQClick,
+                .subscriptionInvalidRefreshTokenDetected,
+                .subscriptionInvalidRefreshTokenSignedOut,
+                .subscriptionInvalidRefreshTokenRecovered,
+                .subscriptionAuthV2MigrationFailed,
+                .subscriptionAuthV2MigrationSucceeded,
+                .subscriptionAuthV2GetTokensError,
+                .subscriptionKeychainManagerDataAddedToTheBacklog,
+                .subscriptionKeychainManagerDeallocatedWithBacklog,
+                .subscriptionKeychainManagerDataWroteFromBacklog,
+                .subscriptionKeychainManagerFailedToWriteDataFromBacklog,
+                .subscriptionToolbarButtonShown,
+                .subscriptionToolbarButtonPopoverShown,
+                .subscriptionToolbarButtonPopoverDismissButtonClicked,
+                .subscriptionToolbarButtonPopoverProceedButtonClicked,
+                .subscriptionWinBackOfferLaunchPromptShown,
+                .subscriptionWinBackOfferLaunchPromptCTAClicked,
+                .subscriptionWinBackOfferLaunchPromptDismissed,
+                .subscriptionWinBackOfferMainMenuShown,
+                .subscriptionWinBackOfferMainMenuClicked,
+                .subscriptionWinBackOfferSettingsSidebarBadgeShown,
+                .subscriptionWinBackOfferSettingsPageShown,
+                .subscriptionWinBackOfferSettingsPageCTAClicked,
+                .subscriptionWinBackOfferNewTabPageShown,
+                .subscriptionWinBackOfferNewTabPageCTAClicked,
+                .subscriptionWinBackOfferNewTabPageDismissed:
+            return [.pixelSource]
+        }
+    }
+
 }
 
 enum SubscriptionErrorPixel: PixelKitEvent {
@@ -238,10 +311,17 @@ enum SubscriptionErrorPixel: PixelKitEvent {
         case .subscriptionKeychainAccessError(let accessType, let accessError, let source, let authVersion):
             return [
                 "access_type": accessType.rawValue,
-                "error": accessError.errorDescription ?? "Unknown",
+                "error": accessError.description,
                 "source": source.rawValue,
                 "authVersion": authVersion.rawValue
             ]
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .subscriptionKeychainAccessError:
+            return [.pixelSource]
         }
     }
 

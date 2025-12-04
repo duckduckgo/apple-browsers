@@ -25,52 +25,6 @@ import XCTest
 final class DefaultVisualizeFireSettingsDeciderTests: XCTestCase {
 
     @MainActor
-    func testWhenFeatureFlagIsOnAndFireAnimationIsDisabled_thenShouldShowFireAnimationIsFalse() {
-        let persistor = MockFireButtonPreferencesPersistor()
-        let featureFlagger = MockFeatureFlagger()
-
-        persistor.isFireAnimationEnabled = false
-        featureFlagger.enabledFeatureFlags = [.disableFireAnimation]
-
-        let dataClearingPreferences: DataClearingPreferences = .init(
-            persistor: persistor,
-            fireproofDomains: MockFireproofDomains(domains: []),
-            faviconManager: FaviconManagerMock(),
-            windowControllersManager: WindowControllersManagerMock(),
-            featureFlagger: featureFlagger,
-            pixelFiring: nil,
-            aiChatHistoryCleaner: MockAIChatHistoryCleaner()
-        )
-
-        let sut = DefaultVisualizeFireSettingsDecider(featureFlagger: featureFlagger, dataClearingPreferences: dataClearingPreferences)
-
-        XCTAssertFalse(sut.shouldShowFireAnimation)
-    }
-
-    @MainActor
-    func testWhenFeatureFlagIsOnAndFireAnimationIsEnabled_thenShouldShowFireAnimationIsTrue() {
-        let persistor = MockFireButtonPreferencesPersistor()
-        let featureFlagger = MockFeatureFlagger()
-
-        persistor.isFireAnimationEnabled = true
-        featureFlagger.enabledFeatureFlags = [.disableFireAnimation]
-
-        let dataClearingPreferences: DataClearingPreferences = .init(
-            persistor: persistor,
-            fireproofDomains: MockFireproofDomains(domains: []),
-            faviconManager: FaviconManagerMock(),
-            windowControllersManager: WindowControllersManagerMock(),
-            featureFlagger: featureFlagger,
-            pixelFiring: nil,
-            aiChatHistoryCleaner: MockAIChatHistoryCleaner()
-        )
-
-        let sut = DefaultVisualizeFireSettingsDecider(featureFlagger: featureFlagger, dataClearingPreferences: dataClearingPreferences)
-
-        XCTAssertTrue(sut.shouldShowFireAnimation)
-    }
-
-    @MainActor
     func testWhenFeatureFlagIsOff_thenShouldShowFireAnimationIsTrue() {
         let persistor = MockFireButtonPreferencesPersistor()
         let featureFlagger = MockFeatureFlagger()
@@ -98,7 +52,6 @@ final class DefaultVisualizeFireSettingsDeciderTests: XCTestCase {
         let featureFlagger = MockFeatureFlagger()
 
         persistor.shouldOpenFireWindowByDefault = true
-        featureFlagger.enabledFeatureFlags = [.openFireWindowByDefault]
 
         let dataClearingPreferences: DataClearingPreferences = .init(
             persistor: persistor,
@@ -121,30 +74,6 @@ final class DefaultVisualizeFireSettingsDeciderTests: XCTestCase {
         let featureFlagger = MockFeatureFlagger()
 
         persistor.shouldOpenFireWindowByDefault = false
-        featureFlagger.enabledFeatureFlags = [.openFireWindowByDefault]
-
-        let dataClearingPreferences: DataClearingPreferences = .init(
-            persistor: persistor,
-            fireproofDomains: MockFireproofDomains(domains: []),
-            faviconManager: FaviconManagerMock(),
-            windowControllersManager: WindowControllersManagerMock(),
-            featureFlagger: featureFlagger,
-            pixelFiring: nil,
-            aiChatHistoryCleaner: MockAIChatHistoryCleaner()
-        )
-
-        let sut = DefaultVisualizeFireSettingsDecider(featureFlagger: featureFlagger, dataClearingPreferences: dataClearingPreferences)
-
-        XCTAssertFalse(sut.isOpenFireWindowByDefaultEnabled)
-    }
-
-    @MainActor
-    func testWhenFeatureFlagIsOff_thenOpenFireWindowByDefaultIsFalse() {
-        let persistor = MockFireButtonPreferencesPersistor()
-        let featureFlagger = MockFeatureFlagger()
-
-        persistor.shouldOpenFireWindowByDefault = true
-        featureFlagger.enabledFeatureFlags = []
 
         let dataClearingPreferences: DataClearingPreferences = .init(
             persistor: persistor,

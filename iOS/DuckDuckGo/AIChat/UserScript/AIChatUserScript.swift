@@ -53,7 +53,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         case newChatAction
         case promptInterruption
         case openSettingsAction
-        case openHistoryAction
+        case toggleSidebarAction
 
         var methodName: String {
             switch self {
@@ -66,9 +66,9 @@ final class AIChatUserScript: NSObject, Subfeature {
             case .promptInterruption:
                 return "submitPromptInterruption"
             case .openSettingsAction:
-                return "openDuckAiSettings"
-            case .openHistoryAction:
-                return "openDuckAiHistory"
+                return "submitOpenSettingsAction"
+            case .toggleSidebarAction:
+                return "submitToggleSidebarAction"
             }
         }
 
@@ -215,9 +215,9 @@ final class AIChatUserScript: NSObject, Subfeature {
         push(.openSettingsAction)
     }
 
-    /// Submits an open history action to the web content, opening the AI Chat history.
-    func submitOpenHistoryAction() {
-        push(.openHistoryAction)
+    /// Submits a toggle sidebar action to the web content, opening/closing the sidebar.
+    func submitToggleSidebarAction() {
+        push(.toggleSidebarAction)
     }
 
     // MARK: - Private Helper

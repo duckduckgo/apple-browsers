@@ -35,6 +35,7 @@ final class SubscriptionContainerViewModel: ObservableObject {
          redirectPurchaseURL: URL? = nil,
          isInternalUser: Bool = false,
          userScript: SubscriptionPagesUserScript,
+         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          subFeature: any SubscriptionPagesUseSubscriptionFeature,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) {
 
@@ -46,6 +47,7 @@ final class SubscriptionContainerViewModel: ObservableObject {
         self.flow = SubscriptionFlowViewModel(purchaseURL: redirectPurchaseURL ?? subscriptionManager.url(for: .purchase),
                                               isInternalUser: isInternalUser,
                                               userScript: userScript,
+                                              userScriptsDependencies: userScriptsDependencies,
                                               subFeature: subFeature,
                                               subscriptionManager: subscriptionManager,
                                               dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider)
@@ -53,6 +55,7 @@ final class SubscriptionContainerViewModel: ObservableObject {
                                                     subFeature: subFeature)
         self.email = SubscriptionEmailViewModel(isInternalUser: isInternalUser,
                                                 userScript: userScript,
+                                                userScriptsDependencies: userScriptsDependencies,
                                                 subFeature: subFeature,
                                                 subscriptionManager: subscriptionManager,
                                                 dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider)

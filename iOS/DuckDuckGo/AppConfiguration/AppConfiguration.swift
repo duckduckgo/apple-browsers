@@ -38,7 +38,7 @@ struct AppConfiguration {
         self.appKeyValueStore = appKeyValueStore
     }
 
-    func start() throws {
+    func start(isBookmarksDBFilePresent: Bool) throws {
         KeyboardConfiguration.disableHardwareKeyboardForUITests()
         PixelConfiguration.configure(with: featureFlagger)
 
@@ -46,8 +46,7 @@ struct AppConfiguration {
 
         onboardingConfiguration.migrateToNewOnboarding()
         clearTemporaryDirectory()
-        let isBackground = UIApplication.shared.applicationState == .background
-        try persistentStoresConfiguration.configure(syncKeyValueStore: appKeyValueStore, isBackground: isBackground)
+        try persistentStoresConfiguration.configure(syncKeyValueStore: appKeyValueStore, isBookmarksDBFilePresent: isBookmarksDBFilePresent)
         migrateAIChatSettings()
         migratePromptCooldown()
 

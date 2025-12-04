@@ -31,6 +31,15 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Dodaj";
 
+/* Open AI Chat history action in the menu list */
+"action.title.aiChat.history" = "Duck.ai čavrljanja";
+
+/* Start new AI Chat action in the menu list */
+"action.title.aiChat.new" = "AI Chat";
+
+/* Open AI Chat settings action in the menu list */
+"action.title.aiChat.settings" = "Postavke usluge Duck.ai";
+
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Lozinke";
 
@@ -463,6 +472,51 @@
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Omogući Email Protection";
 
+/* Button title to dismiss the autofill extension activation view */
+"autofill.extension.activation.done.button.title" = "Gotovo";
+
+/* Title shown when the autofill extension activation succeeds */
+"autofill.extension.activation.title" = "Automatsko popunjavanje lozinki je aktivirano!";
+
+/* Footer text describing what enabling the autofill extension does */
+"autofill.extension.footer" = "Koristi lozinke koje si spremio u DuckDuckGou u svim aplikacijama na svom uređaju.";
+
+/* Header text shown when the autofill extension is disabled */
+"autofill.extension.header.disabled" = "Automatsko popunjavanje u drugim aplikacijama";
+
+/* Header text shown when the autofill extension is enabled */
+"autofill.extension.header.enabled" = "Omogućeno automatsko popunjavanje u drugim aplikacijama";
+
+/* Dismiss button title for the Autofill extension promotion */
+"autofill.extension.promo.button.dismiss.title" = "Odredi kasnije u Postavkama";
+
+/* CTA button title for the Autofill extension promotion */
+"autofill.extension.promo.button.title" = "Uključi automatsko popunjavanje u drugim aplikacijama";
+
+/* Message for the Autofill extension promotion */
+"autofill.extension.promo.message" = "Koristi DuckDuckGo za sigurno automatsko popunjavanje lozinki za sve svoje aplikacije.";
+
+/* Title for the Autofill extension promotion */
+"autofill.extension.promo.title" = "Brzo se prijavi u svoje aplikacije bez upisivanja lozinki";
+
+/* Title for screen showing autofill extension settings */
+"autofill.extension.screen.title" = "Automatski popuni lozinke u drugim aplikacijama";
+
+/* Status text when autofill extension is disabled */
+"autofill.extension.status.off" = "Uključi";
+
+/* Status text when autofill extension is enabled */
+"autofill.extension.status.on" = "Uključeno";
+
+/* Title for autofill extension settings row */
+"autofill.extension.title" = "Automatsko popunjavanje u drugim aplikacijama";
+
+/* Button title that opens system settings to turn off the autofill extension */
+"autofill.extension.turn.off.button.title" = "Isključi u postavkama sustava...";
+
+/* Button title that triggers system prompt to turn on the autofill extension */
+"autofill.extension.turn.on.button.title" = "Uključi...";
+
 /* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
 "autofill.hide-card-cvv" = "Sakrij CVV";
 
@@ -799,8 +853,8 @@
 /* Section header for the autofill settings screen */
 "autofill.settings.import-passwords.section-header" = "Uvezi lozinke";
 
-/* Section header for the autofill settings screen */
-"autofill.settings.options.section-header" = "Opcije";
+/* Section header for the autofill passwords options section of the settings screen */
+"autofill.settings.options.section-header" = "Opcije za lozinku";
 
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Prijavi problem s automatskim popunjavanjem";

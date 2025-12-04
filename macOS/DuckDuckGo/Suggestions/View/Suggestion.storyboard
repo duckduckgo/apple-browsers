@@ -258,6 +258,7 @@
                                                                                         <outlet property="switchToTabBoxLeadingConstraint" destination="V8Y-Ho-Vtw" id="biv-39-JjJ"/>
                                                                                         <outlet property="switchToTabBoxTrailingConstraint" destination="OxD-gm-8AB" id="5ok-h0-6IE"/>
                                                                                         <outlet property="switchToTabLabel" destination="Ca0-hX-oSq" id="kE9-w2-47N"/>
+                                                                                        <outlet property="switchToTabLabelLeadingConstraint" destination="1f1-Ua-aRg" id="kSh-Yp-3xM"/>
                                                                                         <outlet property="textField" destination="bOr-Go-gyW" id="wxi-1N-Bc4"/>
                                                                                     </connections>
                                                                                 </tableCellView>
@@ -359,6 +360,7 @@
                         <outlet property="pixelPerfectConstraint" destination="j9h-Pb-BEa" id="qK5-gz-Sk1"/>
                         <outlet property="tableView" destination="4Z2-d8-NA2" id="xll-Sx-bit"/>
                         <outlet property="tableViewHeightConstraint" destination="aJH-FU-o7W" id="QpI-Vm-xUG"/>
+                        <outlet property="topSeparatorView" destination="ATb-xt-XAg" id="tSv-Xg-A1b"/>
                     </connections>
                 </viewController>
                 <customObject id="WHZ-eM-7SZ" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>

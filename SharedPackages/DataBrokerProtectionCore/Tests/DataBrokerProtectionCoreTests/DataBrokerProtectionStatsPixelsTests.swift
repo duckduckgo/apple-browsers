@@ -47,7 +47,33 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
 
         // Then
         XCTAssertTrue(repository.didGetCustomStatsPixelsLastSentTimestamp)
+        XCTAssertEqual(repository.getCount, 1)
         XCTAssertFalse(repository.didSetCustomStatsPixelsLastSentTimestamp)
+        XCTAssertEqual(repository.setCount, 0)
+    }
+
+    func testWhenCustomStatsPixelsJustSent_thenSecondCallWithin24HoursDoesNotRefire() {
+        // Given
+        handler.clear()
+        let repository = MockDataBrokerProtectionStatsPixelsRepository()
+        let database = MockDatabase()
+        database.brokerProfileQueryDataToReturn = [
+            .mock()
+        ]
+        let sut = DataBrokerProtectionStatsPixels(database: database,
+                                                  handler: handler,
+                                                  repository: repository)
+
+        // When
+        sut.fireCustomStatsPixelsIfNeeded()
+        sut.fireCustomStatsPixelsIfNeeded()
+        sut.fireCustomStatsPixelsIfNeeded()
+
+        // Then
+        XCTAssertTrue(repository.didGetCustomStatsPixelsLastSentTimestamp)
+        XCTAssertEqual(repository.getCount, 3) // We're trying to fire 3 times, so 3 get counts should be recorded
+        XCTAssertTrue(repository.didSetCustomStatsPixelsLastSentTimestamp)
+        XCTAssertEqual(repository.setCount, 1) // Only the first call should send the stats pixel
     }
 
     func testWhen24HoursHavePassed_thenWeFireCustomStatsPixels() {

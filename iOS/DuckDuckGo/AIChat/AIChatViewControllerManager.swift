@@ -154,8 +154,6 @@ final class AIChatViewControllerManager {
                       containerView: UIView? = nil,
                       viewController: UIViewController? = nil,
                       completion: (() -> Void)? = nil) {
-        downloadsDirectoryHandler.createDownloadsDirectoryIfNeeded()
-
         // Reset the session timer if the subscription state has changed
         if subscriptionAIChatStateHandler.shouldForceAIChatRefresh {
             stopSessionTimer()
@@ -407,6 +405,10 @@ extension AIChatViewControllerManager: AIChatViewControllerDelegate {
             guard let self = self else { return }
             self.delegate?.aiChatViewControllerManager(self, didRequestOpenDownloadWithFileName: fileName)
         }
+    }
+    
+    func aiChatViewControllerWillStartDownload() {
+        downloadsDirectoryHandler.createDownloadsDirectoryIfNeeded()
     }
 }
 

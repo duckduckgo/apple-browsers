@@ -29,8 +29,7 @@ class ChromiumDataImporterTests {
         let loginImporter = MockLoginImporter()
         let faviconManager = FaviconManagerMock()
         let bookmarkImporter = MockBookmarkImporter(importBookmarks: { _, _, _, _ in .init(successful: 1, duplicates: 2, failed: 3) })
-        let featureFlagger = MockFeatureFlagger()
-        let importer = ChromiumDataImporter(profile: .init(browser: .chrome, profileURL: ChromiumBookmarkStore().resourceURL), loginImporter: loginImporter, bookmarkImporter: bookmarkImporter, faviconManager: faviconManager, featureFlagger: featureFlagger)
+        let importer = ChromiumDataImporter(profile: .init(browser: .chrome, profileURL: ChromiumBookmarkStore().resourceURL), loginImporter: loginImporter, bookmarkImporter: bookmarkImporter, faviconManager: faviconManager)
 
         let result = await importer.importData(types: [.bookmarks])
 
@@ -41,8 +40,8 @@ class ChromiumDataImporterTests {
         #expect(bookmarks.failed == 3)
     }
 
-    @Test("Check if only bookmarks are imported and bookmarks bar is favorited after importing bookmarks with feature flag disabled")
-    func whenImportingBookmarks_AndFeatureFlagDisabled_OnlyBookmarksAreMerged_AndBookmarksBarIsFavorited() async throws {
+    @Test("Check if bookmarks and custom shortcuts are merged and bookmarks bar is not favorited after importing bookmarks")
+    func whenImportingBookmarks_BookmarksAndCustomShortcutsAreMerged_AndBookmarksBarIsNotFavorited() async throws {
         var bookmarksToImport: ImportedBookmarks?
         var bookmarksBarMarkedAsFavorites: Bool?
 
@@ -53,30 +52,7 @@ class ChromiumDataImporterTests {
             bookmarksBarMarkedAsFavorites = markBookmarksBarAsFavorites
             return .init(successful: 1, duplicates: 2, failed: 3)
         })
-        let featureFlagger = MockFeatureFlagger()
-        let importer = ChromiumDataImporter(profile: .init(browser: .chrome, profileURL: ChromiumBookmarkStore.customShortcuts.resourceURL), loginImporter: loginImporter, bookmarkImporter: bookmarkImporter, faviconManager: faviconManager, featureFlagger: featureFlagger)
-
-        _ = await importer.importData(types: [.bookmarks])
-
-        #expect(bookmarksToImport?.numberOfBookmarks == 4)
-        #expect(bookmarksBarMarkedAsFavorites == true)
-    }
-
-    @Test("Check if bookmarks and custom shortcuts are merged and bookmarks bar is not favorited after importing bookmarks with feature flag enabled")
-    func whenImportingBookmarks_AndFeatureFlagEnabled_BookmarksAndCustomShortcutsAreMerged_AndBookmarksBarIsNotFavorited() async throws {
-        var bookmarksToImport: ImportedBookmarks?
-        var bookmarksBarMarkedAsFavorites: Bool?
-
-        let loginImporter = MockLoginImporter()
-        let faviconManager = FaviconManagerMock()
-        let bookmarkImporter = MockBookmarkImporter(importBookmarks: { bookmarks, _, markBookmarksBarAsFavorites, _ in
-            bookmarksToImport = bookmarks
-            bookmarksBarMarkedAsFavorites = markBookmarksBarAsFavorites
-            return .init(successful: 1, duplicates: 2, failed: 3)
-        })
-        let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags.append(.importChromeShortcuts)
-        let importer = ChromiumDataImporter(profile: .init(browser: .chrome, profileURL: ChromiumBookmarkStore.customShortcuts.resourceURL), loginImporter: loginImporter, bookmarkImporter: bookmarkImporter, faviconManager: faviconManager, featureFlagger: featureFlagger)
+        let importer = ChromiumDataImporter(profile: .init(browser: .chrome, profileURL: ChromiumBookmarkStore.customShortcuts.resourceURL), loginImporter: loginImporter, bookmarkImporter: bookmarkImporter, faviconManager: faviconManager)
 
         _ = await importer.importData(types: [.bookmarks])
 
@@ -84,8 +60,8 @@ class ChromiumDataImporterTests {
         #expect(bookmarksBarMarkedAsFavorites == false)
     }
 
-    @Test("Check if bookmarks and top sites shortcuts are merged and bookmarks bar is not favorited after importing bookmarks with feature flag enabled")
-    func whenImportingBookmarks_AndFeatureFlagEnabled_BookmarksAndTopSitesShortcutsAreMerged_AndBookmarksBarIsNotFavorited() async throws {
+    @Test("Check if bookmarks and top sites shortcuts are merged and bookmarks bar is not favorited after importing bookmarks")
+    func whenImportingBookmarks_BookmarksAndTopSitesShortcutsAreMerged_AndBookmarksBarIsNotFavorited() async throws {
         var bookmarksToImport: ImportedBookmarks?
         var bookmarksBarMarkedAsFavorites: Bool?
 
@@ -96,9 +72,7 @@ class ChromiumDataImporterTests {
             bookmarksBarMarkedAsFavorites = markBookmarksBarAsFavorites
             return .init(successful: 1, duplicates: 2, failed: 3)
         })
-        let featureFlagger = MockFeatureFlagger()
-        featureFlagger.enabledFeatureFlags.append(.importChromeShortcuts)
-        let importer = ChromiumDataImporter(profile: .init(browser: .chrome, profileURL: ChromiumBookmarkStore.topSitesShortcuts.resourceURL), loginImporter: loginImporter, bookmarkImporter: bookmarkImporter, faviconManager: faviconManager, featureFlagger: featureFlagger)
+        let importer = ChromiumDataImporter(profile: .init(browser: .chrome, profileURL: ChromiumBookmarkStore.topSitesShortcuts.resourceURL), loginImporter: loginImporter, bookmarkImporter: bookmarkImporter, faviconManager: faviconManager)
 
         _ = await importer.importData(types: [.bookmarks])
 

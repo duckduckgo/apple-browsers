@@ -31,6 +31,15 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Papildyti";
 
+/* Open AI Chat history action in the menu list */
+"action.title.aiChat.history" = "„Duck.ai“ pokalbiai";
+
+/* Start new AI Chat action in the menu list */
+"action.title.aiChat.new" = "DI pokalbis";
+
+/* Open AI Chat settings action in the menu list */
+"action.title.aiChat.settings" = "„Duck.ai“ nustatymai";
+
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Slaptažodžiai";
 
@@ -463,6 +472,51 @@
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Įjungti „Email Protection“";
 
+/* Button title to dismiss the autofill extension activation view */
+"autofill.extension.activation.done.button.title" = "Atlikta";
+
+/* Title shown when the autofill extension activation succeeds */
+"autofill.extension.activation.title" = "Automatinis slaptažodžių pildymas įjungtas!";
+
+/* Footer text describing what enabling the autofill extension does */
+"autofill.extension.footer" = "Naudokite slaptažodžius, kuriuos išsaugojote „DuckDuckGo“, visose savo įrenginio programėlėse.";
+
+/* Header text shown when the autofill extension is disabled */
+"autofill.extension.header.disabled" = "Automatinis užpildymas kitose programėlėse";
+
+/* Header text shown when the autofill extension is enabled */
+"autofill.extension.header.enabled" = "Automatinis pildymas kitose programėlėse įjungtas";
+
+/* Dismiss button title for the Autofill extension promotion */
+"autofill.extension.promo.button.dismiss.title" = "Nustatyti vėliau nustatymuose";
+
+/* CTA button title for the Autofill extension promotion */
+"autofill.extension.promo.button.title" = "Įjunkite automatinį pildymą kitose programėlėse";
+
+/* Message for the Autofill extension promotion */
+"autofill.extension.promo.message" = "Naudokite „DuckDuckGo“, kad saugiai automatiškai užpildytumėte visų savo programų slaptažodžius.";
+
+/* Title for the Autofill extension promotion */
+"autofill.extension.promo.title" = "Greitai prisijunkite prie programėlių neįvesdami slaptažodžių";
+
+/* Title for screen showing autofill extension settings */
+"autofill.extension.screen.title" = "Automatiškai užpildykite slaptažodžius kitose programėlėse";
+
+/* Status text when autofill extension is disabled */
+"autofill.extension.status.off" = "Įjungti";
+
+/* Status text when autofill extension is enabled */
+"autofill.extension.status.on" = "Įjungti";
+
+/* Title for autofill extension settings row */
+"autofill.extension.title" = "Automatinis užpildymas kitose programėlėse";
+
+/* Button title that opens system settings to turn off the autofill extension */
+"autofill.extension.turn.off.button.title" = "Išjunkite sistemos nustatymuose...";
+
+/* Button title that triggers system prompt to turn on the autofill extension */
+"autofill.extension.turn.on.button.title" = "Įjunkite...";
+
 /* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
 "autofill.hide-card-cvv" = "Slėpti CVV";
 
@@ -799,8 +853,8 @@
 /* Section header for the autofill settings screen */
 "autofill.settings.import-passwords.section-header" = "Importuoti slaptažodžius";
 
-/* Section header for the autofill settings screen */
-"autofill.settings.options.section-header" = "Parinktys";
+/* Section header for the autofill passwords options section of the settings screen */
+"autofill.settings.options.section-header" = "Slaptažodžių parinktys";
 
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Praneškite apie funkcijos „Automatinis užpildymas“ problemą";

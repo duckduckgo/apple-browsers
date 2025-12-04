@@ -207,6 +207,51 @@ extension DataBrokerProtectionMacOSPixels: PixelKitEvent {
             return [DataBrokerProtectionSharedPixels.Consts.errorDomainKey: (error as NSError).domain]
         }
     }
+
+    public var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .mainAppSetUpFailedSecureVaultInitFailed,
+                .backgroundAgentSetUpFailedSecureVaultInitFailed,
+                .backgroundAgentStarted,
+                .backgroundAgentStartedStoppingDueToAnotherInstanceRunning,
+                .ipcServerProfileSavedCalledByApp,
+                .ipcServerProfileSavedReceivedByAgent,
+                .ipcServerProfileSavedXPCError,
+                .ipcServerImmediateScansInterrupted,
+                .ipcServerImmediateScansFinishedWithoutError,
+                .ipcServerImmediateScansFinishedWithError,
+                .ipcServerAppLaunchedCalledByApp,
+                .ipcServerAppLaunchedReceivedByAgent,
+                .ipcServerAppLaunchedXPCError,
+                .ipcServerAppLaunchedScheduledScansBlocked,
+                .ipcServerAppLaunchedScheduledScansInterrupted,
+                .ipcServerAppLaunchedScheduledScansFinishedWithoutError,
+                .ipcServerAppLaunchedScheduledScansFinishedWithError,
+                .dataBrokerProtectionNotificationSentFirstScanComplete,
+                .dataBrokerProtectionNotificationOpenedFirstScanComplete,
+                .dataBrokerProtectionNotificationSentFirstRemoval,
+                .dataBrokerProtectionNotificationOpenedFirstRemoval,
+                .dataBrokerProtectionNotificationScheduled2WeeksCheckIn,
+                .dataBrokerProtectionNotificationOpened2WeeksCheckIn,
+                .dataBrokerProtectionNotificationSentAllRecordsRemoved,
+                .dataBrokerProtectionNotificationOpenedAllRecordsRemoved,
+                .webUILoadingStarted,
+                .webUILoadingFailed,
+                .webUILoadingSuccess,
+                .homeViewShowNoPermissionError,
+                .homeViewShowWebUI,
+                .homeViewShowBadPathError,
+                .homeViewCTAMoveApplicationClicked,
+                .homeViewCTAGrantPermissionClicked,
+                .entitlementCheckValid,
+                .entitlementCheckInvalid,
+                .entitlementCheckError,
+                .invalidPayload,
+                .errorLoadingCachedConfig,
+                .failedToParsePrivacyConfig:
+            return [.pixelSource]
+        }
+    }
 }
 
 public class DataBrokerProtectionMacOSPixelsHandler: EventMapping<DataBrokerProtectionMacOSPixels> {

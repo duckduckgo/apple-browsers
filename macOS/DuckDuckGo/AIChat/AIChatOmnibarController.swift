@@ -19,9 +19,12 @@
 import Cocoa
 import Combine
 import AIChat
+import URLPredictor
+import PixelKit
 
 protocol AIChatOmnibarControllerDelegate: AnyObject {
     func aiChatOmnibarControllerDidSubmit(_ controller: AIChatOmnibarController)
+    func aiChatOmnibarController(_ controller: AIChatOmnibarController, didRequestNavigationToURL url: URL)
 }
 
 /// Controller that manages the state and actions for the AI Chat omnibar.
@@ -83,8 +86,16 @@ final class AIChatOmnibarController {
 
         let trimmedText = currentText.trimmingCharacters(in: .whitespacesAndNewlines)
 
-        let nativePrompt = AIChatNativePrompt.queryPrompt(trimmedText, autoSubmit: true)
+        if let navigableURL = classifyAsNavigableURL(trimmedText) {
+            PixelKit.fire(AIChatPixel.aiChatAddressBarAIChatSubmitURL, frequency: .dailyAndCount, includeAppVersionParameter: true)
+            currentText = ""
+            delegate?.aiChatOmnibarController(self, didRequestNavigationToURL: navigableURL)
+            return
+        }
 
+        PixelKit.fire(AIChatPixel.aiChatAddressBarAIChatSubmitPrompt, frequency: .dailyAndCount, includeAppVersionParameter: true)
+
+        let nativePrompt = AIChatNativePrompt.queryPrompt(trimmedText, autoSubmit: true)
         promptHandler.setData(nativePrompt)
 
         Task { @MainActor in
@@ -95,7 +106,21 @@ final class AIChatOmnibarController {
         }
 
         currentText = ""
-
         delegate?.aiChatOmnibarControllerDidSubmit(self)
+    }
+
+    /// Checks if the input text is a navigable URL (not a search query).
+    /// Returns the URL if it should be navigated to, nil if it should be treated as an AI chat query.
+    private func classifyAsNavigableURL(_ text: String) -> URL? {
+        do {
+            switch try Classifier.classify(input: text) {
+            case .navigate(let url):
+                return url
+            case .search:
+                return nil
+            }
+        } catch {
+            return nil
+        }
     }
 }

@@ -32,11 +32,26 @@ final class AddressBarSharedTextState: ObservableObject {
     /// Whether the user has typed anything (triggers text sharing between modes)
     @Published private(set) var hasUserInteractedWithText: Bool = false
 
+    /// Whether the user has type anything after switching modes
+    private(set) var hasUserInteractedWithTextAfterSwitchingModes: Bool = false
+
     /// Resets the shared state to initial values
     func reset() {
         text = ""
         selectionRange = NSRange(location: 0, length: 0)
         hasUserInteractedWithText = false
+    }
+
+    func resetUserInteraction() {
+        hasUserInteractedWithText = false
+    }
+
+    func setHasUserInteractedWithTextAfterSwitchingModes(_ value: Bool) {
+        hasUserInteractedWithTextAfterSwitchingModes = value
+    }
+
+    func resetUserInteractionAfterSwitchingModes() {
+        hasUserInteractedWithTextAfterSwitchingModes = false
     }
 
     /// Updates the shared text content
@@ -47,6 +62,7 @@ final class AddressBarSharedTextState: ObservableObject {
         text = newText
         if markInteraction && !newText.isEmpty {
             hasUserInteractedWithText = true
+            hasUserInteractedWithTextAfterSwitchingModes = true
         }
 
         // Adjust selection range if it's now beyond the text length

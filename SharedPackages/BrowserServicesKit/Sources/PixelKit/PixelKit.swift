@@ -200,7 +200,6 @@ public final class PixelKit {
                      withNamePrefix namePrefix: String? = nil,
                      allowedQueryReservedCharacters: CharacterSet? = nil,
                      includeAppVersionParameter: Bool = true,
-                     includePixelSourceParameter: Bool = true,
                      onComplete: @escaping CompletionBlock = { _, _ in }) {
 
         let pixelName = prefixedAndSuffixedName(for: event, namePrefix: namePrefix)
@@ -242,7 +241,7 @@ public final class PixelKit {
              withError: event.error,
              allowedQueryReservedCharacters: allowedQueryReservedCharacters,
              includeAppVersionParameter: includeAppVersionParameter,
-             includePixelSourceParameter: includePixelSourceParameter,
+             standardParameters: event.standardParameters ?? [],
              onComplete: onComplete)
     }
 
@@ -253,7 +252,6 @@ public final class PixelKit {
                             withNamePrefix namePrefix: String? = nil,
                             allowedQueryReservedCharacters: CharacterSet? = nil,
                             includeAppVersionParameter: Bool = true,
-                            includePixelSourceParameter: Bool = true,
                             onComplete: @escaping CompletionBlock = { _, _ in }) {
 
         Self.shared?.fire(event,
@@ -263,7 +261,6 @@ public final class PixelKit {
                           withNamePrefix: namePrefix,
                           allowedQueryReservedCharacters: allowedQueryReservedCharacters,
                           includeAppVersionParameter: includeAppVersionParameter,
-                          includePixelSourceParameter: includePixelSourceParameter,
                           onComplete: onComplete)
     }
 
@@ -276,12 +273,12 @@ public final class PixelKit {
                       withError error: NSError?,
                       allowedQueryReservedCharacters: CharacterSet?,
                       includeAppVersionParameter: Bool,
-                      includePixelSourceParameter: Bool,
+                      standardParameters: [PixelKitStandardParameter],
                       onComplete: @escaping CompletionBlock) {
 
         var newParams = params ?? [:]
         if includeAppVersionParameter { newParams[Parameters.appVersion] = appVersion }
-        if includePixelSourceParameter, let source { newParams[Parameters.pixelSource] = source }
+        if standardParameters.contains(.pixelSource), let source { newParams[Parameters.pixelSource] = source }
         if let error { newParams.appendErrorPixelParams(error: error) }
 
         #if DEBUG
@@ -724,6 +721,7 @@ internal extension Dictionary where Key == String, Value == String {
         var params = [String: String]()
         params[PixelKit.Parameters.errorCode] = "\(error.code)"
         params[PixelKit.Parameters.errorDomain] = error.domain
+        // WARNING: Avoid adding error.description to prevent leaking personal information.
 
         let underlyingErrorParameters = self.underlyingErrorParameters(for: error)
         params.merge(underlyingErrorParameters) { first, _ in
@@ -745,12 +743,14 @@ internal extension Dictionary where Key == String, Value == String {
     /// Recursive call to add underlying error information for non DDGErrors
     private func underlyingErrorParameters(for nsError: NSError, level: Int = 0) -> [String: String] {
         if let underlyingError = nsError.userInfo[NSUnderlyingErrorKey] as? NSError {
-            let errorCodeParameterName = PixelKit.Parameters.underlyingErrorCode + (level == 0 ? "" : String(level + 1))
-            let errorDomainParameterName = PixelKit.Parameters.underlyingErrorDomain + (level == 0 ? "" : String(level + 1))
+            let levelString = (level == 0 ? "" : String(level + 1))
+            let errorCodeParameterName = PixelKit.Parameters.underlyingErrorCode + levelString
+            let errorDomainParameterName = PixelKit.Parameters.underlyingErrorDomain + levelString
 
             let currentUnderlyingErrorParameters = [
                 errorCodeParameterName: "\(underlyingError.code)",
                 errorDomainParameterName: underlyingError.domain
+                // WARNING: Avoid adding error.description to prevent leaking personal information.
             ]
 
             // Check if the underlying error has an underlying error of its own

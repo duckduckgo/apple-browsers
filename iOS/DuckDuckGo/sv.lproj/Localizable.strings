@@ -31,6 +31,15 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Lägg till";
 
+/* Open AI Chat history action in the menu list */
+"action.title.aiChat.history" = "Duck.ai-chattar";
+
+/* Start new AI Chat action in the menu list */
+"action.title.aiChat.new" = "AI-chatt";
+
+/* Open AI Chat settings action in the menu list */
+"action.title.aiChat.settings" = "Duck.ai-inställningar";
+
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Lösenord";
 
@@ -463,6 +472,51 @@
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Aktivera Email Protection";
 
+/* Button title to dismiss the autofill extension activation view */
+"autofill.extension.activation.done.button.title" = "Klart";
+
+/* Title shown when the autofill extension activation succeeds */
+"autofill.extension.activation.title" = "Automatisk ifyllning av lösenord har aktiverats!";
+
+/* Footer text describing what enabling the autofill extension does */
+"autofill.extension.footer" = "Använd lösenord du har sparat i DuckDuckGo i alla appar på din enhet.";
+
+/* Header text shown when the autofill extension is disabled */
+"autofill.extension.header.disabled" = "Automatisk ifyllning i andra appar";
+
+/* Header text shown when the autofill extension is enabled */
+"autofill.extension.header.enabled" = "Autofyll i andra appar har aktiverats";
+
+/* Dismiss button title for the Autofill extension promotion */
+"autofill.extension.promo.button.dismiss.title" = "Ställ in senare i inställningar";
+
+/* CTA button title for the Autofill extension promotion */
+"autofill.extension.promo.button.title" = "Aktivera autofyll i andra appar";
+
+/* Message for the Autofill extension promotion */
+"autofill.extension.promo.message" = "Använd DuckDuckGo för att säkert autofylla lösenord för alla dina appar.";
+
+/* Title for the Autofill extension promotion */
+"autofill.extension.promo.title" = "Logga snabbt in i dina appar utan att skriva lösenord";
+
+/* Title for screen showing autofill extension settings */
+"autofill.extension.screen.title" = "Fyll i lösenord automatiskt i andra appar";
+
+/* Status text when autofill extension is disabled */
+"autofill.extension.status.off" = "Aktivera";
+
+/* Status text when autofill extension is enabled */
+"autofill.extension.status.on" = "På";
+
+/* Title for autofill extension settings row */
+"autofill.extension.title" = "Automatisk ifyllning i andra appar";
+
+/* Button title that opens system settings to turn off the autofill extension */
+"autofill.extension.turn.off.button.title" = "Stäng av i systeminställningarna …";
+
+/* Button title that triggers system prompt to turn on the autofill extension */
+"autofill.extension.turn.on.button.title" = "Aktivera ...";
+
 /* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
 "autofill.hide-card-cvv" = "Dölj CVV";
 
@@ -799,8 +853,8 @@
 /* Section header for the autofill settings screen */
 "autofill.settings.import-passwords.section-header" = "Importera lösenord";
 
-/* Section header for the autofill settings screen */
-"autofill.settings.options.section-header" = "Alternativ";
+/* Section header for the autofill passwords options section of the settings screen */
+"autofill.settings.options.section-header" = "Lösenordsalternativ";
 
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Rapportera ett problem med automatisk ifyllning";

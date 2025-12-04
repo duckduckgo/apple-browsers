@@ -31,6 +31,15 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Lisää";
 
+/* Open AI Chat history action in the menu list */
+"action.title.aiChat.history" = "Duck.ai-keskustelut";
+
+/* Start new AI Chat action in the menu list */
+"action.title.aiChat.new" = "Tekoäly-chat";
+
+/* Open AI Chat settings action in the menu list */
+"action.title.aiChat.settings" = "Duck.ai-asetukset";
+
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Salasanat";
 
@@ -463,6 +472,51 @@
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Ota Email Protection käyttöön";
 
+/* Button title to dismiss the autofill extension activation view */
+"autofill.extension.activation.done.button.title" = "Valmis";
+
+/* Title shown when the autofill extension activation succeeds */
+"autofill.extension.activation.title" = "Salasanojen automaattinen täyttö on nyt käytössä!";
+
+/* Footer text describing what enabling the autofill extension does */
+"autofill.extension.footer" = "Käytä DuckDuckGossa tallentamiasi salasanoja kaikissa sovelluksissa laitteellasi.";
+
+/* Header text shown when the autofill extension is disabled */
+"autofill.extension.header.disabled" = "Automaattinen täyttö muissa sovelluksissa";
+
+/* Header text shown when the autofill extension is enabled */
+"autofill.extension.header.enabled" = "Automaattinen täyttö muissa sovelluksissa on käytössä";
+
+/* Dismiss button title for the Autofill extension promotion */
+"autofill.extension.promo.button.dismiss.title" = "Määritä myöhemmin asetuksissa";
+
+/* CTA button title for the Autofill extension promotion */
+"autofill.extension.promo.button.title" = "Ota automaattinen täyttö käyttöön muissa sovelluksissa";
+
+/* Message for the Autofill extension promotion */
+"autofill.extension.promo.message" = "Käytä DuckDuckGo:ta kaikkien sovellusten salasanojen turvalliseen automaattiseen täyttämiseen.";
+
+/* Title for the Autofill extension promotion */
+"autofill.extension.promo.title" = "Kirjaudu nopeasti sovelluksiisi ilman, että sinun tarvitsee kirjoittaa salasanoja";
+
+/* Title for screen showing autofill extension settings */
+"autofill.extension.screen.title" = "Täytä salasanat automaattisesti muissa sovelluksissa";
+
+/* Status text when autofill extension is disabled */
+"autofill.extension.status.off" = "Ota käyttöön";
+
+/* Status text when autofill extension is enabled */
+"autofill.extension.status.on" = "Päällä";
+
+/* Title for autofill extension settings row */
+"autofill.extension.title" = "Automaattinen täyttö muissa sovelluksissa";
+
+/* Button title that opens system settings to turn off the autofill extension */
+"autofill.extension.turn.off.button.title" = "Poista käytöstä järjestelmäasetuksissa...";
+
+/* Button title that triggers system prompt to turn on the autofill extension */
+"autofill.extension.turn.on.button.title" = "Ota käyttöön...";
+
 /* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
 "autofill.hide-card-cvv" = "Piilota CVV";
 
@@ -799,8 +853,8 @@
 /* Section header for the autofill settings screen */
 "autofill.settings.import-passwords.section-header" = "Tuo salasanat";
 
-/* Section header for the autofill settings screen */
-"autofill.settings.options.section-header" = "Valinnat";
+/* Section header for the autofill passwords options section of the settings screen */
+"autofill.settings.options.section-header" = "Salasanavaihtoehdot";
 
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Ilmoita automaattisen täytön ongelmasta";

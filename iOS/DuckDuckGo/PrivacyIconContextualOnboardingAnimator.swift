@@ -18,12 +18,16 @@
 //
 
 import Foundation
+import UIKit
 
 final class PrivacyIconContextualOnboardingAnimator {
 
     func showPrivacyIconAnimation(in omniBar: any OmniBarView) {
         guard let window = omniBar.window else { return }
-        ViewHighlighter.showIn(window, focussedOnView: omniBar.privacyInfoContainer.privacyIcon, scale: .custom(3))
+        // Center on the actual shield animation view (47x47), not the container (28x28)
+        // This accounts for the larger animation that overflows the privacy icon container
+        let targetView: UIView = omniBar.privacyInfoContainer.privacyIcon.shieldAnimationView ?? omniBar.privacyInfoContainer.privacyIcon
+        ViewHighlighter.showIn(window, focussedOnView: targetView, scale: .custom(3))
     }
 
     func dismissPrivacyIconAnimation(_ view: PrivacyIconView) {

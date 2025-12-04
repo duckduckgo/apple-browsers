@@ -31,6 +31,15 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Dodaj";
 
+/* Open AI Chat history action in the menu list */
+"action.title.aiChat.history" = "Czaty Duck.ai";
+
+/* Start new AI Chat action in the menu list */
+"action.title.aiChat.new" = "Czat AI";
+
+/* Open AI Chat settings action in the menu list */
+"action.title.aiChat.settings" = "Ustawienia Duck.ai";
+
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Hasła";
 
@@ -463,6 +472,51 @@
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Włącz ochronę poczty Email Protection";
 
+/* Button title to dismiss the autofill extension activation view */
+"autofill.extension.activation.done.button.title" = "Gotowe";
+
+/* Title shown when the autofill extension activation succeeds */
+"autofill.extension.activation.title" = "Automatyczne uzupełnianie haseł zostało aktywowane!";
+
+/* Footer text describing what enabling the autofill extension does */
+"autofill.extension.footer" = "Używaj haseł zapisanych w DuckDuckGo we wszystkich aplikacjach na swoim urządzeniu.";
+
+/* Header text shown when the autofill extension is disabled */
+"autofill.extension.header.disabled" = "Autouzupełnianie w innych aplikacjach";
+
+/* Header text shown when the autofill extension is enabled */
+"autofill.extension.header.enabled" = "Autouzupełnianie w innych aplikacjach włączone";
+
+/* Dismiss button title for the Autofill extension promotion */
+"autofill.extension.promo.button.dismiss.title" = "Ustaw później w obszarze Ustawienia";
+
+/* CTA button title for the Autofill extension promotion */
+"autofill.extension.promo.button.title" = "Włącz autouzupełnianie w innych aplikacjach";
+
+/* Message for the Autofill extension promotion */
+"autofill.extension.promo.message" = "Używaj DuckDuckGo, aby w bezpieczny sposób automatycznie uzupełniać hasła we wszystkich swoich aplikacjach.";
+
+/* Title for the Autofill extension promotion */
+"autofill.extension.promo.title" = "Szybko zaloguj się do swoich aplikacji bez wpisywania haseł";
+
+/* Title for screen showing autofill extension settings */
+"autofill.extension.screen.title" = "Automatycznie uzupełniaj hasła w innych aplikacjach";
+
+/* Status text when autofill extension is disabled */
+"autofill.extension.status.off" = "Włącz";
+
+/* Status text when autofill extension is enabled */
+"autofill.extension.status.on" = "Włączone";
+
+/* Title for autofill extension settings row */
+"autofill.extension.title" = "Autouzupełnianie w innych aplikacjach";
+
+/* Button title that opens system settings to turn off the autofill extension */
+"autofill.extension.turn.off.button.title" = "Wyłącz w ustawieniach systemowych...";
+
+/* Button title that triggers system prompt to turn on the autofill extension */
+"autofill.extension.turn.on.button.title" = "Włącz...";
+
 /* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
 "autofill.hide-card-cvv" = "Ukryj CVV";
 
@@ -799,8 +853,8 @@
 /* Section header for the autofill settings screen */
 "autofill.settings.import-passwords.section-header" = "Importuj hasła";
 
-/* Section header for the autofill settings screen */
-"autofill.settings.options.section-header" = "Opcje";
+/* Section header for the autofill passwords options section of the settings screen */
+"autofill.settings.options.section-header" = "Opcje hasła";
 
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Zgłoś problem z autouzupełnianiem";

@@ -42,10 +42,8 @@ final class WideEventService {
             await sendDelayedSubscriptionPurchasePixels()
         }
 
-        if featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) {
-            await sendAbandonedSubscriptionRestorePixels()
-            await sendDelayedSubscriptionRestorePixels()
-        }
+        await sendAbandonedSubscriptionRestorePixels()
+        await sendDelayedSubscriptionRestorePixels()
 
         if featureFlagger.isFeatureOn(.vpnConnectionWidePixelMeasurement) {
             await sendAbandonedVPNConnectionPixels()

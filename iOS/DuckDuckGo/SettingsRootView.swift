@@ -153,6 +153,7 @@ struct SettingsRootView: View {
                                                                  subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
                                                                  subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
                                                                  subscriptionDataReporter: viewModel.subscriptionDataReporter,
+                                                                 userScriptsDependencies: viewModel.userScriptsDependencies,
                                                                  tld: AppDependencyProvider.shared.storageCache.tld,
                                                                  internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                                  dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
@@ -163,6 +164,7 @@ struct SettingsRootView: View {
                                                                subscriptionManager: AppDependencyProvider.shared.subscriptionManager!,
                                                                subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
                                                                subscriptionDataReporter: viewModel.subscriptionDataReporter,
+                                                               userScriptsDependencies: viewModel.userScriptsDependencies,
                                                                tld: AppDependencyProvider.shared.storageCache.tld,
                                                                internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                                dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider)
@@ -174,6 +176,7 @@ struct SettingsRootView: View {
             SubscriptionContainerViewFactory.makeEmailFlowV2(navigationCoordinator: subscriptionNavigationCoordinator,
                                                              subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
                                                              subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
+                                                             userScriptsDependencies: viewModel.userScriptsDependencies,
                                                              internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                              emailFlow: .restoreFlow,
                                                              dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
@@ -183,6 +186,7 @@ struct SettingsRootView: View {
             SubscriptionContainerViewFactory.makeEmailFlow(navigationCoordinator: subscriptionNavigationCoordinator,
                                                            subscriptionManager: AppDependencyProvider.shared.subscriptionManager!,
                                                            subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
+                                                           userScriptsDependencies: viewModel.userScriptsDependencies,
                                                            internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                                                            emailFlow: .restoreFlow,
                                                            dataBrokerProtectionViewControllerProvider: viewModel.dataBrokerProtectionViewControllerProvider,
@@ -231,7 +235,11 @@ struct SettingsRootView: View {
                 SubscriptionPIRMoveToDesktopView()
             }
         case .itr:
-            SubscriptionITPView()
+            let model = SubscriptionITPViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
+                                                 userScriptsDependencies: viewModel.userScriptsDependencies,
+                                                 isInternalUser: AppDependencyProvider.shared.internalUserDecider.isInternalUser,
+                                                 isAuthV2Enabled: AppDependencyProvider.shared.isUsingAuthV2)
+            SubscriptionITPView(viewModel: model)
         case let .subscriptionFlow(redirectURLComponents):
             subscriptionFlowNavigationDestination(redirectURLComponents: redirectURLComponents)
                 .environmentObject(subscriptionNavigationCoordinator)
@@ -249,7 +257,8 @@ struct SettingsRootView: View {
             SettingsAppearanceView().environmentObject(viewModel)
         case .subscriptionSettings:
             if let configuration = subscriptionSettingsConfiguration() {
-                SubscriptionSettingsViewV2(configuration: configuration, settingsViewModel: viewModel)
+                let model = SubscriptionSettingsViewModelV2(userScriptsDependencies: viewModel.userScriptsDependencies)
+                SubscriptionSettingsViewV2(configuration: configuration, viewModel: model, settingsViewModel: viewModel)
                     .environmentObject(subscriptionNavigationCoordinator)
             }
         }

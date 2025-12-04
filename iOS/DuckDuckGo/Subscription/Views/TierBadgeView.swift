@@ -64,4 +64,3 @@ struct TierBadgeView: View {
     }
     .padding()
 }
-

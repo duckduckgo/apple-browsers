@@ -2175,4 +2175,27 @@ public struct UserText {
 
         }
     }
+    
+    // MARK: - Fire Confirmation
+    
+    public static let fireConfirmationTitle = NSLocalizedString("fire.confirmation.title", value: "Choose What To Delete", comment: "Title for fire button confirmation screen")
+    public static let fireConfirmationTabsTitle = NSLocalizedString("fire.confirmation.tabs.title", value: "Tabs", comment: "Tabs option title in fire confirmation")
+//    public static let fireConfirmationTabsSubtitle = NSLocalizedString("fire.confirmation.tabs.subtitle", value: "Close all 9 tabs", comment: "Tabs option subtitle in fire confirmation")
+    public static func fireConfirmationTabsSubtitle(withCount count: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "fire.confirmation.tabs.subtitle.withCount", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, count)
+    }
+    public static let fireConfirmationDataTitle = NSLocalizedString("fire.confirmation.data.title", value: "Cookies and Site Data", comment: "Cookies and site data option title in fire confirmation")
+//    public static let fireConfirmationDataSubtitle = NSLocalizedString("fire.confirmation.data.subtitle", value: "Delete from 4 sites. May sign you out of accounts.", comment: "Cookies and site data option subtitle in fire confirmation")
+    public static func fireConfirmationDataSubtitle(withCount count: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "fire.confirmation.data.subtitle.withCount", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, count)
+    }
+    public static let fireConfirmationAIChatsTitle = NSLocalizedString("fire.confirmation.aichats.subtitle", value: "Duck.ai Chats", comment: "AI Chats option title in fire confirmation")
+
+//    public static let fireConfirmationAIChatsSubtitle = NSLocalizedString("fire.confirmation.aichats.subtitle", value: "Delete 5 chats", comment: "AI chats option subtitle in fire confirmation")
+    public static func fireConfirmationAIChatsSubtitle(withCount count: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "fire.confirmation.aichats.subtitle.withCount", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, count)
+    }
 }

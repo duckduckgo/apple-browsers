@@ -460,12 +460,19 @@ final class WireGuardAdapterTests: XCTestCase {
     }
 
     private func waitForHandledEventCount(_ count: Int, timeout: TimeInterval = 5.0, file: StaticString = #file, line: UInt = #line) {
-        let predicate = NSPredicate { _, _ in
-            self.eventHandler.handledEvents.count >= count
+        if eventHandler.handledEvents.count >= count {
+            return
         }
 
-        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: nil)
+        let expectation = expectation(description: "Wait for \(count) events")
+        eventHandler.onEventReceived = { currentCount in
+            if currentCount >= count {
+                expectation.fulfill()
+            }
+        }
+
         let result = XCTWaiter.wait(for: [expectation], timeout: timeout)
+        eventHandler.onEventReceived = nil
 
         if result != .completed {
             XCTFail("Expected \(count) events, got \(eventHandler.handledEvents.count)", file: file, line: line)

@@ -23,6 +23,8 @@ final class MockWireGuardAdapterEventHandler: WireGuardAdapterEventHandling {
     private let lock = NSLock()
     private var _handledEvents: [WireGuardAdapterEvent] = []
 
+    var onEventReceived: ((Int) -> Void)?
+
     var handledEvents: [WireGuardAdapterEvent] {
         lock.lock()
         defer { lock.unlock() }
@@ -30,8 +32,12 @@ final class MockWireGuardAdapterEventHandler: WireGuardAdapterEventHandling {
     }
 
     func handle(_ event: WireGuardAdapterEvent) {
+        let count: Int
         lock.lock()
-        defer { lock.unlock() }
         _handledEvents.append(event)
+        count = _handledEvents.count
+        lock.unlock()
+
+        onEventReceived?(count)
     }
 }

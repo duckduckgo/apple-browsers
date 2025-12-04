@@ -394,4 +394,12 @@ extension DBPUICommunicator: DBPUICommunicationDelegate {
     public func removeOptOutFromDashboard(_ id: Int64) async {
         delegate?.willRemoveOptOutFromDashboard(id)
     }
+
+    public func needBackgroundAppRefresh() async -> Bool {
+        false // macOS doesn't have Background App Refresh
+    }
+
+    public func enableBackgroundAppRefresh() async {
+        // No-op on macOS
+    }
 }

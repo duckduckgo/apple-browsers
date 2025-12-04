@@ -227,6 +227,10 @@ private final class MockDelegate: DBPUICommunicationDelegate {
     func applyVPNBypassSetting(_ bypass: Bool) async {}
 
     func removeOptOutFromDashboard(_ id: Int64) async {}
+
+    func needBackgroundAppRefresh() async -> Bool { false }
+
+    func enableBackgroundAppRefresh() async {}
 }
 
 private final class MockWebSettings: DataBrokerProtectionWebUIURLSettingsRepresentable {

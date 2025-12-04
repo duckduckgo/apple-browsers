@@ -20,6 +20,7 @@
 import Foundation
 import Combine
 import WebKit
+import UIKit
 import BrowserServicesKit
 import Common
 import os.log
@@ -226,5 +227,17 @@ extension DBPUIViewModel: DBPUICommunicationDelegate {
 
     public func applyVPNBypassSetting(_ bypass: Bool) async {
         // No op, we don't have a VPN bypass on iOS
+    }
+
+    @MainActor
+    public func needBackgroundAppRefresh() async -> Bool {
+        UIApplication.shared.backgroundRefreshStatus != .available
+    }
+
+    @MainActor
+    public func enableBackgroundAppRefresh() async {
+        guard let url = URL(string: UIApplication.openSettingsURLString),
+              UIApplication.shared.canOpenURL(url) else { return }
+        await UIApplication.shared.open(url)
     }
 }

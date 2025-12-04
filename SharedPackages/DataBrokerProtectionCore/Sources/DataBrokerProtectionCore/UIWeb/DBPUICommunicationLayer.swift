@@ -27,11 +27,13 @@ public struct DBPUIFeatureConfigurationResponse: Encodable {
     public let useUnifiedFeedback: Bool
     public let excludeVpnTraffic: Bool
     public let brokerRemovalEnabled: Bool
+    public let needBackgroundAppRefresh: Bool
 
-    public init(useUnifiedFeedback: Bool, excludeVpnTraffic: Bool, brokerRemovalEnabled: Bool) {
+    public init(useUnifiedFeedback: Bool, excludeVpnTraffic: Bool, brokerRemovalEnabled: Bool, needBackgroundAppRefresh: Bool) {
         self.useUnifiedFeedback = useUnifiedFeedback
         self.excludeVpnTraffic = excludeVpnTraffic
         self.brokerRemovalEnabled = brokerRemovalEnabled
+        self.needBackgroundAppRefresh = needBackgroundAppRefresh
     }
 }
 
@@ -55,6 +57,8 @@ public protocol DBPUICommunicationDelegate: AnyObject {
     func openSendFeedbackModal() async
     func applyVPNBypassSetting(_ bypass: Bool) async
     func removeOptOutFromDashboard(_ id: Int64) async
+    func needBackgroundAppRefresh() async -> Bool
+    func enableBackgroundAppRefresh() async
 }
 
 public enum DBPUIReceivedMethodName: String {
@@ -79,6 +83,7 @@ public enum DBPUIReceivedMethodName: String {
     case getVPNBypassSetting = "getVpnExclusionSetting"
     case setVPNBypassSetting = "setVpnExclusionSetting"
     case removeOptOutFromDashboard
+    case enableBackgroundAppRefresh
 }
 
 public enum DBPUISendableMethodName: String {
@@ -97,7 +102,7 @@ public struct DBPUICommunicationLayer: Subfeature {
     weak public var delegate: DBPUICommunicationDelegate?
 
     private enum Constants {
-        static let version = 11
+        static let version = 12
     }
 
     public init(webURLSettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
@@ -139,6 +144,7 @@ public struct DBPUICommunicationLayer: Subfeature {
         case .getVPNBypassSetting: return getVPNBypassSetting
         case .setVPNBypassSetting: return setVPNBypassSetting
         case .removeOptOutFromDashboard: return removeOptOutFromDashboard
+        case .enableBackgroundAppRefresh: return enableBackgroundAppRefresh
         }
 
     }
@@ -332,7 +338,8 @@ public struct DBPUICommunicationLayer: Subfeature {
         return DBPUIFeatureConfigurationResponse(
             useUnifiedFeedback: privacyConfig.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.useUnifiedFeedback),
             excludeVpnTraffic: vpnBypassService?.isSupported ?? false,
-            brokerRemovalEnabled: true
+            brokerRemovalEnabled: true,
+            needBackgroundAppRefresh: await delegate?.needBackgroundAppRefresh() ?? false
         )
     }
 
@@ -374,5 +381,10 @@ public struct DBPUICommunicationLayer: Subfeature {
         await delegate?.removeOptOutFromDashboard(result.recordId)
 
         return DBPUIRemoveOptOutFromDashboardResult(success: true)
+    }
+
+    func enableBackgroundAppRefresh(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        await delegate?.enableBackgroundAppRefresh()
+        return nil
     }
 }

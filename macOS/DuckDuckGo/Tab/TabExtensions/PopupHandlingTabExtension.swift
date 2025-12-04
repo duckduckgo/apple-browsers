@@ -97,6 +97,7 @@ final class PopupHandlingTabExtension {
 
         interactionEventsPublisher
             .filter { event in
+                Logger.navigation.debug("PopupHandlingTabExtension.interactionEventsPublisher.filter: event: \(String(describing: event))")
                 guard featureFlagger.isFeatureOn(.popupBlocking),
                       featureFlagger.isFeatureOn(.extendedUserInitiatedPopupTimeout) else { return false }
 
@@ -321,7 +322,16 @@ final class PopupHandlingTabExtension {
     /// - Returns: A `UserInitiatedReason` describing why the action is user-initiated, or `nil` if the navigation action is not user-initiated
     @MainActor
     func isNavigationActionUserInitiated(_ navigationAction: WKNavigationAction) -> UserInitiatedReason? {
-        let threshold = popupBlockingConfig.userInitiatedPopupThreshold
+        var threshold = popupBlockingConfig.userInitiatedPopupThreshold
+
+#if DEBUG || REVIEW
+        // Allow debug override for faster UI testing (e.g., from environment variable in UI tests)
+        if let envValue = ProcessInfo.processInfo.environment["POPUP_TIMEOUT_OVERRIDE"],
+           let overrideValue = TimeInterval(envValue) {
+            threshold = overrideValue
+        }
+#endif
+
         // Check if enhanced popup blocking is enabled and configured properly
         guard featureFlagger.isFeatureOn(.popupBlocking),
               featureFlagger.isFeatureOn(.extendedUserInitiatedPopupTimeout),
@@ -423,6 +433,7 @@ extension PopupHandlingTabExtension: NavigationResponder {
         } else {
             NSApp.currentEvent
         }
+        Logger.navigation.debug("PopupHandlingTabExtension.decidePolicy: userInteractionEvent: \(userInteractionEvent ??? "<nil>") currentEvent: \(NSApp.currentEvent ??? "<nil>")")
 
         let linkOpenBehavior = LinkOpenBehavior(button: navigationAction.navigationType.isMiddleButtonClick ? .middle : .left,
                                                 modifierFlags: userInteractionEvent?.modifierFlags ?? [],

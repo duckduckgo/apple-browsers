@@ -88,13 +88,12 @@ final class AIChatFullModeOmniBrandingView: UIView {
 
         let iconSize: CGFloat = 24
         let chevronSize: CGFloat = 18
-        let topBottomSpacing: CGFloat = 10
         let iconTextSpacing: CGFloat = 4
 
         // Left icon
         NSLayoutConstraint.activate([
             leftIconView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 8),
-            leftIconView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: topBottomSpacing),
+            leftIconView.centerYAnchor.constraint(equalTo: centerYAnchor),
             leftIconView.widthAnchor.constraint(equalToConstant: iconSize),
             leftIconView.heightAnchor.constraint(equalToConstant: iconSize)
         ])

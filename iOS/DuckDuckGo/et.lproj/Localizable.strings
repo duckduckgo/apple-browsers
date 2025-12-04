@@ -35,7 +35,7 @@
 "action.title.aiChat.history" = "Duck.ai vestlused";
 
 /* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "AI vestlus";
+"action.title.aiChat.new" = "Uus AI vestlus";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Duck.ai seaded";
@@ -89,7 +89,7 @@
 "action.title.newBackgroundTabForUrl" = "Ava taustal";
 
 /* Create New Tab action */
-"action.title.newTabAction" = "Uus";
+"action.title.newTabAction" = "Uus vaheleht";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Ava uuel vahelehel";
@@ -2925,6 +2925,9 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Aadressiriba asukoht";
+
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Eksperimentaalne brauseri menüü";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Ava lingid seotud rakendustes";

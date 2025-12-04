@@ -1,5 +1,5 @@
 //
-//  MockHomePageContinueSetUpModelPersisting.swift
+//  MockHomePageSubscriptionCardVisibilityManaging.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -19,11 +19,15 @@
 import Foundation
 @testable import DuckDuckGo_Privacy_Browser
 
-final class MockHomePageContinueSetUpModelPersisting: HomePageContinueSetUpModelPersisting {
-    var shouldShowMakeDefaultSetting: Bool = true
-    var shouldShowAddToDockSetting: Bool = true
-    var shouldShowImportSetting: Bool = true
-    var shouldShowDuckPlayerSetting: Bool = true
-    var shouldShowEmailProtectionSetting: Bool = true
-    var isFirstSession: Bool = true
+final class MockHomePageSubscriptionCardVisibilityManaging: HomePageSubscriptionCardVisibilityManaging {
+    @Published var shouldShowSubscriptionCard: Bool = true
+    var shouldShowSubscriptionCardPublisher: Published<Bool>.Publisher {
+        $shouldShowSubscriptionCard
+    }
+
+    var dismissCalled = false
+    func dismissSubscriptionCard() {
+        shouldShowSubscriptionCard = false
+        dismissCalled = true
+    }
 }

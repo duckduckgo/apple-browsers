@@ -55,7 +55,7 @@ extension NewTabPageActionsManager {
         tabsPreferences: TabsPreferences,
         newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
         winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator,
-        subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+        subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
         homePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersisting
     ) {
         let settingsMigrator = NewTabPageProtectionsReportSettingsMigrator(legacyKeyValueStore: legacyKeyValueStore)
@@ -93,7 +93,7 @@ extension NewTabPageActionsManager {
             tabsPreferences: tabsPreferences,
             newTabPageAIChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider,
             winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
-            subscriptionManager: subscriptionManager,
+            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             homePageContinueSetUpModelPersistor: homePageContinueSetUpModelPersistor
         )
     }
@@ -122,7 +122,7 @@ extension NewTabPageActionsManager {
         tabsPreferences: TabsPreferences,
         newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
         winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator,
-        subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+        subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
         homePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersisting
     ) {
         let availabilityProvider = NewTabPageSectionsAvailabilityProvider(featureFlagger: featureFlagger)
@@ -198,7 +198,7 @@ extension NewTabPageActionsManager {
                         dataImportProvider: BookmarksAndPasswordsImportStatusProvider(bookmarkManager: bookmarkManager),
                         tabOpener: NewTabPageTabOpener(),
                         privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
-                        subscriptionManager: subscriptionManager,
+                        subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
                         persistor: homePageContinueSetUpModelPersistor
                     ),
                     appearancePreferences: appearancePreferences

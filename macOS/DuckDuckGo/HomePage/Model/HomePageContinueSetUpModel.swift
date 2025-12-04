@@ -73,7 +73,7 @@ extension HomePage.Models {
         private let tabOpener: ContinueSetUpModelTabOpening
         private let emailManager: EmailManager
         private let duckPlayerPreferences: DuckPlayerPreferencesPersistor
-        private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+        private let subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging
         private let pixelHandler: (PixelKitEvent, Bool) -> Void
 
         @UserDefaultsWrapper(key: .homePageShowAllFeatures, defaultValue: false)
@@ -107,8 +107,6 @@ extension HomePage.Models {
 
         @Published var visibleFeaturesMatrix: [[FeatureType]] = [[]]
 
-        private var observer: NSObjectProtocol?
-
         init(defaultBrowserProvider: DefaultBrowserProvider = SystemDefaultBrowserProvider(),
              dockCustomizer: DockCustomization = DockCustomizer(),
              dataImportProvider: DataImportStatusProviding,
@@ -116,7 +114,7 @@ extension HomePage.Models {
              emailManager: EmailManager = EmailManager(),
              duckPlayerPreferences: DuckPlayerPreferencesPersistor = DuckPlayerPreferencesUserDefaultsPersistor(),
              privacyConfigurationManager: PrivacyConfigurationManaging,
-             subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+             subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
              persistor: HomePageContinueSetUpModelPersisting,
              pixelHandler: @escaping (PixelKitEvent, Bool) -> Void = { PixelKit.fire($0, includeAppVersionParameter: $1) }) {
 
@@ -127,7 +125,7 @@ extension HomePage.Models {
             self.emailManager = emailManager
             self.duckPlayerPreferences = duckPlayerPreferences
             self.privacyConfigurationManager = privacyConfigurationManager
-            self.subscriptionManager = subscriptionManager
+            self.subscriptionCardVisibilityManager = subscriptionCardVisibilityManager
             self.pixelHandler = pixelHandler
             self.persistor = persistor
 
@@ -142,29 +140,7 @@ extension HomePage.Models {
             // (the notification in this case) to trigger a refresh.
             NotificationCenter.default.addObserver(self, selector: #selector(refreshFeaturesForHTMLNewTabPage(_:)), name: .newTabPageWebViewDidAppear, object: nil)
 
-            observeSubscriptionDidChange()
-            checkCachedSubscription()
-
-        }
-
-        private func checkCachedSubscription() {
-            Task { @MainActor in
-                let currentSubscription = try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst)
-                if currentSubscription != nil {
-                    // Prevent card from showing again if the user has any kind of subscription.
-                    persistor.userHadSubscription = true
-                }
-                refreshFeaturesMatrix()
-            }
-        }
-
-        private func observeSubscriptionDidChange() {
-            observer = NotificationCenter.default.addObserver(forName: .subscriptionDidChange, object: nil, queue: .main) { [weak self] _ in
-                guard let self else { return }
-                // Prevent card from showing again if the user has any kind of subscription.
-                persistor.userHadSubscription = true
-                refreshFeaturesMatrix()
-            }
+            observeSubscriptionCardVisibilityChanges()
         }
 
         @MainActor func performAction(for featureType: FeatureType) {
@@ -219,7 +195,7 @@ extension HomePage.Models {
         @MainActor
         private func performSubscriptionAction() {
             pixelHandler(SubscriptionPixel.subscriptionNewTabPageNextStepsCardClicked, true)
-            guard let url = SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.onboarding.rawValue)?.url else {
+            guard let url = SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.newTabPageNextStepsCard.rawValue)?.url else {
                 return
             }
 
@@ -241,9 +217,19 @@ extension HomePage.Models {
                 persistor.shouldShowEmailProtectionSetting = false
             case .subscription:
                 pixelHandler(SubscriptionPixel.subscriptionNewTabPageNextStepsCardDismissed, true)
-                persistor.shouldShowSubscriptionSetting = false
+                subscriptionCardVisibilityManager.dismissSubscriptionCard()
             }
             refreshFeaturesMatrix()
+        }
+
+        private func observeSubscriptionCardVisibilityChanges() {
+            subscriptionCardVisibilityManager.shouldShowSubscriptionCardPublisher
+                .removeDuplicates()
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] _ in
+                    self?.refreshFeaturesMatrix()
+                }
+                .store(in: &cancellables)
         }
 
         func refreshFeaturesMatrix() {
@@ -351,13 +337,7 @@ extension HomePage.Models {
         }
 
         private var shouldSubscriptionCardBeVisible: Bool {
-            persistor.shouldShowSubscriptionSetting && !persistor.userHadSubscription
-        }
-
-        deinit {
-            if let observer {
-                NotificationCenter.default.removeObserver(observer)
-            }
+            subscriptionCardVisibilityManager.shouldShowSubscriptionCard
         }
     }
 

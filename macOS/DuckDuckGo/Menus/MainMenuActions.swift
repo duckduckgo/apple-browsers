@@ -576,8 +576,8 @@ extension AppDelegate {
         appearancePreferences.isContinueSetUpCardsViewOutdated = false
         appearancePreferences.continueSetUpCardsClosed = false
         appearancePreferences.isContinueSetUpVisible = true
-        let homePageContinueSetUpModelPersistor = HomePageContinueSetUpModelPersistor(keyValueStore: keyValueStore)
         homePageContinueSetUpModelPersistor.clear()
+        homePageSubscriptionCardPersistor.clear()
         NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: NSApp)
     }
 
@@ -680,6 +680,7 @@ extension AppDelegate {
 
     @objc func resetMakeDuckDuckGoYoursUserSettings(_ sender: Any?) {
         homePageContinueSetUpModelPersistor.clear()
+        homePageSubscriptionCardPersistor.clear()
     }
 
     @objc func resetOnboarding(_ sender: Any?) {
@@ -1299,6 +1300,8 @@ extension MainViewController {
         NSApp.delegateTyped.appearancePreferences.isContinueSetUpVisible = true
         let homePageContinueSetUpModelPersistor = HomePageContinueSetUpModelPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
         homePageContinueSetUpModelPersistor.clear()
+        let homePageSubscriptionCardPersistor = HomePageSubscriptionCardPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
+        homePageSubscriptionCardPersistor.clear()
         NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: NSApp)
     }
 

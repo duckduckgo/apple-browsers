@@ -38,7 +38,7 @@ final class ContinueSetUpModelTests: XCTestCase {
     var privacyConfigManager: MockPrivacyConfigurationManager!
     var dockCustomizer: DockCustomization!
     var userDefaults: UserDefaults! = UserDefaults(suiteName: "\(Bundle.main.bundleIdentifier!).\(AppVersion.runType)")!
-    var subscriptionManager: SubscriptionAuthV1toV2BridgeMock!
+    var subscriptionCardVisibilityManager: MockHomePageSubscriptionCardVisibilityManaging!
     var homePageContinueSetUpModelPersisting: MockHomePageContinueSetUpModelPersisting!
 
     var firedPixels: [PixelKitEvent] = []
@@ -56,9 +56,8 @@ final class ContinueSetUpModelTests: XCTestCase {
         let config = MockPrivacyConfiguration()
         privacyConfigManager.mockPrivacyConfig = config
         dockCustomizer = DockCustomizerMock()
-        subscriptionManager = SubscriptionAuthV1toV2BridgeMock()
+        subscriptionCardVisibilityManager = MockHomePageSubscriptionCardVisibilityManaging()
         homePageContinueSetUpModelPersisting = MockHomePageContinueSetUpModelPersisting()
-        subscriptionManager.returnSubscription = .failure(SubscriptionManagerError.noTokenAvailable)
 
         firedPixels = []
 
@@ -70,7 +69,7 @@ final class ContinueSetUpModelTests: XCTestCase {
             emailManager: emailManager,
             duckPlayerPreferences: duckPlayerPreferences,
             privacyConfigurationManager: privacyConfigManager,
-            subscriptionManager: subscriptionManager,
+            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             persistor: homePageContinueSetUpModelPersisting,
             pixelHandler: { pixel, _ in
                 self.firedPixels.append(pixel)
@@ -90,7 +89,7 @@ final class ContinueSetUpModelTests: XCTestCase {
         duckPlayerPreferences = nil
         privacyConfigManager = nil
         userDefaults = nil
-        subscriptionManager = nil
+        subscriptionCardVisibilityManager = nil
         homePageContinueSetUpModelPersisting = nil
         firedPixels = []
     }
@@ -114,7 +113,7 @@ final class ContinueSetUpModelTests: XCTestCase {
         capturingDefaultBrowserProvider.isDefault = true
         capturingDataImportProvider.didImport = true
         duckPlayerPreferences.youtubeOverlayAnyButtonPressed = true
-        homePageContinueSetUpModelPersisting.userHadSubscription = true
+        subscriptionCardVisibilityManager.shouldShowSubscriptionCard = false
 
         vm = HomePage.Models.ContinueSetUpModel(
             defaultBrowserProvider: capturingDefaultBrowserProvider,
@@ -124,7 +123,7 @@ final class ContinueSetUpModelTests: XCTestCase {
             emailManager: emailManager,
             duckPlayerPreferences: duckPlayerPreferences,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            subscriptionManager: subscriptionManager,
+            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             persistor: homePageContinueSetUpModelPersisting,
             pixelHandler: { pixel, _ in
                 self.firedPixels.append(pixel)
@@ -145,7 +144,7 @@ final class ContinueSetUpModelTests: XCTestCase {
             emailManager: emailManager,
             duckPlayerPreferences: duckPlayerPreferences,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            subscriptionManager: subscriptionManager,
+            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             persistor: homePageContinueSetUpModelPersisting
         )
 
@@ -341,7 +340,7 @@ final class ContinueSetUpModelTests: XCTestCase {
         emailStorage.isEmailProtectionEnabled = true
         duckPlayerPreferences.youtubeOverlayAnyButtonPressed = true
         capturingDataImportProvider.didImport = true
-        homePageContinueSetUpModelPersisting.userHadSubscription = true
+        subscriptionCardVisibilityManager.shouldShowSubscriptionCard = false
         dockCustomizer.addToDock()
 
         vm = HomePage.Models.ContinueSetUpModel(
@@ -352,7 +351,7 @@ final class ContinueSetUpModelTests: XCTestCase {
             emailManager: emailManager,
             duckPlayerPreferences: duckPlayerPreferences,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            subscriptionManager: subscriptionManager,
+            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             persistor: homePageContinueSetUpModelPersisting
         )
 
@@ -369,7 +368,7 @@ final class ContinueSetUpModelTests: XCTestCase {
             emailManager: emailManager,
             duckPlayerPreferences: duckPlayerPreferences,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            subscriptionManager: subscriptionManager,
+            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             persistor: homePageContinueSetUpModelPersisting
         )
         vm.shouldShowAllFeatures = true
@@ -396,7 +395,7 @@ final class ContinueSetUpModelTests: XCTestCase {
         XCTAssertFalse(vm.visibleFeaturesMatrix.flatMap { $0 }.contains(.dock))
 #endif
 
-        let vm2 = HomePage.Models.ContinueSetUpModel.fixture(persistor: homePageContinueSetUpModelPersisting)
+        let vm2 = HomePage.Models.ContinueSetUpModel.fixture(persistor: homePageContinueSetUpModelPersisting, subscriptionCardVisibilityManager: subscriptionCardVisibilityManager)
         XCTAssertTrue(vm2.visibleFeaturesMatrix.flatMap { $0 }.isEmpty)
     }
 
@@ -446,63 +445,10 @@ final class ContinueSetUpModelTests: XCTestCase {
         XCTAssertFalse(vm.visibleFeaturesMatrix.reduce([], +).contains(HomePage.Models.FeatureType.dock))
     }
 
-    @MainActor func test_WhenUserHasSubscription_ItSavesTheUserHadSubscriptionFlag() {
-        let startedAt = Date().startOfDay
-        let expiresAt = Date().startOfDay.daysAgo(-10)
-        let subscription = DuckDuckGoSubscription(
-            productId: "test",
-            name: "test",
-            billingPeriod: .yearly,
-            startedAt: startedAt,
-            expiresOrRenewsAt: expiresAt,
-            platform: .stripe,
-            status: .autoRenewable,
-            activeOffers: []
-        )
-        subscriptionManager.returnSubscription = .success(subscription)
-
-        vm = HomePage.Models.ContinueSetUpModel(
-            defaultBrowserProvider: capturingDefaultBrowserProvider,
-            dockCustomizer: dockCustomizer,
-            dataImportProvider: capturingDataImportProvider,
-            tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: tabCollectionVM),
-            emailManager: emailManager,
-            duckPlayerPreferences: duckPlayerPreferences,
-            privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            subscriptionManager: subscriptionManager,
-            persistor: homePageContinueSetUpModelPersisting
-        )
-
-        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
-
-        XCTAssertTrue(homePageContinueSetUpModelPersisting.userHadSubscription)
-    }
-
-    @MainActor func test_WhenUserHasSubscription_ItDoesNotShowTheSubscriptionCard() {
-        let startedAt = Date().startOfDay
-        let expiresAt = Date().startOfDay.daysAgo(-10)
-        let subscription = DuckDuckGoSubscription(
-            productId: "test",
-            name: "test",
-            billingPeriod: .yearly,
-            startedAt: startedAt,
-            expiresOrRenewsAt: expiresAt,
-            platform: .stripe,
-            status: .autoRenewable,
-            activeOffers: []
-        )
-        subscriptionManager.returnSubscription = .success(subscription)
-        let vm = HomePage.Models.ContinueSetUpModel.fixture(persistor: homePageContinueSetUpModelPersisting)
-
-        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
-
-        XCTAssertFalse(vm.visibleFeaturesMatrix.flatMap { $0 }.contains(.subscription))
-    }
-
     @MainActor func testWhenAskedToPerformActionForSubscriptionThenItOpensSubscriptionSite() {
         vm.performAction(for: .subscription)
 
-        let expectedURL = SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.onboarding.rawValue)?.url
+        let expectedURL = SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.newTabPageNextStepsCard.rawValue)?.url
 
         XCTAssertEqual(tabCollectionVM.tabs[1].url, expectedURL)
     }
@@ -531,14 +477,13 @@ extension HomePage.Models.ContinueSetUpModel {
         privacyConfig: MockPrivacyConfiguration = MockPrivacyConfiguration(),
         persistor: HomePageContinueSetUpModelPersisting = MockHomePageContinueSetUpModelPersisting(),
         dockCustomizer: DockCustomization = DockCustomizerMock(),
-        subscriptionManager: SubscriptionAuthV1toV2BridgeMock = SubscriptionAuthV1toV2BridgeMock()
+        subscriptionCardVisibilityManager: MockHomePageSubscriptionCardVisibilityManaging = MockHomePageSubscriptionCardVisibilityManaging()
     ) -> HomePage.Models.ContinueSetUpModel {
         privacyConfig.featureSettings = [
             "networkProtection": "disabled"
         ] as! [String: String]
         let manager = MockPrivacyConfigurationManager()
         manager.mockPrivacyConfig = privacyConfig
-        subscriptionManager.returnSubscription = .failure(SubscriptionManagerError.noTokenAvailable)
 
         return HomePage.Models.ContinueSetUpModel(
             defaultBrowserProvider: defaultBrowserProvider,
@@ -548,7 +493,7 @@ extension HomePage.Models.ContinueSetUpModel {
             emailManager: emailManager,
             duckPlayerPreferences: duckPlayerPreferences,
             privacyConfigurationManager: manager,
-            subscriptionManager: subscriptionManager,
+            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             persistor: persistor
         )
     }

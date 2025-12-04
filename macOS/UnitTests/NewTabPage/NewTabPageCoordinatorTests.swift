@@ -70,15 +70,14 @@ final class NewTabPageCoordinatorTests: XCTestCase {
     var featureFlagger: FeatureFlagger!
     var windowControllersManager: (WindowControllersManagerProtocol & AIChatTabManaging)!
     var tabsPreferences: TabsPreferences!
-    var subscriptionManager: SubscriptionAuthV1toV2BridgeMock!
+    var subscriptionCardVisibilityManager: MockHomePageSubscriptionCardVisibilityManaging!
     var homePageContinueSetUpModelPersisting: MockHomePageContinueSetUpModelPersisting!
 
     @MainActor
     override func setUp() async throws {
         try await super.setUp()
 
-        subscriptionManager = SubscriptionAuthV1toV2BridgeMock()
-        subscriptionManager.returnSubscription = .none
+        subscriptionCardVisibilityManager = MockHomePageSubscriptionCardVisibilityManaging()
         homePageContinueSetUpModelPersisting = MockHomePageContinueSetUpModelPersisting()
         notificationCenter = NotificationCenter()
         keyValueStore = try MockKeyValueFileStore()
@@ -155,7 +154,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             tabsPreferences: tabsPreferences,
             newTabPageAIChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(),
             winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator(winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager()),
-            subscriptionManager: subscriptionManager,
+            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             homePageContinueSetUpModelPersistor: homePageContinueSetUpModelPersisting,
             fireDailyPixel: { self.firePixelCalls.append($0) }
         )
@@ -172,7 +171,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
         tabsPreferences = nil
         themeManager = nil
         windowControllersManager = nil
-        subscriptionManager = nil
+        subscriptionCardVisibilityManager = nil
         homePageContinueSetUpModelPersisting = nil
     }
 

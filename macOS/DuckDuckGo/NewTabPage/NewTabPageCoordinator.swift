@@ -62,7 +62,7 @@ final class NewTabPageCoordinator {
         tabsPreferences: TabsPreferences,
         newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
         winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator,
-        subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+        subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
         homePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersisting,
         fireDailyPixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .legacyDaily) }
     ) {
@@ -102,7 +102,7 @@ final class NewTabPageCoordinator {
             tabsPreferences: tabsPreferences,
             newTabPageAIChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider,
             winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
-            subscriptionManager: subscriptionManager,
+            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             homePageContinueSetUpModelPersistor: homePageContinueSetUpModelPersistor
         )
         newTabPageShownPixelSender = NewTabPageShownPixelSender(

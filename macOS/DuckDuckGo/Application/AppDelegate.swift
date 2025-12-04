@@ -180,7 +180,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         tabsPreferences: tabsPreferences,
         newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration),
         winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
-        subscriptionManager: subscriptionAuthV1toV2Bridge,
+        subscriptionCardVisibilityManager: homePageSubscriptionCardVisibilityManager,
         homePageContinueSetUpModelPersistor: homePageContinueSetUpModelPersistor
     )
 
@@ -264,6 +264,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }()
 
     // MARK: - Home Page Continue Set Up Model
+
+    lazy var homePageSubscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging = {
+        return HomePageSubscriptionCardVisibilityManager(subscriptionManager: subscriptionAuthV1toV2Bridge, persistor: homePageSubscriptionCardPersistor)
+    }()
+
+    lazy var homePageSubscriptionCardPersistor: HomePageSubscriptionCardPersisting = {
+        return HomePageSubscriptionCardPersistor(keyValueStore: keyValueStore)
+    }()
 
     lazy var homePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersistor = {
         return HomePageContinueSetUpModelPersistor(keyValueStore: keyValueStore)
@@ -1728,7 +1736,7 @@ extension AppDelegate: UserScriptDependenciesProviding {
             tabsPreferences: tabsPreferences,
             newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration),
             winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
-            subscriptionManager: subscriptionAuthV1toV2Bridge,
+            subscriptionCardVisibilityManager: homePageSubscriptionCardVisibilityManager,
             homePageContinueSetUpModelPersistor: homePageContinueSetUpModelPersistor
         )
     }

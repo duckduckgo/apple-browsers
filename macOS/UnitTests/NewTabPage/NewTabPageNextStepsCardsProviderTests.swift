@@ -32,9 +32,6 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
         let config = MockPrivacyConfiguration()
         privacyConfigManager.mockPrivacyConfig = config
 
-        let subscriptionManager = SubscriptionAuthV1toV2BridgeMock()
-        subscriptionManager.returnSubscription = .none
-
         let continueSetUpModel = HomePage.Models.ContinueSetUpModel(
             defaultBrowserProvider: CapturingDefaultBrowserProvider(),
             dockCustomizer: DockCustomizerMock(),
@@ -43,7 +40,7 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
             emailManager: EmailManager(storage: MockEmailStorage()),
             duckPlayerPreferences: DuckPlayerPreferencesPersistorMock(),
             privacyConfigurationManager: privacyConfigManager,
-            subscriptionManager: subscriptionManager,
+            subscriptionCardVisibilityManager: MockHomePageSubscriptionCardVisibilityManaging(),
             persistor: MockHomePageContinueSetUpModelPersisting()
         )
 

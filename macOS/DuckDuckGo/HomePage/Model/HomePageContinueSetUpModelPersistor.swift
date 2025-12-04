@@ -26,8 +26,7 @@ protocol HomePageContinueSetUpModelPersisting {
     var shouldShowDuckPlayerSetting: Bool { get set }
     var shouldShowEmailProtectionSetting: Bool { get set }
     var isFirstSession: Bool { get set }
-    var shouldShowSubscriptionSetting: Bool { get set }
-    var userHadSubscription: Bool { get set }
+    
 }
 
 struct HomePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersisting {
@@ -40,8 +39,6 @@ struct HomePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersisting
         case homePageShowDuckPlayer = "home.page.show.duck.player"
         case homePageShowEmailProtection = "home.page.show.email.protection"
         case homePageIsFirstSession = "home.page.is.first.session"
-        case homePageShowSubscription = "home.page.show.subscription"
-        case homePageUserHadSubscription = "home.page.user.had.subscription"
     }
 
     init(keyValueStore: ThrowingKeyValueStoring) {
@@ -78,16 +75,6 @@ struct HomePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersisting
         set { try? keyValueStore.set(newValue, forKey: Key.homePageIsFirstSession.rawValue) }
     }
 
-    var shouldShowSubscriptionSetting: Bool {
-        get { (try? keyValueStore.object(forKey: Key.homePageShowSubscription.rawValue) as? Bool) ?? true }
-        set { try? keyValueStore.set(newValue, forKey: Key.homePageShowSubscription.rawValue) }
-    }
-
-    var userHadSubscription: Bool {
-        get { (try? keyValueStore.object(forKey: Key.homePageUserHadSubscription.rawValue) as? Bool) ?? false }
-        set { try? keyValueStore.set(newValue, forKey: Key.homePageUserHadSubscription.rawValue) }
-    }
-
     func clear() {
         try? keyValueStore.removeObject(forKey: Key.homePageShowMakeDefault.rawValue)
         try? keyValueStore.removeObject(forKey: Key.homePageShowAddToDock.rawValue)
@@ -95,7 +82,5 @@ struct HomePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersisting
         try? keyValueStore.removeObject(forKey: Key.homePageShowDuckPlayer.rawValue)
         try? keyValueStore.removeObject(forKey: Key.homePageShowEmailProtection.rawValue)
         try? keyValueStore.removeObject(forKey: Key.homePageIsFirstSession.rawValue)
-        try? keyValueStore.removeObject(forKey: Key.homePageShowSubscription.rawValue)
-        try? keyValueStore.removeObject(forKey: Key.homePageUserHadSubscription.rawValue)
     }
 }

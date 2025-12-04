@@ -47,7 +47,7 @@ final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTes
             authEndpointService: AuthEndpointServiceMock(),
             storePurchaseManager: mockStorePurchaseManager,
             currentEnvironment: SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore),
-            canPurchase: true,
+            hasAppStoreProductsAvailable: true,
             subscriptionFeatureMappingCache: SubscriptionFeatureMappingCacheMock())
 
         mockAppStorePurchaseFlow = AppStorePurchaseFlowMock()
@@ -65,7 +65,7 @@ final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTes
 
         // Given
         mockAccountManager.accessToken = nil
-        mockSubscriptionManager.canPurchase = true
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
         mockAppStorePurchaseFlow.purchaseSubscriptionResult = .success("")
         mockAppStorePurchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
         mockAppStorePurchaseFlow.purchaseSubscriptionBlock = { self.mockAccountManager.accessToken = "token" }
@@ -104,7 +104,7 @@ final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTes
 
         // Given
         mockAccountManager.accessToken = nil
-        mockSubscriptionManager.canPurchase = true
+        mockSubscriptionManager.hasAppStoreProductsAvailable = true
         mockAppStorePurchaseFlow.purchaseSubscriptionResult = .success("")
         mockAppStorePurchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
         mockAppStorePurchaseFlow.purchaseSubscriptionBlock = { self.mockAccountManager.accessToken = "token" }

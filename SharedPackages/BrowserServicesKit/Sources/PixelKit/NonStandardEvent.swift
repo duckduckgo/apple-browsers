@@ -35,4 +35,8 @@ public final class NonStandardEvent: PixelKitEvent {
         event.parameters
     }
 
+    public var standardParameters: [PixelKitStandardParameter]? {
+        event.standardParameters
+    }
+
 }

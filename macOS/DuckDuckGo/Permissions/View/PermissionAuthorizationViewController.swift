@@ -17,6 +17,7 @@
 //
 
 import Cocoa
+import SwiftUI
 
 extension PermissionType {
     var localizedDescription: String {
@@ -55,6 +56,8 @@ extension Array where Element == PermissionType {
 
 final class PermissionAuthorizationViewController: NSViewController {
 
+    let systemPermissionManager = SystemPermissionManager()
+
     @IBOutlet var descriptionLabel: NSTextField!
     @IBOutlet var domainNameLabel: NSTextField!
     @IBOutlet var alwaysAllowCheckbox: NSButton!
@@ -66,17 +69,54 @@ final class PermissionAuthorizationViewController: NSViewController {
     @IBOutlet weak var linkButton: LinkButton!
     @IBOutlet weak var allowButton: NSButton!
 
+    private var swiftUIHostingView: NSHostingView<PermissionAuthorizationSwiftUIView>?
+    private let newPermissionView: Bool
+
     weak var query: PermissionAuthorizationQuery? {
         didSet {
-            updateText()
+            if newPermissionView {
+                setupSwiftUIView()
+            } else {
+                updateText()
+            }
+        }
+    }
+
+    // Programmatic initializer for SwiftUI mode
+    init(newPermissionView: Bool) {
+        self.newPermissionView = newPermissionView
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    // Storyboard initializer
+    required init?(coder: NSCoder) {
+        self.newPermissionView = false
+        super.init(coder: coder)
+    }
+
+    override func loadView() {
+        if newPermissionView {
+            // Create a simple container view for SwiftUI
+            view = NSView()
+        } else {
+            // Load from nib/storyboard
+            super.loadView()
         }
     }
 
     override func viewDidLoad() {
-        updateText()
+        super.viewDidLoad()
+
+        if newPermissionView {
+            setupSwiftUIView()
+        } else {
+            updateText()
+        }
     }
 
     override func viewWillAppear() {
+        guard !newPermissionView else { return }
+
         alwaysAllowCheckbox.state = .off
         if query?.shouldShowCancelInsteadOfDeny == true {
             denyButton.title = UserText.cancel
@@ -87,7 +127,8 @@ final class PermissionAuthorizationViewController: NSViewController {
     }
 
     private func updateText() {
-        guard isViewLoaded,
+        guard !newPermissionView,
+              isViewLoaded,
               let query = query,
               !query.permissions.isEmpty
         else { return }
@@ -123,15 +164,18 @@ final class PermissionAuthorizationViewController: NSViewController {
     }
 
     @IBAction func alwaysAllowLabelClick(_ sender: Any) {
+        guard !newPermissionView else { return }
         alwaysAllowCheckbox.setNextState()
     }
 
     @IBAction func grantAction(_ sender: NSButton) {
+        guard !newPermissionView else { return }
         self.dismiss()
         query?.handleDecision(grant: true, remember: query!.shouldShowAlwaysAllowCheckbox && alwaysAllowCheckbox.state == .on)
     }
 
     @IBAction func denyAction(_ sender: NSButton) {
+        guard !newPermissionView else { return }
         self.dismiss()
         guard let query = query,
               !query.shouldShowCancelInsteadOfDeny
@@ -141,6 +185,69 @@ final class PermissionAuthorizationViewController: NSViewController {
     }
 
     @IBAction func learnMoreAction(_ sender: NSButton) {
+        guard !newPermissionView else { return }
         Application.appDelegate.windowControllersManager.show(url: "https://help.duckduckgo.com/privacy/device-location-services".url, source: .ui, newTab: true)
+    }
+
+    // MARK: - SwiftUI View Setup
+
+    private func setupSwiftUIView() {
+        guard newPermissionView, let query = query, !query.permissions.isEmpty else { return }
+
+        // Remove all existing subviews to ensure clean state
+        view.subviews.forEach { $0.removeFromSuperview() }
+        swiftUIHostingView = nil
+
+        let permissionType = PermissionAuthorizationType(from: query.permissions)
+        let swiftUIView = PermissionAuthorizationSwiftUIView(
+            domain: query.domain,
+            permissionType: permissionType,
+            onDeny: { [weak self] in
+                self?.handleDeny()
+            },
+            onAlwaysDeny: { [weak self] in
+                self?.handleAlwaysDeny()
+            },
+            onAllow: { [weak self] in
+                self?.handleAllow()
+            },
+            onAlwaysAllow: { [weak self] in
+                self?.handleAlwaysAllow()
+            },
+            systemPermissionManager: systemPermissionManager
+        )
+
+        let hostingView = NSHostingView(rootView: swiftUIView)
+        hostingView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(hostingView)
+
+        NSLayoutConstraint.activate([
+            hostingView.topAnchor.constraint(equalTo: view.topAnchor),
+            hostingView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            hostingView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            hostingView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+        ])
+
+        swiftUIHostingView = hostingView
+    }
+
+    private func handleDeny() {
+        dismiss()
+        query?.handleDecision(grant: false, remember: nil)
+    }
+
+    private func handleAlwaysDeny() {
+        dismiss()
+        query?.handleDecision(grant: false, remember: true)
+    }
+
+    private func handleAllow() {
+        dismiss()
+        query?.handleDecision(grant: true, remember: nil)
+    }
+
+    private func handleAlwaysAllow() {
+        dismiss()
+        query?.handleDecision(grant: true, remember: true)
     }
 }

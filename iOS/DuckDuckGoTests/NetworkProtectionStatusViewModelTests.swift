@@ -47,7 +47,7 @@ final class NetworkProtectionStatusViewModelTests: XCTestCase {
                                                       authEndpointService: AuthEndpointServiceMock(),
                                                       storePurchaseManager: StorePurchaseManagerMock(),
                                                       currentEnvironment: SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore),
-                                                      canPurchase: true,
+                                                      hasAppStoreProductsAvailable: true,
                                                       subscriptionFeatureMappingCache: SubscriptionFeatureMappingCacheMock())
         viewModel = NetworkProtectionStatusViewModel(tunnelController: tunnelController,
                                                      settings: VPNSettings(defaults: .networkProtectionGroupDefaults),

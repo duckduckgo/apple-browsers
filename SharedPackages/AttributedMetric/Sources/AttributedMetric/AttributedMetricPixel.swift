@@ -33,11 +33,11 @@ enum AttributedMetricPixelName: String {
     case dataStoreError = "attributed_metric_data_store_error"
 }
 
-/// Note: These pixels will need to be sent with a custom PixelKit instance that is not sending ATB, app version as specified in https://app.asana.com/1/137249556945/project/72649045549333/task/1210849966244847?focus=true
 /// All pixels below will not
 /// - Send any default parameters such as app version and ATB
 /// - Appending app/OS version in the User-Agent header
 /// - Send default suffixes such as [phone|tablet]  or [store|direct]
+/// See https://app.asana.com/1/137249556945/project/72649045549333/task/1210849966244847?focus=true
 enum AttributedMetricPixel: PixelKitEvent {
 
     // Metrics
@@ -134,8 +134,25 @@ enum AttributedMetricPixel: PixelKitEvent {
                           ConstantKeys.bucketVersion: bucketVersion.payloadString]
             addBaseParamFor(dictionary: &result, origin: origin, installDate: installDate)
             return result
+        default:
+            return nil
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .userRetentionWeek,
+                .userRetentionMonth,
+                .userActivePastWeek,
+                .userAverageSearchesPastWeekFirstMonth,
+                .userAverageSearchesPastWeek,
+                .userAverageAdClicksPastWeek,
+                .userAverageDuckAiUsagePastWeek,
+                .userSubscribed,
+                .userSyncedDevice:
+            return [] // pixelSource is not included for AttributedMetric pixels
         case .dataStoreError:
-            return [:]
+            return [.pixelSource]
         }
     }
 

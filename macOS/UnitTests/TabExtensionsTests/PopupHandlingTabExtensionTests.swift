@@ -46,7 +46,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
         mockFeatureFlagger = MockFeatureFlagger()
         mockPopupBlockingConfig = MockPopupBlockingConfiguration()
         testPermissionManager = TestPermissionManager()
-        mockPermissionModel = PermissionModel(permissionManager: testPermissionManager)
+        mockPermissionModel = PermissionModel(permissionManager: testPermissionManager, featureFlagger: mockFeatureFlagger)
         webView = WebView()
         configuration = WKWebViewConfiguration()
         windowFeatures = WKWindowFeatures()
@@ -2223,6 +2223,10 @@ class TestPermissionManager: PermissionManagerProtocol {
         MainActor.assumeMainThread {
             completion()
         }
+    }
+
+    func removePermission(forDomain domain: String, permissionType: PermissionType) {
+        persistedPermissions[domain]?[permissionType] = nil
     }
 
     var persistedPermissionTypes: Set<PermissionType> { return [] }

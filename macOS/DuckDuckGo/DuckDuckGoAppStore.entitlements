@@ -53,14 +53,6 @@
 		<string>$(DBP_BACKGROUND_AGENT_BUNDLE_ID)</string>
 		<string>$(AGENT_BUNDLE_ID)</string>
 	</array>
-	<key>com.apple.security.temporary-exception.files.home-relative-path.read-write</key>
-	<array>
-		<string>/Library/Preferences/com.apple.dock.plist</string>
-	</array>
-	<key>com.apple.security.temporary-exception.apple-events</key>
-	<array>
-		<string>com.apple.dock</string>
-	</array>
 	<key>keychain-access-groups</key>
 	<array>
 		<string>$(DBP_APP_GROUP)</string>

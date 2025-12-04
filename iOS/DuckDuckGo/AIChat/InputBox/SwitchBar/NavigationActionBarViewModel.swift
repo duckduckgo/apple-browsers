@@ -20,6 +20,7 @@
 import Foundation
 import Combine
 import SwiftUI
+import BrowserServicesKit
 
 // MARK: - NavigationActionBarViewModel
 
@@ -33,6 +34,14 @@ final class NavigationActionBarViewModel: ObservableObject {
     @Published var hasUserInteractedWithText: Bool = false
     @Published var isCurrentTextValidURL: Bool = false
     @Published var isKeyboardVisible: Bool = false
+
+    var isUsingFadeOutAnimation: Bool {
+        switchBarHandler.isUsingFadeOutAnimation
+    }
+
+    var isUsingSmallerBottomInput: Bool {
+        switchBarHandler.isUsingSmallerBottomInput
+    }
 
     // MARK: - Dependencies
     private let switchBarHandler: SwitchBarHandling
@@ -119,6 +128,10 @@ final class NavigationActionBarViewModel: ObservableObject {
     var shouldShowMicButton: Bool {
         // https://app.asana.com/1/137249556945/project/72649045549333/task/1210777323867681?focus=true
         guard isVoiceSearchEnabled else { return false }
+
+        if isUsingSmallerBottomInput && isSearchMode && !switchBarHandler.isTopBarPosition {
+            return false
+        }
 
         // If no text, show mic only for top position,
         // for bottom we show mic inside input field.

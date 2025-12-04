@@ -143,6 +143,7 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Tab closing event recreation feature flag (failsafe for removing private API)
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212206087745586?focus=true
     case tabClosingEventRecreation
+
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -167,6 +168,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211660503405838?focus=true
     case forgetAllInSettings
+
+    /// https://app.asana.com/1/137249556945/project/481882893211075/task/1212057154681076?focus=true
+    case productTelemetrySurfaceUsage
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212229431540900
     case granularFireButtonOptions
@@ -285,6 +289,12 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Controls showing the Hide AI section in Settings -> AI Features
     case showHideAiGeneratedImages
+
+    /// Controls showing the AI Chat as Tabs Experiment Setting in Settings -> AI Features
+    case fullDuckAIModeExperimentalSetting
+
+    /// Controls different input sizes and fade out animation for toggle.
+    case fadeOutOnToggle
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

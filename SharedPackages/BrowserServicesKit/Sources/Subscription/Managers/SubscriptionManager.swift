@@ -32,9 +32,9 @@ public protocol SubscriptionManager: SubscriptionTokenProvider, SubscriptionAuth
     static func save(subscriptionEnvironment: SubscriptionEnvironment, userDefaults: UserDefaults)
     var currentEnvironment: SubscriptionEnvironment { get }
 
-    var canPurchase: Bool { get }
-    /// Publisher that emits a boolean value indicating whether the user can purchase.
-    var canPurchasePublisher: AnyPublisher<Bool, Never> { get }
+    var hasAppStoreProductsAvailable: Bool { get }
+    /// Publisher that emits a boolean value indicating whether the user can purchase through the App Store.
+    var hasAppStoreProductsAvailablePublisher: AnyPublisher<Bool, Never> { get }
     @available(macOS 12.0, iOS 15.0, *) func storePurchaseManager() -> StorePurchaseManager
     func loadInitialData() async
     func refreshCachedSubscriptionAndEntitlements(completion: @escaping (_ isSubscriptionActive: Bool) -> Void)
@@ -57,7 +57,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     public let subscriptionFeatureMappingCache: SubscriptionFeatureMappingCache
     public let currentEnvironment: SubscriptionEnvironment
     private let isInternalUserEnabled: () -> Bool
-    private let canPurchaseSubject = PassthroughSubject<Bool, Never>()
+    private let hasAppStoreProductsAvailableSubject = PassthroughSubject<Bool, Never>()
     private var cancellables = Set<AnyCancellable>()
 
     public init(storePurchaseManager: StorePurchaseManager? = nil,
@@ -87,15 +87,15 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
         }
     }
 
-    public var canPurchase: Bool {
+    public var hasAppStoreProductsAvailable: Bool {
         guard let storePurchaseManager = _storePurchaseManager else { return false }
 
         return storePurchaseManager.areProductsAvailable
     }
 
-    /// Publisher that emits a boolean value indicating whether the user can purchase.
+    /// Publisher that emits a boolean value indicating whether the user can purchase through the App Store.
     /// The value is updated whenever the `areProductsAvailablePublisher` of the underlying StorePurchaseManager emits a new value.
-    public var canPurchasePublisher: AnyPublisher<Bool, Never> { canPurchaseSubject.eraseToAnyPublisher() }
+    public var hasAppStoreProductsAvailablePublisher: AnyPublisher<Bool, Never> { hasAppStoreProductsAvailableSubject.eraseToAnyPublisher() }
 
     @available(macOS 12.0, iOS 15.0, *)
     public func storePurchaseManager() -> StorePurchaseManager {
@@ -127,7 +127,7 @@ public final class DefaultSubscriptionManager: SubscriptionManager {
     @available(macOS 12.0, iOS 15.0, *) private func setupForAppStore() {
         storePurchaseManager().areProductsAvailablePublisher
             .sink { [weak self] value in
-                self?.canPurchaseSubject.send(value)
+                self?.hasAppStoreProductsAvailableSubject.send(value)
             }
             .store(in: &cancellables)
 

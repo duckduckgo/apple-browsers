@@ -200,7 +200,6 @@ public final class PixelKit {
                      withNamePrefix namePrefix: String? = nil,
                      allowedQueryReservedCharacters: CharacterSet? = nil,
                      includeAppVersionParameter: Bool = true,
-                     includePixelSourceParameter: Bool = true,
                      onComplete: @escaping CompletionBlock = { _, _ in }) {
 
         let pixelName = prefixedAndSuffixedName(for: event, namePrefix: namePrefix)
@@ -242,7 +241,7 @@ public final class PixelKit {
              withError: event.error,
              allowedQueryReservedCharacters: allowedQueryReservedCharacters,
              includeAppVersionParameter: includeAppVersionParameter,
-             includePixelSourceParameter: includePixelSourceParameter,
+             standardParameters: event.standardParameters ?? [],
              onComplete: onComplete)
     }
 
@@ -253,7 +252,6 @@ public final class PixelKit {
                             withNamePrefix namePrefix: String? = nil,
                             allowedQueryReservedCharacters: CharacterSet? = nil,
                             includeAppVersionParameter: Bool = true,
-                            includePixelSourceParameter: Bool = true,
                             onComplete: @escaping CompletionBlock = { _, _ in }) {
 
         Self.shared?.fire(event,
@@ -263,7 +261,6 @@ public final class PixelKit {
                           withNamePrefix: namePrefix,
                           allowedQueryReservedCharacters: allowedQueryReservedCharacters,
                           includeAppVersionParameter: includeAppVersionParameter,
-                          includePixelSourceParameter: includePixelSourceParameter,
                           onComplete: onComplete)
     }
 
@@ -276,12 +273,12 @@ public final class PixelKit {
                       withError error: NSError?,
                       allowedQueryReservedCharacters: CharacterSet?,
                       includeAppVersionParameter: Bool,
-                      includePixelSourceParameter: Bool,
+                      standardParameters: [PixelKitStandardParameter],
                       onComplete: @escaping CompletionBlock) {
 
         var newParams = params ?? [:]
         if includeAppVersionParameter { newParams[Parameters.appVersion] = appVersion }
-        if includePixelSourceParameter, let source { newParams[Parameters.pixelSource] = source }
+        if standardParameters.contains(.pixelSource), let source { newParams[Parameters.pixelSource] = source }
         if let error { newParams.appendErrorPixelParams(error: error) }
 
         #if DEBUG

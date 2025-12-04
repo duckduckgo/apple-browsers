@@ -1186,18 +1186,6 @@
         }
       }
     },
-    "address.bar.placeholder.with-duckai" : {
-      "comment" : "Address bar placeholder when Duck.ai toggle is available",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "⇥ Press tab then enter to ask Duck.ai"
-          }
-        }
-      }
-    },
     "address.bar.search.open.tab.suffix" : {
       "comment" : "Suffix of DuckDuckGo Search open tab suggestion. Example: cats – DuckDuckGo Search",
       "extractionState" : "extracted_with_value",
@@ -2091,14 +2079,14 @@
         }
       }
     },
-    "aichat.chat-with-ai.tooltip" : {
+    "aichat.ask-privately.tooltip" : {
       "comment" : "Tooltip for the chat with AI segment in the toggle control",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Chat with AI"
+            "value" : "Ask privately"
           }
         }
       }
@@ -2110,19 +2098,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Chat Privately"
+            "value" : "Ask privately"
           }
         }
       }
     },
-    "aichat.search-the-web.tooltip" : {
+    "aichat.search-privately.tooltip" : {
       "comment" : "Tooltip for the search the web segment in the toggle control",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Search the Web"
+            "value" : "Search Privately"
           }
         }
       }
@@ -2315,6 +2303,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Duck.ai"
+          }
+        }
+      }
+    },
+    "aichat.toggle.ask.label" : {
+      "comment" : "Label for the ask AI segment in the address bar toggle control",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai"
+          }
+        }
+      }
+    },
+    "aichat.toggle.search.label" : {
+      "comment" : "Label for the search segment in the address bar toggle control",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search"
           }
         }
       }
@@ -60390,6 +60402,78 @@
         }
       }
     },
+    "permission.center.always.allow" : {
+      "comment" : "Permission center dropdown option to always allow permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Always Allow"
+          }
+        }
+      }
+    },
+    "permission.center.always.ask" : {
+      "comment" : "Permission center dropdown option to always ask for permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Always Ask"
+          }
+        }
+      }
+    },
+    "permission.center.external.apps" : {
+      "comment" : "Permission center header for external app permissions",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "External Apps"
+          }
+        }
+      }
+    },
+    "permission.center.external.scheme.description" : {
+      "comment" : "Description for external scheme permission, first %@ is domain, second %@ is scheme name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ to open \"%2$@\" links"
+          }
+        }
+      }
+    },
+    "permission.center.never.allow" : {
+      "comment" : "Permission center dropdown option to never allow permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Never Allow"
+          }
+        }
+      }
+    },
+    "permission.center.title" : {
+      "comment" : "Title for permission center popover, %@ is the domain name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Permissions for \"%@\""
+          }
+        }
+      }
+    },
     "permission.disabled.app" : {
       "comment" : "The app (DuckDuckGo: %@ 2) has no access permission to (%@ 1) media device",
       "extractionState" : "extracted_with_value",
@@ -60626,6 +60710,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Местоположение"
+          }
+        }
+      }
+    },
+    "permission.geolocation.prompt.format" : {
+      "comment" : "Prompt asking if domain %@ can use location",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow %@ to use your current location?"
           }
         }
       }
@@ -60990,6 +61086,30 @@
         }
       }
     },
+    "permission.popup.always.allow.button" : {
+      "comment" : "Button that grants permission and remembers the decision for future requests",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Always Allow"
+          }
+        }
+      }
+    },
+    "permission.popup.always.deny.button" : {
+      "comment" : "Button that denies permission and remembers the decision for future requests",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Never Allow"
+          }
+        }
+      }
+    },
     "permission.popup.blocked.popover" : {
       "comment" : "Text of popover warning the user that a pop-up has been blocked",
       "extractionState" : "extracted_with_value",
@@ -61050,6 +61170,18 @@
         }
       }
     },
+    "permission.popup.deny.button" : {
+      "comment" : "Button that denies permission for this request only",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Deny"
+          }
+        }
+      }
+    },
     "permission.popup.learn-more.link" : {
       "comment" : "Text of link that leads to web page with more informations about location services.",
       "extractionState" : "extracted_with_value",
@@ -61106,6 +61238,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Подробнее о службах геолокации"
+          }
+        }
+      }
+    },
+    "permission.popup.never.allow.button" : {
+      "comment" : "Button that denies permission and remembers the decision for future requests",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Never Allow"
           }
         }
       }
@@ -61567,6 +61711,78 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Перезагрузите страницу, чтобы снова увидеть запрос"
+          }
+        }
+      }
+    },
+    "permission.restart.app" : {
+      "comment" : "Text shown when app restart is required for permission changes to take effect",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Restart the DuckDuckGo application"
+          }
+        }
+      }
+    },
+    "permission.system.location.disabled" : {
+      "comment" : "Text shown when system location was previously denied. Followed by a link to System Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "System location disabled. Turn it on in "
+          }
+        }
+      }
+    },
+    "permission.system.location.enable" : {
+      "comment" : "Button to enable system location services",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Enable System Location"
+          }
+        }
+      }
+    },
+    "permission.system.location.enabled" : {
+      "comment" : "Text shown after system location permission has been granted",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "System location enabled!"
+          }
+        }
+      }
+    },
+    "permission.system.location.waiting" : {
+      "comment" : "Text shown while waiting for user to respond to system location permission dialog",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Waiting for system permission…"
+          }
+        }
+      }
+    },
+    "permission.system.settings.location" : {
+      "comment" : "Link text to open System Settings Privacy section for location",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "System Settings → Privacy"
           }
         }
       }
@@ -85113,14 +85329,14 @@
         }
       }
     },
-    "suggestion.search.the.web" : {
+    "suggestion.search.privately" : {
       "comment" : "Label shown on the search suggestion cell indicating the action will search the web",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Search the web"
+            "value" : "Search privately"
           }
         }
       }

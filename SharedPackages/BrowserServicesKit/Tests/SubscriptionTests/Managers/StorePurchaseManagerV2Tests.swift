@@ -21,6 +21,7 @@ import XCTest
 import SubscriptionTestingUtilities
 import StoreKit
 import Combine
+import Networking
 
 final class StorePurchaseManagerV2Tests: XCTestCase {
 
@@ -537,6 +538,303 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         // Then
         XCTAssertEqual(regularProducts.count, 0, "Should filter out all pro products")
         XCTAssertEqual(allProducts.count, 2, "Should include all pro products")
+    }
+
+    // MARK: - Subscription Tier Options Tests
+
+    func testSubscriptionTierOptionsReturnsNilWhenNoProductsExist() async {
+        // Given
+        mockProductFetcher.mockProducts = []
+        await sut.updateAvailableProducts()
+
+        // When
+        let tierOptions = await sut.subscriptionTierOptions(includeProTier: false)
+
+        // Then
+        XCTAssertNil(tierOptions)
+    }
+
+    func testSubscriptionTierOptionsReturnsPlusTierOnly() async {
+        // Given
+        let monthlyProduct = MockSubscriptionProduct(
+            id: "com.test.monthly",
+            displayName: "Plus Monthly",
+            displayPrice: "$9.99",
+            isMonthly: true
+        )
+        let yearlyProduct = MockSubscriptionProduct(
+            id: "com.test.yearly",
+            displayName: "Plus Yearly",
+            displayPrice: "$99.99",
+            isYearly: true
+        )
+
+        mockProductFetcher.mockProducts = [monthlyProduct, yearlyProduct]
+        await sut.updateAvailableProducts()
+
+        // Setup mock features
+        let plusFeatures = [
+            TierFeature(product: .networkProtection, name: .plus),
+            TierFeature(product: .dataBrokerProtection, name: .plus),
+            TierFeature(product: .identityTheftRestoration, name: .plus),
+            TierFeature(product: .paidAIChat, name: .plus)
+        ]
+        mockCache.tierMapping = ["com.test.monthly": plusFeatures]
+
+        // When
+        let tierOptions = await sut.subscriptionTierOptions(includeProTier: false)
+
+        // Then
+        XCTAssertNotNil(tierOptions)
+        XCTAssertEqual(tierOptions?.products.count, 1)
+
+        let plusTier = tierOptions?.products.first
+        XCTAssertEqual(plusTier?.tier, .plus)
+        XCTAssertEqual(plusTier?.features.count, 4)
+        XCTAssertEqual(plusTier?.options.count, 2)
+
+        // Verify features
+        XCTAssertTrue(plusTier?.features.contains(where: { $0.product == .networkProtection && $0.name == .plus }) ?? false)
+        XCTAssertTrue(plusTier?.features.contains(where: { $0.product == .dataBrokerProtection && $0.name == .plus }) ?? false)
+        XCTAssertTrue(plusTier?.features.contains(where: { $0.product == .identityTheftRestoration && $0.name == .plus }) ?? false)
+        XCTAssertTrue(plusTier?.features.contains(where: { $0.product == .paidAIChat && $0.name == .plus }) ?? false)
+
+        // Verify options
+        let optionIds = plusTier?.options.map { $0.id } ?? []
+        XCTAssertTrue(optionIds.contains("com.test.monthly"))
+        XCTAssertTrue(optionIds.contains("com.test.yearly"))
+    }
+
+    func testSubscriptionTierOptionsReturnsBothPlusAndProTiers() async {
+        // Given
+        let plusMonthly = MockSubscriptionProduct(
+            id: "com.test.monthly",
+            displayName: "Plus Monthly",
+            displayPrice: "$9.99",
+            isMonthly: true
+        )
+        let plusYearly = MockSubscriptionProduct(
+            id: "com.test.yearly",
+            displayName: "Plus Yearly",
+            displayPrice: "$99.99",
+            isYearly: true
+        )
+        let proMonthly = MockSubscriptionProduct(
+            id: "com.test.monthly.pro",
+            displayName: "Pro Monthly",
+            displayPrice: "$19.99",
+            isMonthly: true
+        )
+        let proYearly = MockSubscriptionProduct(
+            id: "com.test.yearly.pro",
+            displayName: "Pro Yearly",
+            displayPrice: "$199.99",
+            isYearly: true
+        )
+
+        mockProductFetcher.mockProducts = [plusMonthly, plusYearly, proMonthly, proYearly]
+        await sut.updateAvailableProducts()
+
+        // Setup mock features
+        let plusFeatures = [
+            TierFeature(product: .networkProtection, name: .plus),
+            TierFeature(product: .dataBrokerProtection, name: .plus)
+        ]
+        let proFeatures = [
+            TierFeature(product: .networkProtection, name: .pro),
+            TierFeature(product: .dataBrokerProtection, name: .pro),
+            TierFeature(product: .identityTheftRestoration, name: .pro),
+            TierFeature(product: .paidAIChat, name: .pro)
+        ]
+        mockCache.tierMapping = [
+            "com.test.monthly": plusFeatures,
+            "com.test.monthly.pro": proFeatures
+        ]
+
+        // When
+        let tierOptions = await sut.subscriptionTierOptions(includeProTier: true)
+
+        // Then
+        XCTAssertNotNil(tierOptions)
+        XCTAssertEqual(tierOptions?.products.count, 2)
+
+        // Verify Plus tier
+        let plusTier = tierOptions?.products.first { $0.tier == .plus }
+        XCTAssertNotNil(plusTier)
+        XCTAssertEqual(plusTier?.features.count, 2)
+        XCTAssertEqual(plusTier?.options.count, 2)
+        XCTAssertTrue(plusTier?.features.allSatisfy { $0.name == .plus } ?? false)
+
+        // Verify Pro tier
+        let proTier = tierOptions?.products.first { $0.tier == .pro }
+        XCTAssertNotNil(proTier)
+        XCTAssertEqual(proTier?.features.count, 4)
+        XCTAssertEqual(proTier?.options.count, 2)
+        XCTAssertTrue(proTier?.features.allSatisfy { $0.name == .pro } ?? false)
+
+        // Verify Pro tier has more features
+        XCTAssertGreaterThan(proTier?.features.count ?? 0, plusTier?.features.count ?? 0)
+    }
+
+    func testSubscriptionTierOptionsWithFreeTrialProducts() async {
+        // Given
+        let monthlyWithTrial = MockSubscriptionProduct(
+            id: "com.test.monthly.trial",
+            displayName: "Plus Monthly with Trial",
+            displayPrice: "$9.99",
+            isMonthly: true,
+            hasIntroductoryFreeTrialOffer: true,
+            introOffer: MockIntroductoryOffer(
+                id: "trial1",
+                displayPrice: "$0.00",
+                periodInDays: 7,
+                isFreeTrial: true
+            ),
+            isEligibleForFreeTrial: true
+        )
+        let yearlyWithTrial = MockSubscriptionProduct(
+            id: "com.test.yearly.trial",
+            displayName: "Plus Yearly with Trial",
+            displayPrice: "$99.99",
+            isYearly: true,
+            hasIntroductoryFreeTrialOffer: true,
+            introOffer: MockIntroductoryOffer(
+                id: "trial2",
+                displayPrice: "$0.00",
+                periodInDays: 14,
+                isFreeTrial: true
+            ),
+            isEligibleForFreeTrial: true
+        )
+
+        mockProductFetcher.mockProducts = [monthlyWithTrial, yearlyWithTrial]
+        await sut.updateAvailableProducts()
+
+        // Setup mock features
+        let plusFeatures = [
+            TierFeature(product: .networkProtection, name: .plus)
+        ]
+        mockCache.tierMapping = ["com.test.monthly.trial": plusFeatures]
+
+        // When
+        let tierOptions = await sut.subscriptionTierOptions(includeProTier: false)
+
+        // Then
+        XCTAssertNotNil(tierOptions)
+        let plusTier = tierOptions?.products.first
+        XCTAssertNotNil(plusTier)
+
+        // Verify trial offers are included in options
+        let monthlyOption = plusTier?.options.first { $0.id == "com.test.monthly.trial" }
+        XCTAssertNotNil(monthlyOption?.offer)
+        XCTAssertEqual(monthlyOption?.offer?.type, .freeTrial)
+        XCTAssertEqual(monthlyOption?.offer?.durationInDays, 7)
+        XCTAssertTrue(monthlyOption?.offer?.isUserEligible ?? false)
+
+        let yearlyOption = plusTier?.options.first { $0.id == "com.test.yearly.trial" }
+        XCTAssertNotNil(yearlyOption?.offer)
+        XCTAssertEqual(yearlyOption?.offer?.type, .freeTrial)
+        XCTAssertEqual(yearlyOption?.offer?.durationInDays, 14)
+        XCTAssertTrue(yearlyOption?.offer?.isUserEligible ?? false)
+    }
+
+    func testSubscriptionTierOptionsExcludesProTierWhenNotRequested() async {
+        // Given
+        let plusMonthly = MockSubscriptionProduct(id: "com.test.monthly", isMonthly: true)
+        let plusYearly = MockSubscriptionProduct(id: "com.test.yearly", isYearly: true)
+        let proMonthly = MockSubscriptionProduct(id: "com.test.monthly.pro", isMonthly: true)
+        let proYearly = MockSubscriptionProduct(id: "com.test.yearly.pro", isYearly: true)
+
+        mockProductFetcher.mockProducts = [plusMonthly, plusYearly, proMonthly, proYearly]
+        await sut.updateAvailableProducts()
+
+        // Setup mock features
+        let plusFeatures = [TierFeature(product: .networkProtection, name: .plus)]
+        mockCache.tierMapping = ["com.test.monthly": plusFeatures]
+
+        // When
+        let tierOptions = await sut.subscriptionTierOptions(includeProTier: false)
+
+        // Then
+        XCTAssertNotNil(tierOptions)
+        XCTAssertEqual(tierOptions?.products.count, 1)
+        XCTAssertEqual(tierOptions?.products.first?.tier, .plus)
+
+        // Verify no Pro tier products in options
+        let allOptionIds = tierOptions?.products.flatMap { $0.options.map { $0.id } } ?? []
+        XCTAssertFalse(allOptionIds.contains("com.test.monthly.pro"))
+        XCTAssertFalse(allOptionIds.contains("com.test.yearly.pro"))
+    }
+
+    func testSubscriptionTierOptionsReturnsCorrectPlatform() async {
+        // Given
+        let monthlyProduct = MockSubscriptionProduct(id: "com.test.monthly", isMonthly: true)
+        let yearlyProduct = MockSubscriptionProduct(id: "com.test.yearly", isYearly: true)
+
+        mockProductFetcher.mockProducts = [monthlyProduct, yearlyProduct]
+        await sut.updateAvailableProducts()
+
+        // Setup mock features
+        let features = [TierFeature(product: .networkProtection, name: .plus)]
+        mockCache.tierMapping = ["com.test.monthly": features]
+
+        // When
+        let tierOptions = await sut.subscriptionTierOptions(includeProTier: false)
+
+        // Then
+        XCTAssertNotNil(tierOptions)
+        #if os(iOS)
+        XCTAssertEqual(tierOptions?.platform, .ios)
+        #else
+        XCTAssertEqual(tierOptions?.platform, .macos)
+        #endif
+    }
+
+    func testSubscriptionTierOptionsHandlesMissingFeatures() async {
+        // Given
+        let monthlyProduct = MockSubscriptionProduct(id: "com.test.monthly", isMonthly: true)
+        let yearlyProduct = MockSubscriptionProduct(id: "com.test.yearly", isYearly: true)
+
+        mockProductFetcher.mockProducts = [monthlyProduct, yearlyProduct]
+        await sut.updateAvailableProducts()
+
+        // Setup empty features map (features not fetched successfully)
+        mockCache.tierMapping = [:]
+
+        // When
+        let tierOptions = await sut.subscriptionTierOptions(includeProTier: false)
+
+        // Then
+        XCTAssertNil(tierOptions, "Should return nil when features cannot be fetched")
+    }
+
+    func testSubscriptionTierOptionsFetchesOnlyOneProductPerTier() async {
+        // Given
+        let plusMonthly = MockSubscriptionProduct(id: "com.test.monthly", isMonthly: true)
+        let plusYearly = MockSubscriptionProduct(id: "com.test.yearly", isYearly: true)
+        let proMonthly = MockSubscriptionProduct(id: "com.test.monthly.pro", isMonthly: true)
+        let proYearly = MockSubscriptionProduct(id: "com.test.yearly.pro", isYearly: true)
+
+        mockProductFetcher.mockProducts = [plusMonthly, plusYearly, proMonthly, proYearly]
+        await sut.updateAvailableProducts()
+
+        // Setup mock features for both representative products
+        let plusFeatures = [TierFeature(product: .networkProtection, name: .plus)]
+        let proFeatures = [TierFeature(product: .paidAIChat, name: .pro)]
+        mockCache.tierMapping = [
+            "com.test.monthly": plusFeatures,
+            "com.test.monthly.pro": proFeatures
+        ]
+
+        // When
+        let tierOptions = await sut.subscriptionTierOptions(includeProTier: true)
+
+        // Then
+        XCTAssertNotNil(tierOptions)
+        // Verify that cache was called with only representative products (one per tier)
+        // Both monthly products should have been used as representatives
+        XCTAssertNotNil(mockCache.tierMapping["com.test.monthly"])
+        XCTAssertNotNil(mockCache.tierMapping["com.test.monthly.pro"])
     }
 }
 

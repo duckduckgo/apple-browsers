@@ -43,6 +43,7 @@ final class ReportingService {
     private var cancellables = Set<AnyCancellable>()
     let adAttributionPixelReporter: AdAttributionPixelReporter
     let privacyConfigurationManager: PrivacyConfigurationManaging
+    let productSurfaceTelemetry: ProductSurfaceTelemetry
 
     var syncService: SyncService? {
         didSet {
@@ -56,7 +57,8 @@ final class ReportingService {
          userDefaults: UserDefaults,
          pixelKit: PixelKit?,
          appDependencies: DependencyProvider,
-         privacyConfigurationManager: PrivacyConfigurationManaging) {
+         privacyConfigurationManager: PrivacyConfigurationManaging,
+         productSurfaceTelemetry: ProductSurfaceTelemetry) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.featureFlagging = featureFlagging
         self.subscriptionDataReporter = SubscriptionDataReporter(fireproofing: fireproofing)
@@ -75,6 +77,7 @@ final class ReportingService {
                                                                defaultBrowserProviding: defaultBrowserProvider,
                                                                subscriptionStateProvider: subscriptionStateProvider,
                                                                settingsProvider: settingsProvider)
+        self.productSurfaceTelemetry = productSurfaceTelemetry
         addNotificationsObserver()
     }
 
@@ -161,6 +164,7 @@ final class ReportingService {
         Pixel.fire(pixel: .appLaunch, includedParameters: [.appVersion, .atb])
         reportAdAttribution()
         reportWidgetUsage()
+        productSurfaceTelemetry.dailyActiveUser()
         onboardingPixelReporter.fireEnqueuedPixelsIfNeeded()
         reportUserNotificationAuthStatus()
     }

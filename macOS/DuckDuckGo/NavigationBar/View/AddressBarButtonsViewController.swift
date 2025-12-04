@@ -30,6 +30,21 @@ import AIChat
 import UIComponents
 import DesignResourcesKitIcons
 
+// MARK: - Toggle Interaction Tracking
+
+extension UserDefaults {
+    private static let hasInteractedWithToggleKey = "aichat.hasInteractedWithSearchDuckAIToggle"
+
+    var hasInteractedWithSearchDuckAIToggle: Bool {
+        get { bool(forKey: Self.hasInteractedWithToggleKey) }
+        set { set(newValue, forKey: Self.hasInteractedWithToggleKey) }
+    }
+
+    static func resetToggleInteractionFlag() {
+        UserDefaults.standard.hasInteractedWithSearchDuckAIToggle = false
+    }
+}
+
 protocol AddressBarButtonsViewControllerDelegate: AnyObject {
 
     func addressBarButtonsViewControllerCancelButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
@@ -61,7 +76,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private var permissionAuthorizationPopover: PermissionAuthorizationPopover?
     private func permissionAuthorizationPopoverCreatingIfNeeded() -> PermissionAuthorizationPopover {
         return permissionAuthorizationPopover ?? {
-            let popover = PermissionAuthorizationPopover()
+            let popover = PermissionAuthorizationPopover(featureFlagger: featureFlagger)
             NotificationCenter.default.addObserver(self, selector: #selector(popoverDidClose), name: NSPopover.didCloseNotification, object: popover)
             NotificationCenter.default.addObserver(self, selector: #selector(popoverWillShow), name: NSPopover.willShowNotification, object: popover)
             self.permissionAuthorizationPopover = popover
@@ -69,6 +84,8 @@ final class AddressBarButtonsViewController: NSViewController {
             return popover
         }()
     }
+
+    private var permissionCenterPopover: PermissionCenterPopover?
 
     private var popupBlockedPopover: PopupBlockedPopover?
     private func popupBlockedPopoverCreatingIfNeeded() -> PopupBlockedPopover {
@@ -108,6 +125,8 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var trailingStackViewTrailingViewConstraint: NSLayoutConstraint!
 
     private(set) var searchModeToggleControl: CustomToggleControl?
+    private var searchModeToggleWidthConstraint: NSLayoutConstraint?
+    private var wasToggleVisible: Bool = false
     @IBOutlet weak var notificationAnimationView: NavigationBarBadgeAnimationView!
     @IBOutlet weak var bookmarkButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var bookmarkButtonHeightConstraint: NSLayoutConstraint!
@@ -1576,6 +1595,7 @@ final class AddressBarButtonsViewController: NSViewController {
         updateKeyViewChainForToggle(shouldShowToggle: shouldShowToggle)
 
         searchModeToggleControl?.isHidden = !shouldShowToggle
+        updateToggleExpansionState(shouldShowToggle: shouldShowToggle)
 
         if isToggleFeatureEnabled {
             aiChatButton.isHidden = true
@@ -1600,6 +1620,31 @@ final class AddressBarButtonsViewController: NSViewController {
         updateButtonsPosition()
     }
 
+    private func updateToggleExpansionState(shouldShowToggle: Bool) {
+        guard let toggleControl = searchModeToggleControl else { return }
+
+        let hasText = !(textFieldValue?.isEmpty ?? true)
+        let hasUserTypedText = textFieldValue?.isUserTyped == true && hasText
+        let hasInteractedBefore = UserDefaults.standard.hasInteractedWithSearchDuckAIToggle
+
+        if shouldShowToggle && !wasToggleVisible {
+            if hasText || hasInteractedBefore {
+                toggleControl.setExpanded(false, animated: false)
+                searchModeToggleWidthConstraint?.constant = toggleControl.collapsedWidth
+            } else {
+                toggleControl.setExpanded(true, animated: false)
+                searchModeToggleWidthConstraint?.constant = toggleControl.expandedWidth
+            }
+        } else if shouldShowToggle && hasUserTypedText && toggleControl.isExpanded {
+            toggleControl.setExpanded(false, animated: true)
+        } else if !shouldShowToggle && toggleControl.isExpanded {
+            toggleControl.setExpanded(false, animated: false)
+            searchModeToggleWidthConstraint?.constant = toggleControl.collapsedWidth
+        }
+
+        wasToggleVisible = shouldShowToggle
+    }
+
     @IBAction func zoomButtonAction(_ sender: Any) {
         guard let popovers else { return }
         if popovers.isZoomPopoverShown {
@@ -1610,7 +1655,36 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     @IBAction func permissionCenterButtonAction(_ sender: Any) {
+        guard featureFlagger.isFeatureOn(.newPermissionView) else { return }
+        guard let tabViewModel else { return }
 
+        // Close existing popover if shown
+        if let existingPopover = permissionCenterPopover, existingPopover.isShown {
+            existingPopover.close()
+            permissionCenterPopover = nil
+            return
+        }
+
+        let url = tabViewModel.tab.content.urlForWebView ?? .empty
+        let domain = (url.isFileURL ? .localhost : (url.host ?? "")).droppingWwwPrefix()
+
+        let viewModel = PermissionCenterViewModel(
+            domain: domain,
+            usedPermissions: tabViewModel.usedPermissions,
+            permissionManager: permissionManager,
+            removePermission: { [weak tabViewModel] permissionType in
+                tabViewModel?.tab.permissions.remove(permissionType)
+            },
+            dismissPopover: { [weak self] in
+                self?.permissionCenterPopover?.close()
+                self?.permissionCenterPopover = nil
+            }
+        )
+
+        let popover = PermissionCenterPopover(viewModel: viewModel)
+        permissionCenterPopover = popover
+
+        popover.show(relativeTo: permissionCenterButton.bounds, of: permissionCenterButton, preferredEdge: .maxY)
     }
 
     @IBAction func cameraButtonAction(_ sender: NSButton) {
@@ -1765,6 +1839,9 @@ final class AddressBarButtonsViewController: NSViewController {
         toggleControl.setToolTip(UserText.aiChatSearchTheWebTooltip, forSegment: 0)
         toggleControl.setToolTip(UserText.aiChatChatWithAITooltip, forSegment: 1)
 
+        toggleControl.setLabel(UserText.aiChatToggleSearchLabel, forSegment: 0)
+        toggleControl.setLabel(UserText.aiChatToggleAskLabel, forSegment: 1)
+
         applyThemeToToggleControl(toggleControl)
 
         toggleControl.selectedSegment = 0
@@ -1772,20 +1849,33 @@ final class AddressBarButtonsViewController: NSViewController {
         toggleControl.target = self
         toggleControl.action = #selector(searchModeToggleDidChange(_:))
 
+        toggleControl.onWidthChange = { [weak self] newWidth in
+            self?.searchModeToggleWidthConstraint?.constant = newWidth
+        }
+
         trailingButtonsContainer.addArrangedSubview(toggleControl)
         toggleControl.isHidden = true
 
+        let widthConstraint = toggleControl.widthAnchor.constraint(equalToConstant: toggleControl.collapsedWidth)
         NSLayoutConstraint.activate([
-            toggleControl.widthAnchor.constraint(equalToConstant: 70),
+            widthConstraint,
             toggleControl.heightAnchor.constraint(equalToConstant: 32)
         ])
 
+        self.searchModeToggleWidthConstraint = widthConstraint
         self.searchModeToggleControl = toggleControl
     }
 
     @objc private func searchModeToggleDidChange(_ sender: CustomToggleControl) {
         let isAIChatMode = sender.selectedSegment == 1
+        UserDefaults.standard.hasInteractedWithSearchDuckAIToggle = true
+        fireToggleChangedPixel(isAIChatMode: isAIChatMode)
         delegate?.addressBarButtonsViewControllerSearchModeToggleChanged(self, isAIChatMode: isAIChatMode)
+    }
+
+    private func fireToggleChangedPixel(isAIChatMode: Bool) {
+        let pixel: AIChatPixel = isAIChatMode ? .aiChatAddressBarToggleChangedAIChat : .aiChatAddressBarToggleChangedSearch
+        PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
     }
 
     func resetSearchModeToggle() {
@@ -1838,6 +1928,9 @@ final class AddressBarButtonsViewController: NSViewController {
 
         toggleControl.leftImage = DesignSystemImages.Glyphs.Size16.findSearch.tinted(with: themeManager.theme.colorsProvider.iconsColor)
         toggleControl.rightImage = DesignSystemImages.Glyphs.Size16.aiChat.tinted(with: themeManager.theme.colorsProvider.iconsColor)
+
+        toggleControl.labelColor = NSColor(designSystemColor: .textPrimary)
+        toggleControl.selectedLabelColor = NSColor(designSystemColor: .textPrimary)
     }
 
     private func setupAnimationViews() {
@@ -2296,9 +2389,7 @@ extension TabViewModel {
         let hasRequestedPermission = usedPermissions.values.contains(where: { $0.isRequested
         })
         let shouldShowWhileFocused = (tab.content == .newtab) && hasRequestedPermission
-        let isAnyPermissionPresent = usedPermissions.values.contains(where: {
-            !$0.isReloading
-        })
+        let isAnyPermissionPresent = !usedPermissions.values.isEmpty
 
         return (shouldShowWhileFocused || (!isTextFieldEditorFirstResponder && isAnyPermissionPresent))
         && !isAnyTrackerAnimationPlaying

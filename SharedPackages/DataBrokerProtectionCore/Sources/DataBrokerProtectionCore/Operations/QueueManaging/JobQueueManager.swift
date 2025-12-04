@@ -94,6 +94,7 @@ public protocol JobQueueManaging {
                                                  completion: (() -> Void)?)
     func addEmailConfirmationJobs(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding)
     func stop()
+    func stopScheduledOperationsOnly()
 
     func execute(_ command: DataBrokerProtectionQueueManagerDebugCommand)
     var debugRunningStatusString: String { get }
@@ -218,6 +219,14 @@ public final class JobQueueManager: JobQueueManaging {
     }
 
     public func stop() {
+        cancelCurrentModeAndResetIfNeeded()
+    }
+
+    // Won't stop if running immediate scans
+    public func stopScheduledOperationsOnly() {
+        if case .immediate = mode {
+            return
+        }
         cancelCurrentModeAndResetIfNeeded()
     }
 }

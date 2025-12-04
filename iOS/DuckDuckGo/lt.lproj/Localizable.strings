@@ -35,7 +35,7 @@
 "action.title.aiChat.history" = "„Duck.ai“ pokalbiai";
 
 /* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "DI pokalbis";
+"action.title.aiChat.new" = "Naujas DI pokalbis";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "„Duck.ai“ nustatymai";
@@ -89,7 +89,7 @@
 "action.title.newBackgroundTabForUrl" = "Atidaryti fone";
 
 /* Create New Tab action */
-"action.title.newTabAction" = "Naujas";
+"action.title.newTabAction" = "Nauja kortelė";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Atverti naujoje kortelėje";
@@ -2925,6 +2925,9 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Adreso juostos padėtis";
+
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Eksperimentinis naršyklės meniu";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Atidaryti nuorodas susijusiose programose";

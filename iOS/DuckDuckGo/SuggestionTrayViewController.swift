@@ -112,6 +112,8 @@ class SuggestionTrayViewController: UIViewController {
         let internalUserCommands: URLBasedDebugCommands
     }
 
+    let productSurfaceTelemetry: ProductSurfaceTelemetry
+
     required init?(coder: NSCoder,
                    favoritesViewModel: FavoritesListInteracting,
                    bookmarksDatabase: CoreDataDatabase,
@@ -122,6 +124,7 @@ class SuggestionTrayViewController: UIViewController {
                    aiChatSettings: AIChatSettingsProvider,
                    featureDiscovery: FeatureDiscovery,
                    newTabPageDependencies: NewTabPageDependencies,
+                   productSurfaceTelemetry: ProductSurfaceTelemetry,
                    hideBorder: Bool) {
         self.favoritesModel = favoritesViewModel
         self.bookmarksDatabase = bookmarksDatabase
@@ -132,6 +135,7 @@ class SuggestionTrayViewController: UIViewController {
         self.aiChatSettings = aiChatSettings
         self.newTabPageDependencies = newTabPageDependencies
         self.featureDiscovery = featureDiscovery
+        self.productSurfaceTelemetry = productSurfaceTelemetry
         self.hideBorder = hideBorder
         super.init(coder: coder)
     }
@@ -319,7 +323,8 @@ class SuggestionTrayViewController: UIViewController {
                                                     tabsModel: tabsModel,
                                                     featureFlagger: featureFlagger,
                                                     aiChatSettings: aiChatSettings,
-                                                    featureDiscovery: featureDiscovery)
+                                                    featureDiscovery: featureDiscovery,
+                                                    productSurfaceTelemetry: productSurfaceTelemetry)
         install(controller: controller, animated: animated)
         controller.delegate = autocompleteDelegate
         controller.presentationDelegate = self

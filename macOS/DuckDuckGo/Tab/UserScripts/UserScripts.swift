@@ -61,7 +61,6 @@ final class UserScripts: UserScriptsProvider {
     let newTabPageUserScript: NewTabPageUserScript?
     let serpSettingsUserScript: SERPSettingsUserScript?
     let faviconScript = FaviconUserScript()
-    let webNotificationsHandler = WebNotificationsHandler()
 
     private let contentScopePreferences: ContentScopePreferences
 
@@ -209,8 +208,6 @@ final class UserScripts: UserScriptsProvider {
             }
             userScripts.append(specialPages)
         }
-
-        contentScopeUserScript.registerSubfeature(delegate: webNotificationsHandler)
 
         var delegate: Subfeature
         if !Application.appDelegate.isUsingAuthV2 {

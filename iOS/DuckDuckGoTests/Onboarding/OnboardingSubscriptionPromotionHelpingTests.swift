@@ -78,7 +78,7 @@ final class OnboardingSubscriptionPromotionHelpingTests: XCTestCase {
     func testShouldDisplayWhenFeatureFlagEnabledAndCanPurchase() {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = [FeatureFlag.privacyProOnboardingPromotion]
-        mockSubscriptionAuthV1toV2Bridge.canPurchase = true
+        mockSubscriptionAuthV1toV2Bridge.hasAppStoreProductsAvailable = true
 
         // When
         let result = sut.shouldDisplay
@@ -90,7 +90,7 @@ final class OnboardingSubscriptionPromotionHelpingTests: XCTestCase {
     func testShouldNotDisplayWhenFeatureFlagDisabled() {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = []
-        mockSubscriptionAuthV1toV2Bridge.canPurchase = true
+        mockSubscriptionAuthV1toV2Bridge.hasAppStoreProductsAvailable = true
 
         // When
         let result = sut.shouldDisplay
@@ -102,7 +102,7 @@ final class OnboardingSubscriptionPromotionHelpingTests: XCTestCase {
     func testShouldNotDisplayWhenCannotPurchase() {
         // Given
         mockFeatureFlagger.enabledFeatureFlags = [FeatureFlag.privacyProOnboardingPromotion]
-        mockSubscriptionAuthV1toV2Bridge.canPurchase = false
+        mockSubscriptionAuthV1toV2Bridge.hasAppStoreProductsAvailable = false
 
         // When
         let result = sut.shouldDisplay

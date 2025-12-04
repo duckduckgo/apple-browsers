@@ -342,7 +342,11 @@ final class NavigationActionBarView: UIView {
 
         let shouldShowSearchButton: Bool
         if isUsingFadeOutAnimation {
-            shouldShowSearchButton = true
+            if viewModel.isUsingSmallerBottomInput && viewModel.isSearchMode && !isFloating {
+                shouldShowSearchButton = false
+            } else {
+                shouldShowSearchButton = true
+            }
         } else {
             shouldShowSearchButton = hasText
         }

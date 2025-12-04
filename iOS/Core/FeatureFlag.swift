@@ -265,6 +265,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212229431540900
     case granularFireButtonOptions
+    
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212305240287488?focus=true
+    case dataImportWideEventMeasurement
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -282,7 +285,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .unifiedURLPredictor,
              .forgetAllInSettings,
              .vpnConnectionWidePixelMeasurement,
-             .migrateKeychainAccessibility:
+             .migrateKeychainAccessibility,
+             .dataImportWideEventMeasurement:
             true
         default:
             false
@@ -344,7 +348,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .autofillExtensionSettings,
              .canPromoteAutofillExtensionInBrowser,
              .canPromoteAutofillExtensionInPasswordManagement,
-             .granularFireButtonOptions:
+             .granularFireButtonOptions,
+             .dataImportWideEventMeasurement:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -552,6 +557,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AutofillSubfeature.migrateKeychainAccessibility))
         case .granularFireButtonOptions:
             return .disabled
+        case .dataImportWideEventMeasurement:
+            return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
         }
     }
 }

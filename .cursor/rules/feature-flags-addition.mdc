@@ -765,7 +765,7 @@ When adding a feature flag, ensure you:
 ## Reference Documentation
 
 For more information, see:
-- `doc-bot/feature-flags.md` - Type-safe feature flag patterns
-- `doc-bot/abn-experiment-framework.md` - A/B testing with feature flags
+- `feature-flags.md` - Type-safe feature flag patterns
+- `abn-experiment-framework.md` - A/B testing with feature flags
 - `SharedPackages/BrowserServicesKit/Sources/BrowserServicesKit/FeatureFlagger/FeatureFlagger.swift` - Core implementation
 

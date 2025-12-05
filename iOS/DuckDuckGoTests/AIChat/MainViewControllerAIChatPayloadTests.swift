@@ -116,7 +116,8 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
                                     featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
                                     keyValueStore: keyValueStore,
                                     daxDialogsManager: DummyDaxDialogsManager(),
-                                    aiChatSettings: MockAIChatSettingsProvider()
+                                    aiChatSettings: MockAIChatSettingsProvider(),
+                                    productSurfaceTelemetry: MockProductSurfaceTelemetry()
         )
 
         let mockScriptDependencies = DefaultScriptSourceProvider.Dependencies(appSettings: AppSettingsMock(),
@@ -162,7 +163,8 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
             launchSourceManager: LaunchSourceManager(),
             winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager(),
             mobileCustomization: MobileCustomization(isFeatureEnabled: false, keyValueStore: MockThrowingKeyValueStore()),
-            remoteMessagingActionHandler: MockRemoteMessagingActionHandler()
+            remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
+            productSurfaceTelemetry: MockProductSurfaceTelemetry()
         )
         
         let window = UIWindow(frame: UIScreen.main.bounds)

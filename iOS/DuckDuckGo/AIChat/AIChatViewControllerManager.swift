@@ -59,6 +59,7 @@ final class AIChatViewControllerManager {
     private var cancellables = Set<AnyCancellable>()
     private var sessionTimer: AIChatSessionTimer?
     private var pixelMetricHandler: (any AIChatPixelMetricHandling)?
+    private var productSurfaceTelemetry: ProductSurfaceTelemetry
 
     // MARK: - Initialization
 
@@ -70,7 +71,8 @@ final class AIChatViewControllerManager {
          featureFlagger: FeatureFlagger,
          featureDiscovery: FeatureDiscovery,
          aiChatSettings: AIChatSettingsProvider,
-         subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling = SubscriptionAIChatStateHandler()) {
+         subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling = SubscriptionAIChatStateHandler(),
+         productSurfaceTelemetry: ProductSurfaceTelemetry) {
 
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
@@ -81,6 +83,7 @@ final class AIChatViewControllerManager {
         self.featureDiscovery = featureDiscovery
         self.aiChatSettings = aiChatSettings
         self.subscriptionAIChatStateHandler = subscriptionAIChatStateHandler
+        self.productSurfaceTelemetry = productSurfaceTelemetry
     }
 
     // MARK: - Public Methods
@@ -154,6 +157,9 @@ final class AIChatViewControllerManager {
                       containerView: UIView? = nil,
                       viewController: UIViewController? = nil,
                       completion: (() -> Void)? = nil) {
+
+        productSurfaceTelemetry.duckAIUsed()
+
         // Reset the session timer if the subscription state has changed
         if subscriptionAIChatStateHandler.shouldForceAIChatRefresh {
             stopSessionTimer()

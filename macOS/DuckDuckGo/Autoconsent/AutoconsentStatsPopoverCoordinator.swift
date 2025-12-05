@@ -26,6 +26,7 @@ import SwiftUIExtensions
 import FeatureFlags
 import BrowserServicesKit
 import PixelKit
+import os.log
 
 @MainActor
 protocol AutoconsentStatsPopoverCoordinating: AnyObject {
@@ -130,33 +131,29 @@ final class AutoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinat
         return blockedCount >= Constants.threshold
     }
 
+    private func markBlockedCookiesPopoverAsSeen() {
+        do {
+            try keyValueStore.set(true, forKey: StorageKey.blockedCookiesPopoverSeen)
+        } catch {
+            Logger.autoconsent.error("Failed to save blocked cookies popover seen flag: \(error.localizedDescription, privacy: .public)")
+        }
+    }
+
     private func showDialog() async {
         let onClose: () -> Void = { [weak self] in
             PixelKit.fire(AutoconsentPixel.popoverClosed, frequency: .daily)
-            do {
-                try self?.keyValueStore.set(true, forKey: StorageKey.blockedCookiesPopoverSeen)
-            } catch {
-                // Log error if needed
-            }
+            self?.markBlockedCookiesPopoverAsSeen()
         }
 
         let onClick: () -> Void = { [weak self] in
             PixelKit.fire(AutoconsentPixel.popoverClicked, frequency: .daily)
             self?.openNewTabWithSpecialAction()
-            do {
-                try self?.keyValueStore.set(true, forKey: StorageKey.blockedCookiesPopoverSeen)
-            } catch {
-                // Log error if needed
-            }
+            self?.markBlockedCookiesPopoverAsSeen()
         }
 
         let onAutoDismiss: () -> Void = { [weak self] in
             PixelKit.fire(AutoconsentPixel.popoverAutoDismissed, frequency: .daily)
-            do {
-                try self?.keyValueStore.set(true, forKey: StorageKey.blockedCookiesPopoverSeen)
-            } catch {
-                // Log error if needed
-            }
+            self?.markBlockedCookiesPopoverAsSeen()
         }
 
         await presenter.showPopover(onClose: onClose, onClick: onClick, onAutoDismiss: onAutoDismiss)
@@ -177,11 +174,7 @@ final class AutoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinat
             return
         }
         PixelKit.fire(AutoconsentPixel.popoverNewTabOpened, frequency: .daily)
-        do {
-            try self.keyValueStore.set(true, forKey: StorageKey.blockedCookiesPopoverSeen)
-        } catch {
-            // Log error if needed
-        }
+        markBlockedCookiesPopoverAsSeen()
         presenter.dismissPopover()
     }
 
@@ -199,7 +192,7 @@ final class AutoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinat
         do {
             try keyValueStore.removeObject(forKey: StorageKey.blockedCookiesPopoverSeen)
         } catch {
-            // Log error if needed
+            Logger.autoconsent.error("Failed to remove blocked cookies popover seen flag: \(error.localizedDescription, privacy: .public)")
         }
     }
 }

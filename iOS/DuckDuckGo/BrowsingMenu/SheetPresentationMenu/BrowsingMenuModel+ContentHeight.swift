@@ -32,7 +32,8 @@ extension BrowsingMenuModel {
         let headerContentHeight = iconHeight + Metrics.headerButtonIconTextSpacing + headerFont.lineHeight
         let headerHeight = headerItems.isEmpty ? 0 : headerContentHeight + (Metrics.headerButtonVerticalPadding * 2)
 
-        let rowHeight = Metrics.listRowVerticalPadding + rowFont.lineHeight
+        let minTotalVerticalPadding: CGFloat = 16
+        let rowHeight = max(Metrics.defaultListRowHeight, rowFont.lineHeight + minTotalVerticalPadding)
 
         // Footer text labels are only shown when there's fewer than 2 footer items
         let footerShowsLabels = footerItems.count < 2

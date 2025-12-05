@@ -466,7 +466,8 @@ func fileImportInstructionsBuilder(source: DataImport.Source, dataType: DataImpo
         (.bitwarden, .bookmarks),
         (.lastPass, .bookmarks),
         (.csv, .bookmarks),
-        (_, .creditCards):
+        (_, .creditCards),
+        (.fileImport, _):
         assertionFailure("Invalid source/dataType")
     }
 }

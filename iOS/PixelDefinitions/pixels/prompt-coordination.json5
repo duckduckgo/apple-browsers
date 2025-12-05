@@ -5,7 +5,7 @@
         "owners": ["alessandroboron"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "errorCode", "errorDomain"]
+        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
     "m_debug_prompt-coordination_failed-to-retrieve_last-presentation-date": {
         "description": "Fires when we fail to retrieve from the persistence store the timestamp when the last prompt was shown.",

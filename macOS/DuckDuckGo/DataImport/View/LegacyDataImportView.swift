@@ -348,7 +348,7 @@ struct LegacyDataImportView: ModalView {
     private func viewFooter() -> some View {
         HStack(spacing: 8) {
             if case .show(let syncLauncher) = syncFeatureVisibility, model.shouldShowSyncFooterButton {
-                Button(UserText.importDataCompleteSyncButtonTitle) {
+                Button(UserText.legacyImportDataCompleteSyncButtonTitle) {
                     dismiss.callAsFunction()
                     let source = SyncDeviceButtonTouchpoint.dataImportFinish
                     PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed.withoutMacPrefix, withAdditionalParameters: ["source": SyncDeviceButtonTouchpoint.dataImportFinish.rawValue])

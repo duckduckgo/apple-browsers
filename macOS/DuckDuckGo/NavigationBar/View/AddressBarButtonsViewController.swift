@@ -719,6 +719,8 @@ final class AddressBarButtonsViewController: NSViewController {
             let permissionAuthorizationPopover = permissionAuthorizationPopoverCreatingIfNeeded()
             guard !permissionAuthorizationPopover.isShown else {
                 if permissionAuthorizationPopover.viewController.query === query { return }
+                // Don't close if authorization is still in progress (e.g., waiting for user to click Allow/Deny in two-step flow)
+                if permissionAuthorizationPopover.viewController.isAuthorizationInProgress { return }
                 permissionAuthorizationPopover.close()
                 return
             }
@@ -726,6 +728,8 @@ final class AddressBarButtonsViewController: NSViewController {
             return
         }
         if let permissionAuthorizationPopover, permissionAuthorizationPopover.isShown {
+            // Don't close if authorization is still in progress (e.g., waiting for user to click Allow/Deny in two-step flow)
+            guard !permissionAuthorizationPopover.viewController.isAuthorizationInProgress else { return }
             permissionAuthorizationPopover.close()
         }
     }

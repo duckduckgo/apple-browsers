@@ -72,6 +72,10 @@ final class PermissionAuthorizationViewController: NSViewController {
     private var swiftUIHostingView: NSHostingView<PermissionAuthorizationSwiftUIView>?
     private let newPermissionView: Bool
 
+    /// Indicates whether the authorization flow is still in progress (user hasn't clicked Allow/Deny yet).
+    /// This prevents the popover from being closed prematurely during two-step flows (e.g., geolocation).
+    private(set) var isAuthorizationInProgress: Bool = false
+
     weak var query: PermissionAuthorizationQuery? {
         didSet {
             if newPermissionView {
@@ -223,14 +227,17 @@ final class PermissionAuthorizationViewController: NSViewController {
         ])
 
         swiftUIHostingView = hostingView
+        isAuthorizationInProgress = true
     }
 
     private func handleDeny() {
+        isAuthorizationInProgress = false
         dismiss()
         query?.handleDecision(grant: false, remember: nil)
     }
 
     private func handleAllow() {
+        isAuthorizationInProgress = false
         dismiss()
         query?.handleDecision(grant: true, remember: nil)
     }

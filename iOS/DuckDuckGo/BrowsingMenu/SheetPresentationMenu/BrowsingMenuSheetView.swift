@@ -89,7 +89,7 @@ struct BrowsingMenuSheetView: View {
         .listStyle(.insetGrouped)
         .padding(.top, -Metrics.listTopPaddingAdjustment)
         .background(.thickMaterial)
-        .background(Color(designSystemColor: .background).opacity(0.5))
+        .background(Color(designSystemColor: .background).opacity(0.1))
         .onDisappear(perform: {
             actionToPerform()
             onDismiss()

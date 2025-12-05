@@ -243,12 +243,12 @@ struct DataImportViewModel {
 
         let availableImportTypes = importSource.supportedDataTypes.filter { dataType in
             guard let profiles = browserProfiles else { return true }
-            
+
             // If we have valid profiles, check if any profile has valid data for this type.
             // If no valid profiles (Safari doesn't check profiles, password managers), return true (include all types).
             let validProfiles = profiles.validImportableProfiles
             guard !validProfiles.isEmpty else { return true }
-            
+
             return validProfiles.contains { profile in
                 profile.hasValidProfileData(for: dataType)
             }
@@ -900,7 +900,7 @@ extension DataImportViewModel {
     @MainActor
     mutating func selectProfile(_ profile: BrowserProfile) {
         self.selectedProfile = profile
-        
+
         // Filter selected data types to only include types available for this specific profile
         let availableTypesForProfile = importSource.supportedDataTypes.filter { dataType in
             profile.hasValidProfileData(for: dataType)

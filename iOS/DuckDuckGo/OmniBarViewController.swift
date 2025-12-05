@@ -57,6 +57,7 @@ class OmniBarViewController: UIViewController, OmniBar {
     private(set) lazy var state: OmniBarState = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
 
     internal var textFieldTapped = true
+    internal var textEntryMode: TextEntryMode = .search
 
     // MARK: - Animation
 
@@ -334,9 +335,10 @@ class OmniBarViewController: UIViewController, OmniBar {
         text = query
         textDidChange()
     }
-
-    func beginEditing(animated: Bool) {
+    
+    func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode) {
         textFieldTapped = false
+        self.textEntryMode = textEntryMode
         defer {
             textFieldTapped = true
         }

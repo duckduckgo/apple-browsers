@@ -1163,14 +1163,21 @@ class MainViewController: UIViewController {
     }
 
     @IBAction func onFirePressed() {
-
-        func showClearDataAlert() {
-            let alert = ForgetDataAlert.buildAlert(forgetTabsAndDataHandler: { [weak self] in
-                self?.forgetAllWithAnimation {}
-            })
-            self.present(controller: alert, fromView: self.viewCoordinator.toolbar)
+    
+        func showFireConfirmation() {
+            let presenter = FireConfirmationPresenter(featureFlagger: featureFlagger)
+            presenter.presentFireConfirmation(
+                on: self,
+                from: viewCoordinator.toolbar,
+                onConfirm: { [weak self] in
+                    self?.forgetAllWithAnimation {}
+                },
+                onCancel: {
+                    // TODO: - Maybe add pixel
+                }
+            )
         }
-
+        
         Pixel.fire(pixel: .forgetAllPressedBrowsing)
         
         performActionIfAITab { DailyPixel.fireDailyAndCount(pixel: .aiChatFireButtonTapped) }
@@ -1181,7 +1188,7 @@ class MainViewController: UIViewController {
         // Dismiss dax dialog and pulse animation when the user taps on the Fire Button.
         currentTab?.dismissContextualDaxFireDialog()
         ViewHighlighter.hideAll()
-        showClearDataAlert()
+        showFireConfirmation()
         
         performCancel()
     }

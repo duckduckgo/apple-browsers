@@ -261,7 +261,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatTranslateText,
                 .aiChatTranslationSourceLinkClicked,
                 .aiChatPageContextSourceLinkClicked,
-                .aiChatAutoClearHistorySettingToggled,
+                .aiChatAutoClearHistorySettingToggled(_),
                 .aiChatDeleteHistoryRequested,
                 .aiChatDeleteHistorySuccessful,
                 .aiChatDeleteHistoryFailed,

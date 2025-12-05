@@ -49,7 +49,7 @@ struct FireConfirmationView: View {
                 .frame(width: Constants.headerIconSize, height: Constants.headerIconSize)
             
             Text(UserText.fireConfirmationTitle)
-                .font(Constants.headerTitleFont)
+                .daxTitle3()
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -106,7 +106,7 @@ struct FireConfirmationView: View {
                 viewModel.confirm()
             }) {
                 Text(UserText.actionDelete)
-                    .font(Constants.footerButtonFont)
+                    .daxButton()
                     .foregroundColor(Color(designSystemColor: .buttonsWhite))
                     .frame(maxWidth: .infinity)
                     .frame(minHeight: Constants.footerButtonMinHeight)
@@ -138,7 +138,6 @@ private extension FireConfirmationView {
         // Header section
         static let headerSectionSpacing: CGFloat = 8
         static let headerIconSize: CGFloat = 96
-        static let headerTitleFont: Font = .system(size: 20, weight: .bold)
         
         // Options List
         static let optionsListSpacing: CGFloat = 0
@@ -148,7 +147,6 @@ private extension FireConfirmationView {
         
         // Footer Buttons
         static let footerButtonsSpacing: CGFloat = 8
-        static let footerButtonFont: Font = .system(size: 15, weight: .semibold, design: .default)
         static let footerButtonMinHeight: CGFloat = 50
         static let footerButtonCornerRadius: CGFloat = 12
     }
@@ -170,12 +168,12 @@ private struct ToggleRow: View {
             // Text content
             VStack(alignment: .leading, spacing: Constants.titlesVerticalSpacing) {
                 Text(title)
-                    .font(Constants.titleFont)
+                    .daxBodyRegular()
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .fixedSize(horizontal: false, vertical: true)
                 
                 Text(subtitle)
-                    .font(Constants.subtitleFont)
+                    .daxFootnoteRegular()
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -195,8 +193,6 @@ private struct ToggleRow: View {
         static let horizontalSpacing: CGFloat = 0
         static let iconPadding: EdgeInsets = .init(top: 0, leading: 16, bottom: 0, trailing: 12)
         static let titlesVerticalSpacing: CGFloat = 2
-        static let titleFont: Font = .system(size: 16, weight: .regular, design: .default)
-        static let subtitleFont: Font = .system(size: 13, weight: .regular, design: .default)
         static let titlesVerticalPadding: CGFloat = 10.5
         static let titlesTrailingPadding: CGFloat = 16
         static let toggleTrailingPadding: CGFloat = 16

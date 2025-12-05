@@ -143,7 +143,7 @@ extension TabViewController {
         return entries
     }
     
-    func buildAITabMenu(useSmallIcon: Bool = true) -> [BrowsingMenuEntry] {
+    func buildAITabMenu(useSmallIcon: Bool = true, includeSettings: Bool = true) -> [BrowsingMenuEntry] {
         var entries = [BrowsingMenuEntry]()
         
         entries.append(contentsOf: buildAITabLinkEntries(useSmallIcon: useSmallIcon))
@@ -163,8 +163,10 @@ extension TabViewController {
         entries.append(.separator)
         
         entries.append(buildAIChatSettingsEntry(useSmallIcon: useSmallIcon))
-        
-        entries.append(buildSettingsEntry(useSmallIcon: useSmallIcon))
+
+        if includeSettings {
+            entries.append(buildSettingsEntry(useSmallIcon: useSmallIcon))
+        }
 
         return entries
     }
@@ -811,11 +813,13 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     }
     
     func makeAITabMenu() -> [BrowsingMenuEntry] {
-        buildAITabMenu(useSmallIcon: false)
+        buildAITabMenu(useSmallIcon: false, includeSettings: false)
     }
     
     func makeAITabMenuHeaderContent() -> [BrowsingMenuEntry] {
-        buildAITabMenuHeaderContent()
+        // Add settings to the header.
+        // It'll be filtered out in `makeAITabMenu`
+        buildAITabMenuHeaderContent() + [makeSettingsEntry()]
     }
     
     func makeBrowsingMenu(with bookmarksInterface: MenuBookmarksInteracting,

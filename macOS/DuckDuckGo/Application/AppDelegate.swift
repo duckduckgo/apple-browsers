@@ -154,6 +154,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let autoconsentManagement = AutoconsentManagement()
     let attributedMetricManager: AttributedMetricManager
 
+    @MainActor
+    private(set) lazy var autoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinator = AutoconsentStatsPopoverCoordinator(
+        autoconsentStats: autoconsentStats,
+        keyValueStore: keyValueStore,
+        windowControllersManager: windowControllersManager,
+        cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
+        appearancePreferences: appearancePreferences,
+        featureFlagger: featureFlagger,
+        onboardingStateUpdater: onboardingContextualDialogsManager
+    )
+
     private var updateProgressCancellable: AnyCancellable?
 
     @MainActor
@@ -181,6 +192,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration),
         winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
         subscriptionCardVisibilityManager: homePageSubscriptionCardVisibilityManager,
+        protectionsReportModel: newTabPageProtectionsReportModel,
         homePageContinueSetUpModelPersistor: homePageContinueSetUpModelPersistor
     )
 
@@ -196,6 +208,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let autoconsentStats: AutoconsentStatsCollecting
     let activeRemoteMessageModel: ActiveRemoteMessageModel
     let newTabPageCustomizationModel: NewTabPageCustomizationModel
+    private(set) lazy var newTabPageProtectionsReportModel: NewTabPageProtectionsReportModel = NewTabPageProtectionsReportModel(
+        privacyStats: privacyStats,
+        autoconsentStats: autoconsentStats,
+        keyValueStore: keyValueStore,
+        burnAnimationSettingChanges: visualizeFireSettingsDecider.shouldShowFireAnimationPublisher,
+        showBurnAnimation: visualizeFireSettingsDecider.shouldShowFireAnimation,
+        isAutoconsentEnabled: { self.cookiePopupProtectionPreferences.isAutoconsentEnabled },
+        getLegacyIsViewExpandedSetting: settingsMigrator.isViewExpanded,
+        getLegacyActiveFeedSetting: settingsMigrator.activeFeed
+    )
+    private let settingsMigrator = NewTabPageProtectionsReportSettingsMigrator(legacyKeyValueStore: UserDefaultsWrapper<Any>.sharedDefaults)
+
     let remoteMessagingClient: RemoteMessagingClient!
     let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
     let defaultBrowserAndDockPromptService: DefaultBrowserAndDockPromptService
@@ -253,7 +277,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             subscriptionManager: subscriptionAuthV1toV2Bridge,
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
             contextualOnboardingPublisher: onboardingContextualDialogsManager.isContextualOnboardingCompletedPublisher.eraseToAnyPublisher(),
-            featureFlagger: featureFlagger,
             persistor: vpnUpsellUserDefaultsPersistor,
             timerDuration: vpnUpsellUserDefaultsPersistor.expectedUpsellTimeInterval
         )
@@ -1267,6 +1290,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         defaultBrowserAndDockPromptService.applicationDidBecomeActive()
+
+        Task { @MainActor in
+            await autoconsentStatsPopoverCoordinator.checkAndShowDialogIfNeeded()
+        }
     }
 
     private func fireDailyActiveUserPixels() {
@@ -1737,6 +1764,7 @@ extension AppDelegate: UserScriptDependenciesProviding {
             newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration),
             winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
             subscriptionCardVisibilityManager: homePageSubscriptionCardVisibilityManager,
+            protectionsReportModel: newTabPageProtectionsReportModel,
             homePageContinueSetUpModelPersistor: homePageContinueSetUpModelPersistor
         )
     }

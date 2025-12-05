@@ -1440,6 +1440,15 @@ struct UserText {
     static let autoconsentFromSetUpModalConfirmButton = NSLocalizedString("autoconsent.from.setup.modal.cta.confirm", value: "Handle Pop-Ups For Me", comment: "Confirm button for modal asking the user to auto manage cookies")
     static let autoconsentModalDenyButton = NSLocalizedString("autoconsent.modal.cta.deny", value: "No Thanks", comment: "Deny button for modal asking the user to auto manage cookies")
 
+    static func autoconsentStatsPopoverTitle(count: Int) -> String {
+        let localized = NSLocalizedString("autoconsent.stats.popover.title",
+                                         value: "%d cookie pop-ups blocked",
+                                         comment: "Title for autoconsent stats popover showing number of blocked cookie pop-ups")
+        return String(format: localized, count)
+    }
+
+    static let autoconsentStatsPopoverMessage = NSLocalizedString("autoconsent.stats.popover.message", value: "Open a new tab to see your stats.", comment: "Message for autoconsent stats popover prompting user to open new tab")
+
     static let recentlyVisitedMenuSection = NSLocalizedString("history.menu.recently.visited", value: "Recently Visited", comment: "Section header of the history menu")
 
     static let showBookmarksBar = NSLocalizedString("bookmarks.bar.show", value: "Bookmarks Bar", comment: "Menu item for showing the bookmarks bar")

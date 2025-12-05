@@ -296,6 +296,7 @@ final class AddressBarViewController: NSViewController {
         addressBarTextField.focusDelegate = self
         addressBarTextField.searchPreferences = searchPreferences
         addressBarTextField.tabsPreferences = tabsPreferences
+        addressBarTextField.aiChatPreferences = aiChatSettings
 
         setupInactiveShadowView()
         setupActiveOuterBorderSize()

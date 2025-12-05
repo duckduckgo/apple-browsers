@@ -23,6 +23,7 @@ import PrivacyDashboard
 @testable import DuckDuckGo
 
 final class MockOmniBar: OmniBar {
+    
     var mockBarView = MockOmniBarView()
     var barView: any DuckDuckGo.OmniBarView {
         mockBarView
@@ -35,7 +36,7 @@ final class MockOmniBar: OmniBar {
     
     func updateQuery(_ query: String?) { }
     func refreshText(forUrl url: URL?, forceFullURL: Bool) { }
-    func beginEditing(animated: Bool) { }
+    func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode) {}
     func endEditing() { }
     func showSeparator() { }
     func hideSeparator() { }
@@ -126,7 +127,6 @@ final class MockOmniBar: OmniBar {
         var onSettingsLongPress: (() -> Void)?
         var onCustomizableButtonPressed: (() -> Void)?
         var onAIChatLeftButtonPressed: (() -> Void)?
-        var onAIChatRightButtonPressed: (() -> Void)?
         var onAIChatBrandingPressed: (() -> Void)?
 
         static func create() -> Self {

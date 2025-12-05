@@ -86,6 +86,7 @@ public enum PrivacyFeature: String {
     case duckAiDataClearing
     case serp
     case popupBlocking
+    case tabProgressIndicator
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -386,7 +387,6 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case privacyProAuthV2
     case privacyProOnboardingPromotion
     case paidAIChat
-    case vpnToolbarUpsell
     case supportsAlternateStripePaymentFlow
     case subscriptionPurchaseWidePixelMeasurement
     case vpnConnectionWidePixelMeasurement

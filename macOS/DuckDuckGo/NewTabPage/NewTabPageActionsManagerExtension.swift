@@ -56,20 +56,9 @@ extension NewTabPageActionsManager {
         newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
         winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator,
         subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
+        protectionsReportModel: NewTabPageProtectionsReportModel,
         homePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersisting
     ) {
-        let settingsMigrator = NewTabPageProtectionsReportSettingsMigrator(legacyKeyValueStore: legacyKeyValueStore)
-        let protectionsReportModel = NewTabPageProtectionsReportModel(
-            privacyStats: privacyStats,
-            autoconsentStats: autoconsentStats,
-            keyValueStore: keyValueStore,
-            burnAnimationSettingChanges: visualizeFireAnimationDecider.shouldShowFireAnimationPublisher,
-            showBurnAnimation: visualizeFireAnimationDecider.shouldShowFireAnimation,
-            isAutoconsentEnabled: { cookiePopupProtectionPreferences.isAutoconsentEnabled },
-            getLegacyIsViewExpandedSetting: settingsMigrator.isViewExpanded,
-            getLegacyActiveFeedSetting: settingsMigrator.activeFeed
-        )
-
         self.init(
             appearancePreferences: appearancePreferences,
             customizationModel: customizationModel,

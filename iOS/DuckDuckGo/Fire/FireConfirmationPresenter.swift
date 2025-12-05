@@ -29,8 +29,8 @@ struct FireConfirmationPresenter {
     
     func presentFireConfirmation(on viewController: UIViewController,
                                  from source: AnyObject,
-                                  onConfirm: @escaping () -> Void,
-                                  onCancel: @escaping () -> Void) {
+                                 onConfirm: @escaping () -> Void,
+                                 onCancel: @escaping () -> Void) {
         guard featureFlagger.isFeatureOn(.granularFireButtonOptions) else {
             presentLegacyConfirmationAlert(on: viewController, from: source, onConfirm: onConfirm, onCancel: onCancel)
             return

@@ -32,7 +32,7 @@ struct FireConfirmationPresenter {
                                   onConfirm: @escaping () -> Void,
                                   onCancel: @escaping () -> Void) {
         guard featureFlagger.isFeatureOn(.granularFireButtonOptions) else {
-            presentLegacyConfirmationAlert(on: viewController, from: source, onConfirm: onConfirm)
+            presentLegacyConfirmationAlert(on: viewController, from: source, onConfirm: onConfirm, onCancel: onCancel)
             return
         }
         let viewModel = FireConfirmationViewModel(
@@ -99,9 +99,14 @@ struct FireConfirmationPresenter {
         return targetSize.height
     }
     
-    private func presentLegacyConfirmationAlert(on viewController: UIViewController, from source: AnyObject, onConfirm: @escaping () -> Void) {
+    private func presentLegacyConfirmationAlert(on viewController: UIViewController,
+                                                from source: AnyObject,
+                                                onConfirm: @escaping () -> Void,
+                                                onCancel: @escaping () -> Void) {
         
-        let alert = ForgetDataAlert.buildAlert(forgetTabsAndDataHandler: {
+        let alert = ForgetDataAlert.buildAlert(cancelHandler: {
+            onCancel()
+        }, forgetTabsAndDataHandler: {
             onConfirm()
         })
         if let view = source as? UIView {

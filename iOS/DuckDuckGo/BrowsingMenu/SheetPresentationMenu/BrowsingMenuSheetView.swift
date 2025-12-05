@@ -257,15 +257,29 @@ private struct MenuHeaderButton: View {
             .frame(maxWidth: .infinity)
             .frame(maxHeight: .infinity)
             .background(Color.rowBackgroundColor)
-            .clipShape(RoundedRectangle(cornerRadius: Constant.cornerRadius, style: .continuous))
-            .contentShape(RoundedRectangle(cornerRadius: Constant.cornerRadius, style: .continuous))
+            .menuHeaderEntryShape()
         }
         .buttonStyle(.plain)
         .accessibilityLabel(entryData.accessibilityLabel ?? entryData.name)
     }
 
-    private enum Constant {
+    enum Constant {
         static let cornerRadius: CGFloat = 10
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func menuHeaderEntryShape() -> some View {
+        if #available(iOS 17, *) {
+            self
+                .clipShape(ButtonBorderShape.automatic)
+                .contentShape(ButtonBorderShape.automatic)
+        } else {
+            self
+                .clipShape(RoundedRectangle(cornerRadius: MenuHeaderButton.Constant.cornerRadius, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: MenuHeaderButton.Constant.cornerRadius, style: .continuous))
+        }
     }
 }
 

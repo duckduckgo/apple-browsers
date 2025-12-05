@@ -55,6 +55,11 @@ public class DBPIOSInterface {
         func appDidBecomeActive() async
     }
 
+    public protocol UserEventsDelegate: AnyObject {
+        func dashboardDidOpen()
+        func dashboardDidClose()
+    }
+
     public protocol BackgroundTaskInformationDelegate: AnyObject {
         var hasScheduledBackgroundTask: Bool { get async }
     }
@@ -240,7 +245,12 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
     public func appDidBecomeActive() async {
         guard await authenticationManager.isUserAuthenticated else { return }
         fireMonitoringPixels()
-        await checkForEmailConfirmationData()
+
+        if featureFlagger.isForegroundRunningOnAppActiveFeatureOn {
+            await startImmediateScanOperations()
+        } else {
+            await checkForEmailConfirmationData()
+        }
     }
 
     func fireMonitoringPixels() {
@@ -250,6 +260,25 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.AppLifecycleEventsDele
         
         Logger.dataBrokerProtection.debug("PIR wide event sweep requested (app active)")
         sweepWideEvents()
+    }
+}
+
+extension DataBrokerProtectionIOSManager: DBPIOSInterface.UserEventsDelegate {
+    public func dashboardDidOpen() {
+        guard featureFlagger.isForegroundRunningWhenDashboardOpenFeatureOn else { return }
+
+        Logger.dataBrokerProtection.log("Starting all operations whilst dashboard open")
+        queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
+            Logger.dataBrokerProtection.log("All operations completed whilst dashboard open")
+        }
+    }
+    
+    public func dashboardDidClose() {
+        guard featureFlagger.isForegroundRunningWhenDashboardOpenFeatureOn else { return }
+
+        Logger.dataBrokerProtection.log("Stopping operations as dashboard closed")
+        // We don't want to stop immediate scans if they are running
+        self.queueManager.stopScheduledOperationsOnly()
     }
 }
 
@@ -286,24 +315,12 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DatabaseDelegate {
 
     @MainActor
     public func saveProfile(_ profile: DataBrokerProtectionCore.DataBrokerProtectionProfile) async throws {
-        let backgroundAssertion = QRunInBackgroundAssertion(name: "DataBrokerProtectionIOSManager", application: .shared) {
-            self.queueManager.stop()
-        }
-
         do {
             try await database.save(profile)
-            await checkForEmailConfirmationData()
-            queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
-                DispatchQueue.main.async {
-                    backgroundAssertion.release()
-                }
-            }
         } catch {
-            DispatchQueue.main.async {
-                backgroundAssertion.release()
-            }
             throw error
         }
+        await startImmediateScanOperations()
     }
 
     public func deleteAllUserProfileData() throws {
@@ -439,6 +456,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DataBrokerProtectionVi
     public func dataBrokerProtectionViewController() -> DataBrokerProtectionViewController {
         return DataBrokerProtectionViewController(authenticationDelegate: self,
                                                   databaseDelegate: self,
+                                                  userEventsDelegate: self,
                                                   privacyConfigManager: self.privacyConfigManager,
                                                   contentScopeProperties: self.jobDependencies.contentScopeProperties,
                                                   webUISettings: DataBrokerProtectionWebUIURLSettings(.dbp),
@@ -622,5 +640,25 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.BackgroundTaskHandling
 
         // Otherwise → clamp to [minBackgroundTaskWaitTime, maxBackgroundTaskWaitTime]
         return min(max(jobDate, minBackgroundTaskWaitDate), maxBackgroundTaskWaitDate)
+    }
+}
+
+// MARK: - Immediate scans
+
+private extension DataBrokerProtectionIOSManager {
+
+    @MainActor
+    func startImmediateScanOperations() async {
+        Logger.dataBrokerProtection.log("Starting immediate scan operations")
+        let backgroundAssertion = QRunInBackgroundAssertion(name: "DataBrokerProtectionIOSManager", application: .shared) {
+            self.queueManager.stop()
+        }
+
+        await checkForEmailConfirmationData()
+        queueManager.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
+            DispatchQueue.main.async {
+                backgroundAssertion.release()
+            }
+        }
     }
 }

@@ -96,7 +96,10 @@ public struct DefaultRemoteMessagingSurveyURLBuilder: RemoteMessagingSurveyActio
                 if let billing = subscriptionDataProvider?.subscriptionBilling {
                     queryItems.append(URLQueryItem(name: parameter.rawValue, value: billing))
                 }
-
+            case .subscriptionTrialActive:
+                if let trialActive = subscriptionDataProvider?.subscriptionTrialActive {
+                    queryItems.append(URLQueryItem(name: parameter.rawValue, value: String(trialActive)))
+                }
             case .subscriptionDaysSincePurchase:
                 if let startDate = subscriptionDataProvider?.subscriptionStartDate,
                    let daysSincePurchase = Calendar.current.numberOfDaysBetween(startDate, and: Date()) {

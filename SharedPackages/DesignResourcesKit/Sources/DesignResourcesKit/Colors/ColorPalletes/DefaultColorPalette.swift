@@ -111,6 +111,9 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let alertGreen = DynamicColor(lightColor: .alertGreen, darkColor: .alertGreen)
     private static let alertYellow = DynamicColor(lightColor: .alertYellow, darkColor: .alertYellow)
 
+    // Destructive
+    private static let destructivePrimary = DynamicColor(lightColor: Color(0xEE1025), darkColor: Color(0xFF545A))
+
     // Buttons/Primary
     private static let buttonsPrimaryDefault = DynamicColor(lightColor: .blue50, darkColor: .blue30)
     private static let buttonsPrimaryPressed = DynamicColor(lightColor: .blue70, darkColor: .blue50)
@@ -188,6 +191,9 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .textPlaceholder: return textPlaceholder
         case .textSecondary: return textSecondary
         case .textSelectionFill: return textSelectionFill
+
+        // Destructive
+        case .destructivePrimary: return destructivePrimary
 
             // Buttons/SecondaryFill
         case .buttonsSecondaryFillDefault: return buttonsSecondaryFillDefault

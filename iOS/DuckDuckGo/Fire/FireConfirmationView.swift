@@ -105,10 +105,10 @@ struct FireConfirmationView: View {
             }) {
                 Text(UserText.actionDelete)
                     .font(Constants.footerButtonFont)
-                    .foregroundColor(.white)
+                    .foregroundColor(Color(designSystemColor: .buttonsWhite))
                     .frame(maxWidth: .infinity)
                     .frame(minHeight: Constants.footerButtonMinHeight)
-                    .background(.red)
+                    .background(Color(designSystemColor: .destructivePrimary))
                     .cornerRadius(Constants.footerButtonCornerRadius)
             }
             .accessibilityIdentifier("fire.confirmation.button.delete")

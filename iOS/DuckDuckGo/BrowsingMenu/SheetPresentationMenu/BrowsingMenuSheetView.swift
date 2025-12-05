@@ -55,8 +55,11 @@ struct BrowsingMenuSheetView: View {
         /// `.compact` section spacing on iOS 17+. This value is an approximation and
         /// the actual spacing may differ slightly on earlier versions.
         static let listSectionSpacing: CGFloat = 20
-        static let listTopPadding: CGFloat = 20
+        static let listTopPadding: CGFloat = 16
         static let grabberHeight: CGFloat = 20
+
+        static let headerVerticalSpacing: CGFloat = 10
+        static let iconTitleVerticalSpacing: CGFloat = 16
     }
 
     @Environment(\.presentationMode) var presentationMode
@@ -81,6 +84,7 @@ struct BrowsingMenuSheetView: View {
         .compactSectionSpacingIfAvailable()
         .hideScrollContentBackground()
         .listStyle(.insetGrouped)
+        .padding(.top, -4)
         .background(.thickMaterial)
         .background(Color(designSystemColor: .background).opacity(0.5))
         .onDisappear(perform: {
@@ -100,7 +104,7 @@ struct BrowsingMenuSheetView: View {
     private var headerSection: some View {
         Section {
             if !model.headerItems.isEmpty {
-                HStack(spacing: 2) {
+                HStack(spacing: Metrics.headerVerticalSpacing) {
                     ForEach(model.headerItems) { headerItem in
                         MenuHeaderButton(entryData: headerItem) {
                             actionToPerform = { headerItem.action() }
@@ -200,7 +204,7 @@ private struct MenuRowButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 8) {
+            HStack(spacing: Metrics.iconTitleVerticalSpacing) {
                 Image(uiImage: entryData.image)
                     .padding(2)
                     .overlay {

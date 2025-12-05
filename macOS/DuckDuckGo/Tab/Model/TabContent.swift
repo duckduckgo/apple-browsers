@@ -288,10 +288,12 @@ extension TabContent {
         }
     }
 
-    var isUrl: Bool {
+    var isExternalUrl: Bool {
         switch self {
-        case .url: true
-        default: false
+        case .url, .subscription, .identityTheftRestoration, .aiChat:
+            return true
+        default:
+            return false
         }
     }
 
@@ -352,7 +354,7 @@ extension TabContent {
         case .releaseNotes:
             return false
         default:
-            return isUrl
+            return isExternalUrl
         }
     }
 

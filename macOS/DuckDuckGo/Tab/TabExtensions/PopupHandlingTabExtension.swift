@@ -265,7 +265,7 @@ final class PopupHandlingTabExtension {
         // disable opening 'javascript:' links in new tab
         guard navigationAction.request.url?.navigationalScheme != .javascript else { return nil }
         // disable opening internal pages in pop-up windows
-        guard TabContent.contentFromURL(navigationAction.request.url, source: .link).isUrl || !kind.isPopup else { return nil }
+        guard TabContent.contentFromURL(navigationAction.request.url, source: .link).isExternalUrl || !kind.isPopup else { return nil }
 
         let securityOrigin = navigationAction.safeSourceFrame.map { SecurityOrigin($0.securityOrigin) }
         guard let childTab = createChildTab(configuration, securityOrigin, kind) else { return nil }
@@ -419,7 +419,7 @@ extension PopupHandlingTabExtension: NavigationResponder {
     func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
         // Prevent pop-ups opening internal pages (bookmarks, history, settings, etc.)
         if isInPopUpWindow(),
-           !TabContent.contentFromURL(navigationAction.url, source: .link).isUrl {
+           !TabContent.contentFromURL(navigationAction.url, source: .link).isExternalUrl {
             return .cancel
         }
 

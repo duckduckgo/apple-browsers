@@ -182,7 +182,7 @@ public struct GhostAltButtonStyle: ButtonStyle {
     }
     
     private func backgroundColor(_ isPressed: Bool) -> Color {
-        isPressed ?  Color.black.opacity(Consts.ghostPressedBackgroundOpacity) : .clear
+        isPressed ?  Color(UIColor(designSystemColor: .controlsFillPrimary)) : .clear
     }
 }
 

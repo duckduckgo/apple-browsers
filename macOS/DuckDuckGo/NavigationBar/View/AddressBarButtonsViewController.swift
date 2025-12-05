@@ -167,7 +167,11 @@ final class AddressBarButtonsViewController: NSViewController {
         }
     }
 
+    /// Width of the left buttons container (Privacy Dashboard button, Permissions buttons…)
+    /// Used to adjust the Passive Address Bar leading constraint
     @Published private(set) var buttonsWidth: CGFloat = 0
+    /// Width of the right buttons container (Bookmark button, AI Chat button…)
+    /// Used to adjust the Passive Address Bar trailing constraint
     @Published private(set) var trailingButtonsWidth: CGFloat = 0
 
     private let onboardingPixelReporter: OnboardingAddressBarReporting

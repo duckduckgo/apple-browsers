@@ -49,7 +49,7 @@
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>Close this tab</string>
+			<string>Close %d tab</string>
 			<key>other</key>
 			<string>Close all %d tabs</string>
 			<key>zero</key>

@@ -1,0 +1,107 @@
+{
+    "m_product_telemetry_surface_usage_dau": {
+        "description": "Daily active user marker.  Only fires once per day.",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_product_telemetry_surface_usage_menu": {
+        "description": "Fires when the menu is used",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "parameters": ["appVersion"]
+    },
+    "m_product_telemetry_surface_usage_ipad": {
+        "description": "Fires when running on iPad",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "parameters": ["appVersion"]
+    },
+    "m_product_telemetry_surface_usage_landscape": {
+        "description": "Fires when device is in landscape mode",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "parameters": ["appVersion"]
+    },
+    "m_product_telemetry_surface_usage_keyboard_active": {
+        "description": "Fires when keyboard is active (visible)",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "parameters": ["appVersion"]
+    },
+    "m_product_telemetry_surface_usage_autocomplete": {
+        "description": "Fires when autocomplete surface is used",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "parameters": ["appVersion"]
+    },
+    "m_product_telemetry_surface_usage_serp": {
+        "description": "Fires when SERP surface is used",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "parameters": ["appVersion"]
+    },
+    "m_product_telemetry_surface_usage_website": {
+        "description": "Fires when website surface is used",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "parameters": ["appVersion"]
+    },
+    "m_product_telemetry_surface_usage_duck_ai": {
+        "description": "Fires when Duck.ai surface is used",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "parameters": ["appVersion"]
+    },
+    "m_product_telemetry_surface_usage_tab_manager": {
+        "description": "Fires when tab manager surface is used",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "parameters": ["appVersion"]
+    },
+    "m_product_telemetry_surface_usage_data_clearing": {
+        "description": "Fires when data clearing is used from any source",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "parameters": ["appVersion"]
+    },
+    "m_product_telemetry_surface_usage_new_tab_page": {
+        "description": "Fires when New Tab Page surface is used",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "parameters": ["appVersion"]
+    },
+    "m_product_telemetry_surface_usage_settings": {
+        "description": "Fires when settings are used (not re-fired on navigation within settings)",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "parameters": ["appVersion"]
+    },
+    "m_product_telemetry_surface_usage_bookmarks_page": {
+        "description": "Fires when bookmarks page is used",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "parameters": ["appVersion"]
+    },
+    "m_product_telemetry_surface_usage_passwords_page": {
+        "description": "Fires when passwords page is used",
+        "owners": ["brindy"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor", "first_daily_count"],
+        "parameters": ["appVersion"]
+    }
+}

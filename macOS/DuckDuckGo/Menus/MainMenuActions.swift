@@ -708,8 +708,10 @@ extension AppDelegate {
     }
 
     @objc func resetAddToDockFeatureNotification(_ sender: Any?) {
+#if SPARKLE
         guard let dockCustomizer = Application.appDelegate.dockCustomization else { return }
         dockCustomizer.resetData()
+#endif
     }
 
     @objc func resetLaunchDateToToday(_ sender: Any?) {
@@ -718,6 +720,10 @@ extension AppDelegate {
 
     @objc func setLaunchDayAWeekInThePast(_ sender: Any?) {
         UserDefaults.standard.set(Date.weekAgo, forKey: UserDefaultsWrapper<Any>.Key.firstLaunchDate.rawValue)
+    }
+
+    @objc func setLaunchDayAMonthInThePast(_ sender: Any?) {
+        UserDefaults.standard.set(Date.monthAgo, forKey: UserDefaultsWrapper<Any>.Key.firstLaunchDate.rawValue)
     }
 
     @objc func resetTipKit(_ sender: Any?) {

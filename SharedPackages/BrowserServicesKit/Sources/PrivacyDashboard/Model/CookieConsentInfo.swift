@@ -24,13 +24,17 @@ public struct CookieConsentInfo: Encodable {
     let cosmetic: Bool?
     let optoutFailed: Bool?
     let selftestFailed: Bool?
+    let consentReloadLoop: Bool?
+    let consentRule: String?
     let configurable = true
 
-    public init(consentManaged: Bool, cosmetic: Bool?, optoutFailed: Bool?, selftestFailed: Bool?) {
+    public init(consentManaged: Bool, cosmetic: Bool?, optoutFailed: Bool?, selftestFailed: Bool?, consentReloadLoop: Bool?, consentRule: String?) {
         self.consentManaged = consentManaged
         self.cosmetic = cosmetic
         self.optoutFailed = optoutFailed
         self.selftestFailed = selftestFailed
+        self.consentReloadLoop = consentReloadLoop
+        self.consentRule = consentRule
     }
 
 }

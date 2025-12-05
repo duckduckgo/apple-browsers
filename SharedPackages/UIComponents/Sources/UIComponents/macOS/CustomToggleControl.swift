@@ -118,7 +118,112 @@ public final class CustomToggleControl: NSControl {
     private var leftSegmentToolTip: String?
     private var rightSegmentToolTip: String?
 
+    // MARK: - Label Properties
+
+    private var leftLabel: String?
+    private var rightLabel: String?
+
+    public var labelFont: NSFont = NSFont.systemFont(ofSize: 13, weight: .regular) {
+        didSet {
+            invalidateIntrinsicContentSize()
+            needsDisplay = true
+        }
+    }
+
+    public var labelColor: NSColor = .labelColor {
+        didSet { needsDisplay = true }
+    }
+
+    public var selectedLabelColor: NSColor = .labelColor {
+        didSet { needsDisplay = true }
+    }
+
+    public private(set) var isExpanded: Bool = false
+    private var expansionProgress: CGFloat = 0.0
+
+    private var expansionAnimationTimer: Timer?
+    private var expansionAnimationStartTime: CFTimeInterval = 0
+    private var expansionAnimationStartProgress: CGFloat = 0.0
+    private var expansionAnimationTargetProgress: CGFloat = 0.0
+    private let expansionAnimationDuration: CFTimeInterval = 0.2
+
+    public var onWidthChange: ((CGFloat) -> Void)?
+    public var collapsedWidth: CGFloat = 70
+    private let iconLabelSpacing: CGFloat = 4
+    private let segmentPadding: CGFloat = 8
+    private let labelTrailingPadding: CGFloat = 8
+
+    // MARK: - Width Calculation
+
+    public var expandedWidth: CGFloat {
+        let leftLabelWidth = labelWidth(for: leftLabel)
+        let rightLabelWidth = labelWidth(for: rightLabel)
+
+        // Each segment needs: padding + icon + spacing + label + labelTrailingPadding + padding
+        let iconWidth: CGFloat = 16
+        let leftSegmentWidth = segmentPadding + iconWidth + (leftLabel != nil ? iconLabelSpacing + leftLabelWidth + labelTrailingPadding : 0) + segmentPadding
+        let rightSegmentWidth = segmentPadding + iconWidth + (rightLabel != nil ? iconLabelSpacing + rightLabelWidth + labelTrailingPadding : 0) + segmentPadding
+
+        return leftSegmentWidth + rightSegmentWidth + 4 // 4 for indicator gaps
+    }
+
+    public var currentWidth: CGFloat {
+        let collapsed = collapsedWidth
+        let expanded = expandedWidth
+        return collapsed + (expanded - collapsed) * expansionProgress
+    }
+
+    private func labelWidth(for label: String?) -> CGFloat {
+        guard let label = label else { return 0 }
+        let attributes: [NSAttributedString.Key: Any] = [.font: labelFont]
+        let size = (label as NSString).size(withAttributes: attributes)
+        return ceil(size.width)
+    }
+
     // MARK: - Public API Methods
+
+    /// Sets the label for the specified segment
+    /// - Parameters:
+    ///   - label: The label text to display
+    ///   - segment: The index of the segment (0 = left, 1 = right)
+    public func setLabel(_ label: String?, forSegment segment: Int) {
+        guard segment >= 0 && segment < segmentCount else { return }
+        if segment == 0 {
+            leftLabel = label
+        } else {
+            rightLabel = label
+        }
+        invalidateIntrinsicContentSize()
+        needsDisplay = true
+    }
+
+    /// Returns the label for the specified segment
+    /// - Parameter segment: The index of the segment (0 = left, 1 = right)
+    /// - Returns: The label text for the segment, or nil if none is set
+    public func label(forSegment segment: Int) -> String? {
+        guard segment >= 0 && segment < segmentCount else { return nil }
+        return segment == 0 ? leftLabel : rightLabel
+    }
+
+    /// Sets the expanded state of the control
+    /// - Parameters:
+    ///   - expanded: Whether to show labels (expanded) or hide them (collapsed)
+    ///   - animated: Whether to animate the transition
+    public func setExpanded(_ expanded: Bool, animated: Bool) {
+        guard isExpanded != expanded else { return }
+        isExpanded = expanded
+
+        if animated {
+            animateExpansion(to: expanded)
+        } else {
+            expansionProgress = expanded ? 1.0 : 0.0
+            expansionAnimationTimer?.invalidate()
+            expansionAnimationTimer = nil
+            onWidthChange?(currentWidth)
+            invalidateIntrinsicContentSize()
+            needsDisplay = true
+        }
+    }
 
     /// Sets the tooltip for the specified segment
     /// - Parameters:
@@ -288,11 +393,11 @@ public final class CustomToggleControl: NSControl {
         let isRightSelected = selectedSegment == 1
 
         if let leftImg = (isLeftSelected && leftSelectedImage != nil) ? leftSelectedImage : leftImage {
-            drawImage(leftImg, in: leftRect, alpha: 1.0)
+            drawSegmentContent(image: leftImg, label: leftLabel, in: leftRect, isSelected: isLeftSelected)
         }
 
         if let rightImg = (isRightSelected && rightSelectedImage != nil) ? rightSelectedImage : rightImage {
-            drawImage(rightImg, in: rightRect, alpha: 1.0)
+            drawSegmentContent(image: rightImg, label: rightLabel, in: rightRect, isSelected: isRightSelected)
         }
 
         if isFocused {
@@ -325,15 +430,49 @@ public final class CustomToggleControl: NSControl {
         }
     }
 
-    private func drawImage(_ image: NSImage, in rect: NSRect, alpha: CGFloat) {
+    private func drawSegmentContent(image: NSImage, label: String?, in rect: NSRect, isSelected: Bool) {
+        guard let context = NSGraphicsContext.current?.cgContext else { return }
+
+        context.saveGState()
+        context.clip(to: rect)
+
         let imageSize = image.size
+
+        let currentLabelWidth = labelWidth(for: label) * expansionProgress
+
+        let hasVisibleLabel = label != nil && expansionProgress > 0
+        let spacing = hasVisibleLabel ? iconLabelSpacing : 0
+        let totalContentWidth = imageSize.width + spacing + currentLabelWidth
+
+        let contentStartX = rect.midX - totalContentWidth / 2
+
         let imageRect = NSRect(
-            x: rect.midX - imageSize.width / 2,
+            x: contentStartX,
             y: rect.midY - imageSize.height / 2,
             width: imageSize.width,
             height: imageSize.height
         )
+        drawImage(image, in: imageRect, alpha: 1.0)
 
+        if let label = label, expansionProgress > 0 {
+            let textColor = isSelected ? selectedLabelColor : labelColor
+            let attributes: [NSAttributedString.Key: Any] = [
+                .font: labelFont,
+                .foregroundColor: textColor.withAlphaComponent(expansionProgress)
+            ]
+
+            let labelX = imageRect.maxX + iconLabelSpacing
+            let labelSize = (label as NSString).size(withAttributes: attributes)
+            let labelY = rect.midY - labelSize.height / 2
+
+            let labelRect = NSRect(x: labelX, y: labelY, width: labelSize.width, height: labelSize.height)
+            (label as NSString).draw(in: labelRect, withAttributes: attributes)
+        }
+
+        context.restoreGState()
+    }
+
+    private func drawImage(_ image: NSImage, in rect: NSRect, alpha: CGFloat) {
         NSGraphicsContext.current?.imageInterpolation = .high
 
         // For template images, we need to manually tint them for proper color rendering
@@ -342,14 +481,13 @@ public final class CustomToggleControl: NSControl {
                 self.iconTintColor.set()
                 bounds.fill()
 
-                // Draw the image as a mask using destinationIn to cut out transparent areas
                 image.draw(in: bounds, from: .zero, operation: .destinationIn, fraction: 1.0)
                 return true
             }
 
-            tintedImage.draw(in: imageRect, from: .zero, operation: .sourceOver, fraction: alpha)
+            tintedImage.draw(in: rect, from: .zero, operation: .sourceOver, fraction: alpha)
         } else {
-            image.draw(in: imageRect, from: .zero, operation: .sourceOver, fraction: alpha)
+            image.draw(in: rect, from: .zero, operation: .sourceOver, fraction: alpha)
         }
     }
 
@@ -370,7 +508,6 @@ public final class CustomToggleControl: NSControl {
         let elapsed = CACurrentMediaTime() - animationStartTime
         let progress = min(elapsed / animationDuration, 1.0)
 
-        // Ease in-out animation
         let easedProgress = (1 - cos(progress * .pi)) / 2
         selectionProgress = animationStartProgress + (animationTargetProgress - animationStartProgress) * easedProgress
 
@@ -383,11 +520,48 @@ public final class CustomToggleControl: NSControl {
         }
     }
 
+    private func animateExpansion(to expanded: Bool) {
+        expansionAnimationTargetProgress = expanded ? 1.0 : 0.0
+        expansionAnimationStartProgress = expansionProgress
+        expansionAnimationStartTime = CACurrentMediaTime()
+
+        expansionAnimationTimer?.invalidate()
+        expansionAnimationTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { [weak self] _ in
+            self?.updateExpansionAnimation()
+        }
+    }
+
+    @objc private func updateExpansionAnimation() {
+        let elapsed = CACurrentMediaTime() - expansionAnimationStartTime
+        let progress = min(elapsed / expansionAnimationDuration, 1.0)
+
+        let easedProgress = (1 - cos(progress * .pi)) / 2
+        expansionProgress = expansionAnimationStartProgress + (expansionAnimationTargetProgress - expansionAnimationStartProgress) * easedProgress
+
+        onWidthChange?(currentWidth)
+        invalidateIntrinsicContentSize()
+        needsDisplay = true
+
+        if progress >= 1.0 {
+            expansionProgress = expansionAnimationTargetProgress
+            expansionAnimationTimer?.invalidate()
+            expansionAnimationTimer = nil
+        }
+    }
+
+    public override var intrinsicContentSize: NSSize {
+        return NSSize(width: currentWidth, height: NSView.noIntrinsicMetric)
+    }
+
     // MARK: - Mouse Handling
 
     public override func mouseDown(with event: NSEvent) {
         let location = convert(event.locationInWindow, from: nil)
         selectedSegment = location.x > bounds.width / 2 ? 1 : 0
+
+        if isExpanded {
+            setExpanded(false, animated: true)
+        }
     }
 
     public override func mouseMoved(with event: NSEvent) {
@@ -495,6 +669,7 @@ public final class CustomToggleControl: NSControl {
 
     deinit {
         animationTimer?.invalidate()
+        expansionAnimationTimer?.invalidate()
     }
 }
 

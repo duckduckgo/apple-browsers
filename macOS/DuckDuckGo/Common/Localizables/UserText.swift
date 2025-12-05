@@ -622,10 +622,12 @@ struct UserText {
     static let aiChatSidebarTitle = NSLocalizedString("aichat.sidebar.title", value: "Duck.ai", comment: "Title for the Duck.ai sidebar")
     static let aiChatSidebarExpandButtonTooltip = NSLocalizedString("aichat.sidebar.expand-button.tooltip", value: "Expand", comment: "Tooltip for button to open duck.ai chat from sidebar in a full tab")
     static let aiChatSidebarCloseButtonTooltip = NSLocalizedString("aichat.sidebar.close-button.tooltip", value: "Close", comment: "Tooltip for button to close the sidebar with the duck.ai chat")
-    static let aiChatSearchTheWebTooltip = NSLocalizedString("aichat.search-the-web.tooltip", value: "Search the Web", comment: "Tooltip for the search the web segment in the toggle control")
-    static let aiChatChatWithAITooltip = NSLocalizedString("aichat.chat-with-ai.tooltip", value: "Chat with AI", comment: "Tooltip for the chat with AI segment in the toggle control")
+    static let aiChatSearchTheWebTooltip = NSLocalizedString("aichat.search-privately.tooltip", value: "Search Privately", comment: "Tooltip for the search the web segment in the toggle control")
+    static let aiChatChatWithAITooltip = NSLocalizedString("aichat.ask-privately.tooltip", value: "Ask privately", comment: "Tooltip for the chat with AI segment in the toggle control")
+    static let aiChatToggleSearchLabel = NSLocalizedString("aichat.toggle.search.label", value: "Search", comment: "Label for the search segment in the address bar toggle control")
+    static let aiChatToggleAskLabel = NSLocalizedString("aichat.toggle.ask.label", value: "Duck.ai", comment: "Label for the ask AI segment in the address bar toggle control")
     static let aiChatSendButtonTooltip = NSLocalizedString("aichat.send-button.tooltip", value: "Send", comment: "Tooltip for the send button in AI chat omnibar")
-    static let aiChatOmnibarPlaceholder = NSLocalizedString("aichat.omnibar.placeholder", value: "Chat Privately", comment: "Placeholder text shown in the Duck.ai chat input field")
+    static let aiChatOmnibarPlaceholder = NSLocalizedString("aichat.omnibar.placeholder", value: "Ask privately", comment: "Placeholder text shown in the Duck.ai chat input field")
     static let moreSearchSettings = NSLocalizedString("settings.more-search-settings", value: "More Search Settings", comment: "The button name in preferences for More Search Settings")
     static let moreSearchSettingsDescription = NSLocalizedString("settings.more-search-settings.description", value: "Customize your language, region, and more.", comment: "Subtitle of the 'More Search Settings' button")
     static let moreSearchSettingsLink = NSLocalizedString("settings.more-search-settings.link", value: "Open DuckDuckGo Search Settings", comment: "Button to open Search Settings on duckduckgo.com")
@@ -977,10 +979,32 @@ struct UserText {
     static let permissionPopupLearnMoreLink = NSLocalizedString("permission.popup.learn-more.link", value: "Learn more about location services", comment: "Text of link that leads to web page with more informations about location services.")
     static let permissionPopupAllowButton = NSLocalizedString("permission.popup.allow.button", value: "Allow", comment: "Button that the user can use to authorise a web site to for, for example access location or camera and microphone etc.")
 
+    static let permissionPopupDenyButton = NSLocalizedString("permission.popup.deny.button", value: "Deny", comment: "Button that denies permission for this request only")
+    static let permissionPopupAlwaysDenyButton = NSLocalizedString("permission.popup.always.deny.button", value: "Never Allow", comment: "Button that denies permission and remembers the decision for future requests")
+    static let permissionPopupAlwaysAllowButton = NSLocalizedString("permission.popup.always.allow.button", value: "Always Allow", comment: "Button that grants permission and remembers the decision for future requests")
+
     static let privacyDashboardPermissionAsk = NSLocalizedString("dashboard.permission.ask", value: "Ask every time", comment: "Privacy Dashboard: Website should always Ask for permission for input media device access")
     static let privacyDashboardPermissionAlwaysAllow = NSLocalizedString("dashboard.permission.allow", value: "Always allow", comment: "Privacy Dashboard: Website can always access input media device")
     static let privacyDashboardPermissionAlwaysDeny = NSLocalizedString("dashboard.permission.deny", value: "Always deny", comment: "Privacy Dashboard: Website can never access input media device")
     static let permissionPopoverDenyButton = NSLocalizedString("permission.popover.deny", value: "Deny", comment: "Permission Popover: Deny Website input media device access")
+
+    // Two-step permission authorization (geolocation)
+    static let permissionSystemLocationEnable = NSLocalizedString("permission.system.location.enable", value: "Enable System Location", comment: "Button to enable system location services")
+    static let permissionSystemLocationWaiting = NSLocalizedString("permission.system.location.waiting", value: "Waiting for system permission…", comment: "Text shown while waiting for user to respond to system location permission dialog")
+    static let permissionSystemLocationEnabled = NSLocalizedString("permission.system.location.enabled", value: "System location enabled!", comment: "Text shown after system location permission has been granted")
+    static let permissionSystemLocationDisabled = NSLocalizedString("permission.system.location.disabled", value: "System location disabled. Turn it on in ", comment: "Text shown when system location was previously denied. Followed by a link to System Settings")
+    static let permissionSystemSettingsLocation = NSLocalizedString("permission.system.settings.location", value: "System Settings → Privacy", comment: "Link text to open System Settings Privacy section for location")
+    static let permissionRestartApp = NSLocalizedString("permission.restart.app", value: "Restart the DuckDuckGo application", comment: "Text shown when app restart is required for permission changes to take effect")
+    static let permissionGeolocationPromptFormat = NSLocalizedString("permission.geolocation.prompt.format", value: "Allow %@ to use your current location?", comment: "Prompt asking if domain %@ can use location")
+    static let permissionPopupNeverAllowButton = NSLocalizedString("permission.popup.never.allow.button", value: "Never Allow", comment: "Button that denies permission and remembers the decision for future requests")
+
+    // Permission Center
+    static let permissionCenterTitle = NSLocalizedString("permission.center.title", value: "Permissions for \"%@\"", comment: "Title for permission center popover, %@ is the domain name")
+    static let permissionCenterAlwaysAsk = NSLocalizedString("permission.center.always.ask", value: "Always Ask", comment: "Permission center dropdown option to always ask for permission")
+    static let permissionCenterAlwaysAllow = NSLocalizedString("permission.center.always.allow", value: "Always Allow", comment: "Permission center dropdown option to always allow permission")
+    static let permissionCenterNeverAllow = NSLocalizedString("permission.center.never.allow", value: "Never Allow", comment: "Permission center dropdown option to never allow permission")
+    static let permissionCenterExternalSchemeDescription = NSLocalizedString("permission.center.external.scheme.description", value: "%@ to open \"%@\" links", comment: "Description for external scheme permission, first %@ is domain, second %@ is scheme name")
+    static let permissionCenterExternalApps = NSLocalizedString("permission.center.external.apps", value: "External Apps", comment: "Permission center header for external app permissions")
 
     static let privacyDashboardPopupsAlwaysAsk = NSLocalizedString("dashboard.popups.ask", value: "Notify", comment: "Make pop-up windows always request permission for the current domain")
 
@@ -1993,7 +2017,7 @@ struct UserText {
     static let removeSuggestionTooltip = NSLocalizedString("remove.suggestion.tooltip", value: "Remove from browsing history", comment: "Tooltip for the button which removes the history entry from the history")
 
     static let switchToTab = NSLocalizedString("switch.to.tab", value: "Switch to Tab", comment: "Suggestion to switch to an open tab button title")
-    static let searchTheWeb = NSLocalizedString("suggestion.search.the.web", value: "Search the web", comment: "Label shown on the search suggestion cell indicating the action will search the web")
+    static let searchTheWeb = NSLocalizedString("suggestion.search.privately", value: "Search privately", comment: "Label shown on the search suggestion cell indicating the action will search the web")
 
     // MARK: - Storage Access
 

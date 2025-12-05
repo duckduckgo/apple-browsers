@@ -1735,6 +1735,9 @@ public final class MockJobQueueManager: JobQueueManaging {
     public func stop() {
     }
 
+    public func stopScheduledOperationsOnly() {
+    }
+
     public func addEmailConfirmationJobs(showWebView: Bool, jobDependencies: BrokerProfileJobDependencyProviding) {
     }
 }
@@ -1890,11 +1893,17 @@ public final class MockBrokerProfileJobErrorDelegate: BrokerProfileJobErrorDeleg
 public final class MockDBPFeatureFlagger: DBPFeatureFlagging {
     public let isRemoteBrokerDeliveryFeatureOn: Bool
     public let isEmailConfirmationDecouplingFeatureOn: Bool
+    public let isForegroundRunningOnAppActiveFeatureOn: Bool
+    public let isForegroundRunningWhenDashboardOpenFeatureOn: Bool
 
     public init(isRemoteBrokerDeliveryFeatureOn: Bool = true,
-                isEmailConfirmationDecouplingFeatureOn: Bool = false) {
+                isEmailConfirmationDecouplingFeatureOn: Bool = false,
+                isForegroundRunningOnAppActiveFeatureOn: Bool = true,
+                isForegroundRunningWhenDashboardOpenFeatureOn: Bool = true) {
         self.isRemoteBrokerDeliveryFeatureOn = isRemoteBrokerDeliveryFeatureOn
         self.isEmailConfirmationDecouplingFeatureOn = isEmailConfirmationDecouplingFeatureOn
+        self.isForegroundRunningOnAppActiveFeatureOn = isForegroundRunningOnAppActiveFeatureOn
+        self.isForegroundRunningWhenDashboardOpenFeatureOn = isForegroundRunningWhenDashboardOpenFeatureOn
     }
 }
 

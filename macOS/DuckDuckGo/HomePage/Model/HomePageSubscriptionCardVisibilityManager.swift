@@ -61,6 +61,12 @@ final class HomePageSubscriptionCardVisibilityManager: HomePageSubscriptionCardV
             persistor.userHadSubscription = true
         }
 
+        // Avoid setting up the observers if the user has already had a subscription.
+        guard !persistor.userHadSubscription else {
+            updateVisibility()
+            return
+        }
+
         Publishers.CombineLatest(canUserPurchaseSubject, hasSubscriptionSubject)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _, hasSubscription in

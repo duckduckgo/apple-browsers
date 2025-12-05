@@ -28,14 +28,29 @@ struct FireConfirmationPresenter {
     let featureFlagger: FeatureFlagger
     
     func presentFireConfirmation(on viewController: UIViewController,
-                                 from source: AnyObject,
+                                 attachPopoverTo source: AnyObject,
                                  onConfirm: @escaping () -> Void,
                                  onCancel: @escaping () -> Void) {
         guard featureFlagger.isFeatureOn(.granularFireButtonOptions) else {
             presentLegacyConfirmationAlert(on: viewController, from: source, onConfirm: onConfirm, onCancel: onCancel)
             return
         }
-        let viewModel = FireConfirmationViewModel(
+        
+        let viewModel = makeViewModel(dismissing: viewController, onConfirm: onConfirm, onCancel: onCancel)
+        let hostingController = makeHostingController(with: viewModel)
+        let presentingWidth = viewController.view.frame.width
+        
+        configurePresentation(for: hostingController,
+                             source: source,
+                             presentingWidth: presentingWidth)
+        
+        viewController.present(hostingController, animated: true)
+    }
+    
+    private func makeViewModel(dismissing viewController: UIViewController,
+                                onConfirm: @escaping () -> Void,
+                                onCancel: @escaping () -> Void) -> FireConfirmationViewModel {
+        FireConfirmationViewModel(
             onConfirm: { [weak viewController] in
                 viewController?.dismiss(animated: true) {
                     onConfirm()
@@ -47,29 +62,53 @@ struct FireConfirmationPresenter {
                 }
             }
         )
-        
+    }
+    
+    private func makeHostingController(with viewModel: FireConfirmationViewModel) -> UIHostingController<FireConfirmationView> {
         let confirmationView = FireConfirmationView(viewModel: viewModel)
         let hostingController = UIHostingController(rootView: confirmationView)
         hostingController.view.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
-        
         hostingController.modalTransitionStyle = .coverVertical
-                
-        if DevicePlatform.isIpad {
-            configureIPadPopoverPresentation(for: hostingController, from: source)
-        } else {
-            configureSheetPresentation(for: hostingController,
-                                       presentingWidth: viewController.view.frame.width)
-        }
-        viewController.present(hostingController, animated: true)
+        hostingController.modalPresentationStyle = DevicePlatform.isIpad ? .popover : .pageSheet
+        return hostingController
     }
     
-    private func configureSheetPresentation(for hostingController: UIHostingController<FireConfirmationView>,
-                                            presentingWidth: CGFloat) {
-        hostingController.modalPresentationStyle = .pageSheet
-        guard let sheet = hostingController.sheetPresentationController else { return }
-        
+    private func configurePresentation(for hostingController: UIHostingController<FireConfirmationView>,
+                                       source: AnyObject,
+                                       presentingWidth: CGFloat) {
+        if let popoverController = hostingController.popoverPresentationController {
+            configurePopoverSource(popoverController, source: source)
+            
+            let sheetHeight = calculateSheetHeight(for: hostingController.rootView,
+                                                   width: Constants.iPadSheetWidth)
+            hostingController.preferredContentSize = CGSize(width: Constants.iPadSheetWidth, height: sheetHeight)
+            
+            configureSheetDetents(popoverController.adaptiveSheetPresentationController,
+                                 hostingController: hostingController,
+                                 presentingWidth: presentingWidth)
+        }
+        if let sheet = hostingController.sheetPresentationController {
+            configureSheetDetents(sheet,
+                                 hostingController: hostingController,
+                                 presentingWidth: presentingWidth)
+        }
+    }
+    
+    private func configurePopoverSource(_ popover: UIPopoverPresentationController, source: AnyObject) {
+        if let source = source as? UIView {
+            popover.sourceView = source
+            popover.sourceRect = source.bounds
+        } else if let source = source as? UIBarButtonItem {
+            popover.barButtonItem = source
+        }
+    }
+    
+    private func configureSheetDetents(_ sheet: UISheetPresentationController,
+                                       hostingController: UIHostingController<FireConfirmationView>,
+                                       presentingWidth: CGFloat) {
         if #available(iOS 16.0, *) {
-            let targetHeight = calculateContentHeight(for: hostingController.rootView, width: presentingWidth)
+            let targetHeight = calculateContentHeight(for: hostingController.rootView,
+                                                      width: presentingWidth)
             sheet.detents = [.custom { _ in targetHeight }]
         } else {
             sheet.detents = [.large()]
@@ -78,22 +117,12 @@ struct FireConfirmationPresenter {
         sheet.preferredCornerRadius = Constants.sheetCornerRadius
     }
     
-    private func configureIPadPopoverPresentation(for hostingController: UIHostingController<FireConfirmationView>,
-                                                  from source: AnyObject) {
-        hostingController.modalPresentationStyle = .popover
-        if let source = source as? UIView {
-            hostingController.popoverPresentationController?.sourceView = source
-            hostingController.popoverPresentationController?.sourceRect = source.bounds
-        } else if let source = source as? UIBarButtonItem {
-            hostingController.popoverPresentationController?.barButtonItem = source
-        }
-        let sheetHeight: CGFloat
+    private func calculateSheetHeight(for view: FireConfirmationView, width: CGFloat) -> CGFloat {
         if #available(iOS 16.0, *) {
-            sheetHeight = calculateContentHeight(for: hostingController.rootView, width: Constants.iPadSheetWidth)
+            return calculateContentHeight(for: view, width: width)
         } else {
-            sheetHeight = Constants.iPadSheetDefaultHeight
+            return Constants.iPadSheetDefaultHeight
         }
-        hostingController.preferredContentSize = CGSize(width: Constants.iPadSheetWidth, height: sheetHeight)
     }
     
     @available(iOS 16.0, *)

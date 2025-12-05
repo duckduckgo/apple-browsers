@@ -106,7 +106,7 @@ extension TabSwitcherViewController {
             let presenter = FireConfirmationPresenter(featureFlagger: featureFlagger)
             presenter.presentFireConfirmation(
                 on: self,
-                from: sender,
+                attachPopoverTo: sender,
                 onConfirm: { [weak self] in
                     self?.forgetAll()
                 },

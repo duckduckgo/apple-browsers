@@ -270,7 +270,11 @@ private extension UserDefaults {
 
     @objc dynamic var showSearchAndDuckAIToggle: Bool {
         get {
-            value(forKey: Keys.showSearchAndDuckAIToggle) as? Bool ?? Self.showSearchAndDuckAIToggleDefaultValue
+            /// If not explicitly set by user, inherit from showAIChatShortcutInAddressBarWhenTyping
+            if value(forKey: Keys.showSearchAndDuckAIToggle) == nil {
+                return showAIChatShortcutInAddressBarWhenTyping
+            }
+            return value(forKey: Keys.showSearchAndDuckAIToggle) as? Bool ?? Self.showSearchAndDuckAIToggleDefaultValue
         }
 
         set {

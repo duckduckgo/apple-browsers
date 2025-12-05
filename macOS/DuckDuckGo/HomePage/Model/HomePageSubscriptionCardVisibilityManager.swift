@@ -74,6 +74,8 @@ final class HomePageSubscriptionCardVisibilityManager: HomePageSubscriptionCardV
                 // Prevent card from showing again if the user has any kind of subscription.
                 if hasSubscription {
                     persistor.userHadSubscription = true
+                    // Stop observing as we don't want to show the card again.
+                    cancellables.removeAll()
                 }
                 updateVisibility()
             }

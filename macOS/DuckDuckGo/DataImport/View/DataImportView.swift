@@ -94,7 +94,7 @@ struct DataImportView: ModalView {
                     profiles: model.browserProfiles?.validImportableProfiles ?? [],
                     selectedProfile: model.selectedProfile
                 ) { profile in
-                    model.selectedProfile = profile
+                    model.selectProfile(profile)
                 }
             case .fileImport(let dataType, let summary):
                 FileImportScreenView(

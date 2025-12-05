@@ -236,11 +236,23 @@ struct DataImportViewModel {
 
         self.screen = screen ?? .sourceAndDataTypesPicker
 
-        self.browserProfiles = ThirdPartyBrowser.browser(for: importSource).map(loadProfiles)
-        let selectedProfile = self.browserProfiles?.defaultProfile
+        let browserProfiles = ThirdPartyBrowser.browser(for: importSource).map(loadProfiles)
+        self.browserProfiles = browserProfiles
+        let selectedProfile = browserProfiles?.defaultProfile
         self.selectedProfile = selectedProfile
 
-        let availableImportTypes = importSource.supportedDataTypes.filter { selectedProfile?.hasValidProfileData(for: $0) ?? true }
+        let availableImportTypes = importSource.supportedDataTypes.filter { dataType in
+            guard let profiles = browserProfiles else { return true }
+            
+            // If we have valid profiles, check if any profile has valid data for this type.
+            // If no valid profiles (Safari doesn't check profiles, password managers), return true (include all types).
+            let validProfiles = profiles.validImportableProfiles
+            guard !validProfiles.isEmpty else { return true }
+            
+            return validProfiles.contains { profile in
+                profile.hasValidProfileData(for: dataType)
+            }
+        }
         self.selectableImportTypes = availableImportTypes
         self.selectedDataTypes = Self.determineSelectedDataTypes(
             previousSelectedTypes: selectedDataTypes,
@@ -880,6 +892,20 @@ extension DataImportViewModel {
                      reportSenderFactory: reportSenderFactory,
                      onFinished: onFinished,
                      onCancelled: onCancelled)
+    }
+
+    /// Selects a profile and filters selected data types to only include types available for that profile.
+    /// This should be called when the user selects a profile from the profile picker screen.
+    /// - Parameter profile: The profile to select
+    @MainActor
+    mutating func selectProfile(_ profile: BrowserProfile) {
+        self.selectedProfile = profile
+        
+        // Filter selected data types to only include types available for this specific profile
+        let availableTypesForProfile = importSource.supportedDataTypes.filter { dataType in
+            profile.hasValidProfileData(for: dataType)
+        }
+        selectedDataTypes = selectedDataTypes.intersection(availableTypesForProfile)
     }
 
     @MainActor

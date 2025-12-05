@@ -97,7 +97,7 @@ final class HomePageSubscriptionCardVisibilityManager: HomePageSubscriptionCardV
     private func checkPurchaseEligibility() {
         switch subscriptionManager.currentEnvironment.purchasePlatform {
         case .appStore:
-            subscriptionManager.canPurchasePublisher
+            subscriptionManager.hasAppStoreProductsAvailablePublisher
                 .sink { [weak self] canPurchase in
                     self?.canUserPurchaseSubject.send(canPurchase)
                 }

@@ -25,7 +25,7 @@ final class AIChatFullModeOmniBrandingView: UIView {
 
     // MARK: - UI Elements
 
-    private let containerView = UIView()
+    private let stackView = UIStackView()
     private let brandingIconView = UIImageView()
     private let textLabel = UILabel()
 
@@ -48,52 +48,35 @@ final class AIChatFullModeOmniBrandingView: UIView {
     private func setupViews() {
         backgroundColor = .clear
 
-        containerView.backgroundColor = .clear
-        containerView.layer.cornerRadius = 8
-        containerView.clipsToBounds = true
-        addSubview(containerView)
+        stackView.axis = .horizontal
+        stackView.alignment = .center
+        stackView.spacing = 4
+        addSubview(stackView)
 
         brandingIconView.contentMode = .scaleAspectFit
-        containerView.addSubview(brandingIconView)
-
         brandingIconView.image = DesignSystemImages.Color.Size24.aiChatGradient
+        stackView.addArrangedSubview(brandingIconView)
 
         textLabel.text = UserText.omnibarFullAIChatModeDisplayTitle
         textLabel.font = UIFont.daxBodyRegular()
         textLabel.textColor = UIColor(designSystemColor: .textPrimary)
-        textLabel.setContentHuggingPriority(.required, for: .horizontal)
-        containerView.addSubview(textLabel)
+        stackView.addArrangedSubview(textLabel)
     }
 
     private func setupConstraints() {
-        containerView.translatesAutoresizingMaskIntoConstraints = false
+        stackView.translatesAutoresizingMaskIntoConstraints = false
         brandingIconView.translatesAutoresizingMaskIntoConstraints = false
-        textLabel.translatesAutoresizingMaskIntoConstraints = false
-
-        NSLayoutConstraint.activate([
-            containerView.topAnchor.constraint(equalTo: topAnchor),
-            containerView.bottomAnchor.constraint(equalTo: bottomAnchor),
-            containerView.leadingAnchor.constraint(equalTo: leadingAnchor),
-            containerView.trailingAnchor.constraint(equalTo: trailingAnchor)
-        ])
 
         let iconSize: CGFloat = 24
-        let iconTextSpacing: CGFloat = 4
 
-        // Branding icon
         NSLayoutConstraint.activate([
-            brandingIconView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 8),
-            brandingIconView.centerYAnchor.constraint(equalTo: centerYAnchor),
+            stackView.centerXAnchor.constraint(equalTo: centerXAnchor),
+            stackView.centerYAnchor.constraint(equalTo: centerYAnchor),
+
             brandingIconView.widthAnchor.constraint(equalToConstant: iconSize),
-            brandingIconView.heightAnchor.constraint(equalToConstant: iconSize)
-        ])
+            brandingIconView.heightAnchor.constraint(equalToConstant: iconSize),
 
-        NSLayoutConstraint.activate([
-            textLabel.leadingAnchor.constraint(equalTo: brandingIconView.trailingAnchor, constant: iconTextSpacing),
-            textLabel.centerYAnchor.constraint(equalTo: brandingIconView.centerYAnchor),
-            textLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -8)
+            heightAnchor.constraint(equalToConstant: 44)
         ])
-
-        containerView.heightAnchor.constraint(equalToConstant: 44).isActive = true
     }
 }

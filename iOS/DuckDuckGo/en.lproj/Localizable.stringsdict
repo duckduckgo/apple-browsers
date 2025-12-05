@@ -53,7 +53,7 @@
 			<key>other</key>
 			<string>Close all %d tabs</string>
 			<key>zero</key>
-			<string>Are you sure you want to delete this folder and %d item?</string>
+			<string>None</string>
 		</dict>
 	</dict>
 	<key>bookmark.deleteFolderAlert.message</key>

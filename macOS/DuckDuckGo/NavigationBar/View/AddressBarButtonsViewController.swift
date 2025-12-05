@@ -50,6 +50,7 @@ protocol AddressBarButtonsViewControllerDelegate: AnyObject {
     func addressBarButtonsViewControllerCancelButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewControllerHideAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewControllerHideAskAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
+    func addressBarButtonsViewControllerHideSearchModeToggleClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewControllerOpenAIChatSettingsButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewControllerAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewControllerSearchModeToggleChanged(_ addressBarButtonsViewController: AddressBarButtonsViewController, isAIChatMode: Bool)
@@ -1292,6 +1293,11 @@ final class AddressBarButtonsViewController: NSViewController {
         }
     }
 
+    @objc func hideSearchModeToggleAction(_ sender: NSMenuItem) {
+        delegate?.addressBarButtonsViewControllerHideSearchModeToggleClicked(self)
+        updateButtons()
+    }
+
     @objc func openAIChatSettingsContextMenuAction(_ sender: NSMenuItem) {
         delegate?.addressBarButtonsViewControllerOpenAIChatSettingsButtonClicked(self)
     }
@@ -1853,6 +1859,8 @@ final class AddressBarButtonsViewController: NSViewController {
             self?.searchModeToggleWidthConstraint?.constant = newWidth
         }
 
+        toggleControl.menu = createSearchModeToggleContextMenu()
+
         trailingButtonsContainer.addArrangedSubview(toggleControl)
         toggleControl.isHidden = true
 
@@ -1864,6 +1872,26 @@ final class AddressBarButtonsViewController: NSViewController {
 
         self.searchModeToggleWidthConstraint = widthConstraint
         self.searchModeToggleControl = toggleControl
+    }
+
+    private func createSearchModeToggleContextMenu() -> NSMenu {
+        let menu = NSMenu()
+
+        let hideItem = NSMenuItem(title: UserText.aiChatAddressBarHideToggle,
+                                  action: #selector(hideSearchModeToggleAction(_:)),
+                                  keyEquivalent: "")
+        hideItem.target = self
+        menu.addItem(hideItem)
+
+        menu.addItem(NSMenuItem.separator())
+
+        let settingsItem = NSMenuItem(title: UserText.aiChatOpenSettingsButton,
+                                      action: #selector(openAIChatSettingsContextMenuAction(_:)),
+                                      keyEquivalent: "")
+        settingsItem.target = self
+        menu.addItem(settingsItem)
+
+        return menu
     }
 
     @objc private func searchModeToggleDidChange(_ sender: CustomToggleControl) {

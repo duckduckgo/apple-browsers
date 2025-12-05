@@ -1029,6 +1029,9 @@ final class AddressBarViewController: NSViewController {
         // If we have an AddressBarMenuButton, forward the event
         guard !(viewWithinAddressBar is AddressBarMenuButton) else { return event }
 
+        // If we have a CustomToggleControl, forward the event to let it handle its context menu
+        guard !(viewWithinAddressBar is CustomToggleControl) else { return event }
+
         // If the farthest view of the point location is a NSButton or LottieAnimationView don't show contextual menu
         guard viewWithinAddressBar.shouldShowArrowCursor == false else { return nil }
 
@@ -1091,6 +1094,10 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
 
     func addressBarButtonsViewControllerHideAskAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
         aiChatSettings.showShortcutInAddressBarWhenTyping = false
+    }
+
+    func addressBarButtonsViewControllerHideSearchModeToggleClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
+        aiChatSettings.showSearchAndDuckAIToggle = false
     }
 
     func addressBarButtonsViewControllerCancelButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {

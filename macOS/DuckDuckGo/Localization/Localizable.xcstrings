@@ -1779,6 +1779,18 @@
         }
       }
     },
+    "aichat.address-bar.hide-toggle" : {
+      "comment" : "Button to hide duck.ai toggle in address bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hide Duck.ai Toggle"
+          }
+        }
+      }
+    },
     "aichat.address-bar.open-new-tab-button" : {
       "comment" : "Button to open Duck.ai in a new tab",
       "extractionState" : "extracted_with_value",

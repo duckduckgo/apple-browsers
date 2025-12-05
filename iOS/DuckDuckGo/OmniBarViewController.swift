@@ -250,9 +250,6 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.onAIChatLeftButtonPressed = { [weak self] in
             self?.onAIChatLeftButtonPressed()
         }
-        barView.onAIChatRightButtonPressed = { [weak self] in
-            self?.onAIChatRightButtonPressed()
-        }
         barView.onAIChatBrandingPressed = { [weak self] in
             self?.onAIChatBrandingPressed()
         }
@@ -861,10 +858,6 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     private func onAIChatLeftButtonPressed() {
         omniDelegate?.onAIChatLeftButtonPressed()
-    }
-
-    private func onAIChatRightButtonPressed() {
-        omniDelegate?.onAIChatRightButtonPressed()
     }
 
     private func onAIChatBrandingPressed() {

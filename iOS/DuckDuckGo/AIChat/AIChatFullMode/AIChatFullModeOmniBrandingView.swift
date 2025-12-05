@@ -26,8 +26,6 @@ final class AIChatFullModeOmniBrandingView: UIView {
     // MARK: - UI Elements
 
     private let containerView = UIView()
-    private let leftIconView = UIImageView()
-    private let chevronIconView = UIImageView()
     private let brandingIconView = UIImageView()
     private let textLabel = UILabel()
 
@@ -55,14 +53,9 @@ final class AIChatFullModeOmniBrandingView: UIView {
         containerView.clipsToBounds = true
         addSubview(containerView)
 
-        for iconView in [leftIconView, chevronIconView, brandingIconView] {
-            iconView.contentMode = .scaleAspectFit
-            containerView.addSubview(iconView)
-        }
+        brandingIconView.contentMode = .scaleAspectFit
+        containerView.addSubview(brandingIconView)
 
-        leftIconView.image = DesignSystemImages.Color.Size32.duckDuckGo
-        chevronIconView.image = UIImage(systemName: "chevron.right")?.withRenderingMode(.alwaysTemplate)
-        chevronIconView.tintColor = UIColor(designSystemColor: .iconsTertiary)
         brandingIconView.image = DesignSystemImages.Color.Size24.aiChatGradient
 
         textLabel.text = UserText.omnibarFullAIChatModeDisplayTitle
@@ -74,8 +67,6 @@ final class AIChatFullModeOmniBrandingView: UIView {
 
     private func setupConstraints() {
         containerView.translatesAutoresizingMaskIntoConstraints = false
-        leftIconView.translatesAutoresizingMaskIntoConstraints = false
-        chevronIconView.translatesAutoresizingMaskIntoConstraints = false
         brandingIconView.translatesAutoresizingMaskIntoConstraints = false
         textLabel.translatesAutoresizingMaskIntoConstraints = false
 
@@ -87,36 +78,19 @@ final class AIChatFullModeOmniBrandingView: UIView {
         ])
 
         let iconSize: CGFloat = 24
-        let chevronSize: CGFloat = 18
         let iconTextSpacing: CGFloat = 4
-
-        // Left icon
-        NSLayoutConstraint.activate([
-            leftIconView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 8),
-            leftIconView.centerYAnchor.constraint(equalTo: centerYAnchor),
-            leftIconView.widthAnchor.constraint(equalToConstant: iconSize),
-            leftIconView.heightAnchor.constraint(equalToConstant: iconSize)
-        ])
-
-        // Chevron icon
-        NSLayoutConstraint.activate([
-            chevronIconView.leadingAnchor.constraint(equalTo: leftIconView.trailingAnchor, constant: iconTextSpacing),
-            chevronIconView.centerYAnchor.constraint(equalTo: leftIconView.centerYAnchor),
-            chevronIconView.widthAnchor.constraint(equalToConstant: chevronSize),
-            chevronIconView.heightAnchor.constraint(equalToConstant: chevronSize)
-        ])
 
         // Branding icon
         NSLayoutConstraint.activate([
-            brandingIconView.leadingAnchor.constraint(equalTo: chevronIconView.trailingAnchor, constant: iconTextSpacing),
-            brandingIconView.topAnchor.constraint(equalTo: leftIconView.topAnchor),
+            brandingIconView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 8),
+            brandingIconView.centerYAnchor.constraint(equalTo: centerYAnchor),
             brandingIconView.widthAnchor.constraint(equalToConstant: iconSize),
             brandingIconView.heightAnchor.constraint(equalToConstant: iconSize)
         ])
 
         NSLayoutConstraint.activate([
             textLabel.leadingAnchor.constraint(equalTo: brandingIconView.trailingAnchor, constant: iconTextSpacing),
-            textLabel.centerYAnchor.constraint(equalTo: leftIconView.centerYAnchor),
+            textLabel.centerYAnchor.constraint(equalTo: brandingIconView.centerYAnchor),
             textLabel.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: -8)
         ])
 

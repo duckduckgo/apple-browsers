@@ -5,64 +5,64 @@
         "owners": ["alessandroboron", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "errorCode", "errorDomain"]
+        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
     "m_debug_bloomfilterspec_load_failed": {
         "description": "Fired when the Bloom Filter spec configuration file fails to load",
         "owners": ["alessandroboron", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "errorCode", "errorDomain"]
+        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
     "m_debug_bloomfilterexcludeddomains_load_failed": {
         "description": "Fired when the Bloom Filter excluded domains configuration file fails to load",
         "owners": ["alessandroboron", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "errorCode", "errorDomain"]
+        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
     "m_debug_privacyconfiguration_load_failed": {
         "description": "Fired when the Privacy Configuration file fails to load",
         "owners": ["alessandroboron", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "errorCode", "errorDomain"]
+        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
     "m_debug_surrogates_load_failed": {
         "description": "Fired when the surrogates configuration file fails to load",
         "owners": ["alessandroboron", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "errorCode", "errorDomain"]
+        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
     "m_debug_trackerdataset_load_failed": {
         "description": "Fired when the TDS configuration file fails to load",
         "owners": ["alessandroboron", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "errorCode", "errorDomain"]
+        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
     "m_debug_remotemessagingconfig_load_failed": {
         "description": "Fired when the RMF configuration file fails to load",
         "owners": ["alessandroboron", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "errorCode", "errorDomain"]
+        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
 
     "m_debug_privacyconfiguration_parse_failed": {
         "description": "Fired when the Privacy Configuration file fails to parse",
         "owners": ["alessandroboron", "samsymons"],
         "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "errorCode", "errorDomain"]
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
     "m_debug_trackerdataset_parse_failed": {
         "description": "Fired when the TDS configuration file fails to parse",
         "owners": ["alessandroboron", "samsymons"],
         "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "errorCode", "errorDomain"]
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
 
     "m_debug_privacyconfiguration_load_failed_vpn": {
@@ -70,13 +70,13 @@
         "owners": ["alessandroboron", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "errorCode", "errorDomain"]
+        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     },
     "m_debug_privacyconfiguration_parse_failed_vpn": {
         "description": "Fired when the Privacy Configuration file fails to parse when being fetched by the VPN",
         "owners": ["alessandroboron", "samsymons"],
         "triggers": ["other"],
         "suffixes": ["first_daily_count", "platform", "form_factor"],
-        "parameters": ["appVersion", "errorCode", "errorDomain"]
+        "parameters": ["appVersion", "errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
     }
 }

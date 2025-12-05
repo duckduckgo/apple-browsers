@@ -50,6 +50,7 @@ class EmailSignupViewController: UIViewController {
     }
 
     let completion: ((Bool) -> Void)
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
 
     private var webView: WKWebView!
@@ -123,8 +124,10 @@ class EmailSignupViewController: UIViewController {
 
     // MARK: - Public interface
 
-    init(contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
+    init(privacyConfigurationManager: PrivacyConfigurationManaging,
+         contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
          completion: @escaping ((Bool) -> Void)) {
+        self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
         self.completion = completion
         super.init(nibName: nil, bundle: nil)
@@ -161,7 +164,8 @@ class EmailSignupViewController: UIViewController {
 
     private func setupWebView() {
         let configuration =  WKWebViewConfiguration.persistent()
-        let userContentController = UserContentController(contentBlockingAssetsPublisher: contentBlockingAssetsPublisher)
+        let userContentController = UserContentController(assetsPublisher: contentBlockingAssetsPublisher,
+                                                          privacyConfigurationManager: privacyConfigurationManager)
         configuration.userContentController = userContentController
         userContentController.delegate = self
 
@@ -396,6 +400,7 @@ extension EmailSignupViewController: SecureVaultManagerDelegate {
     func secureVaultManager(_: SecureVaultManager,
                             promptUserToAutofillCreditCardWith creditCards: [SecureVaultModels.CreditCard],
                             withTrigger trigger: AutofillUserScript.GetTriggerType,
+                            isMainFrame: Bool,
                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         // no-op
     }
@@ -403,6 +408,7 @@ extension EmailSignupViewController: SecureVaultManagerDelegate {
     func secureVaultManager(_: SecureVaultManager,
                             didFocusFieldFor mainType: AutofillUserScript.GetAutofillDataMainType,
                             withCreditCards creditCards: [SecureVaultModels.CreditCard],
+                            isMainFrame: Bool,
                             completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         // no-op
     }

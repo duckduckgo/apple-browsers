@@ -25,6 +25,15 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Add";
 
+/* Open AI Chat history action in the menu list */
+"action.title.aiChat.history" = "Duck.ai Chats";
+
+/* Start new AI Chat action in the menu list */
+"action.title.aiChat.new" = "New Chat";
+
+/* Open AI Chat settings action in the menu list */
+"action.title.aiChat.settings" = "Duck.ai Settings";
+
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Passwords";
 
@@ -74,7 +83,7 @@
 "action.title.newBackgroundTabForUrl" = "Open in Background";
 
 /* Create New Tab action */
-"action.title.newTabAction" = "New";
+"action.title.newTabAction" = "New Tab";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Open in New Tab";
@@ -457,6 +466,51 @@
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Enable Email Protection";
 
+/* Button title to dismiss the autofill extension activation view */
+"autofill.extension.activation.done.button.title" = "Done";
+
+/* Title shown when the autofill extension activation succeeds */
+"autofill.extension.activation.title" = "Autofill passwords activated!";
+
+/* Footer text describing what enabling the autofill extension does */
+"autofill.extension.footer" = "Use passwords you saved in DuckDuckGo across all apps on your device.";
+
+/* Header text shown when the autofill extension is disabled */
+"autofill.extension.header.disabled" = "Autofill in Other Apps";
+
+/* Header text shown when the autofill extension is enabled */
+"autofill.extension.header.enabled" = "Autofill in Other Apps Enabled";
+
+/* Dismiss button title for the Autofill extension promotion */
+"autofill.extension.promo.button.dismiss.title" = "Set up Later in Settings";
+
+/* CTA button title for the Autofill extension promotion */
+"autofill.extension.promo.button.title" = "Turn On Autofill in Other Apps";
+
+/* Message for the Autofill extension promotion */
+"autofill.extension.promo.message" = "Use DuckDuckGo to securely autofill passwords for all your apps.";
+
+/* Title for the Autofill extension promotion */
+"autofill.extension.promo.title" = "Quickly sign in to your apps without typing passwords";
+
+/* Title for screen showing autofill extension settings */
+"autofill.extension.screen.title" = "Autofill Passwords in Other Apps";
+
+/* Status text when autofill extension is disabled */
+"autofill.extension.status.off" = "Turn On";
+
+/* Status text when autofill extension is enabled */
+"autofill.extension.status.on" = "On";
+
+/* Title for autofill extension settings row */
+"autofill.extension.title" = "Autofill in Other Apps";
+
+/* Button title that opens system settings to turn off the autofill extension */
+"autofill.extension.turn.off.button.title" = "Turn Off in System Settings...";
+
+/* Button title that triggers system prompt to turn on the autofill extension */
+"autofill.extension.turn.on.button.title" = "Turn On...";
+
 /* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
 "autofill.hide-card-cvv" = "Hide CVV";
 
@@ -793,8 +847,8 @@
 /* Section header for the autofill settings screen */
 "autofill.settings.import-passwords.section-header" = "Import Passwords";
 
-/* Section header for the autofill settings screen */
-"autofill.settings.options.section-header" = "Options";
+/* Section header for the autofill passwords options section of the settings screen */
+"autofill.settings.options.section-header" = "Password Options";
 
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Report a problem with autofill";
@@ -2311,6 +2365,9 @@ https://duckduckgo.com/mac";
 /* Text displayed on notification appearing in the address bar when the browser  hides a cookie popup */
 "omnibar.notification.popup-hidden" = "Pop-up Hidden";
 
+/* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
+"omnibar.notification.trackers-blocked" = "%d Trackers";
+
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Got It";
 
@@ -2380,20 +2437,8 @@ https://duckduckgo.com/mac";
 /* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Settings > AI Features.";
 
-/* The explanation of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.subtitle" = "Add a Duck.ai shortcut to new tabs and the address bar. Don't want this? Select Search Only.";
-
-/* Bold text 'Duck.ai shortcut'. This will replace the first placeholder (%1$@) in the subtitle string. */
-"onboarding.highlights.searchExperience.subtitle.duckai-shortcut-bold" = "Duck.ai shortcut";
-
-/* Full message with placeholders: %1$@ will be replaced with 'Duck.ai shortcut' (bold), %2$@ will be replaced with 'Search Only' (bold). */
-"onboarding.highlights.searchExperience.subtitle.formatted" = "Add a %1$@ to new tabs and the address bar. Don't want this? Select %2$@.";
-
-/* Bold text 'Search Only'. This will replace the second placeholder (%2$@) in the subtitle string. */
-"onboarding.highlights.searchExperience.subtitle.search-only-bold" = "Search Only";
-
 /* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Want easier access to private AI Chat?";
+"onboarding.highlights.searchExperience.title" = "Want easy access to private AI chat?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Let’s do it!";
@@ -2728,9 +2773,6 @@ Take back control of your personal information with the browser designed for dat
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Show Full Site Address";
 
-/* Title for the 'Add Duck.ai Shortcut' option in the AI experimental picker */
-"settings.ai.experimental.picker.duckai_shortcut" = "Add Duck.ai Shortcut";
-
 /* Title for the 'Search & Duck.ai' option in the AI experimental picker */
 "settings.ai.experimental.picker.search_and_duckai" = "Search & Duck.ai";
 
@@ -2755,6 +2797,12 @@ Take back control of your personal information with the browser designed for dat
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Search Assist Settings";
 
+/* Settings screen cell subtitle for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.subtitle" = "Show new Duck.ai Chats as tabs in the browser";
+
+/* Settings screen cell title for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.title" = "Duck.ai Tabs Mode";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Hide AI-Generated Images";
 
@@ -2769,6 +2817,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Address Bar Position";
+
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Experimental Browser Menu";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Open Links in Associated Apps";
@@ -2896,8 +2947,11 @@ Take back control of your personal information with the browser designed for dat
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Import Passwords";
 
-/* Copy for budge on settings item to show an item is new */
+/* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "New";
+
+/* Copy for badge on settings item to show an item is experimental */
+"settings.item.badge.preview" = "Preview";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Keyboard";

@@ -31,6 +31,8 @@ struct DownloadTestsHelper {
     }
     
     func createMockFile(on path: URL) {
+        let parentDirectory = path.deletingLastPathComponent()
+        try? FileManager.default.createDirectory(at: parentDirectory, withIntermediateDirectories: true, attributes: nil)
         try? Data("FakeFileData".utf8).write(to: path)
     }
     
@@ -39,6 +41,7 @@ struct DownloadTestsHelper {
     }
     
     func deleteFilesOnPath(_ url: URL) {
+        guard checkIfFileExists(url) else { return }
         do {
             let files = try FileManager.default.contentsOfDirectory(at: url,
                                                                     includingPropertiesForKeys: nil,

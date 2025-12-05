@@ -62,6 +62,9 @@ final class TabViewModel: NSObject {
 
     var lastAddressBarTextFieldValue: AddressBarTextField.Value?
 
+    /// Shared text state for the address bar and AI Chat omnibar for this tab
+    let addressBarSharedTextState = AddressBarSharedTextState()
+
     @Published private(set) var title: String = UserText.tabHomeTitle
     @Published private(set) var favicon: NSImage?
     var findInPage: FindInPageModel? { tab.findInPage?.model }
@@ -129,7 +132,7 @@ final class TabViewModel: NSObject {
 
     init(tab: Tab,
          appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences,
-         accessibilityPreferences: AccessibilityPreferences = .shared,
+         accessibilityPreferences: AccessibilityPreferences = NSApp.delegateTyped.accessibilityPreferences,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.tab = tab
         self.appearancePreferences = appearancePreferences
@@ -387,31 +390,31 @@ final class TabViewModel: NSObject {
         let showFullURL = showFullURL ?? appearancePreferences.showFullURL
         passiveAddressBarAttributedString = switch tab.content {
         case .newtab, .onboarding, .none:
-                .init() // empty
+            .init() // empty
         case .settings:
-                .settingsTrustedIndicator
+            .settingsTrustedIndicator
         case .bookmarks:
-                .bookmarksTrustedIndicator
+            .bookmarksTrustedIndicator
         case .history:
-            featureFlagger.isFeatureOn(.historyView) ? .historyTrustedIndicator : .init()
+            .historyTrustedIndicator
         case .url(let url, _, _) where url.isHistory:
-            featureFlagger.isFeatureOn(.historyView) ? .historyTrustedIndicator : .init()
+            .historyTrustedIndicator
         case .dataBrokerProtection:
-                .dbpTrustedIndicator
+            .dbpTrustedIndicator
         case .subscription:
-            NSAttributedString.subscriptionTrustedIndicator
+            .subscriptionTrustedIndicator
         case .identityTheftRestoration:
-                .identityTheftRestorationTrustedIndicator
+            .identityTheftRestorationTrustedIndicator
         case .releaseNotes:
-                .releaseNotesTrustedIndicator
+            .releaseNotesTrustedIndicator
         case .url(let url, _, _) where url.isDuckPlayer:
-                .duckPlayerTrustedIndicator
+            .duckPlayerTrustedIndicator
         case .url(let url, _, _) where url.isEmailProtection:
-                .emailProtectionTrustedIndicator
+            .emailProtectionTrustedIndicator
+        case .aiChat:
+            .aiChatTrustedIndicator
         case .url(let url, _, _), .webExtensionUrl(let url):
             NSAttributedString(string: passiveAddressBarString(with: url, showFullURL: showFullURL))
-        case .aiChat:
-                .aiChatTrustedIndicator
         }
     }
 
@@ -464,7 +467,7 @@ final class TabViewModel: NSObject {
         case .url, .none, .subscription, .identityTheftRestoration, .onboarding, .webExtensionUrl, .aiChat:
             if let tabTitle = tab.title?.trimmingWhitespace(), !tabTitle.isEmpty {
                 title = tabTitle
-            } else if let host = tab.url?.host?.droppingWwwPrefix() {
+            } else if let host = tab.url?.suggestedTitlePlaceholder {
                 title = host
             } else if let url = tab.url, url.isFileURL {
                 title = url.lastPathComponent

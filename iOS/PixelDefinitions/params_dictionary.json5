@@ -29,10 +29,9 @@
     },
     "errorCode": {
         "key": "e",
-        "type": "string",
+        "type": "integer",
         "description": "NSError code",
-        "pattern": "^-?\\d+$",
-        "examples": ["-1009", "42"]
+        "examples": [-1009, 42]
     },
     "isInternalUser": {
         "key": "is_internal_user",
@@ -41,14 +40,13 @@
         "enum": [true]
     },
     "underlyingErrorCode": {
-        "keyPattern": "^ue[0-9]$",
-        "type": "string",
+        "keyPattern": "^ue[0-9]?$",
+        "type": "integer",
         "description": "Underlying NSError code",
-        "pattern": "^-?\\d+$",
-        "examples": ["-1009", "42"]
+        "examples": [-1009, 42]
     },
     "underlyingErrorDomain": {
-        "keyPattern": "^ud[0-9]$",
+        "keyPattern": "^ud[0-9]?$",
         "type": "string",
         "description": "Underlying NSError code domain",
         "examples": ["NSURLErrorDomain"]
@@ -57,7 +55,7 @@
         "key": "app.name",
         "type": "string",
         "description": "The name of the app sending the pixel",
-        "enum": ["DuckDuckGo iOS"]
+        "enum": ["DuckDuckGo", "PacketTunnelProvider"]
     },
     "wideEventAppVersion": {
         "key": "app.version",
@@ -93,6 +91,11 @@
         "description": "Final status of the wide event flow",
         "enum": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"]
     },
+    "wideEventFeatureStatusReason": {
+        "key": "feature.status_reason",
+        "type": "string",
+        "description": "Optional reason accompanying the feature status"
+    },
     "wideEventErrorDomain": {
         "key": "feature.data.error.domain",
         "type": "string",
@@ -100,9 +103,8 @@
     },
     "wideEventErrorCode": {
         "key": "feature.data.error.code",
-        "type": "string",
-        "description": "Error code for the failure, when applicable",
-        "pattern": "^-?\\d+$"
+        "type": "integer",
+        "description": "Error code for the failure, when applicable"
     },
     "wideEventErrorDescription": {
         "key": "feature.data.error.description",
@@ -111,16 +113,15 @@
         "examples": ["saveToPreferencesFailed", "startVPNFailed"]
     },
     "wideEventUnderlyingErrorDomain": {
-        "keyPattern": "feature\\.data\\.error\\.underlying_domain[0-9]*",
+        "keyPattern": "feature\\.data\\.error\\.underlying_domain[0-9]?",
         "type": "string",
         "description": "Underlying error domain (supports optional numeric index for nested errors)"
     },
     "duration": {
         "key": "duration",
-        "type": "string",
+        "type": "integer",
         "description": "Duration in milliseconds",
-        "pattern": "^\\d+$",
-        "examples": ["1500", "3200"]
+        "examples": [1500, 3200]
     },
     "navigation_type": {
         "key": "navigation_type",
@@ -150,9 +151,91 @@
         ]
     },
     "wideEventUnderlyingErrorCode": {
-        "keyPattern": "feature\\.data\\.error\\.underlying_code[0-9]*",
+        "keyPattern": "feature\\.data\\.error\\.underlying_code[0-9]?",
+        "type": "integer",
+        "description": "Underlying error code (supports optional numeric index for nested errors)"
+    },
+    "dbpDataBroker": {
+        "key": "data_broker",
         "type": "string",
-        "description": "Underlying error code (supports optional numeric index for nested errors)",
-        "pattern": "^-?\\d+$"
+        "description": "Name of the data broker involved in the opt-out attempt or action"
+    },
+    "dbpParentBroker": {
+        "key": "parent",
+        "type": "string",
+        "description": "Parent data broker of the entity targeted by the opt-out attempt"
+    },
+    "dbpAttemptId": {
+        "key": "attempt_id",
+        "type": "string",
+        "description": "Client-generated identifier of the opt-out attempt"
+    },
+    "dbpBrokerVersion": {
+        "key": "broker_version",
+        "type": "string",
+        "description": "Version of the broker JSON file used for the flow"
+    },
+    "dbpStageDuration": {
+        "key": "duration",
+        "type": "integer",
+        "description": "Stage duration in milliseconds"
+    },
+    "dbpStageTries": {
+        "key": "tries",
+        "type": "string",
+        "description": "Number of tries it took to complete the stage"
+    },
+    "dbpActionId": {
+        "key": "action_id",
+        "type": "string",
+        "description": "Identifier of the broker action executed during the opt-out flow"
+    },
+    "dbpActionDuration": {
+        "key": "duration",
+        "type": "integer",
+        "description": "Duration of the broker action execution in milliseconds"
+    },
+    "dbpActionTries": {
+        "key": "tries",
+        "type": "integer",
+        "description": "Number of tries it took for the broker action to complete"
+    },
+    "dbpAttemptDuration": {
+        "key": "duration",
+        "type": "number",
+        "description": "Total duration of the opt-out attempt in milliseconds"
+    },
+    "dbpConfirmationAttemptNumber": {
+        "key": "attempt_number",
+        "type": "integer",
+        "description": "Confirmation attempt ordinal (1..3)"
+    },
+    "dbpFeatureDataBrokerVersion": {
+        "key": "feature.data.ext.data_broker_version",
+        "type": "string",
+        "description": "Version of the broker JSON file reported via wide pixels"
+    },
+    "vpnAuthVersion": {
+        "key": "authVersion",
+        "type": "string",
+        "description": "Version of the VPN authentication flow",
+        "enum": ["v1", "v2"]
+    },
+    "vpnSubscriptionActive": {
+        "key": "isSubscriptionActive",
+        "type": "string",
+        "description": "Whether the VPN subscription is active",
+        "enum": ["true", "false", "no_subscription"]
+    },
+    "vpnNotificationObjectClass": {
+        "key": "notificationObjectClass",
+        "type": "string",
+        "description": "Class name of the object that originated the subscription notification"
+    },
+    "vpnLatencyLocation": {
+        "key": "location",
+        "type": "string",
+        "description": "Location selection for the VPN latency test",
+        "enum": ["nearest", "custom"]
     }
 }

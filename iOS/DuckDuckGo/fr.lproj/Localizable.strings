@@ -31,6 +31,15 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Ajouter";
 
+/* Open AI Chat history action in the menu list */
+"action.title.aiChat.history" = "Chats Duck.ai";
+
+/* Start new AI Chat action in the menu list */
+"action.title.aiChat.new" = "Nouvel AI Chat";
+
+/* Open AI Chat settings action in the menu list */
+"action.title.aiChat.settings" = "Paramètres Duck.ai";
+
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Mots de passe";
 
@@ -80,7 +89,7 @@
 "action.title.newBackgroundTabForUrl" = "Ouvrir en arrière-plan";
 
 /* Create New Tab action */
-"action.title.newTabAction" = "Nouveau";
+"action.title.newTabAction" = "Nouvel onglet";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Ouvrir dans un nouvel onglet";
@@ -463,6 +472,51 @@
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Activez Email Protection";
 
+/* Button title to dismiss the autofill extension activation view */
+"autofill.extension.activation.done.button.title" = "Terminé";
+
+/* Title shown when the autofill extension activation succeeds */
+"autofill.extension.activation.title" = "Saisie automatique des mots de passe activée !";
+
+/* Footer text describing what enabling the autofill extension does */
+"autofill.extension.footer" = "Utilisez les mots de passe que vous avez enregistrés dans DuckDuckGo sur toutes les applications de votre appareil.";
+
+/* Header text shown when the autofill extension is disabled */
+"autofill.extension.header.disabled" = "Saisie automatique dans d'autres applications";
+
+/* Header text shown when the autofill extension is enabled */
+"autofill.extension.header.enabled" = "Saisie automatique activée dans les autres applications";
+
+/* Dismiss button title for the Autofill extension promotion */
+"autofill.extension.promo.button.dismiss.title" = "Configurer ultérieurement dans Réglages";
+
+/* CTA button title for the Autofill extension promotion */
+"autofill.extension.promo.button.title" = "Activer la saisie automatique dans les autres applications";
+
+/* Message for the Autofill extension promotion */
+"autofill.extension.promo.message" = "Utilisez DuckDuckGo pour remplir automatiquement et en toute sécurité les mots de passe de toutes vos applications.";
+
+/* Title for the Autofill extension promotion */
+"autofill.extension.promo.title" = "Connectez-vous rapidement à vos applications sans avoir à saisir de mot de passe";
+
+/* Title for screen showing autofill extension settings */
+"autofill.extension.screen.title" = "Saisie automatique des mots de passe dans les autres applications";
+
+/* Status text when autofill extension is disabled */
+"autofill.extension.status.off" = "Activer";
+
+/* Status text when autofill extension is enabled */
+"autofill.extension.status.on" = "Activé";
+
+/* Title for autofill extension settings row */
+"autofill.extension.title" = "Saisie automatique dans d'autres applications";
+
+/* Button title that opens system settings to turn off the autofill extension */
+"autofill.extension.turn.off.button.title" = "Désactiver dans les paramètres système...";
+
+/* Button title that triggers system prompt to turn on the autofill extension */
+"autofill.extension.turn.on.button.title" = "Activer...";
+
 /* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
 "autofill.hide-card-cvv" = "Masquer CVV";
 
@@ -799,8 +853,8 @@
 /* Section header for the autofill settings screen */
 "autofill.settings.import-passwords.section-header" = "Importer les mots de passe";
 
-/* Section header for the autofill settings screen */
-"autofill.settings.options.section-header" = "Options";
+/* Section header for the autofill passwords options section of the settings screen */
+"autofill.settings.options.section-header" = "Options de mot de passe";
 
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Signaler un problème de saisie automatique";
@@ -980,6 +1034,9 @@
 "Cohort: %@" = "Cohorte : %@";
 
 /* No comment provided by engineer. */
+"Configuration" = "Configuration";
+
+/* No comment provided by engineer. */
 "Confirm" = "Confirmer";
 
 /* Button to continue the onboarding process */
@@ -1094,7 +1151,7 @@
 "crash.report.dialog.title" = "Envoyer automatiquement des rapports de plantage ?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+"Current Dismiss Count: %@" = "Nombre actuel de rejets : %@";
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "CONTENU DE CELLULE PERSONNALISÉ";
@@ -1586,7 +1643,7 @@
 "Enrolled: %@" = "Inscriptions : %@";
 
 /* No comment provided by engineer. */
-"Entry Pill" = "Entry Pill";
+"Entry Pill" = "Pilule d'entrée";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Se connecter";
@@ -2024,6 +2081,9 @@
 "keyCommandShowAllTabs" = "Afficher tous les onglets";
 
 /* No comment provided by engineer. */
+"Last Processed: %@" = "Dernier traitement : %@";
+
+/* No comment provided by engineer. */
 "Loading brokers..." = "Chargement des brokers...";
 
 /* Summary text for the macOS browser waitlist */
@@ -2085,6 +2145,33 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Nom d'hôte de politique des messages";
+
+/* No comment provided by engineer. */
+"Messages" = "Messages";
+
+/* The name of the Address Bar button when referenced in settings. */
+"mobile.customization.addressbar.button" = "Bouton de la barre d'adresse";
+
+/* The title of the Address Bar button. */
+"mobile.customization.addressbar.title" = "Barre d'adresse";
+
+/* A title to indicate that if selected the current button will be hidden from the UI */
+"mobile.customization.option.none.long" = "Masquer ce bouton";
+
+/* Indicates that no button was selected to be shown in the specified location. */
+"mobile.customization.option.none.short" = "Aucun";
+
+/* The title of the section in settings containing the customizable buttons. */
+"mobile.customization.section.title" = "Boutons personnalisables";
+
+/* The label for the toggle that hides and shows the reload button. */
+"mobile.customization.show.reload.button.title" = "Affiche le bouton Recharger";
+
+/* The name of the address bar button when referenced in settings. */
+"mobile.customization.toolbar.button" = "Bouton de la barre d'outils";
+
+/* A label for the access point to customization of the Toolbar. */
+"mobile.customization.toolbar.title" = "Barre d'outils";
 
 /* Title for back button in navigation bar */
 "navbar.back-button.title" = "Retour";
@@ -2342,10 +2429,19 @@
 "new.address.bar.picker.title" = "Option de la barre d'adresse";
 
 /* No comment provided by engineer. */
+"No Logs" = "Pas de journaux";
+
+/* No comment provided by engineer. */
+"No messages" = "Aucun message";
+
+/* No comment provided by engineer. */
 "No results found" = "Aucun résultat trouvé";
 
 /* No comment provided by engineer. */
 "OK" = "OK";
+
+/* Display title for Duck.ai in our address bar */
+"omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Cookies gérés";
@@ -2409,6 +2505,21 @@
 
 /* The title of the onboarding dialog popup */
 "onboarding.highlights.intro.title" = "Bonjour.\n\nEnvie de profiter d'un navigateur plus rapide qui vous protège ?";
+
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.searchExperience.cta" = "Suivant";
+
+/* The footer disclaimer text for the search experience onboarding screen. */
+"onboarding.highlights.searchExperience.footer" = "Les fonctionnalités d'IA sont privées et facultatives. Vous pouvez apporter des modifications dans Paramètres > Fonctionnalités d'IA.";
+
+/* Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold). */
+"onboarding.highlights.searchExperience.footer.formatted" = "Les fonctionnalités d'IA sont privées et facultatives. Vous pouvez apporter des modifications dans %@";
+
+/* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
+"onboarding.highlights.searchExperience.footer.settings-path-bold" = "Paramètres > Fonctionnalités d'IA.";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Vous voulez accéder plus facilement au chat IA privé ?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "C'est parti !";
@@ -2506,12 +2617,6 @@
 /* Deactivate button */
 "pm.deactivate" = "Désactiver";
 
-/* Label for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.label" = "E-mail (facultatif)";
-
-/* Placeholder for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.placeholder" = "nom@email.com";
-
 /* Placeholder for the General Feedback step in the Privacy Pro feedback form */
 "ppro.feedback-form.general-feedback.placeholder" = "Veuillez nous faire part de vos commentaires…";
 
@@ -2545,8 +2650,11 @@
 /* Title for the category selection section in the Privacy Pro feedback form */
 "ppro.feedback-form.select-category.title" = "SÉLECTIONNER UNE CATÉGORIE";
 
-/* Text for the body of the PPro feedback form */
-"ppro.feedback-form.text-1" = "Vous avez rencontré un problème qui n'est pas traité dans notre [centre d'aide](duck://) ? Nous tenons vraiment à savoir de quoi il s'agit.\n\nIndiquez une adresse e-mail si vous souhaitez que nous vous contactions à propos de ce problème (il se peut que nous ne soyons pas en mesure de répondre à tous les problèmes) :";
+/* Support link text displayed beneath the feedback form description */
+"ppro.feedback-form.support.text" = "Besoin d'aide ? [Contactez le support.](https://duckduckgo.com/subscription-support)";
+
+/* Intro text for the body of the PPro feedback form */
+"ppro.feedback-form.text-1" = "Vous avez rencontré un problème qui n'est pas traité dans notre [centre d'aide](duck://) ? Nous tenons vraiment à savoir de quoi il s'agit.\n\nDites-nous ce qui se passe :";
 
 /* Text for the body of the PPro feedback form */
 "ppro.feedback-form.text-2" = "Outre les informations saisies ci-dessus, nous envoyons des informations anonymisées avec vos commentaires :";
@@ -2696,6 +2804,9 @@
 "prompt.custom.url.scheme.title" = "Ouvrir dans une autre application ?";
 
 /* No comment provided by engineer. */
+"Recent Processing Logs" = "Journaux de traitement récents";
+
+/* No comment provided by engineer. */
 "Relatives: %@" = "Proches : %@";
 
 /* No comment provided by engineer. */
@@ -2705,7 +2816,7 @@
 "Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
 
 /* No comment provided by engineer. */
-"Reset Priming Modal State" = "Reset Priming Modal State";
+"Reset Priming Modal State" = "Réinitialiser l'état modal d'amorçage";
 
 /* No comment provided by engineer. */
 "Results" = "Résultats";
@@ -2804,7 +2915,7 @@
 "settings.aifeatures.hide.ai.generated.images" = "Masquer les images générées par l'IA";
 
 /* Description of what the hide AI-generated images feature does */
-"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtre les images générées par l'IA dans les résultats de recherche d'images";
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtre les images générées par l'IA des résultats de recherche d'images";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Toujours activé";
@@ -2814,6 +2925,9 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Position de la barre d'adresse";
+
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Menu expérimental du navigateur";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Ouvrir les liens dans les applications associées";
@@ -3178,6 +3292,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "Le navigateur DuckDuckGo fournit des protections contre le pistage qui sont toujours actives. [En savoir plus](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* No comment provided by engineer. */
+"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Affiche les journaux de la dernière minute pour permettre de diagnostiquer les problèmes immédiatement après une actualisation.";
+
 /* Description on a report broken site page. */
 "site.not.working.description" = "Sélectionnez l'option qui décrit le mieux le problème rencontré.";
 
@@ -3210,6 +3327,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Quel site Web pose problème ?";
+
+/* No comment provided by engineer. */
+"Status: Invalidated" = "Statut : invalidé";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Nom d'hôte enregistré : %@";
@@ -3598,6 +3718,9 @@
 /* No comment provided by engineer. */
 "UIAlert" = "AlerteIU";
 
+/* No comment provided by engineer. */
+"Version: %@" = "Version : %@";
+
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Rechercher";
 
@@ -3859,18 +3982,6 @@
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Message de %@ :";
 
-/* CTA of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.cta" = "Voir l'offre";
-
-/* Dismiss of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.dismiss" = "Pas maintenant";
-
-/* Message of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.text" = "Protégez-vous grâce à notre VPN, à notre IA privée et plus encore. Réabonnez-vous aujourd'hui et économisez 25 %.";
-
-/* Title of message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.title" = "Dernier jour pour économiser 25 % !";
-
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "ÉCONOMISEZ 25 %";
 
@@ -3905,7 +4016,10 @@
 "win-back.campaign.subscription.settings.menu.title" = "Réabonnez-vous et économisez 25 %";
 
 /* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
-"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Réabonnez-vous et économisez 25 %";
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Se réabonner";
+
+/* Subtitle for resubscribe CTA for users eligible for the win-back offer. */
+"win-back.campaign.subscription.settings.page.resubscribe.subtitle" = "Protégez-vous grâce à notre VPN, à notre IA privée et plus encore.\nOffre à durée limitée.";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Vous cherchez la version Mac ?";

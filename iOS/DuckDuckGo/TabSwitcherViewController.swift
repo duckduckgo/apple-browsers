@@ -129,6 +129,8 @@ class TabSwitcherViewController: UIViewController {
     
     private(set) var aichatFullModeFeature: AIChatFullModeFeatureProviding
 
+    private let productSurfaceTelemetry: ProductSurfaceTelemetry
+
     required init?(coder: NSCoder,
                    bookmarksDatabase: CoreDataDatabase,
                    syncService: DDGSyncing,
@@ -137,7 +139,8 @@ class TabSwitcherViewController: UIViewController {
                    tabManager: TabManager,
                    aiChatSettings: AIChatSettingsProvider,
                    appSettings: AppSettings,
-                   aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature()) {
+                   aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
+                   productSurfaceTelemetry: ProductSurfaceTelemetry) {
         self.bookmarksDatabase = bookmarksDatabase
         self.syncService = syncService
         self.featureFlagger = featureFlagger
@@ -146,6 +149,7 @@ class TabSwitcherViewController: UIViewController {
         self.aiChatSettings = aiChatSettings
         self.appSettings = appSettings
         self.aichatFullModeFeature = aichatFullModeFeature
+        self.productSurfaceTelemetry = productSurfaceTelemetry
         super.init(coder: coder)
     }
 
@@ -246,6 +250,11 @@ class TabSwitcherViewController: UIViewController {
         collectionView.allowsMultipleSelection = true
         collectionView.allowsMultipleSelectionDuringEditing = true
 
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        productSurfaceTelemetry.tabManagerUsed()
     }
 
     private func setupBackgroundView() {
@@ -587,19 +596,17 @@ extension TabSwitcherViewController: UICollectionViewDelegateFlowLayout {
 extension TabSwitcherViewController: TabObserver {
     
     func didChange(tab: Tab) {
-        // Reloading when updates are processed will result in a crash
-        guard !isProcessingUpdates, canUpdateCollection else {
+        guard let index = self.tabsModel.indexOf(tab: tab),
+              let cell = collectionView.cellForItem(at: IndexPath(row: index, section: 0)) as? TabViewCell,
+              // Check the current tab is the one we want to update, if not it might have been updated elsewhere
+              cell.tab?.uid == tab.uid else {
+            DailyPixel.fireDaily(.debugTabSwitcherDidChangeInvalidState)
             return
         }
-        
-        collectionView.performBatchUpdates({}, completion: { [weak self] completed in
-            guard completed, let self = self else { return }
-            if let index = self.tabsModel.indexOf(tab: tab), index < self.collectionView.numberOfItems(inSection: 0) {
-                UIView.performWithoutAnimation {
-                    self.collectionView.reconfigureItems(at: [IndexPath(row: index, section: 0)])
-                }
-            }
-        })
+
+        cell.update(withTab: tab,
+                    isSelectionModeEnabled: self.isEditing,
+                    preview: previewsSource.preview(for: tab))
     }
 }
 

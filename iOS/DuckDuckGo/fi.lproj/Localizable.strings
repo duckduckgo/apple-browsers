@@ -31,6 +31,15 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Lisää";
 
+/* Open AI Chat history action in the menu list */
+"action.title.aiChat.history" = "Duck.ai-keskustelut";
+
+/* Start new AI Chat action in the menu list */
+"action.title.aiChat.new" = "Uusi AI Chat";
+
+/* Open AI Chat settings action in the menu list */
+"action.title.aiChat.settings" = "Duck.ai-asetukset";
+
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Salasanat";
 
@@ -80,7 +89,7 @@
 "action.title.newBackgroundTabForUrl" = "Avaa taustalla";
 
 /* Create New Tab action */
-"action.title.newTabAction" = "Uusi";
+"action.title.newTabAction" = "Uusi välilehti";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Avaa uudella välilehdellä";
@@ -463,6 +472,51 @@
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Ota Email Protection käyttöön";
 
+/* Button title to dismiss the autofill extension activation view */
+"autofill.extension.activation.done.button.title" = "Valmis";
+
+/* Title shown when the autofill extension activation succeeds */
+"autofill.extension.activation.title" = "Salasanojen automaattinen täyttö on nyt käytössä!";
+
+/* Footer text describing what enabling the autofill extension does */
+"autofill.extension.footer" = "Käytä DuckDuckGossa tallentamiasi salasanoja kaikissa sovelluksissa laitteellasi.";
+
+/* Header text shown when the autofill extension is disabled */
+"autofill.extension.header.disabled" = "Automaattinen täyttö muissa sovelluksissa";
+
+/* Header text shown when the autofill extension is enabled */
+"autofill.extension.header.enabled" = "Automaattinen täyttö muissa sovelluksissa on käytössä";
+
+/* Dismiss button title for the Autofill extension promotion */
+"autofill.extension.promo.button.dismiss.title" = "Määritä myöhemmin asetuksissa";
+
+/* CTA button title for the Autofill extension promotion */
+"autofill.extension.promo.button.title" = "Ota automaattinen täyttö käyttöön muissa sovelluksissa";
+
+/* Message for the Autofill extension promotion */
+"autofill.extension.promo.message" = "Käytä DuckDuckGo:ta kaikkien sovellusten salasanojen turvalliseen automaattiseen täyttämiseen.";
+
+/* Title for the Autofill extension promotion */
+"autofill.extension.promo.title" = "Kirjaudu nopeasti sovelluksiisi ilman, että sinun tarvitsee kirjoittaa salasanoja";
+
+/* Title for screen showing autofill extension settings */
+"autofill.extension.screen.title" = "Täytä salasanat automaattisesti muissa sovelluksissa";
+
+/* Status text when autofill extension is disabled */
+"autofill.extension.status.off" = "Ota käyttöön";
+
+/* Status text when autofill extension is enabled */
+"autofill.extension.status.on" = "Päällä";
+
+/* Title for autofill extension settings row */
+"autofill.extension.title" = "Automaattinen täyttö muissa sovelluksissa";
+
+/* Button title that opens system settings to turn off the autofill extension */
+"autofill.extension.turn.off.button.title" = "Poista käytöstä järjestelmäasetuksissa...";
+
+/* Button title that triggers system prompt to turn on the autofill extension */
+"autofill.extension.turn.on.button.title" = "Ota käyttöön...";
+
 /* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
 "autofill.hide-card-cvv" = "Piilota CVV";
 
@@ -799,8 +853,8 @@
 /* Section header for the autofill settings screen */
 "autofill.settings.import-passwords.section-header" = "Tuo salasanat";
 
-/* Section header for the autofill settings screen */
-"autofill.settings.options.section-header" = "Valinnat";
+/* Section header for the autofill passwords options section of the settings screen */
+"autofill.settings.options.section-header" = "Salasanavaihtoehdot";
 
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Ilmoita automaattisen täytön ongelmasta";
@@ -978,6 +1032,9 @@
 
 /* No comment provided by engineer. */
 "Cohort: %@" = "Kohortti: %@";
+
+/* No comment provided by engineer. */
+"Configuration" = "Määritys";
 
 /* No comment provided by engineer. */
 "Confirm" = "Vahvista";
@@ -2024,6 +2081,9 @@
 "keyCommandShowAllTabs" = "Näytä kaikki välilehdet";
 
 /* No comment provided by engineer. */
+"Last Processed: %@" = "Viimeksi käsitelty: %@";
+
+/* No comment provided by engineer. */
 "Loading brokers..." = "Ladataan välittäjiä...";
 
 /* Summary text for the macOS browser waitlist */
@@ -2085,6 +2145,33 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Viestikäytännön isäntänimi";
+
+/* No comment provided by engineer. */
+"Messages" = "Viestit";
+
+/* The name of the Address Bar button when referenced in settings. */
+"mobile.customization.addressbar.button" = "Osoitekenttä-painike";
+
+/* The title of the Address Bar button. */
+"mobile.customization.addressbar.title" = "Osoitekenttä";
+
+/* A title to indicate that if selected the current button will be hidden from the UI */
+"mobile.customization.option.none.long" = "Piilota tämä painike";
+
+/* Indicates that no button was selected to be shown in the specified location. */
+"mobile.customization.option.none.short" = "Ei mitään";
+
+/* The title of the section in settings containing the customizable buttons. */
+"mobile.customization.section.title" = "Mukautettavat painikkeet";
+
+/* The label for the toggle that hides and shows the reload button. */
+"mobile.customization.show.reload.button.title" = "Näytä Lataa uudelleen -painike";
+
+/* The name of the address bar button when referenced in settings. */
+"mobile.customization.toolbar.button" = "Työkalupalkin painike";
+
+/* A label for the access point to customization of the Toolbar. */
+"mobile.customization.toolbar.title" = "Työkalupalkki";
 
 /* Title for back button in navigation bar */
 "navbar.back-button.title" = "Takaisin";
@@ -2342,10 +2429,19 @@
 "new.address.bar.picker.title" = "Osoiterivi-vaihtoehto";
 
 /* No comment provided by engineer. */
+"No Logs" = "Ei lokitietoja";
+
+/* No comment provided by engineer. */
+"No messages" = "Ei viestejä";
+
+/* No comment provided by engineer. */
 "No results found" = "Tuloksia ei löytynyt";
 
 /* No comment provided by engineer. */
 "OK" = "OK";
+
+/* Display title for Duck.ai in our address bar */
+"omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Hallitut evästeet";
@@ -2409,6 +2505,21 @@
 
 /* The title of the onboarding dialog popup */
 "onboarding.highlights.intro.title" = "Hei!\n\nOletko valmis käyttämään nopeampaa selainta, joka pitää sinut suojattuna?";
+
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.searchExperience.cta" = "Seuraava";
+
+/* The footer disclaimer text for the search experience onboarding screen. */
+"onboarding.highlights.searchExperience.footer" = "Tekoälyominaisuudet ovat yksityisiä ja valinnaisia. Voit tehdä muutoksia kohdassa Asetukset > Tekoälyominaisuudet.";
+
+/* Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold). */
+"onboarding.highlights.searchExperience.footer.formatted" = "Tekoälyominaisuudet ovat yksityisiä ja valinnaisia. Voit tehdä muutoksia kohdassa %@:ssa";
+
+/* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
+"onboarding.highlights.searchExperience.footer.settings-path-bold" = "Asetukset > Tekoälyominaisuudet.";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Haluatko helpomman pääsyn\nyksityiseen tekoäly-chatiin?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Aloitetaan!";
@@ -2506,12 +2617,6 @@
 /* Deactivate button */
 "pm.deactivate" = "Deaktivoi";
 
-/* Label for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.label" = "Sähköpostiosoite (valinnainen)";
-
-/* Placeholder for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.placeholder" = "nimi@sähköposti.com";
-
 /* Placeholder for the General Feedback step in the Privacy Pro feedback form */
 "ppro.feedback-form.general-feedback.placeholder" = "Anna meille palautetta...";
 
@@ -2545,8 +2650,11 @@
 /* Title for the category selection section in the Privacy Pro feedback form */
 "ppro.feedback-form.select-category.title" = "VALITSE KATEGORIA";
 
-/* Text for the body of the PPro feedback form */
-"ppro.feedback-form.text-1" = "Kohtasitko ongelman, jota ei löydy [ohjekeskuksestamme](duck://)? Haluamme ehdottomasti tietää siitä.\n\nAnna sähköpostiosoite, jos haluat meidän ottavan sinuun yhteyttä tästä ongelmasta (emme ehkä pysty vastaamaan kaikkiin ongelmiin):";
+/* Support link text displayed beneath the feedback form description */
+"ppro.feedback-form.support.text" = "Tarvitsetko apua? [Ota yhteyttä tukeen.](https://duckduckgo.com/subscription-support)";
+
+/* Intro text for the body of the PPro feedback form */
+"ppro.feedback-form.text-1" = "Kohtasitko ongelman, jota ei löydy [ohjekeskuksestamme](duck://)? Haluamme ehdottomasti tietää siitä.\n\nKerro meille, mitä tapahtuu:";
 
 /* Text for the body of the PPro feedback form */
 "ppro.feedback-form.text-2" = "Edellä annettujen tietojen lisäksi lähetämme palautteesi mukana joitakin anonymisoituja tietoja:";
@@ -2696,6 +2804,9 @@
 "prompt.custom.url.scheme.title" = "Avataanko toisessa sovelluksessa?";
 
 /* No comment provided by engineer. */
+"Recent Processing Logs" = "Viimeaikaiset käsittelylokit";
+
+/* No comment provided by engineer. */
 "Relatives: %@" = "Sukulaiset: %@";
 
 /* No comment provided by engineer. */
@@ -2804,7 +2915,7 @@
 "settings.aifeatures.hide.ai.generated.images" = "Piilota tekoälyn luomat kuvat";
 
 /* Description of what the hide AI-generated images feature does */
-"settings.aifeatures.hide.ai.generated.images.subtitle" = "Suodattaa pois tekoälyn luomat kuvat kuvahakutuloksista";
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Suodattaa pois tekoälyn luomat kuvat kuvahaun tuloksista";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Aina käytössä";
@@ -2814,6 +2925,9 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Osoitepalkin sijainti";
+
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Kokeellinen selainvalikko";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Avaa linkit liittyvissä sovelluksissa";
@@ -3178,6 +3292,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "DuckDuckGo-selain tarjoaa aina käytössä olevan seurantasuojauksen. [Lue lisää](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* No comment provided by engineer. */
+"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Näyttää lokit viimeisen minuutin ajalta, jotta ongelmat voidaan diagnosoida heti päivityksen jälkeen.";
+
 /* Description on a report broken site page. */
 "site.not.working.description" = "Valitse vaihtoehto, joka parhaiten kuvaa ongelmaa.";
 
@@ -3210,6 +3327,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Mikä verkkosivusto on viallinen?";
+
+/* No comment provided by engineer. */
+"Status: Invalidated" = "Tila: Mitätöity";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Tallennettu isäntänimi: %@";
@@ -3598,6 +3718,9 @@
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
 
+/* No comment provided by engineer. */
+"Version: %@" = "Versio: %@";
+
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Etsi";
 
@@ -3859,18 +3982,6 @@
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Viesti käyttäjältä %@:";
 
-/* CTA of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.cta" = "Katso tarjous";
-
-/* Dismiss of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.dismiss" = "Ei nyt";
-
-/* Message of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.text" = "Pysy suojattuna VPN:n, yksityisen tekoälyn ja muiden ominaisuuksien avulla. Tilaa jo tänään uudelleen ja säästä 25 %.";
-
-/* Title of message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.title" = "Viimeinen päivä aikaa säästää 25 %!";
-
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "SÄÄSTÄ 25 %";
 
@@ -3905,7 +4016,10 @@
 "win-back.campaign.subscription.settings.menu.title" = "Tilaa uudelleen ja säästä 25 %";
 
 /* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
-"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Tilaa uudelleen ja säästä 25 %";
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Tilaa uudelleen";
+
+/* Subtitle for resubscribe CTA for users eligible for the win-back offer. */
+"win-back.campaign.subscription.settings.page.resubscribe.subtitle" = "Pysy suojattuna VPN:n, yksityisen tekoälyn ja muiden ominaisuuksien avulla.\nRajoitetun ajan tarjous.";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Etsitkö Mac-versiota?";

@@ -37,7 +37,7 @@ final class SubscriptionContainerViewModelTests: XCTestCase {
                                        storePurchaseManager: storePurchaseManager,
                                        currentEnvironment: SubscriptionEnvironment(serviceEnvironment: .production,
                                                                                    purchasePlatform: .appStore),
-                                       canPurchase: true,
+                                       hasAppStoreProductsAvailable: true,
                                        subscriptionFeatureMappingCache: subscriptionFeatureMappingCache)
     }()
 
@@ -66,6 +66,7 @@ final class SubscriptionContainerViewModelTests: XCTestCase {
         sut = .init(subscriptionManager: subscriptionManager,
                     redirectPurchaseURL: redirectPurchaseURL,
                     userScript: .init(),
+                    userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
                     subFeature: DefaultSubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
                                                                                subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                                                subscriptionAttributionOrigin: nil,
@@ -96,6 +97,7 @@ final class SubscriptionContainerViewModelTests: XCTestCase {
         sut = .init(subscriptionManager: subscriptionManager,
                     redirectPurchaseURL: nil,
                     userScript: .init(),
+                    userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
                     subFeature: DefaultSubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
                                                                                subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                                                subscriptionAttributionOrigin: nil,

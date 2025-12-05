@@ -59,10 +59,11 @@ final class AIChatViewControllerManager {
     private var cancellables = Set<AnyCancellable>()
     private var sessionTimer: AIChatSessionTimer?
     private var pixelMetricHandler: (any AIChatPixelMetricHandling)?
+    private var productSurfaceTelemetry: ProductSurfaceTelemetry
 
     // MARK: - Initialization
 
-    init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+    init(privacyConfigurationManager: PrivacyConfigurationManaging,
          contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
          downloadsDirectoryHandler: DownloadsDirectoryHandling = DownloadsDirectoryHandler(),
          userAgentManager: UserAgentManaging = DefaultUserAgentManager.shared,
@@ -70,7 +71,8 @@ final class AIChatViewControllerManager {
          featureFlagger: FeatureFlagger,
          featureDiscovery: FeatureDiscovery,
          aiChatSettings: AIChatSettingsProvider,
-         subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling = SubscriptionAIChatStateHandler()) {
+         subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling = SubscriptionAIChatStateHandler(),
+         productSurfaceTelemetry: ProductSurfaceTelemetry) {
 
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
@@ -81,6 +83,7 @@ final class AIChatViewControllerManager {
         self.featureDiscovery = featureDiscovery
         self.aiChatSettings = aiChatSettings
         self.subscriptionAIChatStateHandler = subscriptionAIChatStateHandler
+        self.productSurfaceTelemetry = productSurfaceTelemetry
     }
 
     // MARK: - Public Methods
@@ -154,7 +157,8 @@ final class AIChatViewControllerManager {
                       containerView: UIView? = nil,
                       viewController: UIViewController? = nil,
                       completion: (() -> Void)? = nil) {
-        downloadsDirectoryHandler.createDownloadsDirectoryIfNeeded()
+
+        productSurfaceTelemetry.duckAIUsed()
 
         // Reset the session timer if the subscription state has changed
         if subscriptionAIChatStateHandler.shouldForceAIChatRefresh {
@@ -322,7 +326,8 @@ final class AIChatViewControllerManager {
     @MainActor
     private func createWebViewConfiguration() -> WKWebViewConfiguration {
         let configuration = WKWebViewConfiguration.persistent()
-        let userContentController = UserContentController(contentBlockingAssetsPublisher: contentBlockingAssetsPublisher)
+        let userContentController = UserContentController(assetsPublisher: contentBlockingAssetsPublisher,
+                                                          privacyConfigurationManager: privacyConfigurationManager)
         userContentController.delegate = self
         configuration.userContentController = userContentController
         self.userContentController = userContentController
@@ -407,6 +412,10 @@ extension AIChatViewControllerManager: AIChatViewControllerDelegate {
             self.delegate?.aiChatViewControllerManager(self, didRequestOpenDownloadWithFileName: fileName)
         }
     }
+    
+    func aiChatViewControllerWillStartDownload() {
+        downloadsDirectoryHandler.createDownloadsDirectoryIfNeeded()
+    }
 }
 
 // MARK: - RoundedPageSheetContainerViewControllerDelegate
@@ -439,6 +448,12 @@ extension AIChatViewControllerManager: AIChatUserScriptDelegate {
     }
 
     func aiChatUserScript(_ userScript: AIChatUserScript, didReceiveMetric metric: AIChatMetric) {
+
+        if metric.metricName == .userDidSubmitPrompt
+            || metric.metricName == .userDidSubmitFirstPrompt {
+            NotificationCenter.default.post(name: .aiChatUserDidSubmitPrompt, object: nil)
+        }
+
         pixelMetricHandler?.firePixelWithMetric(metric)
     }
 }

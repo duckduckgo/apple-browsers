@@ -31,6 +31,15 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Pievienot";
 
+/* Open AI Chat history action in the menu list */
+"action.title.aiChat.history" = "Duck.ai tērzēšanas";
+
+/* Start new AI Chat action in the menu list */
+"action.title.aiChat.new" = "Jauns MI tērzēšanas rīks";
+
+/* Open AI Chat settings action in the menu list */
+"action.title.aiChat.settings" = "Duck.ai iestatījumi";
+
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Paroles";
 
@@ -80,7 +89,7 @@
 "action.title.newBackgroundTabForUrl" = "Atvērt fonā";
 
 /* Create New Tab action */
-"action.title.newTabAction" = "Jauns";
+"action.title.newTabAction" = "Jauna cilne";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Atvērt jaunā cilnē";
@@ -463,6 +472,51 @@
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Iespējo e-pasta aizsardzību";
 
+/* Button title to dismiss the autofill extension activation view */
+"autofill.extension.activation.done.button.title" = "Gatavs";
+
+/* Title shown when the autofill extension activation succeeds */
+"autofill.extension.activation.title" = "Paroļu automātiskā aizpildīšana ir aktivizēta!";
+
+/* Footer text describing what enabling the autofill extension does */
+"autofill.extension.footer" = "Izmanto DuckDuckGo saglabātās paroles visās ierīces lietotnēs.";
+
+/* Header text shown when the autofill extension is disabled */
+"autofill.extension.header.disabled" = "Automātiskā aizpildīšana citās lietotnēs";
+
+/* Header text shown when the autofill extension is enabled */
+"autofill.extension.header.enabled" = "Automātiskā aizpildīšana citās lietotnēs ir iespējota";
+
+/* Dismiss button title for the Autofill extension promotion */
+"autofill.extension.promo.button.dismiss.title" = "Iestatīt vēlāk sadaļā Iestatījumi";
+
+/* CTA button title for the Autofill extension promotion */
+"autofill.extension.promo.button.title" = "Ieslēdz automātisko aizpildīšanu citās lietotnēs";
+
+/* Message for the Autofill extension promotion */
+"autofill.extension.promo.message" = "Izmanto DuckDuckGo, lai droši automātiski aizpildītu paroles visām savām lietotnēm.";
+
+/* Title for the Autofill extension promotion */
+"autofill.extension.promo.title" = "Ātri pieraksties savās lietotnēs, neievadot paroles";
+
+/* Title for screen showing autofill extension settings */
+"autofill.extension.screen.title" = "Paroļu automātiskā aizpildīšana citās lietotnēs";
+
+/* Status text when autofill extension is disabled */
+"autofill.extension.status.off" = "Ieslēgt";
+
+/* Status text when autofill extension is enabled */
+"autofill.extension.status.on" = "Ieslēgts";
+
+/* Title for autofill extension settings row */
+"autofill.extension.title" = "Automātiskā aizpildīšana citās lietotnēs";
+
+/* Button title that opens system settings to turn off the autofill extension */
+"autofill.extension.turn.off.button.title" = "Izslēdz sistēmas iestatījumos...";
+
+/* Button title that triggers system prompt to turn on the autofill extension */
+"autofill.extension.turn.on.button.title" = "Ieslēdz...";
+
 /* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
 "autofill.hide-card-cvv" = "Paslēpt CVV";
 
@@ -799,8 +853,8 @@
 /* Section header for the autofill settings screen */
 "autofill.settings.import-passwords.section-header" = "Importēt paroles";
 
-/* Section header for the autofill settings screen */
-"autofill.settings.options.section-header" = "Opcijas";
+/* Section header for the autofill passwords options section of the settings screen */
+"autofill.settings.options.section-header" = "Paroles iestatījumi";
 
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Ziņot par problēmu ar automātisko aizpildīšanu";
@@ -978,6 +1032,9 @@
 
 /* No comment provided by engineer. */
 "Cohort: %@" = "Kohorta: %@";
+
+/* No comment provided by engineer. */
+"Configuration" = "Konfigurācija";
 
 /* No comment provided by engineer. */
 "Confirm" = "Apstiprināt";
@@ -2024,6 +2081,9 @@
 "keyCommandShowAllTabs" = "Rādīt visas cilnes";
 
 /* No comment provided by engineer. */
+"Last Processed: %@" = "Pēdējo reizi apstrādāts: %@";
+
+/* No comment provided by engineer. */
 "Loading brokers..." = "Ielādē starpniekus..";
 
 /* Summary text for the macOS browser waitlist */
@@ -2085,6 +2145,33 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Ziņojumu politikas resursdatora nosaukums";
+
+/* No comment provided by engineer. */
+"Messages" = "Ziņojumi";
+
+/* The name of the Address Bar button when referenced in settings. */
+"mobile.customization.addressbar.button" = "Adreses joslas poga";
+
+/* The title of the Address Bar button. */
+"mobile.customization.addressbar.title" = "Adreses josla";
+
+/* A title to indicate that if selected the current button will be hidden from the UI */
+"mobile.customization.option.none.long" = "Paslēpt šo pogu";
+
+/* Indicates that no button was selected to be shown in the specified location. */
+"mobile.customization.option.none.short" = "Nav";
+
+/* The title of the section in settings containing the customizable buttons. */
+"mobile.customization.section.title" = "Pielāgojamas pogas";
+
+/* The label for the toggle that hides and shows the reload button. */
+"mobile.customization.show.reload.button.title" = "Parādīt pārlādēšanas pogu";
+
+/* The name of the address bar button when referenced in settings. */
+"mobile.customization.toolbar.button" = "Rīkjoslas poga";
+
+/* A label for the access point to customization of the Toolbar. */
+"mobile.customization.toolbar.title" = "Rīkjosla";
 
 /* Title for back button in navigation bar */
 "navbar.back-button.title" = "Atpakaļ";
@@ -2342,10 +2429,19 @@
 "new.address.bar.picker.title" = "Adreses joslas opcija";
 
 /* No comment provided by engineer. */
+"No Logs" = "Nav žurnālu";
+
+/* No comment provided by engineer. */
+"No messages" = "Nav ziņojumu";
+
+/* No comment provided by engineer. */
 "No results found" = "Nav atrasti rezultāti";
 
 /* No comment provided by engineer. */
 "OK" = "Labi";
+
+/* Display title for Duck.ai in our address bar */
+"omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Pārvaldītie sīkfaili";
@@ -2409,6 +2505,21 @@
 
 /* The title of the onboarding dialog popup */
 "onboarding.highlights.intro.title" = "Sveiki!\n\nVai esi gatavs ātrākai pārlūkprogrammai, kas tevi aizsargā?";
+
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.searchExperience.cta" = "Nākamais";
+
+/* The footer disclaimer text for the search experience onboarding screen. */
+"onboarding.highlights.searchExperience.footer" = "MI funkcijas ir privātas un nav obligātas. Tu vari veikt izmaiņas sadaļā Iestatījumi > MI funkcijas.";
+
+/* Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold). */
+"onboarding.highlights.searchExperience.footer.formatted" = "MI funkcijas ir privātas un nav obligātas. Tu vari veikt izmaiņas %@";
+
+/* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
+"onboarding.highlights.searchExperience.footer.settings-path-bold" = "Iestatījumi > MI funkcijas.";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Vēlies vieglāk piekļūt privātai MI tērzēšanai?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Aiziet!";
@@ -2506,12 +2617,6 @@
 /* Deactivate button */
 "pm.deactivate" = "Deaktivizēt";
 
-/* Label for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.label" = "E-pasta adrese (neobligāti)";
-
-/* Placeholder for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.placeholder" = "vards@email.com";
-
 /* Placeholder for the General Feedback step in the Privacy Pro feedback form */
 "ppro.feedback-form.general-feedback.placeholder" = "Lūdzu, sniedz atsauksmes…";
 
@@ -2545,8 +2650,11 @@
 /* Title for the category selection section in the Privacy Pro feedback form */
 "ppro.feedback-form.select-category.title" = "ATLASĪT KATEGORIJU";
 
-/* Text for the body of the PPro feedback form */
-"ppro.feedback-form.text-1" = "Vai atradi problēmu, kas nav aplūkota mūsu [palīdzības centrā](duck://)? Mēs noteikti gribam par to uzzināt.Norādi savu e-pasta adresi, ja vēlies, lai mēs ar tevi sazināmies par šo problēmu (iespējams, nevarēsim reaģēt uz visām problēmām):";
+/* Support link text displayed beneath the feedback form description */
+"ppro.feedback-form.support.text" = "Vai vajadzīga palīdzība? [Sazinies ar atbalsta dienestu.](https://duckduckgo.com/subscription-support)";
+
+/* Intro text for the body of the PPro feedback form */
+"ppro.feedback-form.text-1" = "Vai atradi problēmu, kas nav aplūkota mūsu [palīdzības centrā](duck://)? Mēs noteikti gribam par to uzzināt.Pastāsti, kas notiek:";
 
 /* Text for the body of the PPro feedback form */
 "ppro.feedback-form.text-2" = "Papildus iepriekš ievadītajai informācijai mēs kopā ar tavām atsauksmēm nosūtām anonimizētu informāciju:";
@@ -2696,6 +2804,9 @@
 "prompt.custom.url.scheme.title" = "Vai atvērt citā lietotnē?";
 
 /* No comment provided by engineer. */
+"Recent Processing Logs" = "Jaunākie apstrādes žurnāli";
+
+/* No comment provided by engineer. */
 "Relatives: %@" = "Radinieki: %@";
 
 /* No comment provided by engineer. */
@@ -2801,10 +2912,10 @@
 "settings.aifeatures.assist" = "Meklēšanas Assist iestatījumi";
 
 /* Title of hide AI-generated images settings link */
-"settings.aifeatures.hide.ai.generated.images" = "Paslēpt mākslīgā intelekta ģenerētus attēlus";
+"settings.aifeatures.hide.ai.generated.images" = "Paslēpt MI ģenerētus attēlus";
 
 /* Description of what the hide AI-generated images feature does */
-"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtrē mākslīgā intelekta ģenerētus attēlus no attēlu meklēšanas rezultātiem";
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtrē MI radītus attēlus no attēlu meklēšanas rezultātiem";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Vienmēr ieslēgts";
@@ -2814,6 +2925,9 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Adreses joslas pozīcija";
+
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Eksperimentāla pārlūka izvēlne";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Atvērt saites saistītajās lietotnēs";
@@ -3178,6 +3292,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "DuckDuckGo pārlūkprogramma nodrošina izsekošanas aizsardzības, kas vienmēr ir aktīvas. [Uzzini vairāk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* No comment provided by engineer. */
+"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Rāda žurnālus no pēdējās minūtes, lai palīdzētu diagnosticēt problēmas uzreiz pēc atsvaidzināšanas.";
+
 /* Description on a report broken site page. */
 "site.not.working.description" = "Izvēlies atbilstošāko problēmas raksturojumu.";
 
@@ -3210,6 +3327,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Kura vietne ir bojāta?";
+
+/* No comment provided by engineer. */
+"Status: Invalidated" = "Statuss: nederīgs";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Saglabātais resursdatora nosaukums: %@";
@@ -3598,6 +3718,9 @@
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
 
+/* No comment provided by engineer. */
+"Version: %@" = "Versija: %@";
+
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Meklēt";
 
@@ -3859,18 +3982,6 @@
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Ziņojums no %@:";
 
-/* CTA of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.cta" = "Apskatīt piedāvājumu";
-
-/* Dismiss of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.dismiss" = "Ne tagad";
-
-/* Message of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.text" = "Paliec aizsargāts ar mūsu VPN, privāto MI un citiem risinājumiem. Abonē vēlreiz jau šodien un ietaupi 25%.";
-
-/* Title of message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.title" = "Pēdējā diena, lai ietaupītu 25%!";
-
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "IETAUPI 25%";
 
@@ -3905,7 +4016,10 @@
 "win-back.campaign.subscription.settings.menu.title" = "Atjauno abonementu un ietaupi 25%";
 
 /* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
-"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Atjauno abonementu un ietaupi 25%";
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Atkārtoti abonēt";
+
+/* Subtitle for resubscribe CTA for users eligible for the win-back offer. */
+"win-back.campaign.subscription.settings.page.resubscribe.subtitle" = "Paliec aizsargāts ar mūsu VPN, privāto MI un citiem risinājumiem.\nIerobežota laika piedāvājums.";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Vai meklē Mac versiju?";

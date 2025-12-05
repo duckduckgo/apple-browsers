@@ -65,7 +65,7 @@ struct UnifiedFeedbackFormViewModelTests {
                 serviceEnvironment: .production,
                 purchasePlatform: .appStore
             ),
-            canPurchase: false,
+            hasAppStoreProductsAvailable: false,
             subscriptionFeatureMappingCache: SubscriptionFeatureMappingCacheMock()
         )
 

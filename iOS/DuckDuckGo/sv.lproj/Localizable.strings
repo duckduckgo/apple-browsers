@@ -31,6 +31,15 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Lägg till";
 
+/* Open AI Chat history action in the menu list */
+"action.title.aiChat.history" = "Duck.ai-chattar";
+
+/* Start new AI Chat action in the menu list */
+"action.title.aiChat.new" = "Ny AI-chatt";
+
+/* Open AI Chat settings action in the menu list */
+"action.title.aiChat.settings" = "Duck.ai-inställningar";
+
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Lösenord";
 
@@ -80,7 +89,7 @@
 "action.title.newBackgroundTabForUrl" = "Öppna i bakgrunden";
 
 /* Create New Tab action */
-"action.title.newTabAction" = "Ny";
+"action.title.newTabAction" = "Ny flik";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Öppna i ny flik";
@@ -463,6 +472,51 @@
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Aktivera Email Protection";
 
+/* Button title to dismiss the autofill extension activation view */
+"autofill.extension.activation.done.button.title" = "Klart";
+
+/* Title shown when the autofill extension activation succeeds */
+"autofill.extension.activation.title" = "Automatisk ifyllning av lösenord har aktiverats!";
+
+/* Footer text describing what enabling the autofill extension does */
+"autofill.extension.footer" = "Använd lösenord du har sparat i DuckDuckGo i alla appar på din enhet.";
+
+/* Header text shown when the autofill extension is disabled */
+"autofill.extension.header.disabled" = "Automatisk ifyllning i andra appar";
+
+/* Header text shown when the autofill extension is enabled */
+"autofill.extension.header.enabled" = "Autofyll i andra appar har aktiverats";
+
+/* Dismiss button title for the Autofill extension promotion */
+"autofill.extension.promo.button.dismiss.title" = "Ställ in senare i inställningar";
+
+/* CTA button title for the Autofill extension promotion */
+"autofill.extension.promo.button.title" = "Aktivera autofyll i andra appar";
+
+/* Message for the Autofill extension promotion */
+"autofill.extension.promo.message" = "Använd DuckDuckGo för att säkert autofylla lösenord för alla dina appar.";
+
+/* Title for the Autofill extension promotion */
+"autofill.extension.promo.title" = "Logga snabbt in i dina appar utan att skriva lösenord";
+
+/* Title for screen showing autofill extension settings */
+"autofill.extension.screen.title" = "Fyll i lösenord automatiskt i andra appar";
+
+/* Status text when autofill extension is disabled */
+"autofill.extension.status.off" = "Aktivera";
+
+/* Status text when autofill extension is enabled */
+"autofill.extension.status.on" = "På";
+
+/* Title for autofill extension settings row */
+"autofill.extension.title" = "Automatisk ifyllning i andra appar";
+
+/* Button title that opens system settings to turn off the autofill extension */
+"autofill.extension.turn.off.button.title" = "Stäng av i systeminställningarna …";
+
+/* Button title that triggers system prompt to turn on the autofill extension */
+"autofill.extension.turn.on.button.title" = "Aktivera ...";
+
 /* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
 "autofill.hide-card-cvv" = "Dölj CVV";
 
@@ -799,8 +853,8 @@
 /* Section header for the autofill settings screen */
 "autofill.settings.import-passwords.section-header" = "Importera lösenord";
 
-/* Section header for the autofill settings screen */
-"autofill.settings.options.section-header" = "Alternativ";
+/* Section header for the autofill passwords options section of the settings screen */
+"autofill.settings.options.section-header" = "Lösenordsalternativ";
 
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Rapportera ett problem med automatisk ifyllning";
@@ -978,6 +1032,9 @@
 
 /* No comment provided by engineer. */
 "Cohort: %@" = "Kohort: %@";
+
+/* No comment provided by engineer. */
+"Configuration" = "Konfiguration";
 
 /* No comment provided by engineer. */
 "Confirm" = "Bekräfta";
@@ -2024,6 +2081,9 @@
 "keyCommandShowAllTabs" = "Visa alla flikar";
 
 /* No comment provided by engineer. */
+"Last Processed: %@" = "Senast bearbetad: %@";
+
+/* No comment provided by engineer. */
 "Loading brokers..." = "Läser in mäklare ...";
 
 /* Summary text for the macOS browser waitlist */
@@ -2085,6 +2145,33 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Värdnamn för meddelandepolicy";
+
+/* No comment provided by engineer. */
+"Messages" = "Meddelande";
+
+/* The name of the Address Bar button when referenced in settings. */
+"mobile.customization.addressbar.button" = "Adressfältsknapp";
+
+/* The title of the Address Bar button. */
+"mobile.customization.addressbar.title" = "Adressfält";
+
+/* A title to indicate that if selected the current button will be hidden from the UI */
+"mobile.customization.option.none.long" = "Dölj den här knappen";
+
+/* Indicates that no button was selected to be shown in the specified location. */
+"mobile.customization.option.none.short" = "Inga";
+
+/* The title of the section in settings containing the customizable buttons. */
+"mobile.customization.section.title" = "Anpassningsbara knappar";
+
+/* The label for the toggle that hides and shows the reload button. */
+"mobile.customization.show.reload.button.title" = "Visa knappen Läs in igen";
+
+/* The name of the address bar button when referenced in settings. */
+"mobile.customization.toolbar.button" = "Verktygsfältsknapp";
+
+/* A label for the access point to customization of the Toolbar. */
+"mobile.customization.toolbar.title" = "Verktygsfält";
 
 /* Title for back button in navigation bar */
 "navbar.back-button.title" = "Tillbaka";
@@ -2342,10 +2429,19 @@
 "new.address.bar.picker.title" = "Alternativ för adressfält";
 
 /* No comment provided by engineer. */
+"No Logs" = "Inga loggar";
+
+/* No comment provided by engineer. */
+"No messages" = "Inga meddelanden";
+
+/* No comment provided by engineer. */
 "No results found" = "Inga resultat hittades";
 
 /* No comment provided by engineer. */
 "OK" = "OK";
+
+/* Display title for Duck.ai in our address bar */
+"omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Cookies hanteras";
@@ -2409,6 +2505,21 @@
 
 /* The title of the onboarding dialog popup */
 "onboarding.highlights.intro.title" = "Hej!\n\nÄr du redo för en snabbare webbläsare som också skyddar dig?";
+
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.searchExperience.cta" = "Nästa";
+
+/* The footer disclaimer text for the search experience onboarding screen. */
+"onboarding.highlights.searchExperience.footer" = "AI-funktioner är privata och valfria. Du kan göra ändringar i Inställningar > AI-funktioner.";
+
+/* Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold). */
+"onboarding.highlights.searchExperience.footer.formatted" = "AI-funktioner är privata och valfria. Du kan göra ändringar i %@";
+
+/* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
+"onboarding.highlights.searchExperience.footer.settings-path-bold" = "Inställningar > AI-funktioner.";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Vill du ha enklare tillgång till privat AI-chatt?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Vi kör!";
@@ -2506,12 +2617,6 @@
 /* Deactivate button */
 "pm.deactivate" = "Inaktivera";
 
-/* Label for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.label" = "E-postadress (valfritt)";
-
-/* Placeholder for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.placeholder" = "namn@epost.com";
-
 /* Placeholder for the General Feedback step in the Privacy Pro feedback form */
 "ppro.feedback-form.general-feedback.placeholder" = "Ge din feedback ...";
 
@@ -2545,8 +2650,11 @@
 /* Title for the category selection section in the Privacy Pro feedback form */
 "ppro.feedback-form.select-category.title" = "VÄLJ EN KATEGORI";
 
-/* Text for the body of the PPro feedback form */
-"ppro.feedback-form.text-1" = "Har du hittat ett problem som inte täcks av vårt [hjälpcenter](duck://)? Vi vill definitivt veta mer om det.\n\nAnge en e-postadress om du vill att vi kontaktar dig angående problemet (vi kanske inte kan svara på alla problem):";
+/* Support link text displayed beneath the feedback form description */
+"ppro.feedback-form.support.text" = "Behöver du hjälp? [Kontakta support.](https://duckduckgo.com/subscription-support)";
+
+/* Intro text for the body of the PPro feedback form */
+"ppro.feedback-form.text-1" = "Har du hittat ett problem som inte täcks av vårt [hjälpcenter](duck://)? Vi vill definitivt veta mer om det.\n\nBerätta för oss vad som händer:";
 
 /* Text for the body of the PPro feedback form */
 "ppro.feedback-form.text-2" = "Förutom de uppgifter som anges ovan skickar vi viss anonymiserad information med din feedback:";
@@ -2696,6 +2804,9 @@
 "prompt.custom.url.scheme.title" = "Öppna i annan app?";
 
 /* No comment provided by engineer. */
+"Recent Processing Logs" = "Senaste bearbetningsloggar";
+
+/* No comment provided by engineer. */
 "Relatives: %@" = "Släktingar: %@";
 
 /* No comment provided by engineer. */
@@ -2804,7 +2915,7 @@
 "settings.aifeatures.hide.ai.generated.images" = "Dölj AI-genererade bilder";
 
 /* Description of what the hide AI-generated images feature does */
-"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtrerar bort AI-genererade bilder från bildsökningsresultat";
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtrerar bort AI-genererade bilder från bildsökningsresultaten";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Alltid på";
@@ -2814,6 +2925,9 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Adressfältsläge";
+
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Experimentell webbläsarmeny";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Öppna länkar i associerade appar";
@@ -3178,6 +3292,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "DuckDuckGo-webbläsaren erbjuder spårningsskydd som alltid är aktiva. [Läs mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* No comment provided by engineer. */
+"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Visar loggar från den senaste minuten för att hjälpa till att diagnostisera problem direkt efter en uppdatering.";
+
 /* Description on a report broken site page. */
 "site.not.working.description" = "Välj det alternativ som bäst beskriver det problem som du har stött på.";
 
@@ -3210,6 +3327,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Vilken webbplats är skadad?";
+
+/* No comment provided by engineer. */
+"Status: Invalidated" = "Status: Ogiltig";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Lagrade värdnamn: %@";
@@ -3598,6 +3718,9 @@
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
 
+/* No comment provided by engineer. */
+"Version: %@" = "Version: %@";
+
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Sök";
 
@@ -3859,18 +3982,6 @@
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Ett meddelande från %@:";
 
-/* CTA of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.cta" = "Se erbjudandet";
-
-/* Dismiss of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.dismiss" = "Inte nu";
-
-/* Message of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.text" = "Skydda dig med vårt VPN, privat AI och mer. Återprenumerera idag och spara 25 %.";
-
-/* Title of message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.title" = "Sista dagen att spara 25 %!";
-
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "SPARA 25 %";
 
@@ -3905,7 +4016,10 @@
 "win-back.campaign.subscription.settings.menu.title" = "Prenumerera igen och spara 25 %";
 
 /* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
-"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Prenumerera igen och spara 25 %";
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Prenumerera igen";
+
+/* Subtitle for resubscribe CTA for users eligible for the win-back offer. */
+"win-back.campaign.subscription.settings.page.resubscribe.subtitle" = "Skydda dig med vårt VPN, privat AI och mer.\nTidsbegränsat erbjudande.";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Letar du efter Mac-versionen?";

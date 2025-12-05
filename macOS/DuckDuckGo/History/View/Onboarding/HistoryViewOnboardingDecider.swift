@@ -27,7 +27,7 @@ protocol HistoryViewOnboardingDeciding {
 final class HistoryViewOnboardingDecider: HistoryViewOnboardingDeciding {
 
     var shouldPresentOnboarding: Bool {
-        featureFlagger.isFeatureOn(.historyView) && !isNewUser() && !settingsPersistor.didShowOnboardingView && isContextualOnboardingCompleted()
+        !isNewUser() && !settingsPersistor.didShowOnboardingView && isContextualOnboardingCompleted()
     }
 
     func skipPresentingOnboarding() {

@@ -17,68 +17,97 @@
 //
 
 import Foundation
+import Common
 
 final class CrashReportReader {
 
-    static let displayName = Bundle.main.displayName
-    static let vpnExtensionDisplayName = "com.duckduckgo.macos.vpn.network-extension"
+    static func validBundleIdentifiers() -> [String] {
+        return [
+            Bundle.main.bundleIdentifier,
+            Bundle.main.vpnMenuAgentBundleId,
+            Bundle.main.vpnSystemExtensionBundleId,
+            Bundle.main.vpnProxyExtensionBundleId,
+            Bundle.main.dbpBackgroundAgentBundleId
+        ].compactMap(\.self)
+    }
+
+    private let fileManager: FileManager
+    private let validBundleIdentifierProvider: () -> [String]
+    private let dateProvider: () -> Date
+
+    init(fileManager: FileManager = .default,
+         validBundleIdentifierProvider: @escaping () -> [String] = CrashReportReader.validBundleIdentifiers,
+         dateProvider: @escaping () -> Date = Date.init) {
+        self.fileManager = fileManager
+        self.validBundleIdentifierProvider = validBundleIdentifierProvider
+        self.dateProvider = dateProvider
+    }
 
     func getCrashReports(since lastCheckDate: Date) -> [CrashReport] {
         var allPaths: [URL]
 
         do {
-            allPaths = try FileManager.default.contentsOfDirectory(at: FileManager.userDiagnosticReports, includingPropertiesForKeys: nil)
+            allPaths = try fileManager.contentsOfDirectory(at: FileManager.userDiagnosticReports, includingPropertiesForKeys: nil)
         } catch {
             assertionFailure("CrashReportReader: Can't read content of diagnostic reports \(error.localizedDescription)")
             return []
         }
 
         do {
-            let systemPaths = try FileManager.default.contentsOfDirectory(at: FileManager.systemDiagnosticReports, includingPropertiesForKeys: nil)
+            let systemPaths = try fileManager.contentsOfDirectory(at: FileManager.systemDiagnosticReports, includingPropertiesForKeys: nil)
             allPaths.append(contentsOf: systemPaths)
         } catch {
             assertionFailure("Failed to read system crash reports: \(error)")
         }
 
         let filteredPaths = allPaths.filter({
-            isCrashReportPath($0) && belongsToThisApp($0) && isFile(at: $0, newerThan: lastCheckDate)
+            isCrashReportPath($0) && isFile(at: $0, newerThan: lastCheckDate)
         })
 
-        return filteredPaths.compactMap(crashReport(from:))
+        return filteredPaths
+            .compactMap(crashReport(from:))
+            .filter(matchesBundleID)
     }
 
     private func isCrashReportPath(_ path: URL) -> Bool {
         let validExtensions = [LegacyCrashReport.fileExtension, JSONCrashReport.fileExtension]
-        return validExtensions.contains(path.pathExtension)
+        guard validExtensions.contains(path.pathExtension) else {
+            return false
+        }
+
+        let fileName = path.lastPathComponent.lowercased()
+        return fileName.contains("duckduckgo")
     }
 
-    private func belongsToThisApp(_ path: URL) -> Bool {
-        let hasAppPrefix = path.lastPathComponent.hasPrefix(Self.displayName ?? "DuckDuckGo")
-        let hasVPNPrefix = path.lastPathComponent.hasPrefix(Self.vpnExtensionDisplayName)
+    private func matchesBundleID(_ crashReport: CrashReport) -> Bool {
+        guard let bundleID = crashReport.bundleID else {
+            return true
+        }
 
-        return hasAppPrefix || hasVPNPrefix
+        return validBundleIdentifierProvider().contains(bundleID)
     }
 
     private func isFile(at path: URL, newerThan lastCheckDate: Date) -> Bool {
-        guard let creationDate = FileManager.default.fileCreationDate(url: path) else {
+        guard let creationDate = fileManager.fileCreationDate(url: path) else {
             assertionFailure("CrashReportReader: Can't get the creation date of the report")
             return true
         }
 
-        return creationDate > lastCheckDate && creationDate < Date()
+        let currentDate = dateProvider()
+        return creationDate > lastCheckDate && creationDate < currentDate
     }
 
     private func crashReport(from url: URL) -> CrashReport? {
         switch url.pathExtension {
-        case LegacyCrashReport.fileExtension: return LegacyCrashReport(url: url)
-        case JSONCrashReport.fileExtension: return JSONCrashReport(url: url)
+        case LegacyCrashReport.fileExtension: return LegacyCrashReport(url: url, fileManager: fileManager)
+        case JSONCrashReport.fileExtension: return JSONCrashReport(url: url, fileManager: fileManager)
         default: return nil
         }
     }
 
 }
 
-fileprivate extension FileManager {
+extension FileManager {
 
     static let userDiagnosticReports: URL = {
         let homeDirectoryURL = FileManager.default.homeDirectoryForCurrentUser

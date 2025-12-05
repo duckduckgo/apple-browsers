@@ -145,4 +145,41 @@ final class AppHTTPSUpgradeStoreTests: XCTestCase {
         XCTAssertTrue(testee.hasExcludedDomain("othernew.com"))
     }
 
+    func testConcurrentReadsAndWritesRemainConsistent() throws {
+        let specificationData = try Data(contentsOf: Resource.bloomFilterSpec)
+        let specification = try JSONDecoder().decode(HTTPSBloomFilterSpecification.self, from: specificationData)
+        let bloomData = try Data(contentsOf: Resource.bloomFilter)
+
+        let iterations = 50
+        let queue = DispatchQueue(label: "test.concurrent.writes", attributes: .concurrent)
+        let group = DispatchGroup()
+
+        for _ in 0..<iterations {
+            group.enter()
+            queue.async {
+                _ = self.testee.loadBloomFilter()
+                group.leave()
+            }
+
+            group.enter()
+            queue.async {
+                do {
+                    try self.testee.persistBloomFilter(specification: specification, data: bloomData)
+                } catch {
+                    XCTFail("Persist should not throw: \(error)")
+                }
+                group.leave()
+            }
+        }
+
+        let expectation = expectation(description: "Concurrent load/persist operations complete")
+        queue.async {
+            group.wait()
+            expectation.fulfill()
+        }
+
+        wait(for: [expectation], timeout: 30)
+        XCTAssertNotNil(testee.loadBloomFilter())
+    }
+
 }

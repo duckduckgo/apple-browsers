@@ -77,6 +77,19 @@ final class ReportProblemFormViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.availableOptions.isEmpty)
     }
 
+    func testWhenInitializedWithPreselectionsThenInitialStateIsCorrect() throws {
+        let category = try XCTUnwrap(ProblemCategory.allCategories.first)
+        let subcategory = try XCTUnwrap(category.subcategories.first)
+        viewModel = ReportProblemFormViewModel(canReportBrokenSite: true,
+                                               onReportBrokenSite: {},
+                                               feedbackSender: mockFeedbackSender,
+                                               preselectedCategory: category,
+                                               preselectedSubCategory: subcategory)
+
+        XCTAssertEqual(viewModel.selectedProblemCategory, category)
+        XCTAssertTrue(viewModel.selectedOptions.contains(subcategory.id))
+    }
+
     // MARK: - Computed Properties Tests
 
     func testWhenNoCategorySelectedThenIsShowingCategorySelectionIsTrue() {

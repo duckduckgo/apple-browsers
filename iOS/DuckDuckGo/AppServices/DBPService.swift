@@ -31,7 +31,7 @@ final class DBPService: NSObject {
         return dbpIOSManager
     }
 
-    init(appDependencies: DependencyProvider) {
+    init(appDependencies: DependencyProvider, contentBlocking: ContentBlocking) {
         guard appDependencies.featureFlagger.isFeatureOn(.personalInformationRemoval) else {
             self.dbpIOSManager = nil
             super.init()
@@ -48,7 +48,7 @@ final class DBPService: NSObject {
         if let pixelKit = PixelKit.shared {
             self.dbpIOSManager = DataBrokerProtectionIOSManagerProvider.iOSManager(
                 authenticationManager: authManager,
-                privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
+                privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
                 featureFlagger: featureFlagger,
                 pixelKit: pixelKit,
                 wideEvent: appDependencies.wideEvent,
@@ -80,11 +80,14 @@ final class DBPService: NSObject {
     }
 
     func resume() {
-        dbpIOSManager?.appDidBecomeActive()
+        Task { @MainActor in
+            await dbpIOSManager?.appDidBecomeActive()
+        }
     }
 }
 
 final class DBPFeatureFlagger: DBPFeatureFlagging {
+    
     private let appDependencies: DependencyProvider
 
     var isRemoteBrokerDeliveryFeatureOn: Bool {
@@ -93,6 +96,14 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
 
     var isEmailConfirmationDecouplingFeatureOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpEmailConfirmationDecoupling)
+    }
+
+    var isForegroundRunningOnAppActiveFeatureOn: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpForegroundRunningOnAppActive)
+    }
+
+    var isForegroundRunningWhenDashboardOpenFeatureOn: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpForegroundRunningWhenDashboardOpen)
     }
 
     init(appDependencies: DependencyProvider) {

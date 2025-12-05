@@ -1,33 +1,28 @@
-DuckDuckGo olarak, kişisel bilgilerinizi bilgisayar korsanlarından, dolandırıcılardan ve gizliliğinizi ihlal eden şirketlerden korumanın en iyi yolunun bunların toplanmasını tamamen durdurmak olduğuna inanıyoruz. Bu nedenle milyonlarca kişi  internette arama yapmak ve gezinmek için Chrome ve diğer tarayıcılar yerine DuckDuckGo'yu tercih ediyor. Dâhilî motorumuz Google gibidir ancak aramalarınızı asla izlemez. Reklam engelleyici ve çerez engelleme gibi tarama korumalarımız, diğer şirketlerin verilerinizi toplamasını engellemeye yardımcı olur. Ayrıca, tarayıcımız ücretsizdir. Gizliliğinize saygılı arama reklamlarından para kazanırız, verilerinizi sömürerek değil. Veri toplama için değil, veri koruma için tasarlanmış tarayıcı ile kişisel bilgilerinizin kontrolünü tekrar elinize alın. 
+DuckDuckGo olarak, kişisel bilgilerinizi bilgisayar korsanlarından, dolandırıcılardan ve gizliliğinizi ihlal eden şirketlerden korumanın en iyi yolunun, bu bilgilerin hiç toplanmamasını sağlamak olduğuna inanıyoruz. Bu yüzden milyonlarca insan Chrome ve diğer tarayıcılar yerine ücretsiz DuckDuckGo tarayıcısını tercih ediyor. Yerleşik arama motorumuz Google gibidir ancak aramalarınızı asla izlemez. Tarama korumalarımız, diğer şirketlerin verilerinizi toplamasını engellemeye yardımcı olur. İsteğe bağlı entegre yapay zekâ özelliklerimiz Search Assist ve Duck.ai gizlilik odaklıdır ve verilerinizi hiçbir zaman yapay zekâyı eğitmek için kullanmaz. Veri koruma için tasarlanmış, veri toplama amacı gütmeyen tarayıcıyla kişisel bilgilerinizin kontrolünü geri alın. 
 
-ÖNE ÇIKAN ÖZELLİKLER
-Aramalarınızı Varsayılan Olarak Koruma Altına Alın: DuckDuckGo Search yerleşik olarak geldiği için web'de izlenmeden kolayca arama yapabilirsiniz. 
-
-Tarama Geçmişinizi Koruyun: Üçüncü Taraf Tracker Loading Protection özelliğimiz, çoğu izleyiciyi yüklenmeden önce engelleyerek, birçok popüler tarayıcının varsayılan olarak sunduklarının çok ötesinde koruma sağlar. 
-
-E-postanızı Güvenceye Alın (İsteğe Bağlı): Çoğu e-posta izleyicisini engellemek ve mevcut e-posta adresinizi @duck.com adresleriyle gizlemek için Email Protection hizmetini kullanın.  
-
-YouTube Videolarını Hedefli Reklamlar Olmadan İzleyin: Duck Player, YouTube'un gömülü video için en katı gizlilik ayarlarını içeren, dikkat dağıtmayan bir arayüzle sizi hedefli reklamlardan ve çerezlerden korur.
-
-Şifrelemeyi Otomatik Olarak Zorunlu Tutun: Birçok siteyi HTTPS bağlantısı kullanmaya zorlayarak verilerinizi ağ ve Wi-Fi meraklılarından koruyun. 
-
-Fingerprinting'i Atlatın: Tarayıcınız ve cihazınızla ilgili bilgileri birleştirme girişimlerini engelleyerek şirketlerin sizin için benzersiz bir tanımlayıcı oluşturmasını zorlaştırın. 
-
-Güvenli Bir Şekilde Senkronize Edin ve Yedekleyin (İsteğe bağlı): Şifrelenmiş yer imlerini ve parolaları cihazlarınız arasında senkronize edin.
-
-Fire Button ile sekmelerinizi ve tarama verilerinizi hızlıca silin.
-
-Çerez açılır pencerelerini engelleyin ve çerezleri en aza indirip gizliliği en üst düzeye çıkarmak için tercihlerinizi otomatik olarak ayarlayın.
-
-Ve bağlantı izlemeden korunma, Global Privacy Control (GPC) vb. çoğu tarayıcıda gizli tarama modunda dahi sunulmayan daha birçok koruma.
-
-Kişisel bilgilerinizin kontrolünü elinize almak için beklemenize gerek yok! Günlük aramalarını, gezinmelerini ve e-postalarını korumak için DuckDuckGo kullanan milyonlarca kişiye katılın. 
-
-Ücretsiz İzleme Korumalarımız hakkında daha fazla bilgi edinmek için https://help.duckduckgo.com/privacy/web-tracking-protections adresine gidin
-
-Gizlilik Politikası: https://duckduckgo.com/privacy/ 
-
-Hizmet Şartları: https://duckduckgo.com/terms
-
-Üçüncü Taraf Tracker Protection ve Arama Ağı Reklamları hakkında not: Arama ağı reklamlarının tıklanmasının ardından bazı sınırlamalar olsa da DuckDuckGo aramasında reklamları görüntülemek anonimdir. Daha fazla bilgi için: https://help.duckduckgo.com/privacy/web-tracking-protections
-
+ÖNE ÇIKAN ÖZELLİKLER 
+DuckDuckGo Search yerleşik olarak geldiği için, izlenmeden kolayca çevrimiçi arama yapabilirsiniz.  
+Üçüncü Taraf Tracker Loading Protection özelliğimiz, çoğu izleyiciyi yüklenmeden önce engelleyerek, çoğu popüler tarayıcının varsayılan olarak sunduğundan çok daha fazlasını sunar.  
+Duck.ai, 3. taraf AI modelleriyle gizli sohbetler yapmanızı sağlar, tarafımızca anonimleştirilir ve hiçbir zaman yapay zekâyı eğitmek için kullanılmaz.
+Email Protection'ı kullanarak çoğu e-posta izleyicisini engelleyin ve mevcut e-posta adresinizi @duck.com adresleriyle gizleyin.   
+Duck Player, YouTube'un gömülü video için en katı gizlilik ayarlarını içeren, dikkat dağıtmayan bir arayüzle sizi YouTube'daki hedefli reklamlardan ve çerezlerden korur. 
+Şirketlerin tarayıcınız ve cihazınızla ilgili bilgileri birleştirmesini engelleyin. 
+Şifrelenmiş yer işaretlerini ve parolaları cihazlarınız arasında senkronize edin. 
+Fire Button ile sekmelerinizi ve tarama verilerinizi hızlıca silin. 
+Çerez açılır pencerelerini otomatik olarak engelleyin.
+Çoğu tarayıcıda bulunmayan birçok koruma daha. 
+ 
+DuckDuckGo Aboneliği
+Abone olanlar şunları elde eder: 
+• VPN'imiz: 5 adede kadar cihazda bağlantınızı güvence altına alın. 
+• Duck.ai'daki gelişmiş yapay zekâ modellerine erişim: Karmaşık görevler için oluşturulmuş yapay zekâ modelleriyle gizlice sohbet edin.
+• Personal Information Removal: Kişisel bilgileri depolayan ve satan sitelerden bulun ve kaldırın.
+• Identity Theft Restoration: Kimliğiniz çalınırsa, geri yüklemenize yardımcı oluruz.
+ 
+DuckDuckGo Aboneliği Fiyatlandırma ve Koşullar   
+Ödeme, siz iptal edene kadar Apple Hesabınızdan otomatik olarak tahsil edilecektir. Aboneliğinizi uygulama ayarlarından iptal edebilirsiniz. Aboneliğinizi diğer cihazlarda etkinleştirmek için bir e-posta adresi sağlama seçeneğiniz vardır ve bu e-posta adresi yalnızca aboneliğinizi doğrulamak için kullanılır. Hizmet şartları ve gizlilik politikası için https://duckduckgo.com/pro/privacy-terms adresini ziyaret edin 
+Ücretsiz İzleme Korumalarımız hakkında daha fazla bilgi edinmek için şu adresi ziyaret edin:https://help.duckduckgo.com/privacy/web-tracking-protections 
+Gizlilik Politikası: https://duckduckgo.com/privacy/  
+Hizmet Şartları: https://duckduckgo.com/terms 
+Üçüncü Taraf İzleyici Koruması ve Arama Reklamları hakkında not: Arama reklamı tıklamalarını takip eden bazı sınırlamalar olsa da, DuckDuckGo aramasında reklamları görüntülemek anonimdir. Daha fazla bilgi için şu adresi ziyaret edin:https://help.duckduckgo.com/privacy/web-tracking-protections
+ 	

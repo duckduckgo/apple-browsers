@@ -46,9 +46,7 @@ struct SettingsAppearanceView: View {
     func navigateToSubPageIfNeeded() {
         deepLinkTarget = viewModel.deepLinkTarget
 
-        // This just needs to be longer than the deep link logic in the View Model which uses a timer 🙄
-        //  otherwise this immediately gets popped.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) {
+        DispatchQueue.main.async {
             switch deepLinkTarget {
             case .customizeToolbarButton:
                 showToolbarSettings = true
@@ -85,6 +83,13 @@ struct SettingsAppearanceView: View {
                     }
             } else {
                 legacySettings()
+            }
+
+            if viewModel.browsingMenuSheetCapability.isAvailable {
+                Section {
+                    SettingsCellView(label: UserText.settingsExperimentalMenu,
+                                     accessory: .toggle(isOn: viewModel.showMenuInSheetBinding))
+                }
             }
 
         }
@@ -127,10 +132,10 @@ struct SettingsAppearanceView: View {
     @ViewBuilder
     func addressBarButtonSetting() -> some View {
 
-        let destination = AddressBarCustomizationPickerView(isAIChatEnabled: viewModel.isAIChatEnabled, selectedAddressBarButton: viewModel.selectedAddressBarButton)
-            .applySettingsListModifiers(title: "",
-                                        displayMode: .inline,
-                                        viewModel: viewModel)
+        let destination = AddressBarCustomizationPickerView(isAIChatEnabled: viewModel.isAIChatEnabled,
+                                                            selectedAddressBarButton: viewModel.selectedAddressBarButton,
+                                                            mobileCustomization: viewModel.mobileCustomization)
+            .applySettingsListModifiers(title: "", displayMode: .inline, viewModel: viewModel)
 
         NavigationLink(destination: destination, isActive: $showAddressBarSettings) {
 
@@ -149,10 +154,10 @@ struct SettingsAppearanceView: View {
 
     @ViewBuilder
     func toolbarButtonSetting() -> some View {
-        let destination = ToolbarCustomizationPickerView(isAIChatEnabled: viewModel.isAIChatEnabled, selectedToolbarButton: viewModel.selectedToolbarButton)
-            .applySettingsListModifiers(title: "",
-                                        displayMode: .inline,
-                                        viewModel: viewModel)
+        let destination = ToolbarCustomizationPickerView(isAIChatEnabled: viewModel.isAIChatEnabled,
+                                                         selectedToolbarButton: viewModel.selectedToolbarButton,
+                                                         mobileCustomization: viewModel.mobileCustomization)
+            .applySettingsListModifiers(title: "", displayMode: .inline, viewModel: viewModel)
 
         NavigationLink(destination: destination, isActive: $showToolbarSettings) {
 

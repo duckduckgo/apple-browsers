@@ -43,6 +43,13 @@ enum SyncFeatureUsagePixels: PixelKitEvent {
         }
     }
 
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .syncDisabled,
+                .syncDisabledAndDeleted:
+            return [.pixelSource]
+        }
+    }
 }
 
 enum SyncSwitchAccountPixelKitEvent: PixelKitEvent {
@@ -70,6 +77,18 @@ enum SyncSwitchAccountPixelKitEvent: PixelKitEvent {
 
     var withoutMacPrefix: NonStandardEvent {
         NonStandardEvent(self)
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .syncAskUserToSwitchAccount,
+                .syncUserAcceptedSwitchingAccount,
+                .syncUserCancelledSwitchingAccount,
+                .syncUserSwitchedAccount,
+                .syncUserSwitchedLogoutError,
+                .syncUserSwitchedLoginError:
+            return [.pixelSource]
+        }
     }
 }
 
@@ -121,6 +140,19 @@ enum SyncSetupPixelKitEvent: PixelKitEvent {
             .syncSetupManualCodeEntryScreenShown,
             .syncSetupManualCodeEnteredFailed:
             return nil
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .syncSetupBarcodeScreenShown,
+                .syncSetupBarcodeCodeCopied,
+                .syncSetupManualCodeEntryScreenShown,
+                .syncSetupManualCodeEnteredSuccess,
+                .syncSetupManualCodeEnteredFailed,
+                .syncSetupEndedAbandoned,
+                .syncSetupEndedSuccessful:
+            return [.pixelSource]
         }
     }
 }

@@ -388,7 +388,9 @@
         "description": "Fires when the VPN menu item in the new tab page menu is pressed",
         "owners": ["rachelmcr"],
         "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": [
+            "appVersion",
             {
                 "key": "status",
                 "type": "string",

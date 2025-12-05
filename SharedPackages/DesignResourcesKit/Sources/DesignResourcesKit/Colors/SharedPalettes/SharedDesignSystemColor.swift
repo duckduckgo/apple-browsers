@@ -76,11 +76,14 @@ public enum SharedDesignSystemColor {
     case containerFillPrimary
     case containerFillSecondary
     case containerFillTertiary
+    case containerBorderTertiary
 
     // Controls
     case controlsFillPrimary
     case controlsFillSecondary
     case controlsFillTertiary
+    case controlsRaisedBackdrop
+    case controlsRaisedFillPrimary
 
     // Destructive
     case destructiveContentPrimary
@@ -102,12 +105,10 @@ public enum SharedDesignSystemColor {
     case iconsSecondary
     case iconsTertiary
 
-    // Placeholders
-    case placeholderShade12
-
     // System
     case lines
-    case spinner
+    case spinnerStart
+    case spinnerFinal
 
     // Shadows
     case shadowPrimary

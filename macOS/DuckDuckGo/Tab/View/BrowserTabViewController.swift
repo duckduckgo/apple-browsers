@@ -76,7 +76,7 @@ final class BrowserTabViewController: NSViewController {
     private var containerStackView: NSStackView
 
     weak var delegate: BrowserTabViewControllerDelegate?
-    var tabViewModel: TabViewModel?
+    private(set) var tabViewModel: TabViewModel?
 
     private let tabCollectionViewModel: TabCollectionViewModel
     private let bookmarkManager: BookmarkManager
@@ -95,6 +95,9 @@ final class BrowserTabViewController: NSViewController {
     private let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     private let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
     private let aiChatPreferences: AIChatPreferences
+    private let aboutPreferences: AboutPreferences
+    private let accessibilityPreferences: AccessibilityPreferences
+    private let duckPlayer: DuckPlayer
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
 
@@ -121,11 +124,7 @@ final class BrowserTabViewController: NSViewController {
     public weak var aiChatSidebarHostingDelegate: AIChatSidebarHostingDelegate?
 
     private var isInPopUpWindow: Bool {
-        guard let mainViewController = parent as? MainViewController else {
-            assert(view.window == nil, "BrowserTabViewController is not a child of MainViewController")
-            return false
-        }
-        return mainViewController.isInPopUpWindow
+        tabCollectionViewModel.isPopup
     }
 
     required init?(coder: NSCoder) {
@@ -150,6 +149,9 @@ final class BrowserTabViewController: NSViewController {
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
          cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
          aiChatPreferences: AIChatPreferences,
+         aboutPreferences: AboutPreferences,
+         accessibilityPreferences: AccessibilityPreferences,
+         duckPlayer: DuckPlayer,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge = NSApp.delegateTyped.subscriptionAuthV1toV2Bridge,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
          tld: TLD = NSApp.delegateTyped.tld
@@ -172,6 +174,9 @@ final class BrowserTabViewController: NSViewController {
         self.webTrackingProtectionPreferences = webTrackingProtectionPreferences
         self.cookiePopupProtectionPreferences = cookiePopupProtectionPreferences
         self.aiChatPreferences = aiChatPreferences
+        self.aboutPreferences = aboutPreferences
+        self.accessibilityPreferences = accessibilityPreferences
+        self.duckPlayer = duckPlayer
         self.subscriptionManager = subscriptionManager
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
 
@@ -549,9 +554,11 @@ final class BrowserTabViewController: NSViewController {
     private func addWebViewToViewHierarchy(_ webView: WebView, tab: Tab) {
         let container = WebViewContainerView(tab: tab, webView: webView, frame: view.bounds)
         self.webViewContainer = container
+        self.webViewContainer?.setContentHuggingPriority(.defaultLow, for: .vertical)
+        self.webViewContainer?.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
         containerStackView.orientation = .vertical
         containerStackView.alignment = .leading
-        containerStackView.distribution = .fillProportionally
+        containerStackView.distribution = .fill
         containerStackView.spacing = 0
 
         // Make sure link preview (tooltip shown in the bottom-left) is on top
@@ -600,17 +607,14 @@ final class BrowserTabViewController: NSViewController {
         // once a dialog is presented we reset the is dismissed flag
         self.wasContextualOnboardingDialogDismissed = false
 
-        var onDismissAction: () -> Void = {}
-        if let webViewContainer {
-            onDismissAction = { [weak self] in
-                guard let self else { return }
-                // we mark the flag for dialog dismissed
-                wasContextualOnboardingDialogDismissed = true
-                delegate?.dismissViewHighlight()
-                self.removeChild(in: self.containerStackView, webViewContainer: webViewContainer)
-                if let lastDialog = onboardingDialogTypeProvider.lastDialog {
-                    self.onboardingPixelReporter.measureDialogDismissed(dialogType: lastDialog)
-                }
+        let onDismissAction: () -> Void = { [weak self] in
+            guard let self else { return }
+            // we mark the flag for dialog dismissed
+            wasContextualOnboardingDialogDismissed = true
+            delegate?.dismissViewHighlight()
+            self.removeChild(in: self.containerStackView, webViewContainer: webViewContainer)
+            if let lastDialog = onboardingDialogTypeProvider.lastDialog {
+                self.onboardingPixelReporter.measureDialogDismissed(dialogType: lastDialog)
             }
         }
 
@@ -962,6 +966,10 @@ final class BrowserTabViewController: NSViewController {
         return tab
     }
 
+    func loadURLInCurrentTab(_ url: URL) {
+        tabCollectionViewModel.selectedTab?.setContent(.contentFromURL(url, source: .userEntered(url.absoluteString, downloadRequested: false)))
+    }
+
     // MARK: - Browser Tabs
 
     private func removeAllTabContent(includingWebView: Bool = true) {
@@ -1024,11 +1032,7 @@ final class BrowserTabViewController: NSViewController {
             }
 
         case .history:
-            if featureFlagger.isFeatureOn(.historyView) {
-                updateTabIfNeeded(tabViewModel: tabViewModel)
-            } else {
-                removeAllTabContent()
-            }
+            updateTabIfNeeded(tabViewModel: tabViewModel)
 
         case .dataBrokerProtection:
             removeAllTabContent()
@@ -1184,6 +1188,7 @@ final class BrowserTabViewController: NSViewController {
             }
             let preferencesViewController = PreferencesViewController(
                 syncService: syncService,
+                duckPlayer: duckPlayer,
                 tabCollectionViewModel: tabCollectionViewModel,
                 privacyConfigurationManager: privacyConfigurationManager,
                 featureFlagger: featureFlagger,
@@ -1194,6 +1199,9 @@ final class BrowserTabViewController: NSViewController {
                 webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                 cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
                 aiChatPreferences: aiChatPreferences,
+                aboutPreferences: aboutPreferences,
+                accessibilityPreferences: accessibilityPreferences,
+                duckPlayerPreferences: duckPlayer.preferences,
                 subscriptionManager: subscriptionManager,
                 winBackOfferVisibilityManager: winBackOfferVisibilityManager
             )
@@ -1744,7 +1752,10 @@ extension BrowserTabViewController {
         tabsPreferences: Application.appDelegate.tabsPreferences,
         webTrackingProtectionPreferences: Application.appDelegate.webTrackingProtectionPreferences,
         cookiePopupProtectionPreferences: Application.appDelegate.cookiePopupProtectionPreferences,
-        aiChatPreferences: Application.appDelegate.aiChatPreferences
+        aiChatPreferences: Application.appDelegate.aiChatPreferences,
+        aboutPreferences: Application.appDelegate.aboutPreferences,
+        accessibilityPreferences: Application.appDelegate.accessibilityPreferences,
+        duckPlayer: Application.appDelegate.duckPlayer
     )
 }
 
@@ -1755,7 +1766,7 @@ private extension NSViewController {
         animateStackViewChanges(stackView)
     }
 
-    func removeChild(in stackView: NSStackView, webViewContainer: NSView) {
+    func removeChild(in stackView: NSStackView, webViewContainer: NSView?) {
         stackView.arrangedSubviews.filter({ $0 != webViewContainer }).forEach {
             stackView.removeArrangedSubview($0)
             $0.removeFromSuperview()

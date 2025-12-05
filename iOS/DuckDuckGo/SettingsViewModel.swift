@@ -68,6 +68,8 @@ final class SettingsViewModel: ObservableObject {
     var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
     weak var autoClearActionDelegate: SettingsAutoClearActionDelegate?
     let mobileCustomization: MobileCustomization
+    let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
+    var browsingMenuSheetCapability: BrowsingMenuSheetCapable
 
     // Subscription Dependencies
     let isAuthV2Enabled: Bool
@@ -77,11 +79,11 @@ final class SettingsViewModel: ObservableObject {
     let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private var subscriptionSignOutObserver: Any?
     var duckPlayerContingencyHandler: DuckPlayerContingencyHandler {
-        DefaultDuckPlayerContingencyHandler(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
+        DefaultDuckPlayerContingencyHandler(privacyConfigurationManager: privacyConfigurationManager)
     }
     var blackFridayCampaignProvider: BlackFridayCampaignProviding {
         DefaultBlackFridayCampaignProvider(
-            privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
+            privacyConfigurationManager: privacyConfigurationManager,
             isFeatureEnabled: { [weak featureFlagger] in
                 featureFlagger?.isFeatureOn(.blackFridayCampaign) ?? false
             }
@@ -106,9 +108,7 @@ final class SettingsViewModel: ObservableObject {
     private var textZoomObserver: Any?
     private var appForegroundObserver: Any?
 
-    // Subscription Free Trials
-    private let subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping
-
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let keyValueStore: ThrowingKeyValueStoring
     private let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
 
@@ -157,10 +157,6 @@ final class SettingsViewModel: ObservableObject {
 
     var isUpdatedAIFeaturesSettingsEnabled: Bool {
         featureFlagger.isFeatureOn(.aiFeaturesSettingsUpdate)
-    }
-
-    var embedSERPSettings: Bool {
-        featureFlagger.isFeatureOn(.embeddedSERPSettings)
     }
 
     var isDuckAiDataClearingEnabled: Bool {
@@ -277,7 +273,7 @@ final class SettingsViewModel: ObservableObject {
             }
         )
     }
-    
+
     var refreshButtonPositionBinding: Binding<RefreshButtonPosition> {
         Binding<RefreshButtonPosition>(
             get: {
@@ -287,6 +283,24 @@ final class SettingsViewModel: ObservableObject {
                 Pixel.fire(pixel: $0 == .addressBar ? .settingsRefreshButtonPositionAddressBar : .settingsRefreshButtonPositionMenu)
                 self.appSettings.currentRefreshButtonPosition = $0
                 self.state.refreshButtonPosition = $0
+            }
+        )
+    }
+
+    var showMenuInSheetBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: {
+                self.state.showMenuInSheet
+            },
+            set: {
+                if $0 {
+                    DailyPixel.fireDailyAndCount(pixel: .experimentalBrowsingMenuEnabled)
+                } else {
+                    DailyPixel.fireDailyAndCount(pixel: .experimentalBrowsingMenuDisabled)
+                }
+                
+                self.browsingMenuSheetCapability.setEnabled($0)
+                self.state.showMenuInSheet = self.browsingMenuSheetCapability.isEnabled
             }
         )
     }
@@ -627,7 +641,6 @@ final class SettingsViewModel: ObservableObject {
          subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
          voiceSearchHelper: VoiceSearchHelperProtocol,
-         variantManager: VariantManager = AppDependencyProvider.shared.variantManager,
          deepLink: SettingsDeepLinkSection? = nil,
          historyManager: HistoryManaging,
          syncPausedStateManager: any SyncPausedStateManaging,
@@ -641,14 +654,16 @@ final class SettingsViewModel: ObservableObject {
          duckPlayerSettings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
          duckPlayerPixelHandler: DuckPlayerPixelFiring.Type = DuckPlayerPixelHandler.self,
          featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
-         subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper(),
          urlOpener: URLOpener = UIApplication.shared,
+         privacyConfigurationManager: PrivacyConfigurationManaging,
          keyValueStore: ThrowingKeyValueStoring,
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
-         mobileCustomization: MobileCustomization
+         mobileCustomization: MobileCustomization,
+         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
+         browsingMenuSheetCapability: BrowsingMenuSheetCapable
     ) {
 
         self.state = SettingsState.defaults
@@ -672,14 +687,16 @@ final class SettingsViewModel: ObservableObject {
         self.duckPlayerSettings = duckPlayerSettings
         self.duckPlayerPixelHandler = duckPlayerPixelHandler
         self.featureDiscovery = featureDiscovery
-        self.subscriptionFreeTrialsHelper = subscriptionFreeTrialsHelper
         self.urlOpener = urlOpener
+        self.privacyConfigurationManager = privacyConfigurationManager
         self.keyValueStore = keyValueStore
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.runPrerequisitesDelegate = runPrerequisitesDelegate
         self.dataBrokerProtectionViewControllerProvider = dataBrokerProtectionViewControllerProvider
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.mobileCustomization = mobileCustomization
+        self.userScriptsDependencies = userScriptsDependencies
+        self.browsingMenuSheetCapability = browsingMenuSheetCapability
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
     }
@@ -706,12 +723,13 @@ extension SettingsViewModel {
             appThemeStyle: appSettings.currentThemeStyle,
             appIcon: AppIconManager.shared.appIcon,
             fireButtonAnimation: appSettings.currentFireButtonAnimation,
-            textZoom: SettingsState.TextZoom(enabled: textZoomCoordinator.isEnabled, level: appSettings.defaultTextZoomLevel),
+            textZoom: SettingsState.TextZoom(level: appSettings.defaultTextZoomLevel),
             addressBar: SettingsState.AddressBar(enabled: !isPad, position: appSettings.currentAddressBarPosition),
             showsFullURL: appSettings.showFullSiteAddress,
             isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
             refreshButtonPosition: appSettings.currentRefreshButtonPosition,
             mobileCustomization: mobileCustomization.state,
+            showMenuInSheet: browsingMenuSheetCapability.isEnabled,
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
             autoclearDataEnabled: AutoClearSettingsModel(settings: appSettings) != nil,
@@ -726,7 +744,7 @@ extension SettingsViewModel {
             showCreditCardManagement: false,
             version: versionProvider.versionAndBuildNumber,
             crashCollectionOptInStatus: appSettings.crashCollectionOptInStatus,
-            debugModeEnabled: featureFlagger.isFeatureOn(.debugMenu) || isDebugBuild,
+            debugModeEnabled: isInternalUser || isDebugBuild,
             voiceSearchEnabled: voiceSearchHelper.isVoiceSearchEnabled,
             speechRecognitionAvailable: voiceSearchHelper.isSpeechRecognizerAvailable,
             loginsEnabled: featureFlagger.isFeatureOn(.autofillAccessCredentialManagement),
@@ -940,10 +958,11 @@ extension SettingsViewModel {
         updateCompleteSetupSectionVisiblity()
     }
 
-    @MainActor func shouldPresentAutofillViewWith(accountDetails: SecureVaultModels.WebsiteAccount?, card: SecureVaultModels.CreditCard?, showCreditCardManagement: Bool, source: AutofillSettingsSource? = nil) {
+    @MainActor func shouldPresentAutofillViewWith(accountDetails: SecureVaultModels.WebsiteAccount?, card: SecureVaultModels.CreditCard?, showCreditCardManagement: Bool, showSettingsScreen: AutofillSettingsDestination? = nil, source: AutofillSettingsSource? = nil) {
         state.activeWebsiteAccount = accountDetails
         state.activeWebsiteCreditCard = card
         state.showCreditCardManagement = showCreditCardManagement
+        state.showSettingsScreen = showSettingsScreen
         state.autofillSource = source
         
         presentLegacyView(.autofill)
@@ -1052,6 +1071,7 @@ extension SettingsViewModel {
                                                                 selectedCard: state.activeWebsiteCreditCard,
                                                                 showPasswordManagement: false,
                                                                 showCreditCardManagement: state.showCreditCardManagement,
+                                                                showSettingsScreen: state.showSettingsScreen,
                                                                 source: state.autofillSource))
 
         case .gpc:
@@ -1096,6 +1116,7 @@ extension SettingsViewModel: DataImportViewControllerDelegate {
                                                             selectedCard: nil,
                                                             showPasswordManagement: true,
                                                             showCreditCardManagement: false,
+                                                            showSettingsScreen: nil,
                                                             source: state.autofillSource))
     }
 }
@@ -1183,7 +1204,7 @@ extension SettingsViewModel {
         }
 
         // Update if can purchase based on App Store product availability
-        updatedSubscription.canPurchase = subscriptionAuthV1toV2Bridge.canPurchase
+        updatedSubscription.hasAppStoreProductsAvailable = subscriptionAuthV1toV2Bridge.hasAppStoreProductsAvailable
 
         // Update if user is signed in based on the presence of token
         updatedSubscription.isSignedIn = subscriptionAuthV1toV2Bridge.isUserAuthenticated
@@ -1275,7 +1296,7 @@ extension SettingsViewModel {
                                                                   object: nil,
                                                                   queue: .main, using: { [weak self] _ in
             guard let self = self else { return }
-            self.state.textZoom = SettingsState.TextZoom(enabled: true, level: self.appSettings.defaultTextZoomLevel)
+            self.state.textZoom = SettingsState.TextZoom(level: self.appSettings.defaultTextZoomLevel)
         })
 
         if #available(iOS 18.2, *) {
@@ -1395,7 +1416,6 @@ extension SettingsViewModel {
     /// Checks if the user is eligible for a free trial subscription offer.
     /// - Returns: `true` if free trials are available and the user is eligible for a free trial, `false` otherwise.
     private func isUserEligibleForTrialOffer() async -> Bool {
-        guard subscriptionFreeTrialsHelper.areFreeTrialsEnabled else { return false }
         if isAuthV2Enabled {
             return await subscriptionManagerV2?.storePurchaseManager().isUserEligibleForFreeTrial() ?? false
         } else {
@@ -1468,6 +1488,18 @@ extension SettingsViewModel {
             get: { self.aiChatSettings.isAIChatTabSwitcherUserSettingsEnabled },
             set: { newValue in
                 self.aiChatSettings.enableAIChatTabSwitcherUserSettings(enable: newValue)
+            }
+        )
+    }
+    
+    var isAIChatFullModeEnabled: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.aiChatSettings.isAIChatFullModeEnabled },
+            set: { newValue in
+                withAnimation {
+                    self.objectWillChange.send()
+                    self.aiChatSettings.enableAIChatFullModeSetting(enable: newValue)
+                }
             }
         )
     }

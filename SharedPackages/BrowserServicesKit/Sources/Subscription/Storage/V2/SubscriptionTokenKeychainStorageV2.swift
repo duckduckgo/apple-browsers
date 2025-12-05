@@ -37,11 +37,14 @@ public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
 
     private let errorEventsHandler: (AccountKeychainAccessType, AccountKeychainAccessError) -> Void
     private let keychainManager: any KeychainManaging
+    private let userDefaults: UserDefaults
 
     public init(keychainManager: any KeychainManaging,
+                userDefaults: UserDefaults,
                 errorEventsHandler: @escaping (AccountKeychainAccessType, AccountKeychainAccessError) -> Void) {
         self.errorEventsHandler = errorEventsHandler
         self.keychainManager = keychainManager
+        self.userDefaults = userDefaults
     }
 
     /*
@@ -69,10 +72,16 @@ public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
         do {
             guard let data = try keychainManager.retrieveData(forKey: SubscriptionKeychainField.tokenContainer.keyValue) else {
                 Logger.subscriptionKeychain.debug("TokenContainer not found")
+                verifyTokenNotFoundExpectation()
                 return nil
             }
-            return CodableHelper.decode(jsonData: data)
+            let result: TokenContainer? = CodableHelper.decode(jsonData: data)
+            if result == nil {
+                verifyTokenNotFoundExpectation()
+            }
+            return result
         } catch {
+            verifyTokenNotFoundExpectation()
             if let error = error as? AccountKeychainAccessError {
                 errorEventsHandler(AccountKeychainAccessType.getAuthToken, error)
             } else {
@@ -84,9 +93,12 @@ public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
     }
 
     public func saveTokenContainer(_ tokenContainer: TokenContainer?) throws {
+        Logger.subscriptionKeychain.log("Saving TokenContainer")
+        tokenExpected = tokenContainer != nil
+
         do {
             guard let tokenContainer else {
-                Logger.subscriptionKeychain.debug("Remove TokenContainer")
+                Logger.subscriptionKeychain.log("Remove TokenContainer")
                 try keychainManager.deleteItem(forKey: SubscriptionKeychainField.tokenContainer.keyValue)
                 return
             }
@@ -97,14 +109,28 @@ public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
 
             try keychainManager.store(data: data, forKey: SubscriptionKeychainField.tokenContainer.keyValue)
         } catch {
-            Logger.subscriptionKeychain.fault("Failed to set TokenContainer: \(error, privacy: .public)")
+            Logger.subscriptionKeychain.error("Failed to set TokenContainer: \(error, privacy: .public)")
             if let error = error as? AccountKeychainAccessError {
                 errorEventsHandler(AccountKeychainAccessType.storeAuthToken, error)
             } else {
                 assertionFailure("Unexpected error: \(error)")
-                Logger.subscriptionKeychain.fault("Unexpected error: \(error, privacy: .public)")
+                Logger.subscriptionKeychain.error("Unexpected error: \(error, privacy: .public)")
             }
             throw error
         }
+    }
+
+    private func verifyTokenNotFoundExpectation() {
+        if tokenExpected {
+            Logger.subscriptionKeychain.fault("Expected token not found")
+            errorEventsHandler(AccountKeychainAccessType.getAuthToken, AccountKeychainAccessError.expectedTokenNotFound)
+            tokenExpected = false
+        }
+    }
+
+    private let tokenExpectedKey = SubscriptionKeychainField.tokenContainer.keyValue+".expected"
+    private var tokenExpected: Bool {
+        get { userDefaults.bool(forKey: tokenExpectedKey) }
+        set { userDefaults.set(newValue, forKey: tokenExpectedKey) }
     }
 }

@@ -40,6 +40,14 @@ public protocol ScriptSourceProviding {
 
 struct DefaultScriptSourceProvider: ScriptSourceProviding {
 
+    struct Dependencies {
+        let appSettings: AppSettings
+        let privacyConfigurationManager: PrivacyConfigurationManaging
+        let contentBlockingManager: ContentBlockerRulesManagerProtocol
+        let fireproofing: Fireproofing
+        let contentScopeExperimentsManager: ContentScopeExperimentsManaging
+    }
+
     var loginDetectionEnabled: Bool { fireproofing.loginDetectionEnabled }
     let sendDoNotSell: Bool
     
@@ -56,18 +64,14 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     var currentCohorts: [ContentScopeExperimentData] = []
 
-    init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
-         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
-         contentBlockingManager: ContentBlockerRulesManagerProtocol = ContentBlocking.shared.contentBlockingManager,
-         fireproofing: Fireproofing,
-         contentScopeExperimentsManager: ContentScopeExperimentsManaging = AppDependencyProvider.shared.contentScopeExperimentsManager) {
+    init(dependencies: Dependencies) {
 
-        sendDoNotSell = appSettings.sendDoNotSell
-        
-        self.privacyConfigurationManager = privacyConfigurationManager
-        self.contentBlockingManager = contentBlockingManager
-        self.fireproofing = fireproofing
-        self.contentScopeExperimentsManager = contentScopeExperimentsManager
+        sendDoNotSell = dependencies.appSettings.sendDoNotSell
+
+        self.privacyConfigurationManager = dependencies.privacyConfigurationManager
+        self.contentBlockingManager = dependencies.contentBlockingManager
+        self.fireproofing = dependencies.fireproofing
+        self.contentScopeExperimentsManager = dependencies.contentScopeExperimentsManager
 
         contentBlockerRulesConfig = Self.buildContentBlockerRulesConfig(contentBlockingManager: contentBlockingManager,
                                                                         privacyConfigurationManager: privacyConfigurationManager)
@@ -77,7 +81,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         messageSecret = Self.generateSessionKey()
         currentCohorts = Self.generateCurrentCohorts(experimentManager: contentScopeExperimentsManager)
 
-        contentScopeProperties = ContentScopeProperties(gpcEnabled: appSettings.sendDoNotSell,
+        contentScopeProperties = ContentScopeProperties(gpcEnabled: dependencies.appSettings.sendDoNotSell,
                                                         sessionKey: sessionKey,
                                                         messageSecret: messageSecret,
                                                         debug: AppUserDefaults().contentScopeDebugStateEnabled,

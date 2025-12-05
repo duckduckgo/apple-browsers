@@ -28,7 +28,8 @@ final class MaliciousSiteProtectionService {
     let preferencesManager = MaliciousSiteProtectionPreferencesManager()
     let manager: MaliciousSiteProtectionManaging
 
-    init(featureFlagger: FeatureFlagger) {
+    init(featureFlagger: FeatureFlagger,
+         privacyConfigurationManager: PrivacyConfigurationManaging) {
         let maliciousSiteProtectionAPI = MaliciousSiteProtectionAPI()
 
         // If Application Support directory is not available leave a trail in crash logs.
@@ -44,7 +45,8 @@ final class MaliciousSiteProtectionService {
             fileNameProvider: MaliciousSiteProtectionManager.fileName(for:)
         )
 
-        let maliciousSiteProtectionFeatureFlagger = MaliciousSiteProtectionFeatureFlags(featureFlagger: featureFlagger)
+        let maliciousSiteProtectionFeatureFlagger = MaliciousSiteProtectionFeatureFlags(featureFlagger: featureFlagger,
+                                                                                        privacyConfigManager: privacyConfigurationManager)
 
         let remoteIntervalProvider: (MaliciousSiteProtection.DataManager.StoredDataType) -> TimeInterval = { dataKind in
             switch dataKind {
@@ -55,10 +57,6 @@ final class MaliciousSiteProtectionService {
         let supportedThreatsProvider = {
             let isScamProtectionEnabled = featureFlagger.isFeatureOn(.scamSiteProtection)
             return isScamProtectionEnabled ? ThreatKind.allCases : ThreatKind.allCases.filter { $0 != .scam }
-        }
-
-        let shouldRemoveWWWInCanonicalization = {
-            return featureFlagger.isFeatureOn(.removeWWWInCanonicalizationInThreatProtection)
         }
 
         let updateManager = MaliciousSiteProtection.UpdateManager(
@@ -82,8 +80,7 @@ final class MaliciousSiteProtectionService {
             dataManager: maliciousSiteProtectionDataManager,
             preferencesManager: preferencesManager,
             maliciousSiteProtectionFeatureFlagger: maliciousSiteProtectionFeatureFlagger,
-            supportedThreatsProvider: supportedThreatsProvider,
-            shouldRemoveWWWInCanonicalization: shouldRemoveWWWInCanonicalization
+            supportedThreatsProvider: supportedThreatsProvider
         )
 
         Task { @MainActor in
@@ -106,7 +103,7 @@ extension MaliciousSiteProtectionFeatureFlags {
 
     init(
         featureFlagger: FeatureFlagger,
-        privacyConfigManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager
+        privacyConfigManager: PrivacyConfigurationManaging
     ) {
         self.init(
             privacyConfigManager: privacyConfigManager,

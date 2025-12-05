@@ -18,6 +18,7 @@
 
 import XCTest
 @testable import AttributedMetric
+import AttributedMetricTestsUtils
 
 final class RollingEightDaysBoolTests: XCTestCase {
 
@@ -148,5 +149,140 @@ final class RollingEightDaysBoolTests: XCTestCase {
         // All values should be true
         let allTrue = Array(repeating: true, count: 8)
         XCTAssertEqual(rollingBool.allValues, allTrue)
+    }
+
+    // MARK: - Codable Persistence Tests
+
+    func testEncodingAndDecodingPreservesLastDay() throws {
+        // Set up state with lastDay
+        let testDate = Calendar.eastern.date(from: DateComponents(year: 2025, month: 1, day: 20, hour: 14, minute: 45))!
+        rollingBool.lastDay = testDate
+        rollingBool.append(true)
+        rollingBool.append(true)
+
+        // Encode
+        let encoder = JSONEncoder()
+        let data = try encoder.encode(rollingBool)
+
+        // Decode
+        let decoder = JSONDecoder()
+        let decoded = try decoder.decode(RollingEightDaysBool.self, from: data)
+
+        // Verify lastDay was persisted
+        XCTAssertNotNil(decoded.lastDay)
+        XCTAssertEqual(decoded.lastDay, testDate)
+
+        // Verify values were also persisted
+        XCTAssertEqual(decoded.allValues, [true, true])
+        XCTAssertEqual(decoded.count, 2)
+    }
+
+    func testEncodingAndDecodingWithNilLastDay() throws {
+        // Set up state without lastDay
+        rollingBool.append(true)
+
+        XCTAssertNil(rollingBool.lastDay)
+
+        // Encode
+        let encoder = JSONEncoder()
+        let data = try encoder.encode(rollingBool)
+
+        // Decode
+        let decoder = JSONDecoder()
+        let decoded = try decoder.decode(RollingEightDaysBool.self, from: data)
+
+        // Verify lastDay is still nil
+        XCTAssertNil(decoded.lastDay)
+
+        // Verify values were persisted
+        XCTAssertEqual(decoded.allValues, [true])
+    }
+
+    func testSetTodayToTrueAfterDecodingUsesPersistedLastDay() throws {
+        // Day 1: Set up initial state
+        let day1 = Calendar.eastern.date(from: DateComponents(year: 2025, month: 1, day: 20))!
+        let timeMachine = TimeMachine(date: day1)
+        rollingBool.setTodayToTrue(dateProvider: timeMachine)
+        XCTAssertEqual(rollingBool.count, 1)
+        XCTAssertNotNil(rollingBool.lastDay)
+
+        // Encode
+        let encoder = JSONEncoder()
+        let data = try encoder.encode(rollingBool)
+
+        // Decode (simulating app restart)
+        let decoder = JSONDecoder()
+        let decoded = try decoder.decode(RollingEightDaysBool.self, from: data)
+
+        // Verify lastDay was restored
+        XCTAssertNotNil(decoded.lastDay)
+        XCTAssertTrue(Calendar.eastern.isDate(decoded.lastDay!, inSameDayAs: day1))
+
+        // Same day: Should not add new value
+        let initialCount = decoded.count
+        decoded.setTodayToTrue(dateProvider: timeMachine)
+        XCTAssertEqual(decoded.count, initialCount) // No change
+
+        // Next day: Should add new value
+        let day2 = Calendar.eastern.date(from: DateComponents(year: 2025, month: 1, day: 21))!
+        let timeMachine2 = TimeMachine(date: day2)
+        decoded.setTodayToTrue(dateProvider: timeMachine2)
+        XCTAssertEqual(decoded.count, 2) // New value added
+        XCTAssertEqual(decoded.allValues, [true, true])
+    }
+
+    func testSetTodayToTrueAfterDecodingWithoutLastDayBehavesCorrectly() throws {
+        // Create state without lastDay (old data format)
+        rollingBool.append(true)
+
+        // Encode
+        let encoder = JSONEncoder()
+        let data = try encoder.encode(rollingBool)
+
+        // Decode
+        let decoder = JSONDecoder()
+        let decoded = try decoder.decode(RollingEightDaysBool.self, from: data)
+
+        // lastDay should be nil after decoding old format
+        XCTAssertNil(decoded.lastDay)
+
+        // First call should initialize lastDay
+        decoded.setTodayToTrue(dateProvider: DefaultDateProvider())
+        XCTAssertNotNil(decoded.lastDay)
+        XCTAssertEqual(decoded.count, 2) // Original value + new value
+    }
+
+    func testMultipleEncodeDecodesCyclesPreserveLastDay() throws {
+        // Initial state
+        let day1 = Calendar.eastern.date(from: DateComponents(year: 2025, month: 1, day: 20))!
+        let timeMachine = TimeMachine(date: day1)
+        rollingBool.setTodayToTrue(dateProvider: timeMachine)
+
+        let encoder = JSONEncoder()
+        let decoder = JSONDecoder()
+
+        // First cycle
+        var data = try encoder.encode(rollingBool)
+        var decoded = try decoder.decode(RollingEightDaysBool.self, from: data)
+        XCTAssertEqual(decoded.lastDay, rollingBool.lastDay)
+
+        // Second cycle
+        let day2 = Calendar.eastern.date(from: DateComponents(year: 2025, month: 1, day: 21))!
+        let timeMachine2 = TimeMachine(date: day2)
+        decoded.setTodayToTrue(dateProvider: timeMachine2)
+        data = try encoder.encode(decoded)
+        let decoded2 = try decoder.decode(RollingEightDaysBool.self, from: data)
+        XCTAssertTrue(Calendar.eastern.isDate(decoded2.lastDay!, inSameDayAs: day2))
+
+        // Third cycle
+        let day3 = Calendar.eastern.date(from: DateComponents(year: 2025, month: 1, day: 22))!
+        let timeMachine3 = TimeMachine(date: day3)
+        decoded2.setTodayToTrue(dateProvider: timeMachine3)
+        data = try encoder.encode(decoded2)
+        let decoded3 = try decoder.decode(RollingEightDaysBool.self, from: data)
+        XCTAssertTrue(Calendar.eastern.isDate(decoded3.lastDay!, inSameDayAs: day3))
+
+        // Verify all values are true
+        XCTAssertEqual(decoded3.allValues, [true, true, true])
     }
 }

@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import os.log
 
 /// A specialised rolling data structure that maintains exactly 8 values for tracking weekly data.
 public class RollingEightDays<T: Codable & Equatable>: RollingArray<T> {
@@ -31,15 +32,22 @@ public class RollingEightDays<T: Codable & Equatable>: RollingArray<T> {
         super.init(capacity: 8)
     }
 
-    /// Creates a new `RollingEightDays` instance from a decoder.
-    ///
-    /// This initialiser allows the rolling eight-day structure to be decoded from
-    /// persistent storage or network data while maintaining the seven-day capacity.
-    ///
-    /// - Parameter decoder: The decoder to read data from.
-    /// - Throws: An error if decoding fails.
+    // MARK: - Codable
+
+    private enum CodingKeys: CodingKey {
+        case lastDay
+    }
+
     public required init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        lastDay = try container.decodeIfPresent(Date.self, forKey: .lastDay)
         try super.init(from: decoder)
+    }
+
+    public override func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(lastDay, forKey: .lastDay)
+        try super.encode(to: encoder)
     }
 
     /// Checks if the given date is the same calendar day as the last recorded day.
@@ -99,9 +107,14 @@ public class RollingEightDaysInt: RollingEightDays<Int>, CustomDebugStringConver
         let now = dateProvider.now()
 
         // First time initialization
-        if lastDay == nil {
-            lastDay = now
+        guard let lastDay else {
+            self.lastDay = now
             append(1)
+            return
+        }
+
+        guard now >= lastDay else {
+            Logger.attributedMetricRolling8Days.error("The date is incorrect; the current date precedes the last recorded date.")
             return
         }
 
@@ -112,7 +125,12 @@ public class RollingEightDaysInt: RollingEightDays<Int>, CustomDebugStringConver
             self[self.lastIndex] = currentValue + 1
         } else {
             // Calculate days between lastDay and now
-            let daysBetween = Calendar.eastern.dateComponents([.day], from: Calendar.eastern.startOfDay(for: lastDay!), to: Calendar.eastern.startOfDay(for: now)).day ?? 0
+            let daysBetween = Calendar.eastern.dateComponents([.day], from: Calendar.eastern.startOfDay(for: lastDay), to: Calendar.eastern.startOfDay(for: now)).day ?? 0
+
+            guard daysBetween > 0 else {
+                Logger.attributedMetricRolling8Days.error("Attempted to increment rolling value for a date that was the same as the last date, which is not possible.")
+                return
+            }
 
             // Append .unknown for each missing day (excluding today)
             for _ in 1..<daysBetween {
@@ -121,7 +139,7 @@ public class RollingEightDaysInt: RollingEightDays<Int>, CustomDebugStringConver
             }
 
             // Update lastDay and append 1 for today
-            lastDay = now
+            self.lastDay = now
             append(1)
         }
     }
@@ -165,12 +183,18 @@ public class RollingEightDaysInt: RollingEightDays<Int>, CustomDebugStringConver
         let valuesDescription = values.map { element -> String in
             switch element {
             case .unknown:
-                return "unknown"
+                return "-"
             case .value(let v):
                 return String(v)
             }
         }.joined(separator: ", ")
 
-        return "RollingEightDaysInt(lastDay: \(dateString), values: [\(valuesDescription)], past7DaysAverage: \(past7DaysAverage), countPast7Days: \(countPast7Days))"
+        return """
+                RollingEightDaysInt
+                lastDay: \(dateString)
+                values: [\(valuesDescription)]
+                past7DaysAverage: \(past7DaysAverage)
+                countPast7Days: \(countPast7Days)
+                """
     }
 }

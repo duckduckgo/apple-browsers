@@ -19,15 +19,12 @@
 import AppKit
 import DesignResourcesKit
 
-enum FaviconPlaceholderStyle {
-    case dot
-    case domainPrefix(URL?)
-}
-
 final class TabFaviconView: NSView {
 
+    private let loadingPolicy = DefaultLoadingIndicatorPolicy()
+    private let imageView = FaviconImageView()
     private let placeholderView = LetterView()
-    private let imageView = NSImageView()
+    private let spinnerView = SpinnerView()
 
     var displaysImage: Bool {
         imageView.image != nil
@@ -41,8 +38,6 @@ final class TabFaviconView: NSView {
             imageView.contentTintColor = newValue
         }
     }
-
-    private let spinnerView = SpinnerView()
 
     override init(frame: NSRect) {
         super.init(frame: frame)
@@ -65,34 +60,61 @@ final class TabFaviconView: NSView {
 
 extension TabFaviconView {
 
-    func displaySpinnerIfNeeded(url: URL?, isLoading: Bool, error: Error?) {
-        let policy = DefaultLoadingIndicatorPolicy()
-        guard policy.shouldShowLoadingIndicator(url: url, isLoading: isLoading, error: error) else {
+    func startSpinnerIfNeeded(isLoading: Bool, url: URL?, error: Error?) {
+        guard shouldStartSpinner(isLoading: isLoading, url: url, error: error) else {
             stopSpinner()
-            resizeImageIfNeeded(scaleDown: false)
             return
         }
 
+        startSpinner()
+    }
+
+    func startSpinner() {
         spinnerView.startAnimating()
         resizeImageIfNeeded(scaleDown: true)
     }
 
-    func stopSpinner() {
-        spinnerView.stopAnimating()
+    func stopSpinner(animated: Bool = true) {
+        spinnerView.stopAnimating(animated: animated)
+        resizeImageIfNeeded(scaleDown: false)
     }
 
-    func displayFavicon(favicon: NSImage?, placeholderStyle: FaviconPlaceholderStyle) {
-        let targetImage = favicon ?? placeholderStyle.placeholderImage
+    func refreshSpinnerColorsIfNeeded(rendered: Bool) {
+        spinnerView.refreshSpinnerColorsIfNeeded(rendered: rendered)
+    }
+
+    /// Renders a given Favicon, with a crossfade animation.
+    ///
+    /// - Important:
+    ///     In order to avoid flickering triggered during CollectionView reload (ie. Pinning / Unpinning a tab), we'll skip Crossfading whenever the View was effectively reset.
+    ///
+    func displayFavicon(favicon: NSImage?, url: URL?) {
+        let targetImage = favicon
+        if shouldCrossfadeFavicon(newFavicon: targetImage) {
+            imageView.applyCrossfadeTransition(timingFunction: FaviconAnimation.animationTimingFunction, duration: FaviconAnimation.animationDuration)
+        }
+
         imageView.image = targetImage
 
-        placeholderView.isShown = shouldDisplayPlaceholderView(favicon: favicon, placeholderStyle: placeholderStyle)
-        placeholderView.displayURL(placeholderStyle.url)
+        placeholderView.isShown = shouldDisplayPlaceholderView(favicon: favicon, url: url)
+        placeholderView.displayURL(url)
     }
 
     func reset() {
-        stopSpinner()
+        stopSpinner(animated: false)
         imageView.image = nil
         placeholderView.isShown = false
+    }
+}
+
+private extension TabFaviconView {
+
+    func shouldCrossfadeFavicon(newFavicon: NSImage?) -> Bool {
+        loadingPolicy.shouldCrossfadeFavicon(newFavicon: newFavicon, oldFavicon: imageView.image, displaysPlaceholder: placeholderView.isShown)
+    }
+
+    func shouldStartSpinner(isLoading: Bool, url: URL?, error: Error?) -> Bool {
+        loadingPolicy.shouldShowLoadingIndicator(isLoading: isLoading, url: url, error: error)
     }
 }
 
@@ -199,45 +221,16 @@ private extension TabFaviconView {
         scaleDown ? CATransform3DMakeScale(FaviconAnimation.scaleDownRatio, FaviconAnimation.scaleDownRatio, 1.0) : CATransform3DIdentity
     }
 
-    func shouldDisplayPlaceholderView(favicon: NSImage?, placeholderStyle: FaviconPlaceholderStyle) -> Bool {
-        favicon == nil && placeholderStyle.url != nil
+    func shouldDisplayPlaceholderView(favicon: NSImage?, url: URL?) -> Bool {
+        favicon == nil && url != nil
     }
 }
 
-private extension FaviconPlaceholderStyle {
+extension NSView {
 
-    var url: URL? {
-        guard case .domainPrefix(let url) = self else {
-            return nil
-        }
-
-        return url
-    }
-
-    var placeholderImage: NSImage? {
-        guard case .dot = self else {
-            return nil
-        }
-
-        // Note: We're not using the `circle.fill` symbol since it's just impossible to get it to render in 16x16.
-        return NSImage.drawFilledCircle(size: FaviconPlaceholder.imageSize, foregroundColorName: FaviconPlaceholder.foregroundColorName)
-    }
-}
-
-private extension NSImage {
-
-    static func drawFilledCircle(size: NSSize, foregroundColorName: DesignSystemColor) -> NSImage {
-        let targetFrame = NSRect(origin: .zero, size: size)
-        let image = NSImage(size: size)
-
-        image.lockFocus()
-
-        NSColor(designSystemColor: foregroundColorName).setFill()
-        NSBezierPath(ovalIn: targetFrame).fill()
-
-        image.unlockFocus()
-
-        return image
+    func applyCrossfadeTransition(timingFunction: CAMediaTimingFunction, duration: TimeInterval) {
+        let transition = CATransition.buildFadeTransition(timingFunction: timingFunction, duration: duration)
+        layer?.add(transition, forKey: nil)
     }
 }
 
@@ -251,9 +244,4 @@ private enum FaviconAnimation {
     static let animationDuration = TimeInterval(0.15)
     static let animationTimingFunction = CAMediaTimingFunction(controlPoints: 0.25, 0.1, 0.25, 1.0)
     static let scaleDownRatio: CGFloat = 0.75
-}
-
-private enum FaviconPlaceholder {
-    static let imageSize = FaviconMetrics.imageSize
-    static let foregroundColorName: DesignSystemColor = .placeholderShade12
 }

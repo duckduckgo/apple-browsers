@@ -56,7 +56,7 @@ final class WideEventServiceTests: XCTestCase {
 
     // MARK: - sendPendingEvents - Feature Flag Gating
 
-    func test_sendPendingEvents_bothFlagsDisabled_returnsEarlyWithoutProcessing() async {
+    func test_sendPendingEvents_allFlagsDisabled_returnsEarlyWithoutProcessing() async {
         mockFeatureFlagger.enabledFeatureFlags = []
 
         await sut.sendPendingEvents()
@@ -68,19 +68,14 @@ final class WideEventServiceTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = [.subscriptionPurchaseWidePixelMeasurement]
         let purchaseData = makeAbandonedPurchaseData()
         mockWideEvent.started.append(purchaseData)
-        let restoreData = makeAbandonedRestoreData()
-        mockWideEvent.started.append(restoreData)
 
         await sut.sendPendingEvents()
 
         let completedPurchaseData = mockWideEvent.completions.compactMap { $0.0 as? SubscriptionPurchaseWideEventData }
-        let completedRestoreData = mockWideEvent.completions.compactMap { $0.0 as? SubscriptionRestoreWideEventData }
         XCTAssertEqual(completedPurchaseData.count, 1)
-        XCTAssertEqual(completedRestoreData.count, 0)
     }
 
-    func test_sendPendingEvents_onlyRestorePixelFlagEnabled_processesRestorePixelsOnly() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionRestoreWidePixelMeasurement]
+    func test_sendPendingEvents_onlyRestore_processesRestorePixelsOnly() async {
         let purchaseData = makeAbandonedPurchaseData()
         mockWideEvent.started.append(purchaseData)
         let restoreData = makeAbandonedRestoreData()
@@ -94,8 +89,8 @@ final class WideEventServiceTests: XCTestCase {
         XCTAssertEqual(completedRestoreData.count, 1)
     }
 
-    func test_sendPendingEvents_bothFlagsEnabled_processesBothPixelTypes() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionPurchaseWidePixelMeasurement, .subscriptionRestoreWidePixelMeasurement]
+    func test_sendPendingEvents_allFlagsEnabled_processesAllPixelTypes() async {
+        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionPurchaseWidePixelMeasurement]
         let purchaseData = makeAbandonedPurchaseData()
         mockWideEvent.started.append(purchaseData)
         let restoreData = makeAbandonedRestoreData()
@@ -208,37 +203,28 @@ final class WideEventServiceTests: XCTestCase {
     // MARK: - processSubscriptionRestorePixels - Happy Path
 
     func test_processSubscriptionRestorePixels_noPendingEvents_completesWithoutErrors() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionRestoreWidePixelMeasurement]
-
         await sut.sendPendingEvents()
-
         XCTAssertEqual(mockWideEvent.completions.count, 0)
     }
 
     func test_processSubscriptionRestorePixels_appleRestoreInProgressWithinTimeout_leavesPending() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionRestoreWidePixelMeasurement]
         let data = makeInProgressAppleRestoreData()
         mockWideEvent.started.append(data)
-
         await sut.sendPendingEvents()
-
         XCTAssertEqual(mockWideEvent.completions.count, 0)
     }
 
     func test_processSubscriptionRestorePixels_emailRestoreInProgressWithinTimeout_leavesPending() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionRestoreWidePixelMeasurement]
         let data = makeInProgressEmailRestoreData()
         mockWideEvent.started.append(data)
 
         await sut.sendPendingEvents()
-
         XCTAssertEqual(mockWideEvent.completions.count, 0)
     }
 
     // MARK: - processSubscriptionRestorePixels - Timeout Cases
 
     func test_processSubscriptionRestorePixels_appleRestoreInProgressPastTimeout_completesWithUnknownAndTimeoutReason() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionRestoreWidePixelMeasurement]
         let data = makeInProgressAppleRestoreData(startDate: Date().addingTimeInterval(-TimeInterval.minutes(20)))
         mockWideEvent.started.append(data)
 
@@ -254,7 +240,6 @@ final class WideEventServiceTests: XCTestCase {
     }
 
     func test_processSubscriptionRestorePixels_emailRestoreInProgressPastTimeout_completesWithUnknownAndTimeoutReason() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionRestoreWidePixelMeasurement]
         let data = makeInProgressEmailRestoreData(startDate: Date().addingTimeInterval(-TimeInterval.minutes(20)))
         mockWideEvent.started.append(data)
 
@@ -270,7 +255,6 @@ final class WideEventServiceTests: XCTestCase {
     }
 
     func test_processSubscriptionRestorePixels_abandonedPixel_completesWithUnknownAndPartialDataReason() async {
-        mockFeatureFlagger.enabledFeatureFlags = [.subscriptionRestoreWidePixelMeasurement]
         let data = makeAbandonedRestoreData()
         mockWideEvent.started.append(data)
 

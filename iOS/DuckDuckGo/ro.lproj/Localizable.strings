@@ -31,6 +31,15 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Adăugați";
 
+/* Open AI Chat history action in the menu list */
+"action.title.aiChat.history" = "Chaturi Duck.ai";
+
+/* Start new AI Chat action in the menu list */
+"action.title.aiChat.new" = "Chat AI nou";
+
+/* Open AI Chat settings action in the menu list */
+"action.title.aiChat.settings" = "Setări Duck.ai";
+
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Parole";
 
@@ -80,7 +89,7 @@
 "action.title.newBackgroundTabForUrl" = "Deschide în fundal";
 
 /* Create New Tab action */
-"action.title.newTabAction" = "Nouă";
+"action.title.newTabAction" = "Filă nouă";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Deschide într-o filă nouă";
@@ -463,6 +472,51 @@
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Activează Email Protection";
 
+/* Button title to dismiss the autofill extension activation view */
+"autofill.extension.activation.done.button.title" = "Terminat";
+
+/* Title shown when the autofill extension activation succeeds */
+"autofill.extension.activation.title" = "Completarea automată a parolelor a fost activată!";
+
+/* Footer text describing what enabling the autofill extension does */
+"autofill.extension.footer" = "Folosește parolele salvate în DuckDuckGo în toate aplicațiile de pe dispozitivul tău.";
+
+/* Header text shown when the autofill extension is disabled */
+"autofill.extension.header.disabled" = "Completare automată în alte aplicații";
+
+/* Header text shown when the autofill extension is enabled */
+"autofill.extension.header.enabled" = "Completarea automată în alte aplicații este activată";
+
+/* Dismiss button title for the Autofill extension promotion */
+"autofill.extension.promo.button.dismiss.title" = "Configurează mai târziu în Setări";
+
+/* CTA button title for the Autofill extension promotion */
+"autofill.extension.promo.button.title" = "Activează completarea automată în alte aplicații";
+
+/* Message for the Autofill extension promotion */
+"autofill.extension.promo.message" = "Folosește DuckDuckGo pentru a completa în siguranță automat parolele pentru toate aplicațiile tale.";
+
+/* Title for the Autofill extension promotion */
+"autofill.extension.promo.title" = "Conectează-te rapid la aplicațiile tale fără a completa parole";
+
+/* Title for screen showing autofill extension settings */
+"autofill.extension.screen.title" = "Completează automat parole în alte aplicații";
+
+/* Status text when autofill extension is disabled */
+"autofill.extension.status.off" = "Activează";
+
+/* Status text when autofill extension is enabled */
+"autofill.extension.status.on" = "Activat";
+
+/* Title for autofill extension settings row */
+"autofill.extension.title" = "Completare automată în alte aplicații";
+
+/* Button title that opens system settings to turn off the autofill extension */
+"autofill.extension.turn.off.button.title" = "Dezactivează din setările sistemului...";
+
+/* Button title that triggers system prompt to turn on the autofill extension */
+"autofill.extension.turn.on.button.title" = "Activează...";
+
 /* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
 "autofill.hide-card-cvv" = "Ascunde codul CVV";
 
@@ -799,8 +853,8 @@
 /* Section header for the autofill settings screen */
 "autofill.settings.import-passwords.section-header" = "Importă parolele";
 
-/* Section header for the autofill settings screen */
-"autofill.settings.options.section-header" = "Opțiuni";
+/* Section header for the autofill passwords options section of the settings screen */
+"autofill.settings.options.section-header" = "Opțiuni privind parola";
 
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Raportează o problemă cu completarea automată";
@@ -978,6 +1032,9 @@
 
 /* No comment provided by engineer. */
 "Cohort: %@" = "Cohortă: %@";
+
+/* No comment provided by engineer. */
+"Configuration" = "Configurație";
 
 /* No comment provided by engineer. */
 "Confirm" = "Confirmare";
@@ -2024,6 +2081,9 @@
 "keyCommandShowAllTabs" = "Afișează toate filele";
 
 /* No comment provided by engineer. */
+"Last Processed: %@" = "Ultima procesare: %@";
+
+/* No comment provided by engineer. */
 "Loading brokers..." = "Se încarcă brokerii...";
 
 /* Summary text for the macOS browser waitlist */
@@ -2085,6 +2145,33 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Nume gazdă pentru politica de mesaje";
+
+/* No comment provided by engineer. */
+"Messages" = "Mesaje";
+
+/* The name of the Address Bar button when referenced in settings. */
+"mobile.customization.addressbar.button" = "Butonul barei de adrese";
+
+/* The title of the Address Bar button. */
+"mobile.customization.addressbar.title" = "Bara de adrese";
+
+/* A title to indicate that if selected the current button will be hidden from the UI */
+"mobile.customization.option.none.long" = "Ascunde acest buton";
+
+/* Indicates that no button was selected to be shown in the specified location. */
+"mobile.customization.option.none.short" = "Niciuna";
+
+/* The title of the section in settings containing the customizable buttons. */
+"mobile.customization.section.title" = "Butoane personalizabile";
+
+/* The label for the toggle that hides and shows the reload button. */
+"mobile.customization.show.reload.button.title" = "Afișează butonul de reîncărcare";
+
+/* The name of the address bar button when referenced in settings. */
+"mobile.customization.toolbar.button" = "Butonul barei de instrumente";
+
+/* A label for the access point to customization of the Toolbar. */
+"mobile.customization.toolbar.title" = "Bara de instrumente";
 
 /* Title for back button in navigation bar */
 "navbar.back-button.title" = "Înapoi";
@@ -2342,10 +2429,19 @@
 "new.address.bar.picker.title" = "Opțiunea bară de adrese";
 
 /* No comment provided by engineer. */
+"No Logs" = "Niciun jurnal";
+
+/* No comment provided by engineer. */
+"No messages" = "Niciun mesaj";
+
+/* No comment provided by engineer. */
 "No results found" = "Nu s-a găsit niciun rezultat";
 
 /* No comment provided by engineer. */
 "OK" = "OK";
+
+/* Display title for Duck.ai in our address bar */
+"omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Modulele cookie au fost gestionate";
@@ -2409,6 +2505,21 @@
 
 /* The title of the onboarding dialog popup */
 "onboarding.highlights.intro.title" = "Salut!\n\nEști gata pentru un browser mai rapid care îți asigură protecția?";
+
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.searchExperience.cta" = "Următorul";
+
+/* The footer disclaimer text for the search experience onboarding screen. */
+"onboarding.highlights.searchExperience.footer" = "Funcțiile IA sunt private și opționale. Poți face modificări în Setări > Funcții IA.";
+
+/* Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold). */
+"onboarding.highlights.searchExperience.footer.formatted" = "Funcțiile IA sunt private și opționale. Poți face modificări în %@";
+
+/* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
+"onboarding.highlights.searchExperience.footer.settings-path-bold" = "Setări > Funcții IA.";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Dorești un acces mai ușor la chatul privat cu IA?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Să începem!";
@@ -2506,12 +2617,6 @@
 /* Deactivate button */
 "pm.deactivate" = "Dezactivează";
 
-/* Label for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.label" = "E-mail (opțional)";
-
-/* Placeholder for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.placeholder" = "name@email.com";
-
 /* Placeholder for the General Feedback step in the Privacy Pro feedback form */
 "ppro.feedback-form.general-feedback.placeholder" = "Te rugăm să ne comunici feedbackul tău...";
 
@@ -2545,8 +2650,11 @@
 /* Title for the category selection section in the Privacy Pro feedback form */
 "ppro.feedback-form.select-category.title" = "SELECTEAZĂ O CATEGORIE";
 
-/* Text for the body of the PPro feedback form */
-"ppro.feedback-form.text-1" = "Ai găsit o problemă care nu este acoperită în [centrul nostru de ajutor](duck://)? Ne dorim foarte mult să știm acest lucru.Furnizează o adresă de e-mail dacă dorești să te contactăm cu privire la această problemă (este posibil să nu putem răspunde la toate problemele):";
+/* Support link text displayed beneath the feedback form description */
+"ppro.feedback-form.support.text" = "Ai nevoie de ajutor? [Contactează serviciul de asistență.](https://duckduckgo.com/subscription-support)";
+
+/* Intro text for the body of the PPro feedback form */
+"ppro.feedback-form.text-1" = "Ai găsit o problemă care nu este prezentată în [centrul nostru de ajutor](duck://)? Ne dorim foarte mult să știm acest lucru.Spune-ne ce se întâmplă:";
 
 /* Text for the body of the PPro feedback form */
 "ppro.feedback-form.text-2" = "Pe lângă detaliile menționate mai sus, trimitem câteva informații anonimizate împreună cu feedbackul tău:";
@@ -2696,6 +2804,9 @@
 "prompt.custom.url.scheme.title" = "Deschizi în altă aplicație?";
 
 /* No comment provided by engineer. */
+"Recent Processing Logs" = "Jurnale de procesare recente";
+
+/* No comment provided by engineer. */
 "Relatives: %@" = "Rude: %@";
 
 /* No comment provided by engineer. */
@@ -2801,10 +2912,10 @@
 "settings.aifeatures.assist" = "Setări Search Assist";
 
 /* Title of hide AI-generated images settings link */
-"settings.aifeatures.hide.ai.generated.images" = "Ascunde imaginile generate de inteligența artificială";
+"settings.aifeatures.hide.ai.generated.images" = "Ascunde imaginile generate de IA";
 
 /* Description of what the hide AI-generated images feature does */
-"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtrează imaginile generate de inteligența artificială din rezultatele căutării de imagini";
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtrează imaginile generate de IA din rezultatele căutării de imagini";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Întotdeauna activat";
@@ -2814,6 +2925,9 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Poziția barei de adrese";
+
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Meniu browser experimental";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Deschide linkuri în aplicațiile asociate";
@@ -3178,6 +3292,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "Browserul DuckDuckGo oferă instrumente de protecție împotriva urmăririi, care sunt mereu active. [Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* No comment provided by engineer. */
+"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Afișează jurnalele din ultimul minut pentru a contribui la diagnosticarea problemelor imediat după o reîmprospătare.";
+
 /* Description on a report broken site page. */
 "site.not.working.description" = "Selectează opțiunea care descrie cel mai bine problema cu care te-ai confruntat.";
 
@@ -3210,6 +3327,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Ce site este defect?";
+
+/* No comment provided by engineer. */
+"Status: Invalidated" = "Stare: invalidat";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Numele gazdă stocat: %@";
@@ -3598,6 +3718,9 @@
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
 
+/* No comment provided by engineer. */
+"Version: %@" = "Versiune: %@";
+
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Caută";
 
@@ -3859,18 +3982,6 @@
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Un mesaj de la %@:";
 
-/* CTA of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.cta" = "Vezi oferta";
-
-/* Dismiss of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.dismiss" = "Nu acum";
-
-/* Message of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.text" = "Rămâi protejat cu VPN-ul nostru, IA privată și multe altele. Reabonează-te astăzi și economisește 25%.";
-
-/* Title of message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.title" = "Ultima zi în care poți să economisești 25%!";
-
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "ECONOMISEȘTE 25%";
 
@@ -3905,7 +4016,10 @@
 "win-back.campaign.subscription.settings.menu.title" = "Reabonează-te și economisește 25%";
 
 /* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
-"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Reabonează-te și economisește 25%";
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Reabonează-te";
+
+/* Subtitle for resubscribe CTA for users eligible for the win-back offer. */
+"win-back.campaign.subscription.settings.page.resubscribe.subtitle" = "Rămâi protejat cu VPN-ul nostru, IA privată și multe altele.\nOfertă valabilă pentru o perioadă limitată.";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Cauți versiunea pentru Mac?";

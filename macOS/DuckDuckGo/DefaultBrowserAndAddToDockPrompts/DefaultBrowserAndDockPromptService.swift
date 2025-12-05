@@ -25,22 +25,29 @@ final class DefaultBrowserAndDockPromptService {
     let featureFlagger: DefaultBrowserAndDockPromptFeatureFlagger
     let store: DefaultBrowserAndDockPromptKeyValueStore
     let userActivityManager: DefaultBrowserAndDockPromptUserActivityManager
+    let notificationPresenter: DefaultBrowserAndDockPromptNotificationPresenting
 
     init(
         featureFlagger: FeatureFlagger,
         privacyConfigManager: PrivacyConfigurationManaging,
         keyValueStore: ThrowingKeyValueStoring,
+        notificationPresenter: DefaultBrowserAndDockPromptNotificationPresenting,
         isOnboardingCompletedProvider: @escaping () -> Bool
     ) {
 
 #if DEBUG || REVIEW
         let defaultBrowserAndDockPromptDebugStore = DefaultBrowserAndDockPromptDebugStore()
-        let defaultBrowserAndDockPromptDateProvider: () -> Date = { defaultBrowserAndDockPromptDebugStore.simulatedTodayDate }
+        let defaultBrowserAndDockPromptDateProvider: () -> Date = { defaultBrowserAndDockPromptDebugStore.simulatedTodayDate ?? Date() }
+        let defaultBrowserAndDockInstallDateProvider: () -> Date? = {
+            defaultBrowserAndDockPromptDebugStore.simulatedInstallDate ?? LocalStatisticsStore().installDate
+        }
 #else
         let defaultBrowserAndDockPromptDateProvider: () -> Date = Date.init
+        let defaultBrowserAndDockInstallDateProvider: () -> Date? = { LocalStatisticsStore().installDate }
 #endif
 
         self.featureFlagger = DefaultBrowserAndDockPromptFeatureFlag(privacyConfigManager: privacyConfigManager, featureFlagger: featureFlagger)
+        self.notificationPresenter = notificationPresenter
         let userActivityStore = DefaultBrowserAndDockPromptUserActivityStore(keyValueFilesStore: keyValueStore)
         userActivityManager = DefaultBrowserAndDockPromptUserActivityManager(store: userActivityStore, dateProvider: defaultBrowserAndDockPromptDateProvider)
 
@@ -54,23 +61,29 @@ final class DefaultBrowserAndDockPromptService {
             featureFlagger: self.featureFlagger,
             store: store,
             userActivityProvider: userActivityManager,
-            installDateProvider: { LocalStatisticsStore().installDate },
+            installDateProvider: defaultBrowserAndDockInstallDateProvider,
             dateProvider: defaultBrowserAndDockPromptDateProvider
         )
         let coordinator = DefaultBrowserAndDockPromptCoordinator(
             promptTypeDecider: defaultBrowserAndDockPromptDecider,
             store: store,
+            notificationPresenter: notificationPresenter,
             isOnboardingCompleted: isOnboardingCompletedProvider,
             dateProvider: defaultBrowserAndDockPromptDateProvider
         )
         let statusUpdateNotifier = DefaultBrowserAndDockPromptStatusUpdateNotifier()
+        let uiProvider = DefaultBrowserAndDockPromptUIProvider()
 
-        presenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, statusUpdateNotifier: statusUpdateNotifier)
+        presenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, statusUpdateNotifier: statusUpdateNotifier, uiProvider: uiProvider)
     }
 
     func applicationDidBecomeActive() {
         guard shouldRecordActivity() else { return }
         userActivityManager.recordActivity()
+    }
+
+    func handleNotificationResponse(_ response: DefaultBrowserAndDockPromptNotificationIdentifier) async {
+        await notificationPresenter.handleNotificationResponse(for: response)
     }
 
     private func shouldRecordActivity() -> Bool {

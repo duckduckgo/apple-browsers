@@ -28,6 +28,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
     var aiChatUserScriptHandler: AIChatUserScriptHandler!
     var mockFeatureFlagger: MockFeatureFlagger!
     var mockPayloadHandler: AIChatPayloadHandler!
+    var mockAIChatFullModeFeature: MockAIChatFullModeFeatureProviding!
     private var mockUserDefaults: UserDefaults!
 
     private var mockSuiteName: String {
@@ -38,12 +39,13 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         super.setUp()
         mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
         mockPayloadHandler = AIChatPayloadHandler()
+        mockAIChatFullModeFeature = MockAIChatFullModeFeatureProviding()
 
         mockUserDefaults = UserDefaults(suiteName: mockSuiteName)
         mockUserDefaults.removePersistentDomain(forName: mockSuiteName)
 
         let experimentalAIChatManager = ExperimentalAIChatManager(featureFlagger: mockFeatureFlagger, userDefaults: mockUserDefaults)
-        aiChatUserScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalAIChatManager)
+        aiChatUserScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalAIChatManager, aichatFullModeFeature: mockAIChatFullModeFeature)
         aiChatUserScriptHandler.setPayloadHandler(mockPayloadHandler)
     }
 
@@ -51,6 +53,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         aiChatUserScriptHandler = nil
         mockFeatureFlagger = nil
         mockPayloadHandler = nil
+        mockAIChatFullModeFeature = nil
         super.tearDown()
     }
 
@@ -65,6 +68,35 @@ class AIChatUserScriptHandlerTests: XCTestCase {
         XCTAssertNotNil(configValues)
         XCTAssertEqual(configValues?.isAIChatHandoffEnabled, true)
         XCTAssertEqual(configValues?.platform, "ios")
+        XCTAssertEqual(configValues?.supportsHomePageEntryPoint, true)
+    }
+    
+    func testGetAIChatNativeConfigValuesWithFullModeFeatureAvailable() {
+        // Given
+        mockAIChatFullModeFeature.isAvailable = true
+
+        // When
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        // Then
+        XCTAssertNotNil(configValues)
+        XCTAssertEqual(configValues?.supportsURLChatIDRestoration, true)
+        XCTAssertEqual(configValues?.supportsAIChatFullMode, true)
+        XCTAssertEqual(configValues?.supportsHomePageEntryPoint, true)
+    }
+    
+    func testGetAIChatNativeConfigValuesWithFullModeFeatureUnavailable() {
+        // Given
+        mockAIChatFullModeFeature.isAvailable = false
+
+        // When
+        let configValues = aiChatUserScriptHandler.getAIChatNativeConfigValues(params: [], message: MockUserScriptMessage(name: "test", body: [:])) as? AIChatNativeConfigValues
+
+        // Then
+        XCTAssertNotNil(configValues)
+        XCTAssertEqual(configValues?.supportsURLChatIDRestoration, AIChatNativeConfigValues.defaultValues.supportsURLChatIDRestoration)
+        XCTAssertEqual(configValues?.supportsAIChatFullMode, false)
+        XCTAssertEqual(configValues?.supportsHomePageEntryPoint, AIChatNativeConfigValues.defaultValues.supportsHomePageEntryPoint)
     }
 
     func testGetAIChatNativeHandoffData() {
@@ -125,4 +157,9 @@ struct MockUserScriptMessage: UserScriptMessage {
         self.isMainFrame = true // Default value
         self.messageWebView = nil // Default value
     }
+}
+
+/// Mock implementation of AIChatFullModeFeatureProviding for testing
+final class MockAIChatFullModeFeatureProviding: AIChatFullModeFeatureProviding {
+    var isAvailable: Bool = false
 }

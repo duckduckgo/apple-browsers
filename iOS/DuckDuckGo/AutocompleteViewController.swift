@@ -56,6 +56,7 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
     private let tabsModel: TabsModel
     private let aiChatSettings: AIChatSettingsProvider
     private let featureDiscovery: FeatureDiscovery
+    private let productSurfaceTelemetry: ProductSurfaceTelemetry
 
     private var task: URLSessionDataTask?
 
@@ -85,12 +86,14 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
          tabsModel: TabsModel,
          featureFlagger: FeatureFlagger,
          aiChatSettings: AIChatSettingsProvider,
-         featureDiscovery: FeatureDiscovery) {
+         featureDiscovery: FeatureDiscovery,
+         productSurfaceTelemetry: ProductSurfaceTelemetry) {
 
         self.tabsModel = tabsModel
         self.historyManager = historyManager
         self.bookmarksDatabase = bookmarksDatabase
         self.featureDiscovery = featureDiscovery
+        self.productSurfaceTelemetry = productSurfaceTelemetry
 
         self.appSettings = appSettings
         self.historyMessageManager = historyMessageManager
@@ -125,6 +128,11 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
             .sink { [weak self] query in
                 self?.requestSuggestions(query: query)
             }
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        productSurfaceTelemetry.autocompleteUsed()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -292,12 +300,10 @@ extension AutocompleteViewController: AutocompleteViewModelDelegate {
             Pixel.fire(pixel: url.isDuckDuckGoSearch ? .autocompleteClickSearchHistory : .autocompleteClickSiteHistory)
 
         case .phrase:
-            let parameters = createPixelIndexParam(for: ddgSuggestionIndex)
-            Pixel.fire(pixel: .autocompleteClickPhrase, withAdditionalParameters: parameters)
+            Pixel.fire(pixel: .autocompleteClickPhrase)
 
         case .website:
-            let parameters = createPixelIndexParam(for: ddgSuggestionIndex)
-            Pixel.fire(pixel: .autocompleteClickWebsite, withAdditionalParameters: parameters)
+            Pixel.fire(pixel: .autocompleteClickWebsite)
 
         case .openTab:
             Pixel.fire(pixel: .autocompleteClickOpenTab)

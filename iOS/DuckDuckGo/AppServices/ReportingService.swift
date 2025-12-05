@@ -21,13 +21,29 @@ import Foundation
 import Core
 import WidgetKit
 import BrowserServicesKit
+import AttributedMetric
+import PixelKit
+import Subscription
+import Combine
+import AIChat
+import SetDefaultBrowserCore
+import ContentBlocking
+import os.log
 
+/// Reporting service for various metrics:
+/// - AttributedMetric: https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053
 final class ReportingService {
 
     let marketplaceAdPostbackManager = MarketplaceAdPostbackManager()
     let onboardingPixelReporter = OnboardingPixelReporter()
     let subscriptionDataReporter: SubscriptionDataReporting
     let featureFlagging: FeatureFlagger
+    let attributedMetricManager: AttributedMetricManager
+    
+    private var cancellables = Set<AnyCancellable>()
+    let adAttributionPixelReporter: AdAttributionPixelReporter
+    let privacyConfigurationManager: PrivacyConfigurationManaging
+    let productSurfaceTelemetry: ProductSurfaceTelemetry
 
     var syncService: SyncService? {
         didSet {
@@ -36,9 +52,36 @@ final class ReportingService {
         }
     }
 
-    init(fireproofing: Fireproofing, featureFlagging: FeatureFlagger) {
+    init(fireproofing: Fireproofing,
+         featureFlagging: FeatureFlagger,
+         userDefaults: UserDefaults,
+         pixelKit: PixelKit?,
+         appDependencies: DependencyProvider,
+         privacyConfigurationManager: PrivacyConfigurationManaging,
+         productSurfaceTelemetry: ProductSurfaceTelemetry) {
+        self.privacyConfigurationManager = privacyConfigurationManager
         self.featureFlagging = featureFlagging
-        subscriptionDataReporter = SubscriptionDataReporter(fireproofing: fireproofing)
+        self.subscriptionDataReporter = SubscriptionDataReporter(fireproofing: fireproofing)
+        self.adAttributionPixelReporter = AdAttributionPixelReporter(privacyConfigurationManager: privacyConfigurationManager)
+
+        // AttributedMetric initialisation
+        let errorHandler = AttributedMetricErrorHandler(pixelKit: pixelKit)
+        let attributedMetricDataStorage = AttributedMetricDataStorage(userDefaults: userDefaults, errorHandler: errorHandler)
+        let settingsProvider = DefaultAttributedMetricSettingsProvider(privacyConfig: privacyConfigurationManager.privacyConfig)
+        let subscriptionStateProvider = DefaultSubscriptionStateProvider(subscriptionManager: appDependencies.subscriptionAuthV1toV2Bridge)
+        let defaultBrowserProvider = AttributedMetricDefaultBrowserProvider()
+        self.attributedMetricManager = AttributedMetricManager(pixelKit: pixelKit,
+                                                               dataStoring: attributedMetricDataStorage,
+                                                               featureFlagger: featureFlagging,
+                                                               originProvider: nil,
+                                                               defaultBrowserProviding: defaultBrowserProvider,
+                                                               subscriptionStateProvider: subscriptionStateProvider,
+                                                               settingsProvider: settingsProvider)
+        self.productSurfaceTelemetry = productSurfaceTelemetry
+        addNotificationsObserver()
+    }
+
+    private func addNotificationsObserver() {
         NotificationCenter.default.addObserver(forName: .didFetchConfigurationOnForeground,
                                                object: nil,
                                                queue: .main) { _ in
@@ -49,11 +92,69 @@ final class ReportingService {
                                                queue: .main) { _ in
             self.onStatisticsLoaded()
         }
+
+        // Register for standard notifications or specific ones coming from frameworks like Subscription and relaunch them to AttributedMetric
+
+        // App start
+        NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
+            .receive(on: attributedMetricManager.workQueue)
+            .sink { [weak self] _ in
+                self?.attributedMetricManager.process(trigger: .appDidStart)
+            }
+            .store(in: &cancellables)
+
+        // Search
+
+        NotificationCenter.default.publisher(for: .userDidPerformDDGSearch)
+            .receive(on: attributedMetricManager.workQueue)
+            .sink { [weak self] _ in
+                self?.attributedMetricManager.process(trigger: .userDidSearch)
+            }
+            .store(in: &cancellables)
+
+        // AD click
+
+        NotificationCenter.default.publisher(for: .userDidSelectDDGAD)
+            .receive(on: attributedMetricManager.workQueue)
+            .sink { [weak self] _ in
+                self?.attributedMetricManager.process(trigger: .userDidSelectAD)
+            }
+            .store(in: &cancellables)
+
+        // New AI chat message sent
+
+        NotificationCenter.default.publisher(for: .aiChatUserDidSubmitPrompt)
+            .receive(on: attributedMetricManager.workQueue)
+            .sink { [weak self] _ in
+                self?.attributedMetricManager.process(trigger: .userDidDuckAIChat)
+            }
+            .store(in: &cancellables)
+
+        // User purchased subscription
+
+        NotificationCenter.default.publisher(for: .userDidPurchaseSubscription)
+            .receive(on: attributedMetricManager.workQueue)
+            .sink { [weak self] _ in
+                self?.attributedMetricManager.process(trigger: .userDidSubscribe)
+            }
+            .store(in: &cancellables)
+
+        // Device sync
+
+        NotificationCenter.default.publisher(for: .syncDevicesUpdate)
+            .receive(on: attributedMetricManager.workQueue)
+            .sink { [weak self] notification in
+                guard let deviceCount = notification.userInfo?[AttributedMetricNotificationParameter.syncCount.rawValue] as? Int else {
+                    assertionFailure("Missing \(AttributedMetricNotificationParameter.syncCount.rawValue)")
+                    return
+                }
+                self?.attributedMetricManager.process(trigger: .userDidSync(devicesCount: deviceCount))
+            }
+            .store(in: &cancellables)
     }
 
     private func sendAppLaunchPostback(marketplaceAdPostbackManager: MarketplaceAdPostbackManaging) {
         // Attribution support
-        let privacyConfigurationManager = ContentBlocking.shared.privacyConfigurationManager
         if privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .marketplaceAdPostback) {
             marketplaceAdPostbackManager.sendAppLaunchPostback()
         }
@@ -63,6 +164,7 @@ final class ReportingService {
         Pixel.fire(pixel: .appLaunch, includedParameters: [.appVersion, .atb])
         reportAdAttribution()
         reportWidgetUsage()
+        productSurfaceTelemetry.dailyActiveUser()
         onboardingPixelReporter.fireEnqueuedPixelsIfNeeded()
         reportUserNotificationAuthStatus()
     }
@@ -115,7 +217,7 @@ private extension ReportingService {
 
     func reportAdAttribution() {
         Task.detached(priority: .background) {
-            await AdAttributionPixelReporter.shared.reportAttributionIfNeeded()
+            await self.adAttributionPixelReporter.reportAttributionIfNeeded()
         }
     }
     
@@ -138,5 +240,59 @@ private extension ReportingService {
                 store.cleanup()
             }
         }
+    }
+}
+
+struct DefaultAttributedMetricSettingsProvider: AttributedMetricSettingsProviding {
+    let privacyConfig: PrivacyConfiguration
+
+    var bucketsSettings: [String: Any] {
+        privacyConfig.settings(for: .attributedMetrics)
+    }
+
+    var originSendList: [String] {
+        guard let originSettingString = privacyConfig.settings(for: AttributedMetricsSubfeature.sendOriginParam),
+              let settingsData = originSettingString.data(using: .utf8),
+              let settings = try? JSONDecoder().decode(OriginSettings.self, from: settingsData) else {
+            Logger.attributedMetric.error("Failed to decode origin settings, returning empty list")
+            return []
+        }
+        return settings.originCampaignSubstrings
+    }
+}
+
+struct AttributedMetricDefaultBrowserProvider: AttributedMetricDefaultBrowserProviding {
+
+    let defaultBrowserManager = DefaultBrowserManager(defaultBrowserInfoStore: DefaultBrowserInfoStore(),
+                                                      defaultBrowserEventMapper: DefaultBrowserPromptManagerDebugPixelHandler(), defaultBrowserChecker: SystemCheckDefaultBrowserService(application: UIApplication.shared))
+
+    var isDefaultBrowser: Bool {
+        let result = defaultBrowserManager.defaultBrowserInfo()
+        switch result {
+        case .failure(let error):
+            switch error {
+            case .notSupportedOnCurrentOSVersion:
+                return false
+            case .unknownError:
+                return false
+            case .rateLimitReached(let updatedStoredInfo):
+                return updatedStoredInfo?.isDefaultBrowser ?? false
+            }
+        case .success(newInfo: let newInfo):
+            return newInfo.isDefaultBrowser
+        }
+    }
+}
+
+struct DefaultSubscriptionStateProvider: SubscriptionStateProviding {
+
+    let subscriptionManager: SubscriptionAuthV1toV2Bridge
+
+    func isFreeTrial() async -> Bool {
+        (try? await subscriptionManager.getSubscription(cachePolicy: .cacheFirst).hasActiveTrialOffer) ?? false
+    }
+    
+    var isActive: Bool {
+        subscriptionManager.isUserAuthenticated
     }
 }

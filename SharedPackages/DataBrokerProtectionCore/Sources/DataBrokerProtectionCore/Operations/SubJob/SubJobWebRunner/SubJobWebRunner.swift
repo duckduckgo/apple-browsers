@@ -77,7 +77,7 @@ public extension SubJobWebRunning {
 
     func evaluateActionAndHaltIfNeeded(_ action: Action) async -> Bool {
         if !stageCalculator.isRetrying {
-            retriesCountOnError = 3
+            retriesCountOnError = 1
         }
 
         return false
@@ -120,6 +120,8 @@ public extension SubJobWebRunning {
             actionsHandler?.captchaTransactionId = nil
             stageCalculator.setStage(.captchaSolve)
             if let captchaData = try? await captchaService.submitCaptchaToBeResolved(for: captchaTransactionId,
+                                                                                     dataBrokerURL: context.dataBroker.url,
+                                                                                     dataBrokerVersion: context.dataBroker.version,
                                                                                      attemptId: stageCalculator.attemptId,
                                                                                      shouldRunNextStep: shouldRunNextStep) {
                 stageCalculator.fireOptOutCaptchaSolve()
@@ -311,6 +313,8 @@ public extension SubJobWebRunning {
             stageCalculator.setStage(.captchaSend)
             actionsHandler?.captchaTransactionId = try await captchaService.submitCaptchaInformation(
                 captchaInfo,
+                dataBrokerURL: context.dataBroker.url,
+                dataBrokerVersion: context.dataBroker.version,
                 attemptId: stageCalculator.attemptId,
                 shouldRunNextStep: shouldRunNextStep)
             stageCalculator.fireOptOutCaptchaSend()
@@ -361,6 +365,7 @@ public extension SubJobWebRunning {
 
         if let currentAction = self.actionsHandler?.currentAction() {
             decrementRetriesCountOnError()
+            Logger.dataBrokerProtection.log("Retrying current action")
             await runNextAction(currentAction)
         } else {
             resetRetriesCount()

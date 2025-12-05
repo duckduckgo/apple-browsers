@@ -83,9 +83,6 @@ private extension NSMenuItem {
         case .bookmarks:
             title = UserText.tabBookmarksTitle
         case .history:
-            guard NSApp.delegateTyped.featureFlagger.isFeatureOn(.historyView) else {
-                return nil
-            }
             title = UserText.mainMenuHistory
         case .releaseNotes:
             title = UserText.releaseNotesTitle

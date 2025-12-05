@@ -31,6 +31,15 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Papildyti";
 
+/* Open AI Chat history action in the menu list */
+"action.title.aiChat.history" = "„Duck.ai“ pokalbiai";
+
+/* Start new AI Chat action in the menu list */
+"action.title.aiChat.new" = "Naujas DI pokalbis";
+
+/* Open AI Chat settings action in the menu list */
+"action.title.aiChat.settings" = "„Duck.ai“ nustatymai";
+
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Slaptažodžiai";
 
@@ -80,7 +89,7 @@
 "action.title.newBackgroundTabForUrl" = "Atidaryti fone";
 
 /* Create New Tab action */
-"action.title.newTabAction" = "Naujas";
+"action.title.newTabAction" = "Nauja kortelė";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Atverti naujoje kortelėje";
@@ -463,6 +472,51 @@
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Įjungti „Email Protection“";
 
+/* Button title to dismiss the autofill extension activation view */
+"autofill.extension.activation.done.button.title" = "Atlikta";
+
+/* Title shown when the autofill extension activation succeeds */
+"autofill.extension.activation.title" = "Automatinis slaptažodžių pildymas įjungtas!";
+
+/* Footer text describing what enabling the autofill extension does */
+"autofill.extension.footer" = "Naudokite slaptažodžius, kuriuos išsaugojote „DuckDuckGo“, visose savo įrenginio programėlėse.";
+
+/* Header text shown when the autofill extension is disabled */
+"autofill.extension.header.disabled" = "Automatinis užpildymas kitose programėlėse";
+
+/* Header text shown when the autofill extension is enabled */
+"autofill.extension.header.enabled" = "Automatinis pildymas kitose programėlėse įjungtas";
+
+/* Dismiss button title for the Autofill extension promotion */
+"autofill.extension.promo.button.dismiss.title" = "Nustatyti vėliau nustatymuose";
+
+/* CTA button title for the Autofill extension promotion */
+"autofill.extension.promo.button.title" = "Įjunkite automatinį pildymą kitose programėlėse";
+
+/* Message for the Autofill extension promotion */
+"autofill.extension.promo.message" = "Naudokite „DuckDuckGo“, kad saugiai automatiškai užpildytumėte visų savo programų slaptažodžius.";
+
+/* Title for the Autofill extension promotion */
+"autofill.extension.promo.title" = "Greitai prisijunkite prie programėlių neįvesdami slaptažodžių";
+
+/* Title for screen showing autofill extension settings */
+"autofill.extension.screen.title" = "Automatiškai užpildykite slaptažodžius kitose programėlėse";
+
+/* Status text when autofill extension is disabled */
+"autofill.extension.status.off" = "Įjungti";
+
+/* Status text when autofill extension is enabled */
+"autofill.extension.status.on" = "Įjungti";
+
+/* Title for autofill extension settings row */
+"autofill.extension.title" = "Automatinis užpildymas kitose programėlėse";
+
+/* Button title that opens system settings to turn off the autofill extension */
+"autofill.extension.turn.off.button.title" = "Išjunkite sistemos nustatymuose...";
+
+/* Button title that triggers system prompt to turn on the autofill extension */
+"autofill.extension.turn.on.button.title" = "Įjunkite...";
+
 /* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
 "autofill.hide-card-cvv" = "Slėpti CVV";
 
@@ -799,8 +853,8 @@
 /* Section header for the autofill settings screen */
 "autofill.settings.import-passwords.section-header" = "Importuoti slaptažodžius";
 
-/* Section header for the autofill settings screen */
-"autofill.settings.options.section-header" = "Parinktys";
+/* Section header for the autofill passwords options section of the settings screen */
+"autofill.settings.options.section-header" = "Slaptažodžių parinktys";
 
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Praneškite apie funkcijos „Automatinis užpildymas“ problemą";
@@ -978,6 +1032,9 @@
 
 /* No comment provided by engineer. */
 "Cohort: %@" = "Kohorta: %@";
+
+/* No comment provided by engineer. */
+"Configuration" = "Konfigūracija";
 
 /* No comment provided by engineer. */
 "Confirm" = "Patvirtinti";
@@ -2024,6 +2081,9 @@
 "keyCommandShowAllTabs" = "Rodyti visus skirtukus";
 
 /* No comment provided by engineer. */
+"Last Processed: %@" = "Paskutinį kartą apdorota: %@";
+
+/* No comment provided by engineer. */
 "Loading brokers..." = "Kraunami brokeriai...";
 
 /* Summary text for the macOS browser waitlist */
@@ -2085,6 +2145,33 @@
 
 /* No comment provided by engineer. */
 "Message policy hostname" = "Pranešimų politikos pagrindinis pavadinimas";
+
+/* No comment provided by engineer. */
+"Messages" = "Pranešimai";
+
+/* The name of the Address Bar button when referenced in settings. */
+"mobile.customization.addressbar.button" = "Adreso juostos mygtukas";
+
+/* The title of the Address Bar button. */
+"mobile.customization.addressbar.title" = "Adreso juosta";
+
+/* A title to indicate that if selected the current button will be hidden from the UI */
+"mobile.customization.option.none.long" = "Slėpti šį mygtuką";
+
+/* Indicates that no button was selected to be shown in the specified location. */
+"mobile.customization.option.none.short" = "Jokie";
+
+/* The title of the section in settings containing the customizable buttons. */
+"mobile.customization.section.title" = "Pritaikomi mygtukai";
+
+/* The label for the toggle that hides and shows the reload button. */
+"mobile.customization.show.reload.button.title" = "Rodyti mygtuką „Įkelti iš naujo“";
+
+/* The name of the address bar button when referenced in settings. */
+"mobile.customization.toolbar.button" = "Įrankių juostos mygtukas";
+
+/* A label for the access point to customization of the Toolbar. */
+"mobile.customization.toolbar.title" = "Įrankių juosta";
 
 /* Title for back button in navigation bar */
 "navbar.back-button.title" = "Atgal";
@@ -2342,10 +2429,19 @@
 "new.address.bar.picker.title" = "Adreso juostos parinktis";
 
 /* No comment provided by engineer. */
+"No Logs" = "Nėra žurnalų";
+
+/* No comment provided by engineer. */
+"No messages" = "Nėra pranešimų";
+
+/* No comment provided by engineer. */
 "No results found" = "Rezultatų nerasta";
 
 /* No comment provided by engineer. */
 "OK" = "GERAI";
+
+/* Display title for Duck.ai in our address bar */
+"omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 
 /* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
 "omnibar.notification.cookies-managed" = "Slapukai valdomi";
@@ -2409,6 +2505,21 @@
 
 /* The title of the onboarding dialog popup */
 "onboarding.highlights.intro.title" = "Sveiki.\n\nPasiruošę greitesnei naršyklei, kuri jus apsaugo?";
+
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.searchExperience.cta" = "Kitas";
+
+/* The footer disclaimer text for the search experience onboarding screen. */
+"onboarding.highlights.searchExperience.footer" = "DI funkcijos yra privačios ir neprivalomos. Galite atlikti pakeitimus Nustatymai > DI funkcijos.";
+
+/* Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold). */
+"onboarding.highlights.searchExperience.footer.formatted" = "DI funkcijos yra privačios ir neprivalomos. Galite atlikti pakeitimus %@";
+
+/* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
+"onboarding.highlights.searchExperience.footer.settings-path-bold" = "Nustatymai > DI funkcijos.";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "Norite lengviau pasiekti privačius DI pokalbius?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Pirmyn!";
@@ -2506,12 +2617,6 @@
 /* Deactivate button */
 "pm.deactivate" = "Deaktyvinti";
 
-/* Label for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.label" = "El. paštas (neprivaloma)";
-
-/* Placeholder for the email form in the Privacy Pro feedback form */
-"ppro.feedback-form.email.placeholder" = "name@email.com";
-
 /* Placeholder for the General Feedback step in the Privacy Pro feedback form */
 "ppro.feedback-form.general-feedback.placeholder" = "Pateikite mums savo atsiliepimą...";
 
@@ -2545,8 +2650,11 @@
 /* Title for the category selection section in the Privacy Pro feedback form */
 "ppro.feedback-form.select-category.title" = "PASIRINKITE KATEGORIJĄ";
 
-/* Text for the body of the PPro feedback form */
-"ppro.feedback-form.text-1" = "Aptikai problemą, kuri neaptarta mūsų [pagalbos centre](duck://)? Mes tikrai norime apie tai sužinoti.Pateik el. paštą, jei norėtum, kad susisiektume su tavimi dėl šios problemos (galbūt negalėsime atsakyti į visas problemas):";
+/* Support link text displayed beneath the feedback form description */
+"ppro.feedback-form.support.text" = "Reikia pagalbos? [Susisiekite su palaikymo tarnyba.](https://duckduckgo.com/subscription-support)";
+
+/* Intro text for the body of the PPro feedback form */
+"ppro.feedback-form.text-1" = "Aptikote problemą, kuri neaptarta mūsų [pagalbos centre](duck://)? Mes tikrai norime apie tai sužinoti.Papasakokite mums, kas vyksta:";
 
 /* Text for the body of the PPro feedback form */
 "ppro.feedback-form.text-2" = "Be pirmiau įvestos informacijos, kartu su tavo atsiliepimais siunčiame anoniminę informaciją:";
@@ -2696,6 +2804,9 @@
 "prompt.custom.url.scheme.title" = "Atidaryti kitoje programoje?";
 
 /* No comment provided by engineer. */
+"Recent Processing Logs" = "Naujausi apdorojimo žurnalai";
+
+/* No comment provided by engineer. */
 "Relatives: %@" = "Giminaičiai: %@";
 
 /* No comment provided by engineer. */
@@ -2801,10 +2912,10 @@
 "settings.aifeatures.assist" = "„Assist“ paieškos nustatymai";
 
 /* Title of hide AI-generated images settings link */
-"settings.aifeatures.hide.ai.generated.images" = "Paslėpti DI sugeneruotus vaizdus";
+"settings.aifeatures.hide.ai.generated.images" = "Slėpti DI generuotus vaizdus";
 
 /* Description of what the hide AI-generated images feature does */
-"settings.aifeatures.hide.ai.generated.images.subtitle" = "Filtruoja DI sugeneruotus vaizdus iš vaizdų paieškos rezultatų";
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "Vaizdų paieškos rezultatuose nepalieka Di sukurtų vaizdų";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Visada įjungta";
@@ -2814,6 +2925,9 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Adreso juostos padėtis";
+
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Eksperimentinis naršyklės meniu";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Atidaryti nuorodas susijusiose programose";
@@ -3178,6 +3292,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "\"DuckDuckGo\" naršyklėje yra visada aktyvi stebėjimo apsauga. [Sužinokite daugiau](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* No comment provided by engineer. */
+"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Rodo paskutinės minutės žurnalus, kad būtų lengviau diagnozuoti problemas iškart po atnaujinimo.";
+
 /* Description on a report broken site page. */
 "site.not.working.description" = "Pasirinkite parinktį, kuri geriausiai apibūdina iškilusią problemą.";
 
@@ -3210,6 +3327,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Kuri svetainė neveikia?";
+
+/* No comment provided by engineer. */
+"Status: Invalidated" = "Būsena: Negaliojanti";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Išsaugotas pagrindinis vardas: %@";
@@ -3598,6 +3718,9 @@
 /* No comment provided by engineer. */
 "UIAlert" = "UIAlert";
 
+/* No comment provided by engineer. */
+"Version: %@" = "Versija: %@";
+
 /* Voice search toggle option for searching on the web */
 "voice-search-toggle-serp-option" = "Paieška";
 
@@ -3859,18 +3982,6 @@
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Pranešimas iš %@:";
 
-/* CTA of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.cta" = "Peržiūrėti pasiūlymą";
-
-/* Dismiss of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.dismiss" = "Ne dabar";
-
-/* Message of the message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.text" = "Apsaugokite save naudodami mūsų VPN, privatų DI ir kitas funkcijas. Prenumeruokite iš naujo šiandien ir sutaupykite 25 %.";
-
-/* Title of message displayed on the last day of the win-back campaign */
-"win-back.campaign.last-day.message.title" = "Paskutinė diena sutaupyti 25 %!";
-
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "SUTAUPYKITE 25%";
 
@@ -3905,7 +4016,10 @@
 "win-back.campaign.subscription.settings.menu.title" = "Prenumeruokite iš naujo ir sutaupykite 25 %";
 
 /* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
-"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Prenumeruokite iš naujo ir sutaupykite 25 %";
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "Iš naujo prenumeruoti";
+
+/* Subtitle for resubscribe CTA for users eligible for the win-back offer. */
+"win-back.campaign.subscription.settings.page.resubscribe.subtitle" = "Apsisaugokite naudodami mūsų VPN, privatų DI ir kitas funkcijas.\nRiboto galiojimo pasiūlymas.";
 
 /* Title for the Windows waitlist button redirecting to Mac waitlist */
 "windows-waitlist.join-waitlist-screen.mac-waitlist" = "Ieškote „Mac“ versijos?";

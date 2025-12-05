@@ -599,6 +599,7 @@ final class AddressBarButtonsViewController: NSViewController {
                 self?.updateAIChatButtonVisibility()
                 self?.updateAskAIChatButtonVisibility()
                 self?.configureAIChatButton()
+                self?.updateButtons()
             }).store(in: &cancellables)
     }
 

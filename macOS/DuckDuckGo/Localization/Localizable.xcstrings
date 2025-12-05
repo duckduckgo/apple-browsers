@@ -72543,6 +72543,30 @@
         }
       }
     },
+    "preferences.appearance.show-aichat-shortcut" : {
+      "comment" : "Option to show AI Chat shortcut in the address bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai shortcut"
+          }
+        }
+      }
+    },
+    "preferences.appearance.show-aichat-toggle" : {
+      "comment" : "Option to show AI Chat toggle in the address bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai toggle"
+          }
+        }
+      }
+    },
     "preferences.appearance.show-autocomplete-suggestions" : {
       "comment" : "Option to show autocomplete suggestions in the address bar",
       "extractionState" : "extracted_with_value",

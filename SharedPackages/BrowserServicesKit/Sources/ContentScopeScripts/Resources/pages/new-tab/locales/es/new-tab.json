@@ -60,6 +60,10 @@
     "title" : "No hay actividad de rastreo reciente",
     "note" : "Placeholder text shown in the Details view when no tracking activity was blocked in the last 7 days. Keep concise if possible."
   },
+  "protections_newBadge" : {
+    "title" : "Nuevo",
+    "note" : "Text displayed in a badge to indicate a new feature or statistic."
+  },
   "stats_menuTitle" : {
     "title" : "Intentos de rastreo bloqueados",
     "note" : "Used as a label in a customization menu"
@@ -117,7 +121,7 @@
     "note" : "The heading indicating multiple cookie pop-ups were handled by the CPM"
   },
   "stats_protectionsReportInfo" : {
-    "title" : "Muestra los intentos de rastreo bloqueados en los últimos 7 días y el número de ventanas emergentes de cookies bloqueadas desde que empezaste a usar el navegador. <span>Puedes restablecer estas estadísticas usando el Fire Button.</span>",
+    "title" : "Muestra los intentos de rastreo bloqueados en los últimos 7 días y el número de ventanas emergentes de cookies bloqueadas desde que empezaste a usar el navegador.",
     "note" : "Text explaining how to reset the protections stats"
   },
   "stats_feedCountBlockedSingular" : {

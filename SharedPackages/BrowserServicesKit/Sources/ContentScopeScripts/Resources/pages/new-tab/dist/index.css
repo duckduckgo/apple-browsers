@@ -1995,7 +1995,7 @@ body:not([data-background-kind=default]) .TabSwitcher_tabSwitcher {
   --background: rgba(255, 255, 255, 0.09);
 }
 .Protections_block {
-  margin-top: 32px;
+  margin-top: 16px;
 }
 .Protections_blockLegacy {
   margin-top: 24px;
@@ -2090,6 +2090,7 @@ body:not([data-background-kind=default]) .TabSwitcher_tabSwitcher {
   height: 16px;
   display: inline-block;
   vertical-align: middle;
+  margin-top: 2px;
 }
 .PrivacyStats_widgetExpander {
   position: relative;
@@ -2227,6 +2228,24 @@ body:not([data-background-kind=default]) .TabSwitcher_tabSwitcher {
 }
 [data-theme=dark] .PrivacyStats_fill {
   background: var(--color-white-at-9);
+}
+
+/* pages/new-tab/app/components/NewBadge.module.css */
+.NewBadge_badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  height: 16px;
+  padding: 0 8px;
+  background-color: #F9BE1A;
+  border-radius: 4px;
+  font-family: var(--theme-font-family, system-ui);
+  font-weight: 700;
+  font-size: 11px;
+  color: var(--color-black-at-96);
+  letter-spacing: -0.015em;
+  flex-shrink: 0;
 }
 
 /* pages/new-tab/app/components/Tooltip/Tooltip.module.css */
@@ -2956,9 +2975,9 @@ body:not([data-background-kind=default]) .TabSwitcher_tabSwitcher {
 .TickPill_tickPill {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 8px 10px;
-  border-radius: 100px;
+  gap: 4px;
+  padding: 8px 8px;
+  border-radius: 1000px;
   background-color: var(--color-white-at-3);
   border: 1px solid var(--color-white-at-12);
   height: 20px;
@@ -2982,8 +3001,8 @@ body:not([data-background-kind=default]) .TabSwitcher_tabSwitcher {
   white-space: nowrap;
 }
 [data-theme=light] .TickPill_tickPill {
-  background-color: var(--color-black-at-4);
-  border: 1px solid var(--color-black-at-12);
+  background-color: var(--color-black-at-1);
+  border: 1px solid var(--color-black-at-9);
 }
 [data-theme=light] .TickPill_text {
   color: var(--color-black-at-84);

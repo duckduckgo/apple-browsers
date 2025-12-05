@@ -190,11 +190,7 @@ final class NavigationBarViewController: NSViewController {
     private let sessionRestorePromptCoordinator: SessionRestorePromptCoordinating
 
     var isInPopUpWindow: Bool {
-        guard let mainViewController = parent as? MainViewController else {
-            assert(view.window == nil, "NavigationBarViewController is not a child of MainViewController")
-            return false
-        }
-        return mainViewController.isInPopUpWindow
+        tabCollectionViewModel.isPopup
     }
 
     var controlsForUserPrevention: [NSControl?] {
@@ -1593,14 +1589,14 @@ final class NavigationBarViewController: NSViewController {
         brokenSitePromptLimiter.didShowToast()
         PixelKit.fire(GeneralPixel.siteNotWorkingShown)
         let popoverMessage = PopoverMessageViewController(message: UserText.BrokenSitePrompt.title,
+                                                          autoDismissDuration: nil,
+                                                          shouldShowCloseButton: true,
                                                           buttonText: UserText.BrokenSitePrompt.buttonTitle,
                                                           buttonAction: {
             self.brokenSitePromptLimiter.didOpenReport()
             self.addressBarViewController?.addressBarButtonsViewController?.openPrivacyDashboardPopover(entryPoint: .prompt)
             PixelKit.fire(GeneralPixel.siteNotWorkingWebsiteIsBroken)
         },
-                                                          shouldShowCloseButton: true,
-                                                          autoDismissDuration: nil,
                                                           onDismiss: {
             self.brokenSitePromptLimiter.didDismissToast()
         }
@@ -2198,7 +2194,14 @@ extension NavigationBarViewController: MouseOverButtonDelegate {
 extension NavigationBarViewController: AddressBarViewControllerDelegate {
 
     func resizeAddressBarForHomePage(_ addressBarViewController: AddressBarViewController) {
-        let addressBarSizeClass: AddressBarSizeClass = tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab ? .homePage : .default
+        let addressBarSizeClass: AddressBarSizeClass
+        if isInPopUpWindow {
+            addressBarSizeClass = .popUpWindow
+        } else if tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab {
+            addressBarSizeClass = .homePage
+        } else {
+            addressBarSizeClass = .default
+        }
 
         if theme.addressBarStyleProvider.shouldShowNewSearchIcon {
             resizeAddressBar(for: addressBarSizeClass, animated: false)

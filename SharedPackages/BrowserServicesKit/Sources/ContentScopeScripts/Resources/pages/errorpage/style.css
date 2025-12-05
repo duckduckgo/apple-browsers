@@ -66,3 +66,25 @@ body {
         color: rgb(210, 210, 210);
     }
 }
+
+/* TODO: Use colour variables from design-tokens */
+
+/* Theme variants - light mode */
+[data-theme-variant="coolGray"] { background: #d2d5e3; }
+[data-theme-variant="slateBlue"] { background: #d2e5f3; }
+[data-theme-variant="green"] { background: #e3eee1; }
+[data-theme-variant="violet"] { background: #e7e4f5; }
+[data-theme-variant="rose"] { background: #f8ebf5; }
+[data-theme-variant="orange"] { background: #fcedd8; }
+[data-theme-variant="desert"] { background: #eee9e1; }
+
+/* Theme variants - dark mode */
+@media (prefers-color-scheme: dark) {
+    [data-theme-variant="coolGray"] { background: #2b2f45; }
+    [data-theme-variant="slateBlue"] { background: #1e3347; }
+    [data-theme-variant="green"] { background: #203b30; }
+    [data-theme-variant="violet"] { background: #2e2158; }
+    [data-theme-variant="rose"] { background: #5b194b; }
+    [data-theme-variant="orange"] { background: #54240c; }
+    [data-theme-variant="desert"] { background: #3c3833; }
+}

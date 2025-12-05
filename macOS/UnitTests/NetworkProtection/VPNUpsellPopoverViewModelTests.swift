@@ -45,7 +45,6 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
         mockPersistor = MockVPNUpsellUserDefaultsPersistor()
         firedPixels = []
 
-        mockFeatureFlagger.enabledFeatureFlags = [.vpnToolbarUpsell]
         mockSubscriptionManager.currentEnvironment = .init(serviceEnvironment: .staging, purchasePlatform: .stripe)
 
         vpnUpsellVisibilityManager = VPNUpsellVisibilityManager(
@@ -54,7 +53,6 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
             subscriptionManager: mockSubscriptionManager,
             defaultBrowserProvider: mockDefaultBrowserProvider,
             contextualOnboardingPublisher: Just(true).eraseToAnyPublisher(),
-            featureFlagger: mockFeatureFlagger,
             persistor: mockPersistor,
             timerDuration: 0.01,
             autoDismissDays: 7,
@@ -230,7 +228,7 @@ final class VPNUpsellPopoverViewModelTests: XCTestCase {
     func testWhenListingPlusFeatures_AndAIChatIsEnabled_ItListsAIChat() throws {
         // Given
         let expectation = XCTestExpectation(description: "Feature set should be updated")
-        mockFeatureFlagger.enabledFeatureFlags = [.vpnToolbarUpsell, .paidAIChat]
+        mockFeatureFlagger.enabledFeatureFlags = [.paidAIChat]
 
         sut.$featureSet
             .dropFirst()

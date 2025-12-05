@@ -191,9 +191,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         tabsPreferences: tabsPreferences,
         newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration),
         winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
-        subscriptionCardVisibilityManager: homePageSubscriptionCardVisibilityManager,
+        subscriptionCardVisibilityManager: homePageSetUpDependencies.subscriptionCardVisibilityManager,
         protectionsReportModel: newTabPageProtectionsReportModel,
-        homePageContinueSetUpModelPersistor: homePageContinueSetUpModelPersistor
+        homePageContinueSetUpModelPersistor: homePageSetUpDependencies.continueSetUpModelPersistor
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
@@ -288,16 +288,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Home Page Continue Set Up Model
 
-    lazy var homePageSubscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging = {
-        return HomePageSubscriptionCardVisibilityManager(subscriptionManager: subscriptionAuthV1toV2Bridge, persistor: homePageSubscriptionCardPersistor)
-    }()
-
-    lazy var homePageSubscriptionCardPersistor: HomePageSubscriptionCardPersisting = {
-        return HomePageSubscriptionCardPersistor(keyValueStore: keyValueStore)
-    }()
-
-    lazy var homePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersistor = {
-        return HomePageContinueSetUpModelPersistor(keyValueStore: UserDefaultsWrapper<Any>.sharedDefaults)
+    // Note: Using UserDefaultsWrapper as legacy store here because the pre-existed code used it.
+    lazy var homePageSetUpDependencies: HomePageSetUpDependencies = {
+        return HomePageSetUpDependencies(subscriptionManager: subscriptionAuthV1toV2Bridge,
+                                         keyValueStore: keyValueStore,
+                                         legacyKeyValueStore: UserDefaultsWrapper<Any>.sharedDefaults)
     }()
 
     // MARK: - DBP
@@ -1763,9 +1758,9 @@ extension AppDelegate: UserScriptDependenciesProviding {
             tabsPreferences: tabsPreferences,
             newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration),
             winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
-            subscriptionCardVisibilityManager: homePageSubscriptionCardVisibilityManager,
+            subscriptionCardVisibilityManager: homePageSetUpDependencies.subscriptionCardVisibilityManager,
             protectionsReportModel: newTabPageProtectionsReportModel,
-            homePageContinueSetUpModelPersistor: homePageContinueSetUpModelPersistor
+            homePageContinueSetUpModelPersistor: homePageSetUpDependencies.continueSetUpModelPersistor
         )
     }
 }

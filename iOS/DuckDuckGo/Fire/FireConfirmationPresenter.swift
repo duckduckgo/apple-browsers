@@ -50,6 +50,7 @@ struct FireConfirmationPresenter {
         
         let confirmationView = FireConfirmationView(viewModel: viewModel)
         let hostingController = UIHostingController(rootView: confirmationView)
+        hostingController.view.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
         
         hostingController.modalTransitionStyle = .coverVertical
                 

@@ -359,11 +359,11 @@ final class AddressBarTextField: NSTextField {
     func addressBarEnterPressed() {
         let selectedRowContent = suggestionContainerViewModel?.selectedRowContent
         let selectedSuggestion = suggestionContainerViewModel?.selectedSuggestionViewModel?.suggestion
-        let selectedSuggestionCategory = selectedSuggestion.flatMap { AIChatSuggestionCategory(from: $0) }
+        let selectedSuggestionCategory = selectedSuggestion.flatMap { SuggestionPixelCategory(from: $0) }
         suggestionContainerViewModel?.clearUserStringValue()
 
         if case .aiChatCell = selectedRowContent {
-            openAIChatWithPrompt(inputMethod: .keyboard, selectedSuggestionCategory: selectedSuggestionCategory)
+            openAIChatWithPrompt(inputMethod: .keyboard)
             hideSuggestionWindow()
             return
         }
@@ -376,12 +376,10 @@ final class AddressBarTextField: NSTextField {
 
     /// Called from MainViewController when user presses Shift/Control + Enter (keyboard shortcut)
     func openAIChatWithPrompt() {
-        let selectedSuggestion = suggestionContainerViewModel?.selectedSuggestionViewModel?.suggestion
-        let selectedSuggestionCategory = selectedSuggestion.flatMap { AIChatSuggestionCategory(from: $0) }
-        openAIChatWithPrompt(inputMethod: .keyboard, selectedSuggestionCategory: selectedSuggestionCategory)
+        openAIChatWithPrompt(inputMethod: .keyboard)
     }
 
-    func openAIChatWithPrompt(inputMethod: SuggestionInputMethod, selectedSuggestionCategory: AIChatSuggestionCategory?) {
+    func openAIChatWithPrompt(inputMethod: SuggestionInputMethod) {
         let prompt = stringValueWithoutSuffix
 
         let behavior = LinkOpenBehavior(
@@ -393,22 +391,22 @@ final class AddressBarTextField: NSTextField {
         let pixel: AIChatPixel
         switch inputMethod {
         case .keyboard:
-            pixel = .aiChatSuggestionAIChatSubmittedKeyboard(suggestionCategory: selectedSuggestionCategory)
+            pixel = .aiChatSuggestionAIChatSubmittedKeyboard
         case .mouse:
-            pixel = .aiChatSuggestionAIChatSubmittedMouse(suggestionCategory: selectedSuggestionCategory)
+            pixel = .aiChatSuggestionAIChatSubmittedMouse
         }
         PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
         NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: .query(prompt, shouldAutoSubmit: true), behavior: behavior)
         currentEditor()?.selectAll(self)
     }
 
-    private func fireSuggestionSubmittedPixel(inputMethod: SuggestionInputMethod, selectedSuggestionCategory: AIChatSuggestionCategory?) {
-        let pixel: AIChatPixel
+    private func fireSuggestionSubmittedPixel(inputMethod: SuggestionInputMethod, selectedSuggestionCategory: SuggestionPixelCategory?) {
+        let pixel: GeneralPixel
         switch inputMethod {
         case .keyboard:
-            pixel = .aiChatSuggestionSubmittedKeyboard(suggestionCategory: selectedSuggestionCategory)
+            pixel = .suggestionSubmittedKeyboard(suggestionCategory: selectedSuggestionCategory)
         case .mouse:
-            pixel = .aiChatSuggestionSubmittedMouse(suggestionCategory: selectedSuggestionCategory)
+            pixel = .suggestionSubmittedMouse(suggestionCategory: selectedSuggestionCategory)
         }
         PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
     }
@@ -1376,11 +1374,11 @@ extension AddressBarTextField: SuggestionViewControllerDelegate {
     func suggestionViewControllerDidConfirmSelection(_ suggestionViewController: SuggestionViewController) {
         let selectedRowContent = suggestionContainerViewModel?.selectedRowContent
         let selectedSuggestion = suggestionContainerViewModel?.selectedSuggestionViewModel?.suggestion
-        let selectedSuggestionCategory = selectedSuggestion.flatMap { AIChatSuggestionCategory(from: $0) }
+        let selectedSuggestionCategory = selectedSuggestion.flatMap { SuggestionPixelCategory(from: $0) }
         suggestionContainerViewModel?.clearUserStringValue()
 
         if case .aiChatCell = selectedRowContent {
-            openAIChatWithPrompt(inputMethod: .mouse, selectedSuggestionCategory: selectedSuggestionCategory)
+            openAIChatWithPrompt(inputMethod: .mouse)
             hideSuggestionWindow()
             return
         }

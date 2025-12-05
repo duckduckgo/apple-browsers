@@ -684,6 +684,12 @@ final class AddressBarButtonsViewController: NSViewController {
             return
         }
 
+        // Check if any permission is in requested state (authorization will be shown)
+        let hasRequestedPermission = tabViewModel.usedPermissions.values.contains { $0.isRequested }
+
+        // Show bell icon immediately if authorization popover will be presented
+        updatePermissionCenterButtonIcon(showBell: hasRequestedPermission)
+
         permissionCenterButton.isShown = tabViewModel.shouldShowPermissionCenterButton(
             isTextFieldEditorFirstResponder: isTextFieldEditorFirstResponder,
             isAnyTrackerAnimationPlaying: isAnyTrackerAnimationPlaying

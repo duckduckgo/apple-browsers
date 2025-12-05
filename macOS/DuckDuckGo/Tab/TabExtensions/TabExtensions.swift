@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Combine
+import Common
 import ContentBlocking
 import Foundation
 import History
@@ -97,6 +98,7 @@ typealias TabExtensionsBuilderArguments = (
     isTabPinned: () -> Bool,
     isTabBurner: Bool,
     isTabLoadedInSidebar: Bool,
+    isInPopUpWindow: () -> Bool,
     contentPublisher: AnyPublisher<Tab.TabContent, Never>,
     setContent: (Tab.TabContent) -> Void,
     closeTab: () -> Void,
@@ -111,7 +113,7 @@ typealias TabExtensionsBuilderArguments = (
     tabsPreferences: TabsPreferences,
     burnerMode: BurnerMode,
     urlProvider: () -> URL?,
-    createChildTab: (WKWebViewConfiguration, WKNavigationAction, NewWindowPolicy) -> Tab?,
+    createChildTab: (WKWebViewConfiguration?, SecurityOrigin?, NewWindowPolicy) -> Tab?,
     presentTab: (Tab, NewWindowPolicy) -> Void,
     newWindowPolicyDecisionMakers: () -> [NewWindowPolicyDecisionMaking]?
 )
@@ -226,7 +228,8 @@ extension TabExtensionsBuilder {
                                       tld: dependencies.privacyFeatures.contentBlocking.tld,
                                       interactionEventsPublisher: args.interactionEventsPublisher,
                                       isTabPinned: args.isTabPinned,
-                                      isBurner: args.isTabBurner)
+                                      isBurner: args.isTabBurner,
+                                      isInPopUpWindow: args.isInPopUpWindow)
         }
         add {
             HoveredLinkTabExtension(hoverUserScriptPublisher: userScripts.map(\.?.hoverUserScript))

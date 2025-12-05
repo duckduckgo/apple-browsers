@@ -253,7 +253,7 @@ extension TabContent {
     /// `real` URL loaded in the web view
     var urlForWebView: URL? {
         switch self {
-        case .url(let url, credential: _, source: _):
+        case .url(let url, credential: _, source: _), .subscription(let url), .identityTheftRestoration(let url), .webExtensionUrl(let url), .aiChat(let url):
             return url
         case .newtab:
             return .newtab
@@ -273,10 +273,6 @@ extension TabContent {
             return .dataBrokerProtection
         case .releaseNotes:
             return .releaseNotes
-        case .subscription(let url), .identityTheftRestoration(let url), .webExtensionUrl(let url):
-            return url
-        case .aiChat(let url):
-            return url
         case .none:
             return nil
         }
@@ -294,10 +290,8 @@ extension TabContent {
 
     var isUrl: Bool {
         switch self {
-        case .url, .subscription, .identityTheftRestoration, .releaseNotes, .history, .aiChat:
-            return true
-        default:
-            return false
+        case .url: true
+        default: false
         }
     }
 
@@ -327,7 +321,10 @@ extension TabContent {
     }
 
     var displaysContentInWebView: Bool {
-        isUrl
+        switch self {
+        case .url, .subscription, .identityTheftRestoration, .releaseNotes, .history, .aiChat: true
+        default: false
+        }
     }
 
     var usesExternalWebView: Bool {

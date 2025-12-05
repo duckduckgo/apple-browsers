@@ -146,9 +146,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866476860577
     case newTabPageOmnibar
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866719732725
-    case vpnToolbarUpsell
-
     /// Loading New Tab Page in regular browsing webview
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866719013868
     case newTabPagePerTab
@@ -355,7 +352,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .newTabPageOmnibar,
                 .newTabPagePerTab,
                 .newTabPageTabIDs,
-                .vpnToolbarUpsell,
                 .supportsAlternateStripePaymentFlow,
                 .duckAISearchParameter,
                 .refactorOfSyncPreferences,
@@ -495,8 +491,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.updateSafariBookmarksImport))
         case .newTabPageOmnibar:
             return .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.omnibar))
-        case .vpnToolbarUpsell:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnToolbarUpsell))
         case .newTabPagePerTab:
             return .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.newTabPagePerTab))
         case .newTabPageTabIDs:

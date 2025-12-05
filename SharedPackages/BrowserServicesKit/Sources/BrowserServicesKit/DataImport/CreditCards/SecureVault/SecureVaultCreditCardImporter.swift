@@ -85,8 +85,6 @@ public final class SecureVaultCreditCardImporter: CreditCardImporter {
                     try vault.storeCreditCard(creditCardToImport)
                     successful += 1
                 }
-
-                try completion(index + 1)
             } catch {
                 let maskedNumber = maskCardNumber(importedCard.cardNumber)
                 let errorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
@@ -97,6 +95,8 @@ public final class SecureVaultCreditCardImporter: CreditCardImporter {
                 ))
                 Logger.autofill.debug("Failed to import card: \(error)")
             }
+
+            try completion(index + 1)
         }
 
         return DataImport.DataTypeSummary(

@@ -390,31 +390,31 @@ final class TabViewModel: NSObject {
         let showFullURL = showFullURL ?? appearancePreferences.showFullURL
         passiveAddressBarAttributedString = switch tab.content {
         case .newtab, .onboarding, .none:
-                .init() // empty
+            .init() // empty
         case .settings:
-                .settingsTrustedIndicator
+            .settingsTrustedIndicator
         case .bookmarks:
-                .bookmarksTrustedIndicator
+            .bookmarksTrustedIndicator
         case .history:
             .historyTrustedIndicator
         case .url(let url, _, _) where url.isHistory:
             .historyTrustedIndicator
         case .dataBrokerProtection:
-                .dbpTrustedIndicator
+            .dbpTrustedIndicator
         case .subscription:
-            NSAttributedString.subscriptionTrustedIndicator
+            .subscriptionTrustedIndicator
         case .identityTheftRestoration:
-                .identityTheftRestorationTrustedIndicator
+            .identityTheftRestorationTrustedIndicator
         case .releaseNotes:
-                .releaseNotesTrustedIndicator
+            .releaseNotesTrustedIndicator
         case .url(let url, _, _) where url.isDuckPlayer:
-                .duckPlayerTrustedIndicator
+            .duckPlayerTrustedIndicator
         case .url(let url, _, _) where url.isEmailProtection:
-                .emailProtectionTrustedIndicator
+            .emailProtectionTrustedIndicator
+        case .aiChat:
+            .aiChatTrustedIndicator
         case .url(let url, _, _), .webExtensionUrl(let url):
             NSAttributedString(string: passiveAddressBarString(with: url, showFullURL: showFullURL))
-        case .aiChat:
-                .aiChatTrustedIndicator
         }
     }
 

@@ -174,6 +174,16 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
             featureFlagger.isFeatureOn(.dbpEmailConfirmationDecoupling)
         }
 
+        var isForegroundRunningOnAppActiveFeatureOn: Bool {
+            // Not relevant to macOS
+            return false
+        }
+
+        var isForegroundRunningWhenDashboardOpenFeatureOn: Bool {
+            // Not relevant to macOS
+            return false
+        }
+
         init(privacyConfigManager: PrivacyConfigurationManaging) {
             self.featureFlagger = DefaultFeatureFlagger(
                 internalUserDecider: privacyConfigManager.internalUserDecider,

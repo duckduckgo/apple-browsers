@@ -722,6 +722,10 @@ extension AppDelegate {
         UserDefaults.standard.set(Date.weekAgo, forKey: UserDefaultsWrapper<Any>.Key.firstLaunchDate.rawValue)
     }
 
+    @objc func setLaunchDayAMonthInThePast(_ sender: Any?) {
+        UserDefaults.standard.set(Date.monthAgo, forKey: UserDefaultsWrapper<Any>.Key.firstLaunchDate.rawValue)
+    }
+
     @objc func resetTipKit(_ sender: Any?) {
         TipKitDebugOptionsUIActionHandler().resetTipKitTapped()
     }

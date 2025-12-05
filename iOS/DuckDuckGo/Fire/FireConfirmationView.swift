@@ -178,6 +178,7 @@ private struct ToggleRow: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.vertical, Constants.titlesVerticalPadding)
+            .padding(.trailing, Constants.titlesTrailingPadding)
             .frame(maxWidth: .infinity, alignment: .leading)
             
             // Toggle
@@ -195,6 +196,7 @@ private struct ToggleRow: View {
         static let titleFont: Font = .system(size: 16, weight: .regular, design: .default)
         static let subtitleFont: Font = .system(size: 13, weight: .regular, design: .default)
         static let titlesVerticalPadding: CGFloat = 10.5
+        static let titlesTrailingPadding: CGFloat = 16
         static let toggleTrailingPadding: CGFloat = 16
     }
 }

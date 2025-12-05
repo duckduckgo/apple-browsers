@@ -66,6 +66,7 @@ struct BrowsingMenuSheetView: View {
     }
 
     @Environment(\.presentationMode) var presentationMode
+    @Environment(\.verticalSizeClass) var verticalSizeClass
 
     private let model: BrowsingMenuModel
     private let onDismiss: () -> Void
@@ -101,6 +102,21 @@ struct BrowsingMenuSheetView: View {
             presentationMode: presentationMode,
             showsLabels: model.footerItems.count < 2
         )
+        .safeAreaInset(edge: .top, content: {
+            if verticalSizeClass == .compact {
+                HStack {
+                    Spacer()
+                    Button(UserText.navigationTitleDone, role: .cancel) {
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                    .padding(.top, 16)
+                    .padding(.bottom, 16)
+                    .padding(.horizontal, 24)
+                }
+                .background(.thickMaterial)
+                .padding(.bottom, -24)
+            }
+        })
         .tint(Color(designSystemColor: .textPrimary))
     }
 

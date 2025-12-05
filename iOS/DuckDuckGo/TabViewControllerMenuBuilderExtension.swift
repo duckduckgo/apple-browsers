@@ -401,7 +401,7 @@ extension TabViewController {
     
     private func buildReportBrokenSiteEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         return BrowsingMenuEntry.regular(name: UserText.actionReportBrokenSite,
-                                         image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.feedbackBlank : DesignSystemImages.Glyphs.Size24.feedback,
+                                         image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.feedbackBlank : DesignSystemImages.Glyphs.Size24.support,
                                          action: { [weak self] in
             self?.onReportBrokenSiteAction()
         })

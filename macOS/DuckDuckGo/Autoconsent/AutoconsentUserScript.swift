@@ -305,7 +305,7 @@ extension AutoconsentUserScript {
         if message.frameInfo.isMainFrame {
             // reset dashboard state
             refreshDashboardState(
-                // keep "cookies managed" if we did it in for this site since app launch
+                // keep "cookies managed" if we did it for this site since app launch
                 consentManaged: management.sitesNotifiedCache.contains(url.host ?? ""),
                 cosmetic: nil,
                 optoutFailed: nil,

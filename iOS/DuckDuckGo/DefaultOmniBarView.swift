@@ -239,6 +239,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
 
     private let aiChatLeftButton = BrowserChromeButton()
     private var aiChatBrandingView: AIChatFullModeOmniBrandingView?
+    private var aiChatModeConstraints: [NSLayoutConstraint] = []
 
     var searchContainerWidth: CGFloat { searchAreaView.frame.width }
 
@@ -402,13 +403,14 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         
         DefaultOmniBarView.activateItemSizeConstraints(for: aiChatLeftButton)
 
+        // AI Chat mode constraints (inactive by default, activated only in AI Chat mode)
         if let brandingView = aiChatBrandingView {
-            NSLayoutConstraint.activate([
-                brandingView.centerXAnchor.constraint(equalTo: searchAreaContainerView.centerXAnchor),
+            aiChatModeConstraints = [
+                brandingView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
+                brandingView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
                 brandingView.centerYAnchor.constraint(equalTo: searchAreaContainerView.centerYAnchor),
-                brandingView.leadingAnchor.constraint(greaterThanOrEqualTo: safeAreaLayoutGuide.leadingAnchor, constant: Metrics.textAreaHorizontalPadding),
-                brandingView.trailingAnchor.constraint(lessThanOrEqualTo: safeAreaLayoutGuide.trailingAnchor, constant: -Metrics.textAreaHorizontalPadding)
-            ])
+                searchAreaContainerView.widthAnchor.constraint(equalTo: searchAreaAlignmentView.widthAnchor)
+            ]
         }
     }
 
@@ -744,6 +746,8 @@ extension DefaultOmniBarView {
         searchAreaView.textField.isHidden = true
         aiChatLeftButton.isHidden = false
         aiChatLeftButton.alpha = 1.0
+        NSLayoutConstraint.activate(aiChatModeConstraints)
+        searchAreaContainerView.bringSubviewToFront(aiChatLeftButton)
 
         layoutIfNeeded()
     }
@@ -754,6 +758,7 @@ extension DefaultOmniBarView {
         searchAreaView.textField.isHidden = false
         aiChatLeftButton.isHidden = true
         aiChatLeftButton.alpha = 0.0
+        NSLayoutConstraint.deactivate(aiChatModeConstraints)
 
         searchAreaView.textField.alpha = 1.0
         searchAreaView.revealButtons()

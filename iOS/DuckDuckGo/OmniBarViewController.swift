@@ -341,6 +341,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         self.textEntryMode = textEntryMode
         defer {
             textFieldTapped = true
+            self.textEntryMode = .search
         }
 
         textField.becomeFirstResponder()

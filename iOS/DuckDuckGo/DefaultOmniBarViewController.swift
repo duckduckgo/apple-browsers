@@ -189,8 +189,6 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
         let switchBarHandler = createSwitchBarHandler(for: textField)
         switchBarHandler.setToggleState(textEntryMode)
-        // Reset to default after consuming the text entry mode
-        self.textEntryMode = .search
         let shouldAutoSelectText = shouldAutoSelectTextForUrl(textField)
 
         let editingStateViewController = OmniBarEditingStateViewController(switchBarHandler: switchBarHandler)

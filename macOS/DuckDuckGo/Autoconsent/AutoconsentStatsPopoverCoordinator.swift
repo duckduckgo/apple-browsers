@@ -81,6 +81,7 @@ final class AutoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinat
             isCPMEnabled(),
             isNotOnNTP(),
             isProtectionsReportEnabledOnNTP(),
+            isOnboardingFinished(),
             !hasBeenPresented(),
             hasBeenEnoughDaysSinceInstallation(),
             await hasBlockedEnoughCookiePopups()
@@ -110,6 +111,10 @@ final class AutoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinat
 
     private func isProtectionsReportEnabledOnNTP() -> Bool {
         return appearancePreferences.isProtectionsReportVisible
+    }
+
+    private func isOnboardingFinished() -> Bool {
+        OnboardingActionsManager.isOnboardingFinished && Application.appDelegate.onboardingContextualDialogsManager.state == .onboardingCompleted
     }
 
     private func hasBeenPresented() -> Bool {

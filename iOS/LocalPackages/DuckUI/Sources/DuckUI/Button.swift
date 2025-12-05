@@ -162,9 +162,34 @@ public struct GhostButtonStyle: ButtonStyle {
     }
 }
 
+public struct GhostAltButtonStyle: ButtonStyle {
+
+    let compact: Bool
+
+    public init(compact: Bool = false) {
+        self.compact = compact
+    }
+
+    public func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(Font(UIFont.boldAppFont(ofSize: Consts.fontSize)))
+            .foregroundColor(Color(designSystemColor: .textSecondary))
+            .padding()
+            .frame(minWidth: 0, maxWidth: .infinity, maxHeight: compact ? Consts.height - 10 : Consts.height)
+            .background(backgroundColor(configuration.isPressed))
+            .cornerRadius(Consts.cornerRadius)
+            .contentShape(Rectangle()) // Makes whole button area tappable, when there's no background
+    }
+    
+    private func backgroundColor(_ isPressed: Bool) -> Color {
+        isPressed ?  Color.black.opacity(Consts.ghostPressedBackgroundOpacity) : .clear
+    }
+}
+
 private enum Consts {
     static let cornerRadius: CGFloat = 12
     static let height: CGFloat = 50
     static let fontSize: CGFloat = 15
     static let pressedOpacity: CGFloat = 0.7
+    static let ghostPressedBackgroundOpacity: CGFloat = 0.09
 }

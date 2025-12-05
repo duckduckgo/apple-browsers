@@ -21,6 +21,7 @@ import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import Core
+import DuckUI
 
 struct FireConfirmationView: View {
     
@@ -97,31 +98,30 @@ struct FireConfirmationView: View {
     }
     
     private var footerButtons: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: Constants.footerButtonsSpacing) {
             // Delete button
             Button(action: {
                 viewModel.confirm()
             }) {
                 Text(UserText.actionDelete)
-                    .font(.system(size: 15, weight: .semibold, design: .default))
+                    .font(Constants.footerButtonFont)
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
-                    .frame(minHeight: 50)
+                    .frame(minHeight: Constants.footerButtonMinHeight)
                     .background(.red)
-                    .cornerRadius(12)
+                    .cornerRadius(Constants.footerButtonCornerRadius)
             }
             .accessibilityIdentifier("fire.confirmation.button.delete")
+            // TODO: - Create a PrimaryDestructive button style and use it here. Pending on design.
             
-            // Cancel button (ghost style)
+            // Cancel button
             Button(action: {
                 viewModel.cancel()
             }) {
                 Text(UserText.actionCancel)
-                    .font(.system(size: 15, weight: .semibold, design: .default))
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
                     .frame(maxWidth: .infinity)
-                    .frame(minHeight: 50)
             }
+            .buttonStyle(GhostAltButtonStyle())
             .accessibilityIdentifier("fire.confirmation.button.cancel")
         }
     }
@@ -144,6 +144,11 @@ private extension FireConfirmationView {
         static let dividerHeight: CGFloat = 0.5
         static let dividerLeadingSpace: CGFloat = 52
         
+        // Footer Buttons
+        static let footerButtonsSpacing: CGFloat = 8
+        static let footerButtonFont: Font = .system(size: 15, weight: .semibold, design: .default)
+        static let footerButtonMinHeight: CGFloat = 50
+        static let footerButtonCornerRadius: CGFloat = 12
     }
 }
 

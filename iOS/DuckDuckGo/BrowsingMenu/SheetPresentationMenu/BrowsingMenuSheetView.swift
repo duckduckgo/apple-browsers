@@ -45,10 +45,10 @@ struct BrowsingMenuSheetView: View {
         static let headerButtonIconTextSpacing: CGFloat = 2
         static let footerButtonVerticalPadding: CGFloat = 8
 
-        /// Approximate vertical padding for list rows with `.insetGrouped` style.
+        /// Approximate row size for `.insetGrouped` style.
         /// This is an estimate used for height calculation and may not exactly match
-        /// the system-provided padding in all configurations.
-        static let listRowVerticalPadding: CGFloat = 24
+        /// the system-provided height in all configurations.
+        static let defaultListRowHeight: CGFloat = 44
 
         /// Approximate spacing between list sections.
         /// Note: The actual UI uses `.compactSectionSpacingIfAvailable()` which applies
@@ -87,6 +87,7 @@ struct BrowsingMenuSheetView: View {
         .compactSectionSpacingIfAvailable()
         .hideScrollContentBackground()
         .listStyle(.insetGrouped)
+        .bounceBasedOnSizeIfAvailable()
         .padding(.top, -Metrics.listTopPaddingAdjustment)
         .background(.thickMaterial)
         .background(Color(designSystemColor: .background).opacity(0.1))
@@ -279,6 +280,15 @@ private extension View {
             self
                 .clipShape(RoundedRectangle(cornerRadius: MenuHeaderButton.Constant.cornerRadius, style: .continuous))
                 .contentShape(RoundedRectangle(cornerRadius: MenuHeaderButton.Constant.cornerRadius, style: .continuous))
+        }
+    }
+
+    @ViewBuilder
+    func bounceBasedOnSizeIfAvailable() -> some View {
+        if #available(iOS 16.4, *) {
+            self.scrollBounceBehavior(.basedOnSize)
+        } else {
+            self
         }
     }
 }

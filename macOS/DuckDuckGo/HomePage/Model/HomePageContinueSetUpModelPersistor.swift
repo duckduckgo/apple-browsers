@@ -26,6 +26,7 @@ protocol HomePageContinueSetUpModelPersisting {
     var shouldShowDuckPlayerSetting: Bool { get set }
     var shouldShowEmailProtectionSetting: Bool { get set }
     var isFirstSession: Bool { get set }
+    func clear()
 }
 
 struct HomePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersisting {

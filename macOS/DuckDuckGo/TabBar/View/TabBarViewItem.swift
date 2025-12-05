@@ -1265,13 +1265,7 @@ final class TabBarViewItem: NSCollectionViewItem {
     }
 
     private func refreshFavicon() {
-        // Reset tint color that was set for active permission icons
-        if cell.displaysTabsProgressIndicator {
-            cell.faviconView.imageTintColor = nil
-        } else {
-            cell.faviconImageView.contentTintColor = nil
-        }
-        // Re-apply the current favicon through normal flow
+        // Re-apply the current favicon through normal flow (tint color is reset in updateFavicon)
         updateFavicon(tabViewModel?.favicon)
     }
 
@@ -1312,14 +1306,20 @@ final class TabBarViewItem: NSCollectionViewItem {
 
         cell.needsLayout = true
 
+        // Reset tint color to appropriate value for normal favicon display
+        let isBurnerTab = isBurner && cell.displaysBurnerHomeTitle
+        let tintColor: NSColor? = isBurnerTab ? .textColor : nil
+
         /// When using `faviconView`, we'll never display `faviconPlaceholderView`.
         if cell.displaysTabsProgressIndicator {
             cell.faviconView.displayFavicon(favicon: favicon, url: tabViewModel?.url)
+            cell.faviconView.imageTintColor = tintColor
             return
         }
 
         cell.faviconImageView.isHidden = (favicon == nil)
         cell.faviconImageView.image = favicon
+        cell.faviconImageView.contentTintColor = tintColor
         if isPinned && cell.faviconImageView.isHidden {
             cell.faviconPlaceholderView.isHidden = false
             cell.faviconPlaceholderView.displayURL(tabViewModel?.tabContent.urlForWebView)

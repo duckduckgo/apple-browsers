@@ -245,13 +245,13 @@ public struct PopoverMessageView: View {
                         viewModel.dismissAction?()
                     }) {
                         Image(.updateNotificationClose)
-                        .frame(width: 16, height: 16)
+                            .frame(width: 16, height: 16)
                     }
-                    Spacer()
-                }
-                .buttonStyle(PlainButtonStyle())
+                    .buttonStyle(PlainButtonStyle())
                     .padding(.leading, -6)
                     .padding(.trailing, 2)
+                    Spacer()
+                }
             }
         }
         .padding(.vertical, 13)

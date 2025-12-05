@@ -480,7 +480,7 @@ extension AutoconsentUserScript {
 
         popupManagedSubject.send(messageData)
 
-        // Show animation and remember that we did it for this site)
+        // Show animation and remember that we did it for this site
         management.sitesNotifiedCache.insert(host)
         if messageData.cmp != Constants.filterListCmpName { // filterlist animation should have been triggered already (see handlePopupFound)
             Logger.autoconsent.debug("Starting animation for the handled cookie popup")

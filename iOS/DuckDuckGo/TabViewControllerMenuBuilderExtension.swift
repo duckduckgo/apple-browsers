@@ -143,11 +143,11 @@ extension TabViewController {
         return entries
     }
     
-    func buildAITabMenu(useSmallIcon: Bool = true, includeSettings: Bool = true) -> [BrowsingMenuEntry] {
+    func buildAITabMenu(useSmallIcon: Bool = true, includeSettings: Bool = true, separateUtililtyItems: Bool = false) -> [BrowsingMenuEntry] {
         var entries = [BrowsingMenuEntry]()
         
-        entries.append(contentsOf: buildAITabLinkEntries(useSmallIcon: useSmallIcon))
-        
+        entries.append(contentsOf: buildAITabLinkEntries(useSmallIcon: useSmallIcon, addPrint: !separateUtililtyItems))
+
         entries.append(.separator)
         
         entries.append(buildOpenBookmarksEntry(useSmallIcon: useSmallIcon))
@@ -159,7 +159,12 @@ extension TabViewController {
         entries.append(buildDownloadsEntry(useSmallIcon: useSmallIcon))
         
         entries.append(buildAIChatSidebarEntry(useSmallIcon: useSmallIcon))
-        
+
+        if separateUtililtyItems {
+            entries.append(.separator)
+            entries.append(buildPrintEntry(withSmallIcon: useSmallIcon))
+        }
+
         entries.append(.separator)
         
         entries.append(buildAIChatSettingsEntry(useSmallIcon: useSmallIcon))
@@ -298,7 +303,7 @@ extension TabViewController {
         return entries
     }
     
-    private func buildAITabLinkEntries(useSmallIcon: Bool = true) -> [BrowsingMenuEntry] {
+    private func buildAITabLinkEntries(useSmallIcon: Bool = true, addPrint: Bool = true) -> [BrowsingMenuEntry] {
         guard let link = link, !isError else { return [] }
 
         var entries = [BrowsingMenuEntry]()
@@ -308,9 +313,11 @@ extension TabViewController {
         }
 
         entries.append(self.buildFindInPageEntry(forLink: link, useSmallIcon: useSmallIcon))
-        
-        entries.append(buildPrintEntry(withSmallIcon: useSmallIcon))
-                
+
+        if addPrint {
+            entries.append(buildPrintEntry(withSmallIcon: useSmallIcon))
+        }
+
         return entries
     }
 
@@ -813,7 +820,7 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     }
     
     func makeAITabMenu() -> [BrowsingMenuEntry] {
-        buildAITabMenu(useSmallIcon: false, includeSettings: false)
+        buildAITabMenu(useSmallIcon: false, includeSettings: false, separateUtililtyItems: true)
     }
     
     func makeAITabMenuHeaderContent() -> [BrowsingMenuEntry] {

@@ -33,14 +33,14 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
         mockNavigationDelegate = await MockNavigationDelegate()
         handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
-                       paidAIChatFlagStatusProvider: { false },
+                       featureFlagProvider: MockFeatureFlagProvider(),
                        navigationDelegate: mockNavigationDelegate)
     }
 
     func testWhenInitializedForIOSThenHandshakeReportsIOS() async throws {
         handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
-                       paidAIChatFlagStatusProvider: { false },
+                       featureFlagProvider: MockFeatureFlagProvider(),
                        navigationDelegate: mockNavigationDelegate)
         let handshake = try await handler.handshake(params: [], message: WKScriptMessage())
         XCTAssertEqual(handshake.platform, .ios)
@@ -49,7 +49,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
     func testWhenInitializedForMacOSThenHandshakeReportsMacOS() async throws {
         handler = .init(platform: .macos,
                        subscriptionManager: subscriptionManager,
-                       paidAIChatFlagStatusProvider: { false },
+                       featureFlagProvider: MockFeatureFlagProvider(),
                        navigationDelegate: mockNavigationDelegate)
         let handshake = try await handler.handshake(params: [], message: WKScriptMessage())
         XCTAssertEqual(handshake.platform, .macos)
@@ -58,7 +58,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
     func testThatHandshakeReportsSupportForAllMessages() async throws {
         handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
-                       paidAIChatFlagStatusProvider: { false },
+                       featureFlagProvider: MockFeatureFlagProvider(),
                        navigationDelegate: mockNavigationDelegate)
         let handshake = try await handler.handshake(params: [], message: WKScriptMessage())
         XCTAssertEqual(handshake.availableMessages, [.subscriptionDetails, .getAuthAccessToken, .getFeatureConfig, .backToSettings, .openSubscriptionActivation, .openSubscriptionPurchase, .authUpdate])
@@ -69,7 +69,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
         subscriptionManager.returnSubscription = .failure(SampleError())
         handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
-                       paidAIChatFlagStatusProvider: { false },
+                       featureFlagProvider: MockFeatureFlagProvider(),
                        navigationDelegate: mockNavigationDelegate)
         let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: WKScriptMessage())
         XCTAssertEqual(subscriptionDetails, .init(isSubscribed: false, billingPeriod: nil, startedAt: nil, expiresOrRenewsAt: nil, paymentPlatform: nil, status: nil))
@@ -92,7 +92,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
         subscriptionManager.returnSubscription = .success(subscription)
         handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
-                       paidAIChatFlagStatusProvider: { false },
+                       featureFlagProvider: MockFeatureFlagProvider(),
                        navigationDelegate: mockNavigationDelegate)
         let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: WKScriptMessage())
         XCTAssertEqual(subscriptionDetails, .init(
@@ -111,7 +111,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
         subscriptionManager.returnSubscription = .success(subscription)
         handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
-                       paidAIChatFlagStatusProvider: { false },
+                       featureFlagProvider: MockFeatureFlagProvider(),
                        navigationDelegate: mockNavigationDelegate)
         let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: WKScriptMessage())
         XCTAssertTrue(subscriptionDetails.isSubscribed)
@@ -123,7 +123,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
         subscriptionManager.returnSubscription = .success(subscription)
         handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
-                       paidAIChatFlagStatusProvider: { false },
+                       featureFlagProvider: MockFeatureFlagProvider(),
                        navigationDelegate: mockNavigationDelegate)
         let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: WKScriptMessage())
         XCTAssertTrue(subscriptionDetails.isSubscribed)
@@ -148,7 +148,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
     func testWhenPaidAIChatIsEnabledThenGetFeatureConfigReturnsTrue() async throws {
         handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
-                       paidAIChatFlagStatusProvider: { true },
+                       featureFlagProvider: MockFeatureFlagProvider(usePaidDuckAi: true, useProTier: false),
                        navigationDelegate: mockNavigationDelegate)
 
         let response = try await handler.getFeatureConfig(params: [], message: WKScriptMessage())
@@ -158,11 +158,31 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
     func testWhenPaidAIChatIsDisabledThenGetFeatureConfigReturnsFalse() async throws {
         handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
-                       paidAIChatFlagStatusProvider: { false },
+                       featureFlagProvider: MockFeatureFlagProvider(usePaidDuckAi: false, useProTier: false),
                        navigationDelegate: mockNavigationDelegate)
 
         let response = try await handler.getFeatureConfig(params: [], message: WKScriptMessage())
         XCTAssertFalse(response.usePaidDuckAi)
+    }
+
+    func testWhenProTierIsEnabledThenGetFeatureConfigReturnsTrue() async throws {
+        handler = .init(platform: .ios,
+                       subscriptionManager: subscriptionManager,
+                       featureFlagProvider: MockFeatureFlagProvider(usePaidDuckAi: false, useProTier: true),
+                       navigationDelegate: mockNavigationDelegate)
+
+        let response = try await handler.getFeatureConfig(params: [], message: WKScriptMessage())
+        XCTAssertTrue(response.useProTier)
+    }
+
+    func testWhenProTierIsDisabledThenGetFeatureConfigReturnsFalse() async throws {
+        handler = .init(platform: .ios,
+                       subscriptionManager: subscriptionManager,
+                       featureFlagProvider: MockFeatureFlagProvider(usePaidDuckAi: false, useProTier: false),
+                       navigationDelegate: mockNavigationDelegate)
+
+        let response = try await handler.getFeatureConfig(params: [], message: WKScriptMessage())
+        XCTAssertFalse(response.useProTier)
     }
 
     @MainActor
@@ -278,6 +298,11 @@ class MockNavigationDelegate: SubscriptionUserScriptNavigationDelegate {
         purchaseOrigin = origin
         purchaseFeaturePage = featurePage
     }
+}
+
+struct MockFeatureFlagProvider: SubscriptionUserScriptFeatureFlagProviding {
+    var usePaidDuckAi: Bool = false
+    var useProTier: Bool = false
 }
 
 class MockUserScriptMessagePusher: UserScriptMessagePushing {

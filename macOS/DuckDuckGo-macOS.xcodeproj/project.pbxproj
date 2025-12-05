@@ -1984,6 +1984,8 @@
 		56D145EF29E6DAD900E3488A /* DataImportProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56D145ED29E6DAD900E3488A /* DataImportProviderTests.swift */; };
 		56D5B3972DD3765D00407440 /* ScriptSourceProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56D5B3962DD3765D00407440 /* ScriptSourceProviderTests.swift */; };
 		56D5B3982DD3765D00407440 /* ScriptSourceProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56D5B3962DD3765D00407440 /* ScriptSourceProviderTests.swift */; };
+		56D60AA72EE33ED100652ABB /* SubscriptionUserScriptFeatureFlagAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56D60AA62EE33ED100652ABB /* SubscriptionUserScriptFeatureFlagAdapter.swift */; };
+		56D60AA82EE33ED100652ABB /* SubscriptionUserScriptFeatureFlagAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56D60AA62EE33ED100652ABB /* SubscriptionUserScriptFeatureFlagAdapter.swift */; };
 		56DB9FE92CD24B47001BEC23 /* ContextualOnboardingPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56DB9FE82CD24B47001BEC23 /* ContextualOnboardingPixel.swift */; };
 		56DB9FEA2CD24B47001BEC23 /* ContextualOnboardingPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56DB9FE82CD24B47001BEC23 /* ContextualOnboardingPixel.swift */; };
 		56DB9FEC2CD2515F001BEC23 /* OnboardingPixelReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56DB9FEB2CD2515F001BEC23 /* OnboardingPixelReporter.swift */; };
@@ -5078,6 +5080,7 @@
 		56D145EA29E6C99B00E3488A /* DataImportStatusProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportStatusProviding.swift; sourceTree = "<group>"; };
 		56D145ED29E6DAD900E3488A /* DataImportProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataImportProviderTests.swift; sourceTree = "<group>"; };
 		56D5B3962DD3765D00407440 /* ScriptSourceProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptSourceProviderTests.swift; sourceTree = "<group>"; };
+		56D60AA62EE33ED100652ABB /* SubscriptionUserScriptFeatureFlagAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionUserScriptFeatureFlagAdapter.swift; sourceTree = "<group>"; };
 		56DB9FE82CD24B47001BEC23 /* ContextualOnboardingPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualOnboardingPixel.swift; sourceTree = "<group>"; };
 		56DB9FEB2CD2515F001BEC23 /* OnboardingPixelReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingPixelReporter.swift; sourceTree = "<group>"; };
 		56EA40282DB7830800B5061E /* LocalizationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationTests.swift; sourceTree = "<group>"; };
@@ -11975,6 +11978,7 @@
 				C167D9022DAD561C00FA1E70 /* SubscriptionFunnelOrigin.swift */,
 				5677BB6F2E0D641F001EB83B /* SubscriptionNavigationCoordinator.swift */,
 				56BFE2092ED5D89F003B007D /* SubscriptionPageFeatureFlagAdapter.swift */,
+				56D60AA62EE33ED100652ABB /* SubscriptionUserScriptFeatureFlagAdapter.swift */,
 			);
 			path = Subscription;
 			sourceTree = "<group>";
@@ -13976,6 +13980,7 @@
 				BB4AA66E2E96F7160008CC12 /* WinBackOfferFeatureFlagger.swift in Sources */,
 				1DB67F2A2B6FEB17003DF243 /* WebViewSnapshotRenderer.swift in Sources */,
 				CC4B39C02ECB4E7000A3C9EF /* DefaultBrowserAndDockPromptNotificationPresenter.swift in Sources */,
+				56D60AA82EE33ED100652ABB /* SubscriptionUserScriptFeatureFlagAdapter.swift in Sources */,
 				CC87770A2E1FF39B00113863 /* FirefoxHistoryReader.swift in Sources */,
 				1E15F69A2DF0D1590061395E /* AIChatSidebar.swift in Sources */,
 				3706FB35293F65D500E42796 /* FlatButton.swift in Sources */,
@@ -15868,6 +15873,7 @@
 				B68C92C1274E3EF4002AC6B0 /* PopUpWindow.swift in Sources */,
 				3135647B2D9EB8E800BF4B5D /* AIChatAddressBarPromptExtractor.swift in Sources */,
 				AA5FA6A0275F948900DCE9C9 /* Favicons.xcdatamodeld in Sources */,
+				56D60AA72EE33ED100652ABB /* SubscriptionUserScriptFeatureFlagAdapter.swift in Sources */,
 				B5C2886C2EC6206100A572F2 /* CASpringAnimationExtension.swift in Sources */,
 				9F6434612BEC82B700D2D8A0 /* AttributionPixelHandler.swift in Sources */,
 				37D0469F2C7D0EDD00AEAA50 /* CustomBackground.swift in Sources */,

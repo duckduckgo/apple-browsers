@@ -1627,6 +1627,14 @@ final class AddressBarButtonsViewController: NSViewController {
         guard featureFlagger.isFeatureOn(.newPermissionView) else { return }
         guard let tabViewModel else { return }
 
+        // Don't open permission center while authorization or popup blocked dialog is presented
+        if let authPopover = permissionAuthorizationPopover, authPopover.isShown {
+            return
+        }
+        if let popupPopover = popupBlockedPopover, popupPopover.isShown {
+            return
+        }
+
         // Close existing popover if shown
         if let existingPopover = permissionCenterPopover, existingPopover.isShown {
             existingPopover.close()

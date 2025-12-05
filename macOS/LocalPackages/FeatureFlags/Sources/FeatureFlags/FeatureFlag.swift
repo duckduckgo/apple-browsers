@@ -182,9 +182,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720696560
     case unifiedURLPredictor
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866619917130
-    case authV2WideEventEnabled
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720972159
     case winBackOffer
 
@@ -288,7 +285,6 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .updateSafariBookmarksImport,
                 .supportsAlternateStripePaymentFlow,
                 .refactorOfSyncPreferences,
-                .authV2WideEventEnabled,
                 .syncCreditCards,
                 .syncIdentities,
                 .dataImportNewSafariFilePicker,
@@ -362,7 +358,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .themes,
                 .appStoreUpdateFlow,
                 .unifiedURLPredictor,
-                .authV2WideEventEnabled,
                 .webKitPerformanceReporting,
                 .fireDialog,
                 .winBackOffer,
@@ -516,8 +511,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.appStoreUpdateFlow))
         case .unifiedURLPredictor:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.unifiedURLPredictor))
-        case .authV2WideEventEnabled:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.authV2WideEventEnabled))
         case .webKitPerformanceReporting:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webKitPerformanceReporting))
         case .winBackOffer:

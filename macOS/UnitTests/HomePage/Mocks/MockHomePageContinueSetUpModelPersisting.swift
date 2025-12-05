@@ -26,5 +26,5 @@ final class MockHomePageContinueSetUpModelPersisting: HomePageContinueSetUpModel
     var shouldShowDuckPlayerSetting: Bool = true
     var shouldShowEmailProtectionSetting: Bool = true
     var isFirstSession: Bool = true
-    func clear()
+    func clear() {}
 }

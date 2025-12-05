@@ -28,15 +28,17 @@ struct FireConfirmationView: View {
     @ObservedObject var viewModel: FireConfirmationViewModel
     
     var body: some View {
-        VStack(spacing: Constants.mainSectionSpacing) {
-            headerSection
-            optionsList
-            footerButtons
+        ScrollView {
+            VStack(spacing: Constants.mainSectionSpacing) {
+                headerSection
+                optionsList
+                footerButtons
+            }
+            .padding(.horizontal, Constants.mainViewPadding.leading)
+            .padding(.vertical, Constants.mainViewPadding.top)
         }
-        .padding(.horizontal, Constants.mainViewPadding.leading)
-        .padding(.vertical, Constants.mainViewPadding.top)
-        .fixedSize(horizontal: false, vertical: true)
         .background(Color(designSystemColor: .backgroundTertiary))
+        .modifier(ScrollBounceBehaviorModifier())
     }
     
     /// Header with title and large icon
@@ -198,6 +200,16 @@ private struct ToggleRow: View {
         static let titlesVerticalPadding: CGFloat = 10.5
         static let titlesTrailingPadding: CGFloat = 16
         static let toggleTrailingPadding: CGFloat = 16
+    }
+}
+
+private struct ScrollBounceBehaviorModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 16.4, *) {
+            content.scrollBounceBehavior(.basedOnSize)
+        } else {
+            content
+        }
     }
 }
 

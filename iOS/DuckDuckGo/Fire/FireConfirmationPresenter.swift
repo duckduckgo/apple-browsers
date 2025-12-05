@@ -107,9 +107,14 @@ struct FireConfirmationPresenter {
                                        hostingController: UIHostingController<FireConfirmationView>,
                                        presentingWidth: CGFloat) {
         if #available(iOS 16.0, *) {
-            let targetHeight = calculateContentHeight(for: hostingController.rootView,
-                                                      width: presentingWidth)
-            sheet.detents = [.custom { _ in targetHeight }]
+            let contentHeight = calculateContentHeight(for: hostingController.rootView,
+                                                       width: presentingWidth)
+            sheet.detents = [.custom { context in
+                let maxHeight = context.maximumDetentValue * Constants.maxHeightRatio
+                return min(contentHeight, maxHeight)
+            }]
+            sheet.prefersEdgeAttachedInCompactHeight = true
+            sheet.widthFollowsPreferredContentSizeWhenEdgeAttached = true
         } else {
             sheet.detents = [.large()]
         }
@@ -117,9 +122,13 @@ struct FireConfirmationPresenter {
         sheet.preferredCornerRadius = Constants.sheetCornerRadius
     }
     
-    private func calculateSheetHeight(for view: FireConfirmationView, width: CGFloat) -> CGFloat {
+    private func calculateSheetHeight(for view: FireConfirmationView, width: CGFloat, maxHeight: CGFloat? = nil) -> CGFloat {
         if #available(iOS 16.0, *) {
-            return calculateContentHeight(for: view, width: width)
+            let contentHeight = calculateContentHeight(for: view, width: width)
+            if let maxHeight = maxHeight {
+                return min(contentHeight, maxHeight)
+            }
+            return contentHeight
         } else {
             return Constants.iPadSheetDefaultHeight
         }
@@ -158,5 +167,6 @@ private extension FireConfirmationPresenter {
         static let iPadSheetWidth: CGFloat = 375
         static let iPadSheetDefaultHeight: CGFloat = 520
         static let sheetCornerRadius: CGFloat = 12
+        static let maxHeightRatio: CGFloat = 0.9
     }
 }

@@ -278,7 +278,8 @@ private extension UserDefaults {
         }
 
         set {
-            guard newValue != showSearchAndDuckAIToggle else { return }
+            /// Note: Unlike other settings, we don't guard against same-value writes because
+            /// we need to persist the value even if it matches the inherited value
             set(newValue, forKey: Keys.showSearchAndDuckAIToggle)
         }
     }

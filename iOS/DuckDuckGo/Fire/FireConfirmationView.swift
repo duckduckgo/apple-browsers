@@ -64,7 +64,7 @@ struct FireConfirmationView: View {
                 subtitle: viewModel.clearTabsSubtitle(),
                 isOn: $viewModel.clearTabs
             )
-            .accessibilityIdentifier("fire.confirmation.toggle.tabs")
+            .accessibilityIdentifier("Fire.Confirmation.Toggle.Tabs.\(viewModel.clearTabs ? "on" : "off")")
             
             shiftedDivider
             
@@ -74,7 +74,7 @@ struct FireConfirmationView: View {
                 subtitle: viewModel.clearDataSubtitle(),
                 isOn: $viewModel.clearData
             )
-            .accessibilityIdentifier("fire.confirmation.toggle.data")
+            .accessibilityIdentifier("Fire.Confirmation.Toggle.Data.\(viewModel.clearData ? "on" : "off")")
             
             if viewModel.showAIChatsOption {
                 shiftedDivider
@@ -85,7 +85,7 @@ struct FireConfirmationView: View {
                     subtitle: viewModel.clearAIChatsSubtitle(),
                     isOn: $viewModel.clearAIChats
                 )
-                .accessibilityIdentifier("fire.confirmation.toggle.aichats")
+                .accessibilityIdentifier("Fire.Confirmation.Toggle.AIChats.\(viewModel.clearAIChats ? "on" : "off")")
             }
         }
         .background(Color(designSystemColor: .surface))
@@ -113,7 +113,7 @@ struct FireConfirmationView: View {
                     .background(Color(designSystemColor: .destructivePrimary))
                     .cornerRadius(Constants.footerButtonCornerRadius)
             }
-            .accessibilityIdentifier("fire.confirmation.button.delete")
+            .accessibilityIdentifier("Fire.Confirmation.Button.Delete")
             // TODO: - Create a PrimaryDestructive button style and use it here. Pending on design.
             
             // Cancel button
@@ -124,7 +124,7 @@ struct FireConfirmationView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(GhostAltButtonStyle())
-            .accessibilityIdentifier("fire.confirmation.button.cancel")
+            .accessibilityIdentifier("Fire.Confirmation.Button.Cancel")
         }
     }
 }

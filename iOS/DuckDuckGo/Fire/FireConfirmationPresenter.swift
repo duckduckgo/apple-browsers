@@ -53,7 +53,7 @@ struct FireConfirmationPresenter {
         
         hostingController.modalTransitionStyle = .coverVertical
                 
-        if DevicePlatform.isIpad, let source = source as? UIView {
+        if DevicePlatform.isIpad {
             configureIPadPopoverPresentation(for: hostingController, from: source)
         } else {
             configureSheetPresentation(for: hostingController,
@@ -78,10 +78,14 @@ struct FireConfirmationPresenter {
     }
     
     private func configureIPadPopoverPresentation(for hostingController: UIHostingController<FireConfirmationView>,
-                                                  from source: UIView) {
+                                                  from source: AnyObject) {
         hostingController.modalPresentationStyle = .popover
-        hostingController.popoverPresentationController?.sourceView = source
-        hostingController.popoverPresentationController?.sourceRect = source.bounds
+        if let source = source as? UIView {
+            hostingController.popoverPresentationController?.sourceView = source
+            hostingController.popoverPresentationController?.sourceRect = source.bounds
+        } else if let source = source as? UIBarButtonItem {
+            hostingController.popoverPresentationController?.barButtonItem = source
+        }
         let sheetHeight: CGFloat
         if #available(iOS 16.0, *) {
             sheetHeight = calculateContentHeight(for: hostingController.rootView, width: Constants.iPadSheetWidth)

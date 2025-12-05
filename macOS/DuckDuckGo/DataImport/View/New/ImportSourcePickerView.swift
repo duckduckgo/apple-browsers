@@ -100,7 +100,7 @@ struct ImportSourcePickerView: View {
             Text(UserText.importChooseSourceTitle)
                 .font(.title2.weight(.semibold))
                 .padding(.top, 20)
-            if viewModel.selectedSource.isSafari || viewModel.selectedSource == .fileImport {
+            if viewModel.selectedSource.isSafari || viewModel.selectedSource.isBrowser == false {
                 Text(UserText.importDataImportTypeTitleSelected)
                     .font(.body)
                     .foregroundColor(Color(designSystemColor: .textSecondary))

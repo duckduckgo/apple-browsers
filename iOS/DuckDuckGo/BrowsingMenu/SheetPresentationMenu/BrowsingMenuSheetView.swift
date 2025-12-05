@@ -233,6 +233,7 @@ private struct MenuRowButton: View {
         }
         .accessibilityLabel(entryData.accessibilityLabel ?? entryData.name)
     }
+
 }
 
 private struct MenuHeaderButton: View {
@@ -254,15 +255,15 @@ private struct MenuHeaderButton: View {
             .frame(maxWidth: .infinity)
             .frame(maxHeight: .infinity)
             .background(Color.rowBackgroundColor)
-            .clipShape(RoundedRectangle(cornerRadius: Constant.cornerRadius))
-            .contentShape(RoundedRectangle(cornerRadius: Constant.cornerRadius))
+            .clipShape(RoundedRectangle(cornerRadius: Constant.cornerRadius, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: Constant.cornerRadius, style: .continuous))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(entryData.accessibilityLabel ?? entryData.name)
     }
 
     private enum Constant {
-        static let cornerRadius: CGFloat = 4
+        static let cornerRadius: CGFloat = 10
     }
 }
 

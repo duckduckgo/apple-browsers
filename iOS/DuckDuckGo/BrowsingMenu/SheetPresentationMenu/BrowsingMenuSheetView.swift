@@ -55,12 +55,14 @@ struct BrowsingMenuSheetView: View {
         /// `.compact` section spacing on iOS 17+. This value is an approximation and
         /// the actual spacing may differ slightly on earlier versions.
         static let listSectionSpacing: CGFloat = 20
-        static let listTopPadding: CGFloat = 16
+        static let listTopPadding: CGFloat = 20 - listTopPaddingAdjustment
         static let grabberHeight: CGFloat = 20
 
         static let headerVerticalSpacing: CGFloat = 10
         static let iconTitleHorizontalSpacing: CGFloat = 16
         static let textDotHorizontalSpacing: CGFloat = 4
+
+        static let listTopPaddingAdjustment: CGFloat = 4
     }
 
     @Environment(\.presentationMode) var presentationMode
@@ -85,7 +87,7 @@ struct BrowsingMenuSheetView: View {
         .compactSectionSpacingIfAvailable()
         .hideScrollContentBackground()
         .listStyle(.insetGrouped)
-        .padding(.top, -4)
+        .padding(.top, -Metrics.listTopPaddingAdjustment)
         .background(.thickMaterial)
         .background(Color(designSystemColor: .background).opacity(0.5))
         .onDisappear(perform: {

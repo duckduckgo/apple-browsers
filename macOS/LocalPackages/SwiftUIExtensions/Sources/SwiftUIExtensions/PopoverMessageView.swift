@@ -27,24 +27,24 @@ public enum PopoverStyle {
 
 public final class PopoverMessageViewModel: ObservableObject {
     // MARK: - Content Properties
-    @Published var title: String?
-    @Published var message: String
-    @Published var image: NSImage?
+    @Published public var title: String?
+    @Published public var message: String
+    @Published public var image: NSImage?
 
     // MARK: - Layout & Behavior Configuration
-    var popoverStyle: PopoverStyle
-    @Published var maxWidth: CGFloat?
-    var shouldShowCloseButton: Bool
+    public var popoverStyle: PopoverStyle
+    @Published public var maxWidth: CGFloat?
+    public var shouldShowCloseButton: Bool
     var shouldPresentMultiline: Bool
 
     // MARK: - Button Configuration
     @Published var buttonText: String?
-    @Published public var buttonAction: (() -> Void)?
+    @Published public private(set) var buttonAction: (() -> Void)?
 
     // MARK: - Action Callbacks
-    var clickAction: (() -> Void)?
+    public private(set) var clickAction: (() -> Void)?
     public var dismissAction: (() -> Void)?
-    public var onClose: (() -> Void)?
+    public private(set) var onClose: (() -> Void)?
 
     public init(title: String?,
                 message: String,

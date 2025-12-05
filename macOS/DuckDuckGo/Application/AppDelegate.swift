@@ -161,7 +161,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         windowControllersManager: windowControllersManager,
         cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
         appearancePreferences: appearancePreferences,
-        featureFlagger: featureFlagger
+        featureFlagger: featureFlagger,
+        onboardingStateUpdater: onboardingContextualDialogsManager
     )
 
     private var updateProgressCancellable: AnyCancellable?

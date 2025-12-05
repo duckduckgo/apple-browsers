@@ -18,32 +18,21 @@
 
 import Foundation
 import AppKit
-import AutoconsentStats
-import PixelKit
 
 @MainActor
 protocol AutoconsentStatsPopoverPresenting: AnyObject {
     func isPopoverBeingPresented() -> Bool
-    func showPopover(onClose: @escaping () -> Void,
-                     onClick: @escaping () -> Void,
-                     onAutoDismiss: (() -> Void)?) async
+    func showPopover(viewController: PopoverMessageViewController)
     func dismissPopover()
 }
 
 @MainActor
 final class AutoconsentStatsPopoverPresenter: AutoconsentStatsPopoverPresenting {
 
-    private enum Constants {
-        static let autoDismissDuration: TimeInterval = 8.0
-    }
-
-    private let autoconsentStats: AutoconsentStatsCollecting
     private let windowControllersManager: WindowControllersManagerProtocol
     private weak var activePopover: PopoverMessageViewController?
 
-    init(autoconsentStats: AutoconsentStatsCollecting,
-         windowControllersManager: WindowControllersManagerProtocol) {
-        self.autoconsentStats = autoconsentStats
+    init(windowControllersManager: WindowControllersManagerProtocol) {
         self.windowControllersManager = windowControllersManager
     }
 
@@ -51,14 +40,11 @@ final class AutoconsentStatsPopoverPresenter: AutoconsentStatsPopoverPresenting 
         activePopover != nil
     }
 
-    func showPopover(onClose: @escaping () -> Void,
-                     onClick: @escaping () -> Void,
-                     onAutoDismiss: (() -> Void)? = nil) async {
+    func showPopover(viewController: PopoverMessageViewController) {
         guard let mainWindowController = windowControllersManager.lastKeyMainWindowController else {
             return
         }
 
-        let totalBlocked = await autoconsentStats.fetchTotalCookiePopUpsBlocked()
         let tabBarVC = mainWindowController.mainViewController.tabBarViewController
 
         let targetButton: NSView? = {
@@ -88,27 +74,11 @@ final class AutoconsentStatsPopoverPresenter: AutoconsentStatsPopoverPresenting 
             return
         }
 
-        let dialogImage: NSImage? = NSImage(named: "Cookies-Blocked-Color-24")
-
-        let viewController = PopoverMessageViewController(
-            title: UserText.autoconsentStatsPopoverTitle(count: Int(totalBlocked)),
-            message: UserText.autoconsentStatsPopoverMessage,
-            image: dialogImage,
-            popoverStyle: .featureDiscovery,
-            autoDismissDuration: Constants.autoDismissDuration,
-            shouldShowCloseButton: true,
-            clickAction: onClick,
-            onClose: onClose,
-            onAutoDismiss: onAutoDismiss
-        )
-
         activePopover = viewController
 
         viewController.show(onParent: mainWindowController.mainViewController,
                             relativeTo: button,
                             behavior: .applicationDefined)
-
-        PixelKit.fire(AutoconsentPixel.popoverShown, frequency: .daily)
     }
 
     func dismissPopover() {

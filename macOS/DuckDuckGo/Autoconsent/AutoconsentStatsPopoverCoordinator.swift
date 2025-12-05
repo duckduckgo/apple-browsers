@@ -46,6 +46,7 @@ final class AutoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinat
     private let featureFlagger: FeatureFlagger
     private let autoconsentStats: AutoconsentStatsCollecting
     private let presenter: AutoconsentStatsPopoverPresenting
+    private let onboardingStateUpdater: ContextualOnboardingStateUpdater
 
     private enum StorageKey {
         static let blockedCookiesPopoverSeen = "com.duckduckgo.autoconsent.blocked.cookies.popover.seen"
@@ -54,6 +55,7 @@ final class AutoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinat
     private enum Constants {
         static let threshold = 5
         static let minimumDaysSinceInstallation = 2
+        static let autoDismissDuration: TimeInterval = 8.0
     }
 
     init(autoconsentStats: AutoconsentStatsCollecting,
@@ -62,6 +64,7 @@ final class AutoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinat
          cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
          appearancePreferences: AppearancePreferences,
          featureFlagger: FeatureFlagger,
+         onboardingStateUpdater: ContextualOnboardingStateUpdater,
          presenter: AutoconsentStatsPopoverPresenting? = nil) {
         self.autoconsentStats = autoconsentStats
         self.keyValueStore = keyValueStore
@@ -69,8 +72,8 @@ final class AutoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinat
         self.cookiePopupProtectionPreferences = cookiePopupProtectionPreferences
         self.appearancePreferences = appearancePreferences
         self.featureFlagger = featureFlagger
+        self.onboardingStateUpdater = onboardingStateUpdater
         self.presenter = presenter ?? AutoconsentStatsPopoverPresenter(
-            autoconsentStats: autoconsentStats,
             windowControllersManager: windowControllersManager
         )
     }
@@ -115,7 +118,7 @@ final class AutoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinat
     }
 
     private func isOnboardingFinished() -> Bool {
-        OnboardingActionsManager.isOnboardingFinished && Application.appDelegate.onboardingContextualDialogsManager.state == .onboardingCompleted
+        onboardingStateUpdater.state == .onboardingCompleted
     }
 
     private func hasBeenPresented() -> Bool {
@@ -140,6 +143,8 @@ final class AutoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinat
     }
 
     private func showDialog() async {
+        let totalBlocked = await autoconsentStats.fetchTotalCookiePopUpsBlocked()
+
         let onClose: () -> Void = { [weak self] in
             PixelKit.fire(AutoconsentPixel.popoverClosed, frequency: .daily)
             self?.markBlockedCookiesPopoverAsSeen()
@@ -156,7 +161,21 @@ final class AutoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinat
             self?.markBlockedCookiesPopoverAsSeen()
         }
 
-        await presenter.showPopover(onClose: onClose, onClick: onClick, onAutoDismiss: onAutoDismiss)
+        let dialogImage = NSImage(named: "Cookies-Blocked-Color-24")
+        let viewController = PopoverMessageViewController(
+            title: UserText.autoconsentStatsPopoverTitle(count: Int(totalBlocked)),
+            message: UserText.autoconsentStatsPopoverMessage,
+            image: dialogImage,
+            popoverStyle: .featureDiscovery,
+            autoDismissDuration: Constants.autoDismissDuration,
+            shouldShowCloseButton: true,
+            clickAction: onClick,
+            onClose: onClose,
+            onAutoDismiss: onAutoDismiss
+        )
+
+        PixelKit.fire(AutoconsentPixel.popoverShown, frequency: .daily)
+        presenter.showPopover(viewController: viewController)
     }
 
     private func openNewTabWithSpecialAction() {

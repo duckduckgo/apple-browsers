@@ -529,7 +529,10 @@ final class AddressBarButtonsViewController: NSViewController {
         permissionsCancellables.removeAll(keepingCapacity: true)
 
         tabViewModel?.$usedPermissions.dropFirst().sink { [weak self] _ in
-            self?.updateAllPermissionButtons()
+            // Dispatch to next run loop to ensure UI updates after Combine propagation
+            DispatchQueue.main.async {
+                self?.updateAllPermissionButtons()
+            }
         }.store(in: &permissionsCancellables)
         tabViewModel?.tab.popupHandling?.pageInitiatedPopupPublisher.sink { [weak self] _ in
             self?.updateAllPermissionButtons()
@@ -681,8 +684,10 @@ final class AddressBarButtonsViewController: NSViewController {
             return
         }
 
-        permissionCenterButton.isShown = tabViewModel.shouldShowPermissionCenterButton(isTextFieldEditorFirstResponder: isTextFieldEditorFirstResponder,
-                                                                                       isAnyTrackerAnimationPlaying: isAnyTrackerAnimationPlaying)
+        permissionCenterButton.isShown = tabViewModel.shouldShowPermissionCenterButton(
+            isTextFieldEditorFirstResponder: isTextFieldEditorFirstResponder,
+            isAnyTrackerAnimationPlaying: isAnyTrackerAnimationPlaying
+        )
 
         showOrHidePermissionCenterPopoverIfNeeded()
     }
@@ -2343,11 +2348,13 @@ extension URL {
 
 extension TabViewModel {
 
-    func shouldShowPermissionCenterButton(isTextFieldEditorFirstResponder: Bool, isAnyTrackerAnimationPlaying: Bool) -> Bool {
+    func shouldShowPermissionCenterButton(
+        isTextFieldEditorFirstResponder: Bool,
+        isAnyTrackerAnimationPlaying: Bool
+    ) -> Bool {
         // Show permission buttons when there's a requested permission on NTP even if address bar is focused,
         // since NTP has the address bar focused by default
-        let hasRequestedPermission = usedPermissions.values.contains(where: { $0.isRequested
-        })
+        let hasRequestedPermission = usedPermissions.values.contains(where: { $0.isRequested })
         let shouldShowWhileFocused = (tab.content == .newtab) && hasRequestedPermission
         let isAnyPermissionPresent = !usedPermissions.values.isEmpty
 

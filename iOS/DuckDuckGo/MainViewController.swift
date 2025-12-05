@@ -224,7 +224,8 @@ class MainViewController: UIViewController {
                                                   experimentalAIChatManager: .init(featureFlagger: featureFlagger),
                                                   featureFlagger: featureFlagger,
                                                   featureDiscovery: featureDiscovery,
-                                                  aiChatSettings: aiChatSettings)
+                                                  aiChatSettings: aiChatSettings,
+                                                  productSurfaceTelemetry: productSurfaceTelemetry)
         manager.delegate = self
         return manager
     }()
@@ -250,7 +251,8 @@ class MainViewController: UIViewController {
     
     let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     let mobileCustomization: MobileCustomization
-    
+    let productSurfaceTelemetry: ProductSurfaceTelemetry
+
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
 
     init(
@@ -295,7 +297,8 @@ class MainViewController: UIViewController {
         winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
         mobileCustomization: MobileCustomization,
-        remoteMessagingActionHandler: RemoteMessagingActionHandling
+        remoteMessagingActionHandler: RemoteMessagingActionHandling,
+        productSurfaceTelemetry: ProductSurfaceTelemetry
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -342,6 +345,8 @@ class MainViewController: UIViewController {
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.mobileCustomization = mobileCustomization
         self.aichatFullModeFeature = aichatFullModeFeature
+        self.productSurfaceTelemetry = productSurfaceTelemetry
+
         super.init(nibName: nil, bundle: nil)
         
         tabManager.delegate = self
@@ -404,7 +409,8 @@ class MainViewController: UIViewController {
             appSettings: appSettings,
             aiChatSettings: aiChatSettings,
             featureDiscovery: featureDiscovery,
-            newTabPageDependencies: newTabPageDependencies)
+            newTabPageDependencies: newTabPageDependencies,
+            productSurfaceTelemetry: productSurfaceTelemetry)
     }()
 
     override func viewDidLoad() {
@@ -491,6 +497,9 @@ class MainViewController: UIViewController {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+
+        productSurfaceTelemetry.iPadUsed(isPad: isPad)
+
         defer {
             if let appDidFinishLaunchingStartTime {
                 let launchTime = CFAbsoluteTimeGetCurrent() - appDidFinishLaunchingStartTime
@@ -623,6 +632,7 @@ class MainViewController: UIViewController {
                                          aiChatSettings: self.aiChatSettings,
                                          featureDiscovery: self.featureDiscovery,
                                          newTabPageDependencies: self.newTabPageDependencies,
+                                         productSurfaceTelemetry: self.productSurfaceTelemetry,
                                          hideBorder: false)
         }) else {
             assertionFailure()
@@ -727,6 +737,7 @@ class MainViewController: UIViewController {
     @objc
     private func keyboardDidShow() {
         keyboardShowing = true
+        productSurfaceTelemetry.keyboardActive()
     }
 
     @objc
@@ -1149,6 +1160,7 @@ class MainViewController: UIViewController {
 
     func fireNewTabPixels() {
         Pixel.fire(.homeScreenShown, withAdditionalParameters: [:])
+        productSurfaceTelemetry.newTabPageUsed()
         let favoritesCount = favoritesViewModel.favorites.count
         let bucket = HomePageDisplayDailyPixelBucket(favoritesCount: favoritesCount)
         DailyPixel.fire(pixel: .newTabPageDisplayedDaily, withAdditionalParameters: [
@@ -1567,13 +1579,14 @@ class MainViewController: UIViewController {
     private func deferredFireOrientationPixel() {
         orientationPixelWorker?.cancel()
         orientationPixelWorker = nil
-        if UIDevice.current.orientation.isLandscape {
-            let worker = DispatchWorkItem {
-                Pixel.fire(pixel: .deviceOrientationLandscape)
-            }
-            DispatchQueue.global(qos: .default).asyncAfter(deadline: .now() + 3, execute: worker)
-            orientationPixelWorker = worker
+        guard UIDevice.current.orientation.isLandscape else { return }
+
+        let worker = DispatchWorkItem { [weak self] in
+            Pixel.fire(pixel: .deviceOrientationLandscape)
+            self?.productSurfaceTelemetry.landscapeModeUsed()
         }
+        DispatchQueue.global(qos: .default).asyncAfter(deadline: .now() + 3, execute: worker)
+        orientationPixelWorker = worker
     }
 
     private func applyWidth() {
@@ -1681,7 +1694,8 @@ class MainViewController: UIViewController {
             bookmarksDatabase: self.bookmarksDatabase,
             favoritesDisplayMode: self.appSettings.favoritesDisplayMode,
             keyValueStore: self.keyValueStore,
-            extensionPromotionManager: extensionPromotionManager
+            extensionPromotionManager: extensionPromotionManager,
+            productSurfaceTelemetry: productSurfaceTelemetry
         )
         autofillLoginListViewController.delegate = self
         let navigationController = UINavigationController(rootViewController: autofillLoginListViewController)
@@ -2528,7 +2542,7 @@ extension MainViewController: BrowserChromeDelegate {
         viewCoordinator.omniBar.cancel()
         switch suggestion {
         case .phrase(phrase: let phrase):
-            if let url = URL.makeSearchURL(query: phrase, useUnifiedLogic: isUnifiedURLPredictionEnabled) {
+            if let url = URL.makeSearchURL(query: phrase, useUnifiedLogic: isUnifiedURLPredictionEnabled, forceSearchQuery: true) {
                 loadUrl(url)
             } else {
                 Logger.lifecycle.error("Couldn't form URL for suggestion: \(phrase, privacy: .public)")
@@ -2692,9 +2706,16 @@ extension MainViewController: OmniBarDelegate {
         switch context {
         case .newTabPage:
             Pixel.fire(pixel: .browsingMenuOpenedNewTabPage)
+            if browsingMenuSheetCapability.isEnabled {
+                Pixel.fire(pixel: .experimentalBrowsingMenuDisplayedNTP)
+            }
         case .aiChatTab, .website:
             Pixel.fire(pixel: .browsingMenuOpened)
-            
+
+            if browsingMenuSheetCapability.isEnabled {
+                Pixel.fire(pixel: .experimentalBrowsingMenuDisplayed)
+            }
+
             performActionIfAITab { DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuOpened) }
         }
     }
@@ -2721,8 +2742,9 @@ extension MainViewController: OmniBarDelegate {
 
         let browsingMenu: BrowsingMenuViewController =
         BrowsingMenuViewController.instantiate(headerEntries: headerEntries,
-                                                                menuEntries: menuEntries,
-                                                                daxDialogsManager: daxDialogsManager)
+                                               menuEntries: menuEntries,
+                                               daxDialogsManager: daxDialogsManager,
+                                               productSurfaceTelemetry: productSurfaceTelemetry)
         browsingMenu.onDismiss = {
             self.viewCoordinator.menuToolbarButton.isEnabled = true
         }
@@ -2764,14 +2786,40 @@ extension MainViewController: OmniBarDelegate {
                                             })
         )
 
-        controller.modalPresentationStyle = .pageSheet
-        if let sheet = controller.sheetPresentationController {
-            sheet.detents = [.medium(), .large()]
+        func configureSheetPresentationController(_ sheet: UISheetPresentationController) {
+            if context == .newTabPage {
+                if #available(iOS 16.0, *) {
+                    let height = model.estimatedContentHeight
+                    sheet.detents = [.custom { _ in height }]
+                } else {
+                    sheet.detents = [.medium()]
+                }
+            } else {
+                sheet.detents = [.medium(), .large()]
+            }
             sheet.prefersGrabberVisible = true
             sheet.widthFollowsPreferredContentSizeWhenEdgeAttached = true
+            sheet.preferredCornerRadius = 24
+        }
+
+        let isiPad = UIDevice.current.userInterfaceIdiom == .pad
+        controller.modalPresentationStyle = isiPad ? .popover : .pageSheet
+
+        if let popoverController = controller.popoverPresentationController  {
+            popoverController.sourceView = omniBar.barView.menuButton
+            controller.additionalSafeAreaInsets = UIEdgeInsets(top: 0, left: 0, bottom: 16, right: 0)
+            controller.preferredContentSize = CGSize(width: 320, height: model.estimatedContentHeight)
+
+            configureSheetPresentationController(popoverController.adaptiveSheetPresentationController)
+        }
+
+        if let sheet = controller.sheetPresentationController {
+           configureSheetPresentationController(sheet)
         }
 
         self.present(controller, animated: true)
+
+        DailyPixel.fireDailyAndCount(pixel: .experimentalBrowsingMenuUsed)
     }
 
     @objc func onBookmarksPressed() {
@@ -3683,6 +3731,7 @@ extension MainViewController: AutoClearWorker {
     func forgetAllWithAnimation(transitionCompletion: (() -> Void)? = nil, showNextDaxDialog: Bool = false) {
         let spid = Instruments.shared.startTimedEvent(.clearingData)
         Pixel.fire(pixel: .forgetAllExecuted)
+        productSurfaceTelemetry.dataClearingUsed()
 
         tabManager.prepareAllTabsExceptCurrentForDataClearing()
         

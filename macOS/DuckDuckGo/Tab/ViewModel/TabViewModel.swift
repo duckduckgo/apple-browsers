@@ -62,6 +62,9 @@ final class TabViewModel: NSObject {
 
     var lastAddressBarTextFieldValue: AddressBarTextField.Value?
 
+    /// Shared text state for the address bar and AI Chat omnibar for this tab
+    let addressBarSharedTextState = AddressBarSharedTextState()
+
     @Published private(set) var title: String = UserText.tabHomeTitle
     @Published private(set) var favicon: NSImage?
     var findInPage: FindInPageModel? { tab.findInPage?.model }

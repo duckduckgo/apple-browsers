@@ -153,7 +153,7 @@ final class DefaultFreemiumDBPFeature: FreemiumDBPFeature {
 
         // Subscribe to available product updates for App Store Environment
         if subscriptionManager.currentEnvironment.purchasePlatform == .appStore {
-            subscriptionManager.canPurchasePublisher
+            subscriptionManager.hasAppStoreProductsAvailablePublisher
                 .sink { [weak self] canPurchase in
                     guard let self = self else { return }
 
@@ -217,7 +217,7 @@ private extension DefaultFreemiumDBPFeature {
         return isUSStoreFront
     }
 
-    /// Checks if the user can make purchases. Always true for Stripe, based on `canPurchase` for App Store.
+    /// Checks if the user can make purchases. Always true for Stripe, based on App Store product availability for App Store.
     var canPurchaseSubscription: Bool {
         subscriptionManager.isPotentialPurchaser
     }
@@ -277,17 +277,5 @@ private extension SubscriptionAuthV1toV2Bridge {
     }
 
     /// `true` if the user is a potential purchaser.
-    ///
-    /// The logic varies by platform:
-    /// - **App Store**: Returns the actual `canPurchase` capability.
-    /// - **Stripe**: Always returns `true`.
-    var isPotentialPurchaser: Bool {
-        let platform = currentEnvironment.purchasePlatform
-        switch platform {
-        case .appStore:
-            return canPurchase
-        case .stripe:
-            return true
-        }
-    }
+    var isPotentialPurchaser: Bool { isSubscriptionPurchaseEligible }
 }

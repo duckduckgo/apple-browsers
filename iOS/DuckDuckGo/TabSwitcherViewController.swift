@@ -129,6 +129,8 @@ class TabSwitcherViewController: UIViewController {
     
     private(set) var aichatFullModeFeature: AIChatFullModeFeatureProviding
 
+    private let productSurfaceTelemetry: ProductSurfaceTelemetry
+
     required init?(coder: NSCoder,
                    bookmarksDatabase: CoreDataDatabase,
                    syncService: DDGSyncing,
@@ -137,7 +139,8 @@ class TabSwitcherViewController: UIViewController {
                    tabManager: TabManager,
                    aiChatSettings: AIChatSettingsProvider,
                    appSettings: AppSettings,
-                   aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature()) {
+                   aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
+                   productSurfaceTelemetry: ProductSurfaceTelemetry) {
         self.bookmarksDatabase = bookmarksDatabase
         self.syncService = syncService
         self.featureFlagger = featureFlagger
@@ -146,6 +149,7 @@ class TabSwitcherViewController: UIViewController {
         self.aiChatSettings = aiChatSettings
         self.appSettings = appSettings
         self.aichatFullModeFeature = aichatFullModeFeature
+        self.productSurfaceTelemetry = productSurfaceTelemetry
         super.init(coder: coder)
     }
 
@@ -246,6 +250,11 @@ class TabSwitcherViewController: UIViewController {
         collectionView.allowsMultipleSelection = true
         collectionView.allowsMultipleSelectionDuringEditing = true
 
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        productSurfaceTelemetry.tabManagerUsed()
     }
 
     private func setupBackgroundView() {

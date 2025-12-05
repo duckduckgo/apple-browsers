@@ -669,13 +669,18 @@ class OmniBarViewController: UIViewController, OmniBar {
         let state = dependencies.mobileCustomization.state
         guard state.isEnabled else {
             barView.customizableButton.setImage(DesignSystemImages.Glyphs.Size24.shareApple, for: .normal)
-            barView.isCustomizableButtonHidden = false
+            barView.isCustomizableButtonHidden = !self.state.showCustomizableButton
             return
         }
 
         let largeIcon = dependencies.mobileCustomization.largeIconForButton(state.currentAddressBarButton)
         barView.customizableButton.setImage(largeIcon, for: .normal)
-        barView.isCustomizableButtonHidden = largeIcon == nil
+
+        if self.state.showCustomizableButton {
+            barView.isCustomizableButtonHidden = largeIcon == nil
+        } else {
+            barView.isCustomizableButtonHidden = true
+        }
     }
 
     func onQuerySubmitted() {

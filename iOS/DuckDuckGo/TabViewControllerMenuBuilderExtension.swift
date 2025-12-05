@@ -50,7 +50,13 @@ extension TabViewController {
         let copyEntry = buildCopyEntry()
 
         if shouldShowAIChatInMenu {
-            let chatEntry = buildChatEntry(withSmallIcon: false)
+            
+            var chatEntry: BrowsingMenuEntry
+            if aiChatFullModeFeature.isAvailable {
+                chatEntry = buildNewAIChatEntry()
+            } else {
+                chatEntry = buildChatEntry(withSmallIcon: false)
+            }
 
             entries.append(newTabEntry)
             entries.append(chatEntry)
@@ -79,7 +85,7 @@ extension TabViewController {
                                 browsingMenuSheetCapability: BrowsingMenuSheetCapable,
                                 clearTabsAndData: @escaping () -> Void) -> BrowsingMenuModel? {
         
-        let builder = makeVariantBuilder(for: browsingMenuSheetCapability.variant)
+        let builder = BrowsingMenuBuilder(entryBuilder: self)
         
         return builder.buildMenu(
             context: context,
@@ -87,19 +93,6 @@ extension TabViewController {
             mobileCustomization: mobileCustomization,
             clearTabsAndData: clearTabsAndData
         )
-    }
-    
-    private func makeVariantBuilder(for variant: BrowsingMenuClusteringVariant) -> BrowsingMenuVariantBuilder {
-        switch variant {
-        case .a:
-            return BrowsingMenuVariantABuilder(entryBuilder: self)
-        case .b:
-            return BrowsingMenuVariantBBuilder(entryBuilder: self)
-        case .c:
-            return BrowsingMenuVariantCBuilder(entryBuilder: self)
-        case .d:
-            return BrowsingMenuVariantDBuilder(entryBuilder: self)
-        }
     }
 
     func buildBrowsingMenu(with bookmarksInterface: MenuBookmarksInteracting,
@@ -150,28 +143,28 @@ extension TabViewController {
         return entries
     }
     
-    func buildAITabMenu() -> [BrowsingMenuEntry] {
+    func buildAITabMenu(useSmallIcon: Bool = true) -> [BrowsingMenuEntry] {
         var entries = [BrowsingMenuEntry]()
         
-        entries.append(contentsOf: buildAITabLinkEntries())
+        entries.append(contentsOf: buildAITabLinkEntries(useSmallIcon: useSmallIcon))
         
         entries.append(.separator)
         
-        entries.append(buildOpenBookmarksEntry())
+        entries.append(buildOpenBookmarksEntry(useSmallIcon: useSmallIcon))
         
         if featureFlagger.isFeatureOn(.autofillAccessCredentialManagement) {
-            entries.append(buildAutoFillEntry())
+            entries.append(buildAutoFillEntry(useSmallIcon: useSmallIcon))
         }
         
-        entries.append(buildDownloadsEntry())
+        entries.append(buildDownloadsEntry(useSmallIcon: useSmallIcon))
         
-        entries.append(buildAIChatSidebarEntry())
+        entries.append(buildAIChatSidebarEntry(useSmallIcon: useSmallIcon))
         
         entries.append(.separator)
         
-        entries.append(buildAIChatSettingsEntry())
+        entries.append(buildAIChatSettingsEntry(useSmallIcon: useSmallIcon))
         
-        entries.append(buildSettingsEntry())
+        entries.append(buildSettingsEntry(useSmallIcon: useSmallIcon))
 
         return entries
     }
@@ -195,19 +188,19 @@ extension TabViewController {
         })
     }
     
-    private func buildDownloadsEntry() -> BrowsingMenuEntry {
+    private func buildDownloadsEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         .regular(name: UserText.actionDownloads,
-                                                 image: DesignSystemImages.Glyphs.Size16.downloads,
-                                                 showNotificationDot: AppDependencyProvider.shared.downloadManager.unseenDownloadsAvailable,
-                                                 action: { [weak self] in
+                 image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.downloads : DesignSystemImages.Glyphs.Size24.downloads,
+                 showNotificationDot: AppDependencyProvider.shared.downloadManager.unseenDownloadsAvailable,
+                 action: { [weak self] in
             self?.onOpenDownloadsAction()
         })
     }
     
-    private func buildAutoFillEntry() -> BrowsingMenuEntry {
+    private func buildAutoFillEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         .regular(name: UserText.actionAutofillLogins,
-                                                 image: DesignSystemImages.Glyphs.Size16.keyLogin,
-                                                 action: { [weak self] in
+                 image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.keyLogin : DesignSystemImages.Glyphs.Size24.key,
+                 action: { [weak self] in
             self?.onOpenAutofillLoginsAction()
         })
     }
@@ -239,7 +232,12 @@ extension TabViewController {
             }))
 
             if shouldShowAIChatInMenu {
-                let chatEntry = buildChatEntry(withSmallIcon: true)
+                var chatEntry: BrowsingMenuEntry
+                if aiChatFullModeFeature.isAvailable {
+                    chatEntry = buildNewAIChatEntry(withSmallIcon: true)
+                } else {
+                    chatEntry = buildChatEntry(withSmallIcon: true)
+                }
                 entries.append(chatEntry)
             }
 
@@ -254,7 +252,7 @@ extension TabViewController {
 
         entries.append(buildDownloadsEntry())
 
-        if state == .newTab, featureFlagger.isFeatureOn(.vpnMenuItem), AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.canPurchase {
+        if state == .newTab, featureFlagger.isFeatureOn(.vpnMenuItem), AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.hasAppStoreProductsAvailable {
             entries.append(buildVPNEntry())
         }
 
@@ -287,7 +285,7 @@ extension TabViewController {
             entries.append(buildReloadEntry())
         }
 
-        if let entry = textZoomCoordinator.makeBrowsingMenuEntry(forLink: link, inController: self, forWebView: self.webView) {
+        if let entry = textZoomCoordinator.makeBrowsingMenuEntry(forLink: link, inController: self, forWebView: self.webView, useSmallIcon: true) {
             entries.append(entry)
         }
 
@@ -298,36 +296,36 @@ extension TabViewController {
         return entries
     }
     
-    private func buildAITabLinkEntries() -> [BrowsingMenuEntry] {
+    private func buildAITabLinkEntries(useSmallIcon: Bool = true) -> [BrowsingMenuEntry] {
         guard let link = link, !isError else { return [] }
 
         var entries = [BrowsingMenuEntry]()
 
-        if let entry = textZoomCoordinator.makeBrowsingMenuEntry(forLink: link, inController: self, forWebView: self.webView) {
+        if let entry = textZoomCoordinator.makeBrowsingMenuEntry(forLink: link, inController: self, forWebView: self.webView, useSmallIcon: useSmallIcon) {
             entries.append(entry)
         }
 
-        entries.append(self.buildFindInPageEntry(forLink: link))
+        entries.append(self.buildFindInPageEntry(forLink: link, useSmallIcon: useSmallIcon))
         
-        entries.append(buildPrintEntry(withSmallIcon: true))
+        entries.append(buildPrintEntry(withSmallIcon: useSmallIcon))
                 
         return entries
     }
 
-    private func buildKeepSignInEntry(forLink link: Link) -> BrowsingMenuEntry? {
+    private func buildKeepSignInEntry(forLink link: Link, useSmallIcon: Bool = true) -> BrowsingMenuEntry? {
         guard let domain = link.url.host, !link.url.isDuckDuckGo else { return nil }
         let isFireproofed = fireproofing.isAllowed(cookieDomain: domain)
         
         if isFireproofed {
             return BrowsingMenuEntry.regular(name: UserText.disablePreservingLogins,
-                                             image: DesignSystemImages.Glyphs.Size16.fireSolid,
+                                             image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.fireSolid : DesignSystemImages.Glyphs.Size24.fireSolid,
                                              action: { [weak self] in
                                                 self?.disableFireproofingForDomain(domain)
                                              })
         }
 
         return BrowsingMenuEntry.regular(name: UserText.enablePreservingLogins,
-                                         image: DesignSystemImages.Glyphs.Size16.fireproofSolid,
+                                         image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.fireproofSolid : DesignSystemImages.Glyphs.Size24.fireproofSolid,
                                          action: { [weak self] in
                                             self?.enableFireproofingForDomain(domain)
                                          })
@@ -366,28 +364,34 @@ extension TabViewController {
         delegate?.tabDidRequestNewTab(self)
     }
 
-    private func buildFindInPageEntry(forLink link: Link) -> BrowsingMenuEntry {
-        return BrowsingMenuEntry.regular(name: UserText.findInPage, image: DesignSystemImages.Glyphs.Size16.findInPage, action: { [weak self] in
+    private func buildFindInPageEntry(forLink link: Link, useSmallIcon: Bool = true) -> BrowsingMenuEntry {
+        let image = useSmallIcon ? DesignSystemImages.Glyphs.Size16.findInPage : DesignSystemImages.Glyphs.Size24.findInPage
+        return BrowsingMenuEntry.regular(name: UserText.findInPage, image: image, action: { [weak self] in
             Pixel.fire(pixel: .browsingMenuFindInPage)
             self?.requestFindInPage()
         })
     }
     
-    private func buildDesktopSiteEntry(forLink link: Link) -> BrowsingMenuEntry {
+    private func buildDesktopSiteEntry(forLink link: Link, useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         let title = self.tabModel.isDesktop ? UserText.actionRequestMobileSite : UserText.actionRequestDesktopSite
-        let image = self.tabModel.isDesktop ? DesignSystemImages.Glyphs.Size16.deviceMobile : DesignSystemImages.Glyphs.Size16.deviceDesktop
+        let image: UIImage
+        if useSmallIcon {
+            image = self.tabModel.isDesktop ? DesignSystemImages.Glyphs.Size16.deviceMobile : DesignSystemImages.Glyphs.Size16.deviceDesktop
+        } else {
+            image = self.tabModel.isDesktop ? DesignSystemImages.Glyphs.Size24.deviceMobile : DesignSystemImages.Glyphs.Size24.deviceDesktop
+        }
         return BrowsingMenuEntry.regular(name: title, image: image, action: { [weak self] in
             self?.onToggleDesktopSiteAction(forUrl: link.url)
         })
     }
     
-    private func buildZoomEntry(forLink link: Link) -> BrowsingMenuEntry? {
-        return textZoomCoordinator.makeBrowsingMenuEntry(forLink: link, inController: self, forWebView: self.webView)
+    private func buildZoomEntry(forLink link: Link, useSmallIcon: Bool = true) -> BrowsingMenuEntry? {
+        return textZoomCoordinator.makeBrowsingMenuEntry(forLink: link, inController: self, forWebView: self.webView, useSmallIcon: useSmallIcon)
     }
     
-    private func buildReloadEntry() -> BrowsingMenuEntry {
+    private func buildReloadEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         return BrowsingMenuEntry.regular(name: UserText.actionRefreshPage,
-                                         image: DesignSystemImages.Glyphs.Size16.reload,
+                                         image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.reload : DesignSystemImages.Glyphs.Size24.reload,
                                          action: { [weak self] in
             guard let self = self else { return }
             Pixel.fire(pixel: .browsingMenuRefreshPage)
@@ -395,87 +399,91 @@ extension TabViewController {
         })
     }
     
-    private func buildReportBrokenSiteEntry() -> BrowsingMenuEntry {
+    private func buildReportBrokenSiteEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         return BrowsingMenuEntry.regular(name: UserText.actionReportBrokenSite,
-                                         image: DesignSystemImages.Glyphs.Size16.feedbackBlank,
+                                         image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.feedbackBlank : DesignSystemImages.Glyphs.Size24.feedback,
                                          action: { [weak self] in
             self?.onReportBrokenSiteAction()
         })
     }
     
-    private func buildClearDataEntry(clearTabsAndData: @escaping () -> Void) -> BrowsingMenuEntry {
+    private func buildClearDataEntry(clearTabsAndData: @escaping () -> Void, useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         return BrowsingMenuEntry.regular(name: UserText.actionForgetAll,
                                          accessibilityLabel: UserText.actionForgetAll,
-                                         image: DesignSystemImages.Glyphs.Size16.fireSolid,
+                                         image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.fireSolid : DesignSystemImages.Glyphs.Size24.fireSolid,
                                          action: clearTabsAndData)
     }
     
     private func buildBookmarkEntries(for link: Link,
-                                      with bookmarksInterface: MenuBookmarksInteracting) -> (bookmark: BrowsingMenuEntry,
-                                                                                             favorite: BrowsingMenuEntry) {
+                                      with bookmarksInterface: MenuBookmarksInteracting,
+                                      useSmallIcon: Bool = true) -> (bookmark: BrowsingMenuEntry,
+                                                                     favorite: BrowsingMenuEntry) {
         let existingFavorite = bookmarksInterface.favorite(for: link.url)
         let existingBookmark = existingFavorite ?? bookmarksInterface.bookmark(for: link.url)
         
         return (bookmark: buildBookmarkEntry(for: link,
                                              bookmark: existingBookmark,
-                                             with: bookmarksInterface),
+                                             with: bookmarksInterface,
+                                             useSmallIcon: useSmallIcon),
                 favorite: buildFavoriteEntry(for: link,
                                              bookmark: existingFavorite,
-                                             with: bookmarksInterface))
+                                             with: bookmarksInterface,
+                                             useSmallIcon: useSmallIcon))
     }
 
     private func buildBookmarkEntry(for link: Link,
                                     bookmark: BookmarkEntity?,
-                                    with bookmarksInterface: MenuBookmarksInteracting) -> BrowsingMenuEntry {
+                                    with bookmarksInterface: MenuBookmarksInteracting,
+                                    useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         
         if bookmark != nil {
             return BrowsingMenuEntry.regular(name: UserText.actionEditBookmark,
-                                             image: DesignSystemImages.Glyphs.Size16.bookmarkSolid,
+                                             image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.bookmarkSolid : DesignSystemImages.Glyphs.Size24.bookmarkSolid,
                                              action: { [weak self] in
                                                 self?.performEditBookmarkAction(for: link)
                                              })
         }
 
         return BrowsingMenuEntry.regular(name: UserText.actionSaveBookmark,
-                                         image: DesignSystemImages.Glyphs.Size16.bookmark,
+                                         image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.bookmark : DesignSystemImages.Glyphs.Size24.bookmark,
                                          action: { [weak self] in
                                            self?.performSaveBookmarkAction(for: link,
                                                                            with: bookmarksInterface)
                                          })
     }
 
-    private func buildOpenBookmarksEntry() -> BrowsingMenuEntry {
+    private func buildOpenBookmarksEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         BrowsingMenuEntry.regular(name: UserText.actionOpenBookmarks,
-                                  image: DesignSystemImages.Glyphs.Size16.bookmarks,
-                                                 action: { [weak self] in
+                                  image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.bookmarks : DesignSystemImages.Glyphs.Size24.bookmarks,
+                                  action: { [weak self] in
             self?.onOpenBookmarksAction()
         })
     }
     
-    private func buildNewAIChatEntry() -> BrowsingMenuEntry {
+    private func buildNewAIChatEntry(withSmallIcon smallIcon: Bool = false) -> BrowsingMenuEntry {
         .regular(name: UserText.actionNewAIChat,
                  accessibilityLabel: UserText.actionNewAIChat,
-                 image: DesignSystemImages.Glyphs.Size24.aiChatAdd,
+                 image: smallIcon ? DesignSystemImages.Glyphs.Size16.aiChatAdd : DesignSystemImages.Glyphs.Size24.aiChatAdd,
                  action: { [weak self] in
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuNewChatTabTapped)
             self?.openNewChatInNewTab()
         })
     }
     
-    private func buildAIChatSidebarEntry() -> BrowsingMenuEntry {
+    private func buildAIChatSidebarEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         .regular(name: UserText.actionAIChatHistory,
                  accessibilityLabel: UserText.actionAIChatHistory,
-                 image: DesignSystemImages.Glyphs.Size16.aiChatHistory,
+                 image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.aiChatHistory : DesignSystemImages.Glyphs.Size24.aiChatHistory,
                  action: { [weak self] in
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuSidebarTapped)
             self?.submitToggleSidebarAction()
         })
     }
     
-    private func buildAIChatSettingsEntry() -> BrowsingMenuEntry {
+    private func buildAIChatSettingsEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         .regular(name: UserText.actionAIChatSettings,
                  accessibilityLabel: UserText.actionAIChatSettings,
-                 image: DesignSystemImages.Glyphs.Size16.aiChatSettings,
+                 image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.aiChatSettings : DesignSystemImages.Glyphs.Size24.settings,
                  action: { [weak self] in
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuAIChatSettingsTapped)
             self?.submitOpenSettingsAction()
@@ -497,7 +505,8 @@ extension TabViewController {
 
     private func buildFavoriteEntry(for link: Link,
                                     bookmark: BookmarkEntity?,
-                                    with bookmarksInterface: MenuBookmarksInteracting) -> BrowsingMenuEntry {
+                                    with bookmarksInterface: MenuBookmarksInteracting,
+                                    useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         if bookmark?.isFavorite(on: .mobile) ?? false {
             let action: () -> Void = { [weak self] in
                 Pixel.fire(pixel: .browsingMenuRemoveFromFavorites)
@@ -505,7 +514,7 @@ extension TabViewController {
             }
 
             let entry = BrowsingMenuEntry.regular(name: UserText.actionRemoveFavorite,
-                                                  image: DesignSystemImages.Glyphs.Size16.favoriteSolid,
+                                                  image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.favoriteSolid : DesignSystemImages.Glyphs.Size24.favoriteSolid,
                                                   action: action)
             return entry
 
@@ -515,7 +524,7 @@ extension TabViewController {
         let addToFavoriteFlow = daxDialogsManager.isAddFavoriteFlow
 
         let entry = BrowsingMenuEntry.regular(name: UserText.actionSaveFavorite,
-                                              image: DesignSystemImages.Glyphs.Size16.favorite,
+                                              image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.favorite : DesignSystemImages.Glyphs.Size24.favorite,
                                               action: { [weak self] in
             Pixel.fire(pixel: addToFavoriteFlow ? .browsingMenuAddToFavoritesAddFavoriteFlow : .browsingMenuAddToFavorites)
             DailyPixel.fire(pixel: .addFavoriteDaily)
@@ -553,10 +562,10 @@ extension TabViewController {
         })
     }
     
-    private func buildUseNewDuckAddressEntry(forLink link: Link) -> BrowsingMenuEntry? {
+    private func buildUseNewDuckAddressEntry(forLink link: Link, useSmallIcon: Bool = true) -> BrowsingMenuEntry? {
         guard emailManager?.isSignedIn == true else { return nil }
         let title = UserText.emailBrowsingMenuUseNewDuckAddress
-        let image = DesignSystemImages.Glyphs.Size16.email
+        let image = useSmallIcon ? DesignSystemImages.Glyphs.Size16.email : DesignSystemImages.Glyphs.Size24.email
 
         return BrowsingMenuEntry.regular(name: title, image: image) { [weak self] in
             (self?.parent as? MainViewController)?.newEmailAddress()
@@ -674,11 +683,16 @@ extension TabViewController {
         delegate?.tabDidRequestAIChat(tab: self)
     }
 
-    private func buildToggleProtectionEntry(forDomain domain: String) -> BrowsingMenuEntry {
+    private func buildToggleProtectionEntry(forDomain domain: String, useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         let config = ContentBlocking.shared.privacyConfigurationManager.privacyConfig
         let isProtected = !config.isUserUnprotected(domain: domain)
         let title = isProtected ? UserText.actionDisableProtection : UserText.actionEnableProtection
-        let image = isProtected ? DesignSystemImages.Glyphs.Size16.shieldBlocked : DesignSystemImages.Glyphs.Size16.shield
+        let image: UIImage
+        if useSmallIcon {
+            image = isProtected ? DesignSystemImages.Glyphs.Size16.shieldBlocked : DesignSystemImages.Glyphs.Size16.shield
+        } else {
+            image = isProtected ? DesignSystemImages.Glyphs.Size24.shieldBlocked : DesignSystemImages.Glyphs.Size24.shield
+        }
 
         return BrowsingMenuEntry.regular(name: title, image: image, action: { [weak self] in
             self?.onToggleProtectionAction(forDomain: domain, isProtected: isProtected)
@@ -732,9 +746,9 @@ extension TabViewController {
         })
     }
 
-    private func buildVPNEntry() -> BrowsingMenuEntry {
+    private func buildVPNEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         let vpnPromoHelper = VPNSubscriptionPromotionHelper()
-        var image: UIImage = DesignSystemImages.Glyphs.Size16.vpnOff
+        var image: UIImage = useSmallIcon ? DesignSystemImages.Glyphs.Size16.vpnOff : DesignSystemImages.Glyphs.Size24.vpnUnlocked
         var showNotificationDot: Bool = true
         var customDotColor: UIColor?
         var accessibilityLabel: String?
@@ -746,7 +760,7 @@ extension TabViewController {
             showNotificationDot = false
         case .subscribed:
             if case .connected = AppDependencyProvider.shared.connectionObserver.recentValue {
-                image = DesignSystemImages.Glyphs.Size16.vpnOn
+                image = useSmallIcon ? DesignSystemImages.Glyphs.Size16.vpnOn : DesignSystemImages.Glyphs.Size24.vpn
                 accessibilityLabel = "\(UserText.actionVPN), \(UserText.settingsOn)"
                 customDotColor = UIColor(designSystemColor: .alertGreen)
             } else {
@@ -786,12 +800,18 @@ extension TabViewController {
 
 extension TabViewController: BrowsingMenuEntryBuilding {
     
+    /// Returns the current link if valid and not in error state
+    private var validLink: Link? {
+        guard let link = link, !isError else { return nil }
+        return link
+    }
+    
     func makeShortcutsMenu() -> [BrowsingMenuEntry] {
         buildShortcutsMenu()
     }
     
     func makeAITabMenu() -> [BrowsingMenuEntry] {
-        buildAITabMenu()
+        buildAITabMenu(useSmallIcon: false)
     }
     
     func makeAITabMenuHeaderContent() -> [BrowsingMenuEntry] {
@@ -810,100 +830,103 @@ extension TabViewController: BrowsingMenuEntryBuilding {
         buildBrowsingMenuHeaderContent()
     }
     
-    // MARK: - Non-optional Entry Makers (wrappers for private methods)
     
     func makeNewTabEntry() -> BrowsingMenuEntry {
         buildNewTabEntry()
     }
 
-    func makeChatEntry(withSmallIcon: Bool) -> BrowsingMenuEntry? {
+    func makeChatEntry() -> BrowsingMenuEntry? {
         let settings = AIChatSettings(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
         guard settings.isAIChatBrowsingMenuUserSettingsEnabled else { return nil }
-        return buildChatEntry(withSmallIcon: withSmallIcon)
+        
+        if aiChatFullModeFeature.isAvailable {
+            return buildNewAIChatEntry(withSmallIcon: false)
+        } else {
+            return buildChatEntry(withSmallIcon: false)
+        }
     }
     
-    func makeSettingsEntry(useSmallIcon: Bool) -> BrowsingMenuEntry {
-        buildSettingsEntry(useSmallIcon: useSmallIcon)
+    func makeSettingsEntry() -> BrowsingMenuEntry {
+        buildSettingsEntry(useSmallIcon: false)
     }
     
-    func makeShareEntry(useSmallIcon: Bool) -> BrowsingMenuEntry {
-        buildShareEntry(useSmallIcon: useSmallIcon)
+    func makeShareEntry() -> BrowsingMenuEntry {
+        buildShareEntry(useSmallIcon: false)
     }
     
-    func makePrintEntry(withSmallIcon: Bool) -> BrowsingMenuEntry {
-        buildPrintEntry(withSmallIcon: withSmallIcon)
+    func makePrintEntry() -> BrowsingMenuEntry {
+        buildPrintEntry(withSmallIcon: false)
     }
     
     func makeDownloadsEntry() -> BrowsingMenuEntry {
-        buildDownloadsEntry()
+        buildDownloadsEntry(useSmallIcon: false)
     }
     
     func makeOpenBookmarksEntry() -> BrowsingMenuEntry {
-        buildOpenBookmarksEntry()
+        buildOpenBookmarksEntry(useSmallIcon: false)
     }
 
     func makeClearDataEntry(mobileCustomization: MobileCustomization, clearTabsAndData: @escaping () -> Void) -> BrowsingMenuEntry? {
         guard mobileCustomization.isEnabled && !mobileCustomization.hasFireButton else { return nil }
-        return buildClearDataEntry(clearTabsAndData: clearTabsAndData)
+        return buildClearDataEntry(clearTabsAndData: clearTabsAndData, useSmallIcon: false)
     }
     
-    // MARK: - Optional Entry Makers (with availability checks)
     
     func makeAutoFillEntry() -> BrowsingMenuEntry? {
         guard featureFlagger.isFeatureOn(.autofillAccessCredentialManagement) else { return nil }
-        return buildAutoFillEntry()
+        return buildAutoFillEntry(useSmallIcon: false)
     }
     
     func makeVPNEntry() -> BrowsingMenuEntry? {
         guard featureFlagger.isFeatureOn(.vpnMenuItem),
-              AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.canPurchase else {
+              AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.hasAppStoreProductsAvailable else {
             return nil
         }
-        return buildVPNEntry()
+        return buildVPNEntry(useSmallIcon: false)
     }
     
     func makeBookmarkEntries(with bookmarksInterface: MenuBookmarksInteracting) -> (bookmark: BrowsingMenuEntry, favorite: BrowsingMenuEntry)? {
-        guard let link = link, !isError else { return nil }
-        return buildBookmarkEntries(for: link, with: bookmarksInterface)
+        guard let link = validLink else { return nil }
+        return buildBookmarkEntries(for: link, with: bookmarksInterface, useSmallIcon: false)
     }
     
     func makeFindInPageEntry() -> BrowsingMenuEntry? {
-        guard let link = link, !isError else { return nil }
-        return buildFindInPageEntry(forLink: link)
+        guard let link = validLink else { return nil }
+        return buildFindInPageEntry(forLink: link, useSmallIcon: false)
     }
     
     func makeDesktopSiteEntry() -> BrowsingMenuEntry? {
-        guard let link = link, !isError else { return nil }
-        return buildDesktopSiteEntry(forLink: link)
+        guard let link = validLink else { return nil }
+        return buildDesktopSiteEntry(forLink: link, useSmallIcon: false)
     }
     
     func makeZoomEntry() -> BrowsingMenuEntry? {
-        guard let link = link, !isError else { return nil }
-        return buildZoomEntry(forLink: link)
+        guard let link = validLink else { return nil }
+        return buildZoomEntry(forLink: link, useSmallIcon: false)
     }
     
     func makeReloadEntry() -> BrowsingMenuEntry? {
         guard appSettings.currentRefreshButtonPosition.isEnabledForBrowsingMenu else { return nil }
-        return buildReloadEntry()
+        return buildReloadEntry(useSmallIcon: false)
     }
     
     func makeToggleProtectionEntry() -> BrowsingMenuEntry? {
         guard let domain = privacyInfo?.domain else { return nil }
-        return buildToggleProtectionEntry(forDomain: domain)
+        return buildToggleProtectionEntry(forDomain: domain, useSmallIcon: false)
     }
     
     func makeReportBrokenSiteEntry() -> BrowsingMenuEntry? {
-        guard link != nil, !isError else { return nil }
-        return buildReportBrokenSiteEntry()
+        guard validLink != nil else { return nil }
+        return buildReportBrokenSiteEntry(useSmallIcon: false)
     }
     
     func makeUseNewDuckAddressEntry() -> BrowsingMenuEntry? {
-        guard let link = link, !isError else { return nil }
-        return buildUseNewDuckAddressEntry(forLink: link)
+        guard let link = validLink else { return nil }
+        return buildUseNewDuckAddressEntry(forLink: link, useSmallIcon: false)
     }
     
     func makeKeepSignInEntry() -> BrowsingMenuEntry? {
-        guard let link = link, !isError else { return nil }
-        return buildKeepSignInEntry(forLink: link)
+        guard let link = validLink else { return nil }
+        return buildKeepSignInEntry(forLink: link, useSmallIcon: false)
     }
 }

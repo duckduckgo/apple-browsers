@@ -191,7 +191,6 @@ public struct UserDefaultsWrapper<T> {
         case autoClearAIChatHistory = "com.duckduckgo.ios.autoClearAIChatHistory"
 
         // Debug keys
-        case debugOnboardingHighlightsEnabledKey = "com.duckduckgo.ios.debug.onboardingHighlightsEnabled"
         case debugWebViewStateRestorationEnabledKey = "com.duckduckgo.ios.debug.webViewStateRestorationEnabled"
         case debugDefaultBrowserPromptCurrentDateKey = "com.duckduckgo.ios.debug.defaultBrowserPromptCurrentDate"
 

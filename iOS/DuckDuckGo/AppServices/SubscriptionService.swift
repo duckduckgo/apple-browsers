@@ -35,11 +35,11 @@ final class SubscriptionService {
     init(application: UIApplication = UIApplication.shared,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
-        subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
-                                                                                 purchasePlatform: .appStore,
-                                                                                 paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) },
-                                                                                 supportsAlternateStripePaymentFlowStatusProvider: { featureFlagger.isFeatureOn(.supportsAlternateStripePaymentFlow) },
-                                                                                 isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: { featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement) })
+        subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(
+                    privacyConfigurationManager: privacyConfigurationManager,
+                    purchasePlatform: .appStore,
+                    featureFlagProvider: SubscriptionPageFeatureFlagAdapter(featureFlagger: featureFlagger)
+                )
         Task {
             await subscriptionManagerV1?.loadInitialData()
             await subscriptionManagerV2?.loadInitialData()

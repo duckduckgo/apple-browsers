@@ -143,6 +143,7 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Tab closing event recreation feature flag (failsafe for removing private API)
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212206087745586?focus=true
     case tabClosingEventRecreation
+
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -152,10 +153,6 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlySubfeatureForTests
-
-    // Shows a PiP video when the user is redirect to the system settings to set DDG as the default browser.
-    // https://app.asana.com/1/137249556945/project/1206329551987282/task/1210806442029191?focus=true
-    case defaultBrowserTutorial
 
     case widgetReporting
 
@@ -171,6 +168,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211660503405838?focus=true
     case forgetAllInSettings
+
+    /// https://app.asana.com/1/137249556945/project/481882893211075/task/1212057154681076?focus=true
+    case productTelemetrySurfaceUsage
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212229431540900
     case granularFireButtonOptions
@@ -223,6 +223,8 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case freemium
     case remoteBrokerDelivery
     case emailConfirmationDecoupling
+    case foregroundRunningOnAppActive
+    case foregroundRunningWhenDashboardOpen
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -284,8 +286,17 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Enables the omnibar toggle for AI Chat
     case omnibarToggle
 
+    /// Enables the omnibar cluster for AI Chat
+    case omnibarCluster
+
     /// Controls showing the Hide AI section in Settings -> AI Features
     case showHideAiGeneratedImages
+
+    /// Controls showing the AI Chat as Tabs Experiment Setting in Settings -> AI Features
+    case fullDuckAIModeExperimentalSetting
+
+    /// Controls different input sizes and fade out animation for toggle.
+    case fadeOutOnToggle
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -469,17 +480,8 @@ public enum MaliciousSiteProtectionSubfeature: String, PrivacySubfeature {
 public enum SetAsDefaultAndAddToDockSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .setAsDefaultAndAddToDock }
 
-    // https://app.asana.com/1/137249556945/project/1206329551987282/task/1210225579353384?focus=true
-    case scheduledDefaultBrowserAndDockPrompts // macOS
-
     // https://app.asana.com/1/137249556945/project/492600419927320/task/1210863200265479?focus=true
     case scheduledDefaultBrowserAndDockPromptsInactiveUser // macOS
-
-    // https://app.asana.com/1/137249556945/project/1206329551987282/task/1209304767941984?focus=true
-    case scheduledDefaultBrowserPrompts // iOS
-
-    // https://app.asana.com/1/137249556945/project/1206329551987282/task/1210716028790591?focus=true
-    case scheduledDefaultBrowserPromptsInactiveUser // iOS
 }
 
 public enum OnboardingSubfeature: String, PrivacySubfeature {

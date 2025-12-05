@@ -76,29 +76,31 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
     init() {
         super.init(title: "")
 
-        guard defaultBrowserAndDockPromptFeatureFlagger.isDefaultBrowserAndDockPromptForActiveUsersFeatureEnabled || defaultBrowserAndDockPromptFeatureFlagger.isDefaultBrowserAndDockPromptForInactiveUsersFeatureEnabled else { return }
-
         overrideDateMenuItem.target = self
 
-        buildItems {
-            overrideDateMenuItem
+        let defaultMenuItems = [
+            overrideDateMenuItem,
             NSMenuItem(title: "Advance by 14 Days", action: #selector(advanceBy14Days))
                 .withAccessibilityIdentifier(AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.advanceBy14DaysMenuItem)
-                .targetting(self)
+                .targetting(self),
             NSMenuItem(title: "Simulate Fresh App Install", action: #selector(simulateFreshAppInstall))
                 .withAccessibilityIdentifier(AccessibilityIdentifiers.DefaultBrowserAndDockPrompts.simulateFreshAppInstallMenuItem)
-                .targetting(self)
+                .targetting(self),
             NSMenuItem(title: "Reset Prompts And Today/Install Dates", action: #selector(resetPrompts))
-                .targetting(self)
-            NSMenuItem.separator()
-            simulatedTodayDateMenuItem
-            appInstallDateMenuItem
-            popoverWillShowDateMenuItem
-            bannerWillShowDateMenuItem
-            numberOfBannersShownMenuItem
-            promptPermanentlyDismissedMenuItem
-            inactiveDaysMenuItem
-            inactiveWillShowDateMenuItem
+                .targetting(self),
+            NSMenuItem.separator(),
+            simulatedTodayDateMenuItem,
+            appInstallDateMenuItem,
+            popoverWillShowDateMenuItem,
+            bannerWillShowDateMenuItem,
+            numberOfBannersShownMenuItem,
+            promptPermanentlyDismissedMenuItem,
+        ]
+
+        let menuItems = defaultBrowserAndDockPromptFeatureFlagger.isDefaultBrowserAndDockPromptForInactiveUsersFeatureEnabled ? defaultMenuItems + [inactiveDaysMenuItem, inactiveWillShowDateMenuItem] : defaultMenuItems
+
+        buildItems {
+            menuItems
         }
     }
 

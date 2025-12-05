@@ -26,6 +26,9 @@ public typealias NumberOfCalls = Int
 struct ExperimentEvent: PixelKitEvent {
     var name: String
     var parameters: [String: String]?
+    var standardParameters: [PixelKitStandardParameter]? {
+        [.pixelSource]
+    }
 }
 
 extension PixelKit {

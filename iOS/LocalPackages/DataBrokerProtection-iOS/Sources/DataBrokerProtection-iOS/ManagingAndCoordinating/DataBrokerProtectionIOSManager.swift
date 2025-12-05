@@ -165,7 +165,10 @@ public final class DataBrokerProtectionIOSManager {
         guard let vault = try? vaultFactory.makeVault(reporter: nil) else {
             return nil
         }
-        let localBrokerService = LocalBrokerJSONService(vault: vault, pixelHandler: sharedPixelsHandler)
+        let localBrokerService = LocalBrokerJSONService(resources: FileResources(runTypeProvider: settings),
+                                                        vault: vault,
+                                                        pixelHandler: sharedPixelsHandler,
+                                                        runTypeProvider: settings)
 
         return RemoteBrokerJSONService(featureFlagger: featureFlagger,
                                        settings: settings,

@@ -4936,6 +4936,126 @@
         }
       }
     },
+    "autoconsent.stats.popover.message" : {
+      "comment" : "Message for autoconsent stats popover prompting user to open new tab",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffne einen neuen Tab, um deine Statistiken anzuzeigen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open a new tab to see your stats."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre una nueva pestaña para ver tus estadísticas."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrez un nouvel onglet pour voir vos statistiques."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri una nuova scheda per vedere le tue statistiche."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Open een nieuw tabblad om je statistieken te zien."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz nową kartę, żeby zobaczyć swoje statystyki."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre um novo separador para veres as tuas estatísticas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открой новую вкладку, чтобы просмотреть свои статистику."
+          }
+        }
+      }
+    },
+    "autoconsent.stats.popover.title" : {
+      "comment" : "Title for autoconsent stats popover showing number of blocked cookie pop-ups",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d Cookie-Pop-ups blockiert"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%d cookie pop-ups blocked"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d ventanas emergentes de cookies bloqueadas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d fenêtres contextuelles de cookies bloquées"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d pop-up dei cookie bloccati"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d cookiepop-ups geblokkeerd"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Liczba zablokowanych wyskakujących okienek z ciasteczkami: %d"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d pop-ups de cookies bloqueados"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%d заблокировано (всплывающие окна куки)"
+          }
+        }
+      }
+    },
     "autofill.addresses" : {
       "comment" : "Autofill autosaved data type",
       "extractionState" : "extracted_with_value",

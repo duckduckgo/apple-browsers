@@ -111,6 +111,9 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User clicks the website link on a translation prompt in Duck.ai tab or sidebar
     case aiChatTranslationSourceLinkClicked
 
+    /// Event Trigger: User clicks the website link on a page context prompt in Duck.ai tab or sidebar
+    case aiChatPageContextSourceLinkClicked
+
     /// Event Trigger: User adds page context to the prompt using a button in the input field
     case aiChatPageContextAdded(automaticEnabled: Bool)
 
@@ -201,6 +204,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_translate_text"
         case .aiChatTranslationSourceLinkClicked:
             return "aichat_translation_source_link_clicked"
+        case .aiChatPageContextSourceLinkClicked:
+            return "aichat_page_context_source_link_clicked"
         case .aiChatPageContextAdded:
             return "aichat_page_context_added"
         case .aiChatPageContextRemoved:
@@ -255,6 +260,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatSummarizeSourceLinkClicked,
                 .aiChatTranslateText,
                 .aiChatTranslationSourceLinkClicked,
+                .aiChatPageContextSourceLinkClicked,
                 .aiChatAutoClearHistorySettingToggled,
                 .aiChatDeleteHistoryRequested,
                 .aiChatDeleteHistorySuccessful,
@@ -313,6 +319,7 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatSummarizeSourceLinkClicked,
                 .aiChatTranslateText,
                 .aiChatTranslationSourceLinkClicked,
+                .aiChatPageContextSourceLinkClicked,
                 .aiChatPageContextAdded,
                 .aiChatPageContextRemoved,
                 .aiChatDeleteHistoryRequested,

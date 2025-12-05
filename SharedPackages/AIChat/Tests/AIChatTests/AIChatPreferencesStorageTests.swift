@@ -180,4 +180,3 @@ final class AIChatPreferencesStorageTests: XCTestCase {
     }
 }
 #endif
-

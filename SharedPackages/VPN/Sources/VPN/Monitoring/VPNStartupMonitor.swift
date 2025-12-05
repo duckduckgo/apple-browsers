@@ -23,7 +23,7 @@ import NetworkExtension
 public final class VPNStartupMonitor {
 
     public enum StartupError: Error, CustomNSError {
-        case startTunnelDisconnectedSilently
+        case startTunnelDisconnectedSilently(underlyingError: Error?)
         case startTunnelTimedOut
 
         var errorDescription: String? {
@@ -51,7 +51,15 @@ public final class VPNStartupMonitor {
         }
 
         public var errorUserInfo: [String: Any] {
-            return [:]
+            switch self {
+            case .startTunnelDisconnectedSilently(let underlyingError):
+                if let underlyingError {
+                    return [NSUnderlyingErrorKey: underlyingError]
+                }
+                return [:]
+            case .startTunnelTimedOut:
+                return [:]
+            }
         }
     }
 
@@ -100,7 +108,15 @@ public final class VPNStartupMonitor {
                     case .connected:
                         return
                     case .disconnecting, .disconnected:
-                        throw StartupError.startTunnelDisconnectedSilently
+                        var underlyingError: Error?
+                        if #available(macOS 13, *) {
+                            do {
+                                try await targetConnection.fetchLastDisconnectError()
+                            } catch {
+                                underlyingError = error
+                            }
+                        }
+                        throw StartupError.startTunnelDisconnectedSilently(underlyingError: underlyingError)
                     default:
                         continue
                     }

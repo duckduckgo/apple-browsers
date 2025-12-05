@@ -90,7 +90,11 @@ final class VPNStartupMonitorTests: XCTestCase {
             try await monitor.waitForStartSuccess(tunnelManager, timeout: 1)
             XCTFail("Expected disconnected error")
         } catch let error as VPNStartupMonitor.StartupError {
-            XCTAssertEqual(error, .startTunnelDisconnectedSilently)
+            if case .startTunnelDisconnectedSilently = error {
+                // Expected
+            } else {
+                XCTFail("Expected startTunnelDisconnectedSilently, got \(error)")
+            }
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
@@ -110,7 +114,11 @@ final class VPNStartupMonitorTests: XCTestCase {
             try await monitor.waitForStartSuccess(tunnelManager, timeout: 1)
             XCTFail("Expected disconnected error")
         } catch let error as VPNStartupMonitor.StartupError {
-            XCTAssertEqual(error, .startTunnelDisconnectedSilently)
+            if case .startTunnelDisconnectedSilently = error {
+                // Expected
+            } else {
+                XCTFail("Expected startTunnelDisconnectedSilently, got \(error)")
+            }
         } catch {
             XCTFail("Unexpected error: \(error)")
         }

@@ -59,7 +59,7 @@ struct BrowsingMenuSheetView: View {
         static let grabberHeight: CGFloat = 20
 
         static let headerVerticalSpacing: CGFloat = 10
-        static let iconTitleVerticalSpacing: CGFloat = 16
+        static let iconTitleHorizontalSpacing: CGFloat = 16
         static let textDotHorizontalSpacing: CGFloat = 4
     }
 
@@ -205,7 +205,7 @@ private struct MenuRowButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: Metrics.iconTitleVerticalSpacing) {
+            HStack(spacing: Metrics.iconTitleHorizontalSpacing) {
                 Image(uiImage: entryData.image)
                     .padding(2)
                     .overlay {

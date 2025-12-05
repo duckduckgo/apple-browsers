@@ -25,22 +25,20 @@ import Common
 
 public enum StoreError: DDGError {
     case failedVerification
-    case noProductsAvailable // getAvailableProducts returned []
-    case storeKitNotAvailable // StoreKit not available on this OS
-    case featureAPIFailed(Error) // getTierFeatures threw error
-    case emptyFeatures // Features map is empty
-    case noTiersCreated // All tier creation failed
-    case invalidProductData // Product data malformed
+    case tieredProductsNoProductsAvailable // getAvailableProducts returned []
+    case tieredProductsFeatureAPIFailed(Error) // getTierFeatures threw error
+    case tieredProductsEmptyFeatures // Features map is empty
+    case tieredProductsNoTiersCreated // All tier creation failed
+    case tieredProductsInvalidProductData // Product data malformed
 
     public var description: String {
         switch self {
         case .failedVerification: "Failed verification"
-        case .noProductsAvailable: "No StoreKit products available."
-        case .storeKitNotAvailable: "StoreKit not available."
-        case .featureAPIFailed(let error): "Feature API failed: \(error)"
-        case .emptyFeatures: "Feature map is empty."
-        case .noTiersCreated: "No tiers were created."
-        case .invalidProductData: "Invalid product data."
+        case .tieredProductsNoProductsAvailable: "No StoreKit products available."
+        case .tieredProductsFeatureAPIFailed(let error): "Feature API failed: \(error)"
+        case .tieredProductsEmptyFeatures: "Feature map is empty."
+        case .tieredProductsNoTiersCreated: "No tiers were created."
+        case .tieredProductsInvalidProductData: "Invalid product data."
         }
     }
 
@@ -49,18 +47,17 @@ public enum StoreError: DDGError {
     public var errorCode: Int {
         switch self {
         case .failedVerification: 12200
-        case .noProductsAvailable: 12201
-        case .storeKitNotAvailable: 12202
-        case .featureAPIFailed: 12203
-        case .emptyFeatures: 12204
-        case .noTiersCreated: 12205
-        case .invalidProductData: 12206
+        case .tieredProductsNoProductsAvailable: 12201
+        case .tieredProductsFeatureAPIFailed: 12202
+        case .tieredProductsEmptyFeatures: 12203
+        case .tieredProductsNoTiersCreated: 12204
+        case .tieredProductsInvalidProductData: 12205
         }
     }
 
     public var underlyingError: (any Error)? {
         switch self {
-        case .featureAPIFailed(let error): error
+        case .tieredProductsFeatureAPIFailed(let error): error
         default: nil
         }
     }
@@ -69,17 +66,15 @@ public enum StoreError: DDGError {
         switch (lhs, rhs) {
         case (.failedVerification, .failedVerification):
             return true
-        case (.noProductsAvailable, .noProductsAvailable):
+        case (.tieredProductsNoProductsAvailable, .tieredProductsNoProductsAvailable):
             return true
-        case (.storeKitNotAvailable, .storeKitNotAvailable):
-            return true
-        case let (.featureAPIFailed(lhsError), .featureAPIFailed(rhsError)):
+        case let (.tieredProductsFeatureAPIFailed(lhsError), .tieredProductsFeatureAPIFailed(rhsError)):
             return String(describing: lhsError) == String(describing: rhsError)
-        case (.emptyFeatures, .emptyFeatures):
+        case (.tieredProductsEmptyFeatures, .tieredProductsEmptyFeatures):
             return true
-        case (.noTiersCreated, .noTiersCreated):
+        case (.tieredProductsNoTiersCreated, .tieredProductsNoTiersCreated):
             return true
-        case (.invalidProductData, .invalidProductData):
+        case (.tieredProductsInvalidProductData, .tieredProductsInvalidProductData):
             return true
         default:
             return false
@@ -277,7 +272,7 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
         let tierProducts = await getAvailableProducts(includeProTier: includeProTier)
         guard !tierProducts.isEmpty else {
             Logger.subscriptionStorePurchaseManager.error("[Store Purchase Manager] No products available")
-            return .failure(.noProductsAvailable)
+            return .failure(.tieredProductsNoProductsAvailable)
         }
         let ids = tierProducts.map(\.self.id)
         Logger.subscriptionStorePurchaseManager.debug("[Store Purchase Manager] Returning SubscriptionTierOptions for products: \(ids)")
@@ -342,7 +337,7 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
         let productIDsToFetch = [plusProductId, proProductId].compactMap { $0 }
         guard !productIDsToFetch.isEmpty else {
             Logger.subscription.error("[AppStorePurchaseFlow] No product IDs to fetch features for")
-            return .failure(.invalidProductData)
+            return .failure(.tieredProductsInvalidProductData)
         }
         Logger.subscription.debug("[AppStorePurchaseFlow] Fetching features for \(productIDsToFetch.count) representative products")
         let tierFeaturesMap: [String: [TierFeature]]
@@ -350,9 +345,14 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
             tierFeaturesMap = try await subscriptionFeatureMappingCache.subscriptionTierFeatures(for: productIDsToFetch)
         } catch {
             Logger.subscription.error("[AppStorePurchaseFlow] Feature API failed: \(String(describing: error), privacy: .public)")
-            return .failure(.featureAPIFailed(error))
+            return .failure(.tieredProductsFeatureAPIFailed(error))
         }
         Logger.subscription.debug("[AppStorePurchaseFlow] Received features for \(tierFeaturesMap.count) products")
+
+        guard !tierFeaturesMap.isEmpty else {
+            Logger.subscription.error("[AppStorePurchaseFlow] No tier features found")
+            return .failure(.tieredProductsEmptyFeatures)
+        }
 
         var tiers: [SubscriptionTier] = []
 
@@ -374,7 +374,7 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
 
         guard !tiers.isEmpty else {
             Logger.subscription.error("[AppStorePurchaseFlow] No tier products found")
-            return .failure(.noTiersCreated)
+            return .failure(.tieredProductsNoTiersCreated)
         }
 
         return .success(SubscriptionTierOptions(platform: platform, products: tiers))

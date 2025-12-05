@@ -87,6 +87,6 @@ public final class StorePurchaseManagerMockV2: StorePurchaseManagerV2 {
 
     public func subscriptionTierOptions(includeProTier: Bool) async -> Result<SubscriptionTierOptions, StoreError> {
         subscriptionTierOptionsIncludeProTierCalled = includeProTier
-        return subscriptionTierOptionsResult ?? .failure(.emptyFeatures)
+        return subscriptionTierOptionsResult ?? .failure(.tieredProductsEmptyFeatures)
     }
 }

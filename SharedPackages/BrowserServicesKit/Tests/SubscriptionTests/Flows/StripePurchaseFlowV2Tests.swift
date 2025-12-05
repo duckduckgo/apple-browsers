@@ -201,7 +201,7 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
         case .success:
             XCTFail("Expected failure but got success")
         case .failure(let error):
-            XCTAssertEqual(error, .emptyProductsFromAPI)
+            XCTAssertEqual(error, .tieredProductsEmptyProductsFromAPI)
         }
     }
 
@@ -217,7 +217,7 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
         case .success:
             XCTFail("Expected failure but got success")
         case .failure(let error):
-            XCTAssertEqual(error, .apiCallFailed(SubscriptionEndpointServiceError.noData))
+            XCTAssertEqual(error, .tieredProductsApiCallFailed(SubscriptionEndpointServiceError.noData))
         }
     }
 
@@ -247,7 +247,7 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
         case .success:
             XCTFail("Expected failure but got success")
         case .failure(let error):
-            XCTAssertEqual(error, .emptyAfterFiltering)
+            XCTAssertEqual(error, .tieredProductsEmptyAfterFiltering)
         }
     }
 
@@ -274,7 +274,7 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
         case .success:
             XCTFail("Expected failure but got success")
         case .failure(let error):
-            XCTAssertEqual(error, .tierCreationFailed)
+            XCTAssertEqual(error, .tieredProductsTierCreationFailed)
         }
     }
 

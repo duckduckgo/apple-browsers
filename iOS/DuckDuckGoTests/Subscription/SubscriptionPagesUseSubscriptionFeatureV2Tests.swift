@@ -347,7 +347,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     func testGetSubscriptionTierOptions_WhenNoOptionsAvailable_ReturnsEmpty() async throws {
         // Given
         let mockStorePurchaseManager = StorePurchaseManagerMockV2()
-        mockStorePurchaseManager.subscriptionTierOptionsResult = .failure(.noProductsAvailable)
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .failure(.tieredProductsNoProductsAvailable)
         mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
 
         // When
@@ -415,7 +415,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     func testGetSubscriptionTierOptions_OnFailure_FiresFailurePixel() async throws {
         // Given
         let mockStorePurchaseManager = StorePurchaseManagerMockV2()
-        mockStorePurchaseManager.subscriptionTierOptionsResult = .failure(.noProductsAvailable)
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .failure(.tieredProductsNoProductsAvailable)
         mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
 
         // When

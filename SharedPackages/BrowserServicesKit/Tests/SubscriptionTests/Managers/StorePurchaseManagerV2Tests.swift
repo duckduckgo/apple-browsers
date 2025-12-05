@@ -555,7 +555,7 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         case .success:
             XCTFail("Expected failure but got success")
         case .failure(let error):
-            XCTAssertEqual(error, .noProductsAvailable)
+            XCTAssertEqual(error, .tieredProductsNoProductsAvailable)
         }
     }
 
@@ -834,7 +834,7 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         case .success:
             XCTFail("Expected failure but got success")
         case .failure(let error):
-            XCTAssertEqual(error, .featureAPIFailed(SubscriptionEndpointServiceError.invalidRequest))
+            XCTAssertEqual(error, .tieredProductsFeatureAPIFailed(SubscriptionEndpointServiceError.invalidRequest))
         }
     }
 
@@ -857,7 +857,7 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         case .success:
             XCTFail("Expected failure but got success")
         case .failure(let error):
-            XCTAssertEqual(error, .noTiersCreated)
+            XCTAssertEqual(error, .tieredProductsNoTiersCreated)
         }
     }
 
@@ -880,7 +880,7 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         case .success:
             XCTFail("Expected failure but got success")
         case .failure(let error):
-            XCTAssertEqual(error, .noTiersCreated)
+            XCTAssertEqual(error, .tieredProductsNoTiersCreated)
         }
     }
 

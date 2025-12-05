@@ -521,7 +521,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
     func testGetSubscriptionTierOptions_WhenNoOptionsAvailable_ReturnsEmpty() async throws {
         // Given
-        mockStorePurchaseManager.subscriptionTierOptionsResult = .failure(.noProductsAvailable)
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .failure(.tieredProductsNoProductsAvailable)
 
         // When
         let result = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
@@ -707,7 +707,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
     func testGetSubscriptionTierOptions_OnFailure_FiresFailurePixel() async throws {
         // Given
-        mockStorePurchaseManager.subscriptionTierOptionsResult = .failure(.noProductsAvailable)
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .failure(.tieredProductsNoProductsAvailable)
 
         // When
         _ = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
@@ -719,7 +719,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
     func testGetSubscriptionTierOptions_OnFailure_FiresFailurePixelWithError() async throws {
         // Given
-        mockStorePurchaseManager.subscriptionTierOptionsResult = .failure(.noProductsAvailable)
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .failure(.tieredProductsNoProductsAvailable)
 
         // When
         _ = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
@@ -733,7 +733,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
     func testGetSubscriptionTierOptions_OnFailure_DoesNotFireSuccessPixel() async throws {
         // Given
-        mockStorePurchaseManager.subscriptionTierOptionsResult = .failure(.noProductsAvailable)
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .failure(.tieredProductsNoProductsAvailable)
 
         // When
         _ = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))

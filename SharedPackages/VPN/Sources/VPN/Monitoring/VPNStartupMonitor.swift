@@ -65,11 +65,18 @@ public final class VPNStartupMonitor {
 
     private let notificationCenter: NotificationCenter
     private let statusProvider: (NEVPNConnection) -> NEVPNStatus
+    private let disconnectErrorProvider: (NEVPNConnection) async throws -> Void
 
     public init(notificationCenter: NotificationCenter = .default,
-                statusProvider: @escaping (NEVPNConnection) -> NEVPNStatus = { $0.status }) {
+                statusProvider: @escaping (NEVPNConnection) -> NEVPNStatus = { $0.status },
+                disconnectErrorProvider: @escaping (NEVPNConnection) async throws -> Void = { connection in
+                    if #available(macOS 13, *) {
+                        try await connection.fetchLastDisconnectError()
+                    }
+                }) {
         self.notificationCenter = notificationCenter
         self.statusProvider = statusProvider
+        self.disconnectErrorProvider = disconnectErrorProvider
     }
 
     /// Waits for VPN startup to complete successfully or fail
@@ -109,12 +116,10 @@ public final class VPNStartupMonitor {
                         return
                     case .disconnecting, .disconnected:
                         var underlyingError: Error?
-                        if #available(macOS 13, *) {
-                            do {
-                                try await targetConnection.fetchLastDisconnectError()
-                            } catch {
-                                underlyingError = error
-                            }
+                        do {
+                            try await self.disconnectErrorProvider(targetConnection)
+                        } catch {
+                            underlyingError = error
                         }
                         throw StartupError.startTunnelDisconnectedSilently(underlyingError: underlyingError)
                     default:

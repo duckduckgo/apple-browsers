@@ -388,7 +388,6 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case paidAIChat
     case vpnToolbarUpsell
     case supportsAlternateStripePaymentFlow
-    case subscriptionPurchaseWidePixelMeasurement
     case vpnConnectionWidePixelMeasurement
     case authV2WideEventEnabled
     case winBackOffer

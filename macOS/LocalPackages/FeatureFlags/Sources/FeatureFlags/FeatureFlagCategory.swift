@@ -85,7 +85,6 @@ extension FeatureFlag: FeatureFlagCategorization {
         case .privacyProAuthV2,
                 .paidAIChat,
                 .supportsAlternateStripePaymentFlow,
-                .subscriptionPurchaseWidePixelMeasurement,
                 .authV2WideEventEnabled,
                 .vpnConnectionWidePixelMeasurement,
                 .blackFridayCampaign,

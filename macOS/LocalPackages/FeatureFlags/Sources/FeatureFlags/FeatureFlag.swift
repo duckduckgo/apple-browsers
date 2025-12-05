@@ -170,9 +170,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866619299477
     case newSyncEntryPoints
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866619360873
-    case subscriptionPurchaseWidePixelMeasurement
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720018164
     case syncFeatureLevel3
 
@@ -291,7 +288,6 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .updateSafariBookmarksImport,
                 .supportsAlternateStripePaymentFlow,
                 .refactorOfSyncPreferences,
-                .subscriptionPurchaseWidePixelMeasurement,
                 .authV2WideEventEnabled,
                 .syncCreditCards,
                 .syncIdentities,
@@ -362,7 +358,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .newSyncEntryPoints,
                 .dbpEmailConfirmationDecoupling,
                 .dbpRemoteBrokerDelivery,
-                .subscriptionPurchaseWidePixelMeasurement,
                 .syncFeatureLevel3,
                 .themes,
                 .appStoreUpdateFlow,
@@ -505,8 +500,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
         case .duckAISearchParameter:
             return .enabled
-        case .subscriptionPurchaseWidePixelMeasurement:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPurchaseWidePixelMeasurement))
         case .fireDialog:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.fireDialog))
         case .fireDialogIndividualSitesLink:

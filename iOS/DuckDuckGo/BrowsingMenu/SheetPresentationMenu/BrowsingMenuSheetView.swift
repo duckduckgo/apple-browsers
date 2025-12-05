@@ -58,7 +58,7 @@ struct BrowsingMenuSheetView: View {
         static let listTopPadding: CGFloat = 20 - listTopPaddingAdjustment
         static let grabberHeight: CGFloat = 20
 
-        static let headerVerticalSpacing: CGFloat = 10
+        static let headerHorizontalSpacing: CGFloat = 10
         static let iconTitleHorizontalSpacing: CGFloat = 16
         static let textDotHorizontalSpacing: CGFloat = 4
 
@@ -124,7 +124,7 @@ struct BrowsingMenuSheetView: View {
     private var headerSection: some View {
         Section {
             if !model.headerItems.isEmpty {
-                HStack(spacing: Metrics.headerVerticalSpacing) {
+                HStack(spacing: Metrics.headerHorizontalSpacing) {
                     ForEach(model.headerItems) { headerItem in
                         MenuHeaderButton(entryData: headerItem) {
                             actionToPerform = { headerItem.action() }

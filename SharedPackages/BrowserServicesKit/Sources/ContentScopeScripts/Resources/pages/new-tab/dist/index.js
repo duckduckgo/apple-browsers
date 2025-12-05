@@ -1858,36 +1858,6 @@
       }
     ));
   }
-  function NewBadgeIcon(props) {
-    return /* @__PURE__ */ _("svg", { xmlns: "http://www.w3.org/2000/svg", width: "42", height: "16", viewBox: "0 0 42 16", fill: "none", ...props }, /* @__PURE__ */ _(
-      "path",
-      {
-        d: "M0 3.99792C0 1.78879 1.79086 -0.0020752 4 -0.0020752H38C40.2091 -0.0020752 42 1.78879 42 3.99792V11.9979C42 14.2071 40.2091 15.9979 38 15.9979H4C1.79086 15.9979 0 14.2071 0 11.9979V3.99792Z",
-        fill: "#F9BE1A"
-      }
-    ), /* @__PURE__ */ _(
-      "path",
-      {
-        d: "M13.0913 9.1073H13.1812V3.94617H14.8032V12.0497H13.3999L9.64893 6.86707H9.55908V12.0497H7.93604V3.94617H9.35107L13.0913 9.1073Z",
-        fill: "black",
-        "fill-opacity": "0.96"
-      }
-    ), /* @__PURE__ */ _(
-      "path",
-      {
-        d: "M22.144 5.3446H18.4722V7.29871H21.936V8.60144H18.4722V10.6512H22.144V12.0497H16.7759V3.94617H22.144V5.3446Z",
-        fill: "black",
-        "fill-opacity": "0.96"
-      }
-    ), /* @__PURE__ */ _(
-      "path",
-      {
-        d: "M26.4663 9.73621H26.5562L28.0337 3.94617H29.4653L30.9702 9.73621H31.0601L32.312 3.94617H34.064L31.9136 12.0497H30.3247L28.7915 6.59167H28.7017L27.1851 12.0497H25.5854L23.4399 3.94617H25.2036L26.4663 9.73621Z",
-        fill: "black",
-        "fill-opacity": "0.96"
-      }
-    ));
-  }
   function InfoIcon(props) {
     return /* @__PURE__ */ _("svg", { xmlns: "http://www.w3.org/2000/svg", width: "16", height: "16", viewBox: "0 0 16 16", fill: "none", class: "info-icon", ...props }, /* @__PURE__ */ _(
       "path",
@@ -9753,6 +9723,28 @@
     }
   });
 
+  // pages/new-tab/app/components/NewBadge.module.css
+  var NewBadge_default;
+  var init_NewBadge = __esm({
+    "pages/new-tab/app/components/NewBadge.module.css"() {
+      NewBadge_default = {
+        badge: "NewBadge_badge"
+      };
+    }
+  });
+
+  // pages/new-tab/app/components/NewBadge.js
+  function NewBadge({ text: text2, ...rest }) {
+    return /* @__PURE__ */ _("span", { class: NewBadge_default.badge, ...rest }, text2?.toUpperCase() || "NEW");
+  }
+  var init_NewBadge2 = __esm({
+    "pages/new-tab/app/components/NewBadge.js"() {
+      "use strict";
+      init_preact_module();
+      init_NewBadge();
+    }
+  });
+
   // pages/new-tab/app/components/Tooltip/Tooltip.module.css
   var Tooltip_default;
   var init_Tooltip = __esm({
@@ -9926,7 +9918,12 @@
       /** @type {number | null} */
       null
     );
-    const wasVisibleRef = A2(false);
+    const wasInViewportRef = A2(false);
+    const observerSetupRef = A2(false);
+    const observerRef = A2(
+      /** @type {IntersectionObserver | null} */
+      null
+    );
     const updateAnimatedCount = q2(
       /** @type {import('./animateCount.js').AnimationUpdateCallback} */
       ((value2) => {
@@ -9935,14 +9932,12 @@
       }),
       []
     );
-    const wasInViewportRef = A2(false);
-    y2(() => {
-      if (!elementRef || !elementRef.current) {
-        setIsInViewport(true);
-        wasInViewportRef.current = true;
+    const setupIntersectionObserver = q2((element) => {
+      if (observerSetupRef.current || observerRef.current) {
         return;
       }
-      const observer = new IntersectionObserver(
+      observerSetupRef.current = true;
+      observerRef.current = new IntersectionObserver(
         (entries4) => {
           entries4.forEach((entry) => {
             const wasInViewport = wasInViewportRef.current;
@@ -9961,57 +9956,66 @@
           rootMargin: "0px"
         }
       );
-      observer.observe(elementRef.current);
+      observerRef.current.observe(element);
+    }, []);
+    y2(() => {
+      if (!elementRef) {
+        setIsInViewport(true);
+        return;
+      }
+      const element = elementRef.current;
+      let cancelled = false;
+      if (element) {
+        setupIntersectionObserver(element);
+      } else {
+        (async () => {
+          await Promise.resolve();
+          if (cancelled) {
+            return;
+          }
+          const delayedElement = elementRef.current;
+          if (delayedElement) {
+            setupIntersectionObserver(delayedElement);
+          }
+        })();
+      }
       return () => {
-        observer.disconnect();
+        cancelled = true;
+        observerSetupRef.current = false;
+        if (observerRef.current) {
+          observerRef.current.disconnect();
+          observerRef.current = null;
+        }
       };
-    }, [elementRef]);
+    }, []);
     y2(() => {
       let cancelAnimation = () => {
       };
-      const isCurrentlyVisible = document.visibilityState === "visible" && isInViewport;
-      const wasVisible = wasVisibleRef.current;
-      const becameVisible = isCurrentlyVisible && !wasVisible;
-      const isReturningToNTP = becameVisible && lastSeenValueRef.current !== null;
-      wasVisibleRef.current = isCurrentlyVisible;
-      if (isCurrentlyVisible) {
+      const shouldAnimate = document.visibilityState === "visible" && isInViewport;
+      if (shouldAnimate) {
         let startValue = animatedValueRef.current;
-        if (isReturningToNTP && lastSeenValueRef.current !== null && lastSeenValueRef.current !== targetValue) {
+        if (lastSeenValueRef.current !== null && lastSeenValueRef.current !== targetValue) {
           startValue = lastSeenValueRef.current;
-          hasAnimatedRef.current = false;
+          lastSeenValueRef.current = null;
         }
         cancelAnimation = animateCount(targetValue, updateAnimatedCount, void 0, startValue);
         hasAnimatedRef.current = true;
-      } else {
-        if (wasVisible) {
-          lastSeenValueRef.current = animatedValueRef.current;
-        }
-        if (hasAnimatedRef.current) {
-          setAnimatedValue(targetValue);
-          animatedValueRef.current = targetValue;
-        }
+      } else if (hasAnimatedRef.current) {
+        setAnimatedValue(targetValue);
+        animatedValueRef.current = targetValue;
+        lastSeenValueRef.current = null;
       }
       const handleVisibilityChange = () => {
-        const isNowVisible = document.visibilityState === "visible" && isInViewport;
-        const wasVisibleBefore = wasVisibleRef.current;
-        const becameVisibleNow = isNowVisible && !wasVisibleBefore;
-        const isReturningToNTPNow = becameVisibleNow && lastSeenValueRef.current !== null;
-        wasVisibleRef.current = isNowVisible;
-        if (isNowVisible) {
-          let startValue = animatedValueRef.current;
-          if (isReturningToNTPNow && lastSeenValueRef.current !== null && lastSeenValueRef.current !== targetValue) {
-            startValue = lastSeenValueRef.current;
-            hasAnimatedRef.current = false;
-          }
+        if (document.visibilityState === "visible" && isInViewport) {
           cancelAnimation();
-          cancelAnimation = animateCount(targetValue, updateAnimatedCount, void 0, startValue);
+          cancelAnimation = animateCount(targetValue, updateAnimatedCount, void 0, animatedValueRef.current);
           hasAnimatedRef.current = true;
         } else if (document.visibilityState === "hidden") {
           cancelAnimation();
           if (hasAnimatedRef.current) {
-            lastSeenValueRef.current = animatedValueRef.current;
             setAnimatedValue(targetValue);
             animatedValueRef.current = targetValue;
+            lastSeenValueRef.current = null;
           }
         }
       };
@@ -10077,7 +10081,7 @@
         onClick: onToggle,
         label: expansion === "expanded" ? t4("stats_hideLabel") : t4("stats_toggleLabel")
       }
-    ))), /* @__PURE__ */ _("div", { class: PrivacyStats_default.counterContainer, ref: counterContainerRef }, /* @__PURE__ */ _("div", { class: PrivacyStats_default.counter }, animatedTrackersBlocked === 0 && /* @__PURE__ */ _("h3", { class: PrivacyStats_default.noRecentTitle }, t4("protections_noRecent")), animatedTrackersBlocked > 0 && /* @__PURE__ */ _("h3", { class: PrivacyStats_default.title }, animatedTrackersBlocked, " ", /* @__PURE__ */ _("span", null, trackersBlockedHeading))), isCpmEnabled && animatedTrackersBlocked > 0 && totalCookiePopUpsBlocked > 0 && /* @__PURE__ */ _("div", { class: PrivacyStats_default.counter }, /* @__PURE__ */ _("h3", { class: PrivacyStats_default.title }, animatedCookiePopUpsBlocked, " ", /* @__PURE__ */ _("span", null, cookiePopUpsBlockedHeading)), /* @__PURE__ */ _(NewBadgeIcon, null))));
+    ))), /* @__PURE__ */ _("div", { class: PrivacyStats_default.counterContainer, ref: counterContainerRef }, /* @__PURE__ */ _("div", { class: PrivacyStats_default.counter }, animatedTrackersBlocked === 0 && /* @__PURE__ */ _("h3", { class: PrivacyStats_default.noRecentTitle }, t4("protections_noRecent")), animatedTrackersBlocked > 0 && /* @__PURE__ */ _("h3", { class: PrivacyStats_default.title }, animatedTrackersBlocked, " ", /* @__PURE__ */ _("span", null, trackersBlockedHeading))), isCpmEnabled && animatedTrackersBlocked > 0 && totalCookiePopUpsBlocked > 0 && /* @__PURE__ */ _("div", { class: PrivacyStats_default.counter }, /* @__PURE__ */ _("h3", { class: PrivacyStats_default.title }, animatedCookiePopUpsBlocked, " ", /* @__PURE__ */ _("span", null, cookiePopUpsBlockedHeading)), /* @__PURE__ */ _(NewBadge, { text: t4("protections_newBadge") }))));
   }
   var import_classnames9;
   var init_ProtectionsHeading = __esm({
@@ -10089,6 +10093,7 @@
       import_classnames9 = __toESM(require_classnames(), 1);
       init_preact_module();
       init_Icons2();
+      init_NewBadge2();
       init_Tooltip2();
       init_useAnimatedCount();
       init_hooks_module();
@@ -28025,30 +28030,13 @@
       {}
     );
     const { activity } = x2(NormalizedDataContext);
-    const activityData = useComputed(() => activity.value);
-    const trackingStatus = useComputed(() => {
-      const status = activityData.value.trackingStatus[id];
-      return status || { totalCount: 0, trackerCompanies: [] };
+    const status = useComputed(() => activity.value.trackingStatus[id]);
+    const cookiePopUpBlocked = useComputed(() => activity.value.cookiePopUpBlocked?.[id]).value;
+    const { totalCount: totalTrackersBlocked } = status.value;
+    const totalTrackersPillText = totalTrackersBlocked === 0 ? trackersFound ? t4("activity_no_trackers_blocked") : t4("activity_no_trackers") : t4(totalTrackersBlocked === 1 ? "activity_countBlockedSingular" : "activity_countBlockedPlural", {
+      count: String(totalTrackersBlocked)
     });
-    const totalTrackersBlocked = useComputed(() => trackingStatus.value.totalCount);
-    const totalTrackersPillText = useComputed(() => {
-      const count = totalTrackersBlocked.value;
-      return count === 0 ? trackersFound ? t4("activity_no_trackers_blocked") : t4("activity_no_trackers") : t4(count === 1 ? "activity_countBlockedSingular" : "activity_countBlockedPlural", {
-        count: String(count)
-      });
-    });
-    const cookiePopUpBlocked = useComputed(() => activityData.value.cookiePopUpBlocked?.[id]);
-    const [, setRenderKey] = d2(0);
-    useSignalEffect(() => {
-      const currentData = activityData.value;
-      currentData.trackingStatus[id];
-      currentData.cookiePopUpBlocked?.[id];
-      setRenderKey((prev) => prev + 1);
-    });
-    const pillText = totalTrackersPillText.value;
-    const showTick = totalTrackersBlocked.value > 0;
-    const showCookiePill = cookiePopUpBlocked.value;
-    return /* @__PURE__ */ _("div", { class: Activity_default.companiesIconRow, "data-testid": "TrackerStatus" }, /* @__PURE__ */ _("div", { class: Activity_default.companiesText }, /* @__PURE__ */ _(TickPill, { text: pillText, displayTick: showTick }), showCookiePill && /* @__PURE__ */ _(TickPill, { text: t4("activity_cookiePopUpBlocked") })));
+    return /* @__PURE__ */ _("div", { class: Activity_default.companiesIconRow, "data-testid": "TrackerStatus" }, /* @__PURE__ */ _("div", { class: Activity_default.companiesText }, /* @__PURE__ */ _(TickPill, { text: totalTrackersPillText, displayTick: totalTrackersBlocked > 0 }), cookiePopUpBlocked && /* @__PURE__ */ _(TickPill, { text: t4("activity_cookiePopUpBlocked") })));
   }
   function TrackerStatusLegacy({ id, trackersFound }) {
     const { t: t4 } = useTypedTranslationWith(
@@ -30571,6 +30559,10 @@
       title: "No recent tracking activity",
       note: "Placeholder text shown in the Details view when no tracking activity was blocked in the last 7 days. Keep concise if possible."
     },
+    protections_newBadge: {
+      title: "NEW",
+      note: "Text displayed in a badge to indicate a new feature or statistic."
+    },
     stats_menuTitle: {
       title: "Blocked Tracking Attempts",
       note: "Used as a label in a customization menu"
@@ -30628,7 +30620,7 @@
       note: "The heading indicating multiple cookie pop-ups were handled by the CPM"
     },
     stats_protectionsReportInfo: {
-      title: "Displays tracking attempts blocked in the last 7 days, and the number of cookie pop-ups blocked since you started using the browser. <span>You can reset these stats using the Fire Button.</span>",
+      title: "Displays tracking attempts blocked in the last 7 days, and the number of cookie pop-ups blocked since you started using the browser.",
       note: "Text explaining how to reset the protections stats"
     },
     stats_feedCountBlockedSingular: {

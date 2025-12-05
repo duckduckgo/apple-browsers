@@ -294,7 +294,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .unifiedURLPredictor,
              .forgetAllInSettings,
              .vpnConnectionWidePixelMeasurement,
-             .migrateKeychainAccessibility:
+             .migrateKeychainAccessibility,
+             .browsingMenuSheetPresentation:
             true
         default:
             false

@@ -59,7 +59,7 @@ struct BrowsingMenuSheetDefaultCapability: BrowsingMenuSheetCapable {
     }
 
     var isAvailable: Bool {
-        featureFlagger.isFeatureOn(.browsingMenuSheetPresentation) || featureFlagger.internalUserDecider.isInternalUser
+        featureFlagger.isFeatureOn(.browsingMenuSheetPresentation)
     }
 
     var isEnabled: Bool {

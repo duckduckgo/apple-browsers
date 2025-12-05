@@ -62,6 +62,7 @@ final class HomePageSubscriptionCardVisibilityManager: HomePageSubscriptionCardV
         }
 
         Publishers.CombineLatest(canUserPurchaseSubject, hasSubscriptionSubject)
+            .receive(on: DispatchQueue.main)
             .sink { [weak self] _, hasSubscription in
                 guard let self else { return }
                 // Prevent card from showing again if the user has any kind of subscription.

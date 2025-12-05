@@ -35,6 +35,7 @@ enum AutoconsentPixel: PixelKitEvent {
     case detectedOnlyRules
     case selfTestOk
     case selfTestFail
+    case errorReloadLoop
     case popoverShown
     case popoverClosed
     case popoverClicked
@@ -60,6 +61,7 @@ enum AutoconsentPixel: PixelKitEvent {
         .detectedOnlyRules,
         .selfTestOk,
         .selfTestFail,
+        .errorReloadLoop,
         .popoverShown,
         .popoverClosed,
         .popoverClicked,
@@ -84,6 +86,7 @@ enum AutoconsentPixel: PixelKitEvent {
         case .detectedOnlyRules: "autoconsent_detected-only-rules"
         case .selfTestOk: "autoconsent_self-test-ok"
         case .selfTestFail: "autoconsent_self-test-fail"
+        case .errorReloadLoop: "autoconsent_error_reload-loop"
         case .popoverShown: "autoconsent_popover-shown"
         case .popoverClosed: "autoconsent_popover-closed"
         case .popoverClicked: "autoconsent_popover-clicked"
@@ -132,6 +135,7 @@ enum AutoconsentPixel: PixelKitEvent {
                 .detectedOnlyRules,
                 .selfTestOk,
                 .selfTestFail,
+                .errorReloadLoop,
                 .popoverShown,
                 .popoverClosed,
                 .popoverClicked,

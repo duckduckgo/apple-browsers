@@ -62,7 +62,7 @@ final class BrokenSiteReportingTests: XCTestCase {
 
     override func tearDown() {
         Pixel.isDryRun = true
-        
+
         HTTPStubs.removeAllStubs()
         super.tearDown()
     }
@@ -74,20 +74,20 @@ final class BrokenSiteReportingTests: XCTestCase {
         referenceTests = testData.reportURL.tests.filter {
             $0.exceptPlatforms.contains("ios-browser") == false
         }
-        
+
         let testsExecuted = expectation(description: "tests executed")
         testsExecuted.expectedFulfillmentCount = referenceTests.count
-        
+
         try runReferenceTests(onTestExecuted: testsExecuted)
         waitForExpectations(timeout: 10, handler: nil)
     }
-    
+
     private func runReferenceTests(onTestExecuted: XCTestExpectation) throws {
-        
+
         guard let test = referenceTests.popLast() else {
             return
         }
-        
+
         print("Testing [%s]", test.name)
 
         var errors: [Error]?
@@ -120,15 +120,15 @@ final class BrokenSiteReportingTests: XCTestCase {
                                       jsPerformance: nil,
                                       userRefreshCount: 0,
                                       variant: "",
-                                      cookieConsentInfo: CookieConsentInfo(consentManaged: true, cosmetic: true, optoutFailed: true, selftestFailed: true),
+                                      cookieConsentInfo: CookieConsentInfo(consentManaged: true, cosmetic: true, optoutFailed: true, selftestFailed: true, consentReloadLoop: nil, consentRule: "test-cmp"),
                                       debugFlags: "",
                                       privacyExperiments: "",
                                       isPirEnabled: nil)
 
         let reporter = BrokenSiteReporter(pixelHandler: { params in
-            
+
             for expectedParam in test.expectReportURLParams {
-                
+
                 if let actualValue = params[expectedParam.name],
                    let expectedCleanValue = expectedParam.value.removingPercentEncoding {
                     if expectedParam.name == "errorDescriptions" {

@@ -373,7 +373,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
         faviconCancellable = extensions.favicons?.faviconPublisher.assign(to: \.favicon, onWeaklyHeld: self)
         if favicon == nil {
-            extensions.favicons?.handleFavicon(oldValue: nil, error: error)
+            extensions.favicons?.loadCachedFavicon(oldValue: nil, isBurner: burnerMode.isBurner, error: error)
         }
 
         emailDidSignOutCancellable = NotificationCenter.default.publisher(for: .emailDidSignOut)
@@ -547,7 +547,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                 webView.stopAllMedia(shouldStopLoading: false)
             }
             Task { @MainActor in
-                extensions.favicons?.handleFavicon(oldValue: oldValue, error: error)
+                extensions.favicons?.loadCachedFavicon(oldValue: oldValue, isBurner: burnerMode.isBurner, error: error)
             }
             if navigationDelegate.currentNavigation == nil {
                 updateCanGoBackForward(withCurrentNavigation: nil)

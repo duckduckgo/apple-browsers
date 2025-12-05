@@ -22,7 +22,15 @@ import UIKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
-typealias BrowsingMenuSheetViewController = UIHostingController<BrowsingMenuSheetView>
+class BrowsingMenuSheetViewController: UIHostingController<BrowsingMenuSheetView> {
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        // Required for material background to become effective
+        view.backgroundColor = .clear
+    }
+}
 
 struct BrowsingMenuModel {
     var headerItems: [BrowsingMenuModel.Entry]
@@ -31,6 +39,25 @@ struct BrowsingMenuModel {
 }
 
 struct BrowsingMenuSheetView: View {
+
+    enum Metrics {
+        static let headerButtonVerticalPadding: CGFloat = 8
+        static let headerButtonIconTextSpacing: CGFloat = 2
+        static let footerButtonVerticalPadding: CGFloat = 8
+
+        /// Approximate vertical padding for list rows with `.insetGrouped` style.
+        /// This is an estimate used for height calculation and may not exactly match
+        /// the system-provided padding in all configurations.
+        static let listRowVerticalPadding: CGFloat = 24
+
+        /// Approximate spacing between list sections.
+        /// Note: The actual UI uses `.compactSectionSpacingIfAvailable()` which applies
+        /// `.compact` section spacing on iOS 17+. This value is an approximation and
+        /// the actual spacing may differ slightly on earlier versions.
+        static let listSectionSpacing: CGFloat = 20
+        static let listTopPadding: CGFloat = 20
+        static let grabberHeight: CGFloat = 20
+    }
 
     @Environment(\.presentationMode) var presentationMode
 
@@ -47,55 +74,65 @@ struct BrowsingMenuSheetView: View {
     }
 
     var body: some View {
-        NavigationView {
-            List {
-                Section {
-                    if !model.headerItems.isEmpty {
-                        HStack(spacing: 2) {
-                            ForEach(model.headerItems) { headerItem in
-                                MenuHeaderButton(entryData: headerItem) {
-                                    actionToPerform = { headerItem.action() }
-                                    presentationMode.wrappedValue.dismiss()
-                                }
-                                .frame(maxWidth: .infinity)
-                            }
-                        }
-                        .background((Color(designSystemColor: .background)))
-                    }
-                }
-                .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
-                .listRowSeparatorTint(Color(designSystemColor: .lines))
-
-                ForEach(model.sections) { section in
-                    Section {
-                        ForEach(section.items) { item in
-                            let isHighlighted = highlightTag != nil && item.tag == highlightTag
-
-                            MenuRowButton(entryData: item, isHighlighted: isHighlighted) {
-                                actionToPerform = { item.action() }
-                                presentationMode.wrappedValue.dismiss()
-                            }
-                            .listRowBackground(Color(designSystemColor: .surface))
-                        }
-                    }
-                }
-                .listRowSeparatorTint(Color(designSystemColor: .lines))
-            }
-            .compactSectionSpacingIfAvailable()
-            .applyInsetGroupedListStyle()
-            .onDisappear(perform: {
-                actionToPerform()
-                onDismiss()
-            })
-            .floatingToolbar(
-                footerItems: model.footerItems,
-                actionToPerform: $actionToPerform,
-                presentationMode: presentationMode,
-                showsLabels: model.footerItems.count < 2
-            )
+        List {
+            headerSection
+            menuSections
         }
+        .compactSectionSpacingIfAvailable()
+        .hideScrollContentBackground()
+        .listStyle(.insetGrouped)
+        .background(.thickMaterial)
+        .background(Color(designSystemColor: .background).opacity(0.5))
+        .onDisappear(perform: {
+            actionToPerform()
+            onDismiss()
+        })
+        .floatingToolbar(
+            footerItems: model.footerItems,
+            actionToPerform: $actionToPerform,
+            presentationMode: presentationMode,
+            showsLabels: model.footerItems.count < 2
+        )
         .tint(Color(designSystemColor: .textPrimary))
-        .background((Color(designSystemColor: .background)))
+    }
+
+    @ViewBuilder
+    private var headerSection: some View {
+        Section {
+            if !model.headerItems.isEmpty {
+                HStack(spacing: 2) {
+                    ForEach(model.headerItems) { headerItem in
+                        MenuHeaderButton(entryData: headerItem) {
+                            actionToPerform = { headerItem.action() }
+                            presentationMode.wrappedValue.dismiss()
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                }
+                .background(.clear)
+            }
+        }
+        .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
+        .listRowSeparatorTint(Color(designSystemColor: .lines))
+        .listRowBackground(Color.clear)
+    }
+
+    @ViewBuilder
+    private var menuSections: some View {
+        ForEach(model.sections) { section in
+            Section {
+                ForEach(section.items) { item in
+                    let isHighlighted = highlightTag != nil && item.tag == highlightTag
+
+                    MenuRowButton(entryData: item, isHighlighted: isHighlighted) {
+                        actionToPerform = { item.action() }
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                    .listRowBackground(Color.rowBackgroundColor)
+                }
+            }
+        }
+        .listRowSeparatorTint(Color(designSystemColor: .lines))
     }
 }
 
@@ -153,6 +190,8 @@ extension BrowsingMenuModel.Entry {
     }
 }
 
+private typealias Metrics = BrowsingMenuSheetView.Metrics
+
 private struct MenuRowButton: View {
 
     fileprivate let entryData: BrowsingMenuModel.Entry
@@ -173,6 +212,7 @@ private struct MenuRowButton: View {
                     }
 
                 Text(entryData.name)
+                    .daxBodyRegular()
 
                 if entryData.showNotificationDot {
                     Circle().fill(entryData.customDotColor.map({ Color($0) }) ?? Color(designSystemColor: .accent))
@@ -195,17 +235,18 @@ private struct MenuHeaderButton: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 2) {
+            VStack(spacing: Metrics.headerButtonIconTextSpacing) {
                 Image(uiImage: entryData.image)
                     .tint(Color(designSystemColor: .icons))
                 Text(entryData.name)
                     .daxFootnoteRegular()
                     .foregroundStyle(Color(designSystemColor: .textSecondary))
             }
-            .padding(.vertical, 8)
+            .padding(.vertical, Metrics.headerButtonVerticalPadding)
             .padding(.horizontal, 8)
             .frame(maxWidth: .infinity)
-            .background(Color(designSystemColor: .surface))
+            .frame(maxHeight: .infinity)
+            .background(Color.rowBackgroundColor)
             .clipShape(RoundedRectangle(cornerRadius: Constant.cornerRadius))
             .contentShape(RoundedRectangle(cornerRadius: Constant.cornerRadius))
         }
@@ -248,8 +289,8 @@ private struct FloatingToolbarModifier: ViewModifier {
                 .overlay(alignment: .bottom, content: {
                     let colors = [
                         .clear,
-                        Color(designSystemColor: .surface).opacity(0.9),
-                        Color(designSystemColor: .surface)
+                        Color(designSystemColor: .background).opacity(0.9),
+                        Color(designSystemColor: .background)
                     ]
                     LinearGradient(colors: colors, startPoint: .top, endPoint: .bottom)
                     // This makes the gradient extend to the full width and into the bottom safe area.
@@ -281,17 +322,21 @@ private struct FloatingToolbarModifier: ViewModifier {
                                 .foregroundStyle(Color(designSystemColor: .textPrimary))
                         }
                     }
-                    .padding(.vertical, 8)
+                    .padding(.vertical, Metrics.footerButtonVerticalPadding)
                     .padding(.horizontal, 16)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(footerItem.accessibilityLabel ?? footerItem.name)
             }
         }
-        .background(Color(designSystemColor: .surfaceCanvas))
+        .background(.regularMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 4, x: 0, y: 4)
         .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 2, x: 0, y: 1)
         .fixedSize(horizontal: true, vertical: true)
     }
+}
+
+private extension Color {
+    static let rowBackgroundColor: Color = .init(designSystemColor: .surfaceTertiary)
 }

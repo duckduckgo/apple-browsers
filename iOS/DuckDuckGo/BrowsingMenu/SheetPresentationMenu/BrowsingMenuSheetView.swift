@@ -60,6 +60,7 @@ struct BrowsingMenuSheetView: View {
 
         static let headerVerticalSpacing: CGFloat = 10
         static let iconTitleVerticalSpacing: CGFloat = 16
+        static let textDotHorizontalSpacing: CGFloat = 4
     }
 
     @Environment(\.presentationMode) var presentationMode
@@ -215,16 +216,18 @@ private struct MenuRowButton: View {
                         }
                     }
 
-                Text(entryData.name)
-                    .daxBodyRegular()
+                HStack(spacing: Metrics.textDotHorizontalSpacing) {
+                    Text(entryData.name)
+                        .daxBodyRegular()
 
-                if entryData.showNotificationDot {
-                    Circle().fill(entryData.customDotColor.map({ Color($0) }) ?? Color(designSystemColor: .accent))
-                        .frame(width: 8, height: 8)
-                        .padding(.leading, 6)
-                        .padding(.trailing, 12)
+                    if entryData.showNotificationDot {
+                        Circle().fill(entryData.customDotColor.map({ Color($0) }) ?? Color(designSystemColor: .accent))
+                            .frame(width: 8, height: 8)
+                            .padding(.leading, 6)
+                            .padding(.trailing, 12)
 
-                    Spacer()
+                        Spacer()
+                    }
                 }
             }
         }

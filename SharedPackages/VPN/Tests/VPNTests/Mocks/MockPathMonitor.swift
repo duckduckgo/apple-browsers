@@ -37,12 +37,12 @@ final class MockPathMonitor: PathMonitoring {
     }
 
     func emitStatus(_ status: Network.NWPath.Status) {
-        if let queue {
-            queue.async {
-                self.pathUpdateHandler?(status)
-            }
-        } else {
+        guard let queue else {
             assertionFailure("Expected the monitor to have started before emitting statuses")
+            return
+        }
+        queue.sync {
+            self.pathUpdateHandler?(status)
         }
     }
 }

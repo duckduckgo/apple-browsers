@@ -679,6 +679,7 @@ extension AppDelegate {
     }
 
     @objc func resetMakeDuckDuckGoYoursUserSettings(_ sender: Any?) {
+        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowAllFeatures.rawValue)
         homePageContinueSetUpModelPersistor.clear()
         homePageSubscriptionCardPersistor.clear()
     }

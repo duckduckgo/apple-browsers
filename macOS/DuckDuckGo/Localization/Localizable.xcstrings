@@ -1186,18 +1186,6 @@
         }
       }
     },
-    "address.bar.placeholder.with-duckai" : {
-      "comment" : "Address bar placeholder when Duck.ai toggle is available",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "⇥ Press tab then enter to ask Duck.ai"
-          }
-        }
-      }
-    },
     "address.bar.search.open.tab.suffix" : {
       "comment" : "Suffix of DuckDuckGo Search open tab suggestion. Example: cats – DuckDuckGo Search",
       "extractionState" : "extracted_with_value",
@@ -2091,14 +2079,14 @@
         }
       }
     },
-    "aichat.chat-with-ai.tooltip" : {
+    "aichat.ask-privately.tooltip" : {
       "comment" : "Tooltip for the chat with AI segment in the toggle control",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Chat with AI"
+            "value" : "Ask privately"
           }
         }
       }
@@ -2110,19 +2098,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Chat Privately"
+            "value" : "Ask privately"
           }
         }
       }
     },
-    "aichat.search-the-web.tooltip" : {
+    "aichat.search-privately.tooltip" : {
       "comment" : "Tooltip for the search the web segment in the toggle control",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Search the Web"
+            "value" : "Search Privately"
           }
         }
       }
@@ -2315,6 +2303,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Duck.ai"
+          }
+        }
+      }
+    },
+    "aichat.toggle.ask.label" : {
+      "comment" : "Label for the ask AI segment in the address bar toggle control",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai"
+          }
+        }
+      }
+    },
+    "aichat.toggle.search.label" : {
+      "comment" : "Label for the search segment in the address bar toggle control",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search"
           }
         }
       }
@@ -85317,14 +85329,14 @@
         }
       }
     },
-    "suggestion.search.the.web" : {
+    "suggestion.search.privately" : {
       "comment" : "Label shown on the search suggestion cell indicating the action will search the web",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Search the web"
+            "value" : "Search privately"
           }
         }
       }

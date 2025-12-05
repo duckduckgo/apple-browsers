@@ -35,7 +35,7 @@
 "action.title.aiChat.history" = "Duck.ai čavrljanja";
 
 /* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "AI Chat";
+"action.title.aiChat.new" = "Nova opcija AI čavrljanja";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Postavke usluge Duck.ai";
@@ -89,7 +89,7 @@
 "action.title.newBackgroundTabForUrl" = "Otvori u pozadini";
 
 /* Create New Tab action */
-"action.title.newTabAction" = "Novo";
+"action.title.newTabAction" = "Nova kartica";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Otvori u novoj kartici";
@@ -2925,6 +2925,9 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Položaj adresne trake";
+
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Eksperimentalni izbornik preglednika";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Otvori veze u povezanim aplikacijama";

@@ -35,7 +35,7 @@
 "action.title.aiChat.history" = "Чаты Duck.ai";
 
 /* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "Чат с ИИ";
+"action.title.aiChat.new" = "Запустить AI Chat";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Настройки Duck.ai";
@@ -2925,6 +2925,9 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Положение адресной строки";
+
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Пробное меню браузера";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Открывать ссылки в связанных приложениях";

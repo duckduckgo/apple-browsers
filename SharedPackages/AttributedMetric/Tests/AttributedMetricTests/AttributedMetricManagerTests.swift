@@ -898,4 +898,76 @@ final class AttributedMetricManagerTests: XCTestCase {
         fixture.attributionManager.process(trigger: .userDidSync(devicesCount: 3))
         XCTAssertFalse(pixelFired, "Should not fire for 3 or more devices")
     }
+
+    // MARK: - Data Expiration Tests
+
+    /// Tests that all data in dataStorage is removed at 6 months (168 days) from installation
+    ///
+    /// ## Input → Output Mapping
+    ///
+    /// | Days Since Install | Data Present? | Reason |
+    /// |-------------------|---------------|--------|
+    /// | 167 (< 6 months)  | Yes           | isLessThanSixMonths returns true |
+    /// | 168 (6 months)    | No            | isLessThanSixMonths returns false, removeAll() called |
+    ///
+    /// ## Constants
+    /// - daysInAMonth: 28
+    /// - 6 months: 28 * 6 = 168 days
+    /// - Threshold: >= 168 days triggers data removal
+    /// - Logic: `installDate > (now - 168 days)` returns false when now >= installDate + 168 days
+    ///
+    /// ## Test Validation
+    /// - Data persists at 167 days (< 6 months)
+    /// - All data is cleared at 168 days (exactly 6 months)
+    /// - Verifies: installDate, lastRetentionThreshold, subscriptionDate, subscription flags, syncDevicesCount
+    /// - Trigger: Any trigger (using .appDidStart) calls process() which checks isLessThanSixMonths
+    func testDataStorageRemovalAfterSixMonths() {
+        let fixture = createTestFixture { _, _, _, _, _, _ in
+            // No pixel expectations needed for this test
+        }
+        defer { fixture.cleanup() }
+
+        // Set install date
+        let installDate = fixture.timeMachine.now()
+        fixture.dataStorage.installDate = installDate
+
+        // Populate data storage with various data
+        fixture.dataStorage.lastRetentionThreshold = .weeks(2)
+        fixture.dataStorage.subscriptionDate = fixture.timeMachine.now()
+        fixture.dataStorage.subscriptionFreeTrialFired = true
+        fixture.dataStorage.subscriptionMonth1Fired = true
+        fixture.dataStorage.syncDevicesCount = 2
+
+        // Verify data is present initially
+        XCTAssertNotNil(fixture.dataStorage.installDate, "Install date should be set")
+        XCTAssertNotNil(fixture.dataStorage.lastRetentionThreshold, "Last retention threshold should be set")
+        XCTAssertNotNil(fixture.dataStorage.subscriptionDate, "Subscription date should be set")
+        XCTAssertTrue(fixture.dataStorage.subscriptionFreeTrialFired, "Subscription free trial flag should be set")
+        XCTAssertTrue(fixture.dataStorage.subscriptionMonth1Fired, "Subscription month 1 flag should be set")
+        XCTAssertEqual(fixture.dataStorage.syncDevicesCount, 2, "Sync devices count should be set")
+
+        // Travel to 167 days (< 6 months = 168 days)
+        fixture.timeMachine.travel(by: .day, value: 167)
+        fixture.attributionManager.process(trigger: .appDidStart)
+
+        // Verify data is still present at 167 days
+        XCTAssertNotNil(fixture.dataStorage.installDate, "Install date should still be present at 167 days")
+        XCTAssertNotNil(fixture.dataStorage.lastRetentionThreshold, "Last retention threshold should still be present")
+        XCTAssertNotNil(fixture.dataStorage.subscriptionDate, "Subscription date should still be present")
+
+        // Travel 1 more day to reach exactly 6 months (168 days total)
+        fixture.timeMachine.travel(by: .day, value: 1)
+        fixture.attributionManager.process(trigger: .appDidStart)
+
+        // Verify all data has been removed at exactly 6 months (168 days)
+        XCTAssertNil(fixture.dataStorage.installDate, "Install date should be removed at 6 months (168 days)")
+        XCTAssertNil(fixture.dataStorage.lastRetentionThreshold, "Last retention threshold should be removed")
+        XCTAssertEqual(fixture.dataStorage.search8Days.countPast7Days, 0, "Search data should be cleared")
+        XCTAssertEqual(fixture.dataStorage.adClick8Days.countPast7Days, 0, "Ad click data should be cleared")
+        XCTAssertEqual(fixture.dataStorage.duckAIChat8Days.countPast7Days, 0, "Duck AI chat data should be cleared")
+        XCTAssertNil(fixture.dataStorage.subscriptionDate, "Subscription date should be removed")
+        XCTAssertFalse(fixture.dataStorage.subscriptionFreeTrialFired, "Subscription free trial flag should be cleared")
+        XCTAssertFalse(fixture.dataStorage.subscriptionMonth1Fired, "Subscription month 1 flag should be cleared")
+        XCTAssertEqual(fixture.dataStorage.syncDevicesCount, 0, "Sync devices count should be cleared")
+    }
 }

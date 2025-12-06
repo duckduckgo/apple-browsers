@@ -22,22 +22,22 @@ import os.log
 public extension Logger {
     static let dbpSubsystem = "PIR"
 
-    static var dataBrokerProtection = {
+    static let dataBrokerProtection = {
         Logger(subsystem: dbpSubsystem, category: DataBrokerProtectionLoggerCategory.dataBrokerProtection.rawValue)
     }()
-    static var action = {
+    static let action = {
         Logger(subsystem: dbpSubsystem, category: DataBrokerProtectionLoggerCategory.action.rawValue)
     }()
-    static var service = {
+    static let service = {
         Logger(subsystem: dbpSubsystem, category: DataBrokerProtectionLoggerCategory.service.rawValue)
     }()
-    static var backgroundAgent = {
+    static let backgroundAgent = {
         Logger(subsystem: dbpSubsystem, category: DataBrokerProtectionLoggerCategory.backgroundAgent.rawValue)
     }()
-    static var backgroundAgentMemoryManagement = {
+    static let backgroundAgentMemoryManagement = {
         Logger(subsystem: dbpSubsystem, category: DataBrokerProtectionLoggerCategory.backgroundAgentMemoryManagement.rawValue)
     }()
-    static var pixel = {
+    static let pixel = {
         Logger(subsystem: dbpSubsystem, category: DataBrokerProtectionLoggerCategory.pixel.rawValue)
     }()
 

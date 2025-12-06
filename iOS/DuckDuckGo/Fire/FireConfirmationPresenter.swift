@@ -48,8 +48,8 @@ struct FireConfirmationPresenter {
     }
     
     private func makeViewModel(dismissing viewController: UIViewController,
-                                onConfirm: @escaping () -> Void,
-                                onCancel: @escaping () -> Void) -> FireConfirmationViewModel {
+                               onConfirm: @escaping () -> Void,
+                               onCancel: @escaping () -> Void) -> FireConfirmationViewModel {
         FireConfirmationViewModel(
             onConfirm: { [weak viewController] in
                 viewController?.dismiss(animated: true) {

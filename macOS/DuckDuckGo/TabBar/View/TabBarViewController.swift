@@ -92,6 +92,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
     private var pinnedTabsDiscoveryPopover: NSPopover?
     private weak var crashPopoverViewController: PopoverMessageViewController?
+    private let autoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinating?
 
     let themeManager: ThemeManaging
     private let tabDragAndDropManager: TabDragAndDropManager
@@ -157,7 +158,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         fireproofDomains: FireproofDomains,
         activeRemoteMessageModel: ActiveRemoteMessageModel,
         featureFlagger: FeatureFlagger,
-        tabDragAndDropManager: TabDragAndDropManager
+        tabDragAndDropManager: TabDragAndDropManager,
+        autoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinating? = nil
     ) -> TabBarViewController {
         NSStoryboard(name: "TabBar", bundle: nil).instantiateInitialController { coder in
             self.init(
@@ -167,7 +169,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
                 fireproofDomains: fireproofDomains,
                 activeRemoteMessageModel: activeRemoteMessageModel,
                 featureFlagger: featureFlagger,
-                tabDragAndDropManager: tabDragAndDropManager
+                tabDragAndDropManager: tabDragAndDropManager,
+                autoconsentStatsPopoverCoordinator: autoconsentStatsPopoverCoordinator
             )
         }!
     }
@@ -183,7 +186,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
           activeRemoteMessageModel: ActiveRemoteMessageModel,
           featureFlagger: FeatureFlagger,
           themeManager: ThemeManager = NSApp.delegateTyped.themeManager,
-          tabDragAndDropManager: TabDragAndDropManager) {
+          tabDragAndDropManager: TabDragAndDropManager,
+          autoconsentStatsPopoverCoordinator: AutoconsentStatsPopoverCoordinating? = nil) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.fireproofDomains = fireproofDomains
@@ -195,6 +199,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         )
         self.themeManager = themeManager
         self.tabDragAndDropManager = tabDragAndDropManager
+        self.autoconsentStatsPopoverCoordinator = autoconsentStatsPopoverCoordinator
 
         standardTabHeight = themeManager.theme.tabStyleProvider.standardTabHeight
         pinnedTabHeight = themeManager.theme.tabStyleProvider.pinnedTabHeight
@@ -505,6 +510,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     // MARK: - Actions
 
     @objc func addButtonAction(_ sender: NSButton) {
+        autoconsentStatsPopoverCoordinator?.dismissDialogDueToNewTabBeingShown()
         tabCollectionViewModel.insertOrAppendNewTab()
     }
 
@@ -1554,13 +1560,13 @@ extension TabBarViewController: TabBarViewItemDelegate {
             let viewController = PopoverMessageViewController(
                 title: UserText.tabCrashPopoverTitle,
                 message: UserText.tabCrashPopoverMessage,
-                presentMultiline: true,
-                maxWidth: TabCrashIndicatorModel.Const.popoverWidth,
                 autoDismissDuration: nil,
-                onDismiss: {
+                maxWidth: TabCrashIndicatorModel.Const.popoverWidth,
+                presentMultiline: true,
+                clickAction: {
                     tabBarViewItem.hideCrashIndicatorButton()
                 },
-                onClick: {
+                onDismiss: {
                     tabBarViewItem.hideCrashIndicatorButton()
                 }
             )

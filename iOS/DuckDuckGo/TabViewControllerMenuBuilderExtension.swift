@@ -143,11 +143,11 @@ extension TabViewController {
         return entries
     }
     
-    func buildAITabMenu(useSmallIcon: Bool = true) -> [BrowsingMenuEntry] {
+    func buildAITabMenu(useSmallIcon: Bool = true, includeSettings: Bool = true, separateUtililtyItems: Bool = false) -> [BrowsingMenuEntry] {
         var entries = [BrowsingMenuEntry]()
         
-        entries.append(contentsOf: buildAITabLinkEntries(useSmallIcon: useSmallIcon))
-        
+        entries.append(contentsOf: buildAITabLinkEntries(useSmallIcon: useSmallIcon, addPrint: !separateUtililtyItems))
+
         entries.append(.separator)
         
         entries.append(buildOpenBookmarksEntry(useSmallIcon: useSmallIcon))
@@ -159,12 +159,19 @@ extension TabViewController {
         entries.append(buildDownloadsEntry(useSmallIcon: useSmallIcon))
         
         entries.append(buildAIChatSidebarEntry(useSmallIcon: useSmallIcon))
-        
+
+        if separateUtililtyItems {
+            entries.append(.separator)
+            entries.append(buildPrintEntry(withSmallIcon: useSmallIcon))
+        }
+
         entries.append(.separator)
         
         entries.append(buildAIChatSettingsEntry(useSmallIcon: useSmallIcon))
-        
-        entries.append(buildSettingsEntry(useSmallIcon: useSmallIcon))
+
+        if includeSettings {
+            entries.append(buildSettingsEntry(useSmallIcon: useSmallIcon))
+        }
 
         return entries
     }
@@ -296,7 +303,7 @@ extension TabViewController {
         return entries
     }
     
-    private func buildAITabLinkEntries(useSmallIcon: Bool = true) -> [BrowsingMenuEntry] {
+    private func buildAITabLinkEntries(useSmallIcon: Bool = true, addPrint: Bool = true) -> [BrowsingMenuEntry] {
         guard let link = link, !isError else { return [] }
 
         var entries = [BrowsingMenuEntry]()
@@ -306,9 +313,11 @@ extension TabViewController {
         }
 
         entries.append(self.buildFindInPageEntry(forLink: link, useSmallIcon: useSmallIcon))
-        
-        entries.append(buildPrintEntry(withSmallIcon: useSmallIcon))
-                
+
+        if addPrint {
+            entries.append(buildPrintEntry(withSmallIcon: useSmallIcon))
+        }
+
         return entries
     }
 
@@ -401,7 +410,7 @@ extension TabViewController {
     
     private func buildReportBrokenSiteEntry(useSmallIcon: Bool = true) -> BrowsingMenuEntry {
         return BrowsingMenuEntry.regular(name: UserText.actionReportBrokenSite,
-                                         image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.feedbackBlank : DesignSystemImages.Glyphs.Size24.feedback,
+                                         image: useSmallIcon ? DesignSystemImages.Glyphs.Size16.feedbackBlank : DesignSystemImages.Glyphs.Size24.support,
                                          action: { [weak self] in
             self?.onReportBrokenSiteAction()
         })
@@ -811,11 +820,13 @@ extension TabViewController: BrowsingMenuEntryBuilding {
     }
     
     func makeAITabMenu() -> [BrowsingMenuEntry] {
-        buildAITabMenu(useSmallIcon: false)
+        buildAITabMenu(useSmallIcon: false, includeSettings: false, separateUtililtyItems: true)
     }
     
     func makeAITabMenuHeaderContent() -> [BrowsingMenuEntry] {
-        buildAITabMenuHeaderContent()
+        // Add settings to the header.
+        // It'll be filtered out in `makeAITabMenu`
+        buildAITabMenuHeaderContent() + [makeSettingsEntry()]
     }
     
     func makeBrowsingMenu(with bookmarksInterface: MenuBookmarksInteracting,

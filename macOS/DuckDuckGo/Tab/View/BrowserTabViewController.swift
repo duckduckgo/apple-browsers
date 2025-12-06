@@ -124,11 +124,7 @@ final class BrowserTabViewController: NSViewController {
     public weak var aiChatSidebarHostingDelegate: AIChatSidebarHostingDelegate?
 
     private var isInPopUpWindow: Bool {
-        guard let mainViewController = parent as? MainViewController else {
-            assert(view.window == nil, "BrowserTabViewController is not a child of MainViewController")
-            return false
-        }
-        return mainViewController.isInPopUpWindow
+        tabCollectionViewModel.isPopup
     }
 
     required init?(coder: NSCoder) {

@@ -60,6 +60,10 @@
     "title" : "Nessuna attività di tracciamento recente",
     "note" : "Placeholder text shown in the Details view when no tracking activity was blocked in the last 7 days. Keep concise if possible."
   },
+  "protections_newBadge" : {
+    "title" : "Nuova",
+    "note" : "Text displayed in a badge to indicate a new feature or statistic."
+  },
   "stats_menuTitle" : {
     "title" : "Tentativi di tracciamento bloccati",
     "note" : "Used as a label in a customization menu"
@@ -117,7 +121,7 @@
     "note" : "The heading indicating multiple cookie pop-ups were handled by the CPM"
   },
   "stats_protectionsReportInfo" : {
-    "title" : "Mostra i tentativi di tracciamento bloccati negli ultimi 7 giorni e il numero di pop-up di cookie bloccati da quando hai iniziato a usare il browser. <span>Puoi reimpostare queste statistiche usando il Fire Button.</span>",
+    "title" : "Mostra i tentativi di tracciamento bloccati negli ultimi 7 giorni e il numero di pop-up di cookie bloccati da quando hai iniziato a usare il browser.",
     "note" : "Text explaining how to reset the protections stats"
   },
   "stats_feedCountBlockedSingular" : {

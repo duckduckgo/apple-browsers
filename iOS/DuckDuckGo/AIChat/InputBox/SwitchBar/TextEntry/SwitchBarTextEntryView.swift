@@ -337,15 +337,6 @@ class SwitchBarTextEntryView: UIView {
         // Reset defaults
         textView.textContainer.lineBreakMode = .byWordWrapping
 
-        let isUsingSmallerBottomInputForSearch = handler.isUsingSmallerBottomInput && currentMode == .search && !handler.isTopBarPosition
-        if isUsingSmallerBottomInputForSearch {
-            heightConstraint?.constant = Constants.minHeight
-            textView.isScrollEnabled = true
-            textView.showsVerticalScrollIndicator = false
-            textView.textContainer.lineBreakMode = .byTruncatingTail
-            return
-        }
-
         if isUnexpandedURL() ||
             // https://app.asana.com/1/137249556945/project/392891325557410/task/1210916875279070?focus=true
             textView.text.isBlank {

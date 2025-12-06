@@ -522,6 +522,7 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .dataImport }
 
     case newSafariFilePicker
+    case newDataImportExperience
 }
 
 public enum SERPSubfeature: String, PrivacySubfeature {

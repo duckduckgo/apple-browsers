@@ -71,6 +71,7 @@ enum ThirdPartyBrowser: CaseIterable {
         case .onePassword8: return .onePassword8
         case .csv: return nil
         case .bookmarksHTML: return nil
+        case .fileImport: return nil
         }
     }
 
@@ -240,6 +241,19 @@ enum ThirdPartyBrowser: CaseIterable {
         }
 
         return DataImport.BrowserProfileList(browser: self, profiles: profiles)
+    }
+
+    var isWebBrowser: Bool {
+        switch self {
+        case .brave, .chrome, .firefox, .safari, .safariTechnologyPreview, .yandex, .vivaldi, .opera, .operaGX, .edge, .tor, .chromium, .coccoc:
+            return true
+        case .bitwarden, .lastPass, .onePassword7, .onePassword8:
+            return false
+        }
+    }
+
+    var isSafari: Bool {
+        self == .safari || self == .safariTechnologyPreview
     }
 
     private func findRunningApplications() -> [NSRunningApplication] {

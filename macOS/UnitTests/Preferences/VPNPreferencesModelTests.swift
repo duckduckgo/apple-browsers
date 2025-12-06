@@ -161,24 +161,33 @@ final class VPNPreferencesModelTests: XCTestCase {
 }
 
 final class MockPinningManager: PinningManager {
+    var pinnedViews: Set<PinnableView> = []
+
     func togglePinning(for view: PinnableView) {
+        if pinnedViews.contains(view) {
+            pinnedViews.remove(view)
+        } else {
+            pinnedViews.insert(view)
+        }
     }
 
     func isPinned(_ view: PinnableView) -> Bool {
-        return false
+        pinnedViews.contains(view)
     }
 
-    func wasManuallyToggled(_ view: DuckDuckGo_Privacy_Browser.PinnableView) -> Bool {
-        return false
+    func wasManuallyToggled(_ view: PinnableView) -> Bool {
+        false
     }
 
     func pin(_ view: PinnableView) {
+        pinnedViews.insert(view)
     }
 
     func unpin(_ view: PinnableView) {
+        pinnedViews.remove(view)
     }
 
     func shortcutTitle(for view: PinnableView) -> String {
-        return ""
+        ""
     }
 }

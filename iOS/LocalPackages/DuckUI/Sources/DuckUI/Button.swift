@@ -19,9 +19,55 @@
 
 import SwiftUI
 
-public struct PrimaryButtonStyle: ButtonStyle {
-    @Environment(\.colorScheme) private var colorScheme
+private struct PrimaryButtonColors {
+    let standard: Color
+    let pressed: Color
+    let disabled: Color
+    let text: Color
+    let textDisabled: Color
 
+    static let primary = PrimaryButtonColors(
+        standard: Color(designSystemColor: .buttonsPrimaryDefault),
+        pressed: Color(designSystemColor: .buttonsPrimaryPressed),
+        disabled: Color(designSystemColor: .buttonsPrimaryDisabled),
+        text: Color(designSystemColor: .buttonsPrimaryText),
+        textDisabled: Color(designSystemColor: .buttonsPrimaryTextDisabled)
+    )
+
+    static let destructive = PrimaryButtonColors(
+        standard: Color(designSystemColor: .destructivePrimary),
+        pressed: Color(designSystemColor: .buttonsDestructivePrimaryPressed),
+        disabled: Color(designSystemColor: .destructivePrimary).opacity(0.36),
+        text: Color(designSystemColor: .buttonsWhite),
+        textDisabled: Color(designSystemColor: .buttonsWhite).opacity(0.36)
+    )
+}
+
+@ViewBuilder
+private func makePrimaryButtonBody(
+    configuration: ButtonStyleConfiguration,
+    colors: PrimaryButtonColors,
+    disabled: Bool,
+    compact: Bool,
+    fullWidth: Bool
+) -> some View {
+    let backgroundColor = disabled ? colors.disabled : colors.standard
+    let foregroundColor = disabled ? colors.textDisabled : colors.text
+
+    configuration.label
+        .fixedSize(horizontal: false, vertical: true)
+        .multilineTextAlignment(.center)
+        .lineLimit(nil)
+        .font(Font(UIFont.boldAppFont(ofSize: Consts.fontSize)))
+        .foregroundColor(foregroundColor)
+        .padding(.vertical)
+        .padding(.horizontal, fullWidth ? nil : 24)
+        .frame(minWidth: 0, maxWidth: fullWidth ? .infinity : nil, maxHeight: compact ? Consts.height - 10 : Consts.height)
+        .background(configuration.isPressed ? colors.pressed : backgroundColor)
+        .cornerRadius(Consts.cornerRadius)
+}
+
+public struct PrimaryButtonStyle: ButtonStyle {
     let disabled: Bool
     let compact: Bool
     let fullWidth: Bool
@@ -31,27 +77,37 @@ public struct PrimaryButtonStyle: ButtonStyle {
         self.compact = compact
         self.fullWidth = fullWidth
     }
-    
-    public func makeBody(configuration: Configuration) -> some View {
-        let standardBackgroundColor = Color(designSystemColor: .buttonsPrimaryDefault)
-        let pressedBackgroundColor = Color(designSystemColor: .buttonsPrimaryPressed)
-        let disabledBackgroundColor = Color(designSystemColor: .buttonsPrimaryDisabled)
-        let standardForegroundColor = Color(designSystemColor: .buttonsPrimaryText)
-        let disabledForegroundColor = Color(designSystemColor: .buttonsPrimaryTextDisabled)
-        let backgroundColor = disabled ? disabledBackgroundColor : standardBackgroundColor
-        let foregroundColor = disabled ? disabledForegroundColor : standardForegroundColor
 
-        configuration.label
-            .fixedSize(horizontal: false, vertical: true)
-            .multilineTextAlignment(.center)
-            .lineLimit(nil)
-            .font(Font(UIFont.boldAppFont(ofSize: Consts.fontSize)))
-            .foregroundColor(foregroundColor)
-            .padding(.vertical)
-            .padding(.horizontal, fullWidth ? nil : 24)
-            .frame(minWidth: 0, maxWidth: fullWidth ? .infinity : nil, maxHeight: compact ? Consts.height - 10 : Consts.height)
-            .background(configuration.isPressed ? pressedBackgroundColor : backgroundColor)
-            .cornerRadius(Consts.cornerRadius)
+    public func makeBody(configuration: Configuration) -> some View {
+        makePrimaryButtonBody(
+            configuration: configuration,
+            colors: .primary,
+            disabled: disabled,
+            compact: compact,
+            fullWidth: fullWidth
+        )
+    }
+}
+
+public struct PrimaryDestructiveButtonStyle: ButtonStyle {
+    let disabled: Bool
+    let compact: Bool
+    let fullWidth: Bool
+
+    public init(disabled: Bool = false, compact: Bool = false, fullWidth: Bool = true) {
+        self.disabled = disabled
+        self.compact = compact
+        self.fullWidth = fullWidth
+    }
+
+    public func makeBody(configuration: Configuration) -> some View {
+        makePrimaryButtonBody(
+            configuration: configuration,
+            colors: .destructive,
+            disabled: disabled,
+            compact: compact,
+            fullWidth: fullWidth
+        )
     }
 }
 

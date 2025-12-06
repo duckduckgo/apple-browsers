@@ -106,15 +106,9 @@ struct FireConfirmationView: View {
                 viewModel.confirm()
             }) {
                 Text(UserText.actionDelete)
-                    .daxButton()
-                    .foregroundColor(Color(designSystemColor: .buttonsWhite))
-                    .frame(maxWidth: .infinity)
-                    .frame(minHeight: Constants.footerButtonMinHeight)
-                    .background(Color(designSystemColor: .destructivePrimary))
-                    .cornerRadius(Constants.footerButtonCornerRadius)
             }
+            .buttonStyle(PrimaryDestructiveButtonStyle())
             .accessibilityIdentifier("Fire.Confirmation.Button.Delete")
-            // TODO: - Create a PrimaryDestructive button style and use it here. Pending on design.
             
             // Cancel button
             Button(action: {
@@ -147,8 +141,6 @@ private extension FireConfirmationView {
         
         // Footer Buttons
         static let footerButtonsSpacing: CGFloat = 8
-        static let footerButtonMinHeight: CGFloat = 50
-        static let footerButtonCornerRadius: CGFloat = 12
     }
 }
 

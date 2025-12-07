@@ -29,7 +29,7 @@ import AppKit
 
 public extension Logger {
     private static let subscriptionSubsystem = "Subscription"
-    static let keychainManager = { Logger(subsystem: Self.subscriptionSubsystem, category: "KeychainManager") }()
+    static let keychainManager = Logger(subsystem: Self.subscriptionSubsystem, category: "KeychainManager")
 }
 
 public protocol KeychainManaging {

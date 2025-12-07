@@ -100,6 +100,21 @@ final class InstructionsFormatParserTests: XCTestCase {
         ])
     }
 
+    func testBoldMarkdownWithArrowAfterDelimiter() throws {
+        let format = "%d Open **%s** and select the vault to export **→ File → Export → All Items** from the menu bar"
+        let parsed = try InstructionsFormatParser().parse(format: format)
+        XCTAssertEqual(parsed, [
+            [
+                .number(argIndex: 1),
+                .text("Open "),
+                .string(argIndex: 2, bold: true),
+                .text(" and select the vault to export "),
+                .text("→ File → Export → All Items", bold: true),
+                .text(" from the menu bar")
+            ]
+        ])
+    }
+
     func testMarkdownWithExpressions() throws {
         let format = """
         %d Open **%s**

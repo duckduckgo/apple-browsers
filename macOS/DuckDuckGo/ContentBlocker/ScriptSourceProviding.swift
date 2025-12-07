@@ -50,34 +50,30 @@ protocol ScriptSourceProviding {
 
 }
 
-// refactor: ScriptSourceProvider to be passed to init methods as `some ScriptSourceProviding`, DefaultScriptSourceProvider to be killed
-// swiftlint:disable:next identifier_name
-@MainActor func DefaultScriptSourceProvider() -> ScriptSourceProviding {
-    ScriptSourceProvider(
-        configStorage: Application.appDelegate.configurationStore,
-        privacyConfigurationManager: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
-        webTrackingProtectionPreferences: Application.appDelegate.webTrackingProtectionPreferences,
-        cookiePopupProtectionPreferences: Application.appDelegate.cookiePopupProtectionPreferences,
-        duckPlayer: Application.appDelegate.duckPlayer,
-        contentBlockingManager: Application.appDelegate.privacyFeatures.contentBlocking.contentBlockingManager,
-        trackerDataManager: Application.appDelegate.privacyFeatures.contentBlocking.trackerDataManager,
-        experimentManager: Application.appDelegate.contentScopeExperimentsManager,
-        tld: Application.appDelegate.tld,
-        featureFlagger: Application.appDelegate.featureFlagger,
-        onboardingNavigationDelegate: Application.appDelegate.windowControllersManager,
-        appearancePreferences: Application.appDelegate.appearancePreferences,
-        startupPreferences: Application.appDelegate.startupPreferences,
-        windowControllersManager: Application.appDelegate.windowControllersManager,
-        bookmarkManager: Application.appDelegate.bookmarkManager,
-        historyCoordinator: Application.appDelegate.historyCoordinator,
-        fireproofDomains: Application.appDelegate.fireproofDomains,
-        fireCoordinator: Application.appDelegate.fireCoordinator,
-        autoconsentManagement: Application.appDelegate.autoconsentManagement,
-        newTabPageActionsManager: nil
-    )
-}
-
 struct ScriptSourceProvider: ScriptSourceProviding {
+
+    struct Dependencies {
+        let configStorage: ConfigurationStoring
+        let privacyConfigurationManager: PrivacyConfigurationManaging
+        let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
+        let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
+        let duckPlayer: DuckPlayer
+        let contentBlockingManager: ContentBlockerRulesManagerProtocol
+        let trackerDataManager: TrackerDataManager
+        let experimentManager: ContentScopeExperimentsManaging
+        let tld: TLD
+        let featureFlagger: FeatureFlagger
+        let onboardingNavigationDelegate: OnboardingNavigating
+        let appearancePreferences: AppearancePreferences
+        let startupPreferences: StartupPreferences
+        let windowControllersManager: WindowControllersManagerProtocol
+        let bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling
+        let historyCoordinator: HistoryDataSource
+        let fireproofDomains: DomainFireproofStatusProviding
+        let fireCoordinator: FireCoordinator
+        let autoconsentManagement: AutoconsentManagement
+    }
+
     private(set) var contentBlockerRulesConfig: ContentBlockerUserScriptConfig?
     private(set) var surrogatesConfig: SurrogatesUserScriptConfig?
     private(set) var onboardingActionsManager: OnboardingActionsManaging?
@@ -104,42 +100,22 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     let autoconsentManagement: AutoconsentManagement
 
     @MainActor
-    init(configStorage: ConfigurationStoring,
-         privacyConfigurationManager: PrivacyConfigurationManaging,
-         webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
-         cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
-         duckPlayer: DuckPlayer,
-         contentBlockingManager: ContentBlockerRulesManagerProtocol,
-         trackerDataManager: TrackerDataManager,
-         experimentManager: ContentScopeExperimentsManaging,
-         tld: TLD,
-         featureFlagger: FeatureFlagger,
-         onboardingNavigationDelegate: OnboardingNavigating,
-         appearancePreferences: AppearancePreferences,
-         startupPreferences: StartupPreferences,
-         windowControllersManager: WindowControllersManagerProtocol,
-         bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
-         historyCoordinator: HistoryDataSource,
-         fireproofDomains: DomainFireproofStatusProviding,
-         fireCoordinator: FireCoordinator,
-         autoconsentManagement: AutoconsentManagement,
-         newTabPageActionsManager: NewTabPageActionsManager?
-    ) {
-
-        self.configStorage = configStorage
-        self.privacyConfigurationManager = privacyConfigurationManager
-        self.webTrackingProtectionPreferences = webTrackingProtectionPreferences
-        self.cookiePopupProtectionPreferences = cookiePopupProtectionPreferences
-        self.duckPlayer = duckPlayer
-        self.contentBlockingManager = contentBlockingManager
-        self.trackerDataManager = trackerDataManager
-        self.experimentManager = experimentManager
-        self.tld = tld
-        self.featureFlagger = featureFlagger
-        self.bookmarkManager = bookmarkManager
-        self.historyCoordinator = historyCoordinator
-        self.windowControllersManager = windowControllersManager
-        self.autoconsentManagement = autoconsentManagement
+    init(dependencies: Dependencies,
+         newTabPageActionsManager: NewTabPageActionsManager?) {
+        self.configStorage = dependencies.configStorage
+        self.privacyConfigurationManager = dependencies.privacyConfigurationManager
+        self.webTrackingProtectionPreferences = dependencies.webTrackingProtectionPreferences
+        self.cookiePopupProtectionPreferences = dependencies.cookiePopupProtectionPreferences
+        self.duckPlayer = dependencies.duckPlayer
+        self.contentBlockingManager = dependencies.contentBlockingManager
+        self.trackerDataManager = dependencies.trackerDataManager
+        self.experimentManager = dependencies.experimentManager
+        self.tld = dependencies.tld
+        self.featureFlagger = dependencies.featureFlagger
+        self.bookmarkManager = dependencies.bookmarkManager
+        self.historyCoordinator = dependencies.historyCoordinator
+        self.windowControllersManager = dependencies.windowControllersManager
+        self.autoconsentManagement = dependencies.autoconsentManagement
 
         self.newTabPageActionsManager = newTabPageActionsManager
         self.contentBlockerRulesConfig = buildContentBlockerRulesConfig()
@@ -147,14 +123,16 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.sessionKey = generateSessionKey()
         self.messageSecret = generateSessionKey()
         self.autofillSourceProvider = buildAutofillSource()
-        self.onboardingActionsManager = buildOnboardingActionsManager(onboardingNavigationDelegate, appearancePreferences, startupPreferences)
+        self.onboardingActionsManager = buildOnboardingActionsManager(dependencies.onboardingNavigationDelegate,
+                                                                      dependencies.appearancePreferences,
+                                                                      dependencies.startupPreferences)
         self.historyViewActionsManager = HistoryViewActionsManager(
-            historyCoordinator: historyCoordinator,
-            bookmarksHandler: bookmarkManager,
-            featureFlagger: featureFlagger,
-            fireproofStatusProvider: fireproofDomains,
-            tld: tld,
-            fire: { @MainActor in fireCoordinator.fireViewModel.fire }
+            historyCoordinator: dependencies.historyCoordinator,
+            bookmarksHandler: dependencies.bookmarkManager,
+            featureFlagger: dependencies.featureFlagger,
+            fireproofStatusProvider: dependencies.fireproofDomains,
+            tld: dependencies.tld,
+            fire: { @MainActor in dependencies.fireCoordinator.fireViewModel.fire }
         )
         self.currentCohorts = generateCurrentCohorts()
     }

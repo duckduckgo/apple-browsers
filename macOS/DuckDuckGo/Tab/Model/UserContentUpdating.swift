@@ -76,25 +76,7 @@ final class UserContentUpdating {
     private lazy var newTabPageActionsManager: NewTabPageActionsManager? = userScriptDependenciesProvider?.makeNewTabPageActionsManager()
 
     @MainActor
-    init(contentBlockerRulesManager: ContentBlockerRulesManagerProtocol,
-         privacyConfigurationManager: PrivacyConfigurationManaging,
-         trackerDataManager: TrackerDataManager,
-         configStorage: ConfigurationStoring,
-         webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
-         cookiePopupProtectionPreferences: CookiePopupProtectionPreferences,
-         duckPlayer: DuckPlayer,
-         experimentManager: @autoclosure @escaping () -> ContentScopeExperimentsManaging,
-         tld: TLD,
-         featureFlagger: FeatureFlagger,
-         onboardingNavigationDelegate: OnboardingNavigating,
-         appearancePreferences: AppearancePreferences,
-         startupPreferences: StartupPreferences,
-         windowControllersManager: WindowControllersManagerProtocol,
-         bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
-         historyCoordinator: HistoryDataSource,
-         fireproofDomains: DomainFireproofStatusProviding,
-         fireCoordinator: FireCoordinator,
-         autoconsentManagement: AutoconsentManagement,
+    init(dependencies: ScriptSourceProvider.Dependencies,
          contentScopePreferences: ContentScopePreferences
     ) {
         func onNotificationWithInitial(_ name: Notification.Name) -> AnyPublisher<Notification, Never> {
@@ -115,34 +97,16 @@ final class UserContentUpdating {
             .eraseToAnyPublisher()
 
         let makeValue: (Update) async -> NewContent = { [weak self] rulesUpdate in
-            let sourceProvider = ScriptSourceProvider(configStorage: configStorage,
-                                                      privacyConfigurationManager: privacyConfigurationManager,
-                                                      webTrackingProtectionPreferences: webTrackingProtectionPreferences,
-                                                      cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
-                                                      duckPlayer: duckPlayer,
-                                                      contentBlockingManager: contentBlockerRulesManager,
-                                                      trackerDataManager: trackerDataManager,
-                                                      experimentManager: experimentManager(),
-                                                      tld: tld,
-                                                      featureFlagger: featureFlagger,
-                                                      onboardingNavigationDelegate: onboardingNavigationDelegate,
-                                                      appearancePreferences: appearancePreferences,
-                                                      startupPreferences: startupPreferences,
-                                                      windowControllersManager: windowControllersManager,
-                                                      bookmarkManager: bookmarkManager,
-                                                      historyCoordinator: historyCoordinator,
-                                                      fireproofDomains: fireproofDomains,
-                                                      fireCoordinator: fireCoordinator,
-                                                      autoconsentManagement: autoconsentManagement,
+            let sourceProvider = ScriptSourceProvider(dependencies: dependencies,
                                                       newTabPageActionsManager: self?.newTabPageActionsManager)
             return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider, contentScopePreferences: contentScopePreferences)
         }
 
         let updatesStream = AsyncStream { continuation in
             // 1. Collect updates from ContentBlockerRulesManager and generate UserScripts based on its output
-            let cancellable = contentBlockerRulesManager.updatesPublisher
+            let cancellable = dependencies.contentBlockingManager.updatesPublisher
             // regenerate UserScripts on gpcEnabled preference updated
-                .combineLatest(webTrackingProtectionPreferences.$isGPCEnabled)
+                .combineLatest(dependencies.webTrackingProtectionPreferences.$isGPCEnabled)
                 .map { $0.0 } // drop gpcEnabled value: $0.1
                 .combineLatest(onNotificationWithInitial(.autofillUserSettingsDidChange), combine)
                 .combineLatest(onNotificationWithInitial(.autofillScriptDebugSettingsDidChange), combine)
@@ -160,7 +124,7 @@ final class UserContentUpdating {
             .map { await makeValue($0) }
 
         updatesTask = Task {
-            // DefaultScriptSourceProvider instance should be created once per rules/config change and fed into UserScripts initialization
+            // ScriptSourceProvider instance should be created once per rules/config change and fed into UserScripts initialization
             for await value in updatesStream {
                 bufferedValue = value
             }

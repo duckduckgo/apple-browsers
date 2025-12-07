@@ -24,6 +24,7 @@ import Common
 import Persistence
 import PixelKit
 import PixelExperimentKit
+import Configuration
 
 protocol ContentBlockingProtocol {
 
@@ -45,6 +46,23 @@ final class AppContentBlocking {
     let trackerDataManager: TrackerDataManager
     let contentBlockingManager: ContentBlockerRulesManagerProtocol
     let userContentUpdating: UserContentUpdating
+    let userScriptsDependencies: ScriptSourceProvider.Dependencies
+
+    let configStorage: ConfigurationStoring
+    let featureFlagger: FeatureFlagger
+    let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
+    let cookiePopupProtectionPreferences: CookiePopupProtectionPreferences
+    let duckPlayer: DuckPlayer
+    let windowControllersManager: WindowControllersManagerProtocol
+    let bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling
+    let historyCoordinator: HistoryDataSource
+    let fireproofDomains: DomainFireproofStatusProviding
+    let fireCoordinator: FireCoordinator
+    let onboardingNavigationDelegate: OnboardingNavigating
+    let appearancePreferences: AppearancePreferences
+    let startupPreferences: StartupPreferences
+    let autoconsentManagement: AutoconsentManagement
+    let experimentManager: ContentScopeExperimentsManaging
 
     let tld: TLD
 
@@ -136,6 +154,21 @@ final class AppContentBlocking {
         contentScopePreferences: ContentScopePreferences
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.configStorage = configurationStore
+        self.featureFlagger = featureFlagger
+        self.webTrackingProtectionPreferences = webTrackingProtectionPreferences
+        self.cookiePopupProtectionPreferences = cookiePopupProtectionPreferences
+        self.duckPlayer = duckPlayer
+        self.windowControllersManager = windowControllersManager
+        self.bookmarkManager = bookmarkManager
+        self.historyCoordinator = historyCoordinator
+        self.fireproofDomains = fireproofDomains
+        self.fireCoordinator = fireCoordinator
+        self.onboardingNavigationDelegate = onboardingNavigationDelegate
+        self.appearancePreferences = appearancePreferences
+        self.startupPreferences = startupPreferences
+        self.autoconsentManagement = autoconsentManagement
+        self.experimentManager = contentScopeExperimentsManager()
         self.tld = tld
 
         trackerDataManager = TrackerDataManager(etag: configurationStore.loadEtag(for: .trackerDataSet),
@@ -152,32 +185,34 @@ final class AppContentBlocking {
                                                             exceptionsSource: exceptionsSource,
                                                             cache: ContentBlockingRulesCache(),
                                                             errorReporting: Self.debugEvents)
-        userContentUpdating = UserContentUpdating(contentBlockerRulesManager: contentBlockingManager,
-                                                  privacyConfigurationManager: privacyConfigurationManager,
-                                                  trackerDataManager: trackerDataManager,
-                                                  configStorage: configurationStore,
-                                                  webTrackingProtectionPreferences: webTrackingProtectionPreferences,
-                                                  cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
-                                                  duckPlayer: duckPlayer,
-                                                  experimentManager: contentScopeExperimentsManager(),
-                                                  tld: tld,
-                                                  featureFlagger: featureFlagger,
-                                                  onboardingNavigationDelegate: onboardingNavigationDelegate,
-                                                  appearancePreferences: appearancePreferences,
-                                                  startupPreferences: startupPreferences,
-                                                  windowControllersManager: windowControllersManager,
-                                                  bookmarkManager: bookmarkManager,
-                                                  historyCoordinator: historyCoordinator,
-                                                  fireproofDomains: fireproofDomains,
-                                                  fireCoordinator: fireCoordinator,
-                                                  autoconsentManagement: autoconsentManagement,
-                                                  contentScopePreferences: contentScopePreferences)
-
         adClickAttributionRulesProvider = AdClickAttributionRulesProvider(config: adClickAttribution,
                                                                           compiledRulesSource: contentBlockingManager,
                                                                           exceptionsSource: exceptionsSource,
                                                                           errorReporting: attributionDebugEvents,
                                                                           compilationErrorReporting: Self.debugEvents)
+        userScriptsDependencies = ScriptSourceProvider.Dependencies(
+            configStorage: configStorage,
+            privacyConfigurationManager: privacyConfigurationManager,
+            webTrackingProtectionPreferences: webTrackingProtectionPreferences,
+            cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
+            duckPlayer: duckPlayer,
+            contentBlockingManager: contentBlockingManager,
+            trackerDataManager: trackerDataManager,
+            experimentManager: experimentManager,
+            tld: tld,
+            featureFlagger: featureFlagger,
+            onboardingNavigationDelegate: onboardingNavigationDelegate,
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            windowControllersManager: windowControllersManager,
+            bookmarkManager: bookmarkManager,
+            historyCoordinator: historyCoordinator,
+            fireproofDomains: fireproofDomains,
+            fireCoordinator: fireCoordinator,
+            autoconsentManagement: autoconsentManagement
+        )
+        userContentUpdating = UserContentUpdating(dependencies: userScriptsDependencies,
+                                                  contentScopePreferences: contentScopePreferences)
     }
 
     static let debugEvents = EventMapping<ContentBlockerDebugEvents> { event, error, parameters, onComplete in

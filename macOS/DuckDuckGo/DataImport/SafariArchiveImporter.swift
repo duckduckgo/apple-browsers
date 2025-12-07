@@ -21,9 +21,10 @@ import BrowserServicesKit
 import SecureStorage
 import PixelKit
 import Common
+import UniformTypeIdentifiers
 
-/// A DataImporter that can import bookmarks and passwords from a zip archive
-/// by extracting the contents and using BookmarkHTMLImporter and CSVImporter.
+/// A DataImporter that can import Safari archives as well as standalone Safari exports
+/// (CSV, HTML, JSON) by delegating to the appropriate importer for each format.
 final class SafariArchiveImporter: DataImporter {
     struct ImportError: DataImportError {
         enum OperationType: Int {
@@ -51,6 +52,30 @@ final class SafariArchiveImporter: DataImporter {
         }
     }
 
+    private enum SourceFileType {
+        case archive
+        case bookmarks
+        case passwords
+        case creditCards
+
+        init(url: URL) {
+            guard let fileType = SafariArchiveImporter.contentType(for: url) else {
+                self = .archive
+                return
+            }
+
+            if fileType.conforms(to: .commaSeparatedText) {
+                self = .passwords
+            } else if fileType.conforms(to: .html) {
+                self = .bookmarks
+            } else if fileType.conforms(to: .json) {
+                self = .creditCards
+            } else {
+                self = .archive
+            }
+        }
+    }
+
     private let archiveURL: URL
     private let archiveReader: ImportArchiveReading
     private let bookmarkImporter: BookmarkImporter
@@ -61,6 +86,7 @@ final class SafariArchiveImporter: DataImporter {
     private let featureFlagger: FeatureFlagger
     private let secureVaultReporter: SecureVaultReporting
     private let tld: TLD
+    private let sourceFileType: SourceFileType
 
     /// Initializes the SafariArchiveImporter with concrete dependencies
     /// - Parameters:
@@ -82,6 +108,7 @@ final class SafariArchiveImporter: DataImporter {
          featureFlagger: FeatureFlagger,
          secureVaultReporter: SecureVaultReporting,
          tld: TLD) {
+        self.sourceFileType = SourceFileType(url: archiveURL)
         self.archiveURL = archiveURL
         self.archiveReader = archiveReader
         self.bookmarkImporter = bookmarkImporter
@@ -98,27 +125,45 @@ final class SafariArchiveImporter: DataImporter {
 
     /// Returns the union of all importable types based on the archive contents
     var importableTypes: [DataImport.DataType] {
-        guard let contents = try? archiveReader.readContents(from: archiveURL) else {
-            return []
-        }
+        switch sourceFileType {
+        case .archive:
+            guard let contents = try? archiveReader.readContents(from: archiveURL) else {
+                return []
+            }
 
-        var types: [DataImport.DataType] = []
-        if !contents.passwords.isEmpty {
-            types.append(.passwords)
+            var types: [DataImport.DataType] = []
+            if !contents.passwords.isEmpty {
+                types.append(.passwords)
+            }
+            if !contents.bookmarks.isEmpty {
+                types.append(.bookmarks)
+            }
+            if !contents.creditCards.isEmpty {
+                types.append(.creditCards)
+            }
+            return types
+        case .passwords:
+            return [.passwords]
+        case .bookmarks:
+            return [.bookmarks]
+        case .creditCards:
+            return [.creditCards]
         }
-        if !contents.bookmarks.isEmpty {
-            types.append(.bookmarks)
-        }
-        if !contents.creditCards.isEmpty {
-            types.append(.creditCards)
-        }
-        return types
     }
 
     /// Validates access for the requested data types by extracting the archive
     /// - Parameter types: The data types to validate access for
     /// - Returns: A dictionary of validation errors, or nil if all validations pass
     func validateAccess(for types: Set<DataImport.DataType>) -> [DataImport.DataType: any DataImportError]? {
+        switch sourceFileType {
+        case .archive:
+            return validateArchiveAccess(for: types)
+        case .bookmarks, .passwords, .creditCards:
+            return nil
+        }
+    }
+
+    private func validateArchiveAccess(for types: Set<DataImport.DataType>) -> [DataImport.DataType: any DataImportError]? {
         do {
             let contents = try archiveReader.readContents(from: archiveURL)
             let tempFile = try createTemporaryBookmarksFile(from: contents.bookmarks)
@@ -170,7 +215,7 @@ final class SafariArchiveImporter: DataImporter {
         // Extract archive contents
         let contents: ImportArchiveContents
         do {
-            contents = try archiveReader.readContents(from: archiveURL)
+            contents = try readContentsForSelectedFile()
         } catch {
             for type in types {
                 finalSummary[type] = DataImportResult.failure(ImportError(action: .generic, type: .unarchive, underlyingError: error))
@@ -195,7 +240,8 @@ final class SafariArchiveImporter: DataImporter {
 
         // Import bookmarks if requested and available
         if types.contains(.bookmarks), !contents.bookmarks.isEmpty {
-            let summary = try await importBookmarks(contents.bookmarks, types, updateProgress, &cumulativeFraction)
+            let originalHTMLFile = sourceFileType == .bookmarks ? archiveURL : nil
+            let summary = try await importBookmarks(contents.bookmarks, originalHTMLFile, types, updateProgress, &cumulativeFraction)
             finalSummary.merge(summary) { (_, new) in new }
         }
 
@@ -218,6 +264,22 @@ final class SafariArchiveImporter: DataImporter {
     }
 
     // MARK: - Private
+
+    private func readContentsForSelectedFile() throws -> ImportArchiveContents {
+        switch sourceFileType {
+        case .archive:
+            return try archiveReader.readContents(from: archiveURL)
+        case .passwords:
+            let csvContent = try String(contentsOf: archiveURL, encoding: .utf8)
+            return ImportArchiveReader.Contents(passwords: [csvContent], bookmarks: [], creditCards: [])
+        case .bookmarks:
+            let bookmarkContent = try String(contentsOf: archiveURL, encoding: .utf8)
+            return ImportArchiveReader.Contents(passwords: [], bookmarks: [bookmarkContent], creditCards: [])
+        case .creditCards:
+            let jsonContent = try String(contentsOf: archiveURL, encoding: .utf8)
+            return ImportArchiveReader.Contents(passwords: [], bookmarks: [], creditCards: [jsonContent])
+        }
+    }
 
     private func createTemporaryBookmarksFile(from contents: [String]) throws -> URL? {
         let tempDirectory = URL(fileURLWithPath: NSTemporaryDirectory())
@@ -262,16 +324,30 @@ final class SafariArchiveImporter: DataImporter {
         return passwordResults
     }
 
-    private func importBookmarks(_ bookmarkContent: [String], _ types: Set<DataImport.DataType>, _ updateProgress: DataImportProgressCallback, _ cumulativeFraction: inout Double) async throws -> DataImportSummary {
-        let tempBookmarksFile: URL?
-        do {
-            tempBookmarksFile = try createTemporaryBookmarksFile(from: bookmarkContent)
-        } catch {
-            return [.bookmarks: .failure(ImportError(action: .generic, type: .createTempFiles, underlyingError: error))]
+    private func importBookmarks(_ bookmarkContent: [String], _ originalFileURL: URL?, _ types: Set<DataImport.DataType>, _ updateProgress: DataImportProgressCallback, _ cumulativeFraction: inout Double) async throws -> DataImportSummary {
+        var temporaryFile: URL?
+        let bookmarkFile: URL
+
+        if let originalFileURL {
+            bookmarkFile = originalFileURL
+        } else {
+            do {
+                temporaryFile = try createTemporaryBookmarksFile(from: bookmarkContent)
+            } catch {
+                return [.bookmarks: .failure(ImportError(action: .generic, type: .createTempFiles, underlyingError: error))]
+            }
+
+            guard let generatedFile = temporaryFile else {
+                return [.bookmarks: .failure(ImportError(action: .generic, type: .createTempFiles, underlyingError: nil))]
+            }
+
+            bookmarkFile = generatedFile
         }
 
-        guard let bookmarkFile = tempBookmarksFile else {
-            return [.bookmarks: .failure(ImportError(action: .generic, type: .createTempFiles, underlyingError: nil))]
+        defer {
+            if let temporaryFile {
+                cleanupTemporaryFile(temporaryFile)
+            }
         }
 
         let bookmarkHTMLImporter = BookmarkHTMLImporter(fileURL: bookmarkFile, bookmarkImporter: bookmarkImporter)
@@ -301,5 +377,9 @@ final class SafariArchiveImporter: DataImporter {
         }
         let creditCardResults = await creditCardTask.task.value
         return creditCardResults
+    }
+
+    private static func contentType(for url: URL) -> UTType? {
+        UTType(filenameExtension: url.pathExtension)
     }
 }

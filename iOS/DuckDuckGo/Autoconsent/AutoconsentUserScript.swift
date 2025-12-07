@@ -274,6 +274,7 @@ extension AutoconsentUserScript {
             topUrl = url
             // reset dashboard state
             refreshDashboardState(
+                // keep "cookies managed" if we did it for this site since app launch
                 consentManaged: management.sitesNotifiedCache.contains(url.host ?? ""),
                 cosmetic: nil,
                 optoutFailed: nil,
@@ -387,19 +388,18 @@ extension AutoconsentUserScript {
         // Emit event through publisher
         popupManagedSubject.send(messageData)
 
-        // trigger popup once per domain
-        if !management.sitesNotifiedCache.contains(host) {
-            Logger.autoconsent.debug("bragging that we closed a popup")
-            management.sitesNotifiedCache.insert(host)
-            // post popover notification on main thread
-            DispatchQueue.main.async {
-                NotificationCenter.default.post(name: .newSiteCookiesManaged, object: self, userInfo: [
-                    UserInfoKeys.topURL: self.topUrl ?? url,
-                    UserInfoKeys.isCosmetic: messageData.isCosmetic
-                ])
-            }
-            firePixel(pixel: messageData.isCosmetic ? .animationShownCosmetic : .animationShown)
+        // remember that we did it for this site
+        management.sitesNotifiedCache.insert(host)
+
+        // post popover notification on main thread
+        Logger.autoconsent.debug("bragging that we closed a popup")
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: .newSiteCookiesManaged, object: self, userInfo: [
+                UserInfoKeys.topURL: self.topUrl ?? url,
+                UserInfoKeys.isCosmetic: messageData.isCosmetic
+            ])
         }
+        firePixel(pixel: messageData.isCosmetic ? .animationShownCosmetic : .animationShown)
 
         replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection
 

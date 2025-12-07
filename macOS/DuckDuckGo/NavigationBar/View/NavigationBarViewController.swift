@@ -1589,14 +1589,14 @@ final class NavigationBarViewController: NSViewController {
         brokenSitePromptLimiter.didShowToast()
         PixelKit.fire(GeneralPixel.siteNotWorkingShown)
         let popoverMessage = PopoverMessageViewController(message: UserText.BrokenSitePrompt.title,
+                                                          autoDismissDuration: nil,
+                                                          shouldShowCloseButton: true,
                                                           buttonText: UserText.BrokenSitePrompt.buttonTitle,
                                                           buttonAction: {
             self.brokenSitePromptLimiter.didOpenReport()
             self.addressBarViewController?.addressBarButtonsViewController?.openPrivacyDashboardPopover(entryPoint: .prompt)
             PixelKit.fire(GeneralPixel.siteNotWorkingWebsiteIsBroken)
         },
-                                                          shouldShowCloseButton: true,
-                                                          autoDismissDuration: nil,
                                                           onDismiss: {
             self.brokenSitePromptLimiter.didDismissToast()
         }

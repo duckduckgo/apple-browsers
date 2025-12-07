@@ -20,19 +20,35 @@ import NetworkExtension
 @testable import VPN
 
 final class MockPacketTunnelProvider: PacketTunnelProviding {
+    private let lock = NSLock()
+
     var reasserting: Bool = false
     private(set) var setTunnelNetworkSettingsCallCount = 0
     private(set) var lastNetworkSettings: NETunnelNetworkSettings?
-    var setTunnelNetworkSettingsError: Error?
-    var setTunnelNetworkSettingsDelay: DispatchTimeInterval = .milliseconds(0)
+    var setTunnelNetworkSettingsDelay: DispatchTimeInterval = .milliseconds(10)
+
+    private var _setTunnelNetworkSettingsError: Error?
+    var setTunnelNetworkSettingsError: Error? {
+        get {
+            lock.lock()
+            defer { lock.unlock() }
+            return _setTunnelNetworkSettingsError
+        }
+        set {
+            lock.lock()
+            defer { lock.unlock() }
+            _setTunnelNetworkSettingsError = newValue
+        }
+    }
 
     func setTunnelNetworkSettings(_ tunnelNetworkSettings: NETunnelNetworkSettings?, completionHandler: (@Sendable (Error?) -> Void)?) {
         setTunnelNetworkSettingsCallCount += 1
         lastNetworkSettings = tunnelNetworkSettings
 
         if let completionHandler {
+            let error = setTunnelNetworkSettingsError
             DispatchQueue.global().asyncAfter(deadline: .now() + setTunnelNetworkSettingsDelay) {
-                completionHandler(self.setTunnelNetworkSettingsError)
+                completionHandler(error)
             }
         }
     }

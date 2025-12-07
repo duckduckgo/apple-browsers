@@ -25,6 +25,8 @@ import PixelKit
 import Suggestions
 import Subscription
 import os.log
+import UIComponents
+import AIChat
 
 protocol AddressBarTextFieldFocusDelegate: AnyObject {
     func addressBarDidFocus(_ addressBarTextField: AddressBarTextField)
@@ -64,13 +66,23 @@ final class AddressBarTextField: NSTextField {
     private var addressBarStringCancellable: AnyCancellable?
     private var contentTypeCancellable: AnyCancellable?
     private var windowFrameCancellable: AnyCancellable?
+    private var sharedTextStateCancellable: AnyCancellable?
 
     weak var onboardingDelegate: OnboardingAddressBarReporting?
     weak var focusDelegate: AddressBarTextFieldFocusDelegate?
     weak var searchPreferences: SearchPreferences?
     weak var tabsPreferences: TabsPreferences?
-    weak var sharedTextState: AddressBarSharedTextState?
+    var aiChatPreferences: AIChatPreferencesStorage?
+
+    weak var sharedTextState: AddressBarSharedTextState? {
+        didSet {
+            subscribeToSharedTextState()
+        }
+    }
     weak var customToggleControl: NSControl?
+
+    /// Flag to prevent loops when updating value from shared state
+    private var isUpdatingFromSharedState = false
 
     private enum TextDidChangeEventType {
         case none
@@ -150,6 +162,31 @@ final class AddressBarTextField: NSTextField {
                 let newTabFontSize = barStyleProvider.newTabOrHomePageAddressBarFontSize
                 let defaultFontSize = barStyleProvider.defaultAddressBarFontSize
                 self.font = .systemFont(ofSize: contentType == .newtab ? newTabFontSize : defaultFontSize)
+            }
+    }
+
+    /// Subscribes to shared text state changes to keep address bar in sync with Duck.ai panel
+    private func subscribeToSharedTextState() {
+        sharedTextStateCancellable?.cancel()
+        sharedTextStateCancellable = nil
+
+        guard Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
+              let sharedTextState else { return }
+
+        sharedTextStateCancellable = sharedTextState.$text
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] newText in
+                guard let self,
+                      !self.isUpdatingFromSharedState,
+                      !self.isFirstResponder else { return }
+                let textForAddressBar = newText.replacingOccurrences(of: "\n", with: " ")
+                /// Only update if the text actually changed and user interacted with shared state
+                guard sharedTextState.hasUserInteractedWithText,
+                      self.stringValueWithoutSuffix != textForAddressBar else { return }
+
+                self.isUpdatingFromSharedState = true
+                self.value = Value(stringValue: textForAddressBar, userTyped: true)
+                self.isUpdatingFromSharedState = false
             }
     }
 
@@ -351,6 +388,26 @@ final class AddressBarTextField: NSTextField {
         PixelKit.fire(AIChatPixel.aiChatSuggestionAIChatSubmitted, frequency: .dailyAndCount, includeAppVersionParameter: true)
         NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: .query(prompt, shouldAutoSubmit: true), behavior: behavior)
         currentEditor()?.selectAll(self)
+    }
+
+    /// Handles paste of multiline text by switching to AI chat mode if conditions are met
+    /// - Parameter text: The pasted text containing newlines
+    /// - Returns: `true` if the text was handled by switching to AI chat mode, `false` otherwise
+    func handleMultilinePaste(_ text: String) -> Bool {
+        guard Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
+              let aiChatPreferences = aiChatPreferences,
+              aiChatPreferences.isAIFeaturesEnabled,
+              aiChatPreferences.showSearchAndDuckAIToggle,
+              let toggleControl = customToggleControl as? CustomToggleControl,
+              !toggleControl.isHidden,
+              toggleControl.isEnabled,
+              toggleControl.selectedSegment == 0 else {
+            return false
+        }
+
+        sharedTextState?.updateText(text, markInteraction: true)
+        toggleControl.selectedSegment = 1
+        return true
     }
 
     private func navigate(suggestion: Suggestion?) {
@@ -577,6 +634,8 @@ final class AddressBarTextField: NSTextField {
 
     enum SuggestionWindowSizes {
         static let padding = CGPoint(x: -20, y: 1)
+        /// Vertical offset to align suggestions panel with the AI Chat omnibar toggle
+        static let aiChatToggleVerticalOffset: CGFloat = 4
     }
 
     @objc dynamic private var suggestionWindowController: NSWindowController?
@@ -668,7 +727,11 @@ final class AddressBarTextField: NSTextField {
             return
         }
 
-        let padding = SuggestionWindowSizes.padding
+        let basePadding = SuggestionWindowSizes.padding
+        /// Move suggestions panel up to vertically align the toggle
+        let yOffset: CGFloat = Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle) ? SuggestionWindowSizes.aiChatToggleVerticalOffset : 0
+        let padding = CGPoint(x: basePadding.x, y: basePadding.y + yOffset)
+
         suggestionWindow.setFrame(NSRect(x: 0, y: 0, width: superview.frame.width - 2 * padding.x, height: 0), display: true)
 
         var point = superview.bounds.origin
@@ -1033,7 +1096,9 @@ extension AddressBarTextField: NSTextFieldDelegate {
             self.value = Value(stringValue: stringValueWithoutSuffix, userTyped: true)
         }
 
-        sharedTextState?.updateText(stringValueWithoutSuffix, markInteraction: true)
+        if !isUpdatingFromSharedState {
+            sharedTextState?.updateText(stringValueWithoutSuffix, markInteraction: true)
+        }
     }
 
     private func autocompleteSuggestionBeingTypedOverByUser(with newUserEnteredValue: String) -> SuggestionViewModel? {
@@ -1048,17 +1113,18 @@ extension AddressBarTextField: NSTextFieldDelegate {
         return nil
     }
 
-    // MARK: - Shared Text State
+    /// Refreshes suggestions based on current text content and shows the suggestion window if results exist
+    func refreshSuggestions() {
+        let text = stringValueWithoutSuffix
+        guard !text.isEmpty else { return }
 
-    /// Restores text from the shared text state
-    func restoreFromSharedState() {
-        guard let sharedTextState = sharedTextState else { return }
-
-        let textToRestore = sharedTextState.text.replacingOccurrences(of: "\n", with: " ")
-        self.value = Value(stringValue: textToRestore, userTyped: true)
+        suggestionContainerViewModel?.setUserStringValue(text, userAppendedStringToTheEnd: false)
+        if suggestionContainerViewModel?.suggestionContainer.result?.count ?? 0 > 0 {
+            showSuggestionWindow()
+        }
     }
 
-    func setCursorPositionAfterRestore() {
+    func moveCursorToEnd() {
         guard let editor = currentEditor() as? NSTextView else { return }
         let textLength = editor.string.count
         editor.selectedRange = NSRange(location: textLength, length: 0)

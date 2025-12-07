@@ -205,4 +205,39 @@ class AutoconsentUITests: UITestCase {
         XCTAssertTrue(clickedButton2.waitForExistence(timeout: UITests.Timeouts.elementExistence))
 
     }
+
+    func testAutoconsent_ReloadLoop_IsPrevented() throws {
+        // Navigate to the reload loop test page
+        // This page automatically reloads after the reject button is clicked,
+        // which would cause an infinite reload loop without prevention
+        let reloadLoopURL = URL(string: "http://privacy-test-pages.site/features/autoconsent/reload-loop.html")!
+        addressBarTextField.pasteURL(reloadLoopURL, pressingEnter: true)
+
+        let webView = app.webViews.firstMatch
+
+        // Wait for the page to load
+        let pageContent = webView.staticTexts.containing(\.value, containing: "CPM reload loop detection").firstMatch
+        XCTAssertTrue(pageContent.waitForExistence(timeout: UITests.Timeouts.navigation), "Reload loop test page should load")
+
+        // The flow is:
+        // 1. First load: autoconsent clicks "Reject all" button
+        // 2. Button click triggers location.reload()
+        // 3. Second load: autoconsent clicks again, but detects a reload loop
+        // 4. Third load: autoconsent prevents further clicks. Page stabilizes with "Reject all" button still visible (not clicked)
+
+        // Wait for page to stabilize after the reload cycle
+        let rejectButton = webView.buttons.containing(\.title, containing: "Reject all").firstMatch
+
+        // Wait a bit for the reload cycle to complete and page to stabilize
+        sleep(3)
+
+        // Verify the page is stable and showing the reject button (not clicked)
+        // If reload loop prevention wasn't working, the page would keep reloading infinitely
+        XCTAssertTrue(pageContent.exists, "Page should still be visible after reload loop prevention kicks in")
+        XCTAssertTrue(rejectButton.exists, "Reject button should be visible (not clicked) after reload loop prevention")
+
+        // Verify exactly 3 page loads occurred: initial navigation + 2 reloads
+        let pageLoadCount = webView.staticTexts.containing(\.value, containing: "Page load count: 3").firstMatch
+        XCTAssertTrue(pageLoadCount.exists, "Page should have loaded exactly 3 times (initial + 2 reloads)")
+    }
 }

@@ -60,6 +60,10 @@
     "title" : "Нет недавних отслеживаний",
     "note" : "Placeholder text shown in the Details view when no tracking activity was blocked in the last 7 days. Keep concise if possible."
   },
+  "protections_newBadge" : {
+    "title" : "Новинка",
+    "note" : "Text displayed in a badge to indicate a new feature or statistic."
+  },
   "stats_menuTitle" : {
     "title" : "Заблокированные попытки отслеживания",
     "note" : "Used as a label in a customization menu"
@@ -117,7 +121,7 @@
     "note" : "The heading indicating multiple cookie pop-ups were handled by the CPM"
   },
   "stats_protectionsReportInfo" : {
-    "title" : "Отображает попытки отслеживания, заблокированные за последние 7 дней, а также количество всплывающих окон куки, заблокированных с начала использования браузера. <span>Эту статистику можно сбросить с помощью кнопки Fire Button.</span>",
+    "title" : "Отображает попытки отслеживания, заблокированные за последние 7 дней, а также количество всплывающих окон куки, заблокированных с начала использования браузера.",
     "note" : "Text explaining how to reset the protections stats"
   },
   "stats_feedCountBlockedSingular" : {

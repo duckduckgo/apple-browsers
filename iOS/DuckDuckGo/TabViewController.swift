@@ -410,7 +410,9 @@ class TabViewController: UIViewController {
                                    featureDiscovery: FeatureDiscovery,
                                    keyValueStore: ThrowingKeyValueStoring,
                                    daxDialogsManager: DaxDialogsManaging,
-                                   aiChatSettings: AIChatSettingsProvider) -> TabViewController {
+                                   aiChatSettings: AIChatSettingsProvider,
+                                   productSurfaceTelemetry: ProductSurfaceTelemetry) -> TabViewController {
+
         let storyboard = UIStoryboard(name: "Tab", bundle: nil)
         let controller = storyboard.instantiateViewController(identifier: "TabViewController", creator: { coder in
             TabViewController(coder: coder,
@@ -436,7 +438,8 @@ class TabViewController: UIViewController {
                               featureDiscovery: featureDiscovery,
                               keyValueStore: keyValueStore,
                               daxDialogsManager: daxDialogsManager,
-                              aiChatSettings: aiChatSettings
+                              aiChatSettings: aiChatSettings,
+                              productSurfaceTelemetry: productSurfaceTelemetry
             )
         })
         return controller
@@ -480,9 +483,11 @@ class TabViewController: UIViewController {
     let websiteDataManager: WebsiteDataManaging
     let specialErrorPageNavigationHandler: SpecialErrorPageManaging
     let featureDiscovery: FeatureDiscovery
+    let productSurfaceTelemetry: ProductSurfaceTelemetry
     let keyValueStore: ThrowingKeyValueStoring
     let daxDialogsManager: DaxDialogsManaging
     let aiChatSettings: AIChatSettingsProvider
+    let aiChatFullModeFeature: AIChatFullModeFeatureProviding
     
     private(set) var aiChatContentHandler: AIChatContentHandling
 
@@ -512,7 +517,9 @@ class TabViewController: UIViewController {
                    keyValueStore: ThrowingKeyValueStoring,
                    daxDialogsManager: DaxDialogsManaging,
                    adClickExternalOpenDetector: AdClickExternalOpenDetector = AdClickExternalOpenDetector(),
-                   aiChatSettings: AIChatSettingsProvider) {
+                   aiChatSettings: AIChatSettingsProvider,
+                   productSurfaceTelemetry: ProductSurfaceTelemetry,
+                   aiChatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature()) {
 
         self.tabModel = tabModel
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -544,7 +551,10 @@ class TabViewController: UIViewController {
         }
         
         self.aiChatSettings = aiChatSettings
+        self.aiChatFullModeFeature = aiChatFullModeFeature
         self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings, featureDiscovery: featureDiscovery)
+
+        self.productSurfaceTelemetry = productSurfaceTelemetry
 
         super.init(coder: aDecoder)
         
@@ -1650,6 +1660,7 @@ extension TabViewController: WKNavigationDelegate {
         instrumentation.didLoadURL()
         checkLoginDetectionAfterNavigation()
         trackSecondSiteVisitIfNeeded(url: webView.url)
+        productSurfaceTelemetry.navigationCompleted(url: webView.url)
 
         // definitely finished with any potential login cycle by this point, so don't try and handle it any more
         detectedLoginURL = nil

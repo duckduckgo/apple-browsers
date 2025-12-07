@@ -24,7 +24,6 @@ import Foundation
 extension UserDefaults {
     /// The app group's shared UserDefaults
     static let netP = UserDefaults(suiteName: Bundle.main.appGroup(bundle: .netP))!
-    static let dbp = UserDefaults(suiteName: Bundle.main.appGroup(bundle: .dbp))!
     static let subs = UserDefaults(suiteName: Bundle.main.appGroup(bundle: .subs))!
     static let appConfiguration = UserDefaults(suiteName: Bundle.main.appGroup(bundle: .appConfiguration))!
 }
@@ -273,6 +272,9 @@ public struct UserDefaultsWrapper<T> {
 
         // Win-back Offer Debug
         case debugWinBackOfferSimulatedTodayDate = "com.duckduckgo.debug.winBackOfferSimulatedTodayDate"
+
+        // First Quit Tracking
+        case hasQuitAppBefore = "com.duckduckgo.app.has.quit.before"
     }
 
     enum RemovedKeys: String, CaseIterable {

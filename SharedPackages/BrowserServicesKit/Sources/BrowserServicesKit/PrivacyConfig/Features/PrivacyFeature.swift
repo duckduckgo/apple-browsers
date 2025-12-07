@@ -86,6 +86,7 @@ public enum PrivacyFeature: String {
     case duckAiDataClearing
     case serp
     case popupBlocking
+    case tabProgressIndicator
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -169,8 +170,14 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211660503405838?focus=true
     case forgetAllInSettings
 
+    /// https://app.asana.com/1/137249556945/project/481882893211075/task/1212057154681076?focus=true
+    case productTelemetrySurfaceUsage
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212229431540900
     case granularFireButtonOptions
+
+    /// https://app.asana.com/1/137249556945/project/1206226850447395/task/1211661206210892?focus=true
+    case experimentalBrowsingMenu
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -220,6 +227,8 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case freemium
     case remoteBrokerDelivery
     case emailConfirmationDecoupling
+    case foregroundRunningOnAppActive
+    case foregroundRunningWhenDashboardOpen
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -289,6 +298,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Controls showing the AI Chat as Tabs Experiment Setting in Settings -> AI Features
     case fullDuckAIModeExperimentalSetting
+
+    /// Controls different input sizes and fade out animation for toggle.
+    case fadeOutOnToggle
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -378,7 +390,6 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case privacyProAuthV2
     case privacyProOnboardingPromotion
     case paidAIChat
-    case vpnToolbarUpsell
     case supportsAlternateStripePaymentFlow
     case subscriptionPurchaseWidePixelMeasurement
     case vpnConnectionWidePixelMeasurement
@@ -513,6 +524,7 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .dataImport }
 
     case newSafariFilePicker
+    case newDataImportExperience
 }
 
 public enum SERPSubfeature: String, PrivacySubfeature {

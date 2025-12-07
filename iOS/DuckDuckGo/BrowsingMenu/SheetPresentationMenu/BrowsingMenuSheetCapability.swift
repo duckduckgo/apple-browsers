@@ -25,29 +25,8 @@ import Core
 protocol BrowsingMenuSheetCapable {
     var isAvailable: Bool { get }
     var isEnabled: Bool { get }
-    var variant: BrowsingMenuClusteringVariant { get set }
 
     func setEnabled(_ enabled: Bool)
-}
-
-enum BrowsingMenuClusteringVariant: String, CaseIterable, CustomStringConvertible {
-    var description: String {
-        switch self {
-        case .a:
-            "Production"
-        case .b:
-            "Easy Shortcuts"
-        case .c:
-            "Easy Privacy Tools"
-        case .d:
-            "Easy Privacy - No floating button"
-        }
-    }
-
-    case a
-    case b
-    case c
-    case d
 }
 
 enum BrowsingMenuSheetCapability {
@@ -63,7 +42,6 @@ enum BrowsingMenuSheetCapability {
 struct BrowsingMenuSheetUnavailableCapability: BrowsingMenuSheetCapable {
     let isAvailable: Bool = false
     let isEnabled: Bool = false
-    var variant: BrowsingMenuClusteringVariant = .a
 
     func setEnabled(_ enabled: Bool) {
         // no-op
@@ -92,25 +70,11 @@ struct BrowsingMenuSheetDefaultCapability: BrowsingMenuSheetCapable {
         }
     }
 
-    var variant: BrowsingMenuClusteringVariant {
-        get {
-            if let variant = try? keyValueStore.object(forKey: StorageKey.menuVariant) as? String {
-                return BrowsingMenuClusteringVariant(rawValue: variant) ?? .a
-            } else {
-                return .a
-            }
-        }
-        set {
-            try? keyValueStore.set(newValue.rawValue, forKey: StorageKey.menuVariant)
-        }
-    }
-
     func setEnabled(_ enabled: Bool) {
         try? keyValueStore.set(enabled, forKey: StorageKey.experimentalBrowsingMenuEnabled)
     }
 
     private struct StorageKey {
-        static let menuVariant = "browsingMenuVariantKey"
         static let experimentalBrowsingMenuEnabled = "com_duckduckgo_experimentalBrowsingMenu_enabled"
     }
 }

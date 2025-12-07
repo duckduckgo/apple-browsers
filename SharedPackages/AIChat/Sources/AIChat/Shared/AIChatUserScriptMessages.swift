@@ -33,6 +33,7 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     case removeChat
     case openSummarizationSourceLink
     case openTranslationSourceLink
+    case openAIChatLink
 
     case getAIChatPageContext
     case submitAIChatPageContext

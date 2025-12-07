@@ -35,6 +35,7 @@ final class MainView: NSView {
         static let bannerHeight: CGFloat = 48
         static let aiChatOmnibarContainerMinHeight: CGFloat = 60
         static let aiChatOmnibarContainerPadding: CGFloat = 50
+        static let aiChatOmnibarContainerTopOffset: CGFloat = -20
     }
 
     let tabBarContainerView = NSView()
@@ -151,7 +152,7 @@ final class MainView: NSView {
         aiChatOmnibarContainerWidthConstraint = aiChatOmnibarContainerView.widthAnchor.constraint(lessThanOrEqualToConstant: 832)
         aiChatOmnibarContainerHeightConstraint = aiChatOmnibarContainerView.heightAnchor.constraint(equalToConstant: Constants.aiChatOmnibarContainerMinHeight)
         NSLayoutConstraint.activate([
-            aiChatOmnibarContainerView.topAnchor.constraint(equalTo: navigationBarContainerView.bottomAnchor, constant: -16),
+            aiChatOmnibarContainerView.topAnchor.constraint(equalTo: navigationBarContainerView.bottomAnchor, constant: Constants.aiChatOmnibarContainerTopOffset),
             aiChatOmnibarContainerView.centerXAnchor.constraint(equalTo: navigationBarContainerView.centerXAnchor),
             aiChatOmnibarContainerHeightConstraint,
             aiChatOmnibarContainerWidthConstraint,

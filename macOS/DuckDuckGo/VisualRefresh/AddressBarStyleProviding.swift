@@ -131,11 +131,13 @@ final class LegacyAddressBarStyleProvider: AddressBarStyleProviding {
 
 final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     let tabBarBackgroundTopPadding: CGFloat = {
+#if swift(>=6.2)
         if #available(macOS 26.0, *) {
             return 2
-        } else {
-            return 0
         }
+#endif
+
+        return 0
     }()
 
     private let navigationBarHeightForDefault: CGFloat = 52

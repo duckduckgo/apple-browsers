@@ -2,24 +2,6 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<key>fire.confirmation.aichats.subtitle.withCount</key>
-	<dict>
-		<key>NSStringLocalizedFormatKey</key>
-		<string>%#@items@</string>
-		<key>items</key>
-		<dict>
-			<key>NSStringFormatSpecTypeKey</key>
-			<string>NSStringPluralRuleType</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
-			<key>one</key>
-			<string>Delete %d chat</string>
-			<key>other</key>
-			<string>Delete %d chats</string>
-			<key>zero</key>
-			<string>None</string>
-		</dict>
-	</dict>
 	<key>fire.confirmation.data.subtitle.withCount</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

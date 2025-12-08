@@ -177,7 +177,7 @@ private extension FireConfirmationPresenter {
     enum Constants {
         static let iPadSheetWidth: CGFloat = 375
         static let iPadSheetDefaultHeight: CGFloat = 520
-        static let sheetCornerRadius: CGFloat = 12
+        static let sheetCornerRadius: CGFloat = 24
         static let maxHeightRatio: CGFloat = 0.9
     }
 }

@@ -511,7 +511,13 @@ struct FireDialogView: ModalView {
                 Spacer(minLength: 4)
 
                 Button(UserText.fireDialogFireproofSitesManage) { presentManageFireproof() }
-                    .buttonStyle(StandardButtonStyle(fontSize: 11, topPadding: 3, bottomPadding: 3, horizontalPadding: 12))
+                    .background(
+                        RoundedRectangle(cornerRadius: 6, style: .continuous)
+                            .fill(Color(designSystemColor: .buttonsSecondaryFillDefault))
+                    )
+                    .font(.system(size: 11))
+                    .padding([.top, .bottom], 3)
+                    .padding(.horizontal, 12)
                     .fixedSize(horizontal: true, vertical: true)
                     .frame(alignment: .trailing)
                     .accessibilityLabel(UserText.manageFireproofSites)

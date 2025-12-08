@@ -169,7 +169,7 @@ struct FireDialogView: ModalView {
                         sitesOverlay
 
                         // Separator above the footer
-                        Color(designSystemColor: .fireDialogSectionBorder)
+                        Color(designSystemColor: .containerBorderPrimary)
                             .frame(height: 1)
                     }
                     .zIndex(10)
@@ -314,7 +314,7 @@ struct FireDialogView: ModalView {
                 .fill(Color(designSystemColor: .containerFillPrimary))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12.0, style: .continuous)
-                        .stroke(Color(designSystemColor: .fireDialogSectionBorder), lineWidth: 1)
+                        .stroke(Color(designSystemColor: .containerBorderPrimary), lineWidth: 1)
                 )
         )
         .padding(.top, 4)
@@ -484,7 +484,7 @@ struct FireDialogView: ModalView {
 
     private func sectionDivider(padding: CGFloat = 16) -> some View {
         HStack(spacing: 0) {
-            Rectangle().fill(Color(designSystemColor: .fireDialogSectionBorder)).frame(height: 1)
+            Rectangle().fill(Color(designSystemColor: .containerBorderPrimary)).frame(height: 1)
                 .padding(.horizontal, padding)
         }
     }

@@ -1,0 +1,25 @@
+{
+  "images" : [
+    {
+      "filename" : "Import-Keychain-Prompt-Container-Light.svg",
+      "idiom" : "universal"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "Import-Keychain-Prompt-Container-Dark.svg",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  },
+  "properties" : {
+    "preserves-vector-representation" : true
+  }
+}

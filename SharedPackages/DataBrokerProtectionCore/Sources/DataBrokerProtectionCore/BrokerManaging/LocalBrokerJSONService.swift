@@ -32,9 +32,11 @@ public final class FileResources: ResourcesRepository {
     }
 
     private let fileManager: FileManager
+    private let runTypeProvider: AppRunTypeProviding
 
-    public init(fileManager: FileManager = .default) {
+    public init(fileManager: FileManager = .default, runTypeProvider: AppRunTypeProviding) {
         self.fileManager = fileManager
+        self.runTypeProvider = runTypeProvider
     }
 
     public func fetchBrokerFromResourceFiles() throws -> [DataBroker]? {
@@ -43,6 +45,7 @@ public final class FileResources: ResourcesRepository {
              There's a bug with the bundle resources in tests:
              https://forums.swift.org/t/swift-5-3-swiftpm-resources-in-tests-uses-wrong-bundle-path/37051/49
              */
+            Logger.dataBrokerProtection.fault("🧩 LocalBrokerJSONService: Unsupported runtime, returning empty brokers array")
             return []
         }
 
@@ -52,7 +55,11 @@ public final class FileResources: ResourcesRepository {
             throw FileResourcesError.bundleResourceURLNil
         }
 
-        let shouldUseFakeBrokers = (AppVersion.runType == .integrationTests)
+        let runType = runTypeProvider.runType
+        let shouldUseFakeBrokers = (runType == .integrationTests || runType == .uiTests)
+
+        Logger.dataBrokerProtection.fault("🧩 LocalBrokerJSONService: Using fake brokers = \(shouldUseFakeBrokers, privacy: .public)")
+
         let brokersURL = resourceURL.appendingPathComponent("BundleResources").appendingPathComponent("JSON")
         do {
             let fileURLs = try fileManager.contentsOfDirectory(
@@ -126,20 +133,30 @@ public struct LocalBrokerJSONService: BrokerJSONFallbackProvider {
     public let vault: any DataBrokerProtectionSecureVault
     private let appVersion: AppVersionNumberProvider
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
+    private let runTypeProvider: AppRunTypeProviding
 
     public init(repository: BrokerUpdaterRepository = BrokerUpdaterUserDefaults(),
-                resources: ResourcesRepository = FileResources(),
+                resources: ResourcesRepository,
                 vault: any DataBrokerProtectionSecureVault,
                 appVersion: AppVersionNumberProvider = AppVersionNumber(),
-                pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>) {
+                pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
+                runTypeProvider: AppRunTypeProviding) {
         self.repository = repository
         self.resources = resources
         self.vault = vault
         self.appVersion = appVersion
         self.pixelHandler = pixelHandler
+        self.runTypeProvider = runTypeProvider
     }
 
     public func updateBrokers() {
+        guard runTypeProvider.runType != .integrationTests else {
+            Logger.dataBrokerProtection.error("🧩 LocalBrokerJSONService updateBrokers skipping due to running integration tests")
+            return
+        }
+
+        Logger.dataBrokerProtection.error("🧩 LocalBrokerJSONService updateBrokers beginning")
+
         let brokers: [DataBroker]?
         do {
             brokers = try resources.fetchBrokerFromResourceFiles()

@@ -57,6 +57,7 @@ class OmniBarViewController: UIViewController, OmniBar {
     private(set) lazy var state: OmniBarState = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
 
     internal var textFieldTapped = true
+    internal var textEntryMode: TextEntryMode = .search
 
     // MARK: - Animation
 
@@ -250,9 +251,6 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.onAIChatLeftButtonPressed = { [weak self] in
             self?.onAIChatLeftButtonPressed()
         }
-        barView.onAIChatRightButtonPressed = { [weak self] in
-            self?.onAIChatRightButtonPressed()
-        }
         barView.onAIChatBrandingPressed = { [weak self] in
             self?.onAIChatBrandingPressed()
         }
@@ -337,11 +335,13 @@ class OmniBarViewController: UIViewController, OmniBar {
         text = query
         textDidChange()
     }
-
-    func beginEditing(animated: Bool) {
+    
+    func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode) {
         textFieldTapped = false
+        self.textEntryMode = textEntryMode
         defer {
             textFieldTapped = true
+            self.textEntryMode = .search
         }
 
         textField.becomeFirstResponder()
@@ -861,10 +861,6 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     private func onAIChatLeftButtonPressed() {
         omniDelegate?.onAIChatLeftButtonPressed()
-    }
-
-    private func onAIChatRightButtonPressed() {
-        omniDelegate?.onAIChatRightButtonPressed()
     }
 
     private func onAIChatBrandingPressed() {

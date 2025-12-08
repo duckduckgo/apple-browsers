@@ -22,7 +22,15 @@ import UIKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
 
-typealias BrowsingMenuSheetViewController = UIHostingController<BrowsingMenuSheetView>
+class BrowsingMenuSheetViewController: UIHostingController<BrowsingMenuSheetView> {
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        // Required for material background to become effective
+        view.backgroundColor = .clear
+    }
+}
 
 struct BrowsingMenuModel {
     var headerItems: [BrowsingMenuModel.Entry]
@@ -32,7 +40,33 @@ struct BrowsingMenuModel {
 
 struct BrowsingMenuSheetView: View {
 
+    enum Metrics {
+        static let headerButtonVerticalPadding: CGFloat = 8
+        static let headerButtonIconTextSpacing: CGFloat = 2
+        static let footerButtonVerticalPadding: CGFloat = 8
+
+        /// Approximate row size for `.insetGrouped` style.
+        /// This is an estimate used for height calculation and may not exactly match
+        /// the system-provided height in all configurations.
+        static let defaultListRowHeight: CGFloat = 44
+
+        /// Approximate spacing between list sections.
+        /// Note: The actual UI uses `.compactSectionSpacingIfAvailable()` which applies
+        /// `.compact` section spacing on iOS 17+. This value is an approximation and
+        /// the actual spacing may differ slightly on earlier versions.
+        static let listSectionSpacing: CGFloat = 20
+        static let listTopPadding: CGFloat = 20 - listTopPaddingAdjustment
+        static let grabberHeight: CGFloat = 20
+
+        static let headerHorizontalSpacing: CGFloat = 10
+        static let iconTitleHorizontalSpacing: CGFloat = 16
+        static let textDotHorizontalSpacing: CGFloat = 4
+
+        static let listTopPaddingAdjustment: CGFloat = 4
+    }
+
     @Environment(\.presentationMode) var presentationMode
+    @Environment(\.verticalSizeClass) var verticalSizeClass
 
     private let model: BrowsingMenuModel
     private let onDismiss: () -> Void
@@ -47,55 +81,82 @@ struct BrowsingMenuSheetView: View {
     }
 
     var body: some View {
-        NavigationView {
-            List {
-                Section {
-                    if !model.headerItems.isEmpty {
-                        HStack(spacing: 2) {
-                            ForEach(model.headerItems) { headerItem in
-                                MenuHeaderButton(entryData: headerItem) {
-                                    actionToPerform = { headerItem.action() }
-                                    presentationMode.wrappedValue.dismiss()
-                                }
-                                .frame(maxWidth: .infinity)
-                            }
-                        }
-                        .background((Color(designSystemColor: .background)))
-                    }
-                }
-                .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
-                .listRowSeparatorTint(Color(designSystemColor: .lines))
-
-                ForEach(model.sections) { section in
-                    Section {
-                        ForEach(section.items) { item in
-                            let isHighlighted = highlightTag != nil && item.tag == highlightTag
-
-                            MenuRowButton(entryData: item, isHighlighted: isHighlighted) {
-                                actionToPerform = { item.action() }
-                                presentationMode.wrappedValue.dismiss()
-                            }
-                            .listRowBackground(Color(designSystemColor: .surface))
-                        }
-                    }
-                }
-                .listRowSeparatorTint(Color(designSystemColor: .lines))
-            }
-            .compactSectionSpacingIfAvailable()
-            .applyInsetGroupedListStyle()
-            .onDisappear(perform: {
-                actionToPerform()
-                onDismiss()
-            })
-            .floatingToolbar(
-                footerItems: model.footerItems,
-                actionToPerform: $actionToPerform,
-                presentationMode: presentationMode,
-                showsLabels: model.footerItems.count < 2
-            )
+        List {
+            headerSection
+            menuSections
         }
+        .compactSectionSpacingIfAvailable()
+        .hideScrollContentBackground()
+        .listStyle(.insetGrouped)
+        .bounceBasedOnSizeIfAvailable()
+        .padding(.top, -Metrics.listTopPaddingAdjustment)
+        .background(.thickMaterial)
+        .background(Color(designSystemColor: .background).opacity(0.1))
+        .onDisappear(perform: {
+            actionToPerform()
+            onDismiss()
+        })
+        .floatingToolbar(
+            footerItems: model.footerItems,
+            actionToPerform: $actionToPerform,
+            presentationMode: presentationMode,
+            showsLabels: model.footerItems.count < 2
+        )
+        .safeAreaInset(edge: .top, content: {
+            if verticalSizeClass == .compact {
+                HStack {
+                    Spacer()
+                    Button(UserText.navigationTitleDone, role: .cancel) {
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                    .padding(.top, 16)
+                    .padding(.bottom, 16)
+                    .padding(.horizontal, 24)
+                }
+                .background(.thickMaterial)
+                .padding(.bottom, -24)
+            }
+        })
         .tint(Color(designSystemColor: .textPrimary))
-        .background((Color(designSystemColor: .background)))
+    }
+
+    @ViewBuilder
+    private var headerSection: some View {
+        Section {
+            if !model.headerItems.isEmpty {
+                HStack(spacing: Metrics.headerHorizontalSpacing) {
+                    ForEach(model.headerItems) { headerItem in
+                        MenuHeaderButton(entryData: headerItem) {
+                            actionToPerform = { headerItem.action() }
+                            presentationMode.wrappedValue.dismiss()
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                }
+                .background(.clear)
+            }
+        }
+        .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
+        .listRowSeparatorTint(Color(designSystemColor: .lines))
+        .listRowBackground(Color.clear)
+    }
+
+    @ViewBuilder
+    private var menuSections: some View {
+        ForEach(model.sections) { section in
+            Section {
+                ForEach(section.items) { item in
+                    let isHighlighted = highlightTag != nil && item.tag == highlightTag
+
+                    MenuRowButton(entryData: item, isHighlighted: isHighlighted) {
+                        actionToPerform = { item.action() }
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                    .listRowBackground(Color.rowBackgroundColor)
+                }
+            }
+        }
+        .listRowSeparatorTint(Color(designSystemColor: .lines))
     }
 }
 
@@ -153,6 +214,8 @@ extension BrowsingMenuModel.Entry {
     }
 }
 
+private typealias Metrics = BrowsingMenuSheetView.Metrics
+
 private struct MenuRowButton: View {
 
     fileprivate let entryData: BrowsingMenuModel.Entry
@@ -161,7 +224,7 @@ private struct MenuRowButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 8) {
+            HStack(spacing: Metrics.iconTitleHorizontalSpacing) {
                 Image(uiImage: entryData.image)
                     .padding(2)
                     .overlay {
@@ -172,20 +235,24 @@ private struct MenuRowButton: View {
                         }
                     }
 
-                Text(entryData.name)
+                HStack(spacing: Metrics.textDotHorizontalSpacing) {
+                    Text(entryData.name)
+                        .daxBodyRegular()
 
-                if entryData.showNotificationDot {
-                    Circle().fill(entryData.customDotColor.map({ Color($0) }) ?? Color(designSystemColor: .accent))
-                        .frame(width: 8, height: 8)
-                        .padding(.leading, 6)
-                        .padding(.trailing, 12)
+                    if entryData.showNotificationDot {
+                        Circle().fill(entryData.customDotColor.map({ Color($0) }) ?? Color(designSystemColor: .accent))
+                            .frame(width: 8, height: 8)
+                            .padding(.leading, 6)
+                            .padding(.trailing, 12)
 
-                    Spacer()
+                        Spacer()
+                    }
                 }
             }
         }
         .accessibilityLabel(entryData.accessibilityLabel ?? entryData.name)
     }
+
 }
 
 private struct MenuHeaderButton: View {
@@ -195,26 +262,50 @@ private struct MenuHeaderButton: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 2) {
+            VStack(spacing: Metrics.headerButtonIconTextSpacing) {
                 Image(uiImage: entryData.image)
                     .tint(Color(designSystemColor: .icons))
                 Text(entryData.name)
                     .daxFootnoteRegular()
                     .foregroundStyle(Color(designSystemColor: .textSecondary))
             }
-            .padding(.vertical, 8)
+            .padding(.vertical, Metrics.headerButtonVerticalPadding)
             .padding(.horizontal, 8)
             .frame(maxWidth: .infinity)
-            .background(Color(designSystemColor: .surface))
-            .clipShape(RoundedRectangle(cornerRadius: Constant.cornerRadius))
-            .contentShape(RoundedRectangle(cornerRadius: Constant.cornerRadius))
+            .frame(maxHeight: .infinity)
+            .background(Color.rowBackgroundColor)
+            .menuHeaderEntryShape()
         }
         .buttonStyle(.plain)
         .accessibilityLabel(entryData.accessibilityLabel ?? entryData.name)
     }
 
-    private enum Constant {
-        static let cornerRadius: CGFloat = 4
+    enum Constant {
+        static let cornerRadius: CGFloat = 10
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func menuHeaderEntryShape() -> some View {
+        if #available(iOS 17, *) {
+            self
+                .clipShape(ButtonBorderShape.automatic)
+                .contentShape(ButtonBorderShape.automatic)
+        } else {
+            self
+                .clipShape(RoundedRectangle(cornerRadius: MenuHeaderButton.Constant.cornerRadius, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: MenuHeaderButton.Constant.cornerRadius, style: .continuous))
+        }
+    }
+
+    @ViewBuilder
+    func bounceBasedOnSizeIfAvailable() -> some View {
+        if #available(iOS 16.4, *) {
+            self.scrollBounceBehavior(.basedOnSize)
+        } else {
+            self
+        }
     }
 }
 
@@ -248,8 +339,8 @@ private struct FloatingToolbarModifier: ViewModifier {
                 .overlay(alignment: .bottom, content: {
                     let colors = [
                         .clear,
-                        Color(designSystemColor: .surface).opacity(0.9),
-                        Color(designSystemColor: .surface)
+                        Color(designSystemColor: .background).opacity(0.9),
+                        Color(designSystemColor: .background)
                     ]
                     LinearGradient(colors: colors, startPoint: .top, endPoint: .bottom)
                     // This makes the gradient extend to the full width and into the bottom safe area.
@@ -281,17 +372,21 @@ private struct FloatingToolbarModifier: ViewModifier {
                                 .foregroundStyle(Color(designSystemColor: .textPrimary))
                         }
                     }
-                    .padding(.vertical, 8)
+                    .padding(.vertical, Metrics.footerButtonVerticalPadding)
                     .padding(.horizontal, 16)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(footerItem.accessibilityLabel ?? footerItem.name)
             }
         }
-        .background(Color(designSystemColor: .surfaceCanvas))
+        .background(.regularMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 12))
         .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 4, x: 0, y: 4)
         .shadow(color: Color(designSystemColor: .shadowSecondary), radius: 2, x: 0, y: 1)
         .fixedSize(horizontal: true, vertical: true)
     }
+}
+
+private extension Color {
+    static let rowBackgroundColor: Color = .init(designSystemColor: .surfaceTertiary)
 }

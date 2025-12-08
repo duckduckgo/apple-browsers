@@ -35,6 +35,11 @@ final class AIChatDebugMenu: NSMenu {
                     .targetting(self)
                 customURLLabelMenuItem
             }
+
+            NSMenuItem.separator()
+
+            NSMenuItem(title: "Reset Toggle Animation", action: #selector(resetToggleAnimation))
+                .targetting(self)
         }
     }
 
@@ -61,6 +66,10 @@ final class AIChatDebugMenu: NSMenu {
     @objc func resetCustomURL() {
         debugStorage.reset()
         updateWebUIMenuItemsState()
+    }
+
+    @objc func resetToggleAnimation() {
+        UserDefaults.standard.hasInteractedWithSearchDuckAIToggle = false
     }
 
     private func updateWebUIMenuItemsState() {

@@ -42,6 +42,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     private var mockPixelHandler: MockDataBrokerProtectionFreemiumPixelHandler!
     private var mockNotificationCenter: NotificationCenter!
     private var mockWideEvent: WideEventMock!
+    private var mockEventReporter: MockSubscriptionEventReporter!
     private var broker: UserScriptMessageBroker!
 
     private struct Constants {
@@ -73,6 +74,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         mockPixelHandler = MockDataBrokerProtectionFreemiumPixelHandler()
         mockNotificationCenter = NotificationCenter()
         mockWideEvent = WideEventMock()
+        mockEventReporter = MockSubscriptionEventReporter()
 
         sut = SubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManagerV2,
                                                         subscriptionSuccessPixelHandler: subscriptionSuccessPixelHandler,
@@ -83,7 +85,8 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
                                                         notificationCenter: mockNotificationCenter,
                                                         dataBrokerProtectionFreemiumPixelHandler: mockPixelHandler,
                                                         aiChatURL: URL.duckDuckGo,
-                                                        wideEvent: mockWideEvent)
+                                                        wideEvent: mockWideEvent,
+                                                        subscriptionEventReporter: mockEventReporter)
         sut.with(broker: broker)
     }
 
@@ -95,6 +98,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         mockSubscriptionFeatureAvailability = nil
         mockUIHandler = nil
         mockWideEvent = nil
+        mockEventReporter = nil
         subscriptionManagerV2 = nil
         subscriptionSuccessPixelHandler = nil
         sut = nil
@@ -422,7 +426,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             ]
         )
 
-        mockStorePurchaseManager.subscriptionTierOptionsResult = expectedTierOptions
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(expectedTierOptions)
 
         // When
         let result = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
@@ -461,7 +465,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             ]
         )
 
-        mockStorePurchaseManager.subscriptionTierOptionsResult = tierOptionsWithPurchase
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(tierOptionsWithPurchase)
 
         // When
         let result = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
@@ -498,7 +502,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             ]
         )
 
-        mockStorePurchaseManager.subscriptionTierOptionsResult = tierOptionsWithPurchase
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(tierOptionsWithPurchase)
 
         // When
         let result = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
@@ -517,7 +521,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
     func testGetSubscriptionTierOptions_WhenNoOptionsAvailable_ReturnsEmpty() async throws {
         // Given
-        mockStorePurchaseManager.subscriptionTierOptionsResult = nil
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .failure(.tieredProductsNoProductsAvailable)
 
         // When
         let result = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
@@ -656,6 +660,155 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         XCTAssertEqual(tierOptions.platform, .stripe)
     }
 
+    // MARK: - Tier Options Pixel Tests
+
+    func testGetSubscriptionTierOptions_AlwaysFiresRequestedPixel() async throws {
+        // Given
+        let expectedTierOptions = SubscriptionTierOptions(
+            platform: .macos,
+            products: [
+                SubscriptionTier(
+                    tier: .plus,
+                    features: [TierFeature(product: .networkProtection, name: .plus)],
+                    options: []
+                )
+            ]
+        )
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(expectedTierOptions)
+
+        // When
+        _ = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
+
+        // Then
+        XCTAssertTrue(mockEventReporter.reportedTierOptionEvents.contains { $0.eventName == SubscriptionPixel.subscriptionTierOptionsRequested.name })
+    }
+
+    func testGetSubscriptionTierOptions_OnSuccess_FiresSuccessPixel() async throws {
+        // Given
+        let expectedTierOptions = SubscriptionTierOptions(
+            platform: .macos,
+            products: [
+                SubscriptionTier(
+                    tier: .plus,
+                    features: [TierFeature(product: .networkProtection, name: .plus)],
+                    options: []
+                )
+            ]
+        )
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(expectedTierOptions)
+
+        // When
+        _ = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
+
+        // Then
+        XCTAssertTrue(mockEventReporter.reportedTierOptionEvents.contains { $0.eventName == SubscriptionPixel.subscriptionTierOptionsSuccess.name })
+        XCTAssertFalse(mockEventReporter.reportedTierOptionEvents.contains { $0.eventName == SubscriptionPixel.subscriptionTierOptionsFailure(error: NSError(domain: "test", code: 0)).name })
+    }
+
+    func testGetSubscriptionTierOptions_OnFailure_FiresFailurePixel() async throws {
+        // Given
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .failure(.tieredProductsNoProductsAvailable)
+
+        // When
+        _ = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
+
+        // Then
+        XCTAssertTrue(mockEventReporter.reportedTierOptionEvents.contains { $0.eventName == SubscriptionPixel.subscriptionTierOptionsFailure(error: NSError(domain: "test", code: 0)).name })
+        XCTAssertFalse(mockEventReporter.reportedTierOptionEvents.contains { $0.eventName == SubscriptionPixel.subscriptionTierOptionsSuccess.name })
+    }
+
+    func testGetSubscriptionTierOptions_OnFailure_FiresFailurePixelWithError() async throws {
+        // Given
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .failure(.tieredProductsNoProductsAvailable)
+
+        // When
+        _ = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
+
+        // Then
+        // The error is now embedded in the pixel enum (SubscriptionPixel.subscriptionTierOptionsFailure(error:))
+        let failureEvent = mockEventReporter.reportedTierOptionEvents.first { $0.eventName == SubscriptionPixel.subscriptionTierOptionsFailure(error: NSError(domain: "test", code: 0)).name }
+        XCTAssertNotNil(failureEvent, "Failure pixel should be fired")
+        XCTAssertFalse(mockEventReporter.reportedTierOptionEvents.contains { $0.eventName == SubscriptionPixel.subscriptionTierOptionsSuccess.name })
+    }
+
+    func testGetSubscriptionTierOptions_OnFailure_DoesNotFireSuccessPixel() async throws {
+        // Given
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .failure(.tieredProductsNoProductsAvailable)
+
+        // When
+        _ = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
+
+        // Then
+        XCTAssertFalse(mockEventReporter.reportedTierOptionEvents.contains { $0.eventName == SubscriptionPixel.subscriptionTierOptionsSuccess.name })
+    }
+
+    func testGetSubscriptionTierOptions_WithProTierPresent_FiresUnexpectedProTierPixel() async throws {
+        // Given
+        let tierOptionsWithProTier = SubscriptionTierOptions(
+            platform: .macos,
+            products: [
+                SubscriptionTier(
+                    tier: .plus,
+                    features: [TierFeature(product: .networkProtection, name: .plus)],
+                    options: []
+                ),
+                SubscriptionTier(
+                    tier: .pro,
+                    features: [TierFeature(product: .networkProtection, name: .pro)],
+                    options: []
+                )
+            ]
+        )
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(tierOptionsWithProTier)
+
+        // When
+        _ = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
+
+        // Then
+        XCTAssertTrue(mockEventReporter.reportedTierOptionEvents.contains { $0.eventName == SubscriptionPixel.subscriptionTierOptionsUnexpectedProTier.name })
+    }
+
+    func testGetSubscriptionTierOptions_WithoutProTier_DoesNotFireUnexpectedProTierPixel() async throws {
+        // Given
+        let tierOptionsWithoutProTier = SubscriptionTierOptions(
+            platform: .macos,
+            products: [
+                SubscriptionTier(
+                    tier: .plus,
+                    features: [TierFeature(product: .networkProtection, name: .plus)],
+                    options: []
+                )
+            ]
+        )
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(tierOptionsWithoutProTier)
+
+        // When
+        _ = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
+
+        // Then
+        XCTAssertFalse(mockEventReporter.reportedTierOptionEvents.contains { $0.eventName == SubscriptionPixel.subscriptionTierOptionsUnexpectedProTier.name })
+    }
+
+}
+
+// MARK: - Mocks
+
+final class MockSubscriptionEventReporter: SubscriptionEventReporter {
+
+    struct TierOptionEventRecord {
+        let eventName: String
+    }
+
+    var reportedActivationErrors: [SubscriptionError] = []
+    var reportedTierOptionEvents: [TierOptionEventRecord] = []
+
+    func report(subscriptionActivationError: SubscriptionError) {
+        reportedActivationErrors.append(subscriptionActivationError)
+    }
+
+    func report(subscriptionTierOptionEvent: PixelKitEvent) {
+        reportedTierOptionEvents.append(TierOptionEventRecord(eventName: subscriptionTierOptionEvent.name))
+    }
 }
 
 final class MockURLWebView: WKWebView {

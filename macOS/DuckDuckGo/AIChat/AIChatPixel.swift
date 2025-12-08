@@ -151,8 +151,11 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User submits URL from duck.ai panel
     case aiChatAddressBarAIChatSubmitURL
 
-    /// Event Trigger: User submits a prompt from the suggestion for duck.ai
-    case aiChatSuggestionAIChatSubmitted
+    /// Event Trigger: User submits a prompt from the suggestion for duck.ai by clicking with the mouse
+    case aiChatSuggestionAIChatSubmittedMouse
+
+    /// Event Trigger: User submits a prompt from the suggestion for duck.ai by pressing enter
+    case aiChatSuggestionAIChatSubmittedKeyboard
 
     // MARK: -
 
@@ -234,8 +237,10 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_addressbar_aichat_submit_prompt"
         case .aiChatAddressBarAIChatSubmitURL:
             return "aichat_addressbar_aichat_submit_url"
-        case .aiChatSuggestionAIChatSubmitted:
-            return "aichat_suggestion_aichat_submitted"
+        case .aiChatSuggestionAIChatSubmittedMouse:
+            return "aichat_suggestion_aichat_submitted_mouse"
+        case .aiChatSuggestionAIChatSubmittedKeyboard:
+            return "aichat_suggestion_aichat_submitted_keyboard"
         }
     }
 
@@ -271,7 +276,8 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarToggleChangedSearch,
                 .aiChatAddressBarAIChatSubmitPrompt,
                 .aiChatAddressBarAIChatSubmitURL,
-                .aiChatSuggestionAIChatSubmitted:
+                .aiChatSuggestionAIChatSubmittedMouse,
+                .aiChatSuggestionAIChatSubmittedKeyboard:
             return nil
         case .aiChatAddressBarButtonClicked(let action):
             return ["action": action.rawValue]
@@ -331,14 +337,13 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatAddressBarToggleChangedSearch,
                 .aiChatAddressBarAIChatSubmitPrompt,
                 .aiChatAddressBarAIChatSubmitURL,
-                .aiChatSuggestionAIChatSubmitted:
+                .aiChatSuggestionAIChatSubmittedMouse,
+                .aiChatSuggestionAIChatSubmittedKeyboard:
             return [.pixelSource]
         }
     }
 
 }
-
-// MARK: - Parameter values
 
 /// Action performed when address bar button is clicked
 enum AIChatAddressBarAction: String, CaseIterable {

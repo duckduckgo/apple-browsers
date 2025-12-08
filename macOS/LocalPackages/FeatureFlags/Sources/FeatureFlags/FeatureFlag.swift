@@ -140,9 +140,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866475316806
     case hangReporting
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866618404342
-    case updateSafariBookmarksImport
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866476860577
     case newTabPageOmnibar
 
@@ -285,8 +282,7 @@ public enum FeatureFlag: String, CaseIterable {
 extension FeatureFlag: FeatureFlagDescribing {
     public var defaultValue: Bool {
         switch self {
-        case .updateSafariBookmarksImport,
-                .supportsAlternateStripePaymentFlow,
+        case .supportsAlternateStripePaymentFlow,
                 .refactorOfSyncPreferences,
                 .subscriptionPurchaseWidePixelMeasurement,
                 .authV2WideEventEnabled,
@@ -348,7 +344,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatKeepSession,
                 .aiChatOmnibarToggle,
                 .aiChatOmnibarCluster,
-                .updateSafariBookmarksImport,
                 .newTabPageOmnibar,
                 .newTabPagePerTab,
                 .newTabPageTabIDs,
@@ -487,8 +482,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.willSoonDropBigSurSupport))
         case .hangReporting:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.hangReporting))
-        case .updateSafariBookmarksImport:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.updateSafariBookmarksImport))
         case .newTabPageOmnibar:
             return .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.omnibar))
         case .newTabPagePerTab:

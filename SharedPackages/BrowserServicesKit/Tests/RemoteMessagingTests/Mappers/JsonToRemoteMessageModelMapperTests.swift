@@ -297,5 +297,5 @@ extension JsonToRemoteMessageModelMapperTests {
             listItems: listItems
         )
     }
-    
+
 }

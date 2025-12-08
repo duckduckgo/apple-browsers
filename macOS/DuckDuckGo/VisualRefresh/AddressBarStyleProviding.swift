@@ -139,7 +139,7 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     ///
     let tabBarBackgroundTopPadding: CGFloat = {
 #if compiler(>=6.2)
-        if #available(macOS 26.0, *) {
+        if #available(macOS 26.0, *), Bundle.main.designCompatibilityEnabled == false {
             return 2
         }
 #endif

@@ -148,6 +148,7 @@ final class PermissionCenterViewModel: ObservableObject {
     private let openPopup: ((PermissionAuthorizationQuery) -> Void)?
     private let setTemporaryPopupAllowance: (() -> Void)?
     private let resetTemporaryPopupAllowance: (() -> Void)?
+    private let grantPermission: ((PermissionAuthorizationQuery) -> Void)?
     private var cancellables = Set<AnyCancellable>()
     private var removedPermissions = Set<PermissionType>()
     private(set) var hasTemporaryPopupAllowance: Bool
@@ -174,6 +175,7 @@ final class PermissionCenterViewModel: ObservableObject {
         openPopup: ((PermissionAuthorizationQuery) -> Void)? = nil,
         setTemporaryPopupAllowance: (() -> Void)? = nil,
         resetTemporaryPopupAllowance: (() -> Void)? = nil,
+        grantPermission: ((PermissionAuthorizationQuery) -> Void)? = nil,
         hasTemporaryPopupAllowance: Bool = false,
         pageInitiatedPopupOpened: Bool = false,
         systemPermissionManager: SystemPermissionManagerProtocol = SystemPermissionManager()
@@ -189,6 +191,7 @@ final class PermissionCenterViewModel: ObservableObject {
         self.openPopup = openPopup
         self.setTemporaryPopupAllowance = setTemporaryPopupAllowance
         self.resetTemporaryPopupAllowance = resetTemporaryPopupAllowance
+        self.grantPermission = grantPermission
         self.hasTemporaryPopupAllowance = hasTemporaryPopupAllowance
         self.pageInitiatedPopupOpened = pageInitiatedPopupOpened
         self.systemPermissionManager = systemPermissionManager
@@ -202,6 +205,11 @@ final class PermissionCenterViewModel: ObservableObject {
     /// Updates the decision for a permission type
     func setDecision(_ decision: PersistedPermissionDecision, for permissionType: PermissionType) {
         permissionManager.setPermission(decision, forDomain: domain, permissionType: permissionType)
+
+        // If setting to "Always Allow" and there's a pending request, grant it
+        if decision == .allow, case .requested(let query) = usedPermissions[permissionType] {
+            grantPermission?(query)
+        }
     }
 
     /// Updates the decision for a specific external scheme

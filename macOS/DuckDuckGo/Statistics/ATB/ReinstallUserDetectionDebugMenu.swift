@@ -120,4 +120,3 @@ final class ReinstallUserDetectionDebugMenu: NSMenu, NSMenuDelegate {
         buildMenuItems()
     }
 }
-

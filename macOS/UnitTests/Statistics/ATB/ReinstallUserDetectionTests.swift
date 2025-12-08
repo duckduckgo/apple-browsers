@@ -323,4 +323,3 @@ final class ReinstallUserDetectionTests: XCTestCase {
         XCTAssertFalse(sut.isReinstallingUser)
     }
 }
-

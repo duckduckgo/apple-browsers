@@ -471,7 +471,7 @@ struct FireDialogView: ModalView {
 
                 Group {
                     Toggle(isOn: isOn)
-                        .toggleStyle(FireToggleStyle(onFill: Color(designSystemColor: .accentPrimary), knobFill: Color(designSystemColor: .fireDialogToggleKnob)))
+                        .toggleStyle(FireToggleStyle(onFill: Color(designSystemColor: .accentPrimary), knobFill: Color(designSystemColor: .accentContentPrimary)))
                         .accessibilityLabel(title)
                         .accessibilityIdentifier(toggleId)
                 }

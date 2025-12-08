@@ -528,11 +528,9 @@ final class AddressBarButtonsViewController: NSViewController {
     private func subscribeToPermissions() {
         permissionsCancellables.removeAll(keepingCapacity: true)
 
-        tabViewModel?.$usedPermissions.dropFirst().sink { [weak self] _ in
-            // Dispatch to next run loop to ensure UI updates after Combine propagation
-            DispatchQueue.main.async {
-                self?.updateAllPermissionButtons()
-            }
+        // Dispatch to next run loop to ensure UI updates after Combine propagation
+        tabViewModel?.$usedPermissions.dropFirst().receive(on: DispatchQueue.main).sink { [weak self] _ in
+            self?.updateAllPermissionButtons()
         }.store(in: &permissionsCancellables)
         tabViewModel?.tab.popupHandling?.pageInitiatedPopupPublisher.sink { [weak self] _ in
             self?.updateAllPermissionButtons()

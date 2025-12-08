@@ -224,9 +224,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866713701189
     case vpnMenuItem
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614199859
-    case forgetAllInSettings
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866470156149
     case duckAiDataClearing
     
@@ -303,7 +300,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .dbpForegroundRunningWhenDashboardOpen,
              .syncCreditCards,
              .unifiedURLPredictor,
-             .forgetAllInSettings,
              .vpnConnectionWidePixelMeasurement,
              .migrateKeychainAccessibility,
              .dataImportWideEventMeasurement,
@@ -355,7 +351,6 @@ extension FeatureFlag: FeatureFlagDescribing {
              .unifiedURLPredictor,
              .mobileCustomization,
              .vpnMenuItem,
-             .forgetAllInSettings,
              .onboardingSearchExperience,
              .duckAiDataClearing,
              .fullDuckAIMode,
@@ -554,8 +549,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.customization))
         case .vpnMenuItem:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnMenuItem))
-        case .forgetAllInSettings:
-            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.forgetAllInSettings))
         case .duckAiDataClearing:
             return .remoteReleasable(.feature(.duckAiDataClearing))
         case .fullDuckAIMode:

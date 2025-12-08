@@ -812,7 +812,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             privacyFeatures = AppPrivacyFeatures(contentBlocking: contentBlocking, database: database.db)
             appContentBlocking = contentBlocking
         } else {
-            // runtime mock-replacement for Unit Tests, to be redone when we‘ll be doing Dependency Injection
+            // runtime mock-replacement for Unit Tests, to be redone once DI is fully implemented - see ScriptSourceProvider.Dependencies pattern
             privacyFeatures = AppPrivacyFeatures(contentBlocking: ContentBlockingMock(), httpsUpgradeStore: HTTPSUpgradeStoreMock())
         }
 #else

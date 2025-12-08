@@ -67,7 +67,6 @@ public protocol SubscriptionUserScriptNavigationDelegate: AnyObject {
 /// Implemented by apps/BSK to provide feature flag values without creating module dependencies
 ///
 public protocol SubscriptionUserScriptFeatureFlagProviding {
-    var usePaidDuckAi: Bool { get }
     var useProTier: Bool { get }
 }
 
@@ -131,7 +130,7 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
 
     @MainActor
     func getFeatureConfig(params: Any, message: any UserScriptMessage) async throws -> DataModel.GetFeatureConfigurationResponse {
-        return .init(usePaidDuckAi: featureFlagProvider.usePaidDuckAi, useProTier: featureFlagProvider.useProTier)
+        return .init(useProTier: featureFlagProvider.useProTier)
     }
 
     @MainActor
@@ -326,7 +325,6 @@ extension SubscriptionUserScript {
         }
 
         struct GetFeatureConfigurationResponse: Encodable {
-            let usePaidDuckAi: Bool
             let useProTier: Bool
         }
 

@@ -311,7 +311,7 @@ struct FireDialogView: ModalView {
         }
         .background(
             RoundedRectangle(cornerRadius: 12.0, style: .continuous)
-                .fill(Color(designSystemColor: .fireDialogSectionBackground))
+                .fill(Color(designSystemColor: .containerFillPrimary))
                 .overlay(
                     RoundedRectangle(cornerRadius: 12.0, style: .continuous)
                         .stroke(Color(designSystemColor: .fireDialogSectionBorder), lineWidth: 1)

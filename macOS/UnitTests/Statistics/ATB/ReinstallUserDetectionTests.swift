@@ -207,7 +207,7 @@ final class ReinstallUserDetectionTests: XCTestCase {
     func testWhenDatesChangedAndSparkleMetadataPresentThenNotFlaggedAsReinstall() {
         mockFileManager.mockCreationDate = january2
         appGroupDefaults.set(january1, forKey: "reinstall.detection.bundle-creation-date")
-        standardDefaults.set("1.0.0", forKey: "pendingUpdateSourceVersion")
+        standardDefaults.set("1.0.0", forKey: "pending.update.source.version")
 
         sut.checkForReinstallingUser()
 
@@ -217,7 +217,7 @@ final class ReinstallUserDetectionTests: XCTestCase {
     func testWhenDatesChangedAndSparkleMetadataPresentThenUpdatesStoredDate() {
         mockFileManager.mockCreationDate = january2
         appGroupDefaults.set(january1, forKey: "reinstall.detection.bundle-creation-date")
-        standardDefaults.set("1.0.0", forKey: "pendingUpdateSourceVersion")
+        standardDefaults.set("1.0.0", forKey: "pending.update.source.version")
 
         sut.checkForReinstallingUser()
 
@@ -316,7 +316,7 @@ final class ReinstallUserDetectionTests: XCTestCase {
 
         // Step 2: Sparkle update (new bundle, Sparkle metadata present)
         mockFileManager.mockCreationDate = january2
-        standardDefaults.set("1.0.0", forKey: "pendingUpdateSourceVersion")
+        standardDefaults.set("1.0.0", forKey: "pending.update.source.version")
         createSUT()
         sut.checkForReinstallingUser()
 

@@ -70,7 +70,7 @@ final class DefaultReinstallUserDetection: ReinstallUserDetection {
         /// The result of the reinstall check
         static let isReinstallingUser = "reinstall.detection.is-reinstalling-user"
         /// Sparkle's pending update metadata key (to detect Sparkle updates)
-        static let sparklePendingUpdateVersion = "pendingUpdateSourceVersion"
+        static let sparklePendingUpdateVersion = "pending.update.source.version"
     }
 
     private let buildType: ApplicationBuildType

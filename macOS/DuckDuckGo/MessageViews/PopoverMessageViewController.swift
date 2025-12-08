@@ -19,6 +19,9 @@
 import AppKit
 import SwiftUI
 import SwiftUIExtensions
+
+typealias PopoverStyle = SwiftUIExtensions.PopoverStyle
+
 final class PopoverMessageViewController: NSHostingController<PopoverMessageView>, NSPopoverDelegate {
 
     enum Constants {
@@ -28,36 +31,48 @@ final class PopoverMessageViewController: NSHostingController<PopoverMessageView
     }
 
     let viewModel: PopoverMessageViewModel
-    let onDismiss: (() -> Void)?
     let autoDismissDuration: TimeInterval?
-    let onClick: (() -> Void)?
     private var timer: Timer?
     private var trackingArea: NSTrackingArea?
+    private var onDismiss: (() -> Void)?
+    private var onAutoDismiss: (() -> Void)?
 
     init(title: String? = nil,
          message: String,
          image: NSImage? = nil,
-         buttonText: String? = nil,
-         buttonAction: (() -> Void)? = nil,
+         popoverStyle: PopoverStyle = .basic,
+         autoDismissDuration: TimeInterval? = Constants.autoDismissDuration,
+         maxWidth: CGFloat? = nil,
          shouldShowCloseButton: Bool = false,
          presentMultiline: Bool = false,
-         maxWidth: CGFloat? = nil,
-         autoDismissDuration: TimeInterval? = Constants.autoDismissDuration,
+         buttonText: String? = nil,
+         buttonAction: (() -> Void)? = nil,
+         clickAction: (() -> Void)? = nil,
+         onClose: (() -> Void)? = nil,
          onDismiss: (() -> Void)? = nil,
-         onClick: (() -> Void)? = nil) {
+         onAutoDismiss: (() -> Void)? = nil) {
+        self.autoDismissDuration = autoDismissDuration
+        self.onDismiss = onDismiss
+        self.onAutoDismiss = onAutoDismiss
         self.viewModel = PopoverMessageViewModel(title: title,
                                                  message: message,
                                                  image: image,
-                                                 buttonText: buttonText,
-                                                 buttonAction: buttonAction,
+                                                 popoverStyle: popoverStyle,
+                                                 maxWidth: maxWidth,
                                                  shouldShowCloseButton: shouldShowCloseButton,
                                                  shouldPresentMultiline: presentMultiline,
-                                                 maxWidth: maxWidth)
-        self.onDismiss = onDismiss
-        self.autoDismissDuration = autoDismissDuration
-        self.onClick = onClick
-        let contentView = PopoverMessageView(viewModel: self.viewModel, onClick: { }, onClose: { })
+                                                 buttonText: buttonText,
+                                                 buttonAction: buttonAction,
+                                                 clickAction: clickAction,
+                                                 dismissAction: nil,
+                                                 onClose: onClose)
+        let contentView = PopoverMessageView(viewModel: self.viewModel)
+
         super.init(rootView: contentView)
+
+        self.viewModel.dismissAction = { [weak self] in
+            self?.dismissPopover(isAutoDismiss: false)
+        }
         self.rootView = createContentView()
     }
 
@@ -71,6 +86,7 @@ final class PopoverMessageViewController: NSHostingController<PopoverMessageView
         if let trackingArea = trackingArea {
             view.removeTrackingArea(trackingArea)
         }
+
         onDismiss?()
     }
 
@@ -81,6 +97,8 @@ final class PopoverMessageViewController: NSHostingController<PopoverMessageView
     }
 
     func show(onParent parent: NSViewController, rect: NSRect, of view: NSView, preferredEdge: NSRectEdge = .maxY) {
+        // Adjust view size to avoid glitch when presenting
+        self.view.frame.size = self.view.fittingSize
         // Set the content size to match the SwiftUI view's intrinsic size
         self.preferredContentSize = self.view.fittingSize
         // For shorter strings, the positioning can be off unless the width is set a second time
@@ -97,6 +115,8 @@ final class PopoverMessageViewController: NSHostingController<PopoverMessageView
               relativeTo view: NSView,
               preferredEdge: NSRectEdge = .maxY,
               behavior: NSPopover.Behavior = .applicationDefined) {
+        // Adjust view size to avoid glitch when presenting
+        self.view.frame.size = self.view.fittingSize
         // Set the content size to match the SwiftUI view's intrinsic size
         self.preferredContentSize = self.view.fittingSize
         // For shorter strings, the positioning can be off unless the width is set a second time
@@ -120,7 +140,7 @@ final class PopoverMessageViewController: NSHostingController<PopoverMessageView
         if let autoDismissDuration {
             timer = Timer.scheduledTimer(withTimeInterval: autoDismissDuration, repeats: false) { [weak self] _ in
                 guard let self = self else { return }
-                self.presentingViewController?.dismiss(self)
+                self.dismissPopover(isAutoDismiss: true)
             }
         }
     }
@@ -130,7 +150,7 @@ final class PopoverMessageViewController: NSHostingController<PopoverMessageView
         trackingArea = NSTrackingArea(rect: view.bounds,
                                       options: [.mouseEnteredAndExited, .activeInKeyWindow],
                                       owner: self,
-                                    userInfo: nil)
+                                      userInfo: nil)
         view.addTrackingArea(trackingArea!)
     }
 
@@ -142,20 +162,14 @@ final class PopoverMessageViewController: NSHostingController<PopoverMessageView
         scheduleAutoDismissTimer()
     }
 
-    override func mouseDown(with event: NSEvent) {
-        onClick?()
-        dismissPopover()
-    }
-
-    private func dismissPopover() {
+    private func dismissPopover(isAutoDismiss: Bool) {
+        if isAutoDismiss {
+            onAutoDismiss?()
+        }
         presentingViewController?.dismiss(self)
     }
 
     private func createContentView() -> PopoverMessageView {
-        return PopoverMessageView(viewModel: self.viewModel, onClick: { [weak self] in
-            self?.onClick?()
-        }) { [weak self] in
-            self?.dismissPopover()
-        }
+        return PopoverMessageView(viewModel: self.viewModel)
     }
 }

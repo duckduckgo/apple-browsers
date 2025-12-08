@@ -1858,36 +1858,6 @@
       }
     ));
   }
-  function NewBadgeIcon(props) {
-    return /* @__PURE__ */ _("svg", { xmlns: "http://www.w3.org/2000/svg", width: "42", height: "16", viewBox: "0 0 42 16", fill: "none", ...props }, /* @__PURE__ */ _(
-      "path",
-      {
-        d: "M0 3.99792C0 1.78879 1.79086 -0.0020752 4 -0.0020752H38C40.2091 -0.0020752 42 1.78879 42 3.99792V11.9979C42 14.2071 40.2091 15.9979 38 15.9979H4C1.79086 15.9979 0 14.2071 0 11.9979V3.99792Z",
-        fill: "#F9BE1A"
-      }
-    ), /* @__PURE__ */ _(
-      "path",
-      {
-        d: "M13.0913 9.1073H13.1812V3.94617H14.8032V12.0497H13.3999L9.64893 6.86707H9.55908V12.0497H7.93604V3.94617H9.35107L13.0913 9.1073Z",
-        fill: "black",
-        "fill-opacity": "0.96"
-      }
-    ), /* @__PURE__ */ _(
-      "path",
-      {
-        d: "M22.144 5.3446H18.4722V7.29871H21.936V8.60144H18.4722V10.6512H22.144V12.0497H16.7759V3.94617H22.144V5.3446Z",
-        fill: "black",
-        "fill-opacity": "0.96"
-      }
-    ), /* @__PURE__ */ _(
-      "path",
-      {
-        d: "M26.4663 9.73621H26.5562L28.0337 3.94617H29.4653L30.9702 9.73621H31.0601L32.312 3.94617H34.064L31.9136 12.0497H30.3247L28.7915 6.59167H28.7017L27.1851 12.0497H25.5854L23.4399 3.94617H25.2036L26.4663 9.73621Z",
-        fill: "black",
-        "fill-opacity": "0.96"
-      }
-    ));
-  }
   function InfoIcon(props) {
     return /* @__PURE__ */ _("svg", { xmlns: "http://www.w3.org/2000/svg", width: "16", height: "16", viewBox: "0 0 16 16", fill: "none", class: "info-icon", ...props }, /* @__PURE__ */ _(
       "path",
@@ -9753,6 +9723,28 @@
     }
   });
 
+  // pages/new-tab/app/components/NewBadge.module.css
+  var NewBadge_default;
+  var init_NewBadge = __esm({
+    "pages/new-tab/app/components/NewBadge.module.css"() {
+      NewBadge_default = {
+        badge: "NewBadge_badge"
+      };
+    }
+  });
+
+  // pages/new-tab/app/components/NewBadge.js
+  function NewBadge({ text: text2, ...rest }) {
+    return /* @__PURE__ */ _("span", { class: NewBadge_default.badge, ...rest }, text2?.toUpperCase() || "NEW");
+  }
+  var init_NewBadge2 = __esm({
+    "pages/new-tab/app/components/NewBadge.js"() {
+      "use strict";
+      init_preact_module();
+      init_NewBadge();
+    }
+  });
+
   // pages/new-tab/app/components/Tooltip/Tooltip.module.css
   var Tooltip_default;
   var init_Tooltip = __esm({
@@ -9874,7 +9866,14 @@
     function update(currentTime) {
       const elapsed = currentTime - startTime;
       const progress = Math.min(elapsed * inverseDuration, 1);
-      const eased = progress < 0.5 ? 4 * progress * progress * progress : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+      let eased;
+      if (progress < 0.5) {
+        const p22 = progress * progress;
+        eased = 4 * p22 * progress;
+      } else {
+        const t4 = -2 * progress + 2;
+        eased = 1 - t4 * t4 * t4 / 2;
+      }
       const currentValue = Math.floor(startValue + animationRange * eased);
       onUpdate(currentValue);
       if (progress < 1) {
@@ -9907,11 +9906,23 @@
   });
 
   // pages/new-tab/app/protections/utils/useAnimatedCount.js
-  function useAnimatedCount(targetValue) {
+  function useAnimatedCount(targetValue, elementRef) {
     const [animatedValue, setAnimatedValue] = d2(0);
     const animatedValueRef = A2(
       /** @type {number} */
       0
+    );
+    const [isInViewport, setIsInViewport] = d2(false);
+    const hasAnimatedRef = A2(false);
+    const lastSeenValueRef = A2(
+      /** @type {number | null} */
+      null
+    );
+    const wasInViewportRef = A2(false);
+    const observerSetupRef = A2(false);
+    const observerRef = A2(
+      /** @type {IntersectionObserver | null} */
+      null
     );
     const updateAnimatedCount = q2(
       /** @type {import('./animateCount.js').AnimationUpdateCallback} */
@@ -9921,23 +9932,91 @@
       }),
       []
     );
+    const setupIntersectionObserver = q2((element) => {
+      if (observerSetupRef.current || observerRef.current) {
+        return;
+      }
+      observerSetupRef.current = true;
+      observerRef.current = new IntersectionObserver(
+        (entries4) => {
+          entries4.forEach((entry) => {
+            const wasInViewport = wasInViewportRef.current;
+            const isNowInViewport = entry.isIntersecting;
+            if (wasInViewport && !isNowInViewport) {
+              lastSeenValueRef.current = animatedValueRef.current;
+            }
+            wasInViewportRef.current = isNowInViewport;
+            setIsInViewport(isNowInViewport);
+          });
+        },
+        {
+          // Trigger when any part of the element is visible
+          threshold: 0,
+          // Optional: add some margin to trigger slightly before visible
+          rootMargin: "0px"
+        }
+      );
+      observerRef.current.observe(element);
+    }, []);
+    y2(() => {
+      if (!elementRef) {
+        setIsInViewport(true);
+        return;
+      }
+      const element = elementRef.current;
+      let cancelled = false;
+      if (element) {
+        setupIntersectionObserver(element);
+      } else {
+        (async () => {
+          await Promise.resolve();
+          if (cancelled) {
+            return;
+          }
+          const delayedElement = elementRef.current;
+          if (delayedElement) {
+            setupIntersectionObserver(delayedElement);
+          }
+        })();
+      }
+      return () => {
+        cancelled = true;
+        observerSetupRef.current = false;
+        if (observerRef.current) {
+          observerRef.current.disconnect();
+          observerRef.current = null;
+        }
+      };
+    }, []);
     y2(() => {
       let cancelAnimation = () => {
       };
-      if (document.visibilityState === "visible") {
-        cancelAnimation = animateCount(targetValue, updateAnimatedCount, void 0, animatedValueRef.current);
-      } else {
+      const shouldAnimate = document.visibilityState === "visible" && isInViewport;
+      if (shouldAnimate) {
+        let startValue = animatedValueRef.current;
+        if (lastSeenValueRef.current !== null && lastSeenValueRef.current !== targetValue) {
+          startValue = lastSeenValueRef.current;
+          lastSeenValueRef.current = null;
+        }
+        cancelAnimation = animateCount(targetValue, updateAnimatedCount, void 0, startValue);
+        hasAnimatedRef.current = true;
+      } else if (hasAnimatedRef.current) {
         setAnimatedValue(targetValue);
         animatedValueRef.current = targetValue;
+        lastSeenValueRef.current = null;
       }
       const handleVisibilityChange = () => {
-        if (document.visibilityState === "visible") {
+        if (document.visibilityState === "visible" && isInViewport) {
           cancelAnimation();
           cancelAnimation = animateCount(targetValue, updateAnimatedCount, void 0, animatedValueRef.current);
-        } else {
+          hasAnimatedRef.current = true;
+        } else if (document.visibilityState === "hidden") {
           cancelAnimation();
-          setAnimatedValue(targetValue);
-          animatedValueRef.current = targetValue;
+          if (hasAnimatedRef.current) {
+            setAnimatedValue(targetValue);
+            animatedValueRef.current = targetValue;
+            lastSeenValueRef.current = null;
+          }
         }
       };
       document.addEventListener("visibilitychange", handleVisibilityChange);
@@ -9945,7 +10024,7 @@
         cancelAnimation();
         document.removeEventListener("visibilitychange", handleVisibilityChange);
       };
-    }, [targetValue, updateAnimatedCount]);
+    }, [targetValue, updateAnimatedCount, isInViewport]);
     return animatedValue;
   }
   var init_useAnimatedCount = __esm({
@@ -9969,15 +10048,29 @@
       /** @type {Strings} */
       {}
     );
+    const ntp = useMessaging();
+    const headingRef = A2(
+      /** @type {HTMLDivElement|null} */
+      null
+    );
+    const counterContainerRef = A2(
+      /** @type {HTMLDivElement|null} */
+      null
+    );
     const totalTrackersBlocked = blockedCountSignal.value;
     const totalCookiePopUpsBlockedValue = totalCookiePopUpsBlockedSignal.value;
     const totalCookiePopUpsBlocked = typeof totalCookiePopUpsBlockedValue === "number" && Number.isFinite(totalCookiePopUpsBlockedValue) ? Math.max(0, Math.floor(totalCookiePopUpsBlockedValue)) : 0;
-    const animatedTrackersBlocked = useAnimatedCount(totalTrackersBlocked);
-    const animatedCookiePopUpsBlocked = useAnimatedCount(totalCookiePopUpsBlocked);
+    const animatedTrackersBlocked = useAnimatedCount(totalTrackersBlocked, counterContainerRef);
+    const animatedCookiePopUpsBlocked = useAnimatedCount(totalCookiePopUpsBlocked, counterContainerRef);
+    y2(() => {
+      return ntp.messaging.subscribe("protections_scroll", () => {
+        headingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }, [ntp]);
     const isCpmEnabled = totalCookiePopUpsBlockedValue !== void 0 && totalCookiePopUpsBlockedValue !== null;
     const trackersBlockedHeading = animatedTrackersBlocked === 1 ? t4("stats_countBlockedSingular") : t4("stats_countBlockedPlural");
     const cookiePopUpsBlockedHeading = animatedCookiePopUpsBlocked === 1 ? t4("stats_totalCookiePopUpsBlockedSingular") : t4("stats_totalCookiePopUpsBlockedPlural");
-    return /* @__PURE__ */ _("div", { class: PrivacyStats_default.heading, "data-testid": "ProtectionsHeading" }, /* @__PURE__ */ _("div", { class: (0, import_classnames9.default)(PrivacyStats_default.control, animatedTrackersBlocked === 0 && PrivacyStats_default.noTrackers) }, /* @__PURE__ */ _("span", { class: PrivacyStats_default.headingIcon }, /* @__PURE__ */ _("img", { src: "./icons/Shield-Check-Color-16.svg", alt: "Privacy Shield" })), /* @__PURE__ */ _("h2", { class: PrivacyStats_default.caption }, t4("protections_menuTitle")), /* @__PURE__ */ _(Tooltip, { content: t4("stats_protectionsReportInfo") }, /* @__PURE__ */ _(InfoIcon, { class: PrivacyStats_default.infoIcon })), canExpand && /* @__PURE__ */ _("span", { class: PrivacyStats_default.widgetExpander }, /* @__PURE__ */ _(
+    return /* @__PURE__ */ _("div", { class: PrivacyStats_default.heading, "data-testid": "ProtectionsHeading", ref: headingRef }, /* @__PURE__ */ _("div", { class: (0, import_classnames9.default)(PrivacyStats_default.control, animatedTrackersBlocked === 0 && PrivacyStats_default.noTrackers) }, /* @__PURE__ */ _("span", { class: PrivacyStats_default.headingIcon }, /* @__PURE__ */ _("img", { src: "./icons/Shield-Check-Color-16.svg", alt: "Privacy Shield" })), /* @__PURE__ */ _("h2", { class: PrivacyStats_default.caption }, t4("protections_menuTitle")), /* @__PURE__ */ _(Tooltip, { content: t4("stats_protectionsReportInfo") }, /* @__PURE__ */ _(InfoIcon, { class: PrivacyStats_default.infoIcon })), canExpand && /* @__PURE__ */ _("span", { class: PrivacyStats_default.widgetExpander }, /* @__PURE__ */ _(
       ShowHideButtonCircle,
       {
         buttonAttrs: {
@@ -9988,7 +10081,7 @@
         onClick: onToggle,
         label: expansion === "expanded" ? t4("stats_hideLabel") : t4("stats_toggleLabel")
       }
-    ))), /* @__PURE__ */ _("div", { class: PrivacyStats_default.counterContainer }, /* @__PURE__ */ _("div", { class: PrivacyStats_default.counter }, animatedTrackersBlocked === 0 && /* @__PURE__ */ _("h3", { class: PrivacyStats_default.noRecentTitle }, t4("protections_noRecent")), animatedTrackersBlocked > 0 && /* @__PURE__ */ _("h3", { class: PrivacyStats_default.title }, animatedTrackersBlocked, " ", /* @__PURE__ */ _("span", null, trackersBlockedHeading))), isCpmEnabled && animatedTrackersBlocked > 0 && totalCookiePopUpsBlocked > 0 && /* @__PURE__ */ _("div", { class: PrivacyStats_default.counter }, /* @__PURE__ */ _("h3", { class: PrivacyStats_default.title }, animatedCookiePopUpsBlocked, " ", /* @__PURE__ */ _("span", null, cookiePopUpsBlockedHeading)), /* @__PURE__ */ _(NewBadgeIcon, null))));
+    ))), /* @__PURE__ */ _("div", { class: PrivacyStats_default.counterContainer, ref: counterContainerRef }, /* @__PURE__ */ _("div", { class: PrivacyStats_default.counter }, animatedTrackersBlocked === 0 && /* @__PURE__ */ _("h3", { class: PrivacyStats_default.noRecentTitle }, t4("protections_noRecent")), animatedTrackersBlocked > 0 && /* @__PURE__ */ _("h3", { class: PrivacyStats_default.title }, animatedTrackersBlocked, " ", /* @__PURE__ */ _("span", null, trackersBlockedHeading))), isCpmEnabled && animatedTrackersBlocked > 0 && totalCookiePopUpsBlocked > 0 && /* @__PURE__ */ _("div", { class: PrivacyStats_default.counter }, /* @__PURE__ */ _("h3", { class: PrivacyStats_default.title }, animatedCookiePopUpsBlocked, " ", /* @__PURE__ */ _("span", null, cookiePopUpsBlockedHeading)), /* @__PURE__ */ _(NewBadge, { text: t4("protections_newBadge") }))));
   }
   var import_classnames9;
   var init_ProtectionsHeading = __esm({
@@ -10000,8 +10093,10 @@
       import_classnames9 = __toESM(require_classnames(), 1);
       init_preact_module();
       init_Icons2();
+      init_NewBadge2();
       init_Tooltip2();
       init_useAnimatedCount();
+      init_hooks_module();
     }
   });
 
@@ -30464,6 +30559,10 @@
       title: "No recent tracking activity",
       note: "Placeholder text shown in the Details view when no tracking activity was blocked in the last 7 days. Keep concise if possible."
     },
+    protections_newBadge: {
+      title: "NEW",
+      note: "Text displayed in a badge to indicate a new feature or statistic."
+    },
     stats_menuTitle: {
       title: "Blocked Tracking Attempts",
       note: "Used as a label in a customization menu"
@@ -30521,7 +30620,7 @@
       note: "The heading indicating multiple cookie pop-ups were handled by the CPM"
     },
     stats_protectionsReportInfo: {
-      title: "Displays tracking attempts blocked in the last 7 days, and the number of cookie pop-ups blocked since you started using the browser. <span>You can reset these stats using the Fire Button.</span>",
+      title: "Displays tracking attempts blocked in the last 7 days, and the number of cookie pop-ups blocked since you started using the browser.",
       note: "Text explaining how to reset the protections stats"
     },
     stats_feedCountBlockedSingular: {

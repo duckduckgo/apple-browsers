@@ -108,6 +108,12 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866710074694
     case dbpEmailConfirmationDecoupling
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212258549430653
+    case dbpForegroundRunningOnAppActive
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212258549430659
+    case dbpForegroundRunningWhenDashboardOpen
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711635701
     case crashReportOptInStatusResetting
 
@@ -227,6 +233,12 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614122594
     case fullDuckAIMode
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212197756955039
+    case fadeOutOnToggle
+
+    /// https://app.asana.com/1/137249556945/project/1210947754188321/task/1212023025413442?focus=true
+    case fadeOutOnToggleSmallerBottomInput
+
     /// macOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015252281641
     /// iOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015250423471
     case attributedMetrics
@@ -263,8 +275,17 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1201462886803403/task/1211326076710245?focus=true
     case migrateKeychainAccessibility
 
+    /// https://app.asana.com/1/137249556945/project/481882893211075/task/1212057154681076?focus=true
+    case productTelemeterySurfaceUsage
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212229431540900
     case granularFireButtonOptions
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1212281244797425?focus=true
+    case fullDuckAIModeExperimentalSetting
+    
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212305240287488?focus=true
+    case dataImportWideEventMeasurement
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -278,11 +299,15 @@ extension FeatureFlag: FeatureFlagDescribing {
              .subscriptionPurchaseWidePixelMeasurement,
              .newDeviceSyncPrompt,
              .authV2WideEventEnabled,
+             .dbpForegroundRunningOnAppActive,
+             .dbpForegroundRunningWhenDashboardOpen,
              .syncCreditCards,
              .unifiedURLPredictor,
              .forgetAllInSettings,
              .vpnConnectionWidePixelMeasurement,
-             .migrateKeychainAccessibility:
+             .migrateKeychainAccessibility,
+             .dataImportWideEventMeasurement,
+             .browsingMenuSheetPresentation:
             true
         default:
             false
@@ -320,6 +345,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .daxEasterEggLogos,
              .dbpEmailConfirmationDecoupling,
              .dbpRemoteBrokerDelivery,
+             .dbpForegroundRunningOnAppActive,
+             .dbpForegroundRunningWhenDashboardOpen,
              .subscriptionPurchaseWidePixelMeasurement,
              .showAIChatAddressBarChoiceScreen,
              .authV2WideEventEnabled,
@@ -332,6 +359,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .onboardingSearchExperience,
              .duckAiDataClearing,
              .fullDuckAIMode,
+             .fadeOutOnToggle,
+             .fadeOutOnToggleSmallerBottomInput,
              .attributedMetrics,
              .vpnConnectionWidePixelMeasurement,
              .storeSerpSettings,
@@ -344,7 +373,9 @@ extension FeatureFlag: FeatureFlagDescribing {
              .autofillExtensionSettings,
              .canPromoteAutofillExtensionInBrowser,
              .canPromoteAutofillExtensionInPasswordManagement,
-             .granularFireButtonOptions:
+             .granularFireButtonOptions,
+             .fullDuckAIModeExperimentalSetting,
+             .dataImportWideEventMeasurement:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -385,7 +416,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                .canPromoteImportPasswordsInBrowser,
                .canPromoteImportPasswordsInPasswordManagement,
                .newDeviceSyncPrompt,
-               .migrateKeychainAccessibility:
+               .migrateKeychainAccessibility,
+               .productTelemeterySurfaceUsage:
             return false
         }
     }
@@ -452,6 +484,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DBPSubfeature.remoteBrokerDelivery))
         case .dbpEmailConfirmationDecoupling:
             return .remoteReleasable(.subfeature(DBPSubfeature.emailConfirmationDecoupling))
+        case .dbpForegroundRunningOnAppActive:
+            return .remoteReleasable(.subfeature(DBPSubfeature.foregroundRunningOnAppActive))
+        case .dbpForegroundRunningWhenDashboardOpen:
+            return .remoteReleasable(.subfeature(DBPSubfeature.foregroundRunningWhenDashboardOpen))
         case .crashReportOptInStatusResetting:
             return .internalOnly()
         case .syncSeamlessAccountSwitching:
@@ -524,6 +560,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.duckAiDataClearing))
         case .fullDuckAIMode:
             return .remoteReleasable(.subfeature(AIChatSubfeature.fullDuckAIMode))
+        case .fadeOutOnToggle:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.fadeOutOnToggle))
+        case .fadeOutOnToggleSmallerBottomInput:
+            return .internalOnly()
         case .attributedMetrics:
             return .remoteReleasable(.feature(.attributedMetrics))
         case .vpnConnectionWidePixelMeasurement:
@@ -541,7 +581,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .allowProTierPurchase:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.allowProTierPurchase))
         case .browsingMenuSheetPresentation:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.experimentalBrowsingMenu))
         case .autofillExtensionSettings:
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillExtensionSettings))
         case .canPromoteAutofillExtensionInBrowser:
@@ -550,8 +590,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AutofillSubfeature.canPromoteAutofillExtensionInPasswordManagement))
         case .migrateKeychainAccessibility:
             return .remoteReleasable(.subfeature(AutofillSubfeature.migrateKeychainAccessibility))
+        case .productTelemeterySurfaceUsage:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.productTelemetrySurfaceUsage))
         case .granularFireButtonOptions:
             return .disabled
+        case .fullDuckAIModeExperimentalSetting:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.fullDuckAIModeExperimentalSetting))
+        case .dataImportWideEventMeasurement:
+            return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
         }
     }
 }

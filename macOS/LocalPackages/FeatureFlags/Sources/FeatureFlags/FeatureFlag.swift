@@ -140,14 +140,8 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866475316806
     case hangReporting
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866618404342
-    case updateSafariBookmarksImport
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866476860577
     case newTabPageOmnibar
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866719732725
-    case vpnToolbarUpsell
 
     /// Loading New Tab Page in regular browsing webview
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866719013868
@@ -288,8 +282,7 @@ public enum FeatureFlag: String, CaseIterable {
 extension FeatureFlag: FeatureFlagDescribing {
     public var defaultValue: Bool {
         switch self {
-        case .updateSafariBookmarksImport,
-                .supportsAlternateStripePaymentFlow,
+        case .supportsAlternateStripePaymentFlow,
                 .refactorOfSyncPreferences,
                 .subscriptionPurchaseWidePixelMeasurement,
                 .authV2WideEventEnabled,
@@ -351,11 +344,9 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .aiChatKeepSession,
                 .aiChatOmnibarToggle,
                 .aiChatOmnibarCluster,
-                .updateSafariBookmarksImport,
                 .newTabPageOmnibar,
                 .newTabPagePerTab,
                 .newTabPageTabIDs,
-                .vpnToolbarUpsell,
                 .supportsAlternateStripePaymentFlow,
                 .duckAISearchParameter,
                 .refactorOfSyncPreferences,
@@ -491,12 +482,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.willSoonDropBigSurSupport))
         case .hangReporting:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.hangReporting))
-        case .updateSafariBookmarksImport:
-            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.updateSafariBookmarksImport))
         case .newTabPageOmnibar:
             return .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.omnibar))
-        case .vpnToolbarUpsell:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnToolbarUpsell))
         case .newTabPagePerTab:
             return .remoteReleasable(.subfeature(HtmlNewTabPageSubfeature.newTabPagePerTab))
         case .newTabPageTabIDs:
@@ -540,11 +527,11 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .blurryAddressBarTahoeFix:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.blurryAddressBarTahoeFix))
         case .dataImportNewExperience:
-            return .disabled
+            return .remoteReleasable(.subfeature(DataImportSubfeature.newDataImportExperience))
         case .scheduledDefaultBrowserAndDockPromptsInactiveUser:
             return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPromptsInactiveUser))
         case .tabProgressIndicator:
-            return .internalOnly()
+            return .remoteReleasable(.feature(.tabProgressIndicator))
         case .attributedMetrics:
             return .remoteReleasable(.feature(.attributedMetrics))
         case .vpnConnectionWidePixelMeasurement:

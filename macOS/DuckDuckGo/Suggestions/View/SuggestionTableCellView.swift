@@ -64,6 +64,7 @@ final class SuggestionTableCellView: NSTableCellView {
         let view = KeyboardShortcutView()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.configure(with: ["⌃", "⏎"])
+        view.toolTip = "control + return"
         return view
     }()
 

@@ -31,6 +31,7 @@ final public class DataBrokerProtectionViewController: UIViewController {
     private let webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable
     private var authenticationDelegate: DBPIOSInterface.AuthenticationDelegate
     private var databaseDelegate: DBPIOSInterface.DatabaseDelegate
+    private var userEventsDelegate: DBPIOSInterface.UserEventsDelegate
     private let privacyConfigManager: PrivacyConfigurationManaging
     private let contentScopeProperties: ContentScopeProperties
 
@@ -49,6 +50,7 @@ final public class DataBrokerProtectionViewController: UIViewController {
         return DBPUIViewModel(authenticationDelegate: authenticationDelegate,
                               databaseDelegate: databaseDelegate,
                               feedbackFormDelegate: self,
+                              userEventsDelegate: userEventsDelegate,
                               webUISettings: webUISettings,
                               pixelHandler: sharedPixelsHandler,
                               privacyConfigManager: privacyConfigManager,
@@ -74,6 +76,7 @@ final public class DataBrokerProtectionViewController: UIViewController {
 
     public init(authenticationDelegate: DBPIOSInterface.AuthenticationDelegate,
                 databaseDelegate: DBPIOSInterface.DatabaseDelegate,
+                userEventsDelegate: DBPIOSInterface.UserEventsDelegate,
                 privacyConfigManager: PrivacyConfigurationManaging,
                 contentScopeProperties: ContentScopeProperties,
                 webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
@@ -85,6 +88,7 @@ final public class DataBrokerProtectionViewController: UIViewController {
 
         self.authenticationDelegate = authenticationDelegate
         self.databaseDelegate = databaseDelegate
+        self.userEventsDelegate = userEventsDelegate
         self.privacyConfigManager = privacyConfigManager
         self.contentScopeProperties = contentScopeProperties
 
@@ -128,6 +132,16 @@ final public class DataBrokerProtectionViewController: UIViewController {
         ])
 
         loadingView.startAnimating()
+    }
+
+    override public func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        webUIViewModel.viewDidAppear()
+    }
+
+    override public func viewDidDisappear(_ animated: Bool) {
+        webUIViewModel.viewDidDisappear()
+        super.viewDidDisappear(animated)
     }
 }
 

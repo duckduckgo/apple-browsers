@@ -40,7 +40,8 @@ struct AIChatViewControllerManagerTests {
             experimentalAIChatManager: ExperimentalAIChatManager(),
             featureFlagger: MockFeatureFlagger(),
             featureDiscovery: MockFeatureDiscovery(),
-            aiChatSettings: MockAIChatSettingsProvider()
+            aiChatSettings: MockAIChatSettingsProvider(),
+            productSurfaceTelemetry: MockProductSurfaceTelemetry()
         )
 
         manager.delegate = delegate

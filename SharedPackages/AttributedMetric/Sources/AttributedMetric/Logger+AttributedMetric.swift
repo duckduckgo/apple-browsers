@@ -20,6 +20,6 @@ import Foundation
 import os.log
 
 public extension Logger {
-    static let attributedMetric = { Logger(subsystem: "AttributedMetric", category: "") }()
-    static let attributedMetricRolling8Days = { Logger(subsystem: "AttributedMetric", category: "RollingEightDays") }()
+    static let attributedMetric = Logger(subsystem: "AttributedMetric", category: "")
+    static let attributedMetricRolling8Days = Logger(subsystem: "AttributedMetric", category: "RollingEightDays")
 }

@@ -178,7 +178,7 @@ struct AIChatUserScriptHandlerTests {
     @MainActor
     func testThatOpenSummarizationSourceLinkCallsWindowControllersManagerShow() async throws {
         let urlString = "https://example.com"
-        let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: .sameTab)
+        let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: .sameTab, name: nil)
         let params = try #require(DecodableHelper.encode(openLinkPayload).flatMap { try JSONSerialization.jsonObject(with: $0, options: []) })
         pixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatSummarizeSourceLinkClicked, frequency: .dailyAndStandard)]
 
@@ -197,7 +197,7 @@ struct AIChatUserScriptHandlerTests {
     @MainActor
     func testThatOpenSummarizationSourceLinkCallsWindowControllersManagerOpen(_ target: AIChatUserScriptHandler.OpenLink.OpenTarget) async throws {
         let urlString = "https://example.com"
-        let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: target)
+        let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: target, name: nil)
         let params = try #require(DecodableHelper.encode(openLinkPayload).flatMap { try JSONSerialization.jsonObject(with: $0, options: []) })
         pixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatSummarizeSourceLinkClicked, frequency: .dailyAndStandard)]
 
@@ -214,7 +214,7 @@ struct AIChatUserScriptHandlerTests {
     @MainActor
     func testThatOpenSummarizationSourceLinkDoesNotCallWindowControllersManagerWhenInvalidURLIsPassed() async throws {
         let urlString = "invalid"
-        let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: .sameTab)
+        let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: .sameTab, name: nil)
         let params = try #require(DecodableHelper.encode(openLinkPayload).flatMap { try JSONSerialization.jsonObject(with: $0, options: []) })
 
         _ = await handler.openSummarizationSourceLink(params: params, message: WKScriptMessage())
@@ -226,7 +226,7 @@ struct AIChatUserScriptHandlerTests {
     @MainActor
     func testThatOpenTranslationSourceLinkCallsWindowControllersManagerShow() async throws {
         let urlString = "https://example.com"
-        let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: .sameTab)
+        let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: .sameTab, name: nil)
         let params = try #require(DecodableHelper.encode(openLinkPayload).flatMap { try JSONSerialization.jsonObject(with: $0, options: []) })
         pixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatTranslationSourceLinkClicked, frequency: .dailyAndStandard)]
 
@@ -244,7 +244,7 @@ struct AIChatUserScriptHandlerTests {
     @MainActor
     func testThatOpenTranslationSourceLinkCallsWindowControllersManagerOpen(_ target: AIChatUserScriptHandler.OpenLink.OpenTarget) async throws {
         let urlString = "https://example.com"
-        let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: target)
+        let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: target, name: nil)
         let params = try #require(DecodableHelper.encode(openLinkPayload).flatMap { try JSONSerialization.jsonObject(with: $0, options: []) })
         pixelFiring.expectedFireCalls = [.init(pixel: AIChatPixel.aiChatTranslationSourceLinkClicked, frequency: .dailyAndStandard)]
 
@@ -261,7 +261,7 @@ struct AIChatUserScriptHandlerTests {
     @MainActor
     func testThatOpenTranslationSourceLinkDoesNotCallWindowControllersManagerWhenInvalidURLIsPassed() async throws {
         let urlString = "invalid"
-        let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: .sameTab)
+        let openLinkPayload = AIChatUserScriptHandler.OpenLink(url: urlString, target: .sameTab, name: nil)
         let params = try #require(DecodableHelper.encode(openLinkPayload).flatMap { try JSONSerialization.jsonObject(with: $0, options: []) })
 
         _ = await handler.openTranslationSourceLink(params: params, message: WKScriptMessage())

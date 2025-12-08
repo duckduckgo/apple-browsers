@@ -61,15 +61,21 @@ final class WebNotificationsHandler: NSObject, Subfeature {
 
     // MARK: - Dependencies
 
+    private let tabUUID: String
     private let notificationService: WebNotificationService
     private let iconFetcher: NotificationIconFetching
     private let featureFlagger: FeatureFlagger
 
+    /// The webView associated with this handler's tab, set by `WebNotificationsTabExtension`.
+    weak var webView: WKWebView?
+
     // MARK: - Initialization
 
-    init(notificationService: WebNotificationService = UNUserNotificationCenter.current(),
+    init(tabUUID: String,
+         notificationService: WebNotificationService = UNUserNotificationCenter.current(),
          iconFetcher: NotificationIconFetching = NotificationIconFetcher(),
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+        self.tabUUID = tabUUID
         self.notificationService = notificationService
         self.iconFetcher = iconFetcher
         self.featureFlagger = featureFlagger
@@ -103,6 +109,7 @@ final class WebNotificationsHandler: NSObject, Subfeature {
     enum UserInfoKey {
         static let notificationId = "notificationId"
         static let originURL = "originURL"
+        static let tabUUID = "tabUUID"
     }
 
     enum MethodName {
@@ -205,7 +212,11 @@ final class WebNotificationsHandler: NSObject, Subfeature {
         content.title = payload.title
         content.body = payload.body ?? ""
         content.sound = .default
-        content.userInfo = [UserInfoKey.notificationId: payload.id, UserInfoKey.originURL: originURL]
+        content.userInfo = [
+            UserInfoKey.notificationId: payload.id,
+            UserInfoKey.originURL: originURL,
+            UserInfoKey.tabUUID: tabUUID
+        ]
 
         if let tag = payload.tag {
             content.threadIdentifier = tag
@@ -339,6 +350,14 @@ final class WebNotificationsHandler: NSObject, Subfeature {
 
     private func sendErrorEvent(id: String, to webView: WKWebView?) {
         sendNotificationEvent(id: id, event: NotificationEvent.error.rawValue, to: webView)
+    }
+
+    /// Dispatches a click event to JavaScript for the given notification.
+    /// Called by `WebNotificationsTabExtension` when a notification is clicked.
+    /// - Parameter notificationId: The ID of the notification that was clicked.
+    func sendClickEvent(notificationId: String) {
+        Logger.general.debug("WebNotificationsHandler: Click event for notification (ID: \(notificationId))")
+        sendNotificationEvent(id: notificationId, event: NotificationEvent.click.rawValue, to: webView)
     }
 
     struct NotificationEventParams: Encodable {

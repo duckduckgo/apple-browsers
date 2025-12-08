@@ -42,6 +42,7 @@ extension XCUIApplication {
         static let resetBookmarksMenuItem = "MainMenu.resetBookmarks"
         static let backButton = "NavigationBarViewController.BackButton"
         static let forwardButton = "NavigationBarViewController.ForwardButton"
+        static let reloadButton = "NavigationBarViewController.RefreshOrStopButton"
         static let downloadsButton = "NavigationBarViewController.downloadsButton"
         static let optionsButton = "NavigationBarViewController.optionsButton"
         static let bookmarksBar = "BookmarksBarViewController.bookmarksBarCollectionView"
@@ -102,10 +103,9 @@ extension XCUIApplication {
                       featureFlags: [String: Bool] = [:],
                       arguments: [String]? = nil) -> XCUIApplication {
         let app = XCUIApplication()
+        app.launchEnvironment["UITEST_MODE"] = "1"
         if let environment {
             app.launchEnvironment = app.launchEnvironment.merging(environment, uniquingKeysWith: { $1 })
-        } else {
-            app.launchEnvironment["UITEST_MODE"] = "1"
         }
         if !featureFlags.isEmpty {
             app.launchEnvironment["FEATURE_FLAGS"] = featureFlags.map { "\($0)=\($1)" }.joined(separator: " ")
@@ -162,6 +162,9 @@ extension XCUIApplication {
     /// Closes current tab via keyboard shortcut
     func closeCurrentTab() {
         typeKey("w", modifierFlags: .command)
+    }
+    override func closeTab() throws {
+        closeCurrentTab()
     }
 
     /// Activate address bar for input
@@ -688,6 +691,10 @@ extension XCUIApplication {
 
     var forwardButton: XCUIElement {
         buttons[AccessibilityIdentifiers.forwardButton]
+    }
+
+    var reloadButton: XCUIElement {
+        buttons[AccessibilityIdentifiers.reloadButton]
     }
 
     var downloadsButton: XCUIElement {

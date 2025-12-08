@@ -283,6 +283,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1212281244797425?focus=true
     case fullDuckAIModeExperimentalSetting
+    
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212305240287488?focus=true
+    case dataImportWideEventMeasurement
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -303,6 +306,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .forgetAllInSettings,
              .vpnConnectionWidePixelMeasurement,
              .migrateKeychainAccessibility,
+             .dataImportWideEventMeasurement,
              .browsingMenuSheetPresentation:
             true
         default:
@@ -370,7 +374,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .canPromoteAutofillExtensionInBrowser,
              .canPromoteAutofillExtensionInPasswordManagement,
              .granularFireButtonOptions,
-             .fullDuckAIModeExperimentalSetting:
+             .fullDuckAIModeExperimentalSetting,
+             .dataImportWideEventMeasurement:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -591,6 +596,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .fullDuckAIModeExperimentalSetting:
             return .remoteReleasable(.subfeature(AIChatSubfeature.fullDuckAIModeExperimentalSetting))
+        case .dataImportWideEventMeasurement:
+            return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
         }
     }
 }

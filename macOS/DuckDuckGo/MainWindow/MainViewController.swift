@@ -1003,7 +1003,7 @@ extension MainViewController {
             return false
         }
 
-        if flags.contains(.option),
+        if flags.contains(.option) || flags.contains(.shift),
            featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
            let buttonsViewController = navigationBarViewController.addressBarViewController?.addressBarButtonsViewController {
             let isSwitchingToAIChatMode = buttonsViewController.searchModeToggleControl?.selectedSegment == 0
@@ -1012,7 +1012,7 @@ extension MainViewController {
                 self.aiChatOmnibarTextContainerViewController.insertNewline()
             }
             return true
-        } else if flags.contains(.shift) || flags.contains(.control),
+        } else if flags.contains(.control),
                   featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
             navigationBarViewController.addressBarViewController?.addressBarTextField.openAIChatWithPrompt()
             return true

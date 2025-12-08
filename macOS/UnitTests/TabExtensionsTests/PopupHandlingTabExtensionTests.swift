@@ -35,7 +35,7 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
     var testPermissionManager: TestPermissionManager!
     var webView: DuckDuckGo_Privacy_Browser.WebView!
     var mockMachAbsTime: TimeInterval!
-    var createChildTab: ((WKWebViewConfiguration, WKNavigationAction, NewWindowPolicy) -> Tab?)?
+    var createChildTab: ((WKWebViewConfiguration?, SecurityOrigin?, NewWindowPolicy) -> Tab?)?
     var tabPresented: ((Tab, NewWindowPolicy) -> Void)?
     var cancellables = Set<AnyCancellable>()
     var configuration: WKWebViewConfiguration!
@@ -83,8 +83,8 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             tabsPreferences: tabsPreferences,
             burnerMode: BurnerMode(isBurner: isBurner),
             permissionModel: mockPermissionModel,
-            createChildTab: { [weak self] config, action, policy in
-                self?.createChildTab?(config, action, policy)
+            createChildTab: { [weak self] config, securityOrigin, policy in
+                self?.createChildTab?(config, securityOrigin, policy)
             },
             presentTab: { [weak self] tab, policy in
                 self?.tabPresented?(tab, policy)
@@ -96,7 +96,8 @@ final class PopupHandlingTabExtensionTests: XCTestCase {
             machAbsTimeProvider: { [weak self] in self!.mockMachAbsTime! },
             interactionEventsPublisher: webView.interactionEventsPublisher.eraseToAnyPublisher(),
             isTabPinned: { isTabPinned },
-            isBurner: isBurner
+            isBurner: isBurner,
+            isInPopUpWindow: { false }
         )
     }
 

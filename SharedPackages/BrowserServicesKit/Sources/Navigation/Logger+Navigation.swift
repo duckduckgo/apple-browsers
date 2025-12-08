@@ -20,5 +20,5 @@ import Foundation
 import os.log
 
 public extension Logger {
-    static var navigation = { Logger(subsystem: "Navigation", category: "") }()
+    static let navigation = Logger(subsystem: "Navigation", category: "")
 }

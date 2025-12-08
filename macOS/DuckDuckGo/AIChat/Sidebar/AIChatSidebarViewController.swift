@@ -323,6 +323,8 @@ extension AIChatSidebarViewController: ThemeUpdateListening {
 
 extension AIChatSidebarViewController: TabDelegate {
 
+    var isInPopUpWindow: Bool { false }
+
     func tab(_ tab: Tab, createdChild childTab: Tab, of kind: NewWindowPolicy) {
         switch kind {
         case .popup(origin: let origin, size: let contentSize):

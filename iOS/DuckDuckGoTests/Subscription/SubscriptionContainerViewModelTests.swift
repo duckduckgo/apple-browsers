@@ -37,7 +37,7 @@ final class SubscriptionContainerViewModelTests: XCTestCase {
                                        storePurchaseManager: storePurchaseManager,
                                        currentEnvironment: SubscriptionEnvironment(serviceEnvironment: .production,
                                                                                    purchasePlatform: .appStore),
-                                       canPurchase: true,
+                                       hasAppStoreProductsAvailable: true,
                                        subscriptionFeatureMappingCache: subscriptionFeatureMappingCache)
     }()
 

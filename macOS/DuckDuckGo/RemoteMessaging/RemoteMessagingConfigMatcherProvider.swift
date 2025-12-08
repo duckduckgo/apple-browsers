@@ -110,7 +110,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         }
 
         let isDuckDuckGoSubscriber = subscriptionManager.isUserAuthenticated
-        let isSubscriptionEligibleUser = subscriptionManager.canPurchase
+        let isSubscriptionEligibleUser = subscriptionManager.isSubscriptionPurchaseEligible
 
         let activationDateStore = DefaultWaitlistActivationDateStore(source: .netP)
         let daysSinceNetworkProtectionEnabled = activationDateStore.daysSinceActivation() ?? -1
@@ -244,5 +244,9 @@ extension DuckDuckGoSubscription: @retroactive SubscriptionSurveyDataProviding {
 
     public var subscriptionExpiryDate: Date? {
         return expiresOrRenewsAt
+    }
+
+    public var subscriptionTrialActive: Bool? {
+        return hasActiveTrialOffer
     }
 }

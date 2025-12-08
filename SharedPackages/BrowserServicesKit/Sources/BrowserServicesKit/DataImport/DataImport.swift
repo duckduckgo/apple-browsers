@@ -22,7 +22,7 @@ import SecureStorage
 
 public enum DataImport {
 
-    public enum Source: String, RawRepresentable, CaseIterable, Equatable, Identifiable {
+    public enum Source: String, RawRepresentable, CaseIterable, Equatable, Identifiable, Codable {
         public var id: String {
             rawValue
         }
@@ -40,15 +40,23 @@ public enum DataImport {
         case tor
         case vivaldi
         case yandex
+        case fileImport
+        case csv
+        case bookmarksHTML
         case onePassword8
         case onePassword7
         case bitwarden
         case lastPass
-        case csv
-        case bookmarksHTML
 
         static let preferredSources: [Self] = [.chrome, .safari]
 
+        public var isSafari: Bool {
+            self == .safari || self == .safariTechnologyPreview
+        }
+
+        public var isAvailableForLegacyImports: Bool {
+            return self != .fileImport
+        }
     }
 
     public enum DataType: String, Hashable, CaseIterable, CustomStringConvertible {
@@ -69,8 +77,20 @@ public enum DataImport {
 
     }
 
+    /// Represents an import item with all necessary display information.
+    /// Used to provide user-facing information about duplicate and failed items.
+    public enum DataImportItem: Equatable {
+        case bookmark(title: String, url: String, errorMessage: String? = nil)
+        case password(title: String?, domain: String, username: String, errorMessage: String? = nil)
+        case creditCard(maskedNumber: String, cardholderName: String?, errorMessage: String? = nil)
+    }
+
     public struct DataTypeSummary: Equatable {
         public let successful: Int
+        public let duplicateItems: [DataImportItem]
+        public let failedItems: [DataImportItem]
+
+        // TEMPORARY: Count properties retained only for legacy compatibility. Remove once legacy import system is removed!
         public let duplicate: Int
         public let failed: Int
 
@@ -79,13 +99,32 @@ public enum DataImport {
         }
 
         public static var empty: Self {
-            DataTypeSummary(successful: 0, duplicate: 0, failed: 0)
+            DataTypeSummary(successful: 0, duplicateItems: [], failedItems: [])
         }
 
-        public init(successful: Int, duplicate: Int, failed: Int) {
+        public init(successful: Int,
+                    duplicateItems: [DataImportItem] = [],
+                    failedItems: [DataImportItem] = []) {
+            self.successful = successful
+            self.duplicateItems = duplicateItems
+            self.failedItems = failedItems
+            self.duplicate = duplicateItems.count
+            self.failed = failedItems.count
+        }
+
+        // TEMPORARY: Legacy initializer for count-based usage. Remove once legacy import system is removed!
+        public init(successful: Int,
+                    duplicate: Int,
+                    failed: Int) {
             self.successful = successful
             self.duplicate = duplicate
             self.failed = failed
+            self.duplicateItems = []
+            self.failedItems = []
+        }
+
+        public var isAllSuccessful: Bool {
+            duplicate == 0 && failed == 0
         }
     }
 

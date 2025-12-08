@@ -20,5 +20,5 @@ import Foundation
 import os.log
 
 public extension Logger {
-    static var history = { Logger(subsystem: "History", category: "") }()
+    static let history = Logger(subsystem: "History", category: "")
 }

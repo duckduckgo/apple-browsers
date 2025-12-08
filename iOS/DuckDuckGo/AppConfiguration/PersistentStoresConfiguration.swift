@@ -77,7 +77,7 @@ final class PersistentStoresConfiguration {
             throw TerminationError.bookmarksDatabase(.other(error))
         }
     }
-    
+
     private func initializeSharedSecureVault() {
         guard AutofillSettingStatus.isAutofillEnabledInSettings else {
             return
@@ -87,8 +87,7 @@ final class PersistentStoresConfiguration {
             Logger.general.info("Shared SecureVault initialized at app startup")
         } catch {
             Logger.general.error("Failed to initialize shared SecureVault at startup: \(error.localizedDescription)")
-            Pixel.fire(pixel: .sharedSecureVaultInitFailed, 
-                      error: error)
+            Pixel.fire(pixel: .sharedSecureVaultInitFailed, error: error)
         }
     }
 

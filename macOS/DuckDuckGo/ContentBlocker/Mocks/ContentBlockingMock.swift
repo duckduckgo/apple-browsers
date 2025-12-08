@@ -38,7 +38,10 @@ final class ContentBlockingMock: NSObject, ContentBlockingProtocol, AdClickAttri
 
     var tld: Common.TLD = .init()
     var userScriptsDependencies: ScriptSourceProvider.Dependencies {
-        _userScriptsDependencies ?? fatalError("userScriptsDependencies not provided in ContentBlockingMock")
+        guard let dependencies = _userScriptsDependencies else {
+            fatalError("userScriptsDependencies not provided to ContentBlockingMock")
+        }
+        return dependencies
     }
 
     typealias ConfigurationManager = MockPrivacyConfigurationManager

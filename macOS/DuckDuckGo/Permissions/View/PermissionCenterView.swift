@@ -52,7 +52,8 @@ struct PermissionCenterView: View {
             // Permission rows in a rounded container
             VStack(spacing: 0) {
                 ForEach(viewModel.permissionItems) { item in
-                    if item.permissionType == .popups {
+                    switch item.permissionType {
+                    case .popups:
                         PopupPermissionRowView(
                             item: item,
                             currentDecision: viewModel.currentPopupDecision(),
@@ -67,7 +68,7 @@ struct PermissionCenterView: View {
                                 viewModel.removePermission(item.permissionType)
                             }
                         )
-                    } else if item.isGroupedExternalApps {
+                    case .externalScheme:
                         ExternalAppsPermissionRowView(
                             item: item,
                             onDecisionChanged: { scheme, decision in
@@ -77,7 +78,7 @@ struct PermissionCenterView: View {
                                 viewModel.removeExternalScheme(scheme)
                             }
                         )
-                    } else {
+                    default:
                         PermissionRowView(
                             item: item,
                             onDecisionChanged: { decision in
@@ -194,18 +195,18 @@ struct PermissionRowView: View {
         case .camera:
             // Use filled icon if allowed or in use, outline otherwise
             if item.isAllowed {
-                Image(nsImage: DesignSystemImages.Glyphs.Size16.videoSolid)
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.permissionCameraSolid)
                     .foregroundColor(iconColor)
             } else {
-                Image(nsImage: DesignSystemImages.Glyphs.Size16.video)
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.permissionCamera)
                     .foregroundColor(iconColor)
             }
         case .microphone:
             if item.isAllowed {
-                Image(nsImage: DesignSystemImages.Glyphs.Size16.microphoneSolid)
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.permissionMicrophoneSolid)
                     .foregroundColor(iconColor)
             } else {
-                Image(nsImage: DesignSystemImages.Glyphs.Size16.microphone)
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.permissionMicrophone)
                     .foregroundColor(iconColor)
             }
         case .geolocation:

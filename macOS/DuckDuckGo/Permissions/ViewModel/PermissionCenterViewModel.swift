@@ -159,6 +159,9 @@ final class PermissionCenterViewModel: ObservableObject {
 
     // MARK: - Initialization
 
+    /// Whether a page-initiated popup was opened (auto-allowed due to "Always Allow" setting)
+    private let pageInitiatedPopupOpened: Bool
+
     init(
         domain: String,
         usedPermissions: Permissions,
@@ -172,6 +175,7 @@ final class PermissionCenterViewModel: ObservableObject {
         setTemporaryPopupAllowance: (() -> Void)? = nil,
         resetTemporaryPopupAllowance: (() -> Void)? = nil,
         hasTemporaryPopupAllowance: Bool = false,
+        pageInitiatedPopupOpened: Bool = false,
         systemPermissionManager: SystemPermissionManagerProtocol = SystemPermissionManager()
     ) {
         self.domain = domain
@@ -186,6 +190,7 @@ final class PermissionCenterViewModel: ObservableObject {
         self.setTemporaryPopupAllowance = setTemporaryPopupAllowance
         self.resetTemporaryPopupAllowance = resetTemporaryPopupAllowance
         self.hasTemporaryPopupAllowance = hasTemporaryPopupAllowance
+        self.pageInitiatedPopupOpened = pageInitiatedPopupOpened
         self.systemPermissionManager = systemPermissionManager
 
         loadPermissions()
@@ -299,6 +304,11 @@ final class PermissionCenterViewModel: ObservableObject {
     // MARK: - Private Methods
 
     private func loadPermissions() {
+        // Clear permissions from removedPermissions if they are re-requested
+        for (permissionType, state) in usedPermissions where state.isRequested {
+            removedPermissions.remove(permissionType)
+        }
+
         // Separate external schemes from other permissions
         var externalSchemePermissions: [PermissionType] = []
         var otherPermissions: [PermissionType] = []
@@ -309,6 +319,14 @@ final class PermissionCenterViewModel: ObservableObject {
             } else {
                 otherPermissions.append(permissionType)
             }
+        }
+
+        // Add popup permission if a page-initiated popup was auto-allowed (due to "Always Allow" setting)
+        // and popup is not already in usedPermissions
+        if pageInitiatedPopupOpened,
+           !otherPermissions.contains(.popups),
+           !removedPermissions.contains(.popups) {
+            otherPermissions.append(.popups)
         }
 
         // Build items for non-external-scheme permissions

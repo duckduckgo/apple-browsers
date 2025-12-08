@@ -40,10 +40,7 @@ final class PermissionModel {
     private let geolocationService: GeolocationServiceProtocol
     private let featureFlagger: FeatureFlagger
 
-    /// Tracks if geolocation was ever activated during this session (for new permission view)
-    private var geolocationWasActivated = false
-
-    /// Tracks permissions that were explicitly removed by the user (to prevent re-adding via updatePermissions)
+    /// Holds the set of permissions the user manually removed (to avoid adding them back via updatePermissions)
     private var removedPermissions = Set<PermissionType>()
 
     weak var webView: WKWebView? {
@@ -117,7 +114,6 @@ final class PermissionModel {
             permissions[permission].willReload()
         }
         authorizationQueries = []
-        geolocationWasActivated = false
         removedPermissions.removeAll()
     }
 
@@ -144,14 +140,9 @@ final class PermissionModel {
                 } else {
                     let currentState = webView.geolocationState
 
-                    // Track if geolocation was ever activated
-                    if currentState == .active {
-                        geolocationWasActivated = true
-                    }
-
-                    // With new permission view, keep geolocation as active once it's been used
+                    // With new permission view, keep geolocation as active once it's been granted/used
+                    // (.active or .inactive means it was granted or actively used)
                     if featureFlagger.isFeatureOn(.newPermissionView),
-                       geolocationWasActivated,
                        currentState == .none,
                        permissions.geolocation == .active || permissions.geolocation == .inactive {
                         permissions.geolocation = .active
@@ -179,6 +170,8 @@ final class PermissionModel {
             if case .success = result {
                 for permission in permissions {
                     if isGranted {
+                        // Remove from removedPermissions so updatePermissions() can track it again
+                        self?.removedPermissions.remove(permission)
                         self?.permissions[permission].granted()
                     } else {
                         self?.permissions[permission].denied()

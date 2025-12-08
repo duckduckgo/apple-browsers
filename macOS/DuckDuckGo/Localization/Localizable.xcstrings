@@ -60433,7 +60433,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Open \"%@\" links"
+            "value" : "Open “%@” links"
           }
         }
       }
@@ -61154,18 +61154,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Всплывающее окно заблокировано"
-          }
-        }
-      }
-    },
-    "permission.popup.blocked.popover.new" : {
-      "comment" : "Text of popover warning the user that a pop-up has been blocked (new design)",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Pop-Up Blocked"
           }
         }
       }

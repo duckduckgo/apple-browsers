@@ -1680,7 +1680,8 @@ final class AddressBarButtonsViewController: NSViewController {
             resetTemporaryPopupAllowance: { [weak tabViewModel] in
                 tabViewModel?.tab.popupHandling?.clearPopupAllowanceForCurrentPage()
             },
-            hasTemporaryPopupAllowance: tabViewModel.tab.popupHandling?.popupsTemporarilyAllowedForCurrentPage ?? false
+            hasTemporaryPopupAllowance: tabViewModel.tab.popupHandling?.popupsTemporarilyAllowedForCurrentPage ?? false,
+            pageInitiatedPopupOpened: tabViewModel.tab.popupHandling?.pageInitiatedPopupOpened ?? false
         )
 
         let popover = PermissionCenterPopover(viewModel: viewModel)
@@ -2366,6 +2367,7 @@ extension URL {
 
 extension TabViewModel {
 
+    @MainActor
     func shouldShowPermissionCenterButton(
         isTextFieldEditorFirstResponder: Bool,
         isAnyTrackerAnimationPlaying: Bool
@@ -2375,8 +2377,11 @@ extension TabViewModel {
         let hasRequestedPermission = usedPermissions.values.contains(where: { $0.isRequested })
         let shouldShowWhileFocused = (tab.content == .newtab) && hasRequestedPermission
         let isAnyPermissionPresent = !usedPermissions.values.isEmpty
+        let pageInitiatedPopupOpened = tab.popupHandling?.pageInitiatedPopupOpened ?? false
 
-        return (shouldShowWhileFocused || (!isTextFieldEditorFirstResponder && isAnyPermissionPresent))
+        // Also show when a page-initiated popup was auto-allowed (due to "Always Allow" setting)
+        // so user can access permission center to change the decision
+        return (shouldShowWhileFocused || (!isTextFieldEditorFirstResponder && (isAnyPermissionPresent || pageInitiatedPopupOpened)))
         && !isAnyTrackerAnimationPlaying
         && !isShowingErrorPage
     }

@@ -153,7 +153,7 @@ final class PopupBlockedViewController: NSViewController {
         swiftUIHostingView = nil
 
         let swiftUIView = PopupBlockedSwiftUIView(
-            onOpen: { [weak self] in
+            onOpenClicked: { [weak self] in
                 self?.handleOpen()
             }
         )
@@ -186,15 +186,15 @@ final class PopupBlockedViewController: NSViewController {
 
 struct PopupBlockedSwiftUIView: View {
 
-    let onOpen: () -> Void
+    let onOpenClicked: () -> Void
 
     var body: some View {
         HStack(spacing: 12) {
-            Text(UserText.permissionPopupBlockedPopoverNew)
+            Text(UserText.permissionPopupBlockedPopover)
                 .font(.system(size: 13, weight: .medium))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
 
-            Button(action: onOpen) {
+            Button(action: onOpenClicked) {
                 Text(UserText.permissionPopupOpenButton)
                     .font(.system(size: 13))
             }

@@ -59,10 +59,6 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
 
     private var task: URLSessionDataTask?
 
-    private var isUsingUnifiedPrediction: Bool {
-        featureFlagger.isFeatureOn(.unifiedURLPredictor)
-    }
-
     lazy var dataSource: AutocompleteSuggestionsDataSource = {
         return AutocompleteSuggestionsDataSource(
             historyManager: historyManager,
@@ -209,8 +205,8 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
             // * converted URL is root (no path)
             // * the user typed the trailing "/"
             guard let self,
-                  let url = URL(trimmedAddressBarString: phrase, useUnifiedLogic: isUsingUnifiedPrediction),
-                  url.isValid(usingUnifiedLogic: self.isUsingUnifiedPrediction)
+                  let url = URL(trimmedAddressBarString: phrase, useUnifiedLogic: true),
+                  url.isValid(usingUnifiedLogic: true)
             else {
                 return true
             }

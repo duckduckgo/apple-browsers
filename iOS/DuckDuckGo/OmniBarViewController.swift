@@ -60,9 +60,6 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     // MARK: - Animation
 
-    var isUsingUnifiedPredictor: Bool {
-        dependencies.featureFlagger.isFeatureOn(.unifiedURLPredictor)
-    }
     var dismissButtonAnimator: UIViewPropertyAnimator?
     private var notificationAnimator = OmniBarNotificationAnimator()
     private let privacyIconContextualOnboardingAnimator = PrivacyIconContextualOnboardingAnimator()
@@ -694,7 +691,7 @@ class OmniBarViewController: UIViewController, OmniBar {
 
             DailyPixel.fireDailyAndCount(pixel: .aiChatLegacyOmnibarQuerySubmitted)
             
-            if let url = URL(trimmedAddressBarString: query, useUnifiedLogic: isUsingUnifiedPredictor), url.isValid(usingUnifiedLogic: isUsingUnifiedPredictor) {
+            if let url = URL(trimmedAddressBarString: query, useUnifiedLogic: true), url.isValid(usingUnifiedLogic: true) {
                 omniDelegate?.onOmniQuerySubmitted(url.absoluteString)
             } else {
                 omniDelegate?.onOmniQuerySubmitted(query)
@@ -934,7 +931,7 @@ extension OmniBarViewController {
 extension OmniBarViewController {
 
     private func decorate() {
-        if let url = textField.text.flatMap({ URL(trimmedAddressBarString: $0.trimmingWhitespace(), useUnifiedLogic: isUsingUnifiedPredictor) }) {
+        if let url = textField.text.flatMap({ URL(trimmedAddressBarString: $0.trimmingWhitespace(), useUnifiedLogic: true) }) {
             textField.attributedText = AddressDisplayHelper.addressForDisplay(url: url, showsFullURL: textField.isEditing)
         }
     }

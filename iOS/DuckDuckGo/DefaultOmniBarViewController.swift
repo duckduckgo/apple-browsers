@@ -223,7 +223,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         /// Determine whether the current text in the omnibar is a search query or a URL.
         /// - If the text is a URL, retrieve the full URL from the delegate and update the text with the full URL for display.
         /// - If the text is a search query, simply update the text with the query itself.
-        if URL(trimmedAddressBarString: currentText, useUnifiedLogic: isUsingUnifiedPredictor) != nil,
+        if URL(trimmedAddressBarString: currentText, useUnifiedLogic: true) != nil,
            let url = omniDelegate?.didRequestCurrentURL() {
             let urlText = AddressDisplayHelper.addressForDisplay(url: url, showsFullURL: true)
             switchBarHandler.updateCurrentText(urlText.string)
@@ -236,7 +236,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
 
     private func shouldAutoSelectTextForUrl(_ textField: UITextField) -> Bool {
         guard let textFieldText = textField.text else { return false }
-        return URL(trimmedAddressBarString: textFieldText.trimmingWhitespace(), useUnifiedLogic: isUsingUnifiedPredictor) != nil
+        return URL(trimmedAddressBarString: textFieldText.trimmingWhitespace(), useUnifiedLogic: true) != nil
     }
 }
 

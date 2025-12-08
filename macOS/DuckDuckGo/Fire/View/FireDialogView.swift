@@ -221,7 +221,7 @@ struct FireDialogView: ModalView {
                 .init(id: FireDialogViewModel.ClearingOption.allData.rawValue, title: UserText.fireDialogSegmentEverything, image: Image(nsImage: DesignSystemImages.Glyphs.Size24.windowsAndTabs))
             ],
             containerBackground: Color(designSystemColor: .containerFillPrimary),
-            containerBorder: Color(designSystemColor: .fireDialogPillBorder),
+            containerBorder: Color(designSystemColor: .containerBorderPrimary),
             selectedForeground: Color(designSystemColor: .accentPrimary),
             unselectedForeground: Color(designSystemColor: .buttonsSecondaryFillText),
             selectedIconBackground: Color(designSystemColor: .fireDialogPillSelectedSegmentIconBackground),

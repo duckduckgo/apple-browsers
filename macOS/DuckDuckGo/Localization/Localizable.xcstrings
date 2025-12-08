@@ -61014,6 +61014,18 @@
         }
       }
     },
+    "permission.popup.allow.popups.button" : {
+      "comment" : "Button to allow pop-ups when blocked popup has no URL",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Pop-ups"
+          }
+        }
+      }
+    },
     "permission.popup.allow.popups.page" : {
       "comment" : "Option to temporarily allow pop-ups for the current page during this visit until it reloads",
       "extractionState" : "extracted_with_value",

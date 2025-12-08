@@ -152,7 +152,14 @@ final class PopupBlockedViewController: NSViewController {
         view.subviews.forEach { $0.removeFromSuperview() }
         swiftUIHostingView = nil
 
+        // Check if the popup has an empty or about: URL
+        let isEmptyPopup: Bool = {
+            guard let url = query?.url else { return true }
+            return url.isEmpty || url.navigationalScheme == .about
+        }()
+
         let swiftUIView = PopupBlockedSwiftUIView(
+            isEmptyPopup: isEmptyPopup,
             onOpenClicked: { [weak self] in
                 self?.handleOpen()
             }
@@ -186,7 +193,13 @@ final class PopupBlockedViewController: NSViewController {
 
 struct PopupBlockedSwiftUIView: View {
 
+    /// Whether the blocked popup has an empty or about: URL
+    let isEmptyPopup: Bool
     let onOpenClicked: () -> Void
+
+    private var buttonText: String {
+        isEmptyPopup ? UserText.permissionPopupAllowPopupsButton : UserText.permissionPopupOpenButton
+    }
 
     var body: some View {
         HStack(spacing: 12) {
@@ -195,7 +208,7 @@ struct PopupBlockedSwiftUIView: View {
                 .foregroundColor(Color(designSystemColor: .textPrimary))
 
             Button(action: onOpenClicked) {
-                Text(UserText.permissionPopupOpenButton)
+                Text(buttonText)
                     .font(.system(size: 13))
             }
             .buttonStyle(.bordered)

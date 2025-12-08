@@ -82,7 +82,7 @@ struct FireConfirmationView: View {
                 ToggleRow(
                     icon: DesignSystemImages.Glyphs.Size24.aiChat,
                     title: UserText.fireConfirmationAIChatsTitle,
-                    subtitle: viewModel.clearAIChatsSubtitle(),
+                    subtitle: UserText.fireConfirmationAIChatsSubtitle,
                     isOn: $viewModel.clearAIChats
                 )
                 .accessibilityIdentifier("Fire.Confirmation.Toggle.AIChats.\(viewModel.clearAIChats ? "on" : "off")")

@@ -54,9 +54,4 @@ class FireConfirmationViewModel: ObservableObject {
         let sitesCount = 1 // TODO: - Fetch actual count
         return UserText.fireConfirmationDataSubtitle(withCount: sitesCount)
     }
-    
-    func clearAIChatsSubtitle() -> String {
-        let chatsCount = 0 // TODO: - Fetch actual count
-        return UserText.fireConfirmationAIChatsSubtitle(withCount: chatsCount)
-    }
 }

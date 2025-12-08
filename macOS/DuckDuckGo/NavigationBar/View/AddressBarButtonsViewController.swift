@@ -711,25 +711,41 @@ final class AddressBarButtonsViewController: NSViewController {
     private func showOrHidePermissionCenterPopoverIfNeeded() {
         guard let tabViewModel else { return }
 
+        // Collect all requested permissions
+        var requestedQueries: [(PermissionType, PermissionAuthorizationQuery)] = []
         for permission in tabViewModel.usedPermissions.keys {
-            guard case .requested(let query) = tabViewModel.usedPermissions[permission] else { continue }
-
-            let permissionAuthorizationPopover = permissionAuthorizationPopoverCreatingIfNeeded()
-            guard !permissionAuthorizationPopover.isShown else {
-                if permissionAuthorizationPopover.viewController.query === query { return }
-                // Don't close if authorization is still in progress (e.g., waiting for user to click Allow/Deny in two-step flow)
-                if permissionAuthorizationPopover.viewController.isAuthorizationInProgress { return }
-                permissionAuthorizationPopover.close()
-                return
+            if case .requested(let query) = tabViewModel.usedPermissions[permission] {
+                requestedQueries.append((permission, query))
             }
+        }
+
+        // If no requested permissions, close popover if shown
+        guard let (_, query) = requestedQueries.first else {
+            if let permissionAuthorizationPopover, permissionAuthorizationPopover.isShown {
+                // Don't close if authorization is still in progress (e.g., waiting for user to click Allow/Deny in two-step flow)
+                guard !permissionAuthorizationPopover.viewController.isAuthorizationInProgress else { return }
+                permissionAuthorizationPopover.close()
+            }
+            return
+        }
+
+        let permissionAuthorizationPopover = permissionAuthorizationPopoverCreatingIfNeeded()
+
+        // If popover is not shown, open it
+        guard permissionAuthorizationPopover.isShown else {
             openPermissionAuthorizationPopover(for: query)
             return
         }
-        if let permissionAuthorizationPopover, permissionAuthorizationPopover.isShown {
-            // Don't close if authorization is still in progress (e.g., waiting for user to click Allow/Deny in two-step flow)
-            guard !permissionAuthorizationPopover.viewController.isAuthorizationInProgress else { return }
-            permissionAuthorizationPopover.close()
-        }
+
+        // If showing the same query, nothing to do
+        if permissionAuthorizationPopover.viewController.query === query { return }
+
+        // Don't close if authorization is still in progress (e.g., waiting for user to click Allow/Deny in two-step flow)
+        if permissionAuthorizationPopover.viewController.isAuthorizationInProgress { return }
+
+        // Close old popover and immediately open new one for the pending query
+        permissionAuthorizationPopover.close()
+        openPermissionAuthorizationPopover(for: query)
     }
 
     private func updateBookmarkButtonImage(isUrlBookmarked: Bool = false) {
@@ -2300,6 +2316,10 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
                 assertionFailure("Unexpected popover positioningView: \(popover.positioningView?.description ?? "<nil>"), expected PermissionButton")
             }
             updatePermissionCenterButtonIcon(showBell: false)
+            // Check for other pending permission requests after popover closes
+            DispatchQueue.main.async { [weak self] in
+                self?.updateAllPermissionButtons()
+            }
         default:
             break
         }

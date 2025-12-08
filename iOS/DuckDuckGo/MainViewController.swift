@@ -656,6 +656,8 @@ class MainViewController: UIViewController {
         addChild(controller)
         controller.view.frame = viewCoordinator.tabBarContainer.bounds
         controller.delegate = self
+        controller.historyManager = historyManager
+        controller.fireproofing = fireproofing
         viewCoordinator.tabBarContainer.addSubview(controller.view)
         tabsBarController = controller
         controller.didMove(toParent: self)
@@ -1177,12 +1179,14 @@ class MainViewController: UIViewController {
     @IBAction func onFirePressed() {
     
         func showFireConfirmation() {
-            let presenter = FireConfirmationPresenter(featureFlagger: featureFlagger)
+            let presenter = FireConfirmationPresenter(tabsModel: tabManager.model,
+                                                      featureFlagger: featureFlagger,
+                                                      historyManager: historyManager,
+                                                      fireproofing: fireproofing)
             let source: UIView = tabsBarController?.fireButton ?? viewCoordinator.toolbar
             presenter.presentFireConfirmation(
                 on: self,
                 attachPopoverTo: source,
-                tabsModel: tabManager.model,
                 onConfirm: { [weak self] in
                     self?.forgetAllWithAnimation {}
                 },

@@ -19,6 +19,9 @@
 
 import Foundation
 import Combine
+import Core
+import Common
+import History
 
 class FireConfirmationViewModel: ObservableObject {
     
@@ -36,13 +39,22 @@ class FireConfirmationViewModel: ObservableObject {
     
     // MARK: - Private Variables
     private let tabsModel: TabsModeling?
+    private let historyManager: HistoryManaging?
+    private let tld: TLD
+    private let fireproofing: Fireproofing?
     
     init(tabsModel: TabsModeling?,
+         historyManager: HistoryManaging?,
+         tld: TLD = AppDependencyProvider.shared.storageCache.tld,
+         fireproofing: Fireproofing?,
          onConfirm: @escaping () -> Void,
          onCancel: @escaping () -> Void) {
         self.onConfirm = onConfirm
         self.onCancel = onCancel
         self.tabsModel = tabsModel
+        self.historyManager = historyManager
+        self.tld = tld
+        self.fireproofing = fireproofing
     }
     
     func confirm() {
@@ -58,9 +70,47 @@ class FireConfirmationViewModel: ObservableObject {
         return UserText.fireConfirmationTabsSubtitle(withCount: tabsCount)
     }
     
+    @MainActor
     func clearDataSubtitle() -> String {
-        let sitesCount = 1 // TODO: - Fetch actual count
+        guard let historyManager = historyManager else {
+            return UserText.fireConfirmationDataSubtitle(withCount: 0)
+        }
+        
+        guard historyManager.isEnabledByUser else {
+            return UserText.fireConfirmationDataSubtitleHistoryDisabled
+        }
+        
+        let sitesCount = computeNonFireproofedDomainCount()
         return UserText.fireConfirmationDataSubtitle(withCount: sitesCount)
+    }
+    
+    @MainActor
+    private func computeNonFireproofedDomainCount() -> Int {
+        guard let history = historyManager?.historyCoordinator.history else {
+            return 0
+        }
+        
+        // Get all domains from history
+        let allDomains = history.lazy.compactMap { entry -> String? in
+            entry.url.host
+        }
+        
+        // Convert them to eTLD+1
+        let eTLDPlus1Domains = allDomains.reduce(into: Set<String>()) { result, domain in
+            let eTLDPlus1Domain = tld.eTLDplus1(domain) ?? domain
+            result.insert(eTLDPlus1Domain)
+        }
+        
+        // Filter out fireproofed domains
+        let nonFireproofed = eTLDPlus1Domains.filter { domain in
+            guard let fireproofing else {
+                assertionFailure("fireproofing should not be nil here")
+                return true
+            }
+            return !fireproofing.isAllowed(fireproofDomain: domain)
+        }
+        
+        return nonFireproofed.count
     }
     
     func clearAIChatsSubtitle() -> String {

@@ -208,7 +208,11 @@ struct MockTabsModel: TabsModeling {
 
 #Preview {
     let tabsModel = MockTabsModel()
-    let viewModel = FireConfirmationViewModel(tabsModel: tabsModel, onConfirm: {}, onCancel: {})
-    FireConfirmationView(viewModel: viewModel)
+    let viewModel = FireConfirmationViewModel(tabsModel: tabsModel,
+                                              historyManager: nil,
+                                              fireproofing: nil,
+                                              onConfirm: {},
+                                              onCancel: {})
+    return FireConfirmationView(viewModel: viewModel)
 }
 #endif

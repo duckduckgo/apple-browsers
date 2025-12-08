@@ -59,6 +59,8 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     }()
 
     weak var delegate: TabsBarDelegate?
+    var historyManager: HistoryManaging?
+    var fireproofing: Fireproofing?
     private weak var tabsModel: TabsModel?
 
     private lazy var tabSwitcherButton: TabSwitcherButton = TabSwitcherStaticButton()
@@ -131,11 +133,13 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     @IBAction func onFireButtonPressed() {
         
         func showClearDataAlert() {
-            let presenter = FireConfirmationPresenter(featureFlagger: AppDependencyProvider.shared.featureFlagger)
+            let presenter = FireConfirmationPresenter(tabsModel: tabsModel,
+                                                      featureFlagger: AppDependencyProvider.shared.featureFlagger,
+                                                      historyManager: historyManager,
+                                                      fireproofing: fireproofing)
             presenter.presentFireConfirmation(
                 on: self,
                 attachPopoverTo: fireButton,
-                tabsModel: tabsModel,
                 onConfirm: { [weak self] in
                     guard let self = self else { return }
                     self.delegate?.tabsBarDidRequestForgetAll(self)

@@ -22,14 +22,17 @@ import UIKit
 import SwiftUI
 import BrowserServicesKit
 import Common
+import Core
 
 struct FireConfirmationPresenter {
     
+    let tabsModel: TabsModeling?
     let featureFlagger: FeatureFlagger
+    let historyManager: HistoryManaging?
+    let fireproofing: Fireproofing?
     
     func presentFireConfirmation(on viewController: UIViewController,
                                  attachPopoverTo source: AnyObject,
-                                 tabsModel: TabsModeling?,
                                  onConfirm: @escaping () -> Void,
                                  onCancel: @escaping () -> Void) {
         guard featureFlagger.isFeatureOn(.granularFireButtonOptions) else {
@@ -57,6 +60,8 @@ struct FireConfirmationPresenter {
                                tabsModel: TabsModeling?) -> FireConfirmationViewModel {
         FireConfirmationViewModel(
             tabsModel: tabsModel,
+            historyManager: historyManager,
+            fireproofing: fireproofing,
             onConfirm: { [weak viewController] in
                 viewController?.dismiss(animated: true) {
                     onConfirm()

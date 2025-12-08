@@ -64,28 +64,31 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                               historyProvider: MockHistoryViewDataProvider())
 
         let privacyConfigurationManager = MockPrivacyConfigurationManaging()
-        updating = UserContentUpdating(contentBlockerRulesManager: rulesManager,
-                                       privacyConfigurationManager: privacyConfigurationManager,
-                                       trackerDataManager: TrackerDataManager(etag: configStore.loadEtag(for: .trackerDataSet),
-                                                                              data: configStore.loadData(for: .trackerDataSet),
-                                                                              embeddedDataProvider: AppTrackerDataSetProvider(),
-                                                                              errorReporting: nil),
-                                       configStorage: MockConfigurationStore(),
-                                       webTrackingProtectionPreferences: preferences,
-                                       cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
-                                       duckPlayer: DuckPlayer(preferencesPersistor: DuckPlayerPreferencesPersistorMock(), privacyConfigurationManager: privacyConfigurationManager, internalUserDecider: featureFlagger.internalUserDecider),
-                                       experimentManager: MockContentScopeExperimentManager(),
-                                       tld: TLD(),
-                                       featureFlagger: featureFlagger,
-                                       onboardingNavigationDelegate: CapturingOnboardingNavigation(),
-                                       appearancePreferences: appearancePreferences,
-                                       startupPreferences: startupPreferences,
-                                       windowControllersManager: windowControllersManager,
-                                       bookmarkManager: MockBookmarkManager(),
-                                       historyCoordinator: CapturingHistoryDataSource(),
-                                       fireproofDomains: MockFireproofDomains(domains: []),
-                                       fireCoordinator: fireCoordinator,
-                                       autoconsentManagement: AutoconsentManagement(),
+        let dependencies = ScriptSourceProvider.Dependencies(
+            configStorage: configStore,
+            privacyConfigurationManager: privacyConfigurationManager,
+            webTrackingProtectionPreferences: preferences,
+            cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
+            duckPlayer: DuckPlayer(preferencesPersistor: DuckPlayerPreferencesPersistorMock(), privacyConfigurationManager: privacyConfigurationManager, internalUserDecider: featureFlagger.internalUserDecider),
+            contentBlockingManager: rulesManager,
+            trackerDataManager: TrackerDataManager(etag: configStore.loadEtag(for: .trackerDataSet),
+                                                   data: configStore.loadData(for: .trackerDataSet),
+                                                   embeddedDataProvider: AppTrackerDataSetProvider(),
+                                                   errorReporting: nil),
+            experimentManager: MockContentScopeExperimentManager(),
+            tld: TLD(),
+            featureFlagger: featureFlagger,
+            onboardingNavigationDelegate: CapturingOnboardingNavigation(),
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            windowControllersManager: windowControllersManager,
+            bookmarkManager: MockBookmarkManager(),
+            historyCoordinator: CapturingHistoryDataSource(),
+            fireproofDomains: MockFireproofDomains(domains: []),
+            fireCoordinator: fireCoordinator,
+            autoconsentManagement: AutoconsentManagement()
+        )
+        updating = UserContentUpdating(dependencies: dependencies,
                                        contentScopePreferences: ContentScopePreferences(windowControllersManager: WindowControllersManagerMock()))
         /// Set it to any value to trigger `didSet` that unblocks updates stream
         updating.userScriptDependenciesProvider = nil

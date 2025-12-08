@@ -73,7 +73,7 @@ final class ScriptSourceProviderTests: XCTestCase {
                                               windowControllersManager: windowControllersManager,
                                               pixelFiring: nil,
                                               historyProvider: MockHistoryViewDataProvider())
-        let sourceProvider = ScriptSourceProvider(
+        let dependencies = ScriptSourceProvider.Dependencies(
             configStorage: MockConfigurationStore(),
             privacyConfigurationManager: privacyConfigurationManager,
             webTrackingProtectionPreferences: WebTrackingProtectionPreferences(persistor: MockWebTrackingProtectionPreferencesPersistor(), windowControllersManager: WindowControllersManagerMock()),
@@ -92,7 +92,10 @@ final class ScriptSourceProviderTests: XCTestCase {
             historyCoordinator: HistoryCoordinatingMock(),
             fireproofDomains: MockFireproofDomains(domains: []),
             fireCoordinator: fireCoordinator,
-            autoconsentManagement: AutoconsentManagement(),
+            autoconsentManagement: AutoconsentManagement()
+        )
+        let sourceProvider = ScriptSourceProvider(
+            dependencies: dependencies,
             newTabPageActionsManager: nil
         )
 

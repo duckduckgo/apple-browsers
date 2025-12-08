@@ -186,7 +186,8 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
                     preferencesPersistor: DuckPlayerPreferencesPersistorMock(),
                     privacyConfigurationManager: MockPrivacyConfigurationManager(),
                     internalUserDecider: featureFlagger.internalUserDecider
-                )
+                ),
+                userScriptsDependencies: nil
             )
             _=viewController.view
             window = MockWindow()

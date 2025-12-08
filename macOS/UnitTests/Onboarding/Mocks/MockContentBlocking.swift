@@ -34,6 +34,9 @@ class MockContentBlocking: ContentBlockingProtocol {
     var tld: TLD = TLD()
 
     var contentBlockingAssetsPublisher: AnyPublisher<UserContentUpdating.NewContent, Never> = Empty<UserContentUpdating.NewContent, Never>(completeImmediately: false).eraseToAnyPublisher()
+
+    @MainActor
+    var userScriptsDependencies: ScriptSourceProvider.Dependencies = .makeMock()
 }
 
 class MockEmbeddedDataProvider: EmbeddedDataProvider {

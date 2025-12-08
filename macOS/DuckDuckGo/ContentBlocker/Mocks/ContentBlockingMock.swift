@@ -30,12 +30,16 @@ final class ContentBlockingMock: NSObject, ContentBlockingProtocol, AdClickAttri
         var embeddedDataEtag: String = ""
         var embeddedData: Data = .init()
     }
+    private let _userScriptsDependencies: ScriptSourceProvider.Dependencies?
     var trackerDataManager = TrackerDataManager(etag: ConfigurationStore().loadEtag(for: .trackerDataSet),
                                                 data: ConfigurationStore().loadData(for: .trackerDataSet),
                                                 embeddedDataProvider: AppTrackerDataSetProvider(),
                                                 errorReporting: nil)
 
     var tld: Common.TLD = .init()
+    var userScriptsDependencies: ScriptSourceProvider.Dependencies {
+        _userScriptsDependencies ?? fatalError("userScriptsDependencies not provided in ContentBlockingMock")
+    }
 
     typealias ConfigurationManager = MockPrivacyConfigurationManager
     typealias ContentBlockingAssets = UserContentUpdating.NewContent
@@ -54,11 +58,13 @@ final class ContentBlockingMock: NSObject, ContentBlockingProtocol, AdClickAttri
     var attributionEvents: EventMapping<AdClickAttributionEvents>?
     var attributionDebugEvents: EventMapping<BrowserServicesKit.AdClickAttributionDebugEvents>?
 
-    init(adClickAttributionEnabled: Bool) {
+    init(adClickAttributionEnabled: Bool = false,
+         userScriptsDependencies: ScriptSourceProvider.Dependencies? = nil) {
+        self._userScriptsDependencies = userScriptsDependencies
         self.adClickAttribution = MockAttributing(isEnabled: adClickAttributionEnabled)
     }
     override convenience init() {
-        self.init(adClickAttributionEnabled: false)
+        self.init(adClickAttributionEnabled: false, userScriptsDependencies: nil)
     }
 }
 

@@ -3626,6 +3626,8 @@
 		C1E961F02B87AA29001760E1 /* AutofillActionBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1E961EE2B87AA29001760E1 /* AutofillActionBuilder.swift */; };
 		C1E961F32B87B273001760E1 /* MockAutofillActionExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1E961EC2B879ED9001760E1 /* MockAutofillActionExecutor.swift */; };
 		C1E961F42B87B276001760E1 /* MockAutofillActionPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1E961E72B879E4D001760E1 /* MockAutofillActionPresenter.swift */; };
+		C1EB779D2EE7112800A61929 /* MockScriptSourceProviderDependencies.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EB779C2EE7112800A61929 /* MockScriptSourceProviderDependencies.swift */; };
+		C1EB779E2EE7112800A61929 /* MockScriptSourceProviderDependencies.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EB779C2EE7112800A61929 /* MockScriptSourceProviderDependencies.swift */; };
 		C1F142DB2CB93AED003DA518 /* FreemiumDBPPromotionViewCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F142DA2CB93AED003DA518 /* FreemiumDBPPromotionViewCoordinatorTests.swift */; };
 		C1F142DC2CB93AED003DA518 /* FreemiumDBPPromotionViewCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F142DA2CB93AED003DA518 /* FreemiumDBPPromotionViewCoordinatorTests.swift */; };
 		CB24F70C29A3D9CB006DCC58 /* AppConfigurationURLProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB24F70B29A3D9CB006DCC58 /* AppConfigurationURLProvider.swift */; };
@@ -6083,6 +6085,7 @@
 		C1E961E72B879E4D001760E1 /* MockAutofillActionPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAutofillActionPresenter.swift; sourceTree = "<group>"; };
 		C1E961EC2B879ED9001760E1 /* MockAutofillActionExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAutofillActionExecutor.swift; sourceTree = "<group>"; };
 		C1E961EE2B87AA29001760E1 /* AutofillActionBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillActionBuilder.swift; sourceTree = "<group>"; };
+		C1EB779C2EE7112800A61929 /* MockScriptSourceProviderDependencies.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockScriptSourceProviderDependencies.swift; sourceTree = "<group>"; };
 		C1F142DA2CB93AED003DA518 /* FreemiumDBPPromotionViewCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreemiumDBPPromotionViewCoordinatorTests.swift; sourceTree = "<group>"; };
 		CB24F70B29A3D9CB006DCC58 /* AppConfigurationURLProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfigurationURLProvider.swift; sourceTree = "<group>"; };
 		CB63DECA2CDC0BB80097986A /* PageRefreshMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageRefreshMonitor.swift; sourceTree = "<group>"; };
@@ -8263,6 +8266,7 @@
 				B610F2E527AA388100FCEBE9 /* ContentBlockingUpdatingTests.swift */,
 				B6AE39F029373AF200C37AA4 /* EmptyAttributionRulesProver.swift */,
 				CBDD5DE229A67F2700832877 /* MockConfigurationStore.swift */,
+				C1EB779C2EE7112800A61929 /* MockScriptSourceProviderDependencies.swift */,
 				56D5B3962DD3765D00407440 /* ScriptSourceProviderTests.swift */,
 			);
 			path = ContentBlocker;
@@ -15010,6 +15014,7 @@
 				7B1522BA2DE9D19600887371 /* MockLoginItemsManager.swift in Sources */,
 				567A23CF2C80CF4B0010F66C /* ErrorPageTabExtensionTests.swift in Sources */,
 				37D046A22C7DA9A200AEAA50 /* UserBackgroundImagesManagerTests.swift in Sources */,
+				C1EB779E2EE7112800A61929 /* MockScriptSourceProviderDependencies.swift in Sources */,
 				1D8C2FEB2B70F5A7005E4BBD /* MockWebViewSnapshotRenderer.swift in Sources */,
 				1DD0DBBF2E40959D00B0E5F1 /* NewTabPageLoadMetricsTests.swift in Sources */,
 				37A0BA2E2D747C5C00130447 /* CapturingHistoryViewBookmarksHandler.swift in Sources */,
@@ -17091,6 +17096,7 @@
 				9FBD84772BB3E54200220859 /* InstallationAttributionPixelHandlerTests.swift in Sources */,
 				B6106BB126A7D8720013B453 /* PermissionStoreTests.swift in Sources */,
 				7B0C7F1B2EDF1D1800A338FD /* WebNotificationClickHandlerTests.swift in Sources */,
+				C1EB779D2EE7112800A61929 /* MockScriptSourceProviderDependencies.swift in Sources */,
 				BB77F8CF2EB3991C00D035A7 /* WinBackOfferPromotionViewCoordinatorTests.swift in Sources */,
 				4BF4951826C08395000547B8 /* ThirdPartyBrowserTests.swift in Sources */,
 				4B98D27C28D960DD003C2B6F /* FirefoxFaviconsReaderTests.swift in Sources */,

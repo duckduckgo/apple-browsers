@@ -32,6 +32,7 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
     private let subscriptionManager: SubscriptionManagerV2
     private let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     private var signOutObserver: Any?
+    private let featureFlagger: FeatureFlagger
 
     private var externalAllowedDomains = ["stripe.com"]
 
@@ -78,7 +79,7 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
     /// Shows badge if tier is Pro, or if Pro tier purchase feature flag is enabled
     var tierBadgeToDisplay: TierBadgeView.Variant? {
         guard let tier = state.subscriptionInfo?.tier else { return nil }
-        guard tier == .pro || isProTierPurchaseEnabled() else { return nil }
+        guard tier == .pro || featureFlagger.isFeatureOn(.allowProTierPurchase) else { return nil }
         switch tier {
         case .plus: return .plus
         case .pro: return .pro
@@ -87,21 +88,19 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
 
     private let keyValueStorage: KeyValueStoring
     private let bannerDismissedKey = "SubscriptionSettingsV2BannerDismissed"
-    private let isProTierPurchaseEnabled: () -> Bool
 
     init(subscriptionManager: SubscriptionManagerV2 = AppDependencyProvider.shared.subscriptionManagerV2!,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          keyValueStorage: KeyValueStoring = SubscriptionSettingsStore(),
-         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
-         isProTierPurchaseEnabled: @escaping () -> Bool = { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.allowProTierPurchase) }) {
+         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies) {
         self.subscriptionManager = subscriptionManager
         self.userScriptsDependencies = userScriptsDependencies
+        self.featureFlagger = featureFlagger
         let subscriptionFAQURL = subscriptionManager.url(for: .faq)
         let learnMoreURL = subscriptionFAQURL.appendingPathComponent("adding-email")
         self.state = State(faqURL: subscriptionFAQURL, learnMoreURL: learnMoreURL, userScriptsDependencies: userScriptsDependencies)
         self.usesUnifiedFeedbackForm = subscriptionManager.isUserAuthenticated
         self.keyValueStorage = keyValueStorage
-        self.isProTierPurchaseEnabled = isProTierPurchaseEnabled
         let rebrandingMessageDismissed = keyValueStorage.object(forKey: bannerDismissedKey) as? Bool ?? false
         self.showRebrandingMessage = !rebrandingMessageDismissed
         setupNotificationObservers()

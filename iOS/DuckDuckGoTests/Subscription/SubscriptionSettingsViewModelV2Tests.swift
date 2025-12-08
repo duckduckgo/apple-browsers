@@ -32,11 +32,13 @@ final class SubscriptionSettingsViewModelV2Tests: XCTestCase {
     var mockSubscriptionManager: SubscriptionManagerMockV2!
     var cancellables = Set<AnyCancellable>()
     var isProTierPurchaseEnabled: Bool = false
+    var mockFeatureFlagger: MockFeatureFlagger!
 
     override func setUp() {
         super.setUp()
         mockSubscriptionManager = SubscriptionManagerMockV2()
         mockSubscriptionManager.resultURL = URL(string: "https://example.com")!
+        mockFeatureFlagger = MockFeatureFlagger()
         cancellables = Set<AnyCancellable>()
     }
 
@@ -73,7 +75,6 @@ final class SubscriptionSettingsViewModelV2Tests: XCTestCase {
 
     func testTierBadgeToDisplay_WhenProTier_AlwaysReturnsPro() async {
         // Given - Pro tier with feature flag OFF
-        isProTierPurchaseEnabled = false
         mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.subscription(status: .autoRenewable, tier: .pro)
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
         sut = makeSUT()
@@ -87,7 +88,7 @@ final class SubscriptionSettingsViewModelV2Tests: XCTestCase {
 
     func testTierBadgeToDisplay_WhenPlusTierAndFeatureFlagEnabled_ReturnsPlus() async {
         // Given - Plus tier with feature flag ON
-        isProTierPurchaseEnabled = true
+        mockFeatureFlagger.enabledFeatureFlags = [.allowProTierPurchase]
         mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.subscription(status: .autoRenewable, tier: .plus)
         mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
         sut = makeSUT()
@@ -118,9 +119,9 @@ final class SubscriptionSettingsViewModelV2Tests: XCTestCase {
     private func makeSUT() -> SubscriptionSettingsViewModelV2 {
         SubscriptionSettingsViewModelV2(
             subscriptionManager: mockSubscriptionManager,
+            featureFlagger: mockFeatureFlagger,
             keyValueStorage: MockKeyValueStorage(),
             userScriptsDependencies: DefaultScriptSourceProvider.Dependencies.makeMock(),
-            isProTierPurchaseEnabled: { [weak self] in self?.isProTierPurchaseEnabled ?? false }
         )
     }
 

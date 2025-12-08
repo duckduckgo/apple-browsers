@@ -135,6 +135,7 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
             presenter.presentFireConfirmation(
                 on: self,
                 attachPopoverTo: fireButton,
+                tabsModel: tabsModel,
                 onConfirm: { [weak self] in
                     guard let self = self else { return }
                     self.delegate?.tabsBarDidRequestForgetAll(self)

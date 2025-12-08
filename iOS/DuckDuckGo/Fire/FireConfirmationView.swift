@@ -201,7 +201,14 @@ private struct ScrollBounceBehaviorModifier: ViewModifier {
     }
 }
 
-#Preview {
-    let viewModel = FireConfirmationViewModel(onConfirm: {}, onCancel: {})
-    return FireConfirmationView(viewModel: viewModel)
+#if DEBUG
+struct MockTabsModel: TabsModeling {
+    var count: Int { 0 }
 }
+
+#Preview {
+    let tabsModel = MockTabsModel()
+    let viewModel = FireConfirmationViewModel(tabsModel: tabsModel, onConfirm: {}, onCancel: {})
+    FireConfirmationView(viewModel: viewModel)
+}
+#endif

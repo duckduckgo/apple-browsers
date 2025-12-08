@@ -29,6 +29,7 @@ struct FireConfirmationPresenter {
     
     func presentFireConfirmation(on viewController: UIViewController,
                                  attachPopoverTo source: AnyObject,
+                                 tabsModel: TabsModeling?,
                                  onConfirm: @escaping () -> Void,
                                  onCancel: @escaping () -> Void) {
         guard featureFlagger.isFeatureOn(.granularFireButtonOptions) else {
@@ -36,7 +37,10 @@ struct FireConfirmationPresenter {
             return
         }
         
-        let viewModel = makeViewModel(dismissing: viewController, onConfirm: onConfirm, onCancel: onCancel)
+        let viewModel = makeViewModel(dismissing: viewController,
+                                      onConfirm: onConfirm,
+                                      onCancel: onCancel,
+                                      tabsModel: tabsModel)
         let hostingController = makeHostingController(with: viewModel)
         let presentingWidth = viewController.view.frame.width
         
@@ -49,8 +53,10 @@ struct FireConfirmationPresenter {
     
     private func makeViewModel(dismissing viewController: UIViewController,
                                onConfirm: @escaping () -> Void,
-                               onCancel: @escaping () -> Void) -> FireConfirmationViewModel {
+                               onCancel: @escaping () -> Void,
+                               tabsModel: TabsModeling?) -> FireConfirmationViewModel {
         FireConfirmationViewModel(
+            tabsModel: tabsModel,
             onConfirm: { [weak viewController] in
                 viewController?.dismiss(animated: true) {
                     onConfirm()

@@ -1182,6 +1182,7 @@ class MainViewController: UIViewController {
             presenter.presentFireConfirmation(
                 on: self,
                 attachPopoverTo: source,
+                tabsModel: tabManager.model,
                 onConfirm: { [weak self] in
                     self?.forgetAllWithAnimation {}
                 },

@@ -22,19 +22,27 @@ import Combine
 
 class FireConfirmationViewModel: ObservableObject {
     
+    // MARK: - Published Variables
+    
     @Published var clearTabs: Bool = true
     @Published var clearData: Bool = true
     @Published var clearAIChats: Bool = false
     
-    let showAIChatsOption: Bool = true
+    // MARK: - Public Variables
     
     let onConfirm: () -> Void
     let onCancel: () -> Void
+    let showAIChatsOption: Bool = true
     
-    init(onConfirm: @escaping () -> Void,
+    // MARK: - Private Variables
+    private let tabsModel: TabsModeling?
+    
+    init(tabsModel: TabsModeling?,
+         onConfirm: @escaping () -> Void,
          onCancel: @escaping () -> Void) {
         self.onConfirm = onConfirm
         self.onCancel = onCancel
+        self.tabsModel = tabsModel
     }
     
     func confirm() {
@@ -46,7 +54,7 @@ class FireConfirmationViewModel: ObservableObject {
     }
     
     func clearTabsSubtitle() -> String {
-        let tabsCount = 1 // TODO: - Fetch actual count
+        let tabsCount = tabsModel?.count ?? 0
         return UserText.fireConfirmationTabsSubtitle(withCount: tabsCount)
     }
     

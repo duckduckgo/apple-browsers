@@ -60421,7 +60421,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%1$@ to open \"%2$@\" links"
+            "value" : "%1$@ to open “%2$@” links"
           }
         }
       }
@@ -60457,7 +60457,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Permissions for \"%@\""
+            "value" : "Permissions for “%@”"
           }
         }
       }

@@ -540,14 +540,14 @@ class HistoryCoordinatorTests: XCTestCase {
         let (historyStoringMock, historyCoordinator) = await HistoryCoordinator.aHistoryCoordinator()
 
         let url = URL(string: "https://example.com")!
-        
+
         // Set up expectation for initial saves (1 visit + 1 cookiePopupBlocked = 2)
         let initialSaveExpectation = expectation(description: "Initial saves completed")
         initialSaveExpectation.expectedFulfillmentCount = 2
         historyStoringMock.saveCompletion = {
             initialSaveExpectation.fulfill()
         }
-        
+
         historyCoordinator.addVisit(of: url)
         historyCoordinator.cookiePopupBlocked(on: url)
 

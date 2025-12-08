@@ -224,11 +224,28 @@ extension FadeOutContainerViewController: UIGestureRecognizerDelegate {
         }
 
         let velocity = panGesture.velocity(in: view)
-        return abs(velocity.x) > abs(velocity.y)
+        // Only begin if horizontal velocity is significantly greater than vertical
+        return abs(velocity.x) > abs(velocity.y) * 1.5
     }
 
     func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
                            shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        // Don't recognize simultaneously with scroll views
+        // (We installSuggestionsTray in searchPageContainer and they can conflict with each other)
+        if otherGestureRecognizer.view is UIScrollView {
+            return false
+        }
         return true
+    }
+
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                           shouldRequireFailureOf otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        // If there's a vertical pan gesture (like in a scroll view), require it to fail first
+        if let otherPan = otherGestureRecognizer as? UIPanGestureRecognizer, otherGestureRecognizer.view is UIScrollView {
+            let velocity = otherPan.velocity(in: otherPan.view)
+            // If the other gesture is more vertical, require it to fail
+            return abs(velocity.y) > abs(velocity.x)
+        }
+        return false
     }
 }

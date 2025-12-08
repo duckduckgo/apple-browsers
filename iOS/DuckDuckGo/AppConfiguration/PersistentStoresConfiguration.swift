@@ -34,11 +34,10 @@ final class PersistentStoresConfiguration {
 
     let database = Database.shared
     let bookmarksDatabase = BookmarksDatabase.make()
-    private let application: UIApplication
-    
-    /// Shared SecureVault instance initialized at app startup to prevent multiple GRDB background tasks
     private(set) var sharedSecureVault: (any AutofillSecureVault)?
 
+    private let application: UIApplication
+    
     init(application: UIApplication = .shared) {
         self.application = application
     }
@@ -79,28 +78,17 @@ final class PersistentStoresConfiguration {
         }
     }
     
-    /// Initialize shared SecureVault instance at app startup to prevent multiple GRDB background tasks
     private func initializeSharedSecureVault() {
-        // Only initialize if autofill is enabled and we don't already have an instance
-        guard AutofillSettingStatus.isAutofillEnabledInSettings,
-              sharedSecureVault == nil else {
+        guard AutofillSettingStatus.isAutofillEnabledInSettings else {
             return
         }
-        
         do {
-            // Initialize synchronously on main thread like other databases
             sharedSecureVault = try AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
             Logger.general.info("Shared SecureVault initialized at app startup")
         } catch {
             Logger.general.error("Failed to initialize shared SecureVault at startup: \(error.localizedDescription)")
-            
-            // Fire pixel to track shared vault initialization failures
-            let additionalParams = [
-                "autofillEnabled": "\(AutofillSettingStatus.isAutofillEnabledInSettings)"
-            ]
             Pixel.fire(pixel: .sharedSecureVaultInitFailed, 
-                      error: error,
-                      withAdditionalParameters: additionalParams)
+                      error: error)
         }
     }
 

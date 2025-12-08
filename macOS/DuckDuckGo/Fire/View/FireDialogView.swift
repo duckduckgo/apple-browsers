@@ -182,14 +182,14 @@ struct FireDialogView: ModalView {
             footerView
                 .zIndex(11)
                 .padding(.bottom, 10) // presenter sheet crops the padding 🤷‍♂️
-                .background(Color(designSystemColor: .fireDialogBackground))
+                .background(Color(designSystemColor: .surfaceSecondary))
         }
         .readSize { size in
             // Set exact content height to avoid content shifting and animation jumping when sheet resizes
             viewHeight = size.height
         }
         .frame(width: Constants.viewSize.width, height: viewHeight, alignment: .top)
-        .background(Color(designSystemColor: .fireDialogBackground))
+        .background(Color(designSystemColor: .surfaceSecondary))
         .accessibilityElement(children: .contain)
         .accessibilityLabel(viewModel.mode.dialogTitle)
     }
@@ -423,7 +423,7 @@ struct FireDialogView: ModalView {
         }
         .background(
             CustomRoundedCornersShape(tl: 8, tr: 8, bl: 0, br: 0)
-                .fill(Color(designSystemColor: .fireDialogBackground))
+                .fill(Color(designSystemColor: .surfaceSecondary))
         )
     }
 

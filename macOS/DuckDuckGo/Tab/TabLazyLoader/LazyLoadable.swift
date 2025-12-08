@@ -35,7 +35,7 @@ protocol LazyLoadable: AnyObject, Identifiable {
 }
 
 extension Tab: LazyLoadable {
-    var isUrl: Bool { content.isUrl }
+    var isUrl: Bool { content.isExternalUrl }
 
     var url: URL? { content.urlForWebView }
 

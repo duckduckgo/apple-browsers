@@ -20,5 +20,5 @@ import Foundation
 import os.log
 
 public extension Logger {
-    static var bitWarden = { Logger(subsystem: "Bitwarden", category: "") }()
+    static let bitWarden = Logger(subsystem: "Bitwarden", category: "")
 }

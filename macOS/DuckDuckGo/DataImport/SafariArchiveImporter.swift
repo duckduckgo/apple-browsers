@@ -26,6 +26,11 @@ import UniformTypeIdentifiers
 /// A DataImporter that can import Safari archives as well as standalone Safari exports
 /// (CSV, HTML, JSON) by delegating to the appropriate importer for each format.
 final class SafariArchiveImporter: DataImporter {
+
+    enum Constants {
+        static let maxFavoritesCount = 12
+    }
+
     struct ImportError: DataImportError {
         enum OperationType: Int {
             case validateAccess
@@ -177,7 +182,10 @@ final class SafariArchiveImporter: DataImporter {
 
             // Validate bookmarks if requested and available
             if types.contains(.bookmarks), let bookmarkFile = tempFile {
-                let bookmarkHTMLImporter = BookmarkHTMLImporter(fileURL: bookmarkFile, bookmarkImporter: bookmarkImporter)
+                let bookmarkHTMLImporter = BookmarkHTMLImporter(fileURL: bookmarkFile,
+                                                                bookmarkImporter: bookmarkImporter,
+                                                                maxFavoritesCount: Constants.maxFavoritesCount,
+                                                                otherBookmarksFolderTitle: UserText.bookmarksImportedFolderTitle)
                 if let bookmarkErrors = bookmarkHTMLImporter.validateAccess(for: [.bookmarks]) {
                     errors.merge(bookmarkErrors) { _, new in new }
                 }
@@ -350,7 +358,10 @@ final class SafariArchiveImporter: DataImporter {
             }
         }
 
-        let bookmarkHTMLImporter = BookmarkHTMLImporter(fileURL: bookmarkFile, bookmarkImporter: bookmarkImporter)
+        let bookmarkHTMLImporter = BookmarkHTMLImporter(fileURL: bookmarkFile,
+                                                        bookmarkImporter: bookmarkImporter,
+                                                        maxFavoritesCount: Constants.maxFavoritesCount,
+                                                        otherBookmarksFolderTitle: UserText.bookmarksImportedFolderTitle)
         let bookmarkTask = bookmarkHTMLImporter.importData(types: [.bookmarks])
         let currentTotalFraction = cumulativeFraction
         for await update in bookmarkTask.progress {
@@ -361,6 +372,17 @@ final class SafariArchiveImporter: DataImporter {
             }
         }
         let bookmarkResults = await bookmarkTask.task.value
+
+        // Fire pixel on successful bookmark import
+        if case .success = bookmarkResults[.bookmarks] {
+            let numberOfFavorites = bookmarkHTMLImporter.totalFavoritesCount
+            PixelKit.fire(GeneralPixel.favoritesImportSucceeded(
+                source: DataImport.Source.safari.pixelSourceParameterName,
+                sourceVersion: nil,
+                favoritesBucket: .init(count: numberOfFavorites)),
+                frequency: .dailyAndStandard)
+        }
+
         return bookmarkResults
     }
 

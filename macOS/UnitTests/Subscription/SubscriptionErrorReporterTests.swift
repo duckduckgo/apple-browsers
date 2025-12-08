@@ -31,7 +31,7 @@ final class SubscriptionErrorReporterTests: XCTestCase {
     var userDefaults: UserDefaults!
     var pixelKit: PixelKit!
 
-    var reporter: SubscriptionErrorReporter! = DefaultSubscriptionErrorReporter()
+    var reporter: SubscriptionEventReporter! = DefaultSubscriptionEventReporter()
 
     var pixelsFired = Set<String>()
 
@@ -48,7 +48,7 @@ final class SubscriptionErrorReporterTests: XCTestCase {
         pixelKit.clearFrequencyHistoryForAllPixels()
         PixelKit.setSharedForTesting(pixelKit: pixelKit)
 
-        reporter = DefaultSubscriptionErrorReporter()
+        reporter = DefaultSubscriptionEventReporter()
     }
 
     override func tearDown() async throws {
@@ -190,6 +190,53 @@ final class SubscriptionErrorReporterTests: XCTestCase {
         // Then
         XCTAssertPrivacyPixelsFired([SubscriptionPixel.subscriptionPurchaseFailureOther.name + "_d",
                                      SubscriptionPixel.subscriptionPurchaseFailureOther.name + "_c"])
+    }
+
+    // MARK: - Tests for Subscription Tier Option Events
+
+    func testReporterForTierOptionsRequested() async throws {
+        // Given
+        let event = SubscriptionPixel.subscriptionTierOptionsRequested
+
+        // When
+        reporter.report(subscriptionTierOptionEvent: event)
+
+        // Then
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.subscriptionTierOptionsRequested.name])
+    }
+
+    func testReporterForTierOptionsSuccess() async throws {
+        // Given
+        let event = SubscriptionPixel.subscriptionTierOptionsSuccess
+
+        // When
+        reporter.report(subscriptionTierOptionEvent: event)
+
+        // Then
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.subscriptionTierOptionsSuccess.name])
+    }
+
+    func testReporterForTierOptionsFailure() async throws {
+        // Given
+        let error = NSError(domain: "TestError", code: 123)
+        let event = SubscriptionPixel.subscriptionTierOptionsFailure(error: error)
+
+        // When
+        reporter.report(subscriptionTierOptionEvent: event)
+
+        // Then
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.subscriptionTierOptionsFailure(error: error).name])
+    }
+
+    func testReporterForTierOptionsUnexpectedProTier() async throws {
+        // Given
+        let event = SubscriptionPixel.subscriptionTierOptionsUnexpectedProTier
+
+        // When
+        reporter.report(subscriptionTierOptionEvent: event)
+
+        // Then
+        XCTAssertPrivacyPixelsFired([SubscriptionPixel.subscriptionTierOptionsUnexpectedProTier.name])
     }
 
     public func XCTAssertPrivacyPixelsFired(_ pixels: [String], file: StaticString = #file, line: UInt = #line) {

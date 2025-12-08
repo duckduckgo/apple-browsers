@@ -3982,8 +3982,8 @@
 		F1AFDBD92C23221700710F2C /* SubscriptionAppStoreRestorerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1AFDBD12C231B7A00710F2C /* SubscriptionAppStoreRestorerTests.swift */; };
 		F1B33DF22BAD929D001128B3 /* SubscriptionAppStoreRestorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1B33DF12BAD929D001128B3 /* SubscriptionAppStoreRestorer.swift */; };
 		F1B33DF32BAD929D001128B3 /* SubscriptionAppStoreRestorer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1B33DF12BAD929D001128B3 /* SubscriptionAppStoreRestorer.swift */; };
-		F1B33DF62BAD970E001128B3 /* SubscriptionErrorReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1B33DF52BAD970E001128B3 /* SubscriptionErrorReporter.swift */; };
-		F1B33DF72BAD970E001128B3 /* SubscriptionErrorReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1B33DF52BAD970E001128B3 /* SubscriptionErrorReporter.swift */; };
+		F1B33DF62BAD970E001128B3 /* SubscriptionEventReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1B33DF52BAD970E001128B3 /* SubscriptionEventReporter.swift */; };
+		F1B33DF72BAD970E001128B3 /* SubscriptionEventReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1B33DF52BAD970E001128B3 /* SubscriptionEventReporter.swift */; };
 		F1C5763E2BFF972900C78647 /* SubscriptionUIHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1C5763D2BFF972900C78647 /* SubscriptionUIHandling.swift */; };
 		F1C5763F2BFF972900C78647 /* SubscriptionUIHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1C5763D2BFF972900C78647 /* SubscriptionUIHandling.swift */; };
 		F1C70D792BFF50A400599292 /* DataBrokerProtectionLoginItemInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1C70D782BFF50A400599292 /* DataBrokerProtectionLoginItemInterface.swift */; };
@@ -6255,7 +6255,7 @@
 		F1AFDBD12C231B7A00710F2C /* SubscriptionAppStoreRestorerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionAppStoreRestorerTests.swift; sourceTree = "<group>"; };
 		F1AFDBD32C231B9700710F2C /* SubscriptionErrorReporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionErrorReporterTests.swift; sourceTree = "<group>"; };
 		F1B33DF12BAD929D001128B3 /* SubscriptionAppStoreRestorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionAppStoreRestorer.swift; sourceTree = "<group>"; };
-		F1B33DF52BAD970E001128B3 /* SubscriptionErrorReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionErrorReporter.swift; sourceTree = "<group>"; };
+		F1B33DF52BAD970E001128B3 /* SubscriptionEventReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionEventReporter.swift; sourceTree = "<group>"; };
 		F1C5763D2BFF972900C78647 /* SubscriptionUIHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionUIHandling.swift; sourceTree = "<group>"; };
 		F1C70D782BFF50A400599292 /* DataBrokerProtectionLoginItemInterface.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DataBrokerProtectionLoginItemInterface.swift; sourceTree = "<group>"; };
 		F1C70D7B2BFF510000599292 /* SubscriptionEnvironment+Default.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "SubscriptionEnvironment+Default.swift"; sourceTree = "<group>"; };
@@ -12056,7 +12056,7 @@
 				F1664A672D708EC60034CCB8 /* SubscriptionPagesUseSubscriptionFeatureV2.swift */,
 				F1C5763D2BFF972900C78647 /* SubscriptionUIHandling.swift */,
 				F1B33DF12BAD929D001128B3 /* SubscriptionAppStoreRestorer.swift */,
-				F1B33DF52BAD970E001128B3 /* SubscriptionErrorReporter.swift */,
+				F1B33DF52BAD970E001128B3 /* SubscriptionEventReporter.swift */,
 				1ED910D42B63BFB300936947 /* IdentityTheftRestorationPagesUserScript.swift */,
 			);
 			path = Subscription;
@@ -13906,7 +13906,7 @@
 				3706FAF6293F65D500E42796 /* LoginFaviconView.swift in Sources */,
 				B5E7B6C02ED4A52E00094EDF /* TitleDisplayPolicy.swift in Sources */,
 				31BFDB6E2ECA423900ADFABD /* MouseBlockingBackgroundView.swift in Sources */,
-				F1B33DF72BAD970E001128B3 /* SubscriptionErrorReporter.swift in Sources */,
+				F1B33DF72BAD970E001128B3 /* SubscriptionEventReporter.swift in Sources */,
 				1D9297C02C1B062900A38521 /* ApplicationUpdateDetector.swift in Sources */,
 				3706FEC0293F6EFF00E42796 /* BWRequest.swift in Sources */,
 				3706FAF7293F65D500E42796 /* FireproofDomainsViewController.swift in Sources */,
@@ -16618,7 +16618,7 @@
 				4B8A4DFF27C83B29005F40E8 /* SaveIdentityViewController.swift in Sources */,
 				84E7205D2EAA1268002618BD /* AppearancePreferencesPersistorMock.swift in Sources */,
 				1DDC84FB2B8356CE00670238 /* PreferencesDefaultBrowserView.swift in Sources */,
-				F1B33DF62BAD970E001128B3 /* SubscriptionErrorReporter.swift in Sources */,
+				F1B33DF62BAD970E001128B3 /* SubscriptionEventReporter.swift in Sources */,
 				373D42C62E2E7E0D0094AC56 /* NewTabPageTabExtension.swift in Sources */,
 				4BA1A69B258B076900F6F690 /* FileStore.swift in Sources */,
 				1D01A3D02B88CEC600FE8150 /* PreferencesAccessibilityView.swift in Sources */,

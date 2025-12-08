@@ -23,7 +23,7 @@ import XCTest
 class SafariBookmarksReaderTests: XCTestCase {
 
     func testImportingBookmarks() {
-        let bookmarksReader = SafariBookmarksReader(safariBookmarksFileURL: bookmarksFileURL(), featureFlagger: MockFeatureFlagger())
+        let bookmarksReader = SafariBookmarksReader(safariBookmarksFileURL: bookmarksFileURL())
         let bookmarks = bookmarksReader.readBookmarks()
 
         guard case let .success(bookmarks) = bookmarks else {

@@ -148,7 +148,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
     func testWhenProTierIsEnabledThenGetFeatureConfigReturnsTrue() async throws {
         handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
-                       featureFlagProvider: MockFeatureFlagProvider(usePaidDuckAi: false, useProTier: true),
+                       featureFlagProvider: MockFeatureFlagProvider(useProTier: true),
                        navigationDelegate: mockNavigationDelegate)
 
         let response = try await handler.getFeatureConfig(params: [], message: WKScriptMessage())
@@ -158,7 +158,7 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
     func testWhenProTierIsDisabledThenGetFeatureConfigReturnsFalse() async throws {
         handler = .init(platform: .ios,
                        subscriptionManager: subscriptionManager,
-                       featureFlagProvider: MockFeatureFlagProvider(usePaidDuckAi: false, useProTier: false),
+                       featureFlagProvider: MockFeatureFlagProvider(useProTier: false),
                        navigationDelegate: mockNavigationDelegate)
 
         let response = try await handler.getFeatureConfig(params: [], message: WKScriptMessage())
@@ -281,7 +281,6 @@ class MockNavigationDelegate: SubscriptionUserScriptNavigationDelegate {
 }
 
 struct MockFeatureFlagProvider: SubscriptionUserScriptFeatureFlagProviding {
-    var usePaidDuckAi: Bool = false
     var useProTier: Bool = false
 }
 

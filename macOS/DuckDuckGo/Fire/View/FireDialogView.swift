@@ -523,12 +523,16 @@ struct FireDialogView: ModalView {
         }
     }
 
+    private var individualSitesColor: NSColor {
+        NSColor(designSystemColor: .accentTextPrimary)
+    }
+
     private var individualSitesLink: some View {
         HStack(spacing: 8) {
             Image(nsImage: DesignSystemImages.Glyphs.Size16.globeBlocked
-                .tinted(with: .linkBlue))
+                .tinted(with: individualSitesColor))
                 .accessibilityHidden(true)
-            TextButton(UserText.fireDialogManageIndividualSitesLink, fontSize: 11) {
+            TextButton(UserText.fireDialogManageIndividualSitesLink, textColor: Color(individualSitesColor), fontSize: 11) {
                 presentIndividualSites()
             }
             .accessibilityIdentifier("FireDialogView.individualSitesLink")
@@ -536,7 +540,7 @@ struct FireDialogView: ModalView {
 
             Image(nsImage: DesignSystemImages.Glyphs.Size16.chevronRight
                 .resized(to: NSSize(width: 12, height: 12))
-                .tinted(with: .linkBlue))
+                .tinted(with: individualSitesColor))
                 .accessibilityHidden(true)
 
         }

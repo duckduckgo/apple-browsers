@@ -902,6 +902,34 @@ struct UserText {
     static let feedbackFormClose = NSLocalizedString("feedback.form.close", value: "Close", comment: "Close button for feedback forms")
     static let feedbackSomethingElse = NSLocalizedString("feedback.something-else", value: "Something else", comment: "Generic option for other feedback items")
 
+    // MARK: - Quit Survey
+    static let quitSurveyInitialQuestion = NSLocalizedString("quit-survey.initial-question", value: "Before you go, how was your first time exploring the DuckDuckGo browser?", comment: "Question shown in the quit survey dialog asking about user's experience")
+    static let quitSurveyPositiveOption = NSLocalizedString("quit-survey.positive-option", value: "Good, and I'll use it again soon", comment: "Positive response option in quit survey")
+    static let quitSurveyNegativeOption = NSLocalizedString("quit-survey.negative-option", value: "Bad, it needs work", comment: "Negative response option in quit survey")
+    static let quitSurveyCloseAndQuit = NSLocalizedString("quit-survey.close-and-quit", value: "Close and Quit", comment: "Button to close survey and quit the browser")
+    static let quitSurveyPositiveTitle = NSLocalizedString("quit-survey.positive-title", value: "Thanks and see you again soon!", comment: "Title shown after positive response in quit survey")
+    static func quitSurveyAutoQuitMessage(seconds: Int) -> String {
+        let localized = NSLocalizedString("quit-survey.auto-quit-message", value: "The browser will automatically quit in %d seconds...", comment: "Message indicating browser will auto-quit. %d is the number of seconds remaining")
+        return String(format: localized, seconds)
+    }
+    static let quitSurveyQuitNow = NSLocalizedString("quit-survey.quit-now", value: "Quit Now", comment: "Button to quit immediately")
+    static let quitSurveyNegativeTitle = NSLocalizedString("quit-survey.negative-title", value: "Mind sharing what went wrong?", comment: "Title for negative feedback form in quit survey")
+    static let quitSurveySelectAllThatApply = NSLocalizedString("quit-survey.select-all-that-apply", value: "Select all that apply", comment: "Instruction text for quit survey feedback options")
+    static let quitSurveyTellUsMore = NSLocalizedString("quit-survey.tell-us-more", value: "Tell us more (optional)", comment: "Label for optional text input in quit survey")
+    static let quitSurveyTellUsMoreHint = NSLocalizedString("quit-survey.tell-us-more-hint", value: "The more details you share, the better!", comment: "Hint text for optional feedback input")
+    static let quitSurveyTextPlaceholder = NSLocalizedString("quit-survey.text-placeholder", value: "Share your thoughts...", comment: "Placeholder text for feedback text input")
+    static let quitSurveyDisclaimer = NSLocalizedString("quit-survey.disclaimer", value: "Reports sent to DuckDuckGo are 100% anonymous and only include your message, the DuckDuckGo browser version, and your macOS version.", comment: "Privacy disclaimer in quit survey")
+    static let quitSurveySubmitAndQuit = NSLocalizedString("quit-survey.submit-and-quit", value: "Submit and Quit", comment: "Button to submit feedback and quit")
+
+    // Quit survey feedback options
+    static let quitSurveyOptionBrowserIsSlow = NSLocalizedString("quit-survey.option.browser-is-slow", value: "Browser is slow", comment: "Quit survey feedback option")
+    static let quitSurveyOptionBrowserDoesntWork = NSLocalizedString("quit-survey.option.browser-doesnt-work", value: "Browser doesn't work as expected", comment: "Quit survey feedback option")
+    static let quitSurveyOptionNoExtensions = NSLocalizedString("quit-survey.option.no-extensions", value: "No extensions", comment: "Quit survey feedback option")
+    static let quitSurveyOptionWebsitesDontWork = NSLocalizedString("quit-survey.option.websites-dont-work", value: "Websites don't work as expected", comment: "Quit survey feedback option")
+    static let quitSurveyOptionImportIssues = NSLocalizedString("quit-survey.option.import-issues", value: "Issues importing my stuff", comment: "Quit survey feedback option")
+    static let quitSurveyOptionNoPrivacyBenefits = NSLocalizedString("quit-survey.option.no-privacy-benefits", value: "Not seeing privacy benefits", comment: "Quit survey feedback option")
+    static let quitSurveyOptionSomethingElse = NSLocalizedString("quit-survey.option.something-else", value: "Something else", comment: "Quit survey feedback option for other issues")
+
     static let otherBookmarksImportedFolderTitle = NSLocalizedString("bookmarks.imported.other.folder.title", value: "Other bookmarks", comment: "Name of the \"Other bookmarks\" folder imported from other browser")
     static let mobileBookmarksImportedFolderTitle = NSLocalizedString("bookmarks.imported.mobile.folder.title", value: "Mobile bookmarks", comment: "Name of the \"Mobile bookmarks\" folder imported from other browser")
     static let bookmarksImportedFolderTitle = NSLocalizedString("bookmarks.imported.folder.title", value: "Bookmarks", comment: "Name of the \"Bookmarks\" folder for bookmarks imported from other browser")

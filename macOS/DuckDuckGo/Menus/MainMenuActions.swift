@@ -321,14 +321,9 @@ extension AppDelegate {
             },
             onResize: { width, height in
                 guard let window = window else { return }
-                let currentFrame = window.frame
-                let newFrame = NSRect(
-                    x: currentFrame.origin.x,
-                    y: currentFrame.origin.y + (currentFrame.height - height), // Adjust Y to keep top position
-                    width: width,
-                    height: height
-                )
-                window.setFrame(newFrame, display: true, animate: true)
+                // For sheets, use origin: .zero - macOS handles sheet positioning automatically
+                let newFrame = NSRect(origin: .zero, size: NSSize(width: width, height: height))
+                window.setFrame(newFrame, display: true, animate: false)
             }
         )
 
@@ -374,14 +369,9 @@ extension AppDelegate {
             },
             onResize: { width, height in
                 guard let window = window else { return }
-                let currentFrame = window.frame
-                let newFrame = NSRect(
-                    x: currentFrame.origin.x,
-                    y: currentFrame.origin.y + (currentFrame.height - height), // Adjust Y to keep top position
-                    width: width,
-                    height: height
-                )
-                window.setFrame(newFrame, display: true, animate: true)
+                // For sheets, use origin: .zero - macOS handles sheet positioning automatically
+                let newFrame = NSRect(origin: .zero, size: NSSize(width: width, height: height))
+                window.setFrame(newFrame, display: true, animate: false)
             }
         )
 

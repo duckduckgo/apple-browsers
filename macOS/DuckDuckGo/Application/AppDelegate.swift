@@ -1337,26 +1337,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             dataClearingPreferences: dataClearingPreferences,
             downloadManager: downloadManager,
             installDate: AppDelegate.firstLaunchDate,
-            persistor: QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)
+            persistor: QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore),
+            reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore)
         )
 
         if decider.shouldShowQuitSurvey {
-            let alert = NSAlert()
-            alert.messageText = "Quit DuckDuckGo?"
-            alert.informativeText = "This is your first time quitting the application."
-            alert.alertStyle = .informational
-            alert.addButton(withTitle: "Quit Now")
-            alert.addButton(withTitle: "Cancel")
-
-            let response = alert.runModal()
-
-            // Mark as shown regardless of user choice
             decider.markQuitSurveyShown()
-
-            if response == .alertSecondButtonReturn {
-                // User clicked "Cancel"
-                return .terminateCancel
-            }
+            showQuitSurvey()
+            return .terminateLater
         }
 
         if !downloadManager.downloads.isEmpty {
@@ -1400,6 +1388,53 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             condition.resolve()
         }
         RunLoop.current.run(until: condition)
+    }
+
+    // MARK: - Quit Survey
+
+    @MainActor private func showQuitSurvey() {
+        var quitSurveyWindow: NSWindow?
+
+        let surveyView = QuitSurveyFlowView(
+            onQuit: {
+                if let parentWindow = quitSurveyWindow?.sheetParent {
+                    parentWindow.endSheet(quitSurveyWindow!)
+                } else {
+                    quitSurveyWindow?.close()
+                }
+                NSApp.reply(toApplicationShouldTerminate: true)
+            },
+            onResize: { width, height in
+                guard let window = quitSurveyWindow else { return }
+                // For sheets, use origin: .zero - macOS handles sheet positioning automatically
+                let newFrame = NSRect(origin: .zero, size: NSSize(width: width, height: height))
+                window.setFrame(newFrame, display: true, animate: false)
+            }
+        )
+
+        let controller = QuitSurveyViewController(rootView: surveyView)
+        quitSurveyWindow = NSWindow(contentViewController: controller)
+
+        guard let window = quitSurveyWindow else { return }
+
+        window.styleMask.remove(.resizable)
+        let windowRect = NSRect(
+            x: 0,
+            y: 0,
+            width: QuitSurveyViewController.Constants.initialWidth,
+            height: QuitSurveyViewController.Constants.initialHeight
+        )
+        window.setFrame(windowRect, display: true)
+
+        // Show as sheet on the main window, or as standalone window if no main window
+        if let parentWindowController = windowControllersManager.lastKeyMainWindowController,
+           let parentWindow = parentWindowController.window {
+            parentWindow.beginSheet(window) { _ in }
+        } else {
+            // Fallback: show as a centered window
+            window.center()
+            window.makeKeyAndOrderFront(nil)
+        }
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {

@@ -123,14 +123,6 @@ extension URL {
     }
 
     static func makeURL(from addressBarString: String) -> URL? {
-        guard Application.appDelegate.featureFlagger.isFeatureOn(.unifiedURLPredictor) else {
-            return makeURLUsingNativePredictionLogic(from: addressBarString)
-        }
-
-        return makeURLUsingUnifiedPredictionLogic(from: addressBarString)
-    }
-
-    static func makeURLUsingUnifiedPredictionLogic(from addressBarString: String) -> URL? {
         do {
             switch try Classifier.classify(input: addressBarString) {
             case .navigate(let url):
@@ -162,16 +154,7 @@ extension URL {
         return nil
     }
 
-    static func makeURL(fromSuggestionPhrase phrase: String, useUnifiedLogic: Bool) -> URL? {
-        guard useUnifiedLogic else {
-            guard let url = URL(trimmedAddressBarString: phrase),
-                  let scheme = url.scheme.map(NavigationalScheme.init),
-                  NavigationalScheme.hypertextSchemes.contains(scheme),
-                  url.isValid else {
-                return nil
-            }
-            return url
-        }
+    static func makeURL(fromSuggestionPhrase phrase: String) -> URL? {
         return .init(trimmedAddressBarString: phrase, useUnifiedLogic: true)
     }
 #endif

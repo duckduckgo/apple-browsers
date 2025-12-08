@@ -44,11 +44,4 @@ struct SuggestionLoadingDeciderTests {
         let decision = decider.shouldLoadSuggestions(for: input)
         #expect(decision == expectation, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
     }
-
-    @Test("Suggestion loading deciding for various inputs with unified URL prediction", arguments: suggestionLoadingArgs)
-    func suggestionLoadingWithUnifiedURLPrediction(input: String, expectation: Bool, line: Int) throws {
-        featureFlagger.enabledFeatureFlags = [.unifiedURLPredictor]
-        let decision = decider.shouldLoadSuggestions(for: input)
-        #expect(decision == expectation, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
-    }
 }

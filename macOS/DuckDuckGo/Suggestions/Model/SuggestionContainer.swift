@@ -42,7 +42,7 @@ struct SuggestionLoadingDecider {
         // * input starts with http[s]
         // * converted URL is root (no path)
         // * the user typed the trailing "/"
-        guard let url = URL.makeURL(fromSuggestionPhrase: input, useUnifiedLogic: featureFlagger.isFeatureOn(.unifiedURLPredictor)) else {
+        guard let url = URL.makeURL(fromSuggestionPhrase: input) else {
             return true
         }
 

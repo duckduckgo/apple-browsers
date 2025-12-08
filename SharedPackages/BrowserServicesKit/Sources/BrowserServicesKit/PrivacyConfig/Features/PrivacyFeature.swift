@@ -112,9 +112,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Hang reporting feature flag
     case hangReporting
 
-    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211260578559159?focus=true
-    case unifiedURLPredictor
-
     /// Enable WebKit page load timing performance reporting
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/XXXXXXXXX?focus=true
     case webKitPerformanceReporting

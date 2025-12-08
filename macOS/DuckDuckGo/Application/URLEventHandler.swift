@@ -57,6 +57,8 @@ final class URLEventHandler {
             urlsToOpen > 0
         }
     }
+
+    @discardableResult
     func applicationDidFinishLaunching() -> AppDidFinishLaunchingResult {
         var result = AppDidFinishLaunchingResult(urlsToOpen: urlsToOpen.count)
         for url in urlsToOpen {

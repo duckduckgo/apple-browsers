@@ -777,7 +777,7 @@ final class AddressBarTextField: NSTextField {
 
     @objc func pasteAndGo(_ menuItem: NSMenuItem) {
         guard let pasteboardString = NSPasteboard.general.string(forType: .string)?.trimmingWhitespace(),
-              let url = URL(trimmedAddressBarString: pasteboardString, useUnifiedLogic: Application.appDelegate.featureFlagger.isFeatureOn(.unifiedURLPredictor)) else {
+              let url = URL(trimmedAddressBarString: pasteboardString, useUnifiedLogic: true) else {
             assertionFailure("Pasteboard doesn't contain URL")
             return
         }
@@ -883,17 +883,7 @@ extension AddressBarTextField {
 
         init(stringValue: String, userTyped: Bool, isSearch: Bool = false) {
 
-            let url: URL? = {
-                let shouldUseUnifiedLogic = Application.appDelegate.featureFlagger.isFeatureOn(.unifiedURLPredictor)
-                guard shouldUseUnifiedLogic else {
-                    let url = URL(trimmedAddressBarString: stringValue)
-                    return url?.isValid == true ? url : nil
-                }
-                /// unified logic does not require additional `isValid` check
-                return URL(trimmedAddressBarString: stringValue, useUnifiedLogic: true)
-            }()
-
-            if let url {
+            if let url = URL(trimmedAddressBarString: stringValue, useUnifiedLogic: true) {
                 var stringValue = stringValue
                 // display punycoded url in readable form when editing
                 if !userTyped,
@@ -1381,7 +1371,7 @@ private extension NSMenuItem {
     static func makePasteAndGoMenuItem() -> NSMenuItem? {
         if let trimmedPasteboardString = NSPasteboard.general.string(forType: .string)?.trimmingWhitespace(),
            trimmedPasteboardString.count > 0 {
-            if URL(trimmedAddressBarString: trimmedPasteboardString, useUnifiedLogic: Application.appDelegate.featureFlagger.isFeatureOn(.unifiedURLPredictor)) != nil {
+            if URL(trimmedAddressBarString: trimmedPasteboardString, useUnifiedLogic: true) != nil {
                 return Self.pasteAndGoMenuItem
             } else {
                 return Self.pasteAndSearchMenuItem

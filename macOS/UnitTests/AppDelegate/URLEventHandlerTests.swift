@@ -24,9 +24,9 @@ import XCTest
 final class URLEventHandlerTests: XCTestCase {
 
     func testWhenInternetEventSentThenItIsHandled() {
-        assertUrlHandled("https://www.example.com")
+        assertUrlHandled("https://www.example.com/")
         assertUrlHandled("https://www.example.com/with/path")
-        assertUrlHandled("https://www.example.com?utm_campaign=Newsletter%202021%20Q1")
+        assertUrlHandled("https://www.example.com/?utm_campaign=Newsletter%202021%20Q1")
         assertUrlHandled("https://www.example.com/with/path?and_params=with%20spaces")
         assertUrlHandled("http://example.com/?a=http%3A%2F%2Fexample.com%2F%3Fa%3Dbc")
     }

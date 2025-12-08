@@ -77,7 +77,7 @@ final class TabViewModelTests: XCTestCase {
 
     @MainActor
     func testWhenURLIsSetThenAddressBarIsUpdated() {
-        let urlString = "http://spreadprivacy.com"
+        let urlString = "http://spreadprivacy.com/"
         let url = URL.makeURL(from: urlString)!
         let tabViewModel = TabViewModel.forTabWithURL(url)
 

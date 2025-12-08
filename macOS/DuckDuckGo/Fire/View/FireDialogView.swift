@@ -226,7 +226,7 @@ struct FireDialogView: ModalView {
             unselectedForeground: Color(designSystemColor: .buttonsSecondaryFillText),
             selectedIconBackground: Color(designSystemColor: .fireDialogPillSelectedSegmentIconBackground),
             selectedSegmentFill: Color(designSystemColor: .fireDialogPillSelectedSegmentBackground),
-            selectedSegmentStroke: Color(designSystemColor: .fireDialogPillSelectedSegmentBorder),
+            selectedSegmentStroke: Color(designSystemColor: .containerBorderPrimary),
             selectedSegmentShadowColor: Color(designSystemColor: .shadowTertiary),
             selectedSegmentShadowRadius: 0,
             selectedSegmentShadowY: 1,

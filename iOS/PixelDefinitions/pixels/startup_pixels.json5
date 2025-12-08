@@ -148,5 +148,26 @@
             }
         ],
         "expires": "2026-02-05"
+    },
+    "m_debug_shared_secure_vault_init_failed": {
+        "description": "Fires when shared SecureVault failed to initialize at app startup",
+        "owners": ["jaceklyp"],
+        "triggers": ["startup"],
+        "suffixes": [
+            ["daily", "platform", "form_factor"],
+            ["platform", "form_factor"]
+        ],
+        "parameters": [
+            "appVersion",
+            "errorCode", 
+            "errorDomain",
+            "underlyingErrorCode",
+            "underlyingErrorDomain",
+            {
+                "key": "autofillEnabled",
+                "description": "Whether autofill is enabled in settings",
+                "type": "boolean"
+            }
+        ]
     }
 }

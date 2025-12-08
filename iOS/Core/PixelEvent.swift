@@ -516,6 +516,7 @@ extension Pixel {
         
         case secureVaultInitFailedError
         case secureVaultFailedToOpenDatabaseError
+        case sharedSecureVaultInitFailed
         
         // Replacing secureVaultIsEnabledCheckedWhenEnabledAndBackgrounded with data protection check
         case secureVaultIsEnabledCheckedWhenEnabledAndDataProtected
@@ -1990,6 +1991,7 @@ extension Pixel.Event {
 
         case .secureVaultInitFailedError: return "m_secure-vault_error_init-failed"
         case .secureVaultFailedToOpenDatabaseError: return "m_secure-vault_error_failed-to-open-database"
+        case .sharedSecureVaultInitFailed: return "m_debug_shared_secure_vault_init_failed"
 
         case .secureVaultIsEnabledCheckedWhenEnabledAndDataProtected: return "m_secure-vault_is-enabled-checked_when-enabled-and-data-protected"
 

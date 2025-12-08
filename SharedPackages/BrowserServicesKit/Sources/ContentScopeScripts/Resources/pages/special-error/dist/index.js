@@ -2601,13 +2601,12 @@
   }
   function App() {
     const { messaging: messaging2 } = useMessaging();
-    const { isDarkMode } = useEnv();
     function didCatch(error) {
       const message = error?.message || "unknown";
       console.error("ErrorBoundary", message);
       messaging2?.reportPageException({ message });
     }
-    return /* @__PURE__ */ _("main", { className: App_default.main, "data-theme": isDarkMode ? "dark" : "light" }, /* @__PURE__ */ _(PageTitle, null), /* @__PURE__ */ _(ErrorBoundary, { didCatch: ({ error }) => didCatch(error), fallback: /* @__PURE__ */ _(ErrorFallback, null) }, /* @__PURE__ */ _(SpecialErrorView, null), /* @__PURE__ */ _(WillThrow, null)));
+    return /* @__PURE__ */ _("main", { className: App_default.main }, /* @__PURE__ */ _(PageTitle, null), /* @__PURE__ */ _(ErrorBoundary, { didCatch: ({ error }) => didCatch(error), fallback: /* @__PURE__ */ _(ErrorFallback, null) }, /* @__PURE__ */ _(SpecialErrorView, null), /* @__PURE__ */ _(WillThrow, null)));
   }
   function WillThrow() {
     const env = useEnv();
@@ -2665,6 +2664,43 @@
     })))), /* @__PURE__ */ _("main", { class: Components_default.main, "data-platform-name": platformName, "data-theme": isDarkMode ? "dark" : "light" }, /* @__PURE__ */ _("h1", null, "Special Error Components"), /* @__PURE__ */ _("section", null, /* @__PURE__ */ _("h2", null, "Warning Heading"), /* @__PURE__ */ _("div", null, /* @__PURE__ */ _(WarningHeading, null))), /* @__PURE__ */ _("section", null, /* @__PURE__ */ _("h2", null, "Warning Content"), /* @__PURE__ */ _("div", null, /* @__PURE__ */ _(WarningContent, null))), /* @__PURE__ */ _("section", null, /* @__PURE__ */ _("h2", null, "Advanced Info Heading"), /* @__PURE__ */ _("div", null, /* @__PURE__ */ _(AdvancedInfoHeading, null))), /* @__PURE__ */ _("section", null, /* @__PURE__ */ _("h2", null, "Advanced Info Content"), /* @__PURE__ */ _("div", null, /* @__PURE__ */ _(AdvancedInfoContent, null))), /* @__PURE__ */ _("section", null, /* @__PURE__ */ _("h2", null, "Leave Site Button"), /* @__PURE__ */ _("div", null, /* @__PURE__ */ _(LeaveSiteButton, null))), /* @__PURE__ */ _("section", null, /* @__PURE__ */ _("h2", null, "Advanced Info Button"), /* @__PURE__ */ _("div", null, /* @__PURE__ */ _(AdvancedInfoButton, { onClick: () => {
     } }))), /* @__PURE__ */ _("section", null, /* @__PURE__ */ _("h2", null, "Visit Site Link"), /* @__PURE__ */ _("div", null, /* @__PURE__ */ _(VisitSiteLink, null))), /* @__PURE__ */ _("section", null, /* @__PURE__ */ _("h2", null, "Warning"), /* @__PURE__ */ _("div", null, /* @__PURE__ */ _(Warning, { advancedInfoVisible: false, advancedButtonHandler: () => {
     } }))), /* @__PURE__ */ _("section", null, /* @__PURE__ */ _("h2", null, "Advanced Info"), /* @__PURE__ */ _("div", null, /* @__PURE__ */ _(AdvancedInfo, null))), /* @__PURE__ */ _("section", null, /* @__PURE__ */ _("h2", null, "Special Error View"), /* @__PURE__ */ _("div", null, /* @__PURE__ */ _(SpecialErrorView, null)))));
+  }
+
+  // pages/special-error/app/providers/ThemeProvider.js
+  var ThemeContext = K({
+    /** @type {BrowserTheme} */
+    theme: "light",
+    /** @type {ThemeVariant} */
+    themeVariant: "default"
+  });
+  function ThemeProvider({ children, initialTheme, initialThemeVariant }) {
+    const { isDarkMode } = useEnv();
+    const { messaging: messaging2 } = useMessaging();
+    const [explicitTheme, setExplicitTheme] = d2(
+      /** @type {BrowserTheme | undefined} */
+      void 0
+    );
+    const [explicitThemeVariant, setExplicitThemeVariant] = d2(
+      /** @type {ThemeVariant | undefined} */
+      void 0
+    );
+    y2(() => {
+      if (!messaging2) return;
+      const unsubscribe = messaging2.onThemeUpdate((data) => {
+        setExplicitTheme(data.theme);
+        setExplicitThemeVariant(data.themeVariant);
+      });
+      return unsubscribe;
+    }, [messaging2]);
+    const theme = explicitTheme ?? initialTheme ?? (isDarkMode ? "dark" : "light");
+    const themeVariant = explicitThemeVariant ?? initialThemeVariant ?? "default";
+    y2(() => {
+      document.body.dataset.theme = theme;
+    }, [theme]);
+    y2(() => {
+      document.body.dataset.themeVariant = themeVariant;
+    }, [themeVariant]);
+    return /* @__PURE__ */ _(ThemeContext.Provider, { value: { theme, themeVariant } }, children);
   }
 
   // shared/call-with-retry.js
@@ -2734,12 +2770,12 @@
     if (!root) throw new Error("could not render, root element missing");
     if (environment.display === "app") {
       E(
-        /* @__PURE__ */ _(EnvironmentProvider, { debugState: environment.debugState, injectName: environment.injectName, willThrow: environment.willThrow }, /* @__PURE__ */ _(UpdateEnvironment, { search: window.location.search }), /* @__PURE__ */ _(TranslationProvider, { translationObject: strings, fallback: special_error_default, textLength: environment.textLength }, /* @__PURE__ */ _(MessagingProvider, { messaging: messaging2 }, /* @__PURE__ */ _(SettingsProvider, { settings }, /* @__PURE__ */ _(SpecialErrorProvider, { specialError }, /* @__PURE__ */ _(App, null)))))),
+        /* @__PURE__ */ _(EnvironmentProvider, { debugState: environment.debugState, injectName: environment.injectName, willThrow: environment.willThrow }, /* @__PURE__ */ _(UpdateEnvironment, { search: window.location.search }), /* @__PURE__ */ _(TranslationProvider, { translationObject: strings, fallback: special_error_default, textLength: environment.textLength }, /* @__PURE__ */ _(MessagingProvider, { messaging: messaging2 }, /* @__PURE__ */ _(ThemeProvider, { initialTheme: init2.theme, initialThemeVariant: init2.themeVariant }, /* @__PURE__ */ _(SettingsProvider, { settings }, /* @__PURE__ */ _(SpecialErrorProvider, { specialError }, /* @__PURE__ */ _(App, null))))))),
         root
       );
     } else if (environment.display === "components") {
       E(
-        /* @__PURE__ */ _(EnvironmentProvider, { debugState: false, injectName: environment.injectName }, /* @__PURE__ */ _(TranslationProvider, { translationObject: strings, fallback: special_error_default, textLength: environment.textLength }, /* @__PURE__ */ _(SettingsProvider, { settings }, /* @__PURE__ */ _(SpecialErrorProvider, { specialError }, /* @__PURE__ */ _(Components, null))))),
+        /* @__PURE__ */ _(EnvironmentProvider, { debugState: false, injectName: environment.injectName }, /* @__PURE__ */ _(TranslationProvider, { translationObject: strings, fallback: special_error_default, textLength: environment.textLength }, /* @__PURE__ */ _(ThemeProvider, { initialTheme: init2.theme, initialThemeVariant: init2.themeVariant }, /* @__PURE__ */ _(SettingsProvider, { settings }, /* @__PURE__ */ _(SpecialErrorProvider, { specialError }, /* @__PURE__ */ _(Components, null)))))),
         root
       );
     }
@@ -2821,6 +2857,14 @@
      */
     advancedInfo() {
       this.messaging.notify("advancedInfo");
+    }
+    /**
+     * Subscribe to theme update notifications from the native layer.
+     * @param {(data: import('../types/special-error.ts').OnThemeUpdateSubscribe) => void} callback
+     * @returns {() => void} Unsubscribe function
+     */
+    onThemeUpdate(callback) {
+      return this.messaging.subscribe("onThemeUpdate", callback);
     }
   };
   var baseEnvironment = new Environment().withInjectName(document.documentElement.dataset.platform).withEnv("production");

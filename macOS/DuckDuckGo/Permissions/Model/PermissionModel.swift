@@ -216,6 +216,11 @@ final class PermissionModel {
         // If Always Allow/Deny for the current host: Grant/Revoke the permission
         guard webView?.url?.host?.droppingWwwPrefix() == domain else { return }
 
+        // If decision changed to "allow", remove from removedPermissions so updatePermissions() can track it again
+        if decision == .allow {
+            removedPermissions.remove(permissionType)
+        }
+
         switch (decision, self.permissions[permissionType]) {
         case (.deny, .some):
             self.revoke(permissionType)

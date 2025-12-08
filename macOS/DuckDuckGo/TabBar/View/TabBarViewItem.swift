@@ -1049,9 +1049,11 @@ final class TabBarViewItem: NSCollectionViewItem {
     func clear() {
         clearSubscriptions()
         stopActivePermissionIconTimer()
+        // Set usedPermissions first to trigger updateActivePermissionIcons() with correct wasShowingPermissionIcon
+        usedPermissions = Permissions()
+        // Then clear activePermissionTypes after the didSet has processed
         activePermissionTypes = []
         currentActivePermissionIndex = 0
-        usedPermissions = Permissions()
         isLeftToSelected = false
         cell.clear()
     }

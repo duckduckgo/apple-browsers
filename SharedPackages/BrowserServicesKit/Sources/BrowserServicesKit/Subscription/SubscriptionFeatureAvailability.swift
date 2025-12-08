@@ -19,44 +19,46 @@
 import Foundation
 import Subscription
 
+public enum SubscriptionPageFeatureFlag {
+    case paidAIChat
+    case tierMessaging
+    case proTierPurchase
+    case supportsAlternateStripePaymentFlow
+    case subscriptionPurchaseWidePixelMeasurement
+}
+
+public protocol SubscriptionPageFeatureFlagProviding {
+    func isEnabled(_ flag: SubscriptionPageFeatureFlag) -> Bool
+}
+
 public protocol SubscriptionFeatureAvailability {
     var isSubscriptionPurchaseAllowed: Bool { get }
     var isPaidAIChatEnabled: Bool { get }
+    var isTierMessagingEnabled: Bool { get }
+    var isProTierPurchaseEnabled: Bool { get }
     /// Indicates whether the alternate Stripe payment flow is supported for subscriptions.
     var isSupportsAlternateStripePaymentFlowEnabled: Bool { get }
     var isSubscriptionPurchaseWidePixelMeasurementEnabled: Bool { get }
-    var isSubscriptionRestoreWidePixelMeasurementEnabled: Bool { get }
 }
 
 public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAvailability {
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let purchasePlatform: SubscriptionEnvironment.PurchasePlatform
-    private let paidAIChatFlagStatusProvider: () -> Bool
-    private let supportsAlternateStripePaymentFlowStatusProvider: () -> Bool
-    private let isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: () -> Bool
-    private let isSubscriptionRestoreWidePixelMeasurementEnabledProvider: () -> Bool
+    private let featureFlagProvider: SubscriptionPageFeatureFlagProviding
 
     /// Initializes a new instance of `DefaultSubscriptionFeatureAvailability`.
     ///
     /// - Parameters:
     ///   - privacyConfigurationManager: The privacy configuration manager used to check feature availability.
     ///   - purchasePlatform: The platform through which purchases are made (App Store or Stripe).
-    ///   - paidAIChatFlagStatusProvider: A closure that returns whether paid AI chat features are enabled.
-    ///   - supportsAlternateStripePaymentFlowStatusProvider: A closure that returns whether the alternate Stripe payment flow is supported.
-    ///   - isSubscriptionRestoreWidePixelMeasurementEnabledProvider: A closure that returns whether the restore wide pixel measurement is supported.
+    ///   - featureFlagProvider: A provider that answers queries about feature flag status.
     public init(privacyConfigurationManager: PrivacyConfigurationManaging,
                 purchasePlatform: SubscriptionEnvironment.PurchasePlatform,
-                paidAIChatFlagStatusProvider: @escaping () -> Bool,
-                supportsAlternateStripePaymentFlowStatusProvider: @escaping () -> Bool,
-                isSubscriptionPurchaseWidePixelMeasurementEnabledProvider: @escaping () -> Bool,
-                isSubscriptionRestoreWidePixelMeasurementEnabledProvider: @escaping () -> Bool = { false })  {
+                featureFlagProvider: SubscriptionPageFeatureFlagProviding)  {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.purchasePlatform = purchasePlatform
-        self.paidAIChatFlagStatusProvider = paidAIChatFlagStatusProvider
-        self.supportsAlternateStripePaymentFlowStatusProvider = supportsAlternateStripePaymentFlowStatusProvider
-        self.isSubscriptionPurchaseWidePixelMeasurementEnabledProvider = isSubscriptionPurchaseWidePixelMeasurementEnabledProvider
-        self.isSubscriptionRestoreWidePixelMeasurementEnabledProvider = isSubscriptionRestoreWidePixelMeasurementEnabledProvider
+        self.featureFlagProvider = featureFlagProvider
     }
 
     public var isSubscriptionPurchaseAllowed: Bool {
@@ -73,7 +75,15 @@ public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAv
     }
 
     public var isPaidAIChatEnabled: Bool {
-        return paidAIChatFlagStatusProvider()
+        return featureFlagProvider.isEnabled(.paidAIChat)
+    }
+
+    public var isTierMessagingEnabled: Bool {
+        return featureFlagProvider.isEnabled(.tierMessaging)
+    }
+
+    public var isProTierPurchaseEnabled: Bool {
+        return featureFlagProvider.isEnabled(.proTierPurchase)
     }
 
     /// Indicates whether the alternate Stripe payment flow is supported for subscriptions.
@@ -81,15 +91,11 @@ public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAv
     ///
     /// - Returns: `true` if the alternate Stripe payment flow is supported, `false` otherwise.
     public var isSupportsAlternateStripePaymentFlowEnabled: Bool {
-        supportsAlternateStripePaymentFlowStatusProvider()
+        featureFlagProvider.isEnabled(.supportsAlternateStripePaymentFlow)
     }
 
     public var isSubscriptionPurchaseWidePixelMeasurementEnabled: Bool {
-        isSubscriptionPurchaseWidePixelMeasurementEnabledProvider()
-    }
-
-    public var isSubscriptionRestoreWidePixelMeasurementEnabled: Bool {
-        isSubscriptionRestoreWidePixelMeasurementEnabledProvider()
+        featureFlagProvider.isEnabled(.subscriptionPurchaseWidePixelMeasurement)
     }
 
     // MARK: - Conditions

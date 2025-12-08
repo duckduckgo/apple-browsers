@@ -83,6 +83,7 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     private weak var contentContainerViewTrailingConstraint: NSLayoutConstraint?
 
     let appSettings: AppSettings
+    private let featureFlagger: FeatureFlagger
 
     // MARK: - Manager Components
 
@@ -99,11 +100,13 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     internal init(switchBarHandler: any SwitchBarHandling,
                   switchBarSubmissionMetrics: SwitchBarSubmissionMetricsProviding = SwitchBarSubmissionMetrics(),
-                  appSettings: AppSettings = AppDependencyProvider.shared.appSettings) {
+                  appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
+                  featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.switchBarHandler = switchBarHandler
         self.switchBarSubmissionMetrics = switchBarSubmissionMetrics
         self.daxLogoManager = DaxLogoManager()
         self.appSettings = appSettings
+        self.featureFlagger = featureFlagger
         self.isUsingTopBarPosition = appSettings.currentAddressBarPosition == .top || isLandscapeOrientation
         self.isAdjustedForTopBar = self.isUsingTopBarPosition
 
@@ -119,6 +122,9 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
     override func viewDidLoad() {
         super.viewDidLoad()
 
+        if switchBarHandler.isUsingFadeOutAnimation {
+            switchBarHandler.updateBarPosition(isTop: isUsingTopBarPosition)
+        }
         setupView()
         installComponents()
         setupSubscriptions()
@@ -268,17 +274,18 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         let manager = SwipeContainerManager(switchBarHandler: switchBarHandler)
         manager.installInViewController(self, asSubviewOf: contentContainerView, barView: switchBarVC.view, isTopBarPosition: isUsingTopBarPosition)
         manager.delegate = self
+        manager.fadeOutDelegate = self
         swipeContainerManager = manager
     }
 
     private func installSuggestionsTray() {
         guard let dependencies = suggestionTrayDependencies,
-              let swipeContainerViewController = swipeContainerManager?.swipeContainerViewController,
-              let searchContainer = swipeContainerViewController.searchPageContainer else { return }
+              let containerViewController = swipeContainerManager?.containerViewController,
+              let searchContainer = swipeContainerManager?.searchPageContainer else { return }
 
         let manager = SuggestionTrayManager(switchBarHandler: switchBarHandler, dependencies: dependencies)
         manager.delegate = self
-        manager.installInContainerView(searchContainer, parentViewController: swipeContainerViewController)
+        manager.installInContainerView(searchContainer, parentViewController: containerViewController)
         suggestionTrayManager = manager
     }
 
@@ -368,11 +375,11 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
 
     private func updateSwipeContainerSafeArea() {
         if isUsingTopBarPosition {
-            swipeContainerManager?.swipeContainerViewController.additionalSafeAreaInsets.bottom = 0
+            swipeContainerManager?.containerViewController.additionalSafeAreaInsets.bottom = 0
         } else {
             switchBarVC.view.layoutIfNeeded()
             let barHeigthAboveSafeArea = switchBarVC.view.bounds.height - switchBarVC.view.safeAreaInsets.bottom
-            swipeContainerManager?.swipeContainerViewController.additionalSafeAreaInsets.bottom = barHeigthAboveSafeArea
+            swipeContainerManager?.containerViewController.additionalSafeAreaInsets.bottom = barHeigthAboveSafeArea
         }
     }
 
@@ -474,7 +481,13 @@ final class OmniBarEditingStateViewController: UIViewController, OmniBarEditingS
         let isHorizontallyCompactLayoutEnabled = requiresHorizontallyCompactLayout(for: view.bounds.size)
 
         let isHomeDaxVisible = !shouldDisplaySuggestionTray && !shouldDisplayFavoritesOverlay && !isHorizontallyCompactLayoutEnabled
-        let isAIDaxVisible = !shouldDisplaySuggestionTray && !isHorizontallyCompactLayoutEnabled
+
+        let isAIDaxVisible: Bool
+        if switchBarHandler.isUsingFadeOutAnimation {
+            isAIDaxVisible = !isHorizontallyCompactLayoutEnabled
+        } else {
+            isAIDaxVisible = !shouldDisplaySuggestionTray && !isHorizontallyCompactLayoutEnabled
+        }
 
         daxLogoManager.updateVisibility(isHomeDaxVisible: isHomeDaxVisible, isAIDaxVisible: isAIDaxVisible)
     }
@@ -506,6 +519,26 @@ extension OmniBarEditingStateViewController: SwipeContainerViewControllerDelegat
         switchBarVC.updateScrollProgress(progress)
 
         daxLogoManager.updateSwipeProgress(progress)
+    }
+}
+
+// MARK: - FadeOutContainerViewControllerDelegate
+
+extension OmniBarEditingStateViewController: FadeOutContainerViewControllerDelegate {
+
+    func fadeOutContainerViewController(_ controller: FadeOutContainerViewController, didTransitionToMode mode: TextEntryMode) {
+        switchBarHandler.setToggleState(mode)
+    }
+
+    func fadeOutContainerViewController(_ controller: FadeOutContainerViewController, didUpdateTransitionProgress progress: CGFloat) {
+        // Forward the transition progress to the switch bar to animate the toggle
+        switchBarVC.updateScrollProgress(progress)
+
+        daxLogoManager.updateSwipeProgress(progress)
+    }
+
+    func fadeOutContainerViewControllerIsShowingSuggestions(_ controller: FadeOutContainerViewController) -> Bool {
+        return suggestionTrayManager?.shouldDisplaySuggestionTray ?? false
     }
 }
 

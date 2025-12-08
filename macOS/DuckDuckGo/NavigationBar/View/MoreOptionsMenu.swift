@@ -622,7 +622,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     private func addSubscriptionItems() {
         func shouldHideDueToNoProduct() -> Bool {
             let platform = subscriptionManager.currentEnvironment.purchasePlatform
-            return platform == .appStore && subscriptionManager.canPurchase == false
+            return platform == .appStore && subscriptionManager.hasAppStoreProductsAvailable == false
         }
 
         // Check if user is eligible for Win-back Offer

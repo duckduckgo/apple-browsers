@@ -99,7 +99,8 @@ extension AIChatMessageHandler {
                                             supportsPageContext: featureFlagger.isFeatureOn(.aiChatPageContext),
                                             supportsAIChatFullMode: false,
                                             appVersion: appVersion,
-                                            supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint)
+                                            supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint,
+                                            supportsOpenAIChatLink: defaults.supportsOpenAIChatLink)
         } else {
             return AIChatNativeConfigValues(isAIChatHandoffEnabled: defaults.isAIChatHandoffEnabled,
                                             supportsClosingAIChat: defaults.supportsClosingAIChat,
@@ -112,7 +113,8 @@ extension AIChatMessageHandler {
                                             supportsPageContext: defaults.supportsPageContext,
                                             supportsAIChatFullMode: defaults.supportsAIChatFullMode,
                                             appVersion: appVersion,
-                                            supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint)
+                                            supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint,
+                                            supportsOpenAIChatLink: defaults.supportsOpenAIChatLink)
         }
     }
 

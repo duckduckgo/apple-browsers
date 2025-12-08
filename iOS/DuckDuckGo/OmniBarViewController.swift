@@ -57,6 +57,7 @@ class OmniBarViewController: UIViewController, OmniBar {
     private(set) lazy var state: OmniBarState = SmallOmniBarState.HomeNonEditingState(dependencies: dependencies, isLoading: false)
 
     internal var textFieldTapped = true
+    internal var textEntryMode: TextEntryMode = .search
 
     // MARK: - Animation
 
@@ -250,9 +251,6 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.onAIChatLeftButtonPressed = { [weak self] in
             self?.onAIChatLeftButtonPressed()
         }
-        barView.onAIChatRightButtonPressed = { [weak self] in
-            self?.onAIChatRightButtonPressed()
-        }
         barView.onAIChatBrandingPressed = { [weak self] in
             self?.onAIChatBrandingPressed()
         }
@@ -337,11 +335,13 @@ class OmniBarViewController: UIViewController, OmniBar {
         text = query
         textDidChange()
     }
-
-    func beginEditing(animated: Bool) {
+    
+    func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode) {
         textFieldTapped = false
+        self.textEntryMode = textEntryMode
         defer {
             textFieldTapped = true
+            self.textEntryMode = .search
         }
 
         textField.becomeFirstResponder()
@@ -669,13 +669,18 @@ class OmniBarViewController: UIViewController, OmniBar {
         let state = dependencies.mobileCustomization.state
         guard state.isEnabled else {
             barView.customizableButton.setImage(DesignSystemImages.Glyphs.Size24.shareApple, for: .normal)
-            barView.isCustomizableButtonHidden = false
+            barView.isCustomizableButtonHidden = !self.state.showCustomizableButton
             return
         }
 
         let largeIcon = dependencies.mobileCustomization.largeIconForButton(state.currentAddressBarButton)
         barView.customizableButton.setImage(largeIcon, for: .normal)
-        barView.isCustomizableButtonHidden = largeIcon == nil
+
+        if self.state.showCustomizableButton {
+            barView.isCustomizableButtonHidden = largeIcon == nil
+        } else {
+            barView.isCustomizableButtonHidden = true
+        }
     }
 
     func onQuerySubmitted() {
@@ -856,10 +861,6 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     private func onAIChatLeftButtonPressed() {
         omniDelegate?.onAIChatLeftButtonPressed()
-    }
-
-    private func onAIChatRightButtonPressed() {
-        omniDelegate?.onAIChatRightButtonPressed()
     }
 
     private func onAIChatBrandingPressed() {

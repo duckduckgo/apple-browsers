@@ -408,7 +408,7 @@ final class PreferencesSidebarModel: ObservableObject {
     private func makeSubscriptionState() async -> PreferencesSidebarSubscriptionState {
         // This requires follow-up work:
         // https://app.asana.com/1/137249556945/task/1210799126744217
-        let shouldHideSubscriptionPurchase = subscriptionManager.currentEnvironment.purchasePlatform == .appStore && subscriptionManager.canPurchase == false
+        let shouldHideSubscriptionPurchase = subscriptionManager.currentEnvironment.purchasePlatform == .appStore && subscriptionManager.hasAppStoreProductsAvailable == false
 
         let isIdentityTheftRestorationAvailable = await (try? subscriptionManager.isFeatureIncludedInSubscription(.identityTheftRestoration)) ?? false
         let isIdentityTheftRestorationEnabled = await (try? subscriptionManager.isFeatureEnabled(.identityTheftRestoration)) ?? false

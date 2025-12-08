@@ -30,22 +30,19 @@ internal class ChromiumDataImporter: DataImporter {
     private var source: DataImport.Source {
         profile.browser.importSource
     }
-    private let featureFlagger: FeatureFlagger
 
-    init(profile: DataImport.BrowserProfile, loginImporter: LoginImporter?, bookmarkImporter: BookmarkImporter, faviconManager: FaviconManagement, featureFlagger: FeatureFlagger) {
+    init(profile: DataImport.BrowserProfile, loginImporter: LoginImporter?, bookmarkImporter: BookmarkImporter, faviconManager: FaviconManagement) {
         self.profile = profile
         self.loginImporter = loginImporter
         self.bookmarkImporter = bookmarkImporter
         self.faviconManager = faviconManager
-        self.featureFlagger = featureFlagger
     }
 
-    convenience init(profile: DataImport.BrowserProfile, loginImporter: LoginImporter?, bookmarkImporter: BookmarkImporter, featureFlagger: FeatureFlagger) {
+    convenience init(profile: DataImport.BrowserProfile, loginImporter: LoginImporter?, bookmarkImporter: BookmarkImporter) {
         self.init(profile: profile,
                   loginImporter: loginImporter,
                   bookmarkImporter: bookmarkImporter,
-                  faviconManager: NSApp.delegateTyped.faviconManager,
-                  featureFlagger: featureFlagger)
+                  faviconManager: NSApp.delegateTyped.faviconManager)
     }
 
     var importableTypes: [DataImport.DataType] {
@@ -109,17 +106,13 @@ internal class ChromiumDataImporter: DataImporter {
                 return summary
             }
 
-            var markRootBookmarksAsFavoritesByDefault = true
-            if featureFlagger.isFeatureOn(.importChromeShortcuts) {
-                markRootBookmarksAsFavoritesByDefault = false
-                let newTabShortcuts = fetchShortcutsAsFavorites()
-                FavoritesImportProcessor.mergeBookmarksAndFavorites(bookmarks: &importedBookmarks, favorites: newTabShortcuts)
-            }
+            let newTabShortcuts = fetchShortcutsAsFavorites()
+            FavoritesImportProcessor.mergeBookmarksAndFavorites(bookmarks: &importedBookmarks, favorites: newTabShortcuts)
 
             try updateProgress(.importingBookmarks(numberOfBookmarks: importedBookmarks.numberOfBookmarks,
                                                    fraction: passwordsFraction + dataTypeFraction * 0.5))
 
-            let bookmarksSummary = bookmarkImporter.importBookmarks(importedBookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: markRootBookmarksAsFavoritesByDefault, maxFavoritesCount: nil)
+            let bookmarksSummary = bookmarkImporter.importBookmarks(importedBookmarks, source: .thirdPartyBrowser(source), markRootBookmarksAsFavoritesByDefault: false, maxFavoritesCount: nil)
 
             await importFavicons()
 

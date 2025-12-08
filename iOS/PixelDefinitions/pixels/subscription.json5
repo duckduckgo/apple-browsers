@@ -76,6 +76,58 @@
         ]
     },
 
+    // Tier Options Pixels
+    "m_subscription_tier-options_requested": {
+        "description": "Fired when subscription tier options are requested from the purchase page",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_subscription_tier-options_success": {
+        "description": "Fired when subscription tier options are successfully retrieved",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_subscription_tier-options_failure": {
+        "description": "Fired when subscription tier options fail to be retrieved",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "d",
+                "description": "Error type: com.duckduckgo.subscription.StoreError",
+                "type": "string"
+            },
+            {
+                "key": "e",
+                "description": "Error code: 12201, 12202, 12203, 12204, 12205, 12206",
+                "type": "string"
+            },
+            {
+                "key": "ud",
+                "description": "Underlying Error type: com.duckduckgo.subscription.SubscriptionEndpointServiceError",
+                "type": "string"
+            },
+            {
+                "key": "ue",
+                "description": "Underlying Error code: 12300, 12301, 12302",
+                "type": "string"
+            }
+        ]
+    },
+    "m_subscription_tier-options_unexpected-pro-tier": {
+        "description": "Fired when Pro tier products are unexpectedly returned when they should be filtered out",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+
     // Win-back Offer Pixels - Impressions
     "m_privacy-pro_winback_launch_prompt_shown": {
         "description": "Fired when the win-back offer launch prompt is displayed to an expired subscriber",

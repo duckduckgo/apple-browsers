@@ -342,7 +342,6 @@ final class SubscriptionFlowViewModel: ObservableObject {
 
     @MainActor
     func restoreAppstoreTransaction() {
-        let isSubscriptionRestoreWidePixelMeasurementEnabled = featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement)
         let data = SubscriptionRestoreWideEventData(
             restorePlatform: .purchaseBackgroundTask,
             contextData: WideEventContextData(name: SubscriptionRestoreFunnelOrigin.prePurchaseCheck.rawValue)
@@ -351,18 +350,14 @@ final class SubscriptionFlowViewModel: ObservableObject {
         clearTransactionError()
         
         Task {
-            if isSubscriptionRestoreWidePixelMeasurementEnabled {
-                data.appleAccountRestoreDuration = WideEvent.MeasuredInterval.startingNow()
-                wideEvent.startFlow(data)
-            }
+            data.appleAccountRestoreDuration = WideEvent.MeasuredInterval.startingNow()
+            wideEvent.startFlow(data)
             
             do {
                 try await subFeature.restoreAccountFromAppStorePurchase()
                 
-                if isSubscriptionRestoreWidePixelMeasurementEnabled {
-                    data.appleAccountRestoreDuration?.complete()
-                    wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
-                }
+                data.appleAccountRestoreDuration?.complete()
+                wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
                 
                 backButtonEnabled(false)
                 await webViewModel.navigationCoordinator.reload()
@@ -375,10 +370,8 @@ final class SubscriptionFlowViewModel: ObservableObject {
                     data.errorData = .init(error: error)
                 }
                 
-                if isSubscriptionRestoreWidePixelMeasurementEnabled {
-                    data.appleAccountRestoreDuration?.complete()
-                    wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
-                }
+                data.appleAccountRestoreDuration?.complete()
+                wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
             }
         }
     }

@@ -152,10 +152,10 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         omniBarView.isUsingSmallTopSpacing = false
     }
 
-    override func beginEditing(animated: Bool) {
+    override func beginEditing(animated: Bool, forTextEntryMode textEntryMode: TextEntryMode) {
         animateNextEditingTransition = animated
 
-        super.beginEditing(animated: animated)
+        super.beginEditing(animated: animated, forTextEntryMode: textEntryMode)
         
         animateNextEditingTransition = true
     }
@@ -188,6 +188,7 @@ final class DefaultOmniBarViewController: OmniBarViewController {
         guard let suggestionsDependencies = dependencies.suggestionTrayDependencies else { return }
 
         let switchBarHandler = createSwitchBarHandler(for: textField)
+        switchBarHandler.setToggleState(textEntryMode)
         let shouldAutoSelectText = shouldAutoSelectTextForUrl(textField)
 
         let editingStateViewController = OmniBarEditingStateViewController(switchBarHandler: switchBarHandler)

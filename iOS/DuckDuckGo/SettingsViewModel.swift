@@ -69,6 +69,7 @@ final class SettingsViewModel: ObservableObject {
     weak var autoClearActionDelegate: SettingsAutoClearActionDelegate?
     let mobileCustomization: MobileCustomization
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
+    var browsingMenuSheetCapability: BrowsingMenuSheetCapable
 
     // Subscription Dependencies
     let isAuthV2Enabled: Bool
@@ -156,10 +157,6 @@ final class SettingsViewModel: ObservableObject {
 
     var isUpdatedAIFeaturesSettingsEnabled: Bool {
         featureFlagger.isFeatureOn(.aiFeaturesSettingsUpdate)
-    }
-
-    var embedSERPSettings: Bool {
-        featureFlagger.isFeatureOn(.embeddedSERPSettings)
     }
 
     var isDuckAiDataClearingEnabled: Bool {
@@ -276,7 +273,7 @@ final class SettingsViewModel: ObservableObject {
             }
         )
     }
-    
+
     var refreshButtonPositionBinding: Binding<RefreshButtonPosition> {
         Binding<RefreshButtonPosition>(
             get: {
@@ -296,12 +293,14 @@ final class SettingsViewModel: ObservableObject {
                 self.state.showMenuInSheet
             },
             set: {
-                if let overrides = self.featureFlagger.localOverrides,
-                    overrides.override(for: FeatureFlag.browsingMenuSheetPresentation) != $0 {
-
-                    overrides.toggleOverride(for: FeatureFlag.browsingMenuSheetPresentation)
-                    self.state.showMenuInSheet = $0
+                if $0 {
+                    DailyPixel.fireDailyAndCount(pixel: .experimentalBrowsingMenuEnabled)
+                } else {
+                    DailyPixel.fireDailyAndCount(pixel: .experimentalBrowsingMenuDisabled)
                 }
+                
+                self.browsingMenuSheetCapability.setEnabled($0)
+                self.state.showMenuInSheet = self.browsingMenuSheetCapability.isEnabled
             }
         )
     }
@@ -663,7 +662,8 @@ final class SettingsViewModel: ObservableObject {
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
          mobileCustomization: MobileCustomization,
-         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
+         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
+         browsingMenuSheetCapability: BrowsingMenuSheetCapable
     ) {
 
         self.state = SettingsState.defaults
@@ -696,6 +696,7 @@ final class SettingsViewModel: ObservableObject {
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.mobileCustomization = mobileCustomization
         self.userScriptsDependencies = userScriptsDependencies
+        self.browsingMenuSheetCapability = browsingMenuSheetCapability
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
     }
@@ -728,7 +729,7 @@ extension SettingsViewModel {
             isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
             refreshButtonPosition: appSettings.currentRefreshButtonPosition,
             mobileCustomization: mobileCustomization.state,
-            showMenuInSheet: featureFlagger.isFeatureOn(.browsingMenuSheetPresentation),
+            showMenuInSheet: browsingMenuSheetCapability.isEnabled,
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
             autoclearDataEnabled: AutoClearSettingsModel(settings: appSettings) != nil,
@@ -1203,7 +1204,7 @@ extension SettingsViewModel {
         }
 
         // Update if can purchase based on App Store product availability
-        updatedSubscription.canPurchase = subscriptionAuthV1toV2Bridge.canPurchase
+        updatedSubscription.hasAppStoreProductsAvailable = subscriptionAuthV1toV2Bridge.hasAppStoreProductsAvailable
 
         // Update if user is signed in based on the presence of token
         updatedSubscription.isSignedIn = subscriptionAuthV1toV2Bridge.isUserAuthenticated
@@ -1487,6 +1488,18 @@ extension SettingsViewModel {
             get: { self.aiChatSettings.isAIChatTabSwitcherUserSettingsEnabled },
             set: { newValue in
                 self.aiChatSettings.enableAIChatTabSwitcherUserSettings(enable: newValue)
+            }
+        )
+    }
+    
+    var isAIChatFullModeEnabled: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.aiChatSettings.isAIChatFullModeEnabled },
+            set: { newValue in
+                withAnimation {
+                    self.objectWillChange.send()
+                    self.aiChatSettings.enableAIChatFullModeSetting(enable: newValue)
+                }
             }
         )
     }

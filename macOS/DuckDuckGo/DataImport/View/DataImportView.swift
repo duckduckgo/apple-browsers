@@ -22,14 +22,13 @@ import BrowserServicesKit
 import PixelKit
 import DesignResourcesKitIcons
 import UniformTypeIdentifiers
+import SwiftUIExtensions
 
 @MainActor
 struct DataImportView: ModalView {
-    private let isDataTypePickerExpanded: Bool
     @Environment(\.dismiss) private var dismiss
 
     @State var model: DataImportViewModel
-    let title: String
 
     let importFlowLauncher: DataImportFlowRelaunching
 
@@ -38,11 +37,10 @@ struct DataImportView: ModalView {
 
     private let syncFeatureVisibility: SyncFeatureVisibility
 
-    init(model: DataImportViewModel = DataImportViewModel(), importFlowLauncher: DataImportFlowRelaunching, title: String = UserText.importDataTitle, isDataTypePickerExpanded: Bool, syncFeatureVisibility: SyncFeatureVisibility) {
+    init(model: DataImportViewModel? = nil, importFlowLauncher: DataImportFlowRelaunching, syncFeatureVisibility: SyncFeatureVisibility) {
+        let model = model ?? DataImportViewModel(syncFeatureVisibility: syncFeatureVisibility)
         self._model = State(initialValue: model)
         self.importFlowLauncher = importFlowLauncher
-        self.title = title
-        self.isDataTypePickerExpanded = isDataTypePickerExpanded
         self.syncFeatureVisibility = syncFeatureVisibility
     }
 
@@ -65,23 +63,17 @@ struct DataImportView: ModalView {
 #endif
     }
 
-    private var alignment: HorizontalAlignment {
-        if case .summary = model.screen {
-            return .leading
-        } else {
-            return .center
-        }
-    }
-
     var body: some View {
-        VStack(alignment: alignment, spacing: 0) {
+        VStack(alignment: .center, spacing: 0) {
             switch model.screen {
-            case .profileAndDataTypesPicker:
+            case .sourceAndDataTypesPicker:
                 ImportSourcePickerView(
                     availableSources: model.availableImportSources,
                     selectedSource: model.importSource,
                     selectedImportTypes: Array(model.selectedDataTypes),
+                    selectableImportTypes: Array(model.selectableImportTypes),
                     shouldShowSyncFeature: syncFeatureVisibility.shouldShowSyncFeature,
+                    isPickerExpanded: model.isPickerExpanded,
                     onSourceSelected: { source in
                         model.update(with: source)
                     },
@@ -89,35 +81,66 @@ struct DataImportView: ModalView {
                         model.setDataType(type, selected: isSelected)
                     },
                     onSyncSelected: {
-                        guard case .show(let syncLauncher) = syncFeatureVisibility else {
-                            return
+                        model.launchSync(using: dismiss.callAsFunction) {
+                            importFlowLauncher.relaunchDataImport(model: model)
                         }
-                        syncLauncher.startDeviceSyncFlow(source: .dataImportStart) {
-                            importFlowLauncher.relaunchDataImport(model: model, title: title, isDataTypePickerExpanded: isDataTypePickerExpanded)
-                        }
-                        dismiss.callAsFunction()
+                    },
+                    onExpandedStateChanged: { isExpanded in
+                        model.isPickerExpanded = isExpanded
                     }
                 )
-            case .fileImport(let dataType, let summaryTypes):
-                FileImportScreenView(model: $model, kind: .individual(dataType: dataType), summaryTypes: summaryTypes, dismiss: dismiss.callAsFunction)
-            case .archiveImport:
-                FileImportScreenView(model: $model, kind: .archive, summaryTypes: [], dismiss: dismiss.callAsFunction)
-            default:
-                viewHeader()
-                    .padding(.top, 30)
-                    .padding(.leading, 20)
-                    .padding(.trailing, 20)
-                    .padding(.bottom, 0)
-
-                viewBody()
-                    .padding(.leading, 20)
-                    .padding(.trailing, 20)
-                    .padding(.bottom, 26)
-                    .padding(.top, 0)
+            case .profilePicker:
+                NewProfilePickerView(
+                    profiles: model.browserProfiles?.validImportableProfiles ?? [],
+                    selectedProfile: model.selectedProfile
+                ) { profile in
+                    model.selectProfile(profile)
+                }
+            case .fileImport(let dataType, let summary):
+                FileImportScreenView(
+                    importSource: model.importSource,
+                    kind: .individual(dataType: dataType),
+                    summary: summary,
+                    isSelectFileButtonDisabled: model.isSelectFileButtonDisabled,
+                    selectFile: { model.selectFile() },
+                    onFileDrop: { model.initiateImport(fileURL: $0) }
+                )
+            case .archiveImport(_, let summary):
+                FileImportScreenView(
+                    importSource: model.importSource,
+                    kind: .archive,
+                    summary: summary,
+                    isSelectFileButtonDisabled: model.isSelectFileButtonDisabled,
+                    selectFile: { model.selectFile() },
+                    onFileDrop: { model.initiateImport(fileURL: $0) }
+                )
+            case .moreInfo:
+                NewImportMoreInfoView()
+            case .passwordEntryHelp:
+                PasswordEntryRetryPromptView(
+                    onRetry: {
+                        model.initiateImport()
+                    }
+                )
+            case .summary(let summary):
+                NewImportSummaryView(
+                    summary: summary,
+                    sourceImage: model.importSource.importSourceImage ?? DesignSystemImages.Color.Size24.document,
+                    reportModel: $model.reportModel
+                ) { type in
+                    model.showSummaryDetail(summary: summary, type: type)
+                }
+            case .summaryDetail(let summary, _):
+                // This view is currently only used for passwords
+                if let result = summary[.passwords] {
+                    DataImportSummaryDetailView(result: result)
+                } else {
+                    EmptyView()
+                }
             }
 
             // if import in progress…
-            if let importProgress = model.importProgress {
+            if let importProgress = model.importProgress, !model.shouldHideProgress {
                 progressView(importProgress)
                     .padding(.leading, 20)
                     .padding(.trailing, 20)
@@ -138,227 +161,13 @@ struct DataImportView: ModalView {
         .onReceive(internalUserDecider.isInternalUserPublisher.removeDuplicates()) {
             isInternalUser = $0
         }
-    }
-
-    @ViewBuilder
-    private func viewHeader() -> some View {
-        switch model.screen {
-        case .summary where !model.hasAnySummaryError:
-            summarySuccessHeader
-        case .shortcuts:
-            shortcutsHeader
-        default:
-            defaultHeader
-        }
-    }
-
-    @ViewBuilder
-    private var summarySuccessHeader: some View {
-        VStack(alignment: .leading) {
-            Image(.success96)
-            Text(UserText.importDataSuccessTitle)
-                .foregroundColor(.primary)
-                .font(.system(size: 17, weight: .bold))
-        }
-        .padding(.bottom, 16)
-    }
-
-    private var shortcutsHeader: some View {
-        Text(UserText.importDataShortcutsTitle)
-            .font(.title2.weight(.semibold))
-            .padding(.bottom, 20)
-    }
-
-    @ViewBuilder
-    private var defaultHeader: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // If screen is not the first screen where the user choose the type of import they want to do show the generic title.
-            // Otherwise show the injected title.
-            let title = model.screen == .profileAndDataTypesPicker ? self.title : UserText.importDataTitle
-
-            Text(title)
-                .font(.title2.weight(.semibold))
-                .padding(.bottom, 20)
-        }
-    }
-
-    @ViewBuilder var importSourcePicker: some View {
-        // browser to import data from picker popup
-        DataImportSourcePicker(importSources: model.availableImportSources, selectedSource: model.importSource) { importSource in
-            model.update(with: importSource)
-        }
-        .padding(.bottom, 8)
-        .disabled(model.isImportSourcePickerDisabled)
-    }
-
-    @ViewBuilder
-    private func viewBody() -> some View {
-        VStack(alignment: .center, spacing: 0) {
-            // body
-            switch model.screen {
-            case .profileAndDataTypesPicker:
-                profileAndDataTypesPickerBody
-            case .moreInfo:
-                // you will be asked for your keychain password blah blah...
-                moreInfoBody
-            case .getReadPermission(let url):
-                // give request to Safari folder, select Bookmarks.plist using open panel
-                getReadPermissionBody(url: url)
-            case .fileImport(let dataType, let summaryTypes):
-                fileImportBody(dataType: dataType, summaryTypes: summaryTypes)
-            case .archiveImport:
-                multifileImportBody(fileTypes: model.importSource.archiveImportSupportedFiles)
-            case .summary(let dataTypes, let previousScreen):
-                DataImportSummaryView(model, dataTypes: dataTypes, isFileImport: previousScreen.isFileImport)
-            case .feedback:
-                feedbackBody
-            case .shortcuts(let dataTypes):
-                DataImportShortcutsView(dataTypes: dataTypes)
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var profileAndDataTypesPickerBody: some View {
-        passwordsExplainerView().padding(.bottom, 20).padding(.horizontal, 20).frame(alignment: .center)
-        importPickerPanel {
-            VStack(alignment: .leading, spacing: 8) {
-                // Browser Profile picker
-                if model.browserProfiles?.validImportableProfiles.count ?? 0 > 1 {
-                    DataImportProfilePicker(profileList: model.browserProfiles,
-                                            selectedProfile: $model.selectedProfile)
-                    .padding(.bottom, 8)
-                    .disabled(model.isImportSourcePickerDisabled)
-                }
-
-                DataImportTypePicker(viewModel: $model, isDataTypePickerExpanded: isDataTypePickerExpanded)
-                    .disabled(model.isImportSourcePickerDisabled)
-                .padding(.top, 8)
-            }
-        }
-
-        if case .show(let syncLauncher) = syncFeatureVisibility {
-            Button {
-                dismiss.callAsFunction()
-                let source = SyncDeviceButtonTouchpoint.dataImportStart
-                PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed.withoutMacPrefix, withAdditionalParameters: ["source": source.rawValue])
-                syncLauncher.startDeviceSyncFlow(source: source) {
-                    importFlowLauncher.relaunchDataImport(model: model, title: title, isDataTypePickerExpanded: isDataTypePickerExpanded)
-                }
-            } label: {
-                Text(UserText.importDataSelectionSyncButtonTitle)
-                    .fontWeight(.semibold)
-                    .foregroundColor(Color(.linkBlue))
-            }
-            .buttonStyle(.plain)
-            .padding(.top, 20)
-        }
-    }
-
-    @ViewBuilder
-    private var moreInfoBody: some View {
-        importPickerPanel {
-            BrowserImportMoreInfoView(source: model.importSource)
-        }
-    }
-
-    @ViewBuilder
-    private var feedbackBody: some View {
-        importSourceDataTitle
-        VStack(alignment: .leading, spacing: 0) {
-            DataImportSummaryView(model)
-                .padding(.bottom, 20)
-            ReportFeedbackView(model: $model.reportModel)
-        }
-    }
-
-    @ViewBuilder
-    private func getReadPermissionBody(url: URL) -> some View {
-        importPickerPanel {
-            RequestFilePermissionView(source: model.importSource, url: url, requestDataDirectoryPermission: SafariDataImporter.requestDataDirectoryPermission) { _ in
-                model.initiateImport()
-            }
-        }
-    }
-
-    @ViewBuilder
-    private func fileImportBody(dataType: DataImport.DataType, summaryTypes: Set<DataImport.DataType>) -> some View {
-        importPickerPanel {
-            VStack(alignment: .leading, spacing: 0) {
-                if !summaryTypes.isEmpty {
-                    DataImportSummaryView(model, dataTypes: summaryTypes)
-                        .padding(.bottom, 24)
-                }
-
-                // if no data to import
-                if model.summary(for: dataType)?.isEmpty == true
-                    || model.error(for: dataType)?.errorType == .noData {
-                    DataImportNoDataView(source: model.importSource, dataType: dataType)
-                        .padding(.bottom, 24)
-                // if browser importer failed - display error message
-                } else if model.error(for: dataType) != nil {
-                    DataImportErrorView(source: model.importSource, dataType: dataType)
-                        .padding(.bottom, 24)
-                }
-
-                // manual file import instructions for CSV/HTML
-                FileImportView(source: model.importSource, dataType: dataType, isButtonDisabled: model.isSelectFileButtonDisabled) {
-                    model.selectFile()
-                } onFileDrop: { url in
-                    model.initiateImport(fileURL: url)
+        .onChange(of: model.importTaskId) { _ in
+            Task {
+                if let importProgress = model.importProgress {
+                    await handleImportProgress(importProgress)
                 }
             }
         }
-
-    }
-
-    @ViewBuilder
-    private func multifileImportBody(fileTypes: Set<UTType>) -> some View {
-        importPickerPanel(bottomPadding: 4) {
-            EmptyView()
-        }
-        .padding(.bottom, 20)
-        VStack(alignment: .leading) {
-            // manual file import instructions for CSV/HTML
-            NewFileImportView(source: model.importSource, allowedFileTypes: Array(fileTypes), isButtonDisabled: model.isSelectFileButtonDisabled, kind: .archive) {
-                model.selectFile()
-            } onFileDrop: { url in
-                model.initiateImport(fileURL: url)
-            }
-
-            if case .failure(let error) = model.summary.last?.result,
-               let error = error as? SafariArchiveImporter.ImportError,
-               error.type == .unarchive || error.type == .importContents {
-                HStack {
-                    Image(nsImage: DesignSystemImages.Color.Size16.exclamationHigh)
-                    Text("Incorrect file type or format. Please select a different file.")
-                        .foregroundColor(Color(designSystemColor: .destructivePrimary))
-                }
-                .padding(.vertical, 20)
-            }
-        }
-    }
-
-    private func importPickerPanel<Content: View>(bottomPadding: CGFloat = 12, _ content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            importSourceDataTitle
-            importSourcePicker
-            content()
-        }
-        .frame(idealWidth: .infinity, maxWidth: .infinity, alignment: .topLeading)
-        .padding(.bottom, bottomPadding)
-        .padding(.top, 12)
-        .padding(.horizontal, 12)
-        .background(Color.surfaceSecondary)
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(Color.decorationTertiary, lineWidth: 1)
-        )
-    }
-
-    private var importSourceDataTitle: some View {
-        Text(UserText.importDataSourceTitle)
     }
 
     private func progressView(_ progress: TaskProgress<DataImportViewModel, Never, DataImportProgressEvent>) -> some View {
@@ -366,26 +175,15 @@ struct DataImportView: ModalView {
         ProgressView(value: self.progress?.fraction) {
             Text(self.progress?.text ?? "")
         }
-        .task {
-            // when model.importProgress async sequence not nil
-            // receive progress updates events and update model on completion
-            await handleImportProgress(progress)
-        }
     }
 
     // under line buttons
     private func viewFooter() -> some View {
         HStack(spacing: 8) {
-            if case .show(let syncLauncher) = syncFeatureVisibility, model.shouldShowSyncFooterButton {
-                Button(UserText.importDataCompleteSyncButtonTitle) {
-                    dismiss.callAsFunction()
-                    let source = SyncDeviceButtonTouchpoint.dataImportFinish
-                    PixelKit.fire(SyncPromoPixelKitEvent.syncPromoConfirmed.withoutMacPrefix, withAdditionalParameters: ["source": SyncDeviceButtonTouchpoint.dataImportFinish.rawValue])
-                    syncLauncher.startDeviceSyncFlow(source: source, completion: nil)
-                }
+            if !model.shouldHidePasswordExplainerView {
+                passwordsExplainerView()
             }
             Spacer()
-
             ForEach(model.buttons.indices, id: \.self) { idx in
                 Button {
                     model.performAction(for: model.buttons[idx],
@@ -398,21 +196,50 @@ struct DataImportView: ModalView {
                 .disabled(model.buttons[idx].isDisabled)
             }
         }
+        .opacity(model.shouldHideFooter ? 0 : 1)
     }
 
+    @State private var showPasswordsExplainerPopover = false
+    @State private var popoverCloseTask: Task<Void, Never>?
+
     private func passwordsExplainerView() -> some View {
-        HStack(alignment: .top, spacing: 8) {
-            (
-                Text(Image(.lockSolid16)).baselineOffset(-1.0)
-                +
-                Text(verbatim: " ")
-                +
-                Text(model.isPasswordManagerAutolockEnabled ? UserText.importLoginsPasswordsExplainer : UserText.importLoginsPasswordsExplainerAutolockOff)
-            )
-            .font(.system(size: 12))
-            .foregroundColor(.secondary)
-            .multilineTextAlignment(.center)
-            .frame(maxWidth: .infinity, alignment: .center)
+        HStack(spacing: 8) {
+            ZStack(alignment: .center) {
+                // Invisible rectangle to push the popover away from the icon slightly
+                Rectangle()
+                    .fill(Color.clear)
+                    .frame(width: 16, height: 24)
+                    .popover(isPresented: $showPasswordsExplainerPopover, arrowEdge: .bottom) {
+                        Text(model.isPasswordManagerAutolockEnabled ? UserText.importLoginsPasswordsExplainer : UserText.importLoginsPasswordsExplainerAutolockOff)
+                            .padding()
+                            .frame(width: 280)
+                    }
+
+                Image(nsImage: DesignSystemImages.Glyphs.Size16.lock)
+                    .renderingMode(.template)
+                    .foregroundColor(Color(designSystemColor: showPasswordsExplainerPopover ? .iconsPrimary : .iconsTertiary))
+            }
+            Text(UserText.importLoginsPasswordsExplainerEncrypted)
+                .font(.system(size: 11))
+                .foregroundColor(Color(designSystemColor: showPasswordsExplainerPopover ? .iconsPrimary : .iconsTertiary))
+
+        }
+        .padding(8) // Increase the hit area of the view by 8px on all sides
+        .contentShape(Rectangle())
+        .padding(-8)
+        .onHover { isHovering in
+            popoverCloseTask?.cancel()
+
+            if isHovering {
+                showPasswordsExplainerPopover = true
+            } else {
+                popoverCloseTask = Task { @MainActor in
+                    try? await Task.sleep(nanoseconds: 600_000_000)
+                    if !Task.isCancelled {
+                        showPasswordsExplainerPopover = false
+                    }
+                }
+            }
         }
     }
 
@@ -571,13 +398,16 @@ extension DataImportViewModel.ButtonType {
 
     var shortcut: KeyboardShortcut? {
         switch self {
-        case .next: .defaultAction
         case .initiateImport: .defaultAction
+        case .selectFile: .defaultAction
         case .skip: .cancelAction
         case .cancel: .cancelAction
-        case .back: nil
-        case .done: .defaultAction
+        case .back: .cancelAction
+        case .close: .cancelAction
+        case .done: .cancelAction
         case .submit: .defaultAction
+        case .continue: .defaultAction
+        case .sync: .defaultAction
         }
     }
 
@@ -587,10 +417,8 @@ extension DataImportViewModel.ButtonType {
 
     func title(dataType: DataImport.DataType?) -> String {
         switch self {
-        case .next:
-            UserText.next
         case .initiateImport:
-            UserText.initiateImport
+            UserText.importNowButtonTitle
         case .skip:
             switch dataType {
             case .some(.bookmarks):
@@ -608,6 +436,14 @@ extension DataImportViewModel.ButtonType {
             UserText.done
         case .submit:
             UserText.submitReport
+        case .continue:
+            UserText.continue
+        case .selectFile:
+            UserText.importDataSelectFileButtonTitle
+        case .sync:
+            UserText.importDataCompleteSyncButtonTitle
+        case .close:
+            UserText.close
         }
     }
 

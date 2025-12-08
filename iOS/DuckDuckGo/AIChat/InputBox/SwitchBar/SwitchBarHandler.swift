@@ -23,6 +23,8 @@ import Persistence
 import Core
 import UIKit
 import AIChat
+import BrowserServicesKit
+import enum Common.DevicePlatform
 
 // MARK: - TextEntryMode Enum
 public enum TextEntryMode: String, CaseIterable {
@@ -41,6 +43,10 @@ protocol SwitchBarHandling: AnyObject {
     var isCurrentTextValidURL: Bool { get }
     var buttonState: SwitchBarButtonState { get }
     var isTopBarPosition: Bool { get }
+
+    var isUsingExpandedBottomBarHeight: Bool { get }
+    var isUsingFadeOutAnimation: Bool { get }
+    var isUsingSmallerBottomInput: Bool { get }
 
     var currentTextPublisher: AnyPublisher<String, Never> { get }
     var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> { get }
@@ -79,6 +85,7 @@ final class SwitchBarHandler: SwitchBarHandling {
     private let aiChatSettings: AIChatSettingsProvider
     private let funnelState: SwitchBarFunnelProviding
     private var sessionStateMetrics: SessionStateMetricsProviding
+    private let featureFlagger: FeatureFlagger
 
     // MARK: - Published Properties
     @Published private(set) var currentText: String = ""
@@ -92,6 +99,18 @@ final class SwitchBarHandler: SwitchBarHandling {
     private static var hasUsedAIChatInSession = false
 
     private(set) var isTopBarPosition: Bool = true
+
+    var isUsingExpandedBottomBarHeight: Bool {
+        isUsingFadeOutAnimation && !isTopBarPosition
+    }
+
+    var isUsingFadeOutAnimation: Bool {
+        featureFlagger.isFeatureOn(.fadeOutOnToggle) && devicePlatform.isIphone
+    }
+
+    var isUsingSmallerBottomInput: Bool {
+        isUsingFadeOutAnimation && featureFlagger.isFeatureOn(.fadeOutOnToggleSmallerBottomInput)
+    }
 
     var isVoiceSearchEnabled: Bool {
         voiceSearchHelper.isVoiceSearchEnabled
@@ -137,17 +156,22 @@ final class SwitchBarHandler: SwitchBarHandling {
     private let microphoneButtonTappedSubject = PassthroughSubject<Void, Never>()
     private let clearButtonTappedSubject = PassthroughSubject<Void, Never>()
     private var backgroundObserver: NSObjectProtocol?
+    private let devicePlatform: DevicePlatformProviding.Type
 
     init(voiceSearchHelper: VoiceSearchHelperProtocol,
          storage: KeyValueStoring,
          aiChatSettings: AIChatSettingsProvider,
          funnelState: SwitchBarFunnelProviding = SwitchBarFunnel(storage: UserDefaults.standard),
-         sessionStateMetrics: SessionStateMetricsProviding) {
+         sessionStateMetrics: SessionStateMetricsProviding,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
         self.voiceSearchHelper = voiceSearchHelper
         self.storage = storage
         self.aiChatSettings = aiChatSettings
         self.funnelState = funnelState
         self.sessionStateMetrics = sessionStateMetrics
+        self.featureFlagger = featureFlagger
+        self.devicePlatform = devicePlatform
 
         // Set up app lifecycle observers to reset session flags
         backgroundObserver = NotificationCenter.default.addObserver(

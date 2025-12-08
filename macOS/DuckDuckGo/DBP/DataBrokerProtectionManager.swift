@@ -89,10 +89,14 @@ public final class DataBrokerProtectionManager {
     lazy var brokerUpdater: BrokerJSONServiceProvider? = {
         guard let vault, let sharedPixelsHandler else { return nil }
 
+        let settings = DataBrokerProtectionSettings(defaults: .dbp)
         let featureFlagger = DBPFeatureFlagger(featureFlagger: Application.appDelegate.featureFlagger)
-        let localBrokerService = LocalBrokerJSONService(vault: vault, pixelHandler: sharedPixelsHandler)
+        let localBrokerService = LocalBrokerJSONService(resources: FileResources(runTypeProvider: settings),
+                                                        vault: vault,
+                                                        pixelHandler: sharedPixelsHandler,
+                                                        runTypeProvider: settings)
         let brokerUpdater = RemoteBrokerJSONService(featureFlagger: featureFlagger,
-                                                    settings: DataBrokerProtectionSettings(defaults: .dbp),
+                                                    settings: settings,
                                                     vault: vault,
                                                     authenticationManager: authenticationManager,
                                                     pixelHandler: sharedPixelsHandler,
@@ -117,8 +121,8 @@ public final class DataBrokerProtectionManager {
         self.vpnBypassService = VPNBypassService()
     }
 
-    public func isUserAuthenticated() -> Bool {
-        authenticationManager.isUserAuthenticated
+    public func isUserAuthenticated() async -> Bool {
+        return await authenticationManager.isUserAuthenticated
     }
 
     // MARK: - Debugging Features
@@ -151,8 +155,8 @@ extension DataBrokerProtectionManager: DataBrokerProtectionDataManagerDelegate {
         try? await VPNControllerXPCClient.shared.command(.restartAdapter)
     }
 
-    public func isAuthenticatedUser() -> Bool {
-        isUserAuthenticated()
+    public func isAuthenticatedUser() async -> Bool {
+        return await isUserAuthenticated()
     }
 
     /// Returns whether the current user is eligible for a free trial of Data Broker Protection

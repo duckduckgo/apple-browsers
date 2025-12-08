@@ -2930,6 +2930,7 @@
     /** @type {import("../src/index.js").HistoryPage} */
     {}
   );
+  var useMessaging = () => x2(MessagingContext2);
   var SettingsContext = K(new Settings({ platform: { name: "macos" } }));
   var useSettings = () => x2(SettingsContext);
   function usePlatformName() {
@@ -5110,6 +5111,39 @@
     );
   }
 
+  // pages/history/app/global/Providers/ThemeProvider.js
+  var ThemeContext = K({
+    /** @type {BrowserTheme} */
+    theme: "light",
+    /** @type {ThemeVariant} */
+    themeVariant: "default"
+  });
+  function ThemeProvider({ children, initialTheme, initialThemeVariant }) {
+    const { isDarkMode } = useEnv();
+    const history = useMessaging();
+    const [explicitTheme, setExplicitTheme] = d2(
+      /** @type {BrowserTheme | undefined} */
+      void 0
+    );
+    const [explicitThemeVariant, setExplicitThemeVariant] = d2(
+      /** @type {ThemeVariant | undefined} */
+      void 0
+    );
+    y2(() => {
+      const unsubscribe = history.messaging.subscribe("onThemeUpdate", (data) => {
+        setExplicitTheme(data.theme);
+        setExplicitThemeVariant(data.themeVariant);
+      });
+      return unsubscribe;
+    }, [history]);
+    const theme = explicitTheme ?? initialTheme ?? (isDarkMode ? "dark" : "light");
+    const themeVariant = explicitThemeVariant ?? initialThemeVariant ?? "default";
+    return /* @__PURE__ */ _(ThemeContext.Provider, { value: { theme, themeVariant } }, children);
+  }
+  function useTheme() {
+    return x2(ThemeContext);
+  }
+
   // pages/history/app/components/App.jsx
   function App() {
     const platformName = usePlatformName();
@@ -5117,7 +5151,7 @@
       /** @type {HTMLElement|null} */
       null
     );
-    const { isDarkMode } = useEnv();
+    const { theme, themeVariant } = useTheme();
     const ranges = useRangesData();
     const query = useQueryContext();
     const mode = useLayoutMode();
@@ -5145,7 +5179,8 @@
       "div",
       {
         class: App_default.layout,
-        "data-theme": isDarkMode ? "dark" : "light",
+        "data-theme": theme,
+        "data-theme-variant": themeVariant,
         "data-platform": platformName,
         "data-layout-mode": mode,
         onClick: clickAnywhere
@@ -5275,7 +5310,7 @@
               willThrow: environment.willThrow
             },
             /* @__PURE__ */ _(UpdateEnvironment, { search: window.location.search }),
-            /* @__PURE__ */ _(TranslationProvider, { translationObject: strings, fallback: history_default, textLength: environment.textLength }, /* @__PURE__ */ _(MessagingContext2.Provider, { value: messaging2 }, /* @__PURE__ */ _(SettingsContext.Provider, { value: settings }, /* @__PURE__ */ _(QueryProvider, { query: query.query }, /* @__PURE__ */ _(HistoryServiceProvider, { service, initial }, /* @__PURE__ */ _(SelectionProvider, null, /* @__PURE__ */ _(App, null)))))))
+            /* @__PURE__ */ _(TranslationProvider, { translationObject: strings, fallback: history_default, textLength: environment.textLength }, /* @__PURE__ */ _(MessagingContext2.Provider, { value: messaging2 }, /* @__PURE__ */ _(ThemeProvider, { initialTheme: init2.theme, initialThemeVariant: init2.themeVariant }, /* @__PURE__ */ _(SettingsContext.Provider, { value: settings }, /* @__PURE__ */ _(QueryProvider, { query: query.query }, /* @__PURE__ */ _(HistoryServiceProvider, { service, initial }, /* @__PURE__ */ _(SelectionProvider, null, /* @__PURE__ */ _(App, null))))))))
           )
         ),
         root2
@@ -5288,6 +5323,9 @@
     }
   }
   function applyDefaultStyles(defaultStyles) {
+    if (defaultStyles?.lightBackgroundColor || defaultStyles?.darkBackgroundColor) {
+      console.warn("defaultStyles is deprecated. Use themeVariant instead. This will override theme variant colors.", defaultStyles);
+    }
     if (defaultStyles?.lightBackgroundColor) {
       document.body.style.setProperty("--default-light-background-color", defaultStyles.lightBackgroundColor);
     }

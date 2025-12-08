@@ -141,7 +141,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         return UUID().uuidString
     }
 
-    public func buildAutofillSource() -> AutofillUserScriptSourceProvider {
+    func buildAutofillSource() -> AutofillUserScriptSourceProvider {
         let privacyConfig = self.privacyConfigurationManager.privacyConfig
         do {
             return try DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfigurationManager,

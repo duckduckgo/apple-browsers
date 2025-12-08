@@ -27,13 +27,13 @@ import WebKit
 import enum UserScript.UserScriptError
 
 @MainActor
-public final class ContentOverlayViewController: NSViewController, EmailManagerRequestDelegate {
+final class ContentOverlayViewController: NSViewController, EmailManagerRequestDelegate {
 
     @IBOutlet var webView: WKWebView!
     private var topAutofillUserScript: OverlayAutofillUserScript?
     private var appearanceCancellable: AnyCancellable?
 
-    public weak var autofillInterfaceToChild: OverlayAutofillUserScriptDelegate?
+    weak var autofillInterfaceToChild: OverlayAutofillUserScriptDelegate?
 
     lazy var emailManager: EmailManager = {
         let emailManager = EmailManager()
@@ -62,15 +62,9 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
 
     init?(
         coder: NSCoder,
-        privacyConfigurationManager: PrivacyConfigurationManaging,
-        webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
-        featureFlagger: FeatureFlagger,
-        tld: TLD
+        userScriptsDependencies: ScriptSourceProvider.Dependencies
     ) {
-        self.privacyConfigurationManager = privacyConfigurationManager
-        self.webTrackingProtectionPreferences = webTrackingProtectionPreferences
-        self.featureFlagger = featureFlagger
-        self.tld = tld
+        self.userScriptsDependencies = userScriptsDependencies
         super.init(coder: coder)
     }
 
@@ -80,10 +74,20 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
 
     lazy var passwordManagerCoordinator: PasswordManagerCoordinating = PasswordManagerCoordinator.shared
 
-    private let privacyConfigurationManager: PrivacyConfigurationManaging
-    private let webTrackingProtectionPreferences: WebTrackingProtectionPreferences
-    private let featureFlagger: FeatureFlagger
-    private let tld: TLD
+    private let userScriptsDependencies: ScriptSourceProvider.Dependencies
+
+    private var privacyConfigurationManager: PrivacyConfigurationManaging {
+        userScriptsDependencies.privacyConfigurationManager
+    }
+    private var webTrackingProtectionPreferences: WebTrackingProtectionPreferences {
+        userScriptsDependencies.webTrackingProtectionPreferences
+    }
+    private var featureFlagger: FeatureFlagger {
+        userScriptsDependencies.featureFlagger
+    }
+    private var tld: TLD {
+        userScriptsDependencies.tld
+    }
 
     lazy var usageProvider: AutofillUsageProvider = AutofillUsageStore(standardUserDefaults: .standard, appGroupUserDefaults: nil)
 
@@ -99,7 +103,7 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
         requestResizeToSize(CGSize(width: 0, height: 0))
     }
 
-    public func setType(serializedInputContext: String, zoomFactor: CGFloat?) {
+    func setType(serializedInputContext: String, zoomFactor: CGFloat?) {
         guard let topAutofillUserScript = topAutofillUserScript else { return }
         if let zoomFactor = zoomFactor {
             initWebView()
@@ -141,7 +145,7 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
         webView.load(URLRequest(url: .blankPage))
     }
 
-    public func messageMouseMove(x: CGFloat, y: CGFloat) {
+    func messageMouseMove(x: CGFloat, y: CGFloat) {
         // Fakes the elements being focused by the user as it doesn't appear there's much else we can do
         let script = """
         (() => {
@@ -153,9 +157,11 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
         webView.evaluateJavaScript(script)
     }
 
-    public func buildAutofillSource() -> AutofillUserScriptSourceProvider {
-        let scriptSourceProviding = DefaultScriptSourceProvider()
-        return scriptSourceProviding.buildAutofillSource()
+    func buildAutofillSource() -> AutofillUserScriptSourceProvider {
+        ScriptSourceProvider(
+            dependencies: userScriptsDependencies,
+            newTabPageActionsManager: nil
+        ).buildAutofillSource()
     }
 
     private func initWebView() {
@@ -233,7 +239,7 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
         static let minHeight: CGFloat = 56
     }
 
-    public func requestResizeToSize(_ size: CGSize) {
+    func requestResizeToSize(_ size: CGSize) {
         var widthOut = size.width
         if widthOut < Constants.minWidth {
             widthOut = Constants.minWidth
@@ -252,7 +258,7 @@ extension ContentOverlayViewController: OverlayAutofillUserScriptPresentationDel
         self.requestResizeToSize(requestResizeToSize)
     }
 
-    public func closeContentOverlayPopover() {
+    func closeContentOverlayPopover() {
         self.topAutofillUserScript?.closeAutofillParent()
     }
 }

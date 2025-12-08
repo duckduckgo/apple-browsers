@@ -102,6 +102,7 @@ final class BrowserTabViewController: NSViewController {
     private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
 
     private let tld: TLD
+    private let userScriptsDependencies: ScriptSourceProvider.Dependencies?
 
     private var tabViewModelCancellables = Set<AnyCancellable>()
     private var activeUserDialogCancellable: Cancellable?
@@ -154,7 +155,8 @@ final class BrowserTabViewController: NSViewController {
          duckPlayer: DuckPlayer,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge = NSApp.delegateTyped.subscriptionAuthV1toV2Bridge,
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging = NSApp.delegateTyped.winBackOfferVisibilityManager,
-         tld: TLD = NSApp.delegateTyped.tld
+         tld: TLD = NSApp.delegateTyped.tld,
+         userScriptsDependencies: ScriptSourceProvider.Dependencies?
     ) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
@@ -181,6 +183,7 @@ final class BrowserTabViewController: NSViewController {
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
 
         self.tld = tld
+        self.userScriptsDependencies = userScriptsDependencies
         containerStackView = NSStackView()
 
         super.init(nibName: nil, bundle: nil)
@@ -1222,14 +1225,15 @@ final class BrowserTabViewController: NSViewController {
     }
 
     private var contentOverlayPopover: ContentOverlayPopover?
-    private func contentOverlayPopoverCreatingIfNeeded() -> ContentOverlayPopover {
+    private func contentOverlayPopoverCreatingIfNeeded() -> ContentOverlayPopover? {
+        guard let userScriptsDependencies else {
+            assertionFailure("userScriptsDependencies not provided; ContentOverlayPopover will not be created")
+            return nil
+        }
         return contentOverlayPopover ?? {
             let overlayPopover = ContentOverlayPopover(
                 currentTabView: self.view,
-                privacyConfigurationManager: privacyConfigurationManager,
-                webTrackingProtectionPreferences: webTrackingProtectionPreferences,
-                featureFlagger: featureFlagger,
-                tld: tld
+                userScriptsDependencies: userScriptsDependencies
             )
             self.contentOverlayPopover = overlayPopover
             windowControllersManager.stateChanged
@@ -1288,17 +1292,17 @@ extension BrowserTabViewController: NSDraggingDestination {
 
 extension BrowserTabViewController: ContentOverlayUserScriptDelegate {
     public func websiteAutofillUserScriptCloseOverlay(_ websiteAutofillUserScript: WebsiteAutofillUserScript?) {
-        contentOverlayPopoverCreatingIfNeeded().websiteAutofillUserScriptCloseOverlay(websiteAutofillUserScript)
+        contentOverlayPopoverCreatingIfNeeded()?.websiteAutofillUserScriptCloseOverlay(websiteAutofillUserScript)
     }
     public func websiteAutofillUserScript(_ websiteAutofillUserScript: WebsiteAutofillUserScript,
                                           willDisplayOverlayAtClick: NSPoint?,
                                           serializedInputContext: String,
                                           inputPosition: CGRect) {
 
-        self.contentOverlayPopoverCreatingIfNeeded().websiteAutofillUserScript(websiteAutofillUserScript,
-                                                                              willDisplayOverlayAtClick: willDisplayOverlayAtClick,
-                                                                              serializedInputContext: serializedInputContext,
-                                                                              inputPosition: inputPosition)
+        contentOverlayPopoverCreatingIfNeeded()?.websiteAutofillUserScript(websiteAutofillUserScript,
+                                                                           willDisplayOverlayAtClick: willDisplayOverlayAtClick,
+                                                                           serializedInputContext: serializedInputContext,
+                                                                           inputPosition: inputPosition)
 
     }
 
@@ -1753,7 +1757,8 @@ extension BrowserTabViewController {
         aiChatPreferences: Application.appDelegate.aiChatPreferences,
         aboutPreferences: Application.appDelegate.aboutPreferences,
         accessibilityPreferences: Application.appDelegate.accessibilityPreferences,
-        duckPlayer: Application.appDelegate.duckPlayer
+        duckPlayer: Application.appDelegate.duckPlayer,
+        userScriptsDependencies: nil
     )
 }
 

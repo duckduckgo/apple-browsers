@@ -31,6 +31,7 @@ protocol ContentBlockingProtocol {
     var privacyConfigurationManager: PrivacyConfigurationManaging { get }
     var contentBlockingManager: ContentBlockerRulesManagerProtocol { get }
     var trackerDataManager: TrackerDataManager { get }
+    var userScriptsDependencies: ScriptSourceProvider.Dependencies { get }
     var tld: TLD { get }
 
     var contentBlockingAssetsPublisher: AnyPublisher<UserContentUpdating.NewContent, Never> { get }

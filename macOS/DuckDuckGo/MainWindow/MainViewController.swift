@@ -214,7 +214,8 @@ final class MainViewController: NSViewController {
             aiChatPreferences: aiChatPreferences,
             aboutPreferences: aboutPreferences,
             accessibilityPreferences: accessibilityPreferences,
-            duckPlayer: duckPlayer
+            duckPlayer: duckPlayer,
+            userScriptsDependencies: contentBlocking.userScriptsDependencies
         )
         aiChatSidebarPresenter = AIChatSidebarPresenter(
             sidebarHost: browserTabViewController,

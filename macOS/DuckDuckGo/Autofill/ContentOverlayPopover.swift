@@ -22,29 +22,23 @@ import WebKit
 import BrowserServicesKit
 
 @MainActor
-public final class ContentOverlayPopover: NSObject {
+final class ContentOverlayPopover: NSObject {
 
-    public var zoomFactor: CGFloat?
-    public weak var currentTabView: NSView?
+    var zoomFactor: CGFloat?
+    weak var currentTabView: NSView?
 
-    public var viewController: ContentOverlayViewController
-    public var windowController: NSWindowController
+    var viewController: ContentOverlayViewController
+    var windowController: NSWindowController
 
-    public init(
+    init(
         currentTabView: NSView,
-        privacyConfigurationManager: PrivacyConfigurationManaging,
-        webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
-        featureFlagger: FeatureFlagger,
-        tld: TLD
+        userScriptsDependencies: ScriptSourceProvider.Dependencies
     ) {
         let storyboard = NSStoryboard(name: "ContentOverlay", bundle: Bundle.main)
         viewController = storyboard.instantiateController(identifier: "ContentOverlayViewController") { coder in
             ContentOverlayViewController(
                 coder: coder,
-                privacyConfigurationManager: privacyConfigurationManager,
-                webTrackingProtectionPreferences: webTrackingProtectionPreferences,
-                featureFlagger: featureFlagger,
-                tld: tld
+                userScriptsDependencies: userScriptsDependencies
             )
         }
         windowController = storyboard.instantiateController(identifier: "ContentOverlayWindowController")
@@ -66,7 +60,7 @@ public final class ContentOverlayPopover: NSObject {
         self.currentTabView = currentTabView
     }
 
-    public required init?(coder: NSCoder) {
+    required init?(coder: NSCoder) {
         fatalError("ContentOverlayPopover: Bad initializer")
     }
 

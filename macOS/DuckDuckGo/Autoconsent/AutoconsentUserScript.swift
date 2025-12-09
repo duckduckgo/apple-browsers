@@ -305,6 +305,7 @@ extension AutoconsentUserScript {
         if message.frameInfo.isMainFrame {
             // reset dashboard state
             refreshDashboardState(
+                // keep "cookies managed" if we did it for this site since app launch
                 consentManaged: management.sitesNotifiedCache.contains(url.host ?? ""),
                 cosmetic: nil,
                 optoutFailed: nil,
@@ -422,15 +423,13 @@ extension AutoconsentUserScript {
         // but a real opt-out may still follow. See https://github.com/duckduckgo/autoconsent/blob/main/api.md#messaging-api
         if messageData.cmp == Constants.filterListCmpName {
             refreshDashboardState(consentManaged: true, cosmetic: true, optoutFailed: false, selftestFailed: nil, consentReloadLoop: reloadLoopDetected, consentRule: messageData.cmp)
-            // trigger animation, but do not cache it because it can still be overridden
-            if !management.sitesNotifiedCache.contains(host) {
-                Logger.autoconsent.debug("Starting animation for cosmetic filters")
-                // post popover notification
-                NotificationCenter.default.post(name: Self.newSitePopupHiddenNotification, object: self, userInfo: [
-                    "topUrl": self.topUrl ?? url,
-                    "isCosmetic": true
-                ])
-            }
+            // trigger animation
+            Logger.autoconsent.debug("Starting animation for cosmetic filters")
+            // post popover notification
+            NotificationCenter.default.post(name: Self.newSitePopupHiddenNotification, object: self, userInfo: [
+                "topUrl": self.topUrl ?? url,
+                "isCosmetic": true
+            ])
         }
 
         replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection
@@ -481,18 +480,16 @@ extension AutoconsentUserScript {
 
         popupManagedSubject.send(messageData)
 
-        // Show animation only for first time on a domain
-        if !management.sitesNotifiedCache.contains(host) {
-            management.sitesNotifiedCache.insert(host)
-            if messageData.cmp != Constants.filterListCmpName { // filterlist animation should have been triggered already (see handlePopupFound)
-                Logger.autoconsent.debug("Starting animation for the handled cookie popup")
-                // post popover notification
-                NotificationCenter.default.post(name: Self.newSitePopupHiddenNotification, object: self, userInfo: [
-                    "topUrl": self.topUrl ?? url,
-                    "isCosmetic": messageData.isCosmetic
-                ])
-                firePixel(pixel: messageData.isCosmetic ? .animationShownCosmetic : .animationShown)
-            }
+        // Show animation and remember that we did it for this site
+        management.sitesNotifiedCache.insert(host)
+        if messageData.cmp != Constants.filterListCmpName { // filterlist animation should have been triggered already (see handlePopupFound)
+            Logger.autoconsent.debug("Starting animation for the handled cookie popup")
+            // post popover notification
+            NotificationCenter.default.post(name: Self.newSitePopupHiddenNotification, object: self, userInfo: [
+                "topUrl": self.topUrl ?? url,
+                "isCosmetic": messageData.isCosmetic
+            ])
+            firePixel(pixel: messageData.isCosmetic ? .animationShownCosmetic : .animationShown)
         }
 
         replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection

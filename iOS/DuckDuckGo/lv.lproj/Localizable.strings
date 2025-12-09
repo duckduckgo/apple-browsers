@@ -35,7 +35,7 @@
 "action.title.aiChat.history" = "Duck.ai tērzēšanas";
 
 /* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "MI čats";
+"action.title.aiChat.new" = "Jauns MI tērzēšanas rīks";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Duck.ai iestatījumi";
@@ -89,7 +89,7 @@
 "action.title.newBackgroundTabForUrl" = "Atvērt fonā";
 
 /* Create New Tab action */
-"action.title.newTabAction" = "Jauns";
+"action.title.newTabAction" = "Jauna cilne";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Atvērt jaunā cilnē";

@@ -228,5 +228,40 @@
                 "enum": ["0s", "1-10s", "10-60s", "1-5min", "5-10min", "10-20min", "20-40min", "40-60min", "1-2hr", "2hr+", "unknown"]
             }
         ]
+    },
+    "m_mac_autoconsent_popover-shown_daily": {
+        "description": "Fires when the autoconsent stats popover is displayed.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_autoconsent_popover-closed_daily": {
+        "description": "Fires when the autoconsent stats popover is closed using 'x' button.",
+        "owners": ["miasma13"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_autoconsent_popover-clicked_daily": {
+        "description": "Fires when the autoconsent stats popover content is clicked.",
+        "owners": ["miasma13"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_autoconsent_popover-new-tab-opened_daily": {
+        "description": "Fires when a new tab is opened as a result of interacting with the autoconsent stats popover.",
+        "owners": ["miasma13"],
+        "triggers": ["user_submitted"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_autoconsent_popover-autodismissed_daily": {
+        "description": "Fires when the autoconsent stats popover is automatically dismissed after the timeout period.",
+        "owners": ["miasma13"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
     }
 }

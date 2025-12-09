@@ -80,14 +80,6 @@ enum PermissionAuthorizationType {
         }
     }
 
-    /// Whether this permission uses permanent decisions ("Always Allow" / "Never Allow") vs one-time decisions ("Allow" / "Deny")
-    var usesPermanentDecisions: Bool {
-        switch self {
-        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme, .geolocation:
-            return true
-        }
-    }
-
     // MARK: - Two-Step UI Localized Strings
 
     /// Button text for enabling system permission (Step 1)
@@ -170,9 +162,7 @@ struct PermissionAuthorizationSwiftUIView: View {
     let domain: String
     let permissionType: PermissionAuthorizationType
     let onDeny: () -> Void
-    let onAlwaysDeny: () -> Void
     let onAllow: () -> Void
-    let onAlwaysAllow: () -> Void
     let systemPermissionManager: SystemPermissionManagerProtocol
 
     /// State for the system permission step in two-step flow
@@ -211,24 +201,6 @@ struct PermissionAuthorizationSwiftUIView: View {
                 return String(format: UserText.externalSchemePermissionAuthorizationFormat, domain, permissionType.localizedDescription)
             }
         }
-    }
-
-    // MARK: - Button Titles & Actions
-
-    private var denyButtonTitle: String {
-        permissionType.usesPermanentDecisions ? UserText.permissionPopupAlwaysDenyButton : UserText.permissionPopupDenyButton
-    }
-
-    private var allowButtonTitle: String {
-        permissionType.usesPermanentDecisions ? UserText.permissionPopupAlwaysAllowButton : UserText.permissionPopupAllowButton
-    }
-
-    private var denyAction: () -> Void {
-        permissionType.usesPermanentDecisions ? onAlwaysDeny : onDeny
-    }
-
-    private var allowAction: () -> Void {
-        permissionType.usesPermanentDecisions ? onAlwaysAllow : onAllow
     }
 
     // MARK: - Body
@@ -342,6 +314,7 @@ struct PermissionAuthorizationSwiftUIView: View {
             .foregroundColor(.accentColor))
             .frame(maxWidth: .infinity, alignment: .leading)
             .fixedSize(horizontal: false, vertical: true)
+            .cursor(.pointingHand)
             .onTapGesture {
                 openSystemSettings()
             }
@@ -368,8 +341,8 @@ struct PermissionAuthorizationSwiftUIView: View {
                     .frame(height: 36)
             } else {
                 HStack(spacing: 8) {
-                    Button(action: onAlwaysDeny) {
-                        Text(UserText.permissionPopupNeverAllowButton)
+                    Button(action: onDeny) {
+                        Text(UserText.permissionPopupDenyButton)
                             .font(.system(size: 13))
                             .foregroundColor(isEnabled ? Color(designSystemColor: .textPrimary) : Color(designSystemColor: .textSecondary))
                             .frame(maxWidth: .infinity)
@@ -379,10 +352,10 @@ struct PermissionAuthorizationSwiftUIView: View {
                     }
                     .buttonStyle(PlainButtonStyle())
                     .disabled(!isEnabled)
-                    .accessibilityIdentifier("PermissionAuthorizationSwiftUIView.neverAllowButton")
+                    .accessibilityIdentifier("PermissionAuthorizationSwiftUIView.denyButton")
 
-                    Button(action: onAlwaysAllow) {
-                        Text(UserText.permissionPopupAlwaysAllowButton)
+                    Button(action: onAllow) {
+                        Text(UserText.permissionPopupAllowButton)
                             .font(.system(size: 13))
                             .foregroundColor(isEnabled ? Color(designSystemColor: .textPrimary) : Color(designSystemColor: .textSecondary))
                             .frame(maxWidth: .infinity)
@@ -392,7 +365,7 @@ struct PermissionAuthorizationSwiftUIView: View {
                     }
                     .buttonStyle(PlainButtonStyle())
                     .disabled(!isEnabled)
-                    .accessibilityIdentifier("PermissionAuthorizationSwiftUIView.alwaysAllowButton")
+                    .accessibilityIdentifier("PermissionAuthorizationSwiftUIView.allowButton")
                 }
             }
         }
@@ -446,8 +419,8 @@ struct PermissionAuthorizationSwiftUIView: View {
                 .padding(.top, 16)
 
             HStack(spacing: 12) {
-                Button(action: denyAction) {
-                    Text(denyButtonTitle)
+                Button(action: onDeny) {
+                    Text(UserText.permissionPopupDenyButton)
                         .font(.system(size: 13))
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                         .frame(maxWidth: .infinity)
@@ -458,8 +431,8 @@ struct PermissionAuthorizationSwiftUIView: View {
                 .buttonStyle(PlainButtonStyle())
                 .accessibilityIdentifier("PermissionAuthorizationSwiftUIView.denyButton")
 
-                Button(action: allowAction) {
-                    Text(allowButtonTitle)
+                Button(action: onAllow) {
+                    Text(UserText.permissionPopupAllowButton)
                         .font(.system(size: 13))
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                         .frame(maxWidth: .infinity)
@@ -485,16 +458,12 @@ extension PermissionAuthorizationSwiftUIView {
         domain: String,
         permissionType: PermissionAuthorizationType,
         onDeny: @escaping () -> Void,
-        onAlwaysDeny: @escaping () -> Void,
-        onAllow: @escaping () -> Void,
-        onAlwaysAllow: @escaping () -> Void
+        onAllow: @escaping () -> Void
     ) {
         self.domain = domain
         self.permissionType = permissionType
         self.onDeny = onDeny
-        self.onAlwaysDeny = onAlwaysDeny
         self.onAllow = onAllow
-        self.onAlwaysAllow = onAlwaysAllow
         self.systemPermissionManager = SystemPermissionManager()
     }
 }
@@ -551,9 +520,7 @@ struct PermissionAuthorizationSwiftUIView_Previews: PreviewProvider {
             domain: "apple.com",
             permissionType: .geolocation,
             onDeny: {},
-            onAlwaysDeny: {},
-            onAllow: {},
-            onAlwaysAllow: {}
+            onAllow: {}
         )
         .previewDisplayName("Geolocation - Two Step")
 
@@ -561,9 +528,7 @@ struct PermissionAuthorizationSwiftUIView_Previews: PreviewProvider {
             domain: "apple.com",
             permissionType: .camera,
             onDeny: {},
-            onAlwaysDeny: {},
-            onAllow: {},
-            onAlwaysAllow: {}
+            onAllow: {}
         )
         .previewDisplayName("Camera")
 
@@ -571,9 +536,7 @@ struct PermissionAuthorizationSwiftUIView_Previews: PreviewProvider {
             domain: "apple.com",
             permissionType: .cameraAndMicrophone,
             onDeny: {},
-            onAlwaysDeny: {},
-            onAllow: {},
-            onAlwaysAllow: {}
+            onAllow: {}
         )
         .previewDisplayName("Camera and Microphone")
     }

@@ -35,7 +35,7 @@
 "action.title.aiChat.history" = "Duck.ai-keskustelut";
 
 /* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "Tekoäly-chat";
+"action.title.aiChat.new" = "Uusi AI Chat";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Duck.ai-asetukset";
@@ -89,7 +89,7 @@
 "action.title.newBackgroundTabForUrl" = "Avaa taustalla";
 
 /* Create New Tab action */
-"action.title.newTabAction" = "Uusi";
+"action.title.newTabAction" = "Uusi välilehti";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Avaa uudella välilehdellä";

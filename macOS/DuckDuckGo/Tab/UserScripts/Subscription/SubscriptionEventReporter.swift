@@ -1,5 +1,5 @@
 //
-//  SubscriptionErrorReporter.swift
+//  SubscriptionEventReporter.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -62,11 +62,12 @@ enum SubscriptionError: LocalizedError {
     }
 }
 
-protocol SubscriptionErrorReporter {
+protocol SubscriptionEventReporter {
     func report(subscriptionActivationError: SubscriptionError)
+    func report(subscriptionTierOptionEvent: PixelKitEvent)
 }
 
-struct DefaultSubscriptionErrorReporter: SubscriptionErrorReporter {
+struct DefaultSubscriptionEventReporter: SubscriptionEventReporter {
 
     func report(subscriptionActivationError: SubscriptionError) {
 
@@ -95,5 +96,9 @@ struct DefaultSubscriptionErrorReporter: SubscriptionErrorReporter {
         case .otherRestoreError:
             PixelKit.fire(SubscriptionPixel.subscriptionRestorePurchaseStoreFailureOther, frequency: .legacyDailyAndCount)
         }
+    }
+
+    func report(subscriptionTierOptionEvent: PixelKitEvent) {
+        PixelKit.fire(subscriptionTierOptionEvent)
     }
 }

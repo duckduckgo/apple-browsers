@@ -170,11 +170,7 @@ final class AddressBarViewController: NSViewController {
     }
 
     var isInPopUpWindow: Bool {
-        guard let navigationBarViewController = parent as? NavigationBarViewController else {
-            assert(view.window == nil, "AddressBarViewController is not a child of NavigationBarViewController")
-            return false
-        }
-        return navigationBarViewController.isInPopUpWindow
+        tabCollectionViewModel.isPopup
     }
 
     private var accentColor: NSColor {
@@ -277,6 +273,11 @@ final class AddressBarViewController: NSViewController {
         addressBarTextField.setAccessibilityIdentifier("AddressBarViewController.addressBarTextField")
 
         passiveTextField.isSelectable = !isInPopUpWindow
+        /// Passive Address Bar text field is centered by the constraints
+        /// Left alignment is used to prevent jumping of the text field in overflow mode when the buttons width changes
+        passiveTextField.alignment = .left
+        passiveTextField.lineBreakMode = isInPopUpWindow ? .byTruncatingMiddle : .byTruncatingTail
+        passiveTextField.clipsToBounds = true
 
         switchToTabBox.isHidden = true
         switchToTabLabel.attributedStringValue = SuggestionTableCellView.switchToTabAttributedString
@@ -295,6 +296,7 @@ final class AddressBarViewController: NSViewController {
         addressBarTextField.focusDelegate = self
         addressBarTextField.searchPreferences = searchPreferences
         addressBarTextField.tabsPreferences = tabsPreferences
+        addressBarTextField.aiChatPreferences = aiChatSettings
 
         setupInactiveShadowView()
         setupActiveOuterBorderSize()
@@ -415,7 +417,6 @@ final class AddressBarViewController: NSViewController {
                 addressBarTextField.sharedTextState = sharedTextState
 
                 subscribeToTabContent()
-                subscribeToPassiveAddressBarString()
                 subscribeToProgressEventsIfNeeded()
 
                 // don't resign first responder on tab switching
@@ -446,17 +447,6 @@ final class AddressBarViewController: NSViewController {
         tabViewModel?.tab.$content
             .map { $0 == .newtab }
             .assign(to: \.isHomePage, onWeaklyHeld: self)
-            .store(in: &tabViewModelCancellables)
-    }
-
-    private func subscribeToPassiveAddressBarString() {
-        guard let tabViewModel else {
-            passiveTextField.stringValue = ""
-            return
-        }
-        tabViewModel.$passiveAddressBarAttributedString
-            .receive(on: DispatchQueue.main)
-            .assign(to: \.attributedStringValue, onWeaklyHeld: passiveTextField)
             .store(in: &tabViewModelCancellables)
     }
 
@@ -860,6 +850,7 @@ final class AddressBarViewController: NSViewController {
 
     private func layoutTextFields(trailingWidth width: CGFloat) {
         addressBarTextTrailingConstraint.constant = width
+        passiveTextFieldTrailingConstraint.constant = width
     }
 
     private func firstResponderDidChange(_ notification: Notification) {
@@ -1038,6 +1029,9 @@ final class AddressBarViewController: NSViewController {
         // If we have an AddressBarMenuButton, forward the event
         guard !(viewWithinAddressBar is AddressBarMenuButton) else { return event }
 
+        // If we have a CustomToggleControl, forward the event to let it handle its context menu
+        guard !(viewWithinAddressBar is CustomToggleControl) else { return event }
+
         // If the farthest view of the point location is a NSButton or LottieAnimationView don't show contextual menu
         guard viewWithinAddressBar.shouldShowArrowCursor == false else { return nil }
 
@@ -1100,6 +1094,10 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
 
     func addressBarButtonsViewControllerHideAskAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
         aiChatSettings.showShortcutInAddressBarWhenTyping = false
+    }
+
+    func addressBarButtonsViewControllerHideSearchModeToggleClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
+        aiChatSettings.showSearchAndDuckAIToggle = false
     }
 
     func addressBarButtonsViewControllerCancelButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {

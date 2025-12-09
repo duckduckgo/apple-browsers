@@ -39,6 +39,10 @@ final class PermissionModel {
     private let permissionManager: PermissionManagerProtocol
     private let geolocationService: GeolocationServiceProtocol
     private let featureFlagger: FeatureFlagger
+
+    /// Holds the set of permissions the user manually removed (to avoid adding them back via updatePermissions)
+    private var removedPermissions = Set<PermissionType>()
+
     weak var webView: WKWebView? {
         didSet {
             guard let webView = webView else { return }
@@ -110,11 +114,15 @@ final class PermissionModel {
             permissions[permission].willReload()
         }
         authorizationQueries = []
+        removedPermissions.removeAll()
     }
 
     private func updatePermissions() {
         guard let webView = webView else { return }
         for permissionType in PermissionType.permissionsUpdatedExternally {
+            // Skip permissions that were explicitly removed by the user
+            guard !removedPermissions.contains(permissionType) else { continue }
+
             switch permissionType {
             case .microphone:
                 permissions.microphone.update(with: webView.microphoneState)
@@ -130,7 +138,17 @@ final class PermissionModel {
                     permissions.geolocation
                         .systemAuthorizationDenied(systemWide: !geolocationService.locationServicesEnabled())
                 } else {
-                    permissions.geolocation.update(with: webView.geolocationState)
+                    let currentState = webView.geolocationState
+
+                    // With new permission view, keep geolocation as active once it's been granted/used
+                    // (.active or .inactive means it was granted or actively used)
+                    if featureFlagger.isFeatureOn(.newPermissionView),
+                       currentState == .none,
+                       permissions.geolocation == .active || permissions.geolocation == .inactive {
+                        permissions.geolocation = .active
+                    } else {
+                        permissions.geolocation.update(with: currentState)
+                    }
                 }
             case .popups, .externalScheme:
                 continue
@@ -152,6 +170,8 @@ final class PermissionModel {
             if case .success = result {
                 for permission in permissions {
                     if isGranted {
+                        // Remove from removedPermissions so updatePermissions() can track it again
+                        self?.removedPermissions.remove(permission)
                         self?.permissions[permission].granted()
                     } else {
                         self?.permissions[permission].denied()
@@ -196,6 +216,11 @@ final class PermissionModel {
         // If Always Allow/Deny for the current host: Grant/Revoke the permission
         guard webView?.url?.host?.droppingWwwPrefix() == domain else { return }
 
+        // If decision changed to "allow", remove from removedPermissions so updatePermissions() can track it again
+        if decision == .allow {
+            removedPermissions.remove(permissionType)
+        }
+
         switch (decision, self.permissions[permissionType]) {
         case (.deny, .some):
             self.revoke(permissionType)
@@ -239,6 +264,9 @@ final class PermissionModel {
 
     /// Removes a permission completely (revokes and removes from tracking)
     func remove(_ permission: PermissionType) {
+        // Track as explicitly removed to prevent re-adding via updatePermissions()
+        removedPermissions.insert(permission)
+
         // First revoke the permission
         switch permission {
         case .camera, .microphone, .geolocation:

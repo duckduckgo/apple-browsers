@@ -35,7 +35,7 @@
 "action.title.aiChat.history" = "Czaty Duck.ai";
 
 /* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "Czat AI";
+"action.title.aiChat.new" = "Nowy AI Chat";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Ustawienia Duck.ai";
@@ -89,7 +89,7 @@
 "action.title.newBackgroundTabForUrl" = "Otwórz w tle";
 
 /* Create New Tab action */
-"action.title.newTabAction" = "Nowa";
+"action.title.newTabAction" = "Nowa karta";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Otwórz w nowej karcie";

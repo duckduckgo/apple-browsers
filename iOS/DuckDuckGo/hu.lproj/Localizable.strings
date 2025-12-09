@@ -35,7 +35,7 @@
 "action.title.aiChat.history" = "Duck.ai-csevegések";
 
 /* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "AI-csevegés";
+"action.title.aiChat.new" = "Új AI-csevegés";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "A Duck.ai beállításai";
@@ -89,7 +89,7 @@
 "action.title.newBackgroundTabForUrl" = "Megnyitás a háttérben";
 
 /* Create New Tab action */
-"action.title.newTabAction" = "Új";
+"action.title.newTabAction" = "Új lap";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Megnyitás új lapon";

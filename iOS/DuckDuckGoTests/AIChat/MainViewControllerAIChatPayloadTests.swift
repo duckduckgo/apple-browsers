@@ -164,6 +164,7 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
             winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager(),
             mobileCustomization: MobileCustomization(isFeatureEnabled: false, keyValueStore: MockThrowingKeyValueStore()),
             remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
+            remoteMessagingDebugHandler: MockRemoteMessagingDebugHandler(),
             productSurfaceTelemetry: MockProductSurfaceTelemetry()
         )
         

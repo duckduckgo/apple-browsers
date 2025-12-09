@@ -35,7 +35,7 @@
 "action.title.aiChat.history" = "Συνομιλίες Duck.ai";
 
 /* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "Συνομιλία με ΤΝ";
+"action.title.aiChat.new" = "Νέο AI Chat";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Ρυθμίσεις Duck.ai";
@@ -89,7 +89,7 @@
 "action.title.newBackgroundTabForUrl" = "Άνοιγμα στο παρασκήνιο";
 
 /* Create New Tab action */
-"action.title.newTabAction" = "Νέο";
+"action.title.newTabAction" = "Νέα καρτέλα";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Άνοιγμα σε νέα καρτέλα";

@@ -30,6 +30,7 @@ class SwitchBarTextEntryView: UIView {
         static let maxHeightWhenUsingFadeOutAnimation: CGFloat = 132
         static let minHeight: CGFloat = 44
         static let minHeightAIChat: CGFloat = 68
+        static let minHeightAIChatBottomBar: CGFloat = 96
         static let fontSize: CGFloat = 16
 
         // Text container insets
@@ -64,8 +65,12 @@ class SwitchBarTextEntryView: UIView {
             return Constants.minHeight
         }
 
-        if currentMode == .aiChat && !handler.isUsingExpandedBottomBarHeight {
-            return Constants.minHeightAIChat
+        if currentMode == .search && !handler.isTopBarPosition {
+            return handler.isUsingSmallerBottomInput ? Constants.minHeight : Constants.minHeightAIChatBottomBar
+        }
+
+        if currentMode == .aiChat {
+            return handler.isTopBarPosition ? Constants.minHeightAIChat : Constants.minHeightAIChatBottomBar
         }
 
         return Constants.minHeight

@@ -70,8 +70,6 @@ final class DefaultReinstallUserDetection: ReinstallingUserDetecting {
         static let storedBundleCreationDate = "reinstall.detection.bundle-creation-date"
         /// The result of the reinstall check
         static let isReinstallingUser = "reinstall.detection.is-reinstalling-user"
-        /// Sparkle's pending update metadata key (to detect Sparkle updates)
-        static let sparklePendingUpdateVersion = "pending.update.source.version"
     }
 
     private let buildType: ApplicationBuildType
@@ -176,6 +174,6 @@ final class DefaultReinstallUserDetection: ReinstallingUserDetecting {
     /// If this metadata exists, Sparkle initiated the update.
     private func wasSparkleUpdate() -> Bool {
         // Check if Sparkle stored pending update metadata
-        return standardDefaults.string(forKey: Keys.sparklePendingUpdateVersion) != nil
+        return standardDefaults.string(forKey: UserDefaultsWrapper<Any>.Key.pendingUpdateSourceVersion.rawValue) != nil
     }
 }

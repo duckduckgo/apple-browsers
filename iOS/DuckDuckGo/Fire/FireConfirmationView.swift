@@ -107,7 +107,8 @@ struct FireConfirmationView: View {
             }) {
                 Text(UserText.actionDelete)
             }
-            .buttonStyle(PrimaryDestructiveButtonStyle())
+            .buttonStyle(PrimaryDestructiveButtonStyle(disabled: viewModel.isDeleteButtonDisabled))
+            .disabled(viewModel.isDeleteButtonDisabled)
             .accessibilityIdentifier("Fire.Confirmation.Button.Delete")
             
             // Cancel button

@@ -37,6 +37,12 @@ class FireConfirmationViewModel: ObservableObject {
     let onCancel: () -> Void
     let showAIChatsOption: Bool = true
     
+    // MARK: - Computed Properties
+    
+    var isDeleteButtonDisabled: Bool {
+        !clearTabs && !clearData && !clearAIChats
+    }
+    
     // MARK: - Private Variables
     private let tabsModel: TabsModeling?
     private let historyManager: HistoryManaging?

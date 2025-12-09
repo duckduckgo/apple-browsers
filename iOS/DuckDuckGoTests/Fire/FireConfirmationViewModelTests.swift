@@ -379,4 +379,57 @@ final class FireConfirmationViewModelTests: XCTestCase {
         XCTAssertTrue(newViewModel.clearData, "clearData should remain default true after cancel")
         XCTAssertFalse(newViewModel.clearAIChats, "clearAIChats should remain default false after cancel")
     }
+    
+    // MARK: - Delete Button Disabled Tests
+    
+    func testWhenAllTogglesAreOffThenDeleteButtonIsDisabled() {
+        // Given
+        let viewModel = makeViewModel(tabsModel: nil)
+        viewModel.clearTabs = false
+        viewModel.clearData = false
+        viewModel.clearAIChats = false
+        
+        // Then
+        XCTAssertTrue(viewModel.isDeleteButtonDisabled, "Delete button should be disabled when all toggles are off")
+    }
+    
+    func testWhenAtLeastOneToggleIsOnThenDeleteButtonIsEnabled() {
+        // Given
+        let viewModel = makeViewModel(tabsModel: nil)
+        
+        // When - Only clearTabs is on
+        viewModel.clearTabs = true
+        viewModel.clearData = false
+        viewModel.clearAIChats = false
+        
+        // Then
+        XCTAssertFalse(viewModel.isDeleteButtonDisabled, "Delete button should be enabled when clearTabs is on")
+        
+        // When - Only clearData is on
+        viewModel.clearTabs = false
+        viewModel.clearData = true
+        viewModel.clearAIChats = false
+        
+        // Then
+        XCTAssertFalse(viewModel.isDeleteButtonDisabled, "Delete button should be enabled when clearData is on")
+        
+        // When - Only clearAIChats is on
+        viewModel.clearTabs = false
+        viewModel.clearData = false
+        viewModel.clearAIChats = true
+        
+        // Then
+        XCTAssertFalse(viewModel.isDeleteButtonDisabled, "Delete button should be enabled when clearAIChats is on")
+    }
+    
+    func testWhenAllTogglesAreOnThenDeleteButtonIsEnabled() {
+        // Given
+        let viewModel = makeViewModel(tabsModel: nil)
+        viewModel.clearTabs = true
+        viewModel.clearData = true
+        viewModel.clearAIChats = true
+        
+        // Then
+        XCTAssertFalse(viewModel.isDeleteButtonDisabled, "Delete button should be enabled when all toggles are on")
+    }
 }

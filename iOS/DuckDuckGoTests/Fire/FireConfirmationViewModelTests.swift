@@ -350,15 +350,15 @@ final class FireConfirmationViewModelTests: XCTestCase {
     
     func testWhenStoredValuesExistThenTheyAreLoadedOnInit() {
         // Given - Pre-populate storage
-        customSuite.set(true, forKey: "com.duckduckgo.ios.fireConfirmation.clearTabs")
-        customSuite.set(false, forKey: "com.duckduckgo.ios.fireConfirmation.clearData")
-        customSuite.set(true, forKey: "com.duckduckgo.ios.fireConfirmation.clearAIChats")
+        customSuite.set(false, forKey: "com.duckduckgo.ios.fireConfirmation.toggle.clearTabs")
+        customSuite.set(false, forKey: "com.duckduckgo.ios.fireConfirmation.toggle.clearData")
+        customSuite.set(true, forKey: "com.duckduckgo.ios.fireConfirmation.toggle.clearAIChats")
         
         // When
         let viewModel = makeViewModel(tabsModel: nil)
         
         // Then
-        XCTAssertTrue(viewModel.clearTabs, "clearTabs should load stored value true")
+        XCTAssertFalse(viewModel.clearTabs, "clearTabs should load stored value true")
         XCTAssertFalse(viewModel.clearData, "clearData should load stored value false")
         XCTAssertTrue(viewModel.clearAIChats, "clearAIChats should load stored value true")
     }

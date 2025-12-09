@@ -106,7 +106,8 @@ extension TabSwitcherViewController {
             let presenter = FireConfirmationPresenter(tabsModel: tabsModel,
                                                       featureFlagger: featureFlagger,
                                                       historyManager: historyManager,
-                                                      fireproofing: fireproofing)
+                                                      fireproofing: fireproofing,
+                                                      aiChatSettings: aiChatSettings)
             presenter.presentFireConfirmation(
                 on: self,
                 attachPopoverTo: sender,

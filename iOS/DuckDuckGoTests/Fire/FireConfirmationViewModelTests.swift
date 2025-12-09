@@ -22,6 +22,7 @@ import XCTest
 @testable import Core
 import Common
 import History
+import AIChat
 
 final class FireConfirmationViewModelTests: XCTestCase {
     
@@ -80,27 +81,23 @@ final class FireConfirmationViewModelTests: XCTestCase {
         }
     }
     
-    private func makeViewModel(tabsModel: TabsModeling?) -> FireConfirmationViewModel {
-        return FireConfirmationViewModel(
-            tabsModel: tabsModel,
-            historyManager: nil,
-            fireproofing: nil,
-            onConfirm: {},
-            onCancel: {}
-        )
-    }
-    
     private func makeViewModel(
-        tabsModel: TabsModeling? = nil,
-        historyManager: HistoryManaging?,
+        tabsModel: TabsModeling = MockTabsModel(count: 0),
+        historyManager: HistoryManaging = MockHistoryManager(
+            historyCoordinator: NullHistoryCoordinator(),
+            isEnabledByUser: false,
+            historyFeatureEnabled: false
+        ),
         tld: TLD = TLD(),
-        fireproofing: Fireproofing?
+        fireproofing: Fireproofing = TestFireproofing(),
+        aiChatSettings: AIChatSettingsProvider = MockAIChatSettingsProvider()
     ) -> FireConfirmationViewModel {
         return FireConfirmationViewModel(
             tabsModel: tabsModel,
             historyManager: historyManager,
             tld: tld,
             fireproofing: fireproofing,
+            aiChatSettings: aiChatSettings,
             onConfirm: {},
             onCancel: {}
         )
@@ -123,7 +120,7 @@ final class FireConfirmationViewModelTests: XCTestCase {
     
     func testWhenTabsModelIsNilThenClearTabsSubtitleReturnsZeroCount() {
         // Given
-        let viewModel = makeViewModel(tabsModel: nil)
+        let viewModel = makeViewModel()
         
         // When
         let subtitle = viewModel.clearTabsSubtitle()
@@ -169,18 +166,6 @@ final class FireConfirmationViewModelTests: XCTestCase {
     }
     
     // MARK: - clearDataSubtitle Tests
-    
-    @MainActor
-    func testWhenHistoryManagerIsNilThenClearDataSubtitleReturnsZeroCount() {
-        // Given
-        let viewModel = makeViewModel(historyManager: nil, fireproofing: nil)
-        
-        // When
-        let subtitle = viewModel.clearDataSubtitle()
-        
-        // Then
-        XCTAssertEqual(subtitle, "None")
-    }
     
     @MainActor
     func testWhenHistoryIsDisabledThenClearDataSubtitleReturnsStaticText() {
@@ -323,7 +308,7 @@ final class FireConfirmationViewModelTests: XCTestCase {
         // Given - No stored values (clean UserDefaults)
         
         // When
-        let viewModel = makeViewModel(tabsModel: nil)
+        let viewModel = makeViewModel()
         
         // Then
         XCTAssertTrue(viewModel.clearTabs, "clearTabs should default to true")
@@ -333,7 +318,7 @@ final class FireConfirmationViewModelTests: XCTestCase {
     
     func testWhenConfirmCalledThenToggleValuesArePersisted() {
         // Given
-        let viewModel = makeViewModel(tabsModel: nil)
+        let viewModel = makeViewModel()
         viewModel.clearTabs = false
         viewModel.clearData = false
         viewModel.clearAIChats = true
@@ -342,7 +327,7 @@ final class FireConfirmationViewModelTests: XCTestCase {
         viewModel.confirm()
         
         // Then
-        let newViewModel = makeViewModel(tabsModel: nil)
+        let newViewModel = makeViewModel()
         XCTAssertFalse(newViewModel.clearTabs, "clearTabs should be persisted as false")
         XCTAssertFalse(newViewModel.clearData, "clearData should be persisted as false")
         XCTAssertTrue(newViewModel.clearAIChats, "clearAIChats should be persisted as true")
@@ -355,7 +340,7 @@ final class FireConfirmationViewModelTests: XCTestCase {
         customSuite.set(true, forKey: "com.duckduckgo.ios.fireConfirmation.toggle.clearAIChats")
         
         // When
-        let viewModel = makeViewModel(tabsModel: nil)
+        let viewModel = makeViewModel()
         
         // Then
         XCTAssertFalse(viewModel.clearTabs, "clearTabs should load stored value true")
@@ -365,7 +350,7 @@ final class FireConfirmationViewModelTests: XCTestCase {
     
     func testWhenCancelCalledThenToggleValuesAreNotPersisted() {
         // Given
-        let viewModel = makeViewModel(tabsModel: nil)
+        let viewModel = makeViewModel()
         viewModel.clearTabs = false
         viewModel.clearData = false
         viewModel.clearAIChats = true
@@ -374,7 +359,7 @@ final class FireConfirmationViewModelTests: XCTestCase {
         viewModel.cancel()
         
         // Then
-        let newViewModel = makeViewModel(tabsModel: nil)
+        let newViewModel = makeViewModel()
         XCTAssertTrue(newViewModel.clearTabs, "clearTabs should remain default true after cancel")
         XCTAssertTrue(newViewModel.clearData, "clearData should remain default true after cancel")
         XCTAssertFalse(newViewModel.clearAIChats, "clearAIChats should remain default false after cancel")
@@ -452,7 +437,7 @@ final class FireConfirmationViewModelTests: XCTestCase {
     
     func testWhenAllTogglesAreOffThenDeleteButtonIsDisabled() {
         // Given
-        let viewModel = makeViewModel(tabsModel: nil)
+        let viewModel = makeViewModel()
         viewModel.clearTabs = false
         viewModel.clearData = false
         viewModel.clearAIChats = false
@@ -463,7 +448,7 @@ final class FireConfirmationViewModelTests: XCTestCase {
     
     func testWhenAtLeastOneToggleIsOnThenDeleteButtonIsEnabled() {
         // Given
-        let viewModel = makeViewModel(tabsModel: nil)
+        let viewModel = makeViewModel()
         
         // When - Only clearTabs is on
         viewModel.clearTabs = true
@@ -492,12 +477,32 @@ final class FireConfirmationViewModelTests: XCTestCase {
     
     func testWhenAllTogglesAreOnThenDeleteButtonIsEnabled() {
         // Given
-        let viewModel = makeViewModel(tabsModel: nil)
+        let viewModel = makeViewModel()
         viewModel.clearTabs = true
         viewModel.clearData = true
         viewModel.clearAIChats = true
         
         // Then
         XCTAssertFalse(viewModel.isDeleteButtonDisabled, "Delete button should be enabled when all toggles are on")
+    }
+    
+    // MARK: - showAIChatsOption Tests
+    
+    func testWhenAIChatIsEnabledThenShowAIChatsOptionIsTrue() {
+        // Given
+        let aiChatSettings = MockAIChatSettingsProvider(isAIChatEnabled: true)
+        let viewModel = makeViewModel(aiChatSettings: aiChatSettings)
+        
+        // Then
+        XCTAssertTrue(viewModel.showAIChatsOption, "showAIChatsOption should be true when AI Chat is enabled")
+    }
+    
+    func testWhenAIChatIsDisabledThenShowAIChatsOptionIsFalse() {
+        // Given
+        let aiChatSettings = MockAIChatSettingsProvider(isAIChatEnabled: false)
+        let viewModel = makeViewModel(aiChatSettings: aiChatSettings)
+        
+        // Then
+        XCTAssertFalse(viewModel.showAIChatsOption, "showAIChatsOption should be false when AI Chat is disabled")
     }
 }

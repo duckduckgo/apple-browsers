@@ -22,6 +22,7 @@ import Combine
 import Core
 import Common
 import History
+import AIChat
 
 class FireConfirmationViewModel: ObservableObject {
     
@@ -35,7 +36,23 @@ class FireConfirmationViewModel: ObservableObject {
     
     let onConfirm: () -> Void
     let onCancel: () -> Void
-    let showAIChatsOption: Bool = true
+    
+    // MARK: - Private Variables
+    private let tabsModel: TabsModeling
+    private let historyManager: HistoryManaging
+    private let tld: TLD
+    private let fireproofing: Fireproofing
+    private let aiChatSettings: AIChatSettingsProvider
+    
+    // MARK: - Lazy Variables
+    @MainActor
+    private lazy var sitesCount: Int = {
+        return self.computeNonFireproofedDomainCount()
+    }()
+    
+    private lazy var tabsCount: Int = {
+        return tabsModel.count
+    }()
     
     // MARK: - Computed Properties
     
@@ -49,25 +66,12 @@ class FireConfirmationViewModel: ObservableObject {
     
     @MainActor
     var isClearDataDisabled: Bool {
-        let historyEnabled = historyManager?.isEnabledByUser ?? false
-        return historyEnabled && sitesCount == 0
+        return historyManager.isEnabledByUser && sitesCount == 0
     }
     
-    // MARK: - Private Variables
-    private let tabsModel: TabsModeling?
-    private let historyManager: HistoryManaging?
-    private let tld: TLD
-    private let fireproofing: Fireproofing?
-    
-    // MARK: - Lazy Variables
-    @MainActor
-    private lazy var sitesCount: Int = {
-        return self.computeNonFireproofedDomainCount()
-    }()
-    
-    private lazy var tabsCount: Int = {
-        return tabsModel?.count ?? 0
-    }()
+    var showAIChatsOption: Bool {
+        aiChatSettings.isAIChatEnabled
+    }
     
     // MARK: - Persistence Storage
     @UserDefaultsWrapper(key: .fireConfirmationClearTabs, defaultValue: true)
@@ -79,10 +83,13 @@ class FireConfirmationViewModel: ObservableObject {
     @UserDefaultsWrapper(key: .fireConfirmationClearAIChats, defaultValue: false)
     private var storedClearAIChats: Bool
     
-    init(tabsModel: TabsModeling?,
-         historyManager: HistoryManaging?,
+    // MARK: - Initializer
+    
+    init(tabsModel: TabsModeling,
+         historyManager: HistoryManaging,
          tld: TLD = AppDependencyProvider.shared.storageCache.tld,
-         fireproofing: Fireproofing?,
+         fireproofing: Fireproofing,
+         aiChatSettings: AIChatSettingsProvider,
          onConfirm: @escaping () -> Void,
          onCancel: @escaping () -> Void) {
         self.onConfirm = onConfirm
@@ -91,8 +98,11 @@ class FireConfirmationViewModel: ObservableObject {
         self.historyManager = historyManager
         self.tld = tld
         self.fireproofing = fireproofing
+        self.aiChatSettings = aiChatSettings
         loadPersistedValues()
     }
+    
+    // MARK: - Public Functions
     
     func confirm() {
         // Persist current toggle states
@@ -113,19 +123,17 @@ class FireConfirmationViewModel: ObservableObject {
     
     @MainActor
     func clearDataSubtitle() -> String {
-        guard let historyManager = historyManager else {
-            return UserText.fireConfirmationDataSubtitle(withCount: 0)
-        }
-        
         guard historyManager.isEnabledByUser else {
             return UserText.fireConfirmationDataSubtitleHistoryDisabled
         }
         return UserText.fireConfirmationDataSubtitle(withCount: sitesCount)
     }
     
+    // MARK: - Private Helpers
+    
     @MainActor
     private func computeNonFireproofedDomainCount() -> Int {
-        guard let history = historyManager?.historyCoordinator.history else {
+        guard let history = historyManager.historyCoordinator.history else {
             return 0
         }
         
@@ -142,10 +150,6 @@ class FireConfirmationViewModel: ObservableObject {
         
         // Filter out fireproofed domains
         let nonFireproofed = eTLDPlus1Domains.filter { domain in
-            guard let fireproofing else {
-                assertionFailure("fireproofing should not be nil here")
-                return true
-            }
             return !fireproofing.isAllowed(fireproofDomain: domain)
         }
         

@@ -50,7 +50,7 @@ protocol ReinstallingUserDetecting {
     /// The result is stored in UserDefaults and can be accessed via `isReinstallingUser`.
     ///
     /// On App Store builds, this is a no-op since reinstall detection is not supported.
-    func checkForReinstallingUser()
+    func checkForReinstallingUser() throws
 }
 
 /// Provides the URL of the application bundle.
@@ -108,7 +108,7 @@ final class DefaultReinstallUserDetection: ReinstallingUserDetecting {
         }
     }
 
-    func checkForReinstallingUser() {
+    func checkForReinstallingUser() throws {
         guard buildType.isSparkleBuild else {
             // App Store builds: No-op - reinstall detection is not supported
             return
@@ -119,12 +119,12 @@ final class DefaultReinstallUserDetection: ReinstallingUserDetecting {
             return
         }
 
-        let storedCreationDate = try? keyValueStore.object(forKey: Keys.storedBundleCreationDate) as? Date
+        let storedCreationDate = try keyValueStore.object(forKey: Keys.storedBundleCreationDate) as? Date
 
         // Case 1: No stored date → First launch ever (or first launch with this feature)
         guard let storedCreationDate = storedCreationDate else {
             // Store current bundle's creation date for future comparisons
-            try? keyValueStore.set(currentBundleCreationDate, forKey: Keys.storedBundleCreationDate)
+            try keyValueStore.set(currentBundleCreationDate, forKey: Keys.storedBundleCreationDate)
             return
         }
 
@@ -138,13 +138,13 @@ final class DefaultReinstallUserDetection: ReinstallingUserDetecting {
         if wasSparkleUpdate() {
             // Sparkle update - not a reinstall
             // Update stored date to current bundle
-            try? keyValueStore.set(currentBundleCreationDate, forKey: Keys.storedBundleCreationDate)
+            try keyValueStore.set(currentBundleCreationDate, forKey: Keys.storedBundleCreationDate)
             return
         }
 
         // Not a Sparkle update → Reinstall detected (or manual update, which we treat as reinstall)
-        try? keyValueStore.set(true, forKey: Keys.isReinstallingUser)
-        try? keyValueStore.set(currentBundleCreationDate, forKey: Keys.storedBundleCreationDate)
+        try keyValueStore.set(true, forKey: Keys.isReinstallingUser)
+        try keyValueStore.set(currentBundleCreationDate, forKey: Keys.storedBundleCreationDate)
     }
 
     // MARK: - Bundle Metadata

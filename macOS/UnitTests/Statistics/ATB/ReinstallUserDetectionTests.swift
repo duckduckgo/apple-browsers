@@ -139,7 +139,7 @@ final class ReinstallUserDetectionTests: XCTestCase {
         mockBuildType.isAppStoreBuild = true
         mockFileManager.mockCreationDate = january1
 
-        sut.checkForReinstallingUser()
+        try sut.checkForReinstallingUser()
 
         // Should not store anything
         let storedDate = try mockKeyValueStore.object(forKey: "reinstall.detection.bundle-creation-date")
@@ -152,16 +152,16 @@ final class ReinstallUserDetectionTests: XCTestCase {
     func testWhenNoStoredDateThenStoresCurrentBundleDate() throws {
         mockFileManager.mockCreationDate = january1
 
-        sut.checkForReinstallingUser()
+        try sut.checkForReinstallingUser()
 
         let storedDate = try mockKeyValueStore.object(forKey: "reinstall.detection.bundle-creation-date") as? Date
         XCTAssertEqual(storedDate, january1)
     }
 
-    func testWhenNoStoredDateThenDoesNotFlagAsReinstall() {
+    func testWhenNoStoredDateThenDoesNotFlagAsReinstall() throws {
         mockFileManager.mockCreationDate = january1
 
-        sut.checkForReinstallingUser()
+        try sut.checkForReinstallingUser()
 
         XCTAssertFalse(sut.isReinstallingUser)
     }
@@ -172,7 +172,7 @@ final class ReinstallUserDetectionTests: XCTestCase {
         mockFileManager.mockCreationDate = january1
         try mockKeyValueStore.set(january1, forKey: "reinstall.detection.bundle-creation-date")
 
-        sut.checkForReinstallingUser()
+        try sut.checkForReinstallingUser()
 
         XCTAssertFalse(sut.isReinstallingUser)
         let storedDate = try mockKeyValueStore.object(forKey: "reinstall.detection.bundle-creation-date") as? Date
@@ -185,7 +185,7 @@ final class ReinstallUserDetectionTests: XCTestCase {
         mockFileManager.mockCreationDate = currentDate
         try mockKeyValueStore.set(storedDate, forKey: "reinstall.detection.bundle-creation-date")
 
-        sut.checkForReinstallingUser()
+        try sut.checkForReinstallingUser()
 
         XCTAssertFalse(sut.isReinstallingUser)
     }
@@ -196,7 +196,7 @@ final class ReinstallUserDetectionTests: XCTestCase {
         mockFileManager.mockCreationDate = currentDate
         try mockKeyValueStore.set(storedDate, forKey: "reinstall.detection.bundle-creation-date")
 
-        sut.checkForReinstallingUser()
+        try sut.checkForReinstallingUser()
 
         // At exactly 1.0 second, dates are considered different (since we use < 1.0)
         XCTAssertTrue(sut.isReinstallingUser)
@@ -209,7 +209,7 @@ final class ReinstallUserDetectionTests: XCTestCase {
         try mockKeyValueStore.set(january1, forKey: "reinstall.detection.bundle-creation-date")
         standardDefaults.set("1.0.0", forKey: "pending.update.source.version")
 
-        sut.checkForReinstallingUser()
+        try sut.checkForReinstallingUser()
 
         XCTAssertFalse(sut.isReinstallingUser)
     }
@@ -219,7 +219,7 @@ final class ReinstallUserDetectionTests: XCTestCase {
         try mockKeyValueStore.set(january1, forKey: "reinstall.detection.bundle-creation-date")
         standardDefaults.set("1.0.0", forKey: "pending.update.source.version")
 
-        sut.checkForReinstallingUser()
+        try sut.checkForReinstallingUser()
 
         let storedDate = try mockKeyValueStore.object(forKey: "reinstall.detection.bundle-creation-date") as? Date
         XCTAssertEqual(storedDate, january2)
@@ -232,7 +232,7 @@ final class ReinstallUserDetectionTests: XCTestCase {
         try mockKeyValueStore.set(january1, forKey: "reinstall.detection.bundle-creation-date")
         // No Sparkle metadata set
 
-        sut.checkForReinstallingUser()
+        try sut.checkForReinstallingUser()
 
         XCTAssertTrue(sut.isReinstallingUser)
     }
@@ -241,7 +241,7 @@ final class ReinstallUserDetectionTests: XCTestCase {
         mockFileManager.mockCreationDate = january2
         try mockKeyValueStore.set(january1, forKey: "reinstall.detection.bundle-creation-date")
 
-        sut.checkForReinstallingUser()
+        try sut.checkForReinstallingUser()
 
         let storedDate = try mockKeyValueStore.object(forKey: "reinstall.detection.bundle-creation-date") as? Date
         XCTAssertEqual(storedDate, january2)
@@ -251,7 +251,7 @@ final class ReinstallUserDetectionTests: XCTestCase {
         // First call - simulate reinstall
         mockFileManager.mockCreationDate = january2
         try mockKeyValueStore.set(january1, forKey: "reinstall.detection.bundle-creation-date")
-        sut.checkForReinstallingUser()
+        try sut.checkForReinstallingUser()
 
         XCTAssertTrue(sut.isReinstallingUser)
 
@@ -266,7 +266,7 @@ final class ReinstallUserDetectionTests: XCTestCase {
         mockFileManager.shouldThrowError = true
         try mockKeyValueStore.set(january1, forKey: "reinstall.detection.bundle-creation-date")
 
-        sut.checkForReinstallingUser()
+        try sut.checkForReinstallingUser()
 
         // Should not flag as reinstall
         XCTAssertFalse(sut.isReinstallingUser)
@@ -278,7 +278,7 @@ final class ReinstallUserDetectionTests: XCTestCase {
     func testWhenBundleCreationDateNotInAttributesThenSkipsDetection() throws {
         mockFileManager.mockCreationDate = nil // No creation date in attributes
 
-        sut.checkForReinstallingUser()
+        try sut.checkForReinstallingUser()
 
         XCTAssertFalse(sut.isReinstallingUser)
         let storedDate = try mockKeyValueStore.object(forKey: "reinstall.detection.bundle-creation-date")
@@ -287,31 +287,31 @@ final class ReinstallUserDetectionTests: XCTestCase {
 
     // MARK: - Integration-like Tests
 
-    func testTypicalReinstallFlow() {
+    func testTypicalReinstallFlow() throws {
         // Step 1: First launch - new user
         mockFileManager.mockCreationDate = january1
-        sut.checkForReinstallingUser()
+        try sut.checkForReinstallingUser()
 
         XCTAssertFalse(sut.isReinstallingUser)
 
         // Step 2: Normal app launch (same bundle)
         createSUT()
-        sut.checkForReinstallingUser()
+        try sut.checkForReinstallingUser()
 
         XCTAssertFalse(sut.isReinstallingUser)
 
         // Step 3: User reinstalls (new bundle, no Sparkle)
         mockFileManager.mockCreationDate = january2
         createSUT()
-        sut.checkForReinstallingUser()
+        try sut.checkForReinstallingUser()
 
         XCTAssertTrue(sut.isReinstallingUser)
     }
 
-    func testTypicalSparkleUpdateFlow() {
+    func testTypicalSparkleUpdateFlow() throws {
         // Step 1: First launch
         mockFileManager.mockCreationDate = january1
-        sut.checkForReinstallingUser()
+        try sut.checkForReinstallingUser()
 
         XCTAssertFalse(sut.isReinstallingUser)
 
@@ -319,7 +319,7 @@ final class ReinstallUserDetectionTests: XCTestCase {
         mockFileManager.mockCreationDate = january2
         standardDefaults.set("1.0.0", forKey: "pending.update.source.version")
         createSUT()
-        sut.checkForReinstallingUser()
+        try sut.checkForReinstallingUser()
 
         XCTAssertFalse(sut.isReinstallingUser)
     }

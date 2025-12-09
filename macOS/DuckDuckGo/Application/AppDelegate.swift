@@ -1076,7 +1076,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Stores the bundle's creation date in the KeyValueStore and compares
         // on subsequent launches. If the date changes and it's not a Sparkle update,
         // the user has reinstalled the app.
-        DefaultReinstallUserDetection(keyValueStore: keyValueStore).checkForReinstallingUser()
+        do {
+            try DefaultReinstallUserDetection(keyValueStore: keyValueStore).checkForReinstallingUser()
+        } catch {
+            Logger.general.error("Problem when checking for reinstalling user: \(error.localizedDescription)")
+        }
 
         Task {
             await subscriptionManagerV1?.loadInitialData()

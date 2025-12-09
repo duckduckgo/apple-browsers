@@ -259,8 +259,11 @@ class SwitchBarTextEntryView: UIView {
         case .aiChat:
             if handler.isUsingFadeOutAnimation {
 //                textView.keyboardType = .default
-                textView.keyboardType = .webSearch
+                print("🇳🇴 [\(String(describing: Self.self))] updateKeyboardConfiguration ⚠️")
+                textView.keyboardType = .default
                 textView.returnKeyType = .default
+                textView.autocorrectionType = .no
+                textView.spellCheckingType = .no
             } else {
                 textView.keyboardType = .webSearch
                 textView.returnKeyType = .go
@@ -479,6 +482,7 @@ class SwitchBarTextEntryView: UIView {
             textView.keyboardType = .default
             textView.returnKeyType = .default
             textView.autocorrectionType = .default
+            textView.spellCheckingType = .default
             textView.reloadInputViews()
         }
     }

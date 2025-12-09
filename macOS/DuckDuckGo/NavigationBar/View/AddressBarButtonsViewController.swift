@@ -1716,7 +1716,7 @@ final class AddressBarButtonsViewController: NSViewController {
         }
         /// Defer dismissal to the next run loop cycle so the toggle collapse animation
         /// can start first, then both animations run concurrently without interference
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
             self?.aiChatTogglePopoverCoordinator?.dismissPopover()
         }
     }

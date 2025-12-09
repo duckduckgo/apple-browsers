@@ -31,13 +31,13 @@ final class AIChatTogglePopoverPresenter: AIChatTogglePopoverPresenting {
 
     private let windowControllersManager: WindowControllersManagerProtocol
     private weak var activePopover: PopoverMessageViewController?
-
+    private var isPresentingPopover: Bool = false
     init(windowControllersManager: WindowControllersManagerProtocol) {
         self.windowControllersManager = windowControllersManager
     }
 
     func isPopoverBeingPresented() -> Bool {
-        activePopover != nil
+        isPresentingPopover
     }
 
     func showPopover(viewController: PopoverMessageViewController, relativeTo toggleControl: NSView) {
@@ -46,6 +46,7 @@ final class AIChatTogglePopoverPresenter: AIChatTogglePopoverPresenting {
         }
 
         activePopover = viewController
+        isPresentingPopover = true
 
         viewController.show(onParent: mainWindowController.mainViewController,
                             relativeTo: toggleControl,
@@ -59,5 +60,10 @@ final class AIChatTogglePopoverPresenter: AIChatTogglePopoverPresenting {
         }
         popover.dismiss(nil)
         activePopover = nil
+
+        /// Give time for the popover animation to finish
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            self.isPresentingPopover = false
+        }
     }
 }

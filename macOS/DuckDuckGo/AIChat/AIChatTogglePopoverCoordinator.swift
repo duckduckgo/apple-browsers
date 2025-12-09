@@ -27,6 +27,7 @@ import PixelKit
 protocol AIChatTogglePopoverCoordinating: AnyObject {
     func showPopoverIfNeeded(relativeTo toggleControl: NSView, isNewUser: Bool, userDidInteractWithToggle: Bool)
     func dismissPopover()
+    func isPopoverBeingPresented() -> Bool
     func showPopoverForDebug(relativeTo toggleControl: NSView)
     func clearPopoverSeenFlag()
 }
@@ -140,6 +141,10 @@ final class AIChatTogglePopoverCoordinator: AIChatTogglePopoverCoordinating {
             return
         }
         presenter.dismissPopover()
+    }
+
+    func isPopoverBeingPresented() -> Bool {
+        presenter.isPopoverBeingPresented()
     }
 
     // MARK: - Debug

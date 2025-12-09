@@ -1,5 +1,6 @@
 //
-//  NewTabPageOmnibarConfigProviding.swift
+//  MockRemoteMessagingDebugHandler.swift
+//  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,18 +17,11 @@
 //  limitations under the License.
 //
 
-import Combine
+import Foundation
+@testable import DuckDuckGo
 
-public protocol NewTabPageOmnibarConfigProviding: AnyObject {
+final class MockRemoteMessagingDebugHandler: RemoteMessagingDebugHandling {
 
-    @MainActor
-    var mode: NewTabPageDataModel.OmnibarMode { get set }
+    func refreshRemoteMessages() { }
 
-    var isAIChatShortcutEnabled: Bool { get set }
-    var isAIChatShortcutEnabledPublisher: AnyPublisher<Bool, Never> { get }
-
-    var isAIChatSettingVisible: Bool { get }
-    var isAIChatSettingVisiblePublisher: AnyPublisher<Bool, Never> { get }
-
-    var showCustomizePopover: Bool { get set }
 }

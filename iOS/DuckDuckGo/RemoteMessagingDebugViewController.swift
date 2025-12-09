@@ -36,7 +36,11 @@ class RemoteMessagingDebugViewController: UIHostingController<RemoteMessagingDeb
 
 struct RemoteMessagingDebugRootView: View {
 
-    @ObservedObject var model = RemoteMessagingDebugViewModel()
+    @ObservedObject var model: RemoteMessagingDebugViewModel
+    
+    init(remoteMessagingDebugHandler: RemoteMessagingDebugHandling? = nil) {
+        self.model = RemoteMessagingDebugViewModel(remoteMessagingDebugHandler: remoteMessagingDebugHandler)
+    }
     @State private var shareItem: ShareItem?
 
     var body: some View {
@@ -230,8 +234,10 @@ class RemoteMessagingDebugViewModel: ObservableObject {
     @Published var isLoadingLogs: Bool = false
 
     let database: CoreDataDatabase
+    private let remoteMessagingDebugHandler: RemoteMessagingDebugHandling?
 
-    init() {
+    init(remoteMessagingDebugHandler: RemoteMessagingDebugHandling? = nil) {
+        self.remoteMessagingDebugHandler = remoteMessagingDebugHandler
         database = Database.shared
         fetchMessages()
         fetchConfigInfo()
@@ -268,7 +274,7 @@ class RemoteMessagingDebugViewModel: ObservableObject {
     }
 
     func refreshConfig() {
-        (UIApplication.shared.delegate as? AppDelegate)?.debugRefreshRemoteMessages()
+        remoteMessagingDebugHandler?.refreshRemoteMessages()
     }
 
     func fetchMessages() {

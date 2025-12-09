@@ -318,8 +318,9 @@ final class FireConfirmationViewModelTests: XCTestCase {
     }
     
     func testWhenConfirmCalledThenToggleValuesArePersisted() {
-        // Given
-        let viewModel = makeViewModel()
+        // Given - Enable AI Chat so clearAIChats can be persisted and loaded
+        let aiChatSettings = MockAIChatSettingsProvider(isAIChatEnabled: true)
+        let viewModel = makeViewModel(aiChatSettings: aiChatSettings)
         viewModel.clearTabs = false
         viewModel.clearData = false
         viewModel.clearAIChats = true
@@ -328,25 +329,54 @@ final class FireConfirmationViewModelTests: XCTestCase {
         viewModel.confirm()
         
         // Then
-        let newViewModel = makeViewModel()
+        let newViewModel = makeViewModel(aiChatSettings: aiChatSettings)
         XCTAssertFalse(newViewModel.clearTabs, "clearTabs should be persisted as false")
         XCTAssertFalse(newViewModel.clearData, "clearData should be persisted as false")
         XCTAssertTrue(newViewModel.clearAIChats, "clearAIChats should be persisted as true")
     }
     
     func testWhenStoredValuesExistThenTheyAreLoadedOnInit() {
-        // Given - Pre-populate storage
+        // Given - Pre-populate storage and enable AI Chat
         customSuite.set(false, forKey: "com.duckduckgo.ios.fireConfirmation.toggle.clearTabs")
         customSuite.set(false, forKey: "com.duckduckgo.ios.fireConfirmation.toggle.clearData")
         customSuite.set(true, forKey: "com.duckduckgo.ios.fireConfirmation.toggle.clearAIChats")
+        let aiChatSettings = MockAIChatSettingsProvider(isAIChatEnabled: true)
         
         // When
-        let viewModel = makeViewModel()
+        let viewModel = makeViewModel(aiChatSettings: aiChatSettings)
         
         // Then
-        XCTAssertFalse(viewModel.clearTabs, "clearTabs should load stored value true")
+        XCTAssertFalse(viewModel.clearTabs, "clearTabs should load stored value false")
         XCTAssertFalse(viewModel.clearData, "clearData should load stored value false")
-        XCTAssertTrue(viewModel.clearAIChats, "clearAIChats should load stored value true")
+        XCTAssertTrue(viewModel.clearAIChats, "clearAIChats should load stored value true when AI Chat is enabled")
+    }
+    
+    func testWhenAIChatIsDisabledThenStoredClearAIChatsIsIgnored() {
+        // Given - Pre-populate storage with clearAIChats = true, but AI Chat is disabled
+        customSuite.set(true, forKey: "com.duckduckgo.ios.fireConfirmation.toggle.clearAIChats")
+        let aiChatSettings = MockAIChatSettingsProvider(isAIChatEnabled: false)
+        
+        // When
+        let viewModel = makeViewModel(aiChatSettings: aiChatSettings)
+        
+        // Then
+        XCTAssertFalse(viewModel.clearAIChats, "clearAIChats should be false when AI Chat is disabled, regardless of stored value")
+        XCTAssertFalse(viewModel.showAIChatsOption, "showAIChatsOption should be false when AI Chat is disabled")
+    }
+    
+    func testWhenAIChatIsDisabledAndClearAIChatsPersistedThenDeleteButtonRespectsVisibleTogglesOnly() {
+        // Given - Pre-populate storage with clearAIChats = true, but AI Chat is disabled
+        // Both visible toggles are off
+        customSuite.set(false, forKey: "com.duckduckgo.ios.fireConfirmation.toggle.clearTabs")
+        customSuite.set(false, forKey: "com.duckduckgo.ios.fireConfirmation.toggle.clearData")
+        customSuite.set(true, forKey: "com.duckduckgo.ios.fireConfirmation.toggle.clearAIChats")
+        let aiChatSettings = MockAIChatSettingsProvider(isAIChatEnabled: false)
+        
+        // When
+        let viewModel = makeViewModel(aiChatSettings: aiChatSettings)
+        
+        // Then - Delete button should be disabled since all visible toggles are off
+        XCTAssertTrue(viewModel.isDeleteButtonDisabled, "Delete button should be disabled when AI Chat is disabled and visible toggles are off")
     }
     
     func testWhenCancelCalledThenToggleValuesAreNotPersisted() {

@@ -111,7 +111,9 @@ class FireConfirmationViewModel: ObservableObject {
         // Persist current toggle states
         storedClearTabs = clearTabs
         storedClearData = clearData
-        storedClearAIChats = clearAIChats
+        if showAIChatsOption {
+            storedClearAIChats = clearAIChats
+        }
         
         onConfirm()
     }
@@ -162,6 +164,6 @@ class FireConfirmationViewModel: ObservableObject {
     private func loadPersistedValues() {
         self.clearTabs = storedClearTabs
         self.clearData = storedClearData
-        self.clearAIChats = storedClearAIChats
+        self.clearAIChats = showAIChatsOption ? storedClearAIChats : false
     }
 }

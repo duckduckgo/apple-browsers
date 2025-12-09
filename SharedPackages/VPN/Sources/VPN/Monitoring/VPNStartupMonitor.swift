@@ -100,6 +100,7 @@ public final class VPNStartupMonitor {
                     case .connected:
                         return
                     case .disconnecting, .disconnected:
+
                         throw StartupError.startTunnelDisconnectedSilently
                     default:
                         continue

@@ -115,4 +115,3 @@ final class ContentScopeExperimentsMenu: NSMenu, NSMenuDelegate {
         return menuItem
     }
 }
-

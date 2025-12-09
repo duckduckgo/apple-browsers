@@ -192,7 +192,7 @@ struct UnifiedFeedbackFormViewModelTests {
 
     @Test func testSubscriptionSubcategories_HaveCorrectFAQUrls() {
         #expect(SubscriptionFeedbackSubcategory.otp.url.absoluteString.contains("payments") == true)
-        #expect(SubscriptionFeedbackSubcategory.unableToAccessFeatures.url.absoluteString.contains("payments") == true)
+        #expect(SubscriptionFeedbackSubcategory.unableToAccessFeatures.url.absoluteString.contains("activating") == true)
         #expect(SubscriptionFeedbackSubcategory.somethingElse.url.absoluteString.contains("payments") == true)
     }
 

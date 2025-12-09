@@ -24,5 +24,11 @@ extension NSNotification.Name {
     static let ShowSaveCredentialsPopover = NSNotification.Name("ShowSaveCredentialsPopover")
     static let ShowCredentialsSavedPopover = NSNotification.Name("ShowCredentialsSavedPopover")
 
+    // Navigation Bar Popovers
+    static let ShowVPNUninstalledPopover = NSNotification.Name("ShowVPNUninstalledPopover")
+    static let ShowPrivateEmailCopiedPopover = NSNotification.Name("ShowPrivateEmailCopiedPopover")
+    static let ShowFireproofingPopover = NSNotification.Name("ShowFireproofingPopover")
+    static let ShowLoginAutosavedPopover = NSNotification.Name("ShowLoginAutosavedPopover")
+    static let ShowPasswordsAutoPinnedPopover = NSNotification.Name("ShowPasswordsAutoPinnedPopover")
 }
 #endif

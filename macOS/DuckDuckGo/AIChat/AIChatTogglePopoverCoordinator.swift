@@ -18,6 +18,9 @@
 
 import Foundation
 import AppKit
+import SwiftUI
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 @MainActor
 protocol AIChatTogglePopoverCoordinating: AnyObject {
@@ -84,12 +87,19 @@ final class AIChatTogglePopoverCoordinator: AIChatTogglePopoverCoordinating {
             self?.markPopoverAsSeen()
         }
 
-        let dialogImage = NSImage(named: "AIChat-Color-16")
+        let dialogImage = DesignSystemImages.Color.Size96.announcement
+        let configuration = PopoverConfiguration(
+            style: .featureDiscovery,
+            buttonLayout: .vertical,
+            imageSize: CGSize(width: 76, height: 76),
+            buttonStyle: .link,
+            accentColor: Color(designSystemColor: .accentPrimary)
+        )
         let viewController = PopoverMessageViewController(
             title: UserText.aiChatTogglePopoverTitle,
             message: UserText.aiChatTogglePopoverMessage,
             image: dialogImage,
-            popoverStyle: .featureDiscovery,
+            configuration: configuration,
             autoDismissDuration: Constants.autoDismissDuration,
             shouldShowCloseButton: true,
             presentMultiline: true,
@@ -127,5 +137,3 @@ final class AIChatTogglePopoverCoordinator: AIChatTogglePopoverCoordinating {
         UserDefaults.standard.removeObject(forKey: StorageKey.popoverSeen)
     }
 }
-
-

@@ -49,7 +49,7 @@ final class AIChatTogglePopoverPresenter: AIChatTogglePopoverPresenting {
 
         viewController.show(onParent: mainWindowController.mainViewController,
                             relativeTo: toggleControl,
-                            preferredEdge: .maxY,
+                            preferredEdge: .minY,
                             behavior: .applicationDefined)
     }
 
@@ -61,5 +61,3 @@ final class AIChatTogglePopoverPresenter: AIChatTogglePopoverPresenting {
         activePopover = nil
     }
 }
-
-

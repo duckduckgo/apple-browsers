@@ -2380,6 +2380,42 @@
         }
       }
     },
+    "aichat.toggle.popover.button" : {
+      "comment" : "Button text for customizing AI features in the toggle popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Customize AI Features"
+          }
+        }
+      }
+    },
+    "aichat.toggle.popover.message" : {
+      "comment" : "Message for the AI Chat toggle introduction popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search as usual or get answers with AI. Either way, your information stays private."
+          }
+        }
+      }
+    },
+    "aichat.toggle.popover.title" : {
+      "comment" : "Title for the AI Chat toggle introduction popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "NEW! Two private ways to get answers"
+          }
+        }
+      }
+    },
     "aichat.toggle.search.label" : {
       "comment" : "Label for the search segment in the address bar toggle control",
       "extractionState" : "extracted_with_value",

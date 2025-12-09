@@ -98,7 +98,17 @@ final class PermissionManager: PermissionManagerProtocol {
 
         let storedPermission: StoredPermission
         let domain = domain.droppingWwwPrefix()
-        guard self.permission(forDomain: domain, permissionType: permissionType) != decision else { return }
+
+        // Check if permission is already stored with the same decision
+        // Note: permission(forDomain:...) returns .ask by default, so we also check hasPermissionPersisted
+        // when newPermissionView is enabled (to allow storing .ask explicitly)
+        let currentDecision = self.permission(forDomain: domain, permissionType: permissionType)
+        if featureFlagger.isFeatureOn(.newPermissionView) {
+            let isAlreadyPersisted = hasPermissionPersisted(forDomain: domain, permissionType: permissionType)
+            guard currentDecision != decision || !isAlreadyPersisted else { return }
+        } else {
+            guard currentDecision != decision else { return }
+        }
 
         defer {
             self.permissionSubject.send( (domain, permissionType, decision) )

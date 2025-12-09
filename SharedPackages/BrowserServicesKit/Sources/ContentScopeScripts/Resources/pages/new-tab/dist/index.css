@@ -2108,13 +2108,21 @@ body:not([data-background-kind=default]) .TabSwitcher_tabSwitcher {
 }
 .PrivacyStats_counterContainer {
   display: flex;
-  gap: 24px;
+  gap: 12px;
 }
 .PrivacyStats_counter {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding-right: 38px;
+  width: 196px;
+  padding-right: 18px;
+  box-sizing: content-box;
+}
+.PrivacyStats_counter:last-child {
+  padding-right: 0;
+}
+.PrivacyStats_cookiePopUpsCounter {
+  margin-left: 14px;
 }
 .PrivacyStats_title {
   color: var(--ntp-text-primary);
@@ -2130,6 +2138,8 @@ body:not([data-background-kind=default]) .TabSwitcher_tabSwitcher {
   line-height: 20px;
   padding-bottom: 4px;
   padding-top: 12px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 .PrivacyStats_noRecentTitle {
   color: var(--ntp-text-muted);
@@ -3043,6 +3053,7 @@ body:not([data-background-kind=default]) .TabSwitcher_tabSwitcher {
   display: block;
 }
 .RemoteMessagingFramework_content {
+  width: 100%;
 }
 .RemoteMessagingFramework_title {
   font-size: var(--body-font-size);

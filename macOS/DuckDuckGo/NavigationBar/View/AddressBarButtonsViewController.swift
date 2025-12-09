@@ -1714,7 +1714,11 @@ final class AddressBarButtonsViewController: NSViewController {
         guard let value = textFieldValue, value.isUserTyped, !value.isEmpty else {
             return
         }
-        aiChatTogglePopoverCoordinator?.dismissPopover()
+        /// Defer dismissal to the next run loop cycle so the toggle collapse animation
+        /// can start first, then both animations run concurrently without interference
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            self?.aiChatTogglePopoverCoordinator?.dismissPopover()
+        }
     }
 
     @IBAction func zoomButtonAction(_ sender: Any) {

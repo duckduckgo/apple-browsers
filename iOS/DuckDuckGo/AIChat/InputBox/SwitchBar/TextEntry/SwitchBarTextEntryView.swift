@@ -465,6 +465,7 @@ class SwitchBarTextEntryView: UIView {
 
         if text.isEmpty {
             disableAutoCorrectionAndSpellChecking()
+            textView.reloadInputViews()
         } else {
             textView.keyboardType = .default
             textView.returnKeyType = .default

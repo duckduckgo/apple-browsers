@@ -24,6 +24,7 @@ import Common
 import History
 import AIChat
 
+@MainActor
 class FireConfirmationViewModel: ObservableObject {
     
     // MARK: - Published Variables
@@ -45,7 +46,7 @@ class FireConfirmationViewModel: ObservableObject {
     private let aiChatSettings: AIChatSettingsProvider
     
     // MARK: - Lazy Variables
-    @MainActor
+
     private lazy var sitesCount: Int = {
         return self.computeNonFireproofedDomainCount()
     }()
@@ -67,7 +68,6 @@ class FireConfirmationViewModel: ObservableObject {
         tabsCount == 0
     }
     
-    @MainActor
     var isClearDataDisabled: Bool {
         return historyManager.isEnabledByUser && sitesCount == 0
     }
@@ -109,8 +109,12 @@ class FireConfirmationViewModel: ObservableObject {
     
     func confirm() {
         // Persist current toggle states
-        storedClearTabs = clearTabs
-        storedClearData = clearData
+        if !isClearTabsDisabled {
+            storedClearTabs = clearTabs
+        }
+        if !isClearDataDisabled {
+            storedClearData = clearData
+        }
         if showAIChatsOption {
             storedClearAIChats = clearAIChats
         }
@@ -126,7 +130,6 @@ class FireConfirmationViewModel: ObservableObject {
         return UserText.fireConfirmationTabsSubtitle(withCount: tabsCount)
     }
     
-    @MainActor
     func clearDataSubtitle() -> String {
         guard historyManager.isEnabledByUser else {
             return UserText.fireConfirmationDataSubtitleHistoryDisabled
@@ -136,7 +139,6 @@ class FireConfirmationViewModel: ObservableObject {
     
     // MARK: - Private Helpers
     
-    @MainActor
     private func computeNonFireproofedDomainCount() -> Int {
         guard let history = historyManager.historyCoordinator.history else {
             return 0
@@ -162,8 +164,8 @@ class FireConfirmationViewModel: ObservableObject {
     }
     
     private func loadPersistedValues() {
-        self.clearTabs = storedClearTabs
-        self.clearData = storedClearData
+        self.clearTabs = isClearTabsDisabled ? false : storedClearTabs
+        self.clearData = isClearDataDisabled ? false : storedClearData
         self.clearAIChats = showAIChatsOption ? storedClearAIChats : false
     }
 }

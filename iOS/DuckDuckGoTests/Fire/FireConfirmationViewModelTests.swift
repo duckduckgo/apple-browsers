@@ -24,6 +24,7 @@ import Common
 import History
 import AIChat
 
+@MainActor
 final class FireConfirmationViewModelTests: XCTestCase {
     
     private let testGroupName = "FireConfirmationViewModelTests"
@@ -167,8 +168,7 @@ final class FireConfirmationViewModelTests: XCTestCase {
     }
     
     // MARK: - clearDataSubtitle Tests
-    
-    @MainActor
+
     func testWhenHistoryIsDisabledThenClearDataSubtitleReturnsStaticText() {
         // Given
         let historyManager = MockHistoryManager(
@@ -185,7 +185,6 @@ final class FireConfirmationViewModelTests: XCTestCase {
         XCTAssertEqual(subtitle, "May sign you out of accounts")
     }
     
-    @MainActor
     func testWhenHistoryIsEnabledButEmptyThenClearDataSubtitleReturnsZeroCount() {
         // Given
         let historyCoordinator = TestHistoryCoordinator()
@@ -205,7 +204,6 @@ final class FireConfirmationViewModelTests: XCTestCase {
         XCTAssertEqual(subtitle, "None")
     }
     
-    @MainActor
     func testWhenHistoryHasOneSiteThenClearDataSubtitleShowsSingular() {
         // Given
         let historyCoordinator = TestHistoryCoordinator()
@@ -227,7 +225,6 @@ final class FireConfirmationViewModelTests: XCTestCase {
         XCTAssertEqual(subtitle, "Delete from 1 site. May sign you out of accounts.")
     }
     
-    @MainActor
     func testWhenHistoryHasMultipleSitesThenClearDataSubtitleShowsPlural() {
         // Given
         let historyCoordinator = TestHistoryCoordinator()
@@ -251,7 +248,6 @@ final class FireConfirmationViewModelTests: XCTestCase {
         XCTAssertEqual(subtitle, "Delete from 3 sites. May sign you out of accounts.")
     }
     
-    @MainActor
     func testWhenHistoryHasDuplicateDomainsThenClearDataSubtitleCountsUniqueDomains() {
         // Given
         let historyCoordinator = TestHistoryCoordinator()
@@ -275,7 +271,6 @@ final class FireConfirmationViewModelTests: XCTestCase {
         XCTAssertEqual(subtitle, "Delete from 1 site. May sign you out of accounts.")
     }
     
-    @MainActor
     func testWhenSomeDomainsAreFireproofedThenClearDataSubtitleCountsOnlyNonFireproofed() {
         // Given
         let historyCoordinator = TestHistoryCoordinator()
@@ -307,9 +302,11 @@ final class FireConfirmationViewModelTests: XCTestCase {
     
     func testWhenNoStoredValuesThenDefaultsAreUsed() {
         // Given - No stored values (clean UserDefaults)
+        // Use tabs model with tabs so toggle is enabled
+        let tabsModel = MockTabsModel(count: 3)
         
         // When
-        let viewModel = makeViewModel()
+        let viewModel = makeViewModel(tabsModel: tabsModel)
         
         // Then
         XCTAssertTrue(viewModel.clearTabs, "clearTabs should default to true")
@@ -319,8 +316,10 @@ final class FireConfirmationViewModelTests: XCTestCase {
     
     func testWhenConfirmCalledThenToggleValuesArePersisted() {
         // Given - Enable AI Chat so clearAIChats can be persisted and loaded
+        // Use tabs model with tabs so toggle is enabled and can be persisted
+        let tabsModel = MockTabsModel(count: 3)
         let aiChatSettings = MockAIChatSettingsProvider(isAIChatEnabled: true)
-        let viewModel = makeViewModel(aiChatSettings: aiChatSettings)
+        let viewModel = makeViewModel(tabsModel: tabsModel, aiChatSettings: aiChatSettings)
         viewModel.clearTabs = false
         viewModel.clearData = false
         viewModel.clearAIChats = true
@@ -328,8 +327,8 @@ final class FireConfirmationViewModelTests: XCTestCase {
         // When
         viewModel.confirm()
         
-        // Then
-        let newViewModel = makeViewModel(aiChatSettings: aiChatSettings)
+        // Then - Create new view model with same tabs so toggle remains enabled
+        let newViewModel = makeViewModel(tabsModel: tabsModel, aiChatSettings: aiChatSettings)
         XCTAssertFalse(newViewModel.clearTabs, "clearTabs should be persisted as false")
         XCTAssertFalse(newViewModel.clearData, "clearData should be persisted as false")
         XCTAssertTrue(newViewModel.clearAIChats, "clearAIChats should be persisted as true")
@@ -380,8 +379,9 @@ final class FireConfirmationViewModelTests: XCTestCase {
     }
     
     func testWhenCancelCalledThenToggleValuesAreNotPersisted() {
-        // Given
-        let viewModel = makeViewModel()
+        // Given - Use tabs model with tabs so toggle is enabled
+        let tabsModel = MockTabsModel(count: 3)
+        let viewModel = makeViewModel(tabsModel: tabsModel)
         viewModel.clearTabs = false
         viewModel.clearData = false
         viewModel.clearAIChats = true
@@ -389,8 +389,8 @@ final class FireConfirmationViewModelTests: XCTestCase {
         // When
         viewModel.cancel()
         
-        // Then
-        let newViewModel = makeViewModel()
+        // Then - Create new view model with same tabs so toggle remains enabled
+        let newViewModel = makeViewModel(tabsModel: tabsModel)
         XCTAssertTrue(newViewModel.clearTabs, "clearTabs should remain default true after cancel")
         XCTAssertTrue(newViewModel.clearData, "clearData should remain default true after cancel")
         XCTAssertFalse(newViewModel.clearAIChats, "clearAIChats should remain default false after cancel")
@@ -427,7 +427,6 @@ final class FireConfirmationViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.isClearTabsDisabled, "Tabs toggle should be disabled when hasActiveTabs is false")
     }
     
-    @MainActor
     func testWhenSitesCountIsZeroThenDataToggleIsDisabled() {
         // Given
         let historyCoordinator = TestHistoryCoordinator()
@@ -444,7 +443,6 @@ final class FireConfirmationViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.isClearDataDisabled, "Data toggle should be disabled when sites count is 0")
     }
     
-    @MainActor
     func testWhenSitesCountIsNonZeroThenDataToggleIsEnabled() {
         // Given
         let historyCoordinator = TestHistoryCoordinator()
@@ -463,7 +461,6 @@ final class FireConfirmationViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.isClearDataDisabled, "Data toggle should be enabled when sites count is greater than 0")
     }
     
-    @MainActor
     func testWhenHistoryIsDisabledThenDataToggleIsNotDisabled() {
         // Given
         let historyManager = MockHistoryManager(
@@ -528,6 +525,42 @@ final class FireConfirmationViewModelTests: XCTestCase {
         
         // Then
         XCTAssertFalse(viewModel.isDeleteButtonDisabled, "Delete button should be enabled when all toggles are on")
+    }
+    
+    // MARK: - Disabled Toggle Behavior Tests
+
+    func testWhenTogglePersistedTrueButDisabledThenDeleteButtonIsDisabled() {
+        // Given - clearTabs was persisted as true, but now there are no tabs
+        // Other toggles are off
+        customSuite.set(true, forKey: "com.duckduckgo.ios.fireConfirmation.toggle.clearTabs")
+        customSuite.set(false, forKey: "com.duckduckgo.ios.fireConfirmation.toggle.clearData")
+        customSuite.set(false, forKey: "com.duckduckgo.ios.fireConfirmation.toggle.clearAIChats")
+        
+        // When
+        let viewModel = makeViewModel(tabsModel: MockTabsModel(count: 0))
+        
+        // Then
+        XCTAssertFalse(viewModel.clearTabs, "clearTabs should be false when tabs toggle is disabled")
+        XCTAssertTrue(viewModel.isClearTabsDisabled, "Tabs toggle should be disabled")
+        XCTAssertTrue(viewModel.isDeleteButtonDisabled, "Delete button should be disabled when persisted toggle is disabled")
+    }
+
+    func testWhenDisabledToggleThenStoredPreferenceIsPreservedAndRestoredWhenEnabled() {
+        // Given - User previously had clearTabs = true, now tabs are disabled
+        customSuite.set(true, forKey: "com.duckduckgo.ios.fireConfirmation.toggle.clearTabs")
+        
+        // When - Open dialog with no tabs (toggle disabled, clearTabs forced to false)
+        let viewModel = makeViewModel(tabsModel: MockTabsModel(count: 0))
+        XCTAssertFalse(viewModel.clearTabs, "clearTabs should be false when disabled")
+        
+        viewModel.confirm()
+        
+        // Then
+        let storedValue = customSuite.bool(forKey: "com.duckduckgo.ios.fireConfirmation.toggle.clearTabs")
+        XCTAssertTrue(storedValue, "Stored preference should be preserved when toggle is disabled")
+        
+        let newViewModel = makeViewModel(tabsModel: MockTabsModel(count: 5))
+        XCTAssertTrue(newViewModel.clearTabs, "Preference should restore when toggle becomes enabled again")
     }
     
     // MARK: - showAIChatsOption Tests

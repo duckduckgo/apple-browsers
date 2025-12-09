@@ -33,6 +33,7 @@ struct FireConfirmationPresenter {
     let fireproofing: Fireproofing
     let aiChatSettings: AIChatSettingsProvider
     
+    @MainActor
     func presentFireConfirmation(on viewController: UIViewController,
                                  attachPopoverTo source: AnyObject,
                                  onConfirm: @escaping () -> Void,
@@ -55,6 +56,7 @@ struct FireConfirmationPresenter {
         viewController.present(hostingController, animated: true)
     }
     
+    @MainActor
     private func makeViewModel(dismissing viewController: UIViewController,
                                onConfirm: @escaping () -> Void,
                                onCancel: @escaping () -> Void) -> FireConfirmationViewModel {

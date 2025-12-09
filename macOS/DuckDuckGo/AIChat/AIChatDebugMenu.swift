@@ -83,7 +83,7 @@ final class AIChatDebugMenu: NSMenu {
 
     @MainActor @objc func showTogglePopover() {
         resetTogglePopoverSeenFlag()
-        
+
         guard let mainWindowController = NSApp.delegateTyped.windowControllersManager.lastKeyMainWindowController,
               let addressBarButtonsVC = mainWindowController.mainViewController.navigationBarViewController.addressBarViewController?.addressBarButtonsViewController,
               let toggleControl = addressBarButtonsVC.searchModeToggleControl else {
@@ -122,5 +122,4 @@ final class AIChatDebugMenu: NSMenu {
             _ = callback(nil)
         }
     }
-
 }

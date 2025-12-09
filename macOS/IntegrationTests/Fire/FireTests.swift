@@ -572,7 +572,7 @@ final class FireTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenBurnEntityIsCalled_WithCookiesAndSiteData_AutoconsentStatsAreCleared() async {
+    func testWhenBurnEntityIsCalled_WithCookiesAndSiteData_AutoconsentStatsAreNotCleared() async {
         let autoconsentStats = AutoconsentStatsMock()
 
         // Simulate some recorded stats
@@ -587,10 +587,10 @@ final class FireTests: XCTestCase {
         let burningExpectation = expectation(description: "Burning")
 
         fire.burnEntity(.none(selectedDomains: Set()),
-                       includingHistory: false,
-                       includeCookiesAndSiteData: true,
-                       includeChatHistory: false) {
-            XCTAssertTrue(autoconsentStats.clearAutoconsentStatsCalled)
+                        includingHistory: false,
+                        includeCookiesAndSiteData: true,
+                        includeChatHistory: false) {
+            XCTAssertFalse(autoconsentStats.clearAutoconsentStatsCalled)
             burningExpectation.fulfill()
         }
 
@@ -598,7 +598,7 @@ final class FireTests: XCTestCase {
 
         // Verify stats were actually cleared
         let clearedPopUpsBlocked = await autoconsentStats.fetchTotalCookiePopUpsBlocked()
-        XCTAssertEqual(clearedPopUpsBlocked, 0)
+        XCTAssertEqual(clearedPopUpsBlocked, 1)
     }
 
     @MainActor

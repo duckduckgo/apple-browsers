@@ -35,7 +35,7 @@
 "action.title.aiChat.history" = "Chats Duck.ai";
 
 /* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "Chat IA";
+"action.title.aiChat.new" = "Nouvel AI Chat";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Paramètres Duck.ai";
@@ -89,7 +89,7 @@
 "action.title.newBackgroundTabForUrl" = "Ouvrir en arrière-plan";
 
 /* Create New Tab action */
-"action.title.newTabAction" = "Nouveau";
+"action.title.newTabAction" = "Nouvel onglet";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Ouvrir dans un nouvel onglet";
@@ -2925,6 +2925,9 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Position de la barre d'adresse";
+
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Menu expérimental du navigateur";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Ouvrir les liens dans les applications associées";

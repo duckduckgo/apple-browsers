@@ -258,7 +258,11 @@ final class WebNotificationsHandlerTests: XCTestCase {
         let params: [String: Any] = [:]
 
         let config = await WKWebViewConfiguration()
-        config.websiteDataStore = .nonPersistent()
+
+        await MainActor.run {
+            config.websiteDataStore = .nonPersistent()
+        }
+
         let fireWindowWebView = await WKWebView(frame: .zero, configuration: config)
         let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params, webView: fireWindowWebView)
 
@@ -278,7 +282,11 @@ final class WebNotificationsHandlerTests: XCTestCase {
         let params: [String: Any] = [:]
 
         let config = await WKWebViewConfiguration()
-        config.websiteDataStore = .nonPersistent()
+
+        await MainActor.run {
+            config.websiteDataStore = .nonPersistent()
+        }
+
         let fireWindowWebView = await WKWebView(frame: .zero, configuration: config)
         let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params, webView: fireWindowWebView)
 
@@ -404,7 +412,11 @@ final class WebNotificationsHandlerTests: XCTestCase {
         ]
 
         let config = await WKWebViewConfiguration()
-        config.websiteDataStore = .nonPersistent()
+
+        await MainActor.run {
+            config.websiteDataStore = .nonPersistent()
+        }
+
         let fireWindowWebView = await WKWebView(frame: .zero, configuration: config)
         let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params, webView: fireWindowWebView)
 

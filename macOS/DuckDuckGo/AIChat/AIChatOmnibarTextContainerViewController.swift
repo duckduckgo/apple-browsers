@@ -40,7 +40,6 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     private let placeholderLabel = NSTextField(labelWithString: "")
     private let dividerView = ColorView(frame: .zero)
     private let omnibarController: AIChatOmnibarController
-    private let sharedTextState: AddressBarSharedTextState
     private var cancellables = Set<AnyCancellable>()
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
@@ -48,9 +47,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     weak var customToggleControl: NSControl?
     var heightDidChange: ((CGFloat) -> Void)?
 
-    init(omnibarController: AIChatOmnibarController, sharedTextState: AddressBarSharedTextState, themeManager: ThemeManaging) {
+    init(omnibarController: AIChatOmnibarController, themeManager: ThemeManaging) {
         self.omnibarController = omnibarController
-        self.sharedTextState = sharedTextState
         self.themeManager = themeManager
 
         textStorage.addLayoutManager(layoutManager)
@@ -72,6 +70,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         view = MouseOverView()
         view.wantsLayer = true
         view.layer?.masksToBounds = false
+        view.setAccessibilityIdentifier("AIChatOmnibarTextContainerViewController.view")
+        view.setAccessibilityElement(true)
     }
 
     override func viewDidLoad() {
@@ -140,6 +140,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         textView.usesRuler = false
         textView.usesFontPanel = false
         textView.delegate = self
+        textView.setAccessibilityIdentifier("AIChatOmnibarTextContainerViewController.textView")
+        textView.setAccessibilityElement(true)
 
         placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
         placeholderLabel.stringValue = UserText.aiChatOmnibarPlaceholder
@@ -180,7 +182,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         let colorsProvider = theme.colorsProvider
         let addressBarStyleProvider = theme.addressBarStyleProvider
 
-        backgroundView.backgroundColor = colorsProvider.activeAddressBarBackgroundColor
+        backgroundView.backgroundColor = .clear
 
         scrollView.backgroundColor = .clear
         scrollView.drawsBackground = false
@@ -216,6 +218,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
                         let textLength = newText.count
                         self.textView.selectedRange = NSRange(location: textLength, length: 0)
                     }
+                    /// Update panel height when text changes programmatically (e.g., from paste)
+                    self.updatePanelHeight()
                 }
                 self.updatePlaceholderVisibility()
             }
@@ -292,7 +296,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         backgroundView.startListening()
     }
 
-    func cleanup() {
+    func stopEventMonitoring() {
         backgroundView.stopListening()
     }
 

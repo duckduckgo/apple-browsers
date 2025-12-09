@@ -166,7 +166,9 @@ fileprivate struct ExperimentInfo: Identifiable {
 }
 
 class ContentScopeExperimentsDebugViewModel: ObservableObject {
-    @Published var allExperiments: [ExperimentInfo] = []
+    // swiftlint:disable:next private_over_fileprivate
+    @Published
+    fileprivate var experiments: [ExperimentInfo] = []
 
     private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()

@@ -591,7 +591,15 @@ struct FireDialogView: ModalView {
                     .frame(maxWidth: .infinity)
                     .frame(height: 32)
             }
-            .buttonStyle(DestructiveActionButtonStyle(enabled: isDeleteEnabled, topPadding: 0, bottomPadding: 0))
+            .buttonStyle(
+                DestructiveActionButtonStyle(
+                    enabled: isDeleteEnabled,
+                    topPadding: 0,
+                    bottomPadding: 0,
+                    backgroundColor: Color(designSystemColor: .destructivePrimary),
+                    backgroundPressedColor: Color(designSystemColor: .destructiveSecondary)
+                )
+            )
             .disabled(!isDeleteEnabled)
             .accessibilityLabel(UserText.delete)
             .keyboardShortcut(.defaultAction)
@@ -601,7 +609,6 @@ struct FireDialogView: ModalView {
         .padding(.top, 8)
         .padding(.bottom, 6)
     }
-
 }
 
 // Corner radius configuration for section rows

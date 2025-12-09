@@ -148,7 +148,6 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
             return false
         }
         set {
-            return
         }
     }
 

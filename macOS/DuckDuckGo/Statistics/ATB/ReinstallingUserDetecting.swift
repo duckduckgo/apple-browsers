@@ -1,5 +1,5 @@
 //
-//  ReinstallUserDetection.swift
+//  ReinstallUserDetecting.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //

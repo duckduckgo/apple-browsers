@@ -231,11 +231,9 @@ class SwitchBarTextEntryView: UIView {
         case .search:
             placeholderLabel.text = UserText.searchDuckDuckGo
             textView.autocapitalizationType = .none
-            disableAutoCorrectionAndSpellChecking()
         case .aiChat:
             placeholderLabel.text = UserText.searchInputFieldPlaceholderDuckAI
             textView.autocapitalizationType = .sentences
-            // Note: autocorrection/spellchecking is configured in updateKeyboardConfiguration()
 
             /// Auto-focus the text field when switching to duck.ai mode
             /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210975209610640?focus=true

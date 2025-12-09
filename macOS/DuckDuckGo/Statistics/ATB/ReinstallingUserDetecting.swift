@@ -35,7 +35,7 @@ import Foundation
 ///
 /// Call `checkForReinstallingUser()` once early in app launch (before writing to the App Group Container),
 /// then access `isReinstallingUser` anywhere in the app to get the stored result.
-protocol ReinstallUserDetection {
+protocol ReinstallingUserDetecting {
 
     /// Returns `true` if a reinstall was detected.
     ///
@@ -62,7 +62,7 @@ extension Bundle: BundleURLProviding {}
 // MARK: - Implementation
 
 /// Default implementation that uses bundle creation date comparison for reinstall detection.
-final class DefaultReinstallUserDetection: ReinstallUserDetection {
+final class DefaultReinstallUserDetection: ReinstallingUserDetecting {
 
     private enum Keys {
         /// Bundle creation date stored in App Group UserDefaults

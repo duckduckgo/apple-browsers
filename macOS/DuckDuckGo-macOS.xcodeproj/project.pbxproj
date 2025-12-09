@@ -3311,8 +3311,8 @@
 		BB32C59B2DCD2CA600775E80 /* ColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB32C5992DCD2CA300775E80 /* ColorPalette.swift */; };
 		BB32C59D2DCD417600775E80 /* ColorsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB32C59C2DCD416E00775E80 /* ColorsProviding.swift */; };
 		BB32C59E2DCD417600775E80 /* ColorsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB32C59C2DCD416E00775E80 /* ColorsProviding.swift */; };
-		BB33643F2EE0B4EA003F50FF /* ReinstallUserDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB33643E2EE0B4EA003F50FF /* ReinstallUserDetection.swift */; };
-		BB3364402EE0B4EA003F50FF /* ReinstallUserDetection.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB33643E2EE0B4EA003F50FF /* ReinstallUserDetection.swift */; };
+		BB33643F2EE0B4EA003F50FF /* ReinstallingUserDetecting.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB33643E2EE0B4EA003F50FF /* ReinstallingUserDetecting.swift */; };
+		BB3364402EE0B4EA003F50FF /* ReinstallingUserDetecting.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB33643E2EE0B4EA003F50FF /* ReinstallingUserDetecting.swift */; };
 		BB349A4E2E3B8B0E0028AFE1 /* MockDefaultBrowserProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB349A4D2E3B8B0E0028AFE1 /* MockDefaultBrowserProvider.swift */; };
 		BB349A4F2E3B8B0E0028AFE1 /* MockDefaultBrowserProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB349A4D2E3B8B0E0028AFE1 /* MockDefaultBrowserProvider.swift */; };
 		BB4147D12E798ACB0075AA72 /* UpdateCheckActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB80C42E2A420400F59FF4 /* UpdateCheckActor.swift */; };
@@ -5916,7 +5916,7 @@
 		BB32C5962DCCF79D00775E80 /* PinnedTabRampView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedTabRampView.swift; sourceTree = "<group>"; };
 		BB32C5992DCD2CA300775E80 /* ColorPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPalette.swift; sourceTree = "<group>"; };
 		BB32C59C2DCD416E00775E80 /* ColorsProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorsProviding.swift; sourceTree = "<group>"; };
-		BB33643E2EE0B4EA003F50FF /* ReinstallUserDetection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReinstallUserDetection.swift; sourceTree = "<group>"; };
+		BB33643E2EE0B4EA003F50FF /* ReinstallingUserDetecting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReinstallingUserDetecting.swift; sourceTree = "<group>"; };
 		BB349A4D2E3B8B0E0028AFE1 /* MockDefaultBrowserProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDefaultBrowserProvider.swift; sourceTree = "<group>"; };
 		BB4339DA2C7F9606005D7ED7 /* PinnedTabsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedTabsTests.swift; sourceTree = "<group>"; };
 		BB470EBA2C5A66D6002EE91D /* BookmarkManagementDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkManagementDetailViewModel.swift; sourceTree = "<group>"; };
@@ -11113,7 +11113,7 @@
 			isa = PBXGroup;
 			children = (
 				BBDA795B2EE0BB69003B1C70 /* ReinstallUserDetectionDebugMenu.swift */,
-				BB33643E2EE0B4EA003F50FF /* ReinstallUserDetection.swift */,
+				BB33643E2EE0B4EA003F50FF /* ReinstallingUserDetecting.swift */,
 				B69B50382726A12400758A2B /* AtbParser.swift */,
 				B69B50342726A11F00758A2B /* StatisticsLoader.swift */,
 				B69B50362726A12000758A2B /* StatisticsStore.swift */,
@@ -14379,7 +14379,7 @@
 				3706FBE7293F65D500E42796 /* PasswordManagementItemListModel.swift in Sources */,
 				3706FBE8293F65D500E42796 /* SuggestionTableCellView.swift in Sources */,
 				3706FBE9293F65D500E42796 /* FireViewModel.swift in Sources */,
-				BB33643F2EE0B4EA003F50FF /* ReinstallUserDetection.swift in Sources */,
+				BB33643F2EE0B4EA003F50FF /* ReinstallingUserDetecting.swift in Sources */,
 				317307292CD248EA00C492AB /* AutofillToolbarOnboardingViewController.swift in Sources */,
 				CCEB61802E05710A00AEBED4 /* FirefoxPreferences.swift in Sources */,
 				B68D21D02ACBC9FD002DA3C2 /* ContentBlockerRulesManagerMock.swift in Sources */,
@@ -16501,7 +16501,7 @@
 				37EE56322D5F197700D53C7C /* ZoomPopoverViewModel.swift in Sources */,
 				4BBD3C00285ACE090047A89D /* NSNotificationName+Favicons.swift in Sources */,
 				4B0DB5E528BD9D08007DD239 /* PinningManager.swift in Sources */,
-				BB3364402EE0B4EA003F50FF /* ReinstallUserDetection.swift in Sources */,
+				BB3364402EE0B4EA003F50FF /* ReinstallingUserDetecting.swift in Sources */,
 				373D9B4829EEAC1B00381FDD /* SyncMetadataDatabase.swift in Sources */,
 				B68458C025C7E9E000DC17B6 /* TabCollectionViewModel+NSSecureCoding.swift in Sources */,
 				AA8EDF2724923EC70071C2E8 /* StringExtension.swift in Sources */,

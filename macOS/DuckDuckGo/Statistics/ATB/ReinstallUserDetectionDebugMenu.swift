@@ -22,13 +22,13 @@ import Foundation
 
 final class ReinstallUserDetectionDebugMenu: NSMenu, NSMenuDelegate {
 
-    private let reinstallUserDetection: ReinstallUserDetection
+    private let reinstallUserDetection: ReinstallingUserDetecting
     private let appGroupDefaults: UserDefaults
     private let fileManager: FileManager
 
     init(
         appGroupDefaults: UserDefaults = .appConfiguration,
-        reinstallUserDetection: ReinstallUserDetection? = nil,
+        reinstallUserDetection: ReinstallingUserDetecting? = nil,
         fileManager: FileManager = .default
     ) {
         self.appGroupDefaults = appGroupDefaults

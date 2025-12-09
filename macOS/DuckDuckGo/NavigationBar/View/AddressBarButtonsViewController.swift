@@ -712,9 +712,14 @@ final class AddressBarButtonsViewController: NSViewController {
             updatePermissionCenterButtonIcon(forRequestedPermission: requestedPermissionType)
         }
 
+        // Check if there are any persisted permissions for the current domain
+        let domain = tabViewModel.tab.content.urlForWebView?.host ?? ""
+        let hasAnyPersistedPermissions = permissionManager.hasAnyPermissionPersisted(forDomain: domain)
+
         permissionCenterButton.isShown = tabViewModel.shouldShowPermissionCenterButton(
             isTextFieldEditorFirstResponder: isTextFieldEditorFirstResponder,
-            isAnyTrackerAnimationPlaying: isAnyTrackerAnimationPlaying
+            isAnyTrackerAnimationPlaying: isAnyTrackerAnimationPlaying,
+            hasAnyPersistedPermissions: hasAnyPersistedPermissions
         )
 
         showOrHidePermissionCenterPopoverIfNeeded()
@@ -2515,7 +2520,8 @@ extension TabViewModel {
     @MainActor
     func shouldShowPermissionCenterButton(
         isTextFieldEditorFirstResponder: Bool,
-        isAnyTrackerAnimationPlaying: Bool
+        isAnyTrackerAnimationPlaying: Bool,
+        hasAnyPersistedPermissions: Bool
     ) -> Bool {
         // Show permission buttons when there's a requested permission on NTP even if address bar is focused,
         // since NTP has the address bar focused by default
@@ -2526,7 +2532,7 @@ extension TabViewModel {
 
         // Also show when a page-initiated popup was auto-allowed (due to "Always Allow" setting)
         // so user can access permission center to change the decision
-        return (shouldShowWhileFocused || (!isTextFieldEditorFirstResponder && (isAnyPermissionPresent || pageInitiatedPopupOpened)))
+        return (shouldShowWhileFocused || (!isTextFieldEditorFirstResponder && (isAnyPermissionPresent || pageInitiatedPopupOpened || hasAnyPersistedPermissions)))
         && !isAnyTrackerAnimationPlaying
         && !isShowingErrorPage
     }

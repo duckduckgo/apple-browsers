@@ -29,6 +29,8 @@ protocol PermissionManagerProtocol: AnyObject {
     var permissionPublisher: AnyPublisher<PublishedPermission, Never> { get }
 
     func hasPermissionPersisted(forDomain domain: String, permissionType: PermissionType) -> Bool
+    func hasAnyPermissionPersisted(forDomain domain: String) -> Bool
+    func persistedPermissionTypes(forDomain domain: String) -> [PermissionType]
     func permission(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision
     func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType)
 
@@ -80,6 +82,16 @@ final class PermissionManager: PermissionManagerProtocol {
 
     func hasPermissionPersisted(forDomain domain: String, permissionType: PermissionType) -> Bool {
         return permissions[domain.droppingWwwPrefix()]?[permissionType] != nil
+    }
+
+    func hasAnyPermissionPersisted(forDomain domain: String) -> Bool {
+        guard let domainPermissions = permissions[domain.droppingWwwPrefix()] else { return false }
+        return !domainPermissions.isEmpty
+    }
+
+    func persistedPermissionTypes(forDomain domain: String) -> [PermissionType] {
+        guard let domainPermissions = permissions[domain.droppingWwwPrefix()] else { return [] }
+        return Array(domainPermissions.keys)
     }
 
     func setPermission(_ decision: PersistedPermissionDecision, forDomain domain: String, permissionType: PermissionType) {

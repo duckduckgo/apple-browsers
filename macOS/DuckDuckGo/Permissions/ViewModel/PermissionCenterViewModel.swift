@@ -331,11 +331,26 @@ final class PermissionCenterViewModel: ObservableObject {
         var externalSchemePermissions: [PermissionType] = []
         var otherPermissions: [PermissionType] = []
 
+        // Start with permissions from usedPermissions (current session)
         for permissionType in usedPermissions.keys where !removedPermissions.contains(permissionType) {
             if case .externalScheme = permissionType {
                 externalSchemePermissions.append(permissionType)
             } else {
                 otherPermissions.append(permissionType)
+            }
+        }
+
+        // Also include persisted permissions that aren't in usedPermissions
+        for permissionType in permissionManager.persistedPermissionTypes(forDomain: domain) {
+            guard !removedPermissions.contains(permissionType) else { continue }
+            if case .externalScheme = permissionType {
+                if !externalSchemePermissions.contains(permissionType) {
+                    externalSchemePermissions.append(permissionType)
+                }
+            } else {
+                if !otherPermissions.contains(permissionType) {
+                    otherPermissions.append(permissionType)
+                }
             }
         }
 

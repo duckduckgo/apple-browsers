@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Swift Package Update Checker
 # Scans Xcode projects for Swift packages and checks for available updates
@@ -148,7 +148,13 @@ get_latest_github_release() {
     tags=$(git ls-remote --tags --refs "https://github.com/${repo_path}.git" 2>/dev/null | \
            awk '{print $2}' | sed 's|refs/tags/||' | \
            grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' | \
-           sort -t. -k1,1n -k2,2n -k3,3n | tail -1) || true
+           awk '{
+               tag = $0
+               version = tag
+               gsub(/^v/, "", version)
+               print version "\t" tag
+           }' | \
+           sort -t. -k1,1n -k2,2n -k3,3n | tail -1 | cut -f2) || true
 
     echo "$tags"
 }

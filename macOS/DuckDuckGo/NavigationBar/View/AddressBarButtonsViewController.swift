@@ -1698,7 +1698,9 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func showTogglePopoverIfNeeded(toggleControl: NSView) {
-        // Delay slightly to ensure the toggle is visible and positioned correctly
+        guard featureFlagger.isFeatureOn(.aiChatOmnibarToggle) else { return }
+
+        /// Delay slightly to ensure the toggle is visible and positioned correctly
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
             self?.aiChatTogglePopoverCoordinator?.showPopoverIfNeeded(
                 relativeTo: toggleControl,

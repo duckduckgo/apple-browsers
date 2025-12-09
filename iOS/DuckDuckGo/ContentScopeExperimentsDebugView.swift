@@ -166,7 +166,6 @@ fileprivate struct ExperimentInfo: Identifiable {
 }
 
 class ContentScopeExperimentsDebugViewModel: ObservableObject {
-    // swiftlint:disable:next private_over_fileprivate
     @Published
     fileprivate var experiments: [ExperimentInfo] = []
 

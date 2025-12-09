@@ -235,7 +235,8 @@ class SwitchBarTextEntryView: UIView {
         case .aiChat:
             placeholderLabel.text = UserText.searchInputFieldPlaceholderDuckAI
             textView.autocapitalizationType = .sentences
-            textView.autocorrectionType = .default
+//            textView.autocorrectionType = .default
+            textView.autocorrectionType = .no
             textView.spellCheckingType = .default
             
             /// Auto-focus the text field when switching to duck.ai mode
@@ -257,7 +258,8 @@ class SwitchBarTextEntryView: UIView {
             textView.returnKeyType = .search
         case .aiChat:
             if handler.isUsingFadeOutAnimation {
-                textView.keyboardType = .default
+//                textView.keyboardType = .default
+                textView.keyboardType = .webSearch
                 textView.returnKeyType = .default
             } else {
                 textView.keyboardType = .webSearch
@@ -440,9 +442,13 @@ class SwitchBarTextEntryView: UIView {
             .receive(on: DispatchQueue.main)
             .removeDuplicates()
             .sink { [weak self] text in
+                print("🇳🇴 [\(String(describing: Self.self))] currentTextPublisher...")
                 guard let self = self else { return }
 
+                print("🇳🇴 [\(String(describing: Self.self))] \t checking if")
+                self.updateAutoCorrectionForAIChat()
                 if self.textView.text != text {
+                    print("🇳🇴 [\(String(describing: Self.self))] calling methods")
                     self.textView.text = text
                     self.updatePlaceholderVisibility()
                     self.updateTextViewHeight()
@@ -457,6 +463,24 @@ class SwitchBarTextEntryView: UIView {
                 self?.updateButtonState()
             }
             .store(in: &cancellables)
+    }
+
+    private func updateAutoCorrectionForAIChat() {
+        guard currentMode == .aiChat else {
+            print("🇳🇴 [\(String(describing: Self.self))] NO CHANGES, SEARCH 🔵")
+            return
+        }
+        // textView.autocorrectionType = textView.text.isEmpty ? .no : .default
+        if textView.text.isEmpty {
+            print("🇳🇴 [\(String(describing: Self.self))] OFF AUTO CORRECTION 🟡")
+            textView.autocorrectionType = .no
+        } else {
+            print("🇳🇴 [\(String(describing: Self.self))] ON AUTO CORRECTION 🟢")
+            textView.keyboardType = .default
+            textView.returnKeyType = .default
+            textView.autocorrectionType = .default
+            textView.reloadInputViews()
+        }
     }
 
     @discardableResult

@@ -25,6 +25,22 @@ import History
 
 final class FireConfirmationViewModelTests: XCTestCase {
     
+    private let testGroupName = "FireConfirmationViewModelTests"
+    private var customSuite: UserDefaults!
+    
+    override func setUp() {
+        super.setUp()
+        customSuite = UserDefaults(suiteName: testGroupName)
+        customSuite.removePersistentDomain(forName: testGroupName)
+        UserDefaults.app = customSuite
+    }
+    
+    override func tearDown() {
+        UserDefaults.app = .standard
+        customSuite = nil
+        super.tearDown()
+    }
+    
     private struct MockTabsModel: TabsModeling {
         let count: Int
     }
@@ -299,5 +315,68 @@ final class FireConfirmationViewModelTests: XCTestCase {
         
         // Then - Only notfireproofed.com is counted
         XCTAssertEqual(subtitle, "Delete from 1 site. May sign you out of accounts.")
+    }
+    
+    // MARK: - Persistence Tests
+    
+    func testWhenNoStoredValuesThenDefaultsAreUsed() {
+        // Given - No stored values (clean UserDefaults)
+        
+        // When
+        let viewModel = makeViewModel(tabsModel: nil)
+        
+        // Then
+        XCTAssertTrue(viewModel.clearTabs, "clearTabs should default to true")
+        XCTAssertTrue(viewModel.clearData, "clearData should default to true")
+        XCTAssertFalse(viewModel.clearAIChats, "clearAIChats should default to false")
+    }
+    
+    func testWhenConfirmCalledThenToggleValuesArePersisted() {
+        // Given
+        let viewModel = makeViewModel(tabsModel: nil)
+        viewModel.clearTabs = false
+        viewModel.clearData = false
+        viewModel.clearAIChats = true
+        
+        // When
+        viewModel.confirm()
+        
+        // Then
+        let newViewModel = makeViewModel(tabsModel: nil)
+        XCTAssertFalse(newViewModel.clearTabs, "clearTabs should be persisted as false")
+        XCTAssertFalse(newViewModel.clearData, "clearData should be persisted as false")
+        XCTAssertTrue(newViewModel.clearAIChats, "clearAIChats should be persisted as true")
+    }
+    
+    func testWhenStoredValuesExistThenTheyAreLoadedOnInit() {
+        // Given - Pre-populate storage
+        customSuite.set(true, forKey: "com.duckduckgo.ios.fireConfirmation.clearTabs")
+        customSuite.set(false, forKey: "com.duckduckgo.ios.fireConfirmation.clearData")
+        customSuite.set(true, forKey: "com.duckduckgo.ios.fireConfirmation.clearAIChats")
+        
+        // When
+        let viewModel = makeViewModel(tabsModel: nil)
+        
+        // Then
+        XCTAssertTrue(viewModel.clearTabs, "clearTabs should load stored value true")
+        XCTAssertFalse(viewModel.clearData, "clearData should load stored value false")
+        XCTAssertTrue(viewModel.clearAIChats, "clearAIChats should load stored value true")
+    }
+    
+    func testWhenCancelCalledThenToggleValuesAreNotPersisted() {
+        // Given
+        let viewModel = makeViewModel(tabsModel: nil)
+        viewModel.clearTabs = false
+        viewModel.clearData = false
+        viewModel.clearAIChats = true
+        
+        // When
+        viewModel.cancel()
+        
+        // Then
+        let newViewModel = makeViewModel(tabsModel: nil)
+        XCTAssertTrue(newViewModel.clearTabs, "clearTabs should remain default true after cancel")
+        XCTAssertTrue(newViewModel.clearData, "clearData should remain default true after cancel")
+        XCTAssertFalse(newViewModel.clearAIChats, "clearAIChats should remain default false after cancel")
     }
 }

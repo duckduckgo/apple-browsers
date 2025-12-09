@@ -190,6 +190,11 @@ public struct UserDefaultsWrapper<T> {
         // AI Chat
         case autoClearAIChatHistory = "com.duckduckgo.ios.autoClearAIChatHistory"
 
+        // Fire Confirmation
+        case fireConfirmationClearTabs = "com.duckduckgo.ios.fireConfirmation.toggle.clearTabs"
+        case fireConfirmationClearData = "com.duckduckgo.ios.fireConfirmation.toggle.clearData"
+        case fireConfirmationClearAIChats = "com.duckduckgo.ios.fireConfirmation.toggle.clearAIChats"
+
         // Debug keys
         case debugWebViewStateRestorationEnabledKey = "com.duckduckgo.ios.debug.webViewStateRestorationEnabled"
         case debugDefaultBrowserPromptCurrentDateKey = "com.duckduckgo.ios.debug.defaultBrowserPromptCurrentDate"

@@ -43,6 +43,16 @@ class FireConfirmationViewModel: ObservableObject {
     private let tld: TLD
     private let fireproofing: Fireproofing?
     
+    // MARK: - Persistence Storage
+    @UserDefaultsWrapper(key: .fireConfirmationClearTabs, defaultValue: true)
+    private var storedClearTabs: Bool
+    
+    @UserDefaultsWrapper(key: .fireConfirmationClearData, defaultValue: true)
+    private var storedClearData: Bool
+    
+    @UserDefaultsWrapper(key: .fireConfirmationClearAIChats, defaultValue: false)
+    private var storedClearAIChats: Bool
+    
     init(tabsModel: TabsModeling?,
          historyManager: HistoryManaging?,
          tld: TLD = AppDependencyProvider.shared.storageCache.tld,
@@ -55,9 +65,15 @@ class FireConfirmationViewModel: ObservableObject {
         self.historyManager = historyManager
         self.tld = tld
         self.fireproofing = fireproofing
+        loadPersistedValues()
     }
     
     func confirm() {
+        // Persist current toggle states
+        storedClearTabs = clearTabs
+        storedClearData = clearData
+        storedClearAIChats = clearAIChats
+        
         onConfirm()
     }
     
@@ -111,5 +127,11 @@ class FireConfirmationViewModel: ObservableObject {
         }
         
         return nonFireproofed.count
+    }
+    
+    private func loadPersistedValues() {
+        self.clearTabs = storedClearTabs
+        self.clearData = storedClearData
+        self.clearAIChats = storedClearAIChats
     }
 }

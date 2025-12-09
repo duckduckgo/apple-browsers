@@ -72550,7 +72550,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Duck.ai shortcut"
+            "value" : "Duck.ai Shortcut"
           }
         }
       }
@@ -72562,7 +72562,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Duck.ai toggle"
+            "value" : "Duck.ai Toggle"
           }
         }
       }

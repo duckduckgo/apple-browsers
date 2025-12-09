@@ -226,14 +226,6 @@ extension SharedColorPaletteDefinition {
         /// Tone Colors
         case .toneShadePrimary:
             return toneShadePrimary
-
-        /// Fire Dialog
-        case .fireDialogPillSegmentMouseOver:
-            return DynamicColor(lightColor: Color(0xE0E0E0), darkColor: Color(0x333333))
-        case .fireDialogPillSegmentMouseDown:
-            return DynamicColor(lightColor: .gray30, darkColor: Color(0x404145))
-        case .fireDialogPillHoverOverlay:
-            return DynamicColor(lightColor: .black.opacity(0.06), darkColor: .white.opacity(0.06))
         }
     }
 }

@@ -140,11 +140,6 @@ public enum SharedDesignSystemColor {
 
     // Tone
     case toneShadePrimary
-
-    // Fire Dialog View
-    case fireDialogPillSegmentMouseOver
-    case fireDialogPillSegmentMouseDown
-    case fireDialogPillHoverOverlay
 }
 
 #endif

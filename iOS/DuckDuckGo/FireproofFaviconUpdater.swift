@@ -60,9 +60,9 @@ class FireproofFaviconUpdater: NSObject, FaviconUserScriptDelegate {
 
     private let featureFlagger = AppDependencyProvider.shared.featureFlagger
 
-    init(bookmarksDatabase: CoreDataDatabase, 
-         tab: TabNotifying, 
-         favicons: FaviconProviding, 
+    init(bookmarksDatabase: CoreDataDatabase,
+         tab: TabNotifying,
+         favicons: FaviconProviding,
          sharedSecureVault: (any AutofillSecureVault)? = nil) {
         self.context = bookmarksDatabase.makeContext(concurrencyType: .mainQueueConcurrencyType)
         self.tab = tab

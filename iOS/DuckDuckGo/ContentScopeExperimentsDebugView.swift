@@ -151,10 +151,10 @@ fileprivate struct ExperimentInfo: Identifiable {
     let state: String
     let cohorts: [String]
     let minSupportedVersion: String?
-    let rolloutPercent: Int?
+    let rolloutPercent: Double?
     let enrollment: ExperimentData?
 
-    init(name: String, state: String, cohorts: [String], minSupportedVersion: String?, rolloutPercent: Int?, enrollment: ExperimentData?) {
+    init(name: String, state: String, cohorts: [String], minSupportedVersion: String?, rolloutPercent: Double?, enrollment: ExperimentData?) {
         self.id = name
         self.name = name
         self.state = state

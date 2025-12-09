@@ -25,19 +25,19 @@ public struct StandardButtonStyle: ButtonStyle {
     public let bottomPadding: CGFloat
     public let horizontalPadding: CGFloat
     public let backgroundColor: Color
-    public let pressedBackgroundColor: Color
+    public let backgroundPressedColor: Color
 
-    public init(fontSize: CGFloat = 13, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, horizontalPadding: CGFloat = 7.5, backgroundColor: Color? = nil, pressedBackgroundColor: Color? = nil) {
+    public init(fontSize: CGFloat = 13, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, horizontalPadding: CGFloat = 7.5, backgroundColor: Color? = nil, backgroundPressedColor: Color? = nil) {
         self.fontSize = fontSize
         self.topPadding = topPadding
         self.bottomPadding = bottomPadding
         self.horizontalPadding = horizontalPadding
         self.backgroundColor = backgroundColor ?? Color(.pwmButtonBackground)
-        self.pressedBackgroundColor = pressedBackgroundColor ?? Color(.pwmButtonBackgroundPressed)
+        self.backgroundPressedColor = backgroundPressedColor ?? Color(.pwmButtonBackgroundPressed)
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
-        let backgroundColor = configuration.isPressed ? pressedBackgroundColor : backgroundColor
+        let backgroundColor = configuration.isPressed ? backgroundPressedColor : backgroundColor
         let labelColor = Color(.pwmButtonLabel)
 
         configuration.label

@@ -82,7 +82,7 @@ extension View {
     }
 
     @ViewBuilder
-    private func hideScrollContentBackground() -> some View {
+    func hideScrollContentBackground() -> some View {
         if #available(iOS 16, *) {
             self.scrollContentBackground(.hidden)
         } else {

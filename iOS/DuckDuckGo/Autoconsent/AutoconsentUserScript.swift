@@ -51,20 +51,20 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
 
     var injectionTime: WKUserScriptInjectionTime { .atDocumentStart }
     var forMainFrameOnly: Bool { false }
-    
+
     weak var selfTestWebView: WKWebView?
     var selfTestFrameInfo: WKFrameInfo?
-    
+
     var topUrl: URL?
     var preferences: AutoconsentPreferences
     let management = AutoconsentManagement.shared
-    
+
     public var messageNames: [String] { MessageName.allCases.map(\.rawValue) }
     let source: String
     private let config: PrivacyConfiguration
     private let ignoreNonHTTPURLs: Bool
     weak var delegate: AutoconsentUserScriptDelegate?
-    
+
     // Publisher for cookie popup managed events
     private let popupManagedSubject = PassthroughSubject<AutoconsentDoneMessage, Never>()
     public var popupManagedPublisher: AnyPublisher<AutoconsentDoneMessage, Never> {
@@ -86,16 +86,16 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
         self.ignoreNonHTTPURLs = ignoreNonHTTPURLs
         super.init()
     }
-    
+
     @MainActor
-    func refreshDashboardState(consentManaged: Bool, cosmetic: Bool?, optoutFailed: Bool?, selftestFailed: Bool?) {
+    func refreshDashboardState(consentManaged: Bool, cosmetic: Bool?, optoutFailed: Bool?, selftestFailed: Bool?, consentReloadLoop: Bool?, consentRule: String?) {
         let consentStatus = CookieConsentInfo(
-            consentManaged: consentManaged, cosmetic: cosmetic, optoutFailed: optoutFailed, selftestFailed: selftestFailed
+            consentManaged: consentManaged, cosmetic: cosmetic, optoutFailed: optoutFailed, selftestFailed: selftestFailed, consentReloadLoop: consentReloadLoop, consentRule: consentRule
         )
         Logger.autoconsent.debug("Refreshing dashboard state: \(String(describing: consentStatus))")
         self.delegate?.autoconsentUserScript(consentStatus: consentStatus)
     }
-    
+
     func userContentController(_ userContentController: WKUserContentController,
                                didReceive message: WKScriptMessage) {
         // this is never used because macOS <11 is not supported by autoconsent
@@ -175,7 +175,7 @@ extension AutoconsentUserScript {
         let url: String
         let isCosmetic: Bool
     }
-    
+
     struct AutoconsentReportState: Codable {
         let lifecycle: String
         let detectedCmps: [String]
@@ -274,10 +274,13 @@ extension AutoconsentUserScript {
             topUrl = url
             // reset dashboard state
             refreshDashboardState(
+                // keep "cookies managed" if we did it for this site since app launch
                 consentManaged: management.sitesNotifiedCache.contains(url.host ?? ""),
                 cosmetic: nil,
                 optoutFailed: nil,
-                selftestFailed: nil
+                selftestFailed: nil,
+                consentReloadLoop: nil,
+                consentRule: nil
             )
             firePixel(pixel: .acInit)
         }
@@ -339,7 +342,7 @@ extension AutoconsentUserScript {
             replyHandler(nil, "missing frame target")
         }
     }
-    
+
     @MainActor
     func handlePopupFound(message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
         Logger.autoconsent.debug("Autoconsent popup found")
@@ -356,7 +359,7 @@ extension AutoconsentUserScript {
         Logger.autoconsent.debug("opt-out result: \(String(describing: messageData))")
 
         if !messageData.result {
-            refreshDashboardState(consentManaged: true, cosmetic: nil, optoutFailed: true, selftestFailed: nil)
+            refreshDashboardState(consentManaged: true, cosmetic: nil, optoutFailed: true, selftestFailed: nil, consentReloadLoop: nil, consentRule: messageData.cmp)
             firePixel(pixel: .errorOptoutFailed)
         } else if messageData.scheduleSelfTest {
             // save a reference to the webview and frame for self-test
@@ -379,25 +382,24 @@ extension AutoconsentUserScript {
         }
         Logger.autoconsent.debug("opt-out successful: \(String(describing: messageData))")
 
-        refreshDashboardState(consentManaged: true, cosmetic: messageData.isCosmetic, optoutFailed: false, selftestFailed: nil)
+        refreshDashboardState(consentManaged: true, cosmetic: messageData.isCosmetic, optoutFailed: false, selftestFailed: nil, consentReloadLoop: nil, consentRule: messageData.cmp)
         firePixel(pixel: messageData.isCosmetic ? .doneCosmetic : .done)
 
         // Emit event through publisher
         popupManagedSubject.send(messageData)
 
-        // trigger popup once per domain
-        if !management.sitesNotifiedCache.contains(host) {
-            Logger.autoconsent.debug("bragging that we closed a popup")
-            management.sitesNotifiedCache.insert(host)
-            // post popover notification on main thread
-            DispatchQueue.main.async {
-                NotificationCenter.default.post(name: .newSiteCookiesManaged, object: self, userInfo: [
-                    UserInfoKeys.topURL: self.topUrl ?? url,
-                    UserInfoKeys.isCosmetic: messageData.isCosmetic
-                ])
-            }
-            firePixel(pixel: messageData.isCosmetic ? .animationShownCosmetic : .animationShown)
+        // remember that we did it for this site
+        management.sitesNotifiedCache.insert(host)
+
+        // post popover notification on main thread
+        Logger.autoconsent.debug("bragging that we closed a popup")
+        DispatchQueue.main.async {
+            NotificationCenter.default.post(name: .newSiteCookiesManaged, object: self, userInfo: [
+                UserInfoKeys.topURL: self.topUrl ?? url,
+                UserInfoKeys.isCosmetic: messageData.isCosmetic
+            ])
         }
+        firePixel(pixel: messageData.isCosmetic ? .animationShownCosmetic : .animationShown)
 
         replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection
 
@@ -432,7 +434,7 @@ extension AutoconsentUserScript {
         }
         // store self-test result
         Logger.autoconsent.debug("self-test result: \(String(describing: messageData))")
-        refreshDashboardState(consentManaged: true, cosmetic: nil, optoutFailed: false, selftestFailed: messageData.result)
+        refreshDashboardState(consentManaged: true, cosmetic: nil, optoutFailed: false, selftestFailed: messageData.result, consentReloadLoop: nil, consentRule: messageData.cmp)
         firePixel(pixel: messageData.result ? .selfTestOk : .selfTestFail)
         replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection
     }
@@ -468,7 +470,7 @@ extension AutoconsentUserScript {
         }
         replyHandler([ "type": "ok" ], nil)
     }
-    
+
     func firePixel(pixel: AutoconsentPixel) {
         // Delegate to the shared management instance to handle pixel firing and task scheduling
         management.firePixel(pixel: pixel)

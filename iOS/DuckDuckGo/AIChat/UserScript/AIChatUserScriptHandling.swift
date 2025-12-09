@@ -125,7 +125,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             supportsPageContext: defaults.supportsPageContext,
             supportsAIChatFullMode: aichatFullModeFeature.isAvailable ? true : defaults.supportsAIChatFullMode,
             appVersion: AppVersion.shared.versionAndBuildNumber,
-            supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint
+            supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint,
+            supportsOpenAIChatLink: defaults.supportsOpenAIChatLink
         )
     }
 

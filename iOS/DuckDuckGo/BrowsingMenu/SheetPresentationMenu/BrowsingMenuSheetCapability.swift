@@ -25,30 +25,8 @@ import Core
 protocol BrowsingMenuSheetCapable {
     var isAvailable: Bool { get }
     var isEnabled: Bool { get }
-    var variant: BrowsingMenuClusteringVariant { get set }
 
-    @discardableResult
-    func setEnabled(_ enabled: Bool) -> Bool
-}
-
-enum BrowsingMenuClusteringVariant: String, CaseIterable, CustomStringConvertible {
-    var description: String {
-        switch self {
-        case .a:
-            "Production"
-        case .b:
-            "Easy Shortcuts"
-        case .c:
-            "Easy Privacy Tools"
-        case .d:
-            "Easy Privacy - No floating button"
-        }
-    }
-
-    case a
-    case b
-    case c
-    case d
+    func setEnabled(_ enabled: Bool)
 }
 
 enum BrowsingMenuSheetCapability {
@@ -64,10 +42,9 @@ enum BrowsingMenuSheetCapability {
 struct BrowsingMenuSheetUnavailableCapability: BrowsingMenuSheetCapable {
     let isAvailable: Bool = false
     let isEnabled: Bool = false
-    var variant: BrowsingMenuClusteringVariant = .a
 
-    func setEnabled(_ enabled: Bool) -> Bool {
-        false
+    func setEnabled(_ enabled: Bool) {
+        // no-op
     }
 }
 
@@ -82,43 +59,22 @@ struct BrowsingMenuSheetDefaultCapability: BrowsingMenuSheetCapable {
     }
 
     var isAvailable: Bool {
-        return featureFlagger.internalUserDecider.isInternalUser
+        featureFlagger.isFeatureOn(.browsingMenuSheetPresentation)
     }
 
     var isEnabled: Bool {
-        guard isAvailable else { return false }
-
-        return featureFlagger.isFeatureOn(.browsingMenuSheetPresentation)
-    }
-
-    var variant: BrowsingMenuClusteringVariant {
         get {
-            if let variant = try? keyValueStore.object(forKey: StorageKey.menuVariant) as? String {
-                return BrowsingMenuClusteringVariant(rawValue: variant) ?? .a
-            } else {
-                return .a
-            }
-        }
-        set {
-            try? keyValueStore.set(newValue.rawValue, forKey: StorageKey.menuVariant)
+            guard isAvailable else { return false }
+
+            return (try? keyValueStore.object(forKey: StorageKey.experimentalBrowsingMenuEnabled) as? Bool) ?? false
         }
     }
 
-    func setEnabled(_ enabled: Bool) -> Bool {
-
-        guard isAvailable else { return false }
-
-        let flag = FeatureFlag.browsingMenuSheetPresentation
-        if let overrides = self.featureFlagger.localOverrides,
-           overrides.override(for: flag) != enabled {
-
-            overrides.toggleOverride(for: flag)
-        }
-
-        return isEnabled
+    func setEnabled(_ enabled: Bool) {
+        try? keyValueStore.set(enabled, forKey: StorageKey.experimentalBrowsingMenuEnabled)
     }
 
     private struct StorageKey {
-        static let menuVariant = "browsingMenuVariantKey"
+        static let experimentalBrowsingMenuEnabled = "com_duckduckgo_experimentalBrowsingMenu_enabled"
     }
 }

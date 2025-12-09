@@ -28,6 +28,7 @@ import Common
 import Configuration
 import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
+import Subscription
 
 class SettingsLegacyViewProvider: ObservableObject {
 
@@ -47,9 +48,12 @@ class SettingsLegacyViewProvider: ObservableObject {
     let websiteDataManager: WebsiteDataManaging
     let customConfigurationURLProvider: CustomConfigurationURLProviding
     let keyValueStore: ThrowingKeyValueStoring
+    let productSurfaceTelemetry: ProductSurfaceTelemetry
     let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
     let daxDialogsManager: DaxDialogsManaging
     let dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?
+    let subscriptionDataReporter: SubscriptionDataReporting
+    let remoteMessagingDebugHandler: RemoteMessagingDebugHandling
 
     init(syncService: any DDGSyncing,
          syncDataProviders: SyncDataProviders,
@@ -63,7 +67,10 @@ class SettingsLegacyViewProvider: ObservableObject {
          keyValueStore: ThrowingKeyValueStoring,
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          daxDialogsManager: DaxDialogsManaging,
-         dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?) {
+         dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?,
+         subscriptionDataReporter: SubscriptionDataReporting,
+         remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
+         productSurfaceTelemetry: ProductSurfaceTelemetry) {
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
         self.appSettings = appSettings
@@ -77,6 +84,9 @@ class SettingsLegacyViewProvider: ObservableObject {
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.daxDialogsManager = daxDialogsManager
         self.dbpIOSPublicInterface = dbpIOSPublicInterface
+        self.subscriptionDataReporter = subscriptionDataReporter
+        self.remoteMessagingDebugHandler = remoteMessagingDebugHandler
+        self.productSurfaceTelemetry = productSurfaceTelemetry
     }
     
     enum LegacyView {
@@ -135,7 +145,9 @@ class SettingsLegacyViewProvider: ObservableObject {
             daxDialogManager: self.daxDialogsManager,
             databaseDelegate: self.dbpIOSPublicInterface,
             debuggingDelegate: self.dbpIOSPublicInterface,
-            runPrequisitesDelegate: self.dbpIOSPublicInterface))
+            runPrequisitesDelegate: self.dbpIOSPublicInterface,
+            subscriptionDataReporter: self.subscriptionDataReporter,
+            remoteMessagingDebugHandler: self.remoteMessagingDebugHandler))
     }
 
     // Legacy UIKit Views (Pushed unmodified)
@@ -183,7 +195,8 @@ class SettingsLegacyViewProvider: ObservableObject {
                                               source: source ?? .settings,
                                               bookmarksDatabase: self.bookmarksDatabase,
                                               favoritesDisplayMode: self.appSettings.favoritesDisplayMode,
-                                              keyValueStore: keyValueStore)
+                                              keyValueStore: keyValueStore,
+                                              productSurfaceTelemetry: self.productSurfaceTelemetry)
     }
 
     func importPasswords(delegate: DataImportViewControllerDelegate) -> DataImportViewController {

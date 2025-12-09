@@ -11,6 +11,15 @@
             }
         }
     </style>
+    <script>
+        // $LOADING_COLOR$ is replaced by native via string interpolation.
+        // This script must be in <head> to block rendering and prevent flash of wrong color.
+        const loadingColor = "$LOADING_COLOR$";
+        const hasLoadingColor = !!loadingColor && !loadingColor.startsWith("$");
+        if (hasLoadingColor) {
+            document.documentElement.style.background = loadingColor;
+        }
+    </script>
     <title>History</title>
     <meta name="robots" content="noindex,nofollow">
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />

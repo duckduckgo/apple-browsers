@@ -131,14 +131,4 @@ final class VPNSubscriptionPromotionHelperTests: XCTestCase {
         XCTAssertEqual(mockFreeTrialBadgePersistor.viewCount, 0)
     }
 
-    func testFireTapPixel() {
-        // When
-        sut.fireTapPixel()
-
-        // Then
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1)
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.pixelName, Pixel.Event.browsingMenuVPN.name)
-        XCTAssertEqual(PixelFiringMock.lastParams, ["status": "no_pill"])
-    }
-
 }

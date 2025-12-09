@@ -30,6 +30,7 @@ protocol AddressBarStyleProviding {
     func shouldShowOutlineBorder(isHomePage: Bool) -> Bool
     func sizeForSuggestionRow(isHomePage: Bool) -> CGFloat
 
+    var tabBarBackgroundTopPadding: CGFloat { get }
     var defaultAddressBarFontSize: CGFloat { get }
     var newTabOrHomePageAddressBarFontSize: CGFloat { get }
     var shouldShowNewSearchIcon: Bool { get }
@@ -64,6 +65,7 @@ final class LegacyAddressBarStyleProvider: AddressBarStyleProviding {
     private let addressBarBottomPaddingForHomePage: CGFloat = 8
     private let addressBarBottomPaddingForPopUpWindow: CGFloat = 0
 
+    let tabBarBackgroundTopPadding: CGFloat = 0
     let defaultAddressBarFontSize: CGFloat = 13
     let newTabOrHomePageAddressBarFontSize: CGFloat = 15
     let addressBarButtonsCornerRadius: CGFloat = 0
@@ -128,6 +130,23 @@ final class LegacyAddressBarStyleProvider: AddressBarStyleProviding {
 }
 
 final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
+
+    /// The TabBar component requires an extra top padding whenever all of the following are met:
+    ///     1. We're building on `Xcode 26`
+    ///     2. We're running on `Tahoe`
+    ///     3. The `UIDesignRequiresCompatibility` flag is disabled
+    /// In any other scenario, applying a top padding would result in an unexpected gap
+    ///
+    let tabBarBackgroundTopPadding: CGFloat = {
+#if compiler(>=6.2)
+        if #available(macOS 26.0, *), Bundle.main.designCompatibilityEnabled == false {
+            return 2
+        }
+#endif
+
+        return 0
+    }()
+
     private let navigationBarHeightForDefault: CGFloat = 52
     private let navigationBarHeightForHomePage: CGFloat = 52
     private let navigationBarHeightForPopUpWindow: CGFloat = 42

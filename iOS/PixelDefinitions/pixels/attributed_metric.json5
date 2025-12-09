@@ -1,0 +1,278 @@
+{
+    "attributed_metric_retention_week": {
+        "description": "Measures retention on a weekly basis for attribution analysis",
+        "owners": ["federicocappelli"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            {
+                "key": "origin",
+                "description": "Attribution origin identifier (mutually exclusive with install_date)",
+                "type": "string"
+            },
+            {
+                "key": "install_date",
+                "description": "Installation date (mutually exclusive with origin)",
+                "type": "string"
+            },
+            {
+                "key": "default_browser",
+                "description": "Whether the browser is set as default",
+                "type": "string",
+                "enum": ["true", "false"]
+            },
+            {
+                "key": "count",
+                "description": "Count value for the retention metric",
+                "type": "string"
+            },
+            {
+                "key": "version",
+                "description": "Bucket version identifier for the metric calculation",
+                "type": "string"
+            }
+        ]
+    },
+    "attributed_metric_retention_month": {
+        "description": "Measures retention on a monthly basis for attribution analysis",
+        "owners": ["federicocappelli"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            {
+                "key": "origin",
+                "description": "Attribution origin identifier (mutually exclusive with install_date)",
+                "type": "string"
+            },
+            {
+                "key": "install_date",
+                "description": "Installation date (mutually exclusive with origin)",
+                "type": "string"
+            },
+            {
+                "key": "default_browser",
+                "description": "Whether the browser is set as default",
+                "type": "string",
+                "enum": ["true", "false"]
+            },
+            {
+                "key": "count",
+                "description": "Count value for the retention metric",
+                "type": "string"
+            },
+            {
+                "key": "version",
+                "description": "Bucket version identifier for the metric calculation",
+                "type": "string"
+            }
+        ]
+    },
+    "attributed_metric_active_past_week": {
+        "description": "Measures the number of active days in the past week for attribution analysis",
+        "owners": ["federicocappelli"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            {
+                "key": "origin",
+                "description": "Attribution origin identifier (mutually exclusive with install_date)",
+                "type": "string"
+            },
+            {
+                "key": "install_date",
+                "description": "Installation date (mutually exclusive with origin)",
+                "type": "string"
+            },
+            {
+                "key": "days",
+                "description": "Number of days the user was active in the past week",
+                "type": "string"
+            },
+            {
+                "key": "daysSinceInstalled",
+                "description": "Number of days since the app was installed",
+                "type": "string"
+            },
+            {
+                "key": "version",
+                "description": "Bucket version identifier for the metric calculation",
+                "type": "string"
+            }
+        ]
+    },
+    "attributed_metric_average_searches_past_week_first_month": {
+        "description": "Measures average search count during the first month",
+        "owners": ["federicocappelli"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            {
+                "key": "origin",
+                "description": "Attribution origin identifier (mutually exclusive with install_date)",
+                "type": "string"
+            },
+            {
+                "key": "install_date",
+                "description": "Installation date (mutually exclusive with origin)",
+                "type": "string"
+            },
+            {
+                "key": "count",
+                "description": "Average number of searches in the past week",
+                "type": "string"
+            },
+            {
+                "key": "version",
+                "description": "Bucket version identifier for the metric calculation",
+                "type": "string"
+            }
+        ]
+    },
+    "attributed_metric_average_searches_past_week": {
+        "description": "Measures average search count in the past week for attribution analysis",
+        "owners": ["federicocappelli"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            {
+                "key": "origin",
+                "description": "Attribution origin identifier (mutually exclusive with install_date)",
+                "type": "string"
+            },
+            {
+                "key": "install_date",
+                "description": "Installation date (mutually exclusive with origin)",
+                "type": "string"
+            },
+            {
+                "key": "count",
+                "description": "Average number of searches in the past week",
+                "type": "string"
+            },
+            {
+                "key": "version",
+                "description": "Bucket version identifier for the metric calculation",
+                "type": "string"
+            }
+        ]
+    },
+    "attributed_metric_average_ad_clicks_past_week": {
+        "description": "Measures average ad clicks in the past week for attribution analysis",
+        "owners": ["federicocappelli"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            {
+                "key": "origin",
+                "description": "Attribution origin identifier (mutually exclusive with install_date)",
+                "type": "string"
+            },
+            {
+                "key": "install_date",
+                "description": "Installation date (mutually exclusive with origin)",
+                "type": "string"
+            },
+            {
+                "key": "count",
+                "description": "Average number of ad clicks in the past week",
+                "type": "string"
+            },
+            {
+                "key": "version",
+                "description": "Bucket version identifier for the metric calculation",
+                "type": "string"
+            }
+        ]
+    },
+    "attributed_metric_average_duck_ai_usage_past_week": {
+        "description": "Measures average Duck AI usage in the past week for attribution analysis",
+        "owners": ["federicocappelli"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            {
+                "key": "origin",
+                "description": "Attribution origin identifier (mutually exclusive with install_date)",
+                "type": "string"
+            },
+            {
+                "key": "install_date",
+                "description": "Installation date (mutually exclusive with origin)",
+                "type": "string"
+            },
+            {
+                "key": "count",
+                "description": "Average number of Duck AI interactions in the past week",
+                "type": "string"
+            },
+            {
+                "key": "version",
+                "description": "Bucket version identifier for the metric calculation",
+                "type": "string"
+            }
+        ]
+    },
+    "attributed_metric_subscribed": {
+        "description": "Measures subscription events for attribution analysis",
+        "owners": ["federicocappelli"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            {
+                "key": "origin",
+                "description": "Attribution origin identifier (mutually exclusive with install_date)",
+                "type": "string"
+            },
+            {
+                "key": "install_date",
+                "description": "Installation date (mutually exclusive with origin)",
+                "type": "string"
+            },
+            {
+                "key": "month",
+                "description": "Month identifier when the subscription occurred",
+                "type": "string"
+            },
+            {
+                "key": "version",
+                "description": "Bucket version identifier for the metric calculation",
+                "type": "string"
+            }
+        ]
+    },
+    "attributed_metric_synced_device": {
+        "description": "Measures device sync events for attribution analysis",
+        "owners": ["federicocappelli"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            {
+                "key": "origin",
+                "description": "Attribution origin identifier (mutually exclusive with install_date)",
+                "type": "string"
+            },
+            {
+                "key": "install_date",
+                "description": "Installation date (mutually exclusive with origin)",
+                "type": "string"
+            },
+            {
+                "key": "number_of_devices",
+                "description": "Number of devices synced",
+                "type": "string"
+            },
+            {
+                "key": "version",
+                "description": "Bucket version identifier for the metric calculation",
+                "type": "string"
+            }
+        ]
+    },
+    "attributed_metric_data_store_error": {
+        "description": "Reports data store errors in the attributed metrics system",
+        "owners": ["federicocappelli"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["errorCode", "errorDomain", "underlyingErrorCode", "underlyingErrorDomain"]
+    }
+}

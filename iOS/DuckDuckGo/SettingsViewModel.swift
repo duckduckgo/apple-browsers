@@ -274,18 +274,6 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
-    var sheetBrowsingMenuVariantBinding: Binding<BrowsingMenuClusteringVariant> {
-        Binding<BrowsingMenuClusteringVariant>(
-            get: {
-                self.state.sheetMenuVariant
-            },
-            set: {
-                self.browsingMenuSheetCapability.variant = $0
-                self.state.sheetMenuVariant = $0
-            }
-        )
-    }
-
     var refreshButtonPositionBinding: Binding<RefreshButtonPosition> {
         Binding<RefreshButtonPosition>(
             get: {
@@ -305,8 +293,14 @@ final class SettingsViewModel: ObservableObject {
                 self.state.showMenuInSheet
             },
             set: {
-                let value = self.browsingMenuSheetCapability.setEnabled($0)
-                self.state.showMenuInSheet = value
+                if $0 {
+                    DailyPixel.fireDailyAndCount(pixel: .experimentalBrowsingMenuEnabled)
+                } else {
+                    DailyPixel.fireDailyAndCount(pixel: .experimentalBrowsingMenuDisabled)
+                }
+                
+                self.browsingMenuSheetCapability.setEnabled($0)
+                self.state.showMenuInSheet = self.browsingMenuSheetCapability.isEnabled
             }
         )
     }
@@ -736,7 +730,6 @@ extension SettingsViewModel {
             refreshButtonPosition: appSettings.currentRefreshButtonPosition,
             mobileCustomization: mobileCustomization.state,
             showMenuInSheet: browsingMenuSheetCapability.isEnabled,
-            sheetMenuVariant: browsingMenuSheetCapability.variant,
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
             autoclearDataEnabled: AutoClearSettingsModel(settings: appSettings) != nil,
@@ -1211,7 +1204,7 @@ extension SettingsViewModel {
         }
 
         // Update if can purchase based on App Store product availability
-        updatedSubscription.canPurchase = subscriptionAuthV1toV2Bridge.canPurchase
+        updatedSubscription.hasAppStoreProductsAvailable = subscriptionAuthV1toV2Bridge.hasAppStoreProductsAvailable
 
         // Update if user is signed in based on the presence of token
         updatedSubscription.isSignedIn = subscriptionAuthV1toV2Bridge.isUserAuthenticated
@@ -1495,6 +1488,18 @@ extension SettingsViewModel {
             get: { self.aiChatSettings.isAIChatTabSwitcherUserSettingsEnabled },
             set: { newValue in
                 self.aiChatSettings.enableAIChatTabSwitcherUserSettings(enable: newValue)
+            }
+        )
+    }
+    
+    var isAIChatFullModeEnabled: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.aiChatSettings.isAIChatFullModeEnabled },
+            set: { newValue in
+                withAnimation {
+                    self.objectWillChange.send()
+                    self.aiChatSettings.enableAIChatFullModeSetting(enable: newValue)
+                }
             }
         )
     }

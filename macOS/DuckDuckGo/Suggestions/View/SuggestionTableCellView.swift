@@ -64,6 +64,7 @@ final class SuggestionTableCellView: NSTableCellView {
         let view = KeyboardShortcutView()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.configure(with: ["⌃", "⏎"])
+        view.toolTip = "control + return"
         return view
     }()
 
@@ -342,7 +343,11 @@ final class SuggestionTableCellView: NSTableCellView {
             }
         }
 
-        iconImageViewLeadingConstraint.constant = theme?.addressBarStyleProvider.suggestionIconViewLeadingPadding ?? Constants.iconImageViewLeadingSpace
+        var iconLeadingPadding = theme?.addressBarStyleProvider.suggestionIconViewLeadingPadding ?? Constants.iconImageViewLeadingSpace
+        if Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
+            iconLeadingPadding += 8
+        }
+        iconImageViewLeadingConstraint.constant = iconLeadingPadding
         searchSuggestionTextFieldLeadingConstraint.constant = theme?.addressBarStyleProvider.suggestionTextFieldLeadingPadding ?? Constants.suggestionTextFieldLeadingSpace
 
         super.layout()

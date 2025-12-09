@@ -39,10 +39,10 @@ protocol BrowsingMenuEntryBuilding: AnyObject {
     func makeBrowsingMenuHeaderContent() -> [BrowsingMenuEntry]
 
     func makeNewTabEntry() -> BrowsingMenuEntry
-    func makeChatEntry(withSmallIcon: Bool) -> BrowsingMenuEntry?
-    func makeSettingsEntry(useSmallIcon: Bool) -> BrowsingMenuEntry
-    func makeShareEntry(useSmallIcon: Bool) -> BrowsingMenuEntry
-    func makePrintEntry(withSmallIcon: Bool) -> BrowsingMenuEntry
+    func makeChatEntry() -> BrowsingMenuEntry?
+    func makeSettingsEntry() -> BrowsingMenuEntry
+    func makeShareEntry() -> BrowsingMenuEntry
+    func makePrintEntry() -> BrowsingMenuEntry
     func makeDownloadsEntry() -> BrowsingMenuEntry
     func makeAutoFillEntry() -> BrowsingMenuEntry?
     func makeVPNEntry() -> BrowsingMenuEntry?

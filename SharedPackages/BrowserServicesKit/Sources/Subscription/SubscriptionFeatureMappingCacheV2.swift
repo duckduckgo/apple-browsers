@@ -22,4 +22,5 @@ import Networking
 
 public protocol SubscriptionFeatureMappingCacheV2 {
     func subscriptionFeatures(for subscriptionIdentifier: String) async -> [SubscriptionEntitlement]
+    func subscriptionTierFeatures(for subscriptionIdentifiers: [String]) async throws -> [String: [TierFeature]]
 }

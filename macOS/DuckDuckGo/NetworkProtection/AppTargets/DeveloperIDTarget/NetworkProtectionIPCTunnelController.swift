@@ -266,6 +266,15 @@ extension NetworkProtectionIPCTunnelController {
             return nil
         }
 
+        var standardParameters: [PixelKitStandardParameter]? {
+            switch self {
+            case .begin,
+                    .success,
+                    .failure:
+                return [.pixelSource]
+            }
+        }
+
     }
 }
 
@@ -293,6 +302,15 @@ extension NetworkProtectionIPCTunnelController {
 
         var parameters: [String: String]? {
             return nil
+        }
+
+        var standardParameters: [PixelKitStandardParameter]? {
+            switch self {
+            case .begin,
+                    .success,
+                    .failure:
+                return [.pixelSource]
+            }
         }
 
     }

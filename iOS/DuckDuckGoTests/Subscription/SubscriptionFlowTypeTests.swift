@@ -1,4 +1,4 @@
-g//
+//
 //  SubscriptionFlowTypeTests.swift
 //  DuckDuckGo
 //

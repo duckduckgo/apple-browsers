@@ -29,7 +29,6 @@ final class ReinstallUserDetectionDebugMenu: NSMenu, NSMenuDelegate {
 
     init(
         keyValueStore: ThrowingKeyValueStoring = NSApp.delegateTyped.keyValueStore,
-        reinstallUserDetection: ReinstallingUserDetecting? = nil,
         fileManager: FileManager = .default
     ) {
         self.keyValueStore = keyValueStore

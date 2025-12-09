@@ -141,7 +141,7 @@ final class PermissionCenterViewModel: ObservableObject {
     private let systemPermissionManager: SystemPermissionManagerProtocol
     private let featureFlagger: FeatureFlagger
     private let usedPermissions: Permissions
-    private let popupQueries: [PermissionAuthorizationQuery]
+    private var popupQueries: [PermissionAuthorizationQuery]
     private let removePermissionFromTab: (PermissionType) -> Void
     private let dismissPopover: () -> Void
     private let onPermissionRemoved: (() -> Void)?
@@ -263,6 +263,16 @@ final class PermissionCenterViewModel: ObservableObject {
             resetTemporaryPopupAllowance?()
             hasTemporaryPopupAllowance = false
         case .alwaysAllow:
+            // Open all blocked popups
+            for query in popupQueries {
+                openPopup?(query)
+            }
+            // Clear popup queries so they don't reappear when loadPermissions() is called
+            popupQueries = []
+            // Clear blocked popups from UI since they've been opened
+            if let index = permissionItems.firstIndex(where: { $0.permissionType == .popups }) {
+                permissionItems[index].blockedPopups = []
+            }
             permissionManager.setPermission(.allow, forDomain: domain, permissionType: .popups)
             resetTemporaryPopupAllowance?()
             hasTemporaryPopupAllowance = false

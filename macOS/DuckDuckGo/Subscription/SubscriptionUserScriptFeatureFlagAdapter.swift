@@ -38,4 +38,3 @@ struct SubscriptionUserScriptFeatureFlagAdapter: SubscriptionUserScriptFeatureFl
         featureFlagger.isFeatureOn(.allowProTierPurchase)
     }
 }
-

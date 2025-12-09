@@ -144,7 +144,7 @@ public struct ContentScopeExperimentsDebugView: View {
     }
 }
 
-struct ExperimentInfo: Identifiable {
+private struct ExperimentInfo: Identifiable {
     let id: String
     let name: String
     let state: String

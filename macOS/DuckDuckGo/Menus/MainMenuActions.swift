@@ -580,64 +580,6 @@ extension AppDelegate {
         NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: NSApp)
     }
 
-    @objc func showContentScopeExperiments(_ sender: Any?) {
-        let enrolledExperiments = contentScopeExperimentsManager.allActiveContentScopeExperiments
-        let configManager = privacyFeatures.contentBlocking.privacyConfigurationManager
-
-        let alert = NSAlert()
-        alert.messageText = "Content Scope Experiments"
-
-        var infoText = ""
-
-        guard let configData = try? PrivacyConfigurationData(data: configManager.currentConfig),
-              let cssFeature = configData.features["contentScopeExperiments"] else {
-            infoText = "No contentScopeExperiments feature found in config"
-            alert.informativeText = infoText
-            alert.addButton(withTitle: "OK")
-            alert.runModal()
-            return
-        }
-
-        if cssFeature.features.isEmpty {
-            infoText = "No experiments defined in contentScopeExperiments"
-        } else {
-            for (name, subfeature) in cssFeature.features.sorted(by: { $0.key < $1.key }) {
-                let enrollment = enrolledExperiments[name]
-                let enrollmentStatus = enrollment != nil ? "✓ Enrolled" : "✗ Not Enrolled"
-
-                infoText += "[\(enrollmentStatus)] \(name)\n"
-                infoText += "  State: \(subfeature.state)\n"
-
-                if let cohorts = subfeature.cohorts {
-                    let cohortNames = cohorts.map { $0.name }.joined(separator: ", ")
-                    infoText += "  Cohorts: \(cohortNames)\n"
-                }
-
-                if let minVersion = subfeature.minSupportedVersion {
-                    infoText += "  Min Version: \(minVersion)\n"
-                }
-
-                if let rollout = subfeature.rollout?.steps.last?.percent {
-                    infoText += "  Rollout: \(rollout)%\n"
-                }
-
-                if let enrollment = enrollment {
-                    infoText += "  Your Cohort: \(enrollment.cohortID)\n"
-                    let dateFormatter = DateFormatter()
-                    dateFormatter.dateStyle = .medium
-                    dateFormatter.timeStyle = .short
-                    infoText += "  Enrolled: \(dateFormatter.string(from: enrollment.enrollmentDate))\n"
-                }
-
-                infoText += "\n"
-            }
-        }
-
-        alert.informativeText = infoText
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
-    }
-
     @objc func resetDefaultGrammarChecks(_ sender: Any?) {
         UserDefaultsWrapper.clear(.spellingCheckEnabledOnce)
         UserDefaultsWrapper.clear(.grammarCheckEnabledOnce)

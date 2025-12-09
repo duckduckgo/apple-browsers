@@ -441,13 +441,10 @@ class SwitchBarTextEntryView: UIView {
             .receive(on: DispatchQueue.main)
             .removeDuplicates()
             .sink { [weak self] text in
-                print("🇳🇴 [\(String(describing: Self.self))] currentTextPublisher...")
                 guard let self = self else { return }
 
                 self.updateAutoCorrectionSetupForAIChat(for: text)
-                print("🇳🇴 [\(String(describing: Self.self))] \t checking if")
                 if self.textView.text != text {
-                    print("🇳🇴 [\(String(describing: Self.self))] calling methods")
                     self.textView.text = text
                     self.updatePlaceholderVisibility()
                     self.updateTextViewHeight()

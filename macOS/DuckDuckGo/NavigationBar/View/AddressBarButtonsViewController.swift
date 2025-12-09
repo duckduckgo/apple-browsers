@@ -1700,7 +1700,11 @@ final class AddressBarButtonsViewController: NSViewController {
     private func showTogglePopoverIfNeeded(toggleControl: NSView) {
         // Delay slightly to ensure the toggle is visible and positioned correctly
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-            self?.aiChatTogglePopoverCoordinator?.showPopoverIfNeeded(relativeTo: toggleControl)
+            self?.aiChatTogglePopoverCoordinator?.showPopoverIfNeeded(
+                relativeTo: toggleControl,
+                isNewUser: AppDelegate.isNewUser,
+                userDidInteractWithToggle: UserDefaults.standard.hasInteractedWithSearchDuckAIToggle
+            )
         }
     }
 

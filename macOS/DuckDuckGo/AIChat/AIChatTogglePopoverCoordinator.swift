@@ -24,7 +24,7 @@ import DesignResourcesKitIcons
 
 @MainActor
 protocol AIChatTogglePopoverCoordinating: AnyObject {
-    func showPopoverIfNeeded(relativeTo toggleControl: NSView)
+    func showPopoverIfNeeded(relativeTo toggleControl: NSView, isNewUser: Bool, userDidInteractWithToggle: Bool)
     func dismissPopover()
     func showPopoverForDebug(relativeTo toggleControl: NSView)
     func clearPopoverSeenFlag()
@@ -55,11 +55,11 @@ final class AIChatTogglePopoverCoordinator: AIChatTogglePopoverCoordinating {
         )
     }
 
-    func showPopoverIfNeeded(relativeTo toggleControl: NSView) {
-        guard
-            !presenter.isPopoverBeingPresented(),
-            !hasBeenPresented()
-        else {
+    func showPopoverIfNeeded(relativeTo toggleControl: NSView, isNewUser: Bool, userDidInteractWithToggle: Bool) {
+        guard canShowPopover(
+            isNewUser: isNewUser,
+            userDidInteractWithToggle: userDidInteractWithToggle
+        ) else {
             return
         }
 
@@ -67,6 +67,17 @@ final class AIChatTogglePopoverCoordinator: AIChatTogglePopoverCoordinating {
     }
 
     // MARK: - Private Methods
+
+    private func canShowPopover(isNewUser: Bool, userDidInteractWithToggle: Bool) -> Bool {
+        /// https://app.asana.com/1/137249556945/task/1212290374487805/comment/1212362023650996
+        guard !presenter.isPopoverBeingPresented(),
+              !hasBeenPresented(),
+              !isNewUser,
+              !userDidInteractWithToggle else {
+            return false
+        }
+        return true
+    }
 
     private func hasBeenPresented() -> Bool {
         return UserDefaults.standard.bool(forKey: StorageKey.popoverSeen)

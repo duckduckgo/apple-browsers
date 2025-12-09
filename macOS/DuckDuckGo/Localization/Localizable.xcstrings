@@ -1828,6 +1828,18 @@
         }
       }
     },
+    "aichat.address-bar.hide-toggle" : {
+      "comment" : "Button to hide duck.ai toggle in address bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hide Duck.ai Toggle"
+          }
+        }
+      }
+    },
     "aichat.address-bar.open-new-tab-button" : {
       "comment" : "Button to open Duck.ai in a new tab",
       "extractionState" : "extracted_with_value",
@@ -64695,7 +64707,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "External Apps"
+            "value" : "External apps"
           }
         }
       }
@@ -64707,7 +64719,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%1$@ to open \"%2$@\" links"
+            "value" : "%1$@ to open “%2$@” links"
+          }
+        }
+      }
+    },
+    "permission.center.external.scheme.format" : {
+      "comment" : "Format for external scheme row, %@ is scheme name like mailto or sms",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open “%@” links"
           }
         }
       }
@@ -64731,7 +64755,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Permissions for \"%@\""
+            "value" : "Permissions for “%@”"
           }
         }
       }
@@ -65288,6 +65312,18 @@
         }
       }
     },
+    "permission.popup.allow.popups.button" : {
+      "comment" : "Button to allow pop-ups when blocked popup has no URL",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Pop-ups"
+          }
+        }
+      }
+    },
     "permission.popup.allow.popups.page" : {
       "comment" : "Option to temporarily allow pop-ups for the current page during this visit until it reloads",
       "extractionState" : "extracted_with_value",
@@ -65512,6 +65548,18 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Never Allow"
+          }
+        }
+      }
+    },
+    "permission.popup.open.button" : {
+      "comment" : "Button to open a blocked pop-up",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open"
           }
         }
       }
@@ -73961,6 +74009,66 @@
         }
       }
     },
+    "ppro.feedback-form.category.unable-to-access-features" : {
+      "comment" : "Description for the feedback form when there is an issue with accessing Plus or Pro tier features",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kein Zugriff auf Plus- oder Pro-Funktionen möglich"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Unable to access Plus or Pro tier features"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No puedes acceder a las funciones de los niveles Plus o Pro"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible d'accéder aux fonctionnalités des niveaux Plus ou Pro"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossibile accedere alle funzionalità del livello Plus o Pro"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toegang tot Plus- of Pro-functies niet mogelijk"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brak dostępu do funkcji poziomu Plus lub Pro"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não é possível aceder às funcionalidades dos níveis Plus ou Pro"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет доступа к функциям уровня Plus или Pro"
+          }
+        }
+      }
+    },
     "ppro.feedback-form.disclaimer" : {
       "comment" : "Text for the disclaimer of the PPro feedback form",
       "extractionState" : "extracted_with_value",
@@ -76837,6 +76945,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Duck.ai"
+          }
+        }
+      }
+    },
+    "preferences.appearance.show-aichat-shortcut" : {
+      "comment" : "Option to show AI Chat shortcut in the address bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai Shortcut"
+          }
+        }
+      }
+    },
+    "preferences.appearance.show-aichat-toggle" : {
+      "comment" : "Option to show AI Chat toggle in the address bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai Toggle"
           }
         }
       }

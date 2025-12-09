@@ -610,6 +610,7 @@ struct UserText {
     static let aiChatOpenSidebarButton = NSLocalizedString("aichat.address-bar.open-sidebar-button", value: "Open Duck.ai Sidebar", comment: "Button to open Duck.ai sidebar")
     static let aiChatCloseSidebarButton = NSLocalizedString("aichat.address-bar.close-sidebar-button", value: "Close Duck.ai Sidebar", comment: "Button to close Duck.ai sidebar")
     static let aiChatAddressBarHideButton = NSLocalizedString("aichat.address-bar.hide-button", value: "Hide Duck.ai Shortcut", comment: "Button to hide duck.ai shortcut in address bar")
+    static let aiChatAddressBarHideToggle = NSLocalizedString("aichat.address-bar.hide-toggle", value: "Hide Duck.ai Toggle", comment: "Button to hide duck.ai toggle in address bar")
     static let aiChatOpenSettingsButton = NSLocalizedString("aichat.address-bar.open-settings-button", value: "Open AI Settings", comment: "Button to open AI settings")
     static let askAIChatButtonTitle = NSLocalizedString("aichat.address-bar.ask-button.title", value: "Ask Duck.ai", comment: "Title for button to ask Duck.ai")
 
@@ -978,6 +979,8 @@ struct UserText {
 
     static let permissionExternalSchemeOpenFormat = NSLocalizedString("permission.externalScheme.open.format", value: "Open %@", comment: "Open %@ App Name")
     static let permissionPopupBlockedPopover = NSLocalizedString("permission.popup.blocked.popover", value: "Pop-Up Blocked", comment: "Text of popover warning the user that a pop-up has been blocked")
+    static let permissionPopupOpenButton = NSLocalizedString("permission.popup.open.button", value: "Open", comment: "Button to open a blocked pop-up")
+    static let permissionPopupAllowPopupsButton = NSLocalizedString("permission.popup.allow.popups.button", value: "Allow Pop-ups", comment: "Button to allow pop-ups when blocked popup has no URL")
     static let permissionPopupLearnMoreLink = NSLocalizedString("permission.popup.learn-more.link", value: "Learn more about location services", comment: "Text of link that leads to web page with more informations about location services.")
     static let permissionPopupAllowButton = NSLocalizedString("permission.popup.allow.button", value: "Allow", comment: "Button that the user can use to authorise a web site to for, for example access location or camera and microphone etc.")
 
@@ -1001,12 +1004,13 @@ struct UserText {
     static let permissionPopupNeverAllowButton = NSLocalizedString("permission.popup.never.allow.button", value: "Never Allow", comment: "Button that denies permission and remembers the decision for future requests")
 
     // Permission Center
-    static let permissionCenterTitle = NSLocalizedString("permission.center.title", value: "Permissions for \"%@\"", comment: "Title for permission center popover, %@ is the domain name")
+    static let permissionCenterTitle = NSLocalizedString("permission.center.title", value: "Permissions for “%@”", comment: "Title for permission center popover, %@ is the domain name")
     static let permissionCenterAlwaysAsk = NSLocalizedString("permission.center.always.ask", value: "Always Ask", comment: "Permission center dropdown option to always ask for permission")
     static let permissionCenterAlwaysAllow = NSLocalizedString("permission.center.always.allow", value: "Always Allow", comment: "Permission center dropdown option to always allow permission")
     static let permissionCenterNeverAllow = NSLocalizedString("permission.center.never.allow", value: "Never Allow", comment: "Permission center dropdown option to never allow permission")
-    static let permissionCenterExternalSchemeDescription = NSLocalizedString("permission.center.external.scheme.description", value: "%@ to open \"%@\" links", comment: "Description for external scheme permission, first %@ is domain, second %@ is scheme name")
-    static let permissionCenterExternalApps = NSLocalizedString("permission.center.external.apps", value: "External Apps", comment: "Permission center header for external app permissions")
+    static let permissionCenterExternalSchemeDescription = NSLocalizedString("permission.center.external.scheme.description", value: "%@ to open “%@” links", comment: "Description for external scheme permission, first %@ is domain, second %@ is scheme name")
+    static let permissionCenterExternalApps = NSLocalizedString("permission.center.external.apps", value: "External apps", comment: "Permission center header for external app permissions")
+    static let permissionCenterExternalSchemeFormat = NSLocalizedString("permission.center.external.scheme.format", value: "Open “%@” links", comment: "Format for external scheme row, %@ is scheme name like mailto or sms")
 
     static let privacyDashboardPopupsAlwaysAsk = NSLocalizedString("dashboard.popups.ask", value: "Notify", comment: "Make pop-up windows always request permission for the current domain")
 
@@ -1167,6 +1171,8 @@ struct UserText {
     static let syncAppIconWithTheme = NSLocalizedString("preferences.appearance.sync-app-icon-with-theme", value: "Change app icon to match theme", comment: "Checkbox option to sync the app icon with the selected theme")
     static let addressBar = NSLocalizedString("preferences.appearance.address-bar", value: "Address Bar", comment: "Theme preferences")
     static let showAIChatInAddress = NSLocalizedString("preferences.appearance.show-aichat", value: "Duck.ai", comment: "Option to show AI Chat the address bar")
+    static let showAIChatShortcutInAddress = NSLocalizedString("preferences.appearance.show-aichat-shortcut", value: "Duck.ai Shortcut", comment: "Option to show AI Chat shortcut in the address bar")
+    static let showAIChatToggleInAddress = NSLocalizedString("preferences.appearance.show-aichat-toggle", value: "Duck.ai Toggle", comment: "Option to show AI Chat toggle in the address bar")
 
     static let showFullWebsiteAddress = NSLocalizedString("preferences.appearance.show-full-url", value: "Full website address", comment: "Option to show full URL in the address bar")
     static let showAutocompleteSuggestions = NSLocalizedString("preferences.appearance.show-autocomplete-suggestions", value: "Autocomplete suggestions", comment: "Option to show autocomplete suggestions in the address bar")

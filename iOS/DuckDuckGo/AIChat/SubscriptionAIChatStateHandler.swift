@@ -24,11 +24,14 @@ import Foundation
 ///
 /// When a user's subscription changes (sign-in, sign-out, or plan change),
 /// AI Chat needs to reload to reflect the new subscription features and limits.
-protocol SubscriptionAIChatStateHandling {
+protocol SubscriptionAIChatStateHandling: AnyObject {
     /// Indicates if AI Chat should refresh due to subscription changes.
     ///
     /// Becomes `true` when subscription status changes.
     var shouldForceAIChatRefresh: Bool { get }
+
+    /// Called when subscription state changes. Set this to react to changes immediately.
+    var onSubscriptionStateChanged: (() -> Void)? { get set }
 
     /// Clears the refresh flag after AI Chat has been reloaded.
     func reset()
@@ -36,6 +39,7 @@ protocol SubscriptionAIChatStateHandling {
 
 final class SubscriptionAIChatStateHandler: SubscriptionAIChatStateHandling {
     private(set) var shouldForceAIChatRefresh: Bool = false
+    var onSubscriptionStateChanged: (() -> Void)?
     private var subscriptionCancellables = Set<AnyCancellable>()
 
     init() {
@@ -65,8 +69,9 @@ final class SubscriptionAIChatStateHandler: SubscriptionAIChatStateHandling {
             .store(in: &subscriptionCancellables)
     }
 
-    private func handleSubscriptionStateChange(_ notification: Notification, ) {
+    private func handleSubscriptionStateChange(_ notification: Notification) {
         shouldForceAIChatRefresh = true
+        onSubscriptionStateChanged?()
     }
 
     func reset() {

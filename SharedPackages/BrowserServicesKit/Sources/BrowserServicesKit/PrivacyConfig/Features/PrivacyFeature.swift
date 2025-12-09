@@ -106,9 +106,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlySubfeatureForTests
 
-    // Import Safari's bookmarks and favorites to better match Safari's behavior
-    case updateSafariBookmarksImport
-
     /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
     case willSoonDropBigSurSupport
 
@@ -391,9 +388,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case privacyProOnboardingPromotion
     case paidAIChat
     case supportsAlternateStripePaymentFlow
-    case subscriptionPurchaseWidePixelMeasurement
     case vpnConnectionWidePixelMeasurement
-    case authV2WideEventEnabled
     case winBackOffer
     case vpnMenuItem
     case blackFridayCampaign

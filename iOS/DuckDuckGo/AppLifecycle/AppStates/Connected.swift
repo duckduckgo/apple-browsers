@@ -73,7 +73,7 @@ struct Connected: ConnectedHandling {
 
     /// Temporary logic to handle cases where the window is disconnected and later reconnected.
     /// Ensures the main coordinator’s main view controller is reattached to the new window.
-    /// If confirmed this scenario never occurs, this code should be removed.
+    /// This unfortunately happens for iOS 16 and lower. Remove this once we drop support for it.
     init(stateContext: Foreground.StateContext, actionToHandle: AppAction?, window: UIWindow) {
         appDependencies = stateContext.appDependencies
         didFinishLaunchingStartTime = 0
@@ -97,7 +97,7 @@ struct Connected: ConnectedHandling {
 
     /// Temporary logic to handle cases where the window is disconnected and later reconnected.
     /// Ensures the main coordinator’s main view controller is reattached to the new window.
-    /// If confirmed this scenario never occurs, this code should be removed.
+    /// This unfortunately happens for iOS 16 and lower. Remove this once we drop support for it.
     init(stateContext: Background.StateContext, actionToHandle: AppAction?, window: UIWindow) {
         appDependencies = stateContext.appDependencies
         didFinishLaunchingStartTime = 0

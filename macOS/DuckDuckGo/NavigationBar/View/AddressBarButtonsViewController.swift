@@ -50,6 +50,7 @@ protocol AddressBarButtonsViewControllerDelegate: AnyObject {
     func addressBarButtonsViewControllerCancelButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewControllerHideAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewControllerHideAskAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
+    func addressBarButtonsViewControllerHideSearchModeToggleClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewControllerOpenAIChatSettingsButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewControllerAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewControllerSearchModeToggleChanged(_ addressBarButtonsViewController: AddressBarButtonsViewController, isAIChatMode: Bool)
@@ -90,7 +91,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private var popupBlockedPopover: PopupBlockedPopover?
     private func popupBlockedPopoverCreatingIfNeeded() -> PopupBlockedPopover {
         return popupBlockedPopover ?? {
-            let popover = PopupBlockedPopover()
+            let popover = PopupBlockedPopover(featureFlagger: featureFlagger)
             popover.delegate = self
             self.popupBlockedPopover = popover
             return popover
@@ -513,6 +514,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
             stopAnimations()
             closePrivacyDashboard()
+            closePermissionPopovers()
 
             self.tabViewModel = tabViewModel
             subscribeToUrl()
@@ -545,7 +547,8 @@ final class AddressBarButtonsViewController: NSViewController {
     private func subscribeToPermissions() {
         permissionsCancellables.removeAll(keepingCapacity: true)
 
-        tabViewModel?.$usedPermissions.dropFirst().sink { [weak self] _ in
+        // Dispatch to next run loop to ensure UI updates after Combine propagation
+        tabViewModel?.$usedPermissions.dropFirst().receive(on: DispatchQueue.main).sink { [weak self] _ in
             self?.updateAllPermissionButtons()
         }.store(in: &permissionsCancellables)
         tabViewModel?.tab.popupHandling?.pageInitiatedPopupPublisher.sink { [weak self] _ in
@@ -598,6 +601,7 @@ final class AddressBarButtonsViewController: NSViewController {
                 self?.updateAIChatButtonVisibility()
                 self?.updateAskAIChatButtonVisibility()
                 self?.configureAIChatButton()
+                self?.updateButtons()
             }).store(in: &cancellables)
     }
 
@@ -698,8 +702,16 @@ final class AddressBarButtonsViewController: NSViewController {
             return
         }
 
-        permissionCenterButton.isShown = tabViewModel.shouldShowPermissionCenterButton(isTextFieldEditorFirstResponder: isTextFieldEditorFirstResponder,
-                                                                                       isAnyTrackerAnimationPlaying: isAnyTrackerAnimationPlaying)
+        // Check if any permission is in requested state (authorization will be shown)
+        let hasRequestedPermission = tabViewModel.usedPermissions.values.contains { $0.isRequested }
+
+        // Show bell icon immediately if authorization popover will be presented
+        updatePermissionCenterButtonIcon(showBell: hasRequestedPermission)
+
+        permissionCenterButton.isShown = tabViewModel.shouldShowPermissionCenterButton(
+            isTextFieldEditorFirstResponder: isTextFieldEditorFirstResponder,
+            isAnyTrackerAnimationPlaying: isAnyTrackerAnimationPlaying
+        )
 
         showOrHidePermissionCenterPopoverIfNeeded()
     }
@@ -719,21 +731,41 @@ final class AddressBarButtonsViewController: NSViewController {
     private func showOrHidePermissionCenterPopoverIfNeeded() {
         guard let tabViewModel else { return }
 
+        // Collect all requested permissions
+        var requestedQueries: [(PermissionType, PermissionAuthorizationQuery)] = []
         for permission in tabViewModel.usedPermissions.keys {
-            guard case .requested(let query) = tabViewModel.usedPermissions[permission] else { continue }
-
-            let permissionAuthorizationPopover = permissionAuthorizationPopoverCreatingIfNeeded()
-            guard !permissionAuthorizationPopover.isShown else {
-                if permissionAuthorizationPopover.viewController.query === query { return }
-                permissionAuthorizationPopover.close()
-                return
+            if case .requested(let query) = tabViewModel.usedPermissions[permission] {
+                requestedQueries.append((permission, query))
             }
+        }
+
+        // If no requested permissions, close popover if shown
+        guard let (_, query) = requestedQueries.first else {
+            if let permissionAuthorizationPopover, permissionAuthorizationPopover.isShown {
+                // Don't close if authorization is still in progress (e.g., waiting for user to click Allow/Deny in two-step flow)
+                guard !permissionAuthorizationPopover.viewController.isAuthorizationInProgress else { return }
+                permissionAuthorizationPopover.close()
+            }
+            return
+        }
+
+        let permissionAuthorizationPopover = permissionAuthorizationPopoverCreatingIfNeeded()
+
+        // If popover is not shown, open it
+        guard permissionAuthorizationPopover.isShown else {
             openPermissionAuthorizationPopover(for: query)
             return
         }
-        if let permissionAuthorizationPopover, permissionAuthorizationPopover.isShown {
-            permissionAuthorizationPopover.close()
-        }
+
+        // If showing the same query, nothing to do
+        if permissionAuthorizationPopover.viewController.query === query { return }
+
+        // Don't close if authorization is still in progress (e.g., waiting for user to click Allow/Deny in two-step flow)
+        if permissionAuthorizationPopover.viewController.isAuthorizationInProgress { return }
+
+        // Close old popover and immediately open new one for the pending query
+        permissionAuthorizationPopover.close()
+        openPermissionAuthorizationPopover(for: query)
     }
 
     private func updateBookmarkButtonImage(isUrlBookmarked: Bool = false) {
@@ -1292,6 +1324,11 @@ final class AddressBarButtonsViewController: NSViewController {
         }
     }
 
+    @objc func hideSearchModeToggleAction(_ sender: NSMenuItem) {
+        delegate?.addressBarButtonsViewControllerHideSearchModeToggleClicked(self)
+        updateButtons()
+    }
+
     @objc func openAIChatSettingsContextMenuAction(_ sender: NSMenuItem) {
         delegate?.addressBarButtonsViewControllerOpenAIChatSettingsButtonClicked(self)
     }
@@ -1542,6 +1579,7 @@ final class AddressBarButtonsViewController: NSViewController {
         button.backgroundColor = .buttonMouseDown
         button.mouseOverColor = .buttonMouseDown
         (popover.contentViewController as? PermissionAuthorizationViewController)?.query = query
+        (popover.contentViewController as? PopupBlockedViewController)?.query = query
         query.wasShownOnce = true
 
         // Wait for the button appearance animation to complete before showing popover
@@ -1560,6 +1598,12 @@ final class AddressBarButtonsViewController: NSViewController {
 
     func closePrivacyDashboard() {
         popovers?.closePrivacyDashboard()
+    }
+
+    private func closePermissionPopovers() {
+        permissionAuthorizationPopover?.close()
+        popupBlockedPopover?.close()
+        permissionCenterPopover?.close()
     }
 
     func openPrivacyDashboard() {
@@ -1658,6 +1702,14 @@ final class AddressBarButtonsViewController: NSViewController {
         guard featureFlagger.isFeatureOn(.newPermissionView) else { return }
         guard let tabViewModel else { return }
 
+        // Don't open permission center while authorization or popup blocked dialog is presented
+        if let authPopover = permissionAuthorizationPopover, authPopover.isShown {
+            return
+        }
+        if let popupPopover = popupBlockedPopover, popupPopover.isShown {
+            return
+        }
+
         // Close existing popover if shown
         if let existingPopover = permissionCenterPopover, existingPopover.isShown {
             existingPopover.close()
@@ -1668,17 +1720,42 @@ final class AddressBarButtonsViewController: NSViewController {
         let url = tabViewModel.tab.content.urlForWebView ?? .empty
         let domain = (url.isFileURL ? .localhost : (url.host ?? "")).droppingWwwPrefix()
 
+        // Get popup queries for the Permission Center
+        let popupQueries = tabViewModel.tab.permissions.authorizationQueries.filter { $0.permissions.contains(.popups) }
+
         let viewModel = PermissionCenterViewModel(
             domain: domain,
             usedPermissions: tabViewModel.usedPermissions,
+            popupQueries: popupQueries,
             permissionManager: permissionManager,
+            featureFlagger: featureFlagger,
             removePermission: { [weak tabViewModel] permissionType in
                 tabViewModel?.tab.permissions.remove(permissionType)
             },
             dismissPopover: { [weak self] in
                 self?.permissionCenterPopover?.close()
                 self?.permissionCenterPopover = nil
-            }
+            },
+            onPermissionRemoved: { [weak self] in
+                // Dispatch to next run loop to allow Combine publishers to propagate changes
+                DispatchQueue.main.async {
+                    self?.updateAllPermissionButtons()
+                }
+            },
+            openPopup: { [weak tabViewModel] query in
+                tabViewModel?.tab.permissions.allow(query)
+            },
+            setTemporaryPopupAllowance: { [weak tabViewModel] in
+                tabViewModel?.tab.popupHandling?.setPopupAllowanceForCurrentPage()
+            },
+            resetTemporaryPopupAllowance: { [weak tabViewModel] in
+                tabViewModel?.tab.popupHandling?.clearPopupAllowanceForCurrentPage()
+            },
+            grantPermission: { [weak tabViewModel] query in
+                tabViewModel?.tab.permissions.allow(query)
+            },
+            hasTemporaryPopupAllowance: tabViewModel.tab.popupHandling?.popupsTemporarilyAllowedForCurrentPage ?? false,
+            pageInitiatedPopupOpened: tabViewModel.tab.popupHandling?.pageInitiatedPopupOpened ?? false
         )
 
         let popover = PermissionCenterPopover(viewModel: viewModel)
@@ -1853,6 +1930,8 @@ final class AddressBarButtonsViewController: NSViewController {
             self?.searchModeToggleWidthConstraint?.constant = newWidth
         }
 
+        toggleControl.menu = createSearchModeToggleContextMenu()
+
         trailingButtonsContainer.addArrangedSubview(toggleControl)
         toggleControl.isHidden = true
 
@@ -1864,6 +1943,26 @@ final class AddressBarButtonsViewController: NSViewController {
 
         self.searchModeToggleWidthConstraint = widthConstraint
         self.searchModeToggleControl = toggleControl
+    }
+
+    private func createSearchModeToggleContextMenu() -> NSMenu {
+        let menu = NSMenu()
+
+        let hideItem = NSMenuItem(title: UserText.aiChatAddressBarHideToggle,
+                                  action: #selector(hideSearchModeToggleAction(_:)),
+                                  keyEquivalent: "")
+        hideItem.target = self
+        menu.addItem(hideItem)
+
+        menu.addItem(NSMenuItem.separator())
+
+        let settingsItem = NSMenuItem(title: UserText.aiChatOpenSettingsButton,
+                                      action: #selector(openAIChatSettingsContextMenuAction(_:)),
+                                      keyEquivalent: "")
+        settingsItem.target = self
+        menu.addItem(settingsItem)
+
+        return menu
     }
 
     @objc private func searchModeToggleDidChange(_ sender: CustomToggleControl) {
@@ -2318,6 +2417,10 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
                 assertionFailure("Unexpected popover positioningView: \(popover.positioningView?.description ?? "<nil>"), expected PermissionButton")
             }
             updatePermissionCenterButtonIcon(showBell: false)
+            // Check for other pending permission requests after popover closes
+            DispatchQueue.main.async { [weak self] in
+                self?.updateAllPermissionButtons()
+            }
         default:
             break
         }
@@ -2383,15 +2486,21 @@ extension URL {
 
 extension TabViewModel {
 
-    func shouldShowPermissionCenterButton(isTextFieldEditorFirstResponder: Bool, isAnyTrackerAnimationPlaying: Bool) -> Bool {
+    @MainActor
+    func shouldShowPermissionCenterButton(
+        isTextFieldEditorFirstResponder: Bool,
+        isAnyTrackerAnimationPlaying: Bool
+    ) -> Bool {
         // Show permission buttons when there's a requested permission on NTP even if address bar is focused,
         // since NTP has the address bar focused by default
-        let hasRequestedPermission = usedPermissions.values.contains(where: { $0.isRequested
-        })
+        let hasRequestedPermission = usedPermissions.values.contains(where: { $0.isRequested })
         let shouldShowWhileFocused = (tab.content == .newtab) && hasRequestedPermission
         let isAnyPermissionPresent = !usedPermissions.values.isEmpty
+        let pageInitiatedPopupOpened = tab.popupHandling?.pageInitiatedPopupOpened ?? false
 
-        return (shouldShowWhileFocused || (!isTextFieldEditorFirstResponder && isAnyPermissionPresent))
+        // Also show when a page-initiated popup was auto-allowed (due to "Always Allow" setting)
+        // so user can access permission center to change the decision
+        return (shouldShowWhileFocused || (!isTextFieldEditorFirstResponder && (isAnyPermissionPresent || pageInitiatedPopupOpened)))
         && !isAnyTrackerAnimationPlaying
         && !isShowingErrorPage
     }

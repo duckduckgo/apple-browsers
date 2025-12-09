@@ -4,6 +4,9 @@
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
 
+/* No comment provided by engineer. */
+"Account" = "account";
+
 /* Buton label for Edit action */
 "action.generic.edit" = "Bewerken";
 
@@ -33,9 +36,6 @@
 
 /* Open AI Chat history action in the menu list */
 "action.title.aiChat.history" = "Duck.ai chats";
-
-/* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "Nieuwe AI Chat";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Duck.ai-instellingen";
@@ -87,9 +87,6 @@
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Openen op de achtergrond";
-
-/* Create New Tab action */
-"action.title.newTabAction" = "Nieuw tabblad";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Openen in nieuw tabblad";
@@ -904,6 +901,12 @@
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Gebruikersnaam bijwerken?";
 
+/* No comment provided by engineer. */
+"Available Products" = "Beschikbare producten";
+
+/* View plans button text during Black Friday campaign */
+"black-friday.campaign.view.plans.cta" = "Bespaar %d%% op het eerste jaar";
+
 /* Add bookmark screen title */
 "bookmark.addBookmark.title" = "Bladwijzer toevoegen";
 
@@ -1026,6 +1029,9 @@
 
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Annuleren is niet meer dan één keer toegestaan";
+
+/* No comment provided by engineer. */
+"Checking for existing account..." = "Controleren op een bestaande account...";
 
 /* Close All Tabs */
 "close.all.tabs" = "Alle tabbladen sluiten";
@@ -1151,7 +1157,10 @@
 "crash.report.dialog.title" = "Automatisch crashrapporten verzenden?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Huidig aantal afwijzingen: %@";
+"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+
+/* No comment provided by engineer. */
+"Current Subscriptions" = "Huidige abonnementen";
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "Aangepaste celinhoud";
@@ -1676,6 +1685,9 @@
 "error.unknown.try.again" = "Er is een onbekende fout opgetreden";
 
 /* No comment provided by engineer. */
+"External ID: %@" = "Externe ID: %@";
+
+/* No comment provided by engineer. */
 "favorite" = "Favoriet";
 
 /* No comment provided by engineer. */
@@ -1912,6 +1924,9 @@
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "SELECTEER EEN CATEGORIE";
 
+/* Category for issues with accessing Plus or Pro tier features */
+"feedback.ppro.category.unable-to-access-features" = "Toegang tot Plus- of Pro-functies niet mogelijk";
+
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Jouw anonieme feedback is belangrijk voor ons.";
 
@@ -2082,6 +2097,9 @@
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Laatst verwerkt: %@";
+
+/* No comment provided by engineer. */
+"Loading available products..." = "Beschikbare producten laden...";
 
 /* No comment provided by engineer. */
 "Loading brokers..." = "Datahandelaars laden...";
@@ -2429,6 +2447,12 @@
 "new.address.bar.picker.title" = "Optie voor adresbalk";
 
 /* No comment provided by engineer. */
+"No active subscriptions" = "Geen actieve abonnementen";
+
+/* No comment provided by engineer. */
+"No existing subscription found" = "Geen bestaand abonnement gevonden";
+
+/* No comment provided by engineer. */
 "No Logs" = "Geen logboeken";
 
 /* No comment provided by engineer. */
@@ -2436,6 +2460,9 @@
 
 /* No comment provided by engineer. */
 "No results found" = "Geen resultaten gevonden";
+
+/* No comment provided by engineer. */
+"No subscriptions available" = "Geen abonnementen beschikbaar";
 
 /* No comment provided by engineer. */
 "OK" = "OK";
@@ -2448,6 +2475,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser  hides a cookie popup */
 "omnibar.notification.popup-hidden" = "Pop-up verborgen";
+
+/* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
+"omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Ik snap het";
@@ -2519,7 +2549,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Instellingen > AI-functies.";
 
 /* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Wil je eenvoudiger toegang\ntot privé AI-chat?";
+"onboarding.highlights.searchExperience.title" = "Wil je eenvoudig toegang tot privé AI-chat?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Laten we het doen!";
@@ -2911,6 +2941,12 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Instellingen voor zoek Assist";
 
+/* Settings screen cell subtitle for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.subtitle" = "Nieuwe Duck.ai-chats als tabbladen in de browser weergeven";
+
+/* Settings screen cell title for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.title" = "Tabbladmodus Duck.ai ";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Verberg AI-gegenereerde afbeeldingen.";
 
@@ -2925,9 +2961,6 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Positie van adresbalk";
-
-/* Settings screen cell text for experimental menu */
-"settings.appearance.experimental.menu" = "Experimenteel browsermenu";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Links openen in bijbehorende apps";
@@ -3055,8 +3088,11 @@
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Wachtwoorden importeren";
 
-/* Copy for budge on settings item to show an item is new */
+/* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Nieuw";
+
+/* Copy for badge on settings item to show an item is experimental */
+"settings.item.badge.preview" = "Voorvertoning";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Toetsenbord";
@@ -3327,6 +3363,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Welke website is defect?";
+
+/* No comment provided by engineer. */
+"Status" = "Status";
 
 /* No comment provided by engineer. */
 "Status: Invalidated" = "Status: ongeldig verklaard";
@@ -3981,6 +4020,12 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Een bericht van %@:";
+
+/* No comment provided by engineer. */
+"Will attach to EXISTING account" = "Wordt gekoppeld aan BESTAAND account";
+
+/* No comment provided by engineer. */
+"Will create NEW account" = "Zal een NIEUW account aanmaken";
 
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "BESPAAR 25%";

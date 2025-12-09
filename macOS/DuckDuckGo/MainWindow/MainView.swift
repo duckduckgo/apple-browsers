@@ -50,6 +50,8 @@ final class MainView: NSView {
 
     let divider = ColorView(frame: .zero, backgroundColor: .separatorColor)
 
+    private let themeManager: ThemeManager = NSApp.delegateTyped.themeManager
+
     private var navigationBarTopConstraint: NSLayoutConstraint!
     private var bookmarksBarHeightConstraint: NSLayoutConstraint!
     private var webContainerTopConstraint: NSLayoutConstraint!
@@ -89,10 +91,14 @@ final class MainView: NSView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    private var navigationBarTopPadding: CGFloat {
+        Constants.tabBarHeight + themeManager.theme.addressBarStyleProvider.tabBarBackgroundTopPadding
+    }
+
     private func addConstraints() {
         bookmarksBarHeightConstraint = bookmarksBarContainerView.heightAnchor.constraint(equalToConstant: Constants.bookmarksBarHeight)
         tabBarHeightConstraint = tabBarContainerView.heightAnchor.constraint(equalToConstant: Constants.tabBarHeight)
-        navigationBarTopConstraint = navigationBarContainerView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.tabBarHeight)
+        navigationBarTopConstraint = navigationBarContainerView.topAnchor.constraint(equalTo: topAnchor, constant: navigationBarTopPadding)
         webContainerTopConstraint = webContainerView.topAnchor.constraint(equalTo: bannerContainerView.bottomAnchor)
         webContainerTopConstraintToNavigation = webContainerView.topAnchor.constraint(equalTo: navigationBarContainerView.bottomAnchor)
 
@@ -281,7 +287,7 @@ final class MainView: NSView {
             navigationBarTopConstraint = navigationBarTopConstraint?.animator()
         }
         tabBarHeightConstraint?.constant = newValue ? Constants.tabBarHeight : 0
-        navigationBarTopConstraint?.constant = newValue ? Constants.tabBarHeight : 0
+        navigationBarTopConstraint?.constant = newValue ? navigationBarTopPadding : 0
     }
 
     var isAIChatOmnibarContainerShown: Bool {

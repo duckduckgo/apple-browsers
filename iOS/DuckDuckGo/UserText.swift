@@ -764,6 +764,7 @@ public struct UserText {
     static let generalFeedbackFormCategoryAiChat = NSLocalizedString("feedback.general.category.ai-chat", value: "Duck.ai", comment: "Category for Duck.ai feedback")
     static let pproFeedbackFormCategorySelect = NSLocalizedString("feedback.ppro.category.select", value: "Select a category", comment: "Prompt to select a category for Privacy Pro feedback")
     static let pproFeedbackFormCategoryOTP = NSLocalizedString("feedback.ppro.category.otp", value: "Issue with one-time password", comment: "Category for one-time password issues")
+    static let pproFeedbackFormCategoryUnableToAccessFeatures = NSLocalizedString("feedback.ppro.category.unable-to-access-features", value: "Unable to access Plus or Pro tier features", comment: "Category for issues with accessing Plus or Pro tier features")
     static let pproFeedbackFormCategoryOther = NSLocalizedString("feedback.ppro.category.other", value: "Something else", comment: "Category for other Privacy Pro issues")
     static let pirFeedbackFormCategorySelect = NSLocalizedString("feedback.pir.category.select", value: "Select a category", comment: "Prompt to select a category for Personal Info Removal feedback")
     static let pirFeedbackFormCategoryNothingOnSpecificSite = NSLocalizedString("feedback.pir.category.nothing-on-site", value: "The scan didn't find my info on a specific site", comment: "Category for when scan doesn't find info on a specific site")

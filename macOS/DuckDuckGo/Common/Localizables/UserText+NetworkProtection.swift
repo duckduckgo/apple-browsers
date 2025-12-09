@@ -98,6 +98,8 @@ extension UserText {
 
     static let pproFeedbackFormCategoryOTP = NSLocalizedString("ppro.feedback-form.category.otp", value: "Issue with one-time password", comment: "Description for the feedback form when there is an issue with the one-time password")
 
+    static let pproFeedbackFormCategoryUnableToAccessFeatures = NSLocalizedString("ppro.feedback-form.category.unable-to-access-features", value: "Unable to access Plus or Pro tier features", comment: "Description for the feedback form when there is an issue with accessing Plus or Pro tier features")
+
     static let pproFeedbackFormCategoryOther = NSLocalizedString("ppro.feedback-form.category.something-else", value: "Something else", comment: "Description for the feedback form when the user has an issue not categorized in other options")
 
     static let vpnFeedbackFormTitle = NSLocalizedString("vpn.feedback-form.title", value: "Help Improve the DuckDuckGo VPN", comment: "Title for each screen of the VPN feedback form")

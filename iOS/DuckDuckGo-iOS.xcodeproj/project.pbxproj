@@ -180,7 +180,6 @@
 		31A71F382E0B225A00F23147 /* SwitchBarButtonsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31A71F372E0B225A00F23147 /* SwitchBarButtonsView.swift */; };
 		31A968152E4E6E1300F4305E /* SettingsAIChatShortcutsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31A968142E4E6E1300F4305E /* SettingsAIChatShortcutsView.swift */; };
 		31A968192E4F692200F4305E /* SettingsAIExperimentalPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31A968182E4F692200F4305E /* SettingsAIExperimentalPickerView.swift */; };
-		31AC83B62EB50E97009191A4 /* MainViewControllerAIChatPayloadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31AC83B52EB50E97009191A4 /* MainViewControllerAIChatPayloadTests.swift */; };
 		31B0B2BF2D390CF400A702D4 /* QuickActionsSmallWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B0B2BE2D390CF000A702D4 /* QuickActionsSmallWidget.swift */; };
 		31B2F10F2C92FECC00CD30E3 /* MarketplaceAdPostbackManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B2F10E2C92FECC00CD30E3 /* MarketplaceAdPostbackManager.swift */; };
 		31B2F1112C92FEE000CD30E3 /* MarketplaceAdPostback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31B2F1102C92FEE000CD30E3 /* MarketplaceAdPostback.swift */; };
@@ -1595,6 +1594,7 @@
 		C1641EAF2BC2F5140012607A /* ImportPasswordsViaSyncViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1641EAE2BC2F5140012607A /* ImportPasswordsViaSyncViewController.swift */; };
 		C1641EB12BC2F52B0012607A /* ImportPasswordsViaSyncView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1641EB02BC2F52B0012607A /* ImportPasswordsViaSyncView.swift */; };
 		C1641EB32BC2F53C0012607A /* ImportPasswordsViaSyncViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1641EB22BC2F53C0012607A /* ImportPasswordsViaSyncViewModel.swift */; };
+		C16670E42EE7301300C6105C /* SubscriptionAIChatStateHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C16670E32EE7301300C6105C /* SubscriptionAIChatStateHandlerTests.swift */; };
 		C167D9062DAD5BDA00FA1E70 /* SubscriptionFunnelOrigin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C167D9052DAD5BDA00FA1E70 /* SubscriptionFunnelOrigin.swift */; };
 		C17023AA2E589C6E00090178 /* DaxEasterEggLogoCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = C17023A92E589C6E00090178 /* DaxEasterEggLogoCache.swift */; };
 		C177D9F62CFDDFEB0039CBF7 /* UIAlertControllerExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = C177D9F52CFDDFEB0039CBF7 /* UIAlertControllerExtension.swift */; };
@@ -1765,6 +1765,10 @@
 		CB5516D0286500290079B175 /* TrackerRadarIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85519124247468580010FDD0 /* TrackerRadarIntegrationTests.swift */; };
 		CB5516D1286500290079B175 /* ContentBlockingRulesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02CA904C24FD2DB000D41DDF /* ContentBlockingRulesTests.swift */; };
 		CB5516D2286500290079B175 /* AtbServerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85F21DBD21121147002631A6 /* AtbServerTests.swift */; };
+		CB596FF12ED9FBF300370FA8 /* MockRemoteMessagingDebugHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB596FF02ED9FBF300370FA8 /* MockRemoteMessagingDebugHandler.swift */; };
+		CB596FF22ED9FBF300370FA8 /* MockRemoteMessagingDebugHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB596FF02ED9FBF300370FA8 /* MockRemoteMessagingDebugHandler.swift */; };
+		CB596FF32ED9FBF300370FA8 /* MockRemoteMessagingDebugHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB596FF02ED9FBF300370FA8 /* MockRemoteMessagingDebugHandler.swift */; };
+		CB596FF42ED9FBF300370FA8 /* MockRemoteMessagingDebugHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB596FF02ED9FBF300370FA8 /* MockRemoteMessagingDebugHandler.swift */; };
 		CB69F31B2D581CF4008550E7 /* ShortcutKey.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB69F31A2D581CF4008550E7 /* ShortcutKey.swift */; };
 		CB6CC7E42CD2529000320907 /* BrokenSitePrompt in Frameworks */ = {isa = PBXBuildFile; productRef = CB6CC7E32CD2529000320907 /* BrokenSitePrompt */; };
 		CB7E0A212D5E1D96002A7C0C /* UIInteractionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CB7E0A202D5E1D96002A7C0C /* UIInteractionManager.swift */; };
@@ -2376,7 +2380,6 @@
 		31A71F372E0B225A00F23147 /* SwitchBarButtonsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwitchBarButtonsView.swift; sourceTree = "<group>"; };
 		31A968142E4E6E1300F4305E /* SettingsAIChatShortcutsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsAIChatShortcutsView.swift; sourceTree = "<group>"; };
 		31A968182E4F692200F4305E /* SettingsAIExperimentalPickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsAIExperimentalPickerView.swift; sourceTree = "<group>"; };
-		31AC83B52EB50E97009191A4 /* MainViewControllerAIChatPayloadTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewControllerAIChatPayloadTests.swift; sourceTree = "<group>"; };
 		31B0B2BE2D390CF000A702D4 /* QuickActionsSmallWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickActionsSmallWidget.swift; sourceTree = "<group>"; };
 		31B2F10E2C92FECC00CD30E3 /* MarketplaceAdPostbackManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketplaceAdPostbackManager.swift; sourceTree = "<group>"; };
 		31B2F1102C92FEE000CD30E3 /* MarketplaceAdPostback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketplaceAdPostback.swift; sourceTree = "<group>"; };
@@ -3923,6 +3926,7 @@
 		C1641EB22BC2F53C0012607A /* ImportPasswordsViaSyncViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportPasswordsViaSyncViewModel.swift; sourceTree = "<group>"; };
 		C164F9472D0861D600BAE88E /* cs */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = cs; path = cs.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C164F9482D0861D600BAE88E /* cs */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = cs; path = cs.lproj/Localizable.strings; sourceTree = "<group>"; };
+		C16670E32EE7301300C6105C /* SubscriptionAIChatStateHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionAIChatStateHandlerTests.swift; sourceTree = "<group>"; };
 		C167D9052DAD5BDA00FA1E70 /* SubscriptionFunnelOrigin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionFunnelOrigin.swift; sourceTree = "<group>"; };
 		C17023A92E589C6E00090178 /* DaxEasterEggLogoCache.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxEasterEggLogoCache.swift; sourceTree = "<group>"; };
 		C174E08E2D08625300ACE1AF /* el */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = el; path = el.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -4116,6 +4120,7 @@
 		CB4448752AF6D51D001F93F7 /* hr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = hr; path = hr.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CB4FA44D2C78AACE00A16F5A /* SpecialErrorPageUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpecialErrorPageUserScript.swift; sourceTree = "<group>"; };
 		CB5038622AF6D563007FD69F /* nl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = nl; path = nl.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		CB596FF02ED9FBF300370FA8 /* MockRemoteMessagingDebugHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockRemoteMessagingDebugHandler.swift; sourceTree = "<group>"; };
 		CB69F31A2D581CF4008550E7 /* ShortcutKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutKey.swift; sourceTree = "<group>"; };
 		CB6ABD002AF6D52B004A8224 /* hu */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = hu; path = hu.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		CB6CE65B2AF6D4EE00119848 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = es.lproj/InfoPlist.strings; sourceTree = "<group>"; };
@@ -4980,7 +4985,6 @@
 			isa = PBXGroup;
 			children = (
 				85F996CF2E54C260006B4641 /* OpenAIChatFromAddressBarHandlingTests.swift */,
-				31AC83B52EB50E97009191A4 /* MainViewControllerAIChatPayloadTests.swift */,
 				8579791B2E4A3BF300A9F6DB /* AIChatSettingsMigrationTests.swift */,
 				3105BCF32DF2154800EB755E /* AIChatPixelMetricHandlerTests.swift */,
 				3105BCF42DF2154800EB755E /* MockAIChatPixelMetricHandler.swift */,
@@ -4990,6 +4994,7 @@
 				C124F0552E6879E7008D0F49 /* SwitchBarFunnelTests.swift */,
 				C14414782EB11A100057F921 /* AIChatFullModeFeatureTests.swift */,
 				C12B671F2EC0BDD9003B80DD /* AIChatContentHandlerTests.swift */,
+				C16670E32EE7301300C6105C /* SubscriptionAIChatStateHandlerTests.swift */,
 			);
 			path = AIChat;
 			sourceTree = "<group>";
@@ -7269,6 +7274,7 @@
 				9F60CBB22E989EA2004D2367 /* MockRemoteMessagingPresenter.swift */,
 				9F60CBB72E989EDA004D2367 /* MockLastSearchStateRefresher.swift */,
 				9FAB4B772E98C98300D8298A /* MockRemoteMessagingActionHandler.swift */,
+				CB596FF02ED9FBF300370FA8 /* MockRemoteMessagingDebugHandler.swift */,
 			);
 			path = RemoteMessaging;
 			sourceTree = "<group>";
@@ -11867,11 +11873,11 @@
 				9F387DD82EA86CE3006861F8 /* PromptCooldownStoreTests.swift in Sources */,
 				9F60CBBD2E98A13D004D2367 /* MockBrowserTabURLOpener.swift in Sources */,
 				EEC02C162B065BE00045CE11 /* NetworkProtectionVPNLocationViewModelTests.swift in Sources */,
+				C16670E42EE7301300C6105C /* SubscriptionAIChatStateHandlerTests.swift in Sources */,
 				9F60CBB82E989EDC004D2367 /* MockLastSearchStateRefresher.swift in Sources */,
 				9FF967B72E0E31D300E45B54 /* MockDefaultBrowserPromptUserTypeStoring.swift in Sources */,
 				987130C5294AAB9F00AB05E0 /* BookmarkEditorViewModelTests.swift in Sources */,
 				BDFF03262BA3DA4900F324C9 /* NetworkProtectionFeatureVisibilityTests.swift in Sources */,
-				31AC83B62EB50E97009191A4 /* MainViewControllerAIChatPayloadTests.swift in Sources */,
 				6F1422842D314DD100B6D3DE /* TabInteractionStateDiskSourceTests.swift in Sources */,
 				9F06EB8C2D10578000905426 /* MaliciousSiteProtectionSettingsViewModelTests.swift in Sources */,
 				9F387DEB2EA895B7006861F8 /* MockModalPromptProvider.swift in Sources */,
@@ -11887,6 +11893,7 @@
 				9F7CFF7D2C89B69A0012833E /* AppIconPickerViewModelTests.swift in Sources */,
 				F189AED71F18F6DE001EBAE1 /* TabTests.swift in Sources */,
 				C163DC962DC92FDC0026852D /* OnboardingSubscriptionPromotionHelpingTests.swift in Sources */,
+				CB596FF12ED9FBF300370FA8 /* MockRemoteMessagingDebugHandler.swift in Sources */,
 				9F5E5AB22C3E606D00165F54 /* ContextualOnboardingPresenterTests.swift in Sources */,
 				C1D6C1DD2E74285A00F29155 /* SwitchBarRetentionMetricsTests.swift in Sources */,
 				9F387DF82EA8BF4F006861F8 /* MockLaunchSourceManager.swift in Sources */,
@@ -12143,6 +12150,7 @@
 				98E5640A2DE8B32D00E6E75F /* MockMessageNavigationDelegate.swift in Sources */,
 				9876DF2E2DEEE21700E30713 /* MockThemeManager.swift in Sources */,
 				9F60CBBE2E98A13D004D2367 /* MockBrowserTabURLOpener.swift in Sources */,
+				CB596FF42ED9FBF300370FA8 /* MockRemoteMessagingDebugHandler.swift in Sources */,
 				98E5640B2DE8B32D00E6E75F /* MockStatisticsStore.swift in Sources */,
 				98E5640C2DE8B32D00E6E75F /* MockTabPreviewsSource.swift in Sources */,
 				989F0DA12ECB278600781641 /* ContentBlockerRulesManagerMock.swift in Sources */,
@@ -12289,6 +12297,7 @@
 				98E563BB2DE8B32D00E6E75F /* MockStatisticsStore.swift in Sources */,
 				98E563BC2DE8B32D00E6E75F /* MockTabPreviewsSource.swift in Sources */,
 				98E563BD2DE8B32D00E6E75F /* MockDataExtensions.swift in Sources */,
+				CB596FF22ED9FBF300370FA8 /* MockRemoteMessagingDebugHandler.swift in Sources */,
 				9F387E0B2EA9A29A006861F8 /* MockNewAddressBarPickerDisplayValidator.swift in Sources */,
 				98E563BE2DE8B32D00E6E75F /* MockBundle.swift in Sources */,
 				98E563BF2DE8B32D00E6E75F /* MockTabInteractionStateSource.swift in Sources */,
@@ -12398,6 +12407,7 @@
 				98E5645B2DE8DDDC00E6E75F /* MockUsageSegmentation.swift in Sources */,
 				98E564A62DE8EDE200E6E75F /* CapturingAlertPresenter.swift in Sources */,
 				986CD5482DE9134700AFA98A /* ContextualDaxDialogsFactoryTests.swift in Sources */,
+				CB596FF32ED9FBF300370FA8 /* MockRemoteMessagingDebugHandler.swift in Sources */,
 				9F387E0A2EA9A29A006861F8 /* MockNewAddressBarPickerDisplayValidator.swift in Sources */,
 				986CD5492DE9134700AFA98A /* NewTabPageControllerDaxDialogTests.swift in Sources */,
 				986CD54A2DE9134700AFA98A /* ContextualOnboardingNewTabDialogFactoryTests.swift in Sources */,

@@ -448,12 +448,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     LegacyBookmarksStoreMigration.setupAndMigrate(from: legacyDB, to: context)
                 }
             }
-
-            // Check for reinstalling user by comparing bundle creation dates.
-            // Stores the bundle's creation date in App Group UserDefaults and compares
-            // on subsequent launches. If the date changes and it's not a Sparkle update,
-            // the user has reinstalled the app.
-            DefaultReinstallUserDetection(appGroupDefaults: .appConfiguration).checkForReinstallingUser()
         } else {
             database = nil
         }
@@ -1077,6 +1071,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         defer {
             didFinishLaunching = true
         }
+
+        // Check for reinstalling user by comparing bundle creation dates.
+        // Stores the bundle's creation date in App Group UserDefaults and compares
+        // on subsequent launches. If the date changes and it's not a Sparkle update,
+        // the user has reinstalled the app.
+        DefaultReinstallUserDetection(appGroupDefaults: .appConfiguration).checkForReinstallingUser()
 
         Task {
             await subscriptionManagerV1?.loadInitialData()

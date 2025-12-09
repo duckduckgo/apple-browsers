@@ -70,7 +70,7 @@ public final class VPNStartupMonitor {
     public init(notificationCenter: NotificationCenter = .default,
                 statusProvider: @escaping (NEVPNConnection) -> NEVPNStatus = { $0.status },
                 disconnectErrorProvider: @escaping (NEVPNConnection) async throws -> Void = { connection in
-                    if #available(macOS 13, *) {
+                    if #available(macOS 13, iOS 16, *) {
                         try await connection.fetchLastDisconnectError()
                     }
                 }) {

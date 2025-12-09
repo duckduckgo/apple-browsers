@@ -193,7 +193,6 @@ class SwitchBarTextEntryView: UIView {
             self?.fireClearButtonPressedPixel()
             self?.handler.clearText()
             self?.handler.clearButtonTapped()
-            print("🇳🇴 [\(String(describing: Self.self))] setupButtonsView")
             self?.updateAutoCorrectionSetupForAIChat(for: "")
         }
 
@@ -232,7 +231,7 @@ class SwitchBarTextEntryView: UIView {
         case .search:
             placeholderLabel.text = UserText.searchDuckDuckGo
             textView.autocapitalizationType = .none
-            disableAutocorrectionAndSpellChecking()
+            disableAutoCorrectionAndSpellChecking()
         case .aiChat:
             placeholderLabel.text = UserText.searchInputFieldPlaceholderDuckAI
             textView.autocapitalizationType = .sentences
@@ -255,12 +254,12 @@ class SwitchBarTextEntryView: UIView {
         case .search:
             textView.keyboardType = .webSearch
             textView.returnKeyType = .search
-            disableAutocorrectionAndSpellChecking()
+            disableAutoCorrectionAndSpellChecking()
         case .aiChat:
             if handler.isUsingFadeOutAnimation {
                 textView.keyboardType = .default
                 textView.returnKeyType = .default
-                disableAutocorrectionAndSpellChecking()
+                disableAutoCorrectionAndSpellChecking()
             } else {
                 textView.keyboardType = .webSearch
                 textView.returnKeyType = .go
@@ -466,17 +465,11 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func updateAutoCorrectionSetupForAIChat(for text: String) {
-        guard currentMode == .aiChat else {
-            print("🇳🇴 [\(String(describing: Self.self))] NO CHANGES, SEARCH 🔵")
-            return
-        }
-        
-        print("🇳🇴 [\(String(describing: Self.self))] textView: \(text)")
+        guard currentMode == .aiChat else { return }
+
         if text.isEmpty {
-            print("🇳🇴 [\(String(describing: Self.self))] OFF AUTO CORRECTION 🟡")
-            disableAutocorrectionAndSpellChecking()
+            disableAutoCorrectionAndSpellChecking()
         } else {
-            print("🇳🇴 [\(String(describing: Self.self))] ON AUTO CORRECTION 🟢")
             textView.keyboardType = .default
             textView.returnKeyType = .default
             enableAutoCorrectionAndSpellChecking()
@@ -499,7 +492,7 @@ class SwitchBarTextEntryView: UIView {
         canExpandOnSelectionChange = true
     }
 
-    private func disableAutocorrectionAndSpellChecking() {
+    private func disableAutoCorrectionAndSpellChecking() {
         textView.autocorrectionType = .no
         textView.spellCheckingType = .no
     }

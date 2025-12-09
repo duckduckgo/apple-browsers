@@ -26,6 +26,7 @@ final class MockAIChatTogglePopoverPresenter: AIChatTogglePopoverPresenting {
     var showPopoverViewController: PopoverMessageViewController?
     var showPopoverToggleControl: NSView?
     var dismissPopoverCalled = false
+    var notifyPopoverDismissedCalled = false
 
     func isPopoverBeingPresented() -> Bool {
         return isPopoverBeingPresentedValue
@@ -43,12 +44,18 @@ final class MockAIChatTogglePopoverPresenter: AIChatTogglePopoverPresenting {
         isPopoverBeingPresentedValue = false
     }
 
+    func notifyPopoverDismissed() {
+        notifyPopoverDismissedCalled = true
+        isPopoverBeingPresentedValue = false
+    }
+
     func reset() {
         isPopoverBeingPresentedValue = false
         showPopoverCalled = false
         showPopoverViewController = nil
         showPopoverToggleControl = nil
         dismissPopoverCalled = false
+        notifyPopoverDismissedCalled = false
     }
 }
 

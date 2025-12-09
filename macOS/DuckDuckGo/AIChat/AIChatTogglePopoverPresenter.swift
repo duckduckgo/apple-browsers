@@ -24,6 +24,7 @@ protocol AIChatTogglePopoverPresenting: AnyObject {
     func isPopoverBeingPresented() -> Bool
     func showPopover(viewController: PopoverMessageViewController, relativeTo toggleControl: NSView)
     func dismissPopover()
+    func notifyPopoverDismissed()
 }
 
 @MainActor
@@ -60,10 +61,14 @@ final class AIChatTogglePopoverPresenter: AIChatTogglePopoverPresenting {
         }
         popover.dismiss(nil)
         activePopover = nil
+    }
+
+    func notifyPopoverDismissed() {
+        activePopover = nil
 
         /// Give time for the popover animation to finish
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-            self.isPresentingPopover = false
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
+            self?.isPresentingPopover = false
         }
     }
 }

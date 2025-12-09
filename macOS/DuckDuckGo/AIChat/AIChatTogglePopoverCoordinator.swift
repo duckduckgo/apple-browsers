@@ -105,6 +105,10 @@ final class AIChatTogglePopoverCoordinator: AIChatTogglePopoverCoordinating {
             self?.markPopoverAsSeen()
         }
 
+        let onDismiss: () -> Void = { [weak self] in
+            self?.presenter.notifyPopoverDismissed()
+        }
+
         let dialogImage = DesignSystemImages.Color.Size96.announcement
         let accentColor = Color(themeManager.theme.colorsProvider.accentPrimaryColor)
         let configuration = PopoverConfiguration(
@@ -125,6 +129,7 @@ final class AIChatTogglePopoverCoordinator: AIChatTogglePopoverCoordinating {
             buttonText: UserText.aiChatTogglePopoverButton,
             buttonAction: onButtonAction,
             onClose: onClose,
+            onDismiss: onDismiss,
             onAutoDismiss: onAutoDismiss
         )
 

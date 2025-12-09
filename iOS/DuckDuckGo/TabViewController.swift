@@ -490,6 +490,7 @@ class TabViewController: UIViewController {
     let aiChatFullModeFeature: AIChatFullModeFeatureProviding
     
     private(set) var aiChatContentHandler: AIChatContentHandling
+    let subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling
 
     required init?(coder aDecoder: NSCoder,
                    tabModel: Tab,
@@ -553,11 +554,17 @@ class TabViewController: UIViewController {
         self.aiChatSettings = aiChatSettings
         self.aiChatFullModeFeature = aiChatFullModeFeature
         self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings, featureDiscovery: featureDiscovery)
+        self.subscriptionAIChatStateHandler = SubscriptionAIChatStateHandler()
 
         self.productSurfaceTelemetry = productSurfaceTelemetry
 
         super.init(coder: aDecoder)
-        
+
+        // Reload AI Chat when subscription state changes
+        subscriptionAIChatStateHandler.onSubscriptionStateChanged = { [weak self] in
+            self?.reloadAIChatIfNeeded()
+        }
+
         // Assign itself as tabNavigationHandler for DuckPlayer
         duckPlayerNavigationHandler.tabNavigationHandler = self
 

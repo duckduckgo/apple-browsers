@@ -749,7 +749,7 @@ extension DefaultOmniBarView {
         NSLayoutConstraint.activate(aiChatModeConstraints)
         searchAreaContainerView.bringSubviewToFront(aiChatLeftButton)
 
-        layoutIfNeeded()
+        setNeedsLayout()
     }
 
     /// Restores the omnibar UI to regular browse mode. Hides AI Chat buttons, shows search elements.
@@ -763,7 +763,7 @@ extension DefaultOmniBarView {
         searchAreaView.textField.alpha = 1.0
         searchAreaView.revealButtons()
 
-        layoutIfNeeded()
+        setNeedsLayout()
     }
 
     // Used to mask shadows going outside of bounds to prevent them covering other content

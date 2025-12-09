@@ -32,12 +32,12 @@ protocol SubscriptionAppStoreRestorer {
 @available(macOS 12.0, *)
 struct DefaultSubscriptionAppStoreRestorer: SubscriptionAppStoreRestorer {
     private let subscriptionManager: SubscriptionManager
-    private let subscriptionErrorReporter: SubscriptionErrorReporter
+    private let subscriptionErrorReporter: SubscriptionEventReporter
     private let appStoreRestoreFlow: AppStoreRestoreFlow
     let uiHandler: SubscriptionUIHandling
 
     public init(subscriptionManager: SubscriptionManager,
-                subscriptionErrorReporter: SubscriptionErrorReporter = DefaultSubscriptionErrorReporter(),
+                subscriptionErrorReporter: SubscriptionEventReporter = DefaultSubscriptionEventReporter(),
                 appStoreRestoreFlow: AppStoreRestoreFlow,
                 uiHandler: SubscriptionUIHandling) {
         self.subscriptionManager = subscriptionManager
@@ -122,7 +122,7 @@ struct DefaultSubscriptionAppStoreRestorer: SubscriptionAppStoreRestorer {
 @available(macOS 12.0, *)
 struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
     private let subscriptionManager: SubscriptionManagerV2
-    private let subscriptionErrorReporter: SubscriptionErrorReporter
+    private let subscriptionErrorReporter: SubscriptionEventReporter
     private let appStoreRestoreFlow: AppStoreRestoreFlowV2
     private let featureFlagger: FeatureFlagger
 
@@ -133,7 +133,7 @@ struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
     let uiHandler: SubscriptionUIHandling
 
     public init(subscriptionManager: SubscriptionManagerV2,
-                subscriptionErrorReporter: SubscriptionErrorReporter = DefaultSubscriptionErrorReporter(),
+                subscriptionErrorReporter: SubscriptionEventReporter = DefaultSubscriptionEventReporter(),
                 appStoreRestoreFlow: AppStoreRestoreFlowV2,
                 uiHandler: SubscriptionUIHandling,
                 subscriptionRestoreWideEventData: SubscriptionRestoreWideEventData? = nil,

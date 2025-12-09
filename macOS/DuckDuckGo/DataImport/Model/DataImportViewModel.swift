@@ -610,8 +610,7 @@ private func dataImporter(for source: DataImport.Source, fileDataType: DataImpor
                                   tld: Application.appDelegate.tld)
         } else {
             SafariDataImporter(profile: profile,
-                               bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
-                               featureFlagger: Application.appDelegate.featureFlagger)
+                               bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager))
         }
     }
 }

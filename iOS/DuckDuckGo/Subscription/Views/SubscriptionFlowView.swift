@@ -84,7 +84,7 @@ struct SubscriptionFlowView: View {
                     backButton
                 }
                 ToolbarItem(placement: .principal) {
-                    if viewModel.flowType.showsDaxLogo {
+                    if viewModel.flowType.showsDaxLogo && viewModel.state.viewTitle == viewModel.flowType.navigationTitle {
                         DaxLogoNavbarTitle()
                     } else {
                         Text(viewModel.state.viewTitle).bold()

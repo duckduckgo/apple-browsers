@@ -99,7 +99,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
     private let webViewSettings: AsyncHeadlessWebViewSettings
 
     init(purchaseURL: URL,
-         flowType: SubscriptionFlowType = .firstPurchase,
+         flowType: SubscriptionFlowType,
          isInternalUser: Bool = false,
          userScript: SubscriptionPagesUserScript,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,

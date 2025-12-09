@@ -76,4 +76,3 @@ final class SubscriptionFlowTypeTests: XCTestCase {
         XCTAssertNil(flowType.impressionPixel)
     }
 }
-

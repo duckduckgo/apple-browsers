@@ -33,6 +33,7 @@ final class SubscriptionContainerViewModel: ObservableObject {
 
     init(subscriptionManager: SubscriptionAuthV1toV2Bridge,
          redirectPurchaseURL: URL? = nil,
+         flowType: SubscriptionFlowType = .firstPurchase,
          isInternalUser: Bool = false,
          userScript: SubscriptionPagesUserScript,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
@@ -45,6 +46,7 @@ final class SubscriptionContainerViewModel: ObservableObject {
         self.subFeature = subFeature
 
         self.flow = SubscriptionFlowViewModel(purchaseURL: redirectPurchaseURL ?? subscriptionManager.url(for: .purchase),
+                                              flowType: flowType,
                                               isInternalUser: isInternalUser,
                                               userScript: userScript,
                                               userScriptsDependencies: userScriptsDependencies,

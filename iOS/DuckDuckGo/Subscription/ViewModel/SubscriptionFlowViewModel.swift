@@ -26,6 +26,29 @@ import BrowserServicesKit
 import DataBrokerProtection_iOS
 import PixelKit
 
+enum SubscriptionFlowType {
+    case firstPurchase
+    case planUpdate
+
+    var navigationTitle: String {
+        switch self {
+        case .firstPurchase: return UserText.subscriptionTitle
+        case .planUpdate: return UserText.subscriptionPlansTitle
+        }
+    }
+
+    var showsDaxLogo: Bool {
+        self == .firstPurchase
+    }
+
+    var impressionPixel: Pixel.Event? {
+        switch self {
+        case .firstPurchase: return .subscriptionOfferScreenImpression
+        case .planUpdate: return nil
+        }
+    }
+}
+
 final class SubscriptionFlowViewModel: ObservableObject {
     
     let userScript: SubscriptionPagesUserScript
@@ -35,6 +58,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
     let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     weak var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
     let purchaseURL: URL
+    let flowType: SubscriptionFlowType
 
     private let urlOpener: URLOpener
     private let featureFlagger: FeatureFlagger
@@ -75,6 +99,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
     private let webViewSettings: AsyncHeadlessWebViewSettings
 
     init(purchaseURL: URL,
+         flowType: SubscriptionFlowType = .firstPurchase,
          isInternalUser: Bool = false,
          userScript: SubscriptionPagesUserScript,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
@@ -86,6 +111,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
          wideEvent: WideEventManaging = AppDependencyProvider.shared.wideEvent,
          dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?) {
         self.purchaseURL = purchaseURL
+        self.flowType = flowType
         self.userScript = userScript
         self.userScriptsDependencies = userScriptsDependencies
         self.subFeature = subFeature
@@ -244,10 +270,10 @@ final class SubscriptionFlowViewModel: ObservableObject {
                 strongSelf.state.canNavigateBack = false
                 Task { await strongSelf.setTransactionStatus(.idle) }
 
-                if strongSelf.isCurrentURLMatchingPostPurchaseAddEmailFlow() {
+                if strongSelf.flowType == .firstPurchase && strongSelf.isCurrentURLMatchingPostPurchaseAddEmailFlow() {
                     strongSelf.state.viewTitle = UserText.subscriptionRestoreAddEmailTitle
                 } else {
-                    strongSelf.state.viewTitle = UserText.subscriptionTitle
+                    strongSelf.state.viewTitle = strongSelf.flowType.navigationTitle
                 }
             }
     }
@@ -255,6 +281,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
     private func shouldAllowWebViewBackNavigationForURL(currentURL: URL) -> Bool {
         return !currentURL.shouldPreventBackNavigation &&
         !isCurrentURL(matching: .purchase) &&
+        !isCurrentURL(matching: .plans) &&
         !isCurrentURL(matching: .welcome) &&
         !isCurrentURL(matching: .activationFlowSuccess) &&
         !isCurrentURL(matching: subscriptionManager.url(for: .baseURL).appendingPathComponent("add-email/success"))
@@ -333,11 +360,13 @@ final class SubscriptionFlowViewModel: ObservableObject {
             self.resetState()
         }
         if webViewModel.url != subscriptionManager.url(for: .purchase).forComparison() {
-             self.webViewModel.navigationCoordinator.navigateTo(url: purchaseURL)
+            self.webViewModel.navigationCoordinator.navigateTo(url: purchaseURL)
         }
         await self.setupTransactionObserver()
         await self.setupWebViewObservers()
-        Pixel.fire(pixel: .subscriptionOfferScreenImpression)
+        if let pixel = flowType.impressionPixel {
+            Pixel.fire(pixel: pixel)
+        }
     }
 
     @MainActor

@@ -234,6 +234,55 @@ enum SubscriptionContainerViewFactory {
             .environmentObject(navigationCoordinator)
     }
 
+    static func makePlansFlowV2(redirectURLComponents: URLComponents?,
+                                navigationCoordinator: SubscriptionNavigationCoordinator,
+                                subscriptionManager: SubscriptionManagerV2,
+                                subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
+                                userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
+                                internalUserDecider: InternalUserDecider,
+                                dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?,
+                                wideEvent: WideEventManaging) -> some View {
+
+        let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager,
+                                                               storePurchaseManager: subscriptionManager.storePurchaseManager())
+        let appStorePurchaseFlow = DefaultAppStorePurchaseFlowV2(subscriptionManager: subscriptionManager,
+                                                                 storePurchaseManager: subscriptionManager.storePurchaseManager(),
+                                                                 appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                 wideEvent: wideEvent)
+
+        let origin = redirectURLComponents?.url?.getParameter(named: AttributionParameter.origin)
+
+        // Build plans URL from subscription manager (respects custom base URL)
+        // and preserve all query parameters from redirectURLComponents
+        var plansURL = subscriptionManager.url(for: .plans)
+        if let queryItems = redirectURLComponents?.queryItems {
+            for item in queryItems {
+                if let value = item.value {
+                    plansURL = plansURL.appendingParameter(name: item.name, value: value)
+                }
+            }
+        }
+
+        let viewModel = SubscriptionContainerViewModel(
+            subscriptionManager: subscriptionManager,
+            redirectPurchaseURL: plansURL,
+            flowType: .planUpdate,
+            isInternalUser: internalUserDecider.isInternalUser,
+            userScript: SubscriptionPagesUserScript(),
+            userScriptsDependencies: userScriptsDependencies,
+            subFeature: DefaultSubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
+                                                                         subscriptionFeatureAvailability: subscriptionFeatureAvailability,
+                                                                         subscriptionAttributionOrigin: origin,
+                                                                         appStorePurchaseFlow: appStorePurchaseFlow,
+                                                                         appStoreRestoreFlow: appStoreRestoreFlow,
+                                                                         internalUserDecider: internalUserDecider,
+                                                                         wideEvent: wideEvent),
+            dataBrokerProtectionViewControllerProvider: dataBrokerProtectionViewControllerProvider
+        )
+        return SubscriptionContainerView(currentView: .subscribe, viewModel: viewModel)
+            .environmentObject(navigationCoordinator)
+    }
+
     static func makeEmailFlowV2(navigationCoordinator: SubscriptionNavigationCoordinator,
                                 subscriptionManager: SubscriptionManagerV2,
                                 subscriptionFeatureAvailability: SubscriptionFeatureAvailability,

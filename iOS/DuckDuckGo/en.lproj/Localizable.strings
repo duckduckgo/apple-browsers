@@ -3355,6 +3355,9 @@ Take back control of your personal information with the browser designed for dat
 /* Text for the 'Windows' button */
 "subscription.pir.windows" = "Windows";
 
+/* Navigation title for the subscription plans page */
+"subscription.plans.title" = "Subscription Plans";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Completing purchase...";
 
@@ -3444,6 +3447,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Free Trial Active";
+
+/* View All Plans button to see available subscription tiers */
+"subscription.view.all.plans" = "View All Plans";
 
 /* Message confirming that recovery code was copied to clipboard */
 "sync.code.copied" = "Recovery code copied to clipboard";

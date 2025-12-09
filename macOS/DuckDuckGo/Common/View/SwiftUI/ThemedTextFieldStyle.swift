@@ -26,12 +26,12 @@ extension TextFieldStyle where Self == ThemedTextFieldStyle {
 }
 
 struct ThemedTextFieldStyle: TextFieldStyle {
-
     var backgroundColor = Color(designSystemColor: .toneShadePrimary)
+    let focusBorderColor = Color(designSystemColor: .accentPrimary)
 
     func _body(configuration: TextField<Self._Label>) -> some View {
         if #available(macOS 12.0, *) {
-            FocusableThemedTextFieldStyle(configuration: configuration, backgroundColor: backgroundColor)
+            FocusableThemedTextFieldStyle(configuration: configuration, backgroundColor: backgroundColor, focusBorderColor: focusBorderColor)
         } else {
             LegacyThemedTextFieldStyle(configuration: configuration, backgroundColor: backgroundColor)
         }
@@ -43,6 +43,7 @@ struct FocusableThemedTextFieldStyle<Label: View>: View {
     @FocusState private var isFocused: Bool
     let configuration: TextField<Label>
     let backgroundColor: Color
+    let focusBorderColor: Color
 
     var body: some View {
         configuration
@@ -54,7 +55,7 @@ struct FocusableThemedTextFieldStyle<Label: View>: View {
             .cornerRadius(4)
             .overlay(
                 RoundedRectangle(cornerRadius: 4)
-                    .stroke(Color.accentColor, lineWidth: 3)
+                    .stroke(focusBorderColor, lineWidth: 3)
                     .opacity(isFocused ? 1 : 0)
             )
     }

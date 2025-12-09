@@ -114,6 +114,159 @@ final class SubscriptionSettingsViewModelV2Tests: XCTestCase {
         XCTAssertNil(sut.tierBadgeToDisplay)
     }
 
+    // MARK: - View All Plans Visibility Tests
+
+    func testShouldShowViewAllPlans_WhenNoSubscription_ReturnsFalse() {
+        // Given - No subscription
+        mockSubscriptionManager.resultSubscription = nil
+        sut = makeSUT()
+
+        // Then
+        XCTAssertFalse(sut.shouldShowViewAllPlans)
+    }
+
+    func testShouldShowViewAllPlans_WhenSubscriptionInactive_ReturnsFalse() async {
+        // Given - Inactive subscription
+        mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.subscription(status: .expired, tier: .plus)
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        sut = makeSUT()
+
+        // When
+        await waitForSubscriptionUpdate()
+
+        // Then
+        XCTAssertFalse(sut.shouldShowViewAllPlans)
+    }
+
+    func testShouldShowViewAllPlans_WhenActiveSubscriptionAndFeatureFlagEnabled_ReturnsTrue() async {
+        // Given - Active subscription with feature flag ON
+        mockFeatureFlagger.enabledFeatureFlags = [.allowProTierPurchase]
+        mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.subscription(status: .autoRenewable, tier: .plus)
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        sut = makeSUT()
+
+        // When
+        await waitForSubscriptionUpdate()
+
+        // Then
+        XCTAssertTrue(sut.shouldShowViewAllPlans)
+    }
+
+    func testShouldShowViewAllPlans_WhenActiveProTierSubscriptionAndFeatureFlagDisabled_ReturnsTrue() async {
+        // Given - Active Pro tier subscription with feature flag OFF
+        mockFeatureFlagger.enabledFeatureFlags = []
+        mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.subscription(status: .autoRenewable, tier: .pro)
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        sut = makeSUT()
+
+        // When
+        await waitForSubscriptionUpdate()
+
+        // Then - Pro tier shows View All Plans even without feature flag
+        XCTAssertTrue(sut.shouldShowViewAllPlans)
+    }
+
+    func testShouldShowViewAllPlans_WhenActivePlusTierSubscriptionAndFeatureFlagDisabled_ReturnsFalse() async {
+        // Given - Active Plus tier subscription with feature flag OFF
+        mockFeatureFlagger.enabledFeatureFlags = []
+        mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.subscription(status: .autoRenewable, tier: .plus)
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        sut = makeSUT()
+
+        // When
+        await waitForSubscriptionUpdate()
+
+        // Then - Plus tier doesn't show View All Plans when feature flag is off
+        XCTAssertFalse(sut.shouldShowViewAllPlans)
+    }
+
+    // MARK: - View All Plans Action Tests
+
+    func testViewAllPlans_WhenApplePlatform_SetsIsShowingPlansViewTrue() async {
+        // Given - Apple platform subscription
+        mockFeatureFlagger.enabledFeatureFlags = [.allowProTierPurchase]
+        mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple, tier: .plus)
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        sut = makeSUT()
+        await waitForSubscriptionUpdate()
+
+        // When
+        sut.viewAllPlans()
+
+        // Then
+        XCTAssertTrue(sut.state.isShowingPlansView)
+    }
+
+    func testViewAllPlans_WhenGooglePlatform_SetsIsShowingGoogleViewTrue() async {
+        // Given - Google platform subscription
+        mockFeatureFlagger.enabledFeatureFlags = [.allowProTierPurchase]
+        mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .google, tier: .plus)
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        sut = makeSUT()
+        await waitForSubscriptionUpdate()
+
+        // When
+        sut.viewAllPlans()
+
+        // Then
+        XCTAssertTrue(sut.state.isShowingGoogleView)
+    }
+
+    func testViewAllPlans_WhenStripePlatform_SetsIsShowingStripeViewTrue() async {
+        // Given - Stripe platform subscription
+        mockFeatureFlagger.enabledFeatureFlags = [.allowProTierPurchase]
+        mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .stripe, tier: .plus)
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        mockSubscriptionManager.customerPortalURL = URL(string: "https://stripe.com/portal")!
+        sut = makeSUT()
+        await waitForSubscriptionUpdate()
+
+        // When
+        sut.viewAllPlans()
+
+        // Then - Stripe triggers async portal URL fetch, then shows stripe view
+        let expectation = expectation(description: "Stripe view shown")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            if self.sut.state.isShowingStripeView {
+                expectation.fulfill()
+            }
+        }
+        await fulfillment(of: [expectation], timeout: 2.0)
+    }
+
+    func testViewAllPlans_WhenUnknownPlatform_SetsIsShowingInternalSubscriptionNoticeTrue() async {
+        // Given - Unknown platform subscription
+        mockFeatureFlagger.enabledFeatureFlags = [.allowProTierPurchase]
+        mockSubscriptionManager.resultSubscription = SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .unknown, tier: .plus)
+        mockSubscriptionManager.resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer()
+        sut = makeSUT()
+        await waitForSubscriptionUpdate()
+
+        // When
+        sut.viewAllPlans()
+
+        // Then
+        XCTAssertTrue(sut.state.isShowingInternalSubscriptionNotice)
+    }
+
+    func testDisplayPlansView_UpdatesState() {
+        // Given
+        sut = makeSUT()
+        XCTAssertFalse(sut.state.isShowingPlansView)
+
+        // When
+        sut.displayPlansView(true)
+
+        // Then
+        XCTAssertTrue(sut.state.isShowingPlansView)
+
+        // When
+        sut.displayPlansView(false)
+
+        // Then
+        XCTAssertFalse(sut.state.isShowingPlansView)
+    }
+
     // MARK: - Helpers
 
     private func makeSUT() -> SubscriptionSettingsViewModelV2 {

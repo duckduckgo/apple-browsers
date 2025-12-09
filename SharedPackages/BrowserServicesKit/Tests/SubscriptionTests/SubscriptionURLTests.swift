@@ -53,7 +53,8 @@ final class SubscriptionURLTests: XCTestCase {
                                               .activationFlowLinkViaEmailStep,
                                               .activationFlowSuccess,
                                               .manageEmail,
-                                              .identityTheftRestoration]
+                                              .identityTheftRestoration,
+                                              .plans]
 
         for urlType in allURLTypes {
             // When
@@ -74,7 +75,8 @@ final class SubscriptionURLTests: XCTestCase {
                                               .activationFlowLinkViaEmailStep,
                                               .activationFlowSuccess,
                                               .manageEmail,
-                                              .identityTheftRestoration]
+                                              .identityTheftRestoration,
+                                              .plans]
 
         for urlType in allURLTypes {
             // When
@@ -92,6 +94,40 @@ final class SubscriptionURLTests: XCTestCase {
 
         // When
         let url = SubscriptionURL.identityTheftRestoration.subscriptionURL(environment: .production)
+
+        // Then
+        XCTAssertEqual(url, expectedURL)
+    }
+
+    func testPlansURLForProduction() throws {
+        // Given
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans")!
+
+        // When
+        let url = SubscriptionURL.plans.subscriptionURL(environment: .production)
+
+        // Then
+        XCTAssertEqual(url, expectedURL)
+    }
+
+    func testPlansURLForStaging() throws {
+        // Given
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans?environment=staging")!
+
+        // When
+        let url = SubscriptionURL.plans.subscriptionURL(environment: .staging)
+
+        // Then
+        XCTAssertEqual(url, expectedURL)
+    }
+
+    func testCustomBaseSubscriptionURLForPlansURL() throws {
+        // Given
+        let customBaseURL = URL(string: "https://dax.duck.co/subscriptions")!
+        let expectedURL = URL(string: "https://dax.duck.co/subscriptions/plans")!
+
+        // When
+        let url = SubscriptionURL.plans.subscriptionURL(withCustomBaseURL: customBaseURL, environment: .production)
 
         // Then
         XCTAssertEqual(url, expectedURL)

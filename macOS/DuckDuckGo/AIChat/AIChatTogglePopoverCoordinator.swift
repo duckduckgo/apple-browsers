@@ -34,6 +34,7 @@ protocol AIChatTogglePopoverCoordinating: AnyObject {
 final class AIChatTogglePopoverCoordinator: AIChatTogglePopoverCoordinating {
 
     private let windowControllersManager: WindowControllersManagerProtocol
+    private let themeManager: ThemeManaging
     private let presenter: AIChatTogglePopoverPresenting
 
     private enum StorageKey {
@@ -45,8 +46,10 @@ final class AIChatTogglePopoverCoordinator: AIChatTogglePopoverCoordinating {
     }
 
     init(windowControllersManager: WindowControllersManagerProtocol,
+         themeManager: ThemeManaging? = nil,
          presenter: AIChatTogglePopoverPresenting? = nil) {
         self.windowControllersManager = windowControllersManager
+        self.themeManager = themeManager ?? NSApp.delegateTyped.themeManager
         self.presenter = presenter ?? AIChatTogglePopoverPresenter(
             windowControllersManager: windowControllersManager
         )
@@ -88,12 +91,13 @@ final class AIChatTogglePopoverCoordinator: AIChatTogglePopoverCoordinating {
         }
 
         let dialogImage = DesignSystemImages.Color.Size96.announcement
+        let accentColor = Color(themeManager.theme.colorsProvider.accentPrimaryColor)
         let configuration = PopoverConfiguration(
             style: .featureDiscovery,
             buttonLayout: .vertical,
             imageSize: CGSize(width: 76, height: 76),
             buttonStyle: .link,
-            accentColor: Color(designSystemColor: .accentPrimary)
+            accentColor: accentColor
         )
         let viewController = PopoverMessageViewController(
             title: UserText.aiChatTogglePopoverTitle,

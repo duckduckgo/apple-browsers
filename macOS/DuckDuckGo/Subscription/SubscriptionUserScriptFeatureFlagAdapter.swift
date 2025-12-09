@@ -30,6 +30,10 @@ struct SubscriptionUserScriptFeatureFlagAdapter: SubscriptionUserScriptFeatureFl
         self.featureFlagger = featureFlagger
     }
 
+    var usePaidDuckAi: Bool {
+        featureFlagger.isFeatureOn(.paidAIChat)
+    }
+
     var useProTier: Bool {
         featureFlagger.isFeatureOn(.allowProTierPurchase)
     }

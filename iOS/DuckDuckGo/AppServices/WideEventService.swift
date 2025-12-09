@@ -30,6 +30,7 @@ final class WideEventService {
     private let activationTimeoutInterval: TimeInterval = .hours(4)
     private let restoreTimeoutInterval: TimeInterval = .minutes(15)
     private let vpnConnectionTimeoutInterval: TimeInterval = .minutes(15)
+    private let dataImportTimeoutInterval: TimeInterval = .minutes(15)
 
     private let sendQueue = DispatchQueue(label: "com.duckduckgo.wide-pixel.send-queue", qos: .utility)
 
@@ -47,26 +48,24 @@ final class WideEventService {
     // the flow, or the app crashing.
     func sendAbandonedPixels(completion: @escaping () -> Void) {
         let shouldSendSubscriptionPurchaseWidePixel = featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement)
-        let shouldSendSubscriptionRestoreWidePixel = featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement)
         let shouldSendVPNConnectionWidePixel = featureFlagger.isFeatureOn(.vpnConnectionWidePixelMeasurement)
-
-        if !shouldSendSubscriptionPurchaseWidePixel && !shouldSendSubscriptionRestoreWidePixel && !shouldSendVPNConnectionWidePixel {
-            completion()
-            return
-        }
+        let shouldSendDataImportWideEvent = featureFlagger.isFeatureOn(.dataImportWideEventMeasurement)
         
         sendQueue.async { [weak self] in
             guard let self else { return }
 
             Task {
+                await self.sendAbandonedSubscriptionRestorePixels()
+                
                 if shouldSendSubscriptionPurchaseWidePixel {
                     await self.sendAbandonedSubscriptionPurchasePixels()
                 }
-                if shouldSendSubscriptionRestoreWidePixel {
-                    await self.sendAbandonedSubscriptionRestorePixels()
-                }
                 if shouldSendVPNConnectionWidePixel {
                     await self.sendAbandonedVPNConnectionPixels()
+                }
+                
+                if shouldSendDataImportWideEvent {
+                    await self.sendAbandonedDatImportPixels()
                 }
 
                 DispatchQueue.main.async {
@@ -79,26 +78,23 @@ final class WideEventService {
     // Sends pixels which are currently incomplete but may complete later.
     func sendDelayedPixels(completion: @escaping () -> Void) {
         let shouldSendSubscriptionPurchaseWidePixel = featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement)
-        let shouldSendSubscriptionRestoreWidePixel = featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement)
         let shouldSendVPNConnectionWidePixel = featureFlagger.isFeatureOn(.vpnConnectionWidePixelMeasurement)
-
-        if !shouldSendSubscriptionPurchaseWidePixel && !shouldSendSubscriptionRestoreWidePixel && !shouldSendVPNConnectionWidePixel {
-            completion()
-            return
-        }
+        let shouldSendDataImportWideEvent = featureFlagger.isFeatureOn(.dataImportWideEventMeasurement)
 
         sendQueue.async { [weak self] in
             guard let self else { return }
 
             Task {
+                await self.sendDelayedSubscriptionRestorePixels()
+                
                 if shouldSendSubscriptionPurchaseWidePixel {
                     await self.sendDelayedSubscriptionPurchasePixels()
                 }
-                if shouldSendSubscriptionRestoreWidePixel {
-                    await self.sendDelayedSubscriptionRestorePixels()
-                }
                 if shouldSendVPNConnectionWidePixel {
                     await self.sendDelayedVPNConnectionPixels()
+                }
+                if shouldSendDataImportWideEvent {
+                    await self.sendDelayedDataImportPixels()
                 }
 
                 DispatchQueue.main.async {
@@ -247,6 +243,45 @@ final class WideEventService {
             }
 
             _ = try? await wideEvent.completeFlow(data, status: .unknown(reason: VPNConnectionWideEventData.StatusReason.timeout.rawValue))
+        }
+    }
+    
+    
+    // MARK: - Data Import
+
+    // In the data import flow, we consider the pixel abandoned if:
+    // - The flow is open and has not completed AND
+    // - The duration interval is closed (never started OR has closed)
+    private func sendAbandonedDatImportPixels() async {
+        let pending: [DataImportWideEventData] = wideEvent.getAllFlowData(DataImportWideEventData.self)
+
+        for data in pending {
+            if data.overallDuration?.start != nil && data.overallDuration?.end == nil {
+                continue
+            }
+
+            _ = try? await wideEvent.completeFlow(data, status: .unknown(reason: DataImportWideEventData.StatusReason.partialData.rawValue))
+        }
+    }
+
+    // In the data import flow, we consider the pixel delayed if:
+    // - The flow is open and has not completed AND
+    // - The duration interval has started, but has not completed AND
+    // - The start time till now has exceed the maximum allowed time (if not, we consider it to be still in progress and allow it to continue)
+    private func sendDelayedDataImportPixels() async {
+        let pending: [DataImportWideEventData] = wideEvent.getAllFlowData(DataImportWideEventData.self)
+
+        for data in pending {
+            guard let start = data.overallDuration?.start, data.overallDuration?.end == nil else {
+                continue
+            }
+
+            let deadline = start.addingTimeInterval(dataImportTimeoutInterval)
+            if Date() < deadline {
+                continue
+            }
+
+            _ = try? await wideEvent.completeFlow(data, status: .unknown(reason: DataImportWideEventData.StatusReason.timeout.rawValue))
         }
     }
 }

@@ -77,7 +77,7 @@ public extension SubJobWebRunning {
 
     func evaluateActionAndHaltIfNeeded(_ action: Action) async -> Bool {
         if !stageCalculator.isRetrying {
-            retriesCountOnError = 3
+            retriesCountOnError = 1
         }
 
         return false
@@ -365,6 +365,7 @@ public extension SubJobWebRunning {
 
         if let currentAction = self.actionsHandler?.currentAction() {
             decrementRetriesCountOnError()
+            Logger.dataBrokerProtection.log("Retrying current action")
             await runNextAction(currentAction)
         } else {
             resetRetriesCount()

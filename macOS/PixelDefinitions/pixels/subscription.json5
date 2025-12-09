@@ -60,6 +60,112 @@
             }
         ]
     },
+    // Tier Options Pixels - Direct Distribution
+    "m_mac_direct_subscription_tier-options_requested": {
+        "description": "Fired when subscription tier options are requested from the purchase page (direct distribution)",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_direct_subscription_tier-options_success": {
+        "description": "Fired when subscription tier options are successfully retrieved (direct distribution)",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_direct_subscription_tier-options_failure": {
+        "description": "Fired when subscription tier options fail to be retrieved (direct distribution)",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "d",
+                "type": "string",
+                "description": "Error Type: com.duckduckgo.subscription.StripePurchaseFlowError"
+            },
+            {
+                "key": "e",
+                "type": "string",
+                "description": "Error Code: 12700, 12701, 12702, 12703, 12704, 12705, 12706"
+            },
+            {
+                "key": "ud",
+                "type": "string",
+                "description": "Error Type: com.duckduckgo.subscription.SubscriptionEndpointServiceError"
+            },
+            {
+                "key": "ue",
+                "type": "string",
+                "description": "Error Code: 12300, 12301, 12302"
+            }
+        ]
+    },
+    "m_mac_direct_subscription_tier-options_unexpected-pro-tier": {
+        "description": "Fired when Pro tier products are unexpectedly returned when they should be filtered out (direct distribution)",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
+    // Tier Options Pixels - App Store Distribution
+    "m_mac_store_subscription_tier-options_requested": {
+        "description": "Fired when subscription tier options are requested from the purchase page (App Store distribution)",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_store_subscription_tier-options_success": {
+        "description": "Fired when subscription tier options are successfully retrieved (App Store distribution)",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_store_subscription_tier-options_failure": {
+        "description": "Fired when subscription tier options fail to be retrieved (App Store distribution)",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "d",
+                "type": "string",
+                "description": "Error Type: com.duckduckgo.subscription.StripePurchaseFlowError"
+            },
+            {
+                "key": "e",
+                "type": "string",
+                "description": "Error Code: 12700, 12701, 12702, 12703, 12704, 12705, 12706"
+            },
+            {
+                "key": "ud",
+                "type": "string",
+                "description": "Error Type: com.duckduckgo.subscription.SubscriptionEndpointServiceError"
+            },
+            {
+                "key": "ue",
+                "type": "string",
+                "description": "Error Code: 12300, 12301, 12302"
+            }
+        ]
+    },
+    "m_mac_store_subscription_tier-options_unexpected-pro-tier": {
+        "description": "Fired when Pro tier products are unexpectedly returned when they should be filtered out (App Store distribution)",
+        "owners": ["SabrinaTardio"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+
     "m_mac_store_privacy-pro_app_subscription-purchase_failure": {
         "description": "The error encountered when an App Store subscription purchase fails",
         "owners": ["federicocappelli"],

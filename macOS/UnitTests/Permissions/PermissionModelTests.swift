@@ -33,6 +33,7 @@ final class PermissionModelTests: XCTestCase {
     var permissionManagerMock: PermissionManagerMock!
     var geolocationServiceMock: GeolocationServiceMock!
     var geolocationProviderMock: GeolocationProviderMock!
+    var featureFlaggerMock: MockFeatureFlagger!
     static var processPool: WKProcessPool!
     var webView: WebViewMock!
     var model: PermissionModel!
@@ -60,6 +61,7 @@ final class PermissionModelTests: XCTestCase {
 
         permissionManagerMock = PermissionManagerMock()
         geolocationServiceMock = GeolocationServiceMock()
+        featureFlaggerMock = MockFeatureFlagger()
 
         let configuration = WKWebViewConfiguration(processPool: Self.processPool)
         webView = WebViewMock(frame: NSRect(x: 0, y: 0, width: 50, height: 50), configuration: configuration)
@@ -69,7 +71,8 @@ final class PermissionModelTests: XCTestCase {
         webView.configuration.processPool.geolocationProvider = geolocationProviderMock
         model = PermissionModel(webView: webView,
                                 permissionManager: permissionManagerMock,
-                                geolocationService: geolocationServiceMock)
+                                geolocationService: geolocationServiceMock,
+                                featureFlagger: featureFlaggerMock)
 
         AVCaptureDeviceMock.authorizationStatuses = nil
     }
@@ -79,6 +82,7 @@ final class PermissionModelTests: XCTestCase {
         webView = nil
         permissionManagerMock = nil
         geolocationServiceMock = nil
+        featureFlaggerMock = nil
         pixelKit = nil
         geolocationProviderMock = nil
         model = nil

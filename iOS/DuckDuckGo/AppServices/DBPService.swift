@@ -80,11 +80,14 @@ final class DBPService: NSObject {
     }
 
     func resume() {
-        dbpIOSManager?.appDidBecomeActive()
+        Task { @MainActor in
+            await dbpIOSManager?.appDidBecomeActive()
+        }
     }
 }
 
 final class DBPFeatureFlagger: DBPFeatureFlagging {
+    
     private let appDependencies: DependencyProvider
 
     var isRemoteBrokerDeliveryFeatureOn: Bool {
@@ -93,6 +96,14 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
 
     var isEmailConfirmationDecouplingFeatureOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpEmailConfirmationDecoupling)
+    }
+
+    var isForegroundRunningOnAppActiveFeatureOn: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpForegroundRunningOnAppActive)
+    }
+
+    var isForegroundRunningWhenDashboardOpenFeatureOn: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpForegroundRunningWhenDashboardOpen)
     }
 
     init(appDependencies: DependencyProvider) {

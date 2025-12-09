@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import UIKit
 import Suggestions
 import Bookmarks
 import AIChat
@@ -68,9 +69,6 @@ protocol OmniBarDelegate: AnyObject {
     /// Called when the AI Chat left button is tapped
     func onAIChatLeftButtonPressed()
 
-    /// Called when the AI Chat right button is tapped
-    func onAIChatRightButtonPressed()
-
     /// Called when the AI Chat full mode omnibar branding area is tapped.
     func onAIChatBrandingPressed()
 
@@ -98,6 +96,8 @@ protocol OmniBarDelegate: AnyObject {
     func didRequestCurrentURL() -> URL?
 
     func isSuggestionTrayVisible() -> Bool
+
+    func onDaxLogoTapped(logoURL: URL?, image: UIImage?, sourceFrame: CGRect)
 
     // MARK: - Experimental Address Bar (pixels only)
     func onExperimentalAddressBarTapped()
@@ -149,9 +149,6 @@ extension OmniBarDelegate {
     func onAIChatLeftButtonPressed() {
     }
 
-    func onAIChatRightButtonPressed() {
-    }
-
     func onAIChatBrandingPressed() {
     }
 
@@ -163,6 +160,9 @@ extension OmniBarDelegate {
     
     func onVoiceSearchPressed(preferredTarget: VoiceSearchTarget) {
         onVoiceSearchPressed()
+    }
+
+    func onDaxLogoTapped(logoURL: URL?, image: UIImage?, sourceFrame: CGRect) {
     }
 
     // Default no-op implementations for experimental address bar pixel hooks

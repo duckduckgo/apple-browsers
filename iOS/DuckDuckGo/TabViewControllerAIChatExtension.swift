@@ -47,6 +47,9 @@ extension TabViewController: AITabController {
         aiChatContentHandler.setPayload(payload: payload)
 
         let queryURL = aiChatContentHandler.buildQueryURL(query: query, autoSend: autoSend, tools: tools)
+        
+        aiChatContentHandler.fireChatOpenPixelAndSetWasUsed()
+        
         load(url: queryURL)
     }
     
@@ -69,5 +72,11 @@ extension TabViewController: AITabController {
     func openNewChatInNewTab() {
         let newChatURL = aiChatContentHandler.buildQueryURL(query: nil, autoSend: false, tools: nil)
         delegate?.tab(self, didRequestNewTabForUrl: newChatURL, openedByPage: false, inheritingAttribution: nil)
+    }
+
+    /// Reloads the AI Chat if this is an AI tab.
+    func reloadAIChatIfNeeded() {
+        guard isAITab else { return }
+        webView.reload()
     }
 }

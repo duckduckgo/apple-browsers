@@ -46,7 +46,6 @@ final class MainViewController: NSViewController {
     let bookmarksBarViewController: BookmarksBarViewController
     let aiChatOmnibarContainerViewController: AIChatOmnibarContainerViewController
     let aiChatOmnibarTextContainerViewController: AIChatOmnibarTextContainerViewController
-    let sharedTextState: AddressBarSharedTextState
     let featureFlagger: FeatureFlagger
     let fireCoordinator: FireCoordinator
     private let bookmarksBarVisibilityManager: BookmarksBarVisibilityManager
@@ -156,7 +155,8 @@ final class MainViewController: NSViewController {
             fireproofDomains: fireproofDomains,
             activeRemoteMessageModel: NSApp.delegateTyped.activeRemoteMessageModel,
             featureFlagger: featureFlagger,
-            tabDragAndDropManager: tabDragAndDropManager
+            tabDragAndDropManager: tabDragAndDropManager,
+            autoconsentStatsPopoverCoordinator: NSApp.delegateTyped.autoconsentStatsPopoverCoordinator
         )
         bookmarksBarVisibilityManager = BookmarksBarVisibilityManager(selectedTabPublisher: tabCollectionViewModel.$selectedTabViewModel.eraseToAnyPublisher())
 
@@ -239,10 +239,6 @@ final class MainViewController: NSViewController {
             pixelFiring: pixelFiring
         )
 
-        // Create the shared text state for address bar mode switching
-        let sharedTextState = AddressBarSharedTextState()
-        self.sharedTextState = sharedTextState
-
         navigationBarViewController = NavigationBarViewController.create(tabCollectionViewModel: tabCollectionViewModel,
                                                                          downloadListCoordinator: downloadListCoordinator,
                                                                          bookmarkManager: bookmarkManager,
@@ -265,8 +261,7 @@ final class MainViewController: NSViewController {
                                                                          defaultBrowserPreferences: defaultBrowserPreferences,
                                                                          downloadsPreferences: downloadsPreferences,
                                                                          tabsPreferences: tabsPreferences,
-                                                                         accessibilityPreferences: accessibilityPreferences,
-                                                                         sharedTextState: sharedTextState)
+                                                                         accessibilityPreferences: accessibilityPreferences)
 
         findInPageViewController = FindInPageViewController.create()
         fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
@@ -279,7 +274,7 @@ final class MainViewController: NSViewController {
         // Create the shared AI Chat omnibar controller
         let aiChatOmnibarController = AIChatOmnibarController(
             aiChatTabOpener: aiChatTabOpener,
-            sharedTextState: sharedTextState
+            tabCollectionViewModel: tabCollectionViewModel
         )
 
         aiChatOmnibarContainerViewController = AIChatOmnibarContainerViewController(
@@ -288,7 +283,6 @@ final class MainViewController: NSViewController {
         )
         aiChatOmnibarTextContainerViewController = AIChatOmnibarTextContainerViewController(
             omnibarController: aiChatOmnibarController,
-            sharedTextState: sharedTextState,
             themeManager: themeManager
         )
         self.vpnUpsellPopoverPresenter = vpnUpsellPopoverPresenter
@@ -480,6 +474,11 @@ final class MainViewController: NSViewController {
     }
 
     func updateAIChatOmnibarContainerVisibility(visible: Bool, shouldKeepSelection: Bool = false) {
+        if visible {
+            let desiredHeight = aiChatOmnibarTextContainerViewController.calculateDesiredPanelHeight()
+            mainView.updateAIChatOmnibarContainerHeight(desiredHeight, animated: false)
+        }
+
         mainView.isAIChatOmnibarContainerShown = visible
 
         navigationBarViewController.addressBarViewController?.setAIChatOmnibarVisible(visible, shouldKeepSelection: shouldKeepSelection)
@@ -489,20 +488,11 @@ final class MainViewController: NSViewController {
             aiChatOmnibarTextContainerViewController.startEventMonitoring()
             aiChatOmnibarTextContainerViewController.focusTextView()
 
-            DispatchQueue.main.async { [weak self] in
-                guard let self = self else { return }
-                let desiredHeight = self.aiChatOmnibarTextContainerViewController.calculateDesiredPanelHeight()
-                self.mainView.updateAIChatOmnibarContainerHeight(desiredHeight, animated: false)
-
-                let maxHeight = self.mainView.calculateMaxAIChatOmnibarHeight()
-                self.aiChatOmnibarTextContainerViewController.updateScrollingBehavior(maxHeight: maxHeight)
-            }
+            let maxHeight = mainView.calculateMaxAIChatOmnibarHeight()
+            aiChatOmnibarTextContainerViewController.updateScrollingBehavior(maxHeight: maxHeight)
         } else {
             aiChatOmnibarContainerViewController.cleanup()
-            aiChatOmnibarTextContainerViewController.cleanup()
-
-            /// Reset panel height to minimum to prevent size flash on next open
-            mainView.updateAIChatOmnibarContainerHeight(100, animated: false)
+            aiChatOmnibarTextContainerViewController.stopEventMonitoring()
         }
     }
 
@@ -920,6 +910,13 @@ final class MainViewController: NSViewController {
         }
         let tabContent = tabContent ?? selectedTabViewModel.tab.content
 
+        /// Close AI Chat omnibar if visible before adjusting first responder
+        /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1212252449969913?focus=true
+        if mainView.isAIChatOmnibarContainerShown && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
+            updateAIChatOmnibarContainerVisibility(visible: false, shouldKeepSelection: false)
+            aiChatOmnibarContainerViewController.cleanup()
+        }
+
         if case .newtab = tabContent {
             navigationBarViewController.addressBarViewController?.addressBarTextField.makeMeFirstResponder()
         } else {
@@ -1006,10 +1003,18 @@ extension MainViewController {
             return false
         }
 
-        if flags.contains(.shift) || flags.contains(.option),
+        if flags.contains(.option) || flags.contains(.shift),
            featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
            let buttonsViewController = navigationBarViewController.addressBarViewController?.addressBarButtonsViewController {
+            let isSwitchingToAIChatMode = buttonsViewController.searchModeToggleControl?.selectedSegment == 0
             buttonsViewController.toggleSearchMode()
+            if isSwitchingToAIChatMode {
+                self.aiChatOmnibarTextContainerViewController.insertNewline()
+            }
+            return true
+        } else if flags.contains(.control),
+                  featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
+            navigationBarViewController.addressBarViewController?.addressBarTextField.openAIChatWithPrompt()
             return true
         } else if flags.contains(.shift) && aiChatMenuConfig.shouldDisplayAddressBarShortcutWhenTyping {
             navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.aiChatButtonAction(self)
@@ -1207,6 +1212,11 @@ extension MainViewController: BrowserTabViewControllerDelegate {
 extension MainViewController: AIChatOmnibarControllerDelegate {
     func aiChatOmnibarControllerDidSubmit(_ controller: AIChatOmnibarController) {
         updateAIChatOmnibarContainerVisibility(visible: false, shouldKeepSelection: false)
+    }
+
+    func aiChatOmnibarController(_ controller: AIChatOmnibarController, didRequestNavigationToURL url: URL) {
+        updateAIChatOmnibarContainerVisibility(visible: false, shouldKeepSelection: false)
+        browserTabViewController.loadURLInCurrentTab(url)
     }
 }
 

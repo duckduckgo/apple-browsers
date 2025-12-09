@@ -32,16 +32,18 @@ final class PopupHandlingTabExtension {
     private let tabsPreferences: TabsPreferences
     private let burnerMode: BurnerMode
     private let permissionModel: PermissionModel
-    private let createChildTab: (WKWebViewConfiguration, WKNavigationAction, NewWindowPolicy) -> Tab?
+    private let createChildTab: (WKWebViewConfiguration?, SecurityOrigin?, NewWindowPolicy) -> Tab?
     private let presentTab: (Tab, NewWindowPolicy) -> Void
     private let newWindowPolicyDecisionMakers: () -> [NewWindowPolicyDecisionMaking]?
     private let featureFlagger: FeatureFlagger
     private let popupBlockingConfig: PopupBlockingConfiguration
+    private let tld: TLD
     private let machAbsTimeProvider: () -> TimeInterval
 
     // Navigation hotkey handler properties
     private let isTabPinned: () -> Bool
     private let isBurner: Bool
+    private let isInPopUpWindow: () -> Bool
     private var onNewWindow: ((WKNavigationAction) -> NewWindowPolicyDecision?)?
 
     private var cancellables = Set<AnyCancellable>()
@@ -71,15 +73,17 @@ final class PopupHandlingTabExtension {
     init(tabsPreferences: TabsPreferences,
          burnerMode: BurnerMode,
          permissionModel: PermissionModel,
-         createChildTab: @escaping (WKWebViewConfiguration, WKNavigationAction, NewWindowPolicy) -> Tab?,
+         createChildTab: @escaping (WKWebViewConfiguration?, SecurityOrigin?, NewWindowPolicy) -> Tab?,
          presentTab: @escaping (Tab, NewWindowPolicy) -> Void,
          newWindowPolicyDecisionMakers: @escaping () -> [NewWindowPolicyDecisionMaking]?,
          featureFlagger: FeatureFlagger,
          popupBlockingConfig: PopupBlockingConfiguration,
+         tld: TLD,
          machAbsTimeProvider: @escaping () -> TimeInterval = CACurrentMediaTime,
          interactionEventsPublisher: some Publisher<WebViewInteractionEvent, Never>,
          isTabPinned: @escaping () -> Bool,
-         isBurner: Bool) {
+         isBurner: Bool,
+         isInPopUpWindow: @escaping () -> Bool) {
         self.tabsPreferences = tabsPreferences
         self.burnerMode = burnerMode
         self.permissionModel = permissionModel
@@ -88,12 +92,15 @@ final class PopupHandlingTabExtension {
         self.newWindowPolicyDecisionMakers = newWindowPolicyDecisionMakers
         self.featureFlagger = featureFlagger
         self.popupBlockingConfig = popupBlockingConfig
+        self.tld = tld
         self.machAbsTimeProvider = machAbsTimeProvider
         self.isTabPinned = isTabPinned
         self.isBurner = isBurner
+        self.isInPopUpWindow = isInPopUpWindow
 
         interactionEventsPublisher
             .filter { event in
+                Logger.navigation.debug("PopupHandlingTabExtension.interactionEventsPublisher.filter: event: \(String(describing: event))")
                 guard featureFlagger.isFeatureOn(.popupBlocking),
                       featureFlagger.isFeatureOn(.extendedUserInitiatedPopupTimeout) else { return false }
 
@@ -257,8 +264,11 @@ final class PopupHandlingTabExtension {
                                     isUserInitiated: Bool) -> WKWebView? {
         // disable opening 'javascript:' links in new tab
         guard navigationAction.request.url?.navigationalScheme != .javascript else { return nil }
+        // disable opening internal pages in pop-up windows
+        guard TabContent.contentFromURL(navigationAction.request.url, source: .link).isExternalUrl || !kind.isPopup else { return nil }
 
-        guard let childTab = createChildTab(configuration, navigationAction, kind) else { return nil }
+        let securityOrigin = navigationAction.safeSourceFrame.map { SecurityOrigin($0.securityOrigin) }
+        guard let childTab = createChildTab(configuration, securityOrigin, kind) else { return nil }
 
         presentTab(childTab, kind)
 
@@ -286,6 +296,16 @@ final class PopupHandlingTabExtension {
             return .userInitiated(reason)
         }
 
+        // Check if the source domain is in the allowlist
+        if let sourceFrame = navigationAction.safeSourceFrame {
+            let allowlist = popupBlockingConfig.allowlist
+            let sourceHost = sourceFrame.securityOrigin.host
+            if isDomainInAllowlist(sourceHost, allowlist: allowlist) {
+                Logger.general.debug("Pop-up allowed: source domain \(sourceHost) is in allowlist")
+                return .allowlistedDomain(sourceHost)
+            }
+        }
+
         let url = navigationAction.request.url ?? .empty
         // Check if pop-ups temporarily allowed for the current page with the "Only allow pop-ups for this visit" option selected:
         // Either for empty/about: URLs specifically with `suppressEmptyPopUpsOnApproval` feature flag enabled,
@@ -308,7 +328,16 @@ final class PopupHandlingTabExtension {
     /// - Returns: A `UserInitiatedReason` describing why the action is user-initiated, or `nil` if the navigation action is not user-initiated
     @MainActor
     func isNavigationActionUserInitiated(_ navigationAction: WKNavigationAction) -> UserInitiatedReason? {
-        let threshold = popupBlockingConfig.userInitiatedPopupThreshold
+        var threshold = popupBlockingConfig.userInitiatedPopupThreshold
+
+#if DEBUG || REVIEW
+        // Allow debug override for faster UI testing (e.g., from environment variable in UI tests)
+        if let envValue = ProcessInfo.processInfo.environment["POPUP_TIMEOUT_OVERRIDE"],
+           let overrideValue = TimeInterval(envValue) {
+            threshold = overrideValue
+        }
+#endif
+
         // Check if enhanced popup blocking is enabled and configured properly
         guard featureFlagger.isFeatureOn(.popupBlocking),
               featureFlagger.isFeatureOn(.extendedUserInitiatedPopupTimeout),
@@ -327,6 +356,37 @@ final class PopupHandlingTabExtension {
             return .extendedTimeout(eventTimestamp: lastUserInteractionEvent.timestamp, currentTime: currentTime)
         }
         return nil
+    }
+
+    /// Checks if a domain matches any entry in the allowlist
+    /// If "x.example.com" is in the allowlist, it will match "x.example.com" and any subdomain like "sub.x.example.com"
+    private func isDomainInAllowlist(_ domain: String, allowlist: Set<String>) -> Bool {
+        // Normalize: drop www prefix and lowercase for case-insensitive comparison
+        let normalizedDomain = domain.lowercased().droppingWwwPrefix()
+
+        // Get eTLD+1 for the domain to know when to stop stripping components
+        guard let domainETLDplus1 = tld.eTLDplus1(normalizedDomain) else {
+            return false
+        }
+
+        // Check the normalized domain and all parent domains up to eTLD+1
+        var currentDomain = normalizedDomain
+        repeat {
+            // Check if current domain is in allowlist
+            if allowlist.contains(currentDomain) {
+                return true
+            }
+
+            // Strip the first component to get parent domain
+            if currentDomain.count > domainETLDplus1.count,
+               let dotIndex = currentDomain.firstIndex(of: ".") {
+                currentDomain = String(currentDomain[currentDomain.index(after: dotIndex)...])
+            } else {
+                break
+            }
+        } while true
+
+        return false
     }
 
 }
@@ -357,12 +417,18 @@ extension PopupHandlingTabExtension: NavigationResponder {
 
     /// Redirect Navigation Actions to the new window/tab for user actions with key modifiers (⌘-click, middle mouse button press…)
     func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
+        // Prevent pop-ups opening internal pages (bookmarks, history, settings, etc.)
+        if isInPopUpWindow(),
+           !TabContent.contentFromURL(navigationAction.url, source: .link).isExternalUrl {
+            return .cancel
+        }
+
         // Must be targeting an existing frame (not a new window/tab)
         guard let targetFrame = navigationAction.targetFrame else { return .next }
 
         // Check if the navigation action is a link activation (clicked link, etc.)
         let isLinkActivated = !navigationAction.isTargetingNewWindow
-            && (navigationAction.navigationType.isLinkActivated || (navigationAction.navigationType == .other && navigationAction.isUserInitiated))
+        && (navigationAction.navigationType.isLinkActivated || (navigationAction.navigationType == .other && navigationAction.isUserInitiated))
         // Must be a link activation (clicked link, etc.)
         guard isLinkActivated else { return .next }
 
@@ -379,6 +445,7 @@ extension PopupHandlingTabExtension: NavigationResponder {
         } else {
             NSApp.currentEvent
         }
+        Logger.navigation.debug("PopupHandlingTabExtension.decidePolicy: userInteractionEvent: \(userInteractionEvent ??? "<nil>") currentEvent: \(NSApp.currentEvent ??? "<nil>")")
 
         let linkOpenBehavior = LinkOpenBehavior(button: navigationAction.navigationType.isMiddleButtonClick ? .middle : .left,
                                                 modifierFlags: userInteractionEvent?.modifierFlags ?? [],

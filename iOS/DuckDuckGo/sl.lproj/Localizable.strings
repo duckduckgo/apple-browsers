@@ -31,6 +31,15 @@
 /* Add action - button shown in alert */
 "action.title.add" = "Dodaj";
 
+/* Open AI Chat history action in the menu list */
+"action.title.aiChat.history" = "Klepeti Duck.ai";
+
+/* Start new AI Chat action in the menu list */
+"action.title.aiChat.new" = "Novi klepet z umetno inteligenco";
+
+/* Open AI Chat settings action in the menu list */
+"action.title.aiChat.settings" = "Nastavitve Duck.ai";
+
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Gesla";
 
@@ -80,7 +89,7 @@
 "action.title.newBackgroundTabForUrl" = "Odpri v ozadju";
 
 /* Create New Tab action */
-"action.title.newTabAction" = "Nov";
+"action.title.newTabAction" = "Nov zavihek";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Odpri v novem zavihku";
@@ -2916,6 +2925,9 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Položaj naslovne vrstice";
+
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Eksperimentalni meni brskalnika";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Odpri povezave v povezanih aplikacijah";

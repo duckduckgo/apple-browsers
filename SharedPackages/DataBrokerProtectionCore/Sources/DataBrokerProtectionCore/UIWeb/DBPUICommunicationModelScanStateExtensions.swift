@@ -146,8 +146,9 @@ public extension DBPUIScanAndOptOutMaintenanceState {
                                                                      laterDate: eightDaysAfterToday)
 
         let earliestScanPreferredRunDate = nonRemovedBrokerProfileQueryData.earliestScanPreferredRunDate() ?? currentDate
+        let displayDate = max(earliestScanPreferredRunDate, currentDate)
 
-        return DBPUIScanDate(date: earliestScanPreferredRunDate.timeIntervalSince1970, dataBrokers: brokers)
+        return DBPUIScanDate(date: displayDate.timeIntervalSince1970, dataBrokers: brokers)
     }
 }
 
@@ -223,7 +224,7 @@ private extension Array where Element == BrokerProfileQueryData {
             return [uiDataBroker] + uiMirrorSites
         }
 
-        let uniqued = brokers.uniqued()
+        let uniqued = brokers.uniqued(on: \.name)
         return uniqued.map { $0 }
     }
 
@@ -249,7 +250,7 @@ private extension Array where Element == BrokerProfileQueryData {
             return [uiDataBroker] + uiMirrorSites
         }
 
-        let uniqued = brokers.uniqued()
+        let uniqued = brokers.uniqued(on: \.name)
         return uniqued.map { $0 }
     }
 

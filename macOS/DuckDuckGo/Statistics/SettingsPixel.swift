@@ -142,4 +142,17 @@ enum SettingsPixel: PixelKitEvent {
         nil
     }
 
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .settingsPaneOpened,
+                .showFullURLSettingToggled,
+                .themeSettingChanged,
+                .websiteZoomSettingChanged,
+                .dataClearingSettingToggled,
+                .syncAppIconWithThemeTurnedOn,
+                .syncAppIconWithThemeTurnedOff:
+            return [.pixelSource]
+        }
+    }
+
 }

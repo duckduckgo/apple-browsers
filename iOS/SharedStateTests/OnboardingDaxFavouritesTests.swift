@@ -111,7 +111,8 @@ import Combine
                                     featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
                                     keyValueStore: try! MockKeyValueFileStore(),
                                     daxDialogsManager: DummyDaxDialogsManager(),
-                                    aiChatSettings: MockAIChatSettingsProvider()
+                                    aiChatSettings: MockAIChatSettingsProvider(),
+                                    productSurfaceTelemetry: MockProductSurfaceTelemetry()
         )
         sut = MainViewController(
             privacyConfigurationManager: mockConfigManager,
@@ -151,7 +152,8 @@ import Combine
             winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager(),
             mobileCustomization: MobileCustomization(isFeatureEnabled: false, keyValueStore: MockThrowingKeyValueStore()),
             remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
-            remoteMessagingDebugHandler: MockRemoteMessagingDebugHandler()
+            remoteMessagingDebugHandler: MockRemoteMessagingDebugHandler(),
+            productSurfaceTelemetry: MockProductSurfaceTelemetry()
         )
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIViewController()

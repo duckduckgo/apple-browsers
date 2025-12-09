@@ -147,7 +147,7 @@ struct SuggestionViewModel {
     }
 
     var suffix: String? {
-        let isAIChatToggleEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+        let isAIChatToggleEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && featureFlagger.isFeatureOn(.aiChatOmnibarCluster)
 
         switch suggestion {
         // for punycoded urls display real url as a suffix

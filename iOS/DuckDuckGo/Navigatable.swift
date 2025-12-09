@@ -17,7 +17,7 @@
 //  limitations under the License.
 //
 
-protocol Navigatable {
+protocol Navigatable: AnyObject {
     var canGoBack: Bool { get }
     var canGoForward: Bool { get }
 }

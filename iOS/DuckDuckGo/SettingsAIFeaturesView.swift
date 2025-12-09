@@ -131,38 +131,39 @@ struct SettingsAIFeaturesView: View {
 
             if !viewModel.openedFromSERPSettingsButton {
                 Section {
-                    if viewModel.embedSERPSettings {
-                        NavigationLink(destination: SERPSettingsView(page: .searchAssist).environmentObject(viewModel)) {
-                            SettingsCellView(label: UserText.settingsAiFeaturesSearchAssist,
-                                             subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle,
-                                             image: Image(uiImage: DesignSystemImages.Glyphs.Size24.assist))
-                        }
-                        .listRowBackground(Color(designSystemColor: .surface))
-
-                        if viewModel.shouldShowHideAIGeneratedImagesSection {
-                            NavigationLink(destination:
-                                SERPSettingsView(page: .hideAIGeneratedImages)
-                                    .environmentObject(viewModel)
-                                    .onAppear {
-                                        PixelKit.fire(SERPSettingsPixel.hideAIGeneratedImagesButtonClicked, frequency: .dailyAndStandard)
-                                    }
-                            ) {
-                                SettingsCellView(label: UserText.settingsAiFeaturesHideAIGeneratedImages,
-                                                 subtitle: UserText.settingsAiFeaturesHideAIGeneratedImagesSubtitle,
-                                                 image: Image(uiImage: DesignSystemImages.Glyphs.Size24.imageAIHide))
-                            }
-                            .listRowBackground(Color(designSystemColor: .surface))
-                        }
-                    } else {
+                    NavigationLink(destination: SERPSettingsView(page: .searchAssist).environmentObject(viewModel)) {
                         SettingsCellView(label: UserText.settingsAiFeaturesSearchAssist,
                                          subtitle: UserText.settingsAiFeaturesSearchAssistSubtitle,
-                                         image: Image(uiImage: DesignSystemImages.Glyphs.Size24.assist),
-                                         action: { viewModel.openAssistSettings() },
-                                         webLinkIndicator: true,
-                                         isButton: true)
+                                         image: Image(uiImage: DesignSystemImages.Glyphs.Size24.assist))
+                    }
+                    .listRowBackground(Color(designSystemColor: .surface))
+
+                    if viewModel.shouldShowHideAIGeneratedImagesSection {
+                        NavigationLink(destination:
+                            SERPSettingsView(page: .hideAIGeneratedImages)
+                                .environmentObject(viewModel)
+                                .onAppear {
+                                    PixelKit.fire(SERPSettingsPixel.hideAIGeneratedImagesButtonClicked, frequency: .dailyAndStandard)
+                                }
+                        ) {
+                            SettingsCellView(label: UserText.settingsAiFeaturesHideAIGeneratedImages,
+                                             subtitle: UserText.settingsAiFeaturesHideAIGeneratedImagesSubtitle,
+                                             image: Image(uiImage: DesignSystemImages.Glyphs.Size24.imageAIHide))
+                        }
+                        .listRowBackground(Color(designSystemColor: .surface))
                     }
                 }
             }
+            
+            if viewModel.experimentalAIChatManager.fullDuckAIModeExperimentalSettingFlagEnabled {
+                Section {
+                    SettingsCellView(label: UserText.settingsEnableDuckAIFullModeTitle,
+                                     subtitle: UserText.settingsEnableDuckAIFullModeSubtitle,
+                                     accessory: .toggle(isOn: viewModel.isAIChatFullModeEnabled),
+                                     optionalBadgeText: UserText.settingsItemPreviewBadge)
+                }
+            }
+            
         }.applySettingsListModifiers(title: UserText.settingsAiFeatures,
                                      displayMode: .inline,
                                      viewModel: viewModel)

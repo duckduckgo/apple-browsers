@@ -113,6 +113,17 @@ final class VPNUninstaller: VPNUninstalling {
             }
         }
 
+        var standardParameters: [PixelKitStandardParameter]? {
+            switch self {
+            case .prevented,
+                    .begin,
+                    .cancelled,
+                    .success,
+                    .failure:
+                return [.pixelSource]
+            }
+        }
+
     }
 
     private let ipcServiceLauncher: IPCServiceLauncher

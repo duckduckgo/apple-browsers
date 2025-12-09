@@ -30,6 +30,7 @@ protocol AddressBarStyleProviding {
     func shouldShowOutlineBorder(isHomePage: Bool) -> Bool
     func sizeForSuggestionRow(isHomePage: Bool) -> CGFloat
 
+    var tabBarBackgroundTopPadding: CGFloat { get }
     var defaultAddressBarFontSize: CGFloat { get }
     var newTabOrHomePageAddressBarFontSize: CGFloat { get }
     var shouldShowNewSearchIcon: Bool { get }
@@ -64,6 +65,7 @@ final class LegacyAddressBarStyleProvider: AddressBarStyleProviding {
     private let addressBarBottomPaddingForHomePage: CGFloat = 8
     private let addressBarBottomPaddingForPopUpWindow: CGFloat = 0
 
+    let tabBarBackgroundTopPadding: CGFloat = 0
     let defaultAddressBarFontSize: CGFloat = 13
     let newTabOrHomePageAddressBarFontSize: CGFloat = 15
     let addressBarButtonsCornerRadius: CGFloat = 0
@@ -128,18 +130,28 @@ final class LegacyAddressBarStyleProvider: AddressBarStyleProviding {
 }
 
 final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
+    let tabBarBackgroundTopPadding: CGFloat = {
+#if compiler(>=6.2)
+        if #available(macOS 26.0, *) {
+            return 2
+        }
+#endif
+
+        return 0
+    }()
+
     private let navigationBarHeightForDefault: CGFloat = 52
     private let navigationBarHeightForHomePage: CGFloat = 52
     private let navigationBarHeightForPopUpWindow: CGFloat = 42
     private let addressBarTopPaddingForDefault: CGFloat = 7
-    private let addressBarTopPaddingForDefaultFocusedWithAIChat: CGFloat = 4
+    private let addressBarTopPaddingForDefaultFocusedWithAIChat: CGFloat = 3
     private let addressBarTopPaddingForHomePage: CGFloat = 7
-    private let addressBarTopPaddingForHomePageFocusedWithAIChat: CGFloat = 4
+    private let addressBarTopPaddingForHomePageFocusedWithAIChat: CGFloat = 3
     private let addressBarTopPaddingForPopUpWindow: CGFloat = 7
     private let addressBarBottomPaddingForDefault: CGFloat = 7
-    private let addressBarBottomPaddingForDefaultFocusedWithAIChat: CGFloat = 4
+    private let addressBarBottomPaddingForDefaultFocusedWithAIChat: CGFloat = 3
     private let addressBarBottomPaddingForHomePage: CGFloat = 7
-    private let addressBarBottomPaddingForHomePageFocusedWithAIChat: CGFloat = 4
+    private let addressBarBottomPaddingForHomePageFocusedWithAIChat: CGFloat = 3
     private let addressBarBottomPaddingForPopUpWindow: CGFloat = 7
 
     private let featureFlagger: FeatureFlagger

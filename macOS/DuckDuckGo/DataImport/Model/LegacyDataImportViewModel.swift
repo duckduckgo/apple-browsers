@@ -165,7 +165,7 @@ struct LegacyDataImportViewModel {
 
     init(importSource: Source? = nil,
          screen: Screen? = nil,
-         availableImportSources: [DataImport.Source] = DataImport.Source.allCases.filter { $0.canImportData },
+         availableImportSources: [DataImport.Source] = DataImport.Source.allCasesForLegacyImports.filter { $0.canImportData },
          preferredImportSources: [Source] = [.chrome, .firefox, .safari],
          summary: [DataTypeImportResult] = [],
          isPasswordManagerAutolockEnabled: Bool = AutofillPreferences().isAutoLockEnabled,
@@ -187,7 +187,7 @@ struct LegacyDataImportViewModel {
         self.screen = screen ?? importSource.legacyInitialScreen
 
         self.browserProfiles = ThirdPartyBrowser.browser(for: importSource).map(loadProfiles)
-        self.selectedProfile = browserProfiles?.defaultProfile
+        self.selectedProfile = browserProfiles?.defaultProfile ?? browserProfiles?.profiles.first
 
         self.selectableImportTypes = importSource.supportedDataTypes
         self.selectedDataTypes = importSource.supportedDataTypes
@@ -458,15 +458,14 @@ private func dataImporter(for source: DataImport.Source, fileDataType: DataImpor
 
         BookmarkHTMLImporter(fileURL: url, bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager))
 
-    case .onePassword8, .onePassword7, .bitwarden, .lastPass, .csv,
+    case .onePassword8, .onePassword7, .bitwarden, .lastPass, .csv, .fileImport,
          /* any */_ where fileDataType == .passwords:
         CSVImporter(fileURL: url, loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()), defaultColumnPositions: .init(source: source), reporter: SecureVaultReporter.shared, tld: Application.appDelegate.tld)
 
     case .brave, .chrome, .chromium, .coccoc, .edge, .opera, .operaGX, .vivaldi:
         ChromiumDataImporter(profile: profile,
                              loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()),
-                             bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
-                             featureFlagger: Application.appDelegate.featureFlagger)
+                             bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager))
     case .yandex:
         YandexDataImporter(profile: profile,
                            bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
@@ -476,8 +475,7 @@ private func dataImporter(for source: DataImport.Source, fileDataType: DataImpor
                             primaryPassword: primaryPassword,
                             loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()),
                             bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
-                            faviconManager: NSApp.delegateTyped.faviconManager,
-                            featureFlagger: Application.appDelegate.featureFlagger)
+                            faviconManager: NSApp.delegateTyped.faviconManager)
     case .safari, .safariTechnologyPreview:
         if #available(macOS 15.2, *), Application.appDelegate.featureFlagger.isFeatureOn(.dataImportNewSafariFilePicker), !source.archiveImportSupportedFiles.isEmpty {
             SafariArchiveImporter(archiveURL: url,
@@ -489,8 +487,7 @@ private func dataImporter(for source: DataImport.Source, fileDataType: DataImpor
                                   tld: Application.appDelegate.tld)
         } else {
             SafariDataImporter(profile: profile,
-                               bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
-                               featureFlagger: Application.appDelegate.featureFlagger)
+                               bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: NSApp.delegateTyped.bookmarkManager))
         }
     }
 }
@@ -518,10 +515,11 @@ extension DataImport.Source {
             } else {
                 return .profileAndDataTypesPicker
             }
-        case .onePassword8, .onePassword7, .bitwarden, .lastPass, .csv:
+        case .onePassword8, .onePassword7, .bitwarden, .lastPass, .csv, .fileImport:
             return .fileImport(dataType: .passwords)
         case .bookmarksHTML:
             return .fileImport(dataType: .bookmarks)
+
         }
     }
 

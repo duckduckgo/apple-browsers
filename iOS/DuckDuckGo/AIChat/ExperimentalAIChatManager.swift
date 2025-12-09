@@ -19,21 +19,29 @@
 
 import Foundation
 import Core
+import Common
 import BrowserServicesKit
 
 struct ExperimentalAIChatManager {
     private let featureFlagger: FeatureFlagger
     private let userDefaults: UserDefaults
     private let experimentalAIChatSettingsKey = "experimentalAIChatSettingsEnabled"
+    private let devicePlatform: DevicePlatformProviding.Type
 
     init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         userDefaults: UserDefaults = .standard) {
+         userDefaults: UserDefaults = .standard,
+         devicePlatform: DevicePlatformProviding.Type = DevicePlatform.self) {
         self.featureFlagger = featureFlagger
         self.userDefaults = userDefaults
+        self.devicePlatform = devicePlatform
     }
 
     var isExperimentalAIChatFeatureFlagEnabled: Bool {
         featureFlagger.isFeatureOn(for: FeatureFlag.experimentalAddressBar, allowOverride: true)
+    }
+    
+    var fullDuckAIModeExperimentalSettingFlagEnabled: Bool {
+        featureFlagger.isFeatureOn(for: FeatureFlag.fullDuckAIModeExperimentalSetting, allowOverride: true) && devicePlatform.isIphone
     }
 
     var isExperimentalAIChatSettingsEnabled: Bool {

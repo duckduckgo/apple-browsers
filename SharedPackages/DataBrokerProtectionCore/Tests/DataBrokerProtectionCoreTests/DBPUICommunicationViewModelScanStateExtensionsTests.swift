@@ -237,6 +237,33 @@ final class DBPUICommunicationViewModelScanStateExtensionsTests: XCTestCase {
         XCTAssertTrue(areDatesEqualsOnDayMonthAndYear(date1: Date().tomorrow, date2: Date(timeIntervalSince1970: result.scanSchedule.nextScan.date)))
     }
 
+    func testWhenLastScansContainDuplicateBrokerNames_thenOnlyOneEntryIsReturned() {
+        let brokerProfileQueryData: [BrokerProfileQueryData] = [
+            .mock(dataBrokerName: "Duplicate Broker", url: "broker1.com", lastRunDate: .nowMinus(hours: 24)),
+            .mock(dataBrokerName: "Duplicate Broker", url: "broker2.com", lastRunDate: .nowMinus(hours: 12)),
+            .mock(dataBrokerName: "Another Broker", url: "broker3.com", lastRunDate: .nowMinus(hours: 6))
+        ]
+
+        let result = DBPUIScanAndOptOutMaintenanceState(from: brokerProfileQueryData)
+
+        XCTAssertEqual(result.scanSchedule.lastScan.dataBrokers.count, 2)
+        XCTAssertEqual(Set(result.scanSchedule.lastScan.dataBrokers.map(\.name)), Set(["Duplicate Broker", "Another Broker"]))
+    }
+
+    func testWhenNextScansContainDuplicateBrokerNames_thenOnlyOneEntryIsReturned() {
+        let tomorrow = Date().tomorrow!
+        let brokerProfileQueryData: [BrokerProfileQueryData] = [
+            .mock(dataBrokerName: "Duplicate Broker", url: "broker1.com", preferredRunDate: tomorrow),
+            .mock(dataBrokerName: "Duplicate Broker", url: "broker2.com", preferredRunDate: tomorrow),
+            .mock(dataBrokerName: "Another Broker", url: "broker3.com", preferredRunDate: tomorrow)
+        ]
+
+        let result = DBPUIScanAndOptOutMaintenanceState(from: brokerProfileQueryData)
+
+        XCTAssertEqual(result.scanSchedule.nextScan.dataBrokers.count, 2)
+        XCTAssertEqual(Set(result.scanSchedule.nextScan.dataBrokers.map(\.name)), Set(["Duplicate Broker", "Another Broker"]))
+    }
+
     func testWhenMirrorSiteIsNotInRemovedPeriod_thenItShouldBeAddedToTotalScans() {
         let brokerProfileQueryWithMirrorSite: BrokerProfileQueryData = .mock(dataBrokerName: "Broker #1", mirrorSites: [.init(name: "mirror", url: "mirror1.com", addedAt: Date(), removedAt: nil)])
         let brokerProfileQueryData: [BrokerProfileQueryData] = [
@@ -380,6 +407,20 @@ final class DBPUICommunicationViewModelScanStateExtensionsTests: XCTestCase {
 
         XCTAssertEqual(result.scanSchedule.nextScan.dataBrokers.count, 3)
         XCTAssertTrue(areDatesEqualsOnDayMonthAndYear(date1: Date().tomorrow, date2: Date(timeIntervalSince1970: result.scanSchedule.nextScan.date)))
+    }
+
+    func testNextScans_whenPreferredRunDateIsInThePast_thenDisplayDateIsClampedToNow() {
+        let pastPreferredRunDate = Date().addingTimeInterval(-3600)
+        let now = Date()
+
+        let brokerProfileQueryData: [BrokerProfileQueryData] = [
+            .mock(dataBrokerName: "Broker #1", url: "broker1.com", preferredRunDate: pastPreferredRunDate)
+        ]
+
+        let result = DBPUIScanAndOptOutMaintenanceState(from: brokerProfileQueryData)
+
+        let nextScanDate = Date(timeIntervalSince1970: result.scanSchedule.nextScan.date)
+        XCTAssertGreaterThanOrEqual(nextScanDate, now)
     }
 
     func testBrokersWithMixedScanProgress_areOrderedByLastRunDate_andHaveCorrectStatus() {

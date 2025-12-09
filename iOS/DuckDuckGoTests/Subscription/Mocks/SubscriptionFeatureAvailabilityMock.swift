@@ -22,6 +22,7 @@ import Subscription
 import BrowserServicesKit
 
 public final class SubscriptionFeatureAvailabilityMock: SubscriptionFeatureAvailability {
+    
     static public var enabled: SubscriptionFeatureAvailabilityMock {
         return SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true)
     }
@@ -30,7 +31,8 @@ public final class SubscriptionFeatureAvailabilityMock: SubscriptionFeatureAvail
     public var isPaidAIChatEnabled: Bool = true
     public var isSupportsAlternateStripePaymentFlowEnabled: Bool = false
     public var isSubscriptionPurchaseWidePixelMeasurementEnabled: Bool = true
-    public var isSubscriptionRestoreWidePixelMeasurementEnabled: Bool = false
+    public var isTierMessagingEnabled: Bool = false
+    public var isProTierPurchaseEnabled: Bool = false
 
     public init(isSubscriptionPurchaseAllowed: Bool) {
         self.isSubscriptionPurchaseAllowed = isSubscriptionPurchaseAllowed

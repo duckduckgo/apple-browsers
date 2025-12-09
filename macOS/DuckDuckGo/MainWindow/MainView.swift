@@ -33,8 +33,9 @@ final class MainView: NSView {
         static let findInPageContainerTopOffset: CGFloat = -4
         static let fireContainerHeight: CGFloat = 32
         static let bannerHeight: CGFloat = 48
-        static let aiChatOmnibarContainerMinHeight: CGFloat = 100
+        static let aiChatOmnibarContainerMinHeight: CGFloat = 60
         static let aiChatOmnibarContainerPadding: CGFloat = 50
+        static let aiChatOmnibarContainerTopOffset: CGFloat = -20
     }
 
     let tabBarContainerView = NSView()
@@ -48,6 +49,8 @@ final class MainView: NSView {
     let aiChatOmnibarTextContainerView: NSView = .init()
 
     let divider = ColorView(frame: .zero, backgroundColor: .separatorColor)
+
+    private let themeManager: ThemeManager = NSApp.delegateTyped.themeManager
 
     private var navigationBarTopConstraint: NSLayoutConstraint!
     private var bookmarksBarHeightConstraint: NSLayoutConstraint!
@@ -88,10 +91,14 @@ final class MainView: NSView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    private var navigationBarTopPadding: CGFloat {
+        Constants.tabBarHeight + themeManager.theme.addressBarStyleProvider.tabBarBackgroundTopPadding
+    }
+
     private func addConstraints() {
         bookmarksBarHeightConstraint = bookmarksBarContainerView.heightAnchor.constraint(equalToConstant: Constants.bookmarksBarHeight)
         tabBarHeightConstraint = tabBarContainerView.heightAnchor.constraint(equalToConstant: Constants.tabBarHeight)
-        navigationBarTopConstraint = navigationBarContainerView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.tabBarHeight)
+        navigationBarTopConstraint = navigationBarContainerView.topAnchor.constraint(equalTo: topAnchor, constant: navigationBarTopPadding)
         webContainerTopConstraint = webContainerView.topAnchor.constraint(equalTo: bannerContainerView.bottomAnchor)
         webContainerTopConstraintToNavigation = webContainerView.topAnchor.constraint(equalTo: navigationBarContainerView.bottomAnchor)
 
@@ -151,7 +158,7 @@ final class MainView: NSView {
         aiChatOmnibarContainerWidthConstraint = aiChatOmnibarContainerView.widthAnchor.constraint(lessThanOrEqualToConstant: 832)
         aiChatOmnibarContainerHeightConstraint = aiChatOmnibarContainerView.heightAnchor.constraint(equalToConstant: Constants.aiChatOmnibarContainerMinHeight)
         NSLayoutConstraint.activate([
-            aiChatOmnibarContainerView.topAnchor.constraint(equalTo: navigationBarContainerView.bottomAnchor, constant: -16),
+            aiChatOmnibarContainerView.topAnchor.constraint(equalTo: navigationBarContainerView.bottomAnchor, constant: Constants.aiChatOmnibarContainerTopOffset),
             aiChatOmnibarContainerView.centerXAnchor.constraint(equalTo: navigationBarContainerView.centerXAnchor),
             aiChatOmnibarContainerHeightConstraint,
             aiChatOmnibarContainerWidthConstraint,
@@ -280,7 +287,7 @@ final class MainView: NSView {
             navigationBarTopConstraint = navigationBarTopConstraint?.animator()
         }
         tabBarHeightConstraint?.constant = newValue ? Constants.tabBarHeight : 0
-        navigationBarTopConstraint?.constant = newValue ? Constants.tabBarHeight : 0
+        navigationBarTopConstraint?.constant = newValue ? navigationBarTopPadding : 0
     }
 
     var isAIChatOmnibarContainerShown: Bool {

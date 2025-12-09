@@ -1,0 +1,9 @@
+// Keyboard go button click pixels for AI Chat
+{
+    "m_keyboard_go_click_aichat": {
+        "description": "Fires when user taps keyboard go button while on AI Chat",
+        "owners": ["aataraxiaa"],
+        "triggers": ["other"],
+        "parameters": ["appVersion"]
+    }
+}

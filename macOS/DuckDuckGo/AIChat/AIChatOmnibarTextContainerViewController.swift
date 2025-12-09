@@ -22,12 +22,12 @@ import Combine
 final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpdateListening, NSTextViewDelegate {
 
     private enum Constants {
-        static let bottomPadding: CGFloat = 54.0
-        static let minimumPanelHeight: CGFloat = 100.0
+        static let bottomPadding: CGFloat = 34.0
+        static let minimumPanelHeight: CGFloat = 60
         static let maximumPanelHeight: CGFloat = 512.0
         static let dividerLeadingOffset: CGFloat = -9.0
         static let dividerTrailingOffset: CGFloat = 77.0
-        static let dividerTopOffset: CGFloat = 8.0
+        static let dividerTopOffset: CGFloat = -10.0
     }
 
     private let backgroundView = MouseBlockingBackgroundView()
@@ -37,9 +37,9 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     private let layoutManager = NSLayoutManager()
     private let textContainer = NSTextContainer()
     private let textView: FocusableTextView
+    private let placeholderLabel = NSTextField(labelWithString: "")
     private let dividerView = ColorView(frame: .zero)
     private let omnibarController: AIChatOmnibarController
-    private let sharedTextState: AddressBarSharedTextState
     private var cancellables = Set<AnyCancellable>()
     let themeManager: ThemeManaging
     var themeUpdateCancellable: AnyCancellable?
@@ -47,9 +47,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
     weak var customToggleControl: NSControl?
     var heightDidChange: ((CGFloat) -> Void)?
 
-    init(omnibarController: AIChatOmnibarController, sharedTextState: AddressBarSharedTextState, themeManager: ThemeManaging) {
+    init(omnibarController: AIChatOmnibarController, themeManager: ThemeManaging) {
         self.omnibarController = omnibarController
-        self.sharedTextState = sharedTextState
         self.themeManager = themeManager
 
         textStorage.addLayoutManager(layoutManager)
@@ -71,6 +70,8 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         view = MouseOverView()
         view.wantsLayer = true
         view.layer?.masksToBounds = false
+        view.setAccessibilityIdentifier("AIChatOmnibarTextContainerViewController.view")
+        view.setAccessibilityElement(true)
     }
 
     override func viewDidLoad() {
@@ -139,6 +140,16 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         textView.usesRuler = false
         textView.usesFontPanel = false
         textView.delegate = self
+        textView.setAccessibilityIdentifier("AIChatOmnibarTextContainerViewController.textView")
+        textView.setAccessibilityElement(true)
+
+        placeholderLabel.translatesAutoresizingMaskIntoConstraints = false
+        placeholderLabel.stringValue = UserText.aiChatOmnibarPlaceholder
+        placeholderLabel.isBezeled = false
+        placeholderLabel.drawsBackground = false
+        placeholderLabel.isEditable = false
+        placeholderLabel.isSelectable = false
+        containerView.addSubview(placeholderLabel)
 
         NSLayoutConstraint.activate([
             backgroundView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -146,7 +157,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             backgroundView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -4),
             backgroundView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
 
-            containerView.topAnchor.constraint(equalTo: backgroundView.topAnchor),
+            containerView.topAnchor.constraint(equalTo: backgroundView.topAnchor, constant: 1.0),
             containerView.leadingAnchor.constraint(equalTo: backgroundView.leadingAnchor),
             containerView.trailingAnchor.constraint(equalTo: backgroundView.trailingAnchor),
             containerView.bottomAnchor.constraint(equalTo: backgroundView.bottomAnchor),
@@ -161,6 +172,9 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
             dividerView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: Constants.dividerTrailingOffset),
             dividerView.topAnchor.constraint(equalTo: scrollView.bottomAnchor, constant: Constants.dividerTopOffset),
             dividerView.heightAnchor.constraint(equalToConstant: 1),
+
+            placeholderLabel.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor, constant: 9),
+            placeholderLabel.topAnchor.constraint(equalTo: scrollView.topAnchor, constant: 9),
         ])
     }
 
@@ -168,7 +182,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         let colorsProvider = theme.colorsProvider
         let addressBarStyleProvider = theme.addressBarStyleProvider
 
-        backgroundView.backgroundColor = colorsProvider.activeAddressBarBackgroundColor
+        backgroundView.backgroundColor = .clear
 
         scrollView.backgroundColor = .clear
         scrollView.drawsBackground = false
@@ -179,6 +193,9 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         textView.font = .systemFont(ofSize: addressBarStyleProvider.defaultAddressBarFontSize, weight: .regular)
 
         textView.insertionPointColor = colorsProvider.addressBarTextFieldColor
+
+        placeholderLabel.textColor = colorsProvider.textSecondaryColor
+        placeholderLabel.font = .systemFont(ofSize: addressBarStyleProvider.defaultAddressBarFontSize, weight: .regular)
 
         dividerView.backgroundColor = NSColor.separatorColor
     }
@@ -201,7 +218,10 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
                         let textLength = newText.count
                         self.textView.selectedRange = NSRange(location: textLength, length: 0)
                     }
+                    /// Update panel height when text changes programmatically (e.g., from paste)
+                    self.updatePanelHeight()
                 }
+                self.updatePlaceholderVisibility()
             }
             .store(in: &cancellables)
     }
@@ -210,11 +230,16 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         omnibarController.updateText(textView.string)
         let currentScrollPosition = scrollView.documentVisibleRect.origin
         updatePanelHeight()
+        updatePlaceholderVisibility()
 
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             self.textView.scroll(currentScrollPosition)
         }
+    }
+
+    private func updatePlaceholderVisibility() {
+        placeholderLabel.isHidden = !textView.string.isEmpty
     }
 
     private func updatePanelHeight() {
@@ -233,7 +258,7 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         let usedRect = layoutManager.usedRect(for: textContainer)
         let textInsets = textView.textContainerInset
         let bottomSpacing: CGFloat = Constants.bottomPadding
-        let totalHeight = usedRect.height + textInsets.height + textInsets.height + 20 + bottomSpacing
+        let totalHeight = usedRect.height + textInsets.height + bottomSpacing
 
         return min(totalHeight, Constants.maximumPanelHeight)
     }
@@ -271,12 +296,16 @@ final class AIChatOmnibarTextContainerViewController: NSViewController, ThemeUpd
         backgroundView.startListening()
     }
 
-    func cleanup() {
+    func stopEventMonitoring() {
         backgroundView.stopListening()
     }
 
     func focusTextView() {
         view.window?.makeFirstResponder(textView)
+    }
+
+    func insertNewline() {
+        textView.insertNewlineIgnoringFieldEditor(nil)
     }
 
     func updateScrollingBehavior(maxHeight: CGFloat) {

@@ -85,12 +85,10 @@ struct SettingsAppearanceView: View {
                 legacySettings()
             }
 
-            if viewModel.isInternalUser {
+            if viewModel.browsingMenuSheetCapability.isAvailable {
                 Section {
-                    SettingsCellView(label: "Sheet menu presentation",
+                    SettingsCellView(label: UserText.settingsExperimentalMenu,
                                      accessory: .toggle(isOn: viewModel.showMenuInSheetBinding))
-                } footer: {
-                    Text(verbatim: "This setting is experimental and available only for internal users")
                 }
             }
 

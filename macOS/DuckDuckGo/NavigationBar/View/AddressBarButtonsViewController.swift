@@ -513,6 +513,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
             stopAnimations()
             closePrivacyDashboard()
+            closePermissionPopovers()
 
             self.tabViewModel = tabViewModel
             subscribeToUrl()
@@ -1590,6 +1591,12 @@ final class AddressBarButtonsViewController: NSViewController {
 
     func closePrivacyDashboard() {
         popovers?.closePrivacyDashboard()
+    }
+
+    private func closePermissionPopovers() {
+        permissionAuthorizationPopover?.close()
+        popupBlockedPopover?.close()
+        permissionCenterPopover?.close()
     }
 
     func openPrivacyDashboard() {

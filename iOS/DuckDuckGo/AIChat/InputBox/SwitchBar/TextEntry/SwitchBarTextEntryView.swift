@@ -193,6 +193,7 @@ class SwitchBarTextEntryView: UIView {
             self?.fireClearButtonPressedPixel()
             self?.handler.clearText()
             self?.handler.clearButtonTapped()
+            self?.updateAutoCorrectionSetupForAIChat(for: "")
         }
 
         buttonsView.onVoiceTapped = { [weak self] in
@@ -230,14 +231,10 @@ class SwitchBarTextEntryView: UIView {
         case .search:
             placeholderLabel.text = UserText.searchDuckDuckGo
             textView.autocapitalizationType = .none
-            textView.autocorrectionType = .no
-            textView.spellCheckingType = .no
         case .aiChat:
             placeholderLabel.text = UserText.searchInputFieldPlaceholderDuckAI
             textView.autocapitalizationType = .sentences
-            textView.autocorrectionType = .default
-            textView.spellCheckingType = .default
-            
+
             /// Auto-focus the text field when switching to duck.ai mode
             /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210975209610640?focus=true
             DispatchQueue.main.async { [weak self] in
@@ -255,13 +252,16 @@ class SwitchBarTextEntryView: UIView {
         case .search:
             textView.keyboardType = .webSearch
             textView.returnKeyType = .search
+            disableAutoCorrectionAndSpellChecking()
         case .aiChat:
             if handler.isUsingFadeOutAnimation {
                 textView.keyboardType = .default
                 textView.returnKeyType = .default
+                disableAutoCorrectionAndSpellChecking()
             } else {
                 textView.keyboardType = .webSearch
                 textView.returnKeyType = .go
+                enableAutoCorrectionAndSpellChecking()
             }
         }
 
@@ -442,6 +442,7 @@ class SwitchBarTextEntryView: UIView {
             .sink { [weak self] text in
                 guard let self = self else { return }
 
+                self.updateAutoCorrectionSetupForAIChat(for: text)
                 if self.textView.text != text {
                     self.textView.text = text
                     self.updatePlaceholderVisibility()
@@ -459,6 +460,20 @@ class SwitchBarTextEntryView: UIView {
             .store(in: &cancellables)
     }
 
+    private func updateAutoCorrectionSetupForAIChat(for text: String) {
+        guard handler.isUsingFadeOutAnimation && currentMode == .aiChat else { return }
+
+        if text.isEmpty {
+            disableAutoCorrectionAndSpellChecking()
+            textView.reloadInputViews()
+        } else {
+            textView.keyboardType = .default
+            textView.returnKeyType = .default
+            enableAutoCorrectionAndSpellChecking()
+            textView.reloadInputViews()
+        }
+    }
+
     @discardableResult
     override func becomeFirstResponder() -> Bool {
         return textView.becomeFirstResponder()
@@ -472,6 +487,16 @@ class SwitchBarTextEntryView: UIView {
     func selectAllText() {
         textView.selectAll(nil)
         canExpandOnSelectionChange = true
+    }
+
+    private func disableAutoCorrectionAndSpellChecking() {
+        textView.autocorrectionType = .no
+        textView.spellCheckingType = .no
+    }
+
+    private func enableAutoCorrectionAndSpellChecking() {
+        textView.autocorrectionType = .default
+        textView.spellCheckingType = .default
     }
 }
 

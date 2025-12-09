@@ -164,9 +164,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866619299477
     case newSyncEntryPoints
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866619360873
-    case subscriptionPurchaseWidePixelMeasurement
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720018164
     case syncFeatureLevel3
 
@@ -178,9 +175,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720696560
     case unifiedURLPredictor
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866619917130
-    case authV2WideEventEnabled
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866720972159
     case winBackOffer
@@ -284,8 +278,6 @@ extension FeatureFlag: FeatureFlagDescribing {
         switch self {
         case .supportsAlternateStripePaymentFlow,
                 .refactorOfSyncPreferences,
-                .subscriptionPurchaseWidePixelMeasurement,
-                .authV2WideEventEnabled,
                 .syncCreditCards,
                 .syncIdentities,
                 .dataImportNewSafariFilePicker,
@@ -353,12 +345,10 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .newSyncEntryPoints,
                 .dbpEmailConfirmationDecoupling,
                 .dbpRemoteBrokerDelivery,
-                .subscriptionPurchaseWidePixelMeasurement,
                 .syncFeatureLevel3,
                 .themes,
                 .appStoreUpdateFlow,
                 .unifiedURLPredictor,
-                .authV2WideEventEnabled,
                 .webKitPerformanceReporting,
                 .fireDialog,
                 .winBackOffer,
@@ -492,8 +482,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
         case .duckAISearchParameter:
             return .enabled
-        case .subscriptionPurchaseWidePixelMeasurement:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPurchaseWidePixelMeasurement))
         case .fireDialog:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.fireDialog))
         case .fireDialogIndividualSitesLink:
@@ -510,8 +498,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.appStoreUpdateFlow))
         case .unifiedURLPredictor:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.unifiedURLPredictor))
-        case .authV2WideEventEnabled:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.authV2WideEventEnabled))
         case .webKitPerformanceReporting:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webKitPerformanceReporting))
         case .winBackOffer:

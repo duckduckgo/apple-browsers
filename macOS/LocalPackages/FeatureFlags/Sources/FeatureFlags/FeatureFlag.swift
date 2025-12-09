@@ -277,6 +277,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// Shows a survey when quitting the app for the first time in a determined period
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1212242893241885?focus=true
     case firstTimeQuitSurvey
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212357739558636?focus=true
+    case dataImportWideEventMeasurement
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -298,7 +301,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .extendedUserInitiatedPopupTimeout,
                 .suppressEmptyPopUpsOnApproval,
                 .popupPermissionButtonPersistence,
-                .tabClosingEventRecreation:
+                .tabClosingEventRecreation,
+                .dataImportWideEventMeasurement:
             true
         default:
             false
@@ -385,7 +389,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .popupPermissionButtonPersistence,
                 .webNotifications,
                 .newPermissionView,
-                .firstTimeQuitSurvey:
+                .firstTimeQuitSurvey,
+                .dataImportWideEventMeasurement:
             return true
         case .sslCertificatesBypass,
                 .appendAtbToSerpQueries,
@@ -564,6 +569,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.tabClosingEventRecreation))
         case .firstTimeQuitSurvey:
             return .disabled
+        case .dataImportWideEventMeasurement:
+            return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
         }
 
     }

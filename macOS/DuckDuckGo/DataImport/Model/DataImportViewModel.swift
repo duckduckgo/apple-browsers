@@ -479,6 +479,7 @@ struct DataImportViewModel {
 
     /// Select CSV/HTML file for import button press
     @MainActor mutating func selectFile() {
+        setupAndStartWideEvent()
         let dataTypes: [UTType]
         switch screen {
         case .fileImport(dataType: let dataType, summary: _):
@@ -489,13 +490,20 @@ struct DataImportViewModel {
             dataTypes = importSource.supportedDataTypes.flatMap { $0.allowedFileTypes }
         default:
             assertionFailure("Expected File Import")
+            completeAndCleanupWideEvent(with: .failure, description: "Expected File Import")
             return
         }
 
-        guard let url = openPanelCallback(dataTypes) else { return }
+        guard let url = openPanelCallback(dataTypes) else {
+            completeAndCleanupWideEvent(with: .failure, description: "Missing open panel callback url")
+            return
+        }
 
         // If the source is .fileImport, detect the file type and switch to the appropriate source (.csv or .bookmarksHTML)
-        guard switchFromFileImportToSpecificSourceIfNeeded(fileURL: url) else { return }
+        guard switchFromFileImportToSpecificSourceIfNeeded(fileURL: url) else {
+            completeAndCleanupWideEvent(with: .failure, description: "Unable to switch from file import to specific source")
+            return
+        }
 
         self.initiateImport(fileURL: url)
     }

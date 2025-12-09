@@ -193,6 +193,8 @@ class SwitchBarTextEntryView: UIView {
             self?.fireClearButtonPressedPixel()
             self?.handler.clearText()
             self?.handler.clearButtonTapped()
+            print("🇳🇴 [\(String(describing: Self.self))] setupButtonsView")
+            self?.updateAutoCorrectionSetupForAIChat(for: "")
         }
 
         buttonsView.onVoiceTapped = { [weak self] in
@@ -230,15 +232,12 @@ class SwitchBarTextEntryView: UIView {
         case .search:
             placeholderLabel.text = UserText.searchDuckDuckGo
             textView.autocapitalizationType = .none
-            textView.autocorrectionType = .no
-            textView.spellCheckingType = .no
+            disableAutocorrectionAndSpellChecking()
         case .aiChat:
             placeholderLabel.text = UserText.searchInputFieldPlaceholderDuckAI
             textView.autocapitalizationType = .sentences
-//            textView.autocorrectionType = .default
-            textView.autocorrectionType = .no
-            textView.spellCheckingType = .default
-            
+            textView.autocorrectionType = .default
+
             /// Auto-focus the text field when switching to duck.ai mode
             /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210975209610640?focus=true
             DispatchQueue.main.async { [weak self] in
@@ -256,14 +255,12 @@ class SwitchBarTextEntryView: UIView {
         case .search:
             textView.keyboardType = .webSearch
             textView.returnKeyType = .search
+            disableAutocorrectionAndSpellChecking()
         case .aiChat:
             if handler.isUsingFadeOutAnimation {
-//                textView.keyboardType = .default
-                print("🇳🇴 [\(String(describing: Self.self))] updateKeyboardConfiguration ⚠️")
                 textView.keyboardType = .default
                 textView.returnKeyType = .default
-                textView.autocorrectionType = .no
-                textView.spellCheckingType = .no
+                disableAutocorrectionAndSpellChecking()
             } else {
                 textView.keyboardType = .webSearch
                 textView.returnKeyType = .go
@@ -448,8 +445,8 @@ class SwitchBarTextEntryView: UIView {
                 print("🇳🇴 [\(String(describing: Self.self))] currentTextPublisher...")
                 guard let self = self else { return }
 
+                self.updateAutoCorrectionSetupForAIChat(for: text)
                 print("🇳🇴 [\(String(describing: Self.self))] \t checking if")
-                self.updateAutoCorrectionForAIChat()
                 if self.textView.text != text {
                     print("🇳🇴 [\(String(describing: Self.self))] calling methods")
                     self.textView.text = text
@@ -468,21 +465,21 @@ class SwitchBarTextEntryView: UIView {
             .store(in: &cancellables)
     }
 
-    private func updateAutoCorrectionForAIChat() {
+    private func updateAutoCorrectionSetupForAIChat(for text: String) {
         guard currentMode == .aiChat else {
             print("🇳🇴 [\(String(describing: Self.self))] NO CHANGES, SEARCH 🔵")
             return
         }
-        // textView.autocorrectionType = textView.text.isEmpty ? .no : .default
-        if textView.text.isEmpty {
+        
+        print("🇳🇴 [\(String(describing: Self.self))] textView: \(text)")
+        if text.isEmpty {
             print("🇳🇴 [\(String(describing: Self.self))] OFF AUTO CORRECTION 🟡")
-            textView.autocorrectionType = .no
+            disableAutocorrectionAndSpellChecking()
         } else {
             print("🇳🇴 [\(String(describing: Self.self))] ON AUTO CORRECTION 🟢")
             textView.keyboardType = .default
             textView.returnKeyType = .default
-            textView.autocorrectionType = .default
-            textView.spellCheckingType = .default
+            enableAutoCorrectionAndSpellChecking()
             textView.reloadInputViews()
         }
     }
@@ -500,6 +497,16 @@ class SwitchBarTextEntryView: UIView {
     func selectAllText() {
         textView.selectAll(nil)
         canExpandOnSelectionChange = true
+    }
+
+    private func disableAutocorrectionAndSpellChecking() {
+        textView.autocorrectionType = .no
+        textView.spellCheckingType = .no
+    }
+
+    private func enableAutoCorrectionAndSpellChecking() {
+        textView.autocorrectionType = .default
+        textView.spellCheckingType = .default
     }
 }
 

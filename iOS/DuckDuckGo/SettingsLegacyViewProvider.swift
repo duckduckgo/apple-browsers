@@ -28,6 +28,7 @@ import Common
 import Configuration
 import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
+import Subscription
 
 class SettingsLegacyViewProvider: ObservableObject {
 
@@ -51,6 +52,8 @@ class SettingsLegacyViewProvider: ObservableObject {
     let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
     let daxDialogsManager: DaxDialogsManaging
     let dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?
+    let subscriptionDataReporter: SubscriptionDataReporting
+    let remoteMessagingDebugHandler: RemoteMessagingDebugHandling
 
     init(syncService: any DDGSyncing,
          syncDataProviders: SyncDataProviders,
@@ -65,6 +68,8 @@ class SettingsLegacyViewProvider: ObservableObject {
          systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging,
          daxDialogsManager: DaxDialogsManaging,
          dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?,
+         subscriptionDataReporter: SubscriptionDataReporting,
+         remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
          productSurfaceTelemetry: ProductSurfaceTelemetry) {
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
@@ -79,6 +84,8 @@ class SettingsLegacyViewProvider: ObservableObject {
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.daxDialogsManager = daxDialogsManager
         self.dbpIOSPublicInterface = dbpIOSPublicInterface
+        self.subscriptionDataReporter = subscriptionDataReporter
+        self.remoteMessagingDebugHandler = remoteMessagingDebugHandler
         self.productSurfaceTelemetry = productSurfaceTelemetry
     }
     
@@ -138,7 +145,9 @@ class SettingsLegacyViewProvider: ObservableObject {
             daxDialogManager: self.daxDialogsManager,
             databaseDelegate: self.dbpIOSPublicInterface,
             debuggingDelegate: self.dbpIOSPublicInterface,
-            runPrequisitesDelegate: self.dbpIOSPublicInterface))
+            runPrequisitesDelegate: self.dbpIOSPublicInterface,
+            subscriptionDataReporter: self.subscriptionDataReporter,
+            remoteMessagingDebugHandler: self.remoteMessagingDebugHandler))
     }
 
     // Legacy UIKit Views (Pushed unmodified)

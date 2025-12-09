@@ -239,7 +239,8 @@ class TabViewController: UIViewController {
     let bookmarksDatabase: CoreDataDatabase
     lazy var faviconUpdater = FireproofFaviconUpdater(bookmarksDatabase: bookmarksDatabase,
                                                       tab: tabModel,
-                                                      favicons: Favicons.shared)
+                                                      favicons: Favicons.shared,
+                                                      sharedSecureVault: sharedSecureVault)
 
     private let refreshControl = UIRefreshControl()
 
@@ -411,7 +412,8 @@ class TabViewController: UIViewController {
                                    keyValueStore: ThrowingKeyValueStoring,
                                    daxDialogsManager: DaxDialogsManaging,
                                    aiChatSettings: AIChatSettingsProvider,
-                                   productSurfaceTelemetry: ProductSurfaceTelemetry) -> TabViewController {
+                                   productSurfaceTelemetry: ProductSurfaceTelemetry,
+                                   sharedSecureVault: (any AutofillSecureVault)? = nil) -> TabViewController {
 
         let storyboard = UIStoryboard(name: "Tab", bundle: nil)
         let controller = storyboard.instantiateViewController(identifier: "TabViewController", creator: { coder in
@@ -439,7 +441,8 @@ class TabViewController: UIViewController {
                               keyValueStore: keyValueStore,
                               daxDialogsManager: daxDialogsManager,
                               aiChatSettings: aiChatSettings,
-                              productSurfaceTelemetry: productSurfaceTelemetry
+                              productSurfaceTelemetry: productSurfaceTelemetry,
+                              sharedSecureVault: sharedSecureVault
             )
         })
         return controller
@@ -488,8 +491,10 @@ class TabViewController: UIViewController {
     let daxDialogsManager: DaxDialogsManaging
     let aiChatSettings: AIChatSettingsProvider
     let aiChatFullModeFeature: AIChatFullModeFeatureProviding
+    let sharedSecureVault: (any AutofillSecureVault)?
     
     private(set) var aiChatContentHandler: AIChatContentHandling
+    let subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling
 
     required init?(coder aDecoder: NSCoder,
                    tabModel: Tab,
@@ -519,7 +524,8 @@ class TabViewController: UIViewController {
                    adClickExternalOpenDetector: AdClickExternalOpenDetector = AdClickExternalOpenDetector(),
                    aiChatSettings: AIChatSettingsProvider,
                    productSurfaceTelemetry: ProductSurfaceTelemetry,
-                   aiChatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature()) {
+                   aiChatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
+                   sharedSecureVault: (any AutofillSecureVault)? = nil) {
 
         self.tabModel = tabModel
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -546,6 +552,7 @@ class TabViewController: UIViewController {
         self.keyValueStore = keyValueStore
         self.adClickExternalOpenDetector = adClickExternalOpenDetector
         self.daxDialogsManager = daxDialogsManager
+        self.sharedSecureVault = sharedSecureVault
         self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {
             return AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.isSubscriptionPurchaseEligible
         }
@@ -553,11 +560,17 @@ class TabViewController: UIViewController {
         self.aiChatSettings = aiChatSettings
         self.aiChatFullModeFeature = aiChatFullModeFeature
         self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings, featureDiscovery: featureDiscovery)
+        self.subscriptionAIChatStateHandler = SubscriptionAIChatStateHandler()
 
         self.productSurfaceTelemetry = productSurfaceTelemetry
 
         super.init(coder: aDecoder)
-        
+
+        // Reload AI Chat when subscription state changes
+        subscriptionAIChatStateHandler.onSubscriptionStateChanged = { [weak self] in
+            self?.reloadAIChatIfNeeded()
+        }
+
         // Assign itself as tabNavigationHandler for DuckPlayer
         duckPlayerNavigationHandler.tabNavigationHandler = self
 

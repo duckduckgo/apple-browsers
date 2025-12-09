@@ -22,5 +22,5 @@ import os.log
 public extension Logger {
     fileprivate static let subsystem = "com.duckduckgo.macos.browser.DuckDuckGoTests"
 
-    static var tests = { Logger(subsystem: subsystem, category: "🧪") }()
+    static let tests = Logger(subsystem: subsystem, category: "🧪")
 }

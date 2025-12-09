@@ -84,17 +84,6 @@ final class PermissionAuthorizationTypeTests: XCTestCase {
         XCTAssertFalse(PermissionAuthorizationType.externalScheme(scheme: "zoom").requiresSystemPermission)
     }
 
-    // MARK: - usesPermanentDecisions Tests
-
-    func testUsesPermanentDecisions_AllCases_ReturnTrue() {
-        XCTAssertTrue(PermissionAuthorizationType.camera.usesPermanentDecisions)
-        XCTAssertTrue(PermissionAuthorizationType.microphone.usesPermanentDecisions)
-        XCTAssertTrue(PermissionAuthorizationType.cameraAndMicrophone.usesPermanentDecisions)
-        XCTAssertTrue(PermissionAuthorizationType.geolocation.usesPermanentDecisions)
-        XCTAssertTrue(PermissionAuthorizationType.popups.usesPermanentDecisions)
-        XCTAssertTrue(PermissionAuthorizationType.externalScheme(scheme: "zoom").usesPermanentDecisions)
-    }
-
     // MARK: - asPermissionType Tests
 
     func testAsPermissionType_Camera() {

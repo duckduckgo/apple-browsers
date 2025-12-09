@@ -46,10 +46,15 @@ final class MockAutoconsentStats: AutoconsentStatsCollecting {
     let statsUpdatePublisher: AnyPublisher<Void, Never> = Empty<Void, Never>().eraseToAnyPublisher()
 
     func recordAutoconsentAction(clicksMade: Int64, timeSpent: TimeInterval) async {}
-    func fetchTotalCookiePopUpsBlocked() async -> Int64 { 0 }
+
+    var totalCookiePopUpsBlocked: Int64 = 0
+    func fetchTotalCookiePopUpsBlocked() async -> Int64 {
+        return totalCookiePopUpsBlocked
+    }
+
     func fetchAutoconsentDailyUsagePack() async -> AutoconsentDailyUsagePack {
         AutoconsentDailyUsagePack(
-            totalCookiePopUpsBlocked: 0,
+            totalCookiePopUpsBlocked: totalCookiePopUpsBlocked,
             totalClicksMadeBlockingCookiePopUps: 0,
             totalTotalTimeSpentBlockingCookiePopUps: 0
         )
@@ -113,6 +118,20 @@ final class NewTabPageCoordinatorTests: XCTestCase {
                                               windowControllersManager: windowControllersManager,
                                               pixelFiring: nil,
                                               historyProvider: MockHistoryViewDataProvider())
+        let cookiePopupProtectionPreferences = CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager)
+        let visualizeFireAnimationDecider = MockVisualizeFireAnimationDecider()
+        let settingsMigrator = NewTabPageProtectionsReportSettingsMigrator(legacyKeyValueStore: UserDefaultsWrapper<Any>.sharedDefaults)
+        let protectionsReportModel = NewTabPageProtectionsReportModel(
+            privacyStats: MockPrivacyStats(),
+            autoconsentStats: MockAutoconsentStats(),
+            keyValueStore: keyValueStore,
+            burnAnimationSettingChanges: visualizeFireAnimationDecider.shouldShowFireAnimationPublisher,
+            showBurnAnimation: visualizeFireAnimationDecider.shouldShowFireAnimation,
+            isAutoconsentEnabled: { cookiePopupProtectionPreferences.isAutoconsentEnabled },
+            getLegacyIsViewExpandedSetting: settingsMigrator.isViewExpanded,
+            getLegacyActiveFeedSetting: settingsMigrator.activeFeed
+        )
+
         coordinator = NewTabPageCoordinator(
             appearancePreferences: appearancePreferences,
             customizationModel: customizationModel,
@@ -130,7 +149,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             fireproofDomains: MockFireproofDomains(domains: []),
             privacyStats: MockPrivacyStats(),
             autoconsentStats: MockAutoconsentStats(),
-            cookiePopupProtectionPreferences: CookiePopupProtectionPreferences(persistor: MockCookiePopupProtectionPreferencesPersistor(), windowControllersManager: windowControllersManager),
+            cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
             freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator(
                 freemiumDBPUserStateManager: MockFreemiumDBPUserStateManager(),
                 freemiumDBPFeature: MockFreemiumDBPFeature(),
@@ -143,12 +162,13 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             fireCoordinator: fireCoordinator,
             keyValueStore: keyValueStore,
             notificationCenter: notificationCenter,
-            visualizeFireAnimationDecider: MockVisualizeFireAnimationDecider(),
+            visualizeFireAnimationDecider: visualizeFireAnimationDecider,
             featureFlagger: featureFlagger,
             windowControllersManager: windowControllersManager,
             tabsPreferences: tabsPreferences,
             newTabPageAIChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(),
             winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator(winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager()),
+            protectionsReportModel: protectionsReportModel,
             fireDailyPixel: { self.firePixelCalls.append($0) }
         )
     }

@@ -245,4 +245,8 @@ extension DuckDuckGoSubscription: @retroactive SubscriptionSurveyDataProviding {
     public var subscriptionExpiryDate: Date? {
         return expiresOrRenewsAt
     }
+
+    public var subscriptionTrialActive: Bool? {
+        return hasActiveTrialOffer
+    }
 }

@@ -33,6 +33,16 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
         featureFlagger.isFeatureOn(.dbpEmailConfirmationDecoupling)
     }
 
+    var isForegroundRunningOnAppActiveFeatureOn: Bool {
+        // Not relevant to macOS
+        return false
+    }
+
+    var isForegroundRunningWhenDashboardOpenFeatureOn: Bool {
+        // Not relevant to macOS
+        return false
+    }
+
     init(featureFlagger: FeatureFlagger) {
         self.featureFlagger = featureFlagger
     }

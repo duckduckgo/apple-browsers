@@ -211,9 +211,6 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     /// Callback fired when the AI Chat left button is tapped
     var onAIChatLeftButtonPressed: (() -> Void)?
 
-    /// Callback fired when the AI Chat right button is tapped
-    var onAIChatRightButtonPressed: (() -> Void)?
-
     /// Callback fired when the omnibar branding area is tapped while in AI Chat mode
     var onAIChatBrandingPressed: (() -> Void)?
 
@@ -241,11 +238,8 @@ final class DefaultOmniBarView: UIView, OmniBarView {
     let backButtonView = BrowserChromeButton()
 
     private let aiChatLeftButton = BrowserChromeButton()
-    private let aiChatRightButton = BrowserChromeButton()
     private var aiChatBrandingView: AIChatFullModeOmniBrandingView?
-
-    private var aiChatLeadingSpacingConstraint: NSLayoutConstraint?
-    private var aiChatTrailingSpacingConstraint: NSLayoutConstraint?
+    private var aiChatModeConstraints: [NSLayoutConstraint] = []
 
     var searchContainerWidth: CGFloat { searchAreaView.frame.width }
 
@@ -313,8 +307,7 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         trailingButtonsContainer.addArrangedSubview(menuButtonView)
         trailingButtonsContainer.addArrangedSubview(settingsButtonView)
 
-        addSubview(aiChatLeftButton)
-        addSubview(aiChatRightButton)
+        searchAreaContainerView.addSubview(aiChatLeftButton)
 
         addSubview(activeOutlineView)
         addLayoutGuide(fieldContainerLayoutGuide)
@@ -401,30 +394,23 @@ final class DefaultOmniBarView: UIView, OmniBarView {
 
         // AI Chat Full Mode
         aiChatLeftButton.translatesAutoresizingMaskIntoConstraints = false
-        aiChatRightButton.translatesAutoresizingMaskIntoConstraints = false
 
         let aiChatButtonConstraints = [
-            aiChatLeftButton.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: Metrics.textAreaHorizontalPadding),
+            aiChatLeftButton.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
             aiChatLeftButton.centerYAnchor.constraint(equalTo: centerYAnchor),
-
-            aiChatRightButton.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -Metrics.textAreaHorizontalPadding),
-            aiChatRightButton.centerYAnchor.constraint(equalTo: centerYAnchor)
         ]
         NSLayoutConstraint.activate(aiChatButtonConstraints)
         
         DefaultOmniBarView.activateItemSizeConstraints(for: aiChatLeftButton)
-        DefaultOmniBarView.activateItemSizeConstraints(for: aiChatRightButton)
 
-        aiChatLeadingSpacingConstraint = searchAreaContainerView.leadingAnchor.constraint(equalTo: aiChatLeftButton.trailingAnchor, constant: Metrics.buttonToSearchContainerSpace)
-        aiChatTrailingSpacingConstraint = searchAreaContainerView.trailingAnchor.constraint(equalTo: aiChatRightButton.leadingAnchor, constant: -Metrics.buttonToSearchContainerSpace)
-
+        // AI Chat mode constraints (inactive by default, activated only in AI Chat mode)
         if let brandingView = aiChatBrandingView {
-            NSLayoutConstraint.activate([
-                brandingView.centerXAnchor.constraint(equalTo: searchAreaContainerView.centerXAnchor),
+            aiChatModeConstraints = [
+                brandingView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
+                brandingView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
                 brandingView.centerYAnchor.constraint(equalTo: searchAreaContainerView.centerYAnchor),
-                brandingView.leadingAnchor.constraint(greaterThanOrEqualTo: safeAreaLayoutGuide.leadingAnchor, constant: Metrics.textAreaHorizontalPadding),
-                brandingView.trailingAnchor.constraint(lessThanOrEqualTo: safeAreaLayoutGuide.trailingAnchor, constant: -Metrics.textAreaHorizontalPadding)
-            ])
+                searchAreaContainerView.widthAnchor.constraint(equalTo: searchAreaAlignmentView.widthAnchor)
+            ]
         }
     }
 
@@ -490,10 +476,6 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         aiChatLeftButton.isHidden = true
         DefaultOmniBarView.setUpCommonProperties(for: aiChatLeftButton)
 
-        aiChatRightButton.setImage(DesignSystemImages.Glyphs.Size24.add, for: .normal)
-        aiChatRightButton.isHidden = true
-        DefaultOmniBarView.setUpCommonProperties(for: aiChatRightButton)
-
         progressView?.hide()
 
         updateShadows()
@@ -522,7 +504,6 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         menuButton.addGestureRecognizer(UILongPressGestureRecognizer(target: self, action: #selector(menuButtonLongPress)))
 
         aiChatLeftButton.addTarget(self, action: #selector(aiChatLeftButtonTap), for: .touchUpInside)
-        aiChatRightButton.addTarget(self, action: #selector(aiChatRightButtonTap), for: .touchUpInside)
     }
 
     private func updateShadows() {
@@ -684,10 +665,6 @@ final class DefaultOmniBarView: UIView, OmniBarView {
         onAIChatLeftButtonPressed?()
     }
 
-    @objc private func aiChatRightButtonTap() {
-        onAIChatRightButtonPressed?()
-    }
-
     @objc private func aiChatBrandingViewTapped() {
         onAIChatBrandingPressed?()
     }
@@ -767,32 +744,26 @@ extension DefaultOmniBarView {
     private func showAIChatOmnibar() {
         aiChatBrandingView?.isHidden = false
         searchAreaView.textField.isHidden = true
-
-        aiChatLeadingSpacingConstraint?.isActive = true
-        aiChatTrailingSpacingConstraint?.isActive = true
         aiChatLeftButton.isHidden = false
-        aiChatRightButton.isHidden = false
         aiChatLeftButton.alpha = 1.0
-        aiChatRightButton.alpha = 1.0
+        NSLayoutConstraint.activate(aiChatModeConstraints)
+        searchAreaContainerView.bringSubviewToFront(aiChatLeftButton)
 
-        layoutIfNeeded()
+        setNeedsLayout()
     }
 
     /// Restores the omnibar UI to regular browse mode. Hides AI Chat buttons, shows search elements.
     private func hideAIChatOmnibar() {
         aiChatBrandingView?.isHidden = true
         searchAreaView.textField.isHidden = false
-        aiChatLeadingSpacingConstraint?.isActive = false
-        aiChatTrailingSpacingConstraint?.isActive = false
         aiChatLeftButton.isHidden = true
-        aiChatRightButton.isHidden = true
         aiChatLeftButton.alpha = 0.0
-        aiChatRightButton.alpha = 0.0
+        NSLayoutConstraint.deactivate(aiChatModeConstraints)
 
         searchAreaView.textField.alpha = 1.0
         searchAreaView.revealButtons()
 
-        layoutIfNeeded()
+        setNeedsLayout()
     }
 
     // Used to mask shadows going outside of bounds to prevent them covering other content

@@ -123,12 +123,8 @@ final class BrowserTabViewController: NSViewController {
 
     public weak var aiChatSidebarHostingDelegate: AIChatSidebarHostingDelegate?
 
-    private var isInPopUpWindow: Bool {
-        guard let mainViewController = parent as? MainViewController else {
-            assert(view.window == nil, "BrowserTabViewController is not a child of MainViewController")
-            return false
-        }
-        return mainViewController.isInPopUpWindow
+    var isInPopUpWindow: Bool {
+        tabCollectionViewModel.isPopup
     }
 
     required init?(coder: NSCoder) {
@@ -741,14 +737,14 @@ final class BrowserTabViewController: NSViewController {
             .dropFirst()
             .removeDuplicates(by: { old, new in
                 // no need to call showTabContent if webView stays in place and only its URL changes
-                if old.isUrl && new.isUrl {
+                if old.displaysContentInWebView && new.displaysContentInWebView {
                     return true
                 }
                 return old == new
             })
             .map { [weak self, tabViewModel] tabContent -> AnyPublisher<Void, Never> in
                 // For non-URL tabs, just emit an event displaying the tab content
-                guard let tabViewModel, tabContent.isUrl else {
+                guard let tabViewModel, tabContent.displaysContentInWebView else {
                     return Just(()).eraseToAnyPublisher()
                 }
 
@@ -1123,9 +1119,7 @@ final class BrowserTabViewController: NSViewController {
     }
 
     func generateNativePreviewIfNeeded() {
-        guard let tabViewModel = tabViewModel, !tabViewModel.tab.content.isUrl, !tabViewModel.tab.content.isHistory, !tabViewModel.isShowingErrorPage else {
-            return
-        }
+        guard let tabViewModel = tabViewModel, !tabViewModel.tab.content.displaysContentInWebView, !tabViewModel.isShowingErrorPage else { return }
 
         var containsHostingView: Bool
         switch tabViewModel.tab.content {

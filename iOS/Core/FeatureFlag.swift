@@ -108,6 +108,12 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866710074694
     case dbpEmailConfirmationDecoupling
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212258549430653
+    case dbpForegroundRunningOnAppActive
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212258549430659
+    case dbpForegroundRunningWhenDashboardOpen
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711635701
     case crashReportOptInStatusResetting
 
@@ -277,6 +283,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1212281244797425?focus=true
     case fullDuckAIModeExperimentalSetting
+    
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212305240287488?focus=true
+    case dataImportWideEventMeasurement
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -290,11 +299,15 @@ extension FeatureFlag: FeatureFlagDescribing {
              .subscriptionPurchaseWidePixelMeasurement,
              .newDeviceSyncPrompt,
              .authV2WideEventEnabled,
+             .dbpForegroundRunningOnAppActive,
+             .dbpForegroundRunningWhenDashboardOpen,
              .syncCreditCards,
              .unifiedURLPredictor,
              .forgetAllInSettings,
              .vpnConnectionWidePixelMeasurement,
-             .migrateKeychainAccessibility:
+             .migrateKeychainAccessibility,
+             .dataImportWideEventMeasurement,
+             .browsingMenuSheetPresentation:
             true
         default:
             false
@@ -332,6 +345,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .daxEasterEggLogos,
              .dbpEmailConfirmationDecoupling,
              .dbpRemoteBrokerDelivery,
+             .dbpForegroundRunningOnAppActive,
+             .dbpForegroundRunningWhenDashboardOpen,
              .subscriptionPurchaseWidePixelMeasurement,
              .showAIChatAddressBarChoiceScreen,
              .authV2WideEventEnabled,
@@ -359,7 +374,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .canPromoteAutofillExtensionInBrowser,
              .canPromoteAutofillExtensionInPasswordManagement,
              .granularFireButtonOptions,
-             .fullDuckAIModeExperimentalSetting:
+             .fullDuckAIModeExperimentalSetting,
+             .dataImportWideEventMeasurement:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -468,6 +484,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DBPSubfeature.remoteBrokerDelivery))
         case .dbpEmailConfirmationDecoupling:
             return .remoteReleasable(.subfeature(DBPSubfeature.emailConfirmationDecoupling))
+        case .dbpForegroundRunningOnAppActive:
+            return .remoteReleasable(.subfeature(DBPSubfeature.foregroundRunningOnAppActive))
+        case .dbpForegroundRunningWhenDashboardOpen:
+            return .remoteReleasable(.subfeature(DBPSubfeature.foregroundRunningWhenDashboardOpen))
         case .crashReportOptInStatusResetting:
             return .internalOnly()
         case .syncSeamlessAccountSwitching:
@@ -561,7 +581,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .allowProTierPurchase:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.allowProTierPurchase))
         case .browsingMenuSheetPresentation:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.experimentalBrowsingMenu))
         case .autofillExtensionSettings:
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillExtensionSettings))
         case .canPromoteAutofillExtensionInBrowser:
@@ -576,6 +596,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .fullDuckAIModeExperimentalSetting:
             return .remoteReleasable(.subfeature(AIChatSubfeature.fullDuckAIModeExperimentalSetting))
+        case .dataImportWideEventMeasurement:
+            return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
         }
     }
 }

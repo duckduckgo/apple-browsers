@@ -25,6 +25,8 @@ import PixelKit
 import Suggestions
 import Subscription
 import os.log
+import UIComponents
+import AIChat
 
 protocol AddressBarTextFieldFocusDelegate: AnyObject {
     func addressBarDidFocus(_ addressBarTextField: AddressBarTextField)
@@ -70,6 +72,8 @@ final class AddressBarTextField: NSTextField {
     weak var focusDelegate: AddressBarTextFieldFocusDelegate?
     weak var searchPreferences: SearchPreferences?
     weak var tabsPreferences: TabsPreferences?
+    var aiChatPreferences: AIChatPreferencesStorage?
+
     weak var sharedTextState: AddressBarSharedTextState? {
         didSet {
             subscribeToSharedTextState()
@@ -358,21 +362,28 @@ final class AddressBarTextField: NSTextField {
 
     func addressBarEnterPressed() {
         let selectedRowContent = suggestionContainerViewModel?.selectedRowContent
+        let selectedSuggestion = suggestionContainerViewModel?.selectedSuggestionViewModel?.suggestion
+        let selectedSuggestionCategory = selectedSuggestion.flatMap { SuggestionPixelCategory(from: $0) }
         suggestionContainerViewModel?.clearUserStringValue()
 
         if case .aiChatCell = selectedRowContent {
-            openAIChatWithPrompt()
+            openAIChatWithPrompt(inputMethod: .keyboard)
             hideSuggestionWindow()
             return
         }
 
-        let suggestion = suggestionContainerViewModel?.selectedSuggestionViewModel?.suggestion
-        navigate(suggestion: suggestion)
+        fireSuggestionSubmittedPixel(inputMethod: .keyboard, selectedSuggestionCategory: selectedSuggestionCategory)
+        navigate(suggestion: selectedSuggestion)
 
         hideSuggestionWindow()
     }
 
+    /// Called from MainViewController when user presses Shift/Control + Enter (keyboard shortcut)
     func openAIChatWithPrompt() {
+        openAIChatWithPrompt(inputMethod: .keyboard)
+    }
+
+    func openAIChatWithPrompt(inputMethod: SuggestionInputMethod) {
         let prompt = stringValueWithoutSuffix
 
         let behavior = LinkOpenBehavior(
@@ -381,9 +392,47 @@ final class AddressBarTextField: NSTextField {
             canOpenLinkInCurrentTab: true
         )
 
-        PixelKit.fire(AIChatPixel.aiChatSuggestionAIChatSubmitted, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        let pixel: AIChatPixel
+        switch inputMethod {
+        case .keyboard:
+            pixel = .aiChatSuggestionAIChatSubmittedKeyboard
+        case .mouse:
+            pixel = .aiChatSuggestionAIChatSubmittedMouse
+        }
+        PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
         NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: .query(prompt, shouldAutoSubmit: true), behavior: behavior)
         currentEditor()?.selectAll(self)
+    }
+
+    private func fireSuggestionSubmittedPixel(inputMethod: SuggestionInputMethod, selectedSuggestionCategory: SuggestionPixelCategory?) {
+        let pixel: GeneralPixel
+        switch inputMethod {
+        case .keyboard:
+            pixel = .suggestionSubmittedKeyboard(suggestionCategory: selectedSuggestionCategory)
+        case .mouse:
+            pixel = .suggestionSubmittedMouse(suggestionCategory: selectedSuggestionCategory)
+        }
+        PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
+    }
+
+    /// Handles paste of multiline text by switching to AI chat mode if conditions are met
+    /// - Parameter text: The pasted text containing newlines
+    /// - Returns: `true` if the text was handled by switching to AI chat mode, `false` otherwise
+    func handleMultilinePaste(_ text: String) -> Bool {
+        guard Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
+              let aiChatPreferences = aiChatPreferences,
+              aiChatPreferences.isAIFeaturesEnabled,
+              aiChatPreferences.showSearchAndDuckAIToggle,
+              let toggleControl = customToggleControl as? CustomToggleControl,
+              !toggleControl.isHidden,
+              toggleControl.isEnabled,
+              toggleControl.selectedSegment == 0 else {
+            return false
+        }
+
+        sharedTextState?.updateText(text, markInteraction: true)
+        toggleControl.selectedSegment = 1
+        return true
     }
 
     private func navigate(suggestion: Suggestion?) {
@@ -777,6 +826,14 @@ final class AddressBarTextField: NSTextField {
 
         let shouldShowFullURL = preferences.showShortcutInAddressBar
         menuItem.state = shouldShowFullURL ? .on : .off
+    }
+
+    @objc func toggleAIChatToggle(_ menuItem: NSMenuItem) {
+        let preferences = AIChatPreferences()
+        preferences.showSearchAndDuckAIToggle.toggle()
+
+        let shouldShowToggle = preferences.showSearchAndDuckAIToggle
+        menuItem.state = shouldShowToggle ? .on : .off
     }
 
 }
@@ -1221,12 +1278,19 @@ extension AddressBarTextField: NSTextViewDelegate {
             sharingMenuItem.submenu = SharingMenu(title: UserText.shareMenuItem, location: .addressBarTextField, delegate: self)
         }
 
-        let additionalMenuItems: [NSMenuItem] = [
+        let isAIChatOmnibarToggleEnabled = Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+
+        var additionalMenuItems: [NSMenuItem] = [
             .toggleAutocompleteSuggestionsMenuItem(searchPreferences),
             .toggleFullWebsiteAddressMenuItem,
-            .toggleAIChatAddressMenuItem,
-            .separator()
+            .toggleAIChatAddressMenuItem(isOmnibarToggleEnabled: isAIChatOmnibarToggleEnabled)
         ]
+
+        if isAIChatOmnibarToggleEnabled {
+            additionalMenuItems.append(.toggleAIChatToggleMenuItem)
+        }
+
+        additionalMenuItems.append(.separator())
         let insertionPoint = menuItemInsertionPoint(within: menu)
         for (idx, item) in additionalMenuItems.enumerated() {
             menu.insertItem(item, at: insertionPoint + idx)
@@ -1301,14 +1365,27 @@ private extension NSMenuItem {
         return menuItem
     }
 
-    static var toggleAIChatAddressMenuItem: NSMenuItem {
+    static func toggleAIChatAddressMenuItem(isOmnibarToggleEnabled: Bool) -> NSMenuItem {
+        let title = isOmnibarToggleEnabled ? UserText.showAIChatShortcutInAddress : UserText.showAIChatInAddress
         let menuItem = NSMenuItem(
-            title: UserText.showAIChatInAddress,
+            title: title,
             action: #selector(AddressBarTextField.toggleAIChatAddress(_:)),
             keyEquivalent: ""
         )
 
         menuItem.state = AIChatPreferences().showShortcutInAddressBar ? .on : .off
+
+        return menuItem
+    }
+
+    static var toggleAIChatToggleMenuItem: NSMenuItem {
+        let menuItem = NSMenuItem(
+            title: UserText.showAIChatToggleInAddress,
+            action: #selector(AddressBarTextField.toggleAIChatToggle(_:)),
+            keyEquivalent: ""
+        )
+
+        menuItem.state = AIChatPreferences().showSearchAndDuckAIToggle ? .on : .off
 
         return menuItem
     }
@@ -1348,18 +1425,27 @@ extension AddressBarTextField: SuggestionViewControllerDelegate {
 
     func suggestionViewControllerDidConfirmSelection(_ suggestionViewController: SuggestionViewController) {
         let selectedRowContent = suggestionContainerViewModel?.selectedRowContent
+        let selectedSuggestion = suggestionContainerViewModel?.selectedSuggestionViewModel?.suggestion
+        let selectedSuggestionCategory = selectedSuggestion.flatMap { SuggestionPixelCategory(from: $0) }
         suggestionContainerViewModel?.clearUserStringValue()
 
         if case .aiChatCell = selectedRowContent {
-            openAIChatWithPrompt()
+            openAIChatWithPrompt(inputMethod: .mouse)
             hideSuggestionWindow()
             return
         }
 
-        let suggestion = suggestionContainerViewModel?.selectedSuggestionViewModel?.suggestion
-        navigate(suggestion: suggestion)
+        fireSuggestionSubmittedPixel(inputMethod: .mouse, selectedSuggestionCategory: selectedSuggestionCategory)
+        navigate(suggestion: selectedSuggestion)
     }
 
+}
+
+// MARK: - Suggestion Input Method
+
+enum SuggestionInputMethod {
+    case keyboard
+    case mouse
 }
 
 fileprivate extension NSStoryboard {

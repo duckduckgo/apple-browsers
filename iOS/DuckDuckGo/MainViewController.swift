@@ -208,6 +208,7 @@ class MainViewController: UIViewController {
     let experimentalAIChatManager: ExperimentalAIChatManager
     let daxDialogsManager: DaxDialogsManaging
     let dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?
+    let remoteMessagingDebugHandler: RemoteMessagingDebugHandling
 
     var appDidFinishLaunchingStartTime: CFAbsoluteTime?
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
@@ -298,6 +299,7 @@ class MainViewController: UIViewController {
         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
         mobileCustomization: MobileCustomization,
         remoteMessagingActionHandler: RemoteMessagingActionHandling,
+        remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
         productSurfaceTelemetry: ProductSurfaceTelemetry
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
@@ -345,6 +347,7 @@ class MainViewController: UIViewController {
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.mobileCustomization = mobileCustomization
         self.aichatFullModeFeature = aichatFullModeFeature
+        self.remoteMessagingDebugHandler = remoteMessagingDebugHandler
         self.productSurfaceTelemetry = productSurfaceTelemetry
 
         super.init(nibName: nil, bundle: nil)
@@ -3050,16 +3053,10 @@ extension MainViewController: OmniBarDelegate {
         currentTab?.submitToggleSidebarAction()
     }
 
-    /// Delegate method called when the AI Chat right button is tapped
-    func onAIChatRightButtonPressed() {
-        DailyPixel.fireDailyAndCount(pixel: .aiChatOmnibarNewChatButtonTapped)
-        currentTab?.submitStartChatAction()
-    }
-
     /// Delegate method called when the omnibar branding area is tapped while in AI Chat mode.
     func onAIChatBrandingPressed() {
         DailyPixel.fireDailyAndCount(pixel: .addressBarClickOnAIChat)
-        viewCoordinator.omniBar.beginEditing(animated: true)
+        viewCoordinator.omniBar.beginEditing(animated: true, forTextEntryMode: .aiChat)
     }
 }
 

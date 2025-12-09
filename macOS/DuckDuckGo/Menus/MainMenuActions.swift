@@ -580,6 +580,26 @@ extension AppDelegate {
         NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: NSApp)
     }
 
+    @MainActor
+    @objc func debugShowFeatureAwarenessDialogForNTPWidget(_ sender: Any?) {
+        Task {
+            await Application.appDelegate.autoconsentStatsPopoverCoordinator.showDialogForDebug()
+        }
+    }
+
+    @objc func debugIncrementAutoconsentStats(_ sender: Any?) {
+        Task {
+            await autoconsentStats.recordAutoconsentAction(clicksMade: 1, timeSpent: 1.0)
+            print("DEBUG: Autoconsent stats incremented")
+        }
+    }
+
+    @MainActor
+    @objc func debugClearBlockedCookiesPopoverSeenFlag(_ sender: Any?) {
+        Application.appDelegate.autoconsentStatsPopoverCoordinator.clearBlockedCookiesPopoverSeenFlag()
+        print("DEBUG: Cleared blockedCookiesPopoverSeen flag")
+    }
+
     @objc func showContentScopeExperiments(_ sender: Any?) {
         let experiments = contentScopeExperimentsManager.allActiveContentScopeExperiments
 
@@ -720,6 +740,10 @@ extension AppDelegate {
 
     @objc func setLaunchDayAWeekInThePast(_ sender: Any?) {
         UserDefaults.standard.set(Date.weekAgo, forKey: UserDefaultsWrapper<Any>.Key.firstLaunchDate.rawValue)
+    }
+
+    @objc func setLaunchDayAMonthInThePast(_ sender: Any?) {
+        UserDefaults.standard.set(Date.monthAgo, forKey: UserDefaultsWrapper<Any>.Key.firstLaunchDate.rawValue)
     }
 
     @objc func resetTipKit(_ sender: Any?) {

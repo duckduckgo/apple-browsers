@@ -74,17 +74,22 @@ struct FigmaColorPalette: SharedColorPaletteDefinition {
     static let iconsPrimary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0xd6, darkHex: 0xffffff, darkOpacityHex: 0xc6)
     static let iconsSecondary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x99, darkHex: 0xffffff, darkOpacityHex: 0x7a)
     static let iconsTertiary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x5b, darkHex: 0xffffff, darkOpacityHex: 0x3d)
+    static let shadowPrimary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x0c, darkHex: 0x000000, darkOpacityHex: 0x28)
+    static let shadowSecondary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x14, darkHex: 0x000000, darkOpacityHex: 0x3d)
+    static let shadowTertiary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x28, darkHex: 0x000000, darkOpacityHex: 0x51)
     static let surfaceBackdrop = DynamicColor(lightHex: 0xe0e0e0, darkHex: 0x070707)
     static let surfaceCanvas = DynamicColor(lightHex: 0xfafafa, darkHex: 0x1c1c1c)
     static let surfaceDecorationPrimary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x16, darkHex: 0xffffff, darkOpacityHex: 0x1e)
     static let surfaceDecorationSecondary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x28, darkHex: 0xffffff, darkOpacityHex: 0x33)
     static let surfaceDecorationTertiary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x3d, darkHex: 0xffffff, darkOpacityHex: 0x51)
     static let surfacePrimary = DynamicColor(lightHex: 0xf2f2f2, darkHex: 0x282828)
-    static let surfaceSecondary = DynamicColor(lightHex: 0xf9f9f9, darkHex: 0x373737)
+    static let surfaceSecondary = DynamicColor(lightHex: 0xfafafa, darkHex: 0x383838)
     static let surfaceTertiary = DynamicColor(lightHex: 0xffffff, darkHex: 0x474747)
     static let textPrimary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0xf4, darkHex: 0xffffff, darkOpacityHex: 0xf4)
-    static let textSecondary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0xa8, darkHex: 0xffffff, darkOpacityHex: 0xa8)
-    static let textTertiary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x5b, darkHex: 0xffffff, darkOpacityHex: 0x5b)
+    static let textSecondary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x99, darkHex: 0xffffff, darkOpacityHex: 0x99)
+    static let textTertiary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x66, darkHex: 0xffffff, darkOpacityHex: 0x66)
+    static let toneShadePrimary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x0f, darkHex: 0x161617, darkOpacityHex: 0x51)
+    static let toneTintPrimary = DynamicColor(lightHex: 0xffffff, lightOpacityHex: 0x7a, darkHex: 0xf9f9f9, darkOpacityHex: 0x1e)
 
     // MARK: - Not Specialized
 
@@ -105,14 +110,9 @@ struct FigmaColorPalette: SharedColorPaletteDefinition {
     static let buttonsSecondaryFillText = DynamicColor(lightColor: .shade(0.84), darkColor: .white)
     static let buttonsSecondaryFillTextDisabled = DynamicColor(lightColor: .shade(0.36), darkColor: .tint(0.36))
 
-    static let shadowPrimary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x0c, darkHex: 0x000000, darkOpacityHex: 0x28)
-    static let shadowSecondary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x14, darkHex: 0x000000, darkOpacityHex: 0x3d)
-    static let shadowTertiary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x28, darkHex: 0x000000, darkOpacityHex: 0x51)
-
     static let lines = DynamicColor(lightHex: 0x1F1F1F, lightOpacity: 0.09, darkHex: 0xF9F9F9, darkOpacity: 0.12)
     static let spinnerStart = DynamicColor(lightHex: 0x000000, lightOpacity: 0.42, darkHex: 0xffffff, darkOpacity: 0.6)
     static let spinnerFinal = DynamicColor(lightColor: .green60, darkColor: .green30)
-    static let toneShadePrimary = DynamicColor(lightHex: 0x000000, lightOpacityHex: 0x0f, darkHex: 0x161617, darkOpacityHex: 0x51)
 }
 
 #endif

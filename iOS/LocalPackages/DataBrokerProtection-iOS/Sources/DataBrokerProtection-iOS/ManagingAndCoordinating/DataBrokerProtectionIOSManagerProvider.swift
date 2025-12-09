@@ -105,8 +105,11 @@ public class DataBrokerProtectionIOSManagerProvider {
             assertionFailure("Failed to make secure storage vault")
             return nil
         }
-
-        let localBrokerService = LocalBrokerJSONService(vault: vault, pixelHandler: sharedPixelsHandler)
+        
+        let localBrokerService = LocalBrokerJSONService(resources: FileResources(runTypeProvider: dbpSettings),
+                                                        vault: vault,
+                                                        pixelHandler: sharedPixelsHandler,
+                                                        runTypeProvider: dbpSettings)
 
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, localBrokerService: localBrokerService)
 

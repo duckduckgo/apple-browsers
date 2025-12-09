@@ -189,7 +189,7 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
         }
     }
 
-    func testSubscriptionTierOptionsFailureNoProducts() async throws {
+    func testSubscriptionTierOptionsFailureEmptyProductsFromAPI() async throws {
         // Given
         subscriptionManager.tierProductsResponse = .success(GetTierProductsResponse(products: []))
 
@@ -201,7 +201,7 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
         case .success:
             XCTFail("Expected failure but got success")
         case .failure(let error):
-            XCTAssertEqual(error, .noProductsFound)
+            XCTAssertEqual(error, .tieredProductsEmptyProductsFromAPI)
         }
     }
 
@@ -217,7 +217,64 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
         case .success:
             XCTFail("Expected failure but got success")
         case .failure(let error):
-            XCTAssertEqual(error, .noProductsFound)
+            XCTAssertEqual(error, .tieredProductsApiCallFailed(SubscriptionEndpointServiceError.noData))
+        }
+    }
+
+    func testSubscriptionTierOptionsFailureEmptyAfterFiltering() async throws {
+        // Given - Only pro tier products, but pro tier is disabled
+        let responseWithOnlyProTier = GetTierProductsResponse(products: [
+            TierProduct(
+                productName: "Pro Subscription",
+                tier: .pro,
+                regions: ["us", "row"],
+                entitlements: [
+                    TierFeature(product: .networkProtection, name: .pro),
+                    TierFeature(product: .paidAIChat, name: .pro)
+                ],
+                billingCycles: [
+                    BillingCycle(productId: "monthly-pro", period: "Monthly", price: "19.99", currency: "USD")
+                ]
+            )
+        ])
+        subscriptionManager.tierProductsResponse = .success(responseWithOnlyProTier)
+
+        // When - includeProTier is false, which should filter out all products
+        let result = await stripePurchaseFlow.subscriptionTierOptions(includeProTier: false)
+
+        // Then
+        switch result {
+        case .success:
+            XCTFail("Expected failure but got success")
+        case .failure(let error):
+            XCTAssertEqual(error, .tieredProductsEmptyAfterFiltering)
+        }
+    }
+
+    func testSubscriptionTierOptionsFailureTierCreationFailed() async throws {
+        // Given - Products with no billing cycles (tier creation will fail)
+        let responseWithNoBillingCycles = GetTierProductsResponse(products: [
+            TierProduct(
+                productName: "Plus Subscription",
+                tier: .plus,
+                regions: ["us", "row"],
+                entitlements: [
+                    TierFeature(product: .networkProtection, name: .plus)
+                ],
+                billingCycles: [] // No billing cycles = tier creation fails
+            )
+        ])
+        subscriptionManager.tierProductsResponse = .success(responseWithNoBillingCycles)
+
+        // When
+        let result = await stripePurchaseFlow.subscriptionTierOptions(includeProTier: false)
+
+        // Then
+        switch result {
+        case .success:
+            XCTFail("Expected failure but got success")
+        case .failure(let error):
+            XCTAssertEqual(error, .tieredProductsTierCreationFailed)
         }
     }
 

@@ -349,7 +349,6 @@ final class Fire: FireProtocol {
                 }
 
                 self.burnAutoconsentCache()
-                await self.burnAutoconsentStats()
                 self.burnZoomLevels(of: domains)
 
                 // when removing cookies for the domain we also need to clear cookiePopupBlocked flag
@@ -420,6 +419,7 @@ final class Fire: FireProtocol {
             }
             await self.burnPrivacyStats()
             await self.burnAutoconsentStats()
+
             if includeChatHistory {
                 await burnChatHistory()
             }
@@ -434,7 +434,6 @@ final class Fire: FireProtocol {
 
             self.burnRecentlyClosed()
             self.burnAutoconsentCache()
-            await self.burnAutoconsentStats()
             self.burnZoomLevels()
 
             group.notify(queue: .main) {

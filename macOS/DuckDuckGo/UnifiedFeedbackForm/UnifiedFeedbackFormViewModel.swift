@@ -132,7 +132,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
 
     var availableSubscriptionSubcategories: [SubscriptionFeedbackSubcategory] {
         var subcategories: [SubscriptionFeedbackSubcategory] = SubscriptionFeedbackSubcategory.allCases
-        if featureFlagger.isFeatureOn(.allowProTierPurchase) {
+        if !featureFlagger.isFeatureOn(.allowProTierPurchase) {
             subcategories = subcategories.filter { $0 != .unableToAccessFeatures }
         }
         return subcategories

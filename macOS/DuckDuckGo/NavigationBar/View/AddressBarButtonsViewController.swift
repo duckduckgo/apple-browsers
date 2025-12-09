@@ -2084,6 +2084,10 @@ final class AddressBarButtonsViewController: NSViewController {
     private func animateTrackers() {
         guard privacyDashboardButton.isShown, let tabViewModel else { return }
 
+        // Don't play the animation if there's a pending permission request
+        let hasPendingPermissionRequest = tabViewModel.usedPermissions.values.contains { $0.isRequested }
+        guard !hasPendingPermissionRequest else { return }
+
         switch tabViewModel.tab.content {
         case .url(let url, _, _):
             // Don't play the shield animation if mouse is over

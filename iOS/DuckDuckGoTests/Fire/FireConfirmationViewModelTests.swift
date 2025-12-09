@@ -380,6 +380,74 @@ final class FireConfirmationViewModelTests: XCTestCase {
         XCTAssertFalse(newViewModel.clearAIChats, "clearAIChats should remain default false after cancel")
     }
     
+    // MARK: - Toggle Disabled State Tests
+    
+    func testWhenTabsCountIsZeroThenTabsToggleIsDisabled() {
+        // Given
+        let viewModel = makeViewModel(tabsModel: MockTabsModel(count: 0))
+        
+        // Then
+        XCTAssertTrue(viewModel.isClearTabsDisabled, "Tabs toggle should be disabled when count is 0")
+    }
+    
+    func testWhenTabsCountIsNonZeroThenTabsToggleIsEnabled() {
+        // Given
+        let viewModel = makeViewModel(tabsModel: MockTabsModel(count: 5))
+        
+        // Then
+        XCTAssertFalse(viewModel.isClearTabsDisabled, "Tabs toggle should be enabled when count is greater than 0")
+    }
+    
+    @MainActor
+    func testWhenSitesCountIsZeroThenDataToggleIsDisabled() {
+        // Given
+        let historyCoordinator = TestHistoryCoordinator()
+        historyCoordinator.testHistory = []
+        
+        let historyManager = MockHistoryManager(
+            historyCoordinator: historyCoordinator,
+            isEnabledByUser: true,
+            historyFeatureEnabled: true
+        )
+        let viewModel = makeViewModel(historyManager: historyManager, fireproofing: TestFireproofing())
+        
+        // Then
+        XCTAssertTrue(viewModel.isClearDataDisabled, "Data toggle should be disabled when sites count is 0")
+    }
+    
+    @MainActor
+    func testWhenSitesCountIsNonZeroThenDataToggleIsEnabled() {
+        // Given
+        let historyCoordinator = TestHistoryCoordinator()
+        historyCoordinator.testHistory = [
+            makeHistoryEntry(url: URL(string: "https://example.com")!)
+        ]
+        
+        let historyManager = MockHistoryManager(
+            historyCoordinator: historyCoordinator,
+            isEnabledByUser: true,
+            historyFeatureEnabled: true
+        )
+        let viewModel = makeViewModel(historyManager: historyManager, fireproofing: TestFireproofing())
+        
+        // Then
+        XCTAssertFalse(viewModel.isClearDataDisabled, "Data toggle should be enabled when sites count is greater than 0")
+    }
+    
+    @MainActor
+    func testWhenHistoryIsDisabledThenDataToggleIsNotDisabled() {
+        // Given
+        let historyManager = MockHistoryManager(
+            historyCoordinator: TestHistoryCoordinator(),
+            isEnabledByUser: false,
+            historyFeatureEnabled: false
+        )
+        let viewModel = makeViewModel(historyManager: historyManager, fireproofing: TestFireproofing())
+        
+        // Then
+        XCTAssertFalse(viewModel.isClearDataDisabled, "Data toggle should not be disabled when history is disabled")
+    }
+    
     // MARK: - Delete Button Disabled Tests
     
     func testWhenAllTogglesAreOffThenDeleteButtonIsDisabled() {

@@ -43,11 +43,31 @@ class FireConfirmationViewModel: ObservableObject {
         !clearTabs && !clearData && !clearAIChats
     }
     
+    var isClearTabsDisabled: Bool {
+        tabsCount == 0
+    }
+    
+    @MainActor
+    var isClearDataDisabled: Bool {
+        let historyEnabled = historyManager?.isEnabledByUser ?? false
+        return historyEnabled && sitesCount == 0
+    }
+    
     // MARK: - Private Variables
     private let tabsModel: TabsModeling?
     private let historyManager: HistoryManaging?
     private let tld: TLD
     private let fireproofing: Fireproofing?
+    
+    // MARK: - Lazy Variables
+    @MainActor
+    private lazy var sitesCount: Int = {
+        return self.computeNonFireproofedDomainCount()
+    }()
+    
+    private lazy var tabsCount: Int = {
+        return tabsModel?.count ?? 0
+    }()
     
     // MARK: - Persistence Storage
     @UserDefaultsWrapper(key: .fireConfirmationClearTabs, defaultValue: true)
@@ -88,7 +108,6 @@ class FireConfirmationViewModel: ObservableObject {
     }
     
     func clearTabsSubtitle() -> String {
-        let tabsCount = tabsModel?.count ?? 0
         return UserText.fireConfirmationTabsSubtitle(withCount: tabsCount)
     }
     
@@ -101,8 +120,6 @@ class FireConfirmationViewModel: ObservableObject {
         guard historyManager.isEnabledByUser else {
             return UserText.fireConfirmationDataSubtitleHistoryDisabled
         }
-        
-        let sitesCount = computeNonFireproofedDomainCount()
         return UserText.fireConfirmationDataSubtitle(withCount: sitesCount)
     }
     

@@ -62,7 +62,8 @@ struct FireConfirmationView: View {
                 icon: DesignSystemImages.Glyphs.Size24.tabsMobile,
                 title: UserText.fireConfirmationTabsTitle,
                 subtitle: viewModel.clearTabsSubtitle(),
-                isOn: $viewModel.clearTabs
+                isOn: $viewModel.clearTabs,
+                isDisabled: viewModel.isClearTabsDisabled
             )
             .accessibilityIdentifier("Fire.Confirmation.Toggle.Tabs.\(viewModel.clearTabs ? "on" : "off")")
             
@@ -72,7 +73,8 @@ struct FireConfirmationView: View {
                 icon: DesignSystemImages.Glyphs.Size24.cookie,
                 title: UserText.fireConfirmationDataTitle,
                 subtitle: viewModel.clearDataSubtitle(),
-                isOn: $viewModel.clearData
+                isOn: $viewModel.clearData,
+                isDisabled: viewModel.isClearDataDisabled
             )
             .accessibilityIdentifier("Fire.Confirmation.Toggle.Data.\(viewModel.clearData ? "on" : "off")")
             
@@ -150,6 +152,7 @@ private struct ToggleRow: View {
     let title: String
     let subtitle: String
     @Binding var isOn: Bool
+    var isDisabled: Bool = false
     
     var body: some View {
         HStack(spacing: Constants.horizontalSpacing) {
@@ -177,6 +180,7 @@ private struct ToggleRow: View {
             // Toggle
             Toggle("", isOn: $isOn)
                 .labelsHidden()
+                .disabled(isDisabled)
                 .padding(.trailing, Constants.toggleTrailingPadding)
                 .tint(Color(designSystemColor: .accent))
         }

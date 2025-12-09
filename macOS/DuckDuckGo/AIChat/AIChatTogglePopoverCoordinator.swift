@@ -21,6 +21,7 @@ import AppKit
 import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import PixelKit
 
 @MainActor
 protocol AIChatTogglePopoverCoordinating: AnyObject {
@@ -89,10 +90,12 @@ final class AIChatTogglePopoverCoordinator: AIChatTogglePopoverCoordinating {
 
     private func showPopover(relativeTo toggleControl: NSView) {
         let onClose: () -> Void = { [weak self] in
+            PixelKit.fire(AIChatPixel.aiChatTogglePopoverDismissButtonClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
             self?.markPopoverAsSeen()
         }
 
         let onButtonAction: () -> Void = { [weak self] in
+            PixelKit.fire(AIChatPixel.aiChatTogglePopoverCustomizeButtonClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
             self?.openAIChatSettings()
             self?.markPopoverAsSeen()
         }
@@ -125,6 +128,7 @@ final class AIChatTogglePopoverCoordinator: AIChatTogglePopoverCoordinating {
         )
 
         presenter.showPopover(viewController: viewController, relativeTo: toggleControl)
+        PixelKit.fire(AIChatPixel.aiChatTogglePopoverShown, frequency: .dailyAndCount, includeAppVersionParameter: true)
     }
 
     private func openAIChatSettings() {

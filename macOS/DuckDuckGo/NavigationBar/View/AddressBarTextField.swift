@@ -828,6 +828,14 @@ final class AddressBarTextField: NSTextField {
         menuItem.state = shouldShowFullURL ? .on : .off
     }
 
+    @objc func toggleAIChatToggle(_ menuItem: NSMenuItem) {
+        let preferences = AIChatPreferences()
+        preferences.showSearchAndDuckAIToggle.toggle()
+
+        let shouldShowToggle = preferences.showSearchAndDuckAIToggle
+        menuItem.state = shouldShowToggle ? .on : .off
+    }
+
 }
 
 // MARK: - NSDraggingDestination
@@ -1270,12 +1278,19 @@ extension AddressBarTextField: NSTextViewDelegate {
             sharingMenuItem.submenu = SharingMenu(title: UserText.shareMenuItem, location: .addressBarTextField, delegate: self)
         }
 
-        let additionalMenuItems: [NSMenuItem] = [
+        let isAIChatOmnibarToggleEnabled = Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+
+        var additionalMenuItems: [NSMenuItem] = [
             .toggleAutocompleteSuggestionsMenuItem(searchPreferences),
             .toggleFullWebsiteAddressMenuItem,
-            .toggleAIChatAddressMenuItem,
-            .separator()
+            .toggleAIChatAddressMenuItem(isOmnibarToggleEnabled: isAIChatOmnibarToggleEnabled)
         ]
+
+        if isAIChatOmnibarToggleEnabled {
+            additionalMenuItems.append(.toggleAIChatToggleMenuItem)
+        }
+
+        additionalMenuItems.append(.separator())
         let insertionPoint = menuItemInsertionPoint(within: menu)
         for (idx, item) in additionalMenuItems.enumerated() {
             menu.insertItem(item, at: insertionPoint + idx)
@@ -1350,14 +1365,27 @@ private extension NSMenuItem {
         return menuItem
     }
 
-    static var toggleAIChatAddressMenuItem: NSMenuItem {
+    static func toggleAIChatAddressMenuItem(isOmnibarToggleEnabled: Bool) -> NSMenuItem {
+        let title = isOmnibarToggleEnabled ? UserText.showAIChatShortcutInAddress : UserText.showAIChatInAddress
         let menuItem = NSMenuItem(
-            title: UserText.showAIChatInAddress,
+            title: title,
             action: #selector(AddressBarTextField.toggleAIChatAddress(_:)),
             keyEquivalent: ""
         )
 
         menuItem.state = AIChatPreferences().showShortcutInAddressBar ? .on : .off
+
+        return menuItem
+    }
+
+    static var toggleAIChatToggleMenuItem: NSMenuItem {
+        let menuItem = NSMenuItem(
+            title: UserText.showAIChatToggleInAddress,
+            action: #selector(AddressBarTextField.toggleAIChatToggle(_:)),
+            keyEquivalent: ""
+        )
+
+        menuItem.state = AIChatPreferences().showSearchAndDuckAIToggle ? .on : .off
 
         return menuItem
     }

@@ -23,7 +23,7 @@ import NetworkExtension
 public final class VPNStartupMonitor {
 
     public enum StartupError: Error, CustomNSError {
-        case startTunnelDisconnectedSilently
+        case startTunnelDisconnectedSilently(underlyingError: Error?)
         case startTunnelTimedOut
 
         var errorDescription: String? {
@@ -51,17 +51,32 @@ public final class VPNStartupMonitor {
         }
 
         public var errorUserInfo: [String: Any] {
-            return [:]
+            switch self {
+            case .startTunnelDisconnectedSilently(let underlyingError):
+                if let underlyingError {
+                    return [NSUnderlyingErrorKey: underlyingError]
+                }
+                return [:]
+            case .startTunnelTimedOut:
+                return [:]
+            }
         }
     }
 
     private let notificationCenter: NotificationCenter
     private let statusProvider: (NEVPNConnection) -> NEVPNStatus
+    private let disconnectErrorProvider: (NEVPNConnection) async throws -> Void
 
     public init(notificationCenter: NotificationCenter = .default,
-                statusProvider: @escaping (NEVPNConnection) -> NEVPNStatus = { $0.status }) {
+                statusProvider: @escaping (NEVPNConnection) -> NEVPNStatus = { $0.status },
+                disconnectErrorProvider: @escaping (NEVPNConnection) async throws -> Void = { connection in
+                    if #available(macOS 13, iOS 16, *) {
+                        try await connection.fetchLastDisconnectError()
+                    }
+                }) {
         self.notificationCenter = notificationCenter
         self.statusProvider = statusProvider
+        self.disconnectErrorProvider = disconnectErrorProvider
     }
 
     /// Waits for VPN startup to complete successfully or fail
@@ -100,7 +115,13 @@ public final class VPNStartupMonitor {
                     case .connected:
                         return
                     case .disconnecting, .disconnected:
-                        throw StartupError.startTunnelDisconnectedSilently
+                        var underlyingError: Error?
+                        do {
+                            try await self.disconnectErrorProvider(targetConnection)
+                        } catch {
+                            underlyingError = error
+                        }
+                        throw StartupError.startTunnelDisconnectedSilently(underlyingError: underlyingError)
                     default:
                         continue
                     }

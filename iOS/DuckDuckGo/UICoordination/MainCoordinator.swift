@@ -83,7 +83,8 @@ final class MainCoordinator {
          winBackOfferService: WinBackOfferService,
          modalPromptCoordinationService: ModalPromptCoordinationService,
          mobileCustomization: MobileCustomization,
-         productSurfaceTelemetry: ProductSurfaceTelemetry
+         productSurfaceTelemetry: ProductSurfaceTelemetry,
+         sharedSecureVault: (any AutofillSecureVault)? = nil
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
@@ -136,7 +137,8 @@ final class MainCoordinator {
                                 keyValueStore: keyValueStore,
                                 daxDialogsManager: daxDialogsManager,
                                 aiChatSettings: aiChatSettings,
-                                productSurfaceTelemetry: productSurfaceTelemetry)
+                                productSurfaceTelemetry: productSurfaceTelemetry,
+                                sharedSecureVault: sharedSecureVault)
         controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
                                         bookmarksDatabase: bookmarksDatabase,
                                         bookmarksDatabaseCleaner: syncService.syncDataProviders.bookmarksAdapter.databaseCleaner,
@@ -173,6 +175,7 @@ final class MainCoordinator {
                                         winBackOfferVisibilityManager: winBackOfferService.visibilityManager,
                                         mobileCustomization: mobileCustomization,
                                         remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler,
+                                        remoteMessagingDebugHandler: remoteMessagingService,
                                         productSurfaceTelemetry: productSurfaceTelemetry)
     }
 

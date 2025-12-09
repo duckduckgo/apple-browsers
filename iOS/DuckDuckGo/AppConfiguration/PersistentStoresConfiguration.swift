@@ -20,6 +20,8 @@
 import Foundation
 import Core
 import Persistence
+import BrowserServicesKit
+import os.log
 
 enum DatabaseError {
 
@@ -32,8 +34,10 @@ final class PersistentStoresConfiguration {
 
     let database = Database.shared
     let bookmarksDatabase = BookmarksDatabase.make()
-    private let application: UIApplication
+    private(set) var sharedSecureVault: (any AutofillSecureVault)?
 
+    private let application: UIApplication
+    
     init(application: UIApplication = .shared) {
         self.application = application
     }
@@ -42,6 +46,7 @@ final class PersistentStoresConfiguration {
                    isBookmarksDBFilePresent: Bool) throws {
         try loadDatabase()
         try loadAndMigrateBookmarksDatabase(syncKeyValueStore: syncKeyValueStore, isBookmarksDBFilePresent: isBookmarksDBFilePresent)
+        initializeSharedSecureVault()
     }
 
     private func loadDatabase() throws {
@@ -70,6 +75,19 @@ final class PersistentStoresConfiguration {
             throw TerminationError.bookmarksDatabase(error)
         } catch {
             throw TerminationError.bookmarksDatabase(.other(error))
+        }
+    }
+
+    private func initializeSharedSecureVault() {
+        guard AutofillSettingStatus.isAutofillEnabledInSettings else {
+            return
+        }
+        do {
+            sharedSecureVault = try AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
+            Logger.general.info("Shared SecureVault initialized at app startup")
+        } catch {
+            Logger.general.error("Failed to initialize shared SecureVault at startup: \(error.localizedDescription)")
+            Pixel.fire(pixel: .sharedSecureVaultInitFailed, error: error)
         }
     }
 

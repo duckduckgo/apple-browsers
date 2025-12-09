@@ -1,5 +1,5 @@
 //
-//  NewTabPageOmnibarConfigProviding.swift
+//  BundleExtension.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,18 +16,11 @@
 //  limitations under the License.
 //
 
-import Combine
+import Foundation
 
-public protocol NewTabPageOmnibarConfigProviding: AnyObject {
+extension Bundle {
 
-    @MainActor
-    var mode: NewTabPageDataModel.OmnibarMode { get set }
-
-    var isAIChatShortcutEnabled: Bool { get set }
-    var isAIChatShortcutEnabledPublisher: AnyPublisher<Bool, Never> { get }
-
-    var isAIChatSettingVisible: Bool { get }
-    var isAIChatSettingVisiblePublisher: AnyPublisher<Bool, Never> { get }
-
-    var showCustomizePopover: Bool { get set }
+    var designCompatibilityEnabled: Bool {
+        object(forInfoDictionaryKey: "UIDesignRequiresCompatibility") as? Bool ?? false
+    }
 }

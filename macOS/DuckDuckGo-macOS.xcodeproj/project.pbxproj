@@ -2107,6 +2107,8 @@
 		7B97CD5C2B7E0BBB004FEF43 /* UserDefaultsWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85C6A29525CC1FFD00EEB5F1 /* UserDefaultsWrapper.swift */; };
 		7BA076BB2B65D61400D7FB72 /* NetworkProtectionProxy in Frameworks */ = {isa = PBXBuildFile; productRef = 7BA076BA2B65D61400D7FB72 /* NetworkProtectionProxy */; };
 		7BA59C9B2AE18B49009A97B1 /* SystemExtensionManager in Frameworks */ = {isa = PBXBuildFile; productRef = 7BA59C9A2AE18B49009A97B1 /* SystemExtensionManager */; };
+		7BA64F682EE1E86B00289E30 /* ContentScopeExperimentsMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BA64F672EE1E86B00289E30 /* ContentScopeExperimentsMenu.swift */; };
+		7BA64F692EE1E86B00289E30 /* ContentScopeExperimentsMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BA64F672EE1E86B00289E30 /* ContentScopeExperimentsMenu.swift */; };
 		7BA71D742D71E530003F25A4 /* ExtensionConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BA71D732D71E52C003F25A4 /* ExtensionConfiguration.swift */; };
 		7BA71D752D71E530003F25A4 /* ExtensionConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BA71D732D71E52C003F25A4 /* ExtensionConfiguration.swift */; };
 		7BA7CC392AD11E2D0042E5CE /* DuckDuckGoVPNAppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BA7CC0E2AD11DC80042E5CE /* DuckDuckGoVPNAppDelegate.swift */; };
@@ -5168,6 +5170,7 @@
 		7B934C402A866DD400FC8F9C /* UserDefaults+NetworkProtectionShared.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "UserDefaults+NetworkProtectionShared.swift"; sourceTree = "<group>"; };
 		7B93A68A2D4A5AEC00E9FFC1 /* ExcludedAppsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcludedAppsModel.swift; sourceTree = "<group>"; };
 		7B969B3C2D52A818004AE4E8 /* VPNUIPresenting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNUIPresenting.swift; sourceTree = "<group>"; };
+		7BA64F672EE1E86B00289E30 /* ContentScopeExperimentsMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentScopeExperimentsMenu.swift; sourceTree = "<group>"; };
 		7BA71D732D71E52C003F25A4 /* ExtensionConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionConfiguration.swift; sourceTree = "<group>"; };
 		7BA7CC0B2AD11D1E0042E5CE /* DuckDuckGoVPNAppStore.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = DuckDuckGoVPNAppStore.xcconfig; sourceTree = "<group>"; };
 		7BA7CC0C2AD11D1E0042E5CE /* DuckDuckGoVPN.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = DuckDuckGoVPN.xcconfig; sourceTree = "<group>"; };
@@ -10411,6 +10414,7 @@
 			isa = PBXGroup;
 			children = (
 				AA97BF4525135DD30014931A /* ApplicationDockMenu.swift */,
+				7BA64F672EE1E86B00289E30 /* ContentScopeExperimentsMenu.swift */,
 				AA7E919628746BCC00AB6B62 /* HistoryMenu.swift */,
 				AA4BBA3A25C58FA200C4FB0F /* MainMenu.swift */,
 				AA6EF9B425081B4C004754E6 /* MainMenuActions.swift */,
@@ -14252,6 +14256,7 @@
 				3706FB9D293F65D500E42796 /* BookmarkManager.swift in Sources */,
 				3768D83C2C24C0A8004120AE /* RemoteMessageViewModel.swift in Sources */,
 				1DD6A7B42D804ADA006AE043 /* PinnedTabsDiscoveryPopUpViewController.swift in Sources */,
+				7BA64F682EE1E86B00289E30 /* ContentScopeExperimentsMenu.swift in Sources */,
 				37E13B8F2D54B03D002ECD62 /* HistoryViewDataProvider.swift in Sources */,
 				56A053FD2C1A0AC9007D8FAB /* OnboardingActionsManager.swift in Sources */,
 				B626A76E29928B1600053070 /* TestsClosureNavigationResponder.swift in Sources */,
@@ -16152,6 +16157,7 @@
 				856C98DF257014BD00A22F1F /* FileDownloadManager.swift in Sources */,
 				4BB99CFF26FE191E001E4761 /* BookmarkImport.swift in Sources */,
 				B68503A7279141CD00893A05 /* KeySetDictionary.swift in Sources */,
+				7BA64F692EE1E86B00289E30 /* ContentScopeExperimentsMenu.swift in Sources */,
 				B66260E029AC6EBD00E9E3EE /* HistoryTabExtension.swift in Sources */,
 				B6BCC54F2AFE4F7D002C5499 /* DataImportTypePicker.swift in Sources */,
 				AAEEC6A927088ADB008445F7 /* FireCoordinator.swift in Sources */,

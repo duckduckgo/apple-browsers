@@ -116,11 +116,10 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
     private(set) var availableCategories: [UnifiedFeedbackCategory] = [.subscription]
 
     var availableSubscriptionSubcategories: [SubscriptionFeedbackSubcategory] {
-        var subcategories: [SubscriptionFeedbackSubcategory] = [.otp]
+        var subcategories: [SubscriptionFeedbackSubcategory] = SubscriptionFeedbackSubcategory.allCases
         if isProTierPurchaseEnabled() {
-            subcategories.append(.unableToAccessFeatures)
+            subcategories = subcategories.filter { $0 != .unableToAccessFeatures }
         }
-        subcategories.append(.somethingElse)
         return subcategories
     }
 

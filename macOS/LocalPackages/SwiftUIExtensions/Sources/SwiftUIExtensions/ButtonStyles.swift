@@ -184,15 +184,19 @@ public struct DestructiveActionButtonStyle: ButtonStyle {
     public let enabled: Bool
     public let topPadding: CGFloat
     public let bottomPadding: CGFloat
+    public let backgroundColor: Color
+    public let backgroundPressedColor: Color
 
-    public init(enabled: Bool, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3) {
+    public init(enabled: Bool, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, backgroundColor: Color? = nil, backgroundPressedColor: Color? = nil) {
         self.enabled = enabled
         self.topPadding = topPadding
         self.bottomPadding = bottomPadding
+        self.backgroundColor = backgroundColor ?? Color(.destructiveActionButtonBackground)
+        self.backgroundPressedColor = backgroundPressedColor ?? Color(.destructiveActionButtonBackgroundPressed)
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
-        let enabledBackgroundColor = configuration.isPressed ? Color(.destructiveActionButtonBackgroundPressed) : Color(.destructiveActionButtonBackground)
+        let enabledBackgroundColor = configuration.isPressed ? backgroundPressedColor : backgroundColor
         let disabledBackgroundColor = Color.gray.opacity(0.1)
         let labelColor = enabled ? Color.white : Color.primary.opacity(0.3)
 

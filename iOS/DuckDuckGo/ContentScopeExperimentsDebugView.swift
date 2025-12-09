@@ -28,7 +28,7 @@ public struct ContentScopeExperimentsDebugView: View {
 
     private func copyContentToClipboard() {
         var content = "ContentScope Experiments:\n\n"
-        for experiment in viewModel.allExperiments {
+        for experiment in viewModel.experiments {
             content += "Experiment: \(experiment.name)\n"
             content += "State: \(experiment.state)\n"
             content += "Cohorts: \(experiment.cohorts.joined(separator: ", "))\n"
@@ -44,13 +44,13 @@ public struct ContentScopeExperimentsDebugView: View {
 
     public var body: some View {
         List {
-            if viewModel.allExperiments.isEmpty {
+            if viewModel.experiments.isEmpty {
                 Section {
                     Text("No experiments defined in contentScopeExperiments")
                         .foregroundColor(.secondary)
                 }
             } else {
-                ForEach(viewModel.allExperiments) { experiment in
+                ForEach(viewModel.experiments) { experiment in
                     experimentRow(experiment)
                 }
             }
@@ -213,6 +213,6 @@ class ContentScopeExperimentsDebugViewModel: ObservableObject {
             ))
         }
 
-        allExperiments = experiments.sorted { $0.name < $1.name }
+        self.experiments = experiments.sorted { $0.name < $1.name }
     }
 }

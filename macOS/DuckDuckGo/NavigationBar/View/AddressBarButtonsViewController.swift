@@ -219,6 +219,7 @@ final class AddressBarButtonsViewController: NSViewController {
     var textFieldValue: AddressBarTextField.Value? {
         didSet {
             updateButtons()
+            dismissTogglePopoverIfTyping()
         }
     }
     var isMouseOverNavigationBar = false {
@@ -261,6 +262,10 @@ final class AddressBarButtonsViewController: NSViewController {
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let aiChatSidebarPresenter: AIChatSidebarPresenting
     private let aiChatSettings: AIChatPreferencesStorage
+
+    private(set) lazy var aiChatTogglePopoverCoordinator: AIChatTogglePopoverCoordinating? = {
+        AIChatTogglePopoverCoordinator(windowControllersManager: NSApp.delegateTyped.windowControllersManager)
+    }()
 
     init?(coder: NSCoder,
           tabCollectionViewModel: TabCollectionViewModel,
@@ -1679,6 +1684,9 @@ final class AddressBarButtonsViewController: NSViewController {
                 toggleControl.setExpanded(true, animated: false)
                 searchModeToggleWidthConstraint?.constant = toggleControl.expandedWidth
             }
+
+            // Show the introduction popover when the toggle becomes visible for the first time
+            showTogglePopoverIfNeeded(toggleControl: toggleControl)
         } else if shouldShowToggle && hasUserTypedText && toggleControl.isExpanded {
             toggleControl.setExpanded(false, animated: true)
         } else if !shouldShowToggle && toggleControl.isExpanded {
@@ -1687,6 +1695,20 @@ final class AddressBarButtonsViewController: NSViewController {
         }
 
         wasToggleVisible = shouldShowToggle
+    }
+
+    private func showTogglePopoverIfNeeded(toggleControl: NSView) {
+        // Delay slightly to ensure the toggle is visible and positioned correctly
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+            self?.aiChatTogglePopoverCoordinator?.showPopoverIfNeeded(relativeTo: toggleControl)
+        }
+    }
+
+    private func dismissTogglePopoverIfTyping() {
+        guard let value = textFieldValue, value.isUserTyped, !value.isEmpty else {
+            return
+        }
+        aiChatTogglePopoverCoordinator?.dismissPopover()
     }
 
     @IBAction func zoomButtonAction(_ sender: Any) {

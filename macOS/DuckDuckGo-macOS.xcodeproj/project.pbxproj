@@ -2884,6 +2884,8 @@
 		B56871622EC528CF0075A270 /* CATransitionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B56871602EC528CF0075A270 /* CATransitionExtension.swift */; };
 		B5AE99532E84A5D900F45912 /* ThemeName.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5AE99522E84A5D900F45912 /* ThemeName.swift */; };
 		B5AE99542E84A5D900F45912 /* ThemeName.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5AE99522E84A5D900F45912 /* ThemeName.swift */; };
+		B5BD99642EE8DA2E00E7DD99 /* ThemedTextFieldStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5BD99632EE8DA2E00E7DD99 /* ThemedTextFieldStyle.swift */; };
+		B5BD99652EE8DA2E00E7DD99 /* ThemedTextFieldStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5BD99632EE8DA2E00E7DD99 /* ThemedTextFieldStyle.swift */; };
 		B5C2886B2EC6206100A572F2 /* CASpringAnimationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C2886A2EC6206100A572F2 /* CASpringAnimationExtension.swift */; };
 		B5C2886C2EC6206100A572F2 /* CASpringAnimationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5C2886A2EC6206100A572F2 /* CASpringAnimationExtension.swift */; };
 		B5CBB60B2EC4F80A006C3F54 /* TabTitleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B5CBB60A2EC4F80A006C3F54 /* TabTitleView.swift */; };
@@ -5649,6 +5651,7 @@
 		B574243A2EBA8CDF002E5460 /* TabFaviconView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabFaviconView.swift; sourceTree = "<group>"; };
 		B5ACEDAB2E8DC635008EC8B9 /* MockThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockThemeManager.swift; sourceTree = "<group>"; };
 		B5AE99522E84A5D900F45912 /* ThemeName.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeName.swift; sourceTree = "<group>"; };
+		B5BD99632EE8DA2E00E7DD99 /* ThemedTextFieldStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemedTextFieldStyle.swift; sourceTree = "<group>"; };
 		B5C2886A2EC6206100A572F2 /* CASpringAnimationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CASpringAnimationExtension.swift; sourceTree = "<group>"; };
 		B5CBB60A2EC4F80A006C3F54 /* TabTitleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabTitleView.swift; sourceTree = "<group>"; };
 		B5DE8DA82EBE292F005C5EF4 /* SpinnerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpinnerView.swift; sourceTree = "<group>"; };
@@ -9253,6 +9256,7 @@
 				4B1E6EEF27AB5E5D00F51793 /* NSPopUpButtonView.swift */,
 				C1372EF32BBC5BAD003F8793 /* SecureTextField.swift */,
 				B6DE57F52B05EA9000CD54B9 /* SheetHostingWindow.swift */,
+				B5BD99632EE8DA2E00E7DD99 /* ThemedTextFieldStyle.swift */,
 				378F44EA29B4C73E00899924 /* ViewExtension.swift */,
 			);
 			path = SwiftUI;
@@ -14263,6 +14267,7 @@
 				3706FB9A293F65D500E42796 /* FireproofDomainsStore.swift in Sources */,
 				3706FB9B293F65D500E42796 /* PrivacyDashboardPermissionHandler.swift in Sources */,
 				3706FB9C293F65D500E42796 /* TabCollectionViewModel.swift in Sources */,
+				B5BD99642EE8DA2E00E7DD99 /* ThemedTextFieldStyle.swift in Sources */,
 				378F44EC29B4C73E00899924 /* ViewExtension.swift in Sources */,
 				37A756EC2DD5EAA50003C8C9 /* NewTabPageProtectionsReportSettingsMigrator.swift in Sources */,
 				3706FB9D293F65D500E42796 /* BookmarkManager.swift in Sources */,
@@ -15900,6 +15905,7 @@
 				B688B4DF27420D290087BEAF /* PDFSearchTextMenuItemHandler.swift in Sources */,
 				F14890852ECCCAA800B5239E /* AttributedMetricUtils.swift in Sources */,
 				AA7E919728746BCC00AB6B62 /* HistoryMenu.swift in Sources */,
+				B5BD99652EE8DA2E00E7DD99 /* ThemedTextFieldStyle.swift in Sources */,
 				BB470EBB2C5A66D6002EE91D /* BookmarkManagementDetailViewModel.swift in Sources */,
 				F4A6198C283CFFBB007F2080 /* ContentScopeFeatureFlagging.swift in Sources */,
 				4B8A4E0127C8447E005F40E8 /* SaveIdentityPopover.swift in Sources */,

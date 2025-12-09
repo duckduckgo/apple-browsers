@@ -702,11 +702,15 @@ final class AddressBarButtonsViewController: NSViewController {
             return
         }
 
-        // Check if any permission is in requested state (authorization will be shown)
-        let hasRequestedPermission = tabViewModel.usedPermissions.values.contains { $0.isRequested }
-
-        // Show bell icon immediately if authorization popover will be presented
-        updatePermissionCenterButtonIcon(showBell: hasRequestedPermission)
+        // Only update icon if no authorization popover is currently shown
+        // (icon updates during active popover are handled by openPermissionAuthorizationPopover)
+        let isAuthorizationPopoverShown = permissionAuthorizationPopover?.isShown == true || popupBlockedPopover?.isShown == true
+        if !isAuthorizationPopoverShown {
+            // Find the first requested permission type (authorization will be shown)
+            let requestedPermissionType = tabViewModel.usedPermissions.first { $0.value.isRequested }?.key
+            // Show permission-specific icon if authorization popover will be presented
+            updatePermissionCenterButtonIcon(forRequestedPermission: requestedPermissionType)
+        }
 
         permissionCenterButton.isShown = tabViewModel.shouldShowPermissionCenterButton(
             isTextFieldEditorFirstResponder: isTextFieldEditorFirstResponder,
@@ -716,15 +720,28 @@ final class AddressBarButtonsViewController: NSViewController {
         showOrHidePermissionCenterPopoverIfNeeded()
     }
 
-    private func updatePermissionCenterButtonIcon(showBell: Bool = false) {
+    private func updatePermissionCenterButtonIcon(forRequestedPermission permissionType: PermissionType? = nil) {
         guard featureFlagger.isFeatureOn(.newPermissionView) else {
             return
         }
 
-        if showBell {
-            permissionCenterButton.image = DesignSystemImages.Glyphs.Size16.permissionsNotification
-        } else {
+        guard let permissionType else {
             permissionCenterButton.image = DesignSystemImages.Glyphs.Size16.permissions
+            return
+        }
+
+        // Show permission-specific icon when authorization is being requested
+        switch permissionType {
+        case .camera:
+            permissionCenterButton.image = DesignSystemImages.Glyphs.Size16.permissionCamera
+        case .microphone:
+            permissionCenterButton.image = DesignSystemImages.Glyphs.Size16.permissionMicrophone
+        case .geolocation:
+            permissionCenterButton.image = DesignSystemImages.Glyphs.Size16.permissionsLocation
+        case .popups:
+            permissionCenterButton.image = DesignSystemImages.Glyphs.Size16.popupBlocked
+        case .externalScheme:
+            permissionCenterButton.image = DesignSystemImages.Glyphs.Size16.openIn
         }
     }
 
@@ -1540,6 +1557,8 @@ final class AddressBarButtonsViewController: NSViewController {
 
         if featureFlagger.isFeatureOn(.newPermissionView) {
             button = permissionCenterButton
+            // Update button icon to match the permission being requested
+            updatePermissionCenterButtonIcon(forRequestedPermission: query.permissions.first)
             if query.permissions.first?.isPopups == true {
                 guard !query.wasShownOnce else { return }
                 popover = popupBlockedPopoverCreatingIfNeeded()
@@ -2394,8 +2413,11 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
         guard let popover = notification.object as? NSPopover else { return }
 
         switch popover {
-        case is PermissionAuthorizationPopover, is PopupBlockedPopover:
-            updatePermissionCenterButtonIcon(showBell: true)
+        case let authPopover as PermissionAuthorizationPopover:
+            let permissionType = authPopover.viewController.query?.permissions.first
+            updatePermissionCenterButtonIcon(forRequestedPermission: permissionType)
+        case is PopupBlockedPopover:
+            updatePermissionCenterButtonIcon(forRequestedPermission: .popups)
         default:
             break
         }
@@ -2420,7 +2442,7 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
             } else {
                 assertionFailure("Unexpected popover positioningView: \(popover.positioningView?.description ?? "<nil>"), expected PermissionButton")
             }
-            updatePermissionCenterButtonIcon(showBell: false)
+            updatePermissionCenterButtonIcon()
             // Check for other pending permission requests after popover closes
             DispatchQueue.main.async { [weak self] in
                 self?.updateAllPermissionButtons()

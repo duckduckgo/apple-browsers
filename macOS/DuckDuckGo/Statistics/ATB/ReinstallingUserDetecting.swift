@@ -29,12 +29,12 @@ import Persistence
 /// Uses bundle creation date comparison to detect reinstalls (Sparkle builds only).
 ///
 /// Detection logic:
-/// 1. Store the app bundle's creation date in App Group UserDefaults on first launch
+/// 1. Store the app bundle's creation date in the ThrowingKeyValueStore  on first launch
 /// 2. On subsequent launches, compare current bundle's creation date with stored date
 /// 3. If dates differ → new bundle installed (check if Sparkle update or reinstall)
 /// 4. If dates match → same bundle, existing user
 ///
-/// Call `checkForReinstallingUser()` once early in app launch (before writing to the App Group Container),
+/// Call `checkForReinstallingUser()` once early in app launch (before the SparkleUpdater gets initialized),
 /// then access `isReinstallingUser` anywhere in the app to get the stored result.
 protocol ReinstallingUserDetecting {
 

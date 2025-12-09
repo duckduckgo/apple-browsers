@@ -19,20 +19,21 @@
 import AppKit
 import Common
 import Foundation
+import Persistence
 
 final class ReinstallUserDetectionDebugMenu: NSMenu, NSMenuDelegate {
 
     private let reinstallUserDetection: ReinstallingUserDetecting
-    private let appGroupDefaults: UserDefaults
+    private let keyValueStore: ThrowingKeyValueStoring
     private let fileManager: FileManager
 
     init(
-        appGroupDefaults: UserDefaults = .appConfiguration,
+        keyValueStore: ThrowingKeyValueStoring = NSApp.delegateTyped.keyValueStore,
         reinstallUserDetection: ReinstallingUserDetecting? = nil,
         fileManager: FileManager = .default
     ) {
-        self.appGroupDefaults = appGroupDefaults
-        self.reinstallUserDetection = reinstallUserDetection ?? DefaultReinstallUserDetection(appGroupDefaults: appGroupDefaults)
+        self.keyValueStore = keyValueStore
+        self.reinstallUserDetection = DefaultReinstallUserDetection(keyValueStore: keyValueStore)
         self.fileManager = fileManager
         super.init(title: "Reinstall Detection")
         self.delegate = self
@@ -48,7 +49,7 @@ final class ReinstallUserDetectionDebugMenu: NSMenu, NSMenuDelegate {
 
 #if SPARKLE
         let isReinstall = reinstallUserDetection.isReinstallingUser
-        let storedDate = appGroupDefaults.object(forKey: "reinstall.detection.bundle-creation-date") as? Date
+        let storedDate = try? keyValueStore.object(forKey: "reinstall.detection.bundle-creation-date") as? Date
         let currentDate = getBundleCreationDate()
 
         buildItems {
@@ -103,8 +104,8 @@ final class ReinstallUserDetectionDebugMenu: NSMenu, NSMenuDelegate {
     }
 
     @objc private func resetDetectionState(_ sender: Any?) {
-        appGroupDefaults.removeObject(forKey: "reinstall.detection.bundle-creation-date")
-        appGroupDefaults.removeObject(forKey: "reinstall.detection.is-reinstalling-user")
+        try? keyValueStore.removeObject(forKey: "reinstall.detection.bundle-creation-date")
+        try? keyValueStore.removeObject(forKey: "reinstall.detection.is-reinstalling-user")
 
         let alert = NSAlert()
         alert.messageText = "Detection State Reset"

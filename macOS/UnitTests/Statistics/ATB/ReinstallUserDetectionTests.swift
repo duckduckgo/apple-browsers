@@ -17,6 +17,7 @@
 //
 
 import XCTest
+import PersistenceTestingUtils
 @testable import DuckDuckGo_Privacy_Browser
 
 // MARK: - Mocks
@@ -56,7 +57,7 @@ final class ReinstallUserDetectionTests: XCTestCase {
     private var mockBuildType: MockApplicationBuildType!
     private var mockFileManager: MockFileManagerForReinstallDetection!
     private var mockBundleURLProvider: MockBundleURLProvider!
-    private var appGroupDefaults: UserDefaults!
+    private var mockKeyValueStore: MockThrowingKeyValueStore!
     private var standardDefaults: UserDefaults!
 
     // MARK: - Test Dates
@@ -72,11 +73,10 @@ final class ReinstallUserDetectionTests: XCTestCase {
         mockBuildType = MockApplicationBuildType()
         mockFileManager = MockFileManagerForReinstallDetection()
         mockBundleURLProvider = MockBundleURLProvider()
+        mockKeyValueStore = MockThrowingKeyValueStore()
 
-        // Create fresh in-memory UserDefaults for each test
-        let appGroupSuiteName = "test.reinstall.detection.appgroup.\(UUID().uuidString)"
+        // Create fresh in-memory UserDefaults for standard defaults
         let standardSuiteName = "test.reinstall.detection.standard.\(UUID().uuidString)"
-        appGroupDefaults = UserDefaults(suiteName: appGroupSuiteName)!
         standardDefaults = UserDefaults(suiteName: standardSuiteName)!
 
         createSUT()
@@ -87,9 +87,8 @@ final class ReinstallUserDetectionTests: XCTestCase {
         mockBuildType = nil
         mockFileManager = nil
         mockBundleURLProvider = nil
-        appGroupDefaults.removePersistentDomain(forName: appGroupDefaults.description)
+        mockKeyValueStore = nil
         standardDefaults.removePersistentDomain(forName: standardDefaults.description)
-        appGroupDefaults = nil
         standardDefaults = nil
 
         super.tearDown()
@@ -100,7 +99,7 @@ final class ReinstallUserDetectionTests: XCTestCase {
             buildType: mockBuildType,
             fileManager: mockFileManager,
             bundleURLProvider: mockBundleURLProvider,
-            appGroupDefaults: appGroupDefaults,
+            keyValueStore: mockKeyValueStore,
             standardDefaults: standardDefaults
         )
     }
@@ -111,31 +110,31 @@ final class ReinstallUserDetectionTests: XCTestCase {
         XCTAssertFalse(sut.isReinstallingUser)
     }
 
-    func testWhenTrueStoredThenIsReinstallingUserReturnsTrue() {
-        appGroupDefaults.set(true, forKey: "reinstall.detection.is-reinstalling-user")
+    func testWhenTrueStoredThenIsReinstallingUserReturnsTrue() throws {
+        try mockKeyValueStore.set(true, forKey: "reinstall.detection.is-reinstalling-user")
 
         XCTAssertTrue(sut.isReinstallingUser)
     }
 
-    func testWhenFalseStoredThenIsReinstallingUserReturnsFalse() {
-        appGroupDefaults.set(false, forKey: "reinstall.detection.is-reinstalling-user")
+    func testWhenFalseStoredThenIsReinstallingUserReturnsFalse() throws {
+        try mockKeyValueStore.set(false, forKey: "reinstall.detection.is-reinstalling-user")
 
         XCTAssertFalse(sut.isReinstallingUser)
     }
 
     // MARK: - App Store Build Tests
 
-    func testWhenAppStoreBuildThenIsReinstallingUserReturnsFalse() {
+    func testWhenAppStoreBuildThenIsReinstallingUserReturnsFalse() throws {
         mockBuildType.isSparkleBuild = false
         mockBuildType.isAppStoreBuild = true
 
         // Even if stored value is true, should return false for App Store
-        appGroupDefaults.set(true, forKey: "reinstall.detection.is-reinstalling-user")
+        try mockKeyValueStore.set(true, forKey: "reinstall.detection.is-reinstalling-user")
 
         XCTAssertFalse(sut.isReinstallingUser)
     }
 
-    func testWhenAppStoreBuildThenCheckForReinstallingUserIsNoOp() {
+    func testWhenAppStoreBuildThenCheckForReinstallingUserIsNoOp() throws {
         mockBuildType.isSparkleBuild = false
         mockBuildType.isAppStoreBuild = true
         mockFileManager.mockCreationDate = january1
@@ -143,18 +142,19 @@ final class ReinstallUserDetectionTests: XCTestCase {
         sut.checkForReinstallingUser()
 
         // Should not store anything
-        XCTAssertNil(appGroupDefaults.object(forKey: "reinstall.detection.bundle-creation-date"))
+        let storedDate = try mockKeyValueStore.object(forKey: "reinstall.detection.bundle-creation-date")
+        XCTAssertNil(storedDate)
         XCTAssertFalse(sut.isReinstallingUser)
     }
 
     // MARK: - First Launch Tests
 
-    func testWhenNoStoredDateThenStoresCurrentBundleDate() {
+    func testWhenNoStoredDateThenStoresCurrentBundleDate() throws {
         mockFileManager.mockCreationDate = january1
 
         sut.checkForReinstallingUser()
 
-        let storedDate = appGroupDefaults.object(forKey: "reinstall.detection.bundle-creation-date") as? Date
+        let storedDate = try mockKeyValueStore.object(forKey: "reinstall.detection.bundle-creation-date") as? Date
         XCTAssertEqual(storedDate, january1)
     }
 
@@ -168,33 +168,33 @@ final class ReinstallUserDetectionTests: XCTestCase {
 
     // MARK: - Same Bundle Tests (Dates Match)
 
-    func testWhenDatesMatchExactlyThenNoChanges() {
+    func testWhenDatesMatchExactlyThenNoChanges() throws {
         mockFileManager.mockCreationDate = january1
-        appGroupDefaults.set(january1, forKey: "reinstall.detection.bundle-creation-date")
+        try mockKeyValueStore.set(january1, forKey: "reinstall.detection.bundle-creation-date")
 
         sut.checkForReinstallingUser()
 
         XCTAssertFalse(sut.isReinstallingUser)
-        let storedDate = appGroupDefaults.object(forKey: "reinstall.detection.bundle-creation-date") as? Date
+        let storedDate = try mockKeyValueStore.object(forKey: "reinstall.detection.bundle-creation-date") as? Date
         XCTAssertEqual(storedDate, january1)
     }
 
-    func testWhenDatesWithinToleranceThenTreatedAsEqual() {
+    func testWhenDatesWithinToleranceThenTreatedAsEqual() throws {
         let storedDate = january1
         let currentDate = january1.addingTimeInterval(0.5) // 0.5 seconds later
         mockFileManager.mockCreationDate = currentDate
-        appGroupDefaults.set(storedDate, forKey: "reinstall.detection.bundle-creation-date")
+        try mockKeyValueStore.set(storedDate, forKey: "reinstall.detection.bundle-creation-date")
 
         sut.checkForReinstallingUser()
 
         XCTAssertFalse(sut.isReinstallingUser)
     }
 
-    func testWhenDatesExactlyAtToleranceBoundaryThenTreatedAsDifferent() {
+    func testWhenDatesExactlyAtToleranceBoundaryThenTreatedAsDifferent() throws {
         let storedDate = january1
         let currentDate = january1.addingTimeInterval(1.0) // Exactly 1 second later
         mockFileManager.mockCreationDate = currentDate
-        appGroupDefaults.set(storedDate, forKey: "reinstall.detection.bundle-creation-date")
+        try mockKeyValueStore.set(storedDate, forKey: "reinstall.detection.bundle-creation-date")
 
         sut.checkForReinstallingUser()
 
@@ -204,9 +204,9 @@ final class ReinstallUserDetectionTests: XCTestCase {
 
     // MARK: - Sparkle Update Tests
 
-    func testWhenDatesChangedAndSparkleMetadataPresentThenNotFlaggedAsReinstall() {
+    func testWhenDatesChangedAndSparkleMetadataPresentThenNotFlaggedAsReinstall() throws {
         mockFileManager.mockCreationDate = january2
-        appGroupDefaults.set(january1, forKey: "reinstall.detection.bundle-creation-date")
+        try mockKeyValueStore.set(january1, forKey: "reinstall.detection.bundle-creation-date")
         standardDefaults.set("1.0.0", forKey: "pending.update.source.version")
 
         sut.checkForReinstallingUser()
@@ -214,22 +214,22 @@ final class ReinstallUserDetectionTests: XCTestCase {
         XCTAssertFalse(sut.isReinstallingUser)
     }
 
-    func testWhenDatesChangedAndSparkleMetadataPresentThenUpdatesStoredDate() {
+    func testWhenDatesChangedAndSparkleMetadataPresentThenUpdatesStoredDate() throws {
         mockFileManager.mockCreationDate = january2
-        appGroupDefaults.set(january1, forKey: "reinstall.detection.bundle-creation-date")
+        try mockKeyValueStore.set(january1, forKey: "reinstall.detection.bundle-creation-date")
         standardDefaults.set("1.0.0", forKey: "pending.update.source.version")
 
         sut.checkForReinstallingUser()
 
-        let storedDate = appGroupDefaults.object(forKey: "reinstall.detection.bundle-creation-date") as? Date
+        let storedDate = try mockKeyValueStore.object(forKey: "reinstall.detection.bundle-creation-date") as? Date
         XCTAssertEqual(storedDate, january2)
     }
 
     // MARK: - Reinstall Detection Tests
 
-    func testWhenDatesChangedAndNoSparkleMetadataThenFlaggedAsReinstall() {
+    func testWhenDatesChangedAndNoSparkleMetadataThenFlaggedAsReinstall() throws {
         mockFileManager.mockCreationDate = january2
-        appGroupDefaults.set(january1, forKey: "reinstall.detection.bundle-creation-date")
+        try mockKeyValueStore.set(january1, forKey: "reinstall.detection.bundle-creation-date")
         // No Sparkle metadata set
 
         sut.checkForReinstallingUser()
@@ -237,20 +237,20 @@ final class ReinstallUserDetectionTests: XCTestCase {
         XCTAssertTrue(sut.isReinstallingUser)
     }
 
-    func testWhenDatesChangedAndNoSparkleMetadataThenUpdatesStoredDate() {
+    func testWhenDatesChangedAndNoSparkleMetadataThenUpdatesStoredDate() throws {
         mockFileManager.mockCreationDate = january2
-        appGroupDefaults.set(january1, forKey: "reinstall.detection.bundle-creation-date")
+        try mockKeyValueStore.set(january1, forKey: "reinstall.detection.bundle-creation-date")
 
         sut.checkForReinstallingUser()
 
-        let storedDate = appGroupDefaults.object(forKey: "reinstall.detection.bundle-creation-date") as? Date
+        let storedDate = try mockKeyValueStore.object(forKey: "reinstall.detection.bundle-creation-date") as? Date
         XCTAssertEqual(storedDate, january2)
     }
 
-    func testWhenReinstallDetectedThenSubsequentCallsReturnTrue() {
+    func testWhenReinstallDetectedThenSubsequentCallsReturnTrue() throws {
         // First call - simulate reinstall
         mockFileManager.mockCreationDate = january2
-        appGroupDefaults.set(january1, forKey: "reinstall.detection.bundle-creation-date")
+        try mockKeyValueStore.set(january1, forKey: "reinstall.detection.bundle-creation-date")
         sut.checkForReinstallingUser()
 
         XCTAssertTrue(sut.isReinstallingUser)
@@ -262,26 +262,27 @@ final class ReinstallUserDetectionTests: XCTestCase {
 
     // MARK: - Edge Case Tests
 
-    func testWhenCannotReadBundleCreationDateThenSkipsDetection() {
+    func testWhenCannotReadBundleCreationDateThenSkipsDetection() throws {
         mockFileManager.shouldThrowError = true
-        appGroupDefaults.set(january1, forKey: "reinstall.detection.bundle-creation-date")
+        try mockKeyValueStore.set(january1, forKey: "reinstall.detection.bundle-creation-date")
 
         sut.checkForReinstallingUser()
 
         // Should not flag as reinstall
         XCTAssertFalse(sut.isReinstallingUser)
         // Should not modify stored date
-        let storedDate = appGroupDefaults.object(forKey: "reinstall.detection.bundle-creation-date") as? Date
+        let storedDate = try mockKeyValueStore.object(forKey: "reinstall.detection.bundle-creation-date") as? Date
         XCTAssertEqual(storedDate, january1)
     }
 
-    func testWhenBundleCreationDateNotInAttributesThenSkipsDetection() {
+    func testWhenBundleCreationDateNotInAttributesThenSkipsDetection() throws {
         mockFileManager.mockCreationDate = nil // No creation date in attributes
 
         sut.checkForReinstallingUser()
 
         XCTAssertFalse(sut.isReinstallingUser)
-        XCTAssertNil(appGroupDefaults.object(forKey: "reinstall.detection.bundle-creation-date"))
+        let storedDate = try mockKeyValueStore.object(forKey: "reinstall.detection.bundle-creation-date")
+        XCTAssertNil(storedDate)
     }
 
     // MARK: - Integration-like Tests

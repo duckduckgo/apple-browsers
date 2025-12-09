@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Persistence
 
 // MARK: - Protocols
 
@@ -76,20 +77,20 @@ final class DefaultReinstallUserDetection: ReinstallingUserDetecting {
     private let buildType: ApplicationBuildType
     private let fileManager: FileManager
     private let bundleURLProvider: BundleURLProviding
-    private let appGroupDefaults: UserDefaults
+    private let keyValueStore: ThrowingKeyValueStoring
     private let standardDefaults: UserDefaults
 
     init(
         buildType: ApplicationBuildType = StandardApplicationBuildType(),
         fileManager: FileManager = .default,
         bundleURLProvider: BundleURLProviding = Bundle.main,
-        appGroupDefaults: UserDefaults,
+        keyValueStore: ThrowingKeyValueStoring,
         standardDefaults: UserDefaults = .standard
     ) {
         self.buildType = buildType
         self.fileManager = fileManager
         self.bundleURLProvider = bundleURLProvider
-        self.appGroupDefaults = appGroupDefaults
+        self.keyValueStore = keyValueStore
         self.standardDefaults = standardDefaults
     }
 
@@ -98,7 +99,15 @@ final class DefaultReinstallUserDetection: ReinstallingUserDetecting {
             // Reinstall detection is not supported for App Store builds
             return false
         }
-        return appGroupDefaults.bool(forKey: Keys.isReinstallingUser)
+
+        do {
+            let storedValue = try keyValueStore.object(forKey: Keys.isReinstallingUser) as? Bool
+            guard let storedValue else { return false }
+
+            return storedValue
+        } catch {
+            return false
+        }
     }
 
     func checkForReinstallingUser() {
@@ -112,12 +121,12 @@ final class DefaultReinstallUserDetection: ReinstallingUserDetecting {
             return
         }
 
-        let storedCreationDate = appGroupDefaults.object(forKey: Keys.storedBundleCreationDate) as? Date
+        let storedCreationDate = try? keyValueStore.object(forKey: Keys.storedBundleCreationDate) as? Date
 
         // Case 1: No stored date → First launch ever (or first launch with this feature)
         guard let storedCreationDate = storedCreationDate else {
             // Store current bundle's creation date for future comparisons
-            appGroupDefaults.set(currentBundleCreationDate, forKey: Keys.storedBundleCreationDate)
+            try? keyValueStore.set(currentBundleCreationDate, forKey: Keys.storedBundleCreationDate)
             return
         }
 
@@ -131,13 +140,13 @@ final class DefaultReinstallUserDetection: ReinstallingUserDetecting {
         if wasSparkleUpdate() {
             // Sparkle update - not a reinstall
             // Update stored date to current bundle
-            appGroupDefaults.set(currentBundleCreationDate, forKey: Keys.storedBundleCreationDate)
+            try? keyValueStore.set(currentBundleCreationDate, forKey: Keys.storedBundleCreationDate)
             return
         }
 
         // Not a Sparkle update → Reinstall detected (or manual update, which we treat as reinstall)
-        appGroupDefaults.set(true, forKey: Keys.isReinstallingUser)
-        appGroupDefaults.set(currentBundleCreationDate, forKey: Keys.storedBundleCreationDate)
+        try? keyValueStore.set(true, forKey: Keys.isReinstallingUser)
+        try? keyValueStore.set(currentBundleCreationDate, forKey: Keys.storedBundleCreationDate)
     }
 
     // MARK: - Bundle Metadata

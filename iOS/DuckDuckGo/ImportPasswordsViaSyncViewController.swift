@@ -31,13 +31,10 @@ final class ImportPasswordsViaSyncViewController: UIViewController {
     weak var delegate: ImportPasswordsViaSyncViewControllerDelegate?
 
     private let viewModel = ImportPasswordsViaSyncViewModel()
+    private let importPasswordsStatusHandler: ImportPasswordsViaSyncStatusHandler
 
     init(syncService: DDGSyncing) {
-        let importPasswordsStatusHandler = ImportPasswordsViaSyncStatusHandler(syncService: syncService)
-        Task {
-            await importPasswordsStatusHandler.setImportViaSyncStartDateIfRequired()
-        }
-
+        importPasswordsStatusHandler = ImportPasswordsViaSyncStatusHandler(syncService: syncService)
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -47,6 +44,10 @@ final class ImportPasswordsViaSyncViewController: UIViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        Task {
+            await importPasswordsStatusHandler.setImportViaSyncStartDateIfRequired()
+        }
 
         setupView()
     }

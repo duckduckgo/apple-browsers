@@ -144,7 +144,8 @@ public struct ContentScopeExperimentsDebugView: View {
     }
 }
 
-private struct ExperimentInfo: Identifiable {
+// swiftlint:disable:next private_over_fileprivate
+fileprivate struct ExperimentInfo: Identifiable {
     let id: String
     let name: String
     let state: String

@@ -51,6 +51,8 @@ final class MockFileManagerForReinstallDetection: FileManager {
 
 final class ReinstallUserDetectionTests: XCTestCase {
 
+    private static let suiteName = "testing_reinstall_user_detection"
+
     // MARK: - Properties
 
     private var sut: DefaultReinstallUserDetection!
@@ -74,10 +76,7 @@ final class ReinstallUserDetectionTests: XCTestCase {
         mockFileManager = MockFileManagerForReinstallDetection()
         mockBundleURLProvider = MockBundleURLProvider()
         mockKeyValueStore = MockThrowingKeyValueStore()
-
-        // Create fresh in-memory UserDefaults for standard defaults
-        let standardSuiteName = "test.reinstall.detection.standard.\(UUID().uuidString)"
-        standardDefaults = UserDefaults(suiteName: standardSuiteName)!
+        standardDefaults = UserDefaults(suiteName: Self.suiteName)
 
         createSUT()
     }
@@ -88,7 +87,7 @@ final class ReinstallUserDetectionTests: XCTestCase {
         mockFileManager = nil
         mockBundleURLProvider = nil
         mockKeyValueStore = nil
-        standardDefaults.removePersistentDomain(forName: standardDefaults.description)
+        standardDefaults.removePersistentDomain(forName: Self.suiteName)
         standardDefaults = nil
 
         super.tearDown()

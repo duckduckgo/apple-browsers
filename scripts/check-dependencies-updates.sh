@@ -133,7 +133,7 @@ get_latest_github_release() {
 
     local api_url="https://api.github.com/repos/${repo_path}/releases/latest"
     local response tag
-    response=$(curl -sf -H "Accept: application/vnd.github.v3+json" "$api_url" 2>/dev/null) || true
+    response=$(curl --max-time -sf -H "Accept: application/vnd.github.v3+json" "$api_url" 2>/dev/null) || true
 
     if [[ -n "$response" ]]; then
         tag=$(echo "$response" | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' | head -1)

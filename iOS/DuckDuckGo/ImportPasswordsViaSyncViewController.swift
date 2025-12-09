@@ -34,7 +34,9 @@ final class ImportPasswordsViaSyncViewController: UIViewController {
 
     init(syncService: DDGSyncing) {
         let importPasswordsStatusHandler = ImportPasswordsViaSyncStatusHandler(syncService: syncService)
-        importPasswordsStatusHandler.setImportViaSyncStartDateIfRequired()
+        Task {
+            await importPasswordsStatusHandler.setImportViaSyncStartDateIfRequired()
+        }
 
         super.init(nibName: nil, bundle: nil)
     }

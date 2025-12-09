@@ -27,7 +27,7 @@ public struct TextButton: View {
     public let fontWeight: Font.Weight
     public let action: () -> Void
 
-    public init(_ title: String, textColor: Color? = nil ,fontSize: CGFloat = NSFont.systemFontSize, weight: Font.Weight = .regular, action: @escaping () -> Void) {
+    public init(_ title: String, textColor: Color? = nil, fontSize: CGFloat = NSFont.systemFontSize, weight: Font.Weight = .regular, action: @escaping () -> Void) {
         self.title = title
         self.textColor = textColor ?? Color(.linkBlue)
         self.fontSize = fontSize

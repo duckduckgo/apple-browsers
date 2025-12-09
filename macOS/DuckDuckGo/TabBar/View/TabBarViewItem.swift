@@ -1292,6 +1292,8 @@ final class TabBarViewItem: NSCollectionViewItem {
             return DesignSystemImages.Glyphs.Size16.permissionMicrophoneSolid
         case .geolocation:
             return DesignSystemImages.Glyphs.Size16.permissionsLocationSolid
+        case .notification:
+            return DesignSystemImages.Glyphs.Size16.permissionsNotificationSolid
         case .popups, .externalScheme:
             assertionFailure("Unexpected permission type for active icon: \(permissionType)")
             return DesignSystemImages.Glyphs.Size16.permissionCameraSolid

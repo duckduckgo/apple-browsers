@@ -461,7 +461,7 @@ class SwitchBarTextEntryView: UIView {
     }
 
     private func updateAutoCorrectionSetupForAIChat(for text: String) {
-        guard currentMode == .aiChat else { return }
+        guard handler.isUsingFadeOutAnimation && currentMode == .aiChat else { return }
 
         if text.isEmpty {
             disableAutoCorrectionAndSpellChecking()

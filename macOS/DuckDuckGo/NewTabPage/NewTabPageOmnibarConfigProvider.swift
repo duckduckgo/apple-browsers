@@ -76,7 +76,6 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     private enum Key: String {
         case newTabPageOmnibarMode
-        case showCustomizePopover
     }
 
     private enum Constants: Int {

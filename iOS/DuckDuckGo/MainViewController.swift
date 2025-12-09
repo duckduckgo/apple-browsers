@@ -299,7 +299,7 @@ class MainViewController: UIViewController {
         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
         mobileCustomization: MobileCustomization,
         remoteMessagingActionHandler: RemoteMessagingActionHandling,
-        remoteMessagingDebugHandler: RemoteMessagingDebugHandling
+        remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
         productSurfaceTelemetry: ProductSurfaceTelemetry
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler

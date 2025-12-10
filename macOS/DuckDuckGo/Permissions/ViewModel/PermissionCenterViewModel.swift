@@ -434,7 +434,7 @@ final class PermissionCenterViewModel: ObservableObject {
         guard permissionType.requiresSystemPermission else { return false }
 
         let authState = systemPermissionManager.authorizationState(for: permissionType)
-        return authState == .denied || authState == .restricted || authState == .systemDisabled
+        return authState != .authorized
     }
 
     /// Asynchronously checks system disabled state for permissions that require it (e.g., notifications)
@@ -446,7 +446,7 @@ final class PermissionCenterViewModel: ObservableObject {
             guard let self else { return }
 
             let authState = await self.systemPermissionManager.authorizationStateAsync(for: item.permissionType)
-            let isSystemDisabled = authState == .denied || authState == .restricted || authState == .systemDisabled
+            let isSystemDisabled = authState != .authorized
 
             // Update the item in the array if it still exists and status differs
             // Note: If loadPermissions() was called during the async check, the array might have been rebuilt,

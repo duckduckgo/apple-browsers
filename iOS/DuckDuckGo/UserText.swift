@@ -1827,6 +1827,10 @@ public struct UserText {
     public static let settingsEnableDuckAIFullModeTitle = NSLocalizedString("settings.aifeatures.full.mode.title", value: "Duck.ai Tabs Mode", comment: "Settings screen cell title for enabling Duck.ai as tabs")
     
     public static let settingsEnableDuckAIFullModeSubtitle = NSLocalizedString("settings.aifeatures.full.mode.subtitle", value: "Show new Duck.ai Chats as tabs in the browser", comment: "Settings screen cell subtitle for enabling Duck.ai as tabs")
+    
+    public static let settingsAutomaticPageContextTitle = NSLocalizedString("settings.aifeatures.automatic.context.title", value: "Automatically Send Context", comment: "Settings screen cell title for enabling automatic page context")
+    
+    public static let settingsAutomaticPageContextSubtitle = NSLocalizedString("settings.aifeatures.automatic.context.subtitle", value: "Automatically send page context to Duck.ai", comment: "Settings screen cell subtitle for enabling automatic page context")
 
     public static let settingsAiFeaturesSearchAssist = NSLocalizedString("settings.aifeatures.assist", value: "Search Assist Settings", comment: "Title of search assist settings link")
 

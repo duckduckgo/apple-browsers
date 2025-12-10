@@ -132,6 +132,22 @@ class AIChatSettingsTests: XCTestCase {
         mockNotificationCenter.removeObserver(observer)
     }
 
+    func testEnableAutomaticContextAttachment() {
+        let settings = AIChatSettings(privacyConfigurationManager: mockPrivacyConfigurationManager,
+                                      debugSettings: mockAIChatDebugSettings,
+                                      keyValueStore: mockKeyValueStore,
+                                      notificationCenter: mockNotificationCenter)
+
+        // Default value is true
+        XCTAssertTrue(settings.isAutomaticContextAttachmentEnabled)
+
+        settings.enableAutomaticContextAttachment(enable: false)
+        XCTAssertFalse(settings.isAutomaticContextAttachmentEnabled)
+
+        settings.enableAutomaticContextAttachment(enable: true)
+        XCTAssertTrue(settings.isAutomaticContextAttachmentEnabled)
+    }
+
 }
 
 final class MockAIChatDebugSettings: AIChatDebugSettingsHandling {

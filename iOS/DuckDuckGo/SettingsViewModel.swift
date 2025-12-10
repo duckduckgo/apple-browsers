@@ -1499,6 +1499,18 @@ extension SettingsViewModel {
             }
         )
     }
+    
+    var isAutomaticContextAttachmentEnabled: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.aiChatSettings.isAutomaticContextAttachmentEnabled },
+            set: { newValue in
+                withAnimation {
+                    self.objectWillChange.send()
+                    self.aiChatSettings.enableAutomaticContextAttachment(enable: newValue)
+                }
+            }
+        )
+    }
 
     func launchAIFeaturesLearnMore() {
         urlOpener.open(URL.aiFeaturesLearnMore)

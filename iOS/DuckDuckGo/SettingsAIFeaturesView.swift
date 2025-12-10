@@ -102,6 +102,14 @@ struct SettingsAIFeaturesView: View {
                         }
                     }
                 }
+                
+                if viewModel.experimentalAIChatManager.isContextualDuckAIModeEnabled {
+                    Section {
+                        SettingsCellView(label: UserText.settingsAutomaticPageContextTitle,
+                                         subtitle: UserText.settingsAutomaticPageContextSubtitle,
+                                         accessory: .toggle(isOn: viewModel.isAutomaticContextAttachmentEnabled))
+                    }
+                }
 
                 if viewModel.isUpdatedAIFeaturesSettingsEnabled {
                     Section {

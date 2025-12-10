@@ -130,9 +130,16 @@ final class LegacyAddressBarStyleProvider: AddressBarStyleProviding {
 }
 
 final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
+
+    /// The TabBar component requires an extra top padding whenever all of the following are met:
+    ///     1. We're building on `Xcode 26`
+    ///     2. We're running on `Tahoe`
+    ///     3. The `UIDesignRequiresCompatibility` flag is disabled
+    /// In any other scenario, applying a top padding would result in an unexpected gap
+    ///
     let tabBarBackgroundTopPadding: CGFloat = {
 #if compiler(>=6.2)
-        if #available(macOS 26.0, *) {
+        if #available(macOS 26.0, *), Bundle.main.designCompatibilityEnabled == false {
             return 2
         }
 #endif

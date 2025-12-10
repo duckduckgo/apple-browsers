@@ -194,17 +194,11 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866469585479
     case daxEasterEggLogos
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866714477935
-    case subscriptionPurchaseWidePixelMeasurement
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866471806081
     case showAIChatAddressBarChoiceScreen
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866714634010
     case newDeviceSyncPrompt
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866611049398
-    case authV2WideEventEnabled
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866468857577
     case winBackOffer
@@ -296,9 +290,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .supportsAlternateStripePaymentFlow,
              .createFireproofFaviconUpdaterSecureVaultInBackground,
              .daxEasterEggLogos,
-             .subscriptionPurchaseWidePixelMeasurement,
              .newDeviceSyncPrompt,
-             .authV2WideEventEnabled,
              .dbpForegroundRunningOnAppActive,
              .dbpForegroundRunningWhenDashboardOpen,
              .syncCreditCards,
@@ -347,9 +339,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .dbpRemoteBrokerDelivery,
              .dbpForegroundRunningOnAppActive,
              .dbpForegroundRunningWhenDashboardOpen,
-             .subscriptionPurchaseWidePixelMeasurement,
              .showAIChatAddressBarChoiceScreen,
-             .authV2WideEventEnabled,
              .winBackOffer,
              .syncCreditCards,
              .unifiedURLPredictor,
@@ -534,14 +524,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.inactivityNotification))
         case .daxEasterEggLogos:
             return .remoteReleasable(.feature(.daxEasterEggLogos))
-        case .subscriptionPurchaseWidePixelMeasurement:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPurchaseWidePixelMeasurement))
         case .showAIChatAddressBarChoiceScreen:
             return .remoteReleasable(.subfeature(AIChatSubfeature.showAIChatAddressBarChoiceScreen))
         case .newDeviceSyncPrompt:
             return .remoteReleasable(.subfeature(SyncSubfeature.newDeviceSyncPrompt))
-        case .authV2WideEventEnabled:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.authV2WideEventEnabled))
         case .winBackOffer:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.winBackOffer))
         case .blackFridayCampaign:

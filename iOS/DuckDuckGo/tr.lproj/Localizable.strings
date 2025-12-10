@@ -4,6 +4,9 @@
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
 
+/* No comment provided by engineer. */
+"Account" = "hesap";
+
 /* Buton label for Edit action */
 "action.generic.edit" = "Düzenle";
 
@@ -33,9 +36,6 @@
 
 /* Open AI Chat history action in the menu list */
 "action.title.aiChat.history" = "Duck.ai Sohbetleri";
-
-/* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "Yeni Yapay Zeka Sohbeti";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Duck.ai Ayarları";
@@ -87,9 +87,6 @@
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Arka Planda Aç";
-
-/* Create New Tab action */
-"action.title.newTabAction" = "Yeni Sekme";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Yeni Sekmede Aç";
@@ -904,6 +901,12 @@
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Kullanıcı adı güncellensin mi?";
 
+/* No comment provided by engineer. */
+"Available Products" = "Mevcut Ürünler";
+
+/* View plans button text during Black Friday campaign */
+"black-friday.campaign.view.plans.cta" = "İlk Yıl %d%% Tasarruf Edin";
+
 /* Add bookmark screen title */
 "bookmark.addBookmark.title" = "Yer İmi ekle";
 
@@ -1026,6 +1029,9 @@
 
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Bir kereden fazla iptal uygulanamaz";
+
+/* No comment provided by engineer. */
+"Checking for existing account..." = "Hesap olup olmadığı kontrol ediliyor...";
 
 /* Close All Tabs */
 "close.all.tabs" = "Tüm Sekmeleri Kapat";
@@ -1152,6 +1158,9 @@
 
 /* No comment provided by engineer. */
 "Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+
+/* No comment provided by engineer. */
+"Current Subscriptions" = "Mevcut Abonelikler";
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "ÖZEL HÜCRE İÇERIĞI";
@@ -1676,6 +1685,9 @@
 "error.unknown.try.again" = "Bilinmeyen bir hata oluştu";
 
 /* No comment provided by engineer. */
+"External ID: %@" = "Harici Kimlik: %@";
+
+/* No comment provided by engineer. */
 "favorite" = "Favori";
 
 /* No comment provided by engineer. */
@@ -1912,6 +1924,9 @@
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "BİR KATEGORİ SEÇİN";
 
+/* Category for issues with accessing Plus or Pro tier features */
+"feedback.ppro.category.unable-to-access-features" = "Plus veya Pro seviye özelliklere erişilemiyor";
+
 /* No comment provided by engineer. */
 "feedback.start.footer" = "İsimsiz geri bildiriminiz bizim için önemlidir.";
 
@@ -2082,6 +2097,9 @@
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Son İşlenme: %@";
+
+/* No comment provided by engineer. */
+"Loading available products..." = "Mevcut ürünler yükleniyor...";
 
 /* No comment provided by engineer. */
 "Loading brokers..." = "Brokerlar yükleniyor...";
@@ -2429,6 +2447,12 @@
 "new.address.bar.picker.title" = "Adres çubuğu seçeneği";
 
 /* No comment provided by engineer. */
+"No active subscriptions" = "Aktif abonelik yok";
+
+/* No comment provided by engineer. */
+"No existing subscription found" = "Abonelik bulunamadı";
+
+/* No comment provided by engineer. */
 "No Logs" = "Günlük Yok";
 
 /* No comment provided by engineer. */
@@ -2436,6 +2460,9 @@
 
 /* No comment provided by engineer. */
 "No results found" = "Sonuç bulunamadı";
+
+/* No comment provided by engineer. */
+"No subscriptions available" = "Kullanılabilir abonelik yok";
 
 /* No comment provided by engineer. */
 "OK" = "Tamam";
@@ -2448,6 +2475,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser  hides a cookie popup */
 "omnibar.notification.popup-hidden" = "Açılır Pencere Gizli";
+
+/* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
+"omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Anladım";
@@ -2911,6 +2941,12 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Search Assist Ayarları";
 
+/* Settings screen cell subtitle for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.subtitle" = "Tarayıcıda yeni Duck.ai sohbetlerini sekmeler olarak göster";
+
+/* Settings screen cell title for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.title" = "Duck.ai Sekme Modu";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Yapay Zeka Tarafından Oluşturulan Görselleri Gizle";
 
@@ -2925,9 +2961,6 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Adres Çubuğu Konumu";
-
-/* Settings screen cell text for experimental menu */
-"settings.appearance.experimental.menu" = "Deneysel Tarayıcı Menüsü";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Bağlantıları İlişkili Uygulamalarda Aç";
@@ -3055,8 +3088,11 @@
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Şifreleri İçe Aktar";
 
-/* Copy for budge on settings item to show an item is new */
+/* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Yeni";
+
+/* Copy for badge on settings item to show an item is experimental */
+"settings.item.badge.preview" = "Önizleme";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klavye";
@@ -3327,6 +3363,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Hangi web sitesi hatalı?";
+
+/* No comment provided by engineer. */
+"Status" = "Durum";
 
 /* No comment provided by engineer. */
 "Status: Invalidated" = "Durum: Geçersiz kılındı";
@@ -3981,6 +4020,12 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "%@ size bir mesaj gönderdi:";
+
+/* No comment provided by engineer. */
+"Will attach to EXISTING account" = "MEVCUT hesaba eklenecek";
+
+/* No comment provided by engineer. */
+"Will create NEW account" = "YENİ hesap oluşturacak";
 
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "%25 TASARRUF EDİN";

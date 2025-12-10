@@ -604,7 +604,8 @@ enum Preferences {
                                                           subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher(),
                                                           keyValueStore: NSApp.delegateTyped.keyValueStore,
                                                           winBackOfferVisibilityManager: winBackOfferVisibilityManager,
-                                                          blackFridayCampaignProvider: blackFridayCampaignProvider)
+                                                          blackFridayCampaignProvider: blackFridayCampaignProvider,
+                                                          isProTierPurchaseEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.allowProTierPurchase) })
         }
 
         private func openURL(subscriptionURL: SubscriptionURL) {

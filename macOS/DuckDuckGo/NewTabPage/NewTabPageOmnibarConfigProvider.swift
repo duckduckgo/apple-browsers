@@ -76,8 +76,6 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     private enum Key: String {
         case newTabPageOmnibarMode
-        case showCustomizePopover
-        case customizePopoverPresentationCount
     }
 
     private enum Constants: Int {
@@ -146,35 +144,11 @@ final class NewTabPageOmnibarConfigProvider: NewTabPageOmnibarConfigProviding {
 
     var showCustomizePopover: Bool {
         get {
-#if REVIEW
-            if AppVersion.runType == .uiTests {
-                return false
-            }
-#endif
-            if !shouldShowCustomizePopover {
-                return false
-            } else {
-                return (try? keyValueStore.object(forKey: Key.showCustomizePopover.rawValue) as? Bool) ?? true
-            }
+            // We no longer present the tooltip
+            return false
         }
         set {
-            try? keyValueStore.set(newValue, forKey: Key.showCustomizePopover.rawValue)
-            showCustomizePopoverSubject.send(newValue)
         }
     }
 
-    var showCustomizePopoverPublisher: AnyPublisher<Bool, Never> {
-        showCustomizePopoverSubject.eraseToAnyPublisher()
-    }
-
-    var customizePopoverPresentationCount: Int {
-        get { (try? keyValueStore.object(forKey: Key.customizePopoverPresentationCount.rawValue) as? Int) ?? 0 }
-        set { try? keyValueStore.set(newValue, forKey: Key.customizePopoverPresentationCount.rawValue) }
-    }
-
-    private var shouldShowCustomizePopover: Bool {
-        customizePopoverPresentationCount <= Constants.maxNumberOfPopoverPresentations.rawValue &&
-        OnboardingActionsManager.isOnboardingFinished &&
-        Application.appDelegate.onboardingContextualDialogsManager.state == .onboardingCompleted
-    }
 }

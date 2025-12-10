@@ -183,7 +183,6 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
         )
 
         let provider = NewTabPageCustomizationProvider(customizationModel: customizationModel, appearancePreferences: appearancePreferences)
-
         XCTAssertEqual(provider.customizerData.themeVariant, .violet)
     }
 

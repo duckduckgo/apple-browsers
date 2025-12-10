@@ -46,6 +46,9 @@ public protocol AIChatSettingsProvider {
 
     /// The user settings state for AI Chats as Tabs experimental feature
     var isAIChatFullModeEnabled: Bool { get }
+    
+    /// The user settings state for automatically attaching page context
+    var isAutomaticContextAttachmentEnabled: Bool { get }
 
     /// The user settings state for automatically attaching page context
     var isAutomaticContextAttachmentEnabled: Bool { get }

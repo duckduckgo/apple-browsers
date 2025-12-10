@@ -86,9 +86,9 @@ public class DefaultDataBrokerProtectionUserNotificationService: DataBrokerProte
 
     public func scheduleCheckInNotificationIfPossible() {
         if userDefaults[.didSendCheckedInNotification] != true {
-            sendNotification(.twoWeeksCheckIn, afterDays: 14)
+            sendNotification(.oneWeekCheckIn, afterDays: 7)
             userDefaults[.didSendCheckedInNotification] = true
-            pixelHandler.fire(.notificationScheduled2WeeksCheckIn)
+            pixelHandler.fire(.notificationScheduled1WeekCheckIn)
         }
     }
 
@@ -162,7 +162,7 @@ private enum UserNotification {
     case firstScanComplete
     case firstProfileRemoved
     case allInfoRemoved
-    case twoWeeksCheckIn
+    case oneWeekCheckIn
 
     var title: String {
         switch self {
@@ -174,7 +174,7 @@ private enum UserNotification {
             return "A record of your info was removed!"
         case .allInfoRemoved:
             return "Personal info removed!"
-        case .twoWeeksCheckIn:
+        case .oneWeekCheckIn:
             return "We're making progress!"
         }
     }
@@ -189,7 +189,7 @@ private enum UserNotification {
             return "That's one less creepy site storing and selling your personal info online. Check progress..."
         case .allInfoRemoved:
             return "See all the records matching your personal info that DuckDuckGo found and removed from the web..."
-        case .twoWeeksCheckIn:
+        case .oneWeekCheckIn:
             return "See the records matching your personal info that DuckDuckGo found and removed from the web so far..."
         }
     }
@@ -204,8 +204,8 @@ private enum UserNotification {
             return DataBrokerProtectionNotificationIdentifier.firstProfileRemoved.rawValue
         case .allInfoRemoved:
             return DataBrokerProtectionNotificationIdentifier.allInfoRemoved.rawValue
-        case .twoWeeksCheckIn:
-            return DataBrokerProtectionNotificationIdentifier.twoWeeksCheckIn.rawValue
+        case .oneWeekCheckIn:
+            return DataBrokerProtectionNotificationIdentifier.oneWeekCheckIn.rawValue
         }
     }
 }

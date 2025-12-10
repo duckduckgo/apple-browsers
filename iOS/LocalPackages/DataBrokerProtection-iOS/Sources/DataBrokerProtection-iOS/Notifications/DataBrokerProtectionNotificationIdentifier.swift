@@ -24,5 +24,5 @@ public enum DataBrokerProtectionNotificationIdentifier: String, CaseIterable {
     case firstScanComplete = "dbp.ios.scan.complete"
     case firstProfileRemoved = "dbp.ios.first.removed"
     case allInfoRemoved = "dbp.ios.all.removed"
-    case twoWeeksCheckIn = "dbp.ios.2-weeks-check-in"
+    case oneWeekCheckIn = "dbp.ios.1-week-check-in"
 }

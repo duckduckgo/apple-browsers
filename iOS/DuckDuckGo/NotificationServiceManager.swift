@@ -94,8 +94,8 @@ private extension NotificationServiceManager {
             pixel = .dbpNotificationOpenedFirstRemoval
         case .allInfoRemoved:
             pixel = .dbpNotificationOpenedAllRecordsRemoved
-        case .twoWeeksCheckIn:
-            pixel = .dbpNotificationOpened2WeeksCheckIn
+        case .oneWeekCheckIn:
+            pixel = .dbpNotificationOpened1WeekCheckIn
         }
         Pixel.fire(pixel: pixel)
 

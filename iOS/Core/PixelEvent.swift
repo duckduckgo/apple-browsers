@@ -1505,7 +1505,7 @@ extension Pixel {
         case dbpNotificationOpenedFirstFreemiumScanComplete
         case dbpNotificationOpenedFirstRemoval
         case dbpNotificationOpenedAllRecordsRemoved
-        case dbpNotificationOpened2WeeksCheckIn
+        case dbpNotificationOpened1WeekCheckIn
 
         // MARK: - App Intent
         case appIntentPerformed
@@ -2968,7 +2968,7 @@ extension Pixel.Event {
         case .dbpNotificationOpenedFirstFreemiumScanComplete: return "m_ios_dbp_freemium_notification_opened_first_scan_complete"
         case .dbpNotificationOpenedFirstRemoval: return "m_ios_dbp_notification_opened_first_removal"
         case .dbpNotificationOpenedAllRecordsRemoved: return "m_ios_dbp_notification_opened_all_records_removed"
-        case .dbpNotificationOpened2WeeksCheckIn: return "m_ios_dbp_notification_opened_2_weeks_check_in"
+        case .dbpNotificationOpened1WeekCheckIn: return "m_ios_dbp_notification_opened_1_week_check_in"
 
         // MARK: App Intent
         case .appIntentPerformed: return "m_app-intent_intent-performed"

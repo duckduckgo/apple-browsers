@@ -55,10 +55,32 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
     private var observation: NSKeyValueObservation?
 
     private var startZoomScale: CGFloat = 0
-    
+
+    /// On iOS 26 + iPad changing tabs triggers "scroll to top" so we'll disable that for one time only after the chrome manager is attached to a webview.
+    /// https://app.asana.com/1/137249556945/project/392891325557410/task/1212150015970150?focus=true
+    private let isScrollToTopWorkaroundEnabled: Bool
+
+    private var disableScrollToTopOnce = false
+
+    init(enableScrollToTopWorkaround: Bool) {
+        self.isScrollToTopWorkaroundEnabled = enableScrollToTopWorkaround
+    }
+
+    override init() {
+        if #available(iOS 26, *), UIDevice.current.userInterfaceIdiom == .pad {
+            isScrollToTopWorkaroundEnabled = true
+        } else {
+            isScrollToTopWorkaroundEnabled = false
+        }
+        super.init()
+    }
+
     func attach(to scrollView: UIScrollView) {
         detach()
-        
+
+        if isScrollToTopWorkaroundEnabled {
+            disableScrollToTopOnce = true
+        }
         scrollView.delegate = self
         
         observation = scrollView.observe(\.contentSize, options: .new) { [weak self] scrollView, observation in
@@ -130,6 +152,11 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
     }
 
     func scrollViewShouldScrollToTop(_ scrollView: UIScrollView) -> Bool {
+        if disableScrollToTopOnce {
+            disableScrollToTopOnce = false
+            return false
+        }
+
         switch animator.barsState {
         case .hidden:
             animator.revealBars(animated: true)

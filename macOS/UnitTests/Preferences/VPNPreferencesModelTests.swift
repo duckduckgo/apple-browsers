@@ -30,19 +30,17 @@ final class VPNPreferencesModelTests: XCTestCase {
     private static let sharedUserDefaults = UserDefaults(suiteName: defaultsSuiteName)!
 
     var model: VPNPreferencesModel!
-    var userDefaults: UserDefaults!
     var vpnSettings: VPNSettings!
     var xpsClient: VPNControllerXPCClient!
     var proxySettings: TransparentProxySettings!
 
     override func setUpWithError() throws {
-        userDefaults = Self.sharedUserDefaults
-        userDefaults.removePersistentDomain(forName: Self.defaultsSuiteName)
+        Self.sharedUserDefaults.removePersistentDomain(forName: Self.defaultsSuiteName)
 
-        vpnSettings = VPNSettings(defaults: userDefaults)
+        vpnSettings = VPNSettings(defaults: Self.sharedUserDefaults)
         xpsClient = VPNControllerXPCClient()
-        proxySettings = TransparentProxySettings(defaults: userDefaults)
-        model = VPNPreferencesModel(vpnXPCClient: xpsClient, settings: vpnSettings, proxySettings: proxySettings, pinningManager: MockPinningManager(), defaults: userDefaults, featureFlagger: MockFeatureFlagger())
+        proxySettings = TransparentProxySettings(defaults: Self.sharedUserDefaults)
+        model = VPNPreferencesModel(vpnXPCClient: xpsClient, settings: vpnSettings, proxySettings: proxySettings, pinningManager: MockPinningManager(), defaults: Self.sharedUserDefaults, featureFlagger: MockFeatureFlagger())
     }
 
     override func tearDownWithError() throws {
@@ -50,7 +48,6 @@ final class VPNPreferencesModelTests: XCTestCase {
         xpsClient = nil
         proxySettings = nil
         model = nil
-        userDefaults = nil
     }
 
     func test_WhenUpdateDNSSettingsToCustomThenPropagatesToVpnSettings() {

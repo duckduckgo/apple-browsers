@@ -144,20 +144,12 @@ class FireConfirmationViewModel: ObservableObject {
             return 0
         }
         
-        // Get all domains from history
-        let allDomains = history.lazy.compactMap { entry -> String? in
-            entry.url.host
-        }
-        
-        // Convert them to eTLD+1
-        let eTLDPlus1Domains = allDomains.reduce(into: Set<String>()) { result, domain in
-            let eTLDPlus1Domain = tld.eTLDplus1(domain) ?? domain
-            result.insert(eTLDPlus1Domain)
-        }
+        // Get all unique hosts from history
+        let allHosts = Set(history.lazy.compactMap { $0.url.host })
         
         // Filter out fireproofed domains
-        let nonFireproofed = eTLDPlus1Domains.filter { domain in
-            return !fireproofing.isAllowed(fireproofDomain: domain)
+        let nonFireproofed = allHosts.filter { host in
+            return !fireproofing.isAllowed(fireproofDomain: host)
         }
         
         return nonFireproofed.count

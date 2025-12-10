@@ -267,8 +267,8 @@ final class FireConfirmationViewModelTests: XCTestCase {
         // When
         let subtitle = viewModel.clearDataSubtitle()
         
-        // Then - All URLs resolve to example.com (eTLD+1)
-        XCTAssertEqual(subtitle, "Delete from 1 site. May sign you out of accounts.")
+        // Then - example.com and sub.example.com are separate hosts
+        XCTAssertEqual(subtitle, "Delete from 2 sites. May sign you out of accounts.")
     }
     
     func testWhenSomeDomainsAreFireproofedThenClearDataSubtitleCountsOnlyNonFireproofed() {
@@ -295,6 +295,32 @@ final class FireConfirmationViewModelTests: XCTestCase {
         let subtitle = viewModel.clearDataSubtitle()
         
         // Then - Only notfireproofed.com is counted
+        XCTAssertEqual(subtitle, "Delete from 1 site. May sign you out of accounts.")
+    }
+    
+    func testWhenSubdomainIsFireproofedThenOtherSubdomainsAreStillCounted() {
+        // Given
+        let historyCoordinator = TestHistoryCoordinator()
+        historyCoordinator.testHistory = [
+            makeHistoryEntry(url: URL(string: "https://www.example.com")!),
+            makeHistoryEntry(url: URL(string: "https://mail.example.com")!)
+        ]
+        
+        let historyManager = MockHistoryManager(
+            historyCoordinator: historyCoordinator,
+            isEnabledByUser: true,
+            historyFeatureEnabled: true
+        )
+        
+        let fireproofing = TestFireproofing()
+        fireproofing.fireproofedDomains = ["www.example.com"]  // Only www is fireproofed
+        
+        let viewModel = makeViewModel(historyManager: historyManager, fireproofing: fireproofing)
+        
+        // When
+        let subtitle = viewModel.clearDataSubtitle()
+        
+        // Then - Only mail.example.com is counted (www is fireproofed)
         XCTAssertEqual(subtitle, "Delete from 1 site. May sign you out of accounts.")
     }
     

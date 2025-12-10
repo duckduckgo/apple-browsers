@@ -215,6 +215,10 @@ extension SharedColorPaletteDefinition {
         case .toneShadePrimary:
             return toneShadePrimary
 
+        /// Permission Center
+        case .permissionCenterBackground:
+            return DynamicColor(lightColor: .white, darkColor: Color(0x333333))
+
         /// Fire Dialog
         case .fireDialogBackground:
             return DynamicColor(lightColor: .white, darkColor: Color(0x272524))

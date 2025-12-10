@@ -135,6 +135,9 @@ public enum SharedDesignSystemColor {
     // Tone
     case toneShadePrimary
 
+    // Permission Center
+    case permissionCenterBackground
+
     // Fire Dialog View
     case fireDialogBackground
     case fireDialogPillBackground

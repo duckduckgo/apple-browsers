@@ -65,24 +65,31 @@ public extension NewTabPageDataModel {
 
     struct ThemeData: Codable, Equatable {
         let theme: Theme?
+        let themeVariant: ThemeVariant?
 
         enum CodingKeys: CodingKey {
             case theme
+            case themeVariant
         }
 
-        public init(theme: Theme?) {
+        public init(theme: Theme?, themeVariant: ThemeVariant?) {
             self.theme = theme
+            self.themeVariant = themeVariant
         }
 
         public func encode(to encoder: any Encoder) throws {
             var container = encoder.container(keyedBy: CodingKeys.self)
             try container.encodeIfPresent(self.theme?.rawValue ?? "system", forKey: CodingKeys.theme)
+            try container.encodeIfPresent(self.themeVariant, forKey: CodingKeys.themeVariant)
         }
 
         public init(from decoder: any Decoder) throws {
             let container: KeyedDecodingContainer<CodingKeys> = try decoder.container(keyedBy: CodingKeys.self)
             let themeRawValue = try container.decode(String.self, forKey: CodingKeys.theme)
+            let themeVariantRawValue = try container.decodeIfPresent(String.self, forKey: CodingKeys.themeVariant)
+
             theme = Theme(rawValue: themeRawValue)
+            themeVariant = themeVariantRawValue.map { ThemeVariant(rawValue: $0) } ?? .default
         }
     }
 

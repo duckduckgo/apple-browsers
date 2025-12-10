@@ -67,9 +67,21 @@ final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding
         }
     }
 
-    var themePublisher: AnyPublisher<NewTabPageDataModel.Theme?, Never> {
-        appearancePreferences.$themeAppearance.dropFirst().removeDuplicates()
-            .map(NewTabPageDataModel.Theme.init)
+    var themeVariant: NewTabPageDataModel.ThemeVariant? {
+        get {
+            .init(appearancePreferences.themeName)
+        }
+        set {
+            appearancePreferences.themeName = .init(newValue)
+        }
+    }
+
+    var themeStylePublisher: AnyPublisher<(NewTabPageDataModel.Theme?, NewTabPageDataModel.ThemeVariant?), Never> {
+        appearancePreferences.$themeAppearance
+            .combineLatest(appearancePreferences.$themeName)
+            .map { appearance, themeName in
+                (NewTabPageDataModel.Theme(appearance), NewTabPageDataModel.ThemeVariant(themeName))
+            }
             .eraseToAnyPublisher()
     }
 
@@ -207,5 +219,20 @@ extension NewTabPageDataModel.Theme {
         case .systemDefault:
             return nil
         }
+    }
+}
+
+extension ThemeName {
+    init(_ themeVariant: NewTabPageDataModel.ThemeVariant?) {
+        self = themeVariant.flatMap { themeVariant in
+            ThemeName(rawValue: themeVariant.rawValue)
+        } ?? .default
+    }
+}
+
+extension NewTabPageDataModel.ThemeVariant {
+
+    init(_ themeName: ThemeName) {
+        self = NewTabPageDataModel.ThemeVariant(rawValue: themeName.rawValue) ?? .default
     }
 }

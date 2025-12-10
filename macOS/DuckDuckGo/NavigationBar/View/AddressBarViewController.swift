@@ -836,7 +836,8 @@ final class AddressBarViewController: NSViewController {
         let isAddressBarFocused = view.window?.firstResponder == addressBarTextField.currentEditor()
         let adjustedMinX: CGFloat = (!self.isSelected || self.mode.isEditing) ? minX : Constants.defaultActiveTextFieldMinX
 
-        let isToggleVisible = isAddressBarFocused && featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+        let isOmnibarToggleFeatureEnabled = isAddressBarFocused && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatSettings.isAIFeaturesEnabled
+        let isToggleVisible = isOmnibarToggleFeatureEnabled && aiChatSettings.showSearchAndDuckAIToggle
         let textMargin: CGFloat = 20
 
         if theme.addressBarStyleProvider.shouldShowNewSearchIcon {

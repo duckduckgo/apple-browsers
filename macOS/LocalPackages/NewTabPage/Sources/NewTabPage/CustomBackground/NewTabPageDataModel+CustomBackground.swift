@@ -187,16 +187,6 @@ public extension NewTabPageDataModel {
         }
     }
 
-    struct DefaultStyles: Encodable, Equatable {
-        public let lightBackgroundColor: String
-        public let darkBackgroundColor: String
-
-        public init(lightBackgroundColor: String, darkBackgroundColor: String) {
-            self.lightBackgroundColor = lightBackgroundColor
-            self.darkBackgroundColor = darkBackgroundColor
-        }
-    }
-
     struct Tabs: Codable, Equatable {
         public let tabId: String
         public let tabIds: [String]

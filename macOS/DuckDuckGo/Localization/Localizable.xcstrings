@@ -64683,7 +64683,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Always Allow"
+            "value" : "Always allow"
           }
         }
       }
@@ -64695,7 +64695,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Always Ask"
+            "value" : "Always ask"
           }
         }
       }
@@ -64743,7 +64743,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Never Allow"
+            "value" : "Never allow"
           }
         }
       }

@@ -63711,7 +63711,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Open \"%@\" links"
+            "value" : "Open “%@” links"
           }
         }
       }

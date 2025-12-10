@@ -28,7 +28,7 @@ import Persistence
 
 struct FireConfirmationPresenter {
     
-    let tabsModel: TabsModeling
+    let tabsModel: TabsModelProtocol
     let featureFlagger: FeatureFlagger
     let historyManager: HistoryManaging
     let fireproofing: Fireproofing

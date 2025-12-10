@@ -40,7 +40,7 @@ class FireConfirmationViewModel: ObservableObject {
     let onCancel: () -> Void
     
     // MARK: - Private Variables
-    private let tabsModel: TabsModeling
+    private let tabsModel: TabsModelProtocol
     private let historyManager: HistoryManaging
     private let tld: TLD
     private let fireproofing: Fireproofing
@@ -77,7 +77,7 @@ class FireConfirmationViewModel: ObservableObject {
     
     // MARK: - Initializer
     
-    init(tabsModel: TabsModeling,
+    init(tabsModel: TabsModelProtocol,
          historyManager: HistoryManaging,
          tld: TLD = AppDependencyProvider.shared.storageCache.tld,
          fireproofing: Fireproofing,

@@ -41,7 +41,7 @@ final class FireConfirmationViewModelTests: XCTestCase {
         super.tearDown()
     }
     
-    private struct MockTabsModel: TabsModeling {
+    private struct MockTabsModel: TabsModelProtocol {
         let count: Int
     }
     
@@ -81,7 +81,7 @@ final class FireConfirmationViewModelTests: XCTestCase {
     }
     
     private func makeViewModel(
-        tabsModel: TabsModeling = MockTabsModel(count: 0),
+        tabsModel: TabsModelProtocol = MockTabsModel(count: 0),
         historyManager: HistoryManaging = MockHistoryManager(
             historyCoordinator: NullHistoryCoordinator(),
             isEnabledByUser: false,

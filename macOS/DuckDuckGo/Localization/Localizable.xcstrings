@@ -63711,7 +63711,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Open “%@” links"
+            "value" : "Open \"%@\" links"
           }
         }
       }
@@ -63736,6 +63736,30 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Reset permission"
+          }
+        }
+      }
+    },
+    "permission.center.system.notification.disabled" : {
+      "comment" : "Warning shown when system notifications are disabled but user has allowed the site",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "System notifications disabled. Turn them on in"
+          }
+        }
+      }
+    },
+    "permission.center.system.settings.notifications" : {
+      "comment" : "Link text to open System Settings Notifications panel",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "System Settings → Notifications"
           }
         }
       }
@@ -65079,6 +65103,42 @@
     },
     "permission.system.location.waiting" : {
       "comment" : "Text shown while waiting for user to respond to system location permission dialog",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Waiting for system permission…"
+          }
+        }
+      }
+    },
+    "permission.system.notification.enable" : {
+      "comment" : "Button to enable system notifications",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Enable System Notifications"
+          }
+        }
+      }
+    },
+    "permission.system.notification.enabled" : {
+      "comment" : "Text shown after system notification permission has been granted",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "System notifications enabled!"
+          }
+        }
+      }
+    },
+    "permission.system.notification.waiting" : {
+      "comment" : "Text shown while waiting for user to respond to system notification permission dialog",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {

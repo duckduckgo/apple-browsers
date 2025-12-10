@@ -74,7 +74,7 @@ enum PermissionType: Hashable {
 extension PermissionType {
 
     static var permissionsUpdatedExternally: [PermissionType] {
-        return [.camera, .microphone, .geolocation]
+        return [.camera, .microphone, .geolocation, .notification]
     }
 
     func canPersistGrantedDecision(featureFlagger: FeatureFlagger) -> Bool {

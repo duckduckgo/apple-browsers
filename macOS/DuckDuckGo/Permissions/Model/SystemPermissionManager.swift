@@ -17,7 +17,10 @@
 //
 
 import Combine
+import Common
 import CoreLocation
+import UserNotifications
+import os.log
 
 /// Represents the authorization state for a system permission
 enum SystemPermissionAuthorizationState {
@@ -67,7 +70,9 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
         switch permissionType {
         case .geolocation:
             return geolocationAuthorizationState
-        case .camera, .microphone, .popups, .notification, .externalScheme:
+        case .notification:
+            return .notDetermined // Must check async - actual check happens in SwiftUI view
+        case .camera, .microphone, .popups, .externalScheme:
             return .authorized // These don't require system permission through our two-step flow
         }
     }
@@ -77,7 +82,9 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
         switch permissionType {
         case .geolocation:
             return isGeolocationAuthorizationRequired
-        case .camera, .microphone, .popups, .notification, .externalScheme:
+        case .notification:
+            return true // Always show two-step flow for notifications
+        case .camera, .microphone, .popups, .externalScheme:
             return false // These don't require system permission through our two-step flow
         }
     }
@@ -88,7 +95,22 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
         switch permissionType {
         case .geolocation:
             return requestGeolocationAuthorization(completion: completion)
-        case .camera, .microphone, .popups, .notification, .externalScheme:
+        case .notification:
+            Task {
+                do {
+                    let granted = try await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])
+                    await MainActor.run {
+                        completion(granted ? .authorized : .denied)
+                    }
+                } catch {
+                    Logger.general.error("SystemPermissionManager: Notification authorization failed - \(error.localizedDescription)")
+                    await MainActor.run {
+                        completion(.denied)
+                    }
+                }
+            }
+            return nil
+        case .camera, .microphone, .popups, .externalScheme:
             // These don't require system permission through our two-step flow
             completion(.authorized)
             return nil

@@ -23,6 +23,7 @@ import CoreLocation
 import FeatureFlags
 import Foundation
 import Navigation
+import UserNotifications
 import WebKit
 
 final class PermissionModel {
@@ -150,7 +151,15 @@ final class PermissionModel {
                         permissions.geolocation.update(with: currentState)
                     }
                 }
-            case .popups, .externalScheme, .notification:
+            case .notification:
+                // Notification state is managed through the authorization flow and Permission Center
+                // System authorization status is checked when needed (e.g., in Permission Center)
+                // Keep notification as active once granted (similar to geolocation)
+                if featureFlagger.isFeatureOn(.newPermissionView),
+                   permissions.notification == .active || permissions.notification == .inactive {
+                    permissions.notification = .active
+                }
+            case .popups, .externalScheme:
                 continue
             }
         }

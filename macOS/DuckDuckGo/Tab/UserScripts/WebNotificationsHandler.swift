@@ -17,6 +17,7 @@
 //
 
 import BrowserServicesKit
+import Combine
 import Common
 import FeatureFlags
 import Foundation
@@ -43,7 +44,9 @@ protocol WebNotificationService {
     func add(_ request: UNNotificationRequest) async throws
 }
 
-extension UNUserNotificationCenter: WebNotificationService {}
+extension UNUserNotificationCenter: WebNotificationService {
+    // UNUserNotificationCenter already provides the required methods
+}
 
 // MARK: - WebNotificationsHandler
 
@@ -69,6 +72,9 @@ final class WebNotificationsHandler: NSObject, Subfeature {
 
     /// The webView associated with this handler's tab, set by `WebNotificationsTabExtension`.
     weak var webView: WKWebView?
+
+    /// The permission model for handling permission requests through the standard UI flow.
+    weak var permissionModel: PermissionModel?
 
     private var isWebNotificationsEnabled: Bool {
         featureFlagger.isFeatureOn(.webNotifications)
@@ -114,21 +120,6 @@ final class WebNotificationsHandler: NSObject, Subfeature {
         default:
             return nil
         }
-    }
-
-    // MARK: - Domain Extraction
-
-    /// Extracts the domain from the webView's URL for permission storage.
-    @MainActor
-    private func domain(from webView: WKWebView?) -> String? {
-        webView?.url?.host
-    }
-
-    /// Returns true if the domain has a stored denial for notifications.
-    @MainActor
-    private func isDomainDenied(for webView: WKWebView?) -> Bool {
-        guard let domain = domain(from: webView) else { return false }
-        return permissionManager.permission(forDomain: domain, permissionType: .notification) == .deny
     }
 
     // MARK: - System Authorization
@@ -241,9 +232,23 @@ final class WebNotificationsHandler: NSObject, Subfeature {
             return
         }
 
+        guard featureFlagger.isFeatureOn(.newPermissionView) else {
+            Logger.general.debug("WebNotificationsHandler: Blocked - newPermissionView flag disabled (ID: \(payload.id))")
+            sendErrorEvent(id: payload.id, to: original.webView)
+            return
+        }
+
+        guard let url = await original.webView?.url,
+              let domain = url.host else {
+            Logger.general.debug("WebNotificationsHandler: Missing domain for permission check (ID: \(payload.id))")
+            sendErrorEvent(id: payload.id, to: original.webView)
+            return
+        }
+
         // Check stored permission (Fire Windows use same storage, cleared on burn)
-        if await isDomainDenied(for: original.webView) {
-            Logger.general.debug("WebNotificationsHandler: Blocked - stored denial (ID: \(payload.id))")
+        let permissionDecision = permissionManager.permission(forDomain: domain, permissionType: .notification)
+        guard permissionDecision == .allow else {
+            Logger.general.debug("WebNotificationsHandler: Blocked - permission not allowed (ID: \(payload.id))")
             sendErrorEvent(id: payload.id, to: original.webView)
             return
         }
@@ -287,23 +292,37 @@ final class WebNotificationsHandler: NSObject, Subfeature {
             return RequestPermissionResponse(permission: Permission.denied.rawValue)
         }
 
-        // Check stored permission (Fire Windows use same storage, cleared on burn)
-        if await isDomainDenied(for: original.webView) {
-            Logger.general.debug("WebNotificationsHandler: Permission denied - stored decision")
+        guard featureFlagger.isFeatureOn(.newPermissionView) else {
+            Logger.general.debug("WebNotificationsHandler: Permission denied - newPermissionView flag disabled")
             return RequestPermissionResponse(permission: Permission.denied.rawValue)
         }
 
-        // Check/request system authorization
-        let authorized = await ensureSystemAuthorization()
-
-        // Store the decision (Fire Windows cleared on burn via burnPermissions())
-        if authorized, let domain = await domain(from: original.webView) {
-            permissionManager.setPermission(.allow, forDomain: domain, permissionType: .notification)
-            Logger.general.debug("WebNotificationsHandler: Stored allow permission for \(domain)")
+        guard let url = await original.webView?.url,
+              let domain = url.host,
+              let permissionModel = permissionModel else {
+            Logger.general.debug("WebNotificationsHandler: Missing dependencies")
+            return RequestPermissionResponse(permission: Permission.denied.rawValue)
         }
 
-        let permission = authorized ? Permission.granted : Permission.denied
-        return RequestPermissionResponse(permission: permission.rawValue)
+        // Request permission through PermissionModel (shows UI, handles storage)
+        // Fire Windows: permissions cleared on burn via burnPermissions()
+        let grantedInUI: Bool = await withCheckedContinuation { continuation in
+            var cancellables = Set<AnyCancellable>()
+            permissionModel.request([.notification], forDomain: domain, url: url)
+                .sink { isGranted in
+                    continuation.resume(returning: isGranted)
+                }
+                .store(in: &cancellables)
+        }
+
+        guard grantedInUI else {
+            Logger.general.debug("WebNotificationsHandler: User denied in permission UI")
+            return RequestPermissionResponse(permission: Permission.denied.rawValue)
+        }
+
+        // Two-step UI handles system authorization, just return granted
+        Logger.general.debug("WebNotificationsHandler: Permission granted through two-step UI")
+        return RequestPermissionResponse(permission: Permission.granted.rawValue)
     }
 
     // MARK: - Event Sending (for native to JS communication)

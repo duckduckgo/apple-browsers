@@ -184,6 +184,14 @@ final class AddressBarButtonsViewController: NSViewController {
             externalSchemeButton.action = #selector(externalSchemeButtonAction(_:))
         }
     }
+    @IBOutlet weak var notificationButton: PermissionButton? {
+        didSet {
+            notificationButton?.isHidden = true
+            notificationButton?.target = self
+            notificationButton?.action = #selector(notificationButtonAction(_:))
+        }
+    }
+    @IBOutlet weak var notificationButtonHeightConstraint: NSLayoutConstraint?
 
     /// Width of the left buttons container (Privacy Dashboard button, Permissions buttons…)
     /// Used to adjust the Passive Address Bar leading constraint
@@ -554,8 +562,10 @@ final class AddressBarButtonsViewController: NSViewController {
         tabViewModel?.tab.popupHandling?.pageInitiatedPopupPublisher.sink { [weak self] _ in
             self?.updateAllPermissionButtons()
         }.store(in: &permissionsCancellables)
-        tabViewModel?.$permissionAuthorizationQuery.dropFirst().sink { [weak self] _ in
-            self?.updateAllPermissionButtons()
+        tabViewModel?.$permissionAuthorizationQuery
+            .receive(on: DispatchQueue.main)
+            .dropFirst().sink { [weak self] _ in
+                self?.updateAllPermissionButtons()
         }.store(in: &permissionsCancellables)
     }
 
@@ -660,6 +670,9 @@ final class AddressBarButtonsViewController: NSViewController {
         externalSchemeButton.buttonState = tabViewModel.usedPermissions.externalScheme
         let title = String(format: UserText.permissionExternalSchemeOpenFormat, tabViewModel.usedPermissions.first(where: { $0.key.isExternalScheme })?.key.localizedDescription ?? "")
         externalSchemeButton.setAccessibilityTitle(title)
+
+        notificationButton?.buttonState = tabViewModel.usedPermissions.notification
+        notificationButton?.setAccessibilityTitle(UserText.permissionNotification)
     }
 
     private func showOrHidePermissionPopoverIfNeeded() {
@@ -1892,6 +1905,25 @@ final class AddressBarButtonsViewController: NSViewController {
         let domain = url.isFileURL ? .localhost : (url.host ?? "")
 
         PermissionContextMenu(permissionManager: permissionManager, permissions: permissions, domain: domain, delegate: self, featureFlagger: featureFlagger)
+            .popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height), in: sender)
+    }
+
+    @IBAction func notificationButtonAction(_ sender: NSButton) {
+        guard let tabViewModel,
+              let state = tabViewModel.usedPermissions.notification
+        else {
+            Logger.general.error("Selected tab view model is nil or no notification state")
+            return
+        }
+        if case .requested(let query) = state {
+            openPermissionAuthorizationPopover(for: query)
+            return
+        }
+
+        let url = tabViewModel.tab.content.urlForWebView ?? .empty
+        let domain = url.isFileURL ? .localhost : (url.host ?? "")
+
+        PermissionContextMenu(permissionManager: permissionManager, permissions: [(.notification, state)], domain: domain, delegate: self, featureFlagger: featureFlagger)
             .popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height), in: sender)
     }
 

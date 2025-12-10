@@ -19,6 +19,7 @@
 import AppKit
 import Combine
 import SwiftUI
+import UserNotifications
 
 // MARK: - PermissionAuthorizationType
 
@@ -77,9 +78,9 @@ enum PermissionAuthorizationType {
     /// Whether this permission type requires a two-step authorization flow (system permission first, then website permission)
     var requiresSystemPermission: Bool {
         switch self {
-        case .geolocation:
+        case .geolocation, .notification:
             return true
-        case .camera, .microphone, .cameraAndMicrophone, .popups, .notification, .externalScheme:
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
             return false
         }
     }
@@ -91,7 +92,9 @@ enum PermissionAuthorizationType {
         switch self {
         case .geolocation:
             return UserText.permissionSystemLocationEnable
-        case .camera, .microphone, .cameraAndMicrophone, .popups, .notification, .externalScheme:
+        case .notification:
+            return UserText.permissionSystemNotificationEnable
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
             return "" // Not used for these types
         }
     }
@@ -101,7 +104,9 @@ enum PermissionAuthorizationType {
         switch self {
         case .geolocation:
             return UserText.permissionSystemLocationWaiting
-        case .camera, .microphone, .cameraAndMicrophone, .popups, .notification, .externalScheme:
+        case .notification:
+            return UserText.permissionSystemNotificationWaiting
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
             return ""
         }
     }
@@ -111,7 +116,9 @@ enum PermissionAuthorizationType {
         switch self {
         case .geolocation:
             return UserText.permissionSystemLocationEnabled
-        case .camera, .microphone, .cameraAndMicrophone, .popups, .notification, .externalScheme:
+        case .notification:
+            return UserText.permissionSystemNotificationEnabled
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
             return ""
         }
     }
@@ -141,7 +148,9 @@ enum PermissionAuthorizationType {
         switch self {
         case .geolocation:
             return URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices")
-        case .camera, .microphone, .cameraAndMicrophone, .popups, .notification, .externalScheme:
+        case .notification:
+            return URL(string: "x-apple.systempreferences:com.apple.preference.notifications")
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
             return nil
         }
     }
@@ -260,7 +269,22 @@ struct PermissionAuthorizationSwiftUIView: View {
         case .authorized:
             systemPermissionState = .authorized
         case .notDetermined:
-            break // Keep initial state
+            // For notifications, check async (UNUserNotificationCenter requires it)
+            if permissionType.asPermissionType == .notification {
+                Task { @MainActor in
+                    let settings = await UNUserNotificationCenter.current().notificationSettings()
+                    switch settings.authorizationStatus {
+                    case .authorized, .provisional, .ephemeral:
+                        systemPermissionState = .authorized
+                    case .denied:
+                        systemPermissionState = .alreadyDenied
+                    case .notDetermined:
+                        break // Keep initial state - will show "Enable System Notifications" button
+                    @unknown default:
+                        break
+                    }
+                }
+            }
         }
     }
 
@@ -482,9 +506,9 @@ extension PermissionType {
     /// Whether this permission type requires a two-step authorization flow (system permission first, then website permission)
     var requiresSystemPermission: Bool {
         switch self {
-        case .geolocation:
+        case .geolocation, .notification:
             return true
-        case .camera, .microphone, .popups, .notification, .externalScheme:
+        case .camera, .microphone, .popups, .externalScheme:
             return false
         }
     }
@@ -494,7 +518,9 @@ extension PermissionType {
         switch self {
         case .geolocation:
             return UserText.permissionSystemLocationDisabled
-        case .camera, .microphone, .popups, .notification, .externalScheme:
+        case .notification:
+            return UserText.permissionCenterSystemNotificationDisabled
+        case .camera, .microphone, .popups, .externalScheme:
             return ""
         }
     }
@@ -504,7 +530,9 @@ extension PermissionType {
         switch self {
         case .geolocation:
             return UserText.permissionSystemSettingsLocation
-        case .camera, .microphone, .popups, .notification, .externalScheme:
+        case .notification:
+            return UserText.permissionCenterSystemSettingsNotifications
+        case .camera, .microphone, .popups, .externalScheme:
             return ""
         }
     }
@@ -514,7 +542,9 @@ extension PermissionType {
         switch self {
         case .geolocation:
             return URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices")
-        case .camera, .microphone, .popups, .notification, .externalScheme:
+        case .notification:
+            return URL(string: "x-apple.systempreferences:com.apple.preference.notifications")
+        case .camera, .microphone, .popups, .externalScheme:
             return nil
         }
     }

@@ -2203,6 +2203,14 @@ class TestPermissionManager: PermissionManagerProtocol {
         return persistedPermissions[domain]?[permissionType] != nil
     }
 
+    func hasAnyPermissionPersisted(forDomain domain: String) -> Bool {
+        return persistedPermissions[domain]?.isEmpty == false
+    }
+
+    func persistedPermissionTypes(forDomain domain: String) -> [PermissionType] {
+        return Array(persistedPermissions[domain]?.keys ?? [].keys)
+    }
+
     func permission(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision {
         return persistedPermissions[domain]?[permissionType] ?? .ask
     }

@@ -26,13 +26,19 @@ import Combine
 
 final class VPNPreferencesModelTests: XCTestCase {
 
+    private static let defaultsSuiteName = "\(Bundle.main.bundleIdentifier!).\(AppVersion.runType).vpnpreferencesmodeltests"
+    private static let sharedUserDefaults = UserDefaults(suiteName: defaultsSuiteName)!
+
     var model: VPNPreferencesModel!
-    var userDefaults: UserDefaults! = UserDefaults(suiteName: "\(Bundle.main.bundleIdentifier!).\(AppVersion.runType)")!
+    var userDefaults: UserDefaults!
     var vpnSettings: VPNSettings!
     var xpsClient: VPNControllerXPCClient!
     var proxySettings: TransparentProxySettings!
 
     override func setUpWithError() throws {
+        userDefaults = Self.sharedUserDefaults
+        userDefaults.removePersistentDomain(forName: Self.defaultsSuiteName)
+
         vpnSettings = VPNSettings(defaults: userDefaults)
         xpsClient = VPNControllerXPCClient()
         proxySettings = TransparentProxySettings(defaults: userDefaults)

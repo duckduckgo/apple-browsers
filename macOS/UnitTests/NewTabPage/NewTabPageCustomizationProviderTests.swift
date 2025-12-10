@@ -122,9 +122,9 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
             .init(
                 background: .solidColor("color05"),
                 theme: .light,
+                themeVariant: .default,
                 userColor: .init(hex: "#123abc"),
-                userImages: userBackgroundImagesManager.availableImages.map(NewTabPageDataModel.UserImage.init),
-                defaultStyles: .init(lightBackgroundColor: "#FAFAFA", darkBackgroundColor: "#1C1C1C")
+                userImages: userBackgroundImagesManager.availableImages.map(NewTabPageDataModel.UserImage.init)
             )
         )
     }
@@ -163,6 +163,28 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
         XCTAssertEqual(provider.theme, .light)
         appearancePreferences.themeAppearance = .systemDefault
         XCTAssertEqual(provider.theme, nil)
+    }
+
+    @MainActor
+    func testThatThemeVariantGetterReturnsSelectedThemeNameDuringInitialization() {
+        let appearancePreferences = AppearancePreferences(persistor: MockAppearancePreferencesPersistor(), privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger())
+        let featureFlagger = MockFeatureFlagger()
+
+        let themeManager = MockThemeManager()
+        themeManager.theme = ThemeStyle.buildThemeStyle(themeName: .violet, featureFlagger: featureFlagger)
+
+        let customizationModel = NewTabPageCustomizationModel(
+            appearancePreferences: appearancePreferences,
+            userBackgroundImagesManager: userBackgroundImagesManager,
+            sendPixel: { _ in },
+            openFilePanel: { nil },
+            showAddImageFailedAlert: {},
+            themeManager: themeManager
+        )
+
+        let provider = NewTabPageCustomizationProvider(customizationModel: customizationModel, appearancePreferences: appearancePreferences)
+
+        XCTAssertEqual(provider.customizerData.themeVariant, .violet)
     }
 
     func testThatThemeSetterSetsAppearancePreferencesTheme() {

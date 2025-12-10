@@ -629,7 +629,7 @@ struct UserText {
     static let aiChatToggleAskLabel = NSLocalizedString("aichat.toggle.ask.label", value: "Duck.ai", comment: "Label for the ask AI segment in the address bar toggle control")
 
     // AI Chat Toggle Popover
-    static let aiChatTogglePopoverTitle = NSLocalizedString("aichat.toggle.popover.title", value: "NEW! Two private ways to get answers", comment: "Title for the AI Chat toggle introduction popover")
+    static let aiChatTogglePopoverTitle = NSLocalizedString("aichat.toggle.popover.title", value: "NEW! Two ways to search privately", comment: "Title for the AI Chat toggle introduction popover")
     static let aiChatTogglePopoverMessage = NSLocalizedString("aichat.toggle.popover.message", value: "Search as usual or get answers with AI. Either way, your information stays private.", comment: "Message for the AI Chat toggle introduction popover")
     static let aiChatTogglePopoverButton = NSLocalizedString("aichat.toggle.popover.button", value: "Customize AI Features", comment: "Button text for customizing AI features in the toggle popover")
     static let aiChatSendButtonTooltip = NSLocalizedString("aichat.send-button.tooltip", value: "Send", comment: "Tooltip for the send button in AI chat omnibar")

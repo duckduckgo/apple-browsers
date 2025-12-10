@@ -1,5 +1,5 @@
 //
-//  SubscriptionFeatureAvailabilityMock.swift
+//  BundleExtension.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,17 +17,10 @@
 //
 
 import Foundation
-import Subscription
-import BrowserServicesKit
 
-public final class SubscriptionFeatureAvailabilityMock: SubscriptionFeatureAvailability {
-    public var isTierMessagingEnabled: Bool = false
-    public var isProTierPurchaseEnabled: Bool = false
-    public var isPaidAIChatEnabled: Bool = true
-    public var isSubscriptionPurchaseAllowed: Bool
-    public var isSupportsAlternateStripePaymentFlowEnabled: Bool = false
+extension Bundle {
 
-    public init(isSubscriptionPurchaseAllowed: Bool, usesUnifiedFeedbackForm: Bool) {
-        self.isSubscriptionPurchaseAllowed = isSubscriptionPurchaseAllowed
+    var designCompatibilityEnabled: Bool {
+        object(forInfoDictionaryKey: "UIDesignRequiresCompatibility") as? Bool ?? false
     }
 }

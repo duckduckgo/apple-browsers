@@ -237,28 +237,6 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
         XCTAssertTrue(subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled)
     }
 
-    // MARK: - Tests for Wide Event Measurement
-
-    func testIsSubscriptionPurchaseWidePixelMeasurementDisabledWhenProviderReturnsFalse() {
-        let featureFlagProvider = MockSubscriptionPageFeatureFlagProvider()
-        featureFlagProvider.flags = [.subscriptionPurchaseWidePixelMeasurement: false]
-
-        let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
-                                                                                     purchasePlatform: .appStore,
-                                                                                     featureFlagProvider: featureFlagProvider)
-        XCTAssertFalse(subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled)
-    }
-
-    func testIsSubscriptionPurchaseWidePixelMeasurementEnabledWhenProviderReturnsTrue() {
-        let featureFlagProvider = MockSubscriptionPageFeatureFlagProvider()
-        featureFlagProvider.flags = [.subscriptionPurchaseWidePixelMeasurement: true]
-
-        let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
-                                                                                     purchasePlatform: .appStore,
-                                                                                     featureFlagProvider: featureFlagProvider)
-        XCTAssertTrue(subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled)
-    }
-
     // MARK: - Helper
 
     private func makeSubfeatureEnabledCheck(for enabledSubfeatures: [PrivacyProSubfeature]) -> (any PrivacySubfeature) -> Bool {

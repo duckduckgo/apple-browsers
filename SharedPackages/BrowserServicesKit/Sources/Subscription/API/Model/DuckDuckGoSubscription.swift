@@ -28,6 +28,7 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
     public let platform: Platform
     public let status: Status
     public let activeOffers: [Offer]
+    public let tier: TierName?
 
     /// Not parsed from 
     public var features: [SubscriptionEntitlement]?
@@ -127,6 +128,7 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
         - Expires/Renews At: \(formatDate(expiresOrRenewsAt))
         - Platform: \(platform.rawValue)
         - Status: \(status.rawValue)
+        - Tier: \(tier?.rawValue ?? "unknown")
         - Features: \(features?.map { $0.debugDescription } ?? [])
         """
     }
@@ -149,6 +151,7 @@ public struct DuckDuckGoSubscription: Codable, Equatable, CustomDebugStringConve
         lhs.expiresOrRenewsAt == rhs.expiresOrRenewsAt &&
         lhs.platform == rhs.platform &&
         lhs.status == rhs.status &&
+        lhs.tier == rhs.tier &&
         Set(lhs.activeOffers) == Set(rhs.activeOffers) &&
         Set(lhs.features ?? []) == Set(rhs.features ?? [])
     }

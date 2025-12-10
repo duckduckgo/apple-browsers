@@ -109,10 +109,19 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
     private let defaultMetadataCollector: any UnifiedMetadataCollector
     private let feedbackSender: any UnifiedFeedbackSender
     private let isPaidAIChatFeatureEnabled: () -> Bool
+    private let isProTierPurchaseEnabled: () -> Bool
 
     let source: String
 
     private(set) var availableCategories: [UnifiedFeedbackCategory] = [.subscription]
+
+    var availableSubscriptionSubcategories: [SubscriptionFeedbackSubcategory] {
+        var subcategories: [SubscriptionFeedbackSubcategory] = SubscriptionFeedbackSubcategory.allCases
+        if !isProTierPurchaseEnabled() {
+            subcategories = subcategories.filter { $0 != .unableToAccessFeatures }
+        }
+        return subcategories
+    }
 
     init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
          vpnMetadataCollector: any UnifiedMetadataCollector,
@@ -120,6 +129,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
          defaultMetadatCollector: any UnifiedMetadataCollector = DefaultMetadataCollector(),
          feedbackSender: any UnifiedFeedbackSender = DefaultFeedbackSender(),
          isPaidAIChatFeatureEnabled: @escaping () -> Bool,
+         isProTierPurchaseEnabled: @escaping () -> Bool,
          source: Source = .unknown) {
         self.viewState = .feedbackPending
         self.subscriptionManager = subscriptionManager
@@ -128,6 +138,7 @@ final class UnifiedFeedbackFormViewModel: ObservableObject {
         self.defaultMetadataCollector = defaultMetadatCollector
         self.feedbackSender = feedbackSender
         self.isPaidAIChatFeatureEnabled = isPaidAIChatFeatureEnabled
+        self.isProTierPurchaseEnabled = isProTierPurchaseEnabled
         self.source = source.rawValue
 
         Task {

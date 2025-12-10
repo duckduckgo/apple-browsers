@@ -283,6 +283,7 @@ struct DataImportViewModel {
     /// Import button press (starts browser data import)
     @MainActor
     mutating func initiateImport(primaryPassword: String? = nil, fileURL: URL? = nil) {
+        setupAndStartWideEventIfNeeded()
         guard let url = fileURL ?? selectedProfile?.profileURL else {
             assertionFailure("URL not provided")
             return
@@ -479,6 +480,7 @@ struct DataImportViewModel {
 
     /// Select CSV/HTML file for import button press
     @MainActor mutating func selectFile() {
+        setupAndStartWideEventIfNeeded()
         let dataTypes: [UTType]
         switch screen {
         case .fileImport(dataType: let dataType, summary: _):
@@ -492,14 +494,10 @@ struct DataImportViewModel {
             return
         }
 
-        guard let url = openPanelCallback(dataTypes) else {
-            return
-        }
+        guard let url = openPanelCallback(dataTypes) else { return }
 
         // If the source is .fileImport, detect the file type and switch to the appropriate source (.csv or .bookmarksHTML)
-        guard switchFromFileImportToSpecificSourceIfNeeded(fileURL: url) else {
-            return
-        }
+        guard switchFromFileImportToSpecificSourceIfNeeded(fileURL: url) else { return }
 
         self.initiateImport(fileURL: url)
     }
@@ -558,6 +556,7 @@ struct DataImportViewModel {
     mutating func goBack() {
         if case .summaryDetail(let summary, _) = screen {
             screen = .summary(summary)
+            completeAndCleanupWideEvent(with: summary)
         } else {
             screen = .sourceAndDataTypesPicker
             summary.removeAll()
@@ -902,6 +901,9 @@ extension DataImportViewModel {
     }
 
     mutating func update(with importSource: Source) {
+        if let dataImportWideEventData {
+            wideEvent.discardFlow(dataImportWideEventData)
+        }
         self = .init(importSource: importSource,
                      selectedDataTypes: self.selectedDataTypes,
                      isPickerExpanded: self.isPickerExpanded,
@@ -1061,7 +1063,6 @@ private extension DataImportViewModel {
     }
 
     mutating func startDurationMeasurement(for types: Set<DataType>) {
-        setupAndStartWideEventIfNeeded()
         for type in types {
             dataImportWideEventData?[keyPath: type.importerDurationPath] = WideEvent.MeasuredInterval.startingNow()
         }
@@ -1111,11 +1112,13 @@ private extension DataImportViewModel {
         // Overall status
         if importSummary.allSatisfy({ !$1.isSuccess }) {
             wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
+            self.dataImportWideEventData = nil
             return
         }
 
         if importSummary.allSatisfy({ ((try? $1.get().isAllSuccessful) ?? false) }) {
             wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
+            self.dataImportWideEventData = nil
             return
         }
 

@@ -62,10 +62,12 @@ class BrowserChromeManager: NSObject, UIScrollViewDelegate {
 
     private var disableScrollToTopOnce = false
 
+    /// Primarily available for unit testing
     init(enableScrollToTopWorkaround: Bool) {
         self.isScrollToTopWorkaroundEnabled = enableScrollToTopWorkaround
     }
 
+    /// Checks current ios version and device user interface idiom to enable/disable the scroll to top workaround.
     override init() {
         if #available(iOS 26, *), UIDevice.current.userInterfaceIdiom == .pad {
             isScrollToTopWorkaroundEnabled = true

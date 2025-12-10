@@ -191,7 +191,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         tabsPreferences: tabsPreferences,
         newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration),
         winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
-        protectionsReportModel: newTabPageProtectionsReportModel
+        subscriptionCardVisibilityManager: homePageSetUpDependencies.subscriptionCardVisibilityManager,
+        protectionsReportModel: newTabPageProtectionsReportModel,
+        homePageContinueSetUpModelPersistor: homePageSetUpDependencies.continueSetUpModelPersistor
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
@@ -282,6 +284,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     lazy var vpnUpsellUserDefaultsPersistor: VPNUpsellUserDefaultsPersistor = {
         return VPNUpsellUserDefaultsPersistor(keyValueStore: keyValueStore)
+    }()
+
+    // MARK: - Home Page Continue Set Up Model
+
+    // Note: Using UserDefaultsWrapper as legacy store here because the pre-existed code used it.
+    lazy var homePageSetUpDependencies: HomePageSetUpDependencies = {
+        return HomePageSetUpDependencies(subscriptionManager: subscriptionAuthV1toV2Bridge,
+                                         keyValueStore: keyValueStore,
+                                         legacyKeyValueStore: UserDefaultsWrapper<Any>.sharedDefaults)
     }()
 
     // MARK: - DBP
@@ -1794,7 +1805,9 @@ extension AppDelegate: UserScriptDependenciesProviding {
             tabsPreferences: tabsPreferences,
             newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProvider(aiChatMenuConfiguration: aiChatMenuConfiguration),
             winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
-            protectionsReportModel: newTabPageProtectionsReportModel
+            subscriptionCardVisibilityManager: homePageSetUpDependencies.subscriptionCardVisibilityManager,
+            protectionsReportModel: newTabPageProtectionsReportModel,
+            homePageContinueSetUpModelPersistor: homePageSetUpDependencies.continueSetUpModelPersistor
         )
     }
 }

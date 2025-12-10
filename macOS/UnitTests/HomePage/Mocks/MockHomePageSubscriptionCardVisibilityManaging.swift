@@ -1,7 +1,7 @@
 //
-//  NewTabPageDataModel+NextStepsCards.swift
+//  MockHomePageSubscriptionCardVisibilityManaging.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,26 +17,17 @@
 //
 
 import Foundation
+@testable import DuckDuckGo_Privacy_Browser
 
-public extension NewTabPageDataModel {
-
-    enum CardID: String, Codable {
-        case bringStuff
-        case defaultApp
-        case emailProtection
-        case duckplayer
-        case addAppToDockMac
-        case subscription
-    }
-}
-
-extension NewTabPageDataModel {
-
-    struct Card: Codable, Equatable {
-        let id: CardID
+final class MockHomePageSubscriptionCardVisibilityManaging: HomePageSubscriptionCardVisibilityManaging {
+    @Published var shouldShowSubscriptionCard: Bool = true
+    var shouldShowSubscriptionCardPublisher: Published<Bool>.Publisher {
+        $shouldShowSubscriptionCard
     }
 
-    struct NextStepsData: Codable, Equatable {
-        public let content: [Card]?
+    var dismissCalled = false
+    func dismissSubscriptionCard() {
+        shouldShowSubscriptionCard = false
+        dismissCalled = true
     }
 }

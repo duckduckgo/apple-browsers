@@ -1,7 +1,7 @@
 //
-//  NewTabPageDataModel+NextStepsCards.swift
+//  MockHomePageContinueSetUpModelPersisting.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,26 +17,14 @@
 //
 
 import Foundation
+@testable import DuckDuckGo_Privacy_Browser
 
-public extension NewTabPageDataModel {
-
-    enum CardID: String, Codable {
-        case bringStuff
-        case defaultApp
-        case emailProtection
-        case duckplayer
-        case addAppToDockMac
-        case subscription
-    }
-}
-
-extension NewTabPageDataModel {
-
-    struct Card: Codable, Equatable {
-        let id: CardID
-    }
-
-    struct NextStepsData: Codable, Equatable {
-        public let content: [Card]?
-    }
+final class MockHomePageContinueSetUpModelPersisting: HomePageContinueSetUpModelPersisting {
+    var shouldShowMakeDefaultSetting: Bool = true
+    var shouldShowAddToDockSetting: Bool = true
+    var shouldShowImportSetting: Bool = true
+    var shouldShowDuckPlayerSetting: Bool = true
+    var shouldShowEmailProtectionSetting: Bool = true
+    var isFirstSession: Bool = true
+    func clear() {}
 }

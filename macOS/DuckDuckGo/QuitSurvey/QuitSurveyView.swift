@@ -438,4 +438,3 @@ struct QuitSurveyView_Previews: PreviewProvider {
     }
 }
 #endif
-

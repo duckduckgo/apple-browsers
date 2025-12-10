@@ -168,4 +168,3 @@ final class QuitSurveyViewModel: ObservableObject {
         autoQuitTimer?.invalidate()
     }
 }
-

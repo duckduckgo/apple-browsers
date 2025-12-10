@@ -212,6 +212,7 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case canPromoteAutofillExtensionInBrowser
     case canPromoteAutofillExtensionInPasswordManagement
     case migrateKeychainAccessibility
+    case autofillPasswordSearchPrioritizeDomain
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {

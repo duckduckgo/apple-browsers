@@ -105,7 +105,16 @@ struct PermissionCenterView: View {
             .padding(.bottom, 16)
         }
         .frame(width: popoverWidth)
-        .background(Color(designSystemColor: .containerFillPrimary))
+        .background(popoverBackgroundColor)
+    }
+
+    /// Background color matching privacy dashboard: white for light mode, dark for dark mode
+    private var popoverBackgroundColor: Color {
+        Color(NSColor(name: nil) { appearance in
+            appearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+                ? NSColor(white: 0.2, alpha: 1.0)
+                : NSColor.white
+        })
     }
 }
 

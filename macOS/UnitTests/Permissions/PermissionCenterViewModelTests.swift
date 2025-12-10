@@ -42,8 +42,8 @@ final class PermissionCenterViewModelTests: XCTestCase {
         super.tearDown()
     }
 
-    /// Tests that notification permissions are filtered out from the permission items list.
-    func testNotificationPermissionsAreFilteredFromUI() {
+    /// Tests that notification permissions appear in the permission items list.
+    func testNotificationPermissionsAppearInUI() {
         // Create permissions including notification
         var usedPermissions = Permissions()
         usedPermissions[.camera] = .active(query: nil)
@@ -60,19 +60,19 @@ final class PermissionCenterViewModelTests: XCTestCase {
             systemPermissionManager: mockSystemPermissionManager
         )
 
-        // Verify notification is not in the items
+        // Verify notification is in the items
         let permissionTypes = viewModel.permissionItems.map { $0.permissionType }
-        XCTAssertFalse(permissionTypes.contains(.notification), "Notification should be filtered from UI")
+        XCTAssertTrue(permissionTypes.contains(.notification), "Notification should appear in UI")
         XCTAssertTrue(permissionTypes.contains(.camera), "Camera should be present")
         XCTAssertTrue(permissionTypes.contains(.microphone), "Microphone should be present")
     }
 
-    /// Tests that only notification permissions are filtered, other permissions remain.
-    func testOnlyNotificationPermissionsAreFiltered() {
+    /// Tests that notification permissions work alongside other permissions.
+    func testNotificationPermissionsWorkAlongsideOtherPermissions() {
         var usedPermissions = Permissions()
         usedPermissions[.camera] = .active(query: nil)
+        usedPermissions[.notification] = .active(query: nil)
         usedPermissions[.geolocation] = .active(query: nil)
-        usedPermissions[.popups] = .active(query: nil)
 
         let viewModel = PermissionCenterViewModel(
             domain: "example.com",
@@ -84,7 +84,11 @@ final class PermissionCenterViewModelTests: XCTestCase {
             systemPermissionManager: mockSystemPermissionManager
         )
 
-        XCTAssertEqual(viewModel.permissionItems.count, 3)
+        XCTAssertEqual(viewModel.permissionItems.count, 3, "Should show all three permissions")
+        let types = viewModel.permissionItems.map { $0.permissionType }
+        XCTAssertTrue(types.contains(.notification))
+        XCTAssertTrue(types.contains(.camera))
+        XCTAssertTrue(types.contains(.geolocation))
     }
 }
 

@@ -45,21 +45,28 @@ struct BrowsingMenuSheetView: View {
         static let headerButtonIconTextSpacing: CGFloat = 2
         static let footerButtonVerticalPadding: CGFloat = 8
 
-        /// Approximate vertical padding for list rows with `.insetGrouped` style.
+        /// Approximate row size for `.insetGrouped` style.
         /// This is an estimate used for height calculation and may not exactly match
-        /// the system-provided padding in all configurations.
-        static let listRowVerticalPadding: CGFloat = 24
+        /// the system-provided height in all configurations.
+        static let defaultListRowHeight: CGFloat = 44
 
         /// Approximate spacing between list sections.
         /// Note: The actual UI uses `.compactSectionSpacingIfAvailable()` which applies
         /// `.compact` section spacing on iOS 17+. This value is an approximation and
         /// the actual spacing may differ slightly on earlier versions.
         static let listSectionSpacing: CGFloat = 20
-        static let listTopPadding: CGFloat = 20
+        static let listTopPadding: CGFloat = 20 - listTopPaddingAdjustment
         static let grabberHeight: CGFloat = 20
+
+        static let headerHorizontalSpacing: CGFloat = 10
+        static let iconTitleHorizontalSpacing: CGFloat = 16
+        static let textDotHorizontalSpacing: CGFloat = 4
+
+        static let listTopPaddingAdjustment: CGFloat = 4
     }
 
     @Environment(\.presentationMode) var presentationMode
+    @Environment(\.verticalSizeClass) var verticalSizeClass
 
     private let model: BrowsingMenuModel
     private let onDismiss: () -> Void
@@ -81,8 +88,10 @@ struct BrowsingMenuSheetView: View {
         .compactSectionSpacingIfAvailable()
         .hideScrollContentBackground()
         .listStyle(.insetGrouped)
+        .bounceBasedOnSizeIfAvailable()
+        .padding(.top, -Metrics.listTopPaddingAdjustment)
         .background(.thickMaterial)
-        .background(Color(designSystemColor: .background).opacity(0.5))
+        .background(Color(designSystemColor: .background).opacity(0.1))
         .onDisappear(perform: {
             actionToPerform()
             onDismiss()
@@ -93,6 +102,21 @@ struct BrowsingMenuSheetView: View {
             presentationMode: presentationMode,
             showsLabels: model.footerItems.count < 2
         )
+        .safeAreaInset(edge: .top, content: {
+            if verticalSizeClass == .compact {
+                HStack {
+                    Spacer()
+                    Button(UserText.navigationTitleDone, role: .cancel) {
+                        presentationMode.wrappedValue.dismiss()
+                    }
+                    .padding(.top, 16)
+                    .padding(.bottom, 16)
+                    .padding(.horizontal, 24)
+                }
+                .background(.thickMaterial)
+                .padding(.bottom, -24)
+            }
+        })
         .tint(Color(designSystemColor: .textPrimary))
     }
 
@@ -100,7 +124,7 @@ struct BrowsingMenuSheetView: View {
     private var headerSection: some View {
         Section {
             if !model.headerItems.isEmpty {
-                HStack(spacing: 2) {
+                HStack(spacing: Metrics.headerHorizontalSpacing) {
                     ForEach(model.headerItems) { headerItem in
                         MenuHeaderButton(entryData: headerItem) {
                             actionToPerform = { headerItem.action() }
@@ -200,7 +224,7 @@ private struct MenuRowButton: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 8) {
+            HStack(spacing: Metrics.iconTitleHorizontalSpacing) {
                 Image(uiImage: entryData.image)
                     .padding(2)
                     .overlay {
@@ -211,21 +235,24 @@ private struct MenuRowButton: View {
                         }
                     }
 
-                Text(entryData.name)
-                    .daxBodyRegular()
+                HStack(spacing: Metrics.textDotHorizontalSpacing) {
+                    Text(entryData.name)
+                        .daxBodyRegular()
 
-                if entryData.showNotificationDot {
-                    Circle().fill(entryData.customDotColor.map({ Color($0) }) ?? Color(designSystemColor: .accent))
-                        .frame(width: 8, height: 8)
-                        .padding(.leading, 6)
-                        .padding(.trailing, 12)
+                    if entryData.showNotificationDot {
+                        Circle().fill(entryData.customDotColor.map({ Color($0) }) ?? Color(designSystemColor: .accent))
+                            .frame(width: 8, height: 8)
+                            .padding(.leading, 6)
+                            .padding(.trailing, 12)
 
-                    Spacer()
+                        Spacer()
+                    }
                 }
             }
         }
         .accessibilityLabel(entryData.accessibilityLabel ?? entryData.name)
     }
+
 }
 
 private struct MenuHeaderButton: View {
@@ -247,15 +274,38 @@ private struct MenuHeaderButton: View {
             .frame(maxWidth: .infinity)
             .frame(maxHeight: .infinity)
             .background(Color.rowBackgroundColor)
-            .clipShape(RoundedRectangle(cornerRadius: Constant.cornerRadius))
-            .contentShape(RoundedRectangle(cornerRadius: Constant.cornerRadius))
+            .menuHeaderEntryShape()
         }
         .buttonStyle(.plain)
         .accessibilityLabel(entryData.accessibilityLabel ?? entryData.name)
     }
 
-    private enum Constant {
-        static let cornerRadius: CGFloat = 4
+    enum Constant {
+        static let cornerRadius: CGFloat = 10
+    }
+}
+
+private extension View {
+    @ViewBuilder
+    func menuHeaderEntryShape() -> some View {
+        if #available(iOS 17, *) {
+            self
+                .clipShape(ButtonBorderShape.automatic)
+                .contentShape(ButtonBorderShape.automatic)
+        } else {
+            self
+                .clipShape(RoundedRectangle(cornerRadius: MenuHeaderButton.Constant.cornerRadius, style: .continuous))
+                .contentShape(RoundedRectangle(cornerRadius: MenuHeaderButton.Constant.cornerRadius, style: .continuous))
+        }
+    }
+
+    @ViewBuilder
+    func bounceBasedOnSizeIfAvailable() -> some View {
+        if #available(iOS 16.4, *) {
+            self.scrollBounceBehavior(.basedOnSize)
+        } else {
+            self
+        }
     }
 }
 

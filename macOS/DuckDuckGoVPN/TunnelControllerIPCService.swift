@@ -191,6 +191,7 @@ extension TunnelControllerIPCService: XPCServerInterface {
     func register(version: String, bundlePath: String, completion: @escaping (Error?) -> Void) {
         server.serverInfoChanged(statusReporter.serverInfoObserver.recentValue)
         server.statusChanged(statusReporter.statusObserver.recentValue)
+        server.vpnEnableChanged(statusReporter.vpnEnabledObserver.isVPNEnabled)
         if self.version != version {
             let error = TunnelControllerIPCService.IPCError.versionMismatched
             NetworkProtectionKnownFailureStore().lastKnownFailure = KnownFailure(error)

@@ -4,6 +4,9 @@
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
 
+/* No comment provided by engineer. */
+"Account" = "λογαριασμό";
+
 /* Buton label for Edit action */
 "action.generic.edit" = "Επεξεργασία";
 
@@ -33,9 +36,6 @@
 
 /* Open AI Chat history action in the menu list */
 "action.title.aiChat.history" = "Συνομιλίες Duck.ai";
-
-/* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "Νέο AI Chat";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Ρυθμίσεις Duck.ai";
@@ -87,9 +87,6 @@
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Άνοιγμα στο παρασκήνιο";
-
-/* Create New Tab action */
-"action.title.newTabAction" = "Νέα καρτέλα";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Άνοιγμα σε νέα καρτέλα";
@@ -904,6 +901,12 @@
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Ενημέρωση ονόματος χρήστη;";
 
+/* No comment provided by engineer. */
+"Available Products" = "Διαθέσιμα προϊόντα";
+
+/* View plans button text during Black Friday campaign */
+"black-friday.campaign.view.plans.cta" = "Εξοικονομήστε %d%% το πρώτο έτος";
+
 /* Add bookmark screen title */
 "bookmark.addBookmark.title" = "Προσθήκη σελιδοδείκτη";
 
@@ -1026,6 +1029,9 @@
 
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Δεν μπορείτε να ακυρώσετε περισσότερες από μία φορές";
+
+/* No comment provided by engineer. */
+"Checking for existing account..." = "Έλεγχος για υπάρχοντα λογαριασμό...";
 
 /* Close All Tabs */
 "close.all.tabs" = "Κλείσιμο όλων των καρτελών";
@@ -1152,6 +1158,9 @@
 
 /* No comment provided by engineer. */
 "Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+
+/* No comment provided by engineer. */
+"Current Subscriptions" = "Τρέχουσες συνδρομές";
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "ΠΡΟΣΑΡΜΟΣΜΕΝΟ ΠΕΡΙΕΧΟΜΕΝΟ ΚΕΛΙΟΥ";
@@ -1676,6 +1685,9 @@
 "error.unknown.try.again" = "Έχει προκύψει κάποιο άγνωστο σφάλμα";
 
 /* No comment provided by engineer. */
+"External ID: %@" = "Εξωτερικό αναγνωριστικό: %@";
+
+/* No comment provided by engineer. */
 "favorite" = "Αγαπημένο";
 
 /* No comment provided by engineer. */
@@ -1912,6 +1924,9 @@
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "ΕΠΙΛΕΞΤΕ ΚΑΤΗΓΟΡΙΑ";
 
+/* Category for issues with accessing Plus or Pro tier features */
+"feedback.ppro.category.unable-to-access-features" = "Δεν είναι δυνατή η πρόσβαση στις λειτουργίες επιπέδου Plus ή Pro";
+
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Τα ανώνυμα σχόλιά σας είναι σημαντικά για εμάς.";
 
@@ -2082,6 +2097,9 @@
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Τελευταία επεξεργασία: %@";
+
+/* No comment provided by engineer. */
+"Loading available products..." = "Φόρτωση διαθέσιμων προϊόντων...";
 
 /* No comment provided by engineer. */
 "Loading brokers..." = "Φόρτωση διαμεσολαβητών...";
@@ -2429,6 +2447,12 @@
 "new.address.bar.picker.title" = "Επιλογή γραμμής διευθύνσεων";
 
 /* No comment provided by engineer. */
+"No active subscriptions" = "Δεν υπάρχουν ενεργές συνδρομές";
+
+/* No comment provided by engineer. */
+"No existing subscription found" = "Δεν βρέθηκε υπάρχουσα συνδρομή";
+
+/* No comment provided by engineer. */
 "No Logs" = "Δεν υπάρχουν αρχεία καταγραφής";
 
 /* No comment provided by engineer. */
@@ -2436,6 +2460,9 @@
 
 /* No comment provided by engineer. */
 "No results found" = "Δεν βρέθηκαν αποτελέσματα";
+
+/* No comment provided by engineer. */
+"No subscriptions available" = "Δεν υπάρχουν διαθέσιμες συνδρομές";
 
 /* No comment provided by engineer. */
 "OK" = "Εντάξει";
@@ -2448,6 +2475,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser  hides a cookie popup */
 "omnibar.notification.popup-hidden" = "Κρυφό αναδυόμενο παράθυρο";
+
+/* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
+"omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Το κατάλαβα";
@@ -2519,7 +2549,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Ρυθμίσεις > Λειτουργίες τεχνητής νοημοσύνης.";
 
 /* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Θέλετε πιο εύκολη πρόσβαση στο ιδιωτικό AI chat;";
+"onboarding.highlights.searchExperience.title" = "Θέλετε εύκολη πρόσβαση στο ιδιωτικό AI chat;";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Ας το δοκιμάσουμε!";
@@ -2911,6 +2941,12 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Ρυθμίσεις αναζήτησης Assist";
 
+/* Settings screen cell subtitle for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.subtitle" = "Εμφάνιση νέων Συνομιλιών Duck.ai ως καρτέλες στο πρόγραμμα περιήγησης";
+
+/* Settings screen cell title for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.title" = "Λειτουργία καρτελών Duck.ai";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Απόκρυψη εικόνων που δημιουργήθηκαν με τεχνητή νοημοσύνη";
 
@@ -2925,9 +2961,6 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Θέση γραμμής διευθύνσεων";
-
-/* Settings screen cell text for experimental menu */
-"settings.appearance.experimental.menu" = "Πειραματικό μενού προγράμματος περιήγησης";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Ανοίξτε τους συνδέσμους στις σχετικές εφαρμογές";
@@ -3055,8 +3088,11 @@
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Εισαγωγή κωδικών πρόσβασης";
 
-/* Copy for budge on settings item to show an item is new */
+/* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Νέο";
+
+/* Copy for badge on settings item to show an item is experimental */
+"settings.item.badge.preview" = "Προεπισκόπηση";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Πληκτρολόγιο";
@@ -3327,6 +3363,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Ποιος ιστότοπος είναι κατεστραμμένος;";
+
+/* No comment provided by engineer. */
+"Status" = "Κατάσταση";
 
 /* No comment provided by engineer. */
 "Status: Invalidated" = "Κατάσταση: Καταστάθηκε μη έγκυρο";
@@ -3981,6 +4020,12 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Μήνυμα από %@:";
+
+/* No comment provided by engineer. */
+"Will attach to EXISTING account" = "Θα επισυναφθεί σε ΥΠΑΡΧΟΝΤΑ λογαριασμό";
+
+/* No comment provided by engineer. */
+"Will create NEW account" = "Θα δημιουργήσει ΝΕΟ λογαριασμό";
 
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "ΕΞΟΙΚΟΝΟΜΗΣΤΕ 25%";

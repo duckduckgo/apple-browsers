@@ -106,9 +106,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlySubfeatureForTests
 
-    // Import Safari's bookmarks and favorites to better match Safari's behavior
-    case updateSafariBookmarksImport
-
     /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
     case willSoonDropBigSurSupport
 
@@ -175,6 +172,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212229431540900
     case granularFireButtonOptions
+
+    /// https://app.asana.com/1/137249556945/project/1206226850447395/task/1211661206210892?focus=true
+    case experimentalBrowsingMenu
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -388,9 +388,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case privacyProOnboardingPromotion
     case paidAIChat
     case supportsAlternateStripePaymentFlow
-    case subscriptionPurchaseWidePixelMeasurement
     case vpnConnectionWidePixelMeasurement
-    case authV2WideEventEnabled
     case winBackOffer
     case vpnMenuItem
     case blackFridayCampaign
@@ -521,6 +519,8 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .dataImport }
 
     case newSafariFilePicker
+    case dataImportWideEventMeasurement
+    case newDataImportExperience
 }
 
 public enum SERPSubfeature: String, PrivacySubfeature {

@@ -33,10 +33,10 @@ final class NewTabPageCustomizationModel: ObservableObject {
     }
 
     struct DefaultBackgroundColorStyle {
-        let themeName: ThemeName
+        let themeName: String
 
         init(theme: ThemeStyleProviding) {
-            themeName = theme.name
+            themeName = theme.name.rawValue
         }
     }
 

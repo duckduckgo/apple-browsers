@@ -24,19 +24,19 @@ public extension NewTabPageDataModel {
     struct CustomizerData: Encodable, Equatable {
         public let background: Background
         public let theme: Theme?
+        public let themeVariant: ThemeVariant
         public let userColor: Background?
         public let userImages: [UserImage]
-        public let defaultStyles: DefaultStyles?
 
         public init(background: Background,
                     theme: Theme?,
+                    themeVariant: ThemeVariant?,
                     userColor: NSColor?,
-                    userImages: [UserImage],
-                    defaultStyles: DefaultStyles?) {
+                    userImages: [UserImage]) {
             self.background = background
             self.theme = theme
+            self.themeVariant = themeVariant ?? .default
             self.userImages = userImages
-            self.defaultStyles = defaultStyles
 
             if let hex = userColor?.hex() {
                 self.userColor = Background.hexColor(hex)
@@ -48,18 +48,18 @@ public extension NewTabPageDataModel {
         enum CodingKeys: CodingKey {
             case background
             case theme
+            case themeVariant
             case userColor
             case userImages
-            case defaultStyles
         }
 
         public func encode(to encoder: any Encoder) throws {
             var container: KeyedEncodingContainer<CodingKeys> = encoder.container(keyedBy: CodingKeys.self)
             try container.encode(self.background, forKey: CodingKeys.background)
             try container.encode(self.theme?.rawValue ?? "system", forKey: CodingKeys.theme)
+            try container.encode(self.themeVariant, forKey: CodingKeys.themeVariant)
             try container.encode(self.userColor, forKey: CodingKeys.userColor)
             try container.encode(self.userImages, forKey: CodingKeys.userImages)
-            try container.encode(self.defaultStyles, forKey: CodingKeys.defaultStyles)
         }
     }
 
@@ -88,6 +88,17 @@ public extension NewTabPageDataModel {
 
     enum Theme: String, Codable {
         case dark, light
+    }
+
+    enum ThemeVariant: String, Codable {
+        case `default`
+        case coolGray
+        case desert
+        case green
+        case orange
+        case rose
+        case slateBlue
+        case violet
     }
 
     enum Background: Codable, Equatable {

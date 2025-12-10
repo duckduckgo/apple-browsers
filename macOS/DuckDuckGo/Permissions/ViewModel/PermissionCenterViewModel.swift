@@ -16,8 +16,10 @@
 //  limitations under the License.
 //
 
+import AppKit
 import BrowserServicesKit
 import Combine
+import DesignResourcesKit
 import FeatureFlags
 import Foundation
 
@@ -134,6 +136,7 @@ final class PermissionCenterViewModel: ObservableObject {
 
     @Published private(set) var domain: String
     @Published private(set) var permissionItems: [PermissionCenterItem] = []
+    @Published var backgroundColor: NSColor = NSColor(designSystemColor: .permissionCenterBackground)
 
     // MARK: - Dependencies
 

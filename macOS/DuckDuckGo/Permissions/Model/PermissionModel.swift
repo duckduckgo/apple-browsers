@@ -152,12 +152,21 @@ final class PermissionModel {
                     }
                 }
             case .notification:
-                // Notification state is managed through the authorization flow and Permission Center
-                // System authorization status is checked when needed (e.g., in Permission Center)
-                // Keep notification as active once granted (similar to geolocation)
-                if featureFlagger.isFeatureOn(.newPermissionView),
-                   permissions.notification == .active || permissions.notification == .inactive {
-                    permissions.notification = .active
+                // Check system notification authorization (following geolocation pattern)
+                if permissions.notification != nil, featureFlagger.isFeatureOn(.newPermissionView) {
+                    Task { @MainActor [weak self] in
+                        guard let self else { return }
+                        let settings = await UNUserNotificationCenter.current().notificationSettings()
+                        let systemStatus = settings.authorizationStatus
+                        
+                        if [.denied, .notDetermined].contains(systemStatus) {
+                            // System authorization not granted - set to disabled so UI will show
+                            self.permissions.notification?.systemAuthorizationDenied(systemWide: false)
+                        } else if self.permissions.notification == .active || self.permissions.notification == .inactive {
+                            // System authorized and website permission granted - keep as active
+                            self.permissions.notification = .active
+                        }
+                    }
                 }
             case .popups, .externalScheme:
                 continue

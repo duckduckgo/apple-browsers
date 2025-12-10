@@ -369,7 +369,8 @@ final class PermissionCenterViewModel: ObservableObject {
             if !externalSchemes.contains(permissionType) {
                 externalSchemes.append(permissionType)
             }
-        } else {
+        } else if permissionType != .notification {
+            // Notification permissions are not shown in the Permission Center
             if !other.contains(permissionType) {
                 other.append(permissionType)
             }

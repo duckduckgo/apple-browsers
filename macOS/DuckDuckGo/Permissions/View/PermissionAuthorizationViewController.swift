@@ -30,6 +30,8 @@ extension PermissionType {
             return UserText.permissionGeolocation
         case .popups:
             return UserText.permissionPopups
+        case .notification:
+            return UserText.permissionNotification
         case .externalScheme(scheme: let scheme):
             guard let url = URL(string: scheme + URL.NavigationalScheme.separator),
                   let app = NSWorkspace.shared.application(toOpen: url)
@@ -144,6 +146,10 @@ final class PermissionAuthorizationViewController: NSViewController {
                                                   query.permissions.localizedDescription.lowercased())
         case .popups:
             descriptionLabel.stringValue = String(format: UserText.popupWindowsPermissionAuthorizationFormat,
+                                                  query.domain,
+                                                  query.permissions.localizedDescription.lowercased())
+        case .notification:
+            descriptionLabel.stringValue = String(format: UserText.devicePermissionAuthorizationFormat,
                                                   query.domain,
                                                   query.permissions.localizedDescription.lowercased())
         case .externalScheme where query.domain.isEmpty:

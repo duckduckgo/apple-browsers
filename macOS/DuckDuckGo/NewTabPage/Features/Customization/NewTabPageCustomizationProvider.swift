@@ -77,8 +77,11 @@ final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding
     }
 
     var themeStylePublisher: AnyPublisher<(NewTabPageDataModel.Theme?, NewTabPageDataModel.ThemeVariant?), Never> {
-        appearancePreferences.$themeAppearance
-            .combineLatest(appearancePreferences.$themeName)
+        Publishers.CombineLatest(appearancePreferences.$themeAppearance, appearancePreferences.$themeName)
+            .dropFirst()
+            .removeDuplicates { previous, current in
+                previous.0 == current.0 && previous.1 == current.1
+            }
             .map { appearance, themeName in
                 (NewTabPageDataModel.Theme(appearance), NewTabPageDataModel.ThemeVariant(themeName))
             }

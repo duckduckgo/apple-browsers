@@ -61,6 +61,7 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
         customizationModel = nil
         provider = nil
         userBackgroundImagesManager = nil
+        themeManager = nil
     }
 
     func testThatCustomizerOpenerReturnsSettingsModelCustomizerOpener() {
@@ -185,7 +186,7 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
     }
 
     func testThatThemeVariantGetterReturnsSelectedThemeNameAfterInitialization() {
-        themeManager.theme = ThemeStyle.buildThemeStyle(themeName: .violet, featureFlagger: MockFeatureFlagger())
+        appearancePreferences.themeName = .violet
         XCTAssertEqual(provider.customizerData.themeVariant, .violet)
     }
 
@@ -200,7 +201,7 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
 
     func testThatThemePublisherPublishesEvents() throws {
         var events: [NewTabPageDataModel.Theme?] = []
-        let cancellable = provider.themeStylePublisher.sink { appearance, _ in
+        let cancellable = provider.themeStylePublisher.sink { appearance, themeName in
             events.append(appearance)
         }
 

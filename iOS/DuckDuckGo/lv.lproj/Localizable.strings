@@ -4,6 +4,9 @@
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
 
+/* No comment provided by engineer. */
+"Account" = "account";
+
 /* Buton label for Edit action */
 "action.generic.edit" = "Rediģēt";
 
@@ -33,9 +36,6 @@
 
 /* Open AI Chat history action in the menu list */
 "action.title.aiChat.history" = "Duck.ai tērzēšanas";
-
-/* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "Jauns MI tērzēšanas rīks";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Duck.ai iestatījumi";
@@ -87,9 +87,6 @@
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Atvērt fonā";
-
-/* Create New Tab action */
-"action.title.newTabAction" = "Jauna cilne";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Atvērt jaunā cilnē";
@@ -904,6 +901,12 @@
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Atjaunināt lietotājvārdu?";
 
+/* No comment provided by engineer. */
+"Available Products" = "Pieejamie produkti";
+
+/* View plans button text during Black Friday campaign */
+"black-friday.campaign.view.plans.cta" = "Ietaupīt %d%% pirmajā gadā";
+
 /* Add bookmark screen title */
 "bookmark.addBookmark.title" = "Pievienot grāmatzīmi";
 
@@ -1026,6 +1029,9 @@
 
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Atcelt nav atļauts vairāk nekā vienu reizi";
+
+/* No comment provided by engineer. */
+"Checking for existing account..." = "Pārbaudu, vai ir esošs konts...";
 
 /* Close All Tabs */
 "close.all.tabs" = "Aizvērt visas cilnes";
@@ -1152,6 +1158,9 @@
 
 /* No comment provided by engineer. */
 "Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+
+/* No comment provided by engineer. */
+"Current Subscriptions" = "Pašreizējie abonementi";
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "PIELĀGOTS ŠŪNU SATURS";
@@ -1676,6 +1685,9 @@
 "error.unknown.try.again" = "Radās nezināma kļūda";
 
 /* No comment provided by engineer. */
+"External ID: %@" = "Ārējais ID: %@";
+
+/* No comment provided by engineer. */
 "favorite" = "Izlase";
 
 /* No comment provided by engineer. */
@@ -1912,6 +1924,9 @@
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "ATLASĪT KATEGORIJU";
 
+/* Category for issues with accessing Plus or Pro tier features */
+"feedback.ppro.category.unable-to-access-features" = "Nevar piekļūt Plus vai Pro līmeņa funkcijām";
+
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Tavas anonīmās atsauksmes mums ir svarīgas.";
 
@@ -2082,6 +2097,9 @@
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Pēdējo reizi apstrādāts: %@";
+
+/* No comment provided by engineer. */
+"Loading available products..." = "Ielādē pieejamos produktus...";
 
 /* No comment provided by engineer. */
 "Loading brokers..." = "Ielādē starpniekus..";
@@ -2429,6 +2447,12 @@
 "new.address.bar.picker.title" = "Adreses joslas opcija";
 
 /* No comment provided by engineer. */
+"No active subscriptions" = "Nav aktīvu abonementu";
+
+/* No comment provided by engineer. */
+"No existing subscription found" = "Nav atrasts neviens esošs abonements";
+
+/* No comment provided by engineer. */
 "No Logs" = "Nav žurnālu";
 
 /* No comment provided by engineer. */
@@ -2436,6 +2460,9 @@
 
 /* No comment provided by engineer. */
 "No results found" = "Nav atrasti rezultāti";
+
+/* No comment provided by engineer. */
+"No subscriptions available" = "Nav pieejamu abonementu";
 
 /* No comment provided by engineer. */
 "OK" = "Labi";
@@ -2448,6 +2475,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser  hides a cookie popup */
 "omnibar.notification.popup-hidden" = "Uznirstošais logs paslēpts";
+
+/* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
+"omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Sapratu";
@@ -2519,7 +2549,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Iestatījumi > MI funkcijas.";
 
 /* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Vēlies vieglāk piekļūt privātai MI tērzēšanai?";
+"onboarding.highlights.searchExperience.title" = "Vēlies ērtu piekļuvi privātai MI tērzēšanai?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Aiziet!";
@@ -2911,6 +2941,12 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Meklēšanas Assist iestatījumi";
 
+/* Settings screen cell subtitle for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.subtitle" = "Rādīt jaunas Duck.ai tērzēšanas kā cilnes pārlūkprogrammā";
+
+/* Settings screen cell title for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.title" = "Duck.ai cilņu režīms";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Paslēpt MI ģenerētus attēlus";
 
@@ -2925,9 +2961,6 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Adreses joslas pozīcija";
-
-/* Settings screen cell text for experimental menu */
-"settings.appearance.experimental.menu" = "Eksperimentāla pārlūka izvēlne";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Atvērt saites saistītajās lietotnēs";
@@ -3055,8 +3088,11 @@
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Importēt paroles";
 
-/* Copy for budge on settings item to show an item is new */
+/* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Jauns";
+
+/* Copy for badge on settings item to show an item is experimental */
+"settings.item.badge.preview" = "Priekšskatījums";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tastatūra";
@@ -3327,6 +3363,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Kura vietne ir bojāta?";
+
+/* No comment provided by engineer. */
+"Status" = "Statuss";
 
 /* No comment provided by engineer. */
 "Status: Invalidated" = "Statuss: nederīgs";
@@ -3981,6 +4020,12 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Ziņojums no %@:";
+
+/* No comment provided by engineer. */
+"Will attach to EXISTING account" = "Tiks pievienots esošajam kontam";
+
+/* No comment provided by engineer. */
+"Will create NEW account" = "Izveidos JAUNU kontu";
 
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "IETAUPI 25%";

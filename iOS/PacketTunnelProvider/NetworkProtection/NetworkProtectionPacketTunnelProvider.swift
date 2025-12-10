@@ -480,9 +480,9 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                                                 authService: authService,
                                                 refreshEventMapping: AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: self.wideEvent, isFeatureEnabled: {
 #if DEBUG
-                return VPNPrivacyConfigurationManager.shared.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.authV2WideEventEnabled, defaultValue: true) // Allow the refresh event when using staging in debug mode, for easier testing
+                return true // Allow the refresh event when using staging in debug mode, for easier testing
 #else
-                return VPNPrivacyConfigurationManager.shared.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.authV2WideEventEnabled, defaultValue: true) && authEnvironment == .production
+                return authEnvironment == .production
 #endif
             }))
 
@@ -499,9 +499,9 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                                                                    wideEvent: self.wideEvent,
                                                                    isAuthV2WideEventEnabled: {
 #if DEBUG
-                return VPNPrivacyConfigurationManager.shared.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.authV2WideEventEnabled, defaultValue: true) // Allow the refresh event when using staging in debug mode, for easier testing
+                return true // Allow the refresh event when using staging in debug mode, for easier testing
 #else
-                return VPNPrivacyConfigurationManager.shared.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.authV2WideEventEnabled, defaultValue: true) && subscriptionEnvironment.serviceEnvironment == .production
+                return subscriptionEnvironment.serviceEnvironment == .production
 #endif
             })
 

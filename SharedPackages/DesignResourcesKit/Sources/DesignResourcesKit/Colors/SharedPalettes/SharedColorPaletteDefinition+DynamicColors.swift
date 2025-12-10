@@ -116,10 +116,22 @@ extension SharedColorPaletteDefinition {
             return containerFillSecondary
         case .containerFillTertiary:
             return containerFillTertiary
+        case .containerBorderPrimary:
+            return containerBorderPrimary
+        case .containerBorderSecondary:
+            return containerBorderSecondary
         case .containerBorderTertiary:
             return containerBorderTertiary
 
         /// Controls Colors
+        case .controlsBorderPrimary:
+            return controlsBorderPrimary
+        case .controlsBorderSecondary:
+            return controlsBorderSecondary
+        case .controlsBorderTertiary:
+            return controlsBorderTertiary
+        case .controlsBorderQuaternary:
+            return controlsBorderQuaternary
         case .controlsFillPrimary:
             return controlsFillPrimary
         case .controlsFillSecondary:

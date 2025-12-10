@@ -92,7 +92,30 @@ public struct RemoteMessageModel: Equatable, Codable {
                                             action: action)
 
         case .cardsList(let titleText, let placeholder, let items, let primaryActionText, let primaryAction):
-            self.content = .cardsList(titleText: titleText, placeholder: placeholder, items: items, primaryActionText: primaryActionText, primaryAction: primaryAction)
+
+            let translatedItems: [RemoteMessageModelType.ListItem] = items.map { item in
+                guard let translatedItem = translation.listItems?[item.id] else {
+                    return item
+                }
+                return RemoteMessageModelType.ListItem(
+                    id: item.id,
+                    type: item.type,
+                    titleText: translatedItem.titleText ?? item.titleText,
+                    descriptionText: translatedItem.descriptionText ?? item.descriptionText,
+                    placeholderImage: item.placeholderImage,
+                    action: item.action,
+                    matchingRules: item.matchingRules,
+                    exclusionRules: item.exclusionRules
+                )
+            }
+
+            self.content = .cardsList(
+                titleText: translation.titleText ?? titleText,
+                placeholder: placeholder,
+                items: translatedItems,
+                primaryActionText: translation.primaryActionText ?? primaryActionText,
+                primaryAction: primaryAction
+            )
         }
     }
 }

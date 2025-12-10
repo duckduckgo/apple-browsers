@@ -46,8 +46,7 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
                 self.openFilePanelCalls += 1
                 return nil
             },
-            showAddImageFailedAlert: {},
-            themeManager: MockThemeManager()
+            showAddImageFailedAlert: {}
         )
 
         provider = NewTabPageCustomizationProvider(customizationModel: customizationModel, appearancePreferences: appearancePreferences)
@@ -168,18 +167,14 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
     @MainActor
     func testThatThemeVariantGetterReturnsSelectedThemeNameDuringInitialization() {
         let appearancePreferences = AppearancePreferences(persistor: MockAppearancePreferencesPersistor(), privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger())
-        let featureFlagger = MockFeatureFlagger()
-
-        let themeManager = MockThemeManager()
-        themeManager.theme = ThemeStyle.buildThemeStyle(themeName: .violet, featureFlagger: featureFlagger)
+        appearancePreferences.themeName = .violet
 
         let customizationModel = NewTabPageCustomizationModel(
             appearancePreferences: appearancePreferences,
             userBackgroundImagesManager: userBackgroundImagesManager,
             sendPixel: { _ in },
             openFilePanel: { nil },
-            showAddImageFailedAlert: {},
-            themeManager: themeManager
+            showAddImageFailedAlert: {}
         )
 
         let provider = NewTabPageCustomizationProvider(customizationModel: customizationModel, appearancePreferences: appearancePreferences)

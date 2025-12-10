@@ -143,6 +143,7 @@ public enum SharedDesignSystemColor {
 
     // Permission Center
     case permissionCenterBackground
+    case permissionCenterContainerBackground
 
     // Fire Dialog View
     case fireDialogBackground

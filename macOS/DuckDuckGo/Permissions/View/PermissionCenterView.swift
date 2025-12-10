@@ -95,7 +95,7 @@ struct PermissionCenterView: View {
                     }
                 }
             }
-            .background(Color(designSystemColor: .containerFillTertiary))
+            .background(Color(designSystemColor: .permissionCenterContainerBackground))
             .cornerRadius(8)
             .overlay(
                 RoundedRectangle(cornerRadius: 8)

@@ -1785,6 +1785,13 @@ final class AddressBarButtonsViewController: NSViewController {
         let popover = PermissionCenterPopover(viewModel: viewModel)
         permissionCenterPopover = popover
 
+        // Set button to active/pressed state
+        permissionCenterButton.backgroundColor = .buttonMouseDown
+        permissionCenterButton.mouseOverColor = .buttonMouseDown
+
+        // Register for close notification to reset button state
+        NotificationCenter.default.addObserver(self, selector: #selector(popoverDidClose), name: NSPopover.didCloseNotification, object: popover)
+
         popover.show(positionedBelow: permissionCenterButton.bounds.insetFromLineOfDeath(flipped: permissionCenterButton.isFlipped), in: permissionCenterButton)
     }
 
@@ -2452,6 +2459,9 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
             DispatchQueue.main.async { [weak self] in
                 self?.updateAllPermissionButtons()
             }
+        case is PermissionCenterPopover:
+            permissionCenterButton.backgroundColor = .clear
+            permissionCenterButton.mouseOverColor = .buttonMouseOver
         default:
             break
         }

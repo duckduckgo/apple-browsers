@@ -34,8 +34,13 @@ final class CapturingNewTabPageCustomBackgroundProvider: NewTabPageCustomBackgro
     @Published
     var theme: NewTabPageDataModel.Theme?
 
-    var themePublisher: AnyPublisher<NewTabPageDataModel.Theme?, Never> {
-        $theme.dropFirst().removeDuplicates().eraseToAnyPublisher()
+    @Published
+    var themeVariant: NewTabPage.NewTabPageDataModel.ThemeVariant?
+
+    var themeStylePublisher: AnyPublisher<(NewTabPage.NewTabPageDataModel.Theme?, NewTabPage.NewTabPageDataModel.ThemeVariant?), Never> {
+        $theme
+            .combineLatest($themeVariant)
+            .eraseToAnyPublisher()
     }
 
     @Published

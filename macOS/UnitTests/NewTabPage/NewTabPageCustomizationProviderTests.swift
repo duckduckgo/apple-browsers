@@ -192,7 +192,9 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
 
     func testThatThemePublisherPublishesEvents() throws {
         var events: [NewTabPageDataModel.Theme?] = []
-        let cancellable = provider.themePublisher.sink { events.append($0) }
+        let cancellable = provider.themeStylePublisher.sink { appearance, _ in
+            events.append(appearance)
+        }
 
         appearancePreferences.themeAppearance = .light
         appearancePreferences.themeAppearance = .dark

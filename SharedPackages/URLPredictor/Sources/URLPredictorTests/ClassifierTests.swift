@@ -148,7 +148,6 @@ struct ClassifierTests {
     func classifiesCustomSchemesAsURL() async throws {
         #expect(try Classifier.classify(input: "databrokerprotection://show_dashboard") == .navigate(url: URL(string: "databrokerprotection://show_dashboard")!))
         #expect(try Classifier.classify(input: "duck://newtab") == .navigate(url: URL(string: "duck://newtab")!))
-        #expect(try Classifier.classify(input: "duck://newtab") == .navigate(url: URL(string: "duck://newtab")!))
         #expect(try Classifier.classify(input: "mailto:user@example.com") == .navigate(url: URL(string: "mailto:user@example.com")!))
         #expect(try Classifier.classify(input: "networkprotection://example") == .navigate(url: URL(string: "networkprotection://example")!))
         #expect(try Classifier.classify(input: "webkit-extension://sample-extension") == .navigate(url: URL(string: "webkit-extension://sample-extension")!))

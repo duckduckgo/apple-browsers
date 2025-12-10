@@ -719,6 +719,10 @@ class MainViewController: UIViewController {
         }
     }
 
+    func presentDataBrokerProtectionDashboard() {
+        segueToDataBrokerProtection()
+    }
+
     private func registerForKeyboardNotifications() {
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(keyboardWillChangeFrame),

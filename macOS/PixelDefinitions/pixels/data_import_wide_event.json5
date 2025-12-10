@@ -10,7 +10,6 @@
             "wideEventAppVersion",
             "wideEventPlatform",
             "wideEventType",
-            "wideEventFormFactor",
             "wideEventSampleRate",
             "wideEventFeatureStatus",
             "wideEventFeatureStatusReason",

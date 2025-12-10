@@ -285,7 +285,6 @@ struct DataImportViewModel {
     mutating func initiateImport(primaryPassword: String? = nil, fileURL: URL? = nil) {
         guard let url = fileURL ?? selectedProfile?.profileURL else {
             assertionFailure("URL not provided")
-            completeAndCleanupWideEvent(with: .failure, description: "URL not provided")
             return
         }
 
@@ -363,7 +362,7 @@ struct DataImportViewModel {
 
         // if there‘s read permission/primary password requested - request it and reinitiate import
         if handleErrors(summary.compactMapValues { $0.error }) {
-            completeAndCleanupWideEvent(with: summary)
+            completeDurationMeasurement(with: summary)
             return
         }
 
@@ -408,13 +407,13 @@ struct DataImportViewModel {
         } else {
             Logger.dataImportExport.debug("mergeImportSummary: intermediary summary(\(Set(summary.keys)))")
             self.screen = .summary(summary)
+            completeAndCleanupWideEvent(with: summary)
         }
 
         if self.areAllSelectedDataTypesSuccessfullyImported {
             successfulImportHappened = true
             NotificationCenter.default.post(name: .dataImportComplete, object: nil)
         }
-        completeAndCleanupWideEvent(with: summary)
     }
 
     /// handle recoverable errors (request primary password or file permission)
@@ -474,12 +473,12 @@ struct DataImportViewModel {
                 result[element.dataType] = element.result
             }
             self.screen = .summary(importSummary)
+            completeAndCleanupWideEvent(with: importSummary)
         }
     }
 
     /// Select CSV/HTML file for import button press
     @MainActor mutating func selectFile() {
-        setupAndStartWideEvent()
         let dataTypes: [UTType]
         switch screen {
         case .fileImport(dataType: let dataType, summary: _):
@@ -490,18 +489,15 @@ struct DataImportViewModel {
             dataTypes = importSource.supportedDataTypes.flatMap { $0.allowedFileTypes }
         default:
             assertionFailure("Expected File Import")
-            completeAndCleanupWideEvent(with: .failure, description: "Expected File Import")
             return
         }
 
         guard let url = openPanelCallback(dataTypes) else {
-            completeAndCleanupWideEvent(with: .failure, description: "Missing open panel callback url")
             return
         }
 
         // If the source is .fileImport, detect the file type and switch to the appropriate source (.csv or .bookmarksHTML)
         guard switchFromFileImportToSpecificSourceIfNeeded(fileURL: url) else {
-            completeAndCleanupWideEvent(with: .failure, description: "Unable to switch from file import to specific source")
             return
         }
 
@@ -953,7 +949,6 @@ extension DataImportViewModel {
                 goBack()
             } else {
                 importTask?.cancel()
-                dismissAndCleanupWideEvent()
                 onCancelled()
                 self.dismiss(using: dismiss)
             }
@@ -970,7 +965,7 @@ extension DataImportViewModel {
 
     @MainActor
     mutating func importButtonPressed() {
-        setupAndStartWideEvent()
+        setupAndStartWideEventIfNeeded()
         guard let importer = selectedProfile.map({
             dataImporterFactory(/* importSource: */ importSource,
                                 /* dataType: */ nil,
@@ -1054,8 +1049,8 @@ extension DataImportViewModel {
 // MARK: - Wide Event
 
 private extension DataImportViewModel {
-    mutating func setupAndStartWideEvent() {
-        guard isDataImportWideEventMeasurementEnabled else { return }
+    mutating func setupAndStartWideEventIfNeeded() {
+        guard isDataImportWideEventMeasurementEnabled, self.dataImportWideEventData == nil else { return }
         let data = DataImportWideEventData(
             source: importSource,
             contextData: WideEventContextData(name: "funnel_default_macos")
@@ -1066,7 +1061,7 @@ private extension DataImportViewModel {
     }
 
     mutating func startDurationMeasurement(for types: Set<DataType>) {
-        guard isDataImportWideEventMeasurementEnabled else { return }
+        setupAndStartWideEventIfNeeded()
         for type in types {
             dataImportWideEventData?[keyPath: type.importerDurationPath] = WideEvent.MeasuredInterval.startingNow()
         }
@@ -1078,10 +1073,12 @@ private extension DataImportViewModel {
         dataImportWideEventData?[keyPath: type.statusPath] = status
         if let error = error {
             dataImportWideEventData?[keyPath: type.errorPath] = error
+        } else {
+            dataImportWideEventData?[keyPath: type.errorPath] = nil
         }
     }
 
-    mutating func completeAndCleanupWideEvent(with importSummary: DataImportSummary) {
+    mutating func completeDurationMeasurement(with importSummary: DataImportSummary) {
         guard isDataImportWideEventMeasurementEnabled else { return }
 
         for type in DataType.allCases {
@@ -1103,38 +1100,26 @@ private extension DataImportViewModel {
                 ))
             }
         }
+    }
+
+    mutating func completeAndCleanupWideEvent(with importSummary: DataImportSummary) {
+        guard isDataImportWideEventMeasurementEnabled, let data = dataImportWideEventData else { return }
+
+        completeDurationMeasurement(with: importSummary)
+        data.overallDuration?.complete()
 
         // Overall status
         if importSummary.allSatisfy({ !$1.isSuccess }) {
-            completeAndCleanupWideEvent(with: .failure)
+            wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
             return
         }
 
         if importSummary.allSatisfy({ ((try? $1.get().isAllSuccessful) ?? false) }) {
-            completeAndCleanupWideEvent(with: .success)
+            wideEvent.completeFlow(data, status: .success, onComplete: { _, _ in })
             return
         }
 
-        completeAndCleanupWideEvent(
-            with: .success(reason: DataImportWideEventData.StatusReason.partialData.rawValue)
-        )
-    }
-
-    mutating func completeAndCleanupWideEvent(with status: WideEventStatus,
-                                              error: Error? = nil,
-                                              description: String? = nil) {
-        guard let data = dataImportWideEventData else { return }
-        data.overallDuration?.complete()
-        if let error {
-            data.errorData = WideEventErrorData(error: error, description: description)
-        }
-        wideEvent.completeFlow(data, status: status, onComplete: { _, _ in })
-        self.dataImportWideEventData = nil
-    }
-
-    mutating func dismissAndCleanupWideEvent() {
-        guard let data = dataImportWideEventData else { return }
-        wideEvent.discardFlow(data)
+        wideEvent.completeFlow(data, status: .success(reason: DataImportWideEventData.StatusReason.partialData.rawValue), onComplete: { _, _ in })
         self.dataImportWideEventData = nil
     }
 }

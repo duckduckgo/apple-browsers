@@ -32,6 +32,7 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
     private let subscriptionManager: SubscriptionManagerV2
     private let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     private var signOutObserver: Any?
+    private let featureFlagger: FeatureFlagger
 
     private var externalAllowedDomains = ["stripe.com"]
 
@@ -74,6 +75,17 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
 
     @Published var showRebrandingMessage: Bool = false
 
+    /// Returns the tier badge variant to display, or nil if badge should not be shown
+    /// Shows badge if tier is Pro, or if Pro tier purchase feature flag is enabled
+    var tierBadgeToDisplay: TierBadgeView.Variant? {
+        guard let tier = state.subscriptionInfo?.tier else { return nil }
+        guard tier == .pro || featureFlagger.isFeatureOn(.allowProTierPurchase) else { return nil }
+        switch tier {
+        case .plus: return .plus
+        case .pro: return .pro
+        }
+    }
+
     private let keyValueStorage: KeyValueStoring
     private let bannerDismissedKey = "SubscriptionSettingsV2BannerDismissed"
 
@@ -83,6 +95,7 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies) {
         self.subscriptionManager = subscriptionManager
         self.userScriptsDependencies = userScriptsDependencies
+        self.featureFlagger = featureFlagger
         let subscriptionFAQURL = subscriptionManager.url(for: .faq)
         let learnMoreURL = subscriptionFAQURL.appendingPathComponent("adding-email")
         self.state = State(faqURL: subscriptionFAQURL, learnMoreURL: learnMoreURL, userScriptsDependencies: userScriptsDependencies)

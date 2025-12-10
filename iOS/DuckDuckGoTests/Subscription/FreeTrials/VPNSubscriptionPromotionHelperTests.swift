@@ -66,7 +66,8 @@ final class VPNSubscriptionPromotionHelperTests: XCTestCase {
             expiresOrRenewsAt: expiresAt,
             platform: .stripe,
             status: .autoRenewable,
-            activeOffers: []
+            activeOffers: [],
+            tier: nil
         )
         mockSubscriptionManager.returnSubscription = .success(subscription)
 
@@ -129,16 +130,6 @@ final class VPNSubscriptionPromotionHelperTests: XCTestCase {
 
         // Then
         XCTAssertEqual(mockFreeTrialBadgePersistor.viewCount, 0)
-    }
-
-    func testFireTapPixel() {
-        // When
-        sut.fireTapPixel()
-
-        // Then
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.count, 1)
-        XCTAssertEqual(PixelFiringMock.allPixelsFired.first?.pixelName, Pixel.Event.browsingMenuVPN.name)
-        XCTAssertEqual(PixelFiringMock.lastParams, ["status": "no_pill"])
     }
 
 }

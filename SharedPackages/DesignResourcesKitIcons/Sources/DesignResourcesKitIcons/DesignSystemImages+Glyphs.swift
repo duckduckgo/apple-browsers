@@ -193,7 +193,8 @@ public extension DesignSystemImages {
             public static var locationSolid: DesignSystemImage { .init(resource: .locationSolid16) }
             public static var menuLines: DesignSystemImage { .init(resource: .menuLines16) }
             public static var menuLinesDot: DesignSystemImage { .init(resource: .menuLinesDot16) }
-            public static var microphone: DesignSystemImage { .init(resource: .microphone16) }
+            public static var permissionMicrophone: DesignSystemImage { .init(resource: .microphone16) }
+            public static var permissionMicrophoneSolid: DesignSystemImage { .init(resource: .microphoneSolid16) }
             public static var microphoneBlocked: DesignSystemImage { .init(resource: .microphoneBlocked16) }
             public static var openIn: DesignSystemImage { .init(resource: .openIn16) }
             public static var options: DesignSystemImage { .init(resource: .options16) }
@@ -244,7 +245,8 @@ public extension DesignSystemImages {
             public static var thumbsUp: DesignSystemImage { .init(resource: .thumbsUp16) }
             public static var trash: DesignSystemImage { .init(resource: .trash16) }
             public static var typeSize: DesignSystemImage { .init(resource: .typeSize16) }
-            public static var videoSolid: DesignSystemImage { .init(resource: .videoSolid16) }
+            public static var permissionCamera: DesignSystemImage { .init(resource: .video16) }
+            public static var permissionCameraSolid: DesignSystemImage { .init(resource: .videoSolid16) }
             public static var update: DesignSystemImage { .init(resource: .update16) }
             public static var viewGrid: DesignSystemImage { .init(resource: .viewGrid16) }
             public static var viewGridSolid: DesignSystemImage { .init(resource: .viewGridSolid16) }

@@ -30,7 +30,8 @@ public struct SubscriptionMockFactory {
                                                   expiresOrRenewsAt: Date().addingTimeInterval(TimeInterval.days(+30)),
                                                   platform: .apple,
                                                   status: .autoRenewable,
-                                                  activeOffers: [])
+                                                  activeOffers: [],
+                                                  tier: nil)
     public static let expiredSubscription = DuckDuckGoSubscription(productId: UUID().uuidString,
                                                          name: "Subscription test #2",
                                                          billingPeriod: .monthly,
@@ -38,7 +39,8 @@ public struct SubscriptionMockFactory {
                                                          expiresOrRenewsAt: Date().addingTimeInterval(TimeInterval.days(-1)),
                                                          platform: .apple,
                                                          status: .expired,
-                                                         activeOffers: [])
+                                                         activeOffers: [],
+                                                         tier: nil)
 
     public static let expiredStripeSubscription = DuckDuckGoSubscription(productId: UUID().uuidString,
                                                          name: "Subscription test #2",
@@ -47,7 +49,8 @@ public struct SubscriptionMockFactory {
                                                          expiresOrRenewsAt: Date().addingTimeInterval(TimeInterval.days(-1)),
                                                          platform: .stripe,
                                                          status: .expired,
-                                                         activeOffers: [])
+                                                         activeOffers: [],
+                                                         tier: nil)
 
     public static let productsItems: [GetProductsItem] = [GetProductsItem(productId: appleSubscription.productId,
                                                                           productLabel: appleSubscription.name,
@@ -72,4 +75,23 @@ public struct SubscriptionMockFactory {
             ]
         )
     ])
+
+    public static func subscription(
+        status: DuckDuckGoSubscription.Status,
+        platform: DuckDuckGoSubscription.Platform = .apple,
+        activeOffers: [DuckDuckGoSubscription.Offer] = [],
+        tier: TierName? = nil
+    ) -> DuckDuckGoSubscription {
+        DuckDuckGoSubscription(
+            productId: UUID().uuidString,
+            name: "Test Subscription",
+            billingPeriod: .monthly,
+            startedAt: Date(),
+            expiresOrRenewsAt: Date().addingTimeInterval(TimeInterval.days(+30)),
+            platform: platform,
+            status: status,
+            activeOffers: activeOffers,
+            tier: tier
+        )
+    }
 }

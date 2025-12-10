@@ -1828,6 +1828,18 @@
         }
       }
     },
+    "aichat.address-bar.hide-toggle" : {
+      "comment" : "Button to hide duck.ai toggle in address bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hide Duck.ai Toggle"
+          }
+        }
+      }
+    },
     "aichat.address-bar.open-new-tab-button" : {
       "comment" : "Button to open Duck.ai in a new tab",
       "extractionState" : "extracted_with_value",
@@ -64695,7 +64707,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "External Apps"
+            "value" : "External apps"
           }
         }
       }
@@ -64707,7 +64719,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%1$@ to open \"%2$@\" links"
+            "value" : "%1$@ to open “%2$@” links"
+          }
+        }
+      }
+    },
+    "permission.center.external.scheme.format" : {
+      "comment" : "Format for external scheme row, %@ is scheme name like mailto or sms",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open “%@” links"
           }
         }
       }
@@ -64731,7 +64755,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Permissions for \"%@\""
+            "value" : "Permissions for “%@”"
           }
         }
       }
@@ -65288,6 +65312,18 @@
         }
       }
     },
+    "permission.popup.allow.popups.button" : {
+      "comment" : "Button to allow pop-ups when blocked popup has no URL",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow Pop-ups"
+          }
+        }
+      }
+    },
     "permission.popup.allow.popups.page" : {
       "comment" : "Option to temporarily allow pop-ups for the current page during this visit until it reloads",
       "extractionState" : "extracted_with_value",
@@ -65512,6 +65548,18 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Never Allow"
+          }
+        }
+      }
+    },
+    "permission.popup.open.button" : {
+      "comment" : "Button to open a blocked pop-up",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open"
           }
         }
       }
@@ -73961,6 +74009,66 @@
         }
       }
     },
+    "ppro.feedback-form.category.unable-to-access-features" : {
+      "comment" : "Description for the feedback form when there is an issue with accessing Plus or Pro tier features",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kein Zugriff auf Plus- oder Pro-Funktionen möglich"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Unable to access Plus or Pro tier features"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No puedes acceder a las funciones de los niveles Plus o Pro"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible d'accéder aux fonctionnalités des niveaux Plus ou Pro"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossibile accedere alle funzionalità del livello Plus o Pro"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toegang tot Plus- of Pro-functies niet mogelijk"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brak dostępu do funkcji poziomu Plus lub Pro"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não é possível aceder às funcionalidades dos níveis Plus ou Pro"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет доступа к функциям уровня Plus или Pro"
+          }
+        }
+      }
+    },
     "ppro.feedback-form.disclaimer" : {
       "comment" : "Text for the disclaimer of the PPro feedback form",
       "extractionState" : "extracted_with_value",
@@ -76837,6 +76945,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Duck.ai"
+          }
+        }
+      }
+    },
+    "preferences.appearance.show-aichat-shortcut" : {
+      "comment" : "Option to show AI Chat shortcut in the address bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai Shortcut"
+          }
+        }
+      }
+    },
+    "preferences.appearance.show-aichat-toggle" : {
+      "comment" : "Option to show AI Chat toggle in the address bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai Toggle"
           }
         }
       }
@@ -81277,6 +81409,258 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Выйти"
+          }
+        }
+      }
+    },
+    "quit-survey.auto-quit-message" : {
+      "comment" : "Message indicating browser will auto-quit. %d is the number of seconds remaining",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The browser will automatically quit in %d seconds..."
+          }
+        }
+      }
+    },
+    "quit-survey.close-and-quit" : {
+      "comment" : "Button to close survey and quit the browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Close and Quit"
+          }
+        }
+      }
+    },
+    "quit-survey.disclaimer" : {
+      "comment" : "Privacy disclaimer in quit survey",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Reports sent to DuckDuckGo are 100% anonymous and only include your message, the DuckDuckGo browser version, and your macOS version."
+          }
+        }
+      }
+    },
+    "quit-survey.initial-question" : {
+      "comment" : "Question shown in the quit survey dialog asking about user's experience",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Before you go, how was your first time exploring the DuckDuckGo browser?"
+          }
+        }
+      }
+    },
+    "quit-survey.negative-option" : {
+      "comment" : "Negative response option in quit survey",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Bad, it needs work"
+          }
+        }
+      }
+    },
+    "quit-survey.negative-title" : {
+      "comment" : "Title for negative feedback form in quit survey",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Mind sharing what went wrong?"
+          }
+        }
+      }
+    },
+    "quit-survey.option.browser-doesnt-work" : {
+      "comment" : "Quit survey feedback option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Browser doesn't work as expected"
+          }
+        }
+      }
+    },
+    "quit-survey.option.browser-is-slow" : {
+      "comment" : "Quit survey feedback option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Browser is slow"
+          }
+        }
+      }
+    },
+    "quit-survey.option.import-issues" : {
+      "comment" : "Quit survey feedback option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Issues importing my stuff"
+          }
+        }
+      }
+    },
+    "quit-survey.option.no-extensions" : {
+      "comment" : "Quit survey feedback option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No extensions"
+          }
+        }
+      }
+    },
+    "quit-survey.option.no-privacy-benefits" : {
+      "comment" : "Quit survey feedback option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Not seeing privacy benefits"
+          }
+        }
+      }
+    },
+    "quit-survey.option.something-else" : {
+      "comment" : "Quit survey feedback option for other issues",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Something else"
+          }
+        }
+      }
+    },
+    "quit-survey.option.websites-dont-work" : {
+      "comment" : "Quit survey feedback option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Websites don't work as expected"
+          }
+        }
+      }
+    },
+    "quit-survey.positive-option" : {
+      "comment" : "Positive response option in quit survey",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Good, and I'll use it again soon"
+          }
+        }
+      }
+    },
+    "quit-survey.positive-title" : {
+      "comment" : "Title shown after positive response in quit survey",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Thanks and see you again soon!"
+          }
+        }
+      }
+    },
+    "quit-survey.quit-now" : {
+      "comment" : "Button to quit immediately",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Quit Now"
+          }
+        }
+      }
+    },
+    "quit-survey.select-all-that-apply" : {
+      "comment" : "Instruction text for quit survey feedback options",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Select all that apply"
+          }
+        }
+      }
+    },
+    "quit-survey.submit-and-quit" : {
+      "comment" : "Button to submit feedback and quit",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Submit and Quit"
+          }
+        }
+      }
+    },
+    "quit-survey.tell-us-more" : {
+      "comment" : "Label for optional text input in quit survey",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Tell us more (optional)"
+          }
+        }
+      }
+    },
+    "quit-survey.tell-us-more-hint" : {
+      "comment" : "Hint text for optional feedback input",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The more details you share, the better!"
+          }
+        }
+      }
+    },
+    "quit-survey.text-placeholder" : {
+      "comment" : "Placeholder text for feedback text input",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Share your thoughts..."
           }
         }
       }

@@ -68,7 +68,11 @@ final class VPNStartupMonitorTests: XCTestCase {
             try await monitor.waitForStartSuccess(tunnelManager, timeout: 0.1)
             XCTFail("Expected timeout error")
         } catch let error as VPNStartupMonitor.StartupError {
-            XCTAssertEqual(error, .startTunnelTimedOut)
+            if case .startTunnelTimedOut = error {
+                // Expected
+            } else {
+                XCTFail("Expected startTunnelTimedOut, got \(error)")
+            }
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
@@ -90,7 +94,11 @@ final class VPNStartupMonitorTests: XCTestCase {
             try await monitor.waitForStartSuccess(tunnelManager, timeout: 1)
             XCTFail("Expected disconnected error")
         } catch let error as VPNStartupMonitor.StartupError {
-            XCTAssertEqual(error, .startTunnelDisconnectedSilently)
+            if case .startTunnelDisconnectedSilently(let underlyingError) = error {
+                XCTAssertNil(underlyingError)
+            } else {
+                XCTFail("Expected startTunnelDisconnectedSilently, got \(error)")
+            }
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
@@ -110,7 +118,11 @@ final class VPNStartupMonitorTests: XCTestCase {
             try await monitor.waitForStartSuccess(tunnelManager, timeout: 1)
             XCTFail("Expected disconnected error")
         } catch let error as VPNStartupMonitor.StartupError {
-            XCTAssertEqual(error, .startTunnelDisconnectedSilently)
+            if case .startTunnelDisconnectedSilently(let underlyingError) = error {
+                XCTAssertNil(underlyingError)
+            } else {
+                XCTFail("Expected startTunnelDisconnectedSilently, got \(error)")
+            }
         } catch {
             XCTFail("Unexpected error: \(error)")
         }
@@ -159,6 +171,41 @@ final class VPNStartupMonitorTests: XCTestCase {
         }
 
         try await monitor.waitForStartSuccess(tunnelManager, timeout: 1)
+    }
+
+    // MARK: - Underlying Error Capture
+
+    func testCapturesUnderlyingErrorWhenDisconnected() async {
+        struct MockDisconnectError: Error {}
+
+        let monitor = VPNStartupMonitor(
+            notificationCenter: notificationCenter,
+            statusProvider: { [weak self] _ in self?.mockStatus ?? .invalid },
+            disconnectErrorProvider: { _ in throw MockDisconnectError() }
+        )
+
+        let connection = tunnelManager.connection
+        mockStatus = .connecting
+
+        Task {
+            try await Task.sleep(nanoseconds: 100 * NSEC_PER_MSEC)
+            mockStatus = .disconnected
+            postStatusChange(connection: connection)
+        }
+
+        do {
+            try await monitor.waitForStartSuccess(tunnelManager, timeout: 1)
+            XCTFail("Expected disconnected error")
+        } catch let error as VPNStartupMonitor.StartupError {
+            if case .startTunnelDisconnectedSilently(let underlyingError) = error {
+                XCTAssertNotNil(underlyingError)
+                XCTAssertTrue(underlyingError is MockDisconnectError)
+            } else {
+                XCTFail("Expected startTunnelDisconnectedSilently, got \(error)")
+            }
+        } catch {
+            XCTFail("Unexpected error: \(error)")
+        }
     }
 
     // MARK: - Cancellation

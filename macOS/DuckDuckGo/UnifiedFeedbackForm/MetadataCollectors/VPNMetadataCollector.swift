@@ -20,7 +20,7 @@ import Foundation
 import AppKit
 import Common
 import LoginItems
-import NetworkExtension
+import Network
 import NetworkProtectionIPC
 import NetworkProtectionUI
 import Subscription

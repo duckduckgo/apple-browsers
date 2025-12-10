@@ -610,6 +610,7 @@ struct UserText {
     static let aiChatOpenSidebarButton = NSLocalizedString("aichat.address-bar.open-sidebar-button", value: "Open Duck.ai Sidebar", comment: "Button to open Duck.ai sidebar")
     static let aiChatCloseSidebarButton = NSLocalizedString("aichat.address-bar.close-sidebar-button", value: "Close Duck.ai Sidebar", comment: "Button to close Duck.ai sidebar")
     static let aiChatAddressBarHideButton = NSLocalizedString("aichat.address-bar.hide-button", value: "Hide Duck.ai Shortcut", comment: "Button to hide duck.ai shortcut in address bar")
+    static let aiChatAddressBarHideToggle = NSLocalizedString("aichat.address-bar.hide-toggle", value: "Hide Duck.ai Toggle", comment: "Button to hide duck.ai toggle in address bar")
     static let aiChatOpenSettingsButton = NSLocalizedString("aichat.address-bar.open-settings-button", value: "Open AI Settings", comment: "Button to open AI settings")
     static let askAIChatButtonTitle = NSLocalizedString("aichat.address-bar.ask-button.title", value: "Ask Duck.ai", comment: "Title for button to ask Duck.ai")
 
@@ -901,6 +902,34 @@ struct UserText {
     static let feedbackFormClose = NSLocalizedString("feedback.form.close", value: "Close", comment: "Close button for feedback forms")
     static let feedbackSomethingElse = NSLocalizedString("feedback.something-else", value: "Something else", comment: "Generic option for other feedback items")
 
+    // MARK: - Quit Survey
+    static let quitSurveyInitialQuestion = NSLocalizedString("quit-survey.initial-question", value: "Before you go, how was your first time exploring the DuckDuckGo browser?", comment: "Question shown in the quit survey dialog asking about user's experience")
+    static let quitSurveyPositiveOption = NSLocalizedString("quit-survey.positive-option", value: "Good, and I'll use it again soon", comment: "Positive response option in quit survey")
+    static let quitSurveyNegativeOption = NSLocalizedString("quit-survey.negative-option", value: "Bad, it needs work", comment: "Negative response option in quit survey")
+    static let quitSurveyCloseAndQuit = NSLocalizedString("quit-survey.close-and-quit", value: "Close and Quit", comment: "Button to close survey and quit the browser")
+    static let quitSurveyPositiveTitle = NSLocalizedString("quit-survey.positive-title", value: "Thanks and see you again soon!", comment: "Title shown after positive response in quit survey")
+    static func quitSurveyAutoQuitMessage(seconds: Int) -> String {
+        let localized = NSLocalizedString("quit-survey.auto-quit-message", value: "The browser will automatically quit in %d seconds...", comment: "Message indicating browser will auto-quit. %d is the number of seconds remaining")
+        return String(format: localized, seconds)
+    }
+    static let quitSurveyQuitNow = NSLocalizedString("quit-survey.quit-now", value: "Quit Now", comment: "Button to quit immediately")
+    static let quitSurveyNegativeTitle = NSLocalizedString("quit-survey.negative-title", value: "Mind sharing what went wrong?", comment: "Title for negative feedback form in quit survey")
+    static let quitSurveySelectAllThatApply = NSLocalizedString("quit-survey.select-all-that-apply", value: "Select all that apply", comment: "Instruction text for quit survey feedback options")
+    static let quitSurveyTellUsMore = NSLocalizedString("quit-survey.tell-us-more", value: "Tell us more (optional)", comment: "Label for optional text input in quit survey")
+    static let quitSurveyTellUsMoreHint = NSLocalizedString("quit-survey.tell-us-more-hint", value: "The more details you share, the better!", comment: "Hint text for optional feedback input")
+    static let quitSurveyTextPlaceholder = NSLocalizedString("quit-survey.text-placeholder", value: "Share your thoughts...", comment: "Placeholder text for feedback text input")
+    static let quitSurveyDisclaimer = NSLocalizedString("quit-survey.disclaimer", value: "Reports sent to DuckDuckGo are 100% anonymous and only include your message, the DuckDuckGo browser version, and your macOS version.", comment: "Privacy disclaimer in quit survey")
+    static let quitSurveySubmitAndQuit = NSLocalizedString("quit-survey.submit-and-quit", value: "Submit and Quit", comment: "Button to submit feedback and quit")
+
+    // Quit survey feedback options
+    static let quitSurveyOptionBrowserIsSlow = NSLocalizedString("quit-survey.option.browser-is-slow", value: "Browser is slow", comment: "Quit survey feedback option")
+    static let quitSurveyOptionBrowserDoesntWork = NSLocalizedString("quit-survey.option.browser-doesnt-work", value: "Browser doesn't work as expected", comment: "Quit survey feedback option")
+    static let quitSurveyOptionNoExtensions = NSLocalizedString("quit-survey.option.no-extensions", value: "No extensions", comment: "Quit survey feedback option")
+    static let quitSurveyOptionWebsitesDontWork = NSLocalizedString("quit-survey.option.websites-dont-work", value: "Websites don't work as expected", comment: "Quit survey feedback option")
+    static let quitSurveyOptionImportIssues = NSLocalizedString("quit-survey.option.import-issues", value: "Issues importing my stuff", comment: "Quit survey feedback option")
+    static let quitSurveyOptionNoPrivacyBenefits = NSLocalizedString("quit-survey.option.no-privacy-benefits", value: "Not seeing privacy benefits", comment: "Quit survey feedback option")
+    static let quitSurveyOptionSomethingElse = NSLocalizedString("quit-survey.option.something-else", value: "Something else", comment: "Quit survey feedback option for other issues")
+
     static let otherBookmarksImportedFolderTitle = NSLocalizedString("bookmarks.imported.other.folder.title", value: "Other bookmarks", comment: "Name of the \"Other bookmarks\" folder imported from other browser")
     static let mobileBookmarksImportedFolderTitle = NSLocalizedString("bookmarks.imported.mobile.folder.title", value: "Mobile bookmarks", comment: "Name of the \"Mobile bookmarks\" folder imported from other browser")
     static let bookmarksImportedFolderTitle = NSLocalizedString("bookmarks.imported.folder.title", value: "Bookmarks", comment: "Name of the \"Bookmarks\" folder for bookmarks imported from other browser")
@@ -978,6 +1007,8 @@ struct UserText {
 
     static let permissionExternalSchemeOpenFormat = NSLocalizedString("permission.externalScheme.open.format", value: "Open %@", comment: "Open %@ App Name")
     static let permissionPopupBlockedPopover = NSLocalizedString("permission.popup.blocked.popover", value: "Pop-Up Blocked", comment: "Text of popover warning the user that a pop-up has been blocked")
+    static let permissionPopupOpenButton = NSLocalizedString("permission.popup.open.button", value: "Open", comment: "Button to open a blocked pop-up")
+    static let permissionPopupAllowPopupsButton = NSLocalizedString("permission.popup.allow.popups.button", value: "Allow Pop-ups", comment: "Button to allow pop-ups when blocked popup has no URL")
     static let permissionPopupLearnMoreLink = NSLocalizedString("permission.popup.learn-more.link", value: "Learn more about location services", comment: "Text of link that leads to web page with more informations about location services.")
     static let permissionPopupAllowButton = NSLocalizedString("permission.popup.allow.button", value: "Allow", comment: "Button that the user can use to authorise a web site to for, for example access location or camera and microphone etc.")
 
@@ -1001,12 +1032,13 @@ struct UserText {
     static let permissionPopupNeverAllowButton = NSLocalizedString("permission.popup.never.allow.button", value: "Never Allow", comment: "Button that denies permission and remembers the decision for future requests")
 
     // Permission Center
-    static let permissionCenterTitle = NSLocalizedString("permission.center.title", value: "Permissions for \"%@\"", comment: "Title for permission center popover, %@ is the domain name")
+    static let permissionCenterTitle = NSLocalizedString("permission.center.title", value: "Permissions for “%@”", comment: "Title for permission center popover, %@ is the domain name")
     static let permissionCenterAlwaysAsk = NSLocalizedString("permission.center.always.ask", value: "Always Ask", comment: "Permission center dropdown option to always ask for permission")
     static let permissionCenterAlwaysAllow = NSLocalizedString("permission.center.always.allow", value: "Always Allow", comment: "Permission center dropdown option to always allow permission")
     static let permissionCenterNeverAllow = NSLocalizedString("permission.center.never.allow", value: "Never Allow", comment: "Permission center dropdown option to never allow permission")
-    static let permissionCenterExternalSchemeDescription = NSLocalizedString("permission.center.external.scheme.description", value: "%@ to open \"%@\" links", comment: "Description for external scheme permission, first %@ is domain, second %@ is scheme name")
-    static let permissionCenterExternalApps = NSLocalizedString("permission.center.external.apps", value: "External Apps", comment: "Permission center header for external app permissions")
+    static let permissionCenterExternalSchemeDescription = NSLocalizedString("permission.center.external.scheme.description", value: "%@ to open “%@” links", comment: "Description for external scheme permission, first %@ is domain, second %@ is scheme name")
+    static let permissionCenterExternalApps = NSLocalizedString("permission.center.external.apps", value: "External apps", comment: "Permission center header for external app permissions")
+    static let permissionCenterExternalSchemeFormat = NSLocalizedString("permission.center.external.scheme.format", value: "Open “%@” links", comment: "Format for external scheme row, %@ is scheme name like mailto or sms")
 
     static let privacyDashboardPopupsAlwaysAsk = NSLocalizedString("dashboard.popups.ask", value: "Notify", comment: "Make pop-up windows always request permission for the current domain")
 
@@ -1167,6 +1199,8 @@ struct UserText {
     static let syncAppIconWithTheme = NSLocalizedString("preferences.appearance.sync-app-icon-with-theme", value: "Change app icon to match theme", comment: "Checkbox option to sync the app icon with the selected theme")
     static let addressBar = NSLocalizedString("preferences.appearance.address-bar", value: "Address Bar", comment: "Theme preferences")
     static let showAIChatInAddress = NSLocalizedString("preferences.appearance.show-aichat", value: "Duck.ai", comment: "Option to show AI Chat the address bar")
+    static let showAIChatShortcutInAddress = NSLocalizedString("preferences.appearance.show-aichat-shortcut", value: "Duck.ai Shortcut", comment: "Option to show AI Chat shortcut in the address bar")
+    static let showAIChatToggleInAddress = NSLocalizedString("preferences.appearance.show-aichat-toggle", value: "Duck.ai Toggle", comment: "Option to show AI Chat toggle in the address bar")
 
     static let showFullWebsiteAddress = NSLocalizedString("preferences.appearance.show-full-url", value: "Full website address", comment: "Option to show full URL in the address bar")
     static let showAutocompleteSuggestions = NSLocalizedString("preferences.appearance.show-autocomplete-suggestions", value: "Autocomplete suggestions", comment: "Option to show autocomplete suggestions in the address bar")

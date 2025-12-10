@@ -22,6 +22,7 @@ import Core
 import Persistence
 import Bookmarks
 import CoreData
+import os.log
 
 protocol TabNotifying {
     func didUpdateFavicon()
@@ -59,10 +60,14 @@ class FireproofFaviconUpdater: NSObject, FaviconUserScriptDelegate {
 
     private let featureFlagger = AppDependencyProvider.shared.featureFlagger
 
-    init(bookmarksDatabase: CoreDataDatabase, tab: TabNotifying, favicons: FaviconProviding) {
+    init(bookmarksDatabase: CoreDataDatabase,
+         tab: TabNotifying,
+         favicons: FaviconProviding,
+         sharedSecureVault: (any AutofillSecureVault)? = nil) {
         self.context = bookmarksDatabase.makeContext(concurrencyType: .mainQueueConcurrencyType)
         self.tab = tab
         self.favicons = favicons
+        self.secureVault = sharedSecureVault
 
         super.init()
         registerForNotifications()
@@ -132,6 +137,8 @@ class FireproofFaviconUpdater: NSObject, FaviconUserScriptDelegate {
     private func initSecureVault() async -> (any AutofillSecureVault)? {
         if featureFlagger.isFeatureOn(.autofillCredentialInjecting) && AutofillSettingStatus.isAutofillEnabledInSettings {
             if secureVault == nil {
+                // Fallback: Create new instance if shared one was not injected
+                Logger.general.info("FireproofFaviconUpdater creating fallback SecureVault instance")
                 // Move heavy PBKDF2 crypto operations to background thread to avoid blocking main thread
                 secureVault = await Task.detached(priority: .userInitiated) {
                     return try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
@@ -178,6 +185,8 @@ class FireproofFaviconUpdater: NSObject, FaviconUserScriptDelegate {
     private func legacyInitSecureVault() -> (any AutofillSecureVault)? {
         if featureFlagger.isFeatureOn(.autofillCredentialInjecting) && AutofillSettingStatus.isAutofillEnabledInSettings {
             if secureVault == nil {
+                // Fallback: Create new instance if shared one was not injected
+                Logger.general.info("FireproofFaviconUpdater creating fallback SecureVault instance (legacy)")
                 secureVault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
             }
             return secureVault

@@ -594,9 +594,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let legacyTokenStorage = SubscriptionTokenKeychainStorage(keychainType: keychainType)
         let authRefreshWideEventMapper = AuthV2TokenRefreshWideEventData.authV2RefreshEventMapping(wideEvent: wideEvent, isFeatureEnabled: {
 #if DEBUG
-            return featureFlagger.isFeatureOn(.authV2WideEventEnabled) // Allow the refresh event when using staging in debug mode, for easier testing
+            return true // Allow the refresh event when using staging in debug mode, for easier testing
 #else
-            return featureFlagger.isFeatureOn(.authV2WideEventEnabled) && subscriptionEnvironment.serviceEnvironment == .production
+            return subscriptionEnvironment.serviceEnvironment == .production
 #endif
         })
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
@@ -1022,6 +1022,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // swiftlint:enable cyclomatic_complexity
 
     func applicationWillFinishLaunching(_ notification: Notification) {
+        /// Check for reinstalling user by comparing bundle creation dates.
+        /// Stores the bundle's creation date in the KeyValueStore and compares
+        /// on subsequent launches. If the date changes and it's not a Sparkle update,
+        /// the user has reinstalled the app.
+        ///
+        /// This needs to run before the SparkleUpdateController is run to avoid having the user defaults resetted after an update restart.
+        do {
+            try DefaultReinstallUserDetection(keyValueStore: keyValueStore).checkForReinstallingUser()
+        } catch {
+            Logger.general.error("Problem when checking for reinstalling user: \(error.localizedDescription)")
+        }
+
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent())
 
         stateRestorationManager = AppStateRestorationManager(fileStore: fileStore,
@@ -1325,26 +1337,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             dataClearingPreferences: dataClearingPreferences,
             downloadManager: downloadManager,
             installDate: AppDelegate.firstLaunchDate,
-            persistor: QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)
+            persistor: QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore),
+            reinstallUserDetection: DefaultReinstallUserDetection(keyValueStore: keyValueStore)
         )
 
         if decider.shouldShowQuitSurvey {
-            let alert = NSAlert()
-            alert.messageText = "Quit DuckDuckGo?"
-            alert.informativeText = "This is your first time quitting the application."
-            alert.alertStyle = .informational
-            alert.addButton(withTitle: "Quit Now")
-            alert.addButton(withTitle: "Cancel")
-
-            let response = alert.runModal()
-
-            // Mark as shown regardless of user choice
             decider.markQuitSurveyShown()
-
-            if response == .alertSecondButtonReturn {
-                // User clicked "Cancel"
-                return .terminateCancel
-            }
+            showQuitSurvey()
+            return .terminateLater
         }
 
         if !downloadManager.downloads.isEmpty {
@@ -1388,6 +1388,53 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             condition.resolve()
         }
         RunLoop.current.run(until: condition)
+    }
+
+    // MARK: - Quit Survey
+
+    @MainActor private func showQuitSurvey() {
+        var quitSurveyWindow: NSWindow?
+
+        let surveyView = QuitSurveyFlowView(
+            onQuit: {
+                if let parentWindow = quitSurveyWindow?.sheetParent {
+                    parentWindow.endSheet(quitSurveyWindow!)
+                } else {
+                    quitSurveyWindow?.close()
+                }
+                NSApp.reply(toApplicationShouldTerminate: true)
+            },
+            onResize: { width, height in
+                guard let window = quitSurveyWindow else { return }
+                // For sheets, use origin: .zero - macOS handles sheet positioning automatically
+                let newFrame = NSRect(origin: .zero, size: NSSize(width: width, height: height))
+                window.setFrame(newFrame, display: true, animate: false)
+            }
+        )
+
+        let controller = QuitSurveyViewController(rootView: surveyView)
+        quitSurveyWindow = NSWindow(contentViewController: controller)
+
+        guard let window = quitSurveyWindow else { return }
+
+        window.styleMask.remove(.resizable)
+        let windowRect = NSRect(
+            x: 0,
+            y: 0,
+            width: QuitSurveyViewController.Constants.initialWidth,
+            height: QuitSurveyViewController.Constants.initialHeight
+        )
+        window.setFrame(windowRect, display: true)
+
+        // Show as sheet on the main window, or as standalone window if no main window
+        if let parentWindowController = windowControllersManager.lastKeyMainWindowController,
+           let parentWindow = parentWindowController.window {
+            parentWindow.beginSheet(window) { _ in }
+        } else {
+            // Fallback: show as a centered window
+            window.center()
+            window.makeKeyAndOrderFront(nil)
+        }
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {

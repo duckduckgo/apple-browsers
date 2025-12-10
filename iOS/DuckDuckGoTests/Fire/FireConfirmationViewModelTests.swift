@@ -45,7 +45,6 @@ final class FireConfirmationViewModelTests: XCTestCase {
     
     private struct MockTabsModel: TabsModeling {
         let count: Int
-        var hasActiveTabs = true
     }
     
     private class TestHistoryCoordinator: NullHistoryCoordinator {
@@ -438,19 +437,6 @@ final class FireConfirmationViewModelTests: XCTestCase {
         
         // Then
         XCTAssertFalse(viewModel.isClearTabsDisabled, "Tabs toggle should be enabled when count is greater than 0")
-    }
-    
-    func testWhenHasActiveTabsIsFalseThenTabsCountIsZero() {
-        // Given
-        let tabsModel = MockTabsModel(count: 1, hasActiveTabs: false)
-        let viewModel = makeViewModel(tabsModel: tabsModel)
-        
-        // When
-        let subtitle = viewModel.clearTabsSubtitle()
-        
-        // Then
-        XCTAssertEqual(subtitle, "None", "Tabs subtitle should show 'None' when hasActiveTabs is false")
-        XCTAssertTrue(viewModel.isClearTabsDisabled, "Tabs toggle should be disabled when hasActiveTabs is false")
     }
     
     func testWhenSitesCountIsZeroThenDataToggleIsDisabled() {

@@ -22,7 +22,6 @@ import Core
 
 protocol TabsModeling {
     var count: Int { get }
-    var hasActiveTabs: Bool { get }
 }
 
 public class TabsModel: NSObject, NSCoding, TabsModeling {

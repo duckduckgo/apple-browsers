@@ -52,9 +52,6 @@ class FireConfirmationViewModel: ObservableObject {
     }()
     
     private lazy var tabsCount: Int = {
-        guard tabsModel.hasActiveTabs else {
-            return 0
-        }
         return tabsModel.count
     }()
     

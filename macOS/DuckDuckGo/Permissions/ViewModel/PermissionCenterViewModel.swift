@@ -334,7 +334,7 @@ final class PermissionCenterViewModel: ObservableObject {
         for permissionType in usedPermissions.keys where !removedPermissions.contains(permissionType) {
             if case .externalScheme = permissionType {
                 externalSchemePermissions.append(permissionType)
-            } else {
+            } else if permissionType != .notification {
                 otherPermissions.append(permissionType)
             }
         }

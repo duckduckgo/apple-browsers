@@ -26,16 +26,19 @@ final class PermissionCenterViewModelTests: XCTestCase {
 
     var mockPermissionManager: PermissionManagerMock!
     var mockSystemPermissionManager: MockSystemPermissionManager!
+    var mockFeatureFlagger: MockFeatureFlagger!
 
     override func setUp() {
         super.setUp()
         mockPermissionManager = PermissionManagerMock()
         mockSystemPermissionManager = MockSystemPermissionManager()
+        mockFeatureFlagger = MockFeatureFlagger()
     }
 
     override func tearDown() {
         mockPermissionManager = nil
         mockSystemPermissionManager = nil
+        mockFeatureFlagger = nil
         super.tearDown()
     }
 
@@ -51,6 +54,7 @@ final class PermissionCenterViewModelTests: XCTestCase {
             domain: "example.com",
             usedPermissions: usedPermissions,
             permissionManager: mockPermissionManager,
+            featureFlagger: mockFeatureFlagger,
             removePermission: { _ in },
             dismissPopover: { },
             systemPermissionManager: mockSystemPermissionManager
@@ -74,6 +78,7 @@ final class PermissionCenterViewModelTests: XCTestCase {
             domain: "example.com",
             usedPermissions: usedPermissions,
             permissionManager: mockPermissionManager,
+            featureFlagger: mockFeatureFlagger,
             removePermission: { _ in },
             dismissPopover: { },
             systemPermissionManager: mockSystemPermissionManager
@@ -102,5 +107,3 @@ final class MockSystemPermissionManager: SystemPermissionManagerProtocol {
         return nil
     }
 }
-
-

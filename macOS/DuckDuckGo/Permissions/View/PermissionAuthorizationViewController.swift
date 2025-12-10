@@ -149,9 +149,8 @@ final class PermissionAuthorizationViewController: NSViewController {
                                                   query.domain,
                                                   query.permissions.localizedDescription.lowercased())
         case .notification:
-            descriptionLabel.stringValue = String(format: UserText.devicePermissionAuthorizationFormat,
-                                                  query.domain,
-                                                  query.permissions.localizedDescription.lowercased())
+            descriptionLabel.stringValue = String(format: UserText.notificationPermissionAuthorizationFormat,
+                                                  query.domain)
         case .externalScheme where query.domain.isEmpty:
             descriptionLabel.stringValue = String(format: UserText.externalSchemePermissionAuthorizationNoDomainFormat,
                                                   query.permissions.localizedDescription)
@@ -239,12 +238,12 @@ final class PermissionAuthorizationViewController: NSViewController {
     private func handleDeny() {
         isAuthorizationInProgress = false
         dismiss()
-        query?.handleDecision(grant: false, remember: true)
+        query?.handleDecision(grant: false, remember: nil)
     }
 
     private func handleAllow() {
         isAuthorizationInProgress = false
         dismiss()
-        query?.handleDecision(grant: true, remember: true)
+        query?.handleDecision(grant: true, remember: nil)
     }
 }

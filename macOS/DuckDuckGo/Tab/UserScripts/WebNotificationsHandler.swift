@@ -117,6 +117,11 @@ final class WebNotificationsHandler: NSObject, Subfeature {
             return { [weak self] params, original in
                 return await self?.handleRequestPermission(params: params, original: original)
             }
+        case .addDebugFlag:
+            return { params, original in
+                // Debug flag acknowledged but not used by this handler
+                return nil
+            }
         default:
             return nil
         }
@@ -220,28 +225,28 @@ final class WebNotificationsHandler: NSObject, Subfeature {
         }
 
         // Block notifications from iframes to prevent content spoofing attacks
-        guard original.frameInfo.isMainFrame else {
+        guard await original.frameInfo.isMainFrame else {
             Logger.general.debug("WebNotificationsHandler: Blocked notification from iframe (ID: \(payload.id))")
-            sendErrorEvent(id: payload.id, to: original.webView)
+            await sendErrorEvent(id: payload.id, to: original.webView)
             return
         }
 
         guard isWebNotificationsEnabled else {
             Logger.general.debug("WebNotificationsHandler: Blocked - feature flag disabled (ID: \(payload.id))")
-            sendErrorEvent(id: payload.id, to: original.webView)
+            await sendErrorEvent(id: payload.id, to: original.webView)
             return
         }
 
         guard featureFlagger.isFeatureOn(.newPermissionView) else {
             Logger.general.debug("WebNotificationsHandler: Blocked - newPermissionView flag disabled (ID: \(payload.id))")
-            sendErrorEvent(id: payload.id, to: original.webView)
+            await sendErrorEvent(id: payload.id, to: original.webView)
             return
         }
 
         guard let url = await original.webView?.url,
               let domain = url.host else {
             Logger.general.debug("WebNotificationsHandler: Missing domain for permission check (ID: \(payload.id))")
-            sendErrorEvent(id: payload.id, to: original.webView)
+            await sendErrorEvent(id: payload.id, to: original.webView)
             return
         }
 
@@ -249,13 +254,13 @@ final class WebNotificationsHandler: NSObject, Subfeature {
         let permissionDecision = permissionManager.permission(forDomain: domain, permissionType: .notification)
         guard permissionDecision == .allow else {
             Logger.general.debug("WebNotificationsHandler: Blocked - permission not allowed (ID: \(payload.id))")
-            sendErrorEvent(id: payload.id, to: original.webView)
+            await sendErrorEvent(id: payload.id, to: original.webView)
             return
         }
 
         guard await isSystemAuthorized() else {
             Logger.general.debug("WebNotificationsHandler: Blocked - not authorized (ID: \(payload.id))")
-            sendErrorEvent(id: payload.id, to: original.webView)
+            await sendErrorEvent(id: payload.id, to: original.webView)
             return
         }
 
@@ -282,7 +287,7 @@ final class WebNotificationsHandler: NSObject, Subfeature {
         Logger.general.debug("WebNotificationsHandler: Permission request received")
 
         // Block permission requests from iframes to prevent spoofing
-        guard original.frameInfo.isMainFrame else {
+        guard await original.frameInfo.isMainFrame else {
             Logger.general.debug("WebNotificationsHandler: Permission denied from iframe")
             return RequestPermissionResponse(permission: Permission.denied.rawValue)
         }
@@ -363,6 +368,7 @@ extension WebNotificationsHandler {
         case showNotification
         case closeNotification
         case requestPermission
+        case addDebugFlag
     }
 
     enum Permission: String {

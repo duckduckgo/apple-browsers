@@ -63297,7 +63297,7 @@
       }
     },
     "permission.authorization.format" : {
-      "comment" : "Popover asking for domain %@ to use camera/mic (%@)",
+      "comment" : "Popover asking for domain %@ to send notifications\nPopover asking for domain %@ to use camera/mic (%@)",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {

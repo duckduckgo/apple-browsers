@@ -209,7 +209,7 @@ struct PermissionAuthorizationSwiftUIView: View {
         case .popups:
             return String(format: UserText.popupWindowsPermissionAuthorizationFormat, domain, permissionType.localizedDescription.lowercased())
         case .notification:
-            return String(format: UserText.devicePermissionAuthorizationFormat, domain, permissionType.localizedDescription.lowercased())
+            return String(format: UserText.notificationPermissionAuthorizationFormat, domain)
         case .externalScheme:
             if domain.isEmpty {
                 return String(format: UserText.externalSchemePermissionAuthorizationNoDomainFormat, permissionType.localizedDescription)

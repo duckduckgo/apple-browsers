@@ -161,7 +161,7 @@ final class PermissionModel {
                         
                         if [.denied, .notDetermined].contains(systemStatus) {
                             // System authorization not granted - set to disabled so UI will show
-                            self.permissions.notification?.systemAuthorizationDenied(systemWide: false)
+                            self.permissions.notification.systemAuthorizationDenied(systemWide: false)
                         } else if self.permissions.notification == .active || self.permissions.notification == .inactive {
                             // System authorized and website permission granted - keep as active
                             self.permissions.notification = .active

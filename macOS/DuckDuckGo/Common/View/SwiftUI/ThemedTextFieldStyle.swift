@@ -29,6 +29,7 @@ struct ThemedTextFieldStyle: TextFieldStyle {
     var backgroundColor = Color(designSystemColor: .toneShadePrimary)
     let focusBorderColor = Color(designSystemColor: .accentPrimary)
 
+    // swiftlint:disable identifier_name
     func _body(configuration: TextField<Self._Label>) -> some View {
         if #available(macOS 12.0, *) {
             FocusableThemedTextFieldStyle(configuration: configuration, backgroundColor: backgroundColor, focusBorderColor: focusBorderColor)
@@ -36,6 +37,7 @@ struct ThemedTextFieldStyle: TextFieldStyle {
             LegacyThemedTextFieldStyle(configuration: configuration, backgroundColor: backgroundColor)
         }
     }
+    // swiftlint:enable identifier_name
 }
 
 @available(macOS 12.0, *)

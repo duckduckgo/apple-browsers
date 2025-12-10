@@ -489,11 +489,11 @@ struct UserText {
 
     // MARK: - Fire dialog sites list sheet
     static let fireDialogSitesOverlayTitle = NSLocalizedString("fire.dialog.sites.overlay.title",
-                                                              value: "Site Details",
-                                                              comment: "Header of in-dialog overlay listing domains affected by deletion")
+                                                               value: "Site Details",
+                                                               comment: "Header of in-dialog overlay listing domains affected by deletion")
     static let fireDialogSitesOverlaySubtitle = NSLocalizedString("fire.dialog.sites.overlay.subtitle",
-                                                                 value: "These sites will be deleted.",
-                                                                 comment: "Subtitle above the list of domains in in-dialog overlay")
+                                                                  value: "These sites will be deleted.",
+                                                                  comment: "Subtitle above the list of domains in in-dialog overlay")
 
     // MARK: - Fire dialog single-entry contextual titles
     /// Title used when reusing the Fire dialog as a single entry point (from History, menu, etc.) with full-time range
@@ -555,38 +555,38 @@ struct UserText {
     static let webTrackingProtectionExplanation = NSLocalizedString("web.tracking.protection.explanation", value: "DuckDuckGo automatically blocks hidden trackers as you browse the web.", comment: "feature explanation in settings")
     static let webTrackingProtectionUpdatedDescription = NSLocalizedString("web.tracking.protection.updated.description", value: "The DuckDuckGo browser provides tracking protections, which are always active.", comment: "Updated feature description in settings")
     static let webTrackingProtectionAlwaysOn = NSLocalizedString("Always On", comment: "Web tracking protection Always on title")
-    
+
     // Tracking Protection Features
     static let trackingProtectionThirdPartyTrackersTitle = NSLocalizedString("tracking.protection.third.party.trackers.title", value: "Blocks 3rd-party trackers", comment: "Feature box title")
     static let trackingProtectionThirdPartyTrackersDescription = NSLocalizedString("tracking.protection.third.party.trackers.description", value: "Helps block 3rd-party cookies that track you from site to site by preventing 3rd-party trackers from loading in the first place.", comment: "Feature description")
-    
+
     static let trackingProtectionTargetedAdsTitle = NSLocalizedString("tracking.protection.targeted.ads.title", value: "Blocks targeted ads", comment: "Feature box title")
     static let trackingProtectionTargetedAdsDescription = NSLocalizedString("tracking.protection.targeted.ads.description", value: "Blocks invasive trackers before they load, effectively eliminating ads that rely on tracking.", comment: "Feature description")
-    
+
     static let trackingProtectionLinkTrackingTitle = NSLocalizedString("tracking.protection.link.tracking.title", value: "Blocks link tracking", comment: "Feature box title")
     static let trackingProtectionLinkTrackingDescription = NSLocalizedString("tracking.protection.link.tracking.description", value: "Removes tracking parameters in links to prevent 3rd parties from tracking your behavior across sites.", comment: "Feature box description")
-    
+
     static let trackingProtectionFingerprintingTitle = NSLocalizedString("tracking.protection.fingerprinting.title", value: "Prevents fingerprint tracking", comment: "Feature box title")
     static let trackingProtectionFingerprintingDescription = NSLocalizedString("tracking.protection.fingerprinting.description", value: "Helps stop tracking companies from obtaining unique identifiers about your browser and device, which they use to follow you around the web.", comment: "Feature box description")
-    
+
     static let trackingProtectionReferrerTitle = NSLocalizedString("tracking.protection.referrer.title", value: "Protects against referrer tracking", comment: "Feature box title")
     static let trackingProtectionReferrerDescription = NSLocalizedString("tracking.protection.referrer.description", value: "Helps block companies from identifying the last website you visited.", comment: "Feature box description")
-    
+
     static let trackingProtectionFirstPartyCookiesTitle = NSLocalizedString("tracking.protection.first.party.cookies.title", value: "Expires 1st-party cookies", comment: "Feature box title")
     static let trackingProtectionFirstPartyCookiesDescription = NSLocalizedString("tracking.protection.first.party.cookies.description", value: "Automatically expires 1st-party cookies after 30 days, ensuring sites can't track you indefinitely when you're logged out.", comment: "Feature box description")
-    
+
     static let trackingProtectionCNAMECloakingTitle = NSLocalizedString("tracking.protection.cname.cloaking.title", value: "Protects against DNS CNAME cloaking", comment: "Feature box title")
     static let trackingProtectionCNAMECloakingDescription = NSLocalizedString("tracking.protection.cname.cloaking.description", value: "Helps block 3rd-party trackers that try to disguise themselves within a website using DNS.", comment: "Feature box description")
-    
+
     static let trackingProtectionGoogleAMPTitle = NSLocalizedString("tracking.protection.google.amp.title", value: "Blocks Google's AMP Tracking", comment: "Feature box title")
     static let trackingProtectionGoogleAMPDescription = NSLocalizedString("tracking.protection.google.amp.description", value: "Replaces Google AMP links with the original publisher's site.", comment: "Feature box description")
-    
+
     static let trackingProtectionGoogleSignInTitle = NSLocalizedString("tracking.protection.google.sign.in.title", value: "Blocks Google's sign-in pop-ups", comment: "Feature box title")
     static let trackingProtectionGoogleSignInDescription = NSLocalizedString("tracking.protection.google.sign.in.description", value: "Blocks Google sign-in pop-ups on sites Google doesn't own.", comment: "Feature box description")
-    
+
     static let trackingProtectionFacebookTitle = NSLocalizedString("tracking.protection.facebook.title", value: "Facebook tracking protection", comment: "Feature box title")
     static let trackingProtectionFacebookDescription = NSLocalizedString("tracking.protection.facebook.description", value: "Disables tracking for Facebook content like Facebook comment widgets on non-Facebook sites.", comment: "Feature box description")
-    
+
     static let emailProtectionExplanation = NSLocalizedString("email.protection.explanation", value: "Block email trackers and hide your address without switching your email provider.", comment: "Email protection feature explanation in settings. The feature blocks email trackers and hides original email address.")
 
     // Misc
@@ -610,6 +610,7 @@ struct UserText {
     static let aiChatOpenSidebarButton = NSLocalizedString("aichat.address-bar.open-sidebar-button", value: "Open Duck.ai Sidebar", comment: "Button to open Duck.ai sidebar")
     static let aiChatCloseSidebarButton = NSLocalizedString("aichat.address-bar.close-sidebar-button", value: "Close Duck.ai Sidebar", comment: "Button to close Duck.ai sidebar")
     static let aiChatAddressBarHideButton = NSLocalizedString("aichat.address-bar.hide-button", value: "Hide Duck.ai Shortcut", comment: "Button to hide duck.ai shortcut in address bar")
+    static let aiChatAddressBarHideToggle = NSLocalizedString("aichat.address-bar.hide-toggle", value: "Hide Duck.ai Toggle", comment: "Button to hide duck.ai toggle in address bar")
     static let aiChatOpenSettingsButton = NSLocalizedString("aichat.address-bar.open-settings-button", value: "Open AI Settings", comment: "Button to open AI settings")
     static let askAIChatButtonTitle = NSLocalizedString("aichat.address-bar.ask-button.title", value: "Ask Duck.ai", comment: "Title for button to ask Duck.ai")
 
@@ -622,6 +623,12 @@ struct UserText {
     static let aiChatSidebarTitle = NSLocalizedString("aichat.sidebar.title", value: "Duck.ai", comment: "Title for the Duck.ai sidebar")
     static let aiChatSidebarExpandButtonTooltip = NSLocalizedString("aichat.sidebar.expand-button.tooltip", value: "Expand", comment: "Tooltip for button to open duck.ai chat from sidebar in a full tab")
     static let aiChatSidebarCloseButtonTooltip = NSLocalizedString("aichat.sidebar.close-button.tooltip", value: "Close", comment: "Tooltip for button to close the sidebar with the duck.ai chat")
+    static let aiChatSearchTheWebTooltip = NSLocalizedString("aichat.search-privately.tooltip", value: "Search Privately", comment: "Tooltip for the search the web segment in the toggle control")
+    static let aiChatChatWithAITooltip = NSLocalizedString("aichat.ask-privately.tooltip", value: "Ask privately", comment: "Tooltip for the chat with AI segment in the toggle control")
+    static let aiChatToggleSearchLabel = NSLocalizedString("aichat.toggle.search.label", value: "Search", comment: "Label for the search segment in the address bar toggle control")
+    static let aiChatToggleAskLabel = NSLocalizedString("aichat.toggle.ask.label", value: "Duck.ai", comment: "Label for the ask AI segment in the address bar toggle control")
+    static let aiChatSendButtonTooltip = NSLocalizedString("aichat.send-button.tooltip", value: "Send", comment: "Tooltip for the send button in AI chat omnibar")
+    static let aiChatOmnibarPlaceholder = NSLocalizedString("aichat.omnibar.placeholder", value: "Ask privately", comment: "Placeholder text shown in the Duck.ai chat input field")
     static let moreSearchSettings = NSLocalizedString("settings.more-search-settings", value: "More Search Settings", comment: "The button name in preferences for More Search Settings")
     static let moreSearchSettingsDescription = NSLocalizedString("settings.more-search-settings.description", value: "Customize your language, region, and more.", comment: "Subtitle of the 'More Search Settings' button")
     static let moreSearchSettingsLink = NSLocalizedString("settings.more-search-settings.link", value: "Open DuckDuckGo Search Settings", comment: "Button to open Search Settings on duckduckgo.com")
@@ -752,13 +759,15 @@ struct UserText {
     static let importDataSourceTitle = NSLocalizedString("import.browser.data.source.title", value: "Where do you want to import from?", comment: "Import Browser Data title for option to choose source browser to import from")
     static let importDataSubtitle = NSLocalizedString("import.browser.data.source.subtitle", value: "Access and manage your passwords in DuckDuckGo Settings > Passwords & Autofill.", comment: "Subtitle explaining where users can find imported passwords.")
     static let importDataSuccessTitle = NSLocalizedString("import.browser.data.success.title", value: "Import complete!", comment: "message about Passwords and or bookmarks Data Import completion")
+    static let importDataSummaryTitle = NSLocalizedString("import.browser.data.summary.title", value:"Import Summary", comment: "Title for screen shown after importing data (passwords / bookmarks)")
     static let importDataImportTypeTitleCollapsedAll = NSLocalizedString("import.browser.data.import-type.title.collapsed.all", value: "Import all available data", comment: "Import Browser Data dialog title for option to choose what to import in collapsed state")
     static let importDataImportTypeTitleSelected = NSLocalizedString("import.browser.data.import-type.title.collapsed", value: "Import selected data", comment: "Import Browser Data dialog title for option to choose what to import in collapsed state")
     static let importDataImportTypeSubtitleBookmarksAndPasswords = NSLocalizedString("import.browser.data.import-type.subtitle.bookmarks.and.passwords", value: "Bookmarks and passwords", comment: "Import Browser Data dialog subtitle for option to choose what to import in collapsed state")
     static let importDataImportTypeSubtitleNone = NSLocalizedString("import.browser.data.import-type.subtitle.none", value: "None", comment: "Import Browser Data dialog subtitle for option to choose what to import in collapsed state")
     static let importDataSelectProfileTitle = NSLocalizedString("import.browser.data.select.profile.title", value: "Select profile:", comment: "Title for the data import browser profile picker")
     static let importDataSelectionSyncButtonTitle = NSLocalizedString("import.browser.data.selection.sync.button.title", value: "Sync from DuckDuckGo on another device", comment: "Import Browser Data dialog button title to sync imported data at selection stage")
-    static let importDataCompleteSyncButtonTitle = NSLocalizedString("import.browser.data.complete.sync.button.title", value: "Sync to DuckDuckGo on Mobile", comment: "Import Browser Data dialog button title to sync imported data at completion stage")
+    static let legacyImportDataCompleteSyncButtonTitle = NSLocalizedString("import.browser.data.complete.sync.button.title", value: "Sync to DuckDuckGo on Mobile", comment: "Import Browser Data dialog button title to sync imported data at completion stage")
+    static let importDataCompleteSyncButtonTitle = NSLocalizedString("import.browser.data.complete.set.up.sync.button.title", value: "Set Up Sync", comment: "Import Browser Data dialog button title to set up data sync at completion stage")
 
     static let exportLogins = NSLocalizedString("export.logins.data", value: "Export Passwords…", comment: "Opens Export Logins Data dialog")
     static let exportBookmarks = NSLocalizedString("export.bookmarks.menu.item", value: "Export Bookmarks…", comment: "Export bookmarks menu item")
@@ -803,7 +812,7 @@ struct UserText {
     static let problemCategoryBrokenWebsite = NSLocalizedString("feedback.problem-category.broken-website", value: "Report broken website", comment: "Problem category for broken website reports")
     static let problemCategoryAdsIssues = NSLocalizedString("feedback.problem-category.ads-issues", value: "Ads causing issues", comment: "Problem category for advertising-related problems")
     static let problemCategoryPasswordIssues = NSLocalizedString("feedback.problem-category.password-issues", value: "Password issues", comment: "Problem category for password-related problems")
-    static let problemCategorySomethingElse = NSLocalizedString("feedback.problem-category.something-else", value: "Something else", comment: "Problem category for other issues")
+    static let problemCategoryOtherFeedback = NSLocalizedString("feedback.problem-category.other-feedback", value: "Other feedback", comment: "Problem category for other issues")
 
     // Problem subcategories - Performance
     static let problemSubcategoryBrowserStartsSlowly = NSLocalizedString("feedback.problem-subcategory.browser-starts-slowly", value: "Browser starts slowly", comment: "Problem subcategory for slow browser startup")
@@ -822,6 +831,7 @@ struct UserText {
     static let problemSubcategoryTooManyCaptchas = NSLocalizedString("feedback.problem-subcategory.too-many-captchas", value: "Too many CAPTCHAs", comment: "Problem subcategory for excessive CAPTCHA prompts")
     static let problemSubcategoryVideoAudioPlaysAutomatically = NSLocalizedString("feedback.problem-subcategory.video-audio-plays-automatically", value: "Video/audio plays automatically", comment: "Problem subcategory for unwanted autoplay")
     static let problemSubcategoryVideoDoesntPlay = NSLocalizedString("feedback.problem-subcategory.video-doesnt-play", value: "Video doesn't play", comment: "Problem subcategory for video playback issues")
+    static let problemSubcategoryPopupWindowsNotOpening = NSLocalizedString("feedback.problem-subcategory.popup-windows-not-opening", value: "Pop-ups don't open", comment: "Problem subcategory for popup windows being blocked")
 
     // Problem subcategories - Install & Updates
     static let problemSubcategoryBrowserVersionIssues = NSLocalizedString("feedback.problem-subcategory.browser-version-issues", value: "Browser version issues", comment: "Problem subcategory for version-related problems")
@@ -925,11 +935,11 @@ struct UserText {
                                                                        value: "Allow “%@“ to use your %@?",
                                                                        comment: "Popover asking for domain %@ to use camera/mic (%@)")
     static let popupWindowsPermissionAuthorizationFormat = NSLocalizedString("permission.authorization.popups.format",
-                                                                             value: "Allow “%@“ to open PopUp Window?",
-                                                                             comment: "Popover asking for domain %@ to open Popup Window")
+                                                                             value: "Allow “%@” to open a pop-up window?",
+                                                                             comment: "Popover asking for domain %@ to open a pop-up window")
     static let permissionMenuHeaderPopupWindowsFormat = NSLocalizedString("permission.authorization.popups.menu-header",
-                                                                          value: "Allow “%@“ to open PopUp Windows?",
-                                                                          comment: "Popover asking for domain %@ to open Popup Window")
+                                                                          value: "Allow “%@” to open pop-up windows?",
+                                                                          comment: "Popover asking for domain %@ to open pop-up windows")
     static let externalSchemePermissionAuthorizationFormat = NSLocalizedString("permission.authorization.externalScheme.format",
                                                                                value: "“%@” would like to open this link in %@",
                                                                                comment: "Popover asking for domain %@ to open link in External App (%@)")
@@ -943,7 +953,7 @@ struct UserText {
     static let permissionCamera = NSLocalizedString("permission.camera", value: "Camera", comment: "Camera input media device name")
     static let permissionCameraAndMicrophone = NSLocalizedString("permission.cameraAndmicrophone", value: "Camera and Microphone", comment: "camera and microphone input media devices name")
     static let permissionGeolocation = NSLocalizedString("permission.geolocation", value: "Location", comment: "User's Geolocation permission access name")
-    static let permissionPopups = NSLocalizedString("permission.popups", value: "Pop-ups", comment: "Open Pop Up Windows permission access name")
+    static let permissionPopups = NSLocalizedString("permission.popups", value: "Pop-ups", comment: "Open pop-up windows permission access name")
 
     static let permissionMuteFormat = NSLocalizedString("permission.mute", value: "Pause %@ use on “%@”", comment: "Temporarily pause input media device %@ access for %@2 website")
     static let permissionUnmuteFormat = NSLocalizedString("permission.unmute", value: "Resume %@ use on “%@”", comment: "Resume input media device %@ access for %@ website")
@@ -956,20 +966,53 @@ struct UserText {
     static let permissionGeolocationServicesDisabled = NSLocalizedString("permission.disabled.system", value: "System location services are disabled", comment: "Geolocation Services are disabled in System Preferences")
     static let permissionOpenSystemSettings = NSLocalizedString("permission.open.settings", value: "Open System Settings", comment: "Open System Settings (to re-enable permission for the App) (macOS 13 and above)")
 
-    static let permissionPopupTitle = NSLocalizedString("permission.popup.title", value: "Blocked Pop-ups", comment: "Title of a popup that has a list of blocked popups")
-    static let permissionPopupOpenFormat = NSLocalizedString("permission.popup.open.format", value: "%@", comment: "Open %@ URL Pop-up")
+    static func permissionPopupTitle(count: Int) -> String {
+        let format = NSLocalizedString("permission.popup.title", value: "Blocked %d pop-ups", comment: "Title showing number of blocked pop-ups")
+        return String.localizedStringWithFormat(format, count)
+    }
+    static let permissionPopupOpenFormat = NSLocalizedString("permission.popup.open.format",
+                                                             value: "Open “%@”",
+                                                             comment: "Menu action to open the blocked pop-up at the specified URL")
+    static let permissionPopupAllowPopupsForPage = NSLocalizedString("permission.popup.allow.popups.page",
+                                                                     value: "Only allow pop-ups for this visit",
+                                                                     comment: "Option to temporarily allow pop-ups for the current page during this visit until it reloads")
 
     static let permissionExternalSchemeOpenFormat = NSLocalizedString("permission.externalScheme.open.format", value: "Open %@", comment: "Open %@ App Name")
-    static let permissionPopupBlockedPopover = NSLocalizedString("permission.popup.blocked.popover", value: "Pop-up Blocked", comment: "Text of popver warning the user that the a pop-up as been blocked")
+    static let permissionPopupBlockedPopover = NSLocalizedString("permission.popup.blocked.popover", value: "Pop-Up Blocked", comment: "Text of popover warning the user that a pop-up has been blocked")
+    static let permissionPopupOpenButton = NSLocalizedString("permission.popup.open.button", value: "Open", comment: "Button to open a blocked pop-up")
+    static let permissionPopupAllowPopupsButton = NSLocalizedString("permission.popup.allow.popups.button", value: "Allow Pop-ups", comment: "Button to allow pop-ups when blocked popup has no URL")
     static let permissionPopupLearnMoreLink = NSLocalizedString("permission.popup.learn-more.link", value: "Learn more about location services", comment: "Text of link that leads to web page with more informations about location services.")
     static let permissionPopupAllowButton = NSLocalizedString("permission.popup.allow.button", value: "Allow", comment: "Button that the user can use to authorise a web site to for, for example access location or camera and microphone etc.")
+
+    static let permissionPopupDenyButton = NSLocalizedString("permission.popup.deny.button", value: "Deny", comment: "Button that denies permission for this request only")
+    static let permissionPopupAlwaysDenyButton = NSLocalizedString("permission.popup.always.deny.button", value: "Never Allow", comment: "Button that denies permission and remembers the decision for future requests")
+    static let permissionPopupAlwaysAllowButton = NSLocalizedString("permission.popup.always.allow.button", value: "Always Allow", comment: "Button that grants permission and remembers the decision for future requests")
 
     static let privacyDashboardPermissionAsk = NSLocalizedString("dashboard.permission.ask", value: "Ask every time", comment: "Privacy Dashboard: Website should always Ask for permission for input media device access")
     static let privacyDashboardPermissionAlwaysAllow = NSLocalizedString("dashboard.permission.allow", value: "Always allow", comment: "Privacy Dashboard: Website can always access input media device")
     static let privacyDashboardPermissionAlwaysDeny = NSLocalizedString("dashboard.permission.deny", value: "Always deny", comment: "Privacy Dashboard: Website can never access input media device")
     static let permissionPopoverDenyButton = NSLocalizedString("permission.popover.deny", value: "Deny", comment: "Permission Popover: Deny Website input media device access")
 
-    static let privacyDashboardPopupsAlwaysAsk = NSLocalizedString("dashboard.popups.ask", value: "Notify", comment: "Make PopUp Windows always asked from user for current domain")
+    // Two-step permission authorization (geolocation)
+    static let permissionSystemLocationEnable = NSLocalizedString("permission.system.location.enable", value: "Enable System Location", comment: "Button to enable system location services")
+    static let permissionSystemLocationWaiting = NSLocalizedString("permission.system.location.waiting", value: "Waiting for system permission…", comment: "Text shown while waiting for user to respond to system location permission dialog")
+    static let permissionSystemLocationEnabled = NSLocalizedString("permission.system.location.enabled", value: "System location enabled!", comment: "Text shown after system location permission has been granted")
+    static let permissionSystemLocationDisabled = NSLocalizedString("permission.system.location.disabled", value: "System location disabled. Turn it on in ", comment: "Text shown when system location was previously denied. Followed by a link to System Settings")
+    static let permissionSystemSettingsLocation = NSLocalizedString("permission.system.settings.location", value: "System Settings → Privacy", comment: "Link text to open System Settings Privacy section for location")
+    static let permissionRestartApp = NSLocalizedString("permission.restart.app", value: "Restart the DuckDuckGo application", comment: "Text shown when app restart is required for permission changes to take effect")
+    static let permissionGeolocationPromptFormat = NSLocalizedString("permission.geolocation.prompt.format", value: "Allow %@ to use your current location?", comment: "Prompt asking if domain %@ can use location")
+    static let permissionPopupNeverAllowButton = NSLocalizedString("permission.popup.never.allow.button", value: "Never Allow", comment: "Button that denies permission and remembers the decision for future requests")
+
+    // Permission Center
+    static let permissionCenterTitle = NSLocalizedString("permission.center.title", value: "Permissions for “%@”", comment: "Title for permission center popover, %@ is the domain name")
+    static let permissionCenterAlwaysAsk = NSLocalizedString("permission.center.always.ask", value: "Always Ask", comment: "Permission center dropdown option to always ask for permission")
+    static let permissionCenterAlwaysAllow = NSLocalizedString("permission.center.always.allow", value: "Always Allow", comment: "Permission center dropdown option to always allow permission")
+    static let permissionCenterNeverAllow = NSLocalizedString("permission.center.never.allow", value: "Never Allow", comment: "Permission center dropdown option to never allow permission")
+    static let permissionCenterExternalSchemeDescription = NSLocalizedString("permission.center.external.scheme.description", value: "%@ to open “%@” links", comment: "Description for external scheme permission, first %@ is domain, second %@ is scheme name")
+    static let permissionCenterExternalApps = NSLocalizedString("permission.center.external.apps", value: "External apps", comment: "Permission center header for external app permissions")
+    static let permissionCenterExternalSchemeFormat = NSLocalizedString("permission.center.external.scheme.format", value: "Open “%@” links", comment: "Format for external scheme row, %@ is scheme name like mailto or sms")
+
+    static let privacyDashboardPopupsAlwaysAsk = NSLocalizedString("dashboard.popups.ask", value: "Notify", comment: "Make pop-up windows always request permission for the current domain")
 
     static let settings = NSLocalizedString("settings", value: "Settings", comment: "Menu item for opening settings")
 
@@ -1128,6 +1171,8 @@ struct UserText {
     static let syncAppIconWithTheme = NSLocalizedString("preferences.appearance.sync-app-icon-with-theme", value: "Change app icon to match theme", comment: "Checkbox option to sync the app icon with the selected theme")
     static let addressBar = NSLocalizedString("preferences.appearance.address-bar", value: "Address Bar", comment: "Theme preferences")
     static let showAIChatInAddress = NSLocalizedString("preferences.appearance.show-aichat", value: "Duck.ai", comment: "Option to show AI Chat the address bar")
+    static let showAIChatShortcutInAddress = NSLocalizedString("preferences.appearance.show-aichat-shortcut", value: "Duck.ai Shortcut", comment: "Option to show AI Chat shortcut in the address bar")
+    static let showAIChatToggleInAddress = NSLocalizedString("preferences.appearance.show-aichat-toggle", value: "Duck.ai Toggle", comment: "Option to show AI Chat toggle in the address bar")
 
     static let showFullWebsiteAddress = NSLocalizedString("preferences.appearance.show-full-url", value: "Full website address", comment: "Option to show full URL in the address bar")
     static let showAutocompleteSuggestions = NSLocalizedString("preferences.appearance.show-autocomplete-suggestions", value: "Autocomplete suggestions", comment: "Option to show autocomplete suggestions in the address bar")
@@ -1187,11 +1232,16 @@ struct UserText {
     // MARK: - Login Import & Export
 
     static let importChooseSourceTitle = NSLocalizedString("import.choose-source.title", value: "Choose where to import from", comment: "Title text for the import dialog, before the user selects a source")
-    static let importChooseSourceShowMoreButtonTitle = NSLocalizedString("import.choose-source.show-more-button.title", value: "Show More", comment: "Button text for showing more import options in the data import view")
+    static let importChooseSourceShowMoreButtonTitle = NSLocalizedString("import.choose-source.more-button.title", value: "More", comment: "Button text for showing more import options in the data import view")
     static let importChooseSourceSyncButtonTitle = NSLocalizedString("import.choose-source.sync-button.title", value: "Using DuckDuckGo on another device?", comment: "Button text for syncing from the data import view")
     static let importChooseSourceSyncButtonAction = NSLocalizedString("import.choose-source.sync-button.action", value: "Sync", comment: "Action text for syncing data with another device from the data import view")
 
+    static let importNowButtonTitle = NSLocalizedString("import.now.button.title", value: "Import Now", comment: "Button text for starting the import process")
+
     static let importSelectedDataTitle = NSLocalizedString("import.selected-data.title", value: "Import Selected Data", comment: "Title text for the dialog to confirm which data to import (e.g passwords, bookmarks)")
+
+    static let importSelectProfileTitle = NSLocalizedString("import.select-profile.title", value: "Select profile to import", comment: "Title text for the dialog to select which browser profile to import")
+    static let importSelectProfilesTitle = NSLocalizedString("import.select-profiles.title", value: "Select profiles to import", comment: "Title text for the dialog to select which browser profiles to import")
 
     static func importFromFileTitle(from source: DataImport.Source) -> String {
         String(format: NSLocalizedString("import.from.file.title", value: "Import from %@", comment: "Title text for the file import screen, after the user selects a source"), source.importSourceName)
@@ -1201,15 +1251,20 @@ struct UserText {
     static let importTypeSelectionTitleBookmarks = NSLocalizedString("import.type-selection.title.bookmarks", value: "Import Bookmarks", comment: "Title text for the button to select the type of data to import when bookmarks selected")
     static let importTypeSelectionTitlePasswords = NSLocalizedString("import.type-selection.title.passwords", value: "Import Passwords", comment: "Title text for the button to select the type of data to import when passwords selected")
 
+    static let importChromeAllowKeychainIntructions = NSLocalizedString("import.chrome.allow-keychain.instructions", value: "Enter your device password and click **Allow** to complete the import. DuckDuckGo won't see your password.", comment: "Instructions shown to the user when Chrome needs to access their Keychain. Contains markdown for bold text.")
+    static let importChromeAllowButtonTitle = NSLocalizedString("import.chrome.allow-keychain.allow.button.title", value: "Allow", comment: "Button title of example dialog demonstrating to the user what to click when the system needs to access their Keychain.")
+
     static let importLoginsCSV = NSLocalizedString("import.logins.csv.title", value: "CSV Passwords File (for other browsers)", comment: "Title text for the CSV importer")
+    static let importLoginsCSVShort = NSLocalizedString("import.logins.csv.short.title", value: "CSV Passwords", comment: "Short title text for the CSV importer")
     static let importBookmarksHTML = NSLocalizedString("import.bookmarks.html.title", value: "HTML Bookmarks File (for other browsers)", comment: "Title text for the HTML Bookmarks importer")
+    static let importBookmarksHTMLShort = NSLocalizedString("import.bookmarks.html.short.title", value: "HTML Bookmarks", comment: "Short title text for the HTML Bookmarks importer")
     static let importBookmarksSelectHTMLFile = NSLocalizedString("import.bookmarks.select-html-file", value: "Select Bookmarks HTML File…", comment: "Button text for selecting HTML Bookmarks file")
     static let importLoginsSelectCSVFile = NSLocalizedString("import.logins.select-csv-file", value: "Select Passwords CSV File…", comment: "Button text for selecting a CSV file")
     static func importLoginsSelectCSVFile(from source: DataImport.Source) -> String {
         String(format: NSLocalizedString("import.logins.select-csv-file.source", value: "Select %@ CSV File…", comment: "Button text for selecting a CSV file exported from (LastPass or Bitwarden or 1Password - %@)"), source.importSourceName)
     }
     static let importDataSelectFileButtonTitle = NSLocalizedString("import.data.select-file.button.title", value: "Select File…", comment: "Button text for selecting a file")
-    static let importDragAndDropFile = NSLocalizedString("import.drag-and-drop-file", value: "Drag & drop your file here", comment: "Drag-and-drop instruction for importing a file")
+    static let importDragAndDropFile = NSLocalizedString("import.drag-and-drop-file", value: "Drop your file here", comment: "Drag-and-drop instruction for importing a file")
 
     static func importNoDataBookmarksSubtitle(from source: DataImport.Source) -> String {
         String(format: NSLocalizedString("import.nodata.bookmarks.subtitle", value: "If you have %@ bookmarks, try importing them manually instead.", comment: "Data import error subtitle: suggestion to import Bookmarks manually by selecting a CSV or HTML file. The placeholder here represents the source browser, e.g Firefox."), source.importSourceName)
@@ -1221,6 +1276,7 @@ struct UserText {
     static let importLoginsPasswords = NSLocalizedString("import.logins.passwords", value: "Passwords", comment: "Title text for the Passwords import option")
     static let importLoginsPasswordsExplainer = NSLocalizedString("import.logins.passwords.explainer2", value: "Passwords are encrypted. Nobody but you can see your passwords, not even us. Find Passwords in DuckDuckGo Settings > Passwords & Autofill.", comment: "Explanatory text for the Passwords import option to alleviate security concerns and explain usage.")
     static let importLoginsPasswordsExplainerAutolockOff = NSLocalizedString("import.logins.passwords.explainer.autolock.off", value: "Passwords are encrypted. We recommend setting up Auto-lock to keep your passwords even more secure. Set it up in DuckDuckGo Settings > Passwords & Autofill.", comment: "Explanatory text for the Passwords import option to alleviate security concerns and explain usage when autolock is disabled")
+    static let importLoginsPasswordsExplainerEncrypted = NSLocalizedString("import.logins.passwords.explainer.encrypted", value: "Encrypted", comment: "Explanatory label stating that the passwords are encrypted")
 
     static let importCreditCards = NSLocalizedString("import.credit-cards", value: "Credit Cards", comment: "Title text for the Credit Card import option")
 
@@ -1237,8 +1293,8 @@ struct UserText {
 
     static func dataImportRequiresPasswordTitle(_ source: DataImport.Source) -> String {
         let localized = NSLocalizedString("import.data.requires-password.title",
-                                         value: "Enter Primary Password for %@",
-                                         comment: "Alert title text when the data import needs a password")
+                                          value: "Enter Primary Password for %@",
+                                          comment: "Alert title text when the data import needs a password")
         return String(format: localized, source.importSourceName)
     }
 
@@ -1249,6 +1305,12 @@ struct UserText {
         return String(format: localized, source.importSourceName)
     }
 
+
+    static let passwordEntryHelpTitle = NSLocalizedString("import.password.entry.help.title", value: "Want to try again? macOS needs your permission to finish importing.", comment: "Title for the password entry help screen")
+    static let passwordEntryHelpInstructions = NSLocalizedString("import.password.entry.help.instructions", value: "Click **Show macOS Message** and select **Allow** when the macOS message appears.", comment: "Instructions for password entry help")
+    static let passwordEntryHelpShowMacOSMessageButton = NSLocalizedString("import.password.entry.help.show.macos.message.button", value: "Show macOS Message", comment: "Button text to trigger the macOS keychain prompt")
+    static let passwordEntryHelpDialogExampleText = NSLocalizedString("import.password.entry.help.dialog.example.text", value: "DuckDuckGo wants to use your confidential information stored in your keychain.", comment: "Explanatory text shown on an example of a system prompt that asks for the user's password.")
+
     static let bookmarkImportSafariRequestPermissionButtonTitle = NSLocalizedString("import.bookmarks.safari.permission-button.title", value: "Select Safari Folder…", comment: "Text for the Safari data import permission button")
 
     static let bookmarkImportBookmarks = NSLocalizedString("import.bookmarks.bookmarks", value: "Bookmarks", comment: "Title text for the Bookmarks import option")
@@ -1258,8 +1320,76 @@ struct UserText {
     static let importShortcutsPasswordsTitle = NSLocalizedString("import.shortcuts.passwords.title", value: "Show Passwords Shortcut", comment: "Title for the setting to enable the passwords shortcut")
     static let importShortcutsPasswordsSubtitle = NSLocalizedString("import.shortcuts.passwords.subtitle", value: "Keep passwords nearby in the address bar", comment: "Description for the setting to enable the passwords shortcut")
 
+    static func importSummaryBookmarksImported(_ count: Int) -> String {
+        let localized = NSLocalizedString("import.summary.bookmarks.imported", value: "Bookmarks Imported: %d", comment: "Summary text showing number of bookmarks successfully imported")
+        return String(format: localized, count)
+    }
+    static func importSummaryBookmarksImportedPartial(_ successful: Int, _ total: Int) -> String {
+        let localized = NSLocalizedString("import.summary.bookmarks.imported.partial", value: "Bookmarks Imported: %d / %d", comment: "Summary text showing number of bookmarks successfully imported out of total attempted")
+        return String(format: localized, successful, total)
+    }
+    static func importSummaryPasswordsImported(_ count: Int) -> String {
+        let localized = NSLocalizedString("import.summary.passwords.imported", value: "Passwords Imported: %d", comment: "Summary text showing number of passwords successfully imported")
+        return String(format: localized, count)
+    }
+    static func importSummaryPasswordsImportedPartial(_ successful: Int, _ total: Int) -> String {
+        let localized = NSLocalizedString("import.summary.passwords.imported.partial", value: "Passwords Imported: %d / %d", comment: "Summary text showing number of passwords successfully imported out of total attempted")
+        return String(format: localized, successful, total)
+    }
+    static func importSummaryCreditCardsImported(_ count: Int) -> String {
+        let localized = NSLocalizedString("import.summary.credit.cards.imported", value: "Credit Cards Imported: %d", comment: "Summary text showing number of credit cards successfully imported")
+        return String(format: localized, count)
+    }
+    static func importSummaryCreditCardsImportedPartial(_ successful: Int, _ total: Int) -> String {
+        let localized = NSLocalizedString("import.summary.credit.cards.imported.partial", value: "Credit Cards Imported: %d / %d", comment: "Summary text showing number of credit cards successfully imported out of total attempted")
+        return String(format: localized, successful, total)
+    }
+    static func importSummaryDuplicatesSkipped(_ count: Int) -> String {
+        let localized = NSLocalizedString("import.summary.duplicates.skipped", value: "Duplicates Skipped: %d", comment: "Summary text showing number of duplicate items that were skipped during import")
+        return String(format: localized, count)
+    }
+    static func importSummaryFailedToImport(_ count: Int) -> String {
+        let localized = NSLocalizedString("import.summary.failed.to.import", value: "Failed to Import: %d", comment: "Summary text showing number of items that failed to import")
+        return String(format: localized, count)
+    }
+
+    static var importSummarySendFeedbackTitle = NSLocalizedString("import.summary.send.feedback.title", value: "Report an issue", comment: "Title for feedback dialog")
+    static var importSummarySendFeedbackFieldPlaceholderText = NSLocalizedString("import.summary.send.feedback.field.placeholder.text", value: "Provide details that you think may help us fix the problem", comment: "Placeholder text for feedback dialog text field")
+    static var importSummarySendFeedbackAnonymousReports = NSLocalizedString("import.summary.send.feedback.anonymous.reports", value: "Anonymous reports help DuckDuckGo fix issues.", comment: "Label for section of feedback dialog that explains anonymous reports")
+
+    static var importSummarySendFeedbackShowsDetailButtonTitle = NSLocalizedString("import.summary.send.feedback.shows.detail.button.title", value: "Show details", comment: "Button title to show more details about what anonymous data will be sent for diagnostics")
+
+    static func importBookmarksFromSourceAutomaticError(source: DataImport.Source) -> String {
+        let localized = NSLocalizedString("import.bookmarks.from.source.automatic.error", value: "Couldn't automatically import Bookmarks from %@", comment: "Error text saying that bookmarks could not be automatically imported from a particular source (e.g Chrome, Firefox)")
+        return String(format: localized, source.importSourceName)
+    }
+
+    static func importPasswordsFromSourceAutomaticError(source: DataImport.Source) -> String {
+        let localized = NSLocalizedString("import.passwords.from.source.automatic.error", value: "Couldn't automatically import Passwords from %@", comment: "Error text saying that passwords could not be automatically imported from a particular source (e.g Chrome, Firefox)")
+        return String(format: localized, source.importSourceName)
+    }
+
+    static func importCreditCardsFromSourceAutomaticError(source: DataImport.Source) -> String {
+        let localized = NSLocalizedString("import.credit-cards.from.source.automatic.error", value: "Couldn't automatically import Credit Cards from %@", comment: "Error text saying that credit cards could not be automatically imported from a particular source (e.g Chrome, Firefox)")
+        return String(format: localized, source.importSourceName)
+    }
+
+    static let importSummaryViewDetails = NSLocalizedString("import.summary.view.details", value: "Details...", comment: "View more detailed information about a recent data import.")
+    static let importSummaryDetailsPasswordsTitle = NSLocalizedString("import.summary.details.passwords.title", value: "Password Import Details", comment: "Title for the passwords import summary details screen")
+    static let importSummaryDetailsTotalPasswordsImported = NSLocalizedString("import.summary.details.total.passwords.imported", value: "Total Passwords Imported:", comment: "Title for the total number of passwords imported")
+
+    static let importSummaryDetailsFailedItemTitle = NSLocalizedString("import.summary.details.failed.item.title", value: "Title:", comment: "Label for Title of a failed item in the import summary details screen")
+    static let importSummaryDetailsFailedItemHost = NSLocalizedString("import.summary.details.failed.item.host", value: "Host:", comment: "Label for Host of a failed item in the import summary details screen")
+    static let importSummaryDetailsFailedItemUser = NSLocalizedString("import.summary.details.failed.item.user", value: "User:", comment: "Label for User of a failed item in the import summary details screen")
+    static let importSummaryDetailsFailedItemError = NSLocalizedString("import.summary.details.failed.item.error", value: "Error:", comment: "Label of Error of a failed item in the import summary details screen")
+
     static let importPasswordsManuallyTitle = NSLocalizedString("import.passwords.manually.title", value: "Import your passwords manually", comment: "Title for the option to manually import passwords")
     static let importBookmarksManuallyTitle = NSLocalizedString("import.bookmarks.manually.title", value: "Import your bookmarks manually", comment: "Title for the option to manually import bookmarks")
+
+    static let importCouldNotImportPasswords = NSLocalizedString("import.could.not.import.passwords", value: "Couldn't import Passwords", comment: "Error message when passwords could not be imported")
+    static let importCouldNotImportBookmarks = NSLocalizedString("import.could.not.import.bookmarks", value: "Couldn't import Bookmarks", comment: "Error message when bookmarks could not be imported")
+    static let importCouldNotImportCreditCards = NSLocalizedString("import.could.not.import.credit-cards", value: "Couldn't import Credit Cards", comment: "Error message when credit cards could not be imported")
+    static let importCouldNotImportFile = NSLocalizedString("import.could.not.import.file", value: "Incorrect file or format, please use a different file.", comment: "Error title when a file could not be imported")
 
     static let openDeveloperTools = NSLocalizedString("main.menu.show.inspector", value: "Open Developer Tools", comment: "Show Web Inspector/Open Developer Tools")
     static let closeDeveloperTools = NSLocalizedString("main.menu.close.inspector", value: "Close Developer Tools", comment: "Hide Web Inspector/Close Developer Tools")
@@ -1391,7 +1521,7 @@ struct UserText {
     static let reopenLastClosedTab = NSLocalizedString("reopen.last.closed.tab", value: "Reopen Last Closed Tab", comment: "This string represents an action to reopen the last closed tab in the browser")
     static let reopenLastClosedWindow = NSLocalizedString("reopen.last.closed.window", value: "Reopen Last Closed Window", comment: "This string represents an action to reopen the last closed window in the browser")
     static let cookiePopupManagedNotification = NSLocalizedString("notification.badge.cookiesmanaged", value: "Cookies Managed", comment: "Notification that appears when browser automatically handle cookies")
-    static let cookiePopupHiddenNotification = NSLocalizedString("notification.badge.popuphidden", value: "Pop-up Hidden", comment: "Notification that appears when browser cosmetically hides a cookie popup")
+    static let cookiePopupHiddenNotification = NSLocalizedString("notification.badge.popuphidden", value: "Pop-Up Hidden", comment: "Notification that appears when the browser cosmetically hides a cookie pop-up")
 
     static let autoconsentModalTitle = NSLocalizedString("autoconsent.modal.title", value: "Looks like this site has a cookie pop-up 👇", comment: "Title for modal asking the user to auto manage cookies")
     static let autoconsentFromSetUpModalTitle = NSLocalizedString("autoconsent.from.setup.modal.title", value: "Want DuckDuckGo to handle cookie pop-ups?", comment: "Title for modal asking the user to auto manage cookies")
@@ -1399,9 +1529,18 @@ struct UserText {
     static let autoconsentModalBody = NSLocalizedString("autoconsent.modal.body", value: "Want me to handle these for you? I can try to minimize cookies, maximize privacy, and hide pop-ups like these.", comment: "Body for modal asking the user to auto manage cookies")
     static let autoconsentFromSetUpModalBody = NSLocalizedString("autoconsent.from.setup.modal.body", value: "When we detect cookie pop-ups on sites you visit, we can try to select the most private settings available and hide pop-ups like this.", comment: "Body for modal asking the user to auto manage cookies")
 
-    static let autoconsentModalConfirmButton = NSLocalizedString("autoconsent.modal.cta.confirm", value: "Manage Cookie Pop-ups", comment: "Confirm button for modal asking the user to auto manage cookies")
-    static let autoconsentFromSetUpModalConfirmButton = NSLocalizedString("autoconsent.from.setup.modal.cta.confirm", value: "Handle Pop-ups For Me", comment: "Confirm button for modal asking the user to auto manage cookies")
+    static let autoconsentModalConfirmButton = NSLocalizedString("autoconsent.modal.cta.confirm", value: "Manage Cookie Pop-Ups", comment: "Confirm button for modal asking the user to auto manage cookies")
+    static let autoconsentFromSetUpModalConfirmButton = NSLocalizedString("autoconsent.from.setup.modal.cta.confirm", value: "Handle Pop-Ups For Me", comment: "Confirm button for modal asking the user to auto manage cookies")
     static let autoconsentModalDenyButton = NSLocalizedString("autoconsent.modal.cta.deny", value: "No Thanks", comment: "Deny button for modal asking the user to auto manage cookies")
+
+    static func autoconsentStatsPopoverTitle(count: Int) -> String {
+        let localized = NSLocalizedString("autoconsent.stats.popover.title",
+                                         value: "%d cookie pop-ups blocked",
+                                         comment: "Title for autoconsent stats popover showing number of blocked cookie pop-ups")
+        return String(format: localized, count)
+    }
+
+    static let autoconsentStatsPopoverMessage = NSLocalizedString("autoconsent.stats.popover.message", value: "Open a new tab to see your stats.", comment: "Message for autoconsent stats popover prompting user to open new tab")
 
     static let recentlyVisitedMenuSection = NSLocalizedString("history.menu.recently.visited", value: "Recently Visited", comment: "Section header of the history menu")
 
@@ -1564,8 +1703,8 @@ struct UserText {
     }
 
     static let passwordManagerAutosaveButtonText = NSLocalizedString("autofill.popover.autosave.button.text",
-                                                                      value: "View",
-                                                                      comment: "Button to view the recently autosaved password")
+                                                                     value: "View",
+                                                                     comment: "Button to view the recently autosaved password")
 
     static let passwordManagerAutoPinnedPopoverText = NSLocalizedString("autofill.popover.passwords.auto-pinned.text", value: "Shortcut Added!", comment: "Text confirming the password manager has been pinned to the toolbar")
 
@@ -1573,8 +1712,8 @@ struct UserText {
                                                                           value: "Add passwords shortcut?",
                                                                           comment: "Text prompting user to pin the password manager shortcut to the toolbar")
     static let passwordManagerPinnedPromptPopoverButtonText = NSLocalizedString("autofill.popover.passwords.pin-prompt.button.text",
-                                                                     value: "Add Shortcut",
-                                                                     comment: "Button to pin the password manager shortcut to the toolbar")
+                                                                                value: "Add Shortcut",
+                                                                                comment: "Button to pin the password manager shortcut to the toolbar")
 
     static func openPasswordManagerButton(managerName: String) -> String {
         let localized = NSLocalizedString("autofill.popover.open-password-manager", value: "Open %@", comment: "Open password manager button")
@@ -1698,7 +1837,7 @@ struct UserText {
     static let fireproofCheckboxTitle = NSLocalizedString("fireproof.checkbox.title", value: "Ask to Fireproof websites when signing in", comment: "Fireproof settings checkbox title")
     static let fireproofExplanation = NSLocalizedString("fireproof.explanation", value: "When you Fireproof a site, cookies won't be erased and you'll stay signed in, even after using the Fire Button.", comment: "Fireproofing mechanism explanation")
     static let manageFireproofSites = NSLocalizedString("fireproof.manage-sites", value: "Manage Fireproof Sites…", comment: "Fireproof settings button caption")
-    
+
     static let autoClear = NSLocalizedString("auto.clear", value: "Auto-Clear", comment: "Header of a section in Settings. The setting configures clearing data automatically after quitting the app.")
     static let automaticallyClearData = NSLocalizedString("automatically.clear.data", value: "Automatically delete tabs and browsing data when DuckDuckGo quits", comment: "Label after the checkbox in Settings which configures clearing data automatically after quitting the app.")
     static let autoClearAIChatHistory = NSLocalizedString("automatically.clear.chats", value: "Delete Duck.ai chat history when DuckDuckGo quits", comment: "Label after the checkbox in Settings which configures clearing Duck.ai chat history automatically after quitting the app.")
@@ -1727,8 +1866,8 @@ struct UserText {
                                                        value: "Go to Startup Settings",
                                                        comment: "Button in Data Clearing Settings. It navigates user to Startup Settings.")
     static let fireWindowSessionRestoreWarning = NSLocalizedString("fire.window.session.restore.warning",
-                                                                  value: "Fire Windows won’t be restored with your session.",
-                                                                  comment: "Warning message explaining that session restoration is not available when using Fire Window")
+                                                                   value: "Fire Windows won’t be restored with your session.",
+                                                                   comment: "Warning message explaining that session restoration is not available when using Fire Window")
     static let fireAnimationSectionHeader = NSLocalizedString("fire.animation.section.setting", value: "Animation", comment: "Section header in Data Clearing related to the Fire Animation.")
     static let showFireAnimationToggleText = NSLocalizedString("fire.animation.toggle.value", value: "Show inferno animation when deleting data", comment: "Checkbox to toggle the fire animation to be on or off")
 
@@ -1873,7 +2012,7 @@ struct UserText {
     static let addToDockPopoverPromptMessage = NSLocalizedString("sad.att.add-to-dock.popover.message", value: "Get quick access to protected browsing when you add DuckDuckGo to your Dock.", comment: "Body of the popover that invites users to add DuckDuckGo to their Dock")
     static let addToDockBannerPromptMessage = NSLocalizedString("sat.att.add-to-dock.banner.message", value: "Get quick access to protected browsing", comment: "Body of the banner view that invites users to add DuckDuckGo to their Dock")
     static let addToDockPopoverPrimaryAction = NSLocalizedString("sad.att.add-to-dock.popover.primary", value: "Add To Dock", comment: "Button primary action title that appears on a popover inviting users to add DuckDuckGo to their Dock")
-    static let addToDockInactiveUserPromptMessage = NSLocalizedString("sad.att.add-to-dock.inactive-user.message", value: "Add DuckDuckGo to your dock for quick access to protections other browsers don't provide.", comment: "Body of a modal view inviting inactive users to add DuckDuckGo to their Dock")
+    static let addToDockInactiveUserPromptMessage = NSLocalizedString("sad.att.add-to-dock.inactive-user.message", value: "Add DuckDuckGo to your Dock for quick access to protections other browsers don't provide.", comment: "Body of a modal view inviting inactive users to add DuckDuckGo to their Dock")
     static let addToDockInactiveUserPrimaryAction = NSLocalizedString("sad.att.add-to-dock.inactive-user.primary", value: "Add To Dock", comment: "Button primary action title that appears on a modal inviting inactive users to add DuckDuckGo to their Dock")
 
     /// Strings for SAD only
@@ -1980,6 +2119,7 @@ struct UserText {
     static let removeSuggestionTooltip = NSLocalizedString("remove.suggestion.tooltip", value: "Remove from browsing history", comment: "Tooltip for the button which removes the history entry from the history")
 
     static let switchToTab = NSLocalizedString("switch.to.tab", value: "Switch to Tab", comment: "Suggestion to switch to an open tab button title")
+    static let searchTheWeb = NSLocalizedString("suggestion.search.privately", value: "Search privately", comment: "Label shown on the search suggestion cell indicating the action will search the web")
 
     // MARK: - Storage Access
 

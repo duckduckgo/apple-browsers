@@ -4,6 +4,9 @@
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
 
+/* No comment provided by engineer. */
+"Account" = "account";
+
 /* Buton label for Edit action */
 "action.generic.edit" = "Uredi";
 
@@ -30,6 +33,12 @@
 
 /* Add action - button shown in alert */
 "action.title.add" = "Dodaj";
+
+/* Open AI Chat history action in the menu list */
+"action.title.aiChat.history" = "Duck.ai čavrljanja";
+
+/* Open AI Chat settings action in the menu list */
+"action.title.aiChat.settings" = "Postavke usluge Duck.ai";
 
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Lozinke";
@@ -78,9 +87,6 @@
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Otvori u pozadini";
-
-/* Create New Tab action */
-"action.title.newTabAction" = "Novo";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Otvori u novoj kartici";
@@ -463,6 +469,51 @@
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Omogući Email Protection";
 
+/* Button title to dismiss the autofill extension activation view */
+"autofill.extension.activation.done.button.title" = "Gotovo";
+
+/* Title shown when the autofill extension activation succeeds */
+"autofill.extension.activation.title" = "Automatsko popunjavanje lozinki je aktivirano!";
+
+/* Footer text describing what enabling the autofill extension does */
+"autofill.extension.footer" = "Koristi lozinke koje si spremio u DuckDuckGou u svim aplikacijama na svom uređaju.";
+
+/* Header text shown when the autofill extension is disabled */
+"autofill.extension.header.disabled" = "Automatsko popunjavanje u drugim aplikacijama";
+
+/* Header text shown when the autofill extension is enabled */
+"autofill.extension.header.enabled" = "Omogućeno automatsko popunjavanje u drugim aplikacijama";
+
+/* Dismiss button title for the Autofill extension promotion */
+"autofill.extension.promo.button.dismiss.title" = "Odredi kasnije u Postavkama";
+
+/* CTA button title for the Autofill extension promotion */
+"autofill.extension.promo.button.title" = "Uključi automatsko popunjavanje u drugim aplikacijama";
+
+/* Message for the Autofill extension promotion */
+"autofill.extension.promo.message" = "Koristi DuckDuckGo za sigurno automatsko popunjavanje lozinki za sve svoje aplikacije.";
+
+/* Title for the Autofill extension promotion */
+"autofill.extension.promo.title" = "Brzo se prijavi u svoje aplikacije bez upisivanja lozinki";
+
+/* Title for screen showing autofill extension settings */
+"autofill.extension.screen.title" = "Automatski popuni lozinke u drugim aplikacijama";
+
+/* Status text when autofill extension is disabled */
+"autofill.extension.status.off" = "Uključi";
+
+/* Status text when autofill extension is enabled */
+"autofill.extension.status.on" = "Uključeno";
+
+/* Title for autofill extension settings row */
+"autofill.extension.title" = "Automatsko popunjavanje u drugim aplikacijama";
+
+/* Button title that opens system settings to turn off the autofill extension */
+"autofill.extension.turn.off.button.title" = "Isključi u postavkama sustava...";
+
+/* Button title that triggers system prompt to turn on the autofill extension */
+"autofill.extension.turn.on.button.title" = "Uključi...";
+
 /* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
 "autofill.hide-card-cvv" = "Sakrij CVV";
 
@@ -799,8 +850,8 @@
 /* Section header for the autofill settings screen */
 "autofill.settings.import-passwords.section-header" = "Uvezi lozinke";
 
-/* Section header for the autofill settings screen */
-"autofill.settings.options.section-header" = "Opcije";
+/* Section header for the autofill passwords options section of the settings screen */
+"autofill.settings.options.section-header" = "Opcije za lozinku";
 
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Prijavi problem s automatskim popunjavanjem";
@@ -849,6 +900,12 @@
 
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Želiš li ažurirati korisničko ime?";
+
+/* No comment provided by engineer. */
+"Available Products" = "Dostupni proizvodi";
+
+/* View plans button text during Black Friday campaign */
+"black-friday.campaign.view.plans.cta" = "Uštedi %d%% na prvoj godini";
 
 /* Add bookmark screen title */
 "bookmark.addBookmark.title" = "Dodaj knjižnu oznaku";
@@ -972,6 +1029,9 @@
 
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Otkazivanje nije dopušteno više od jednom";
+
+/* No comment provided by engineer. */
+"Checking for existing account..." = "Provjeravamo postojeći račun...";
 
 /* Close All Tabs */
 "close.all.tabs" = "Zatvori sve kartice";
@@ -1098,6 +1158,9 @@
 
 /* No comment provided by engineer. */
 "Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+
+/* No comment provided by engineer. */
+"Current Subscriptions" = "Postojeće pretplate";
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "PRILAGOĐENI SADRŽAJ ĆELIJA";
@@ -1622,6 +1685,9 @@
 "error.unknown.try.again" = "Došlo je do nepoznate pogreške";
 
 /* No comment provided by engineer. */
+"External ID: %@" = "Vanjski ID: %@";
+
+/* No comment provided by engineer. */
 "favorite" = "Omiljeno";
 
 /* No comment provided by engineer. */
@@ -1858,6 +1924,9 @@
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "ODABERI KATEGORIJU";
 
+/* Category for issues with accessing Plus or Pro tier features */
+"feedback.ppro.category.unable-to-access-features" = "Ne možeš pristupiti značajkama Plus ili Pro razine";
+
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Tvoje anonimne povratne informacije važne za su nas.";
 
@@ -2028,6 +2097,9 @@
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Posljednja obrada: %@";
+
+/* No comment provided by engineer. */
+"Loading available products..." = "Učitavanje dostupnih proizvoda...";
 
 /* No comment provided by engineer. */
 "Loading brokers..." = "Učitavanje brokera...";
@@ -2375,6 +2447,12 @@
 "new.address.bar.picker.title" = "Opcija adresne trake";
 
 /* No comment provided by engineer. */
+"No active subscriptions" = "Nema aktivnih pretplata";
+
+/* No comment provided by engineer. */
+"No existing subscription found" = "Nema postojeće pretplate";
+
+/* No comment provided by engineer. */
 "No Logs" = "Nema zapisnika";
 
 /* No comment provided by engineer. */
@@ -2382,6 +2460,9 @@
 
 /* No comment provided by engineer. */
 "No results found" = "Nema rezultata";
+
+/* No comment provided by engineer. */
+"No subscriptions available" = "Nema dostupnih pretplata";
 
 /* No comment provided by engineer. */
 "OK" = "U redu";
@@ -2394,6 +2475,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser  hides a cookie popup */
 "omnibar.notification.popup-hidden" = "Skočni prozor je sakriven";
+
+/* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
+"omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Shvatio/la sam";
@@ -2465,7 +2549,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Postavke > AI značajke.";
 
 /* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Želiš lakši pristup privatnom AI čavrljanju?";
+"onboarding.highlights.searchExperience.title" = "Želiš jednostavan pristup privatnom AI čavrljanju?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Učinimo to!";
@@ -2857,6 +2941,12 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Pretraži postavke Assista";
 
+/* Settings screen cell subtitle for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.subtitle" = "Prikaži nova Duck.ai čavrljanja kao kartice u pregledniku";
+
+/* Settings screen cell title for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.title" = "Način rada s Duck.ai karticama";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Sakrij slike generirane umjetnom inteligencijom";
 
@@ -2998,8 +3088,11 @@
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Uvezi lozinke";
 
-/* Copy for budge on settings item to show an item is new */
+/* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Novo";
+
+/* Copy for badge on settings item to show an item is experimental */
+"settings.item.badge.preview" = "Pretpregled";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tipkovnica";
@@ -3270,6 +3363,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Koje je web-mjesto neispravno?";
+
+/* No comment provided by engineer. */
+"Status" = "Status";
 
 /* No comment provided by engineer. */
 "Status: Invalidated" = "Status: poništeno";
@@ -3924,6 +4020,12 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Poruka od %@:";
+
+/* No comment provided by engineer. */
+"Will attach to EXISTING account" = "Povezat će se s POSTOJEĆIM računom";
+
+/* No comment provided by engineer. */
+"Will create NEW account" = "Izradit će NOVI račun";
 
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "UŠTEDI 25 %";

@@ -25,6 +25,8 @@ import PixelKit
 import Suggestions
 import Subscription
 import os.log
+import UIComponents
+import AIChat
 
 protocol AddressBarTextFieldFocusDelegate: AnyObject {
     func addressBarDidFocus(_ addressBarTextField: AddressBarTextField)
@@ -64,13 +66,23 @@ final class AddressBarTextField: NSTextField {
     private var addressBarStringCancellable: AnyCancellable?
     private var contentTypeCancellable: AnyCancellable?
     private var windowFrameCancellable: AnyCancellable?
+    private var sharedTextStateCancellable: AnyCancellable?
 
     weak var onboardingDelegate: OnboardingAddressBarReporting?
     weak var focusDelegate: AddressBarTextFieldFocusDelegate?
     weak var searchPreferences: SearchPreferences?
     weak var tabsPreferences: TabsPreferences?
-    weak var sharedTextState: AddressBarSharedTextState?
+    var aiChatPreferences: AIChatPreferencesStorage?
+
+    weak var sharedTextState: AddressBarSharedTextState? {
+        didSet {
+            subscribeToSharedTextState()
+        }
+    }
     weak var customToggleControl: NSControl?
+
+    /// Flag to prevent loops when updating value from shared state
+    private var isUpdatingFromSharedState = false
 
     private enum TextDidChangeEventType {
         case none
@@ -153,6 +165,31 @@ final class AddressBarTextField: NSTextField {
             }
     }
 
+    /// Subscribes to shared text state changes to keep address bar in sync with Duck.ai panel
+    private func subscribeToSharedTextState() {
+        sharedTextStateCancellable?.cancel()
+        sharedTextStateCancellable = nil
+
+        guard Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
+              let sharedTextState else { return }
+
+        sharedTextStateCancellable = sharedTextState.$text
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] newText in
+                guard let self,
+                      !self.isUpdatingFromSharedState,
+                      !self.isFirstResponder else { return }
+                let textForAddressBar = newText.replacingOccurrences(of: "\n", with: " ")
+                /// Only update if the text actually changed and user interacted with shared state
+                guard sharedTextState.hasUserInteractedWithText,
+                      self.stringValueWithoutSuffix != textForAddressBar else { return }
+
+                self.isUpdatingFromSharedState = true
+                self.value = Value(stringValue: textForAddressBar, userTyped: true)
+                self.isUpdatingFromSharedState = false
+            }
+    }
+
     private func subscribeToAddressBarString(selectedTabViewModel: TabViewModel) {
         addressBarStringCancellable = selectedTabViewModel.$addressBarString
             .dropFirst()
@@ -217,8 +254,9 @@ final class AddressBarTextField: NSTextField {
             let barStyleProvider = themeManager.theme.addressBarStyleProvider
             let newTabFontSize = barStyleProvider.newTabOrHomePageAddressBarFontSize
             let defaultFontSize = barStyleProvider.defaultAddressBarFontSize
+            let hideSuffix = Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarCluster)
 
-            if let attributedString = value.toAttributedString(size: isHomePage ? newTabFontSize : defaultFontSize, isBurner: isBurner) {
+            if let attributedString = value.toAttributedString(size: isHomePage ? newTabFontSize : defaultFontSize, isBurner: isBurner, hideSuffix: hideSuffix) {
                 self.attributedStringValue = attributedString
             } else {
                 self.stringValue = value.string
@@ -323,12 +361,78 @@ final class AddressBarTextField: NSTextField {
     }
 
     func addressBarEnterPressed() {
+        let selectedRowContent = suggestionContainerViewModel?.selectedRowContent
+        let selectedSuggestion = suggestionContainerViewModel?.selectedSuggestionViewModel?.suggestion
+        let selectedSuggestionCategory = selectedSuggestion.flatMap { SuggestionPixelCategory(from: $0) }
         suggestionContainerViewModel?.clearUserStringValue()
 
-        let suggestion = suggestionContainerViewModel?.selectedSuggestionViewModel?.suggestion
-        navigate(suggestion: suggestion)
+        if case .aiChatCell = selectedRowContent {
+            openAIChatWithPrompt(inputMethod: .keyboard)
+            hideSuggestionWindow()
+            return
+        }
+
+        fireSuggestionSubmittedPixel(inputMethod: .keyboard, selectedSuggestionCategory: selectedSuggestionCategory)
+        navigate(suggestion: selectedSuggestion)
 
         hideSuggestionWindow()
+    }
+
+    /// Called from MainViewController when user presses Shift/Control + Enter (keyboard shortcut)
+    func openAIChatWithPrompt() {
+        openAIChatWithPrompt(inputMethod: .keyboard)
+    }
+
+    func openAIChatWithPrompt(inputMethod: SuggestionInputMethod) {
+        let prompt = stringValueWithoutSuffix
+
+        let behavior = LinkOpenBehavior(
+            modifierFlags: NSEvent.modifierFlags,
+            switchToNewTabWhenOpenedPreference: shouldSwitchToNewTabWhenOpened,
+            canOpenLinkInCurrentTab: true
+        )
+
+        let pixel: AIChatPixel
+        switch inputMethod {
+        case .keyboard:
+            pixel = .aiChatSuggestionAIChatSubmittedKeyboard
+        case .mouse:
+            pixel = .aiChatSuggestionAIChatSubmittedMouse
+        }
+        PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
+        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(with: .query(prompt, shouldAutoSubmit: true), behavior: behavior)
+        currentEditor()?.selectAll(self)
+    }
+
+    private func fireSuggestionSubmittedPixel(inputMethod: SuggestionInputMethod, selectedSuggestionCategory: SuggestionPixelCategory?) {
+        let pixel: GeneralPixel
+        switch inputMethod {
+        case .keyboard:
+            pixel = .suggestionSubmittedKeyboard(suggestionCategory: selectedSuggestionCategory)
+        case .mouse:
+            pixel = .suggestionSubmittedMouse(suggestionCategory: selectedSuggestionCategory)
+        }
+        PixelKit.fire(pixel, frequency: .dailyAndCount, includeAppVersionParameter: true)
+    }
+
+    /// Handles paste of multiline text by switching to AI chat mode if conditions are met
+    /// - Parameter text: The pasted text containing newlines
+    /// - Returns: `true` if the text was handled by switching to AI chat mode, `false` otherwise
+    func handleMultilinePaste(_ text: String) -> Bool {
+        guard Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
+              let aiChatPreferences = aiChatPreferences,
+              aiChatPreferences.isAIFeaturesEnabled,
+              aiChatPreferences.showSearchAndDuckAIToggle,
+              let toggleControl = customToggleControl as? CustomToggleControl,
+              !toggleControl.isHidden,
+              toggleControl.isEnabled,
+              toggleControl.selectedSegment == 0 else {
+            return false
+        }
+
+        sharedTextState?.updateText(text, markInteraction: true)
+        toggleControl.selectedSegment = 1
+        return true
     }
 
     private func navigate(suggestion: Suggestion?) {
@@ -555,6 +659,8 @@ final class AddressBarTextField: NSTextField {
 
     enum SuggestionWindowSizes {
         static let padding = CGPoint(x: -20, y: 1)
+        /// Vertical offset to align suggestions panel with the AI Chat omnibar toggle
+        static let aiChatToggleVerticalOffset: CGFloat = 4
     }
 
     @objc dynamic private var suggestionWindowController: NSWindowController?
@@ -646,7 +752,11 @@ final class AddressBarTextField: NSTextField {
             return
         }
 
-        let padding = SuggestionWindowSizes.padding
+        let basePadding = SuggestionWindowSizes.padding
+        /// Move suggestions panel up to vertically align the toggle
+        let yOffset: CGFloat = Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle) ? SuggestionWindowSizes.aiChatToggleVerticalOffset : 0
+        let padding = CGPoint(x: basePadding.x, y: basePadding.y + yOffset)
+
         suggestionWindow.setFrame(NSRect(x: 0, y: 0, width: superview.frame.width - 2 * padding.x, height: 0), display: true)
 
         var point = superview.bounds.origin
@@ -716,6 +826,14 @@ final class AddressBarTextField: NSTextField {
 
         let shouldShowFullURL = preferences.showShortcutInAddressBar
         menuItem.state = shouldShowFullURL ? .on : .off
+    }
+
+    @objc func toggleAIChatToggle(_ menuItem: NSMenuItem) {
+        let preferences = AIChatPreferences()
+        preferences.showSearchAndDuckAIToggle.toggle()
+
+        let shouldShowToggle = preferences.showSearchAndDuckAIToggle
+        menuItem.state = shouldShowToggle ? .on : .off
     }
 
 }
@@ -858,7 +976,7 @@ extension AddressBarTextField {
             self.suggestion != nil
         }
 
-        func toAttributedString(size: CGFloat, isBurner: Bool) -> NSAttributedString? {
+        func toAttributedString(size: CGFloat, isBurner: Bool, hideSuffix: Bool = false) -> NSAttributedString? {
             var attributes: [NSAttributedString.Key: Any] {
                 return [
                     .font: NSFont.systemFont(ofSize: size, weight: .regular),
@@ -866,7 +984,7 @@ extension AddressBarTextField {
                 ]
             }
 
-            guard let suffix else { return nil }
+            guard let suffix, !hideSuffix else { return nil }
 
             let attributedString = NSMutableAttributedString(string: self.string, attributes: attributes)
             attributedString.append(suffix.toAttributedString(size: size, isBurner: isBurner))
@@ -1004,14 +1122,16 @@ extension AddressBarTextField: NSTextFieldDelegate {
         // don't blink and keep the Suggestion displayed
         if case .userAppendingTextToTheEnd = currentTextDidChangeEvent,
            let suggestion = autocompleteSuggestionBeingTypedOverByUser(with: stringValueWithoutSuffix) {
-            self.value = .suggestion(SuggestionViewModel(isHomePage: isHomePage, suggestion: suggestion.suggestion, userStringValue: stringValueWithoutSuffix, themeManager: themeManager))
+            self.value = .suggestion(SuggestionViewModel(isHomePage: isHomePage, suggestion: suggestion.suggestion, userStringValue: stringValueWithoutSuffix, themeManager: themeManager, featureFlagger: Application.appDelegate.featureFlagger))
 
         } else {
             suggestionContainerViewModel?.clearSelection()
             self.value = Value(stringValue: stringValueWithoutSuffix, userTyped: true)
         }
 
-        sharedTextState?.updateText(stringValueWithoutSuffix, markInteraction: true)
+        if !isUpdatingFromSharedState {
+            sharedTextState?.updateText(stringValueWithoutSuffix, markInteraction: true)
+        }
     }
 
     private func autocompleteSuggestionBeingTypedOverByUser(with newUserEnteredValue: String) -> SuggestionViewModel? {
@@ -1026,20 +1146,21 @@ extension AddressBarTextField: NSTextFieldDelegate {
         return nil
     }
 
-    // MARK: - Shared Text State
+    /// Refreshes suggestions based on current text content and shows the suggestion window if results exist
+    func refreshSuggestions() {
+        let text = stringValueWithoutSuffix
+        guard !text.isEmpty else { return }
 
-    /// Restores text from the shared text state
-    func restoreFromSharedState() {
-        guard let sharedTextState = sharedTextState else { return }
-
-        let textToRestore = sharedTextState.text.replacingOccurrences(of: "\n", with: " ")
-        self.value = Value(stringValue: textToRestore, userTyped: true)
-
-        DispatchQueue.main.async { [weak self] in
-            guard let self = self, let editor = self.currentEditor() as? NSTextView else { return }
-            let textLength = editor.string.count
-            editor.selectedRange = NSRange(location: textLength, length: 0)
+        suggestionContainerViewModel?.setUserStringValue(text, userAppendedStringToTheEnd: false)
+        if suggestionContainerViewModel?.suggestionContainer.result?.count ?? 0 > 0 {
+            showSuggestionWindow()
         }
+    }
+
+    func moveCursorToEnd() {
+        guard let editor = currentEditor() as? NSTextView else { return }
+        let textLength = editor.string.count
+        editor.selectedRange = NSRange(location: textLength, length: 0)
     }
 
     func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
@@ -1154,15 +1275,22 @@ extension AddressBarTextField: NSTextViewDelegate {
 
         if let sharingMenuItem = menu.item(with: Self.shareMenuItemAction) {
             sharingMenuItem.title = UserText.shareMenuItem
-            sharingMenuItem.submenu = SharingMenu(title: UserText.shareMenuItem, location: .addressBarTextField)
+            sharingMenuItem.submenu = SharingMenu(title: UserText.shareMenuItem, location: .addressBarTextField, delegate: self)
         }
 
-        let additionalMenuItems: [NSMenuItem] = [
+        let isAIChatOmnibarToggleEnabled = Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+
+        var additionalMenuItems: [NSMenuItem] = [
             .toggleAutocompleteSuggestionsMenuItem(searchPreferences),
             .toggleFullWebsiteAddressMenuItem,
-            .toggleAIChatAddressMenuItem,
-            .separator()
+            .toggleAIChatAddressMenuItem(isOmnibarToggleEnabled: isAIChatOmnibarToggleEnabled)
         ]
+
+        if isAIChatOmnibarToggleEnabled {
+            additionalMenuItems.append(.toggleAIChatToggleMenuItem)
+        }
+
+        additionalMenuItems.append(.separator())
         let insertionPoint = menuItemInsertionPoint(within: menu)
         for (idx, item) in additionalMenuItems.enumerated() {
             menu.insertItem(item, at: insertionPoint + idx)
@@ -1185,7 +1313,7 @@ extension AddressBarTextField: NSTextViewDelegate {
         return menu.numberOfItems
     }
 
-    private static var selectorsToRemove = Set([
+    static var selectorsToRemove = Set([
         Selector(("_openLinkFromMenu:")),
         NSSelectorFromString("invoke"),
         Selector(("_openPreview")),
@@ -1198,14 +1326,15 @@ extension AddressBarTextField: NSTextViewDelegate {
         #selector(NSStandardKeyBindingResponding.uppercaseWord(_:)),
         #selector(NSTextView.startSpeaking(_:)),
         #selector(NSTextView.changeLayoutOrientation(_:)),
-        #selector(NSTextView.orderFrontSubstitutionsPanel(_:))
+        #selector(NSTextView.orderFrontSubstitutionsPanel(_:)),
+        { if #available(macOS 15.2, *) { #selector(showWritingTools(_:)) } else { Selector(("noop")) } }(),
     ])
     private static let shareMenuItemAction = Selector(("_performStandardShareMenuItem:"))
 
     private func removeUnwantedMenuItems(from menu: NSMenu) {
         // filter out menu items with action from `selectorsToRemove` or containing submenu items with action from the list
         menu.items = menu.items.filter { menuItem in
-            menuItem.action.map { action in  Self.selectorsToRemove.contains(action) } != true
+            menuItem.action.map { action in Self.selectorsToRemove.contains(action) } != true
             && Self.selectorsToRemove.isDisjoint(with: menuItem.submenu?.items.compactMap(\.action) ?? [])
         }
     }
@@ -1236,14 +1365,27 @@ private extension NSMenuItem {
         return menuItem
     }
 
-    static var toggleAIChatAddressMenuItem: NSMenuItem {
+    static func toggleAIChatAddressMenuItem(isOmnibarToggleEnabled: Bool) -> NSMenuItem {
+        let title = isOmnibarToggleEnabled ? UserText.showAIChatShortcutInAddress : UserText.showAIChatInAddress
         let menuItem = NSMenuItem(
-            title: UserText.showAIChatInAddress,
+            title: title,
             action: #selector(AddressBarTextField.toggleAIChatAddress(_:)),
             keyEquivalent: ""
         )
 
         menuItem.state = AIChatPreferences().showShortcutInAddressBar ? .on : .off
+
+        return menuItem
+    }
+
+    static var toggleAIChatToggleMenuItem: NSMenuItem {
+        let menuItem = NSMenuItem(
+            title: UserText.showAIChatToggleInAddress,
+            action: #selector(AddressBarTextField.toggleAIChatToggle(_:)),
+            keyEquivalent: ""
+        )
+
+        menuItem.state = AIChatPreferences().showSearchAndDuckAIToggle ? .on : .off
 
         return menuItem
     }
@@ -1282,10 +1424,28 @@ private extension NSMenuItem {
 extension AddressBarTextField: SuggestionViewControllerDelegate {
 
     func suggestionViewControllerDidConfirmSelection(_ suggestionViewController: SuggestionViewController) {
-        let suggestion = suggestionContainerViewModel?.selectedSuggestionViewModel?.suggestion
-        navigate(suggestion: suggestion)
+        let selectedRowContent = suggestionContainerViewModel?.selectedRowContent
+        let selectedSuggestion = suggestionContainerViewModel?.selectedSuggestionViewModel?.suggestion
+        let selectedSuggestionCategory = selectedSuggestion.flatMap { SuggestionPixelCategory(from: $0) }
+        suggestionContainerViewModel?.clearUserStringValue()
+
+        if case .aiChatCell = selectedRowContent {
+            openAIChatWithPrompt(inputMethod: .mouse)
+            hideSuggestionWindow()
+            return
+        }
+
+        fireSuggestionSubmittedPixel(inputMethod: .mouse, selectedSuggestionCategory: selectedSuggestionCategory)
+        navigate(suggestion: selectedSuggestion)
     }
 
+}
+
+// MARK: - Suggestion Input Method
+
+enum SuggestionInputMethod {
+    case keyboard
+    case mouse
 }
 
 fileprivate extension NSStoryboard {
@@ -1339,4 +1499,16 @@ extension URL {
         }
     }
 
+}
+
+// MARK: - SharingMenuDelegate
+extension AddressBarTextField: SharingMenuDelegate {
+    func sharingMenuRequestsSharingData() -> SharingMenu.SharingData? {
+        guard let selectedTabViewModel = tabCollectionViewModel?.selectedTabViewModel,
+              selectedTabViewModel.canReload,
+              !selectedTabViewModel.isShowingErrorPage,
+              let url = selectedTabViewModel.tab.content.userEditableUrl else { return nil }
+
+        return (selectedTabViewModel.title, [url])
+    }
 }

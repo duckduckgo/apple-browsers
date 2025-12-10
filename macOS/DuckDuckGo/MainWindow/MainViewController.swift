@@ -46,7 +46,6 @@ final class MainViewController: NSViewController {
     let bookmarksBarViewController: BookmarksBarViewController
     let aiChatOmnibarContainerViewController: AIChatOmnibarContainerViewController
     let aiChatOmnibarTextContainerViewController: AIChatOmnibarTextContainerViewController
-    let sharedTextState: AddressBarSharedTextState
     let featureFlagger: FeatureFlagger
     let fireCoordinator: FireCoordinator
     private let bookmarksBarVisibilityManager: BookmarksBarVisibilityManager
@@ -156,7 +155,8 @@ final class MainViewController: NSViewController {
             fireproofDomains: fireproofDomains,
             activeRemoteMessageModel: NSApp.delegateTyped.activeRemoteMessageModel,
             featureFlagger: featureFlagger,
-            tabDragAndDropManager: tabDragAndDropManager
+            tabDragAndDropManager: tabDragAndDropManager,
+            autoconsentStatsPopoverCoordinator: NSApp.delegateTyped.autoconsentStatsPopoverCoordinator
         )
         bookmarksBarVisibilityManager = BookmarksBarVisibilityManager(selectedTabPublisher: tabCollectionViewModel.$selectedTabViewModel.eraseToAnyPublisher())
 
@@ -239,10 +239,6 @@ final class MainViewController: NSViewController {
             pixelFiring: pixelFiring
         )
 
-        // Create the shared text state for address bar mode switching
-        let sharedTextState = AddressBarSharedTextState()
-        self.sharedTextState = sharedTextState
-
         navigationBarViewController = NavigationBarViewController.create(tabCollectionViewModel: tabCollectionViewModel,
                                                                          downloadListCoordinator: downloadListCoordinator,
                                                                          bookmarkManager: bookmarkManager,
@@ -265,8 +261,7 @@ final class MainViewController: NSViewController {
                                                                          defaultBrowserPreferences: defaultBrowserPreferences,
                                                                          downloadsPreferences: downloadsPreferences,
                                                                          tabsPreferences: tabsPreferences,
-                                                                         accessibilityPreferences: accessibilityPreferences,
-                                                                         sharedTextState: sharedTextState)
+                                                                         accessibilityPreferences: accessibilityPreferences)
 
         findInPageViewController = FindInPageViewController.create()
         fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
@@ -279,7 +274,7 @@ final class MainViewController: NSViewController {
         // Create the shared AI Chat omnibar controller
         let aiChatOmnibarController = AIChatOmnibarController(
             aiChatTabOpener: aiChatTabOpener,
-            sharedTextState: sharedTextState
+            tabCollectionViewModel: tabCollectionViewModel
         )
 
         aiChatOmnibarContainerViewController = AIChatOmnibarContainerViewController(
@@ -288,7 +283,6 @@ final class MainViewController: NSViewController {
         )
         aiChatOmnibarTextContainerViewController = AIChatOmnibarTextContainerViewController(
             omnibarController: aiChatOmnibarController,
-            sharedTextState: sharedTextState,
             themeManager: themeManager
         )
         self.vpnUpsellPopoverPresenter = vpnUpsellPopoverPresenter
@@ -329,8 +323,7 @@ final class MainViewController: NSViewController {
         mainView.setupAIChatOmnibarTextContainerConstraints(addressBarStack: navigationBarViewController.addressBarStack)
         mainView.setupAIChatOmnibarContainerConstraints(addressBarStack: navigationBarViewController.addressBarStack)
 
-        // Wire the custom toggle control reference to the AI Chat text container for TAB key navigation
-        wireToggleReferenceToAIChatTextContainer()
+        wireAIChatOmnibarUpdates()
     }
 
     override func viewWillAppear() {
@@ -439,6 +432,8 @@ final class MainViewController: NSViewController {
     }
 
     deinit {
+        NotificationCenter.default.removeObserver(self, name: NSWindow.didResizeNotification, object: nil)
+
 #if DEBUG
 
         // Check that TabCollectionViewModel deallocates
@@ -479,6 +474,11 @@ final class MainViewController: NSViewController {
     }
 
     func updateAIChatOmnibarContainerVisibility(visible: Bool, shouldKeepSelection: Bool = false) {
+        if visible {
+            let desiredHeight = aiChatOmnibarTextContainerViewController.calculateDesiredPanelHeight()
+            mainView.updateAIChatOmnibarContainerHeight(desiredHeight, animated: false)
+        }
+
         mainView.isAIChatOmnibarContainerShown = visible
 
         navigationBarViewController.addressBarViewController?.setAIChatOmnibarVisible(visible, shouldKeepSelection: shouldKeepSelection)
@@ -487,9 +487,12 @@ final class MainViewController: NSViewController {
             aiChatOmnibarContainerViewController.startEventMonitoring()
             aiChatOmnibarTextContainerViewController.startEventMonitoring()
             aiChatOmnibarTextContainerViewController.focusTextView()
+
+            let maxHeight = mainView.calculateMaxAIChatOmnibarHeight()
+            aiChatOmnibarTextContainerViewController.updateScrollingBehavior(maxHeight: maxHeight)
         } else {
             aiChatOmnibarContainerViewController.cleanup()
-            aiChatOmnibarTextContainerViewController.cleanup()
+            aiChatOmnibarTextContainerViewController.stopEventMonitoring()
         }
     }
 
@@ -497,6 +500,60 @@ final class MainViewController: NSViewController {
         /// This enables TAB key navigation from AI Chat mode to the toggle
         if let searchModeToggleControl = navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.searchModeToggleControl {
             aiChatOmnibarTextContainerViewController.customToggleControl = searchModeToggleControl
+        }
+    }
+
+    private func wireAIChatOmnibarHeightUpdates() {
+        aiChatOmnibarTextContainerViewController.heightDidChange = { [weak self] desiredHeight in
+            guard let self = self else { return }
+
+            self.mainView.updateAIChatOmnibarContainerHeight(desiredHeight, animated: true)
+
+            let maxHeight = self.mainView.calculateMaxAIChatOmnibarHeight()
+            self.aiChatOmnibarTextContainerViewController.updateScrollingBehavior(maxHeight: maxHeight)
+        }
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(windowDidResize),
+            name: NSWindow.didResizeNotification,
+            object: view.window
+        )
+    }
+
+    private func wireAIChatOmnibarUpdates() {
+        wireToggleReferenceToAIChatTextContainer()
+        wireAIChatOmnibarHeightUpdates()
+        wireAIChatOmnibarHitTesting()
+    }
+
+    @objc private func windowDidResize() {
+        guard mainView.isAIChatOmnibarContainerShown else { return }
+
+        let currentHeight = mainView.aiChatOmnibarContainerView.frame.height
+        mainView.updateAIChatOmnibarContainerHeight(currentHeight, animated: false)
+
+        let maxHeight = mainView.calculateMaxAIChatOmnibarHeight()
+        aiChatOmnibarTextContainerViewController.updateScrollingBehavior(maxHeight: maxHeight)
+    }
+
+    private func wireAIChatOmnibarHitTesting() {
+        navigationBarViewController.addressBarViewController?.isPointInAIChatOmnibar = { [weak self] locationInWindow in
+            guard let self = self else { return false }
+            guard self.mainView.isAIChatOmnibarContainerShown else { return false }
+
+            let containerFrame = self.mainView.aiChatOmnibarContainerView.frame
+            let pointInMainView = self.mainView.convert(locationInWindow, from: nil)
+            if containerFrame.contains(pointInMainView) {
+                return true
+            }
+
+            let textContainerFrame = self.mainView.aiChatOmnibarTextContainerView.frame
+            if textContainerFrame.contains(pointInMainView) {
+                return true
+            }
+
+            return false
         }
     }
 
@@ -853,6 +910,13 @@ final class MainViewController: NSViewController {
         }
         let tabContent = tabContent ?? selectedTabViewModel.tab.content
 
+        /// Close AI Chat omnibar if visible before adjusting first responder
+        /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1212252449969913?focus=true
+        if mainView.isAIChatOmnibarContainerShown && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
+            updateAIChatOmnibarContainerVisibility(visible: false, shouldKeepSelection: false)
+            aiChatOmnibarContainerViewController.cleanup()
+        }
+
         if case .newtab = tabContent {
             navigationBarViewController.addressBarViewController?.addressBarTextField.makeMeFirstResponder()
         } else {
@@ -910,60 +974,105 @@ extension MainViewController {
         let key = event.charactersIgnoringModifiers?.lowercased() ?? ""
         let isWebViewFocused = view.window?.firstResponder is WebView
 
-        // Handle Enter
-        if event.keyCode == kVK_Return,
-           navigationBarViewController.addressBarViewController?.addressBarTextField.isFirstResponder == true {
-            if flags.contains(.shift) && aiChatMenuConfig.shouldDisplayAddressBarShortcutWhenTyping {
-                navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.aiChatButtonAction(self)
-            } else {
-                navigationBarViewController.addressBarViewController?.addressBarTextField.addressBarEnterPressed()
-            }
+        if handleReturnKey(event: event, flags: flags) {
             return true
         }
 
-        // Handle Escape
-        if event.keyCode == kVK_Escape {
-            var isHandled = false
-            if !mainView.findInPageContainerView.isHidden {
-                findInPageViewController.findInPageDone(self)
-                isHandled = true
-            }
-            if let addressBarVC = navigationBarViewController.addressBarViewController {
-                isHandled = isHandled || addressBarVC.escapeKeyDown()
-            }
-            return isHandled
-        }
-
-        // Handle tab switching (CMD+1 through CMD+9)
-        if [.command, [.command, .numericPad]].contains(flags), "123456789".contains(key) {
-            if isWebViewFocused {
-                NSApp.menu?.performKeyEquivalent(with: event)
-                return true
-            }
-            return false
-        }
-
-        if event.keyCode == kVK_Tab, [.control, [.control, .shift]].contains(flags) {
-            NSApp.menu?.performKeyEquivalent(with: event)
+        if handleEscapeKey(event: event) {
             return true
         }
 
-        // Handle browser tab/window actions
-        if isWebViewFocused {
-            switch (key, flags, flags.contains(.command)) {
-            case ("n", [.command], _),
-                ("t", [.command], _), ("t", [.command, .shift], _),
-                ("w", _, true),
-                ("q", [.command], _),
-                ("r", [.command], _):
-                NSApp.menu?.performKeyEquivalent(with: event)
-                return true
-            default:
-                break
-            }
+        if handleTabSwitching(event: event, flags: flags, key: key, isWebViewFocused: isWebViewFocused) {
+            return true
+        }
+
+        if handleControlTab(event: event, flags: flags) {
+            return true
+        }
+
+        if handleBrowserActions(key: key, flags: flags, isWebViewFocused: isWebViewFocused, event: event) {
+            return true
         }
 
         return false
+    }
+
+    private func handleReturnKey(event: NSEvent, flags: NSEvent.ModifierFlags) -> Bool {
+        guard event.keyCode == kVK_Return,
+              navigationBarViewController.addressBarViewController?.addressBarTextField.isFirstResponder == true else {
+            return false
+        }
+
+        if flags.contains(.option) || flags.contains(.shift),
+           featureFlagger.isFeatureOn(.aiChatOmnibarToggle),
+           let buttonsViewController = navigationBarViewController.addressBarViewController?.addressBarButtonsViewController {
+            let isSwitchingToAIChatMode = buttonsViewController.searchModeToggleControl?.selectedSegment == 0
+            buttonsViewController.toggleSearchMode()
+            if isSwitchingToAIChatMode {
+                self.aiChatOmnibarTextContainerViewController.insertNewline()
+            }
+            return true
+        } else if flags.contains(.control),
+                  featureFlagger.isFeatureOn(.aiChatOmnibarToggle) {
+            navigationBarViewController.addressBarViewController?.addressBarTextField.openAIChatWithPrompt()
+            return true
+        } else if flags.contains(.shift) && aiChatMenuConfig.shouldDisplayAddressBarShortcutWhenTyping {
+            navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.aiChatButtonAction(self)
+        } else {
+            navigationBarViewController.addressBarViewController?.addressBarTextField.addressBarEnterPressed()
+        }
+        return true
+    }
+
+    private func handleEscapeKey(event: NSEvent) -> Bool {
+        guard event.keyCode == kVK_Escape else { return false }
+
+        var isHandled = false
+        if !mainView.findInPageContainerView.isHidden {
+            findInPageViewController.findInPageDone(self)
+            isHandled = true
+        }
+        if let addressBarVC = navigationBarViewController.addressBarViewController {
+            isHandled = isHandled || addressBarVC.escapeKeyDown()
+        }
+        return isHandled
+    }
+
+    private func handleTabSwitching(event: NSEvent, flags: NSEvent.ModifierFlags, key: String, isWebViewFocused: Bool) -> Bool {
+        guard [.command, [.command, .numericPad]].contains(flags), "123456789".contains(key) else {
+            return false
+        }
+
+        if isWebViewFocused {
+            NSApp.menu?.performKeyEquivalent(with: event)
+            return true
+        }
+        return false
+    }
+
+    private func handleControlTab(event: NSEvent, flags: NSEvent.ModifierFlags) -> Bool {
+        guard event.keyCode == kVK_Tab, [.control, [.control, .shift]].contains(flags) else {
+            return false
+        }
+
+        NSApp.menu?.performKeyEquivalent(with: event)
+        return true
+    }
+
+    private func handleBrowserActions(key: String, flags: NSEvent.ModifierFlags, isWebViewFocused: Bool, event: NSEvent) -> Bool {
+        guard isWebViewFocused else { return false }
+
+        switch (key, flags, flags.contains(.command)) {
+        case ("n", [.command], _),
+            ("t", [.command], _), ("t", [.command, .shift], _),
+            ("w", _, true),
+            ("q", [.command], _),
+            ("r", [.command], _):
+            NSApp.menu?.performKeyEquivalent(with: event)
+            return true
+        default:
+            return false
+        }
     }
 
     func otherMouseUp(with event: NSEvent) -> NSEvent? {
@@ -1103,6 +1212,11 @@ extension MainViewController: BrowserTabViewControllerDelegate {
 extension MainViewController: AIChatOmnibarControllerDelegate {
     func aiChatOmnibarControllerDidSubmit(_ controller: AIChatOmnibarController) {
         updateAIChatOmnibarContainerVisibility(visible: false, shouldKeepSelection: false)
+    }
+
+    func aiChatOmnibarController(_ controller: AIChatOmnibarController, didRequestNavigationToURL url: URL) {
+        updateAIChatOmnibarContainerVisibility(visible: false, shouldKeepSelection: false)
+        browserTabViewController.loadURLInCurrentTab(url)
     }
 }
 

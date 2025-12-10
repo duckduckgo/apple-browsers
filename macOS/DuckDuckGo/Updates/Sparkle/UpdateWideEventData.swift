@@ -99,6 +99,13 @@ final class UpdateWideEventData: WideEventData {
         case newCheckStarted  // New check interrupted this one
     }
 
+    /// Reason an update flow completed successfully.
+    enum SuccessReason: String {
+        case noUpdateAvailable = "no_update_available"
+        case restartingToUpdate = "restarting_to_update"
+        case installingOnQuit = "installing_on_quit"
+    }
+
     /// Last known step in the update process before flow ended.
     enum UpdateStep: String, Codable {
         case updateCheckStarted
@@ -108,7 +115,7 @@ final class UpdateWideEventData: WideEventData {
         case downloadCompleted
         case extractionStarted
         case extractionCompleted
-        case readyToInstall
+        case restartingToUpdate
     }
 
     /// Time bucket for privacy-safe update frequency tracking.

@@ -92,15 +92,25 @@ struct AutofillSettingsView: View {
             }
             .listRowBackground(Color(designSystemColor: .surface))
 
-            if viewModel.shouldShowNeverPromptReset() {
+            if viewModel.showExtensionSettings || viewModel.shouldShowNeverPromptReset() {
                 Section(header: Text(UserText.autofillSettingsOptionsSectionHeader).foregroundColor(.secondary)) {
-                    Button {
-                        viewModel.resetExcludedSites()
-                    } label: {
-                        Text(UserText.autofillNeverSavedSettings)
-                            .foregroundColor(Color(designSystemColor: .accent))
+                    if viewModel.showExtensionSettings {
+                        Button {
+                            viewModel.navigateToExtensionManagement()
+                        } label: {
+                            StatusRowView(status: viewModel.isExtensionEnabled)
+                        }
+                    }
+                    if viewModel.shouldShowNeverPromptReset() {
+                        Button {
+                            viewModel.resetExcludedSites()
+                        } label: {
+                            Text(UserText.autofillNeverSavedSettings)
+                                .foregroundColor(Color(designSystemColor: .accent))
+                        }
                     }
                 }
+                .listRowBackground(Color(designSystemColor: .surface))
             }
 
         }
@@ -120,7 +130,13 @@ struct AutofillSettingsView: View {
             Text(UserText.autofillResetNeverSavedActionTitle)
         }
         .onAppear {
-            viewModel.refreshCounts()
+            viewModel.refreshData()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+            viewModel.refreshData()
+        }
+        .sheet(isPresented: $viewModel.isShowingActivationView) {
+            AutofillExtensionSettingsActivationView()
         }
     }
 
@@ -143,6 +159,28 @@ struct AutofillSettingsView: View {
                         .daxBodyRegular()
                         .foregroundColor(Color(designSystemColor: .textSecondary))
                 }
+
+                Image(systemName: "chevron.forward")
+                    .font(Font.system(.footnote).weight(.bold))
+                    .foregroundColor(Color(UIColor.tertiaryLabel))
+            }
+        }
+    }
+
+    private struct StatusRowView: View {
+        var status: Bool
+
+        var body: some View {
+            HStack {
+                Text(UserText.autofillExtensionTitle)
+                    .daxBodyRegular()
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+
+                Spacer()
+
+                Text(status ? UserText.autofillExtensionStatusOn : UserText.autofillExtensionStatusOff)
+                    .daxBodyRegular()
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
 
                 Image(systemName: "chevron.forward")
                     .font(Font.system(.footnote).weight(.bold))

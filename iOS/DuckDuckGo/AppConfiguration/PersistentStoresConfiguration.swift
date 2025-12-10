@@ -20,6 +20,8 @@
 import Foundation
 import Core
 import Persistence
+import BrowserServicesKit
+import os.log
 
 enum DatabaseError {
 
@@ -32,15 +34,19 @@ final class PersistentStoresConfiguration {
 
     let database = Database.shared
     let bookmarksDatabase = BookmarksDatabase.make()
-    private let application: UIApplication
+    private(set) var sharedSecureVault: (any AutofillSecureVault)?
 
+    private let application: UIApplication
+    
     init(application: UIApplication = .shared) {
         self.application = application
     }
 
-    func configure(syncKeyValueStore: ThrowingKeyValueStoring, isBackground: Bool = false) throws {
+    func configure(syncKeyValueStore: ThrowingKeyValueStoring,
+                   isBookmarksDBFilePresent: Bool) throws {
         try loadDatabase()
-        try loadAndMigrateBookmarksDatabase(syncKeyValueStore: syncKeyValueStore, isBackground: isBackground)
+        try loadAndMigrateBookmarksDatabase(syncKeyValueStore: syncKeyValueStore, isBookmarksDBFilePresent: isBookmarksDBFilePresent)
+        initializeSharedSecureVault()
     }
 
     private func loadDatabase() throws {
@@ -58,14 +64,30 @@ final class PersistentStoresConfiguration {
         }
     }
 
-    private func loadAndMigrateBookmarksDatabase(syncKeyValueStore: ThrowingKeyValueStoring, isBackground: Bool) throws {
+    private func loadAndMigrateBookmarksDatabase(syncKeyValueStore: ThrowingKeyValueStoring, isBookmarksDBFilePresent: Bool) throws {
         do {
-            let validator = BookmarksDatabaseSetup.makeValidator()
-            try BookmarksDatabaseSetup().loadStoreAndMigrate(bookmarksDatabase: bookmarksDatabase, validator: validator, isBackground: isBackground)
+            // Create a simple counter store with just atomic writes (no encryption for debugging data)
+            let appSupportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+            let counterStore = try KeyValueFileStore(location: appSupportDir, name: "BookmarksStructureLostCounter", writeOptions: [.atomic, .noFileProtection])
+            let validator = BookmarksDatabaseSetup.makeValidator(counterStore: counterStore, isBookmarksDBFilePresent: isBookmarksDBFilePresent)
+            try BookmarksDatabaseSetup().loadStoreAndMigrate(bookmarksDatabase: bookmarksDatabase, validator: validator, isBookmarksDBFilePresent: isBookmarksDBFilePresent)
         } catch let error as BookmarksDatabaseError {
             throw TerminationError.bookmarksDatabase(error)
         } catch {
             throw TerminationError.bookmarksDatabase(.other(error))
+        }
+    }
+
+    private func initializeSharedSecureVault() {
+        guard AutofillSettingStatus.isAutofillEnabledInSettings else {
+            return
+        }
+        do {
+            sharedSecureVault = try AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
+            Logger.general.info("Shared SecureVault initialized at app startup")
+        } catch {
+            Logger.general.error("Failed to initialize shared SecureVault at startup: \(error.localizedDescription)")
+            Pixel.fire(pixel: .sharedSecureVaultInitFailed, error: error)
         }
     }
 

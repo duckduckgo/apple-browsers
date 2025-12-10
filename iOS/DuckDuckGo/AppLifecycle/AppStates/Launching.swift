@@ -61,31 +61,40 @@ struct Launching: LaunchingHandling {
         // Initialize configuration with the key-value store
         configuration = AppConfiguration(appKeyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
 
+        var isBookmarksDBFilePresent: Bool = true
+        if BoolFileMarker(name: .hasSuccessfullySetupBookmarksDatabaseBefore)?.isPresent ?? false {
+            isBookmarksDBFilePresent = FileManager.default.fileExists(atPath: BookmarksDatabase.defaultDBFileURL.path)
+        }
+
         // MARK: - Application Setup
         // Handles one-time application setup during launch
-        try configuration.start()
+        try configuration.start(isBookmarksDBFilePresent: isBookmarksDBFilePresent)
 
         // MARK: - Service Initialization (continued)
         // Create and initialize remaining core services
         // These services are instantiated early in the app lifecycle for two main reasons:
         // 1. To begin their essential work immediately, without waiting for UI or other components
         // 2. To potentially complete their tasks before the app becomes visible to the user
-        // This approach aims to optimise performance and ensure critical functionalities are ready ASAP
-        let autofillService = AutofillService()
+        // This approach aims to optimize performance and ensure critical functionalities are ready ASAP
+        let autofillService = AutofillService(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
 
         let contentBlockingService = ContentBlockingService(appSettings: appSettings,
-                                                            fireproofing: fireproofing)
+                                                            fireproofing: fireproofing,
+                                                            contentScopeExperimentsManager: contentScopeExperimentsManager)
 
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared, contentBlocking: contentBlockingService.common)
         let configurationService = RemoteConfigurationService()
         let crashCollectionService = CrashCollectionService()
         let statisticsService = StatisticsService()
+
+        let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
         let reportingService = ReportingService(fireproofing: fireproofing,
                                                 featureFlagging: featureFlagger,
                                                 userDefaults: UserDefaults.app,
-                                                pixelKit: PixelKit.shared!,
+                                                pixelKit: PixelKit.shared,
                                                 appDependencies: AppDependencyProvider.shared,
-                                                privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager)
+                                                privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
+                                                productSurfaceTelemetry: productSurfaceTelemetry)
         let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                       privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
                                       keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
@@ -111,7 +120,7 @@ struct Launching: LaunchingHandling {
         let subscriptionService = SubscriptionService(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager, featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger,
                                                                             privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager)
-        let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService(featureFlagger: featureFlagger)
+        let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService()
         let wideEventService = WideEventService(
             wideEvent: AppDependencyProvider.shared.wideEvent,
             featureFlagger: featureFlagger,
@@ -145,7 +154,8 @@ struct Launching: LaunchingHandling {
                 experimentalAIChatManager: ExperimentalAIChatManager(),
                 defaultBrowserPromptPresenter: defaultBrowserPromptService.presenter,
                 winBackOfferPresenter: winBackOfferService.presenter,
-                winBackOfferCoordinator: winBackOfferService.coordinator
+                winBackOfferCoordinator: winBackOfferService.coordinator,
+                userScriptsDependencies: contentBlockingService.userScriptsDependencies
             )
         )
 
@@ -180,7 +190,9 @@ struct Launching: LaunchingHandling {
                                               launchSourceManager: launchSourceManager,
                                               winBackOfferService: winBackOfferService,
                                               modalPromptCoordinationService: modalPromptCoordinationService,
-                                              mobileCustomization: mobileCustomization)
+                                              mobileCustomization: mobileCustomization,
+                                              productSurfaceTelemetry: productSurfaceTelemetry,
+                                              sharedSecureVault: configuration.persistentStoresConfiguration.sharedSecureVault)
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components

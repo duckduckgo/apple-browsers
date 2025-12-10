@@ -112,6 +112,7 @@ public extension Error {
 
         params[PixelKit.Parameters.errorCode] = "\(nsError.code)"
         params[PixelKit.Parameters.errorDomain] = nsError.domain
+        // WARNING: Avoid adding error.description to prevent leaking personal information.
 
         let underlyingErrorParameters = self.underlyingErrorParameters(for: nsError)
         params.merge(underlyingErrorParameters) { first, _ in
@@ -133,12 +134,14 @@ public extension Error {
     ///
     private func underlyingErrorParameters(for nsError: NSError, level: Int = 0) -> [String: String] {
         if let underlyingError = nsError.userInfo[NSUnderlyingErrorKey] as? NSError {
-            let errorCodeParameterName = PixelKit.Parameters.underlyingErrorCode + (level == 0 ? "" : String(level + 1))
-            let errorDomainParameterName = PixelKit.Parameters.underlyingErrorDomain + (level == 0 ? "" : String(level + 1))
+            let levelString = (level == 0 ? "" : String(level + 1))
+            let errorCodeParameterName = PixelKit.Parameters.underlyingErrorCode + levelString
+            let errorDomainParameterName = PixelKit.Parameters.underlyingErrorDomain + levelString
 
             let currentUnderlyingErrorParameters = [
                 errorCodeParameterName: "\(underlyingError.code)",
                 errorDomainParameterName: underlyingError.domain
+                // WARNING: Avoid adding error.description to prevent leaking personal information.
             ]
 
             // Check if the underlying error has an underlying error of its own

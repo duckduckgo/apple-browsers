@@ -32,12 +32,11 @@ struct SettingsState {
     }
     
     struct TextZoom {
-        var enabled: Bool
         var level: TextZoomLevel
     }
 
     struct Subscription: Codable {
-        var canPurchase: Bool
+        var hasAppStoreProductsAvailable: Bool
         var isSignedIn: Bool
         var hasSubscription: Bool
         var hasActiveSubscription: Bool
@@ -69,6 +68,7 @@ struct SettingsState {
     var isExperimentalAIChatEnabled: Bool
     var refreshButtonPosition: RefreshButtonPosition
     var mobileCustomization: MobileCustomization.State
+    var showMenuInSheet: Bool
 
     // Privacy properties
     var sendDoNotSell: Bool
@@ -88,6 +88,7 @@ struct SettingsState {
     var activeWebsiteCreditCard: SecureVaultModels.CreditCard?
     var autofillSource: AutofillSettingsSource?
     var showCreditCardManagement: Bool
+    var showSettingsScreen: AutofillSettingsDestination?
 
     // About properties
     var version: String
@@ -125,12 +126,13 @@ struct SettingsState {
             appThemeStyle: .systemDefault,
             appIcon: AppIconManager.shared.appIcon,
             fireButtonAnimation: .fireRising,
-            textZoom: TextZoom(enabled: false, level: .percent100),
+            textZoom: TextZoom(level: .percent100),
             addressBar: AddressBar(enabled: false, position: .top),
             showsFullURL: false,
             isExperimentalAIChatEnabled: false,
             refreshButtonPosition: .addressBar,
             mobileCustomization: .default,
+            showMenuInSheet: false,
             sendDoNotSell: true,
             autoconsentEnabled: false,
             autoclearDataEnabled: false,
@@ -151,7 +153,7 @@ struct SettingsState {
             speechRecognitionAvailable: false,
             loginsEnabled: false,
             networkProtectionConnected: false,
-            subscription: Subscription(canPurchase: false,
+            subscription: Subscription(hasAppStoreProductsAvailable: false,
                                        isSignedIn: false,
                                        hasSubscription: false,
                                        hasActiveSubscription: false,

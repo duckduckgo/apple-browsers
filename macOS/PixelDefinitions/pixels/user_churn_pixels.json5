@@ -1,0 +1,17 @@
+{
+    "m_mac_unset-as-default": {
+        "description": "Pixel fired when DuckDuckGo is unset as the default browser",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "parameters": [
+            "appVersion",
+            "atb",
+            {
+                "key": "newDefault",
+                "type": "string",
+                "description": "The browser that is now the default",
+                "enum": ["Chrome", "Safari", "Firefox", "Brave", "Other"]
+            }
+        ]
+    }
+}

@@ -53,12 +53,11 @@ let package = Package(
         .library(name: "WKAbstractions", targets: ["WKAbstractions"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/duckduckgo/apple-toolbox.git", revision: "6704f157d3887a6d292a5cb1e6a148e2d1c696fd"),
-        .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "18.4.0"),
+        .package(url: "https://github.com/duckduckgo/duckduckgo-autofill.git", exact: "18.5.0"),
         .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "3.0.1"),
         .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.7.0"),
         .package(url: "https://github.com/gumob/PunycodeSwift.git", exact: "3.0.0"),
-        .package(url: "https://github.com/duckduckgo/privacy-dashboard", exact: "9.4.0"),
+        .package(url: "https://github.com/duckduckgo/privacy-dashboard", exact: "9.5.0"),
         .package(url: "https://github.com/httpswift/swifter.git", exact: "1.5.0"),
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.4"),
@@ -115,7 +114,6 @@ let package = Package(
             name: "Persistence",
             dependencies: [
                 "Common",
-                .product(name: "Macros", package: "apple-toolbox"),
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))

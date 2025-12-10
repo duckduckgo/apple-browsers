@@ -52,6 +52,7 @@ private struct Handlers {
     // ---
     static let backToSettings = "backToSettings"
     static let getSubscriptionOptions = "getSubscriptionOptions"
+    static let getSubscriptionTierOptions = "getSubscriptionTierOptions"
     static let subscriptionSelected = "subscriptionSelected"
     static let activateSubscription = "activateSubscription"
     static let featureSelected = "featureSelected"
@@ -89,6 +90,7 @@ public struct GetFeatureConfigurationResponse: Encodable {
     let useSubscriptionsAuthV2: Bool
     let usePaidDuckAi: Bool
     let useAlternateStripePaymentFlow: Bool
+    let useGetSubscriptionTierOptions: Bool
 }
 
 public struct AccessTokenValue: Codable {
@@ -146,7 +148,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     private let appStoreRestoreFlow: AppStoreRestoreFlow
     private let appStoreAccountManagementFlow: AppStoreAccountManagementFlow
     private let subscriptionDataReporter: SubscriptionDataReporting?
-    private let subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping
 
     init(subscriptionManager: SubscriptionManager,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
@@ -154,8 +155,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
          appStorePurchaseFlow: AppStorePurchaseFlow,
          appStoreRestoreFlow: AppStoreRestoreFlow,
          appStoreAccountManagementFlow: AppStoreAccountManagementFlow,
-         subscriptionDataReporter: SubscriptionDataReporting? = nil,
-         subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper()) {
+         subscriptionDataReporter: SubscriptionDataReporting? = nil) {
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.appStorePurchaseFlow = appStorePurchaseFlow
@@ -163,7 +163,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         self.appStoreAccountManagementFlow = appStoreAccountManagementFlow
         self.subscriptionAttributionOrigin = subscriptionAttributionOrigin
         self.subscriptionDataReporter = subscriptionAttributionOrigin != nil ? subscriptionDataReporter : nil
-        self.subscriptionFreeTrialsHelper = subscriptionFreeTrialsHelper
     }
 
     // Transaction Status and errors are observed from ViewModels to handle errors in the UI
@@ -261,13 +260,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     func getSubscriptionOptions(params: Any, original: WKScriptMessage) async -> Encodable? {
         resetSubscriptionFlow()
 
-        var subscriptionOptions: SubscriptionOptions?
-
-        if subscriptionFreeTrialsHelper.areFreeTrialsEnabled {
-            subscriptionOptions = await freeTrialSubscriptionOptions()
-        } else {
-            subscriptionOptions = await subscriptionManager.storePurchaseManager().subscriptionOptions()
-        }
+        let subscriptionOptions = await subscriptionManager.storePurchaseManager().subscriptionOptions()
 
         if let subscriptionOptions {
             if subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed {
@@ -564,22 +557,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     }
 }
 
-private extension DefaultSubscriptionPagesUseSubscriptionFeature {
-    /// Retrieves free trial subscription options.
-    ///
-    /// - Returns: A `SubscriptionOptions` object containing the relevant subscription options.
-    func freeTrialSubscriptionOptions() async -> SubscriptionOptions? {
-        guard let subscriptionOptions = await subscriptionManager.storePurchaseManager().freeTrialSubscriptionOptions() else {
-            /*
-             Fallback to standard subscription options if nil.
-             This could occur if the Free Trial offer in AppStoreConnect had an end date in the past.
-             */
-            return await subscriptionManager.storePurchaseManager().subscriptionOptions()
-        }
-        return subscriptionOptions
-    }
-}
-
 final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesUseSubscriptionFeature {
 
     private let subscriptionAttributionOrigin: String?
@@ -588,9 +565,9 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
     private let appStoreRestoreFlow: AppStoreRestoreFlowV2
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private let subscriptionDataReporter: SubscriptionDataReporting?
-    private let subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping
     private let internalUserDecider: InternalUserDecider
     private let wideEvent: WideEventManaging
+    private let tierEventReporter: SubscriptionTierEventReporting
     private var wideEventData: SubscriptionPurchaseWideEventData?
     private var subscriptionRestoreWideEventData: SubscriptionRestoreWideEventData?
 
@@ -600,18 +577,18 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
          appStorePurchaseFlow: AppStorePurchaseFlowV2,
          appStoreRestoreFlow: AppStoreRestoreFlowV2,
          subscriptionDataReporter: SubscriptionDataReporting? = nil,
-         subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper(),
          internalUserDecider: InternalUserDecider,
-         wideEvent: WideEventManaging) {
+         wideEvent: WideEventManaging,
+         tierEventReporter: SubscriptionTierEventReporting = DefaultSubscriptionTierEventReporter()) {
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.appStorePurchaseFlow = appStorePurchaseFlow
         self.appStoreRestoreFlow = appStoreRestoreFlow
         self.subscriptionAttributionOrigin = subscriptionAttributionOrigin
         self.subscriptionDataReporter = subscriptionAttributionOrigin != nil ? subscriptionDataReporter : nil
-        self.subscriptionFreeTrialsHelper = subscriptionFreeTrialsHelper
         self.internalUserDecider = internalUserDecider
         self.wideEvent = wideEvent
+        self.tierEventReporter = tierEventReporter
     }
 
     // Transaction Status and errors are observed from ViewModels to handle errors in the UI
@@ -653,6 +630,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         case Handlers.getAuthAccessToken: return getAuthAccessToken
         case Handlers.getFeatureConfig: return getFeatureConfig
         case Handlers.getSubscriptionOptions: return getSubscriptionOptions
+        case Handlers.getSubscriptionTierOptions: return getSubscriptionTierOptions
         case Handlers.subscriptionSelected: return subscriptionSelected
         case Handlers.activateSubscription: return activateSubscription
         case Handlers.featureSelected: return featureSelected
@@ -747,7 +725,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         return GetFeatureConfigurationResponse(
             useSubscriptionsAuthV2: true,
             usePaidDuckAi: subscriptionFeatureAvailability.isPaidAIChatEnabled,
-            useAlternateStripePaymentFlow: subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled
+            useAlternateStripePaymentFlow: subscriptionFeatureAvailability.isSupportsAlternateStripePaymentFlowEnabled,
+            useGetSubscriptionTierOptions: subscriptionFeatureAvailability.isTierMessagingEnabled
         )
     }
 
@@ -768,13 +747,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
     func getSubscriptionOptions(params: Any, original: WKScriptMessage) async -> Encodable? {
         resetSubscriptionFlow()
 
-        var subscriptionOptions: SubscriptionOptionsV2?
-
-        if subscriptionFreeTrialsHelper.areFreeTrialsEnabled {
-            subscriptionOptions = await freeTrialSubscriptionOptions()
-        } else {
-            subscriptionOptions = await subscriptionManager.storePurchaseManager().subscriptionOptions()
-        }
+        let subscriptionOptions = await subscriptionManager.storePurchaseManager().subscriptionOptions()
 
         if let subscriptionOptions {
             if subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed {
@@ -786,6 +759,34 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             Logger.subscription.error("Failed to obtain subscription options")
             setTransactionError(.failedToGetSubscriptionOptions)
             return SubscriptionOptionsV2.empty
+        }
+    }
+
+    func getSubscriptionTierOptions(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        tierEventReporter.reportTierOptionsRequested()
+
+        let subscriptionTierOptionsResponse = await subscriptionManager.storePurchaseManager().subscriptionTierOptions(includeProTier: subscriptionFeatureAvailability.isProTierPurchaseEnabled)
+
+        switch subscriptionTierOptionsResponse {
+        case .success(let subscriptionTierOptions):
+            // Check if Pro tier was unexpectedly returned
+            let hasProTier = subscriptionTierOptions.products.contains { $0.tier == .pro }
+            if hasProTier && !subscriptionFeatureAvailability.isProTierPurchaseEnabled {
+                tierEventReporter.reportTierOptionsUnexpectedProTier()
+            }
+
+            tierEventReporter.reportTierOptionsSuccess()
+
+            guard subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed else { return subscriptionTierOptions.withoutPurchaseOptions() }
+            return subscriptionTierOptions
+
+        case .failure(let error):
+            Logger.subscription.error("Failed to obtain subscription tier options")
+            setTransactionError(.failedToGetSubscriptionOptions)
+
+            tierEventReporter.reportTierOptionsFailure(error: error)
+
+            return SubscriptionTierOptions.empty
         }
     }
 
@@ -837,16 +838,14 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         let experiment = subscriptionSelection.experiment?.name
         let freeTrialEligible = subscriptionManager.storePurchaseManager().isUserEligibleForFreeTrial()
 
-        if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
-            let data = SubscriptionPurchaseWideEventData(
-                purchasePlatform: .appStore,
-                subscriptionIdentifier: subscriptionSelection.id,
-                freeTrialEligible: freeTrialEligible,
-                contextData: WideEventContextData(name: subscriptionAttributionOrigin))
+        let data = SubscriptionPurchaseWideEventData(
+            purchasePlatform: .appStore,
+            subscriptionIdentifier: subscriptionSelection.id,
+            freeTrialEligible: freeTrialEligible,
+            contextData: WideEventContextData(name: subscriptionAttributionOrigin))
 
-            self.wideEventData = data
-            wideEvent.startFlow(data)
-        }
+        self.wideEventData = data
+        wideEvent.startFlow(data)
 
         let purchaseTransactionJWS: String
 
@@ -867,7 +866,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
                 setTransactionError(.cancelledByUser)
                 await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.canceled)
 
-                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let wideEventData {
+                if let wideEventData {
                     wideEvent.completeFlow(wideEventData, status: .cancelled, onComplete: { _, _ in })
                 }
 
@@ -875,13 +874,13 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             case .accountCreationFailed(let accountCreationError):
                 setTransactionError(.accountCreationFailed)
 
-                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let wideEventData {
+                if let wideEventData {
                     wideEventData.markAsFailed(at: .accountCreate, error: accountCreationError)
                     wideEvent.completeFlow(wideEventData, status: .failure, onComplete: { _, _ in })
                 }
             case .activeSubscriptionAlreadyPresent:
                 // If we found a subscription, then this is not a purchase flow - discard the purchase pixel.
-                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let wideEventData {
+                if let wideEventData {
                     wideEvent.discardFlow(wideEventData)
                     self.wideEventData = nil
                 }
@@ -890,14 +889,14 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             case .internalError(let internalError):
                 setTransactionError(.purchaseFailed)
 
-                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let wideEventData {
+                if let wideEventData {
                     wideEventData.markAsFailed(at: .accountPayment, error: internalError ?? error)
                     wideEvent.completeFlow(wideEventData, status: .failure, onComplete: { _, _ in })
                 }
             default:
                 setTransactionError(.purchaseFailed)
 
-                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let wideEventData {
+                if let wideEventData {
                     wideEventData.markAsFailed(at: .accountPayment, error: error)
                     wideEvent.completeFlow(wideEventData, status: .failure, onComplete: { _, _ in })
                 }
@@ -913,7 +912,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             assertionFailure("Purchase transaction JWS is empty")
             setTransactionStatus(.idle)
             
-            if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let wideEventData {
+            if let wideEventData {
                 wideEvent.completeFlow(wideEventData, status: .failure, onComplete: { _, _ in })
             }
             
@@ -925,7 +924,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             subscriptionParameters = frontEndExperiment.asParameters()
         }
 
-        if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let wideEventData {
+        if let wideEventData {
             wideEventData.activateAccountDuration = WideEvent.MeasuredInterval.startingNow()
             wideEvent.updateFlow(wideEventData)
         }
@@ -941,7 +940,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             setTransactionStatus(.idle)
             await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate.completed)
 
-            if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let wideEventData {
+            if let wideEventData {
                 wideEventData.activateAccountDuration?.complete()
                 wideEvent.updateFlow(wideEventData)
                 wideEvent.completeFlow(wideEventData, status: .success(reason: nil), onComplete: { _, _ in })
@@ -959,7 +958,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             // Send the wide event error as long as the account isn't missing entitlements
             // If entitlements are missing, the app will check again later and send the pixel as a success if
             // they were fetched, or `unknown` if not
-            if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let wideEventData, error != .missingEntitlements {
+            if let wideEventData, error != .missingEntitlements {
                 wideEventData.markAsFailed(at: .accountActivation, error: error)
                 wideEvent.updateFlow(wideEventData)
                 wideEvent.completeFlow(wideEventData, status: .failure, onComplete: { _, _ in })
@@ -1115,35 +1114,19 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
     }
 }
 
-private extension DefaultSubscriptionPagesUseSubscriptionFeatureV2 {
-    /// Retrieves free trial subscription options.
-    ///
-    /// - Returns: A `SubscriptionOptions` object containing the relevant subscription options.
-    func freeTrialSubscriptionOptions() async -> SubscriptionOptionsV2? {
-        guard let subscriptionOptions = await subscriptionManager.storePurchaseManager().freeTrialSubscriptionOptions() else {
-            /*
-             Fallback to standard subscription options if nil.
-             This could occur if the Free Trial offer in AppStoreConnect had an end date in the past.
-             */
-            return await subscriptionManager.storePurchaseManager().subscriptionOptions()
-        }
-        return subscriptionOptions
-    }
-}
-
 // MARK: - Wide Pixel
 
 private extension DefaultSubscriptionPagesUseSubscriptionFeatureV2 {
     
     func markEmailAddressRestoreWideEventFlowAsSuccess() {
-        guard subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled, let restoreWideEventData = self.subscriptionRestoreEmailAddressWideEventData else { return }
+        guard let restoreWideEventData = self.subscriptionRestoreEmailAddressWideEventData else { return }
         restoreWideEventData.emailAddressRestoreDuration?.complete()
         wideEvent.completeFlow(restoreWideEventData, status: .success, onComplete: { _, _ in })
         self.subscriptionRestoreEmailAddressWideEventData = nil
     }
     
     func markEmailAddressRestoreWideEventFlowAsFailed(with error: Error?) {
-        guard subscriptionFeatureAvailability.isSubscriptionRestoreWidePixelMeasurementEnabled, let restoreWideEventData = self.subscriptionRestoreEmailAddressWideEventData else { return }
+        guard let restoreWideEventData = self.subscriptionRestoreEmailAddressWideEventData else { return }
         restoreWideEventData.emailAddressRestoreDuration?.complete()
         if let error {
             restoreWideEventData.errorData = .init(error: error)

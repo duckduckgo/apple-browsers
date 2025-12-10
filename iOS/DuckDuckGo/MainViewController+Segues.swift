@@ -111,7 +111,8 @@ extension MainViewController {
                                     syncService: self.syncService,
                                     syncDataProviders: self.syncDataProviders,
                                     appSettings: self.appSettings,
-                                    keyValueStore: self.keyValueStore)
+                                    keyValueStore: self.keyValueStore,
+                                    productSurfaceTelemetry: self.productSurfaceTelemetry)
         }
         bookmarks.delegate = self
 
@@ -200,7 +201,8 @@ extension MainViewController {
                                       featureFlagger: self.featureFlagger,
                                       tabManager: self.tabManager,
                                       aiChatSettings: self.aiChatSettings,
-                                      appSettings: self.appSettings)
+                                      appSettings: self.appSettings,
+                                      productSurfaceTelemetry: self.productSurfaceTelemetry)
         }) else {
             assertionFailure()
             return
@@ -263,13 +265,14 @@ extension MainViewController {
     func segueToSettingsAutofillWith(account: SecureVaultModels.WebsiteAccount?,
                                      card: SecureVaultModels.CreditCard?,
                                      showCardManagement: Bool = false,
+                                     showSettingsScreen: AutofillSettingsDestination? = nil,
                                      source: AutofillSettingsSource?) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
-        if showCardManagement {
+        if showCardManagement || showSettingsScreen != nil {
             launchSettings(configure: { viewModel, controller in
                 controller.decorateNavigationBar()
-                viewModel.shouldPresentAutofillViewWith(accountDetails: nil, card: nil, showCreditCardManagement: true, source: nil)
+                viewModel.shouldPresentAutofillViewWith(accountDetails: nil, card: nil, showCreditCardManagement: showCardManagement, showSettingsScreen: showSettingsScreen, source: source)
             })
         } else {
             launchSettings {
@@ -338,7 +341,10 @@ extension MainViewController {
                                                             keyValueStore: keyValueStore,
                                                             systemSettingsPiPTutorialManager: systemSettingsPiPTutorialManager,
                                                             daxDialogsManager: daxDialogsManager,
-                                                            dbpIOSPublicInterface: dbpIOSPublicInterface)
+                                                            dbpIOSPublicInterface: dbpIOSPublicInterface,
+                                                            subscriptionDataReporter: subscriptionDataReporter,
+                                                            remoteMessagingDebugHandler: remoteMessagingDebugHandler,
+                                                            productSurfaceTelemetry: productSurfaceTelemetry)
 
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
         let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings,
@@ -367,7 +373,9 @@ extension MainViewController {
                                                   runPrerequisitesDelegate: dbpIOSPublicInterface,
                                                   dataBrokerProtectionViewControllerProvider: dbpIOSPublicInterface,
                                                   winBackOfferVisibilityManager: winBackOfferVisibilityManager,
-                                                  mobileCustomization: mobileCustomization)
+                                                  mobileCustomization: mobileCustomization,
+                                                  userScriptsDependencies: userScriptsDependencies,
+                                                  browsingMenuSheetCapability: BrowsingMenuSheetCapability.create(using: featureFlagger, keyValueStore: keyValueStore))
 
         settingsViewModel.autoClearActionDelegate = self
         Pixel.fire(pixel: .settingsPresented)
@@ -380,7 +388,9 @@ extension MainViewController {
             } else {
                 assert(self.presentedViewController == nil)
 
-                let settingsController = SettingsHostingController(viewModel: settingsViewModel, viewProvider: legacyViewProvider)
+                let settingsController = SettingsHostingController(viewModel: settingsViewModel,
+                                                                   viewProvider: legacyViewProvider,
+                                                                   productSurfaceTelemetry: self.productSurfaceTelemetry)
 
                 // We are still presenting legacy views, so use a Navcontroller
                 let navController = SettingsUINavigationController(rootViewController: settingsController)
@@ -420,7 +430,9 @@ extension MainViewController {
             daxDialogManager: self.daxDialogsManager,
             databaseDelegate: self.dbpIOSPublicInterface,
             debuggingDelegate: self.dbpIOSPublicInterface,
-            runPrequisitesDelegate: self.dbpIOSPublicInterface))
+            runPrequisitesDelegate: self.dbpIOSPublicInterface,
+            subscriptionDataReporter: self.subscriptionDataReporter,
+            remoteMessagingDebugHandler: self.remoteMessagingDebugHandler))
 
         let controller = UINavigationController(rootViewController: debug)
         controller.modalPresentationStyle = .automatic

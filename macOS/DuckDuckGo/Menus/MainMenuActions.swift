@@ -29,6 +29,7 @@ import os.log
 import PixelKit
 import Subscription
 import SwiftUI
+import Utilities
 import WebKit
 
 // Actions are sent to objects of responder chain
@@ -333,6 +334,7 @@ extension AppDelegate {
 
         let controller = ReportProblemFormViewController(rootView: formView)
         window = NSWindow(contentViewController: controller)
+            .withAccessibilityIdentifier(AccessibilityIdentifiers.Feedback.reportAProblem)
 
         guard let window = window else { return }
 
@@ -578,27 +580,24 @@ extension AppDelegate {
         NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: NSApp)
     }
 
-    @objc func showContentScopeExperiments(_ sender: Any?) {
-        let experiments = contentScopeExperimentsManager.allActiveContentScopeExperiments
-
-        let alert = NSAlert()
-        alert.messageText = "Content Scope Experiments"
-
-        var infoText = "Active Experiments:\n"
-        if experiments.isEmpty {
-            infoText += "No active experiments\n"
-        } else {
-            for (key, data) in experiments {
-                infoText += "\nExperiment: \(key)\n"
-                infoText += "Parent ID: \(data.parentID)\n"
-                infoText += "Cohort ID: \(data.cohortID)\n"
-                infoText += "Enrollment Date: \(data.enrollmentDate)\n"
-            }
+    @MainActor
+    @objc func debugShowFeatureAwarenessDialogForNTPWidget(_ sender: Any?) {
+        Task {
+            await Application.appDelegate.autoconsentStatsPopoverCoordinator.showDialogForDebug()
         }
+    }
 
-        alert.informativeText = infoText
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
+    @objc func debugIncrementAutoconsentStats(_ sender: Any?) {
+        Task {
+            await autoconsentStats.recordAutoconsentAction(clicksMade: 1, timeSpent: 1.0)
+            print("DEBUG: Autoconsent stats incremented")
+        }
+    }
+
+    @MainActor
+    @objc func debugClearBlockedCookiesPopoverSeenFlag(_ sender: Any?) {
+        Application.appDelegate.autoconsentStatsPopoverCoordinator.clearBlockedCookiesPopoverSeenFlag()
+        print("DEBUG: Cleared blockedCookiesPopoverSeen flag")
     }
 
     @objc func resetDefaultGrammarChecks(_ sender: Any?) {
@@ -718,6 +717,10 @@ extension AppDelegate {
 
     @objc func setLaunchDayAWeekInThePast(_ sender: Any?) {
         UserDefaults.standard.set(Date.weekAgo, forKey: UserDefaultsWrapper<Any>.Key.firstLaunchDate.rawValue)
+    }
+
+    @objc func setLaunchDayAMonthInThePast(_ sender: Any?) {
+        UserDefaults.standard.set(Date.monthAgo, forKey: UserDefaultsWrapper<Any>.Key.firstLaunchDate.rawValue)
     }
 
     @objc func resetTipKit(_ sender: Any?) {
@@ -857,7 +860,7 @@ extension MainViewController {
     /// Finds currently active Tab even if it‘s playing a Full Screen video
     private func getActiveTabAndIndex() -> (tab: Tab, index: TabIndex)? {
         var tab: Tab? {
-            // popup windows don‘t get to lastKeyMainWindowController so try getting their WindowController directly fron a key window
+            // popup windows don‘t get to lastKeyMainWindowController so try getting their WindowController directly from a key window
             if let window = self.view.window,
                let mainWindowController = window.nextResponder as? MainWindowController,
                let tab = mainWindowController.activeTab {

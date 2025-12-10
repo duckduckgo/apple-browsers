@@ -70,6 +70,35 @@ final class DataBrokerJobTests: XCTestCase {
         // Then
         XCTAssertFalse(mockActionsHandler.didCallNextAction)
     }
+
+    func testWhenScan_thenWillRetryOnce() async throws {
+        // Given
+        let sut = optOutJob
+        let mockActionsHandler = MockActionsHandler(stepType: .scan)
+        sut.actionsHandler = mockActionsHandler
+
+        let action = NavigateAction(id: "navigate", actionType: .navigate, url: "url", ageRange: [String](), dataSource: nil)
+
+        // When
+        _ = await sut.evaluateActionAndHaltIfNeeded(action)
+
+        // Then
+        XCTAssertEqual(sut.retriesCountOnError, 1)
+    }
+
+    func testWhenOptOut_thenWillRetryOnce() async throws {
+        // Given
+        let sut = optOutJob
+        let mockActionsHandler = MockActionsHandler(stepType: .optOut)
+        sut.actionsHandler = mockActionsHandler
+        let action = NavigateAction(id: "navigate", actionType: .navigate, url: "url", ageRange: [String](), dataSource: nil)
+
+        // When
+        _ = await sut.evaluateActionAndHaltIfNeeded(action)
+
+        // Then
+        XCTAssertEqual(sut.retriesCountOnError, 1)
+    }
 }
 
 private extension DataBrokerJobTests {
@@ -82,7 +111,7 @@ private extension DataBrokerJobTests {
                                          captchaService: CaptchaServiceMock(),
                                          featureFlagger: MockDBPFeatureFlagger(),
                                          stageDurationCalculator: MockStageDurationCalculator(),
-                                         pixelHandler: MockPixelHandler(),
+                                         pixelHandler: MockDataBrokerProtectionPixelsHandler(),
                                          executionConfig: BrokerJobExecutionConfig(),
                                          shouldRunNextStep: { true })
     }
@@ -95,7 +124,7 @@ private extension DataBrokerJobTests {
                                            captchaService: CaptchaServiceMock(),
                                            featureFlagger: MockDBPFeatureFlagger(),
                                            stageCalculator: MockStageDurationCalculator(),
-                                           pixelHandler: MockPixelHandler(),
+                                           pixelHandler: MockDataBrokerProtectionPixelsHandler(),
                                            executionConfig: BrokerJobExecutionConfig(),
                                            actionsHandlerMode: .optOut,
                                            shouldRunNextStep: { true })

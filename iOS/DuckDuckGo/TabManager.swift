@@ -40,10 +40,10 @@ class TabManager {
     private let bookmarksDatabase: CoreDataDatabase
     private let historyManager: HistoryManaging
     private let syncService: DDGSyncing
+    private let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     private let contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>
     private var previewsSource: TabPreviewsSource
     private let interactionStateSource: TabInteractionStateSource?
-    private var duckPlayer: DuckPlayerControlling
     private var subscriptionDataReporter: SubscriptionDataReporting
     private let contextualOnboardingPresenter: ContextualOnboardingPresenting
     private let contextualOnboardingLogic: ContextualOnboardingLogic
@@ -60,6 +60,8 @@ class TabManager {
     private let keyValueStore: ThrowingKeyValueStoring
     private let daxDialogsManager: DaxDialogsManaging
     private let aiChatSettings: AIChatSettingsProvider
+    private let productSurfaceTelemetry: ProductSurfaceTelemetry
+    private let sharedSecureVault: (any AutofillSecureVault)?
 
     weak var delegate: TabDelegate?
     weak var aiChatContentDelegate: AIChatContentHandlingDelegate?
@@ -76,8 +78,8 @@ class TabManager {
          bookmarksDatabase: CoreDataDatabase,
          historyManager: HistoryManaging,
          syncService: DDGSyncing,
+         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
          contentBlockingAssetsPublisher: AnyPublisher<ContentBlockingUpdating.NewContent, Never>,
-         duckPlayer: DuckPlayer = DuckPlayer(),
          subscriptionDataReporter: SubscriptionDataReporting,
          contextualOnboardingPresenter: ContextualOnboardingPresenting,
          contextualOnboardingLogic: ContextualOnboardingLogic,
@@ -93,7 +95,9 @@ class TabManager {
          featureDiscovery: FeatureDiscovery,
          keyValueStore: ThrowingKeyValueStoring,
          daxDialogsManager: DaxDialogsManaging,
-         aiChatSettings: AIChatSettingsProvider
+         aiChatSettings: AIChatSettingsProvider,
+         productSurfaceTelemetry: ProductSurfaceTelemetry,
+         sharedSecureVault: (any AutofillSecureVault)? = nil
     ) {
         self.model = model
         self.persistence = persistence
@@ -103,8 +107,8 @@ class TabManager {
         self.bookmarksDatabase = bookmarksDatabase
         self.historyManager = historyManager
         self.syncService = syncService
+        self.userScriptsDependencies = userScriptsDependencies
         self.contentBlockingAssetsPublisher = contentBlockingAssetsPublisher
-        self.duckPlayer = duckPlayer
         self.subscriptionDataReporter = subscriptionDataReporter
         self.contextualOnboardingPresenter = contextualOnboardingPresenter
         self.contextualOnboardingLogic = contextualOnboardingLogic
@@ -121,6 +125,8 @@ class TabManager {
         self.keyValueStore = keyValueStore
         self.daxDialogsManager = daxDialogsManager
         self.aiChatSettings = aiChatSettings
+        self.productSurfaceTelemetry = productSurfaceTelemetry
+        self.sharedSecureVault = sharedSecureVault
         registerForNotifications()
     }
 
@@ -148,8 +154,8 @@ class TabManager {
                                                               bookmarksDatabase: bookmarksDatabase,
                                                               historyManager: historyManager,
                                                               syncService: syncService,
+                                                              userScriptsDependencies: userScriptsDependencies,
                                                               contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
-                                                              duckPlayer: duckPlayer,
                                                               subscriptionDataReporter: subscriptionDataReporter,
                                                               contextualOnboardingPresenter: contextualOnboardingPresenter,
                                                               contextualOnboardingLogic: contextualOnboardingLogic,
@@ -163,7 +169,9 @@ class TabManager {
                                                               specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
                                                               featureDiscovery: featureDiscovery,
                                                               keyValueStore: keyValueStore,
-                                                              daxDialogsManager: daxDialogsManager, aiChatSettings: aiChatSettings)
+                                                              daxDialogsManager: daxDialogsManager, aiChatSettings: aiChatSettings,
+                                                              productSurfaceTelemetry: productSurfaceTelemetry,
+                                                              sharedSecureVault: sharedSecureVault)
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
                                  interactionStateData: interactionState,
@@ -245,8 +253,8 @@ class TabManager {
                                                               bookmarksDatabase: bookmarksDatabase,
                                                               historyManager: historyManager,
                                                               syncService: syncService,
+                                                              userScriptsDependencies: userScriptsDependencies,
                                                               contentBlockingAssetsPublisher: contentBlockingAssetsPublisher,
-                                                              duckPlayer: duckPlayer,
                                                               subscriptionDataReporter: subscriptionDataReporter,
                                                               contextualOnboardingPresenter: contextualOnboardingPresenter,
                                                               contextualOnboardingLogic: contextualOnboardingLogic,
@@ -261,7 +269,9 @@ class TabManager {
                                                               featureDiscovery: featureDiscovery,
                                                               keyValueStore: keyValueStore,
                                                               daxDialogsManager: daxDialogsManager,
-                                                              aiChatSettings: aiChatSettings)
+                                                              aiChatSettings: aiChatSettings,
+                                                              productSurfaceTelemetry: productSurfaceTelemetry,
+                                                              sharedSecureVault: sharedSecureVault)
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
                                  consumeCookies: !model.hasActiveTabs,

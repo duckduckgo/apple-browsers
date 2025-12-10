@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Combine
+import Common
 import ContentBlocking
 import Foundation
 import History
@@ -97,6 +98,7 @@ typealias TabExtensionsBuilderArguments = (
     isTabPinned: () -> Bool,
     isTabBurner: Bool,
     isTabLoadedInSidebar: Bool,
+    isInPopUpWindow: () -> Bool,
     contentPublisher: AnyPublisher<Tab.TabContent, Never>,
     setContent: (Tab.TabContent) -> Void,
     closeTab: () -> Void,
@@ -106,7 +108,14 @@ typealias TabExtensionsBuilderArguments = (
     inheritedAttribution: AdClickAttributionLogic.State?,
     userContentControllerFuture: Future<UserContentController, Never>,
     permissionModel: PermissionModel,
-    webViewFuture: Future<WKWebView, Never>
+    webViewFuture: Future<WKWebView, Never>,
+    interactionEventsPublisher: AnyPublisher<WebViewInteractionEvent, Never>,
+    tabsPreferences: TabsPreferences,
+    burnerMode: BurnerMode,
+    urlProvider: () -> URL?,
+    createChildTab: (WKWebViewConfiguration?, SecurityOrigin?, NewWindowPolicy) -> Tab?,
+    presentTab: (Tab, NewWindowPolicy) -> Void,
+    newWindowPolicyDecisionMakers: () -> [NewWindowPolicyDecisionMaking]?
 )
 
 extension TabExtensionsBuilder {
@@ -166,6 +175,16 @@ extension TabExtensionsBuilder {
                                        contentScopeUserScriptPublisher: userScripts.compactMap(\.?.contentScopeUserScriptIsolated))
         }
 
+        if dependencies.featureFlagger.isFeatureOn(.webNotifications) {
+            add {
+                WebNotificationsTabExtension(
+                    tabUUID: args.tabID,
+                    contentScopeUserScriptPublisher: userScripts.compactMap(\.?.contentScopeUserScript),
+                    webViewPublisher: args.webViewFuture
+                )
+            }
+        }
+
         add {
             AdClickAttributionTabExtension(inheritedAttribution: args.inheritedAttribution,
                                            userContentControllerFuture: args.userContentControllerFuture,
@@ -198,6 +217,21 @@ extension TabExtensionsBuilder {
                                tld: dependencies.privacyFeatures.contentBlocking.tld)
         }
         add {
+            PopupHandlingTabExtension(tabsPreferences: args.tabsPreferences,
+                                      burnerMode: args.burnerMode,
+                                      permissionModel: args.permissionModel,
+                                      createChildTab: args.createChildTab,
+                                      presentTab: args.presentTab,
+                                      newWindowPolicyDecisionMakers: args.newWindowPolicyDecisionMakers,
+                                      featureFlagger: dependencies.featureFlagger,
+                                      popupBlockingConfig: DefaultPopupBlockingConfiguration(privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager),
+                                      tld: dependencies.privacyFeatures.contentBlocking.tld,
+                                      interactionEventsPublisher: args.interactionEventsPublisher,
+                                      isTabPinned: args.isTabPinned,
+                                      isBurner: args.isTabBurner,
+                                      isInPopUpWindow: args.isInPopUpWindow)
+        }
+        add {
             HoveredLinkTabExtension(hoverUserScriptPublisher: userScripts.map(\.?.hoverUserScript))
         }
         add {
@@ -211,6 +245,7 @@ extension TabExtensionsBuilder {
         add {
             TabSnapshotExtension(webViewPublisher: args.webViewFuture,
                                  contentPublisher: args.contentPublisher,
+                                 interactionEventsPublisher: args.interactionEventsPublisher,
                                  isBurner: args.isTabBurner)
         }
         add {
@@ -233,7 +268,7 @@ extension TabExtensionsBuilder {
             HistoryTabExtension(isCapturingHistory: isCapturingHistory,
                                 historyCoordinating: dependencies.historyCoordinating,
                                 trackersPublisher: contentBlocking.trackersPublisher,
-                                urlPublisher: args.contentPublisher.map { content in content.isUrl ? content.urlForWebView : nil },
+                                urlPublisher: args.contentPublisher.map { content in content.displaysContentInWebView ? content.urlForWebView : nil },
                                 titlePublisher: args.titlePublisher,
                                 popupManagedPublisher: autoconsentTabExtension.popupManagedPublisher)
         }
@@ -245,9 +280,6 @@ extension TabExtensionsBuilder {
         }
         add {
             ExternalAppSchemeHandler(workspace: dependencies.workspace, permissionModel: args.permissionModel, contentPublisher: args.contentPublisher)
-        }
-        add {
-            NavigationHotkeyHandler(isTabPinned: args.isTabPinned, isBurner: args.isTabBurner, tabsPreferences: dependencies.tabsPreferences)
         }
 
         let duckPlayerOnboardingDecider = DefaultDuckPlayerOnboardingDecider(preferences: dependencies.duckPlayer.preferences)

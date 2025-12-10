@@ -1,20 +1,12 @@
 {
   "pins" : [
     {
-      "identity" : "apple-toolbox",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/duckduckgo/apple-toolbox.git",
-      "state" : {
-        "revision" : "6704f157d3887a6d292a5cb1e6a148e2d1c696fd"
-      }
-    },
-    {
       "identity" : "duckduckgo-autofill",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",
       "state" : {
-        "revision" : "0b91be6b29805466d101b556f775763f7c0c5c18",
-        "version" : "18.4.0"
+        "revision" : "8f6c384312a9b27824333e7d23382481ee1183e9",
+        "version" : "18.5.0"
       }
     },
     {
@@ -40,8 +32,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/privacy-dashboard",
       "state" : {
-        "revision" : "fd3b7e2d8194e265c537f227c706de7db3085da5",
-        "version" : "9.4.0"
+        "revision" : "92c9c3970ddc6062fa2952e05098fdaea499ab6a",
+        "version" : "9.5.0"
       }
     },
     {
@@ -51,15 +43,6 @@
       "state" : {
         "revision" : "30a462bdb4398ea835a3585472229e0d74b36ba5",
         "version" : "3.0.0"
-      }
-    },
-    {
-      "identity" : "swift-argument-parser",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-argument-parser.git",
-      "state" : {
-        "revision" : "cdd0ef3755280949551dc26dee5de9ddeda89f54",
-        "version" : "1.6.2"
       }
     },
     {
@@ -96,15 +79,6 @@
       "state" : {
         "revision" : "e8d6eba1fef23ae5b359c46b03f7d94be2f41fed",
         "version" : "3.12.3"
-      }
-    },
-    {
-      "identity" : "swift-syntax",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/swiftlang/swift-syntax",
-      "state" : {
-        "revision" : "f99ae8aa18f0cf0d53481901f88a0991dc3bd4a2",
-        "version" : "601.0.1"
       }
     },
     {

@@ -35,6 +35,7 @@ final class AttributedMetricManagerTests: XCTestCase {
         let pixelKit: PixelKit
         let dataStorage: AttributedMetricDataStorage
         let attributionManager: AttributedMetricManager
+        let settingsProvider: AttributedMetricSettingsProviderMock
 
         func cleanup() {
             dataStorage.removeAll()
@@ -77,7 +78,7 @@ final class AttributedMetricManagerTests: XCTestCase {
         let originProvider: AttributedMetricOriginProvider = AttributedMetricOriginProviderMock()
         let defaultBrowserProvider = AttributedMetricDefaultBrowserProvidingMock()
         let subscriptionProvider = subscriptionStateProvider ?? SubscriptionStateProviderMock()
-        let bucketsSettingsProvider = BucketsSettingsProviderMock()
+        let settingsProvider = AttributedMetricSettingsProviderMock()
 
         let attributionManager = AttributedMetricManager(
             pixelKit: pixelKit,
@@ -87,7 +88,7 @@ final class AttributedMetricManagerTests: XCTestCase {
             defaultBrowserProviding: defaultBrowserProvider,
             subscriptionStateProvider: subscriptionProvider,
             dateProvider: timeMachine,
-            bucketsSettingsProvider: bucketsSettingsProvider
+            settingsProvider: settingsProvider
         )
 
         return TestFixture(
@@ -96,7 +97,8 @@ final class AttributedMetricManagerTests: XCTestCase {
             timeMachine: timeMachine,
             pixelKit: pixelKit,
             dataStorage: dataStorage,
-            attributionManager: attributionManager
+            attributionManager: attributionManager,
+            settingsProvider: settingsProvider
         )
     }
 
@@ -108,10 +110,6 @@ final class AttributedMetricManagerTests: XCTestCase {
     private func extractIntParameter(_ parameters: [String: String], key: String) -> Int? {
         guard let valueString = parameters[key] else { return nil }
         return Int(valueString)
-    }
-
-    func testDisabledFeatureFlag() {
-
     }
 
     /// Tests user retention pixel firing at different time intervals
@@ -148,24 +146,7 @@ final class AttributedMetricManagerTests: XCTestCase {
         var firedPixels: [(name: String, count: Int)] = []
         var pixelFireCount = 0
 
-        // Setup
-        let suiteName = "testing_\(UUID().uuidString)"
-        let userDefaults = UserDefaults(suiteName: suiteName)!
-
-        // Create TimeMachine to control time for daily pixels
-        // Start with a reasonable date (not epoch 0) to avoid triggering the 6-month limit
-        let startDate = Date(timeIntervalSince1970: Date().timeIntervalSince1970)
-        let timeMachine = TimeMachine(date: startDate)
-
-        let pixelKit = PixelKit(
-            dryRun: false,
-            appVersion: "1.0.0",
-            source: "TESTS",
-            defaultHeaders: [:],
-            dailyPixelCalendar: nil,
-            dateGenerator: timeMachine.now,
-            defaults: userDefaults
-        ) { pixelName, _, parameters, _, _, _ in
+        let fixture = createTestFixture { pixelName, _, parameters, _, _, _ in
             switch pixelName {
             case "m_mac_attributed_metric_retention_week":
                 guard let countString = parameters["count"],
@@ -227,23 +208,7 @@ final class AttributedMetricManagerTests: XCTestCase {
                 XCTFail("Unexpected pixel fired: \(pixelName)")
             }
         }
-
-        let errorhandler = AttributedMetricErrorHandler(pixelKit: pixelKit)
-        let dataStorage = AttributedMetricDataStorage(userDefaults: userDefaults, errorHandler: errorhandler)
-        let featureFlagger: any FeatureFlagger = MockFeatureFlagger(featuresStub:
-            [AttributedMetric.AttributedMetricFeatureFlag.attributedMetrics.rawValue: true])
-        let originProvider: AttributedMetricOriginProvider = AttributedMetricOriginProviderMock()
-        let attributedMetricDefaultBrowserProvidingMock = AttributedMetricDefaultBrowserProvidingMock()
-        let subscriptionStateProviderMock = SubscriptionStateProviderMock()
-        let bucketsSettingsProvider = BucketsSettingsProviderMock()
-        let attributionManager = AttributedMetricManager(pixelKit: pixelKit,
-                                                         dataStoring: dataStorage,
-                                                         featureFlagger: featureFlagger,
-                                                         originProvider: originProvider,
-                                                         defaultBrowserProviding: attributedMetricDefaultBrowserProvidingMock,
-                                                         subscriptionStateProvider: subscriptionStateProviderMock,
-                                                         dateProvider: timeMachine,
-                                                         bucketsSettingsProvider: bucketsSettingsProvider)
+        defer { fixture.cleanup() }
 
         /*
          Install day is day 0
@@ -258,37 +223,37 @@ final class AttributedMetricManagerTests: XCTestCase {
          */
 
         // Set install date at the beginning - this stays constant
-        let installDate = timeMachine.now()
-        dataStorage.installDate = installDate
+        let installDate = fixture.timeMachine.now()
+        fixture.dataStorage.installDate = installDate
 
         // Test 1: Day 0 (install day) - No pixels should fire
         let initialPixelCount = pixelFireCount
-        attributionManager.process(trigger: AttributedMetricManager.Trigger.appDidStart)
+        fixture.attributionManager.process(trigger: .appDidStart)
         XCTAssertEqual(pixelFireCount, initialPixelCount, "No pixels should fire on install day")
 
         // Test 2: Day 1 - Week 1 retention pixel
-        timeMachine.travel(by: .day, value: 1)
-        attributionManager.process(trigger: AttributedMetricManager.Trigger.appDidStart)
+        fixture.timeMachine.travel(by: .day, value: 1)
+        fixture.attributionManager.process(trigger: .appDidStart)
 
         // Test 3: Day 1 again (same day) - No duplicate pixel
         let pixelCountBeforeDuplicate = pixelFireCount
-        attributionManager.process(trigger: AttributedMetricManager.Trigger.appDidStart)
+        fixture.attributionManager.process(trigger: .appDidStart)
         XCTAssertEqual(pixelFireCount, pixelCountBeforeDuplicate, "No duplicate pixel should fire for same threshold")
 
         // Test 4: Day 22 - Week 4 retention pixel
         // Travel from day 1 to day 22 (21 more days)
-        timeMachine.travel(by: .day, value: 21)
-        attributionManager.process(trigger: AttributedMetricManager.Trigger.appDidStart)
+        fixture.timeMachine.travel(by: .day, value: 21)
+        fixture.attributionManager.process(trigger: .appDidStart)
 
         // Test 5: Day 29 - Month 2 retention pixel
         // Travel from day 22 to day 29 (7 more days)
-        timeMachine.travel(by: .day, value: 7)
-        attributionManager.process(trigger: AttributedMetricManager.Trigger.appDidStart)
+        fixture.timeMachine.travel(by: .day, value: 7)
+        fixture.attributionManager.process(trigger: .appDidStart)
 
         // Test 6: Day 141 - Month 6 retention pixel
         // Travel from day 29 to day 141 (112 more days)
-        timeMachine.travel(by: .day, value: 112)
-        attributionManager.process(trigger: AttributedMetricManager.Trigger.appDidStart)
+        fixture.timeMachine.travel(by: .day, value: 112)
+        fixture.attributionManager.process(trigger: .appDidStart)
 
         // Wait for expectations
         wait(for: [week1Expectation, week4Expectation, month2Expectation, month6Expectation], timeout: 1.0)
@@ -297,10 +262,6 @@ final class AttributedMetricManagerTests: XCTestCase {
         // Verify correct number of pixels fired
         XCTAssertEqual(pixelFireCount, 4, "Should fire exactly 4 retention pixels")
         XCTAssertEqual(firedPixels.count, 4, "Should have exactly 4 unique pixels")
-
-        // Cleanup
-        dataStorage.removeAll()
-        userDefaults.removeSuite(named: suiteName)
     }
 
     // MARK: - Active Search Days Tests
@@ -936,5 +897,77 @@ final class AttributedMetricManagerTests: XCTestCase {
         // Test: Process sync with 3+ devices should not fire
         fixture.attributionManager.process(trigger: .userDidSync(devicesCount: 3))
         XCTAssertFalse(pixelFired, "Should not fire for 3 or more devices")
+    }
+
+    // MARK: - Data Expiration Tests
+
+    /// Tests that all data in dataStorage is removed at 6 months (168 days) from installation
+    ///
+    /// ## Input → Output Mapping
+    ///
+    /// | Days Since Install | Data Present? | Reason |
+    /// |-------------------|---------------|--------|
+    /// | 167 (< 6 months)  | Yes           | isLessThanSixMonths returns true |
+    /// | 168 (6 months)    | No            | isLessThanSixMonths returns false, removeAll() called |
+    ///
+    /// ## Constants
+    /// - daysInAMonth: 28
+    /// - 6 months: 28 * 6 = 168 days
+    /// - Threshold: >= 168 days triggers data removal
+    /// - Logic: `installDate > (now - 168 days)` returns false when now >= installDate + 168 days
+    ///
+    /// ## Test Validation
+    /// - Data persists at 167 days (< 6 months)
+    /// - All data is cleared at 168 days (exactly 6 months)
+    /// - Verifies: installDate, lastRetentionThreshold, subscriptionDate, subscription flags, syncDevicesCount
+    /// - Trigger: Any trigger (using .appDidStart) calls process() which checks isLessThanSixMonths
+    func testDataStorageRemovalAfterSixMonths() {
+        let fixture = createTestFixture { _, _, _, _, _, _ in
+            // No pixel expectations needed for this test
+        }
+        defer { fixture.cleanup() }
+
+        // Set install date
+        let installDate = fixture.timeMachine.now()
+        fixture.dataStorage.installDate = installDate
+
+        // Populate data storage with various data
+        fixture.dataStorage.lastRetentionThreshold = .weeks(2)
+        fixture.dataStorage.subscriptionDate = fixture.timeMachine.now()
+        fixture.dataStorage.subscriptionFreeTrialFired = true
+        fixture.dataStorage.subscriptionMonth1Fired = true
+        fixture.dataStorage.syncDevicesCount = 2
+
+        // Verify data is present initially
+        XCTAssertNotNil(fixture.dataStorage.installDate, "Install date should be set")
+        XCTAssertNotNil(fixture.dataStorage.lastRetentionThreshold, "Last retention threshold should be set")
+        XCTAssertNotNil(fixture.dataStorage.subscriptionDate, "Subscription date should be set")
+        XCTAssertTrue(fixture.dataStorage.subscriptionFreeTrialFired, "Subscription free trial flag should be set")
+        XCTAssertTrue(fixture.dataStorage.subscriptionMonth1Fired, "Subscription month 1 flag should be set")
+        XCTAssertEqual(fixture.dataStorage.syncDevicesCount, 2, "Sync devices count should be set")
+
+        // Travel to 167 days (< 6 months = 168 days)
+        fixture.timeMachine.travel(by: .day, value: 167)
+        fixture.attributionManager.process(trigger: .appDidStart)
+
+        // Verify data is still present at 167 days
+        XCTAssertNotNil(fixture.dataStorage.installDate, "Install date should still be present at 167 days")
+        XCTAssertNotNil(fixture.dataStorage.lastRetentionThreshold, "Last retention threshold should still be present")
+        XCTAssertNotNil(fixture.dataStorage.subscriptionDate, "Subscription date should still be present")
+
+        // Travel 1 more day to reach exactly 6 months (168 days total)
+        fixture.timeMachine.travel(by: .day, value: 1)
+        fixture.attributionManager.process(trigger: .appDidStart)
+
+        // Verify all data has been removed at exactly 6 months (168 days)
+        XCTAssertNil(fixture.dataStorage.installDate, "Install date should be removed at 6 months (168 days)")
+        XCTAssertNil(fixture.dataStorage.lastRetentionThreshold, "Last retention threshold should be removed")
+        XCTAssertEqual(fixture.dataStorage.search8Days.countPast7Days, 0, "Search data should be cleared")
+        XCTAssertEqual(fixture.dataStorage.adClick8Days.countPast7Days, 0, "Ad click data should be cleared")
+        XCTAssertEqual(fixture.dataStorage.duckAIChat8Days.countPast7Days, 0, "Duck AI chat data should be cleared")
+        XCTAssertNil(fixture.dataStorage.subscriptionDate, "Subscription date should be removed")
+        XCTAssertFalse(fixture.dataStorage.subscriptionFreeTrialFired, "Subscription free trial flag should be cleared")
+        XCTAssertFalse(fixture.dataStorage.subscriptionMonth1Fired, "Subscription month 1 flag should be cleared")
+        XCTAssertEqual(fixture.dataStorage.syncDevicesCount, 0, "Sync devices count should be cleared")
     }
 }

@@ -85,6 +85,13 @@ struct SettingsAppearanceView: View {
                 legacySettings()
             }
 
+            if viewModel.browsingMenuSheetCapability.isAvailable {
+                Section {
+                    SettingsCellView(label: UserText.settingsExperimentalMenu,
+                                     accessory: .toggle(isOn: viewModel.showMenuInSheetBinding))
+                }
+            }
+
         }
         .applySettingsListModifiers(title: UserText.settingsAppearanceSection,
                                     displayMode: .inline,

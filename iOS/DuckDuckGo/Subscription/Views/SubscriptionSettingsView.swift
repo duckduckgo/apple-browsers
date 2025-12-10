@@ -38,7 +38,7 @@ struct SubscriptionSettingsView: View {
     @State var configuration: SubscriptionSettingsViewConfiguration
     @Environment(\.dismiss) var dismiss
 
-    @StateObject var viewModel = SubscriptionSettingsViewModel()
+    @StateObject var viewModel: SubscriptionSettingsViewModel
     @StateObject var settingsViewModel: SettingsViewModel
     @EnvironmentObject var subscriptionNavigationCoordinator: SubscriptionNavigationCoordinator
     var viewPlans: (() -> Void)?
@@ -96,6 +96,7 @@ struct SubscriptionSettingsView: View {
                     navigationCoordinator: subscriptionNavigationCoordinator,
                     subscriptionManager: AppDependencyProvider.shared.subscriptionManager!,
                     subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
+                    userScriptsDependencies: settingsViewModel.userScriptsDependencies,
                     internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                     emailFlow: .manageEmailFlow,
                     dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
@@ -114,6 +115,7 @@ struct SubscriptionSettingsView: View {
                 navigationCoordinator: subscriptionNavigationCoordinator,
                 subscriptionManager: AppDependencyProvider.shared.subscriptionManager!,
                 subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
+                userScriptsDependencies: settingsViewModel.userScriptsDependencies,
                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                 emailFlow: .activationFlow,
                 dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
@@ -327,6 +329,7 @@ struct SubscriptionSettingsView: View {
                                                                                                     vpnMetadataCollector: DefaultVPNMetadataCollector(),
                                                                                                     dbpMetadataCollector: DefaultDBPMetadataCollector(),
                                                                                                     isPaidAIChatFeatureEnabled: { settingsViewModel.subscriptionFeatureAvailability.isPaidAIChatEnabled },
+                                                                                                    isProTierPurchaseEnabled: { settingsViewModel.subscriptionFeatureAvailability.isProTierPurchaseEnabled },
                                                                                                     source: .ppro)),
                        isActive: $isShowingSupportView) {
             EmptyView()
@@ -460,7 +463,7 @@ struct SubscriptionSettingsViewV2: View {
     @State var configuration: SubscriptionSettingsViewConfiguration
     @Environment(\.dismiss) var dismiss
 
-    @StateObject var viewModel = SubscriptionSettingsViewModelV2()
+    @StateObject var viewModel: SubscriptionSettingsViewModelV2
     @StateObject var settingsViewModel: SettingsViewModel
     @EnvironmentObject var subscriptionNavigationCoordinator: SubscriptionNavigationCoordinator
     var viewPlans: (() -> Void)?
@@ -497,13 +500,13 @@ struct SubscriptionSettingsViewV2: View {
         Section {
             switch configuration {
             case .subscribed:
-                SubscriptionSettingsHeaderView(state: .subscribed)
+                SubscriptionSettingsHeaderView(state: .subscribed, tierBadge: viewModel.tierBadgeToDisplay)
             case .expired:
                 SubscriptionSettingsHeaderView(state: .expired(viewModel.state.subscriptionDetails))
             case .activating:
                 SubscriptionSettingsHeaderView(state: .activating)
             case .trial:
-                SubscriptionSettingsHeaderView(state: .trial)
+                SubscriptionSettingsHeaderView(state: .trial, tierBadge: viewModel.tierBadgeToDisplay)
             }
         }
         .listRowBackground(Color.clear)
@@ -742,6 +745,7 @@ struct SubscriptionSettingsViewV2: View {
                 navigationCoordinator: subscriptionNavigationCoordinator,
                 subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
                 subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
+                userScriptsDependencies: settingsViewModel.userScriptsDependencies,
                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                 emailFlow: .manageEmailFlow,
                 dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
@@ -761,6 +765,7 @@ struct SubscriptionSettingsViewV2: View {
                 navigationCoordinator: subscriptionNavigationCoordinator,
                 subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
                 subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
+                userScriptsDependencies: settingsViewModel.userScriptsDependencies,
                 internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
                 emailFlow: .activationFlow,
                 dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
@@ -783,6 +788,7 @@ struct SubscriptionSettingsViewV2: View {
         NavigationLink(destination: UnifiedFeedbackRootView(viewModel: UnifiedFeedbackFormViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
                                                                                                     vpnMetadataCollector: DefaultVPNMetadataCollector(), dbpMetadataCollector: DefaultDBPMetadataCollector(),
                                                                                                     isPaidAIChatFeatureEnabled: { settingsViewModel.subscriptionFeatureAvailability.isPaidAIChatEnabled },
+                                                                                                    isProTierPurchaseEnabled: { settingsViewModel.subscriptionFeatureAvailability.isProTierPurchaseEnabled },
                                                                                                     source: .ppro)),
                        isActive: $isShowingSupportView) {
             EmptyView()

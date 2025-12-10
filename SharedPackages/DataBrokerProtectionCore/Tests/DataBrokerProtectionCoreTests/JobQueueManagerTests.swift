@@ -29,7 +29,7 @@ final class JobQueueManagerTests: XCTestCase {
     private var mockOperationsCreator: MockDataBrokerOperationsCreator!
     private var mockEmailConfirmationJobProvider: MockEmailConfirmationJobProvider!
     private var mockDatabase: MockDatabase!
-    private var mockPixelHandler: MockPixelHandler!
+    private var mockPixelHandler: MockDataBrokerProtectionPixelsHandler!
     private var mockMismatchCalculator: MockMismatchCalculator!
     private var mockSchedulerConfig = BrokerJobExecutionConfig()
     private var mockScanRunner: MockScanSubJobWebRunner!
@@ -43,7 +43,7 @@ final class JobQueueManagerTests: XCTestCase {
         mockOperationsCreator = MockDataBrokerOperationsCreator()
         mockEmailConfirmationJobProvider = MockEmailConfirmationJobProvider()
         mockDatabase = MockDatabase()
-        mockPixelHandler = MockPixelHandler()
+        mockPixelHandler = MockDataBrokerProtectionPixelsHandler()
         mockMismatchCalculator = MockMismatchCalculator(database: mockDatabase, pixelHandler: mockPixelHandler)
         mockScanRunner = MockScanSubJobWebRunner()
         mockOptOutRunner = MockOptOutSubJobWebRunner()
@@ -496,7 +496,7 @@ final class JobQueueManagerTests: XCTestCase {
                               mismatchCalculator: mockMismatchCalculator,
                               pixelHandler: mockPixelHandler)
 
-        mockPixelHandler.resetCapturedData()
+        mockPixelHandler.clear()
         let error = DataBrokerProtectionError.actionFailed(actionID: "action-id", message: "something happened")
 
         // When
@@ -534,7 +534,7 @@ final class JobQueueManagerTests: XCTestCase {
                               mismatchCalculator: mockMismatchCalculator,
                               pixelHandler: mockPixelHandler)
 
-        mockPixelHandler.resetCapturedData()
+        mockPixelHandler.clear()
         let error = DataBrokerProtectionError.actionFailed(actionID: "id", message: "msg")
 
         // When
@@ -558,5 +558,74 @@ final class JobQueueManagerTests: XCTestCase {
 
         XCTAssertEqual(mockPixelHandler.lastFiredEvent?.parameters?["stepType"], "unknown")
         XCTAssertEqual(mockPixelHandler.lastFiredEvent?.parameters?["parent"], "")
+    }
+
+    func testWhenStopScheduledOperations_andCurrentModeIsImmediate_thenCurrentOperationsAreNotInterrupted() async throws {
+        // Given
+        sut = JobQueueManager(jobQueue: mockQueue,
+                              jobProvider: mockOperationsCreator,
+                              emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
+                              mismatchCalculator: mockMismatchCalculator,
+                              pixelHandler: mockPixelHandler)
+        let mockOperationsWithError = (1...2).map { MockBrokerProfileJob(id: $0, jobType: .manualScan, errorDelegate: sut, shouldError: true) }
+        let mockOperations = (3...4).map { MockBrokerProfileJob(id: $0, jobType: .manualScan, errorDelegate: sut) }
+        mockOperationsCreator.operationCollections = mockOperationsWithError + mockOperations
+        var errorCollection: DataBrokerProtectionJobsErrorCollection!
+
+        sut.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+            errorCollection = errors
+        } completion: {
+            XCTFail("Completion should not be called")
+        }
+
+        mockQueue.completeOperationsUpTo(index: 2)
+
+        // When
+        sut.stopScheduledOperationsOnly()
+
+        // Then
+        let expectedError = BrokerProfileJobQueueError.cannotInterrupt
+        var completionCalled = false
+
+        // This shouldn't be allowed to be proceed, and the completion handlers should be called
+        sut.startScheduledScanOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+            errorCollection = errors
+        } completion: {
+            completionCalled.toggle()
+        }
+
+        XCTAssertEqual((errorCollection.oneTimeError as? BrokerProfileJobQueueError), expectedError)
+        XCTAssert(completionCalled)
+    }
+
+    func testWhenStopScheduledOperations_andCurrentModeIsScheduled_thenCurrentOperationsAreInterrupted() async throws {
+        // Given
+        sut = JobQueueManager(jobQueue: mockQueue,
+                              jobProvider: mockOperationsCreator,
+                              emailConfirmationJobProvider: mockEmailConfirmationJobProvider,
+                              mismatchCalculator: mockMismatchCalculator,
+                              pixelHandler: mockPixelHandler)
+        let mockOperationsWithError = (1...2).map { MockBrokerProfileJob(id: $0, jobType: .manualScan, errorDelegate: sut, shouldError: true) }
+        let mockOperations = (3...4).map { MockBrokerProfileJob(id: $0, jobType: .manualScan, errorDelegate: sut) }
+        mockOperationsCreator.operationCollections = mockOperationsWithError + mockOperations
+        var errorCollection: DataBrokerProtectionJobsErrorCollection!
+
+        let expectation = XCTestExpectation(description: "completion called")
+
+        sut.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: mockDependencies) { errors in
+            errorCollection = errors
+        } completion: {
+            expectation.fulfill()
+        }
+
+        mockQueue.completeOperationsUpTo(index: 2)
+
+        // When
+        sut.stopScheduledOperationsOnly()
+
+        // Then
+        let expectedError = BrokerProfileJobQueueError.interrupted
+        XCTAssertEqual((errorCollection.oneTimeError as? BrokerProfileJobQueueError), expectedError)
+        await fulfillment(of: [expectation], timeout: 2)
     }
 }

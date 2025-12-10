@@ -32,7 +32,6 @@ public final class StorePurchaseManagerMock: StorePurchaseManager {
     public var currentStorefrontRegion: SubscriptionRegion = .usa
 
     public var subscriptionOptionsResult: SubscriptionOptions?
-    public var freeTrialSubscriptionOptionsResult: SubscriptionOptions?
     public var syncAppleIDAccountResultError: Error?
 
     public var mostRecentTransactionResult: String?
@@ -50,10 +49,6 @@ public final class StorePurchaseManagerMock: StorePurchaseManager {
 
     public func subscriptionOptions() async -> SubscriptionOptions? {
         subscriptionOptionsResult
-    }
-
-    public func freeTrialSubscriptionOptions() async -> SubscriptionOptions? {
-        freeTrialSubscriptionOptionsResult
     }
 
     public func syncAppleIDAccount() async throws {

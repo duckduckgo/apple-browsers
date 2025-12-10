@@ -89,7 +89,7 @@ final class IdentityTheftRestorationPagesFeature: Subfeature, ObservableObject {
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         /// Note that the `useAlternateStripePaymentFlow` value is not used on the IDTR page, and so we can set the value to false here.
-        return GetFeatureConfigurationResponse(useSubscriptionsAuthV2: isAuthV2Enabled, usePaidDuckAi: false, useAlternateStripePaymentFlow: false)
+        return GetFeatureConfigurationResponse(useSubscriptionsAuthV2: isAuthV2Enabled, usePaidDuckAi: false, useAlternateStripePaymentFlow: false, useGetSubscriptionTierOptions: false)
     }
 
     deinit {

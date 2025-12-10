@@ -29,9 +29,6 @@ import Kingfisher
 private extension PrivacyIconView {
     /// Scale factor for dynamic Dax Easter Egg logos to match PDF default logo visual size
     static let daxLogoScaleFactor: CGFloat = 0.6
-    
-    /// Horizontal offset to compensate for PDF logo's uneven padding (positive = move right)
-    static let pdfLogoOffsetX: CGFloat = 2.0
 }
 
 enum PrivacyIcon {
@@ -54,79 +51,121 @@ protocol PrivacyIconViewDelegate: AnyObject {
 
 class PrivacyIconView: UIView {
 
-    @IBOutlet var staticImageView: UIImageView!
-    @IBOutlet var staticShieldAnimationView: LottieAnimationView!
-    @IBOutlet var staticShieldDotAnimationView: LottieAnimationView!
-    
+    private(set) var staticImageView: UIImageView!
+    private(set) var shieldAnimationView: LottieAnimationView!
+    private(set) var shieldDotAnimationView: LottieAnimationView!
+
+    private(set) var icon: PrivacyIcon = .shield
     private(set) var daxLogoURL: URL?
     weak var delegate: PrivacyIconViewDelegate?
-    
 
-    @IBOutlet var shieldAnimationView: LottieAnimationView!
-    @IBOutlet var shieldDotAnimationView: LottieAnimationView!
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupView()
+    }
 
     public required init?(coder aDecoder: NSCoder) {
-        icon = .shield
         super.init(coder: aDecoder)
-        addInteraction(UIPointerInteraction(delegate: self))
+        setupView()
     }
-    
-    override func awakeFromNib() {
-        super.awakeFromNib()
-  
-        loadAnimations()
-        
-        updateShieldImageView(for: icon)
-        updateAccessibilityLabels(for: icon)
 
-        // Animations are not rendering properly when going back from background, hence the change.
-        [staticShieldAnimationView,
-         staticShieldDotAnimationView,
-         shieldAnimationView,
-         shieldDotAnimationView].forEach { animationView in
-            animationView?.configuration = LottieConfiguration(renderingEngine: .mainThread)
-        }
-        
-        // Add tap gesture for Dax logo
+    private func setupView() {
+        // Allow animated views to overflow the 28x28 container
+        clipsToBounds = false
+
+        // Create static image view for Dax logo
+        staticImageView = UIImageView(frame: bounds)
+        staticImageView.translatesAutoresizingMaskIntoConstraints = false
+        staticImageView.contentMode = .center
+        addSubview(staticImageView)
+
+        // Create shield animation views
+        shieldAnimationView = LottieAnimationView(frame: bounds)
+        shieldAnimationView.translatesAutoresizingMaskIntoConstraints = false
+        shieldAnimationView.contentMode = .scaleAspectFit
+        shieldAnimationView.backgroundBehavior = .pauseAndRestore
+        shieldAnimationView.configuration = LottieConfiguration(renderingEngine: .mainThread)
+        addSubview(shieldAnimationView)
+
+        shieldDotAnimationView = LottieAnimationView(frame: bounds)
+        shieldDotAnimationView.translatesAutoresizingMaskIntoConstraints = false
+        shieldDotAnimationView.contentMode = .scaleAspectFit
+        shieldDotAnimationView.backgroundBehavior = .pauseAndRestore
+        shieldDotAnimationView.configuration = LottieConfiguration(renderingEngine: .mainThread)
+        addSubview(shieldDotAnimationView)
+
+        // Static image view for Dax logo and other images
+        NSLayoutConstraint.activate([
+            staticImageView.widthAnchor.constraint(equalToConstant: 47),
+            staticImageView.heightAnchor.constraint(equalToConstant: 47),
+            staticImageView.centerXAnchor.constraint(equalTo: centerXAnchor),
+            staticImageView.centerYAnchor.constraint(equalTo: centerYAnchor)
+        ])
+
+        // Protections Enabled Animation
+        NSLayoutConstraint.activate([
+            shieldAnimationView.widthAnchor.constraint(equalToConstant: 47),
+            shieldAnimationView.heightAnchor.constraint(equalToConstant: 47),
+            shieldAnimationView.centerXAnchor.constraint(equalTo: centerXAnchor),
+            shieldAnimationView.centerYAnchor.constraint(equalTo: centerYAnchor)
+        ])
+
+        // Protextions Disable Animation
+        NSLayoutConstraint.activate([
+            shieldDotAnimationView.widthAnchor.constraint(equalToConstant: 44),
+            shieldDotAnimationView.heightAnchor.constraint(equalToConstant: 44),
+            shieldDotAnimationView.centerXAnchor.constraint(equalTo: centerXAnchor),
+            shieldDotAnimationView.centerYAnchor.constraint(equalTo: centerYAnchor)
+        ])
+
+        // Add pointer interaction
+        addInteraction(UIPointerInteraction(delegate: self))
+
+        // Add tap gesture for Dax logo easter eggs
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(daxLogoTapped))
         staticImageView.addGestureRecognizer(tapGesture)
         staticImageView.isUserInteractionEnabled = true
+
+        // Load animations
+        loadAnimations()
+
+        // Update display
+        updateShieldImageView(for: icon)
+        updateAccessibilityLabels(for: icon)
     }
     
     func loadAnimations(animationCache cache: AnimationCacheProvider = DefaultAnimationCache.sharedCache) {
         let useDarkStyle = traitCollection.userInterfaceStyle == .dark
 
-        let shieldAnimationName = (useDarkStyle ? "dark-shield" : "shield")
+        let shieldAnimationName = "shield.new"
         let shieldDotAnimationName = (useDarkStyle ? "dark-shield-dot" : "shield-dot")
 
         let shieldAnimation = LottieAnimation.named(shieldAnimationName, animationCache: cache)
-
         shieldAnimationView.animation = shieldAnimation
-        staticShieldAnimationView.animation = shieldAnimation
-        staticShieldAnimationView.currentProgress = 0.0
 
         let shieldWithDotAnimation = LottieAnimation.named(shieldDotAnimationName, animationCache: cache)
         shieldDotAnimationView.animation = shieldWithDotAnimation
-        staticShieldDotAnimationView.animation = shieldWithDotAnimation
-        staticShieldDotAnimationView.currentProgress = 1.0
     }
     
     func updateIcon(_ newIcon: PrivacyIcon) {
+        guard newIcon != icon else { return }
         icon = newIcon
+        updateShieldImageView(for: newIcon)
+        updateAccessibilityLabels(for: newIcon)
     }
     
-    func setDaxEasterEggLogoURL(_ url: URL?) {
+    func setDaxEasterEggLogoURL(_ url: URL?, completion: (() -> Void)? = nil) {
         let oldURL = daxLogoURL
-        
+
         // Exit early if URL hasn't changed
         guard oldURL != url else { return }
-        
+
         daxLogoURL = url
-        
+
         if icon == .daxLogo {
             // Only animate when switching logo types (dynamic ↔ default)
             let isChangingLogoType = (oldURL == nil) != (url == nil)
-            
+
             if isChangingLogoType && staticImageView.image != nil {
                 // Set the correct size properties for the destination before animation
                 if url != nil {
@@ -141,7 +180,7 @@ class PrivacyIconView: UIView {
                     staticImageView.transform = .identity
                     staticImageView.layer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
                 }
-                
+
                 // Now do pure crossfade with just image change
                 UIView.transition(with: staticImageView, duration: 0.25, options: .transitionCrossDissolve, animations: {
                     if let url = url {
@@ -153,45 +192,39 @@ class PrivacyIconView: UIView {
             } else {
                 updateShieldImageView(for: icon)
             }
+
+            completion?()
         }
     }
-    
+
     @objc private func daxLogoTapped() {
-        // Only allow tapping for dynamic logos, not the default Dax logo
+        // Only allow tapping on custom Dax Easter egg logos, not the default logo
         if icon == .daxLogo && !staticImageView.isHidden && daxLogoURL != nil {
             let currentImage = staticImageView.image
             let sourceFrame = staticImageView.convert(staticImageView.bounds, to: nil)
             delegate?.privacyIconViewDidTapDaxLogo(self, logoURL: daxLogoURL, currentImage: currentImage, sourceFrame: sourceFrame)
         }
     }
-    
-    private(set) var icon: PrivacyIcon {
-        willSet {
-            guard newValue != icon else { return }
-            updateShieldImageView(for: newValue)
-            updateAccessibilityLabels(for: newValue)
-        }
-    }
-    
+
     private func updateShieldImageView(for icon: PrivacyIcon) {
         switch icon {
         case .daxLogo:
             staticImageView.isHidden = false
-            staticShieldAnimationView.isHidden = true
-            staticShieldDotAnimationView.isHidden = true
-            
+            shieldAnimationView.isHidden = true
+            shieldDotAnimationView.isHidden = true
+
             if let url = daxLogoURL {
                 // Dynamic images: use scaleAspectFit to maintain aspect ratio and fit in bounds
                 staticImageView.contentMode = .scaleAspectFit
-                
-                // Apply scale + upward adjustment to match PDF logo positioning
+
+                // Apply scale + adjustment to match PDF logo positioning
                 let scaleTransform = CGAffineTransform(scaleX: Self.daxLogoScaleFactor, y: Self.daxLogoScaleFactor)
-                let adjustedTransform = scaleTransform.translatedBy(x: -1, y: -1) // Move up significantly to match PDF
+                let adjustedTransform = scaleTransform.translatedBy(x: -1, y: -1)
                 staticImageView.transform = adjustedTransform
-                
+
                 // Ensure the transform is applied from the center to prevent repositioning
                 staticImageView.layer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
-                
+
                 // Load original high-quality image for both display and full-screen
                 staticImageView.kf.setImage(with: url, placeholder: icon.staticImage)
             } else {
@@ -204,16 +237,27 @@ class PrivacyIconView: UIView {
         case .alert:
             staticImageView.isHidden = false
             staticImageView.image = icon.staticImage
-            staticShieldAnimationView.isHidden = true
-            staticShieldDotAnimationView.isHidden = true
+            staticImageView.contentMode = .center
+            staticImageView.transform = .identity
+            shieldAnimationView.isHidden = true
+            shieldDotAnimationView.isHidden = true
         case .shield:
             staticImageView.isHidden = true
-            staticShieldAnimationView.isHidden = false
-            staticShieldDotAnimationView.isHidden = true
+            shieldAnimationView.isHidden = false
+            shieldDotAnimationView.isHidden = true
+
+            // Set animated view to frame 1
+            if let animation = shieldAnimationView.animation {
+                let totalFrames = animation.endFrame - animation.startFrame
+                shieldAnimationView.currentProgress = totalFrames > 0 ? 1.0 / totalFrames : 0.0
+            }
         case .shieldWithDot:
             staticImageView.isHidden = true
-            staticShieldAnimationView.isHidden = true
-            staticShieldDotAnimationView.isHidden = false
+            shieldAnimationView.isHidden = true
+            shieldDotAnimationView.isHidden = false
+
+            // Set to final frame (100%) to show completed shield with checkmark
+            shieldDotAnimationView.currentProgress = 1.0
         }
     }
     
@@ -223,12 +267,10 @@ class PrivacyIconView: UIView {
             accessibilityLabel = UserText.privacyIconDax
             accessibilityHint = nil
             accessibilityTraits = .image
-        case .shield, .shieldWithDot:
+        case .shield, .shieldWithDot, .alert:
             accessibilityIdentifier = "privacy-icon-shield.button"
-            accessibilityLabel = UserText.privacyIconShield
-            accessibilityHint = UserText.privacyIconOpenDashboardHint
-            accessibilityTraits = .button
-        case .alert:
+            shieldAnimationView.accessibilityIdentifier = "privacy-icon-shield.button"
+            shieldDotAnimationView.accessibilityIdentifier = "privacy-icon-shield.button"
             accessibilityLabel = UserText.privacyIconShield
             accessibilityHint = UserText.privacyIconOpenDashboardHint
             accessibilityTraits = .button
@@ -238,28 +280,23 @@ class PrivacyIconView: UIView {
     func refresh() {
         updateShieldImageView(for: icon)
         updateAccessibilityLabels(for: icon)
-        shieldAnimationView.isHidden = true
-        shieldDotAnimationView.isHidden = true
+        // Keep animated views visible at frame 1 - do NOT hide them
     }
     
     func prepareForAnimation(for icon: PrivacyIcon) {
         let showDot = (icon == .shieldWithDot)
-        
         shieldAnimationView.isHidden = showDot
         shieldDotAnimationView.isHidden = !showDot
-
-        staticShieldAnimationView.isHidden = true
-        staticShieldDotAnimationView.isHidden = true
         staticImageView.isHidden = true
     }
-    
+
     func shieldAnimationView(for icon: PrivacyIcon) -> LottieAnimationView? {
         switch icon {
         case .shield:
             return shieldAnimationView
         case .shieldWithDot:
             return shieldDotAnimationView
-        default:
+        case .daxLogo, .alert:
             return nil
         }
     }
@@ -280,10 +317,11 @@ class PrivacyIconView: UIView {
 extension PrivacyIconView: UIPointerInteractionDelegate {
     
     public func pointerInteraction(_ interaction: UIPointerInteraction, styleFor region: UIPointerRegion) -> UIPointerStyle? {
-
-        // If the static image is visible then don't treat it like a button
-        return !staticImageView.isHidden ? nil :
-            UIPointerStyle(effect: .automatic(.init(view: self)), shape: .roundedRect(frame, radius: 12))
+        // Don't treat Dax logo as a button
+        if icon == .daxLogo {
+            return nil
+        }
+        return UIPointerStyle(effect: .automatic(.init(view: self)), shape: .roundedRect(frame, radius: 12))
     }
     
 }

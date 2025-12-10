@@ -19,20 +19,24 @@
 import Cocoa
 import Common
 import Suggestions
+import BrowserServicesKit
 
 struct SuggestionViewModel {
     let isHomePage: Bool
     let suggestion: Suggestion
     let userStringValue: String
     let suggestionIcons: SuggestionsIconsProviding
+    private let featureFlagger: FeatureFlagger
 
     init(isHomePage: Bool,
          suggestion: Suggestion,
          userStringValue: String,
-         themeManager: ThemeManaging) {
+         themeManager: ThemeManaging,
+         featureFlagger: FeatureFlagger) {
         self.isHomePage = isHomePage
         self.suggestion = suggestion
         self.userStringValue = userStringValue
+        self.featureFlagger = featureFlagger
 
         let theme = themeManager.theme
         let fontSize = isHomePage ? theme.addressBarStyleProvider.newTabOrHomePageAddressBarFontSize : theme.addressBarStyleProvider.defaultAddressBarFontSize
@@ -143,12 +147,21 @@ struct SuggestionViewModel {
     }
 
     var suffix: String? {
+        let isAIChatToggleEnabled = featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && featureFlagger.isFeatureOn(.aiChatOmnibarCluster)
+
         switch suggestion {
         // for punycoded urls display real url as a suffix
         case .website(url: let url) where url.toString(forUserInput: userStringValue, decodePunycode: false) != self.string:
             return url.toString(decodePunycode: false, dropScheme: true, dropTrailingSlash: true)
 
-        case .phrase, .unknown, .website, .askAIChat:
+        case .website(url: let url):
+            guard isAIChatToggleEnabled,
+                  let host = url.root?.toString(decodePunycode: true, dropScheme: true, dropTrailingSlash: true) else {
+                return nil
+            }
+            return "\(UserText.addressBarVisitSuffix) \(host)"
+
+        case .phrase, .unknown, .askAIChat:
             return nil
         case .openTab(title: _, url: let url, _, _) where url.isDuckURLScheme:
             return UserText.duckDuckGo

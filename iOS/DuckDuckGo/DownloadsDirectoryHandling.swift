@@ -25,6 +25,7 @@ protocol DownloadsDirectoryHandling {
     func createDownloadsDirectoryIfNeeded()
     func downloadsDirectoryExists() -> Bool
     func createDownloadsDirectory()
+    func deleteDownloadsDirectoryIfEmpty()
 }
 
 struct DownloadsDirectoryHandler: DownloadsDirectoryHandling {
@@ -63,5 +64,15 @@ struct DownloadsDirectoryHandler: DownloadsDirectoryHandling {
 
     func createDownloadsDirectory() {
         try? FileManager.default.createDirectory(at: downloadsDirectory, withIntermediateDirectories: true, attributes: nil)
+        Logger.general.debug("Downloads directory location \(downloadsDirectory.absoluteString)")
+    }
+
+    func deleteDownloadsDirectoryIfEmpty() {
+        guard downloadsDirectoryExists() else { return }
+        
+        // Check if directory is empty (no files)
+        if downloadsDirectoryFiles.isEmpty {
+            try? FileManager.default.removeItem(at: downloadsDirectory)
+        }
     }
 }

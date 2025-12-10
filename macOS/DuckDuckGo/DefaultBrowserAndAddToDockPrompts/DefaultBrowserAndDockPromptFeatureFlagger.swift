@@ -20,19 +20,13 @@ import Foundation
 import BrowserServicesKit
 import FeatureFlags
 
-public protocol DefaultBrowserAndDockPromptActiveUserFeatureFlagProvider {
-    /// A Boolean value indicating whether Set Default Browser (SAD) and Add To Dock (ATT) are enabled for active users.
-    /// - Returns: `true` if the feature is enabled; otherwise, `false`.
-    var isDefaultBrowserAndDockPromptForActiveUsersFeatureEnabled: Bool { get }
-}
-
 public protocol DefaultBrowserAndDockPromptInactiveUserFeatureFlagProvider {
     /// A Boolean value indicating whether Set Default Browser (SAD) and Add To Dock (ATT) are enabled for inactive users.
     /// - Returns: `true` if the feature is enabled; otherwise, `false`.
     var isDefaultBrowserAndDockPromptForInactiveUsersFeatureEnabled: Bool { get }
 }
 
-public typealias DefaultBrowserAndDockPromptFeatureFlagProvider = DefaultBrowserAndDockPromptActiveUserFeatureFlagProvider & DefaultBrowserAndDockPromptInactiveUserFeatureFlagProvider
+public typealias DefaultBrowserAndDockPromptFeatureFlagProvider = DefaultBrowserAndDockPromptInactiveUserFeatureFlagProvider
 
 public protocol DefaultBrowserAndDockPromptActiveUserFeatureFlagsSettingsProvider {
     /// The number of days to wait after app installation before showing the first popover
@@ -95,10 +89,6 @@ final class DefaultBrowserAndDockPromptFeatureFlag {
 // MARK: - DefaultBrowserAndDockPromptFeatureFlagger
 
 extension DefaultBrowserAndDockPromptFeatureFlag: DefaultBrowserAndDockPromptFeatureFlagProvider {
-
-    public var isDefaultBrowserAndDockPromptForActiveUsersFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(for: FeatureFlag.scheduledSetDefaultBrowserAndAddToDockPrompts)
-    }
 
     public var isDefaultBrowserAndDockPromptForInactiveUsersFeatureEnabled: Bool {
         featureFlagger.isFeatureOn(for: FeatureFlag.scheduledDefaultBrowserAndDockPromptsInactiveUser)

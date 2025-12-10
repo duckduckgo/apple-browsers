@@ -205,7 +205,7 @@ extension XCUIElement {
         return element.tabGroups["TabBarViewController.CollectionView"].radioButtons
     }
 
-    func closeTab() throws {
+    @objc func closeTab() throws {
         // Hover the tab to reveal its close ("x") button
         self.hover()
 

@@ -131,11 +131,12 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
     func getSubscriptionFrom(lastTransactionJWSRepresentation: String) async throws -> DuckDuckGoSubscription?
 
     /// If the user can purchase a subscription or not
-    var canPurchase: Bool { get }
+    var hasAppStoreProductsAvailable: Bool { get }
 
-    /// Publisher that emits a boolean value indicating whether the user can purchase.
-    var canPurchasePublisher: AnyPublisher<Bool, Never> { get }
+    /// Publisher that emits a boolean value indicating whether the user can purchase through the App Store.
+    var hasAppStoreProductsAvailablePublisher: AnyPublisher<Bool, Never> { get }
     func getProducts() async throws -> [GetProductsItem]
+    func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse
 
     @available(macOS 12.0, iOS 15.0, *) func storePurchaseManager() -> StorePurchaseManagerV2
 
@@ -214,7 +215,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     private let isInternalUserEnabled: () -> Bool
     private let legacyAccountStorage: AccountKeychainStorage?
     private let userDefaults: UserDefaults
-    private let canPurchaseSubject = PassthroughSubject<Bool, Never>()
+    private let hasAppStoreProductsAvailableSubject = PassthroughSubject<Bool, Never>()
     private var cancellables = Set<AnyCancellable>()
     private let wideEvent: WideEventManaging?
     private let isAuthV2WideEventEnabled: () -> Bool
@@ -256,14 +257,14 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         }
     }
 
-    public var canPurchase: Bool {
+    public var hasAppStoreProductsAvailable: Bool {
         guard let storePurchaseManager = _storePurchaseManager else { return false }
         return storePurchaseManager.areProductsAvailable
     }
 
-    /// Publisher that emits a boolean value indicating whether the user can purchase.
+    /// Publisher that emits a boolean value indicating whether the user can purchase through the App Store.
     /// The value is updated whenever the `areProductsAvailablePublisher` of the underlying StorePurchaseManager emits a new value.
-    public var canPurchasePublisher: AnyPublisher<Bool, Never> { canPurchaseSubject.eraseToAnyPublisher() }
+    public var hasAppStoreProductsAvailablePublisher: AnyPublisher<Bool, Never> { hasAppStoreProductsAvailableSubject.eraseToAnyPublisher() }
 
     @available(macOS 12.0, iOS 15.0, *)
     public func storePurchaseManager() -> StorePurchaseManagerV2 {
@@ -295,7 +296,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     @available(macOS 12.0, iOS 15.0, *) private func setupForAppStore() {
         storePurchaseManager().areProductsAvailablePublisher
             .sink { [weak self] value in
-                self?.canPurchaseSubject.send(value)
+                self?.hasAppStoreProductsAvailableSubject.send(value)
             }
             .store(in: &cancellables)
 
@@ -380,6 +381,10 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     public func getProducts() async throws -> [GetProductsItem] {
         try await subscriptionEndpointService.getProducts()
+    }
+
+    public func getTierProducts(region: String?, platform: String?) async throws -> GetTierProductsResponse {
+        try await subscriptionEndpointService.getTierProducts(region: region, platform: platform)
     }
 
     public func clearSubscriptionCache() {

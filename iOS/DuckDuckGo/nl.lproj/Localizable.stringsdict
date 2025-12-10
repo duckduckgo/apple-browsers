@@ -121,9 +121,57 @@ Ik heb ze geblokkeerd!
 			<key>NSStringFormatValueTypeKey</key>
 			<string>d</string>
 			<key>one</key>
-			<string>%1$d tracker geblokkeerd</string>
+			<string>%1$d tracker geblokkeerd tijdens het laden</string>
 			<key>other</key>
-			<string>%1$d trackers geblokkeerd</string>
+			<string>%1$d trackers geblokkeerd tijdens het laden</string>
+		</dict>
+	</dict>
+	<key>omnibar.notification.trackers-blocked</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@trackers@</string>
+		<key>trackers</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d Tracker</string>
+			<key>other</key>
+			<string>%1$d Trackers</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.other.domains.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d ander domein geladen</string>
+			<key>other</key>
+			<string>%1$d andere domeinen geladen</string>
+		</dict>
+	</dict>
+	<key>privacy.protection.first.party.trackers.loaded</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@networks@</string>
+		<key>networks</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d tracker die eigendom is van deze site (geladen)</string>
+			<key>other</key>
+			<string>%1$d trackers die eigendom zijn van deze site (geladen)</string>
 		</dict>
 	</dict>
 	<key>number.of.tabs</key>
@@ -166,12 +214,12 @@ Ik heb ze geblokkeerd!
 		<dict>
 			<key>NSStringFormatSpecTypeKey</key>
 			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
 			<key>one</key>
 			<string>Weet je zeker dat je %1$d wachtwoord wilt verwijderen?</string>
 			<key>other</key>
 			<string>Weet je zeker dat je %1$d wachtwoorden wilt verwijderen?</string>
-			<key>NSStringFormatValueTypeKey</key>
-			<string>d</string>
 		</dict>
 	</dict>
 	<key>autofill.delete.all.passwords.confirmation.body</key>

@@ -35,6 +35,9 @@
                             </visualEffectView>
                             <customView translatesAutoresizingMaskIntoConstraints="NO" id="efe-Pc-ueP" userLabel="Window Dragging View" customClass="WindowDraggingView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="0.0" width="845" height="38"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="38" id="lYU-Qo-yiT"/>
+                                </constraints>
                             </customView>
                             <customView translatesAutoresizingMaskIntoConstraints="NO" id="G3d-9f-GhJ" userLabel="ShadowView" customClass="TabShadowView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="0.0" width="845" height="38"/>

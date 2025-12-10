@@ -4,6 +4,9 @@
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
 
+/* No comment provided by engineer. */
+"Account" = "konto";
+
 /* Buton label for Edit action */
 "action.generic.edit" = "Edytuj";
 
@@ -30,6 +33,12 @@
 
 /* Add action - button shown in alert */
 "action.title.add" = "Dodaj";
+
+/* Open AI Chat history action in the menu list */
+"action.title.aiChat.history" = "Czaty Duck.ai";
+
+/* Open AI Chat settings action in the menu list */
+"action.title.aiChat.settings" = "Ustawienia Duck.ai";
 
 /* Autofill Logins menu item opening the login list */
 "action.title.autofill.logins" = "Hasła";
@@ -78,9 +87,6 @@
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Otwórz w tle";
-
-/* Create New Tab action */
-"action.title.newTabAction" = "Nowa";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Otwórz w nowej karcie";
@@ -463,6 +469,51 @@
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Włącz ochronę poczty Email Protection";
 
+/* Button title to dismiss the autofill extension activation view */
+"autofill.extension.activation.done.button.title" = "Gotowe";
+
+/* Title shown when the autofill extension activation succeeds */
+"autofill.extension.activation.title" = "Automatyczne uzupełnianie haseł zostało aktywowane!";
+
+/* Footer text describing what enabling the autofill extension does */
+"autofill.extension.footer" = "Używaj haseł zapisanych w DuckDuckGo we wszystkich aplikacjach na swoim urządzeniu.";
+
+/* Header text shown when the autofill extension is disabled */
+"autofill.extension.header.disabled" = "Autouzupełnianie w innych aplikacjach";
+
+/* Header text shown when the autofill extension is enabled */
+"autofill.extension.header.enabled" = "Autouzupełnianie w innych aplikacjach włączone";
+
+/* Dismiss button title for the Autofill extension promotion */
+"autofill.extension.promo.button.dismiss.title" = "Ustaw później w obszarze Ustawienia";
+
+/* CTA button title for the Autofill extension promotion */
+"autofill.extension.promo.button.title" = "Włącz autouzupełnianie w innych aplikacjach";
+
+/* Message for the Autofill extension promotion */
+"autofill.extension.promo.message" = "Używaj DuckDuckGo, aby w bezpieczny sposób automatycznie uzupełniać hasła we wszystkich swoich aplikacjach.";
+
+/* Title for the Autofill extension promotion */
+"autofill.extension.promo.title" = "Szybko zaloguj się do swoich aplikacji bez wpisywania haseł";
+
+/* Title for screen showing autofill extension settings */
+"autofill.extension.screen.title" = "Automatycznie uzupełniaj hasła w innych aplikacjach";
+
+/* Status text when autofill extension is disabled */
+"autofill.extension.status.off" = "Włącz";
+
+/* Status text when autofill extension is enabled */
+"autofill.extension.status.on" = "Włączone";
+
+/* Title for autofill extension settings row */
+"autofill.extension.title" = "Autouzupełnianie w innych aplikacjach";
+
+/* Button title that opens system settings to turn off the autofill extension */
+"autofill.extension.turn.off.button.title" = "Wyłącz w ustawieniach systemowych...";
+
+/* Button title that triggers system prompt to turn on the autofill extension */
+"autofill.extension.turn.on.button.title" = "Włącz...";
+
 /* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
 "autofill.hide-card-cvv" = "Ukryj CVV";
 
@@ -799,8 +850,8 @@
 /* Section header for the autofill settings screen */
 "autofill.settings.import-passwords.section-header" = "Importuj hasła";
 
-/* Section header for the autofill settings screen */
-"autofill.settings.options.section-header" = "Opcje";
+/* Section header for the autofill passwords options section of the settings screen */
+"autofill.settings.options.section-header" = "Opcje hasła";
 
 /* Title for the button to report that autofill is not working on a site in autofill settings */
 "autofill.settings.report.not.working.button.title" = "Zgłoś problem z autouzupełnianiem";
@@ -849,6 +900,12 @@
 
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Zaktualizować nazwę użytkownika?";
+
+/* No comment provided by engineer. */
+"Available Products" = "Dostępne produkty";
+
+/* View plans button text during Black Friday campaign */
+"black-friday.campaign.view.plans.cta" = "Zaoszczędź %d%% w pierwszym roku";
 
 /* Add bookmark screen title */
 "bookmark.addBookmark.title" = "Dodaj zakładkę";
@@ -972,6 +1029,9 @@
 
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Anulowanie nie jest dozwolone więcej niż jeden raz";
+
+/* No comment provided by engineer. */
+"Checking for existing account..." = "Sprawdzanie istniejącego konta...";
 
 /* Close All Tabs */
 "close.all.tabs" = "Zamknij wszystkie karty";
@@ -1097,7 +1157,10 @@
 "crash.report.dialog.title" = "Automatycznie wysyłać raporty o awariach?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Aktualna liczba odrzuceń: %@";
+"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+
+/* No comment provided by engineer. */
+"Current Subscriptions" = "Obecne subskrypcje";
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "NIESTANDARDOWA ZAWARTOŚĆ KOMÓRKI";
@@ -1622,6 +1685,9 @@
 "error.unknown.try.again" = "Wystąpił nieznany błąd";
 
 /* No comment provided by engineer. */
+"External ID: %@" = "Zewnętrzny ID: %@";
+
+/* No comment provided by engineer. */
 "favorite" = "Ulubione";
 
 /* No comment provided by engineer. */
@@ -1858,6 +1924,9 @@
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "WYBIERZ KATEGORIĘ";
 
+/* Category for issues with accessing Plus or Pro tier features */
+"feedback.ppro.category.unable-to-access-features" = "Brak dostępu do funkcji poziomu Plus lub Pro";
+
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Twoja anonimowa opinia ma dla nas ogromne znaczenie.";
 
@@ -2028,6 +2097,9 @@
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Ostatnio przetworzono: %@";
+
+/* No comment provided by engineer. */
+"Loading available products..." = "Wczytywanie dostępnych produktów...";
 
 /* No comment provided by engineer. */
 "Loading brokers..." = "Ładowanie brokerów…";
@@ -2375,6 +2447,12 @@
 "new.address.bar.picker.title" = "Opcja paska adresu";
 
 /* No comment provided by engineer. */
+"No active subscriptions" = "Brak aktywnych subskrypcji";
+
+/* No comment provided by engineer. */
+"No existing subscription found" = "Nie znaleziono istniejącej subskrypcji";
+
+/* No comment provided by engineer. */
 "No Logs" = "Brak logów";
 
 /* No comment provided by engineer. */
@@ -2382,6 +2460,9 @@
 
 /* No comment provided by engineer. */
 "No results found" = "Nie znaleziono wyników";
+
+/* No comment provided by engineer. */
+"No subscriptions available" = "Brak dostępnych subskrypcji";
 
 /* No comment provided by engineer. */
 "OK" = "OK";
@@ -2394,6 +2475,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser  hides a cookie popup */
 "omnibar.notification.popup-hidden" = "Ukryte wyskakujące okienka";
+
+/* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
+"omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Rozumiem";
@@ -2465,7 +2549,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Ustawienia > Funkcje AI.";
 
 /* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Chcesz łatwiejszego dostępu do prywatnego czatu AI?";
+"onboarding.highlights.searchExperience.title" = "Chcesz łatwego dostępu do prywatnego czatu AI?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Zróbmy to!";
@@ -2857,6 +2941,12 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Ustawienia wyszukiwania Assist";
 
+/* Settings screen cell subtitle for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.subtitle" = "Pokazuj nowe czaty Duck.ai jako karty w przeglądarce";
+
+/* Settings screen cell title for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.title" = "Tryb kart Duck.ai";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Ukryj obrazy generowane przez AI";
 
@@ -2998,8 +3088,11 @@
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Importuj hasła";
 
-/* Copy for budge on settings item to show an item is new */
+/* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Nowa";
+
+/* Copy for badge on settings item to show an item is experimental */
+"settings.item.badge.preview" = "Podgląd";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klawiatura";
@@ -3270,6 +3363,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Która witryna nie działa poprawnie?";
+
+/* No comment provided by engineer. */
+"Status" = "Status";
 
 /* No comment provided by engineer. */
 "Status: Invalidated" = "Status: Unieważniony";
@@ -3924,6 +4020,12 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Wiadomość od %@:";
+
+/* No comment provided by engineer. */
+"Will attach to EXISTING account" = "Zostanie dołączone do ISTNIEJĄCEGO konta";
+
+/* No comment provided by engineer. */
+"Will create NEW account" = "Utworzy NOWE konto";
 
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "ZAOSZCZĘDŹ 25%";

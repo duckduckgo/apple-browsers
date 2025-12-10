@@ -63,7 +63,6 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet var addressBarStack: NSStackView!
 
     @IBOutlet private(set) var menuButtons: NSStackView!
-
     @IBOutlet private var addressBarLeftToNavButtonsConstraint: NSLayoutConstraint!
     @IBOutlet private var addressBarProportionalWidthConstraint: NSLayoutConstraint!
     @IBOutlet private var navigationBarRightToMenuButtonsConstraint: NSLayoutConstraint!
@@ -77,7 +76,6 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet private var backgroundBaseColorView: ColorView!
 
     private var fireWindowBackgroundView: NSImageView?
-
     @IBOutlet private var goBackButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet private var goBackButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet private var goForwardButtonWidthConstraint: NSLayoutConstraint!
@@ -120,7 +118,6 @@ final class NavigationBarViewController: NSViewController {
     private let contentBlocking: ContentBlockingProtocol
     private let permissionManager: PermissionManagerProtocol
     private let vpnUpsellVisibilityManager: VPNUpsellVisibilityManager
-    private let sharedTextState: AddressBarSharedTextState
 
     private var subscriptionManager: SubscriptionAuthV1toV2Bridge {
         Application.appDelegate.subscriptionAuthV1toV2Bridge
@@ -193,11 +190,7 @@ final class NavigationBarViewController: NSViewController {
     private let sessionRestorePromptCoordinator: SessionRestorePromptCoordinating
 
     var isInPopUpWindow: Bool {
-        guard let mainViewController = parent as? MainViewController else {
-            assert(view.window == nil, "NavigationBarViewController is not a child of MainViewController")
-            return false
-        }
-        return mainViewController.isInPopUpWindow
+        tabCollectionViewModel.isPopup
     }
 
     var controlsForUserPrevention: [NSControl?] {
@@ -240,7 +233,6 @@ final class NavigationBarViewController: NSViewController {
                        downloadsPreferences: DownloadsPreferences,
                        tabsPreferences: TabsPreferences,
                        accessibilityPreferences: AccessibilityPreferences,
-                       sharedTextState: AddressBarSharedTextState,
                        showTab: @escaping (Tab.TabContent) -> Void = { content in
                            Task { @MainActor in
                                Application.appDelegate.windowControllersManager.showTab(with: content)
@@ -276,7 +268,6 @@ final class NavigationBarViewController: NSViewController {
                 downloadsPreferences: downloadsPreferences,
                 tabsPreferences: tabsPreferences,
                 accessibilityPreferences: accessibilityPreferences,
-                sharedTextState: sharedTextState,
                 showTab: showTab
             )
         }!
@@ -310,7 +301,6 @@ final class NavigationBarViewController: NSViewController {
         downloadsPreferences: DownloadsPreferences,
         tabsPreferences: TabsPreferences,
         accessibilityPreferences: AccessibilityPreferences,
-        sharedTextState: AddressBarSharedTextState,
         showTab: @escaping (Tab.TabContent) -> Void
     ) {
 
@@ -352,7 +342,6 @@ final class NavigationBarViewController: NSViewController {
         self.downloadsPreferences = downloadsPreferences
         self.tabsPreferences = tabsPreferences
         self.accessibilityPreferences = accessibilityPreferences
-        self.sharedTextState = sharedTextState
         self.showTab = showTab
         self.vpnUpsellVisibilityManager = vpnUpsellVisibilityManager
         self.sessionRestorePromptCoordinator = sessionRestorePromptCoordinator
@@ -422,8 +411,7 @@ final class NavigationBarViewController: NSViewController {
                                                                       accessibilityPreferences: accessibilityPreferences,
                                                                       onboardingPixelReporter: onboardingPixelReporter,
                                                                       aiChatMenuConfig: aiChatMenuConfig,
-                                                                      aiChatSidebarPresenter: aiChatSidebarPresenter,
-                                                                      sharedTextState: sharedTextState) else {
+                                                                      aiChatSidebarPresenter: aiChatSidebarPresenter) else {
             fatalError("NavigationBarViewController: Failed to init AddressBarViewController")
         }
 
@@ -768,7 +756,6 @@ final class NavigationBarViewController: NSViewController {
             return
         }
 #endif
-
         if LocalPinningManager.shared.isPinned(.downloads) && !isInPopUpWindow {
             downloadsButton.isShown = true
             return
@@ -1324,7 +1311,7 @@ final class NavigationBarViewController: NSViewController {
     // MARK: - Actions
 
     override func mouseDown(with event: NSEvent) {
-        if let menu = view.menu, NSEvent.isContextClick(event) {
+        if let menu = view.menu, event.isContextClick {
             NSMenu.popUpContextMenu(menu, with: event, for: view)
             return
         }
@@ -1490,7 +1477,7 @@ final class NavigationBarViewController: NSViewController {
     }
 
     @IBAction func shareButtonAction(_ sender: NSButton) {
-        let sharingMenu = SharingMenu(title: UserText.shareMenuItem, location: .navigationBar)
+        let sharingMenu = SharingMenu(title: UserText.shareMenuItem, location: .navigationBar, delegate: self)
         let location = NSPoint(x: -sharingMenu.size.width + sender.bounds.width, y: sender.bounds.height + 4)
         sharingMenu.popUp(positioning: nil, at: location, in: sender)
         PixelKit.fire(NavigationBarPixel.shareButtonClicked, frequency: .daily)
@@ -1602,14 +1589,14 @@ final class NavigationBarViewController: NSViewController {
         brokenSitePromptLimiter.didShowToast()
         PixelKit.fire(GeneralPixel.siteNotWorkingShown)
         let popoverMessage = PopoverMessageViewController(message: UserText.BrokenSitePrompt.title,
+                                                          autoDismissDuration: nil,
+                                                          shouldShowCloseButton: true,
                                                           buttonText: UserText.BrokenSitePrompt.buttonTitle,
                                                           buttonAction: {
             self.brokenSitePromptLimiter.didOpenReport()
             self.addressBarViewController?.addressBarButtonsViewController?.openPrivacyDashboardPopover(entryPoint: .prompt)
             PixelKit.fire(GeneralPixel.siteNotWorkingWebsiteIsBroken)
         },
-                                                          shouldShowCloseButton: true,
-                                                          autoDismissDuration: nil,
                                                           onDismiss: {
             self.brokenSitePromptLimiter.didDismissToast()
         }
@@ -2207,7 +2194,14 @@ extension NavigationBarViewController: MouseOverButtonDelegate {
 extension NavigationBarViewController: AddressBarViewControllerDelegate {
 
     func resizeAddressBarForHomePage(_ addressBarViewController: AddressBarViewController) {
-        let addressBarSizeClass: AddressBarSizeClass = tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab ? .homePage : .default
+        let addressBarSizeClass: AddressBarSizeClass
+        if isInPopUpWindow {
+            addressBarSizeClass = .popUpWindow
+        } else if tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab {
+            addressBarSizeClass = .homePage
+        } else {
+            addressBarSizeClass = .default
+        }
 
         if theme.addressBarStyleProvider.shouldShowNewSearchIcon {
             resizeAddressBar(for: addressBarSizeClass, animated: false)
@@ -2265,6 +2259,19 @@ extension NavigationBarViewController {
 
 }
 #endif
+
+// MARK: - SharingMenuDelegate
+extension NavigationBarViewController: SharingMenuDelegate {
+    func sharingMenuRequestsSharingData() -> SharingMenu.SharingData? {
+        guard let selectedTabViewModel = tabCollectionViewModel.selectedTabViewModel,
+              selectedTabViewModel.canReload,
+              !selectedTabViewModel.isShowingErrorPage,
+              let url = selectedTabViewModel.tab.content.userEditableUrl else { return nil }
+
+        return (selectedTabViewModel.title, [url])
+    }
+}
+
 // MARK: -
 extension Notification.Name {
     static let ToggleNetworkProtectionInMainWindow = Notification.Name("com.duckduckgo.vpn.toggle-popover-in-main-window")

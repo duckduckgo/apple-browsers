@@ -28,6 +28,7 @@ import Combine
 import AIChat
 import SetDefaultBrowserCore
 import ContentBlocking
+import os.log
 
 /// Reporting service for various metrics:
 /// - AttributedMetric: https://app.asana.com/1/137249556945/project/1205842942115003/task/1210884473312053
@@ -38,11 +39,11 @@ final class ReportingService {
     let subscriptionDataReporter: SubscriptionDataReporting
     let featureFlagging: FeatureFlagger
     let attributedMetricManager: AttributedMetricManager
-    let workQueue = DispatchQueue(label: "com.duckduckgo.ReportingService", qos: .background)
     
     private var cancellables = Set<AnyCancellable>()
     let adAttributionPixelReporter: AdAttributionPixelReporter
     let privacyConfigurationManager: PrivacyConfigurationManaging
+    let productSurfaceTelemetry: ProductSurfaceTelemetry
 
     var syncService: SyncService? {
         didSet {
@@ -54,9 +55,10 @@ final class ReportingService {
     init(fireproofing: Fireproofing,
          featureFlagging: FeatureFlagger,
          userDefaults: UserDefaults,
-         pixelKit: PixelKit,
+         pixelKit: PixelKit?,
          appDependencies: DependencyProvider,
-         privacyConfigurationManager: PrivacyConfigurationManaging) {
+         privacyConfigurationManager: PrivacyConfigurationManaging,
+         productSurfaceTelemetry: ProductSurfaceTelemetry) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.featureFlagging = featureFlagging
         self.subscriptionDataReporter = SubscriptionDataReporter(fireproofing: fireproofing)
@@ -65,7 +67,7 @@ final class ReportingService {
         // AttributedMetric initialisation
         let errorHandler = AttributedMetricErrorHandler(pixelKit: pixelKit)
         let attributedMetricDataStorage = AttributedMetricDataStorage(userDefaults: userDefaults, errorHandler: errorHandler)
-        let bucketsSettingsProvider = DefaultBucketsSettingsProvider(privacyConfig: privacyConfigurationManager.privacyConfig)
+        let settingsProvider = DefaultAttributedMetricSettingsProvider(privacyConfig: privacyConfigurationManager.privacyConfig)
         let subscriptionStateProvider = DefaultSubscriptionStateProvider(subscriptionManager: appDependencies.subscriptionAuthV1toV2Bridge)
         let defaultBrowserProvider = AttributedMetricDefaultBrowserProvider()
         self.attributedMetricManager = AttributedMetricManager(pixelKit: pixelKit,
@@ -74,7 +76,8 @@ final class ReportingService {
                                                                originProvider: nil,
                                                                defaultBrowserProviding: defaultBrowserProvider,
                                                                subscriptionStateProvider: subscriptionStateProvider,
-                                                               bucketsSettingsProvider: bucketsSettingsProvider)
+                                                               settingsProvider: settingsProvider)
+        self.productSurfaceTelemetry = productSurfaceTelemetry
         addNotificationsObserver()
     }
 
@@ -94,7 +97,7 @@ final class ReportingService {
 
         // App start
         NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
-            .receive(on: workQueue)
+            .receive(on: attributedMetricManager.workQueue)
             .sink { [weak self] _ in
                 self?.attributedMetricManager.process(trigger: .appDidStart)
             }
@@ -103,7 +106,7 @@ final class ReportingService {
         // Search
 
         NotificationCenter.default.publisher(for: .userDidPerformDDGSearch)
-            .receive(on: workQueue)
+            .receive(on: attributedMetricManager.workQueue)
             .sink { [weak self] _ in
                 self?.attributedMetricManager.process(trigger: .userDidSearch)
             }
@@ -112,7 +115,7 @@ final class ReportingService {
         // AD click
 
         NotificationCenter.default.publisher(for: .userDidSelectDDGAD)
-            .receive(on: workQueue)
+            .receive(on: attributedMetricManager.workQueue)
             .sink { [weak self] _ in
                 self?.attributedMetricManager.process(trigger: .userDidSelectAD)
             }
@@ -121,7 +124,7 @@ final class ReportingService {
         // New AI chat message sent
 
         NotificationCenter.default.publisher(for: .aiChatUserDidSubmitPrompt)
-            .receive(on: workQueue)
+            .receive(on: attributedMetricManager.workQueue)
             .sink { [weak self] _ in
                 self?.attributedMetricManager.process(trigger: .userDidDuckAIChat)
             }
@@ -130,7 +133,7 @@ final class ReportingService {
         // User purchased subscription
 
         NotificationCenter.default.publisher(for: .userDidPurchaseSubscription)
-            .receive(on: workQueue)
+            .receive(on: attributedMetricManager.workQueue)
             .sink { [weak self] _ in
                 self?.attributedMetricManager.process(trigger: .userDidSubscribe)
             }
@@ -139,7 +142,7 @@ final class ReportingService {
         // Device sync
 
         NotificationCenter.default.publisher(for: .syncDevicesUpdate)
-            .receive(on: workQueue)
+            .receive(on: attributedMetricManager.workQueue)
             .sink { [weak self] notification in
                 guard let deviceCount = notification.userInfo?[AttributedMetricNotificationParameter.syncCount.rawValue] as? Int else {
                     assertionFailure("Missing \(AttributedMetricNotificationParameter.syncCount.rawValue)")
@@ -161,6 +164,7 @@ final class ReportingService {
         Pixel.fire(pixel: .appLaunch, includedParameters: [.appVersion, .atb])
         reportAdAttribution()
         reportWidgetUsage()
+        productSurfaceTelemetry.dailyActiveUser()
         onboardingPixelReporter.fireEnqueuedPixelsIfNeeded()
         reportUserNotificationAuthStatus()
     }
@@ -239,11 +243,21 @@ private extension ReportingService {
     }
 }
 
-struct DefaultBucketsSettingsProvider: BucketsSettingsProviding {
+struct DefaultAttributedMetricSettingsProvider: AttributedMetricSettingsProviding {
     let privacyConfig: PrivacyConfiguration
 
     var bucketsSettings: [String: Any] {
         privacyConfig.settings(for: .attributedMetrics)
+    }
+
+    var originSendList: [String] {
+        guard let originSettingString = privacyConfig.settings(for: AttributedMetricsSubfeature.sendOriginParam),
+              let settingsData = originSettingString.data(using: .utf8),
+              let settings = try? JSONDecoder().decode(OriginSettings.self, from: settingsData) else {
+            Logger.attributedMetric.error("Failed to decode origin settings, returning empty list")
+            return []
+        }
+        return settings.originCampaignSubstrings
     }
 }
 

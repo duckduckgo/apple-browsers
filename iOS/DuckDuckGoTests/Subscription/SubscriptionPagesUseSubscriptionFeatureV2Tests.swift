@@ -27,6 +27,7 @@ import PixelKit
 @testable import Subscription
 import SubscriptionTestingUtilities
 import PixelKitTestingUtilities
+import Networking
 
 final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     
@@ -37,6 +38,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     var mockNotificationCenter: NotificationCenter!
     var mockWideEvent: WideEventMock!
     var mockInternalUserDecider: MockInternalUserDecider!
+    var mockTierEventReporter: MockSubscriptionTierEventReporter!
 
     @MainActor
     override func setUp() {
@@ -48,6 +50,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         mockNotificationCenter = NotificationCenter()
         mockWideEvent = WideEventMock()
         mockInternalUserDecider = MockInternalUserDecider(isInternalUser: true)
+        mockTierEventReporter = MockSubscriptionTierEventReporter()
 
         sut = DefaultSubscriptionPagesUseSubscriptionFeatureV2(
             subscriptionManager: mockSubscriptionManager,
@@ -56,9 +59,9 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             appStorePurchaseFlow: AppStorePurchaseFlowMockV2(),
             appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
             subscriptionDataReporter: nil,
-            subscriptionFreeTrialsHelper: MockSubscriptionFreeTrialsHelping(),
             internalUserDecider: mockInternalUserDecider,
-            wideEvent: mockWideEvent)
+            wideEvent: mockWideEvent,
+            tierEventReporter: mockTierEventReporter)
     }
     
     override func tearDown() {
@@ -68,6 +71,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         mockSubscriptionFeatureAvailability = nil
         mockNotificationCenter = nil
         mockWideEvent = nil
+        mockTierEventReporter = nil
         super.tearDown()
     }
     
@@ -183,6 +187,297 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         XCTAssertFalse(featureValue.useAlternateStripePaymentFlow)
     }
 
+    func testGetFeatureConfig_WhenTierMessagingEnabled_ReturnsCorrectConfig() async throws {
+        // Given
+        mockSubscriptionFeatureAvailability.isTierMessagingEnabled = true
+
+        // When
+        let result = try await sut.getFeatureConfig(params: "", original: MockWKScriptMessage(name: "", body: ""))
+
+        // Then
+        guard let featureValue = result as? GetFeatureConfigurationResponse else {
+            XCTFail("Expected GetFeatureConfigurationResponse type")
+            return
+        }
+
+        XCTAssertTrue(featureValue.useUnifiedFeedback)
+        XCTAssertTrue(featureValue.useSubscriptionsAuthV2)
+        XCTAssertTrue(featureValue.useGetSubscriptionTierOptions)
+    }
+
+    func testGetFeatureConfig_WhenTierMessagingDisabled_ReturnsCorrectConfig() async throws {
+        // Given
+        mockSubscriptionFeatureAvailability.isTierMessagingEnabled = false
+
+        // When
+        let result = try await sut.getFeatureConfig(params: "", original: MockWKScriptMessage(name: "", body: ""))
+
+        // Then
+        guard let featureValue = result as? GetFeatureConfigurationResponse else {
+            XCTFail("Expected GetFeatureConfigurationResponse type")
+            return
+        }
+
+        XCTAssertTrue(featureValue.useUnifiedFeedback)
+        XCTAssertTrue(featureValue.useSubscriptionsAuthV2)
+        XCTAssertFalse(featureValue.useGetSubscriptionTierOptions)
+    }
+
+    // MARK: - GetSubscriptionTierOptions Tests
+
+    func testGetSubscriptionTierOptions_WhenProTierEnabled_PassesTrueToIncludeProTier() async throws {
+        // Given
+        mockSubscriptionFeatureAvailability.isProTierPurchaseEnabled = true
+        mockSubscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
+        
+        let expectedTierOptions = SubscriptionTierOptions(
+            platform: .ios,
+            products: [
+                SubscriptionTier(
+                    tier: .plus,
+                    features: [TierFeature(product: .networkProtection, name: .plus)],
+                    options: [
+                        SubscriptionOptionV2(id: "1",
+                                           cost: SubscriptionOptionCost(displayPrice: "5 USD", recurrence: "monthly"),
+                                           offer: nil)
+                    ]
+                )
+            ]
+        )
+        
+        let mockStorePurchaseManager = StorePurchaseManagerMockV2()
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(expectedTierOptions)
+        mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
+
+        // When
+        let result = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
+
+        // Then
+        XCTAssertEqual(mockStorePurchaseManager.subscriptionTierOptionsIncludeProTierCalled, true, "Should pass true to includeProTier when Pro tier is enabled")
+        
+        guard let tierOptions = result as? SubscriptionTierOptions else {
+            XCTFail("Expected SubscriptionTierOptions type")
+            return
+        }
+
+        XCTAssertEqual(tierOptions.platform, .ios)
+        XCTAssertEqual(tierOptions.products.count, 1)
+        XCTAssertEqual(tierOptions.products[0].tier, .plus)
+        XCTAssertFalse(tierOptions.products[0].options.isEmpty, "Should have purchase options when purchase is allowed")
+    }
+
+    func testGetSubscriptionTierOptions_WhenProTierDisabled_PassesFalseToIncludeProTier() async throws {
+        // Given
+        mockSubscriptionFeatureAvailability.isProTierPurchaseEnabled = false
+        mockSubscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = true
+        
+        let tierOptionsWithPurchase = SubscriptionTierOptions(
+            platform: .ios,
+            products: [
+                SubscriptionTier(
+                    tier: .plus,
+                    features: [TierFeature(product: .networkProtection, name: .plus)],
+                    options: [
+                        SubscriptionOptionV2(id: "1",
+                                           cost: SubscriptionOptionCost(displayPrice: "5 USD", recurrence: "monthly"),
+                                           offer: nil)
+                    ]
+                )
+            ]
+        )
+        
+        let mockStorePurchaseManager = StorePurchaseManagerMockV2()
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(tierOptionsWithPurchase)
+        mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
+
+        // When
+        let result = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
+
+        // Then
+        XCTAssertEqual(mockStorePurchaseManager.subscriptionTierOptionsIncludeProTierCalled, false, "Should pass false to includeProTier when Pro tier is disabled")
+        
+        guard let tierOptions = result as? SubscriptionTierOptions else {
+            XCTFail("Expected SubscriptionTierOptions type")
+            return
+        }
+
+        XCTAssertEqual(tierOptions.platform, .ios)
+        XCTAssertFalse(tierOptions.products[0].options.isEmpty, "Should still have purchase options when purchase is allowed")
+    }
+
+    func testGetSubscriptionTierOptions_WhenPurchaseNotAllowed_StripsPurchaseOptions() async throws {
+        // Given
+        mockSubscriptionFeatureAvailability.isProTierPurchaseEnabled = true
+        mockSubscriptionFeatureAvailability.isSubscriptionPurchaseAllowed = false
+        
+        let tierOptionsWithPurchase = SubscriptionTierOptions(
+            platform: .ios,
+            products: [
+                SubscriptionTier(
+                    tier: .plus,
+                    features: [TierFeature(product: .networkProtection, name: .plus)],
+                    options: [
+                        SubscriptionOptionV2(id: "1",
+                                           cost: SubscriptionOptionCost(displayPrice: "5 USD", recurrence: "monthly"),
+                                           offer: nil)
+                    ]
+                )
+            ]
+        )
+        
+        let mockStorePurchaseManager = StorePurchaseManagerMockV2()
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(tierOptionsWithPurchase)
+        mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
+
+        // When
+        let result = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
+
+        // Then
+        XCTAssertEqual(mockStorePurchaseManager.subscriptionTierOptionsIncludeProTierCalled, true, "Should still pass Pro tier flag correctly")
+        
+        guard let tierOptions = result as? SubscriptionTierOptions else {
+            XCTFail("Expected SubscriptionTierOptions type")
+            return
+        }
+
+        XCTAssertEqual(tierOptions.platform, .ios)
+        XCTAssertTrue(tierOptions.products[0].options.isEmpty, "Should strip purchase options when purchase is not allowed")
+    }
+
+    func testGetSubscriptionTierOptions_WhenNoOptionsAvailable_ReturnsEmpty() async throws {
+        // Given
+        let mockStorePurchaseManager = StorePurchaseManagerMockV2()
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .failure(.tieredProductsNoProductsAvailable)
+        mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
+
+        // When
+        let result = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
+
+        // Then
+        guard let tierOptions = result as? SubscriptionTierOptions else {
+            XCTFail("Expected SubscriptionTierOptions type")
+            return
+        }
+
+        XCTAssertEqual(tierOptions.platform, .ios)
+        XCTAssertTrue(tierOptions.products.isEmpty, "Should return empty tier options when none are available")
+    }
+
+    // MARK: - Tier Options Pixel Tests
+
+    func testGetSubscriptionTierOptions_AlwaysFiresRequestedPixel() async throws {
+        // Given
+        let expectedTierOptions = SubscriptionTierOptions(
+            platform: .ios,
+            products: [
+                SubscriptionTier(
+                    tier: .plus,
+                    features: [TierFeature(product: .networkProtection, name: .plus)],
+                    options: []
+                )
+            ]
+        )
+        let mockStorePurchaseManager = StorePurchaseManagerMockV2()
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(expectedTierOptions)
+        mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
+
+        // When
+        _ = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
+
+        // Then
+        XCTAssertTrue(mockTierEventReporter.requestedCalled, "Should fire requested pixel")
+    }
+
+    func testGetSubscriptionTierOptions_OnSuccess_FiresSuccessPixel() async throws {
+        // Given
+        let expectedTierOptions = SubscriptionTierOptions(
+            platform: .ios,
+            products: [
+                SubscriptionTier(
+                    tier: .plus,
+                    features: [TierFeature(product: .networkProtection, name: .plus)],
+                    options: []
+                )
+            ]
+        )
+        let mockStorePurchaseManager = StorePurchaseManagerMockV2()
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(expectedTierOptions)
+        mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
+
+        // When
+        _ = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
+
+        // Then
+        XCTAssertTrue(mockTierEventReporter.successCalled, "Should fire success pixel")
+        XCTAssertFalse(mockTierEventReporter.failureCalled, "Should not fire failure pixel on success")
+    }
+
+    func testGetSubscriptionTierOptions_OnFailure_FiresFailurePixel() async throws {
+        // Given
+        let mockStorePurchaseManager = StorePurchaseManagerMockV2()
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .failure(.tieredProductsNoProductsAvailable)
+        mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
+
+        // When
+        _ = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
+
+        // Then
+        XCTAssertTrue(mockTierEventReporter.failureCalled, "Should fire failure pixel")
+        XCTAssertNotNil(mockTierEventReporter.failureError, "Should include error in failure pixel")
+        XCTAssertFalse(mockTierEventReporter.successCalled, "Should not fire success pixel on failure")
+    }
+
+    func testGetSubscriptionTierOptions_WithProTierPresent_FiresUnexpectedProTierPixel() async throws {
+        // Given
+        let tierOptionsWithProTier = SubscriptionTierOptions(
+            platform: .ios,
+            products: [
+                SubscriptionTier(
+                    tier: .plus,
+                    features: [TierFeature(product: .networkProtection, name: .plus)],
+                    options: []
+                ),
+                SubscriptionTier(
+                    tier: .pro,
+                    features: [TierFeature(product: .networkProtection, name: .pro)],
+                    options: []
+                )
+            ]
+        )
+        let mockStorePurchaseManager = StorePurchaseManagerMockV2()
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(tierOptionsWithProTier)
+        mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
+
+        // When
+        _ = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
+
+        // Then
+        XCTAssertTrue(mockTierEventReporter.unexpectedProTierCalled, "Should fire unexpected pro tier pixel")
+    }
+
+    func testGetSubscriptionTierOptions_WithoutProTier_DoesNotFireUnexpectedProTierPixel() async throws {
+        // Given
+        let tierOptionsWithoutProTier = SubscriptionTierOptions(
+            platform: .ios,
+            products: [
+                SubscriptionTier(
+                    tier: .plus,
+                    features: [TierFeature(product: .networkProtection, name: .plus)],
+                    options: []
+                )
+            ]
+        )
+        let mockStorePurchaseManager = StorePurchaseManagerMockV2()
+        mockStorePurchaseManager.subscriptionTierOptionsResult = .success(tierOptionsWithoutProTier)
+        mockSubscriptionManager.resultStorePurchaseManager = mockStorePurchaseManager
+
+        // When
+        _ = try await sut.getSubscriptionTierOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
+
+        // Then
+        XCTAssertFalse(mockTierEventReporter.unexpectedProTierCalled, "Should not fire unexpected pro tier pixel")
+    }
+
     @MainActor
     func testAppStoreSuccess_EmitsWidePixelWithContextAndDurations() async throws {
         let originURL = URL(string: "https://duckduckgo.com/subscriptions?origin=funnel_appsettings_ios")!
@@ -204,7 +499,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             appStorePurchaseFlow: purchaseFlow,
             appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
             subscriptionDataReporter: nil,
-            subscriptionFreeTrialsHelper: MockSubscriptionFreeTrialsHelping(),
             internalUserDecider: mockInternalUserDecider,
             wideEvent: mockWideEvent
         )
@@ -248,7 +542,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             appStorePurchaseFlow: purchaseFlow,
             appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
             subscriptionDataReporter: nil,
-            subscriptionFreeTrialsHelper: MockSubscriptionFreeTrialsHelping(),
             internalUserDecider: mockInternalUserDecider,
             wideEvent: mockWideEvent
         )
@@ -280,7 +573,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             appStorePurchaseFlow: purchaseFlow,
             appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
             subscriptionDataReporter: nil,
-            subscriptionFreeTrialsHelper: MockSubscriptionFreeTrialsHelping(),
             internalUserDecider: mockInternalUserDecider,
             wideEvent: mockWideEvent
         )
@@ -300,4 +592,29 @@ final class MockURLWebView: WKWebView {
     }
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
     override var url: URL? { mockedURL }
+}
+
+final class MockSubscriptionTierEventReporter: SubscriptionTierEventReporting {
+    var requestedCalled = false
+    var successCalled = false
+    var failureCalled = false
+    var failureError: Error?
+    var unexpectedProTierCalled = false
+
+    func reportTierOptionsRequested() {
+        requestedCalled = true
+    }
+
+    func reportTierOptionsSuccess() {
+        successCalled = true
+    }
+
+    func reportTierOptionsFailure(error: Error) {
+        failureCalled = true
+        failureError = error
+    }
+
+    func reportTierOptionsUnexpectedProTier() {
+        unexpectedProTierCalled = true
+    }
 }

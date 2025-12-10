@@ -37,15 +37,11 @@ final class WideEventService {
     }
 
     func sendPendingEvents() async {
-        if featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement) {
-            await sendAbandonedSubscriptionPurchasePixels()
-            await sendDelayedSubscriptionPurchasePixels()
-        }
+        await sendAbandonedSubscriptionPurchasePixels()
+        await sendDelayedSubscriptionPurchasePixels()
 
-        if featureFlagger.isFeatureOn(.subscriptionRestoreWidePixelMeasurement) {
-            await sendAbandonedSubscriptionRestorePixels()
-            await sendDelayedSubscriptionRestorePixels()
-        }
+        await sendAbandonedSubscriptionRestorePixels()
+        await sendDelayedSubscriptionRestorePixels()
 
         if featureFlagger.isFeatureOn(.vpnConnectionWidePixelMeasurement) {
             await sendAbandonedVPNConnectionPixels()

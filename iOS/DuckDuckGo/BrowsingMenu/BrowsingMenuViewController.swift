@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import Core
 
 enum BrowsingMenuEntry {
     
@@ -60,20 +61,22 @@ final class BrowsingMenuViewController: UIViewController {
     private let menuEntries: [BrowsingMenuEntry]
     private let daxDialogsManager: DaxDialogsManaging
     private let appSettings: AppSettings
+    private let productSurfaceTelemetry: ProductSurfaceTelemetry
 
     var onDismiss: (() -> Void)?
 
-    class func instantiate(headerEntries: [BrowsingMenuEntry], menuEntries: [BrowsingMenuEntry], daxDialogsManager: DaxDialogsManaging, appSettings: AppSettings = AppDependencyProvider.shared.appSettings) -> BrowsingMenuViewController {
+    class func instantiate(headerEntries: [BrowsingMenuEntry], menuEntries: [BrowsingMenuEntry], daxDialogsManager: DaxDialogsManaging, appSettings: AppSettings = AppDependencyProvider.shared.appSettings, productSurfaceTelemetry: ProductSurfaceTelemetry) -> BrowsingMenuViewController {
         UIStoryboard(name: "BrowsingMenuViewController", bundle: nil).instantiateInitialViewController { coder in
-            BrowsingMenuViewController(headerEntries: headerEntries, menuEntries: menuEntries, daxDialogsManager: daxDialogsManager, appSettings: appSettings, coder: coder)
+            BrowsingMenuViewController(headerEntries: headerEntries, menuEntries: menuEntries, daxDialogsManager: daxDialogsManager, appSettings: appSettings, productSurfaceTelemetry: productSurfaceTelemetry, coder: coder)
         }!
     }
 
-    init?(headerEntries: [BrowsingMenuEntry], menuEntries: [BrowsingMenuEntry], daxDialogsManager: DaxDialogsManaging, appSettings: AppSettings, coder: NSCoder) {
+    init?(headerEntries: [BrowsingMenuEntry], menuEntries: [BrowsingMenuEntry], daxDialogsManager: DaxDialogsManaging, appSettings: AppSettings, productSurfaceTelemetry: ProductSurfaceTelemetry, coder: NSCoder) {
         self.headerEntries = headerEntries
         self.menuEntries = menuEntries
         self.daxDialogsManager = daxDialogsManager
         self.appSettings = appSettings
+        self.productSurfaceTelemetry = productSurfaceTelemetry
         super.init(coder: coder)
         self.transitioningDelegate = self
     }
@@ -88,6 +91,11 @@ final class BrowsingMenuViewController: UIViewController {
         configureHeader()
 
         decorate()
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        productSurfaceTelemetry.menuUsed()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -359,6 +367,15 @@ extension BrowsingMenuViewController {
 
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
             configureArrow(with: ThemeManager.shared.currentTheme.browsingMenuBackgroundColor)
+        }
+    }
+}
+
+extension BrowsingMenuEntry {
+    var isSeparator: Bool {
+        switch self {
+        case .separator: return true
+        default: return false
         }
     }
 }

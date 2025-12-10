@@ -59,4 +59,14 @@ extension WideEventFailureEvent: PixelKitEvent, PixelKitEventWithCustomPrefix {
                 .discardFailed(let pixelName, _): return ["pixelName": pixelName]
         }
     }
+
+    public var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .saveFailed,
+                .updateFailed,
+                .loadFailed,
+                .completionFailed,
+                .discardFailed: return [.pixelSource]
+        }
+    }
 }

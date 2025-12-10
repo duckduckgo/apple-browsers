@@ -30,7 +30,9 @@ import Persistence
 final class SubscriptionSettingsViewModelV2: ObservableObject {
 
     private let subscriptionManager: SubscriptionManagerV2
+    private let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     private var signOutObserver: Any?
+    private let featureFlagger: FeatureFlagger
 
     private var externalAllowedDomains = ["stripe.com"]
 
@@ -57,9 +59,9 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
         var faqViewModel: SubscriptionExternalLinkViewModel
         var learnMoreViewModel: SubscriptionExternalLinkViewModel
 
-        init(faqURL: URL, learnMoreURL: URL) {
-            self.faqViewModel = SubscriptionExternalLinkViewModel(url: faqURL)
-            self.learnMoreViewModel = SubscriptionExternalLinkViewModel(url: learnMoreURL)
+        init(faqURL: URL, learnMoreURL: URL, userScriptsDependencies: DefaultScriptSourceProvider.Dependencies) {
+            self.faqViewModel = SubscriptionExternalLinkViewModel(url: faqURL, userScriptsDependencies: userScriptsDependencies)
+            self.learnMoreViewModel = SubscriptionExternalLinkViewModel(url: learnMoreURL, userScriptsDependencies: userScriptsDependencies)
         }
     }
 
@@ -73,16 +75,30 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
 
     @Published var showRebrandingMessage: Bool = false
 
+    /// Returns the tier badge variant to display, or nil if badge should not be shown
+    /// Shows badge if tier is Pro, or if Pro tier purchase feature flag is enabled
+    var tierBadgeToDisplay: TierBadgeView.Variant? {
+        guard let tier = state.subscriptionInfo?.tier else { return nil }
+        guard tier == .pro || featureFlagger.isFeatureOn(.allowProTierPurchase) else { return nil }
+        switch tier {
+        case .plus: return .plus
+        case .pro: return .pro
+        }
+    }
+
     private let keyValueStorage: KeyValueStoring
     private let bannerDismissedKey = "SubscriptionSettingsV2BannerDismissed"
 
     init(subscriptionManager: SubscriptionManagerV2 = AppDependencyProvider.shared.subscriptionManagerV2!,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         keyValueStorage: KeyValueStoring = SubscriptionSettingsStore()) {
+         keyValueStorage: KeyValueStoring = SubscriptionSettingsStore(),
+         userScriptsDependencies: DefaultScriptSourceProvider.Dependencies) {
         self.subscriptionManager = subscriptionManager
+        self.userScriptsDependencies = userScriptsDependencies
+        self.featureFlagger = featureFlagger
         let subscriptionFAQURL = subscriptionManager.url(for: .faq)
         let learnMoreURL = subscriptionFAQURL.appendingPathComponent("adding-email")
-        self.state = State(faqURL: subscriptionFAQURL, learnMoreURL: learnMoreURL)
+        self.state = State(faqURL: subscriptionFAQURL, learnMoreURL: learnMoreURL, userScriptsDependencies: userScriptsDependencies)
         self.usesUnifiedFeedbackForm = subscriptionManager.isUserAuthenticated
         self.keyValueStorage = keyValueStorage
         let rebrandingMessageDismissed = keyValueStorage.object(forKey: bannerDismissedKey) as? Bool ?? false
@@ -324,7 +340,9 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
             if let existingModel = state.stripeViewModel {
                 existingModel.url = url
             } else {
-                let model = SubscriptionExternalLinkViewModel(url: url, allowedDomains: externalAllowedDomains)
+                let model = SubscriptionExternalLinkViewModel(url: url,
+                                                              allowedDomains: externalAllowedDomains,
+                                                              userScriptsDependencies: userScriptsDependencies)
                 Task { @MainActor in
                     self.state.stripeViewModel = model
                 }

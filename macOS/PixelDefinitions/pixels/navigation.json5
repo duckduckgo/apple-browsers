@@ -71,22 +71,22 @@
             "appVersion",
             "pixelSource",
             {
-                "key": "webKitFirstVisualLayoutMs",
+                "key": "first_visual_layout_ms",
                 "type": "integer",
                 "description": "Time in milliseconds from navigation start to first visual layout"
             },
             {
-                "key": "webKitFirstMeaningfulPaintMs",
+                "key": "first_meaningful_paint_ms",
                 "type": "integer",
                 "description": "Time in milliseconds from navigation start to first meaningful paint"
             },
             {
-                "key": "webKitDocumentCompleteMs",
+                "key": "document_complete_ms",
                 "type": "integer",
                 "description": "Time in milliseconds from navigation start to document complete"
             },
             {
-                "key": "webKitAllResourcesCompleteMs",
+                "key": "all_resources_complete_ms",
                 "type": "integer",
                 "description": "Time in milliseconds from navigation start to all resources complete"
             }

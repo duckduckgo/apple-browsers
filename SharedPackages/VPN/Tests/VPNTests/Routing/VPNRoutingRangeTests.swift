@@ -42,8 +42,7 @@ final class VPNRoutingRangeTests: XCTestCase {
         let expectedIPv6Ranges = [
             IPAddressRange(from: "::1/128")!,
             IPAddressRange(from: "fe80::/10")!,
-            IPAddressRange(from: "ff00::/8")!,
-            IPAddressRange(from: "fc00::/7")!
+            IPAddressRange(from: "ff00::/8")!
         ]
 
         for expectedRange in expectedIPv4Ranges {
@@ -94,63 +93,69 @@ final class VPNRoutingRangeTests: XCTestCase {
 
     }
 
+    /// Verifies that IPv6 ULA is handled like IPv4 RFC 1918 private networks
+    func testIPv6ULAHandledLikeRFC1918() {
+        // Verify fc00::/7 is NOT in alwaysExcludedIPv6Range
+        let alwaysExcluded = VPNRoutingRange.alwaysExcludedIPv6Range
+        let hasULA = alwaysExcluded.contains { $0.description.hasPrefix("fc00::/") }
+        XCTAssertFalse(hasULA, "ULA should not be in always excluded ranges")
+
+        // Verify fc00::/7 IS in localIPv6NetworkRange
+        let localIPv6 = VPNRoutingRange.localIPv6NetworkRange
+        XCTAssertEqual(localIPv6.count, 1, "Should have exactly one IPv6 local range")
+        XCTAssertTrue(localIPv6[0].description.contains("fc00::/7"), "Should include ULA range")
+
+        // Verify the approach: ::/0 is the full IPv6 routing range (contains ULA), but localIPv6NetworkRange
+        // will be conditionally excluded, relying on Apple's documented behavior that
+        // excluded routes take precedence over included routes
+        let fullIPv6 = VPNRoutingRange.fullIPv6RoutingRange
+        XCTAssertEqual(fullIPv6.networkPrefixLength, 0, "Full IPv6 routing range should be ::/0 for all IPv6 addresses")
+    }
+
+    /// Verifies that fullIPv6RoutingRange is exactly ::/0 (all IPv6 addresses)
+    func testFullIPv6RoutingRangeIsAllAddresses() {
+        let fullIPv6 = VPNRoutingRange.fullIPv6RoutingRange
+
+        XCTAssertEqual(fullIPv6.description, "::/0", "Full IPv6 routing range should be exactly ::/0")
+        XCTAssertEqual(fullIPv6.networkPrefixLength, 0, "Prefix length should be 0")
+        XCTAssertTrue(fullIPv6.address is IPv6Address, "Address should be IPv6")
+    }
+
+    /// Verifies that 10.0.0.0/8 is in localNetworkRange but not in localNetworkRangeWithoutDNS
+    func testTenDotZeroOnlyInFullLocalNetworkRange() {
+        let fullLocal = VPNRoutingRange.localNetworkRange
+        let localWithoutDNS = VPNRoutingRange.localNetworkRangeWithoutDNS
+
+        let fullLocalStrings = fullLocal.map { $0.description }
+        let withoutDNSStrings = localWithoutDNS.map { $0.description }
+
+        XCTAssertTrue(fullLocalStrings.contains("10.0.0.0/8"),
+                     "10.0.0.0/8 should be in localNetworkRange")
+        XCTAssertFalse(withoutDNSStrings.contains("10.0.0.0/8"),
+                      "10.0.0.0/8 should NOT be in localNetworkRangeWithoutDNS")
+    }
+
     // MARK: - Public Network Range Tests
 
     /// Verifies that VPN routes all major public internet traffic through the tunnel for comprehensive protection
     func testPublicInternetTrafficIsFullyCovered() {
 
-        let publicNetworks = VPNRoutingRange.publicNetworkRange
+        let publicNetworks = VPNRoutingRange.publicIPv4NetworkRange + [VPNRoutingRange.fullIPv6RoutingRange]
 
-        let expectedPublicRanges = [
+        let expectedIPv4Ranges = [
             IPAddressRange(from: "1.0.0.0/8")!,
             IPAddressRange(from: "8.0.0.0/7")!,
             IPAddressRange(from: "64.0.0.0/3")!,
             IPAddressRange(from: "128.0.0.0/3")!,
-            IPAddressRange(from: "::/0")!
         ]
 
-        for expectedRange in expectedPublicRanges {
+        let expectedIPv6Ranges = [
+            IPAddressRange(from: "::/0")!,
+        ]
+
+        for expectedRange in expectedIPv4Ranges + expectedIPv6Ranges {
             XCTAssertTrue(expectedRange.hasExactMatch(in: publicNetworks),
                          "Major public range \(expectedRange) should be covered")
-        }
-
-    }
-
-    /// Verifies clear separation between public internet and private network traffic routing
-    func testPublicAndPrivateTrafficAreSeparated() {
-
-        let publicNetworks = VPNRoutingRange.publicNetworkRange
-
-        let privateRanges = [
-            IPAddressRange(from: "10.0.0.0/8")!,
-            IPAddressRange(from: "172.16.0.0/12")!,
-            IPAddressRange(from: "192.168.0.0/16")!
-        ]
-
-        for privateRange in privateRanges {
-            XCTAssertFalse(privateRange.hasExactMatch(in: publicNetworks),
-                          "Private range \(privateRange) should NOT be in public ranges")
-        }
-
-    }
-
-    /// Verifies clean separation between internet-routable and system-reserved address ranges
-    func testInternetTrafficDoesNotIncludeSystemRanges() {
-
-        let publicNetworks = VPNRoutingRange.publicNetworkRange
-
-        let systemRanges = [
-            IPAddressRange(from: "127.0.0.0/8")!,      // Loopback
-            IPAddressRange(from: "169.254.0.0/16")!,   // Link-local
-            IPAddressRange(from: "224.0.0.0/4")!,      // Multicast
-            IPAddressRange(from: "240.0.0.0/4")!       // Experimental
-        ]
-
-        for systemRange in systemRanges {
-            let foundInPublic = publicNetworks.contains { publicRange in
-                publicRange == systemRange || publicRange.contains(systemRange) || systemRange.contains(publicRange)
-            }
-            XCTAssertFalse(foundInPublic, "System range \(systemRange) should NOT be in public ranges")
         }
 
     }
@@ -164,7 +169,8 @@ final class VPNRoutingRangeTests: XCTestCase {
             ("alwaysExcludedIPv6", VPNRoutingRange.alwaysExcludedIPv6Range),
             ("localNetwork", VPNRoutingRange.localNetworkRange),
             ("localNetworkWithoutDNS", VPNRoutingRange.localNetworkRangeWithoutDNS),
-            ("publicNetwork", VPNRoutingRange.publicNetworkRange)
+            ("publicIPv4Network", VPNRoutingRange.publicIPv4NetworkRange),
+            ("fullIPv6Routing", [VPNRoutingRange.fullIPv6RoutingRange])
         ]
 
         for (rangeName, ranges) in allRanges {
@@ -240,35 +246,4 @@ final class VPNRoutingRangeTests: XCTestCase {
 
         return overlaps
     }
-
-    /// Verifies that VPN provides comprehensive global internet access by covering all major address blocks
-    func testGlobalInternetAccessIsComprehensive() {
-
-        let publicNetworks = VPNRoutingRange.publicNetworkRange
-
-        let expectedMajorBlocks = [
-            "1.0.0.0/8",      // APNIC
-            "8.0.0.0/7",      // Various (Level 3, Google, etc.)
-            "64.0.0.0/3",     // Part of former 64.0.0.0/2 (64-95)
-            "96.0.0.0/4",     // Part of former 64.0.0.0/2 (96-111)
-            "128.0.0.0/3",    // Various global
-            "::/0"            // IPv6 default
-        ]
-
-        for expectedBlock in expectedMajorBlocks {
-            guard let expectedRange = IPAddressRange(from: expectedBlock) else {
-                XCTFail("Invalid test range: \(expectedBlock)")
-                continue
-            }
-
-            let isCovered = publicNetworks.contains { publicRange in
-                publicRange == expectedRange || publicRange.contains(expectedRange)
-            }
-            XCTAssertTrue(isCovered, "Public network range should contain \(expectedBlock)")
-        }
-
-    }
-
-    // MARK: - Performance Tests
-
 }

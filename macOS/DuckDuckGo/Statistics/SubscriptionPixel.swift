@@ -73,6 +73,11 @@ enum SubscriptionPixel: PixelKitEvent {
     case subscriptionOfferYearlyPriceClick
     case subscriptionAddEmailSuccess
     case subscriptionWelcomeFAQClick
+    // Tier Options
+    case subscriptionTierOptionsRequested
+    case subscriptionTierOptionsSuccess
+    case subscriptionTierOptionsFailure(error: Error)
+    case subscriptionTierOptionsUnexpectedProTier
     // Auth v2
     case subscriptionInvalidRefreshTokenDetected(SubscriptionPixelHandler.Source)
     case subscriptionInvalidRefreshTokenSignedOut
@@ -152,6 +157,11 @@ enum SubscriptionPixel: PixelKitEvent {
         case .subscriptionOfferYearlyPriceClick: return "m_mac_\(appDistribution)_privacy-pro_offer_yearly-price_click"
         case .subscriptionAddEmailSuccess: return "m_mac_\(appDistribution)_privacy-pro_app_add-email_success_u"
         case .subscriptionWelcomeFAQClick: return "m_mac_\(appDistribution)_privacy-pro_welcome_faq_click_u"
+            // Tier Options
+        case .subscriptionTierOptionsRequested: return "m_mac_\(appDistribution)_subscription_tier-options_requested"
+        case .subscriptionTierOptionsSuccess: return "m_mac_\(appDistribution)_subscription_tier-options_success"
+        case .subscriptionTierOptionsFailure: return "m_mac_\(appDistribution)_subscription_tier-options_failure"
+        case .subscriptionTierOptionsUnexpectedProTier: return "m_mac_\(appDistribution)_subscription_tier-options_unexpected-pro-tier"
             // Auth v2
         case .subscriptionInvalidRefreshTokenDetected: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_detected"
         case .subscriptionInvalidRefreshTokenSignedOut: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_signed_out"
@@ -194,6 +204,7 @@ enum SubscriptionPixel: PixelKitEvent {
         static let errorKey = "error"
         static let policyCacheKey = "policycache"
         static let sourceKey = "source"
+        static let platformKey = "platform"
     }
 
     var parameters: [String: String]? {
@@ -218,6 +229,83 @@ enum SubscriptionPixel: PixelKitEvent {
             return nil
         }
     }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .subscriptionActive,
+                .subscriptionOfferScreenImpression,
+                .subscriptionPurchaseAttempt,
+                .subscriptionPurchaseFailureOther,
+                .subscriptionPurchaseFailureStoreError,
+                .subscriptionPurchaseFailureBackendError,
+                .subscriptionPurchaseFailureAccountNotCreated,
+                .subscriptionPurchaseSuccess,
+                .subscriptionRestorePurchaseOfferPageEntry,
+                .subscriptionRestorePurchaseClick,
+                .subscriptionRestorePurchaseSettingsMenuEntry,
+                .subscriptionRestorePurchaseEmailStart,
+                .subscriptionRestorePurchaseStoreStart,
+                .subscriptionRestorePurchaseEmailSuccess,
+                .subscriptionRestorePurchaseStoreSuccess,
+                .subscriptionRestorePurchaseStoreFailureNotFound,
+                .subscriptionRestorePurchaseStoreFailureOther,
+                .subscriptionRestoreAfterPurchaseAttempt,
+                .subscriptionActivated,
+                .subscriptionWelcomeAddDevice,
+                .subscriptionWelcomeVPN,
+                .subscriptionWelcomePersonalInformationRemoval,
+                .subscriptionWelcomeAIChat,
+                .subscriptionWelcomeIdentityRestoration,
+                .subscriptionSettings,
+                .subscriptionVPNSettings,
+                .subscriptionPersonalInformationRemovalSettings,
+                .subscriptionPersonalInformationRemovalSettingsImpression,
+                .subscriptionPaidAIChatSettings,
+                .subscriptionPaidAIChatSettingsImpression,
+                .subscriptionIdentityRestorationSettings,
+                .subscriptionIdentityRestorationSettingsImpression,
+                .subscriptionManagementEmail,
+                .subscriptionManagementPlanBilling,
+                .subscriptionManagementRemoval,
+                .subscriptionPurchaseStripeSuccess,
+                .subscriptionSuccessfulSubscriptionAttribution,
+                .subscriptionOfferMonthlyPriceClick,
+                .subscriptionOfferYearlyPriceClick,
+                .subscriptionAddEmailSuccess,
+                .subscriptionWelcomeFAQClick,
+                .subscriptionInvalidRefreshTokenDetected,
+                .subscriptionInvalidRefreshTokenSignedOut,
+                .subscriptionInvalidRefreshTokenRecovered,
+                .subscriptionAuthV2MigrationFailed,
+                .subscriptionAuthV2MigrationSucceeded,
+                .subscriptionAuthV2GetTokensError,
+                .subscriptionKeychainManagerDataAddedToTheBacklog,
+                .subscriptionKeychainManagerDeallocatedWithBacklog,
+                .subscriptionKeychainManagerDataWroteFromBacklog,
+                .subscriptionKeychainManagerFailedToWriteDataFromBacklog,
+                .subscriptionToolbarButtonShown,
+                .subscriptionToolbarButtonPopoverShown,
+                .subscriptionToolbarButtonPopoverDismissButtonClicked,
+                .subscriptionToolbarButtonPopoverProceedButtonClicked,
+                .subscriptionWinBackOfferLaunchPromptShown,
+                .subscriptionWinBackOfferLaunchPromptCTAClicked,
+                .subscriptionWinBackOfferLaunchPromptDismissed,
+                .subscriptionWinBackOfferMainMenuShown,
+                .subscriptionWinBackOfferMainMenuClicked,
+                .subscriptionWinBackOfferSettingsSidebarBadgeShown,
+                .subscriptionWinBackOfferSettingsPageShown,
+                .subscriptionWinBackOfferSettingsPageCTAClicked,
+                .subscriptionWinBackOfferNewTabPageShown,
+                .subscriptionWinBackOfferNewTabPageCTAClicked,
+                .subscriptionWinBackOfferNewTabPageDismissed,
+                .subscriptionTierOptionsRequested,
+                .subscriptionTierOptionsSuccess,
+                .subscriptionTierOptionsFailure,
+                .subscriptionTierOptionsUnexpectedProTier:
+            return [.pixelSource]
+        }
+    }
+
 }
 
 enum SubscriptionErrorPixel: PixelKitEvent {
@@ -238,10 +326,17 @@ enum SubscriptionErrorPixel: PixelKitEvent {
         case .subscriptionKeychainAccessError(let accessType, let accessError, let source, let authVersion):
             return [
                 "access_type": accessType.rawValue,
-                "error": accessError.errorDescription ?? "Unknown",
+                "error": accessError.description,
                 "source": source.rawValue,
                 "authVersion": authVersion.rawValue
             ]
+        }
+    }
+
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .subscriptionKeychainAccessError:
+            return [.pixelSource]
         }
     }
 

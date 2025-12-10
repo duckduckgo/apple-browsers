@@ -306,19 +306,19 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         switch self {
         case .httpError(_, let code, let dataBroker, let version):
             return ["code": String(code),
-                    "dataBroker": dataBroker,
-                    "version": version]
+                    Consts.dataBrokerParamKey: dataBroker,
+                    Consts.dataBrokerVersionKey: version]
         case .actionFailedError(_, let actionId, let message, let dataBroker, let version, let stepType, let dataBrokerParent):
             return ["actionID": actionId,
                     "message": message,
-                    "dataBroker": dataBroker,
-                    "version": version,
+                    Consts.dataBrokerParamKey: dataBroker,
+                    Consts.dataBrokerVersionKey: version,
                     "stepType": stepType?.rawValue ?? "unknown",
                     Consts.parentKey: dataBrokerParent ?? ""]
         case .otherError(let error, let dataBroker, let version):
             return ["kind": (error as? DataBrokerProtectionError)?.name ?? "unknown",
-                    "dataBroker": dataBroker,
-                    "version": version]
+                    Consts.dataBrokerParamKey: dataBroker,
+                    Consts.dataBrokerVersionKey: version]
         case .databaseError(_, let functionOccurredIn),
                 .cocoaError(_, let functionOccurredIn),
                 .miscError(_, let functionOccurredIn):
@@ -548,6 +548,86 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                 params[Consts.removedAtParamKey] = String(removedAt)
             }
             return params
+        }
+    }
+
+    public var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .httpError,
+                .actionFailedError,
+                .otherError,
+                .databaseError,
+                .cocoaError,
+                .miscError,
+                .secureVaultInitError,
+                .secureVaultKeyStoreReadError,
+                .secureVaultKeyStoreUpdateError,
+                .secureVaultError,
+                .secureVaultDatabaseRecreated,
+                .failedToOpenDatabase,
+                .parentChildMatches,
+                .optOutStart,
+                .optOutSubmitSuccess,
+                .optOutSuccess,
+                .optOutFailure,
+                .scanSuccess,
+                .scanNoResults,
+                .scanError,
+                .scanStage,
+                .optOutEmailGenerate,
+                .optOutCaptchaParse,
+                .optOutCaptchaSend,
+                .optOutCaptchaSolve,
+                .optOutSubmit,
+                .optOutEmailReceive,
+                .optOutEmailConfirm,
+                .optOutValidate,
+                .optOutFillForm,
+                .optOutConditionFound,
+                .optOutConditionNotFound,
+                .optOutFinish,
+                .dailyActiveUser,
+                .weeklyActiveUser,
+                .monthlyActiveUser,
+                .weeklyReportBackgroundTaskSession,
+                .weeklyReportStalledScans,
+                .weeklyReportStalledOptOuts,
+                .scanningEventNewMatch,
+                .scanningEventReAppearance,
+                .optOutJobAt7DaysConfirmed,
+                .optOutJobAt7DaysUnconfirmed,
+                .optOutJobAt14DaysConfirmed,
+                .optOutJobAt14DaysUnconfirmed,
+                .optOutJobAt21DaysConfirmed,
+                .optOutJobAt21DaysUnconfirmed,
+                .optOutJobAt42DaysConfirmed,
+                .optOutJobAt42DaysUnconfirmed,
+                .generateEmailHTTPErrorDaily,
+                .emptyAccessTokenDaily,
+                .initialScanTotalDuration,
+                .initialScanSiteLoadDuration,
+                .initialScanPostLoadingDuration,
+                .initialScanPreStartDuration,
+                .customDataBrokerStatsOptoutSubmit,
+                .customGlobalStatsOptoutSubmit,
+                .weeklyChildBrokerOrphanedOptOuts,
+                .userScriptLoadJSFailed,
+                .serviceEmailConfirmationLinkClientReceived,
+                .serviceEmailConfirmationLinkBackendStatusError,
+                .optOutStageSubmitAwaitingEmailConfirmation,
+                .serviceEmailConfirmationAttemptStart,
+                .serviceEmailConfirmationAttemptSuccess,
+                .serviceEmailConfirmationAttemptFailure,
+                .serviceEmailConfirmationMaxRetriesExceeded,
+                .serviceEmailConfirmationJobSuccess,
+                .updateDataBrokersSuccess,
+                .updateDataBrokersFailure:
+            return [.pixelSource]
+
+#if os(iOS)
+        case .scanStarted:
+            return [.pixelSource]
+#endif
         }
     }
 }

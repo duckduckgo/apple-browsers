@@ -26,6 +26,8 @@ import AIChat
 import Persistence
 import PersistenceTestingUtils
 
+// swiftlint:disable force_try
+
 @MainActor
 final class FireConfirmationViewModelTests: XCTestCase {
     
@@ -596,3 +598,5 @@ final class FireConfirmationViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.showAIChatsOption, "showAIChatsOption should be false when AI Chat is disabled")
     }
 }
+
+// swiftlint:enable force_try

@@ -205,6 +205,8 @@ private extension ReportingService {
                         "\($0.id.kind)-\($0.family.debugDescription)"
                     }.joined(separator: ",")
 
+                    // This is all over kill but the feature is disabled so only the device(s) in a bad state will send this.
+                    let featureState = self.privacyConfigurationManager.privacyConfig.stateFor(iOSBrowserConfigSubfeature.widgetReporting)
                     let isInternalUser = self.privacyConfigurationManager.internalUserDecider.isInternalUser
                     let embeddedEtag = (self.privacyConfigurationManager as? PrivacyConfigurationManager)?.embeddedConfigData.etag ?? "none"
                     let fetchedEtag = (self.privacyConfigurationManager as? PrivacyConfigurationManager)?.fetchedConfigData?.etag ?? "none"
@@ -215,7 +217,8 @@ private extension ReportingService {
                         "privacy_config_embedded_etag": embeddedEtag,
                         "privacy_config_fetched_etag": fetchedEtag,
                         "current_etag": currentEtag,
-                        "is_internal": "\(isInternalUser)"
+                        "is_internal": "\(isInternalUser)",
+                        "feature_state_enabled": "\(featureState == .enabled)"
                     ])
                 }
 

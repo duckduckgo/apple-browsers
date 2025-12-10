@@ -204,7 +204,8 @@ extension MainViewController {
                                       appSettings: self.appSettings,
                                       productSurfaceTelemetry: self.productSurfaceTelemetry,
                                       historyManager: self.historyManager,
-                                      fireproofing: self.fireproofing)
+                                      fireproofing: self.fireproofing,
+                                      keyValueStore: self.keyValueStore)
         }) else {
             assertionFailure()
             return

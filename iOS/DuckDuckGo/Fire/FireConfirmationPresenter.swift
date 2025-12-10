@@ -24,6 +24,7 @@ import BrowserServicesKit
 import Common
 import Core
 import AIChat
+import Persistence
 
 struct FireConfirmationPresenter {
     
@@ -32,6 +33,7 @@ struct FireConfirmationPresenter {
     let historyManager: HistoryManaging
     let fireproofing: Fireproofing
     let aiChatSettings: AIChatSettingsProvider
+    let keyValueFilesStore: ThrowingKeyValueStoring
     
     @MainActor
     func presentFireConfirmation(on viewController: UIViewController,
@@ -65,6 +67,7 @@ struct FireConfirmationPresenter {
             historyManager: historyManager,
             fireproofing: fireproofing,
             aiChatSettings: aiChatSettings,
+            keyValueFilesStore: keyValueFilesStore,
             onConfirm: { [weak viewController] in
                 viewController?.dismiss(animated: true) {
                     onConfirm()

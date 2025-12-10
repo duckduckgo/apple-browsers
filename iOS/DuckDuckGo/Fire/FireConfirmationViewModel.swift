@@ -23,6 +23,7 @@ import Core
 import Common
 import History
 import AIChat
+import Persistence
 
 @MainActor
 class FireConfirmationViewModel: ObservableObject {
@@ -44,6 +45,7 @@ class FireConfirmationViewModel: ObservableObject {
     private let tld: TLD
     private let fireproofing: Fireproofing
     private let aiChatSettings: AIChatSettingsProvider
+    private let settingsStore: FireConfirmationSettingsStoring
     
     // MARK: - Lazy Variables
 
@@ -73,16 +75,6 @@ class FireConfirmationViewModel: ObservableObject {
         aiChatSettings.isAIChatEnabled
     }
     
-    // MARK: - Persistence Storage
-    @UserDefaultsWrapper(key: .fireConfirmationClearTabs, defaultValue: true)
-    private var storedClearTabs: Bool
-    
-    @UserDefaultsWrapper(key: .fireConfirmationClearData, defaultValue: true)
-    private var storedClearData: Bool
-    
-    @UserDefaultsWrapper(key: .fireConfirmationClearAIChats, defaultValue: false)
-    private var storedClearAIChats: Bool
-    
     // MARK: - Initializer
     
     init(tabsModel: TabsModeling,
@@ -90,6 +82,7 @@ class FireConfirmationViewModel: ObservableObject {
          tld: TLD = AppDependencyProvider.shared.storageCache.tld,
          fireproofing: Fireproofing,
          aiChatSettings: AIChatSettingsProvider,
+         keyValueFilesStore: ThrowingKeyValueStoring,
          onConfirm: @escaping () -> Void,
          onCancel: @escaping () -> Void) {
         self.onConfirm = onConfirm
@@ -99,6 +92,7 @@ class FireConfirmationViewModel: ObservableObject {
         self.tld = tld
         self.fireproofing = fireproofing
         self.aiChatSettings = aiChatSettings
+        self.settingsStore = FireConfirmationSettingsStore(keyValueFilesStore: keyValueFilesStore)
         loadPersistedValues()
     }
     
@@ -107,13 +101,13 @@ class FireConfirmationViewModel: ObservableObject {
     func confirm() {
         // Persist current toggle states
         if !isClearTabsDisabled {
-            storedClearTabs = clearTabs
+            settingsStore.clearTabs = clearTabs
         }
         if !isClearDataDisabled {
-            storedClearData = clearData
+            settingsStore.clearData = clearData
         }
         if showAIChatsOption {
-            storedClearAIChats = clearAIChats
+            settingsStore.clearAIChats = clearAIChats
         }
         
         onConfirm()
@@ -153,8 +147,8 @@ class FireConfirmationViewModel: ObservableObject {
     }
     
     private func loadPersistedValues() {
-        self.clearTabs = isClearTabsDisabled ? false : storedClearTabs
-        self.clearData = isClearDataDisabled ? false : storedClearData
-        self.clearAIChats = showAIChatsOption ? storedClearAIChats : false
+        self.clearTabs = isClearTabsDisabled ? false : settingsStore.clearTabs
+        self.clearData = isClearDataDisabled ? false : settingsStore.clearData
+        self.clearAIChats = showAIChatsOption ? settingsStore.clearAIChats : false
     }
 }

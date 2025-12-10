@@ -120,6 +120,7 @@ class TabSwitcherViewController: UIViewController {
     let historyManager: HistoryManaging
     let fireproofing: Fireproofing
     let aiChatSettings: AIChatSettingsProvider
+    let keyValueStore: ThrowingKeyValueStoring
     var tabsModel: TabsModel {
         tabManager.model
     }
@@ -144,10 +145,12 @@ class TabSwitcherViewController: UIViewController {
                    aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
                    productSurfaceTelemetry: ProductSurfaceTelemetry,
                    historyManager: HistoryManaging,
-                   fireproofing: Fireproofing) {
+                   fireproofing: Fireproofing,
+                   keyValueStore: ThrowingKeyValueStoring) {
         self.bookmarksDatabase = bookmarksDatabase
         self.syncService = syncService
         self.featureFlagger = featureFlagger
+        self.keyValueStore = keyValueStore
         self.favicons = favicons
         self.tabManager = tabManager
         self.aiChatSettings = aiChatSettings

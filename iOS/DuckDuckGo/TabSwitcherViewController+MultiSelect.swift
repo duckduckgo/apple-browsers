@@ -107,7 +107,8 @@ extension TabSwitcherViewController {
                                                       featureFlagger: featureFlagger,
                                                       historyManager: historyManager,
                                                       fireproofing: fireproofing,
-                                                      aiChatSettings: aiChatSettings)
+                                                      aiChatSettings: aiChatSettings,
+                                                      keyValueFilesStore: keyValueStore)
             presenter.presentFireConfirmation(
                 on: self,
                 attachPopoverTo: sender,

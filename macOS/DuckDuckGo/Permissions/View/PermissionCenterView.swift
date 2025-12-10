@@ -445,7 +445,7 @@ struct ExternalAppsPermissionRowView: View {
             }
             .padding(.leading, 12)
             .padding(.trailing, 12)
-            .padding(.vertical, 12)
+            .padding(.vertical, 8)
 
             // Individual scheme rows
             ForEach(item.externalSchemes) { schemeInfo in

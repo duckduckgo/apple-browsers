@@ -85,7 +85,9 @@ public extension DBPUIScanAndOptOutMaintenanceState {
                                                                parentBrokerOptOutJobData: parentBrokerOptOutJobData)
 
                 if extractedProfile.removedDate == nil {
-                    inProgressOptOuts.append(profileMatch)
+                    if !$0.profileQuery.deprecated {
+                        inProgressOptOuts.append(profileMatch)
+                    }
                 } else {
                     removedProfiles.append(profileMatch)
                 }

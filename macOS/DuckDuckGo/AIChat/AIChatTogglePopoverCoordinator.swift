@@ -90,19 +90,13 @@ final class AIChatTogglePopoverCoordinator: AIChatTogglePopoverCoordinating {
     }
 
     private func showPopover(relativeTo toggleControl: NSView) {
-        let onClose: () -> Void = { [weak self] in
+        let onClose: () -> Void = {
             PixelKit.fire(AIChatPixel.aiChatTogglePopoverDismissButtonClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
-            self?.markPopoverAsSeen()
         }
 
         let onButtonAction: () -> Void = { [weak self] in
             PixelKit.fire(AIChatPixel.aiChatTogglePopoverCustomizeButtonClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
             self?.openAIChatSettings()
-            self?.markPopoverAsSeen()
-        }
-
-        let onAutoDismiss: () -> Void = { [weak self] in
-            self?.markPopoverAsSeen()
         }
 
         let onDismiss: () -> Void = { [weak self] in
@@ -129,10 +123,10 @@ final class AIChatTogglePopoverCoordinator: AIChatTogglePopoverCoordinating {
             buttonText: UserText.aiChatTogglePopoverButton,
             buttonAction: onButtonAction,
             onClose: onClose,
-            onDismiss: onDismiss,
-            onAutoDismiss: onAutoDismiss
+            onDismiss: onDismiss
         )
 
+        markPopoverAsSeen()
         presenter.showPopover(viewController: viewController, relativeTo: toggleControl)
         PixelKit.fire(AIChatPixel.aiChatTogglePopoverShown, frequency: .dailyAndCount, includeAppVersionParameter: true)
     }

@@ -68,11 +68,22 @@ final class NewTabPageNextStepsCardsProvider: NewTabPageNextStepsCardsProviding 
     @MainActor
     func handleAction(for card: NewTabPageDataModel.CardID) {
         continueSetUpModel.performAction(for: .init(card))
+        fireNextStepsCardClickedPixelIfNeeded(card)
     }
 
     @MainActor
     func dismiss(_ card: NewTabPageDataModel.CardID) {
         continueSetUpModel.removeItem(for: .init(card))
+        PixelKit.fire(NewTabPagePixel.nextStepsCardDismissed(card.rawValue))
+    }
+
+    private func fireNextStepsCardClickedPixelIfNeeded(_ card: NewTabPageDataModel.CardID) {
+        switch card {
+        case .duckplayer, .emailProtection, .bringStuff:
+            PixelKit.fire(NewTabPagePixel.nextStepsCardClicked(card.rawValue))
+        case .addAppToDockMac, .defaultApp:
+            break
+        }
     }
 
     @MainActor

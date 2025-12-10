@@ -148,6 +148,10 @@ enum NewTabPagePixel: PixelKitEvent {
     // Parameter duration: Load time in **seconds** (will be converted to milliseconds in pixel).
     case newTabPageLoadingTime(duration: TimeInterval, osMajorVersion: Int)
 
+    // See macOS/PixelDefinitions/pixels/new_tab_page_pixels.json5
+    case nextStepsCardClicked(_ card: String)
+    case nextStepsCardDismissed(_ card: String)
+
     // MARK: -
 
     enum ProtectionsReportMode: String {
@@ -173,6 +177,8 @@ enum NewTabPagePixel: PixelKitEvent {
         case .omnibarHidden: return "new-tab-page_omnibar_hidden"
         case .omnibarShown: return "new-tab-page_omnibar_shown"
         case .newTabPageLoadingTime: return "new-tab-page_loading_time"
+        case .nextStepsCardClicked: return "new-tab-page_next-steps_clicked"
+        case .nextStepsCardDismissed: return "new-tab-page_next-steps_dismissed"
         }
     }
 
@@ -207,6 +213,9 @@ enum NewTabPagePixel: PixelKitEvent {
                 .omnibarHidden,
                 .omnibarShown:
             return nil
+        case .nextStepsCardClicked(let card),
+                .nextStepsCardDismissed(let card):
+            return ["key": card]
         }
     }
 
@@ -233,6 +242,9 @@ enum NewTabPagePixel: PixelKitEvent {
                 .omnibarShown,
                 .newTabPageLoadingTime:
             return [.pixelSource]
+        case .nextStepsCardClicked,
+                .nextStepsCardDismissed:
+            return nil
         }
     }
 

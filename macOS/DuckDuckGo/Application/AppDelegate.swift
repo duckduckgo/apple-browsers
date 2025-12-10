@@ -1022,6 +1022,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // swiftlint:enable cyclomatic_complexity
 
     func applicationWillFinishLaunching(_ notification: Notification) {
+        /// Check for reinstalling user by comparing bundle creation dates.
+        /// Stores the bundle's creation date in the KeyValueStore and compares
+        /// on subsequent launches. If the date changes and it's not a Sparkle update,
+        /// the user has reinstalled the app.
+        ///
+        /// This needs to run before the SparkleUpdateController is run to avoid having the user defaults resetted after an update restart.
+        do {
+            try DefaultReinstallUserDetection(keyValueStore: keyValueStore).checkForReinstallingUser()
+        } catch {
+            Logger.general.error("Problem when checking for reinstalling user: \(error.localizedDescription)")
+        }
+
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent())
 
         stateRestorationManager = AppStateRestorationManager(fileStore: fileStore,

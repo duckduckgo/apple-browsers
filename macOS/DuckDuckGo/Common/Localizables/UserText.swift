@@ -1011,6 +1011,7 @@ struct UserText {
     static let permissionCenterExternalSchemeDescription = NSLocalizedString("permission.center.external.scheme.description", value: "%@ to open “%@” links", comment: "Description for external scheme permission, first %@ is domain, second %@ is scheme name")
     static let permissionCenterExternalApps = NSLocalizedString("permission.center.external.apps", value: "External apps", comment: "Permission center header for external app permissions")
     static let permissionCenterExternalSchemeFormat = NSLocalizedString("permission.center.external.scheme.format", value: "Open “%@” links", comment: "Format for external scheme row, %@ is scheme name like mailto or sms")
+    static let permissionCenterResetTooltip = NSLocalizedString("permission.center.reset.tooltip", value: "Reset permission", comment: "Tooltip for the remove/reset permission button in permission center")
 
     static let privacyDashboardPopupsAlwaysAsk = NSLocalizedString("dashboard.popups.ask", value: "Notify", comment: "Make pop-up windows always request permission for the current domain")
 

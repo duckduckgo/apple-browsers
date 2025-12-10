@@ -64748,6 +64748,18 @@
         }
       }
     },
+    "permission.center.reset.tooltip" : {
+      "comment" : "Tooltip for the remove/reset permission button in permission center",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Reset permission"
+          }
+        }
+      }
+    },
     "permission.center.title" : {
       "comment" : "Title for permission center popover, %@ is the domain name",
       "extractionState" : "extracted_with_value",

@@ -152,14 +152,15 @@ struct PermissionRowView: View {
                         .foregroundColor(Color(designSystemColor: .textSecondary))
                 }
                 .buttonStyle(PlainButtonStyle())
-                .frame(width: 16, height: 16)
+                .frame(width: 24, height: 24)
                 .background(
-                    RoundedRectangle(cornerRadius: 3)
+                    RoundedRectangle(cornerRadius: 5)
                         .fill(isRemoveButtonHovered ? Color(.buttonMouseOver) : Color.clear)
                 )
                 .onHover { hovering in
                     isRemoveButtonHovered = hovering
                 }
+                .help(UserText.permissionCenterResetTooltip)
             }
             .padding(.leading, 12)
             .padding(.trailing, 12)
@@ -336,14 +337,15 @@ struct PopupPermissionRowView: View {
                         .foregroundColor(Color(designSystemColor: .textSecondary))
                 }
                 .buttonStyle(PlainButtonStyle())
-                .frame(width: 16, height: 16)
+                .frame(width: 24, height: 24)
                 .background(
-                    RoundedRectangle(cornerRadius: 3)
+                    RoundedRectangle(cornerRadius: 5)
                         .fill(isRemoveButtonHovered ? Color(.buttonMouseOver) : Color.clear)
                 )
                 .onHover { hovering in
                     isRemoveButtonHovered = hovering
                 }
+                .help(UserText.permissionCenterResetTooltip)
             }
             .padding(.leading, 12)
             .padding(.trailing, 12)
@@ -503,14 +505,15 @@ struct ExternalSchemeRowView: View {
                     .foregroundColor(Color(designSystemColor: .textSecondary))
             }
             .buttonStyle(PlainButtonStyle())
-            .frame(width: 16, height: 16)
+            .frame(width: 24, height: 24)
             .background(
-                RoundedRectangle(cornerRadius: 3)
+                RoundedRectangle(cornerRadius: 5)
                     .fill(isRemoveButtonHovered ? Color(.buttonMouseOver) : Color.clear)
             )
             .onHover { hovering in
                 isRemoveButtonHovered = hovering
             }
+            .help(UserText.permissionCenterResetTooltip)
         }
         .padding(.leading, 44)
         .padding(.trailing, 12)

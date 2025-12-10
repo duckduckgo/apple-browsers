@@ -57,7 +57,8 @@ final class HomePageSubscriptionCardVisibilityManagerTests: XCTestCase {
             expiresOrRenewsAt: expiresAt,
             platform: .stripe,
             status: .autoRenewable,
-            activeOffers: []
+            activeOffers: [],
+            tier: nil
         )
         subscriptionManager.returnSubscription = .success(subscription)
 
@@ -84,7 +85,8 @@ final class HomePageSubscriptionCardVisibilityManagerTests: XCTestCase {
             expiresOrRenewsAt: expiresAt,
             platform: .stripe,
             status: .autoRenewable,
-            activeOffers: []
+            activeOffers: [],
+            tier: nil
         )
         subscriptionManager.returnSubscription = .success(subscription)
 

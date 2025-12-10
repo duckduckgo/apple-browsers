@@ -1616,7 +1616,7 @@ final class AddressBarButtonsViewController: NSViewController {
                 button.mouseOverColor = .buttonMouseOver
                 return
             }
-            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
+            popover.show(positionedBelow: button.bounds.insetFromLineOfDeath(flipped: button.isFlipped), in: button)
         }
     }
 
@@ -1785,7 +1785,7 @@ final class AddressBarButtonsViewController: NSViewController {
         let popover = PermissionCenterPopover(viewModel: viewModel)
         permissionCenterPopover = popover
 
-        popover.show(relativeTo: permissionCenterButton.bounds, of: permissionCenterButton, preferredEdge: .maxY)
+        popover.show(positionedBelow: permissionCenterButton.bounds.insetFromLineOfDeath(flipped: permissionCenterButton.isFlipped), in: permissionCenterButton)
     }
 
     @IBAction func cameraButtonAction(_ sender: NSButton) {

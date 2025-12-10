@@ -101,7 +101,7 @@ public extension DBPUIScanAndOptOutMaintenanceState {
                         if let extractedProfileRemovedDate = extractedProfile.removedDate,
                            mirrorSite.wasExtant(on: extractedProfileRemovedDate) {
                             removedProfiles.append(mirrorSiteMatch)
-                        } else {
+                        } else if !$0.profileQuery.deprecated {
                             inProgressOptOuts.append(mirrorSiteMatch)
                         }
                     }

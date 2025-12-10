@@ -34,8 +34,6 @@ struct SubscriptionPageFeatureFlagAdapterTests {
         (SubscriptionPageFeatureFlag.proTierPurchase, FeatureFlag.allowProTierPurchase, false),
         (SubscriptionPageFeatureFlag.supportsAlternateStripePaymentFlow, FeatureFlag.supportsAlternateStripePaymentFlow, true),
         (SubscriptionPageFeatureFlag.supportsAlternateStripePaymentFlow, FeatureFlag.supportsAlternateStripePaymentFlow, false),
-        (SubscriptionPageFeatureFlag.subscriptionPurchaseWidePixelMeasurement, FeatureFlag.subscriptionPurchaseWidePixelMeasurement, true),
-        (SubscriptionPageFeatureFlag.subscriptionPurchaseWidePixelMeasurement, FeatureFlag.subscriptionPurchaseWidePixelMeasurement, false),
     ])
     func flagMapping(
         subscriptionFlag: SubscriptionPageFeatureFlag,
@@ -64,7 +62,6 @@ struct SubscriptionPageFeatureFlagAdapterTests {
         #expect(adapter.isEnabled(.tierMessaging) == false)
         #expect(adapter.isEnabled(.proTierPurchase) == false)
         #expect(adapter.isEnabled(.supportsAlternateStripePaymentFlow) == false)
-        #expect(adapter.isEnabled(.subscriptionPurchaseWidePixelMeasurement) == false)
     }
     
     @Test("Multiple flags can be enabled simultaneously")
@@ -82,6 +79,5 @@ struct SubscriptionPageFeatureFlagAdapterTests {
         #expect(adapter.isEnabled(.tierMessaging) == true)
         #expect(adapter.isEnabled(.proTierPurchase) == true)
         #expect(adapter.isEnabled(.supportsAlternateStripePaymentFlow) == false)
-        #expect(adapter.isEnabled(.subscriptionPurchaseWidePixelMeasurement) == false)
     }
 }

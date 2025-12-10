@@ -74009,6 +74009,66 @@
         }
       }
     },
+    "ppro.feedback-form.category.unable-to-access-features" : {
+      "comment" : "Description for the feedback form when there is an issue with accessing Plus or Pro tier features",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kein Zugriff auf Plus- oder Pro-Funktionen möglich"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Unable to access Plus or Pro tier features"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No puedes acceder a las funciones de los niveles Plus o Pro"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible d'accéder aux fonctionnalités des niveaux Plus ou Pro"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossibile accedere alle funzionalità del livello Plus o Pro"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toegang tot Plus- of Pro-functies niet mogelijk"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Brak dostępu do funkcji poziomu Plus lub Pro"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não é possível aceder às funcionalidades dos níveis Plus ou Pro"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нет доступа к функциям уровня Plus или Pro"
+          }
+        }
+      }
+    },
     "ppro.feedback-form.disclaimer" : {
       "comment" : "Text for the disclaimer of the PPro feedback form",
       "extractionState" : "extracted_with_value",

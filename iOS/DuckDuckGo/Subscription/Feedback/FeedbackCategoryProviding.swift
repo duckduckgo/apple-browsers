@@ -79,11 +79,13 @@ enum UnifiedFeedbackCategory: String, FeedbackCategoryProviding {
 
 enum SubscriptionFeedbackSubcategory: String, FeedbackCategoryProviding, FeedbackFAQProviding {
     case otp
+    case unableToAccessFeatures
     case somethingElse
 
     var displayName: String {
         switch self {
         case .otp: return UserText.pproFeedbackFormCategoryOTP
+        case .unableToAccessFeatures: return UserText.pproFeedbackFormCategoryUnableToAccessFeatures
         case .somethingElse: return UserText.pproFeedbackFormCategoryOther
         }
     }
@@ -91,6 +93,7 @@ enum SubscriptionFeedbackSubcategory: String, FeedbackCategoryProviding, Feedbac
     var url: URL {
         switch self {
         case .otp: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/payments/")!
+        case .unableToAccessFeatures: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/activating/")!
         case .somethingElse: return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/payments/")!
         }
     }

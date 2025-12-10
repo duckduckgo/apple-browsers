@@ -1858,6 +1858,9 @@
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "Select a category";
 
+/* Category for issues with accessing Plus or Pro tier features */
+"feedback.ppro.category.unable-to-access-features" = "Unable to access Plus or Pro tier features";
+
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Your anonymous feedback is important to us.";
 

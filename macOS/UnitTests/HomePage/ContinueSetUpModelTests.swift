@@ -453,11 +453,85 @@ final class ContinueSetUpModelTests: XCTestCase {
         XCTAssertEqual(tabCollectionVM.tabs[1].url, expectedURL)
     }
 
+    // MARK: - Pixel Tests (Click)
+
+    @MainActor func testWhenAskedToPerformActionForDefaultBrowserThenItFiresPixel() {
+        vm.performAction(for: .defaultBrowser)
+
+        XCTAssertEqual(firedPixels.count, 1)
+        XCTAssertEqual(firedPixels.first?.name, GeneralPixel.defaultRequestedFromHomepageSetupView.name)
+    }
+
+    @MainActor func testWhenAskedToPerformActionForDockThenItFiresPixel() {
+        vm.performAction(for: .dock)
+
+        XCTAssertEqual(firedPixels.count, 1)
+        XCTAssertEqual(firedPixels.first?.name, GeneralPixel.userAddedToDockFromNewTabPageCard.name)
+    }
+
+    @MainActor func testWhenAskedToPerformActionForDuckplayerThenItFiresPixel() {
+        vm.performAction(for: .duckplayer)
+
+        XCTAssertEqual(firedPixels.count, 1)
+        XCTAssertEqual(firedPixels.first?.name, NewTabPagePixel.nextStepsCardClicked("duckplayer").name)
+    }
+
+    @MainActor func testWhenAskedToPerformActionForEmailProtectionThenItFiresPixel() {
+        vm.performAction(for: .emailProtection)
+
+        XCTAssertEqual(firedPixels.count, 1)
+        XCTAssertEqual(firedPixels.first?.name, NewTabPagePixel.nextStepsCardClicked("emailProtection").name)
+    }
+
+    @MainActor func testWhenAskedToPerformActionForImportBookmarksAndPasswordsThenItFiresPixel() {
+        vm.performAction(for: .importBookmarksAndPasswords)
+
+        XCTAssertEqual(firedPixels.count, 1)
+        XCTAssertEqual(firedPixels.first?.name, NewTabPagePixel.nextStepsCardClicked("bringStuff").name)
+    }
+
     @MainActor func testWhenAskedToPerformActionForSubscriptionThenItFiresPixel() {
         vm.performAction(for: .subscription)
 
         XCTAssertEqual(firedPixels.count, 1)
         XCTAssertEqual(firedPixels.first?.name, SubscriptionPixel.subscriptionNewTabPageNextStepsCardClicked.name)
+    }
+
+    // MARK: - Pixel Tests (Dismiss)
+
+    @MainActor func testWhenDismissingDefaultBrowserCardThenItFiresPixel() {
+        vm.removeItem(for: .defaultBrowser)
+
+        XCTAssertEqual(firedPixels.count, 1)
+        XCTAssertEqual(firedPixels.first?.name, NewTabPagePixel.nextStepsCardDismissed("defaultApp").name)
+    }
+
+    @MainActor func testWhenDismissingDockCardThenItFiresPixel() {
+        vm.removeItem(for: .dock)
+
+        XCTAssertEqual(firedPixels.count, 1)
+        XCTAssertEqual(firedPixels.first?.name, NewTabPagePixel.nextStepsCardDismissed("addAppToDockMac").name)
+    }
+
+    @MainActor func testWhenDismissingDuckplayerCardThenItFiresPixel() {
+        vm.removeItem(for: .duckplayer)
+
+        XCTAssertEqual(firedPixels.count, 1)
+        XCTAssertEqual(firedPixels.first?.name, NewTabPagePixel.nextStepsCardDismissed("duckplayer").name)
+    }
+
+    @MainActor func testWhenDismissingEmailProtectionCardThenItFiresPixel() {
+        vm.removeItem(for: .emailProtection)
+
+        XCTAssertEqual(firedPixels.count, 1)
+        XCTAssertEqual(firedPixels.first?.name, NewTabPagePixel.nextStepsCardDismissed("emailProtection").name)
+    }
+
+    @MainActor func testWhenDismissingImportBookmarksAndPasswordsCardThenItFiresPixel() {
+        vm.removeItem(for: .importBookmarksAndPasswords)
+
+        XCTAssertEqual(firedPixels.count, 1)
+        XCTAssertEqual(firedPixels.first?.name, NewTabPagePixel.nextStepsCardDismissed("bringStuff").name)
     }
 
     @MainActor func testWhenDismissingSubscriptionCardThenItFiresPixel() {

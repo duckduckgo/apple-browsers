@@ -25,10 +25,14 @@ import UserScript
 final class NewTabPageNextStepsCardsProvider: NewTabPageNextStepsCardsProviding {
     let continueSetUpModel: HomePage.Models.ContinueSetUpModel
     let appearancePreferences: AppearancePreferences
+    private let pixelKit: PixelKit?
 
-    init(continueSetUpModel: HomePage.Models.ContinueSetUpModel, appearancePreferences: AppearancePreferences) {
+    init(continueSetUpModel: HomePage.Models.ContinueSetUpModel,
+         appearancePreferences: AppearancePreferences,
+         pixelKit: PixelKit? = PixelKit.shared) {
         self.continueSetUpModel = continueSetUpModel
         self.appearancePreferences = appearancePreferences
+        self.pixelKit = pixelKit
     }
 
     var isViewExpanded: Bool {
@@ -68,22 +72,11 @@ final class NewTabPageNextStepsCardsProvider: NewTabPageNextStepsCardsProviding 
     @MainActor
     func handleAction(for card: NewTabPageDataModel.CardID) {
         continueSetUpModel.performAction(for: .init(card))
-        fireNextStepsCardClickedPixelIfNeeded(card)
     }
 
     @MainActor
     func dismiss(_ card: NewTabPageDataModel.CardID) {
         continueSetUpModel.removeItem(for: .init(card))
-        PixelKit.fire(NewTabPagePixel.nextStepsCardDismissed(card.rawValue))
-    }
-
-    private func fireNextStepsCardClickedPixelIfNeeded(_ card: NewTabPageDataModel.CardID) {
-        switch card {
-        case .duckplayer, .emailProtection, .bringStuff:
-            PixelKit.fire(NewTabPagePixel.nextStepsCardClicked(card.rawValue))
-        case .addAppToDockMac, .defaultApp:
-            break
-        }
     }
 
     @MainActor
@@ -96,9 +89,9 @@ final class NewTabPageNextStepsCardsProvider: NewTabPageNextStepsCardsProviding 
         guard cards.contains(.addAppToDockMac) else {
             return
         }
-        PixelKit.fire(GeneralPixel.addToDockNewTabPageCardPresented,
-                      frequency: .uniqueByName,
-                      includeAppVersionParameter: false)
+        pixelKit?.fire(GeneralPixel.addToDockNewTabPageCardPresented,
+                       frequency: .uniqueByName,
+                       includeAppVersionParameter: false)
     }
 }
 

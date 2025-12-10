@@ -21,12 +21,9 @@ import BrowserServicesKit
 import Combine
 import Common
 import Foundation
+import NewTabPage
 import PixelKit
 import Subscription
-import FeatureFlags
-
-import VPN
-import NetworkProtectionUI
 
 protocol ContinueSetUpModelTabOpening {
     @MainActor
@@ -144,6 +141,7 @@ extension HomePage.Models {
         }
 
         @MainActor func performAction(for featureType: FeatureType) {
+            fireNextStepsCardClickedPixel(for: featureType)
             switch featureType {
             case .defaultBrowser:
                 performDefaultBrowserAction()
@@ -162,7 +160,6 @@ extension HomePage.Models {
 
         private func performDefaultBrowserAction() {
             do {
-                pixelHandler(GeneralPixel.defaultRequestedFromHomepageSetupView, true)
                 try defaultBrowserProvider.presentDefaultBrowserPrompt()
             } catch {
                 defaultBrowserProvider.openSystemPreferences()
@@ -188,13 +185,11 @@ extension HomePage.Models {
         }
 
         func performDockAction() {
-            pixelHandler(GeneralPixel.userAddedToDockFromNewTabPageCard, false)
             dockCustomizer.addToDock()
         }
 
         @MainActor
         private func performSubscriptionAction() {
-            pixelHandler(SubscriptionPixel.subscriptionNewTabPageNextStepsCardClicked, true)
             guard let url = SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.newTabPageNextStepsCard.rawValue)?.url else {
                 return
             }
@@ -204,6 +199,7 @@ extension HomePage.Models {
         }
 
         func removeItem(for featureType: FeatureType) {
+            fireNextStepsCardDismissedPixel(for: featureType)
             switch featureType {
             case .defaultBrowser:
                 persistor.shouldShowMakeDefaultSetting = false
@@ -216,10 +212,35 @@ extension HomePage.Models {
             case .emailProtection:
                 persistor.shouldShowEmailProtectionSetting = false
             case .subscription:
-                pixelHandler(SubscriptionPixel.subscriptionNewTabPageNextStepsCardDismissed, true)
                 subscriptionCardVisibilityManager.dismissSubscriptionCard()
             }
             refreshFeaturesMatrix()
+        }
+
+        // MARK: - Pixel Firing
+
+        private func fireNextStepsCardClickedPixel(for featureType: FeatureType) {
+            let card = NewTabPageDataModel.CardID(featureType)
+            switch featureType {
+            case .defaultBrowser:
+                pixelHandler(GeneralPixel.defaultRequestedFromHomepageSetupView, true)
+            case .dock:
+                pixelHandler(GeneralPixel.userAddedToDockFromNewTabPageCard, false)
+            case .subscription:
+                pixelHandler(SubscriptionPixel.subscriptionNewTabPageNextStepsCardClicked, true)
+            case .duckplayer, .emailProtection, .importBookmarksAndPasswords:
+                pixelHandler(NewTabPagePixel.nextStepsCardClicked(card.rawValue), true)
+            }
+        }
+
+        private func fireNextStepsCardDismissedPixel(for featureType: FeatureType) {
+            let card = NewTabPageDataModel.CardID(featureType)
+            switch featureType {
+            case .subscription:
+                pixelHandler(SubscriptionPixel.subscriptionNewTabPageNextStepsCardDismissed, true)
+            case .defaultBrowser, .dock, .duckplayer, .emailProtection, .importBookmarksAndPasswords:
+                pixelHandler(NewTabPagePixel.nextStepsCardDismissed(card.rawValue), true)
+            }
         }
 
         private func observeSubscriptionCardVisibilityChanges() {

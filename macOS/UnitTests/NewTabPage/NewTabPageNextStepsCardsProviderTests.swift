@@ -19,12 +19,16 @@
 import BrowserServicesKit
 import Combine
 import NewTabPage
+import PixelKit
 import XCTest
 import SubscriptionTestingUtilities
 @testable import DuckDuckGo_Privacy_Browser
 
 final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
-    var provider: NewTabPageNextStepsCardsProvider!
+    private var provider: NewTabPageNextStepsCardsProvider!
+    private var firedPixels: [(name: String, parameters: [String: String])]!
+    private var testUserDefaults: UserDefaults!
+    private var pixelKit: PixelKit!
 
     @MainActor
     override func setUp() async throws {
@@ -44,18 +48,38 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
             persistor: MockHomePageContinueSetUpModelPersisting()
         )
 
+        firedPixels = []
+        let testSuiteName = "NewTabPageNextStepsCardsProviderTests_\(UUID().uuidString)"
+        testUserDefaults = UserDefaults(suiteName: testSuiteName)
+        testUserDefaults.removePersistentDomain(forName: testSuiteName)
+
+        pixelKit = PixelKit(
+            dryRun: false,
+            appVersion: "1.0.0",
+            source: "TESTS",
+            defaultHeaders: [:],
+            dailyPixelCalendar: nil,
+            defaults: testUserDefaults
+        ) { [weak self] pixelName, _, parameters, _, _, _ in
+            self?.firedPixels.append((name: pixelName, parameters: parameters))
+        }
+
         provider = NewTabPageNextStepsCardsProvider(
             continueSetUpModel: continueSetUpModel,
             appearancePreferences: AppearancePreferences(
                 persistor: MockAppearancePreferencesPersistor(),
                 privacyConfigurationManager: MockPrivacyConfigurationManager(),
                 featureFlagger: MockFeatureFlagger()
-            )
+            ),
+            pixelKit: pixelKit
         )
     }
 
     override func tearDown() {
         provider = nil
+        firedPixels = nil
+        testUserDefaults = nil
+        pixelKit = nil
     }
 
     func testWhenCardsViewIsNotOutdatedThenCardsAreReportedByModel() {
@@ -128,5 +152,23 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
 
         cancellable.cancel()
         XCTAssertEqual(cardsEvents, [[.addAppToDockMac], [.addAppToDockMac, .duckplayer], [], []])
+    }
+
+    // MARK: - Pixel Tests
+
+    @MainActor
+    func testWhenWillDisplayCardsWithAddToDockThenCardPresentedPixelIsFired() {
+        provider.willDisplayCards([.addAppToDockMac])
+
+        XCTAssertEqual(firedPixels.count, 1)
+        XCTAssertEqual(firedPixels.first?.name, "m_mac_add_to_dock_new_tab_page_card_presented_u")
+        XCTAssertNil(firedPixels.first?.parameters["appVersion"], "Expected appVersion parameter to NOT be included")
+    }
+
+    @MainActor
+    func testWhenWillDisplayCardsWithoutAddToDockThenNoPixelIsFired() {
+        provider.willDisplayCards([.duckplayer, .emailProtection])
+
+        XCTAssertEqual(firedPixels.count, 0)
     }
 }

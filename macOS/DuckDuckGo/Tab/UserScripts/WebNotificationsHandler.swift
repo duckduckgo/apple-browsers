@@ -304,10 +304,11 @@ final class WebNotificationsHandler: NSObject, Subfeature {
             return RequestPermissionResponse(permission: Permission.denied.rawValue)
         }
 
+        var cancellables = Set<AnyCancellable>()
+
         // Request permission through PermissionModel (shows UI, handles storage)
         // Fire Windows: permissions cleared on burn via burnPermissions()
         let grantedInUI: Bool = await withCheckedContinuation { continuation in
-            var cancellables = Set<AnyCancellable>()
             permissionModel.request([.notification], forDomain: domain, url: url)
                 .sink { isGranted in
                     continuation.resume(returning: isGranted)

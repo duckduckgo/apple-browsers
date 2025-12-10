@@ -239,12 +239,12 @@ final class PermissionAuthorizationViewController: NSViewController {
     private func handleDeny() {
         isAuthorizationInProgress = false
         dismiss()
-        query?.handleDecision(grant: false, remember: nil)
+        query?.handleDecision(grant: false, remember: true)
     }
 
     private func handleAllow() {
         isAuthorizationInProgress = false
         dismiss()
-        query?.handleDecision(grant: true, remember: nil)
+        query?.handleDecision(grant: true, remember: true)
     }
 }

@@ -418,7 +418,7 @@ struct PermissionAuthorizationSwiftUIView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 16)
 
-            HStack(spacing: 12) {
+            HStack(spacing: 8) {
                 Button(action: onDeny) {
                     Text(UserText.permissionPopupDenyButton)
                         .font(.system(size: 13))

@@ -99,7 +99,7 @@ struct PermissionCenterView: View {
             .cornerRadius(8)
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color(NSColor.separatorColor), lineWidth: 1)
+                    .stroke(Color(designSystemColor: .lines), lineWidth: 1)
             )
             .padding(.horizontal, 16)
             .padding(.bottom, 16)

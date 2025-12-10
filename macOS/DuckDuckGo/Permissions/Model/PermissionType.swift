@@ -16,10 +16,12 @@
 //  limitations under the License.
 //
 
-import Foundation
+import AppKit
 import BrowserServicesKit
 import CommonObjCExtensions
+import DesignResourcesKitIcons
 import FeatureFlags
+import Foundation
 import WebKit
 
 enum PermissionType: Hashable {
@@ -117,6 +119,36 @@ extension PermissionType {
             return true
         }
         return false
+    }
+
+    /// Outline icon representing this permission type
+    var icon: NSImage {
+        switch self {
+        case .camera:
+            return DesignSystemImages.Glyphs.Size16.permissionCamera
+        case .microphone:
+            return DesignSystemImages.Glyphs.Size16.permissionMicrophone
+        case .geolocation:
+            return DesignSystemImages.Glyphs.Size16.permissionsLocation
+        case .popups:
+            return DesignSystemImages.Glyphs.Size16.popupBlocked
+        case .externalScheme:
+            return DesignSystemImages.Glyphs.Size16.openIn
+        }
+    }
+
+    /// Solid/filled icon for when permission is active (camera, microphone, geolocation only)
+    var solidIcon: NSImage? {
+        switch self {
+        case .camera:
+            return DesignSystemImages.Glyphs.Size16.permissionCameraSolid
+        case .microphone:
+            return DesignSystemImages.Glyphs.Size16.permissionMicrophoneSolid
+        case .geolocation:
+            return DesignSystemImages.Glyphs.Size16.permissionsLocationSolid
+        case .popups, .externalScheme:
+            return nil
+        }
     }
 
 }

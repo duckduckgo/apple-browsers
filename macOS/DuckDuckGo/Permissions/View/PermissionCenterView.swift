@@ -191,42 +191,10 @@ struct PermissionRowView: View {
     @ViewBuilder
     private var permissionIcon: some View {
         let iconColor: Color = item.isInUse ? Color(NSColor.systemRed) : Color(designSystemColor: .textSecondary)
-
-        switch item.permissionType {
-        case .camera:
-            // Use filled icon if allowed or in use, outline otherwise
-            if item.isAllowed {
-                Image(nsImage: DesignSystemImages.Glyphs.Size16.permissionCameraSolid)
-                    .foregroundColor(iconColor)
-            } else {
-                Image(nsImage: DesignSystemImages.Glyphs.Size16.permissionCamera)
-                    .foregroundColor(iconColor)
-            }
-        case .microphone:
-            if item.isAllowed {
-                Image(nsImage: DesignSystemImages.Glyphs.Size16.permissionMicrophoneSolid)
-                    .foregroundColor(iconColor)
-            } else {
-                Image(nsImage: DesignSystemImages.Glyphs.Size16.permissionMicrophone)
-                    .foregroundColor(iconColor)
-            }
-        case .geolocation:
-            if item.isAllowed {
-                Image(nsImage: DesignSystemImages.Glyphs.Size16.permissionsLocationSolid)
-                    .foregroundColor(iconColor)
-            } else {
-                Image(nsImage: DesignSystemImages.Glyphs.Size16.permissionsLocation)
-                    .foregroundColor(iconColor)
-            }
-        case .popups:
-            // Popups only have outline icon
-            Image(nsImage: DesignSystemImages.Glyphs.Size16.popupBlocked)
-                .foregroundColor(iconColor)
-        case .externalScheme:
-            // External apps only have outline icon
-            Image(nsImage: DesignSystemImages.Glyphs.Size16.openIn)
-                .foregroundColor(iconColor)
-        }
+        // Use solid icon if allowed and available, otherwise use outline icon
+        let icon = (item.isAllowed ? item.permissionType.solidIcon : nil) ?? item.permissionType.icon
+        Image(nsImage: icon)
+            .foregroundColor(iconColor)
     }
 
     private var decisionPopUpButton: some View {

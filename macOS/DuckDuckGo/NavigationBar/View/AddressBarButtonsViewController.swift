@@ -726,28 +726,8 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updatePermissionCenterButtonIcon(forRequestedPermission permissionType: PermissionType? = nil) {
-        guard featureFlagger.isFeatureOn(.newPermissionView) else {
-            return
-        }
-
-        guard let permissionType else {
-            permissionCenterButton.image = DesignSystemImages.Glyphs.Size16.permissions
-            return
-        }
-
-        // Show permission-specific icon when authorization is being requested
-        switch permissionType {
-        case .camera:
-            permissionCenterButton.image = DesignSystemImages.Glyphs.Size16.permissionCamera
-        case .microphone:
-            permissionCenterButton.image = DesignSystemImages.Glyphs.Size16.permissionMicrophone
-        case .geolocation:
-            permissionCenterButton.image = DesignSystemImages.Glyphs.Size16.permissionsLocation
-        case .popups:
-            permissionCenterButton.image = DesignSystemImages.Glyphs.Size16.popupBlocked
-        case .externalScheme:
-            permissionCenterButton.image = DesignSystemImages.Glyphs.Size16.openIn
-        }
+        guard featureFlagger.isFeatureOn(.newPermissionView) else { return }
+        permissionCenterButton.image = permissionType?.icon ?? DesignSystemImages.Glyphs.Size16.permissions
     }
 
     private func showOrHidePermissionCenterPopoverIfNeeded() {

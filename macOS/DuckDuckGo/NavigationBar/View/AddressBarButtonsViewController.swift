@@ -1330,6 +1330,12 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     @objc func hideSearchModeToggleAction(_ sender: NSMenuItem) {
+        /// If the user is in duck.ai mode, switch back to search mode before hiding the toggle
+        if searchModeToggleControl?.selectedSegment == 1 {
+            delegate?.addressBarButtonsViewControllerSearchModeToggleChanged(self, isAIChatMode: false)
+            searchModeToggleControl?.reset()
+        }
+
         delegate?.addressBarButtonsViewControllerHideSearchModeToggleClicked(self)
         updateButtons()
     }

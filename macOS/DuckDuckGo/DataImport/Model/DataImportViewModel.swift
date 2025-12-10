@@ -903,6 +903,7 @@ extension DataImportViewModel {
     mutating func update(with importSource: Source) {
         if let dataImportWideEventData {
             wideEvent.discardFlow(dataImportWideEventData)
+            self.dataImportWideEventData = nil
         }
         self = .init(importSource: importSource,
                      selectedDataTypes: self.selectedDataTypes,

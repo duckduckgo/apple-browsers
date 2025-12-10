@@ -386,7 +386,7 @@ final class PermissionCenterViewModel: ObservableObject {
             ? popupQueries.map { BlockedPopup(url: $0.url, query: $0) }
             : []
 
-        return PermissionCenterItem(
+        let item = PermissionCenterItem(
             id: permissionType,
             permissionType: permissionType,
             domain: domain,
@@ -396,6 +396,14 @@ final class PermissionCenterViewModel: ObservableObject {
             blockedPopups: blockedPopups,
             externalSchemes: []
         )
+
+        // For notification permission, do async check to get accurate system status
+        // Initial sync check returns false (.notDetermined), async check will update if needed
+        if permissionType == .notification {
+            checkSystemDisabledAsync(for: item)
+        }
+
+        return item
     }
 
     private func buildExternalSchemesItem(from externalSchemePermissions: [PermissionType]) -> PermissionCenterItem? {
@@ -427,6 +435,27 @@ final class PermissionCenterViewModel: ObservableObject {
 
         let authState = systemPermissionManager.authorizationState(for: permissionType)
         return authState == .denied || authState == .restricted || authState == .systemDisabled
+    }
+
+    /// Asynchronously checks system disabled state for permissions that require it (e.g., notifications)
+    /// Uses weak self to handle case where popover is dismissed before check completes
+    private func checkSystemDisabledAsync(for item: PermissionCenterItem) {
+        guard item.permissionType.requiresSystemPermission else { return }
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+
+            let authState = await self.systemPermissionManager.authorizationStateAsync(for: item.permissionType)
+            let isSystemDisabled = authState == .denied || authState == .restricted || authState == .systemDisabled
+
+            // Update the item in the array if it still exists and status differs
+            // Note: If loadPermissions() was called during the async check, the array might have been rebuilt,
+            // but updating the new item with the same id is acceptable behavior
+            if let index = self.permissionItems.firstIndex(where: { $0.id == item.id }),
+               self.permissionItems[index].isSystemDisabled != isSystemDisabled {
+                self.permissionItems[index].isSystemDisabled = isSystemDisabled
+            }
+        }
     }
 
     private func subscribeToPermissionChanges() {

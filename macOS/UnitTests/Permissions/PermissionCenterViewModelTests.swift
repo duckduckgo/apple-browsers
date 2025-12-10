@@ -102,6 +102,10 @@ final class MockSystemPermissionManager: SystemPermissionManagerProtocol {
         return authorizationStateToReturn
     }
 
+    func authorizationStateAsync(for permissionType: PermissionType) async -> SystemPermissionAuthorizationState {
+        return authorizationStateToReturn
+    }
+
     func isAuthorizationRequired(for permissionType: PermissionType) -> Bool {
         return false
     }

@@ -2208,7 +2208,8 @@ class TestPermissionManager: PermissionManagerProtocol {
     }
 
     func persistedPermissionTypes(forDomain domain: String) -> [PermissionType] {
-        return Array(persistedPermissions[domain]?.keys ?? [].keys)
+        guard let permissions = persistedPermissions[domain] else { return [] }
+        return Array(permissions.keys)
     }
 
     func permission(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision {

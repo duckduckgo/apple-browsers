@@ -378,7 +378,6 @@ final class PermissionCenterViewModel: ObservableObject {
 
     private func buildPermissionItem(for permissionType: PermissionType) -> PermissionCenterItem {
         let decision = permissionManager.permission(forDomain: domain, permissionType: permissionType)
-        let isSystemDisabled = checkSystemDisabled(for: permissionType)
         let state = usedPermissions[permissionType] ?? .inactive
 
         let blockedPopups: [BlockedPopup] = permissionType == .popups
@@ -390,15 +389,14 @@ final class PermissionCenterViewModel: ObservableObject {
             permissionType: permissionType,
             domain: domain,
             decision: decision,
-            isSystemDisabled: isSystemDisabled,
+            isSystemDisabled: false, // Will be updated async for permissions that require system permission
             state: state,
             blockedPopups: blockedPopups,
             externalSchemes: []
         )
 
-        // For notification permission, do async check to get accurate system status
-        // Initial sync check returns false (.notDetermined), async check will update if needed
-        if permissionType == .notification {
+        // Async check for permissions that require system permission
+        if permissionType.requiresSystemPermission {
             checkSystemDisabledAsync(for: item)
         }
 
@@ -429,14 +427,7 @@ final class PermissionCenterViewModel: ObservableObject {
         )
     }
 
-    private func checkSystemDisabled(for permissionType: PermissionType) -> Bool {
-        guard permissionType.requiresSystemPermission else { return false }
-
-        let authState = systemPermissionManager.authorizationState(for: permissionType)
-        return authState != .authorized
-    }
-
-    /// Asynchronously checks system disabled state for permissions that require it (e.g., notifications)
+    /// Asynchronously checks system disabled state for permissions that require it
     /// Uses weak self to handle case where popover is dismissed before check completes
     private func checkSystemDisabledAsync(for item: PermissionCenterItem) {
         guard item.permissionType.requiresSystemPermission else { return }
@@ -444,7 +435,21 @@ final class PermissionCenterViewModel: ObservableObject {
         Task { @MainActor [weak self] in
             guard let self else { return }
 
-            let authState = await self.systemPermissionManager.authorizationStateAsync(for: item.permissionType)
+            let authState = await self.systemPermissionManager.authorizationState(for: item.permissionType)
+
+            // For notifications: if system permission is notDetermined, remove local permission entirely
+            // This handles the case where user reset permissions in System Settings
+            if item.permissionType == .notification && authState == .notDetermined {
+                self.permissionManager.removePermission(forDomain: self.domain, permissionType: .notification)
+                self.permissionItems.removeAll { $0.permissionType == .notification }
+
+                // Dismiss popover if no permissions left
+                if self.permissionItems.isEmpty {
+                    self.dismissPopover()
+                }
+                return
+            }
+
             let isSystemDisabled = authState != .authorized
 
             // Update the item in the array if it still exists and status differs

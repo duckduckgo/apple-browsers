@@ -189,7 +189,7 @@ final class PermissionModel {
             return
         }
 
-        let systemState = await systemPermissionManager.authorizationStateAsync(for: .notification)
+        let systemState = await systemPermissionManager.authorizationState(for: .notification)
         await notificationAuthorizationStateDidChange(to: systemState)
     }
 
@@ -425,7 +425,7 @@ final class PermissionModel {
         }
     }
 
-    private func shouldGrantPermission(for permissions: [PermissionType], requestedForDomain domain: String) -> Bool? {
+    private func shouldGrantPermission(for permissions: [PermissionType], requestedForDomain domain: String) async -> Bool? {
         for permission in permissions {
             var grant: PersistedPermissionDecision
             let stored = permissionManager.permission(forDomain: domain, permissionType: permission)
@@ -455,7 +455,7 @@ final class PermissionModel {
                 // User has "Always Allow" stored - but check system permission first
                 // If system permission is disabled, show dialog instead of auto-granting
                 // Only applies when new permission view is enabled (two-step authorization flow)
-                if featureFlagger.isFeatureOn(.newPermissionView), isSystemPermissionDisabled(for: permission) {
+                if featureFlagger.isFeatureOn(.newPermissionView), await isSystemPermissionDisabled(for: permission) {
                     return nil
                 }
             case .ask:
@@ -467,10 +467,10 @@ final class PermissionModel {
     }
 
     /// Checks if system-level permission is disabled for the given permission type
-    private func isSystemPermissionDisabled(for permissionType: PermissionType) -> Bool {
+    private func isSystemPermissionDisabled(for permissionType: PermissionType) async -> Bool {
         guard permissionType.requiresSystemPermission else { return false }
 
-        let authState = systemPermissionManager.authorizationState(for: permissionType)
+        let authState = await systemPermissionManager.authorizationState(for: permissionType)
         return authState == .denied || authState == .restricted || authState == .systemDisabled
     }
 
@@ -484,22 +484,24 @@ final class PermissionModel {
             return
         }
 
-        let shouldGrant = shouldGrantPermission(for: permissions, requestedForDomain: domain)
-        let decisionHandler = { [weak self, decisionHandler] isGranted in
-            decisionHandler(isGranted)
-            if isGranted {
-                self?.permissionGranted(for: permissions[0])
+        Task { @MainActor in
+            let shouldGrant = await shouldGrantPermission(for: permissions, requestedForDomain: domain)
+            let wrappedDecisionHandler = { [weak self] (isGranted: Bool) in
+                decisionHandler(isGranted)
+                if isGranted {
+                    self?.permissionGranted(for: permissions[0])
+                }
             }
-        }
-        switch shouldGrant {
-        case .none:
-            queryAuthorization(for: permissions, domain: domain, url: url, decisionHandler: decisionHandler)
-        case .some(true):
-            decisionHandler(true)
-        case .some(false):
-            decisionHandler(false)
-            for permission in permissions {
-                self.permissions[permission].denied()
+            switch shouldGrant {
+            case .none:
+                self.queryAuthorization(for: permissions, domain: domain, url: url, decisionHandler: wrappedDecisionHandler)
+            case .some(true):
+                wrappedDecisionHandler(true)
+            case .some(false):
+                wrappedDecisionHandler(false)
+                for permission in permissions {
+                    self.permissions[permission].denied()
+                }
             }
         }
     }

@@ -162,9 +162,9 @@ extension PermissionType {
     /// Whether this permission type requires system-level permission to be enabled
     var requiresSystemPermission: Bool {
         switch self {
-        case .geolocation:
+        case .geolocation, .notification:
             return true
-        case .camera, .microphone, .popups, .notification, .externalScheme:
+        case .camera, .microphone, .popups, .externalScheme:
             return false
         }
     }

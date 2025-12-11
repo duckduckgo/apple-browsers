@@ -40,10 +40,7 @@ enum SystemPermissionAuthorizationState {
 protocol SystemPermissionManagerProtocol: AnyObject {
 
     /// Returns the current authorization state for the given permission type
-    func authorizationState(for permissionType: PermissionType) -> SystemPermissionAuthorizationState
-
-    /// Returns the current authorization state asynchronously (for permissions that require async checks like notifications)
-    func authorizationStateAsync(for permissionType: PermissionType) async -> SystemPermissionAuthorizationState
+    func authorizationState(for permissionType: PermissionType) async -> SystemPermissionAuthorizationState
 
     /// Returns true if system authorization is required for the given permission type
     func isAuthorizationRequired(for permissionType: PermissionType) -> Bool
@@ -75,19 +72,7 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
     // MARK: - Public Methods
 
     /// Returns the current authorization state for the given permission type
-    func authorizationState(for permissionType: PermissionType) -> SystemPermissionAuthorizationState {
-        switch permissionType {
-        case .geolocation:
-            return geolocationAuthorizationState
-        case .notification:
-            return .notDetermined // Must check async - actual check happens in SwiftUI view
-        case .camera, .microphone, .popups, .externalScheme:
-            return .authorized // These don't require system permission through our two-step flow
-        }
-    }
-
-    /// Returns the current authorization state asynchronously (for permissions requiring async checks)
-    func authorizationStateAsync(for permissionType: PermissionType) async -> SystemPermissionAuthorizationState {
+    func authorizationState(for permissionType: PermissionType) async -> SystemPermissionAuthorizationState {
         switch permissionType {
         case .geolocation:
             // Geolocation can be checked synchronously

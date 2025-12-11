@@ -284,28 +284,15 @@ struct PermissionAuthorizationSwiftUIView: View {
     private func initializeSystemPermissionState() {
         guard systemPermissionState == .initial else { return }
 
-        let authState = systemPermissionManager.authorizationState(for: permissionType.asPermissionType)
-        switch authState {
-        case .denied, .restricted, .systemDisabled:
-            systemPermissionState = .alreadyDenied
-        case .authorized:
-            systemPermissionState = .authorized
-        case .notDetermined:
-            // For notifications, check async (UNUserNotificationCenter requires it)
-            if permissionType.asPermissionType == .notification {
-                Task { @MainActor in
-                    let settings = await UNUserNotificationCenter.current().notificationSettings()
-                    switch settings.authorizationStatus {
-                    case .authorized, .provisional, .ephemeral:
-                        systemPermissionState = .authorized
-                    case .denied:
-                        systemPermissionState = .alreadyDenied
-                    case .notDetermined:
-                        break // Keep initial state - will show "Enable System Notifications" button
-                    @unknown default:
-                        break
-                    }
-                }
+        Task { @MainActor in
+            let authState = await systemPermissionManager.authorizationState(for: permissionType.asPermissionType)
+            switch authState {
+            case .denied, .restricted, .systemDisabled:
+                systemPermissionState = .alreadyDenied
+            case .authorized:
+                systemPermissionState = .authorized
+            case .notDetermined:
+                break // Keep initial state - will show "Enable" button
             }
         }
     }
@@ -332,18 +319,20 @@ struct PermissionAuthorizationSwiftUIView: View {
         // Only re-check if we were in a denied state
         guard systemPermissionState == .alreadyDenied || systemPermissionState == .denied else { return }
 
-        let authState = manager.authorizationState(for: permissionType.asPermissionType)
-        switch authState {
-        case .authorized:
-            // User granted permission in System Settings
-            systemPermissionState = .authorized
-        case .notDetermined:
-            // Location Services was re-enabled but app permission not yet requested
-            // Transition to initial state to show "Enable Location" button
-            systemPermissionState = .initial
-        case .denied, .restricted, .systemDisabled:
-            // Still in a denied state, no change needed
-            break
+        Task { @MainActor in
+            let authState = await manager.authorizationState(for: permissionType.asPermissionType)
+            switch authState {
+            case .authorized:
+                // User granted permission in System Settings
+                systemPermissionState = .authorized
+            case .notDetermined:
+                // Location Services was re-enabled but app permission not yet requested
+                // Transition to initial state to show "Enable Location" button
+                systemPermissionState = .initial
+            case .denied, .restricted, .systemDisabled:
+                // Still in a denied state, no change needed
+                break
+            }
         }
     }
 

@@ -41,11 +41,7 @@ final class SystemPermissionManagerMock: SystemPermissionManagerProtocol {
         notificationAuthorizationStateSubject.eraseToAnyPublisher()
     }
 
-    func authorizationState(for permissionType: PermissionType) -> SystemPermissionAuthorizationState {
-        return authorizationStates[permissionType] ?? defaultAuthorizationState
-    }
-
-    func authorizationStateAsync(for permissionType: PermissionType) async -> SystemPermissionAuthorizationState {
+    func authorizationState(for permissionType: PermissionType) async -> SystemPermissionAuthorizationState {
         if permissionType == .notification {
             return notificationAuthorizationStateSubject.value
         }
@@ -53,7 +49,16 @@ final class SystemPermissionManagerMock: SystemPermissionManagerProtocol {
     }
 
     func isAuthorizationRequired(for permissionType: PermissionType) -> Bool {
-        let state = authorizationState(for: permissionType)
+        if permissionType == .notification {
+            let state = notificationAuthorizationStateSubject.value
+            switch state {
+            case .notDetermined, .systemDisabled:
+                return true
+            case .authorized, .denied, .restricted:
+                return false
+            }
+        }
+        let state = authorizationStates[permissionType] ?? defaultAuthorizationState
         switch state {
         case .notDetermined, .systemDisabled:
             return true
@@ -70,7 +75,13 @@ final class SystemPermissionManagerMock: SystemPermissionManagerProtocol {
             let state = customCompletion(permissionType)
             completion(state)
         } else {
-            completion(authorizationState(for: permissionType))
+            let state: SystemPermissionAuthorizationState
+            if permissionType == .notification {
+                state = notificationAuthorizationStateSubject.value
+            } else {
+                state = authorizationStates[permissionType] ?? defaultAuthorizationState
+            }
+            completion(state)
         }
 
         return AnyCancellable {}

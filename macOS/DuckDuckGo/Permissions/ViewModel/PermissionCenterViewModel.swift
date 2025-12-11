@@ -22,6 +22,7 @@ import Combine
 import DesignResourcesKit
 import FeatureFlags
 import Foundation
+import PixelKit
 
 /// Represents a blocked popup URL for the Permission Center
 struct BlockedPopup: Identifiable {
@@ -207,7 +208,13 @@ final class PermissionCenterViewModel: ObservableObject {
 
     /// Updates the decision for a permission type
     func setDecision(_ decision: PersistedPermissionDecision, for permissionType: PermissionType) {
+        let previousDecision = permissionManager.permission(forDomain: domain, permissionType: permissionType)
         permissionManager.setPermission(decision, forDomain: domain, permissionType: permissionType)
+
+        // Fire pixel for decision change
+        if previousDecision != decision {
+            PixelKit.fire(PermissionPixel.permissionCenterChanged(permissionType: permissionType, from: previousDecision, to: decision))
+        }
 
         // If setting to "Always Allow" and there's a pending request, grant it
         if decision == .allow, case .requested(let query) = usedPermissions[permissionType] {
@@ -218,7 +225,13 @@ final class PermissionCenterViewModel: ObservableObject {
     /// Updates the decision for a specific external scheme
     func setExternalSchemeDecision(_ decision: PersistedPermissionDecision, for scheme: String) {
         let permissionType = PermissionType.externalScheme(scheme: scheme)
+        let previousDecision = permissionManager.permission(forDomain: domain, permissionType: permissionType)
         permissionManager.setPermission(decision, forDomain: domain, permissionType: permissionType)
+
+        // Fire pixel for decision change
+        if previousDecision != decision {
+            PixelKit.fire(PermissionPixel.permissionCenterChanged(permissionType: permissionType, from: previousDecision, to: decision))
+        }
     }
 
     /// Removes a specific external scheme from the grouped row
@@ -226,6 +239,9 @@ final class PermissionCenterViewModel: ObservableObject {
         let permissionType = PermissionType.externalScheme(scheme: scheme)
         removedPermissions.insert(permissionType)
         removePermissionFromTab(permissionType)
+
+        // Fire pixel for permission reset
+        PixelKit.fire(PermissionPixel.permissionCenterReset(permissionType: permissionType))
 
         // Update the grouped item by removing this scheme
         if let index = permissionItems.firstIndex(where: { $0.isGroupedExternalApps }) {
@@ -304,6 +320,10 @@ final class PermissionCenterViewModel: ObservableObject {
         // Track removed permissions to prevent re-adding on reload
         removedPermissions.insert(permissionType)
         removePermissionFromTab(permissionType)
+
+        // Fire pixel for permission reset
+        PixelKit.fire(PermissionPixel.permissionCenterReset(permissionType: permissionType))
+
         // Also remove from UI immediately
         permissionItems.removeAll { $0.permissionType == permissionType }
 

@@ -18,6 +18,7 @@
 
 import AppKit
 import DesignResourcesKitIcons
+import PixelKit
 import SwiftUI
 
 // MARK: - PermissionCenterView
@@ -242,6 +243,7 @@ struct PermissionRowView: View {
 
     private func openSystemSettings() {
         guard let url = item.permissionType.systemSettingsURL else { return }
+        PixelKit.fire(PermissionPixel.systemPreferencesOpened(permissionType: item.permissionType))
         NSWorkspace.shared.open(url)
     }
 }

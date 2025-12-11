@@ -17,6 +17,7 @@
 //
 
 import Cocoa
+import PixelKit
 import SwiftUI
 
 extension PermissionType {
@@ -238,13 +239,23 @@ final class PermissionAuthorizationViewController: NSViewController {
 
     private func handleDeny() {
         isAuthorizationInProgress = false
+        fireAuthorizationPixel(decision: .deny)
         dismiss()
         query?.handleDecision(grant: false, remember: nil)
     }
 
     private func handleAllow() {
         isAuthorizationInProgress = false
+        fireAuthorizationPixel(decision: .allow)
         dismiss()
         query?.handleDecision(grant: true, remember: nil)
+    }
+
+    private func fireAuthorizationPixel(decision: PermissionPixel.AuthorizationDecision) {
+        guard newPermissionView, let query = query else { return }
+        // Fire pixel for each permission type in the query
+        for permissionType in query.permissions {
+            PixelKit.fire(PermissionPixel.authorizationDecision(permissionType: permissionType, decision: decision))
+        }
     }
 }

@@ -18,6 +18,7 @@
 
 import AppKit
 import Combine
+import PixelKit
 import SwiftUI
 
 // MARK: - PermissionAuthorizationType
@@ -329,6 +330,7 @@ struct PermissionAuthorizationSwiftUIView: View {
 
     private func openSystemSettings() {
         guard let url = permissionType.systemSettingsURL else { return }
+        PixelKit.fire(PermissionPixel.systemPreferencesOpened(permissionType: permissionType.asPermissionType))
         NSWorkspace.shared.open(url)
     }
 

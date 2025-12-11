@@ -152,7 +152,8 @@ public class DataBrokerProtectionIOSManagerProvider {
             featureFlagger: featureFlagger,
             settings: dbpSettings,
             subscriptionManager: subscriptionManager,
-            wideEvent: wideEvent
+            wideEvent: wideEvent,
+            eventsHandler: eventsHandler
         )
     }
 }

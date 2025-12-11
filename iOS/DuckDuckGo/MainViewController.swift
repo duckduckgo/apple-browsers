@@ -3659,13 +3659,19 @@ extension MainViewController: AutoClearWorker {
 
     @MainActor
     func forgetData() async {
-        let options: FireOptions = [.data, .aiChats]
+        var options: FireOptions = .data
+        if appSettings.autoClearAIChatHistory {
+            options.insert(.aiChats)
+        }
         await fireExecutor.burn(options: options)
     }
 
     @MainActor
     func forgetData(applicationState: DataStoreWarmup.ApplicationState) async {
-        let options: FireOptions = [.data, .aiChats]
+        var options: FireOptions = .data
+        if appSettings.autoClearAIChatHistory {
+            options.insert(.aiChats)
+        }
         await fireExecutor.burn(options: options)
     }
 

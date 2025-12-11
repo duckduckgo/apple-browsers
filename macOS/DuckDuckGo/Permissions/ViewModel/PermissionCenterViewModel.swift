@@ -327,84 +327,99 @@ final class PermissionCenterViewModel: ObservableObject {
             removedPermissions.remove(permissionType)
         }
 
-        // Separate external schemes from other permissions
+        let (externalSchemePermissions, otherPermissions) = collectPermissions()
+
+        // Build items for non-external-scheme permissions
+        var items: [PermissionCenterItem] = otherPermissions.map { buildPermissionItem(for: $0) }
+
+        // Group all external schemes into a single row
+        if let groupedItem = buildExternalSchemesItem(from: externalSchemePermissions) {
+            items.append(groupedItem)
+        }
+
+        permissionItems = items.sorted { $0.permissionType.rawValue < $1.permissionType.rawValue }
+    }
+
+    private func collectPermissions() -> (externalSchemes: [PermissionType], other: [PermissionType]) {
         var externalSchemePermissions: [PermissionType] = []
         var otherPermissions: [PermissionType] = []
 
+        // Start with permissions from usedPermissions (current session)
         for permissionType in usedPermissions.keys where !removedPermissions.contains(permissionType) {
-            if case .externalScheme = permissionType {
-                externalSchemePermissions.append(permissionType)
-            } else {
-                otherPermissions.append(permissionType)
-            }
+            addPermission(permissionType, toExternal: &externalSchemePermissions, toOther: &otherPermissions)
         }
 
-        // Add popup permission if a page-initiated popup was auto-allowed (due to "Always Allow" setting)
-        // and popup is not already in usedPermissions
+        // Also include persisted permissions that aren't in usedPermissions
+        for permissionType in permissionManager.persistedPermissionTypes(forDomain: domain) where !removedPermissions.contains(permissionType) {
+            addPermission(permissionType, toExternal: &externalSchemePermissions, toOther: &otherPermissions)
+        }
+
+        // Add popup permission if a page-initiated popup was auto-allowed
         if pageInitiatedPopupOpened,
            !otherPermissions.contains(.popups),
            !removedPermissions.contains(.popups) {
             otherPermissions.append(.popups)
         }
 
-        // Build items for non-external-scheme permissions
-        var items: [PermissionCenterItem] = otherPermissions.map { permissionType in
-            let decision = permissionManager.permission(forDomain: domain, permissionType: permissionType)
-            let isSystemDisabled = checkSystemDisabled(for: permissionType)
-            let state = usedPermissions[permissionType] ?? .inactive
+        return (externalSchemePermissions, otherPermissions)
+    }
 
-            // For popups, populate the blocked popup URLs from queries
-            let blockedPopups: [BlockedPopup]
-            if permissionType == .popups {
-                blockedPopups = popupQueries.map { query in
-                    BlockedPopup(url: query.url, query: query)
-                }
-            } else {
-                blockedPopups = []
+    private func addPermission(_ permissionType: PermissionType, toExternal externalSchemes: inout [PermissionType], toOther other: inout [PermissionType]) {
+        if case .externalScheme = permissionType {
+            if !externalSchemes.contains(permissionType) {
+                externalSchemes.append(permissionType)
             }
-
-            return PermissionCenterItem(
-                id: permissionType,
-                permissionType: permissionType,
-                domain: domain,
-                decision: decision,
-                isSystemDisabled: isSystemDisabled,
-                state: state,
-                blockedPopups: blockedPopups,
-                externalSchemes: []
-            )
+        } else if permissionType != .notification {
+            // Notification permissions are not shown in the Permission Center
+            if !other.contains(permissionType) {
+                other.append(permissionType)
+            }
         }
+    }
 
-        // Group all external schemes into a single row
-        if !externalSchemePermissions.isEmpty {
-            let externalSchemes: [ExternalSchemeInfo] = externalSchemePermissions.compactMap { permissionType in
-                guard case .externalScheme(let scheme) = permissionType else { return nil }
-                let decision = permissionManager.permission(forDomain: domain, permissionType: permissionType)
-                return ExternalSchemeInfo(
-                    id: scheme,
-                    scheme: scheme,
-                    decision: decision
-                )
-            }.sorted { $0.scheme < $1.scheme }
+    private func buildPermissionItem(for permissionType: PermissionType) -> PermissionCenterItem {
+        let decision = permissionManager.permission(forDomain: domain, permissionType: permissionType)
+        let isSystemDisabled = checkSystemDisabled(for: permissionType)
+        let state = usedPermissions[permissionType] ?? .inactive
 
-            // Use the first external scheme as the representative permission type for the grouped row
-            let representativeType = externalSchemePermissions[0]
-            let state = usedPermissions[representativeType] ?? .inactive
+        let blockedPopups: [BlockedPopup] = permissionType == .popups
+            ? popupQueries.map { BlockedPopup(url: $0.url, query: $0) }
+            : []
 
-            let groupedItem = PermissionCenterItem(
-                id: representativeType,
-                permissionType: representativeType,
-                domain: domain,
-                decision: .ask, // Not used for grouped row
-                isSystemDisabled: false,
-                state: state,
-                blockedPopups: [],
-                externalSchemes: externalSchemes
-            )
-            items.append(groupedItem)
-        }
+        return PermissionCenterItem(
+            id: permissionType,
+            permissionType: permissionType,
+            domain: domain,
+            decision: decision,
+            isSystemDisabled: isSystemDisabled,
+            state: state,
+            blockedPopups: blockedPopups,
+            externalSchemes: []
+        )
+    }
 
-        permissionItems = items.sorted { $0.permissionType.rawValue < $1.permissionType.rawValue }
+    private func buildExternalSchemesItem(from externalSchemePermissions: [PermissionType]) -> PermissionCenterItem? {
+        guard !externalSchemePermissions.isEmpty else { return nil }
+
+        let externalSchemes: [ExternalSchemeInfo] = externalSchemePermissions.compactMap { permissionType in
+            guard case .externalScheme(let scheme) = permissionType else { return nil }
+            let decision = permissionManager.permission(forDomain: domain, permissionType: permissionType)
+            return ExternalSchemeInfo(id: scheme, scheme: scheme, decision: decision)
+        }.sorted { $0.scheme < $1.scheme }
+
+        let representativeType = externalSchemePermissions[0]
+        let state = usedPermissions[representativeType] ?? .inactive
+
+        return PermissionCenterItem(
+            id: representativeType,
+            permissionType: representativeType,
+            domain: domain,
+            decision: .ask,
+            isSystemDisabled: false,
+            state: state,
+            blockedPopups: [],
+            externalSchemes: externalSchemes
+        )
     }
 
     private func checkSystemDisabled(for permissionType: PermissionType) -> Bool {

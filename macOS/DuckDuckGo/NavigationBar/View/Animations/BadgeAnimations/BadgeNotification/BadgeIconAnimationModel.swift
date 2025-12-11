@@ -1,5 +1,5 @@
 //
-//  CookieNotificationAnimationModel.swift
+//  BadgeIconAnimationModel.swift
 //
 //  Copyright © 2022 DuckDuckGo. All rights reserved.
 //
@@ -19,7 +19,7 @@
 import AppKit
 import Foundation
 
-final class CookieNotificationAnimationModel: ObservableObject {
+final class BadgeIconAnimationModel: ObservableObject {
     enum AnimationState {
         case unstarted
         case firstPhase

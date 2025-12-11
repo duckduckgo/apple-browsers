@@ -25,7 +25,6 @@ import LoginItems
 import VPN
 import NetworkProtectionUI
 import NetworkProtectionIPC
-import NetworkExtension
 import PixelKit
 import Subscription
 
@@ -90,6 +89,13 @@ final class VPNAppEventsHandler {
 
         var parameters: [String: String]? {
             nil
+        }
+
+        var standardParameters: [PixelKitStandardParameter]? {
+            switch self {
+            case .cannotStopVPN:
+                return [.pixelSource]
+            }
         }
     }
 

@@ -170,7 +170,7 @@ final class PermissionContextMenu: NSMenu {
         // only show one persistence option per permission type
         let reduced = permissions.reduce(into: [:], { $0[$1.key] = $1.value })
         for (permission, state) in reduced {
-            guard permission.canPersistGrantedDecision || permission.canPersistDeniedDecision else { continue }
+            guard permission.canPersistGrantedDecision(featureFlagger: featureFlagger) || permission.canPersistDeniedDecision(featureFlagger: featureFlagger) else { continue }
             if case .disabled = state { continue }
 
             addSeparator(if: numberOfItems > 0)
@@ -188,11 +188,11 @@ final class PermissionContextMenu: NSMenu {
             let isNotifyChecked = (permission == .popups && hasTemporaryPopupAllowance) ? false : (persistedValue == .ask)
             addItem(.alwaysAsk(permission, on: domain, target: self, isChecked: isNotifyChecked))
 
-            if permission.canPersistGrantedDecision {
+            if permission.canPersistGrantedDecision(featureFlagger: featureFlagger) {
                 addItem(.alwaysAllow(permission, on: domain, target: self, isChecked: persistedValue == .allow))
             }
 
-            if permission.canPersistDeniedDecision {
+            if permission.canPersistDeniedDecision(featureFlagger: featureFlagger) {
                 addItem(.alwaysDeny(permission, on: domain, target: self, isChecked: persistedValue == .deny))
             }
         }
@@ -295,7 +295,7 @@ final class PermissionContextMenu: NSMenu {
             deeplink = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")!
         case .geolocation:
             deeplink = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices")!
-        case .popups, .externalScheme:
+        case .popups, .notification, .externalScheme:
             assertionFailure("No settings available")
             return
         }
@@ -352,7 +352,7 @@ private extension NSMenuItem {
     static func alwaysAsk(_ permission: PermissionType, on domain: String, target: PermissionContextMenu, isChecked: Bool) -> NSMenuItem {
         let title: String
         switch permission {
-        case .camera, .microphone, .geolocation, .externalScheme:
+        case .camera, .microphone, .geolocation, .notification, .externalScheme:
             title = UserText.privacyDashboardPermissionAsk
         case .popups:
             title = UserText.privacyDashboardPopupsAlwaysAsk
@@ -431,7 +431,7 @@ private extension NSMenuItem {
     static func persistenceHeaderItem(for permission: PermissionType, on domain: String) -> NSMenuItem {
         let title: String
         switch permission {
-        case .camera, .microphone, .geolocation:
+        case .camera, .microphone, .geolocation, .notification:
             title = String(format: UserText.devicePermissionAuthorizationFormat, domain, permission.localizedDescription.lowercased())
         case .externalScheme(scheme: let scheme):
             title = String(format: UserText.permissionMenuHeaderExternalSchemeFormat, permission.localizedDescription.lowercased(), scheme)
@@ -452,7 +452,12 @@ private extension NSMenuItem {
                           permission: PermissionType,
                           target: PermissionContextMenu) -> NSMenuItem {
 
-        let title = String(format: UserText.permissionPopupOpenFormat, (query.url?.isEmpty ?? true) ? "“”" : query.url!.absoluteString)
+        let displayedUrl: String? = {
+            guard let url = query.url, !url.isEmpty else { return nil }
+            return url.absoluteString.truncated(length: MainMenu.Constants.maxTitleLength, middle: "…")
+        }()
+        let title = String(format: UserText.permissionPopupOpenFormat, displayedUrl ?? "“”")
+
         let item = NSMenuItem(title: title, action: #selector(PermissionContextMenu.allowPermissionQuery), keyEquivalent: "")
         item.representedObject = query
         item.target = target
@@ -468,6 +473,7 @@ private extension NSMenuItem {
         if isChecked {
             item.state = .on
         }
+        item.setAccessibilityIdentifier("PermissionContextMenu.allowPopupsForPage")
         return item
     }
 

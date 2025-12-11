@@ -20,5 +20,5 @@ import Foundation
 import os.log
 
 public extension Logger {
-    static let aiChat = { Logger(subsystem: "AI Chat", category: "") }()
+    static let aiChat = Logger(subsystem: "AI Chat", category: "")
 }

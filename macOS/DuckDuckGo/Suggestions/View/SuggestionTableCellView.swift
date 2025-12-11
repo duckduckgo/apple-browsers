@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AIChat
 import Cocoa
 import Common
 import os.log
@@ -64,8 +65,11 @@ final class SuggestionTableCellView: NSTableCellView {
         let view = KeyboardShortcutView()
         view.translatesAutoresizingMaskIntoConstraints = false
         view.configure(with: ["⌃", "⏎"])
+        view.toolTip = "control + return"
         return view
     }()
+
+    private let aiChatPreferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage()
 
     private var labelLeadingToShortcutsConstraint: NSLayoutConstraint?
 
@@ -342,7 +346,13 @@ final class SuggestionTableCellView: NSTableCellView {
             }
         }
 
-        iconImageViewLeadingConstraint.constant = theme?.addressBarStyleProvider.suggestionIconViewLeadingPadding ?? Constants.iconImageViewLeadingSpace
+        var iconLeadingPadding = theme?.addressBarStyleProvider.suggestionIconViewLeadingPadding ?? Constants.iconImageViewLeadingSpace
+        let isToggleFeatureEnabled = Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatPreferencesStorage.isAIFeaturesEnabled
+        let shouldShowToggle = isToggleFeatureEnabled && aiChatPreferencesStorage.showSearchAndDuckAIToggle
+        if shouldShowToggle {
+            iconLeadingPadding += 8
+        }
+        iconImageViewLeadingConstraint.constant = iconLeadingPadding
         searchSuggestionTextFieldLeadingConstraint.constant = theme?.addressBarStyleProvider.suggestionTextFieldLeadingPadding ?? Constants.suggestionTextFieldLeadingSpace
 
         super.layout()

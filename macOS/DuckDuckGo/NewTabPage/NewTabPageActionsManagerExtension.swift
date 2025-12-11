@@ -25,6 +25,7 @@ import History
 import NewTabPage
 import Persistence
 import PrivacyStats
+import Subscription
 
 extension NewTabPageActionsManager {
 
@@ -53,20 +54,11 @@ extension NewTabPageActionsManager {
         windowControllersManager: WindowControllersManagerProtocol & AIChatTabManaging,
         tabsPreferences: TabsPreferences,
         newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
-        winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator
+        winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator,
+        subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
+        protectionsReportModel: NewTabPageProtectionsReportModel,
+        homePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersisting
     ) {
-        let settingsMigrator = NewTabPageProtectionsReportSettingsMigrator(legacyKeyValueStore: legacyKeyValueStore)
-        let protectionsReportModel = NewTabPageProtectionsReportModel(
-            privacyStats: privacyStats,
-            autoconsentStats: autoconsentStats,
-            keyValueStore: keyValueStore,
-            burnAnimationSettingChanges: visualizeFireAnimationDecider.shouldShowFireAnimationPublisher,
-            showBurnAnimation: visualizeFireAnimationDecider.shouldShowFireAnimation,
-            isAutoconsentEnabled: { cookiePopupProtectionPreferences.isAutoconsentEnabled },
-            getLegacyIsViewExpandedSetting: settingsMigrator.isViewExpanded,
-            getLegacyActiveFeedSetting: settingsMigrator.activeFeed
-        )
-
         self.init(
             appearancePreferences: appearancePreferences,
             customizationModel: customizationModel,
@@ -89,7 +81,9 @@ extension NewTabPageActionsManager {
             windowControllersManager: windowControllersManager,
             tabsPreferences: tabsPreferences,
             newTabPageAIChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider,
-            winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator
+            winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
+            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
+            homePageContinueSetUpModelPersistor: homePageContinueSetUpModelPersistor
         )
     }
 
@@ -116,7 +110,9 @@ extension NewTabPageActionsManager {
         windowControllersManager: WindowControllersManagerProtocol  & AIChatTabManaging,
         tabsPreferences: TabsPreferences,
         newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
-        winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator
+        winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator,
+        subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
+        homePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersisting
     ) {
         let availabilityProvider = NewTabPageSectionsAvailabilityProvider(featureFlagger: featureFlagger)
         let favoritesPublisher = bookmarkManager.listPublisher.map({ $0?.favoriteBookmarks ?? [] }).eraseToAnyPublisher()
@@ -190,7 +186,9 @@ extension NewTabPageActionsManager {
                     continueSetUpModel: HomePage.Models.ContinueSetUpModel(
                         dataImportProvider: BookmarksAndPasswordsImportStatusProvider(bookmarkManager: bookmarkManager),
                         tabOpener: NewTabPageTabOpener(),
-                        privacyConfigurationManager: contentBlocking.privacyConfigurationManager
+                        privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
+                        subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
+                        persistor: homePageContinueSetUpModelPersistor
                     ),
                     appearancePreferences: appearancePreferences
                 )

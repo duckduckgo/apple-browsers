@@ -78,12 +78,6 @@ private extension ThemeManager {
     }
 
     func resetThemeNameIfNeeded(isInternalUser: Bool) {
-        /// Internal Users should not see the `.default` theme
-        if isInternalUser, appearancePreferences.themeName == .default {
-            appearancePreferences.themeName = .figma
-            return
-        }
-
         /// Non Internal Users should only see the `.default` theme
         if isInternalUser == false, appearancePreferences.themeName != .default {
             appearancePreferences.themeName = .default

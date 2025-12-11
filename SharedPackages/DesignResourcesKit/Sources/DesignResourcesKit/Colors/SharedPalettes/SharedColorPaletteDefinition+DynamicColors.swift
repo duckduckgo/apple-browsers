@@ -116,10 +116,22 @@ extension SharedColorPaletteDefinition {
             return containerFillSecondary
         case .containerFillTertiary:
             return containerFillTertiary
+        case .containerBorderPrimary:
+            return containerBorderPrimary
+        case .containerBorderSecondary:
+            return containerBorderSecondary
         case .containerBorderTertiary:
             return containerBorderTertiary
 
         /// Controls Colors
+        case .controlsBorderPrimary:
+            return controlsBorderPrimary
+        case .controlsBorderSecondary:
+            return controlsBorderSecondary
+        case .controlsBorderTertiary:
+            return controlsBorderTertiary
+        case .controlsBorderQuaternary:
+            return controlsBorderQuaternary
         case .controlsFillPrimary:
             return controlsFillPrimary
         case .controlsFillSecondary:
@@ -214,6 +226,12 @@ extension SharedColorPaletteDefinition {
         /// Tone Colors
         case .toneShadePrimary:
             return toneShadePrimary
+
+        /// Permission Center
+        case .permissionCenterBackground:
+            return DynamicColor(lightColor: .white, darkColor: Color(0x333333))
+        case .permissionCenterContainerBackground:
+            return DynamicColor(lightColor: Color(0x000000).opacity(0.03), darkColor: Color(0xFFFFFF).opacity(0.06))
 
         /// Fire Dialog
         case .fireDialogBackground:

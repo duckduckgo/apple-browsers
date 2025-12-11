@@ -20,6 +20,7 @@ import BrowserServicesKit
 import Combine
 import NewTabPage
 import XCTest
+import SubscriptionTestingUtilities
 @testable import DuckDuckGo_Privacy_Browser
 
 final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
@@ -38,7 +39,9 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
             tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: TabCollectionViewModel(isPopup: false)),
             emailManager: EmailManager(storage: MockEmailStorage()),
             duckPlayerPreferences: DuckPlayerPreferencesPersistorMock(),
-            privacyConfigurationManager: privacyConfigManager
+            privacyConfigurationManager: privacyConfigManager,
+            subscriptionCardVisibilityManager: MockHomePageSubscriptionCardVisibilityManaging(),
+            persistor: MockHomePageContinueSetUpModelPersisting()
         )
 
         provider = NewTabPageNextStepsCardsProvider(

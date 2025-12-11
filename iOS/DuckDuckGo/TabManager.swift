@@ -60,6 +60,8 @@ class TabManager {
     private let keyValueStore: ThrowingKeyValueStoring
     private let daxDialogsManager: DaxDialogsManaging
     private let aiChatSettings: AIChatSettingsProvider
+    private let productSurfaceTelemetry: ProductSurfaceTelemetry
+    private let sharedSecureVault: (any AutofillSecureVault)?
     private let privacyStats: PrivacyStatsProviding
 
     weak var delegate: TabDelegate?
@@ -95,6 +97,8 @@ class TabManager {
          keyValueStore: ThrowingKeyValueStoring,
          daxDialogsManager: DaxDialogsManaging,
          aiChatSettings: AIChatSettingsProvider,
+         productSurfaceTelemetry: ProductSurfaceTelemetry,
+         sharedSecureVault: (any AutofillSecureVault)? = nil,
          privacyStats: PrivacyStatsProviding
     ) {
         self.model = model
@@ -123,6 +127,8 @@ class TabManager {
         self.keyValueStore = keyValueStore
         self.daxDialogsManager = daxDialogsManager
         self.aiChatSettings = aiChatSettings
+        self.productSurfaceTelemetry = productSurfaceTelemetry
+        self.sharedSecureVault = sharedSecureVault
         self.privacyStats = privacyStats
         registerForNotifications()
     }
@@ -168,6 +174,8 @@ class TabManager {
                                                               keyValueStore: keyValueStore,
                                                               daxDialogsManager: daxDialogsManager,
                                                               aiChatSettings: aiChatSettings,
+                                                              productSurfaceTelemetry: productSurfaceTelemetry,
+                                                              sharedSecureVault: sharedSecureVault,
                                                               privacyStats: privacyStats)
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
@@ -267,6 +275,8 @@ class TabManager {
                                                               keyValueStore: keyValueStore,
                                                               daxDialogsManager: daxDialogsManager,
                                                               aiChatSettings: aiChatSettings,
+                                                              productSurfaceTelemetry: productSurfaceTelemetry,
+                                                              sharedSecureVault: sharedSecureVault,
                                                               privacyStats: privacyStats)
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,

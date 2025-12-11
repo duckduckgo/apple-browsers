@@ -31,8 +31,6 @@ public struct SubscriptionPixelHandler: SubscriptionPixelHandling {
     let source: Source
 
     public struct Defaults {
-        @available(*, deprecated, message: "Use PixelKit error field instead")
-        static let errorKey = "error"
         static let policyCacheKey = "policycache"
         static let sourceKey = "source"
     }
@@ -41,22 +39,28 @@ public struct SubscriptionPixelHandler: SubscriptionPixelHandling {
         let sourceParam = [Defaults.sourceKey: source.rawValue]
         switch pixel {
         case .invalidRefreshToken:
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionInvalidRefreshTokenDetected, withAdditionalParameters: sourceParam)
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionInvalidRefreshTokenDetected,
+                                         withAdditionalParameters: sourceParam)
         case .subscriptionIsActive:
-            DailyPixel.fire(pixel: .subscriptionActive, withAdditionalParameters: [AuthVersion.key: AuthVersion.v2.rawValue])
+            DailyPixel.fire(pixel: .subscriptionActive,
+                            withAdditionalParameters: [AuthVersion.key: AuthVersion.v2.rawValue])
         case .migrationFailed(let error):
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionAuthV2MigrationFailed, withAdditionalParameters: [Defaults.errorKey: error.localizedDescription].merging(sourceParam) { $1 })
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionAuthV2MigrationFailed2, error: error, withAdditionalParameters: sourceParam)
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionAuthV2MigrationFailed2,
+                                         error: error,
+                                         withAdditionalParameters: sourceParam)
         case .migrationSucceeded:
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionAuthV2MigrationSucceeded, withAdditionalParameters: sourceParam)
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionAuthV2MigrationSucceeded,
+                                         withAdditionalParameters: sourceParam)
         case .getTokensError(let policy, let error):
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionAuthV2GetTokensError, withAdditionalParameters: [Defaults.errorKey: error.localizedDescription,
-                                                                                                            Defaults.policyCacheKey: policy.description].merging(sourceParam) { $1 })
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionAuthV2GetTokensError2, error: error, withAdditionalParameters: [Defaults.policyCacheKey: policy.description].merging(sourceParam) { $1 })
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionAuthV2GetTokensError2,
+                                         error: error,
+                                         withAdditionalParameters: [Defaults.policyCacheKey: policy.description].merging(sourceParam) { $1 })
         case .invalidRefreshTokenSignedOut:
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionInvalidRefreshTokenSignedOut, withAdditionalParameters: sourceParam)
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionInvalidRefreshTokenSignedOut,
+                                         withAdditionalParameters: sourceParam)
         case .invalidRefreshTokenRecovered:
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionInvalidRefreshTokenRecovered, withAdditionalParameters: sourceParam)
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionInvalidRefreshTokenRecovered,
+                                         withAdditionalParameters: sourceParam)
         }
     }
 
@@ -64,13 +68,17 @@ public struct SubscriptionPixelHandler: SubscriptionPixelHandling {
         let sourceParam = [Defaults.sourceKey: source.rawValue]
         switch pixel {
         case .deallocatedWithBacklog:
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionKeychainManagerDeallocatedWithBacklog, withAdditionalParameters: sourceParam)
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionKeychainManagerDeallocatedWithBacklog,
+                                         withAdditionalParameters: sourceParam)
         case .dataAddedToTheBacklog:
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionKeychainManagerDataAddedToTheBacklog, withAdditionalParameters: sourceParam)
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionKeychainManagerDataAddedToTheBacklog,
+                                         withAdditionalParameters: sourceParam)
         case .dataWroteFromBacklog:
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionKeychainManagerDataWroteFromBacklog, withAdditionalParameters: sourceParam)
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionKeychainManagerDataWroteFromBacklog,
+                                         withAdditionalParameters: sourceParam)
         case .failedToWriteDataFromBacklog:
-            DailyPixel.fireDailyAndCount(pixel: .subscriptionKeychainManagerFailedToWriteDataFromBacklog, withAdditionalParameters: sourceParam)
+            DailyPixel.fireDailyAndCount(pixel: .subscriptionKeychainManagerFailedToWriteDataFromBacklog,
+                                         withAdditionalParameters: sourceParam)
         }
     }
 }

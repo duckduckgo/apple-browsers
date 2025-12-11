@@ -111,6 +111,9 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User clicks the website link on a translation prompt in Duck.ai tab or sidebar
     case aiChatTranslationSourceLinkClicked
 
+    /// Event Trigger: User clicks the website link on a page context prompt in Duck.ai tab or sidebar
+    case aiChatPageContextSourceLinkClicked
+
     /// Event Trigger: User adds page context to the prompt using a button in the input field
     case aiChatPageContextAdded(automaticEnabled: Bool)
 
@@ -127,6 +130,43 @@ enum AIChatPixel: PixelKitEvent {
 
     /// Event Trigger: Duck.ai chat history fails to be deleted
     case aiChatDeleteHistoryFailed
+
+    // MARK: - Address bar toggle pixels
+
+    /// Event Trigger: User selects address bar and toggle settings is ON (duck.ai mode)
+    case aiChatAddressBarActivatedToggleOn
+
+    /// Event Trigger: User selects address bar and toggle settings is OFF (search mode)
+    case aiChatAddressBarActivatedToggleOff
+
+    /// Event Trigger: User changes toggle to duck.ai
+    case aiChatAddressBarToggleChangedAIChat
+
+    /// Event Trigger: User changes toggle to search
+    case aiChatAddressBarToggleChangedSearch
+
+    /// Event Trigger: User submits prompt from duck.ai panel
+    case aiChatAddressBarAIChatSubmitPrompt
+
+    /// Event Trigger: User submits URL from duck.ai panel
+    case aiChatAddressBarAIChatSubmitURL
+
+    /// Event Trigger: User submits a prompt from the suggestion for duck.ai by clicking with the mouse
+    case aiChatSuggestionAIChatSubmittedMouse
+
+    /// Event Trigger: User submits a prompt from the suggestion for duck.ai by pressing enter
+    case aiChatSuggestionAIChatSubmittedKeyboard
+
+    // MARK: - Toggle popover pixels
+
+    /// Event Trigger: The toggle popover is shown to the user
+    case aiChatTogglePopoverShown
+
+    /// Event Trigger: User clicks the X button to dismiss the toggle popover
+    case aiChatTogglePopoverDismissButtonClicked
+
+    /// Event Trigger: User clicks the settings button in the toggle popover
+    case aiChatTogglePopoverCustomizeButtonClicked
 
     // MARK: -
 
@@ -178,6 +218,8 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_translate_text"
         case .aiChatTranslationSourceLinkClicked:
             return "aichat_translation_source_link_clicked"
+        case .aiChatPageContextSourceLinkClicked:
+            return "aichat_page_context_source_link_clicked"
         case .aiChatPageContextAdded:
             return "aichat_page_context_added"
         case .aiChatPageContextRemoved:
@@ -194,6 +236,28 @@ enum AIChatPixel: PixelKitEvent {
             return "m_mac_aichat_history_delete_successful"
         case .aiChatDeleteHistoryFailed:
             return "m_mac_aichat_history_delete_failed"
+        case .aiChatAddressBarActivatedToggleOn:
+            return "aichat_addressbar_activated_toggle_on"
+        case .aiChatAddressBarActivatedToggleOff:
+            return "aichat_addressbar_activated_toggle_off"
+        case .aiChatAddressBarToggleChangedAIChat:
+            return "aichat_addressbar_toggle_changed_aichat"
+        case .aiChatAddressBarToggleChangedSearch:
+            return "aichat_addressbar_toggle_changed_search"
+        case .aiChatAddressBarAIChatSubmitPrompt:
+            return "aichat_addressbar_aichat_submit_prompt"
+        case .aiChatAddressBarAIChatSubmitURL:
+            return "aichat_addressbar_aichat_submit_url"
+        case .aiChatSuggestionAIChatSubmittedMouse:
+            return "aichat_suggestion_aichat_submitted_mouse"
+        case .aiChatSuggestionAIChatSubmittedKeyboard:
+            return "aichat_suggestion_aichat_submitted_keyboard"
+        case .aiChatTogglePopoverShown:
+            return "aichat_toggle_popover_shown"
+        case .aiChatTogglePopoverDismissButtonClicked:
+            return "aichat_toggle_popover_dismiss_button_clicked"
+        case .aiChatTogglePopoverCustomizeButtonClicked:
+            return "aichat_toggle_popover_customize_button_clicked"
         }
     }
 
@@ -218,10 +282,22 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatSummarizeSourceLinkClicked,
                 .aiChatTranslateText,
                 .aiChatTranslationSourceLinkClicked,
+                .aiChatPageContextSourceLinkClicked,
                 .aiChatAutoClearHistorySettingToggled,
                 .aiChatDeleteHistoryRequested,
                 .aiChatDeleteHistorySuccessful,
-                .aiChatDeleteHistoryFailed:
+                .aiChatDeleteHistoryFailed,
+                .aiChatAddressBarActivatedToggleOn,
+                .aiChatAddressBarActivatedToggleOff,
+                .aiChatAddressBarToggleChangedAIChat,
+                .aiChatAddressBarToggleChangedSearch,
+                .aiChatAddressBarAIChatSubmitPrompt,
+                .aiChatAddressBarAIChatSubmitURL,
+                .aiChatSuggestionAIChatSubmittedMouse,
+                .aiChatSuggestionAIChatSubmittedKeyboard,
+                .aiChatTogglePopoverShown,
+                .aiChatTogglePopoverDismissButtonClicked,
+                .aiChatTogglePopoverCustomizeButtonClicked:
             return nil
         case .aiChatAddressBarButtonClicked(let action):
             return ["action": action.rawValue]
@@ -243,9 +319,54 @@ enum AIChatPixel: PixelKitEvent {
         }
     }
 
-}
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .aichatApplicationMenuAppClicked,
+                .aichatApplicationMenuFileClicked,
+                .aichatNoRemoteSettingsFound,
+                .aiChatSettingsGlobalToggleTurnedOn,
+                .aiChatSettingsGlobalToggleTurnedOff,
+                .aiChatSettingsNewTabPageShortcutTurnedOn,
+                .aiChatSettingsNewTabPageShortcutTurnedOff,
+                .aiChatSettingsAddressBarShortcutTurnedOn,
+                .aiChatSettingsAddressBarShortcutTurnedOff,
+                .aiChatSettingsAddressBarTypingShortcutTurnedOn,
+                .aiChatSettingsAddressBarTypingShortcutTurnedOff,
+                .aiChatSettingsApplicationMenuShortcutTurnedOff,
+                .aiChatSettingsApplicationMenuShortcutTurnedOn,
+                .aiChatSettingsDisplayed,
+                .aiChatAutoClearHistorySettingToggled,
+                .aiChatAddressBarButtonClicked,
+                .aiChatSidebarOpened,
+                .aiChatSidebarClosed,
+                .aiChatSidebarExpanded,
+                .aiChatSidebarSettingChanged,
+                .aiChatSummarizeText,
+                .aiChatSummarizeSourceLinkClicked,
+                .aiChatTranslateText,
+                .aiChatTranslationSourceLinkClicked,
+                .aiChatPageContextSourceLinkClicked,
+                .aiChatPageContextAdded,
+                .aiChatPageContextRemoved,
+                .aiChatDeleteHistoryRequested,
+                .aiChatDeleteHistorySuccessful,
+                .aiChatDeleteHistoryFailed,
+                .aiChatAddressBarActivatedToggleOn,
+                .aiChatAddressBarActivatedToggleOff,
+                .aiChatAddressBarToggleChangedAIChat,
+                .aiChatAddressBarToggleChangedSearch,
+                .aiChatAddressBarAIChatSubmitPrompt,
+                .aiChatAddressBarAIChatSubmitURL,
+                .aiChatSuggestionAIChatSubmittedMouse,
+                .aiChatSuggestionAIChatSubmittedKeyboard,
+                .aiChatTogglePopoverShown,
+                .aiChatTogglePopoverDismissButtonClicked,
+                .aiChatTogglePopoverCustomizeButtonClicked:
+            return [.pixelSource]
+        }
+    }
 
-// MARK: - Parameter values
+}
 
 /// Action performed when address bar button is clicked
 enum AIChatAddressBarAction: String, CaseIterable {

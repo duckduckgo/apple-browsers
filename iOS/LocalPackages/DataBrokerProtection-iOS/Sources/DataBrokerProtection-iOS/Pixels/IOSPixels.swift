@@ -55,6 +55,16 @@ extension IOSPixels: PixelKitEvent {
             return [DataBrokerProtectionSharedPixels.Consts.durationInMs: String(duration)]
         }
     }
+
+    public var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .backgroundTaskStarted,
+                .backgroundTaskExpired,
+                .backgroundTaskEndedHavingCompletedAllJobs,
+                .backgroundTaskSchedulingFailed:
+            return [.pixelSource]
+        }
+    }
 }
 
 public class IOSPixelsHandler: EventMapping<IOSPixels> {

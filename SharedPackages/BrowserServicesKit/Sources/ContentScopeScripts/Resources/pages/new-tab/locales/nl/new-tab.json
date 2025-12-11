@@ -60,6 +60,10 @@
     "title" : "Geen recente trackingactiviteit",
     "note" : "Placeholder text shown in the Details view when no tracking activity was blocked in the last 7 days. Keep concise if possible."
   },
+  "protections_newBadge" : {
+    "title" : "Nieuw",
+    "note" : "Text displayed in a badge to indicate a new feature or statistic."
+  },
   "stats_menuTitle" : {
     "title" : "Geblokkeerde trackingpogingen",
     "note" : "Used as a label in a customization menu"
@@ -117,7 +121,7 @@
     "note" : "The heading indicating multiple cookie pop-ups were handled by the CPM"
   },
   "stats_protectionsReportInfo" : {
-    "title" : "Toont trackingpogingen die in de afgelopen 7 dagen zijn geblokkeerd en het aantal cookiepop-ups dat is geblokkeerd sinds je de browser bent gaan gebruiken. <span>Je kunt deze statistieken resetten met de Fire Button.</span>",
+    "title" : "Toont trackingpogingen die in de afgelopen 7 dagen zijn geblokkeerd en het aantal cookiepop-ups dat is geblokkeerd sinds je de browser bent gaan gebruiken.",
     "note" : "Text explaining how to reset the protections stats"
   },
   "stats_feedCountBlockedSingular" : {
@@ -321,7 +325,7 @@
     "note" : "Title of the Next Steps card for unlocking your free trial of DuckDuckGo subscription"
   },
   "nextSteps_subscription_summary" : {
-    "title" : "Probeer een gratis proefversie van ons abonnement met VPN en 3 andere geavanceerde functies.",
+    "title" : "Probeer een gratis proefversie van ons abonnement met VPN en meer geavanceerde functies.",
     "note" : "Summary of the Next Steps card about the DuckDuckGo subscription"
   },
   "nextSteps_subscription_actionText" : {

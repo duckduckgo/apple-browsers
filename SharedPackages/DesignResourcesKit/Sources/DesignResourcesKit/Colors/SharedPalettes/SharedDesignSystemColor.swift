@@ -76,9 +76,15 @@ public enum SharedDesignSystemColor {
     case containerFillPrimary
     case containerFillSecondary
     case containerFillTertiary
+    case containerBorderPrimary
+    case containerBorderSecondary
     case containerBorderTertiary
 
     // Controls
+    case controlsBorderPrimary
+    case controlsBorderSecondary
+    case controlsBorderTertiary
+    case controlsBorderQuaternary
     case controlsFillPrimary
     case controlsFillSecondary
     case controlsFillTertiary
@@ -134,6 +140,10 @@ public enum SharedDesignSystemColor {
 
     // Tone
     case toneShadePrimary
+
+    // Permission Center
+    case permissionCenterBackground
+    case permissionCenterContainerBackground
 
     // Fire Dialog View
     case fireDialogBackground

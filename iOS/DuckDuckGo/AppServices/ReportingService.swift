@@ -43,6 +43,7 @@ final class ReportingService {
     private var cancellables = Set<AnyCancellable>()
     let adAttributionPixelReporter: AdAttributionPixelReporter
     let privacyConfigurationManager: PrivacyConfigurationManaging
+    let productSurfaceTelemetry: ProductSurfaceTelemetry
 
     var syncService: SyncService? {
         didSet {
@@ -56,7 +57,8 @@ final class ReportingService {
          userDefaults: UserDefaults,
          pixelKit: PixelKit?,
          appDependencies: DependencyProvider,
-         privacyConfigurationManager: PrivacyConfigurationManaging) {
+         privacyConfigurationManager: PrivacyConfigurationManaging,
+         productSurfaceTelemetry: ProductSurfaceTelemetry) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.featureFlagging = featureFlagging
         self.subscriptionDataReporter = SubscriptionDataReporter(fireproofing: fireproofing)
@@ -75,6 +77,7 @@ final class ReportingService {
                                                                defaultBrowserProviding: defaultBrowserProvider,
                                                                subscriptionStateProvider: subscriptionStateProvider,
                                                                settingsProvider: settingsProvider)
+        self.productSurfaceTelemetry = productSurfaceTelemetry
         addNotificationsObserver()
     }
 
@@ -161,6 +164,7 @@ final class ReportingService {
         Pixel.fire(pixel: .appLaunch, includedParameters: [.appVersion, .atb])
         reportAdAttribution()
         reportWidgetUsage()
+        productSurfaceTelemetry.dailyActiveUser()
         onboardingPixelReporter.fireEnqueuedPixelsIfNeeded()
         reportUserNotificationAuthStatus()
     }
@@ -200,8 +204,21 @@ private extension ReportingService {
                     let enabledWidgets = widgetInfo.map {
                         "\($0.id.kind)-\($0.family.debugDescription)"
                     }.joined(separator: ",")
+
+                    // This is all over kill but the feature is disabled so only the device(s) in a bad state will send this.
+                    let featureState = self.privacyConfigurationManager.privacyConfig.stateFor(iOSBrowserConfigSubfeature.widgetReporting)
+                    let isInternalUser = self.privacyConfigurationManager.internalUserDecider.isInternalUser
+                    let embeddedEtag = (self.privacyConfigurationManager as? PrivacyConfigurationManager)?.embeddedConfigData.etag ?? "none"
+                    let fetchedEtag = (self.privacyConfigurationManager as? PrivacyConfigurationManager)?.fetchedConfigData?.etag ?? "none"
+                    let currentEtag = self.privacyConfigurationManager.privacyConfig.identifier
+
                     DailyPixel.fireDaily(.widgetReport, withAdditionalParameters: [
-                        "enabled_widgets": enabledWidgets
+                        "enabled_widgets": enabledWidgets,
+                        "privacy_config_embedded_etag": embeddedEtag,
+                        "privacy_config_fetched_etag": fetchedEtag,
+                        "current_etag": currentEtag,
+                        "is_internal": "\(isInternalUser)",
+                        "feature_state_enabled": "\(featureState == .enabled)"
                     ])
                 }
 

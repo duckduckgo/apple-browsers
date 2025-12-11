@@ -17,8 +17,10 @@
 //
 
 import AVFoundation
+import BrowserServicesKit
 import Combine
 import CoreLocation
+import FeatureFlags
 import Foundation
 import Navigation
 import WebKit
@@ -36,6 +38,12 @@ final class PermissionModel {
 
     private let permissionManager: PermissionManagerProtocol
     private let geolocationService: GeolocationServiceProtocol
+    private let systemPermissionManager: SystemPermissionManagerProtocol
+    private let featureFlagger: FeatureFlagger
+
+    /// Holds the set of permissions the user manually removed (to avoid adding them back via updatePermissions)
+    private var removedPermissions = Set<PermissionType>()
+
     weak var webView: WKWebView? {
         didSet {
             guard let webView = webView else { return }
@@ -46,11 +54,21 @@ final class PermissionModel {
     }
     private var cancellables = Set<AnyCancellable>()
 
+    /// Returns the domain for the current webView URL, mapping file URLs to "localhost"
+    private var currentDomain: String? {
+        guard let url = webView?.url else { return nil }
+        return url.isFileURL ? .localhost : url.host
+    }
+
     init(webView: WKWebView? = nil,
          permissionManager: PermissionManagerProtocol,
-         geolocationService: GeolocationServiceProtocol = GeolocationService.shared) {
+         geolocationService: GeolocationServiceProtocol = GeolocationService.shared,
+         systemPermissionManager: SystemPermissionManagerProtocol = SystemPermissionManager(),
+         featureFlagger: FeatureFlagger) {
         self.permissionManager = permissionManager
         self.geolocationService = geolocationService
+        self.systemPermissionManager = systemPermissionManager
+        self.featureFlagger = featureFlagger
         if let webView {
             self.webView = webView
             self.subscribe(to: webView)
@@ -99,11 +117,15 @@ final class PermissionModel {
             permissions[permission].willReload()
         }
         authorizationQueries = []
+        removedPermissions.removeAll()
     }
 
     private func updatePermissions() {
         guard let webView = webView else { return }
         for permissionType in PermissionType.permissionsUpdatedExternally {
+            // Skip permissions that were explicitly removed by the user
+            guard !removedPermissions.contains(permissionType) else { continue }
+
             switch permissionType {
             case .microphone:
                 permissions.microphone.update(with: webView.microphoneState)
@@ -119,9 +141,19 @@ final class PermissionModel {
                     permissions.geolocation
                         .systemAuthorizationDenied(systemWide: !geolocationService.locationServicesEnabled())
                 } else {
-                    permissions.geolocation.update(with: webView.geolocationState)
+                    let currentState = webView.geolocationState
+
+                    // With new permission view, keep geolocation as active once it's been granted/used
+                    // (.active or .inactive means it was granted or actively used)
+                    if featureFlagger.isFeatureOn(.newPermissionView),
+                       currentState == .none,
+                       permissions.geolocation == .active || permissions.geolocation == .inactive {
+                        permissions.geolocation = .active
+                    } else {
+                        permissions.geolocation.update(with: currentState)
+                    }
                 }
-            case .popups, .externalScheme:
+            case .popups, .externalScheme, .notification:
                 continue
             }
         }
@@ -141,6 +173,8 @@ final class PermissionModel {
             if case .success = result {
                 for permission in permissions {
                     if isGranted {
+                        // Remove from removedPermissions so updatePermissions() can track it again
+                        self?.removedPermissions.remove(permission)
                         self?.permissions[permission].granted()
                     } else {
                         self?.permissions[permission].denied()
@@ -153,9 +187,15 @@ final class PermissionModel {
 
                 self.authorizationQueries.remove(at: idx)
 
-                if case .success( (_, remember: true) ) = result {
+                if case .success( (let granted, let remember) ) = result {
                     for permission in permissions {
-                        self.permissionManager.setPermission(isGranted ? .allow : .deny, forDomain: domain, permissionType: permission)
+                        if remember == true {
+                            // User chose "Always Allow" or "Never Allow"
+                            self.permissionManager.setPermission(granted ? .allow : .deny, forDomain: domain, permissionType: permission)
+                        } else if granted, self.featureFlagger.isFeatureOn(.newPermissionView) {
+                            // User chose one-time "Allow" - store .ask so permission center button is visible on subsequent visits
+                            self.permissionManager.setPermission(.ask, forDomain: domain, permissionType: permission)
+                        }
                     }
                 }
             } // else: query has been removed, the decision is being handled on the query deallocation
@@ -166,13 +206,17 @@ final class PermissionModel {
         queryPtr = Unmanaged.passUnretained(query).toOpaque()
 
         // When Geolocation queried by a website but System Permission is denied: switch to `disabled`
-        if permissions.contains(.geolocation),
+        // Only apply this behavior when new permission view is disabled (old behavior)
+        // When new permission view is enabled, the dialog handles showing the two-step authorization flow
+        if !featureFlagger.isFeatureOn(.newPermissionView),
+           permissions.contains(.geolocation),
            [.denied, .restricted].contains(self.geolocationService.authorizationStatus)
             || !geolocationService.locationServicesEnabled() {
             self.permissions.geolocation
                 .systemAuthorizationDenied(systemWide: !geolocationService.locationServicesEnabled())
         }
 
+        // Set state to .requested so the authorization popover can be shown
         permissions.forEach { self.permissions[$0].authorizationQueried(query, updateQueryIfAlreadyRequested: $0 == .popups) }
         authorizationQueries.append(query)
     }
@@ -184,6 +228,11 @@ final class PermissionModel {
 
         // If Always Allow/Deny for the current host: Grant/Revoke the permission
         guard webView?.url?.host?.droppingWwwPrefix() == domain else { return }
+
+        // If decision changed to "allow", remove from removedPermissions so updatePermissions() can track it again
+        if decision == .allow {
+            removedPermissions.remove(permissionType)
+        }
 
         switch (decision, self.permissions[permissionType]) {
         case (.deny, .some):
@@ -212,7 +261,7 @@ final class PermissionModel {
     }
 
     func revoke(_ permission: PermissionType) {
-        if let domain = webView?.url?.host,
+        if let domain = currentDomain,
            case .allow = permissionManager.permission(forDomain: domain, permissionType: permission) {
             permissionManager.setPermission(.ask, forDomain: domain, permissionType: permission)
         }
@@ -221,8 +270,32 @@ final class PermissionModel {
             self.permissions[permission].revoke() // await deactivation
             webView?.revokePermissions([permission])
 
-        case .popups, .externalScheme:
+        case .popups, .notification, .externalScheme:
             self.permissions[permission].denied()
+        }
+    }
+
+    /// Removes a permission completely (revokes and removes from tracking)
+    func remove(_ permission: PermissionType) {
+        // Track as explicitly removed to prevent re-adding via updatePermissions()
+        removedPermissions.insert(permission)
+
+        // First revoke the permission
+        switch permission {
+        case .camera, .microphone, .geolocation:
+            webView?.revokePermissions([permission])
+        case .popups, .notification, .externalScheme:
+            break
+        }
+
+        // Remove from dictionary (will trigger @Published update)
+        permissions[permission] = nil
+
+        // Remove from persisted storage
+        if let domain = currentDomain {
+            permissionManager.removePermission(forDomain: domain, permissionType: permission)
+        } else {
+            assertionFailure("webView URL should not be nil when removing a permission")
         }
     }
 
@@ -268,9 +341,9 @@ final class PermissionModel {
         for permission in permissions {
             var grant: PersistedPermissionDecision
             let stored = permissionManager.permission(forDomain: domain, permissionType: permission)
-            if case .allow = stored, permission.canPersistGrantedDecision {
+            if case .allow = stored, permission.canPersistGrantedDecision(featureFlagger: featureFlagger) {
                 grant = .allow
-            } else if case .deny = stored, permission.canPersistDeniedDecision {
+            } else if case .deny = stored, permission.canPersistDeniedDecision(featureFlagger: featureFlagger) {
                 grant = .deny
             } else if let state = self.permissions[permission] {
                 switch state {
@@ -287,18 +360,30 @@ final class PermissionModel {
 
             switch grant {
             case .deny:
-                // deny if at least one permission denied permanently
-                // or during current page being displayed
+                // Deny immediately - user explicitly set "Never Allow" for this domain
+                // No need to check system permission state
                 return false
             case .allow:
-                // allow if all permissions allowed permanently
-                break
+                // User has "Always Allow" stored - but check system permission first
+                // If system permission is disabled, show dialog instead of auto-granting
+                // Only applies when new permission view is enabled (two-step authorization flow)
+                if featureFlagger.isFeatureOn(.newPermissionView), isSystemPermissionDisabled(for: permission) {
+                    return nil
+                }
             case .ask:
                 // if at least one permission is not set: ask
                 return nil
             }
         }
         return true
+    }
+
+    /// Checks if system-level permission is disabled for the given permission type
+    private func isSystemPermissionDisabled(for permissionType: PermissionType) -> Bool {
+        guard permissionType.requiresSystemPermission else { return false }
+
+        let authState = systemPermissionManager.authorizationState(for: permissionType)
+        return authState == .denied || authState == .restricted || authState == .systemDisabled
     }
 
     /// Request user authorization for provided PermissionTypes
@@ -344,7 +429,7 @@ final class PermissionModel {
             self.permissions[permission].externalSchemeOpened()
         case .popups:
             self.permissions[permission].popupOpened(nextQuery: authorizationQueries.first(where: { $0.permissions.contains(.popups) }))
-        case .camera, .microphone, .geolocation:
+        case .camera, .microphone, .geolocation, .notification:
             // permission usage activated
             break
         }

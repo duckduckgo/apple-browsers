@@ -140,6 +140,8 @@ class TabSwitcherViewController: UIViewController {
     
     private(set) var aichatFullModeFeature: AIChatFullModeFeatureProviding
 
+    private let productSurfaceTelemetry: ProductSurfaceTelemetry
+
     required init?(coder: NSCoder,
                    bookmarksDatabase: CoreDataDatabase,
                    syncService: DDGSyncing,
@@ -150,6 +152,7 @@ class TabSwitcherViewController: UIViewController {
                    appSettings: AppSettings,
                    aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
                    privacyStats: PrivacyStatsProviding,
+                   productSurfaceTelemetry: ProductSurfaceTelemetry,
                    tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings()) {
         self.bookmarksDatabase = bookmarksDatabase
         self.syncService = syncService
@@ -160,6 +163,7 @@ class TabSwitcherViewController: UIViewController {
         self.appSettings = appSettings
         self.aichatFullModeFeature = aichatFullModeFeature
         self.privacyStats = privacyStats
+        self.productSurfaceTelemetry = productSurfaceTelemetry
         self.tabSwitcherSettings = tabSwitcherSettings
         super.init(coder: coder)
     }
@@ -270,6 +274,11 @@ class TabSwitcherViewController: UIViewController {
         bindTrackerCount()
         trackerCountViewModel?.refresh()
 
+    }
+
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        productSurfaceTelemetry.tabManagerUsed()
     }
 
     private func setupBackgroundView() {

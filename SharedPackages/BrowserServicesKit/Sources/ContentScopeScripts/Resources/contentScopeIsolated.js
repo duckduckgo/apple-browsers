@@ -2182,7 +2182,7 @@
 
   // src/wrapper-utils.js
   init_define_import_meta_trackerLookup();
-  var ddgShimMark = Symbol("ddgShimMark");
+  var ddgShimMark = /* @__PURE__ */ Symbol("ddgShimMark");
   function defineProperty(object, propertyName, descriptor) {
     objectDefineProperty(object, propertyName, descriptor);
   }
@@ -2722,7 +2722,15 @@
           this.wkSend(handler, data2);
         });
         const cipher = new this.globals.Uint8Array([...ciphertext, ...tag]);
-        const decrypted = await this.decrypt(cipher, key, iv);
+        const decrypted = await this.decrypt(
+          /** @type {BufferSource} */
+          /** @type {unknown} */
+          cipher,
+          /** @type {BufferSource} */
+          /** @type {unknown} */
+          key,
+          iv
+        );
         return this.globals.JSONparse(decrypted || "{}");
       } catch (e) {
         if (e instanceof MissingHandler) {
@@ -12314,7 +12322,7 @@ ul.messages {
       }
     });
   }
-  async function getExpandedPerformanceMetrics() {
+  async function getExpandedPerformanceMetrics(timeoutMs = 500) {
     try {
       if (document.readyState !== "complete") {
         return returnError("Document not ready");
@@ -12331,7 +12339,7 @@ ul.messages {
       const fcp = paint.find((p) => p.name === "first-contentful-paint");
       let largestContentfulPaint = null;
       if (PerformanceObserver.supportedEntryTypes.includes("largest-contentful-paint")) {
-        largestContentfulPaint = await waitForLCP();
+        largestContentfulPaint = await waitForLCP(timeoutMs);
       }
       const totalResourceSize = resources.reduce((sum, r) => sum + (r.transferSize || 0), 0);
       if (navigation) {
@@ -12502,6 +12510,15 @@ ul.messages {
           jsPerformance,
           referrer
         };
+        const getOpener = this.getFeatureSettingEnabled("opener", "enabled");
+        if (getOpener) {
+          result.opener = !!window.opener;
+        }
+        const getReloaded = this.getFeatureSettingEnabled("reloaded", "enabled");
+        if (getReloaded) {
+          result.pageReloaded = window.performance.navigation && window.performance.navigation.type === 1 || /** @type {PerformanceNavigationTiming[]} */
+          window.performance.getEntriesByType("navigation").map((nav) => nav.type).includes("reload");
+        }
         const detectorSettings = this.getFeatureSetting("interferenceTypes", "webInterferenceDetection");
         if (detectorSettings) {
           result.detectorData = {
@@ -12552,7 +12569,8 @@ ul.messages {
       }
     }
     async triggerExpandedPerformanceMetrics() {
-      const expandedPerformanceMetrics = await getExpandedPerformanceMetrics();
+      const permissableDelayMs = this.getFeatureSetting("expandedTimeoutMs") ?? 5e3;
+      const expandedPerformanceMetrics = await getExpandedPerformanceMetrics(permissableDelayMs);
       this.messaging.notify("expandedPerformanceMetricsResult", expandedPerformanceMetrics);
     }
   };

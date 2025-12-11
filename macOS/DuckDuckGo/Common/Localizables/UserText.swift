@@ -627,6 +627,11 @@ struct UserText {
     static let aiChatChatWithAITooltip = NSLocalizedString("aichat.ask-privately.tooltip", value: "Ask privately", comment: "Tooltip for the chat with AI segment in the toggle control")
     static let aiChatToggleSearchLabel = NSLocalizedString("aichat.toggle.search.label", value: "Search", comment: "Label for the search segment in the address bar toggle control")
     static let aiChatToggleAskLabel = NSLocalizedString("aichat.toggle.ask.label", value: "Duck.ai", comment: "Label for the ask AI segment in the address bar toggle control")
+
+    // AI Chat Toggle Popover
+    static let aiChatTogglePopoverTitle = NSLocalizedString("aichat.toggle.popover.title", value: "NEW! Two ways to search privately", comment: "Title for the AI Chat toggle introduction popover")
+    static let aiChatTogglePopoverMessage = NSLocalizedString("aichat.toggle.popover.message", value: "Search as usual or get answers with AI. Either way, your information stays private.", comment: "Message for the AI Chat toggle introduction popover")
+    static let aiChatTogglePopoverButton = NSLocalizedString("aichat.toggle.popover.button", value: "Customize AI Features", comment: "Button text for customizing AI features in the toggle popover")
     static let aiChatSendButtonTooltip = NSLocalizedString("aichat.send-button.tooltip", value: "Send", comment: "Tooltip for the send button in AI chat omnibar")
     static let aiChatOmnibarPlaceholder = NSLocalizedString("aichat.omnibar.placeholder", value: "Ask privately", comment: "Placeholder text shown in the Duck.ai chat input field")
     static let moreSearchSettings = NSLocalizedString("settings.more-search-settings", value: "More Search Settings", comment: "The button name in preferences for More Search Settings")
@@ -2168,4 +2173,17 @@ struct UserText {
     static let winBackCampaignLastDayMessageCTA = NSLocalizedString("win-back.campaign.last-day.message.cta", value: "See Offer", comment: "CTA of the message displayed on the last day of the win-back campaign")
 
     static let winBackCampaignMenuBadgeText = NSLocalizedString("win-back.campaign.menu.badge.text", value: "SAVE 25%", comment: "Text for the badge displayed on the Subscription menu item during the win-back campaign")
+
+    // MARK: - OmniBar Notifications
+    static let omnibarNotificationCookiesManaged = NSLocalizedString("omnibar.notification.cookies.managed", value: "Cookies Managed", comment: "Text displayed when cookies are managed by DuckDuckGo")
+    static let omnibarNotificationPopupHidden = NSLocalizedString("omnibar.notification.popup.hidden", value: "Pop-up Hidden", comment: "Text displayed when a pop-up is hidden by DuckDuckGo")
+
+    static func omnibarNotificationTrackersBlocked(_ count: Int) -> String {
+        let template = NSLocalizedString(
+            "omnibar.notification.trackers.blocked",
+            value: "%d Trackers Blocked",
+            comment: "Text displayed when trackers are blocked. The %d is the number of trackers blocked."
+        )
+        return String.localizedStringWithFormat(template, count)
+    }
 }

@@ -2180,10 +2180,58 @@
       "comment" : "Tooltip for the send button in AI chat omnibar",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senden"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Send"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invia"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Versturen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyślij"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправить"
           }
         }
       }
@@ -2376,6 +2424,42 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Duck.ai"
+          }
+        }
+      }
+    },
+    "aichat.toggle.popover.button" : {
+      "comment" : "Button text for customizing AI features in the toggle popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Customize AI Features"
+          }
+        }
+      }
+    },
+    "aichat.toggle.popover.message" : {
+      "comment" : "Message for the AI Chat toggle introduction popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search as usual or get answers with AI. Either way, your information stays private."
+          }
+        }
+      }
+    },
+    "aichat.toggle.popover.title" : {
+      "comment" : "Title for the AI Chat toggle introduction popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "NEW! Two ways to search privately"
           }
         }
       }
@@ -24787,10 +24871,58 @@
       "comment" : "Label for showing Search/Duck.ai toggle when address bar is focused",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Such- und Duck.ai-Umschalter anzeigen, wenn die Adressleiste fokussiert ist"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Show Search and Duck.ai toggle when the address bar is focused"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Muestra la opción Buscar y Duck.ai cuando la barra de direcciones está enfocada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher la recherche et le bouton Duck.ai lorsque la barre d'adresse est mise en évidence"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra il selettore delle funzioni di ricerca e Duck.ai quando la barra degli indirizzi è attiva"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toon de schakelaar voor Zoeken en Duck.ai wanneer de adresbalk is geselecteerd"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż przełącznik wyszukiwania i Duck.ai, gdy pasek adresu jest aktywny"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A opção Mostrar Pesquisa e Duck.ai é ativada/desativada quando a barra de endereços está focada"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показывать переключатель «Поиск или Duck.ai», если выделена адресная строка"
           }
         }
       }
@@ -30214,25 +30346,25 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Los pop-ups no se abren"
+            "value" : "Las ventanas emergentes no se abren"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les pop-ups ne s'ouvrent pas"
+            "value" : "Les fenêtres contextuelles ne s'ouvrent pas"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "I pop-up non si aprono"
+            "value" : "I popup non si aprono"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pop-ups openen niet"
+            "value" : "Pop-ups worden niet geopend"
           }
         },
         "pl" : {
@@ -30244,7 +30376,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pop-ups não abrem"
+            "value" : "Os pop-ups não abrem"
           }
         },
         "ru" : {
@@ -57211,1026 +57343,6 @@
         }
       }
     },
-    "newTab.setup.default.browser.action" : {
-      "comment" : "Action title on the action menu of the Default Browser card",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Standardbrowser erstellen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Make Default Browser"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Convertir en navegador predeterminado"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Définir comme navigateur par défaut"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rendi il browser predefinito"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Instellen als standaardbrowser"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ustaw jako domyślną przeglądarkę"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tornar navegador predefinido"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Назначить браузером по умолчанию"
-          }
-        }
-      }
-    },
-    "newTab.setup.default.browser.summary" : {
-      "comment" : "Summary of the Default Browser card",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wir blockieren automatisch Tracker, während du browst. Das ist Datenschutz, vereinfacht."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "We automatically block trackers as you browse. It's privacy, simplified."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bloqueamos automáticamente los rastreadores mientras navegas. Es tan solo privacidad simplificada."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nous bloquons automatiquement les traqueurs lorsque vous naviguez. C'est la confidentialité, simplifiée."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Blocchiamo automaticamente i sistemi di tracciamento mentre navighi. La privacy, semplificata."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "We blokkeren automatisch trackers wanneer je surft. Dat is privacy, vereenvoudigd."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Podczas przeglądania automatycznie blokujemy mechanizmy śledzące. To prywatność – jeszcze prostsza."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bloqueamos automaticamente os rastreadores enquanto navegas. É privacidade, simplificada."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Пока вы ходите по сайтам, мы автоматически блокируем трекеры. Максимум защиты, минимум усилий."
-          }
-        }
-      }
-    },
-    "newTab.setup.default.browser.title" : {
-      "comment" : "Title of the Default Browser card of the Set Up section in the home page",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Standardmäßig auf Datenschutz einstellen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Default to Privacy"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Predeterminado a Privacidad"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La confidentialité par défaut"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La privacy prima di tutto"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Standaard ingesteld op Privacy"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Domyślnie ustaw prywatność"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Predefinir a privacidade"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Конфиденциальность по умолчанию"
-          }
-        }
-      }
-    },
-    "newTab.setup.dock.action" : {
-      "comment" : "Action title on the action menu of the 'Add App to the Dock' card",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Im Dock behalten"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Keep In Dock"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mantener en Dock"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Garder dans le Dock"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Resta nel dock"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In het Dock houden"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trzymaj w Docku"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Manter na Dock"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ярлык для док-панели"
-          }
-        }
-      }
-    },
-    "newTab.setup.dock.confirmation" : {
-      "comment" : "Confirmation title after user clicks on 'Add to Dock' card",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zum Dock hinzugefügt!"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Added to Dock!"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¡Añadido al Dock!"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajouté au Dock !"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aggiunto al dock!"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Toegevoegd aan Dock!"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dodano do Docka!"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adicionado à Dock!"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ярлык добавлен на док-панель."
-          }
-        }
-      }
-    },
-    "newTab.setup.dock.summary" : {
-      "comment" : "Summary of the 'Add App to the Dock' card",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Du kannst DuckDuckGo schneller erreichen, indem du es zu deinem Dock hinzufügst."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Get to DuckDuckGo faster by adding it to your Dock."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Accede a DuckDuckGo más rápido añadiéndolo a tu Dock."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Accédez plus rapidement à DuckDuckGo en l'ajoutant à votre Dock."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Accedi più velocemente a DuckDuckGo aggiungendolo al tuo dock."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ga sneller naar DuckDuckGo door het aan je Dock toe te voegen."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uzyskuj szybszy dostęp do przeglądarki DuckDuckGo dzięki jej dodaniu do Docka."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Acede ao DuckDuckGo mais rapidamente adicionando-o à tua Dock."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Добавьте DuckDuckGo на док-панель для быстрого запуска."
-          }
-        }
-      }
-    },
-    "newTab.setup.dock.title" : {
-      "comment" : "Title of the new tab page card for adding application to the Dock",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "In deinem Dock behalten"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Keep in Your Dock"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mantener en tu Dock"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Garder dans votre Dock"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tieni nel tuo dock"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bewaar in je dock"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trzymaj w Docku"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Manter na tua Dock"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ярлык для док-панели"
-          }
-        }
-      }
-    },
-    "newTab.setup.duck.player.action" : {
-      "comment" : "Action title on the action menu of the Duck Player card of the Set Up section in the home page",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Duck Player testen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Try Duck Player"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Prueba Duck Player"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Essayer Duck Player"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Prova Duck Player"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Probeer Duck Player"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wypróbuj Duck Player"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Experimente o Duck Player"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Попробовать Duck Player"
-          }
-        }
-      }
-    },
-    "newTab.setup.duck.player.summary" : {
-      "comment" : "Summary of the Duck Player card of the Set Up section in the home page",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Genieße ein sauberes Seherlebnis ohne personalisierte Werbung."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Enjoy a clean viewing experience without personalized ads."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Disfruta de una experiencia de visualización limpia sin anuncios personalizados."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Profitez d'une expérience de visionnage épurée, sans publicités personnalisées."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Usufruisci di un'esperienza di visione lineare, senza annunci personalizzati."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Beleef ongeëvenaard kijkplezier zonder gepersonaliseerde advertenties."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Korzystaj z czystego środowiska oglądania bez spersonalizowanych reklam."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Desfruta de uma experiência de visualização limpa sem anúncios personalizados."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "«Чистый» просмотр без персонализированной рекламы."
-          }
-        }
-      }
-    },
-    "newTab.setup.duck.player.title" : {
-      "comment" : "Title of the Duck Player card of the Set Up section in the home page",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "YouTube aufräumen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Clean Up YouTube"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Limpiar YouTube"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Place nette sur YouTube"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ripulisci YouTube"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "YouTube opruimen"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Oczyść YouTube"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Limpar YouTube"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "YouTube в очищенном варианте"
-          }
-        }
-      }
-    },
-    "newTab.setup.email.protection.action" : {
-      "comment" : "Action title on the action menu of the Email Protection card of the Set Up section in the home page",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Hol dir eine Duck Address"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Get a Duck Address"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Consigue una Duck Address"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Se procurer une Duck Address"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ottieni un Duck Address"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Een Duck Address aanmaken"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uzyskaj Duck Address"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Obtém um Duck Address"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Создать адрес Duck Address"
-          }
-        }
-      }
-    },
-    "newTab.setup.email.protection.summary" : {
-      "comment" : "Summary of the Email Protection card of the Set Up section in the home page",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Erstelle eigene @duck.com-Adressen, die Tracker aus eingehenden E-Mails entfernen."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Generate custom @duck.com addresses that clean trackers from incoming email."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Genera direcciones personalizadas de @duck.com que limpien los rastreadores del correo electrónico entrante."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Générez des adresses @duck.com personnalisées qui débarrassent les e-mails entrants des traqueurs."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Genera indirizzi @duck.com personalizzati che eliminano i sistemi di tracciamento della posta in arrivo."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aangepaste @duck.com-adressen genereren om trackers van binnenkomende e-mails te wissen."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Generuj adresy w domenie @duck.com, które usuwają skrypty śledzące z przychodzących e-maili."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gera endereços @duck.com personalizados que limpam os rastreadores dos e-mails recebidos."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Уникальные почтовые адреса на домене @duck.com для очистки входящей почты от трекеров."
-          }
-        }
-      }
-    },
-    "newTab.setup.email.protection.title" : {
-      "comment" : "Title of the Email Protection card of the Set Up section in the home page",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Schütze deinen Posteingang"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Protect Your Inbox"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Protege tu bandeja de entrada"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Protégez votre boîte de réception"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Proteggi la tua casella di posta"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bescherm je inbox"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Chroń swoją skrzynkę odbiorczą"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Protege a tua caixa de entrada"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Защита для вашей почты"
-          }
-        }
-      }
-    },
-    "newTab.setup.Import.action" : {
-      "comment" : "Action title on the action menu of the Import card of the Set Up section in the home page",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Jetzt importieren"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Import Now"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Importar ahora"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Importer dès maintenant"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Importa ora"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nu importeren"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Importuj teraz"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Importar agora"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Импортировать"
-          }
-        }
-      }
-    },
-    "newTab.setup.import.summary" : {
-      "comment" : "Summary of the Import card of the Set Up section in the home page",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Importiere Lesezeichen, Favoriten und Passwörter aus deinem alten Browser."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Import bookmarks, favorites, and passwords from your old browser."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Importa marcadores, favoritos y contraseñas desde tu navegador antiguo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Importez des signets, des favoris et des mots de passe depuis votre ancien navigateur."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Importa segnalibri, preferiti e password dal tuo vecchio browser."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bladwijzers, favorieten en wachtwoorden vanuit je vorige browser importeren."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zaimportuj zakładki, elementy ulubione i hasła ze starej przeglądarki."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Importa marcadores, favoritos e palavras-passe do teu navegador antigo."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Закладки, избранное и пароли можно импортировать из старого браузера."
-          }
-        }
-      }
-    },
-    "newTab.setup.import.title" : {
-      "comment" : "Title of the Import card of the Set Up section in the home page",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bring deine Sachen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Bring Your Stuff"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trae tus cosas"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Emportez tout avec vous"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Importa i tuoi file"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Neem je favorieten mee"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Przenieś swoje rzeczy"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Traz as tuas coisas"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Все свое с собой"
-          }
-        }
-      }
-    },
-    "newTab.setup.remove.item" : {
-      "comment" : "Action title on the action menu of the set up cards card of the SetUp section in the home page to remove the item",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Verwerfen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Dismiss"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Descartar"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ignorer"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ignora"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Negeren"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Odrzuć"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ignorar"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Отклонить"
-          }
-        }
-      }
-    },
     "newtabpage.context.menu.favorites" : {
       "comment" : "Context menu item to manage Favorites section on the New Tab Page",
       "extractionState" : "extracted_with_value",
@@ -59487,6 +58599,449 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Хорошо"
+          }
+        }
+      }
+    },
+    "omnibar.notification.cookies.managed" : {
+      "comment" : "Text displayed when cookies are managed by DuckDuckGo",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cookies verwaltet"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Cookies Managed"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cookies gestionadas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cookies gérés"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cookie gestiti"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beheerde cookies"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zarządzane pliki cookie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cookies geridos"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kуки-файлы выбраны"
+          }
+        }
+      }
+    },
+    "omnibar.notification.popup.hidden" : {
+      "comment" : "Text displayed when a pop-up is hidden by DuckDuckGo",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pop-up ausgeblendet"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Pop-up Hidden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ventana emergente oculta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fenêtre contextuelle masquée"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Popup nascosto"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pop-up verborgen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ukryte wyskakujące okienka"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pop-up ocultado"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Всплывающее окно скрыто"
+          }
+        }
+      }
+    },
+    "omnibar.notification.trackers.blocked" : {
+      "comment" : "Text displayed when trackers are blocked. The %d is the number of trackers blocked.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@trackers@"
+          },
+          "substitutions" : {
+            "trackers" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg Tracker wurden blockiert"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg Tracker wurde blockiert"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg Tracker wurden blockiert"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%#@trackers@"
+          },
+          "substitutions" : {
+            "trackers" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "new",
+                      "value" : "%arg Trackers Blocked"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "new",
+                      "value" : "%arg Tracker Blocked"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "new",
+                      "value" : "%arg Trackers Blocked"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@trackers@"
+          },
+          "substitutions" : {
+            "trackers" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg rastreadores bloqueados"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg rastreador bloqueado"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg rastreadores bloqueados"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@trackers@"
+          },
+          "substitutions" : {
+            "trackers" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg traqueurs bloqués"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg traqueur bloqué"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg traqueurs bloqués"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@trackers@"
+          },
+          "substitutions" : {
+            "trackers" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg sistemi di tracciamento bloccati"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg sistemi di tracciamento bloccati"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg sistemi di tracciamento bloccati"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@trackers@"
+          },
+          "substitutions" : {
+            "trackers" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg trackers geblokkeerd"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg tracker geblokkeerd"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg trackers geblokkeerd"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@trackers@"
+          },
+          "substitutions" : {
+            "trackers" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "few" : {
+                    "stringUnit" : {
+                      "state" : "new",
+                      "value" : "%arg Trackers Blocked"
+                    }
+                  },
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "Zablokowane mechanizmy śledzące: %arg"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg zablokowany mechanizm śledzący"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "Zablokowane mechanizmy śledzące: %arg"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@trackers@"
+          },
+          "substitutions" : {
+            "trackers" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg rastreadores bloqueados"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg rastreador bloqueado"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg rastreadores bloqueados"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@trackers@"
+          },
+          "substitutions" : {
+            "trackers" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "few" : {
+                    "stringUnit" : {
+                      "state" : "new",
+                      "value" : "%arg Trackers Blocked"
+                    }
+                  },
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "Заблокировано трекеров: %arg"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "Заблокировано трекеров: %arg"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "Заблокировано трекеров: %arg"
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
@@ -64443,7 +63998,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Erlaube „%@“, ein PopUp-Fenster zu öffnen?"
+            "value" : "Erlauben, dass „%@“ ein Pop-up-Fenster öffnet?"
           }
         },
         "en" : {
@@ -64455,19 +64010,19 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "¿Permitir que \"%@\" abra una ventana emergente?"
+            "value" : "¿Permitir que “%@” abra una ventana emergente?"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Autoriser « %@ » à ouvrir la fenêtre contextuelle ?"
+            "value" : "Autoriser « %@ » à ouvrir une fenêtre contextuelle ?"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Consenti a \"%@\" di aprire la finestra popup?"
+            "value" : "Consentire a \"%@\" di aprire una finestra pop-up?"
           }
         },
         "nl" : {
@@ -64479,19 +64034,19 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zezwolić domenie „%@” na otwarcie wyskakującego okienka?"
+            "value" : "Zezwolić domenie „%@\" na otwarcie wyskakującego okienka?"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Permitir que \"%@\" abra a janela de pop-up?"
+            "value" : "Permitir que \"%@\" abra uma janela pop-up?"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Разрешить сайту %@ открыть всплывающее окно?"
+            "value" : "Разрешить «%@» открыть всплывающее окно?"
           }
         }
       }
@@ -64503,7 +64058,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Erlaube „%@“, PopUp-Fenster zu öffnen?"
+            "value" : "Darf „%@“ Pop-up-Fenster öffnen?"
           }
         },
         "en" : {
@@ -64515,7 +64070,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "¿Permitir que \"%@\" abra ventanas emergentes?"
+            "value" : "¿Permitir que “%@” abra ventanas emergentes?"
           }
         },
         "fr" : {
@@ -64527,7 +64082,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Consenti a \"%@\" di aprire finestre popup?"
+            "value" : "Consentire a \"%@\" di aprire finestre pop-up?"
           }
         },
         "nl" : {
@@ -64539,19 +64094,19 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zezwolić domenie „%@” na otwieranie wyskakujących okienek?"
+            "value" : "Zezwolić domenie „%@\" na otwieranie wyskakujących okienek?"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Permitir que \"%@\" abra janelas de pop-up?"
+            "value" : "Permitir que “%@” abra janelas de pop-up?"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Разрешить сайту %@ открыть всплывающие окна?"
+            "value" : "Разрешить сайту %@ открывать всплывающие окна?"
           }
         }
       }
@@ -64683,7 +64238,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Always Allow"
+            "value" : "Always allow"
           }
         }
       }
@@ -64695,7 +64250,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Always Ask"
+            "value" : "Always ask"
           }
         }
       }
@@ -64743,7 +64298,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Never Allow"
+            "value" : "Never allow"
+          }
+        }
+      }
+    },
+    "permission.center.reset.tooltip" : {
+      "comment" : "Tooltip for the remove/reset permission button in permission center",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Reset permission"
           }
         }
       }
@@ -65132,6 +64699,18 @@
         }
       }
     },
+    "permission.notification" : {
+      "comment" : "Web notifications permission access name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Notifications"
+          }
+        }
+      }
+    },
     "permission.open.settings" : {
       "comment" : "Open System Settings (to re-enable permission for the App) (macOS 13 and above)",
       "extractionState" : "extracted_with_value",
@@ -65331,7 +64910,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pop-ups für diesen Besuch erlauben"
+            "value" : "Nur Pop-ups für diesen Besuch zulassen"
           }
         },
         "en" : {
@@ -65343,43 +64922,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Permitir ventanas emergentes durante esta visita"
+            "value" : "Solo permitir ventanas emergentes para esta visita"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Autoriser les fenêtres contextuelles pour cette visite"
+            "value" : "N'autoriser les fenêtres contextuelles que pour cette visite"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Consenti popup per questa visita"
+            "value" : "Consenti i pop-up solo per questa visita"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pop-ups voor dit bezoek toestaan"
+            "value" : "Alleen pop-ups toestaan voor dit bezoek"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zezwalaj na wyskakujące okienka podczas tej wizyty"
+            "value" : "Pozwól na wyskakujące okienka tylko podczas tej wizyty"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Permitir pop-ups nesta visita"
+            "value" : "Permitir pop-ups apenas para esta visita."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Разрешить всплывающие окна для этого посещения"
+            "value" : "Разрешить всплывающие окна только на время этого посещения"
           }
         }
       }
@@ -65571,7 +65150,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "„%@“ öffnen"
+            "value" : "Öffne „%@“"
           }
         },
         "en" : {
@@ -65595,13 +65174,13 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Apri “%@”"
+            "value" : "Apri \"%@\""
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "\"%@\" openen"
+            "value" : "Open \"%@\""
           }
         },
         "pl" : {
@@ -65613,7 +65192,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abrir “%@”"
+            "value" : "Abrir \"%@\""
           }
         },
         "ru" : {
@@ -65686,7 +65265,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%#@popups@ bloqueadas"
+            "value" : "Bloqueadas %#@popups@"
           },
           "substitutions" : {
             "popups" : {
@@ -65742,7 +65321,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%#@popups@ bloccati"
+            "value" : "Bloccato %1$# @popups@"
           },
           "substitutions" : {
             "popups" : {
@@ -65753,7 +65332,7 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg popup"
+                      "value" : "%arg pop-up"
                     }
                   },
                   "other" : {
@@ -65798,7 +65377,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zablokowane %#@popups@"
+            "value" : "Zablokowano %#@popups@"
           },
           "substitutions" : {
             "popups" : {
@@ -65827,7 +65406,7 @@
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg wyskakujących okienek"
+                      "value" : "Wyskakujące okienka: %arg"
                     }
                   }
                 }
@@ -65895,7 +65474,7 @@
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg всплывающих окон"
+                      "value" : "%arg всплывающих окна (окон)"
                     }
                   }
                 }
@@ -81409,6 +80988,258 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Выйти"
+          }
+        }
+      }
+    },
+    "quit-survey.auto-quit-message" : {
+      "comment" : "Message indicating browser will auto-quit. %d is the number of seconds remaining",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The browser will automatically quit in %d seconds..."
+          }
+        }
+      }
+    },
+    "quit-survey.close-and-quit" : {
+      "comment" : "Button to close survey and quit the browser",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Close and Quit"
+          }
+        }
+      }
+    },
+    "quit-survey.disclaimer" : {
+      "comment" : "Privacy disclaimer in quit survey",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Reports sent to DuckDuckGo are 100% anonymous and only include your message, the DuckDuckGo browser version, and your macOS version."
+          }
+        }
+      }
+    },
+    "quit-survey.initial-question" : {
+      "comment" : "Question shown in the quit survey dialog asking about user's experience",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Before you go, how was your first time exploring the DuckDuckGo browser?"
+          }
+        }
+      }
+    },
+    "quit-survey.negative-option" : {
+      "comment" : "Negative response option in quit survey",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Bad, it needs work"
+          }
+        }
+      }
+    },
+    "quit-survey.negative-title" : {
+      "comment" : "Title for negative feedback form in quit survey",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Mind sharing what went wrong?"
+          }
+        }
+      }
+    },
+    "quit-survey.option.browser-doesnt-work" : {
+      "comment" : "Quit survey feedback option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Browser doesn't work as expected"
+          }
+        }
+      }
+    },
+    "quit-survey.option.browser-is-slow" : {
+      "comment" : "Quit survey feedback option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Browser is slow"
+          }
+        }
+      }
+    },
+    "quit-survey.option.import-issues" : {
+      "comment" : "Quit survey feedback option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Issues importing my stuff"
+          }
+        }
+      }
+    },
+    "quit-survey.option.no-extensions" : {
+      "comment" : "Quit survey feedback option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "No extensions"
+          }
+        }
+      }
+    },
+    "quit-survey.option.no-privacy-benefits" : {
+      "comment" : "Quit survey feedback option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Not seeing privacy benefits"
+          }
+        }
+      }
+    },
+    "quit-survey.option.something-else" : {
+      "comment" : "Quit survey feedback option for other issues",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Something else"
+          }
+        }
+      }
+    },
+    "quit-survey.option.websites-dont-work" : {
+      "comment" : "Quit survey feedback option",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Websites don't work as expected"
+          }
+        }
+      }
+    },
+    "quit-survey.positive-option" : {
+      "comment" : "Positive response option in quit survey",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Good, and I'll use it again soon"
+          }
+        }
+      }
+    },
+    "quit-survey.positive-title" : {
+      "comment" : "Title shown after positive response in quit survey",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Thanks and see you again soon!"
+          }
+        }
+      }
+    },
+    "quit-survey.quit-now" : {
+      "comment" : "Button to quit immediately",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Quit Now"
+          }
+        }
+      }
+    },
+    "quit-survey.select-all-that-apply" : {
+      "comment" : "Instruction text for quit survey feedback options",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Select all that apply"
+          }
+        }
+      }
+    },
+    "quit-survey.submit-and-quit" : {
+      "comment" : "Button to submit feedback and quit",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Submit and Quit"
+          }
+        }
+      }
+    },
+    "quit-survey.tell-us-more" : {
+      "comment" : "Label for optional text input in quit survey",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Tell us more (optional)"
+          }
+        }
+      }
+    },
+    "quit-survey.tell-us-more-hint" : {
+      "comment" : "Hint text for optional feedback input",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The more details you share, the better!"
+          }
+        }
+      }
+    },
+    "quit-survey.text-placeholder" : {
+      "comment" : "Placeholder text for feedback text input",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Share your thoughts..."
           }
         }
       }

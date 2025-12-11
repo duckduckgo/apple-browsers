@@ -82,7 +82,7 @@ public enum Classifier {
             allowIntranetMultiLabel: true,
             allowIntranetSingleLabel: false,
             allowPrivateSuffix: true,
-            allowedSchemes: ["http", "https", "file", "about", "blob", "data", "duck", "mailto", "networkprotection", "webkit-extension", "x-safari-https"]
+            allowedSchemes: ["http", "https", "file", "about", "blob", "data", "databrokerprotection", "duck", "mailto", "networkprotection", "webkit-extension", "x-safari-https"]
         )
 #else
         /// The default policy used when not specified.
@@ -90,7 +90,7 @@ public enum Classifier {
             allowIntranetMultiLabel: false,
             allowIntranetSingleLabel: false,
             allowPrivateSuffix: true,
-            allowedSchemes: ["http", "https", "file", "about", "blob", "data", "duck", "mailto", "networkprotection", "webkit-extension", "x-safari-https"]
+            allowedSchemes: ["http", "https", "file", "about", "blob", "data", "databrokerprotection", "duck", "mailto", "networkprotection", "webkit-extension", "x-safari-https"]
         )
 #endif
     }

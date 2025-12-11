@@ -38,6 +38,7 @@ struct AddEditBookmarkDialogView: ModalView {
                 addFolderView
             }
         }
+        .background(Color(designSystemColor: .surfaceSecondary))
         .font(.system(size: 13))
     }
 

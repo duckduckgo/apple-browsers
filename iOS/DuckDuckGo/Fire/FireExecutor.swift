@@ -107,7 +107,7 @@ class FireExecutor {
     }
     
     @MainActor
-    func burn(options: FireOptions) async {
+    func burn(options: FireOptions, applicationState: DataStoreWarmup.ApplicationState = .unknown) async {
         if options.contains(.tabs) {
             delegate?.willStartBurningTabs()
             burnTabs()
@@ -119,7 +119,7 @@ class FireExecutor {
         if shouldBurnData { delegate?.willStartBurningData() }
         if shouldBurnAIChats { delegate?.willStartBurningAIHistory() }
 
-        async let dataTask: Void = shouldBurnData ? burnData() : ()
+        async let dataTask: Void = shouldBurnData ? burnData(applicationState: applicationState) : ()
         async let aiTask: Void = shouldBurnAIChats ? burnAIHistory() : ()
         _ = await (dataTask, aiTask)
 
@@ -149,7 +149,7 @@ class FireExecutor {
     }
     
     @MainActor
-    private func burnData() async {
+    private func burnData(applicationState: DataStoreWarmup.ApplicationState) async {
         guard !burnInProgress else {
             assertionFailure("Shouldn't get called multiple times")
             return
@@ -158,7 +158,7 @@ class FireExecutor {
 
         // This needs to happen only once per app launch
         if let dataStoreWarmup {
-            await dataStoreWarmup.ensureReady(applicationState: .unknown)
+            await dataStoreWarmup.ensureReady(applicationState: applicationState)
             self.dataStoreWarmup = nil
         }
 

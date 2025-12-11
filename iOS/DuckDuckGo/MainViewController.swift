@@ -3672,7 +3672,7 @@ extension MainViewController: AutoClearWorker {
         if appSettings.autoClearAIChatHistory {
             options.insert(.aiChats)
         }
-        await fireExecutor.burn(options: options)
+        await fireExecutor.burn(options: options, applicationState: applicationState)
     }
 
     func forgetAllWithAnimation(options: FireOptions,

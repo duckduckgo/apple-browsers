@@ -135,7 +135,7 @@ public final class AMPCanonicalExtractor: NSObject {
 
         let ampKeywords = settings.ampKeywords
 
-        #if canImport(UIKit)
+#if canImport(UIKit)
         if useBackgroundTaskProtection {
             return performAMPDetectionWithBackgroundTask(urlStr: urlStr, ampKeywords: ampKeywords)
         } else {
@@ -143,14 +143,15 @@ public final class AMPCanonicalExtractor: NSObject {
                 return urlStr.contains(keyword)
             }
         }
-        #else
+#else
         return ampKeywords.contains { keyword in
             return urlStr.contains(keyword)
         }
-        #endif
+#endif
     }
 
     private func performAMPDetectionWithBackgroundTask(urlStr: String, ampKeywords: [String]) -> Bool {
+#if canImport(UIKit)
         var backgroundTask: UIBackgroundTaskIdentifier = .invalid
 
         // Start background task to prevent suspension during detection
@@ -166,6 +167,7 @@ public final class AMPCanonicalExtractor: NSObject {
                 UIApplication.shared.endBackgroundTask(backgroundTask)
             }
         }
+#endif
 
         return ampKeywords.contains { keyword in
             return urlStr.contains(keyword)

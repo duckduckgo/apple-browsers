@@ -960,7 +960,7 @@ struct UserText {
                                                                          value: "“%@“ website would like to use your current location.",
                                                                          comment: "Popover asking for domain %@ to use location")
     static let devicePermissionAuthorizationFormat = NSLocalizedString("permission.authorization.format",
-                                                                       value: "Allow “%@“ to use your %@?",
+                                                                       value: "Allow “%@“ to use your %@ once?",
                                                                        comment: "Popover asking for domain %@ to use camera/mic (%@)")
     static let popupWindowsPermissionAuthorizationFormat = NSLocalizedString("permission.authorization.popups.format",
                                                                              value: "Allow “%@” to open a pop-up window?",
@@ -1029,7 +1029,7 @@ struct UserText {
     static let permissionSystemLocationDisabled = NSLocalizedString("permission.system.location.disabled", value: "System location disabled. Turn it on in ", comment: "Text shown when system location was previously denied. Followed by a link to System Settings")
     static let permissionSystemSettingsLocation = NSLocalizedString("permission.system.settings.location", value: "System Settings → Privacy", comment: "Link text to open System Settings Privacy section for location")
     static let permissionRestartApp = NSLocalizedString("permission.restart.app", value: "Restart the DuckDuckGo application", comment: "Text shown when app restart is required for permission changes to take effect")
-    static let permissionGeolocationPromptFormat = NSLocalizedString("permission.geolocation.prompt.format", value: "Allow %@ to use your current location?", comment: "Prompt asking if domain %@ can use location")
+    static let permissionGeolocationPromptFormat = NSLocalizedString("permission.geolocation.prompt.format", value: "Allow %@ to use your current location once?", comment: "Prompt asking if domain %@ can use location once")
     static let permissionPopupNeverAllowButton = NSLocalizedString("permission.popup.never.allow.button", value: "Never Allow", comment: "Button that denies permission and remembers the decision for future requests")
 
     // Permission Center

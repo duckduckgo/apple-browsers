@@ -125,6 +125,18 @@ jobs:
       with:
         xcode-version: ${{ matrix.xcode-version }}
 
+    - name: Configure system logging
+      working-directory: SharedPackages/BrowserServicesKit
+      run: |
+        sudo cp com.apple.system.logging.plist /Library/Preferences/Logging/com.apple.system.logging.plist
+        sudo killall logd || true
+
+    - name: Start log stream in background
+      working-directory: macOS
+      run: |
+        log stream --debug --info --predicate 'process == "DuckDuckGo Review" OR process == "UI Tests-Runner"' --style syslog > app-console.log 2>&1 &
+        echo $! > log_stream.pid
+
     - name: Create test account for Sync and return the recovery code
       uses: duckduckgo/sync_crypto/action@main
       id: sync-recovery-code
@@ -185,6 +197,13 @@ jobs:
         | tee -a xcodebuild.log \
         | tee ui-tests.log
 
+    - name: Stop log stream
+      if: always()
+      run: |
+        if [ -f log_stream.pid ]; then
+          kill $(cat log_stream.pid) || true
+        fi
+
     - name: Report job duration
       if: success() || (always() && steps.run-ui-tests.outcome == 'failure')
       uses: ./.github/actions/measure-duration
@@ -215,6 +234,7 @@ jobs:
         name: "BuildLogs ${{ matrix.runner }}"
         path: |
           macOS/xcodebuild.log
+          macOS/app-console.log
           macOS/DerivedData/Logs/Test/*.xcresult
           ~/Library/Logs/DiagnosticReports/*
         retention-days: 7

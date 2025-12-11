@@ -154,7 +154,7 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
         XCTAssertEqual(cardsEvents, [[.addAppToDockMac], [.addAppToDockMac, .duckplayer], [], []])
     }
 
-    // MARK: - Pixel Tests
+    // MARK: - Pixel Tests (Card Shown)
 
     @MainActor
     func testWhenWillDisplayCardsWithAddToDockThenCardPresentedPixelIsFired() {
@@ -166,9 +166,57 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenWillDisplayCardsWithoutAddToDockThenNoPixelIsFired() {
-        provider.willDisplayCards([.duckplayer, .emailProtection])
+    func testWhenWillDisplayCardsWithDuckplayerThenShownPixelIsFired() {
+        provider.willDisplayCards([.duckplayer])
 
-        XCTAssertEqual(firedPixels.count, 0)
+        XCTAssertEqual(firedPixels.count, 1)
+        XCTAssertEqual(firedPixels.first?.name, "m_mac_new-tab-page_next-steps_shown")
+        XCTAssertEqual(firedPixels.first?.parameters["key"], "duckplayer")
+        XCTAssertNil(firedPixels.first?.parameters["appVersion"], "Expected appVersion parameter to NOT be included")
+    }
+
+    @MainActor
+    func testWhenWillDisplayCardsWithMultipleCardsThenShownPixelIsFiredForEach() {
+        provider.willDisplayCards([.duckplayer, .emailProtection, .addAppToDockMac])
+
+        XCTAssertEqual(firedPixels.count, 3)
+
+        // duckplayer fires nextStepsCardShown
+        XCTAssertEqual(firedPixels[0].name, "m_mac_new-tab-page_next-steps_shown")
+        XCTAssertEqual(firedPixels[0].parameters["key"], "duckplayer")
+
+        // emailProtection fires nextStepsCardShown
+        XCTAssertEqual(firedPixels[1].name, "m_mac_new-tab-page_next-steps_shown")
+        XCTAssertEqual(firedPixels[1].parameters["key"], "emailProtection")
+
+        // addAppToDockMac fires its own unique pixel
+        XCTAssertEqual(firedPixels[2].name, "m_mac_add_to_dock_new_tab_page_card_presented_u")
+    }
+
+    @MainActor
+    func testWhenWillDisplayCardsWithSubscriptionThenShownPixelIsFired() {
+        provider.willDisplayCards([.subscription])
+
+        XCTAssertEqual(firedPixels.count, 1)
+        XCTAssertEqual(firedPixels.first?.name, "m_mac_new-tab-page_next-steps_shown")
+        XCTAssertEqual(firedPixels.first?.parameters["key"], "subscription")
+    }
+
+    @MainActor
+    func testWhenWillDisplayCardsWithDefaultAppThenShownPixelIsFired() {
+        provider.willDisplayCards([.defaultApp])
+
+        XCTAssertEqual(firedPixels.count, 1)
+        XCTAssertEqual(firedPixels.first?.name, "m_mac_new-tab-page_next-steps_shown")
+        XCTAssertEqual(firedPixels.first?.parameters["key"], "defaultApp")
+    }
+
+    @MainActor
+    func testWhenWillDisplayCardsWithBringStuffThenShownPixelIsFired() {
+        provider.willDisplayCards([.bringStuff])
+
+        XCTAssertEqual(firedPixels.count, 1)
+        XCTAssertEqual(firedPixels.first?.name, "m_mac_new-tab-page_next-steps_shown")
+        XCTAssertEqual(firedPixels.first?.parameters["key"], "bringStuff")
     }
 }

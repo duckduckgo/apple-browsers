@@ -151,6 +151,7 @@ enum NewTabPagePixel: PixelKitEvent {
     // See macOS/PixelDefinitions/pixels/new_tab_page_pixels.json5
     case nextStepsCardClicked(_ card: String)
     case nextStepsCardDismissed(_ card: String)
+    case nextStepsCardShown(_ card: String)
 
     // MARK: -
 
@@ -179,6 +180,7 @@ enum NewTabPagePixel: PixelKitEvent {
         case .newTabPageLoadingTime: return "new-tab-page_loading_time"
         case .nextStepsCardClicked: return "new-tab-page_next-steps_clicked"
         case .nextStepsCardDismissed: return "new-tab-page_next-steps_dismissed"
+        case .nextStepsCardShown: return "new-tab-page_next-steps_shown"
         }
     }
 
@@ -214,7 +216,8 @@ enum NewTabPagePixel: PixelKitEvent {
                 .omnibarShown:
             return nil
         case .nextStepsCardClicked(let card),
-                .nextStepsCardDismissed(let card):
+                .nextStepsCardDismissed(let card),
+                .nextStepsCardShown(let card):
             return ["key": card]
         }
     }
@@ -243,7 +246,8 @@ enum NewTabPagePixel: PixelKitEvent {
                 .newTabPageLoadingTime:
             return [.pixelSource]
         case .nextStepsCardClicked,
-                .nextStepsCardDismissed:
+                .nextStepsCardDismissed,
+                .nextStepsCardShown:
             return nil
         }
     }

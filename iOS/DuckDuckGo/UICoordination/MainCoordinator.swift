@@ -27,6 +27,7 @@ import Configuration
 import SetDefaultBrowserUI
 import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
+import PrivacyStats
 
 @MainActor
 protocol URLHandling: AnyObject {
@@ -109,6 +110,7 @@ final class MainCoordinator {
             featureFlagger: featureFlagger,
             onboardingSearchExperienceProvider: OnboardingSearchExperience()
         )
+        let privacyStats: PrivacyStatsProviding = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
         tabManager = TabManager(model: tabsModel,
                                 persistence: tabsPersistence,
                                 previewsSource: previewsSource,
@@ -135,7 +137,7 @@ final class MainCoordinator {
                                 keyValueStore: keyValueStore,
                                 daxDialogsManager: daxDialogsManager,
                                 aiChatSettings: aiChatSettings,
-                                privacyStats: AppDependencyProvider.shared.privacyStats)
+                                privacyStats: privacyStats)
         controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
                                         bookmarksDatabase: bookmarksDatabase,
                                         bookmarksDatabaseCleaner: syncService.syncDataProviders.bookmarksAdapter.databaseCleaner,
@@ -172,7 +174,7 @@ final class MainCoordinator {
                                         winBackOfferVisibilityManager: winBackOfferService.visibilityManager,
                                         mobileCustomization: mobileCustomization,
                                         remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler,
-                                        privacyStats: AppDependencyProvider.shared.privacyStats)
+                                        privacyStats: privacyStats)
     }
 
     func start() {

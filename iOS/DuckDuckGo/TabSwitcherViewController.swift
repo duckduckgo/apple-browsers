@@ -110,7 +110,7 @@ class TabSwitcherViewController: UIViewController {
 
     var currentSelection: Int?
 
-    var tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings()
+    let tabSwitcherSettings: TabSwitcherSettings
     var isProcessingUpdates = false
     private var canUpdateCollection = true
 
@@ -149,7 +149,8 @@ class TabSwitcherViewController: UIViewController {
                    aiChatSettings: AIChatSettingsProvider,
                    appSettings: AppSettings,
                    aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
-                   privacyStats: PrivacyStatsProviding) {
+                   privacyStats: PrivacyStatsProviding,
+                   tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings()) {
         self.bookmarksDatabase = bookmarksDatabase
         self.syncService = syncService
         self.featureFlagger = featureFlagger
@@ -159,6 +160,7 @@ class TabSwitcherViewController: UIViewController {
         self.appSettings = appSettings
         self.aichatFullModeFeature = aichatFullModeFeature
         self.privacyStats = privacyStats
+        self.tabSwitcherSettings = tabSwitcherSettings
         super.init(coder: coder)
     }
 

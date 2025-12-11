@@ -201,7 +201,7 @@ extension MainViewController {
                                       tabManager: self.tabManager,
                                       aiChatSettings: self.aiChatSettings,
                                       appSettings: self.appSettings,
-                                      privacyStats: AppDependencyProvider.shared.privacyStats)
+                                      privacyStats: self.privacyStats)
         }) else {
             assertionFailure()
             return

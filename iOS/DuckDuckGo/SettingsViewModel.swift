@@ -58,7 +58,7 @@ final class SettingsViewModel: ObservableObject {
     let aiChatSettings: AIChatSettingsProvider
     let serpSettings: SERPSettingsProviding
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
-    private var tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings()
+    private let tabSwitcherSettings: TabSwitcherSettings
     let themeManager: ThemeManaging
     var experimentalAIChatManager: ExperimentalAIChatManager
     private let duckPlayerSettings: DuckPlayerSettings
@@ -670,10 +670,12 @@ final class SettingsViewModel: ObservableObject {
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
          mobileCustomization: MobileCustomization,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
-         browsingMenuSheetCapability: BrowsingMenuSheetCapable
+         browsingMenuSheetCapability: BrowsingMenuSheetCapable,
+         tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings()
     ) {
 
         self.state = SettingsState.defaults
+        self.tabSwitcherSettings = tabSwitcherSettings
         self.legacyViewProvider = legacyViewProvider
         self.isAuthV2Enabled = isAuthV2Enabled
         self.subscriptionManagerV1 = subscriptionManagerV1

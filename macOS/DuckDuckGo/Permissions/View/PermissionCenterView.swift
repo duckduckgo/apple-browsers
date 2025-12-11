@@ -205,9 +205,10 @@ struct PermissionRowView: View {
                     Image(systemName: "xmark")
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .frame(width: 24, height: 24)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(PlainButtonStyle())
-                .frame(width: 24, height: 24)
                 .background(
                     RoundedRectangle(cornerRadius: 5)
                         .fill(isRemoveButtonHovered ? Color(.buttonMouseOver) : Color.clear)
@@ -359,9 +360,10 @@ struct PopupPermissionRowView: View {
                     Image(systemName: "xmark")
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .frame(width: 24, height: 24)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(PlainButtonStyle())
-                .frame(width: 24, height: 24)
                 .background(
                     RoundedRectangle(cornerRadius: 5)
                         .fill(isRemoveButtonHovered ? Color(.buttonMouseOver) : Color.clear)
@@ -527,9 +529,10 @@ struct ExternalSchemeRowView: View {
                 Image(systemName: "xmark")
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .frame(width: 24, height: 24)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(PlainButtonStyle())
-            .frame(width: 24, height: 24)
             .background(
                 RoundedRectangle(cornerRadius: 5)
                     .fill(isRemoveButtonHovered ? Color(.buttonMouseOver) : Color.clear)

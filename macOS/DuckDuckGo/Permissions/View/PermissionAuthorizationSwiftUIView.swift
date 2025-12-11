@@ -197,6 +197,12 @@ struct PermissionAuthorizationSwiftUIView: View {
     /// Whether to show the two-step UI
     private var showsTwoStepUI: Bool {
         guard permissionType.requiresSystemPermission else { return false }
+        
+        // If system permission is already authorized, show simple standard dialog
+        if systemPermissionState == .authorized {
+            return false
+        }
+        
         return systemPermissionManager.isAuthorizationRequired(for: permissionType.asPermissionType) || systemPermissionState != .initial
     }
 

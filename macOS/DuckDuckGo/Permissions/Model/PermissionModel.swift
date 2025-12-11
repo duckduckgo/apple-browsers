@@ -243,8 +243,9 @@ final class PermissionModel {
                             // User chose "Always Allow" or "Never Allow"
                             self.permissionManager.setPermission(granted ? .allow : .deny, forDomain: domain, permissionType: permission)
                         } else if granted, self.featureFlagger.isFeatureOn(.newPermissionView) {
-                            // User chose one-time "Allow" - store .ask so permission center button is visible on subsequent visits
-                            self.permissionManager.setPermission(.ask, forDomain: domain, permissionType: permission)
+                            // For notifications, store .allow (always allow). For other permissions, store .ask (one-time allow)
+                            let decision: PersistedPermissionDecision = permission == .notification ? .allow : .ask
+                            self.permissionManager.setPermission(decision, forDomain: domain, permissionType: permission)
                         }
                     }
                 }

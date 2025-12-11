@@ -110,7 +110,7 @@ final class ActiveRemoteMessageModel: ObservableObject {
             .sink { [weak self] newMessage in
                 if let newMessage = newMessage {
                     self?.newTabPageRemoteMessage = newMessage.surfaces.contains(.newTabPage) ? newMessage : nil
-                    self?.tabBarRemoteMessage = newMessage.surfaces.contains(.tabBar) ? newMessage : nil
+                    self?.tabBarRemoteMessage = newMessage.isForTabBar ? newMessage : nil
                 } else {
                     self?.newTabPageRemoteMessage = nil
                     self?.tabBarRemoteMessage = nil

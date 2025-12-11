@@ -156,7 +156,6 @@ class DownloadManager: DownloadManaging {
 extension DownloadManager {
 
     private func convertToUniqueFilename(_ filename: String) -> String {
-        let downloadsDirectoryFiles: [URL] = (try? downloadsDirectoryHandler.downloadsDirectoryFiles) ?? []
         let downloadingFilenames = Set(downloadList.map { $0.filename })
         let downloadedFilenames = Set(downloadsDirectoryFiles.map { $0.lastPathComponent })
         let list = downloadingFilenames.union(downloadedFilenames)

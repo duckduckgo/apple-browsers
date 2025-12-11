@@ -962,8 +962,8 @@ struct UserText {
     static let devicePermissionAuthorizationFormat = NSLocalizedString("permission.authorization.format",
                                                                        value: "Allow “%@“ to use your %@?",
                                                                        comment: "Popover asking for domain %@ to use camera/mic (%@)")
-    static let notificationPermissionAuthorizationFormat = NSLocalizedString("permission.authorization.format",
-                                                                             value: "Allow “%@“ to send you notifications?",
+    static let notificationPermissionAuthorizationFormat = NSLocalizedString("permission.authorization.notifications.format",
+                                                                             value: "Allow this website to send you notifications?",
                                                                              comment: "Popover asking for domain %@ to send notifications")
     static let popupWindowsPermissionAuthorizationFormat = NSLocalizedString("permission.authorization.popups.format",
                                                                              value: "Allow “%@” to open a pop-up window?",
@@ -1016,13 +1016,13 @@ struct UserText {
     static let permissionPopupLearnMoreLink = NSLocalizedString("permission.popup.learn-more.link", value: "Learn more about location services", comment: "Text of link that leads to web page with more informations about location services.")
     static let permissionPopupAllowButton = NSLocalizedString("permission.popup.allow.button", value: "Allow", comment: "Button that the user can use to authorise a web site to for, for example access location or camera and microphone etc.")
 
-    static let permissionPopupDenyButton = NSLocalizedString("permission.popup.deny.button", value: "Deny", comment: "Button that denies permission for this request only")
+    static let permissionPopupDenyButton = NSLocalizedString("permission.popup.deny.button", value: "Don't Allow", comment: "Button that denies permission for this request only")
     static let permissionPopupAlwaysDenyButton = NSLocalizedString("permission.popup.always.deny.button", value: "Never Allow", comment: "Button that denies permission and remembers the decision for future requests")
     static let permissionPopupAlwaysAllowButton = NSLocalizedString("permission.popup.always.allow.button", value: "Always Allow", comment: "Button that grants permission and remembers the decision for future requests")
 
     static let privacyDashboardPermissionAsk = NSLocalizedString("dashboard.permission.ask", value: "Ask every time", comment: "Privacy Dashboard: Website should always Ask for permission for input media device access")
-    static let privacyDashboardPermissionAlwaysAllow = NSLocalizedString("dashboard.permission.allow", value: "Always allow", comment: "Privacy Dashboard: Website can always access input media device")
-    static let privacyDashboardPermissionAlwaysDeny = NSLocalizedString("dashboard.permission.deny", value: "Always deny", comment: "Privacy Dashboard: Website can never access input media device")
+    static let privacyDashboardPermissionAlwaysAllow = NSLocalizedString("dashboard.permission.allow", value: "Always allow 2", comment: "Privacy Dashboard: Website can always access input media device")
+    static let privacyDashboardPermissionAlwaysDeny = NSLocalizedString("dashboard.permission.deny", value: "Always deny 2", comment: "Privacy Dashboard: Website can never access input media device")
     static let permissionPopoverDenyButton = NSLocalizedString("permission.popover.deny", value: "Deny", comment: "Permission Popover: Deny Website input media device access")
 
     // Two-step permission authorization (geolocation)

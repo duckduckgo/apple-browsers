@@ -198,7 +198,7 @@ final class PermissionModel {
             return
         }
 
-        if [.denied, .notDetermined].contains(status) {
+        if status == .notDetermined {
             // Remove from persistent storage
             if let domain = currentDomain {
                 permissionManager.removePermission(forDomain: domain, permissionType: .notification)

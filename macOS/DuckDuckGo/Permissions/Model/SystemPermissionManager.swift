@@ -61,9 +61,12 @@ protocol SystemPermissionManagerProtocol: AnyObject {
 final class SystemPermissionManager: SystemPermissionManagerProtocol {
 
     private let geolocationService: GeolocationServiceProtocol
+    private let notificationService: UserNotificationAuthorizationServicing
 
-    init(geolocationService: GeolocationServiceProtocol = GeolocationService.shared) {
+    init(geolocationService: GeolocationServiceProtocol = GeolocationService.shared,
+         notificationService: UserNotificationAuthorizationServicing = UserNotificationAuthorizationService()) {
         self.geolocationService = geolocationService
+        self.notificationService = notificationService
     }
 
     // MARK: - Public Methods
@@ -87,9 +90,8 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
             // Geolocation can be checked synchronously
             return geolocationAuthorizationState
         case .notification:
-            // Notification requires async check via UNUserNotificationCenter
-            let settings = await UNUserNotificationCenter.current().notificationSettings()
-            switch settings.authorizationStatus {
+            let status = await notificationService.authorizationStatus
+            switch status {
             case .authorized, .provisional, .ephemeral:
                 return .authorized
             case .denied:
@@ -126,7 +128,7 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
         case .notification:
             Task {
                 do {
-                    let granted = try await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])
+                    let granted = try await notificationService.requestAuthorization(options: [.alert, .sound])
                     await MainActor.run {
                         completion(granted ? .authorized : .denied)
                     }

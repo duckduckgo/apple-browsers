@@ -119,6 +119,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                      downloadsPreferences: DownloadsPreferences? = nil,
                      permissionManager: PermissionManagerProtocol? = nil,
                      geolocationService: GeolocationServiceProtocol = GeolocationService.shared,
+                     notificationService: UserNotificationAuthorizationServicing = UserNotificationAuthorizationService(),
                      cbaTimeReporter: ContentBlockingAssetsCompilationTimeReporter? = ContentBlockingAssetsCompilationTimeReporter.shared,
                      statisticsLoader: StatisticsLoader? = nil,
                      extensionsBuilder: TabExtensionsBuilderProtocol = TabExtensionsBuilder.default,
@@ -181,6 +182,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                   downloadsPreferences: downloadsPreferences ?? NSApp.delegateTyped.downloadsPreferences,
                   permissionManager: permissionManager ?? NSApp.delegateTyped.permissionManager,
                   geolocationService: geolocationService,
+                  notificationService: notificationService,
                   extensionsBuilder: extensionsBuilder,
                   featureFlagger: featureFlagger ?? NSApp.delegateTyped.featureFlagger,
                   contentScopeExperimentsManager: contentScopeExperimentsManager ?? NSApp.delegateTyped.contentScopeExperimentsManager,
@@ -231,6 +233,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
          downloadsPreferences: DownloadsPreferences,
          permissionManager: PermissionManagerProtocol,
          geolocationService: GeolocationServiceProtocol,
+         notificationService: UserNotificationAuthorizationServicing,
          extensionsBuilder: TabExtensionsBuilderProtocol,
          featureFlagger: FeatureFlagger,
          contentScopeExperimentsManager: ContentScopeExperimentsManaging,
@@ -304,6 +307,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
         permissions = PermissionModel(permissionManager: permissionManager,
                                       geolocationService: geolocationService,
+                                      notificationService: notificationService,
                                       featureFlagger: featureFlagger)
 
         let userContentControllerPromise = Future<UserContentController, Never>.promise()

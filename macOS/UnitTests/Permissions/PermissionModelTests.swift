@@ -33,12 +33,11 @@ final class PermissionModelTests: XCTestCase {
     var permissionManagerMock: PermissionManagerMock!
     var geolocationServiceMock: GeolocationServiceMock!
     var geolocationProviderMock: GeolocationProviderMock!
+    var notificationServiceMock: UserNotificationAuthorizationServiceMock!
     var featureFlaggerMock: MockFeatureFlagger!
     static var processPool: WKProcessPool!
     var webView: WebViewMock!
     var model: PermissionModel!
-    var appActivationSubject: PassthroughSubject<Notification, Never>!
-    var mockNotificationAuthStatus: UNAuthorizationStatus = .notDetermined
     var pixelKit: PixelKit! = PixelKit(dryRun: true,
                                        appVersion: "1.0.0",
                                        defaultHeaders: [:],
@@ -63,9 +62,8 @@ final class PermissionModelTests: XCTestCase {
 
         permissionManagerMock = PermissionManagerMock()
         geolocationServiceMock = GeolocationServiceMock()
+        notificationServiceMock = UserNotificationAuthorizationServiceMock()
         featureFlaggerMock = MockFeatureFlagger()
-        appActivationSubject = PassthroughSubject<Notification, Never>()
-        mockNotificationAuthStatus = .notDetermined
 
         let configuration = WKWebViewConfiguration(processPool: Self.processPool)
         webView = WebViewMock(frame: NSRect(x: 0, y: 0, width: 50, height: 50), configuration: configuration)
@@ -76,11 +74,8 @@ final class PermissionModelTests: XCTestCase {
         model = PermissionModel(webView: webView,
                                 permissionManager: permissionManagerMock,
                                 geolocationService: geolocationServiceMock,
-                                featureFlagger: featureFlaggerMock,
-                                appActivationPublisher: appActivationSubject.eraseToAnyPublisher(),
-                                notificationAuthorizationProvider: { [weak self] in
-                                    return self?.mockNotificationAuthStatus ?? .notDetermined
-                                })
+                                notificationService: notificationServiceMock,
+                                featureFlagger: featureFlaggerMock)
 
         AVCaptureDeviceMock.authorizationStatuses = nil
     }
@@ -90,12 +85,11 @@ final class PermissionModelTests: XCTestCase {
         webView = nil
         permissionManagerMock = nil
         geolocationServiceMock = nil
+        notificationServiceMock = nil
         featureFlaggerMock = nil
         pixelKit = nil
         geolocationProviderMock = nil
         model = nil
-        appActivationSubject = nil
-        mockNotificationAuthStatus = .notDetermined
     }
 
     override class func tearDown() {

@@ -41,9 +41,8 @@ final class PermissionModel {
 
     private let permissionManager: PermissionManagerProtocol
     private let geolocationService: GeolocationServiceProtocol
+    private let notificationService: UserNotificationAuthorizationServicing
     private let featureFlagger: FeatureFlagger
-    private let appActivationPublisher: AnyPublisher<Notification, Never>
-    private let notificationAuthorizationProvider: NotificationAuthorizationProvider
 
     /// Holds the set of permissions the user manually removed (to avoid adding them back via updatePermissions)
     private var removedPermissions = Set<PermissionType>()
@@ -67,24 +66,19 @@ final class PermissionModel {
     init(webView: WKWebView? = nil,
          permissionManager: PermissionManagerProtocol,
          geolocationService: GeolocationServiceProtocol = GeolocationService.shared,
-         featureFlagger: FeatureFlagger,
-         appActivationPublisher: AnyPublisher<Notification, Never> = NotificationCenter.default
-             .publisher(for: NSApplication.didBecomeActiveNotification)
-             .eraseToAnyPublisher(),
-         notificationAuthorizationProvider: @escaping NotificationAuthorizationProvider = {
-             await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
-         }) {
+         notificationService: UserNotificationAuthorizationServicing = UserNotificationAuthorizationService(),
+         featureFlagger: FeatureFlagger) {
+
         self.permissionManager = permissionManager
         self.geolocationService = geolocationService
+        self.notificationService = notificationService
         self.featureFlagger = featureFlagger
-        self.appActivationPublisher = appActivationPublisher
-        self.notificationAuthorizationProvider = notificationAuthorizationProvider
         if let webView {
             self.webView = webView
             self.subscribe(to: webView)
             self.subscribe(to: permissionManager)
         }
-        self.subscribeToAppActivation()
+        self.subscribeToNotificationService()
     }
 
     private func subscribe(to webView: WKWebView) {
@@ -120,11 +114,11 @@ final class PermissionModel {
         }.store(in: &cancellables)
     }
 
-    private func subscribeToAppActivation() {
-        appActivationPublisher
-            .sink { [weak self] _ in
+    private func subscribeToNotificationService() {
+        notificationService.authorizationStatusPublisher
+            .sink { [weak self] status in
                 Task { @MainActor [weak self] in
-                    await self?.updateNotificationsPermission()
+                    await self?.notificationAuthorizationStatusDidChange(to: status)
                 }
             }
             .store(in: &cancellables)
@@ -194,12 +188,17 @@ final class PermissionModel {
             return
         }
 
-        let systemStatus = await notificationAuthorizationProvider()
+        let systemStatus = await notificationService.authorizationStatus
+        await notificationAuthorizationStatusDidChange(to: systemStatus)
+    }
 
-        if [.denied, .notDetermined].contains(systemStatus) {
-            // Remove any pending notification authorization queries without triggering denial
-            //authorizationQueries.removeAll(where: { $0.permissions == [.notification] })
+    private func notificationAuthorizationStatusDidChange(to status: UNAuthorizationStatus) async {
+        guard featureFlagger.isFeatureOn(.newPermissionView),
+              permissions.notification != nil else {
+            return
+        }
 
+        if [.denied, .notDetermined].contains(status) {
             // Remove from persistent storage
             if let domain = currentDomain {
                 permissionManager.removePermission(forDomain: domain, permissionType: .notification)
@@ -207,9 +206,6 @@ final class PermissionModel {
 
             // Remove from tracking (triggers UI update to close popover)
             permissions.notification = nil
-        } else if self.permissions.notification == .active || self.permissions.notification == .inactive {
-            // System authorized and website permission granted - keep as active
-            permissions.notification = .active
         }
     }
 

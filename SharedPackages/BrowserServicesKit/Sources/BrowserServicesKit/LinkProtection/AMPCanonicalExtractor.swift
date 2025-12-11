@@ -20,6 +20,10 @@ import Foundation
 import WebKit
 import Common
 
+#if canImport(UIKit)
+import UIKit
+#endif
+
 public final class AMPCanonicalExtractor: NSObject {
 
     final class CompletionHandler {
@@ -45,6 +49,7 @@ public final class AMPCanonicalExtractor: NSObject {
         static let sendCanonical = "sendCanonical"
         static let canonicalKey = "canonical"
         static let ruleListIdentifier = "blockImageRules"
+        static let maxURLLength = 80_000
     }
 
     private let completionHandler = CompletionHandler()
@@ -123,32 +128,42 @@ public final class AMPCanonicalExtractor: NSObject {
         guard settings.deepExtractionEnabled else { return false }
         guard let url = url, !linkCleaner.isURLExcluded(url: url) else { return false }
         let urlStr = url.absoluteString
+        guard urlStr.count < Constants.maxURLLength else { return false }
 
         let ampKeywords = settings.ampKeywords
 
-        let startTime = CFAbsoluteTimeGetCurrent()
-        let result = ampKeywords.contains { keyword in
+        return performAMPDetection(urlStr: urlStr, ampKeywords: ampKeywords)
+    }
+    
+    private func performAMPDetection(urlStr: String, ampKeywords: [String]) -> Bool {
+        #if canImport(UIKit)
+        var backgroundTask: UIBackgroundTaskIdentifier = .invalid
+        
+        // Start background task to prevent suspension during detection
+        backgroundTask = UIApplication.shared.beginBackgroundTask(withName: "AMP Keyword Detection") {
+            if backgroundTask != .invalid {
+                UIApplication.shared.endBackgroundTask(backgroundTask)
+                backgroundTask = .invalid
+            }
+        }
+        
+        defer {
+            if backgroundTask != .invalid {
+                UIApplication.shared.endBackgroundTask(backgroundTask)
+            }
+        }
+        
+        // Perform normal AMP detection
+        return ampKeywords.contains { keyword in
             return urlStr.contains(keyword)
         }
-        let duration = CFAbsoluteTimeGetCurrent() - startTime
-
-        if duration > 5.0 {
-            let charCount = urlStr.count
-            // Calculate magnitude (number of digits) and round to appropriate power of 10
-            // (e.g. 64→0, 1343→1000, 423435→400000) it helps categorize very large values without exposing exact counts.
-            let magnitude = charCount > 0 ? Int(log10(Double(charCount))) : 0
-            let roundingFactor = Int(pow(10.0, max(2.0, Double(magnitude))))
-            let roundedCount = (charCount / roundingFactor) * roundingFactor
-
-            let params: [String: String] = [
-                "duration": String(duration),
-                "rounded_url_length": String(roundedCount)
-            ]
-
-            errorReporting?.fire(.ampKeywordDetectionPerformance, parameters: params)
+        
+        #else
+        // macOS - no background task needed
+        return ampKeywords.contains { keyword in
+            return urlStr.contains(keyword)
         }
-
-        return result
+        #endif
     }
 
     private func buildUserScript() -> WKUserScript {

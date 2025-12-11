@@ -348,8 +348,6 @@ class TabViewController: UIViewController {
         switch event {
         case .ampBlockingRulesCompilationFailed:
             domainEvent = .ampBlockingRulesCompilationFailed
-        case .ampKeywordDetectionPerformance:
-            domainEvent = .ampKeywordDetectionPerformance
         }
         Pixel.fire(pixel: domainEvent,
                    withAdditionalParameters: params ?? [:],

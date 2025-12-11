@@ -293,8 +293,17 @@ struct PermissionAuthorizationSwiftUIView: View {
         guard systemPermissionState == .alreadyDenied || systemPermissionState == .denied else { return }
 
         let authState = manager.authorizationState(for: permissionType.asPermissionType)
-        if authState == .authorized {
+        switch authState {
+        case .authorized:
+            // User granted permission in System Settings
             systemPermissionState = .authorized
+        case .notDetermined:
+            // Location Services was re-enabled but app permission not yet requested
+            // Transition to initial state to show "Enable Location" button
+            systemPermissionState = .initial
+        case .denied, .restricted, .systemDisabled:
+            // Still in a denied state, no change needed
+            break
         }
     }
 

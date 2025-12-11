@@ -2485,7 +2485,7 @@
 		4BB7CBAF2AF59C310014A35F /* VPNWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNWidget.swift; sourceTree = "<group>"; };
 		4BBBBA912B03291700D965DA /* VPNWaitlistUserText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNWaitlistUserText.swift; sourceTree = "<group>"; };
 		4BC21A2C272388BD00229F0E /* RunLoopExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunLoopExtensionTests.swift; sourceTree = "<group>"; };
-		4BC5E8602E174B6A00391C19 /* DesignResourcesKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = DesignResourcesKit; path = ../SharedPackages/DesignResourcesKit; sourceTree = SOURCE_ROOT; };
+		4BC5E8602E174B6A00391C19 /* DesignResourcesKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = DesignResourcesKit; path = ../SharedPackages/Infrastructure/DesignResourcesKit; sourceTree = SOURCE_ROOT; };
 		4BCBE45D2BA7E81F00FC75A1 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		4BCBE45F2BA7E87100FC75A1 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		4BCD14662B05B682000B1E4C /* NetworkProtectionTermsAndConditionsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionTermsAndConditionsStore.swift; sourceTree = "<group>"; };
@@ -3687,7 +3687,7 @@
 		9F94BBAE2EAB395800185F78 /* WhatsNewModalPromptProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatsNewModalPromptProviderTests.swift; sourceTree = "<group>"; };
 		9F94BBB02EAB4AC200185F78 /* WhatsNewDisplayModelMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatsNewDisplayModelMapper.swift; sourceTree = "<group>"; };
 		9F94BBB22EAB4D9100185F78 /* WhatsNewDisplayModelMapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatsNewDisplayModelMapperTests.swift; sourceTree = "<group>"; };
-		9F9845142E8D35C4004D5C9B /* SystemFrameworksExtensions */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SystemFrameworksExtensions; path = ../SharedPackages/SystemFrameworksExtensions; sourceTree = SOURCE_ROOT; };
+		9F9845142E8D35C4004D5C9B /* SystemFrameworksExtensions */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = SystemFrameworksExtensions; path = ../SharedPackages/Infrastructure/SystemFrameworksExtensions; sourceTree = SOURCE_ROOT; };
 		9F989C132E9CB9ED00EC2701 /* ModalPromptCoordinationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModalPromptCoordinationService.swift; sourceTree = "<group>"; };
 		9F989C162E9CCF8000EC2701 /* CardsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardsListView.swift; sourceTree = "<group>"; };
 		9F989C1A2E9E205B00EC2701 /* RemoteMessage.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = RemoteMessage.xcassets; sourceTree = "<group>"; };
@@ -3810,7 +3810,7 @@
 		BB1D99DC2EB9F3860050D8CF /* MockWinBackOfferCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockWinBackOfferCoordinator.swift; sourceTree = "<group>"; };
 		BB343F382EBE1EF600F206F5 /* SERPSettingsEventHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SERPSettingsEventHandler.swift; sourceTree = "<group>"; };
 		BB490ECE2EBDF36B00649B5B /* WinBackOfferFactory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferFactory.swift; sourceTree = "<group>"; };
-		BB631D142DE0D8B70099977D /* DesignResourcesKitIcons */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = DesignResourcesKitIcons; path = ../SharedPackages/DesignResourcesKitIcons; sourceTree = SOURCE_ROOT; };
+		BB631D142DE0D8B70099977D /* DesignResourcesKitIcons */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = DesignResourcesKitIcons; path = ../SharedPackages/Infrastructure/DesignResourcesKitIcons; sourceTree = SOURCE_ROOT; };
 		BB6696362E9E6613003CB6AD /* WinBackOffer.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = WinBackOffer.xcassets; sourceTree = "<group>"; };
 		BB7795762E9D4B0B00CF58F4 /* WinBackOfferLaunchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferLaunchView.swift; sourceTree = "<group>"; };
 		BB7795782E9D4B0B00CF58F4 /* WinBackOfferCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferCoordinator.swift; sourceTree = "<group>"; };

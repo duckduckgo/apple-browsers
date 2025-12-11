@@ -64304,13 +64304,13 @@
       }
     },
     "permission.center.reset.tooltip" : {
-      "comment" : "Tooltip for the remove/reset permission button in permission center",
+      "comment" : "Tooltip for the remove permission button in permission center",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Reset permission"
+            "value" : "Remove permission"
           }
         }
       }

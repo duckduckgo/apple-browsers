@@ -61,7 +61,7 @@ public final class AMPCanonicalExtractor: NSObject {
     private let privacyManager: PrivacyConfigurationManaging
     private let contentBlockingManager: CompiledRuleListsSource
     private let errorReporting: EventMapping<AMPProtectionDebugEvents>?
-    private let featureFlagger: FeatureFlagger?
+    private let useBackgroundTaskProtection: Bool
 
     private var privacyConfig: PrivacyConfiguration { privacyManager.privacyConfig }
 
@@ -72,12 +72,12 @@ public final class AMPCanonicalExtractor: NSObject {
                 privacyManager: PrivacyConfigurationManaging,
                 contentBlockingManager: CompiledRuleListsSource,
                 errorReporting: EventMapping<AMPProtectionDebugEvents>? = nil,
-                featureFlagger: FeatureFlagger? = nil) {
+                useBackgroundTaskProtection: Bool = false) {
         self.linkCleaner = linkCleaner
         self.privacyManager = privacyManager
         self.contentBlockingManager = contentBlockingManager
         self.errorReporting = errorReporting
-        self.featureFlagger = featureFlagger
+        self.useBackgroundTaskProtection = useBackgroundTaskProtection
 
         super.init()
 
@@ -136,7 +136,7 @@ public final class AMPCanonicalExtractor: NSObject {
         let ampKeywords = settings.ampKeywords
 
         #if canImport(UIKit)
-        if featureFlagger?.isFeatureOn(.ampBackgroundTaskSupport) == true {
+        if useBackgroundTaskProtection {
             return performAMPDetectionWithBackgroundTask(urlStr: urlStr, ampKeywords: ampKeywords)
         } else {
             return ampKeywords.contains { keyword in
@@ -144,6 +144,7 @@ public final class AMPCanonicalExtractor: NSObject {
             }
         }
         #else
+        // macOS doesn't need background task protection
         return ampKeywords.contains { keyword in
             return urlStr.contains(keyword)
         }

@@ -298,7 +298,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .extendedUserInitiatedPopupTimeout,
                 .suppressEmptyPopUpsOnApproval,
                 .popupPermissionButtonPersistence,
-                .tabClosingEventRecreation:
+                .tabClosingEventRecreation,
+                .tabProgressIndicator:
             true
         default:
             false

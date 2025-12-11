@@ -53,6 +53,9 @@
         }
       }
     },
+    " " : {
+
+    },
     " %@" : {
       "localizations" : {
         "de" : {
@@ -18331,55 +18334,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Immer erlauben"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Always allow"
+            "value" : "Always allow 2"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Permitir siempre"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Toujours autoriser"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Consenti sempre"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Altijd toestaan"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Zawsze zezwalaj"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Permitir sempre"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Разрешать всегда"
           }
         }
@@ -18511,55 +18514,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Immer ablehnen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Always deny"
+            "value" : "Always deny 2"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Rechazar siempre"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Toujours refuser"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Rifiuta sempre"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Altijd weigeren"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Zawsze odmawiaj"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Negar sempre"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Не разрешать"
           }
         }
@@ -63297,7 +63300,7 @@
       }
     },
     "permission.authorization.format" : {
-      "comment" : "Popover asking for domain %@ to send notifications\nPopover asking for domain %@ to use camera/mic (%@)",
+      "comment" : "Popover asking for domain %@ to use camera/mic (%@)",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -63412,6 +63415,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Сайт %@ запрашивает доступ к вашей текущей геопозиции."
+          }
+        }
+      }
+    },
+    "permission.authorization.notifications.format" : {
+      "comment" : "Popover asking for domain %@ to send notifications",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow this website to send you notifications?"
           }
         }
       }
@@ -64503,7 +64518,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Deny"
+            "value" : "Don't Allow"
           }
         }
       }

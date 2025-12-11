@@ -25,6 +25,7 @@ import Foundation
 import Navigation
 import UserNotifications
 import WebKit
+import os.log
 
 typealias NotificationAuthorizationProvider = @Sendable () async -> UNAuthorizationStatus
 

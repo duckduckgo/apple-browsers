@@ -128,7 +128,9 @@ enum PermissionAuthorizationType {
         switch self {
         case .geolocation:
             return UserText.permissionSystemLocationDisabled
-        case .camera, .microphone, .cameraAndMicrophone, .popups, .notification, .externalScheme:
+        case .notification:
+            return UserText.permissionCenterSystemNotificationDisabled
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
             return ""
         }
     }
@@ -138,7 +140,9 @@ enum PermissionAuthorizationType {
         switch self {
         case .geolocation:
             return UserText.permissionSystemSettingsLocation
-        case .camera, .microphone, .cameraAndMicrophone, .popups, .notification, .externalScheme:
+        case .notification:
+            return UserText.permissionCenterSystemSettingsNotifications
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
             return ""
         }
     }
@@ -252,6 +256,12 @@ struct PermissionAuthorizationSwiftUIView: View {
             stepOneView
                 .padding(.horizontal, 16)
 
+            // Divider between steps
+            Divider()
+                .overlay(Color.black.opacity(0.05))
+                .blendMode(.plusDarker)
+                .padding(.horizontal, 16)
+
             // Step 2: Website permission
             stepTwoView
                 .padding(.horizontal, 16)
@@ -346,6 +356,7 @@ struct PermissionAuthorizationSwiftUIView: View {
         (Text(permissionType.systemPermissionDisabledText)
             .font(.system(size: 13))
             .foregroundColor(Color(designSystemColor: .textPrimary))
+        + Text(" ")
         + Text(permissionType.systemSettingsLinkText)
             .font(.system(size: 13))
             .foregroundColor(.accentColor))
@@ -365,7 +376,9 @@ struct PermissionAuthorizationSwiftUIView: View {
     @ViewBuilder
     private var stepTwoView: some View {
         let isEnabled = systemPermissionState == .authorized
-        let requiresRestart = systemPermissionState == .alreadyDenied || systemPermissionState == .denied
+        let isNotification = if case .notification = permissionType { true } else { false }
+        let requiresRestart = (systemPermissionState == .alreadyDenied || systemPermissionState == .denied)
+            && !isNotification
 
         HStack(spacing: 12) {
             stepIndicator(step: 2, isActive: isEnabled)

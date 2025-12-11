@@ -63,6 +63,7 @@ public enum PrivacyFeature: String {
     case aiChat
     case contextualOnboarding
     case textZoom
+    case adAttributionReporting
     case forceOldAppDelegate
     case htmlHistoryPage
     case tabManager

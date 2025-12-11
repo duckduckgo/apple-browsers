@@ -92,7 +92,9 @@ final class FireConfirmationViewModelTests: XCTestCase {
         tld: TLD = TLD(),
         fireproofing: Fireproofing = TestFireproofing(),
         aiChatSettings: AIChatSettingsProvider = MockAIChatSettingsProvider(),
-        settingsStore: FireConfirmationSettingsStoring? = nil
+        settingsStore: FireConfirmationSettingsStoring? = nil,
+        onConfirm: @escaping (FireOptions) -> Void = { _ in },
+        onCancel: @escaping () -> Void = {}
     ) -> FireConfirmationViewModel {
         return FireConfirmationViewModel(
             tabsModel: tabsModel,
@@ -101,9 +103,8 @@ final class FireConfirmationViewModelTests: XCTestCase {
             fireproofing: fireproofing,
             aiChatSettings: aiChatSettings,
             keyValueFilesStore: mockKeyValueStore,
-            onConfirm: { _ in },
-            onCancel: {}
-        )
+            onConfirm: onConfirm,
+            onCancel: onCancel)
     }
     
     private func makeHistoryEntry(url: URL) -> HistoryEntry {
@@ -596,6 +597,58 @@ final class FireConfirmationViewModelTests: XCTestCase {
         
         // Then
         XCTAssertFalse(viewModel.showAIChatsOption, "showAIChatsOption should be false when AI Chat is disabled")
+    }
+    
+    // MARK: - FireOptions Tests
+    
+    func testWhenAllTogglesAreOnThenConfirmPassesAllOptions() {
+        var capturedOptions: FireOptions?
+        let viewModel = makeViewModel(onConfirm: { capturedOptions = $0 })
+        viewModel.clearTabs = true
+        viewModel.clearData = true
+        viewModel.clearAIChats = true
+        
+        viewModel.confirm()
+        
+        XCTAssertEqual(capturedOptions, [.tabs, .data, .aiChats])
+    }
+    
+    func testWhenNoTogglesAreOnThenConfirmPassesEmptyOptions() {
+        var capturedOptions: FireOptions?
+        let viewModel = makeViewModel(onConfirm: { capturedOptions = $0 })
+        viewModel.clearTabs = false
+        viewModel.clearData = false
+        viewModel.clearAIChats = false
+        
+        viewModel.confirm()
+        
+        XCTAssertEqual(capturedOptions, [])
+    }
+    
+    func testWhenOnlyOneToggleIsOnThenConfirmPassesOnlyThatOption() {
+        var capturedOptions: FireOptions?
+        
+        // Tabs only
+        let viewModel = makeViewModel(onConfirm: { capturedOptions = $0 })
+        viewModel.clearTabs = true
+        viewModel.clearData = false
+        viewModel.clearAIChats = false
+        viewModel.confirm()
+        XCTAssertEqual(capturedOptions, [.tabs])
+        
+        // Data only
+        viewModel.clearTabs = false
+        viewModel.clearData = true
+        viewModel.clearAIChats = false
+        viewModel.confirm()
+        XCTAssertEqual(capturedOptions, [.data])
+        
+        // AI Chats only
+        viewModel.clearTabs = false
+        viewModel.clearData = false
+        viewModel.clearAIChats = true
+        viewModel.confirm()
+        XCTAssertEqual(capturedOptions, [.aiChats])
     }
 }
 

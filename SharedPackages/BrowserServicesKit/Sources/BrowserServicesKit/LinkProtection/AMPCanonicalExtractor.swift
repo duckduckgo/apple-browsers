@@ -61,6 +61,7 @@ public final class AMPCanonicalExtractor: NSObject {
     private let privacyManager: PrivacyConfigurationManaging
     private let contentBlockingManager: CompiledRuleListsSource
     private let errorReporting: EventMapping<AMPProtectionDebugEvents>?
+    private let featureFlagger: FeatureFlagger?
 
     private var privacyConfig: PrivacyConfiguration { privacyManager.privacyConfig }
 
@@ -70,11 +71,13 @@ public final class AMPCanonicalExtractor: NSObject {
     public init(linkCleaner: LinkCleaner,
                 privacyManager: PrivacyConfigurationManaging,
                 contentBlockingManager: CompiledRuleListsSource,
-                errorReporting: EventMapping<AMPProtectionDebugEvents>? = nil) {
+                errorReporting: EventMapping<AMPProtectionDebugEvents>? = nil,
+                featureFlagger: FeatureFlagger? = nil) {
         self.linkCleaner = linkCleaner
         self.privacyManager = privacyManager
         self.contentBlockingManager = contentBlockingManager
         self.errorReporting = errorReporting
+        self.featureFlagger = featureFlagger
 
         super.init()
 
@@ -132,11 +135,22 @@ public final class AMPCanonicalExtractor: NSObject {
 
         let ampKeywords = settings.ampKeywords
 
-        return performAMPDetection(urlStr: urlStr, ampKeywords: ampKeywords)
+        #if canImport(UIKit)
+        if featureFlagger?.isFeatureOn(.ampBackgroundTaskSupport) == true {
+            return performAMPDetectionWithBackgroundTask(urlStr: urlStr, ampKeywords: ampKeywords)
+        } else {
+            return ampKeywords.contains { keyword in
+                return urlStr.contains(keyword)
+            }
+        }
+        #else
+        return ampKeywords.contains { keyword in
+            return urlStr.contains(keyword)
+        }
+        #endif
     }
 
-    private func performAMPDetection(urlStr: String, ampKeywords: [String]) -> Bool {
-        #if canImport(UIKit)
+    private func performAMPDetectionWithBackgroundTask(urlStr: String, ampKeywords: [String]) -> Bool {
         var backgroundTask: UIBackgroundTaskIdentifier = .invalid
 
         // Start background task to prevent suspension during detection
@@ -153,17 +167,9 @@ public final class AMPCanonicalExtractor: NSObject {
             }
         }
 
-        // Perform normal AMP detection
         return ampKeywords.contains { keyword in
             return urlStr.contains(keyword)
         }
-
-        #else
-        // macOS - no background task needed
-        return ampKeywords.contains { keyword in
-            return urlStr.contains(keyword)
-        }
-        #endif
     }
 
     private func buildUserScript() -> WKUserScript {

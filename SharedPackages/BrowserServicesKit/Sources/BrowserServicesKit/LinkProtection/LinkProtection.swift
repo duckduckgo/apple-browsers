@@ -28,12 +28,14 @@ public struct LinkProtection {
 
     public init(privacyManager: PrivacyConfigurationManaging,
                 contentBlockingManager: CompiledRuleListsSource,
-                errorReporting: EventMapping<AMPProtectionDebugEvents>) {
+                errorReporting: EventMapping<AMPProtectionDebugEvents>,
+                featureFlagger: FeatureFlagger? = nil) {
         linkCleaner = LinkCleaner(privacyManager: privacyManager)
         ampExtractor = AMPCanonicalExtractor(linkCleaner: linkCleaner,
                                              privacyManager: privacyManager,
                                              contentBlockingManager: contentBlockingManager,
-                                             errorReporting: errorReporting)
+                                             errorReporting: errorReporting,
+                                             featureFlagger: featureFlagger)
     }
 
     private func makeNewRequest(changingUrl url: URL, inRequest request: URLRequest) -> URLRequest {

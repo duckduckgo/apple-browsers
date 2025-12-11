@@ -227,6 +227,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614199859
     case forgetAllInSettings
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212397873940926?focus=true
+    case ampBackgroundTaskSupport
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866470156149
     case duckAiDataClearing
     
@@ -307,7 +310,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .vpnConnectionWidePixelMeasurement,
              .migrateKeychainAccessibility,
              .dataImportWideEventMeasurement,
-             .browsingMenuSheetPresentation:
+             .browsingMenuSheetPresentation,
+             .ampBackgroundTaskSupport:
             true
         default:
             false
@@ -375,7 +379,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .canPromoteAutofillExtensionInPasswordManagement,
              .granularFireButtonOptions,
              .fullDuckAIModeExperimentalSetting,
-             .dataImportWideEventMeasurement:
+             .dataImportWideEventMeasurement,
+             .ampBackgroundTaskSupport:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -556,6 +561,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnMenuItem))
         case .forgetAllInSettings:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.forgetAllInSettings))
+        case .ampBackgroundTaskSupport:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.ampBackgroundTaskSupport))
         case .duckAiDataClearing:
             return .remoteReleasable(.feature(.duckAiDataClearing))
         case .fullDuckAIMode:

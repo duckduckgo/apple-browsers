@@ -2183,10 +2183,58 @@
       "comment" : "Tooltip for the send button in AI chat omnibar",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Senden"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Send"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Envoyer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Invia"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Versturen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyślij"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отправить"
           }
         }
       }
@@ -2379,6 +2427,42 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Duck.ai"
+          }
+        }
+      }
+    },
+    "aichat.toggle.popover.button" : {
+      "comment" : "Button text for customizing AI features in the toggle popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Customize AI Features"
+          }
+        }
+      }
+    },
+    "aichat.toggle.popover.message" : {
+      "comment" : "Message for the AI Chat toggle introduction popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search as usual or get answers with AI. Either way, your information stays private."
+          }
+        }
+      }
+    },
+    "aichat.toggle.popover.title" : {
+      "comment" : "Title for the AI Chat toggle introduction popover",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "NEW! Two ways to search privately"
           }
         }
       }
@@ -24790,10 +24874,58 @@
       "comment" : "Label for showing Search/Duck.ai toggle when address bar is focused",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Such- und Duck.ai-Umschalter anzeigen, wenn die Adressleiste fokussiert ist"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Show Search and Duck.ai toggle when the address bar is focused"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Muestra la opción Buscar y Duck.ai cuando la barra de direcciones está enfocada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher la recherche et le bouton Duck.ai lorsque la barre d'adresse est mise en évidence"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra il selettore delle funzioni di ricerca e Duck.ai quando la barra degli indirizzi è attiva"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toon de schakelaar voor Zoeken en Duck.ai wanneer de adresbalk is geselecteerd"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż przełącznik wyszukiwania i Duck.ai, gdy pasek adresu jest aktywny"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A opção Mostrar Pesquisa e Duck.ai é ativada/desativada quando a barra de endereços está focada"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показывать переключатель «Поиск или Duck.ai», если выделена адресная строка"
           }
         }
       }
@@ -30217,25 +30349,25 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Los pop-ups no se abren"
+            "value" : "Las ventanas emergentes no se abren"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les pop-ups ne s'ouvrent pas"
+            "value" : "Les fenêtres contextuelles ne s'ouvrent pas"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "I pop-up non si aprono"
+            "value" : "I popup non si aprono"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pop-ups openen niet"
+            "value" : "Pop-ups worden niet geopend"
           }
         },
         "pl" : {
@@ -30247,7 +30379,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pop-ups não abrem"
+            "value" : "Os pop-ups não abrem"
           }
         },
         "ru" : {
@@ -58474,6 +58606,449 @@
         }
       }
     },
+    "omnibar.notification.cookies.managed" : {
+      "comment" : "Text displayed when cookies are managed by DuckDuckGo",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cookies verwaltet"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Cookies Managed"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cookies gestionadas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cookies gérés"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cookie gestiti"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beheerde cookies"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zarządzane pliki cookie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cookies geridos"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kуки-файлы выбраны"
+          }
+        }
+      }
+    },
+    "omnibar.notification.popup.hidden" : {
+      "comment" : "Text displayed when a pop-up is hidden by DuckDuckGo",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pop-up ausgeblendet"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Pop-up Hidden"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ventana emergente oculta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fenêtre contextuelle masquée"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Popup nascosto"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pop-up verborgen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ukryte wyskakujące okienka"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pop-up ocultado"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Всплывающее окно скрыто"
+          }
+        }
+      }
+    },
+    "omnibar.notification.trackers.blocked" : {
+      "comment" : "Text displayed when trackers are blocked. The %d is the number of trackers blocked.",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@trackers@"
+          },
+          "substitutions" : {
+            "trackers" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg Tracker wurden blockiert"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg Tracker wurde blockiert"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg Tracker wurden blockiert"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%#@trackers@"
+          },
+          "substitutions" : {
+            "trackers" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "new",
+                      "value" : "%arg Trackers Blocked"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "new",
+                      "value" : "%arg Tracker Blocked"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "new",
+                      "value" : "%arg Trackers Blocked"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@trackers@"
+          },
+          "substitutions" : {
+            "trackers" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg rastreadores bloqueados"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg rastreador bloqueado"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg rastreadores bloqueados"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@trackers@"
+          },
+          "substitutions" : {
+            "trackers" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg traqueurs bloqués"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg traqueur bloqué"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg traqueurs bloqués"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@trackers@"
+          },
+          "substitutions" : {
+            "trackers" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg sistemi di tracciamento bloccati"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg sistemi di tracciamento bloccati"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg sistemi di tracciamento bloccati"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@trackers@"
+          },
+          "substitutions" : {
+            "trackers" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg trackers geblokkeerd"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg tracker geblokkeerd"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg trackers geblokkeerd"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@trackers@"
+          },
+          "substitutions" : {
+            "trackers" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "few" : {
+                    "stringUnit" : {
+                      "state" : "new",
+                      "value" : "%arg Trackers Blocked"
+                    }
+                  },
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "Zablokowane mechanizmy śledzące: %arg"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg zablokowany mechanizm śledzący"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "Zablokowane mechanizmy śledzące: %arg"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@trackers@"
+          },
+          "substitutions" : {
+            "trackers" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg rastreadores bloqueados"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg rastreador bloqueado"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg rastreadores bloqueados"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%#@trackers@"
+          },
+          "substitutions" : {
+            "trackers" : {
+              "argNum" : 1,
+              "formatSpecifier" : "d",
+              "variations" : {
+                "plural" : {
+                  "few" : {
+                    "stringUnit" : {
+                      "state" : "new",
+                      "value" : "%arg Trackers Blocked"
+                    }
+                  },
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "Заблокировано трекеров: %arg"
+                    }
+                  },
+                  "one" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "Заблокировано трекеров: %arg"
+                    }
+                  },
+                  "other" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "Заблокировано трекеров: %arg"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "onboarding.addtodock.button" : {
       "comment" : "Button label to add application to the macOS system dock",
       "extractionState" : "extracted_with_value",
@@ -63438,7 +64013,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Erlaube „%@“, ein PopUp-Fenster zu öffnen?"
+            "value" : "Erlauben, dass „%@“ ein Pop-up-Fenster öffnet?"
           }
         },
         "en" : {
@@ -63450,19 +64025,19 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "¿Permitir que \"%@\" abra una ventana emergente?"
+            "value" : "¿Permitir que “%@” abra una ventana emergente?"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Autoriser « %@ » à ouvrir la fenêtre contextuelle ?"
+            "value" : "Autoriser « %@ » à ouvrir une fenêtre contextuelle ?"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Consenti a \"%@\" di aprire la finestra popup?"
+            "value" : "Consentire a \"%@\" di aprire una finestra pop-up?"
           }
         },
         "nl" : {
@@ -63474,19 +64049,19 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zezwolić domenie „%@” na otwarcie wyskakującego okienka?"
+            "value" : "Zezwolić domenie „%@\" na otwarcie wyskakującego okienka?"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Permitir que \"%@\" abra a janela de pop-up?"
+            "value" : "Permitir que \"%@\" abra uma janela pop-up?"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Разрешить сайту %@ открыть всплывающее окно?"
+            "value" : "Разрешить «%@» открыть всплывающее окно?"
           }
         }
       }
@@ -63498,7 +64073,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Erlaube „%@“, PopUp-Fenster zu öffnen?"
+            "value" : "Darf „%@“ Pop-up-Fenster öffnen?"
           }
         },
         "en" : {
@@ -63510,7 +64085,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "¿Permitir que \"%@\" abra ventanas emergentes?"
+            "value" : "¿Permitir que “%@” abra ventanas emergentes?"
           }
         },
         "fr" : {
@@ -63522,7 +64097,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Consenti a \"%@\" di aprire finestre popup?"
+            "value" : "Consentire a \"%@\" di aprire finestre pop-up?"
           }
         },
         "nl" : {
@@ -63534,19 +64109,19 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zezwolić domenie „%@” na otwieranie wyskakujących okienek?"
+            "value" : "Zezwolić domenie „%@\" na otwieranie wyskakujących okienek?"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Permitir que \"%@\" abra janelas de pop-up?"
+            "value" : "Permitir que “%@” abra janelas de pop-up?"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Разрешить сайту %@ открыть всплывающие окна?"
+            "value" : "Разрешить сайту %@ открывать всплывающие окна?"
           }
         }
       }
@@ -64374,7 +64949,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pop-ups für diesen Besuch erlauben"
+            "value" : "Nur Pop-ups für diesen Besuch zulassen"
           }
         },
         "en" : {
@@ -64386,43 +64961,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Permitir ventanas emergentes durante esta visita"
+            "value" : "Solo permitir ventanas emergentes para esta visita"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Autoriser les fenêtres contextuelles pour cette visite"
+            "value" : "N'autoriser les fenêtres contextuelles que pour cette visite"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Consenti popup per questa visita"
+            "value" : "Consenti i pop-up solo per questa visita"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pop-ups voor dit bezoek toestaan"
+            "value" : "Alleen pop-ups toestaan voor dit bezoek"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zezwalaj na wyskakujące okienka podczas tej wizyty"
+            "value" : "Pozwól na wyskakujące okienka tylko podczas tej wizyty"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Permitir pop-ups nesta visita"
+            "value" : "Permitir pop-ups apenas para esta visita."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Разрешить всплывающие окна для этого посещения"
+            "value" : "Разрешить всплывающие окна только на время этого посещения"
           }
         }
       }
@@ -64614,7 +65189,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "„%@“ öffnen"
+            "value" : "Öffne „%@“"
           }
         },
         "en" : {
@@ -64638,13 +65213,13 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Apri “%@”"
+            "value" : "Apri \"%@\""
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "\"%@\" openen"
+            "value" : "Open \"%@\""
           }
         },
         "pl" : {
@@ -64656,7 +65231,7 @@
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Abrir “%@”"
+            "value" : "Abrir \"%@\""
           }
         },
         "ru" : {
@@ -64729,7 +65304,7 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%#@popups@ bloqueadas"
+            "value" : "Bloqueadas %#@popups@"
           },
           "substitutions" : {
             "popups" : {
@@ -64785,7 +65360,7 @@
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%#@popups@ bloccati"
+            "value" : "Bloccato %1$# @popups@"
           },
           "substitutions" : {
             "popups" : {
@@ -64796,7 +65371,7 @@
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg popup"
+                      "value" : "%arg pop-up"
                     }
                   },
                   "other" : {
@@ -64841,7 +65416,7 @@
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zablokowane %#@popups@"
+            "value" : "Zablokowano %#@popups@"
           },
           "substitutions" : {
             "popups" : {
@@ -64870,7 +65445,7 @@
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg wyskakujących okienek"
+                      "value" : "Wyskakujące okienka: %arg"
                     }
                   }
                 }
@@ -64938,7 +65513,7 @@
                   "other" : {
                     "stringUnit" : {
                       "state" : "translated",
-                      "value" : "%arg всплывающих окон"
+                      "value" : "%arg всплывающих окна (окон)"
                     }
                   }
                 }

@@ -55,6 +55,9 @@ protocol SystemPermissionManagerProtocol: AnyObject {
     /// - Returns: A cancellable that can be used to cancel the observation (for permissions that support it)
     @discardableResult
     func requestAuthorization(for permissionType: PermissionType, completion: @escaping (SystemPermissionAuthorizationState) -> Void) -> AnyCancellable?
+
+    /// Publisher for notification authorization state changes
+    var notificationAuthorizationStatePublisher: AnyPublisher<SystemPermissionAuthorizationState, Never> { get }
 }
 
 /// Manages system-level permissions required before website permissions can be granted
@@ -145,6 +148,23 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
             completion(.authorized)
             return nil
         }
+    }
+
+    var notificationAuthorizationStatePublisher: AnyPublisher<SystemPermissionAuthorizationState, Never> {
+        notificationService.authorizationStatusPublisher
+            .map { status -> SystemPermissionAuthorizationState in
+                switch status {
+                case .authorized, .provisional, .ephemeral:
+                    return .authorized
+                case .denied:
+                    return .denied
+                case .notDetermined:
+                    return .notDetermined
+                @unknown default:
+                    return .notDetermined
+                }
+            }
+            .eraseToAnyPublisher()
     }
 
     // MARK: - Private Geolocation Implementation

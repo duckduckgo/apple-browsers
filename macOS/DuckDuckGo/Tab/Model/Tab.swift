@@ -307,7 +307,6 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
         permissions = PermissionModel(permissionManager: permissionManager,
                                       geolocationService: geolocationService,
-                                      notificationService: notificationService,
                                       featureFlagger: featureFlagger)
 
         let userContentControllerPromise = Future<UserContentController, Never>.promise()

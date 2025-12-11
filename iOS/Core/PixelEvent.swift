@@ -2838,8 +2838,8 @@ extension Pixel.Event {
         case .aiChatLegacyOmnibarBackButtonPressed: return "m_aichat_legacy_omnibar_back_button_pressed"
         
         // MARK: AI Chat History Deletion
-        case .aiChatHistoryDeleteSuccessful: return "m_ios_aichat_history_delete_successful"
-        case .aiChatHistoryDeleteFailed: return "m_ios_aichat_history_delete_failed"
+        case .aiChatHistoryDeleteSuccessful: return "m_aichat_history_delete_successful"
+        case .aiChatHistoryDeleteFailed: return "m_aichat_history_delete_failed"
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"

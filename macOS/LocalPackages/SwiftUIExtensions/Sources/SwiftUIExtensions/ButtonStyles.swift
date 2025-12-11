@@ -24,17 +24,20 @@ public struct StandardButtonStyle: ButtonStyle {
     public let topPadding: CGFloat
     public let bottomPadding: CGFloat
     public let horizontalPadding: CGFloat
+    public let backgroundColor: Color
+    public let backgroundPressedColor: Color
 
-    public init(fontSize: CGFloat = 13, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, horizontalPadding: CGFloat = 7.5) {
+    public init(fontSize: CGFloat = 13, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, horizontalPadding: CGFloat = 7.5, backgroundColor: Color? = nil, backgroundPressedColor: Color? = nil) {
         self.fontSize = fontSize
         self.topPadding = topPadding
         self.bottomPadding = bottomPadding
         self.horizontalPadding = horizontalPadding
+        self.backgroundColor = backgroundColor ?? Color(.pwmButtonBackground)
+        self.backgroundPressedColor = backgroundPressedColor ?? Color(.pwmButtonBackgroundPressed)
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
-
-        let backgroundColor = configuration.isPressed ? Color(.pwmButtonBackgroundPressed) : Color(.pwmButtonBackground)
+        let backgroundColor = configuration.isPressed ? backgroundPressedColor : backgroundColor
         let labelColor = Color(.pwmButtonLabel)
 
         configuration.label
@@ -181,15 +184,19 @@ public struct DestructiveActionButtonStyle: ButtonStyle {
     public let enabled: Bool
     public let topPadding: CGFloat
     public let bottomPadding: CGFloat
+    public let backgroundColor: Color
+    public let backgroundPressedColor: Color
 
-    public init(enabled: Bool, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3) {
+    public init(enabled: Bool, topPadding: CGFloat = 2.5, bottomPadding: CGFloat = 3, backgroundColor: Color? = nil, backgroundPressedColor: Color? = nil) {
         self.enabled = enabled
         self.topPadding = topPadding
         self.bottomPadding = bottomPadding
+        self.backgroundColor = backgroundColor ?? Color(.destructiveActionButtonBackground)
+        self.backgroundPressedColor = backgroundPressedColor ?? Color(.destructiveActionButtonBackgroundPressed)
     }
 
     public func makeBody(configuration: Self.Configuration) -> some View {
-        let enabledBackgroundColor = configuration.isPressed ? Color(.destructiveActionButtonBackgroundPressed) : Color(.destructiveActionButtonBackground)
+        let enabledBackgroundColor = configuration.isPressed ? backgroundPressedColor : backgroundColor
         let disabledBackgroundColor = Color.gray.opacity(0.1)
         let labelColor = enabled ? Color.white : Color.primary.opacity(0.3)
 

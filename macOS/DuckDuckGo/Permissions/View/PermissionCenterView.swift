@@ -263,9 +263,14 @@ struct PermissionRowView: View {
 
     @ViewBuilder
     private var permissionIcon: some View {
+        // Icon color: red if currently in use, otherwise secondary
         let iconColor: Color = item.isInUse ? Color(NSColor.systemRed) : Color(designSystemColor: .textSecondary)
-        // Use solid icon if allowed and available, otherwise use outline icon
-        let icon = (item.isAllowed ? item.permissionType.solidIcon : nil) ?? item.permissionType.icon
+        // Icon style:
+        // - Solid + red if currently in use (active)
+        // - Solid if "Always Allow" is set (even if not in use)
+        // - Outline for "Always Ask" or "Never Allow" when not in use
+        let useSolidIcon = item.isInUse || item.decision == .allow
+        let icon = (useSolidIcon ? item.permissionType.solidIcon : nil) ?? item.permissionType.icon
         Image(nsImage: icon)
             .foregroundColor(iconColor)
     }

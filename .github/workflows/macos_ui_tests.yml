@@ -315,6 +315,17 @@ jobs:
           kill $(cat log_stream.pid) || true
         fi
 
+    - name: Check for test failures
+      id: check-failures
+      if: always()
+      run: |
+        if grep -q "XCTAssert.*failed\|Test Case.*failed\|Testing failed:" ui-tests.log; then
+          echo "had_failures=true" >> $GITHUB_OUTPUT
+          echo "⚠️ Detected test failures in the log (may have passed on retry)"
+        else
+          echo "had_failures=false" >> $GITHUB_OUTPUT
+        fi
+
     - name: Prepare test report
       id: prepare-test-report
       if: always()
@@ -335,6 +346,14 @@ jobs:
         name: "testreport-${{ matrix.test }}-macos${{ matrix.os-version }}"
         path: "macOS/${{ steps.prepare-test-report.outputs.file }}"
         retention-days: 1
+
+    - name: Upload xcresult files
+      uses: actions/upload-artifact@v4
+      if: always() && steps.check-failures.outputs.had_failures == 'true'
+      with:
+        name: "xcresult-${{ matrix.test }}-macos${{ matrix.os-version }}"
+        path: "macOS/DerivedData/Logs/Test/*.xcresult"
+        retention-days: 7
 
     - name: Organize logs for upload
       if: failure() || cancelled()

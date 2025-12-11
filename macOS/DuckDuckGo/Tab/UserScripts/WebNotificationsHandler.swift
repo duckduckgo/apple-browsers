@@ -68,7 +68,6 @@ final class WebNotificationsHandler: NSObject, Subfeature {
     private let notificationService: WebNotificationService
     private let iconFetcher: NotificationIconFetching
     private let featureFlagger: FeatureFlagger
-    private let permissionManager: PermissionManagerProtocol
 
     /// The webView associated with this handler's tab, set by `WebNotificationsTabExtension`.
     weak var webView: WKWebView?
@@ -85,13 +84,11 @@ final class WebNotificationsHandler: NSObject, Subfeature {
     init(tabUUID: String,
          notificationService: WebNotificationService = UNUserNotificationCenter.current(),
          iconFetcher: NotificationIconFetching = NotificationIconFetcher(),
-         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-         permissionManager: PermissionManagerProtocol = NSApp.delegateTyped.permissionManager) {
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.tabUUID = tabUUID
         self.notificationService = notificationService
         self.iconFetcher = iconFetcher
         self.featureFlagger = featureFlagger
-        self.permissionManager = permissionManager
         super.init()
     }
 
@@ -118,7 +115,7 @@ final class WebNotificationsHandler: NSObject, Subfeature {
                 return await self?.handleRequestPermission(params: params, original: original)
             }
         case .addDebugFlag:
-            return { params, original in
+            return { _, _ in
                 // Debug flag acknowledged but not used by this handler
                 return nil
             }
@@ -250,9 +247,9 @@ final class WebNotificationsHandler: NSObject, Subfeature {
             return
         }
 
-        // Check stored permission (Fire Windows use same storage, cleared on burn)
-        let permissionDecision = permissionManager.permission(forDomain: domain, permissionType: .notification)
-        guard permissionDecision == .allow else {
+        // Check permission (persistent or session). Fire Windows: permissions cleared on burn
+        guard let permissionModel = permissionModel,
+              permissionModel.isPermissionGranted(.notification, forDomain: domain) else {
             Logger.general.debug("WebNotificationsHandler: Blocked - permission not allowed (ID: \(payload.id))")
             await sendErrorEvent(id: payload.id, to: original.webView)
             return
@@ -310,6 +307,9 @@ final class WebNotificationsHandler: NSObject, Subfeature {
         }
 
         var cancellables = Set<AnyCancellable>()
+
+        // We need to force permissions to update as we need to ensure
+        await permissionModel.updateNotificationsPermission()
 
         // Request permission through PermissionModel (shows UI, handles storage)
         // Fire Windows: permissions cleared on burn via burnPermissions()

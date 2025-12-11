@@ -37,6 +37,8 @@ final class PermissionModelTests: XCTestCase {
     static var processPool: WKProcessPool!
     var webView: WebViewMock!
     var model: PermissionModel!
+    var appActivationSubject: PassthroughSubject<Notification, Never>!
+    var mockNotificationAuthStatus: UNAuthorizationStatus = .notDetermined
     var pixelKit: PixelKit! = PixelKit(dryRun: true,
                                        appVersion: "1.0.0",
                                        defaultHeaders: [:],
@@ -62,6 +64,8 @@ final class PermissionModelTests: XCTestCase {
         permissionManagerMock = PermissionManagerMock()
         geolocationServiceMock = GeolocationServiceMock()
         featureFlaggerMock = MockFeatureFlagger()
+        appActivationSubject = PassthroughSubject<Notification, Never>()
+        mockNotificationAuthStatus = .notDetermined
 
         let configuration = WKWebViewConfiguration(processPool: Self.processPool)
         webView = WebViewMock(frame: NSRect(x: 0, y: 0, width: 50, height: 50), configuration: configuration)
@@ -72,7 +76,11 @@ final class PermissionModelTests: XCTestCase {
         model = PermissionModel(webView: webView,
                                 permissionManager: permissionManagerMock,
                                 geolocationService: geolocationServiceMock,
-                                featureFlagger: featureFlaggerMock)
+                                featureFlagger: featureFlaggerMock,
+                                appActivationPublisher: appActivationSubject.eraseToAnyPublisher(),
+                                notificationAuthorizationProvider: { [weak self] in
+                                    return self?.mockNotificationAuthStatus ?? .notDetermined
+                                })
 
         AVCaptureDeviceMock.authorizationStatuses = nil
     }
@@ -86,6 +94,8 @@ final class PermissionModelTests: XCTestCase {
         pixelKit = nil
         geolocationProviderMock = nil
         model = nil
+        appActivationSubject = nil
+        mockNotificationAuthStatus = .notDetermined
     }
 
     override class func tearDown() {
@@ -1115,6 +1125,51 @@ final class PermissionModelTests: XCTestCase {
 
         model.revoke(.geolocation)
         XCTAssertEqual(model.permissions, [.geolocation: .denied])
+    }
+
+    @MainActor
+    func testWhenAppBecomesActiveWithSystemNotificationDeniedThenPendingQueriesAreCleared() async {
+        featureFlaggerMock.enabledFeatures = [.newPermissionView]
+
+        // Set up notification permission in inactive state (granted but not active)
+        model.permissions[.notification] = .inactive
+
+        // Create a pending authorization query
+        let domain = "example.com"
+        let url = URL(string: "https://example.com")
+
+        model.permissions([.notification], requestedForDomain: domain, url: url) { _ in }
+
+        // Wait for query to be created
+        try? await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertFalse(model.authorizationQueries.isEmpty)
+
+        // Mock system authorization as denied
+        mockNotificationAuthStatus = .denied
+
+        // Trigger app activation
+        appActivationSubject.send(Notification(name: NSApplication.didBecomeActiveNotification))
+
+        // Wait for async processing
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        // Verify queries were cleared
+        XCTAssertTrue(model.authorizationQueries.isEmpty)
+        XCTAssertEqual(model.permissions[.notification], .disabled(systemWide: false))
+    }
+
+    @MainActor
+    func testWhenAppBecomesActiveWithSystemNotificationAuthorizedThenStateRemainsActive() async {
+        featureFlaggerMock.enabledFeatures = [.newPermissionView]
+
+        model.permissions[.notification] = .active
+        mockNotificationAuthStatus = .authorized
+
+        appActivationSubject.send(Notification(name: NSApplication.didBecomeActiveNotification))
+
+        try? await Task.sleep(nanoseconds: 100_000_000)
+
+        XCTAssertEqual(model.permissions[.notification], .active)
     }
 
 }

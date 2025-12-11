@@ -23,6 +23,7 @@ import WebKit
 
 protocol PermissionModelProtocol {
     func permissions(_ permissions: [PermissionType], requestedForDomain domain: String, url: URL?, decisionHandler: @escaping (Bool) -> Void)
+    func isPermissionGranted(_ permission: PermissionType, forDomain domain: String) -> Bool
 }
 extension PermissionModel: PermissionModelProtocol {}
 

@@ -26,6 +26,8 @@ import Navigation
 import UserNotifications
 import WebKit
 
+typealias NotificationAuthorizationProvider = @Sendable () async -> UNAuthorizationStatus
+
 final class PermissionModel {
 
     @PublishedAfter private(set) var permissions = Permissions()
@@ -40,6 +42,8 @@ final class PermissionModel {
     private let permissionManager: PermissionManagerProtocol
     private let geolocationService: GeolocationServiceProtocol
     private let featureFlagger: FeatureFlagger
+    private let appActivationPublisher: AnyPublisher<Notification, Never>
+    private let notificationAuthorizationProvider: NotificationAuthorizationProvider
 
     /// Holds the set of permissions the user manually removed (to avoid adding them back via updatePermissions)
     private var removedPermissions = Set<PermissionType>()
@@ -63,15 +67,24 @@ final class PermissionModel {
     init(webView: WKWebView? = nil,
          permissionManager: PermissionManagerProtocol,
          geolocationService: GeolocationServiceProtocol = GeolocationService.shared,
-         featureFlagger: FeatureFlagger) {
+         featureFlagger: FeatureFlagger,
+         appActivationPublisher: AnyPublisher<Notification, Never> = NotificationCenter.default
+             .publisher(for: NSApplication.didBecomeActiveNotification)
+             .eraseToAnyPublisher(),
+         notificationAuthorizationProvider: @escaping NotificationAuthorizationProvider = {
+             await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+         }) {
         self.permissionManager = permissionManager
         self.geolocationService = geolocationService
         self.featureFlagger = featureFlagger
+        self.appActivationPublisher = appActivationPublisher
+        self.notificationAuthorizationProvider = notificationAuthorizationProvider
         if let webView {
             self.webView = webView
             self.subscribe(to: webView)
             self.subscribe(to: permissionManager)
         }
+        self.subscribeToAppActivation()
     }
 
     private func subscribe(to webView: WKWebView) {
@@ -105,6 +118,16 @@ final class PermissionModel {
                                     forDomain: value.domain,
                                     to: value.decision)
         }.store(in: &cancellables)
+    }
+
+    private func subscribeToAppActivation() {
+        appActivationPublisher
+            .sink { [weak self] _ in
+                Task { @MainActor [weak self] in
+                    await self?.updateNotificationsPermission()
+                }
+            }
+            .store(in: &cancellables)
     }
 
     private func resetPermissions() {
@@ -152,25 +175,35 @@ final class PermissionModel {
                     }
                 }
             case .notification:
-                // Check system notification authorization (following geolocation pattern)
-                if permissions.notification != nil, featureFlagger.isFeatureOn(.newPermissionView) {
-                    Task { @MainActor [weak self] in
-                        guard let self else { return }
-                        let settings = await UNUserNotificationCenter.current().notificationSettings()
-                        let systemStatus = settings.authorizationStatus
-                        
-                        if [.denied, .notDetermined].contains(systemStatus) {
-                            // System authorization not granted - set to disabled so UI will show
-                            self.permissions.notification.systemAuthorizationDenied(systemWide: false)
-                        } else if self.permissions.notification == .active || self.permissions.notification == .inactive {
-                            // System authorized and website permission granted - keep as active
-                            self.permissions.notification = .active
-                        }
-                    }
+                Task { @MainActor [weak self] in
+                    await self?.updateNotificationsPermission()
                 }
             case .popups, .externalScheme:
                 continue
             }
+        }
+    }
+
+    /// Updates notification permissions
+    ///
+    /// This was moved out of ``updatePermissions`` because it's not async, and we need an async method that can
+    /// await completion.
+    func updateNotificationsPermission() async {
+        guard featureFlagger.isFeatureOn(.newPermissionView),
+              permissions.notification != nil else {
+            return
+        }
+
+        let systemStatus = await notificationAuthorizationProvider()
+
+        if [.denied, .notDetermined].contains(systemStatus) {
+            permissions.notification = nil
+
+            // Remove any pending notification authorization queries without triggering denial
+            authorizationQueries.removeAll(where: { $0.permissions == [.notification] })
+        } else if self.permissions.notification == .active || self.permissions.notification == .inactive {
+            // System authorized and website permission granted - keep as active
+            permissions.notification = .active
         }
     }
 
@@ -307,6 +340,42 @@ final class PermissionModel {
             permissionManager.removePermission(forDomain: domain, permissionType: permission)
         } else {
             assertionFailure("webView URL should not be nil when removing a permission")
+        }
+    }
+
+    /// Checks if a permission is granted (either persistently via "Always Allow" or for this session via one-time grant).
+    ///
+    /// Permission states indicating "granted":
+    /// - `.active`: Permission granted and actively in use (e.g., camera streaming, geolocation updating)
+    /// - `.inactive`: Permission granted but not currently active (e.g., camera granted but off, notification granted but idle)
+    /// - `.paused`: Permission granted and in use but muted (e.g., camera on but muted)
+    ///
+    /// When user grants permission, it transitions from `.requested` to `.inactive` (see PermissionState.granted()).
+    /// For media permissions (camera/mic), WebView tracking then updates to `.active` when used.
+    /// For notifications, it stays `.inactive` (no WebView tracking for notification usage).
+    ///
+    /// This matches the existing pattern in PermissionModel.updatePermissions():
+    /// "(.active or .inactive means it was granted or actively used)"
+    ///
+    /// - Parameters:
+    ///   - permission: The permission type to check
+    ///   - domain: The domain to check permission for
+    /// - Returns: `true` if permission is granted (persistent or session), `false` otherwise
+    func isPermissionGranted(_ permission: PermissionType, forDomain domain: String) -> Bool {
+        // Check persisted decision first (Always Allow)
+        let persistentDecision = permissionManager.permission(forDomain: domain, permissionType: permission)
+        if persistentDecision == .allow {
+            return true
+        }
+
+        // Check runtime/session state (one-time grant for this session)
+        // States .active, .inactive, .paused all indicate permission was granted
+        let sessionState = permissions[permission]
+        switch sessionState {
+        case .active, .inactive, .paused:
+            return true
+        default:
+            return false
         }
     }
 

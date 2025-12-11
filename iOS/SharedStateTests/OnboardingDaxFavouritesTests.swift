@@ -114,10 +114,19 @@ import Combine
                                     aiChatSettings: MockAIChatSettingsProvider(),
                                     productSurfaceTelemetry: MockProductSurfaceTelemetry()
         )
+        let fireExecutor = FireExecutor(tabManager: tabManager,
+                                        websiteDataManager: mockWebsiteDataManager,
+                                        daxDialogsManager: DummyDaxDialogsManager(),
+                                        syncService: syncService,
+                                        bookmarksDatabaseCleaner: bookmarkDatabaseCleaner,
+                                        fireproofing: fireproofing,
+                                        textZoomCoordinator: textZoomCoordinator,
+                                        historyManager: historyManager,
+                                        featureFlagger: featureFlagger,
+                                        privacyConfigurationManager: mockConfigManager)
         sut = MainViewController(
             privacyConfigurationManager: mockConfigManager,
             bookmarksDatabase: db,
-            bookmarksDatabaseCleaner: bookmarkDatabaseCleaner,
             historyManager: historyManager,
             homePageConfiguration: homePageConfiguration,
             syncService: syncService,
@@ -152,7 +161,8 @@ import Combine
             winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager(),
             mobileCustomization: MobileCustomization(isFeatureEnabled: false, keyValueStore: MockThrowingKeyValueStore()),
             remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
-            productSurfaceTelemetry: MockProductSurfaceTelemetry()
+            productSurfaceTelemetry: MockProductSurfaceTelemetry(),
+            fireExecutor: fireExecutor
         )
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIViewController()

@@ -125,11 +125,19 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
                                                                               contentBlockingManager: ContentBlockerRulesManagerMock(),
                                                                               fireproofing: fireproofing,
                                                                               contentScopeExperimentsManager: MockContentScopeExperimentManager())
-
+        let fireExecutor = FireExecutor(tabManager: tabManager,
+                                        websiteDataManager: mockWebsiteDataManager,
+                                        daxDialogsManager: DummyDaxDialogsManager(),
+                                        syncService: syncService,
+                                        bookmarksDatabaseCleaner: bookmarkDatabaseCleaner,
+                                        fireproofing: fireproofing,
+                                        textZoomCoordinator: textZoomCoordinator,
+                                        historyManager: historyManager,
+                                        featureFlagger: featureFlagger,
+                                        privacyConfigurationManager: configMock)
         sut = TestableMainViewController(
             privacyConfigurationManager: configMock,
             bookmarksDatabase: db,
-            bookmarksDatabaseCleaner: bookmarkDatabaseCleaner,
             historyManager: historyManager,
             homePageConfiguration: homePageConfiguration,
             syncService: syncService,
@@ -164,7 +172,8 @@ final class MainViewControllerAIChatPayloadTests: XCTestCase {
             winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager(),
             mobileCustomization: MobileCustomization(isFeatureEnabled: false, keyValueStore: MockThrowingKeyValueStore()),
             remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
-            productSurfaceTelemetry: MockProductSurfaceTelemetry()
+            productSurfaceTelemetry: MockProductSurfaceTelemetry(),
+            fireExecutor: fireExecutor
         )
         
         let window = UIWindow(frame: UIScreen.main.bounds)

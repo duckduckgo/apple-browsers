@@ -359,8 +359,6 @@ final class PermissionModel {
                 if featureFlagger.isFeatureOn(.newPermissionView), isSystemPermissionDisabled(for: permission) {
                     return nil
                 }
-                // System permission OK, continue checking other permissions
-                break
             case .ask:
                 // if at least one permission is not set: ask
                 return nil

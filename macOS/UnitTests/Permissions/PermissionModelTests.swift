@@ -1359,8 +1359,6 @@ final class PermissionModelTests: XCTestCase {
 
 }
 
-
-
 extension PermissionModelTests: WebViewPermissionsDelegate {
 
     @objc(_webView:checkUserMediaPermissionForURL:mainFrameURL:frameIdentifier:decisionHandler:)

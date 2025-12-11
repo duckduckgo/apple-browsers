@@ -197,10 +197,16 @@ final class PermissionModel {
         let systemStatus = await notificationAuthorizationProvider()
 
         if [.denied, .notDetermined].contains(systemStatus) {
-            permissions.notification = nil
-
             // Remove any pending notification authorization queries without triggering denial
-            authorizationQueries.removeAll(where: { $0.permissions == [.notification] })
+            //authorizationQueries.removeAll(where: { $0.permissions == [.notification] })
+
+            // Remove from persistent storage
+            if let domain = currentDomain {
+                permissionManager.removePermission(forDomain: domain, permissionType: .notification)
+            }
+
+            // Remove from tracking (triggers UI update to close popover)
+            permissions.notification = nil
         } else if self.permissions.notification == .active || self.permissions.notification == .inactive {
             // System authorized and website permission granted - keep as active
             permissions.notification = .active

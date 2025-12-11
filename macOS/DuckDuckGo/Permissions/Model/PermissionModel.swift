@@ -38,6 +38,7 @@ final class PermissionModel {
 
     private let permissionManager: PermissionManagerProtocol
     private let geolocationService: GeolocationServiceProtocol
+    private let systemPermissionManager: SystemPermissionManagerProtocol
     private let featureFlagger: FeatureFlagger
 
     /// Holds the set of permissions the user manually removed (to avoid adding them back via updatePermissions)
@@ -62,9 +63,11 @@ final class PermissionModel {
     init(webView: WKWebView? = nil,
          permissionManager: PermissionManagerProtocol,
          geolocationService: GeolocationServiceProtocol = GeolocationService.shared,
+         systemPermissionManager: SystemPermissionManagerProtocol = SystemPermissionManager(),
          featureFlagger: FeatureFlagger) {
         self.permissionManager = permissionManager
         self.geolocationService = geolocationService
+        self.systemPermissionManager = systemPermissionManager
         self.featureFlagger = featureFlagger
         if let webView {
             self.webView = webView
@@ -202,14 +205,7 @@ final class PermissionModel {
         // "unowned" query reference to be able to use the pointer when the callback is called on query deinit
         queryPtr = Unmanaged.passUnretained(query).toOpaque()
 
-        // When Geolocation queried by a website but System Permission is denied: switch to `disabled`
-        if permissions.contains(.geolocation),
-           [.denied, .restricted].contains(self.geolocationService.authorizationStatus)
-            || !geolocationService.locationServicesEnabled() {
-            self.permissions.geolocation
-                .systemAuthorizationDenied(systemWide: !geolocationService.locationServicesEnabled())
-        }
-
+        // Set state to .requested first so the authorization popover can be shown
         permissions.forEach { self.permissions[$0].authorizationQueried(query, updateQueryIfAlreadyRequested: $0 == .popups) }
         authorizationQueries.append(query)
     }
@@ -332,6 +328,11 @@ final class PermissionModel {
 
     private func shouldGrantPermission(for permissions: [PermissionType], requestedForDomain domain: String) -> Bool? {
         for permission in permissions {
+            // First check if system permission is disabled - always show dialog in that case
+            if isSystemPermissionDisabled(for: permission) {
+                return nil
+            }
+
             var grant: PersistedPermissionDecision
             let stored = permissionManager.permission(forDomain: domain, permissionType: permission)
             if case .allow = stored, permission.canPersistGrantedDecision(featureFlagger: featureFlagger) {
@@ -365,6 +366,14 @@ final class PermissionModel {
             }
         }
         return true
+    }
+
+    /// Checks if system-level permission is disabled for the given permission type
+    private func isSystemPermissionDisabled(for permissionType: PermissionType) -> Bool {
+        guard permissionType.requiresSystemPermission else { return false }
+
+        let authState = systemPermissionManager.authorizationState(for: permissionType)
+        return authState == .denied || authState == .restricted || authState == .systemDisabled
     }
 
     /// Request user authorization for provided PermissionTypes

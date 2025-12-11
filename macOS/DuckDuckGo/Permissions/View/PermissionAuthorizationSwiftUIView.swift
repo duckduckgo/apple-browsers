@@ -182,6 +182,7 @@ struct PermissionAuthorizationSwiftUIView: View {
 
     @State private var systemPermissionState: SystemPermissionState = .initial
     @State private var authorizationCancellable: AnyCancellable?
+    @State private var appActiveCancellable: AnyCancellable?
 
     // MARK: - Computed Properties
 
@@ -246,6 +247,11 @@ struct PermissionAuthorizationSwiftUIView: View {
         .background(Color(designSystemColor: .containerFillPrimary))
         .onAppear {
             initializeSystemPermissionState()
+            subscribeToAppActiveNotification()
+        }
+        .onDisappear {
+            appActiveCancellable?.cancel()
+            appActiveCancellable = nil
         }
     }
 
@@ -261,6 +267,34 @@ struct PermissionAuthorizationSwiftUIView: View {
             systemPermissionState = .authorized
         case .notDetermined:
             break // Keep initial state
+        }
+    }
+
+    /// Subscribe to app becoming active to re-check system permission state
+    /// This allows the UI to update when user returns from System Settings
+    private func subscribeToAppActiveNotification() {
+        appActiveCancellable = NotificationCenter.default
+            .publisher(for: NSApplication.didBecomeActiveNotification)
+            .sink { [systemPermissionManager, permissionType] _ in
+                recheckSystemPermissionState(
+                    manager: systemPermissionManager,
+                    permissionType: permissionType
+                )
+            }
+    }
+
+    /// Re-check system permission state when app becomes active
+    /// Updates UI if user enabled permission in System Settings
+    private func recheckSystemPermissionState(
+        manager: SystemPermissionManagerProtocol,
+        permissionType: PermissionAuthorizationType
+    ) {
+        // Only re-check if we were in a denied state
+        guard systemPermissionState == .alreadyDenied || systemPermissionState == .denied else { return }
+
+        let authState = manager.authorizationState(for: permissionType.asPermissionType)
+        if authState == .authorized {
+            systemPermissionState = .authorized
         }
     }
 
@@ -478,16 +512,6 @@ extension PermissionAuthorizationSwiftUIView {
 // MARK: - PermissionType UI Extensions
 
 extension PermissionType {
-
-    /// Whether this permission type requires a two-step authorization flow (system permission first, then website permission)
-    var requiresSystemPermission: Bool {
-        switch self {
-        case .geolocation:
-            return true
-        case .camera, .microphone, .popups, .notification, .externalScheme:
-            return false
-        }
-    }
 
     /// Text shown when system permission was previously disabled (prefix before link)
     var systemPermissionDisabledText: String {

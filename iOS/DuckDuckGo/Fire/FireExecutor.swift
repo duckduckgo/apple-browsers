@@ -23,6 +23,7 @@ import Bookmarks
 import AIChat
 import BrowserServicesKit
 import UserScript
+import WKAbstractions
 
 struct FireOptions: OptionSet {
     
@@ -47,39 +48,39 @@ class FireExecutor {
     
     // MARK: - Variables
     
-    private let tabManager: TabManager
-    private let downloadManager: DownloadManager
+    private let tabManager: TabManaging
+    private let downloadManager: DownloadManaging
     private let websiteDataManager: WebsiteDataManaging
     private let daxDialogsManager: DaxDialogsManaging
     private let syncService: DDGSyncing
-    private weak var bookmarksDatabaseCleaner: BookmarkDatabaseCleaner?
+    private weak var bookmarksDatabaseCleaner: BookmarkDatabaseCleaning?
     private let fireproofing: Fireproofing
     private let textZoomCoordinator: TextZoomCoordinating
     private let historyManager: HistoryManaging
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let dataStore: (any DDGWebsiteDataStore)?
     
     weak var delegate: FireExecutorDelegate?
     private var burnInProgress = false
     private var dataStoreWarmup: DataStoreWarmup? = DataStoreWarmup()
-    private lazy var aiChatHistoryCleaner: HistoryCleaning = {
-        return HistoryCleaner(featureFlagger: featureFlagger,
-                             privacyConfig: privacyConfigurationManager)
-    }()
+    private let aiChatHistoryCleaner: HistoryCleaning
     
     // MARK: - Init
     
-    init(tabManager: TabManager,
-         downloadManager: DownloadManager = AppDependencyProvider.shared.downloadManager,
+    init(tabManager: TabManaging,
+         downloadManager: DownloadManaging = AppDependencyProvider.shared.downloadManager,
          websiteDataManager: WebsiteDataManaging,
          daxDialogsManager: DaxDialogsManaging,
          syncService: DDGSyncing,
-         bookmarksDatabaseCleaner: BookmarkDatabaseCleaner,
+         bookmarksDatabaseCleaner: BookmarkDatabaseCleaning,
          fireproofing: Fireproofing,
          textZoomCoordinator: TextZoomCoordinating,
          historyManager: HistoryManaging,
          featureFlagger: FeatureFlagger,
-         privacyConfigurationManager: PrivacyConfigurationManaging) {
+         privacyConfigurationManager: PrivacyConfigurationManaging,
+         dataStore: (any DDGWebsiteDataStore)? = nil,
+         aiChatHistoryCleaner: HistoryCleaning? = nil) {
         self.tabManager = tabManager
         self.downloadManager = downloadManager
         self.websiteDataManager = websiteDataManager
@@ -91,6 +92,9 @@ class FireExecutor {
         self.historyManager = historyManager
         self.featureFlagger = featureFlagger
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.dataStore = dataStore
+        self.aiChatHistoryCleaner = aiChatHistoryCleaner ?? HistoryCleaner(featureFlagger: featureFlagger,
+                                                                          privacyConfig: privacyConfigurationManager)
     }
 
     
@@ -164,7 +168,8 @@ class FireExecutor {
         
         // If the user is on a version that uses containers, then we'll clear the current container, then migrate it. Otherwise
         //  this is the same as `WKWebsiteDataStore.default()`
-        await websiteDataManager.clear(dataStore: DDGWebsiteDataStoreProvider.current())
+        let storeToUse = dataStore ?? DDGWebsiteDataStoreProvider.current()
+        await websiteDataManager.clear(dataStore: storeToUse)
         pixel.fire(withAdditionalParameters: [PixelParameters.tabCount: "\(self.tabManager.count)"])
 
         AutoconsentManagement.shared.clearCache()

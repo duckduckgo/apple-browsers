@@ -564,6 +564,11 @@
 		809F9D162EE12CF600943E8A /* FireConfirmationPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 809F9D112EE12CF600943E8A /* FireConfirmationPresenter.swift */; };
 		809F9D172EE12CF600943E8A /* FireConfirmationViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 809F9D132EE12CF600943E8A /* FireConfirmationViewModel.swift */; };
 		80BADA432EEA2B3500BA6CDB /* FireConfirmationSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80BADA422EEA2B3500BA6CDB /* FireConfirmationSettingsStore.swift */; };
+		80E8D5D32EEA655900820EB0 /* FireExecutorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80E8D5D22EEA655900820EB0 /* FireExecutorTests.swift */; };
+		80E8D5D52EEA659300820EB0 /* MockTabManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80E8D5D42EEA659300820EB0 /* MockTabManager.swift */; };
+		80E8D5D62EEA659300820EB0 /* MockTabManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80E8D5D42EEA659300820EB0 /* MockTabManager.swift */; };
+		80E8D5D72EEA659300820EB0 /* MockTabManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80E8D5D42EEA659300820EB0 /* MockTabManager.swift */; };
+		80E8D5D82EEA659300820EB0 /* MockTabManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80E8D5D42EEA659300820EB0 /* MockTabManager.swift */; };
 		83004E802193BB8200DA013C /* WKNavigationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83004E7F2193BB8200DA013C /* WKNavigationExtension.swift */; };
 		83004E862193E5ED00DA013C /* TabViewControllerMenuBuilderExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83004E852193E5ED00DA013C /* TabViewControllerMenuBuilderExtension.swift */; };
 		83004E882193E8C700DA013C /* TabViewControllerLongPressMenuExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83004E872193E8C700DA013C /* TabViewControllerLongPressMenuExtension.swift */; };
@@ -2693,6 +2698,8 @@
 		809F9D122EE12CF600943E8A /* FireConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireConfirmationView.swift; sourceTree = "<group>"; };
 		809F9D132EE12CF600943E8A /* FireConfirmationViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireConfirmationViewModel.swift; sourceTree = "<group>"; };
 		80BADA422EEA2B3500BA6CDB /* FireConfirmationSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireConfirmationSettingsStore.swift; sourceTree = "<group>"; };
+		80E8D5D22EEA655900820EB0 /* FireExecutorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireExecutorTests.swift; sourceTree = "<group>"; };
+		80E8D5D42EEA659300820EB0 /* MockTabManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockTabManager.swift; sourceTree = "<group>"; };
 		83004E7F2193BB8200DA013C /* WKNavigationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WKNavigationExtension.swift; sourceTree = "<group>"; };
 		83004E832193E14C00DA013C /* UIAlertControllerExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = UIAlertControllerExtension.swift; path = ../Core/UIAlertControllerExtension.swift; sourceTree = "<group>"; };
 		83004E852193E5ED00DA013C /* TabViewControllerMenuBuilderExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabViewControllerMenuBuilderExtension.swift; sourceTree = "<group>"; };
@@ -5491,6 +5498,7 @@
 		362E3EC82E7185A900E4C762 /* Tabs */ = {
 			isa = PBXGroup;
 			children = (
+				80E8D5D42EEA659300820EB0 /* MockTabManager.swift */,
 				98E563AA2DE8B32D00E6E75F /* MockTabDelegate.swift */,
 				98E563AB2DE8B32D00E6E75F /* MockTabInteractionStateSource.swift */,
 			);
@@ -6055,6 +6063,7 @@
 		8097AA582EE652CF00E995F9 /* Fire */ = {
 			isa = PBXGroup;
 			children = (
+				80E8D5D22EEA655900820EB0 /* FireExecutorTests.swift */,
 				8097AA592EE652DC00E995F9 /* FireConfirmationViewModelTests.swift */,
 			);
 			path = Fire;
@@ -11892,6 +11901,7 @@
 				9F387DD82EA86CE3006861F8 /* PromptCooldownStoreTests.swift in Sources */,
 				9F60CBBD2E98A13D004D2367 /* MockBrowserTabURLOpener.swift in Sources */,
 				EEC02C162B065BE00045CE11 /* NetworkProtectionVPNLocationViewModelTests.swift in Sources */,
+				80E8D5D62EEA659300820EB0 /* MockTabManager.swift in Sources */,
 				9F60CBB82E989EDC004D2367 /* MockLastSearchStateRefresher.swift in Sources */,
 				9FF967B72E0E31D300E45B54 /* MockDefaultBrowserPromptUserTypeStoring.swift in Sources */,
 				987130C5294AAB9F00AB05E0 /* BookmarkEditorViewModelTests.swift in Sources */,
@@ -12006,6 +12016,7 @@
 				986CD54F2DE9139400AFA98A /* HomePageMessagesConfigurationMock.swift in Sources */,
 				6F5AA3EF2CC1588400685CB4 /* FavoritesListInteractingAdapterTests.swift in Sources */,
 				9FA0AF282EB844C800713387 /* MockParameterRandomiser.swift in Sources */,
+				80E8D5D32EEA655900820EB0 /* FireExecutorTests.swift in Sources */,
 				8582D7282E58A11D00A356FD /* AutocompleteViewModelTests.swift in Sources */,
 				981FED7422046017008488D7 /* AutoClearTests.swift in Sources */,
 				319BE1092D47EBE300E510A4 /* AIChatUserScriptHandlerTests.swift in Sources */,
@@ -12165,6 +12176,7 @@
 				98E5649D2DE8ED1400E6E75F /* SyncMocks.swift in Sources */,
 				98E564A32DE8EDCE00E6E75F /* CapturingSyncPausedStateManager.swift in Sources */,
 				98E5640A2DE8B32D00E6E75F /* MockMessageNavigationDelegate.swift in Sources */,
+				80E8D5D82EEA659300820EB0 /* MockTabManager.swift in Sources */,
 				9876DF2E2DEEE21700E30713 /* MockThemeManager.swift in Sources */,
 				9F60CBBE2E98A13D004D2367 /* MockBrowserTabURLOpener.swift in Sources */,
 				98E5640B2DE8B32D00E6E75F /* MockStatisticsStore.swift in Sources */,
@@ -12341,6 +12353,7 @@
 				98E564B72DE8F34E00E6E75F /* TimeTraveller.swift in Sources */,
 				98E564B82DE8F34E00E6E75F /* MaliciousSiteProtectionMocks.swift in Sources */,
 				98E563CF2DE8B32D00E6E75F /* OnboardingHostingControllerMock.swift in Sources */,
+				80E8D5D72EEA659300820EB0 /* MockTabManager.swift in Sources */,
 				98E563D02DE8B32D00E6E75F /* MockOmniBar.swift in Sources */,
 				98E563D12DE8B32D00E6E75F /* MockUsageSegmentation.swift in Sources */,
 				98E563D22DE8B32D00E6E75F /* MockPixelFiring.swift in Sources */,
@@ -12450,6 +12463,7 @@
 				98E5646B2DE8DDDC00E6E75F /* DuckPlayerMocks.swift in Sources */,
 				98E5646C2DE8DDDC00E6E75F /* MockSecureVault.swift in Sources */,
 				98E564762DE8DDE200E6E75F /* JsonTestDataLoader.swift in Sources */,
+				80E8D5D52EEA659300820EB0 /* MockTabManager.swift in Sources */,
 				98E564772DE8DDE200E6E75F /* WebViewWarmupHelper.swift in Sources */,
 				98E564782DE8DDE200E6E75F /* CombineTestUtilities.swift in Sources */,
 				98E564792DE8DDE200E6E75F /* UserDefaultsExtension.swift in Sources */,

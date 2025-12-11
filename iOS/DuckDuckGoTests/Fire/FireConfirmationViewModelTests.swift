@@ -101,7 +101,7 @@ final class FireConfirmationViewModelTests: XCTestCase {
             fireproofing: fireproofing,
             aiChatSettings: aiChatSettings,
             keyValueFilesStore: mockKeyValueStore,
-            onConfirm: {},
+            onConfirm: { _ in },
             onCancel: {}
         )
     }

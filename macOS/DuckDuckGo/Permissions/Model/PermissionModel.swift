@@ -329,7 +329,8 @@ final class PermissionModel {
     private func shouldGrantPermission(for permissions: [PermissionType], requestedForDomain domain: String) -> Bool? {
         for permission in permissions {
             // First check if system permission is disabled - always show dialog in that case
-            if isSystemPermissionDisabled(for: permission) {
+            // Only applies when new permission view is enabled (two-step authorization flow)
+            if featureFlagger.isFeatureOn(.newPermissionView), isSystemPermissionDisabled(for: permission) {
                 return nil
             }
 

@@ -121,6 +121,7 @@ public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding 
             emailConfirmationDataService: self.emailConfirmationDataService,
             captchaService: self.captchaService,
             featureFlagger: self.featureFlagger,
+            clickAwaitTime: featureFlagger.isClickActionDelayReductionOptimizationOn ? 3 : 40,
             stageCalculator: stageDurationCalculator,
             pixelHandler: self.pixelHandler,
             executionConfig: self.executionConfig,

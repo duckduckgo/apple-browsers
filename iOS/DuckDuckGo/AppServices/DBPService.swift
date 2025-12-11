@@ -107,6 +107,10 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
         appDependencies.featureFlagger.isFeatureOn(.dbpForegroundRunningWhenDashboardOpen)
     }
 
+    var isClickActionDelayReductionOptimizationOn: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpClickActionDelayReductionOptimization)
+    }
+
     init(appDependencies: DependencyProvider) {
         self.appDependencies = appDependencies
     }

@@ -158,6 +158,10 @@ public extension SubJobWebRunning {
             return
         }
 
+        if featureFlagger.isClickActionDelayReductionOptimizationOn && action is ClickAction {
+            try? await Task.sleep(nanoseconds: UInt64(clickAwaitTime) * 1_000_000_000)
+        }
+
         await webViewHandler?.execute(action: action,
                                       ofType: stepType,
                                       data: .userData(context.profileQuery, self.extractedProfile))
@@ -277,8 +281,11 @@ public extension SubJobWebRunning {
             if isForOptOut {
                 stageCalculator.fireOptOutFillForm()
             }
-            // We wait 40 seconds before tapping
-            try? await Task.sleep(nanoseconds: UInt64(clickAwaitTime) * 1_000_000_000)
+            // When click delay optimization is OFF, wait after click (legacy behavior)
+            // When ON, the delay happens before the click in runNextAction
+            if !featureFlagger.isClickActionDelayReductionOptimizationOn {
+                try? await Task.sleep(nanoseconds: UInt64(clickAwaitTime) * 1_000_000_000)
+            }
             await executeNextStep()
         case .fillForm:
             if isForOptOut {

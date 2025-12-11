@@ -114,6 +114,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212258549430659
     case dbpForegroundRunningWhenDashboardOpen
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212397941080401
+    case dbpClickActionDelayReductionOptimization
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711635701
     case crashReportOptInStatusResetting
 
@@ -345,6 +348,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .dbpRemoteBrokerDelivery,
              .dbpForegroundRunningOnAppActive,
              .dbpForegroundRunningWhenDashboardOpen,
+             .dbpClickActionDelayReductionOptimization,
              .showAIChatAddressBarChoiceScreen,
              .winBackOffer,
              .syncCreditCards,
@@ -485,6 +489,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DBPSubfeature.foregroundRunningOnAppActive))
         case .dbpForegroundRunningWhenDashboardOpen:
             return .remoteReleasable(.subfeature(DBPSubfeature.foregroundRunningWhenDashboardOpen))
+        case .dbpClickActionDelayReductionOptimization:
+            return .remoteReleasable(.subfeature(DBPSubfeature.clickActionDelayReductionOptimization))
         case .crashReportOptInStatusResetting:
             return .internalOnly()
         case .syncSeamlessAccountSwitching:

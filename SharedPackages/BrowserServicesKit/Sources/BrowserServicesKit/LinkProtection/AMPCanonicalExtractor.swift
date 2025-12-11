@@ -138,7 +138,7 @@ public final class AMPCanonicalExtractor: NSObject {
     private func performAMPDetection(urlStr: String, ampKeywords: [String]) -> Bool {
         #if canImport(UIKit)
         var backgroundTask: UIBackgroundTaskIdentifier = .invalid
-        
+
         // Start background task to prevent suspension during detection
         backgroundTask = UIApplication.shared.beginBackgroundTask(withName: "AMP Keyword Detection") {
             if backgroundTask != .invalid {
@@ -146,18 +146,18 @@ public final class AMPCanonicalExtractor: NSObject {
                 backgroundTask = .invalid
             }
         }
-        
+
         defer {
             if backgroundTask != .invalid {
                 UIApplication.shared.endBackgroundTask(backgroundTask)
             }
         }
-        
+
         // Perform normal AMP detection
         return ampKeywords.contains { keyword in
             return urlStr.contains(keyword)
         }
-        
+
         #else
         // macOS - no background task needed
         return ampKeywords.contains { keyword in

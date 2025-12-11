@@ -292,6 +292,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1201462886803403/task/1211837879355661?focus=true
     case aiChatSync
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212388316840466?focus=true
+    case showWhatsNewPromptOnDemand
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -315,7 +318,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .browsingMenuSheetPresentation,
              .ampBackgroundTaskSupport,
              .appRatingPrompt,
-             .autofillPasswordSearchPrioritizeDomain:
+             .autofillPasswordSearchPrioritizeDomain,
+             .showWhatsNewPromptOnDemand:
             true
         default:
             false
@@ -385,7 +389,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .ampBackgroundTaskSupport,
              .appRatingPrompt,
              .contextualDuckAIMode,
-             .aiChatSync:
+             .aiChatSync,
+             .showWhatsNewPromptOnDemand:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -612,6 +617,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.contextualDuckAIMode))
         case .aiChatSync:
             return .disabled
+        case .showWhatsNewPromptOnDemand:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.showWhatsNewPromptOnDemand))
         }
     }
 }

@@ -109,16 +109,18 @@ class FireExecutor {
             burnTabs()
             delegate?.didFinishBurningTabs()
         }
-        if options.contains(.data) {
-            delegate?.willStartBurningData()
-            await burnData()
-            delegate?.didFinishBurningData()
-        }
-        if options.contains(.aiChats) {
-            delegate?.willStartBurningAIHistory()
-            await burnAIHistory() // TODO: - run this concurrently with clear data
-            delegate?.didFinishBurningAIHistory()
-        }
+        let shouldBurnData = options.contains(.data)
+        let shouldBurnAIChats = options.contains(.aiChats)
+
+        if shouldBurnData { delegate?.willStartBurningData() }
+        if shouldBurnAIChats { delegate?.willStartBurningAIHistory() }
+
+        async let dataTask: Void = shouldBurnData ? burnData() : ()
+        async let aiTask: Void = shouldBurnAIChats ? burnAIHistory() : ()
+        _ = await (dataTask, aiTask)
+
+        if shouldBurnData { delegate?.didFinishBurningData() }
+        if shouldBurnAIChats { delegate?.didFinishBurningAIHistory() }
     }
     
     // MARK: Burn Tabs Helpers
@@ -181,7 +183,6 @@ class FireExecutor {
     // MARK: - Clear AI History
     
     private func burnAIHistory() async {
-        
         let result = await aiChatHistoryCleaner.cleanAIChatHistory()
         switch result {
         case .success:

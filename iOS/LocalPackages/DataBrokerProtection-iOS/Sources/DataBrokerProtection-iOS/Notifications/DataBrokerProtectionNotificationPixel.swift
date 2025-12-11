@@ -22,25 +22,16 @@ import Common
 import PixelKit
 
 public enum DataBrokerProtectionNotificationPixel {
-    // Sent pixels
     case notificationSentFirstScanComplete
     case notificationSentFirstFreemiumScanComplete
     case notificationSentFirstRemoval
     case notificationSentAllRecordsRemoved
     case notificationScheduled1WeekCheckIn
-
-    // Opened (tapped) pixels
-    case notificationOpenedFirstScanComplete
-    case notificationOpenedFirstFreemiumScanComplete
-    case notificationOpenedFirstRemoval
-    case notificationOpenedAllRecordsRemoved
-    case notificationOpened1WeekCheckIn
 }
 
 extension DataBrokerProtectionNotificationPixel: PixelKitEvent {
     public var name: String {
         switch self {
-        // Sent pixels
         case .notificationSentFirstScanComplete:
             return "m_ios_dbp_notification_sent_first_scan_complete"
         case .notificationSentFirstFreemiumScanComplete:
@@ -51,18 +42,6 @@ extension DataBrokerProtectionNotificationPixel: PixelKitEvent {
             return "m_ios_dbp_notification_sent_all_records_removed"
         case .notificationScheduled1WeekCheckIn:
             return "m_ios_dbp_notification_scheduled_1_week_check_in"
-
-        // Opened pixels
-        case .notificationOpenedFirstScanComplete:
-            return "m_ios_dbp_notification_opened_first_scan_complete"
-        case .notificationOpenedFirstFreemiumScanComplete:
-            return "m_ios_dbp_freemium_notification_opened_first_scan_complete"
-        case .notificationOpenedFirstRemoval:
-            return "m_ios_dbp_notification_opened_first_removal"
-        case .notificationOpenedAllRecordsRemoved:
-            return "m_ios_dbp_notification_opened_all_records_removed"
-        case .notificationOpened1WeekCheckIn:
-            return "m_ios_dbp_notification_opened_1_week_check_in"
         }
     }
 

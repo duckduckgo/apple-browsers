@@ -140,19 +140,27 @@ struct ReloadBannerView: View {
             // Reload button
             Button(action: onReload) {
                 Text(UserText.permissionCenterReloadButton)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.system(size: 13))
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
+                    .padding(.vertical, 4)
                     .background(Color(NSColor.controlBackgroundColor))
-                    .cornerRadius(6)
+                    .cornerRadius(4)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 4)
+                            .stroke(Color(NSColor.separatorColor), lineWidth: 0.5)
+                    )
             }
             .buttonStyle(PlainButtonStyle())
         }
-        .padding(.horizontal, 16)
+        .padding(.horizontal, 12)
         .padding(.vertical, 12)
         .background(Color(designSystemColor: .permissionWarningBackground))
         .cornerRadius(8)
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color(designSystemColor: .lines), lineWidth: 1)
+        )
     }
 }
 

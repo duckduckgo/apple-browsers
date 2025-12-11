@@ -144,6 +144,8 @@ public struct UserDefaultsWrapper<T> {
         case continueSetUpCardsClosed = "home.page.contiune.setup.cards.closed"
         case homePageIsSearchBarVisible = "home.page.is.search.bar.visible"
         case homePageIsFirstSession = "home.page.is.first.session"
+        case homePageShowSubscription = "home.page.show.subscription"
+        case homePageUserHadSubscription = "home.page.user.had.subscription"
         case homePageDidShowSettingsOnboarding = "home.page.did.show.settings.onboarding"
         case homePageUserBackgroundImages = "home.page.user.background.images"
         case homePageCustomBackground = "home.page.custom.background"

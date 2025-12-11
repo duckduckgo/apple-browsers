@@ -37,6 +37,9 @@
 /* Open AI Chat history action in the menu list */
 "action.title.aiChat.history" = "Chats Duck.ai";
 
+/* Start new AI Chat action in the menu list */
+"action.title.aiChat.new" = "Nova conversa";
+
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Definições do Duck.ai";
 
@@ -87,6 +90,9 @@
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Abrir em segundo plano";
+
+/* Create New Tab action */
+"action.title.newTabAction" = "Novo separador";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Abrir em novo separador";

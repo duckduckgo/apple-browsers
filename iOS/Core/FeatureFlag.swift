@@ -99,9 +99,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866468784743
     case autocompleteTabs
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711151217
-    case adAttributionReporting
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866610480266
     case dbpRemoteBrokerDelivery
 
@@ -392,7 +389,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                .syncPromotionPasswords,
                .autofillSurveys,
                .autocompleteTabs,
-               .adAttributionReporting,
                .crashReportOptInStatusResetting,
                .syncSeamlessAccountSwitching,
                .experimentalAddressBar,
@@ -464,8 +460,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.autofillSurveys))
         case .autocompleteTabs:
             return .remoteReleasable(.feature(.autocompleteTabs))
-        case .adAttributionReporting:
-            return .remoteReleasable(.feature(.adAttributionReporting))
         case .dbpRemoteBrokerDelivery:
             return .remoteReleasable(.subfeature(DBPSubfeature.remoteBrokerDelivery))
         case .dbpEmailConfirmationDecoupling:

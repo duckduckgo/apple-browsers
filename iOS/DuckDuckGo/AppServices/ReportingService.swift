@@ -41,7 +41,6 @@ final class ReportingService {
     let attributedMetricManager: AttributedMetricManager
     
     private var cancellables = Set<AnyCancellable>()
-    let adAttributionPixelReporter: AdAttributionPixelReporter
     let privacyConfigurationManager: PrivacyConfigurationManaging
     let productSurfaceTelemetry: ProductSurfaceTelemetry
 
@@ -62,7 +61,6 @@ final class ReportingService {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.featureFlagging = featureFlagging
         self.subscriptionDataReporter = SubscriptionDataReporter(fireproofing: fireproofing)
-        self.adAttributionPixelReporter = AdAttributionPixelReporter(privacyConfigurationManager: privacyConfigurationManager)
 
         // AttributedMetric initialisation
         let errorHandler = AttributedMetricErrorHandler(pixelKit: pixelKit)
@@ -162,7 +160,6 @@ final class ReportingService {
 
     private func onStatisticsLoaded() {
         Pixel.fire(pixel: .appLaunch, includedParameters: [.appVersion, .atb])
-        reportAdAttribution()
         reportWidgetUsage()
         productSurfaceTelemetry.dailyActiveUser()
         onboardingPixelReporter.fireEnqueuedPixelsIfNeeded()
@@ -225,12 +222,6 @@ private extension ReportingService {
             case .failure(let error):
                 DailyPixel.fire(pixel: .widgetReportFailure, error: error)
             }
-        }
-    }
-
-    func reportAdAttribution() {
-        Task.detached(priority: .background) {
-            await self.adAttributionPixelReporter.reportAttributionIfNeeded()
         }
     }
     

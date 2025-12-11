@@ -40,6 +40,7 @@ protocol QuitSurveyDeciding {
 /// 2. No other quit dialogs will be shown (auto-clear warning or active downloads)
 /// 3. User is within 14 days of first launch (new user)
 /// 4. This is the user's first quit
+/// 5. User is not reinstalling (reinstalling users are not considered new users)
 @MainActor
 final class QuitSurveyDecider: QuitSurveyDeciding {
 
@@ -54,6 +55,7 @@ final class QuitSurveyDecider: QuitSurveyDeciding {
     private let downloadManager: FileDownloadManagerProtocol
     private let installDate: Date
     private var persistor: QuitSurveyPersistor
+    private let reinstallUserDetection: ReinstallingUserDetecting
     private let dateProvider: () -> Date
 
     // MARK: - Initialization
@@ -64,6 +66,7 @@ final class QuitSurveyDecider: QuitSurveyDeciding {
         downloadManager: FileDownloadManagerProtocol,
         installDate: Date,
         persistor: QuitSurveyPersistor,
+        reinstallUserDetection: ReinstallingUserDetecting,
         dateProvider: @escaping () -> Date = { Date() }
     ) {
         self.featureFlagger = featureFlagger
@@ -71,6 +74,7 @@ final class QuitSurveyDecider: QuitSurveyDeciding {
         self.downloadManager = downloadManager
         self.installDate = installDate
         self.persistor = persistor
+        self.reinstallUserDetection = reinstallUserDetection
         self.dateProvider = dateProvider
     }
 
@@ -91,9 +95,13 @@ final class QuitSurveyDecider: QuitSurveyDeciding {
         // Condition 4: First quit
         let isFirstQuit = !persistor.hasQuitAppBefore
 
+        // Condition 5: User is not reinstalling (reinstalling users are not considered new users)
+        let isNotReinstallingUser = !reinstallUserDetection.isReinstallingUser
+
         return noOtherDialogsWillShow
             && isNewUser
             && isFirstQuit
+            && isNotReinstallingUser
     }
 
     private var isWithinNewUserThreshold: Bool {

@@ -140,6 +140,10 @@ public enum SharedDesignSystemColor {
 
     // Tone
     case toneShadePrimary
+
+    // Permission Center
+    case permissionCenterBackground
+    case permissionCenterContainerBackground
 }
 
 #endif

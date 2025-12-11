@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import DesignResourcesKit
 import SwiftUI
 
 final class PermissionCenterViewController: NSViewController {
@@ -35,7 +36,10 @@ final class PermissionCenterViewController: NSViewController {
     }
 
     override func loadView() {
-        view = NSView()
+        let backgroundView = NSView()
+        backgroundView.wantsLayer = true
+        backgroundView.layer?.backgroundColor = NSColor(designSystemColor: .permissionCenterBackground).cgColor
+        view = backgroundView
     }
 
     override func viewDidLoad() {

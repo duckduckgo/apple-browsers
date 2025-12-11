@@ -134,7 +134,7 @@ public final class AMPCanonicalExtractor: NSObject {
 
         return performAMPDetection(urlStr: urlStr, ampKeywords: ampKeywords)
     }
-    
+
     private func performAMPDetection(urlStr: String, ampKeywords: [String]) -> Bool {
         #if canImport(UIKit)
         var backgroundTask: UIBackgroundTaskIdentifier = .invalid

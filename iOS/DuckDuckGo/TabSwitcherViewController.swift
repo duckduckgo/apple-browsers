@@ -412,8 +412,8 @@ class TabSwitcherViewController: UIViewController {
         burn(sender: sender)
     }
 
-    func forgetAll() {
-        self.delegate.tabSwitcherDidRequestForgetAll(tabSwitcher: self)
+    func forgetAll(_ options: FireOptions) {
+        self.delegate.tabSwitcherDidRequestForgetAll(tabSwitcher: self, fireOptions: options)
     }
 
     func dismiss() {

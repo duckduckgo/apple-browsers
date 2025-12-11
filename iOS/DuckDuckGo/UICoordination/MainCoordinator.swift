@@ -294,7 +294,7 @@ extension MainCoordinator: URLHandling {
         case .addFavorite:
             controller.startAddFavoriteFlow()
         case .fireButton:
-            controller.forgetAllWithAnimation()
+            controller.forgetAllWithAnimation(options: .all)
         case .voiceSearch:
             controller.onVoiceSearchPressed()
         case .newEmail:

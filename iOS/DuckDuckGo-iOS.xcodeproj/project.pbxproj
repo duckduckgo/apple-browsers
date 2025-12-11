@@ -558,6 +558,7 @@
 		80273AB82ED3E22E00EA03A1 /* SpyDownloadManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80273AB72ED3E22B00EA03A1 /* SpyDownloadManager.swift */; };
 		802A826E2ED3AD7900C90637 /* DownloadsListDataSourceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 802A826D2ED3AD7900C90637 /* DownloadsListDataSourceTests.swift */; };
 		802A826F2ED3AD7900C90637 /* DownloadsDeleteHelperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 802A826C2ED3AD7900C90637 /* DownloadsDeleteHelperTests.swift */; };
+		8065741D2ED917410001497A /* FireExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8065741C2ED917350001497A /* FireExecutor.swift */; };
 		8097AA5A2EE652E400E995F9 /* FireConfirmationViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8097AA592EE652DC00E995F9 /* FireConfirmationViewModelTests.swift */; };
 		809F9D152EE12CF600943E8A /* FireConfirmationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 809F9D122EE12CF600943E8A /* FireConfirmationView.swift */; };
 		809F9D162EE12CF600943E8A /* FireConfirmationPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 809F9D112EE12CF600943E8A /* FireConfirmationPresenter.swift */; };
@@ -2686,6 +2687,7 @@
 		80273AB72ED3E22B00EA03A1 /* SpyDownloadManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpyDownloadManager.swift; sourceTree = "<group>"; };
 		802A826C2ED3AD7900C90637 /* DownloadsDeleteHelperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsDeleteHelperTests.swift; sourceTree = "<group>"; };
 		802A826D2ED3AD7900C90637 /* DownloadsListDataSourceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsListDataSourceTests.swift; sourceTree = "<group>"; };
+		8065741C2ED917350001497A /* FireExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireExecutor.swift; sourceTree = "<group>"; };
 		8097AA592EE652DC00E995F9 /* FireConfirmationViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireConfirmationViewModelTests.swift; sourceTree = "<group>"; };
 		809F9D112EE12CF600943E8A /* FireConfirmationPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireConfirmationPresenter.swift; sourceTree = "<group>"; };
 		809F9D122EE12CF600943E8A /* FireConfirmationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireConfirmationView.swift; sourceTree = "<group>"; };
@@ -6061,6 +6063,7 @@
 		809F9D142EE12CF600943E8A /* Fire */ = {
 			isa = PBXGroup;
 			children = (
+				8065741C2ED917350001497A /* FireExecutor.swift */,
 				809F9D112EE12CF600943E8A /* FireConfirmationPresenter.swift */,
 				809F9D122EE12CF600943E8A /* FireConfirmationView.swift */,
 				80BADA422EEA2B3500BA6CDB /* FireConfirmationSettingsStore.swift */,
@@ -10851,6 +10854,7 @@
 				1E4DCF4827B6A35400961E25 /* DownloadsListModel.swift in Sources */,
 				C12726F02A5FF89900215B02 /* EmailSignupPromptViewModel.swift in Sources */,
 				31669B9A28020A460071CC18 /* SaveLoginViewModel.swift in Sources */,
+				8065741D2ED917410001497A /* FireExecutor.swift in Sources */,
 				312BF6EF2E6B2CAF00411CF9 /* NewAddressBarPickerDisplayValidator.swift in Sources */,
 				EE4FB1882A28D11900E5CBA7 /* NetworkProtectionStatusViewModel.swift in Sources */,
 				4B67012B2E3BE3660066176A /* LogViewerDataSource.swift in Sources */,

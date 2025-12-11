@@ -56,7 +56,7 @@ struct DownloadsDirectoryHandler: DownloadsDirectoryHandling {
                                                                            options: .skipsHiddenFiles)
                 return contents.filter { !$0.hasDirectoryPath }
             } catch {
-                Logger.general.debug("Could not read downloadsDirectoryFiles: \(error.localizedDescription)")
+                Logger.general.error("Could not read downloadsDirectoryFiles: \(error.localizedDescription)")
                 throw error
             }
         }
@@ -85,7 +85,7 @@ struct DownloadsDirectoryHandler: DownloadsDirectoryHandling {
             files = try downloadsDirectoryFiles
         } catch {
             // Don't delete if we couldn't enumerate - fail safe
-            Logger.general.debug("Could not read downloads directory, not deleting: \(error.localizedDescription)")
+            Logger.general.error("Could not read downloads directory, not deleting: \(error.localizedDescription)")
             return
         }
         
@@ -94,7 +94,7 @@ struct DownloadsDirectoryHandler: DownloadsDirectoryHandling {
         do {
             try FileManager.default.removeItem(at: downloadsDirectory)
         } catch {
-            Logger.general.debug("Could not delete downloads directory: \(error.localizedDescription)")
+            Logger.general.error("Could not delete downloads directory: \(error.localizedDescription)")
         }
     }
 }

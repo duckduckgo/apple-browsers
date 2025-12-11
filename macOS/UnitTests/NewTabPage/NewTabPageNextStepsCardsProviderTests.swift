@@ -26,9 +26,7 @@ import SubscriptionTestingUtilities
 
 final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
     private var provider: NewTabPageNextStepsCardsProvider!
-    private var firedPixels: [(name: String, parameters: [String: String])]!
-    private var testUserDefaults: UserDefaults!
-    private var pixelKit: PixelKit!
+    private var firedPixels: [(event: PixelKitEvent, frequency: PixelKit.Frequency, includesAppVersionParameter: Bool)] = []
 
     @MainActor
     override func setUp() async throws {
@@ -49,20 +47,6 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
         )
 
         firedPixels = []
-        let testSuiteName = "NewTabPageNextStepsCardsProviderTests_\(UUID().uuidString)"
-        testUserDefaults = UserDefaults(suiteName: testSuiteName)
-        testUserDefaults.removePersistentDomain(forName: testSuiteName)
-
-        pixelKit = PixelKit(
-            dryRun: false,
-            appVersion: "1.0.0",
-            source: "TESTS",
-            defaultHeaders: [:],
-            dailyPixelCalendar: nil,
-            defaults: testUserDefaults
-        ) { [weak self] pixelName, _, parameters, _, _, _ in
-            self?.firedPixels.append((name: pixelName, parameters: parameters))
-        }
 
         provider = NewTabPageNextStepsCardsProvider(
             continueSetUpModel: continueSetUpModel,
@@ -71,15 +55,15 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
                 privacyConfigurationManager: MockPrivacyConfigurationManager(),
                 featureFlagger: MockFeatureFlagger()
             ),
-            pixelKit: pixelKit
+            pixelHandler: { event, frequency, includesAppVersionParameter in
+                self.firedPixels.append((event, frequency, includesAppVersionParameter))
+            }
         )
     }
 
     override func tearDown() {
         provider = nil
-        firedPixels = nil
-        testUserDefaults = nil
-        pixelKit = nil
+        firedPixels = []
     }
 
     func testWhenCardsViewIsNotOutdatedThenCardsAreReportedByModel() {
@@ -161,8 +145,11 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
         provider.willDisplayCards([.addAppToDockMac])
 
         XCTAssertEqual(firedPixels.count, 1)
-        XCTAssertEqual(firedPixels.first?.name, "m_mac_add_to_dock_new_tab_page_card_presented_u")
-        XCTAssertNil(firedPixels.first?.parameters["appVersion"], "Expected appVersion parameter to NOT be included")
+        let expectedEvent = GeneralPixel.addToDockNewTabPageCardPresented
+        XCTAssertEqual(firedPixels.first?.event.name, expectedEvent.name)
+        XCTAssertEqual(firedPixels.first?.event.parameters, expectedEvent.parameters)
+        XCTAssertEqual(firedPixels.first?.frequency, .uniqueByName)
+        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, false)
     }
 
     @MainActor
@@ -170,9 +157,11 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
         provider.willDisplayCards([.duckplayer])
 
         XCTAssertEqual(firedPixels.count, 1)
-        XCTAssertEqual(firedPixels.first?.name, "m_mac_new-tab-page_next-steps_shown")
-        XCTAssertEqual(firedPixels.first?.parameters["key"], "duckplayer")
-        XCTAssertNil(firedPixels.first?.parameters["appVersion"], "Expected appVersion parameter to NOT be included")
+        let expectedEvent = NewTabPagePixel.nextStepsCardShown(NewTabPageDataModel.CardID.duckplayer.rawValue)
+        XCTAssertEqual(firedPixels.first?.event.name, expectedEvent.name)
+        XCTAssertEqual(firedPixels.first?.event.parameters, expectedEvent.parameters)
+        XCTAssertEqual(firedPixels.first?.frequency, .uniqueByNameAndParameters)
+        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, false)
     }
 
     @MainActor
@@ -182,15 +171,17 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
         XCTAssertEqual(firedPixels.count, 3)
 
         // duckplayer fires nextStepsCardShown
-        XCTAssertEqual(firedPixels[0].name, "m_mac_new-tab-page_next-steps_shown")
-        XCTAssertEqual(firedPixels[0].parameters["key"], "duckplayer")
+        let expectedFirstEvent = NewTabPagePixel.nextStepsCardShown(NewTabPageDataModel.CardID.duckplayer.rawValue)
+        XCTAssertEqual(firedPixels[0].event.name, expectedFirstEvent.name)
+        XCTAssertEqual(firedPixels[0].event.parameters, expectedFirstEvent.parameters)
 
         // emailProtection fires nextStepsCardShown
-        XCTAssertEqual(firedPixels[1].name, "m_mac_new-tab-page_next-steps_shown")
-        XCTAssertEqual(firedPixels[1].parameters["key"], "emailProtection")
+        let expectedSecondEvent = NewTabPagePixel.nextStepsCardShown(NewTabPageDataModel.CardID.emailProtection.rawValue)
+        XCTAssertEqual(firedPixels[1].event.name, expectedSecondEvent.name)
+        XCTAssertEqual(firedPixels[1].event.parameters, expectedSecondEvent.parameters)
 
         // addAppToDockMac fires its own unique pixel
-        XCTAssertEqual(firedPixels[2].name, "m_mac_add_to_dock_new_tab_page_card_presented_u")
+        XCTAssertEqual(firedPixels[2].event.name, GeneralPixel.addToDockNewTabPageCardPresented.name)
     }
 
     @MainActor
@@ -198,8 +189,9 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
         provider.willDisplayCards([.subscription])
 
         XCTAssertEqual(firedPixels.count, 1)
-        XCTAssertEqual(firedPixels.first?.name, "m_mac_new-tab-page_next-steps_shown")
-        XCTAssertEqual(firedPixels.first?.parameters["key"], "subscription")
+        let expectedEvent = NewTabPagePixel.nextStepsCardShown(NewTabPageDataModel.CardID.subscription.rawValue)
+        XCTAssertEqual(firedPixels.first?.event.name, expectedEvent.name)
+        XCTAssertEqual(firedPixels.first?.event.parameters, expectedEvent.parameters)
     }
 
     @MainActor
@@ -207,8 +199,9 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
         provider.willDisplayCards([.defaultApp])
 
         XCTAssertEqual(firedPixels.count, 1)
-        XCTAssertEqual(firedPixels.first?.name, "m_mac_new-tab-page_next-steps_shown")
-        XCTAssertEqual(firedPixels.first?.parameters["key"], "defaultApp")
+        let expectedEvent = NewTabPagePixel.nextStepsCardShown(NewTabPageDataModel.CardID.defaultApp.rawValue)
+        XCTAssertEqual(firedPixels.first?.event.name, expectedEvent.name)
+        XCTAssertEqual(firedPixels.first?.event.parameters, expectedEvent.parameters)
     }
 
     @MainActor
@@ -216,7 +209,8 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
         provider.willDisplayCards([.bringStuff])
 
         XCTAssertEqual(firedPixels.count, 1)
-        XCTAssertEqual(firedPixels.first?.name, "m_mac_new-tab-page_next-steps_shown")
-        XCTAssertEqual(firedPixels.first?.parameters["key"], "bringStuff")
+        let expectedEvent = NewTabPagePixel.nextStepsCardShown(NewTabPageDataModel.CardID.bringStuff.rawValue)
+        XCTAssertEqual(firedPixels.first?.event.name, expectedEvent.name)
+        XCTAssertEqual(firedPixels.first?.event.parameters, expectedEvent.parameters)
     }
 }

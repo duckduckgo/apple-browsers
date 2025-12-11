@@ -224,7 +224,6 @@ extension HomePage.Models {
         }
 
         private func fireNextStepsCardClickedPixel(for featureType: FeatureType) {
-            let card = NewTabPageDataModel.CardID(featureType)
             switch featureType {
             case .defaultBrowser:
                 firePixel(GeneralPixel.defaultRequestedFromHomepageSetupView)
@@ -232,17 +231,18 @@ extension HomePage.Models {
                 firePixel(GeneralPixel.userAddedToDockFromNewTabPageCard, includeAppVersionParameter: false)
             case .subscription:
                 firePixel(SubscriptionPixel.subscriptionNewTabPageNextStepsCardClicked)
-            case .duckplayer, .emailProtection, .importBookmarksAndPasswords:
+            default:
+                let card = NewTabPageDataModel.CardID(featureType)
                 firePixel(NewTabPagePixel.nextStepsCardClicked(card.rawValue))
             }
         }
 
         private func fireNextStepsCardDismissedPixel(for featureType: FeatureType) {
-            let card = NewTabPageDataModel.CardID(featureType)
             switch featureType {
             case .subscription:
                 firePixel(SubscriptionPixel.subscriptionNewTabPageNextStepsCardDismissed)
-            case .defaultBrowser, .dock, .duckplayer, .emailProtection, .importBookmarksAndPasswords:
+            default:
+                let card = NewTabPageDataModel.CardID(featureType)
                 firePixel(NewTabPagePixel.nextStepsCardDismissed(card.rawValue))
             }
         }

@@ -19,6 +19,7 @@
 import XCTest
 import BrowserServicesKit
 import Common
+import NewTabPage
 import PixelKit
 import SubscriptionTestingUtilities
 
@@ -41,7 +42,7 @@ final class ContinueSetUpModelTests: XCTestCase {
     var subscriptionCardVisibilityManager: MockHomePageSubscriptionCardVisibilityManaging!
     var homePageContinueSetUpModelPersisting: MockHomePageContinueSetUpModelPersisting!
 
-    var firedPixels: [PixelKitEvent] = []
+    var firedPixels: [(event: PixelKitEvent, includesAppVersionParameter: Bool)] = []
 
     @MainActor override func setUp() {
         UserDefaultsWrapper<Any>.clearAll()
@@ -71,8 +72,8 @@ final class ContinueSetUpModelTests: XCTestCase {
             privacyConfigurationManager: privacyConfigManager,
             subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             persistor: homePageContinueSetUpModelPersisting,
-            pixelHandler: { pixel, _ in
-                self.firedPixels.append(pixel)
+            pixelHandler: { pixel, includesAppVersionParameter in
+                self.firedPixels.append((pixel, includesAppVersionParameter))
             }
         )
     }
@@ -125,9 +126,7 @@ final class ContinueSetUpModelTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             persistor: homePageContinueSetUpModelPersisting,
-            pixelHandler: { pixel, _ in
-                self.firedPixels.append(pixel)
-            }
+            pixelHandler: { _, _ in }
         )
 
         XCTAssertFalse(vm.isMoreOrLessButtonNeeded)
@@ -459,42 +458,48 @@ final class ContinueSetUpModelTests: XCTestCase {
         vm.performAction(for: .defaultBrowser)
 
         XCTAssertEqual(firedPixels.count, 1)
-        XCTAssertEqual(firedPixels.first?.name, GeneralPixel.defaultRequestedFromHomepageSetupView.name)
+        XCTAssertEqual(firedPixels.first?.event.name, GeneralPixel.defaultRequestedFromHomepageSetupView.name)
+        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
     }
 
     @MainActor func testWhenAskedToPerformActionForDockThenItFiresPixel() {
         vm.performAction(for: .dock)
 
         XCTAssertEqual(firedPixels.count, 1)
-        XCTAssertEqual(firedPixels.first?.name, GeneralPixel.userAddedToDockFromNewTabPageCard.name)
+        XCTAssertEqual(firedPixels.first?.event.name, GeneralPixel.userAddedToDockFromNewTabPageCard.name)
+        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, false)
     }
 
     @MainActor func testWhenAskedToPerformActionForDuckplayerThenItFiresPixel() {
         vm.performAction(for: .duckplayer)
 
         XCTAssertEqual(firedPixels.count, 1)
-        XCTAssertEqual(firedPixels.first?.name, NewTabPagePixel.nextStepsCardClicked("duckplayer").name)
+        XCTAssertEqual(firedPixels.first?.event.name, NewTabPagePixel.nextStepsCardClicked(NewTabPageDataModel.CardID.duckplayer.rawValue).name)
+        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
     }
 
     @MainActor func testWhenAskedToPerformActionForEmailProtectionThenItFiresPixel() {
         vm.performAction(for: .emailProtection)
 
         XCTAssertEqual(firedPixels.count, 1)
-        XCTAssertEqual(firedPixels.first?.name, NewTabPagePixel.nextStepsCardClicked("emailProtection").name)
+        XCTAssertEqual(firedPixels.first?.event.name, NewTabPagePixel.nextStepsCardClicked(NewTabPageDataModel.CardID.emailProtection.rawValue).name)
+        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
     }
 
     @MainActor func testWhenAskedToPerformActionForImportBookmarksAndPasswordsThenItFiresPixel() {
         vm.performAction(for: .importBookmarksAndPasswords)
 
         XCTAssertEqual(firedPixels.count, 1)
-        XCTAssertEqual(firedPixels.first?.name, NewTabPagePixel.nextStepsCardClicked("bringStuff").name)
+        XCTAssertEqual(firedPixels.first?.event.name, NewTabPagePixel.nextStepsCardClicked(NewTabPageDataModel.CardID.bringStuff.rawValue).name)
+        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
     }
 
     @MainActor func testWhenAskedToPerformActionForSubscriptionThenItFiresPixel() {
         vm.performAction(for: .subscription)
 
         XCTAssertEqual(firedPixels.count, 1)
-        XCTAssertEqual(firedPixels.first?.name, SubscriptionPixel.subscriptionNewTabPageNextStepsCardClicked.name)
+        XCTAssertEqual(firedPixels.first?.event.name, SubscriptionPixel.subscriptionNewTabPageNextStepsCardClicked.name)
+        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
     }
 
     // MARK: - Pixel Tests (Dismiss)
@@ -503,42 +508,48 @@ final class ContinueSetUpModelTests: XCTestCase {
         vm.removeItem(for: .defaultBrowser)
 
         XCTAssertEqual(firedPixels.count, 1)
-        XCTAssertEqual(firedPixels.first?.name, NewTabPagePixel.nextStepsCardDismissed("defaultApp").name)
+        XCTAssertEqual(firedPixels.first?.event.name, NewTabPagePixel.nextStepsCardDismissed(NewTabPageDataModel.CardID.defaultApp.rawValue).name)
+        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
     }
 
     @MainActor func testWhenDismissingDockCardThenItFiresPixel() {
         vm.removeItem(for: .dock)
 
         XCTAssertEqual(firedPixels.count, 1)
-        XCTAssertEqual(firedPixels.first?.name, NewTabPagePixel.nextStepsCardDismissed("addAppToDockMac").name)
+        XCTAssertEqual(firedPixels.first?.event.name, NewTabPagePixel.nextStepsCardDismissed(NewTabPageDataModel.CardID.addAppToDockMac.rawValue).name)
+        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
     }
 
     @MainActor func testWhenDismissingDuckplayerCardThenItFiresPixel() {
         vm.removeItem(for: .duckplayer)
 
         XCTAssertEqual(firedPixels.count, 1)
-        XCTAssertEqual(firedPixels.first?.name, NewTabPagePixel.nextStepsCardDismissed("duckplayer").name)
+        XCTAssertEqual(firedPixels.first?.event.name, NewTabPagePixel.nextStepsCardDismissed(NewTabPageDataModel.CardID.duckplayer.rawValue).name)
+        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
     }
 
     @MainActor func testWhenDismissingEmailProtectionCardThenItFiresPixel() {
         vm.removeItem(for: .emailProtection)
 
         XCTAssertEqual(firedPixels.count, 1)
-        XCTAssertEqual(firedPixels.first?.name, NewTabPagePixel.nextStepsCardDismissed("emailProtection").name)
+        XCTAssertEqual(firedPixels.first?.event.name, NewTabPagePixel.nextStepsCardDismissed(NewTabPageDataModel.CardID.emailProtection.rawValue).name)
+        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
     }
 
     @MainActor func testWhenDismissingImportBookmarksAndPasswordsCardThenItFiresPixel() {
         vm.removeItem(for: .importBookmarksAndPasswords)
 
         XCTAssertEqual(firedPixels.count, 1)
-        XCTAssertEqual(firedPixels.first?.name, NewTabPagePixel.nextStepsCardDismissed("bringStuff").name)
+        XCTAssertEqual(firedPixels.first?.event.name, NewTabPagePixel.nextStepsCardDismissed(NewTabPageDataModel.CardID.bringStuff.rawValue).name)
+        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
     }
 
     @MainActor func testWhenDismissingSubscriptionCardThenItFiresPixel() {
         vm.removeItem(for: .subscription)
 
         XCTAssertEqual(firedPixels.count, 1)
-        XCTAssertEqual(firedPixels.first?.name, SubscriptionPixel.subscriptionNewTabPageNextStepsCardDismissed.name)
+        XCTAssertEqual(firedPixels.first?.event.name, SubscriptionPixel.subscriptionNewTabPageNextStepsCardDismissed.name)
+        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
     }
 }
 

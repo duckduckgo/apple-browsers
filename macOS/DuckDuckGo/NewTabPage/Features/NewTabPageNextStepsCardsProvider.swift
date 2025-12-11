@@ -25,14 +25,14 @@ import UserScript
 final class NewTabPageNextStepsCardsProvider: NewTabPageNextStepsCardsProviding {
     let continueSetUpModel: HomePage.Models.ContinueSetUpModel
     let appearancePreferences: AppearancePreferences
-    private let pixelKit: PixelKit?
+    private let pixelHandler: (PixelKitEvent, PixelKit.Frequency, Bool) -> Void
 
     init(continueSetUpModel: HomePage.Models.ContinueSetUpModel,
          appearancePreferences: AppearancePreferences,
-         pixelKit: PixelKit? = PixelKit.shared) {
+         pixelHandler: @escaping (PixelKitEvent, PixelKit.Frequency, Bool) -> Void = { PixelKit.fire($0, frequency: $1, includeAppVersionParameter: $2) }) {
         self.continueSetUpModel = continueSetUpModel
         self.appearancePreferences = appearancePreferences
-        self.pixelKit = pixelKit
+        self.pixelHandler = pixelHandler
     }
 
     var isViewExpanded: Bool {
@@ -90,14 +90,10 @@ final class NewTabPageNextStepsCardsProvider: NewTabPageNextStepsCardsProviding 
             switch card {
             case .addAppToDockMac:
                 // Uses existing pixel with unique frequency (fires once ever)
-                pixelKit?.fire(GeneralPixel.addToDockNewTabPageCardPresented,
-                               frequency: .uniqueByName,
-                               includeAppVersionParameter: false)
-            case .duckplayer, .emailProtection, .bringStuff, .defaultApp, .subscription:
+                pixelHandler(GeneralPixel.addToDockNewTabPageCardPresented, .uniqueByName, false)
+            default:
                 // Fires once per card (unique by name + key parameter)
-                pixelKit?.fire(NewTabPagePixel.nextStepsCardShown(card.rawValue),
-                               frequency: .uniqueByNameAndParameters,
-                               includeAppVersionParameter: false)
+                pixelHandler(NewTabPagePixel.nextStepsCardShown(card.rawValue), .uniqueByNameAndParameters, false)
             }
         }
     }

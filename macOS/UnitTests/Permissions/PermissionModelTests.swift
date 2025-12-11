@@ -1207,45 +1207,6 @@ final class PermissionModelTests: XCTestCase {
         XCTAssertNotNil(model.authorizationQuery)
     }
 
-    func testWhenNewPermissionViewDisabledAndSystemPermissionDeniedThenStoredPermissionIsUsed() {
-        // Disable new permission view feature flag
-        featureFlaggerMock.featuresStub[FeatureFlag.newPermissionView.rawValue] = false
-
-        // Set system permission as denied
-        systemPermissionManagerMock.authorizationStates[.geolocation] = .denied
-
-        // Store an "allow" permission - should be used when feature flag is off
-        permissionManagerMock.setPermission(.allow, forDomain: URL.duckDuckGo.host!, permissionType: .geolocation)
-
-        let e = expectation(description: "Permission granted from stored")
-        var queryShown = false
-        let c = model.$authorizationQuery.sink { query in
-            if query != nil {
-                queryShown = true
-            }
-        }
-
-        // Request geolocation permission
-        if #available(macOS 12, *) {
-            self.webView(webView, requestGeolocationPermissionFor: securityOrigin, initiatedBy: frameInfo) { decision in
-                XCTAssertEqual(decision, .grant)
-                e.fulfill()
-            }
-        } else {
-            self.webView(webView, requestGeolocationPermissionFor: frameInfo) { granted in
-                XCTAssertTrue(granted)
-                e.fulfill()
-            }
-        }
-
-        withExtendedLifetime(c) {
-            waitForExpectations(timeout: 1)
-        }
-
-        // When feature flag is off, stored permission should be used without showing query
-        XCTAssertFalse(queryShown)
-    }
-
     func testWhenNewPermissionViewEnabledAndSystemPermissionAuthorizedThenStoredPermissionIsUsed() {
         // Enable new permission view feature flag
         featureFlaggerMock.featuresStub[FeatureFlag.newPermissionView.rawValue] = true

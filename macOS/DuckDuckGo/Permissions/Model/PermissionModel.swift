@@ -205,7 +205,18 @@ final class PermissionModel {
         // "unowned" query reference to be able to use the pointer when the callback is called on query deinit
         queryPtr = Unmanaged.passUnretained(query).toOpaque()
 
-        // Set state to .requested first so the authorization popover can be shown
+        // When Geolocation queried by a website but System Permission is denied: switch to `disabled`
+        // Only apply this behavior when new permission view is disabled (old behavior)
+        // When new permission view is enabled, the dialog handles showing the two-step authorization flow
+        if !featureFlagger.isFeatureOn(.newPermissionView),
+           permissions.contains(.geolocation),
+           [.denied, .restricted].contains(self.geolocationService.authorizationStatus)
+            || !geolocationService.locationServicesEnabled() {
+            self.permissions.geolocation
+                .systemAuthorizationDenied(systemWide: !geolocationService.locationServicesEnabled())
+        }
+
+        // Set state to .requested so the authorization popover can be shown
         permissions.forEach { self.permissions[$0].authorizationQueried(query, updateQueryIfAlreadyRequested: $0 == .popups) }
         authorizationQueries.append(query)
     }

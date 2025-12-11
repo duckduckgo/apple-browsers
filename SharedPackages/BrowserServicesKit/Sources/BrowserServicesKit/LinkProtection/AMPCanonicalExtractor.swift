@@ -144,7 +144,6 @@ public final class AMPCanonicalExtractor: NSObject {
             }
         }
         #else
-        // macOS doesn't need background task protection
         return ampKeywords.contains { keyword in
             return urlStr.contains(keyword)
         }

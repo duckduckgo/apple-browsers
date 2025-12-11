@@ -109,11 +109,8 @@ final class ActiveRemoteMessageModel: ObservableObject {
         $remoteMessage
             .sink { [weak self] newMessage in
                 if let newMessage = newMessage {
-                    if newMessage.isForTabBar {
-                        self?.tabBarRemoteMessage = newMessage
-                    } else {
-                        self?.newTabPageRemoteMessage = newMessage
-                    }
+                    self?.newTabPageRemoteMessage = newMessage.surfaces.contains(.newTabPage) ? newMessage : nil
+                    self?.tabBarRemoteMessage = newMessage.surfaces.contains(.tabBar) ? newMessage : nil
                 } else {
                     self?.newTabPageRemoteMessage = nil
                     self?.tabBarRemoteMessage = nil
@@ -223,4 +220,5 @@ private extension RemoteMessageModel {
         // Temporary fallback for legacy configs targeting the tab bar by ID only.
         return id == TabBarRemoteMessage.tabBarPermanentSurveyRemoteMessageId
     }
+
 }

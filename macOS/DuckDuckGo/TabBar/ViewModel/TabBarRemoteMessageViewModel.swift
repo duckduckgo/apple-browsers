@@ -41,6 +41,8 @@ final class TabBarRemoteMessageViewModel: ObservableObject {
 
                 if model.shouldShowTabBarRemoteMessage, let tabBarRemoteMessage = model.mapToTabBarRemoteMessage() {
                     self.remoteMessage = tabBarRemoteMessage
+                } else {
+                    self.remoteMessage = nil
                 }
         })
     }

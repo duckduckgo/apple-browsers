@@ -216,6 +216,8 @@ extension SharedColorPaletteDefinition {
             return surfaceDecorationTertiary
 
         /// Text Colors
+        case .textLink:
+            return DynamicColor(lightHex: 0x3969EF, darkHex: 0x7295F6)
         case .textPrimary:
             return textPrimary
         case .textSecondary:
@@ -228,8 +230,6 @@ extension SharedColorPaletteDefinition {
             return toneShadePrimary
 
         /// Permission Center
-        case .permissionCenterBackground:
-            return DynamicColor(lightColor: .white, darkColor: Color(0x333333))
         case .permissionCenterContainerBackground:
             return DynamicColor(lightColor: Color(0x000000).opacity(0.03), darkColor: Color(0xFFFFFF).opacity(0.06))
         }

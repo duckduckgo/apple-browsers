@@ -256,7 +256,7 @@ struct PermissionAuthorizationSwiftUIView: View {
                 .padding(.bottom, 16)
         }
         .frame(width: 360)
-        .background(Color(designSystemColor: .containerFillPrimary))
+        .background(Color(designSystemColor: .surfacePrimary))
         .onAppear {
             initializeSystemPermissionState()
             subscribeToAppActiveNotification()
@@ -373,12 +373,12 @@ struct PermissionAuthorizationSwiftUIView: View {
     /// View shown when system permission was already denied - displays link to System Settings
     private var systemPermissionDisabledView: some View {
         (Text(permissionType.systemPermissionDisabledText)
-            .font(.system(size: 13))
+            .font(.system(size: 12))
             .foregroundColor(Color(designSystemColor: .textPrimary))
         + Text(" ")
         + Text(permissionType.systemSettingsLinkText)
-            .font(.system(size: 13))
-            .foregroundColor(.accentColor))
+            .font(.system(size: 12))
+            .foregroundColor(Color(designSystemColor: .textLink)))
             .frame(maxWidth: .infinity, alignment: .leading)
             .fixedSize(horizontal: false, vertical: true)
             .cursor(.pointingHand)
@@ -505,7 +505,7 @@ struct PermissionAuthorizationSwiftUIView: View {
             .padding(.bottom, 16)
         }
         .frame(width: 360)
-        .background(Color(designSystemColor: .containerFillPrimary))
+        .background(Color(designSystemColor: .surfacePrimary))
     }
 }
 

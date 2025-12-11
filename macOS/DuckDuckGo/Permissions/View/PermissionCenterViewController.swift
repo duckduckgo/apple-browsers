@@ -38,7 +38,7 @@ final class PermissionCenterViewController: NSViewController {
     override func loadView() {
         let backgroundView = NSView()
         backgroundView.wantsLayer = true
-        backgroundView.layer?.backgroundColor = NSColor(designSystemColor: .permissionCenterBackground).cgColor
+        backgroundView.layer?.backgroundColor = NSColor(designSystemColor: .surfacePrimary).cgColor
         view = backgroundView
     }
 

@@ -105,7 +105,7 @@ struct PermissionCenterView: View {
             .padding(.bottom, 16)
         }
         .frame(width: popoverWidth)
-        .background(Color(designSystemColor: .permissionCenterBackground))
+        .background(Color(designSystemColor: .surfacePrimary))
     }
 }
 

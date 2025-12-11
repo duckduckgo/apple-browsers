@@ -64337,7 +64337,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "System notifications disabled. Turn them on in"
+            "value" : "System notifications are disabled. First, turn them on in"
           }
         }
       }

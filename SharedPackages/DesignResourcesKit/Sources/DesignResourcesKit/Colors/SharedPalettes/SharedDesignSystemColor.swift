@@ -134,6 +134,7 @@ public enum SharedDesignSystemColor {
     case surfaceDecorationTertiary
 
     // Text
+    case textLink
     case textPrimary
     case textSecondary
     case textTertiary
@@ -142,7 +143,6 @@ public enum SharedDesignSystemColor {
     case toneShadePrimary
 
     // Permission Center
-    case permissionCenterBackground
     case permissionCenterContainerBackground
 }
 

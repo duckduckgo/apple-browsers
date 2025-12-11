@@ -41,74 +41,77 @@ struct PermissionCenterView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Header
-            Text(String(format: UserText.permissionCenterTitle, viewModel.domain))
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-                .padding(.leading, 20)
-                .padding(.trailing, 16)
-                .padding(.top, 16)
-                .padding(.bottom, 12)
+            // Header - only show if there are permission items
+            if !viewModel.permissionItems.isEmpty {
+                Text(String(format: UserText.permissionCenterTitle, viewModel.domain))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .padding(.leading, 20)
+                    .padding(.trailing, 16)
+                    .padding(.top, 16)
+                    .padding(.bottom, 12)
 
-            // Permission rows in a rounded container
-            VStack(spacing: 0) {
-                ForEach(viewModel.permissionItems) { item in
-                    switch item.permissionType {
-                    case .popups:
-                        PopupPermissionRowView(
-                            item: item,
-                            currentDecision: viewModel.currentPopupDecision(),
-                            showAllowForThisVisitOption: viewModel.showAllowPopupsForThisVisitOption,
-                            onDecisionChanged: { decision in
-                                viewModel.setPopupDecision(decision)
-                            },
-                            onOpenPopup: { popup in
-                                viewModel.openBlockedPopup(popup)
-                            },
-                            onRemove: {
-                                viewModel.removePermission(item.permissionType)
-                            }
-                        )
-                    case .externalScheme:
-                        ExternalAppsPermissionRowView(
-                            item: item,
-                            onDecisionChanged: { scheme, decision in
-                                viewModel.setExternalSchemeDecision(decision, for: scheme)
-                            },
-                            onRemoveScheme: { scheme in
-                                viewModel.removeExternalScheme(scheme)
-                            }
-                        )
-                    default:
-                        PermissionRowView(
-                            item: item,
-                            onDecisionChanged: { decision in
-                                viewModel.setDecision(decision, for: item.permissionType)
-                            },
-                            onRemove: {
-                                viewModel.removePermission(item.permissionType)
-                            }
-                        )
-                    }
+                // Permission rows in a rounded container
+                VStack(spacing: 0) {
+                    ForEach(viewModel.permissionItems) { item in
+                        switch item.permissionType {
+                        case .popups:
+                            PopupPermissionRowView(
+                                item: item,
+                                currentDecision: viewModel.currentPopupDecision(),
+                                showAllowForThisVisitOption: viewModel.showAllowPopupsForThisVisitOption,
+                                onDecisionChanged: { decision in
+                                    viewModel.setPopupDecision(decision)
+                                },
+                                onOpenPopup: { popup in
+                                    viewModel.openBlockedPopup(popup)
+                                },
+                                onRemove: {
+                                    viewModel.removePermission(item.permissionType)
+                                }
+                            )
+                        case .externalScheme:
+                            ExternalAppsPermissionRowView(
+                                item: item,
+                                onDecisionChanged: { scheme, decision in
+                                    viewModel.setExternalSchemeDecision(decision, for: scheme)
+                                },
+                                onRemoveScheme: { scheme in
+                                    viewModel.removeExternalScheme(scheme)
+                                }
+                            )
+                        default:
+                            PermissionRowView(
+                                item: item,
+                                onDecisionChanged: { decision in
+                                    viewModel.setDecision(decision, for: item.permissionType)
+                                },
+                                onRemove: {
+                                    viewModel.removePermission(item.permissionType)
+                                }
+                            )
+                        }
 
-                    if item.id != viewModel.permissionItems.last?.id {
-                        Divider()
+                        if item.id != viewModel.permissionItems.last?.id {
+                            Divider()
+                        }
                     }
                 }
+                .background(Color(designSystemColor: .permissionCenterContainerBackground))
+                .cornerRadius(8)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color(designSystemColor: .lines), lineWidth: 1)
+                )
+                .padding(.horizontal, 16)
+                .padding(.bottom, viewModel.showReloadBanner ? 12 : 16)
             }
-            .background(Color(designSystemColor: .permissionCenterContainerBackground))
-            .cornerRadius(8)
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color(designSystemColor: .lines), lineWidth: 1)
-            )
-            .padding(.horizontal, 16)
-            .padding(.bottom, viewModel.showReloadBanner ? 12 : 16)
 
             // Reload banner
             if viewModel.showReloadBanner {
                 ReloadBannerView(onReload: viewModel.reload)
                     .padding(.horizontal, 16)
+                    .padding(.top, viewModel.permissionItems.isEmpty ? 16 : 0)
                     .padding(.bottom, 16)
             }
         }

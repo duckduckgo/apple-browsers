@@ -155,6 +155,7 @@ final class PermissionCenterViewModel: ObservableObject {
     private let resetTemporaryPopupAllowance: (() -> Void)?
     private let grantPermission: ((PermissionAuthorizationQuery) -> Void)?
     private let reloadPage: (() -> Void)?
+    private let setPermissionsNeedReload: (() -> Void)?
     private var cancellables = Set<AnyCancellable>()
     private var removedPermissions = Set<PermissionType>()
     private(set) var hasTemporaryPopupAllowance: Bool
@@ -183,8 +184,10 @@ final class PermissionCenterViewModel: ObservableObject {
         resetTemporaryPopupAllowance: (() -> Void)? = nil,
         grantPermission: ((PermissionAuthorizationQuery) -> Void)? = nil,
         reloadPage: (() -> Void)? = nil,
+        setPermissionsNeedReload: (() -> Void)? = nil,
         hasTemporaryPopupAllowance: Bool = false,
         pageInitiatedPopupOpened: Bool = false,
+        permissionsNeedReload: Bool = false,
         systemPermissionManager: SystemPermissionManagerProtocol = SystemPermissionManager()
     ) {
         self.domain = domain
@@ -200,9 +203,11 @@ final class PermissionCenterViewModel: ObservableObject {
         self.resetTemporaryPopupAllowance = resetTemporaryPopupAllowance
         self.grantPermission = grantPermission
         self.reloadPage = reloadPage
+        self.setPermissionsNeedReload = setPermissionsNeedReload
         self.hasTemporaryPopupAllowance = hasTemporaryPopupAllowance
         self.pageInitiatedPopupOpened = pageInitiatedPopupOpened
         self.systemPermissionManager = systemPermissionManager
+        self.showReloadBanner = permissionsNeedReload
 
         loadPermissions()
         subscribeToPermissionChanges()
@@ -218,7 +223,7 @@ final class PermissionCenterViewModel: ObservableObject {
         // Fire pixel for decision change
         if previousDecision != decision {
             PixelKit.fire(PermissionPixel.permissionCenterChanged(permissionType: permissionType, from: previousDecision, to: decision))
-            showReloadBanner = true
+            markReloadNeeded()
         }
 
         // If setting to "Always Allow" and there's a pending request, grant it
@@ -233,6 +238,12 @@ final class PermissionCenterViewModel: ObservableObject {
         dismissPopover()
     }
 
+    /// Marks that a reload is needed to apply permission changes
+    private func markReloadNeeded() {
+        showReloadBanner = true
+        setPermissionsNeedReload?()
+    }
+
     /// Updates the decision for a specific external scheme
     func setExternalSchemeDecision(_ decision: PersistedPermissionDecision, for scheme: String) {
         let permissionType = PermissionType.externalScheme(scheme: scheme)
@@ -242,7 +253,7 @@ final class PermissionCenterViewModel: ObservableObject {
         // Fire pixel for decision change
         if previousDecision != decision {
             PixelKit.fire(PermissionPixel.permissionCenterChanged(permissionType: permissionType, from: previousDecision, to: decision))
-            showReloadBanner = true
+            markReloadNeeded()
         }
     }
 
@@ -256,7 +267,7 @@ final class PermissionCenterViewModel: ObservableObject {
         PixelKit.fire(PermissionPixel.permissionCenterReset(permissionType: permissionType))
 
         // Show reload banner
-        showReloadBanner = true
+        markReloadNeeded()
 
         // Update the grouped item by removing this scheme
         if let index = permissionItems.firstIndex(where: { $0.isGroupedExternalApps }) {
@@ -271,8 +282,8 @@ final class PermissionCenterViewModel: ObservableObject {
         // Notify that a permission was removed
         onPermissionRemoved?()
 
-        // Dismiss popover if no permissions left
-        if permissionItems.isEmpty {
+        // Dismiss popover if no permissions left and no reload banner
+        if permissionItems.isEmpty && !showReloadBanner {
             dismissPopover()
         }
     }
@@ -340,7 +351,7 @@ final class PermissionCenterViewModel: ObservableObject {
         PixelKit.fire(PermissionPixel.permissionCenterReset(permissionType: permissionType))
 
         // Show reload banner
-        showReloadBanner = true
+        markReloadNeeded()
 
         // Also remove from UI immediately
         permissionItems.removeAll { $0.permissionType == permissionType }
@@ -354,8 +365,8 @@ final class PermissionCenterViewModel: ObservableObject {
         // Notify that a permission was removed (to update UI like permission button visibility)
         onPermissionRemoved?()
 
-        // Dismiss popover if no permissions left
-        if permissionItems.isEmpty {
+        // Dismiss popover if no permissions left and no reload banner
+        if permissionItems.isEmpty && !showReloadBanner {
             dismissPopover()
         }
     }

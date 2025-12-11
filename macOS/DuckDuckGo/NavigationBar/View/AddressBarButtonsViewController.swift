@@ -1862,10 +1862,15 @@ final class AddressBarButtonsViewController: NSViewController {
                 tabViewModel?.tab.permissions.allow(query)
             },
             reloadPage: { [weak tabViewModel] in
+                tabViewModel?.tab.permissions.clearPermissionsNeedReload()
                 tabViewModel?.tab.reload()
             },
+            setPermissionsNeedReload: { [weak tabViewModel] in
+                tabViewModel?.tab.permissions.setPermissionsNeedReload()
+            },
             hasTemporaryPopupAllowance: tabViewModel.tab.popupHandling?.popupsTemporarilyAllowedForCurrentPage ?? false,
-            pageInitiatedPopupOpened: tabViewModel.tab.popupHandling?.pageInitiatedPopupOpened ?? false
+            pageInitiatedPopupOpened: tabViewModel.tab.popupHandling?.pageInitiatedPopupOpened ?? false,
+            permissionsNeedReload: tabViewModel.permissionsNeedReload
         )
 
         let popover = PermissionCenterPopover(viewModel: viewModel)
@@ -2643,7 +2648,8 @@ extension TabViewModel {
 
         // Also show when a page-initiated popup was auto-allowed (due to "Always Allow" setting)
         // so user can access permission center to change the decision
-        return (shouldShowWhileFocused || (!isTextFieldEditorFirstResponder && (isAnyPermissionPresent || pageInitiatedPopupOpened || hasAnyPersistedPermissions)))
+        // Also show when permissions were changed and a reload is needed
+        return (shouldShowWhileFocused || (!isTextFieldEditorFirstResponder && (isAnyPermissionPresent || pageInitiatedPopupOpened || hasAnyPersistedPermissions || permissionsNeedReload)))
         && !isShowingErrorPage
     }
 

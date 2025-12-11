@@ -1317,7 +1317,48 @@ final class PermissionModelTests: XCTestCase {
         XCTAssertNotNil(model.authorizationQuery)
     }
 
+    func testWhenNewPermissionViewEnabledAndSystemPermissionDeniedButUserSetNeverAllowThenDenyDirectly() {
+        // Enable new permission view feature flag
+        featureFlaggerMock.featuresStub[FeatureFlag.newPermissionView.rawValue] = true
+
+        // Set system permission as denied
+        systemPermissionManagerMock.authorizationStates[.geolocation] = .denied
+
+        // Store a "deny" permission - should be respected regardless of system permission state
+        permissionManagerMock.setPermission(.deny, forDomain: URL.duckDuckGo.host!, permissionType: .geolocation)
+
+        let e = expectation(description: "Permission denied directly")
+        var queryShown = false
+        let c = model.$authorizationQuery.sink { query in
+            if query != nil {
+                queryShown = true
+            }
+        }
+
+        // Request geolocation permission
+        if #available(macOS 12, *) {
+            self.webView(webView, requestGeolocationPermissionFor: securityOrigin, initiatedBy: frameInfo) { decision in
+                XCTAssertEqual(decision, .deny)
+                e.fulfill()
+            }
+        } else {
+            self.webView(webView, requestGeolocationPermissionFor: frameInfo) { granted in
+                XCTAssertFalse(granted)
+                e.fulfill()
+            }
+        }
+
+        withExtendedLifetime(c) {
+            waitForExpectations(timeout: 1)
+        }
+
+        // Query should NOT be shown - user's "Never Allow" decision should be respected
+        // even when system permission is disabled
+        XCTAssertFalse(queryShown)
+    }
+
 }
+
 
 
 extension PermissionModelTests: WebViewPermissionsDelegate {

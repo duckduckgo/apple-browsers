@@ -328,12 +328,6 @@ final class PermissionModel {
 
     private func shouldGrantPermission(for permissions: [PermissionType], requestedForDomain domain: String) -> Bool? {
         for permission in permissions {
-            // First check if system permission is disabled - always show dialog in that case
-            // Only applies when new permission view is enabled (two-step authorization flow)
-            if featureFlagger.isFeatureOn(.newPermissionView), isSystemPermissionDisabled(for: permission) {
-                return nil
-            }
-
             var grant: PersistedPermissionDecision
             let stored = permissionManager.permission(forDomain: domain, permissionType: permission)
             if case .allow = stored, permission.canPersistGrantedDecision(featureFlagger: featureFlagger) {
@@ -355,11 +349,17 @@ final class PermissionModel {
 
             switch grant {
             case .deny:
-                // deny if at least one permission denied permanently
-                // or during current page being displayed
+                // Deny immediately - user explicitly set "Never Allow" for this domain
+                // No need to check system permission state
                 return false
             case .allow:
-                // allow if all permissions allowed permanently
+                // User has "Always Allow" stored - but check system permission first
+                // If system permission is disabled, show dialog instead of auto-granting
+                // Only applies when new permission view is enabled (two-step authorization flow)
+                if featureFlagger.isFeatureOn(.newPermissionView), isSystemPermissionDisabled(for: permission) {
+                    return nil
+                }
+                // System permission OK, continue checking other permissions
                 break
             case .ask:
                 // if at least one permission is not set: ask

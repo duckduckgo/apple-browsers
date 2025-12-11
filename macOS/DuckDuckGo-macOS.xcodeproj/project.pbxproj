@@ -214,6 +214,8 @@
 		1DDD3EC52B84F96B004CBF2B /* CookiePopupProtectionPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DDD3EC32B84F96B004CBF2B /* CookiePopupProtectionPreferences.swift */; };
 		1DDF076328F815AD00EDFBE3 /* NativeMessagingCommunicator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DDF075D28F815AD00EDFBE3 /* NativeMessagingCommunicator.swift */; };
 		1DDF076428F815AD00EDFBE3 /* BWManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DDF075E28F815AD00EDFBE3 /* BWManager.swift */; };
+		1DE28D5E2EEADBCF00C07F15 /* SystemPermissionManagerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE28D5D2EEADBCF00C07F15 /* SystemPermissionManagerMock.swift */; };
+		1DE28D5F2EEADBCF00C07F15 /* SystemPermissionManagerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE28D5D2EEADBCF00C07F15 /* SystemPermissionManagerMock.swift */; };
 		1DE717CE2E44B052009BDFFA /* MockNewTabPageTabPreloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE717CD2E44B04E009BDFFA /* MockNewTabPageTabPreloader.swift */; };
 		1DE717CF2E44B052009BDFFA /* MockNewTabPageTabPreloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE717CD2E44B04E009BDFFA /* MockNewTabPageTabPreloader.swift */; };
 		1DE717D12E44B24D009BDFFA /* NewTabPagePreloaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DE717D02E44B244009BDFFA /* NewTabPagePreloaderTests.swift */; };
@@ -3354,12 +3356,12 @@
 		BB6B34142E78B807004E4ACE /* Update.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6B34132E78B807004E4ACE /* Update.swift */; };
 		BB6B34152E78B807004E4ACE /* Update.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6B34132E78B807004E4ACE /* Update.swift */; };
 		BB6B34162E78C8EA004E4ACE /* UpdateCheckState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BAB80C52E2A420400F59FF4 /* UpdateCheckState.swift */; };
-		BB72939D2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB72939C2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift */; };
-		BB72939E2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB72939C2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift */; };
 		BB6B4EE62EE7483D00FE23E2 /* QuitSurveyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6B4EE42EE7483D00FE23E2 /* QuitSurveyView.swift */; };
 		BB6B4EE72EE7483D00FE23E2 /* QuitSurveyViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6B4EE52EE7483D00FE23E2 /* QuitSurveyViewModel.swift */; };
 		BB6B4EE82EE7483D00FE23E2 /* QuitSurveyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6B4EE42EE7483D00FE23E2 /* QuitSurveyView.swift */; };
 		BB6B4EE92EE7483D00FE23E2 /* QuitSurveyViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6B4EE52EE7483D00FE23E2 /* QuitSurveyViewModel.swift */; };
+		BB72939D2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB72939C2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift */; };
+		BB72939E2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB72939C2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift */; };
 		BB731F312CDBA6360023D2E4 /* FireWindowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB731F302CDBA6320023D2E4 /* FireWindowTests.swift */; };
 		BB7696C52D6E333B00AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7696C42D6E333300AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift */; };
 		BB7696C62D6E333B00AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7696C42D6E333300AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift */; };
@@ -4431,6 +4433,7 @@
 		1DDF075F28F815AD00EDFBE3 /* BWStatus.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BWStatus.swift; sourceTree = "<group>"; };
 		1DDF076028F815AD00EDFBE3 /* BWError.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BWError.swift; sourceTree = "<group>"; };
 		1DDF076128F815AD00EDFBE3 /* BWResponse.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BWResponse.swift; sourceTree = "<group>"; };
+		1DE28D5D2EEADBCF00C07F15 /* SystemPermissionManagerMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SystemPermissionManagerMock.swift; sourceTree = "<group>"; };
 		1DE717CD2E44B04E009BDFFA /* MockNewTabPageTabPreloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockNewTabPageTabPreloader.swift; sourceTree = "<group>"; };
 		1DE717D02E44B244009BDFFA /* NewTabPagePreloaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPagePreloaderTests.swift; sourceTree = "<group>"; };
 		1DE717D32E44B4F3009BDFFA /* NewTabPageTabExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageTabExtensionTests.swift; sourceTree = "<group>"; };
@@ -5982,9 +5985,9 @@
 		BB5789712B2CA70F0009DFE2 /* DataBrokerProtectionSubscriptionEventHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataBrokerProtectionSubscriptionEventHandler.swift; sourceTree = "<group>"; };
 		BB5F46A22C8751F6005F72DF /* BookmarkSortTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkSortTests.swift; sourceTree = "<group>"; };
 		BB6B34132E78B807004E4ACE /* Update.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Update.swift; sourceTree = "<group>"; };
-		BB72939C2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReinstallUserDetectionTests.swift; sourceTree = "<group>"; };
 		BB6B4EE42EE7483D00FE23E2 /* QuitSurveyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuitSurveyView.swift; sourceTree = "<group>"; };
 		BB6B4EE52EE7483D00FE23E2 /* QuitSurveyViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuitSurveyViewModel.swift; sourceTree = "<group>"; };
+		BB72939C2EE709AB00BCC3BB /* ReinstallUserDetectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReinstallUserDetectionTests.swift; sourceTree = "<group>"; };
 		BB731F302CDBA6320023D2E4 /* FireWindowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireWindowTests.swift; sourceTree = "<group>"; };
 		BB7696C42D6E333300AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptPresenting.swift; sourceTree = "<group>"; };
 		BB77F8CD2EB3991C00D035A7 /* WinBackOfferPromotionViewCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WinBackOfferPromotionViewCoordinatorTests.swift; sourceTree = "<group>"; };
@@ -10997,6 +11000,7 @@
 		B6106BA126A7BE430013B453 /* Permissions */ = {
 			isa = PBXGroup;
 			children = (
+				1DE28D5D2EEADBCF00C07F15 /* SystemPermissionManagerMock.swift */,
 				B6106B9F26A7BE0B0013B453 /* PermissionManagerTests.swift */,
 				1D1B4A452EDF97EF00FE43C9 /* PermissionAuthorizationTypeTests.swift */,
 				B6106BB026A7D8720013B453 /* PermissionStoreTests.swift */,
@@ -14996,6 +15000,7 @@
 				37EC31542D8C1BBC0026C348 /* CapturingFaviconReferenceCache.swift in Sources */,
 				84C1007E2ECC75350083AB11 /* MockWKNavigationAction.swift in Sources */,
 				3706FE0A293F661700E42796 /* UserAgentTests.swift in Sources */,
+				1DE28D5E2EEADBCF00C07F15 /* SystemPermissionManagerMock.swift in Sources */,
 				C172E7342C937FBA00521D9A /* SyncPromoManagerTests.swift in Sources */,
 				37A0BA342D74BB3300130447 /* DefaultHistoryViewTabOpenerTests.swift in Sources */,
 				3706FE0B293F661700E42796 /* AVCaptureDeviceMock.swift in Sources */,
@@ -17314,6 +17319,7 @@
 				56189B792DF8DBEF004A19CC /* RootViewV2Tests.swift in Sources */,
 				56A054162C1C37B0007D8FAB /* CapturingOnboardingNavigation.swift in Sources */,
 				84C1007B2ECC6F3C0083AB11 /* PopupHandlingTabExtensionTests.swift in Sources */,
+				1DE28D5F2EEADBCF00C07F15 /* SystemPermissionManagerMock.swift in Sources */,
 				CD3301302C89B602009AA127 /* ErrorPageHTMLFactoryTests.swift in Sources */,
 				4B2975992828285900187C4E /* FirefoxKeyReaderTests.swift in Sources */,
 				56B33CE12D5F58D20062DBC2 /* VPNPreferencesModelTests.swift in Sources */,

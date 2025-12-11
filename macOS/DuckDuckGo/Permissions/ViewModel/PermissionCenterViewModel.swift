@@ -145,7 +145,8 @@ final class PermissionCenterViewModel: ObservableObject {
     private let permissionManager: PermissionManagerProtocol
     private let systemPermissionManager: SystemPermissionManagerProtocol
     private let featureFlagger: FeatureFlagger
-    private let usedPermissions: Permissions
+    private var usedPermissions: Permissions
+    private let usedPermissionsPublisher: AnyPublisher<Permissions, Never>?
     private var popupQueries: [PermissionAuthorizationQuery]
     private let removePermissionFromTab: (PermissionType) -> Void
     private let dismissPopover: () -> Void
@@ -173,6 +174,7 @@ final class PermissionCenterViewModel: ObservableObject {
     init(
         domain: String,
         usedPermissions: Permissions,
+        usedPermissionsPublisher: AnyPublisher<Permissions, Never>? = nil,
         popupQueries: [PermissionAuthorizationQuery] = [],
         permissionManager: PermissionManagerProtocol,
         featureFlagger: FeatureFlagger,
@@ -192,6 +194,7 @@ final class PermissionCenterViewModel: ObservableObject {
     ) {
         self.domain = domain
         self.usedPermissions = usedPermissions
+        self.usedPermissionsPublisher = usedPermissionsPublisher
         self.popupQueries = popupQueries
         self.permissionManager = permissionManager
         self.featureFlagger = featureFlagger
@@ -482,6 +485,7 @@ final class PermissionCenterViewModel: ObservableObject {
     }
 
     private func subscribeToPermissionChanges() {
+        // Subscribe to persisted permission changes
         permissionManager.permissionPublisher
             .filter { [weak self] in $0.domain == self?.domain }
             .receive(on: DispatchQueue.main)
@@ -489,5 +493,24 @@ final class PermissionCenterViewModel: ObservableObject {
                 self?.loadPermissions()
             }
             .store(in: &cancellables)
+
+        // Subscribe to runtime permission state changes (active, inactive, etc.)
+        usedPermissionsPublisher?
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] newPermissions in
+                self?.usedPermissions = newPermissions
+                self?.updatePermissionStates()
+            }
+            .store(in: &cancellables)
+    }
+
+    /// Updates the state of existing permission items without rebuilding the entire list
+    private func updatePermissionStates() {
+        for index in permissionItems.indices {
+            let permissionType = permissionItems[index].permissionType
+            if let newState = usedPermissions[permissionType] {
+                permissionItems[index].state = newState
+            }
+        }
     }
 }

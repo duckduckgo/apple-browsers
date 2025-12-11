@@ -3544,8 +3544,10 @@ extension MainViewController: TabSwitcherDelegate {
     }
 
     func tabSwitcherDidRequestCloseAll(tabSwitcher: TabSwitcherViewController) {
-        self.forgetTabs()
-        tabSwitcher.dismiss()
+        Task {
+            await self.forgetTabs()
+            tabSwitcher.dismiss()
+        }
     }
 
     func tabSwitcherDidReorderTabs(tabSwitcher: TabSwitcherViewController) {
@@ -3624,11 +3626,9 @@ extension MainViewController: AutoClearWorker {
         }
     }
 
-    func forgetTabs() {
+    func forgetTabs() async {
         let options: FireOptions = .tabs
-        Task {
-            await fireExecutor.burn(options: options)
-        }
+        await fireExecutor.burn(options: options)
     }
 
     func refreshUIAfterClear() {

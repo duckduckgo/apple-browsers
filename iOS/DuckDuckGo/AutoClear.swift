@@ -26,7 +26,7 @@ protocol AutoClearWorker {
     func clearNavigationStack()
     func forgetData() async
     func forgetData(applicationState: DataStoreWarmup.ApplicationState) async
-    func forgetTabs()
+    func forgetTabs() async
 
     func willStartClearing(_: AutoClear)
     func autoClearDidFinishClearing(_: AutoClear, isLaunching: Bool)
@@ -67,7 +67,7 @@ final class AutoClear: AutoClearing {
         worker.willStartClearing(self)
 
         if settings.action.contains(.clearTabs) {
-            worker.forgetTabs()
+            await worker.forgetTabs()
         }
 
         if settings.action.contains(.clearData) {

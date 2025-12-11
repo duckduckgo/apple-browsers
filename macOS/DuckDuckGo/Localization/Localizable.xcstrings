@@ -63663,7 +63663,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Always Allow"
+            "value" : "Always allow"
           }
         }
       }
@@ -63675,7 +63675,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Always Ask"
+            "value" : "Always ask"
           }
         }
       }
@@ -63723,7 +63723,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Never Allow"
+            "value" : "Never allow"
+          }
+        }
+      }
+    },
+    "permission.center.reset.tooltip" : {
+      "comment" : "Tooltip for the remove/reset permission button in permission center",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Reset permission"
           }
         }
       }
@@ -64108,6 +64120,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@: приостановить доступ на сайте %2$@"
+          }
+        }
+      }
+    },
+    "permission.notification" : {
+      "comment" : "Web notifications permission access name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Notifications"
           }
         }
       }

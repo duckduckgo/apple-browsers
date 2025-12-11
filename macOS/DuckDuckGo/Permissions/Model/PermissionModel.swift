@@ -150,7 +150,7 @@ final class PermissionModel {
                         permissions.geolocation.update(with: currentState)
                     }
                 }
-            case .popups, .externalScheme:
+            case .popups, .externalScheme, .notification:
                 continue
             }
         }
@@ -184,9 +184,15 @@ final class PermissionModel {
 
                 self.authorizationQueries.remove(at: idx)
 
-                if case .success( (_, remember: true) ) = result {
+                if case .success( (let granted, let remember) ) = result {
                     for permission in permissions {
-                        self.permissionManager.setPermission(isGranted ? .allow : .deny, forDomain: domain, permissionType: permission)
+                        if remember == true {
+                            // User chose "Always Allow" or "Never Allow"
+                            self.permissionManager.setPermission(granted ? .allow : .deny, forDomain: domain, permissionType: permission)
+                        } else if granted, self.featureFlagger.isFeatureOn(.newPermissionView) {
+                            // User chose one-time "Allow" - store .ask so permission center button is visible on subsequent visits
+                            self.permissionManager.setPermission(.ask, forDomain: domain, permissionType: permission)
+                        }
                     }
                 }
             } // else: query has been removed, the decision is being handled on the query deallocation
@@ -257,7 +263,7 @@ final class PermissionModel {
             self.permissions[permission].revoke() // await deactivation
             webView?.revokePermissions([permission])
 
-        case .popups, .externalScheme:
+        case .popups, .notification, .externalScheme:
             self.permissions[permission].denied()
         }
     }
@@ -271,7 +277,7 @@ final class PermissionModel {
         switch permission {
         case .camera, .microphone, .geolocation:
             webView?.revokePermissions([permission])
-        case .popups, .externalScheme:
+        case .popups, .notification, .externalScheme:
             break
         }
 
@@ -404,7 +410,7 @@ final class PermissionModel {
             self.permissions[permission].externalSchemeOpened()
         case .popups:
             self.permissions[permission].popupOpened(nextQuery: authorizationQueries.first(where: { $0.permissions.contains(.popups) }))
-        case .camera, .microphone, .geolocation:
+        case .camera, .microphone, .geolocation, .notification:
             // permission usage activated
             break
         }

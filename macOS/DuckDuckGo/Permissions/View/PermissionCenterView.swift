@@ -54,47 +54,59 @@ struct PermissionCenterView: View {
                 // Permission rows in a rounded container
                 VStack(spacing: 0) {
                     ForEach(viewModel.permissionItems) { item in
-                        switch item.permissionType {
-                        case .popups:
-                            PopupPermissionRowView(
-                                item: item,
-                                currentDecision: viewModel.currentPopupDecision(),
-                                showAllowForThisVisitOption: viewModel.showAllowPopupsForThisVisitOption,
-                                onDecisionChanged: { decision in
-                                    viewModel.setPopupDecision(decision)
-                                },
-                                onOpenPopup: { popup in
-                                    viewModel.openBlockedPopup(popup)
-                                },
-                                onRemove: {
-                                    viewModel.removePermission(item.permissionType)
-                                }
-                            )
-                        case .externalScheme:
-                            ExternalAppsPermissionRowView(
-                                item: item,
-                                onDecisionChanged: { scheme, decision in
-                                    viewModel.setExternalSchemeDecision(decision, for: scheme)
-                                },
-                                onRemoveScheme: { scheme in
-                                    viewModel.removeExternalScheme(scheme)
-                                }
-                            )
-                        default:
-                            PermissionRowView(
-                                item: item,
-                                onDecisionChanged: { decision in
-                                    viewModel.setDecision(decision, for: item.permissionType)
-                                },
-                                onRemove: {
-                                    viewModel.removePermission(item.permissionType)
-                                }
-                            )
-                        }
+                        VStack(spacing: 0) {
+                            switch item.permissionType {
+                            case .popups:
+                                PopupPermissionRowView(
+                                    item: item,
+                                    currentDecision: viewModel.currentPopupDecision(),
+                                    showAllowForThisVisitOption: viewModel.showAllowPopupsForThisVisitOption,
+                                    onDecisionChanged: { decision in
+                                        viewModel.setPopupDecision(decision)
+                                    },
+                                    onOpenPopup: { popup in
+                                        viewModel.openBlockedPopup(popup)
+                                    },
+                                    onRemove: {
+                                        withAnimation(.easeInOut(duration: 0.2)) {
+                                            viewModel.removePermission(item.permissionType)
+                                        }
+                                    }
+                                )
+                            case .externalScheme:
+                                ExternalAppsPermissionRowView(
+                                    item: item,
+                                    onDecisionChanged: { scheme, decision in
+                                        viewModel.setExternalSchemeDecision(decision, for: scheme)
+                                    },
+                                    onRemoveScheme: { scheme in
+                                        withAnimation(.easeInOut(duration: 0.2)) {
+                                            viewModel.removeExternalScheme(scheme)
+                                        }
+                                    }
+                                )
+                            default:
+                                PermissionRowView(
+                                    item: item,
+                                    onDecisionChanged: { decision in
+                                        viewModel.setDecision(decision, for: item.permissionType)
+                                    },
+                                    onRemove: {
+                                        withAnimation(.easeInOut(duration: 0.2)) {
+                                            viewModel.removePermission(item.permissionType)
+                                        }
+                                    }
+                                )
+                            }
 
-                        if item.id != viewModel.permissionItems.last?.id {
-                            Divider()
+                            if item.id != viewModel.permissionItems.last?.id {
+                                Divider()
+                            }
                         }
+                        .transition(.asymmetric(
+                            insertion: .opacity,
+                            removal: .opacity.combined(with: .scale(scale: 0.95))
+                        ))
                     }
                 }
                 .background(Color(designSystemColor: .permissionCenterContainerBackground))
@@ -113,10 +125,12 @@ struct PermissionCenterView: View {
                     .padding(.horizontal, 16)
                     .padding(.top, viewModel.permissionItems.isEmpty ? 16 : 0)
                     .padding(.bottom, 16)
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
             }
         }
         .frame(width: popoverWidth)
         .background(Color(viewModel.backgroundColor))
+        .animation(.easeInOut(duration: 0.2), value: viewModel.showReloadBanner)
     }
 }
 

@@ -137,9 +137,18 @@ final class MainCoordinator {
                                 daxDialogsManager: daxDialogsManager,
                                 aiChatSettings: aiChatSettings,
                                 productSurfaceTelemetry: productSurfaceTelemetry)
+        let fireExecutor = FireExecutor(tabManager: tabManager,
+                                        websiteDataManager: websiteDataManager,
+                                        daxDialogsManager: daxDialogsManager,
+                                        syncService: syncService.sync,
+                                        bookmarksDatabaseCleaner: syncService.syncDataProviders.bookmarksAdapter.databaseCleaner,
+                                        fireproofing: fireproofing,
+                                        textZoomCoordinator: textZoomCoordinator,
+                                        historyManager: historyManager,
+                                        featureFlagger: featureFlagger,
+                                        privacyConfigurationManager: privacyConfigurationManager)
         controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
                                         bookmarksDatabase: bookmarksDatabase,
-                                        bookmarksDatabaseCleaner: syncService.syncDataProviders.bookmarksAdapter.databaseCleaner,
                                         historyManager: historyManager,
                                         homePageConfiguration: homePageConfiguration,
                                         syncService: syncService.sync,
@@ -173,7 +182,8 @@ final class MainCoordinator {
                                         winBackOfferVisibilityManager: winBackOfferService.visibilityManager,
                                         mobileCustomization: mobileCustomization,
                                         remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler,
-                                        productSurfaceTelemetry: productSurfaceTelemetry)
+                                        productSurfaceTelemetry: productSurfaceTelemetry,
+                                        fireExecutor: fireExecutor)
     }
 
     func start() {

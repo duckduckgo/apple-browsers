@@ -102,7 +102,7 @@ class MainViewController: UIViewController {
     let tabManager: TabManager
     let previewsSource: TabPreviewsSource
     let appSettings: AppSettings
-    let fireExecutor: FireExecutor // TODO: - Inject this and remove unneeded variables that are only passed to the cleaner
+    let fireExecutor: FireExecutor
     private var launchTabObserver: LaunchTabNotification.Observer?
     var isNewTabPageVisible: Bool {
         newTabPageViewController != nil
@@ -114,7 +114,6 @@ class MainViewController: UIViewController {
     let privacyConfigurationManager: PrivacyConfigurationManaging
 
     let bookmarksDatabase: CoreDataDatabase
-    private weak var bookmarksDatabaseCleaner: BookmarkDatabaseCleaner?
     private var favoritesViewModel: FavoritesListInteracting
     let syncService: DDGSyncing
     let syncDataProviders: SyncDataProviders
@@ -231,10 +230,6 @@ class MainViewController: UIViewController {
         return manager
     }()
 
-    private lazy var aiChatHistoryCleaner: HistoryCleaning = {
-        return HistoryCleaner(featureFlagger: featureFlagger,
-                             privacyConfig: privacyConfigurationManager)
-    }()
     private lazy var browsingMenuSheetCapability = BrowsingMenuSheetCapability.create(using: featureFlagger, keyValueStore: keyValueStore)
 
     let isAuthV2Enabled: Bool
@@ -259,7 +254,6 @@ class MainViewController: UIViewController {
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
         bookmarksDatabase: CoreDataDatabase,
-        bookmarksDatabaseCleaner: BookmarkDatabaseCleaner,
         historyManager: HistoryManaging,
         homePageConfiguration: HomePageConfiguration,
         syncService: DDGSyncing,
@@ -299,12 +293,12 @@ class MainViewController: UIViewController {
         aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
         mobileCustomization: MobileCustomization,
         remoteMessagingActionHandler: RemoteMessagingActionHandling,
-        productSurfaceTelemetry: ProductSurfaceTelemetry
+        productSurfaceTelemetry: ProductSurfaceTelemetry,
+        fireExecutor: FireExecutor
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.privacyConfigurationManager = privacyConfigurationManager
         self.bookmarksDatabase = bookmarksDatabase
-        self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
         self.historyManager = historyManager
         self.homePageConfiguration = homePageConfiguration
         self.syncService = syncService
@@ -348,21 +342,12 @@ class MainViewController: UIViewController {
         self.aichatFullModeFeature = aichatFullModeFeature
         self.productSurfaceTelemetry = productSurfaceTelemetry
 
-        self.fireExecutor = FireExecutor(tabManager: tabManager,
-                                       websiteDataManager: websiteDataManager,
-                                       daxDialogsManager: daxDialogsManager,
-                                       syncService: syncService,
-                                       bookmarksDatabaseCleaner: bookmarksDatabaseCleaner,
-                                       fireproofing: fireproofing,
-                                       textZoomCoordinator: textZoomCoordinator,
-                                       historyManager: historyManager,
-                                       featureFlagger: featureFlagger,
-                                       privacyConfigurationManager: privacyConfigurationManager)
+        self.fireExecutor = fireExecutor
         super.init(nibName: nil, bundle: nil)
         
         tabManager.delegate = self
         tabManager.aiChatContentDelegate = self
-        fireExecutor.delegate = self
+        self.fireExecutor.delegate = self
         bindSyncService()
     }
 

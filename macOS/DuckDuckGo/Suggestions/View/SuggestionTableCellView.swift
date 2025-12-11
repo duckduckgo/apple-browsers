@@ -69,6 +69,8 @@ final class SuggestionTableCellView: NSTableCellView {
         return view
     }()
 
+    private let aiChatPreferencesStorage: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage()
+
     private var labelLeadingToShortcutsConstraint: NSLayoutConstraint?
 
     var theme: ThemeStyleProviding?
@@ -345,9 +347,8 @@ final class SuggestionTableCellView: NSTableCellView {
         }
 
         var iconLeadingPadding = theme?.addressBarStyleProvider.suggestionIconViewLeadingPadding ?? Constants.iconImageViewLeadingSpace
-        let aiChatSettings = AIChatPreferences()
-        let isToggleFeatureEnabled = Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatSettings.isAIFeaturesEnabled
-        let shouldShowToggle = isToggleFeatureEnabled && aiChatSettings.showSearchAndDuckAIToggle
+        let isToggleFeatureEnabled = Application.appDelegate.featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatPreferencesStorage.isAIFeaturesEnabled
+        let shouldShowToggle = isToggleFeatureEnabled && aiChatPreferencesStorage.showSearchAndDuckAIToggle
         if shouldShowToggle {
             iconLeadingPadding += 8
         }

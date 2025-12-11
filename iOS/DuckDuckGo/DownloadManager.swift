@@ -105,7 +105,10 @@ class DownloadManager: DownloadManaging {
     }
 
     func downloadMetaData(for response: URLResponse, suggestedFilename: String? = nil) -> DownloadMetadata? {
-        let filename = filename(forSuggestedFilename: suggestedFilename ?? response.suggestedFilename, mimeType: response.mimeType)
+        guard let filename = try? filename(forSuggestedFilename: suggestedFilename ?? response.suggestedFilename,
+                                           mimeType: response.mimeType) else {
+            return nil
+        }
         return DownloadMetadata(response, filename: filename)
     }
 
@@ -154,9 +157,10 @@ class DownloadManager: DownloadManaging {
 
 extension DownloadManager {
 
-    private func convertToUniqueFilename(_ filename: String) -> String {
+    private func convertToUniqueFilename(_ filename: String) throws -> String {
+        let downloadsDirectoryFiles: [URL] = (try? downloadsDirectoryHandler.downloadsDirectoryFiles) ?? []
         let downloadingFilenames = Set(downloadList.map { $0.filename })
-        let downloadedFilenames = Set(downloadsDirectoryHandler.downloadsDirectoryFiles.map { $0.lastPathComponent })
+        let downloadedFilenames = Set(downloadsDirectoryFiles.map { $0.lastPathComponent })
         let list = downloadingFilenames.union(downloadedFilenames)
 
         var fileExtension = downloadsDirectoryHandler.downloadsDirectory.appendingPathComponent(filename).pathExtension
@@ -175,9 +179,9 @@ extension DownloadManager {
         return newFilename
     }
 
-    private func filename(forSuggestedFilename suggestedFilename: String?, mimeType: String?) -> String {
+    private func filename(forSuggestedFilename suggestedFilename: String?, mimeType: String?) throws -> String {
         let filename = sanitizeFilename(suggestedFilename, mimeType: mimeType)
-        return convertToUniqueFilename(filename)
+        return try convertToUniqueFilename(filename)
     }
 
     private func sanitizeFilename(_ originalFilename: String?, mimeType: String?) -> String {
@@ -243,6 +247,6 @@ extension NSNotification.Name {
 
 
 extension DownloadManager {
-    var downloadsDirectoryFiles: [URL] { downloadsDirectoryHandler.downloadsDirectoryFiles }
+    var downloadsDirectoryFiles: [URL] { (try? downloadsDirectoryHandler.downloadsDirectoryFiles) ?? [] }
     var downloadsDirectory: URL { downloadsDirectoryHandler.downloadsDirectory }
 }

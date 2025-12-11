@@ -145,22 +145,6 @@ public enum SharedDesignSystemColor {
     case permissionCenterBackground
     case permissionCenterContainerBackground
     case permissionWarningBackground
-
-    // Fire Dialog View
-    case fireDialogBackground
-    case fireDialogPillBackground
-    case fireDialogPillBorder
-    case fireDialogPillSelectedSegmentBackground
-    case fireDialogPillSelectedSegmentBorder
-    case fireDialogPillSelectedSegmentShadow
-    case fireDialogPillSelectedSegmentTopStroke
-    case fireDialogPillSelectedSegmentIconBackground
-    case fireDialogPillSegmentMouseOver
-    case fireDialogPillSegmentMouseDown
-    case fireDialogPillHoverOverlay
-    case fireDialogToggleKnob
-    case fireDialogSectionBackground
-    case fireDialogSectionBorder
 }
 
 #endif

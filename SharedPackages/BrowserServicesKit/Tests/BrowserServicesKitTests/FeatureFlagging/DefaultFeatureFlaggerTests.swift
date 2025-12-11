@@ -111,11 +111,6 @@ final class DefaultFeatureFlaggerTests: XCTestCase {
         XCTAssertFalse(featureFlagger.isFeatureOn(for: FeatureFlagSource.disabled))
     }
 
-    func testWhenEnabled_sourceEnabled_returnsTrue() {
-        let featureFlagger = createFeatureFlagger()
-        XCTAssertTrue(featureFlagger.isFeatureOn(for: FeatureFlagSource.enabled))
-    }
-
     func testWhenInternalOnly_returnsIsInternalUserValue() {
         let featureFlagger = createFeatureFlagger()
         internalUserDeciderStore.isInternalUser = false

@@ -179,6 +179,7 @@ enum PermissionAuthorizationType {
 struct PermissionAuthorizationSwiftUIView: View {
     let domain: String
     let permissionType: PermissionAuthorizationType
+    let showsTwoStepUI: Bool
     let onDeny: () -> Void
     let onAllow: () -> Void
     let systemPermissionManager: SystemPermissionManagerProtocol
@@ -196,20 +197,6 @@ struct PermissionAuthorizationSwiftUIView: View {
     @State private var systemPermissionState: SystemPermissionState = .initial
     @State private var authorizationCancellable: AnyCancellable?
     @State private var appActiveCancellable: AnyCancellable?
-
-    // MARK: - Computed Properties
-
-    /// Whether to show the two-step UI
-    private var showsTwoStepUI: Bool {
-        guard permissionType.requiresSystemPermission else { return false }
-        
-        // If system permission is already authorized, show simple standard dialog
-        if systemPermissionState == .authorized {
-            return false
-        }
-        
-        return systemPermissionManager.isAuthorizationRequired(for: permissionType.asPermissionType) || systemPermissionState != .initial
-    }
 
     private var promptText: String {
         switch permissionType {
@@ -528,11 +515,13 @@ extension PermissionAuthorizationSwiftUIView {
     init(
         domain: String,
         permissionType: PermissionAuthorizationType,
+        showsTwoStepUI: Bool = false,
         onDeny: @escaping () -> Void,
         onAllow: @escaping () -> Void
     ) {
         self.domain = domain
         self.permissionType = permissionType
+        self.showsTwoStepUI = showsTwoStepUI
         self.onDeny = onDeny
         self.onAllow = onAllow
         self.systemPermissionManager = SystemPermissionManager()
@@ -586,6 +575,7 @@ struct PermissionAuthorizationSwiftUIView_Previews: PreviewProvider {
         PermissionAuthorizationSwiftUIView(
             domain: "apple.com",
             permissionType: .geolocation,
+            showsTwoStepUI: true,
             onDeny: {},
             onAllow: {}
         )

@@ -101,7 +101,7 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
         case .geolocation:
             return isGeolocationAuthorizationRequired
         case .notification:
-            return true // Always show two-step flow for notifications
+            return notificationService.cachedAuthorizationStatus == .notDetermined
         case .camera, .microphone, .popups, .externalScheme:
             return false // These don't require system permission through our two-step flow
         }
@@ -114,17 +114,13 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
         case .geolocation:
             return requestGeolocationAuthorization(completion: completion)
         case .notification:
-            Task {
+            Task { @MainActor in
                 do {
                     let granted = try await notificationService.requestAuthorization(options: [.alert, .sound])
-                    await MainActor.run {
-                        completion(granted ? .authorized : .denied)
-                    }
+                    completion(granted ? .authorized : .denied)
                 } catch {
                     Logger.general.error("SystemPermissionManager: Notification authorization failed - \(error.localizedDescription)")
-                    await MainActor.run {
-                        completion(.denied)
-                    }
+                    completion(.denied)
                 }
             }
             return nil

@@ -152,6 +152,10 @@ final class UserNotificationAuthorizationServiceMock: UserNotificationAuthorizat
         }
     }
 
+    var cachedAuthorizationStatus: UNAuthorizationStatus {
+        currentAuthorizationStatus
+    }
+
     var authorizationStatusPublisher: AnyPublisher<UNAuthorizationStatus, Never> {
         $currentAuthorizationStatus.eraseToAnyPublisher()
     }
@@ -172,5 +176,6 @@ final class UserNotificationAuthorizationServiceMock: UserNotificationAuthorizat
         }
     }
 }
+
 
 

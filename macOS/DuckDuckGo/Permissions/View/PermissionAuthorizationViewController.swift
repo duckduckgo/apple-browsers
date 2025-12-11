@@ -208,9 +208,13 @@ final class PermissionAuthorizationViewController: NSViewController {
         swiftUIHostingView = nil
 
         let permissionType = PermissionAuthorizationType(from: query.permissions)
+        let showsTwoStepUI = permissionType.requiresSystemPermission
+            && systemPermissionManager.isAuthorizationRequired(for: permissionType.asPermissionType)
+
         let swiftUIView = PermissionAuthorizationSwiftUIView(
             domain: query.domain,
             permissionType: permissionType,
+            showsTwoStepUI: showsTwoStepUI,
             onDeny: { [weak self] in
                 self?.handleDeny()
             },

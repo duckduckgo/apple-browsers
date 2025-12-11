@@ -98,20 +98,20 @@ final class MockSystemPermissionManager: SystemPermissionManagerProtocol {
 
     var authorizationStateToReturn: SystemPermissionAuthorizationState = .authorized
 
-    func authorizationState(for permissionType: PermissionType) -> SystemPermissionAuthorizationState {
+    func authorizationState(for permissionType: PermissionType) async -> SystemPermissionAuthorizationState {
         return authorizationStateToReturn
     }
 
-    func authorizationStateAsync(for permissionType: PermissionType) async -> SystemPermissionAuthorizationState {
-        return authorizationStateToReturn
-    }
-
-    func isAuthorizationRequired(for permissionType: PermissionType) -> Bool {
+    func isAuthorizationRequired(for permissionType: PermissionType) async -> Bool {
         return false
     }
 
     func requestAuthorization(for permissionType: PermissionType, completion: @escaping (SystemPermissionAuthorizationState) -> Void) -> AnyCancellable? {
         completion(authorizationStateToReturn)
         return nil
+    }
+
+    var notificationAuthorizationStatePublisher: AnyPublisher<SystemPermissionAuthorizationState, Never> {
+        Just(.authorized).eraseToAnyPublisher()
     }
 }

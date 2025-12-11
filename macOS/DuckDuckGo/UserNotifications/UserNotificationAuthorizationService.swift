@@ -24,6 +24,9 @@ import UserNotifications
 protocol UserNotificationAuthorizationServicing: AnyObject {
     /// Returns the current authorization status (async because it requires fetching from UNUserNotificationCenter)
     var authorizationStatus: UNAuthorizationStatus { get async }
+
+    /// Returns the cached authorization status (sync, may be briefly stale at app launch)
+    var cachedAuthorizationStatus: UNAuthorizationStatus { get }
     
     /// Publisher that emits when authorization status changes
     /// Initial value will be .notDetermined, then updated after first async fetch
@@ -43,6 +46,10 @@ final class UserNotificationAuthorizationService: UserNotificationAuthorizationS
             let settings = await UNUserNotificationCenter.current().notificationSettings()
             return settings.authorizationStatus
         }
+    }
+
+    var cachedAuthorizationStatus: UNAuthorizationStatus {
+        currentAuthorizationStatus
     }
     
     var authorizationStatusPublisher: AnyPublisher<UNAuthorizationStatus, Never> {
@@ -78,5 +85,6 @@ final class UserNotificationAuthorizationService: UserNotificationAuthorizationS
         }
     }
 }
+
 
 

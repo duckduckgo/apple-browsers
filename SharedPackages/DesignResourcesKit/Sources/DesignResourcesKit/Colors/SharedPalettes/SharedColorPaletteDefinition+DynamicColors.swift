@@ -232,6 +232,8 @@ extension SharedColorPaletteDefinition {
             return DynamicColor(lightColor: .white, darkColor: Color(0x333333))
         case .permissionCenterContainerBackground:
             return DynamicColor(lightColor: Color(0x000000).opacity(0.03), darkColor: Color(0xFFFFFF).opacity(0.06))
+        case .permissionWarningBackground:
+            return DynamicColor(lightColor: Color(0xFFF0C2), darkColor: Color(0xC18010).opacity(0.16))
 
         /// Fire Dialog
         case .fireDialogBackground:

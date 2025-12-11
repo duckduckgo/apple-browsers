@@ -64303,6 +64303,30 @@
         }
       }
     },
+    "permission.center.reload.button" : {
+      "comment" : "Button to reload the page to apply permission changes",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Reload"
+          }
+        }
+      }
+    },
+    "permission.center.reload.message" : {
+      "comment" : "Message shown in permission center when a permission has been changed and reload is needed",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Reload to apply the new permission"
+          }
+        }
+      }
+    },
     "permission.center.reset.tooltip" : {
       "comment" : "Tooltip for the remove permission button in permission center",
       "extractionState" : "extracted_with_value",

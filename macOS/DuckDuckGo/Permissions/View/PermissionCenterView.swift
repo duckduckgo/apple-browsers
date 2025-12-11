@@ -36,7 +36,7 @@ struct PermissionCenterView: View {
         } else if hasExternalApps {
             return 380
         }
-        return 360
+        return 380
     }
 
     var body: some View {
@@ -103,10 +103,56 @@ struct PermissionCenterView: View {
                     .stroke(Color(designSystemColor: .lines), lineWidth: 1)
             )
             .padding(.horizontal, 16)
-            .padding(.bottom, 16)
+            .padding(.bottom, viewModel.showReloadBanner ? 12 : 16)
+
+            // Reload banner
+            if viewModel.showReloadBanner {
+                ReloadBannerView(onReload: viewModel.reload)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 16)
+            }
         }
         .frame(width: popoverWidth)
         .background(Color(viewModel.backgroundColor))
+    }
+}
+
+// MARK: - ReloadBannerView
+
+struct ReloadBannerView: View {
+    let onReload: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            // Reload icon
+            Image(systemName: "arrow.clockwise")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+
+            // Message
+            Text(UserText.permissionCenterReloadMessage)
+                .font(.system(size: 12))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .padding(.trailing, -12)
+
+            Spacer(minLength: 2)
+
+            // Reload button
+            Button(action: onReload) {
+                Text(UserText.permissionCenterReloadButton)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 6)
+                    .background(Color(NSColor.controlBackgroundColor))
+                    .cornerRadius(6)
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(Color(designSystemColor: .permissionWarningBackground))
+        .cornerRadius(8)
     }
 }
 
@@ -175,7 +221,7 @@ struct PermissionRowView: View {
                     .padding(.bottom, 12)
             }
         }
-        .background(item.isSystemDisabled ? Color(.permissionWarningBackground) : Color.clear)
+        .background(item.isSystemDisabled ? Color(designSystemColor: .permissionWarningBackground) : Color.clear)
         .onChange(of: currentDecision) { newValue in
             onDecisionChanged(newValue)
         }

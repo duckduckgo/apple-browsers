@@ -1861,6 +1861,9 @@ final class AddressBarButtonsViewController: NSViewController {
             grantPermission: { [weak tabViewModel] query in
                 tabViewModel?.tab.permissions.allow(query)
             },
+            reloadPage: { [weak tabViewModel] in
+                tabViewModel?.tab.reload()
+            },
             hasTemporaryPopupAllowance: tabViewModel.tab.popupHandling?.popupsTemporarilyAllowedForCurrentPage ?? false,
             pageInitiatedPopupOpened: tabViewModel.tab.popupHandling?.pageInitiatedPopupOpened ?? false
         )

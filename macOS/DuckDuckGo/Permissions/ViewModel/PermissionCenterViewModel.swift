@@ -138,6 +138,7 @@ final class PermissionCenterViewModel: ObservableObject {
     @Published private(set) var domain: String
     @Published private(set) var permissionItems: [PermissionCenterItem] = []
     @Published var backgroundColor: NSColor = NSColor(designSystemColor: .permissionCenterBackground)
+    @Published private(set) var showReloadBanner: Bool = false
 
     // MARK: - Dependencies
 
@@ -153,6 +154,7 @@ final class PermissionCenterViewModel: ObservableObject {
     private let setTemporaryPopupAllowance: (() -> Void)?
     private let resetTemporaryPopupAllowance: (() -> Void)?
     private let grantPermission: ((PermissionAuthorizationQuery) -> Void)?
+    private let reloadPage: (() -> Void)?
     private var cancellables = Set<AnyCancellable>()
     private var removedPermissions = Set<PermissionType>()
     private(set) var hasTemporaryPopupAllowance: Bool
@@ -180,6 +182,7 @@ final class PermissionCenterViewModel: ObservableObject {
         setTemporaryPopupAllowance: (() -> Void)? = nil,
         resetTemporaryPopupAllowance: (() -> Void)? = nil,
         grantPermission: ((PermissionAuthorizationQuery) -> Void)? = nil,
+        reloadPage: (() -> Void)? = nil,
         hasTemporaryPopupAllowance: Bool = false,
         pageInitiatedPopupOpened: Bool = false,
         systemPermissionManager: SystemPermissionManagerProtocol = SystemPermissionManager()
@@ -196,6 +199,7 @@ final class PermissionCenterViewModel: ObservableObject {
         self.setTemporaryPopupAllowance = setTemporaryPopupAllowance
         self.resetTemporaryPopupAllowance = resetTemporaryPopupAllowance
         self.grantPermission = grantPermission
+        self.reloadPage = reloadPage
         self.hasTemporaryPopupAllowance = hasTemporaryPopupAllowance
         self.pageInitiatedPopupOpened = pageInitiatedPopupOpened
         self.systemPermissionManager = systemPermissionManager
@@ -214,12 +218,19 @@ final class PermissionCenterViewModel: ObservableObject {
         // Fire pixel for decision change
         if previousDecision != decision {
             PixelKit.fire(PermissionPixel.permissionCenterChanged(permissionType: permissionType, from: previousDecision, to: decision))
+            showReloadBanner = true
         }
 
         // If setting to "Always Allow" and there's a pending request, grant it
         if decision == .allow, case .requested(let query) = usedPermissions[permissionType] {
             grantPermission?(query)
         }
+    }
+
+    /// Reloads the page and dismisses the popover
+    func reload() {
+        reloadPage?()
+        dismissPopover()
     }
 
     /// Updates the decision for a specific external scheme
@@ -231,6 +242,7 @@ final class PermissionCenterViewModel: ObservableObject {
         // Fire pixel for decision change
         if previousDecision != decision {
             PixelKit.fire(PermissionPixel.permissionCenterChanged(permissionType: permissionType, from: previousDecision, to: decision))
+            showReloadBanner = true
         }
     }
 
@@ -242,6 +254,9 @@ final class PermissionCenterViewModel: ObservableObject {
 
         // Fire pixel for permission reset
         PixelKit.fire(PermissionPixel.permissionCenterReset(permissionType: permissionType))
+
+        // Show reload banner
+        showReloadBanner = true
 
         // Update the grouped item by removing this scheme
         if let index = permissionItems.firstIndex(where: { $0.isGroupedExternalApps }) {
@@ -323,6 +338,9 @@ final class PermissionCenterViewModel: ObservableObject {
 
         // Fire pixel for permission reset
         PixelKit.fire(PermissionPixel.permissionCenterReset(permissionType: permissionType))
+
+        // Show reload banner
+        showReloadBanner = true
 
         // Also remove from UI immediately
         permissionItems.removeAll { $0.permissionType == permissionType }

@@ -219,17 +219,21 @@ extension HomePage.Models {
 
         // MARK: - Pixel Firing
 
+        private func firePixel(_ event: PixelKitEvent, includeAppVersionParameter: Bool = true) {
+            pixelHandler(event, includeAppVersionParameter)
+        }
+
         private func fireNextStepsCardClickedPixel(for featureType: FeatureType) {
             let card = NewTabPageDataModel.CardID(featureType)
             switch featureType {
             case .defaultBrowser:
-                pixelHandler(GeneralPixel.defaultRequestedFromHomepageSetupView, true)
+                firePixel(GeneralPixel.defaultRequestedFromHomepageSetupView)
             case .dock:
-                pixelHandler(GeneralPixel.userAddedToDockFromNewTabPageCard, false)
+                firePixel(GeneralPixel.userAddedToDockFromNewTabPageCard, includeAppVersionParameter: false)
             case .subscription:
-                pixelHandler(SubscriptionPixel.subscriptionNewTabPageNextStepsCardClicked, true)
+                firePixel(SubscriptionPixel.subscriptionNewTabPageNextStepsCardClicked)
             case .duckplayer, .emailProtection, .importBookmarksAndPasswords:
-                pixelHandler(NewTabPagePixel.nextStepsCardClicked(card.rawValue), true)
+                firePixel(NewTabPagePixel.nextStepsCardClicked(card.rawValue))
             }
         }
 
@@ -237,9 +241,9 @@ extension HomePage.Models {
             let card = NewTabPageDataModel.CardID(featureType)
             switch featureType {
             case .subscription:
-                pixelHandler(SubscriptionPixel.subscriptionNewTabPageNextStepsCardDismissed, true)
+                firePixel(SubscriptionPixel.subscriptionNewTabPageNextStepsCardDismissed)
             case .defaultBrowser, .dock, .duckplayer, .emailProtection, .importBookmarksAndPasswords:
-                pixelHandler(NewTabPagePixel.nextStepsCardDismissed(card.rawValue), true)
+                firePixel(NewTabPagePixel.nextStepsCardDismissed(card.rawValue))
             }
         }
 

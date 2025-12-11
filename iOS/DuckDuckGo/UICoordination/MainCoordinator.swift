@@ -84,7 +84,8 @@ final class MainCoordinator {
          modalPromptCoordinationService: ModalPromptCoordinationService,
          mobileCustomization: MobileCustomization,
          productSurfaceTelemetry: ProductSurfaceTelemetry,
-         sharedSecureVault: (any AutofillSecureVault)? = nil
+         whatsNewRepository: WhatsNewMessageRepository,
+         sharedSecureVault: (any AutofillSecureVault)? = nil,
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
@@ -189,7 +190,8 @@ final class MainCoordinator {
                                         productSurfaceTelemetry: productSurfaceTelemetry,
                                         fireExecutor: fireExecutor,
                                         remoteMessagingDebugHandler: remoteMessagingService,
-                                        syncAiChatsCleaner: syncService.aiChatsCleaner)
+                                        syncAiChatsCleaner: syncService.aiChatsCleaner,
+                                        whatsNewRepository: whatsNewRepository)
     }
 
     func start() {

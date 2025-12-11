@@ -87,6 +87,15 @@ struct SettingsOthersView: View {
                              action: { viewModel.openOtherPlatforms() },
                              webLinkIndicator: true,
                              isButton: true)
+
+            if viewModel.shouldShowWhatsNew {
+                SettingsCellView(
+                    label: "What's New",
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.rocket),
+                    action: { viewModel.openWhatsNew() },
+                    isButton: true
+                )
+            }
         }
     }
 

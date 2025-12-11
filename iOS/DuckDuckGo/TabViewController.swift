@@ -410,7 +410,8 @@ class TabViewController: UIViewController {
                                    featureDiscovery: FeatureDiscovery,
                                    keyValueStore: ThrowingKeyValueStoring,
                                    daxDialogsManager: DaxDialogsManaging,
-                                   aiChatSettings: AIChatSettingsProvider) -> TabViewController {
+                                   aiChatSettings: AIChatSettingsProvider,
+                                   privacyStats: PrivacyStatsProviding) -> TabViewController {
         let storyboard = UIStoryboard(name: "Tab", bundle: nil)
         let controller = storyboard.instantiateViewController(identifier: "TabViewController", creator: { coder in
             TabViewController(coder: coder,
@@ -436,7 +437,8 @@ class TabViewController: UIViewController {
                               featureDiscovery: featureDiscovery,
                               keyValueStore: keyValueStore,
                               daxDialogsManager: daxDialogsManager,
-                              aiChatSettings: aiChatSettings
+                              aiChatSettings: aiChatSettings,
+                              privacyStats: privacyStats
             )
         })
         return controller
@@ -483,6 +485,7 @@ class TabViewController: UIViewController {
     let keyValueStore: ThrowingKeyValueStoring
     let daxDialogsManager: DaxDialogsManaging
     let aiChatSettings: AIChatSettingsProvider
+    let privacyStats: PrivacyStatsProviding
     
     private(set) var aiChatContentHandler: AIChatContentHandling
 
@@ -512,7 +515,8 @@ class TabViewController: UIViewController {
                    keyValueStore: ThrowingKeyValueStoring,
                    daxDialogsManager: DaxDialogsManaging,
                    adClickExternalOpenDetector: AdClickExternalOpenDetector = AdClickExternalOpenDetector(),
-                   aiChatSettings: AIChatSettingsProvider) {
+                   aiChatSettings: AIChatSettingsProvider,
+                   privacyStats: PrivacyStatsProviding) {
 
         self.tabModel = tabModel
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -539,6 +543,7 @@ class TabViewController: UIViewController {
         self.keyValueStore = keyValueStore
         self.adClickExternalOpenDetector = adClickExternalOpenDetector
         self.daxDialogsManager = daxDialogsManager
+        self.privacyStats = privacyStats
         self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {
             return AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.canPurchase
         }
@@ -2951,13 +2956,23 @@ extension TabViewController: ContentBlockerRulesUserScriptDelegate {
         guard let url = url else { return }
         
         adClickAttributionLogic.onRequestDetected(request: tracker)
-        
+
         if tracker.isBlocked && fireWoFollowUp {
             fireWoFollowUp = false
             Pixel.fire(pixel: .daxDialogsWithoutTrackersFollowUp)
         }
 
         privacyInfo?.trackerInfo.addDetectedTracker(tracker, onPageWithURL: url)
+
+        guard tracker.isBlocked,
+              let host = tracker.url.url?.host,
+              let entityName = ContentBlocking.shared.trackerDataManager.trackerData.findParentEntityOrFallback(forHost: host)?.displayName else {
+            return
+        }
+
+        Task {
+            await privacyStats.recordBlockedTracker(entityName)
+        }
     }
 }
 

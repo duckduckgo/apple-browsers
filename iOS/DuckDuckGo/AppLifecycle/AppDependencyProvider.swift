@@ -34,6 +34,7 @@ import PixelExperimentKit
 import Networking
 import Configuration
 import Network
+import PrivacyStats
 
 protocol DependencyProvider {
 
@@ -68,6 +69,9 @@ protocol DependencyProvider {
 
     // DBP
     var dbpSettings: DataBrokerProtectionSettings { get }
+
+    // Privacy Stats
+    var privacyStats: PrivacyStatsProviding { get }
 }
 
 /// Provides dependencies for objects that are not directly instantiated
@@ -112,6 +116,7 @@ final class AppDependencyProvider: DependencyProvider {
     let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
     let persistentPixel: PersistentPixelFiring = PersistentPixel()
     let wideEvent: WideEventManaging = WideEvent()
+    let privacyStats: PrivacyStatsProviding
 
     private init() {
         let featureFlaggerOverrides = FeatureFlagLocalOverrides(keyValueStore: UserDefaults(suiteName: FeatureFlag.localOverrideStoreName)!,
@@ -302,6 +307,8 @@ final class AppDependencyProvider: DependencyProvider {
                                                                               settings: vpnSettings,
                                                                               wideEvent: wideEvent
         )
+
+        privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
     }
 
 }

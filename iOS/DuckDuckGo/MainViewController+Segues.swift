@@ -200,7 +200,8 @@ extension MainViewController {
                                       featureFlagger: self.featureFlagger,
                                       tabManager: self.tabManager,
                                       aiChatSettings: self.aiChatSettings,
-                                      appSettings: self.appSettings)
+                                      appSettings: self.appSettings,
+                                      privacyStats: AppDependencyProvider.shared.privacyStats)
         }) else {
             assertionFailure()
             return

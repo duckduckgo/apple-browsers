@@ -134,7 +134,8 @@ final class MainCoordinator {
                                 featureDiscovery: DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
                                 keyValueStore: keyValueStore,
                                 daxDialogsManager: daxDialogsManager,
-                                aiChatSettings: aiChatSettings)
+                                aiChatSettings: aiChatSettings,
+                                privacyStats: AppDependencyProvider.shared.privacyStats)
         controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
                                         bookmarksDatabase: bookmarksDatabase,
                                         bookmarksDatabaseCleaner: syncService.syncDataProviders.bookmarksAdapter.databaseCleaner,
@@ -170,7 +171,8 @@ final class MainCoordinator {
                                         launchSourceManager: launchSourceManager,
                                         winBackOfferVisibilityManager: winBackOfferService.visibilityManager,
                                         mobileCustomization: mobileCustomization,
-                                        remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler)
+                                        remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler,
+                                        privacyStats: AppDependencyProvider.shared.privacyStats)
     }
 
     func start() {

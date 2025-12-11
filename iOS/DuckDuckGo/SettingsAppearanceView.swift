@@ -115,6 +115,8 @@ struct SettingsAppearanceView: View {
 
             showFullSiteAddressSetting()
 
+            showTrackerCountSetting()
+
             showReloadButtonSetting()
 
         } header: {
@@ -204,6 +206,12 @@ struct SettingsAppearanceView: View {
     func showFullSiteAddressSetting() -> some View {
         SettingsCellView(label: UserText.settingsFullURL,
                          accessory: .toggle(isOn: viewModel.addressBarShowsFullURL))
+    }
+
+    @ViewBuilder
+    func showTrackerCountSetting() -> some View {
+        SettingsCellView(label: UserText.tabSwitcherShowTrackerCount,
+                         accessory: .toggle(isOn: viewModel.showTrackerCountInTabSwitcherBinding))
     }
 
     @ViewBuilder

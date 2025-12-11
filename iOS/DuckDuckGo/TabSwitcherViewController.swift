@@ -26,9 +26,10 @@ import Bookmarks
 import Persistence
 import os.log
 import SwiftUI
+import Combine
+import DesignResourcesKit
 import BrowserServicesKit
 import AIChat
-import Combine
 
 class TabSwitcherViewController: UIViewController {
 
@@ -37,6 +38,10 @@ class TabSwitcherViewController: UIViewController {
 
         static let cellMinHeight: CGFloat = 140.0
         static let cellMaxHeight: CGFloat = 209.0
+
+        static let trackerInfoTopSpacing: CGFloat = 8
+        static let trackerInfoHorizontalPadding: CGFloat = 12
+        static let trackerInfoBottomSpacing: CGFloat = 8
     }
 
     struct BookmarkAllResult {
@@ -118,6 +123,7 @@ class TabSwitcherViewController: UIViewController {
     let featureFlagger: FeatureFlagger
     let tabManager: TabManager
     let aiChatSettings: AIChatSettingsProvider
+    let privacyStats: PrivacyStatsProviding
     var tabsModel: TabsModel {
         tabManager.model
     }
@@ -126,6 +132,11 @@ class TabSwitcherViewController: UIViewController {
 
     private var tabObserverCancellable: AnyCancellable?
     private let appSettings: AppSettings
+    private var trackerCountCancellable: AnyCancellable?
+    private var trackerCountViewModel: TabSwitcherTrackerCountViewModel?
+    private let trackerInfoContainer = UIView()
+    private var trackerInfoHiddenConstraint: NSLayoutConstraint?
+    private var trackerInfoHostingController: UIHostingController<InfoPanelView>?
     
     private(set) var aichatFullModeFeature: AIChatFullModeFeatureProviding
 
@@ -137,7 +148,8 @@ class TabSwitcherViewController: UIViewController {
                    tabManager: TabManager,
                    aiChatSettings: AIChatSettingsProvider,
                    appSettings: AppSettings,
-                   aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature()) {
+                   aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
+                   privacyStats: PrivacyStatsProviding) {
         self.bookmarksDatabase = bookmarksDatabase
         self.syncService = syncService
         self.featureFlagger = featureFlagger
@@ -146,6 +158,7 @@ class TabSwitcherViewController: UIViewController {
         self.aiChatSettings = aiChatSettings
         self.appSettings = appSettings
         self.aichatFullModeFeature = aichatFullModeFeature
+        self.privacyStats = privacyStats
         super.init(coder: coder)
     }
 
@@ -175,7 +188,11 @@ class TabSwitcherViewController: UIViewController {
             isBottomBar ? titleBarView.bottomAnchor.constraint(equalTo: toolbar.topAnchor, constant: topOffset) : nil,
             !isBottomBar ? titleBarView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: bottomOffset) : nil,
 
-            collectionView.topAnchor.constraint(equalTo: isBottomBar ? view.safeAreaLayoutGuide.topAnchor : titleBarView.bottomAnchor),
+            trackerInfoContainer.topAnchor.constraint(equalTo: isBottomBar ? view.safeAreaLayoutGuide.topAnchor : titleBarView.bottomAnchor, constant: Constants.trackerInfoTopSpacing),
+            trackerInfoContainer.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: Constants.trackerInfoHorizontalPadding),
+            trackerInfoContainer.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -Constants.trackerInfoHorizontalPadding),
+
+            collectionView.topAnchor.constraint(equalTo: trackerInfoContainer.bottomAnchor, constant: Constants.trackerInfoBottomSpacing),
             collectionView.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
             collectionView.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
 
@@ -203,9 +220,10 @@ class TabSwitcherViewController: UIViewController {
         titleBarView.translatesAutoresizingMaskIntoConstraints = false
         toolbar.translatesAutoresizingMaskIntoConstraints = false
         collectionView.translatesAutoresizingMaskIntoConstraints = false
+        trackerInfoContainer.translatesAutoresizingMaskIntoConstraints = false
 
         // Clear existing constraints for these views comprehensively
-        let viewsToRemoveConstraintsFor: [UIView] = [titleBarView, toolbar, collectionView, borderView]
+        let viewsToRemoveConstraintsFor: [UIView] = [titleBarView, toolbar, collectionView, borderView, trackerInfoContainer]
         viewsToRemoveConstraintsFor.forEach { targetView in
             targetView.removeFromSuperview()
         }
@@ -213,6 +231,7 @@ class TabSwitcherViewController: UIViewController {
         // Re-add the views to the hierarchy
         view.addSubview(titleBarView)
         view.addSubview(toolbar)
+        view.addSubview(trackerInfoContainer)
         view.addSubview(collectionView)
         view.addSubview(borderView)
 
@@ -245,6 +264,9 @@ class TabSwitcherViewController: UIViewController {
         collectionView.allowsSelection = true
         collectionView.allowsMultipleSelection = true
         collectionView.allowsMultipleSelectionDuringEditing = true
+        setupTrackerInfoContainer()
+        bindTrackerCount()
+        trackerCountViewModel?.refresh()
 
     }
 
@@ -258,12 +280,87 @@ class TabSwitcherViewController: UIViewController {
         tabsStyle = tabSwitcherSettings.isGridViewEnabled ? .grid : .list
     }
 
+    private func setupTrackerInfoContainer() {
+        trackerInfoContainer.isHidden = true
+        trackerInfoHiddenConstraint = trackerInfoContainer.heightAnchor.constraint(equalToConstant: 0)
+        trackerInfoHiddenConstraint?.isActive = true
+    }
+
+    private func bindTrackerCount() {
+        let viewModel = TabSwitcherTrackerCountViewModel(settings: tabSwitcherSettings, privacyStats: privacyStats)
+        trackerCountViewModel = viewModel
+        trackerCountCancellable = viewModel.$state
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] state in
+                self?.applyTrackerCountState(state)
+            }
+    }
+
+    private func applyTrackerCountState(_ state: TabSwitcherTrackerCountViewModel.State) {
+        guard state.isVisible else {
+            trackerInfoHostingController?.willMove(toParent: nil)
+            trackerInfoHostingController?.view.removeFromSuperview()
+            trackerInfoHostingController?.removeFromParent()
+            trackerInfoHostingController = nil
+            trackerInfoHiddenConstraint?.isActive = true
+            trackerInfoContainer.isHidden = true
+            return
+        }
+
+        trackerInfoContainer.isHidden = false
+        trackerInfoHiddenConstraint?.isActive = false
+
+        let model = InfoPanelView.Model(
+            title: state.title,
+            subtitle: state.subtitle,
+            icon: UIImage(resource: .shieldDot),
+            accentColor: Color(designSystemColor: .accent),
+            backgroundColor: Color(designSystemColor: .surface),
+            onTap: { [weak self] in
+                self?.trackerCountViewModel?.refresh()
+            },
+            onInfo: { [weak self] in
+                self?.presentHideTrackerCountAlert()
+            }
+        )
+
+        let hosting = UIHostingController(rootView: InfoPanelView(model: model))
+        addChild(hosting)
+        hosting.view.translatesAutoresizingMaskIntoConstraints = false
+        trackerInfoHostingController?.willMove(toParent: nil)
+        trackerInfoHostingController?.view.removeFromSuperview()
+        trackerInfoHostingController?.removeFromParent()
+        trackerInfoHostingController = hosting
+        trackerInfoContainer.addSubview(hosting.view)
+
+        NSLayoutConstraint.activate([
+            hosting.view.topAnchor.constraint(equalTo: trackerInfoContainer.topAnchor),
+            hosting.view.leadingAnchor.constraint(equalTo: trackerInfoContainer.leadingAnchor),
+            hosting.view.trailingAnchor.constraint(equalTo: trackerInfoContainer.trailingAnchor),
+            hosting.view.bottomAnchor.constraint(equalTo: trackerInfoContainer.bottomAnchor)
+        ])
+
+        hosting.didMove(toParent: self)
+    }
+
+    private func presentHideTrackerCountAlert() {
+        let alert = UIAlertController(title: UserText.tabSwitcherTrackerCountHideTitle,
+                                      message: UserText.tabSwitcherTrackerCountHideMessage,
+                                      preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: UserText.tabSwitcherTrackerCountKeepAction, style: .cancel))
+        alert.addAction(UIAlertAction(title: UserText.tabSwitcherTrackerCountHideAction, style: .default) { [weak self] _ in
+            self?.trackerCountViewModel?.hide()
+        })
+        present(alert, animated: true)
+    }
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         refreshTitle()
         currentSelection = tabsModel.currentIndex
         updateUIForSelectionMode()
         setupBarsLayout()
+        trackerCountViewModel?.refresh()
     }
 
     override func viewWillTransition(to size: CGSize, with coordinator: any UIViewControllerTransitionCoordinator) {

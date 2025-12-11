@@ -23,6 +23,7 @@ protocol TabSwitcherSettings {
  
     var isGridViewEnabled: Bool { get set }
     var hasSeenNewLayout: Bool { get set }
+    var showTrackerCountInTabSwitcher: Bool { get set }
     
 }
 
@@ -33,5 +34,8 @@ class DefaultTabSwitcherSettings: TabSwitcherSettings {
 
     @UserDefaultsWrapper(key: .gridViewSeen, defaultValue: false)
     var hasSeenNewLayout: Bool
+
+    @UserDefaultsWrapper(key: .tabSwitcherShowTrackerCount, defaultValue: true)
+    var showTrackerCountInTabSwitcher: Bool
 
 }

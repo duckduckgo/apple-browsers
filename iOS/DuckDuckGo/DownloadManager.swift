@@ -105,10 +105,8 @@ class DownloadManager: DownloadManaging {
     }
 
     func downloadMetaData(for response: URLResponse, suggestedFilename: String? = nil) -> DownloadMetadata? {
-        guard let filename = try? filename(forSuggestedFilename: suggestedFilename ?? response.suggestedFilename,
-                                           mimeType: response.mimeType) else {
-            return nil
-        }
+        let filename = filename(forSuggestedFilename: suggestedFilename ?? response.suggestedFilename,
+                                mimeType: response.mimeType)
         return DownloadMetadata(response, filename: filename)
     }
 
@@ -157,8 +155,8 @@ class DownloadManager: DownloadManaging {
 
 extension DownloadManager {
 
-    private func convertToUniqueFilename(_ filename: String) throws -> String {
-        let downloadsDirectoryFiles: [URL] = try downloadsDirectoryHandler.downloadsDirectoryFiles
+    private func convertToUniqueFilename(_ filename: String) -> String {
+        let downloadsDirectoryFiles: [URL] = (try? downloadsDirectoryHandler.downloadsDirectoryFiles) ?? []
         let downloadingFilenames = Set(downloadList.map { $0.filename })
         let downloadedFilenames = Set(downloadsDirectoryFiles.map { $0.lastPathComponent })
         let list = downloadingFilenames.union(downloadedFilenames)
@@ -179,9 +177,9 @@ extension DownloadManager {
         return newFilename
     }
 
-    private func filename(forSuggestedFilename suggestedFilename: String?, mimeType: String?) throws -> String {
+    private func filename(forSuggestedFilename suggestedFilename: String?, mimeType: String?) -> String {
         let filename = sanitizeFilename(suggestedFilename, mimeType: mimeType)
-        return try convertToUniqueFilename(filename)
+        return convertToUniqueFilename(filename)
     }
 
     private func sanitizeFilename(_ originalFilename: String?, mimeType: String?) -> String {

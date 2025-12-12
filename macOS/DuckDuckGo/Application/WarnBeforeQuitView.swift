@@ -50,22 +50,22 @@ struct WarnBeforeQuitView: View {
 
             // Text content
             VStack(alignment: .leading, spacing: 4) {
-                Text(UserText.warnBeforeQuitTitle)
+                Text(UserText.confirmQuitAction)
                     .font(.system(size: 15, weight: .semibold))
                     .foregroundColor(.white)
 
-                Text(UserText.warnBeforeQuitSubtitle)
+                Text(UserText.confirmQuitSubtitle)
                     .font(.system(size: 13))
                     .foregroundColor(.white.opacity(0.8))
             }
 
             Spacer()
 
-            // "Don't ask again" button
+            // "Don‘t Show Again" button
             Button {
                 viewModel.dontAskAgainTapped()
             } label: {
-                Text(UserText.warnBeforeQuitDontAskAgain)
+                Text(UserText.confirmDontShowAgain)
                     .font(.system(size: 13))
                     .foregroundColor(.white)
                     .padding(.horizontal, 16)

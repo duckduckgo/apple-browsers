@@ -2108,13 +2108,21 @@ body:not([data-background-kind=default]) .TabSwitcher_tabSwitcher {
 }
 .PrivacyStats_counterContainer {
   display: flex;
-  gap: 24px;
+  gap: 12px;
 }
 .PrivacyStats_counter {
   display: flex;
   flex-direction: column;
   gap: 4px;
-  padding-right: 38px;
+  width: 196px;
+  padding-right: 18px;
+  box-sizing: content-box;
+}
+.PrivacyStats_counter:last-child {
+  padding-right: 0;
+}
+.PrivacyStats_cookiePopUpsCounter {
+  margin-left: 14px;
 }
 .PrivacyStats_title {
   color: var(--ntp-text-primary);
@@ -2130,6 +2138,8 @@ body:not([data-background-kind=default]) .TabSwitcher_tabSwitcher {
   line-height: 20px;
   padding-bottom: 4px;
   padding-top: 12px;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 .PrivacyStats_noRecentTitle {
   color: var(--ntp-text-muted);
@@ -2228,24 +2238,6 @@ body:not([data-background-kind=default]) .TabSwitcher_tabSwitcher {
 }
 [data-theme=dark] .PrivacyStats_fill {
   background: var(--color-white-at-9);
-}
-
-/* pages/new-tab/app/components/NewBadge.module.css */
-.NewBadge_badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: fit-content;
-  height: 16px;
-  padding: 0 8px;
-  background-color: #F9BE1A;
-  border-radius: 4px;
-  font-family: var(--theme-font-family, system-ui);
-  font-weight: 700;
-  font-size: 11px;
-  color: var(--color-black-at-96);
-  letter-spacing: -0.015em;
-  flex-shrink: 0;
 }
 
 /* pages/new-tab/app/components/Tooltip/Tooltip.module.css */

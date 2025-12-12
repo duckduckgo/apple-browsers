@@ -143,7 +143,7 @@ extension PermissionType {
         }
     }
 
-    /// Solid/filled icon for when permission is active (camera, microphone, geolocation, notification only)
+    /// Solid/filled icon for when permission is active (camera, microphone, geolocation only)
     var solidIcon: NSImage? {
         switch self {
         case .camera:
@@ -152,9 +152,7 @@ extension PermissionType {
             return DesignSystemImages.Glyphs.Size16.permissionMicrophoneSolid
         case .geolocation:
             return DesignSystemImages.Glyphs.Size16.permissionsLocationSolid
-        case .notification:
-            return DesignSystemImages.Glyphs.Size16.permissionsNotificationSolid
-        case .popups, .externalScheme:
+        case .notification, .popups, .externalScheme:
             return nil
         }
     }

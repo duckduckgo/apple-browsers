@@ -432,8 +432,10 @@ struct PermissionAuthorizationSwiftUIView: View {
             if isCompleted {
                 // Completed state: green checkmark
                 Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(Color(designSystemColor: .textSuccess))
+                    .resizable()
+                    .scaledToFit()
                     .frame(width: stepIndicatorSize, height: stepIndicatorSize)
+                    .foregroundColor(Color(designSystemColor: .textSuccess))
             } else if isActive {
                 // Active state: filled circle with number
                 Circle()

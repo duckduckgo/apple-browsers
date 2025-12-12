@@ -557,6 +557,50 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         }
     }
 
+    func testWhenClickActionDelayReductionOptimizationFeatureFlagIsOn_thenHandleRemovedProfilesPassesTrueToMarkRemovedClosure() throws {
+        let identifiers = makeFixtureIdentifiers()
+        let brokerData = makeFixtureBrokerProfileQueryData()
+        let removedProfiles = [ExtractedProfile.mockWithoutRemovedDate]
+        let featureFlagger = MockDBPFeatureFlagger(isClickActionDelayReductionOptimizationOn: true)
+        var capturedFeatureFlaggerValue: Bool?
+
+        try sut.handleRemovedProfiles(removedProfiles: removedProfiles,
+                                      brokerId: identifiers.brokerId,
+                                      profileQueryId: identifiers.profileQueryId,
+                                      brokerProfileQueryData: brokerData,
+                                      database: mockDatabase,
+                                      pixelHandler: mockPixelHandler,
+                                      eventsHandler: mockEventsHandler,
+                                      featureFlagger: featureFlagger,
+                                      markRemovedAndNotify: { _, _, _, _, _, _, _, flagger in
+            capturedFeatureFlaggerValue = flagger.isClickActionDelayReductionOptimizationOn
+        })
+
+        XCTAssertEqual(capturedFeatureFlaggerValue, true, "Feature flagger should pass isClickActionDelayReductionOptimizationOn = true to closure")
+    }
+
+    func testWhenClickActionDelayReductionOptimizationFeatureFlagIsOff_thenHandleRemovedProfilesPassesFalseToMarkRemovedClosure() throws {
+        let identifiers = makeFixtureIdentifiers()
+        let brokerData = makeFixtureBrokerProfileQueryData()
+        let removedProfiles = [ExtractedProfile.mockWithoutRemovedDate]
+        let featureFlagger = MockDBPFeatureFlagger(isClickActionDelayReductionOptimizationOn: false)
+        var capturedFeatureFlaggerValue: Bool?
+
+        try sut.handleRemovedProfiles(removedProfiles: removedProfiles,
+                                      brokerId: identifiers.brokerId,
+                                      profileQueryId: identifiers.profileQueryId,
+                                      brokerProfileQueryData: brokerData,
+                                      database: mockDatabase,
+                                      pixelHandler: mockPixelHandler,
+                                      eventsHandler: mockEventsHandler,
+                                      featureFlagger: featureFlagger,
+                                      markRemovedAndNotify: { _, _, _, _, _, _, _, flagger in
+            capturedFeatureFlaggerValue = flagger.isClickActionDelayReductionOptimizationOn
+        })
+
+        XCTAssertEqual(capturedFeatureFlaggerValue, false, "Feature flagger should pass isClickActionDelayReductionOptimizationOn = false to closure")
+    }
+
     // MARK: - updateDatesAfterNoRemovals
 
     func testUpdateDatesAfterNoRemovals_callsUpdateOperationDates() throws {

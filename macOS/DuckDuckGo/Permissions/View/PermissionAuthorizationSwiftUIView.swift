@@ -129,7 +129,7 @@ enum PermissionAuthorizationType {
         case .geolocation:
             return UserText.permissionSystemLocationDisabled
         case .notification:
-            return UserText.permissionCenterSystemNotificationDisabled
+            return UserText.permissionPopoverSystemNotificationDisabled
         case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
             return ""
         }

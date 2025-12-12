@@ -169,12 +169,11 @@ struct PermissionRowView: View {
             // System disabled warning (if applicable)
             if item.isSystemDisabled {
                 systemDisabledWarning
-                    .padding(.leading, 44)
-                    .padding(.trailing, 12)
+                    .padding(.horizontal, 12)
                     .padding(.bottom, 12)
             }
         }
-        .background(item.isSystemDisabled ? Color(.permissionWarningBackground) : Color.clear)
+        .background(Color.clear)
         .onChange(of: currentDecision) { newValue in
             onDecisionChanged(newValue)
         }
@@ -226,18 +225,28 @@ struct PermissionRowView: View {
     }
 
     private var systemDisabledWarning: some View {
-        (Text(item.permissionType.systemPermissionDisabledText)
-            .font(.system(size: 12))
-            .foregroundColor(Color(designSystemColor: .textSecondary))
-        + Text(item.permissionType.systemSettingsLinkText)
-            .font(.system(size: 12))
-            .foregroundColor(.accentColor))
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .cursor(.pointingHand)
-            .onTapGesture {
-                openSystemSettings()
-            }
+        HStack(alignment: .top, spacing: 8) {
+            Image(nsImage: item.permissionType.icon)
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+
+            (Text(item.permissionType.systemPermissionDisabledText)
+                .font(.system(size: 12))
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+            + Text(item.permissionType.systemSettingsLinkText)
+                .font(.system(size: 12))
+                .foregroundColor(Color(designSystemColor: .textLink)))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color(designSystemColor: .alertYellowBackground))
+        )
+        .cursor(.pointingHand)
+        .onTapGesture {
+            openSystemSettings()
+        }
     }
 
     private func openSystemSettings() {

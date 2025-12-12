@@ -64337,7 +64337,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "System notifications are disabled. First, turn them on in"
+            "value" : "System notifications disabled. Turn them on in"
           }
         }
       }
@@ -64866,6 +64866,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Отказать"
+          }
+        }
+      }
+    },
+    "permission.popover.system.notification.disabled" : {
+      "comment" : "Warning shown in permission popover when system notifications are disabled",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "System notifications are disabled. First, turn them on in"
           }
         }
       }

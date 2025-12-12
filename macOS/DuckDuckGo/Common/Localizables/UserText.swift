@@ -1052,8 +1052,9 @@ struct UserText {
     static let permissionCenterExternalApps = NSLocalizedString("permission.center.external.apps", value: "External apps", comment: "Permission center header for external app permissions")
     static let permissionCenterExternalSchemeFormat = NSLocalizedString("permission.center.external.scheme.format", value: "Open “%@” links", comment: "Format for external scheme row, %@ is scheme name like mailto or sms")
     static let permissionCenterResetTooltip = NSLocalizedString("permission.center.reset.tooltip", value: "Reset permission", comment: "Tooltip for the remove/reset permission button in permission center")
-    static let permissionCenterSystemNotificationDisabled = NSLocalizedString("permission.center.system.notification.disabled", value: "System notifications are disabled. First, turn them on in", comment: "Warning shown when system notifications are disabled but user has allowed the site")
+    static let permissionCenterSystemNotificationDisabled = NSLocalizedString("permission.center.system.notification.disabled", value: "System notifications disabled. Turn them on in", comment: "Warning shown when system notifications are disabled but user has allowed the site")
     static let permissionCenterSystemSettingsNotifications = NSLocalizedString("permission.center.system.settings.notifications", value: "System Settings → Notifications", comment: "Link text to open System Settings Notifications panel")
+    static let permissionPopoverSystemNotificationDisabled = NSLocalizedString("permission.popover.system.notification.disabled", value: "System notifications are disabled. First, turn them on in", comment: "Warning shown in permission popover when system notifications are disabled")
 
     static let privacyDashboardPopupsAlwaysAsk = NSLocalizedString("dashboard.popups.ask", value: "Notify", comment: "Make pop-up windows always request permission for the current domain")
 

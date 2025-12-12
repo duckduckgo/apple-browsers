@@ -81,6 +81,8 @@ extension SharedColorPaletteDefinition {
             return alertGreen
         case .alertYellow:
             return alertYellow
+        case .alertYellowBackground:
+            return DynamicColor(lightColor: .alertYellowBackgroundLight, darkColor: .alertYellowBackgroundDark)
 
         /// Buttons/Primary
         case .buttonsPrimaryDefault:

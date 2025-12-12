@@ -53,11 +53,11 @@ extension NSColor {
     }
 
     /// Background color for permission warning rows (system permission disabled)
-    /// Light mode: #FFF0C2, Dark mode: #C18010 at 16% opacity
+    /// Light mode: #FFF0C2 (yellow10), Dark mode: #4A3C1C (alertYellowBackgroundDark)
     static var permissionWarningBackground: NSColor {
         NSColor(name: nil) { appearance in
             if appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua {
-                return NSColor(red: 0xC1 / 255.0, green: 0x80 / 255.0, blue: 0x10 / 255.0, alpha: 0.16)
+                return NSColor(red: 0x4A / 255.0, green: 0x3C / 255.0, blue: 0x1C / 255.0, alpha: 1.0)
             } else {
                 return NSColor(red: 0xFF / 255.0, green: 0xF0 / 255.0, blue: 0xC2 / 255.0, alpha: 1.0)
             }

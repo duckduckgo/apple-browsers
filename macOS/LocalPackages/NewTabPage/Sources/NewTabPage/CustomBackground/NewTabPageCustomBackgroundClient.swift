@@ -29,7 +29,8 @@ public protocol NewTabPageCustomBackgroundProviding: AnyObject {
     var backgroundPublisher: AnyPublisher<NewTabPageDataModel.Background, Never> { get }
 
     var theme: NewTabPageDataModel.Theme? { get set }
-    var themePublisher: AnyPublisher<NewTabPageDataModel.Theme?, Never> { get }
+    var themeVariant: NewTabPageDataModel.ThemeVariant? { get set }
+    var themeStylePublisher: AnyPublisher<(NewTabPageDataModel.Theme?, NewTabPageDataModel.ThemeVariant?), Never> { get }
 
     var userImagesPublisher: AnyPublisher<[NewTabPageDataModel.UserImage], Never> { get }
 
@@ -62,10 +63,10 @@ public final class NewTabPageCustomBackgroundClient: NewTabPageUserScriptClient 
             }
             .store(in: &cancellables)
 
-        model.themePublisher
-            .sink { [weak self] theme in
+        model.themeStylePublisher
+            .sink { [weak self] theme, themeVariant in
                 Task { @MainActor in
-                    self?.notifyThemeUpdated(theme)
+                    self?.notifyThemeStyle(theme: theme, themeVariant: themeVariant)
                 }
             }
             .store(in: &cancellables)
@@ -157,8 +158,9 @@ public final class NewTabPageCustomBackgroundClient: NewTabPageUserScriptClient 
     }
 
     @MainActor
-    private func notifyThemeUpdated(_ theme: NewTabPageDataModel.Theme?) {
-        pushMessage(named: MessageName.onThemeUpdate.rawValue, params: NewTabPageDataModel.ThemeData(theme: theme))
+    private func notifyThemeStyle(theme: NewTabPageDataModel.Theme?, themeVariant: NewTabPageDataModel.ThemeVariant?) {
+        let payload = NewTabPageDataModel.ThemeData(theme: theme, themeVariant: themeVariant)
+        pushMessage(named: MessageName.onThemeUpdate.rawValue, params: payload)
     }
 
     @MainActor

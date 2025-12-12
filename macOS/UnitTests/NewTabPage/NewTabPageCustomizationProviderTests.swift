@@ -46,8 +46,7 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
                 self.openFilePanelCalls += 1
                 return nil
             },
-            showAddImageFailedAlert: {},
-            themeManager: MockThemeManager()
+            showAddImageFailedAlert: {}
         )
 
         provider = NewTabPageCustomizationProvider(customizationModel: customizationModel, appearancePreferences: appearancePreferences)
@@ -122,9 +121,9 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
             .init(
                 background: .solidColor("color05"),
                 theme: .light,
+                themeVariant: .default,
                 userColor: .init(hex: "#123abc"),
-                userImages: userBackgroundImagesManager.availableImages.map(NewTabPageDataModel.UserImage.init),
-                defaultStyles: .init(lightBackgroundColor: "#FAFAFA", darkBackgroundColor: "#1C1C1C")
+                userImages: userBackgroundImagesManager.availableImages.map(NewTabPageDataModel.UserImage.init)
             )
         )
     }
@@ -165,6 +164,28 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
         XCTAssertEqual(provider.theme, nil)
     }
 
+    @MainActor
+    func testThatThemeVariantGetterReturnsSelectedThemeNameDuringInitialization() {
+        let appearancePreferences = AppearancePreferences(persistor: MockAppearancePreferencesPersistor(), privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger())
+        appearancePreferences.themeName = .violet
+
+        let customizationModel = NewTabPageCustomizationModel(
+            appearancePreferences: appearancePreferences,
+            userBackgroundImagesManager: userBackgroundImagesManager,
+            sendPixel: { _ in },
+            openFilePanel: { nil },
+            showAddImageFailedAlert: {}
+        )
+
+        let provider = NewTabPageCustomizationProvider(customizationModel: customizationModel, appearancePreferences: appearancePreferences)
+        XCTAssertEqual(provider.customizerData.themeVariant, .violet)
+    }
+
+    func testThatThemeVariantGetterReturnsSelectedThemeNameAfterInitialization() {
+        appearancePreferences.themeName = .violet
+        XCTAssertEqual(provider.customizerData.themeVariant, .violet)
+    }
+
     func testThatThemeSetterSetsAppearancePreferencesTheme() {
         provider.theme = .dark
         XCTAssertEqual(appearancePreferences.themeAppearance, .dark)
@@ -176,7 +197,9 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
 
     func testThatThemePublisherPublishesEvents() throws {
         var events: [NewTabPageDataModel.Theme?] = []
-        let cancellable = provider.themePublisher.sink { events.append($0) }
+        let cancellable = provider.themeStylePublisher.sink { appearance, themeName in
+            events.append(appearance)
+        }
 
         appearancePreferences.themeAppearance = .light
         appearancePreferences.themeAppearance = .dark

@@ -435,7 +435,7 @@ struct PermissionAuthorizationSwiftUIView: View {
                     Circle()
                         .fill(Color(designSystemColor: .textSuccess))
                         .frame(width: stepIndicatorSize, height: stepIndicatorSize)
-                    
+
                     Image(nsImage: DesignSystemImages.Glyphs.Size12.check)
                         .foregroundColor(.white)
                 }

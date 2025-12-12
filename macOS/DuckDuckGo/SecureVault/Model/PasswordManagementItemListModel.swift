@@ -495,6 +495,13 @@ final class PasswordManagementItemListModel: ObservableObject {
         case .dateModified:
             displayedSections = PasswordManagementListSection.sections(with: itemsByCategory, by: \.lastUpdated, order: sortDescriptor.order)
         }
+        
+        // Clear selection if no longer present
+        if let currentSelected = selected, !displayedSections.contains(where: { section in
+            section.items.contains(currentSelected)
+        }) {
+            selected(item: nil, notify: true)
+        }
     }
 
     func selectFirst() {

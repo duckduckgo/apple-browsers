@@ -28,7 +28,19 @@ class AppRatingPromptTests: XCTestCase {
         super.setUp()
         stub = AppRatingPromptStorageStub()
     }
-    
+
+    func testWhenFeatureFlagIsDisabledNowPromptShown() {
+        let stub = AppRatingPromptStorageStub()
+        let featureFlagger = MockFeatureFlagger()
+        let appRatingPrompt = AppRatingPrompt(storage: stub, featureFlagger: featureFlagger)
+
+        appRatingPrompt.registerUsage(onDate: Date().inDays(fromNow: 0))
+        appRatingPrompt.registerUsage(onDate: Date().inDays(fromNow: 1))
+        appRatingPrompt.registerUsage(onDate: Date().inDays(fromNow: 2))
+        appRatingPrompt.registerUsage(onDate: Date().inDays(fromNow: 6))
+        XCTAssertFalse(appRatingPrompt.shouldPrompt())
+    }
+
     func testPromptScenarios() {
 
         struct Scenario {
@@ -84,7 +96,10 @@ class AppRatingPromptTests: XCTestCase {
             stub.lastShown = scenario.lastShown
             stub.uniqueAccessDays = scenario.currentUsageDay
 
-            let appRatingPrompt = AppRatingPrompt(storage: stub)
+            let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [
+                .appRatingPrompt
+            ])
+            let appRatingPrompt = AppRatingPrompt(storage: stub, featureFlagger: featureFlagger)
             XCTAssertEqual(scenario.shouldPrompt, appRatingPrompt.shouldPrompt(), "\(scenario)")
 
         }
@@ -93,7 +108,8 @@ class AppRatingPromptTests: XCTestCase {
 
     func testWhenAppPromptIsShownThenUsageDaysIsReset() {
         let stub = AppRatingPromptStorageStub()
-        let appRatingPrompt = AppRatingPrompt(storage: stub)
+        let featureFlagger = MockFeatureFlagger()
+        let appRatingPrompt = AppRatingPrompt(storage: stub, featureFlagger: featureFlagger)
 
         appRatingPrompt.registerUsage(onDate: Date().inDays(fromNow: 0))
         appRatingPrompt.registerUsage(onDate: Date().inDays(fromNow: 1))
@@ -107,7 +123,8 @@ class AppRatingPromptTests: XCTestCase {
     func testWhenRegisterUsageOnUniqueDaysThenIncrementsUsageCounter() {
 
         let stub = AppRatingPromptStorageStub()
-        let appRatingPrompt = AppRatingPrompt(storage: stub)
+        let featureFlagger = MockFeatureFlagger()
+        let appRatingPrompt = AppRatingPrompt(storage: stub, featureFlagger: featureFlagger)
 
         appRatingPrompt.registerUsage(onDate: Date().inDays(fromNow: 0))
         appRatingPrompt.registerUsage(onDate: Date().inDays(fromNow: 1))
@@ -118,7 +135,9 @@ class AppRatingPromptTests: XCTestCase {
     }
 
     func testWhenUserAccessFirstDayThenShouldNotPrompt() {
-        XCTAssertFalse(AppRatingPrompt(storage: AppRatingPromptStorageStub()).shouldPrompt(onDate: Date().inDays(fromNow: 0)))
+        let featureFlagger = MockFeatureFlagger()
+        let appRatingPrompt = AppRatingPrompt(storage: AppRatingPromptStorageStub(), featureFlagger: featureFlagger)
+        XCTAssertFalse(appRatingPrompt.shouldPrompt(onDate: Date().inDays(fromNow: 0)))
     }
 }
 

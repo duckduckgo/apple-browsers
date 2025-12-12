@@ -109,8 +109,14 @@ final class ActiveRemoteMessageModel: ObservableObject {
         $remoteMessage
             .sink { [weak self] newMessage in
                 if let newMessage = newMessage {
-                    self?.newTabPageRemoteMessage = newMessage.surfaces.contains(.newTabPage) ? newMessage : nil
-                    self?.tabBarRemoteMessage = newMessage.isForTabBar ? newMessage : nil
+                    if newMessage.isLegacyTabBarSurvey {
+                        // For the legacy permanent survey, always show it on the tab bar.
+                        self?.newTabPageRemoteMessage = nil
+                        self?.tabBarRemoteMessage = newMessage
+                    } else {
+                        self?.newTabPageRemoteMessage = newMessage.surfaces.contains(.newTabPage) ? newMessage : nil
+                        self?.tabBarRemoteMessage = newMessage.surfaces.contains(.tabBar) ? newMessage : nil
+                    }
                 } else {
                     self?.newTabPageRemoteMessage = nil
                     self?.tabBarRemoteMessage = nil
@@ -213,11 +219,7 @@ extension RemoteMessageModelType {
 
 private extension RemoteMessageModel {
 
-    var isForTabBar: Bool {
-        if surfaces.contains(.tabBar) {
-            return true
-        }
-        // Temporary fallback for legacy configs targeting the tab bar by ID only.
+    var isLegacyTabBarSurvey: Bool {
         return id == TabBarRemoteMessage.tabBarPermanentSurveyRemoteMessageId
     }
 

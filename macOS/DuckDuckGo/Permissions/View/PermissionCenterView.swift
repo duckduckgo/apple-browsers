@@ -155,11 +155,11 @@ struct ReloadBannerView: View {
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .padding(.horizontal, 12)
                     .padding(.vertical, 4)
-                    .background(Color(NSColor.controlBackgroundColor))
+                    .background(Color(NSColor.unemphasizedSelectedContentBackgroundColor))
                     .cornerRadius(4)
                     .overlay(
                         RoundedRectangle(cornerRadius: 4)
-                            .stroke(Color(NSColor.separatorColor), lineWidth: 0.5)
+                            .stroke(Color(designSystemColor: .lines), lineWidth: 0.5)
                     )
             }
             .buttonStyle(PlainButtonStyle())
@@ -171,7 +171,7 @@ struct ReloadBannerView: View {
                 .fill(Color(designSystemColor: .permissionWarningBackground))
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .strokeBorder(Color.black.opacity(0.1), lineWidth: 1)
+                        .strokeBorder(Color(designSystemColor: .lines), lineWidth: 1)
                 )
         )
     }
@@ -411,14 +411,14 @@ struct PopupPermissionRowView: View {
             .padding(.trailing, 12)
             .padding(.vertical, 12)
 
-            // Blocked popups section (if any) - hide when pending removal
-            if !item.blockedPopups.isEmpty && !item.isPendingRemoval {
+            // Blocked popups section (if any)
+            if !item.blockedPopups.isEmpty {
                 VStack(alignment: .leading, spacing: 4) {
                     // Header: "Blocked X pop-ups"
                     if let headerText = item.blockedPopupsHeaderText {
                         Text(headerText)
                             .font(.system(size: 11))
-                            .foregroundColor(Color(designSystemColor: .textSecondary))
+                            .foregroundColor(item.isPendingRemoval ? Color(designSystemColor: .textSecondary).opacity(0.5) : Color(designSystemColor: .textSecondary))
                             .padding(.bottom, 4)
                     }
 
@@ -428,12 +428,13 @@ struct PopupPermissionRowView: View {
                         Button(action: { onOpenPopup(popup) }) {
                             Text(popupLinkText(for: popup))
                                 .font(.system(size: 12))
-                                .foregroundColor(.accentColor)
+                                .foregroundColor(item.isPendingRemoval ? Color.accentColor.opacity(0.5) : .accentColor)
                                 .lineLimit(1)
                                 .truncationMode(.middle)
                         }
                         .buttonStyle(PlainButtonStyle())
-                        .cursor(.pointingHand)
+                        .cursor(item.isPendingRemoval ? .arrow : .pointingHand)
+                        .disabled(item.isPendingRemoval)
                     }
                 }
                 .padding(.leading, 44)

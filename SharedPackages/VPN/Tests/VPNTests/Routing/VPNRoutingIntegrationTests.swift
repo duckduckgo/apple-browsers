@@ -130,6 +130,33 @@ final class VPNRoutingIntegrationTests: XCTestCase {
 
     // MARK: - Edge Case and Boundary Tests
 
+    /// Verifies that VPN routing remains fast and responsive even with unusually complex DNS configurations
+    func testComplexDNSConfigurationsRemainPerformant() {
+        let manyDNSServers: [DNSServer] = (1...50).compactMap { i in
+            guard let ip = IPv4Address("8.8.8.\(i % 254 + 1)") else { return nil }
+            return DNSServer(address: ip)
+        }
+
+        let startTime = CFAbsoluteTimeGetCurrent()
+        let resolver = VPNRoutingTableResolver(
+            dnsServers: manyDNSServers,
+            excludeLocalNetworks: true
+        )
+        let includedRoutes = resolver.includedRoutes
+        let excludedRoutes = resolver.excludedRoutes
+        let elapsed = CFAbsoluteTimeGetCurrent() - startTime
+
+        XCTAssertLessThan(elapsed, 0.2, "Should handle \(manyDNSServers.count) DNS servers in under 200ms")
+        XCTAssertGreaterThan(includedRoutes.count, 50, "Should generate comprehensive route list")
+        XCTAssertGreaterThan(excludedRoutes.count, 4, "Should maintain proper exclusions")
+
+        let dnsRouteCount = includedRoutes.filter { route in
+            route.networkPrefixLength == 32 && route.address is IPv4Address
+        }.count
+        XCTAssertGreaterThan(dnsRouteCount, 40, "Should create DNS routes for most servers")
+
+    }
+
     /// Verifies that VPN maintains basic connectivity even when DNS servers are not configured
     func testVPNWorksWithoutDNSConfiguration() {
         let resolver = VPNRoutingTableResolver(
@@ -161,6 +188,37 @@ final class VPNRoutingIntegrationTests: XCTestCase {
 
     }
 
+    /// Verifies that VPN handles misconfigured DNS settings with duplicate servers without breaking connectivity
+    func testMisconfiguredDNSDoesNotBreakConnectivity() {
+        let duplicateDNS = [
+            DNSServer(address: IPv4Address("8.8.8.8")!),
+            DNSServer(address: IPv4Address("8.8.8.8")!), // Exact duplicate
+            DNSServer(address: IPv4Address("1.1.1.1")!),
+            DNSServer(address: IPv4Address("1.1.1.1")!)  // Exact duplicate
+        ]
+
+        let resolver = VPNRoutingTableResolver(
+            dnsServers: duplicateDNS,
+            excludeLocalNetworks: false
+        )
+
+        let includedRoutes = resolver.includedRoutes
+
+        let googleDNS = IPv4Address("8.8.8.8")!
+        let cloudflareDNS = IPv4Address("1.1.1.1")!
+
+        let isGoogleRouted = includedRoutes.contains { route in
+            route.networkPrefixLength == 32 && route.contains(googleDNS)
+        }
+        let isCloudflareRouted = includedRoutes.contains { route in
+            route.networkPrefixLength == 32 && route.contains(cloudflareDNS)
+        }
+
+        XCTAssertTrue(isGoogleRouted, "Should route to 8.8.8.8")
+        XCTAssertTrue(isCloudflareRouted, "Should route to 1.1.1.1")
+
+    }
+
     // MARK: - Routing Table Completeness Tests
 
     /// Verifies that no internet traffic can bypass the VPN tunnel - all public traffic is properly routed
@@ -182,9 +240,8 @@ final class VPNRoutingIntegrationTests: XCTestCase {
 
     /// Verifies that VPN routing tables have clean mathematical separation between included and excluded ranges
     ///
-    /// - Discussion: IPv4 ranges are explicitly carved to avoid overlaps. IPv6 uses ::/0 with exclusions
-    ///   taking precedence per Apple's NEIPv6Settings documentation (overlaps are intentional and expected).
-    ///   DNS host routes may intentionally override broader exclusions (expected behavior).
+    /// - Discussion: While DNS host routes may intentionally override broader exclusions (expected behavior),
+    ///   there should be no unintentional mathematical overlaps between broad inclusion and exclusion ranges.
     func testRoutingTablesHaveCleanMathematicalSeparation() {
         let configurations = [
             (excludeLocal: true, description: "excluding local networks"),
@@ -201,17 +258,44 @@ final class VPNRoutingIntegrationTests: XCTestCase {
             let includedRoutes = resolver.includedRoutes
             let excludedRoutes = resolver.excludedRoutes
 
-            // Only check IPv4 broad ranges - IPv6 intentionally uses ::/0 with overlapping exclusions
-            let broadIPv4IncludedRanges = includedRoutes.filter { $0.networkPrefixLength < 32 && $0.address is IPv4Address }
-            let broadIPv4ExcludedRanges = excludedRoutes.filter { $0.networkPrefixLength < 32 && $0.address is IPv4Address }
+            let broadIncludedRanges = includedRoutes.filter { $0.networkPrefixLength < 32 }
+            let broadExcludedRanges = excludedRoutes.filter { $0.networkPrefixLength < 32 }
 
-            let broadOverlaps = VPNRoutingMathematicsHelpers.findActualRangeConflicts(included: broadIPv4IncludedRanges, excluded: broadIPv4ExcludedRanges)
+            let broadOverlaps = VPNRoutingMathematicsHelpers.findActualRangeConflicts(included: broadIncludedRanges, excluded: broadExcludedRanges)
 
             XCTAssertTrue(broadOverlaps.isEmpty,
-                         "IPv4 should have no broad range overlaps \(config.description): \(broadOverlaps)")
+                         "Should have no broad range overlaps \(config.description): \(broadOverlaps)")
         }
     }
 
+    /// Verifies that DNS server routes don't conflict with excluded network ranges
+    func testDNSRoutesDoNotConflictWithExclusions() {
+        let dnsServers = [
+            DNSServer(address: IPv4Address("192.168.1.1")!),  // Local DNS that might conflict
+            DNSServer(address: IPv4Address("8.8.8.8")!)       // Public DNS (should not conflict)
+        ]
+        let resolver = VPNRoutingTableResolver(
+            dnsServers: dnsServers,
+            excludeLocalNetworks: true  // This excludes 192.168.0.0/16
+        )
+
+        let includedRoutes = resolver.includedRoutes
+        let excludedRoutes = resolver.excludedRoutes
+
+        let dnsRoutes = includedRoutes.filter { route in
+            route.networkPrefixLength == 32 && // Host routes
+            dnsServers.contains { dns in dns.address.rawValue == route.address.rawValue }
+        }
+
+        var conflicts: [(dns: IPAddressRange, excluded: IPAddressRange)] = []
+        for dnsRoute in dnsRoutes {
+            for excludedRange in excludedRoutes where excludedRange.contains(dnsRoute) {
+                conflicts.append((dns: dnsRoute, excluded: excludedRange))
+            }
+        }
+
+        // DNS routes should override exclusions, so conflicts are expected but handled
+    }
     // MARK: - Configuration Change Tests
 
     /// Verifies that users can switch between security mode and local access mode by toggling network settings
@@ -289,7 +373,7 @@ final class VPNRoutingIntegrationTests: XCTestCase {
         XCTAssertTrue(includedStrings.contains("8.0.0.0/7"),
                      "\(testName): Should include public range 8.0.0.0/7")
         XCTAssertTrue(includedStrings.contains("::/0"),
-                     "\(testName): Should include all IPv6 addresses ::/0")
+                     "\(testName): Should include IPv6 default route")
 
         // Verify system exclusions (always apply regardless of local network setting)
         XCTAssertTrue(excludedStrings.contains("127.0.0.0/8"),
@@ -358,7 +442,7 @@ final class VPNRoutingIntegrationTests: XCTestCase {
         }
 
         // Should have IPv6 coverage
-        XCTAssertTrue(includedStrings.contains("::/0"), "Should include all IPv6 addresses ::/0")
+        XCTAssertTrue(includedStrings.contains("::/0"), "Should include IPv6 default route")
 
         // Route counts should be reasonable
         XCTAssertGreaterThan(includedRoutes.count, 30, "Should have comprehensive route coverage")

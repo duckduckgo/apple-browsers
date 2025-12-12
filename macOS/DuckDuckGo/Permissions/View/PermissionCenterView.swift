@@ -109,7 +109,7 @@ struct PermissionCenterView: View {
 
             // Reload banner
             if viewModel.showReloadBanner {
-                ReloadBannerView(onReload: viewModel.reload)
+                ReloadBannerView(changedPermissionsCount: viewModel.changedPermissionsCount, onReload: viewModel.reload)
                     .padding(.horizontal, 16)
                     .padding(.top, viewModel.permissionItems.isEmpty ? 16 : 0)
                     .padding(.bottom, 16)
@@ -123,20 +123,28 @@ struct PermissionCenterView: View {
 // MARK: - ReloadBannerView
 
 struct ReloadBannerView: View {
+    let changedPermissionsCount: Int
     let onReload: () -> Void
 
+    private var message: String {
+        changedPermissionsCount == 1
+            ? UserText.permissionCenterReloadMessageSingular
+            : UserText.permissionCenterReloadMessagePlural
+    }
+
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 0) {
             // Reload icon
             Image(systemName: "arrow.clockwise")
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(Color(designSystemColor: .textSecondary))
+                .padding(.leading, 6)
 
             // Message
-            Text(UserText.permissionCenterReloadMessage)
+            Text(message)
                 .font(.system(size: 12))
                 .foregroundColor(Color(designSystemColor: .textSecondary))
-                .padding(.trailing, -12)
+                .padding(.leading, 12)
 
             Spacer(minLength: 2)
 

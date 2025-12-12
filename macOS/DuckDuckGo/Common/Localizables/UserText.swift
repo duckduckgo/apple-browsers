@@ -1046,7 +1046,8 @@ struct UserText {
     static let permissionCenterExternalApps = NSLocalizedString("permission.center.external.apps", value: "External apps", comment: "Permission center header for external app permissions")
     static let permissionCenterExternalSchemeFormat = NSLocalizedString("permission.center.external.scheme.format", value: "Open “%@” links", comment: "Format for external scheme row, %@ is scheme name like mailto or sms")
     static let permissionCenterResetTooltip = NSLocalizedString("permission.center.reset.tooltip", value: "Remove permission", comment: "Tooltip for the remove permission button in permission center")
-    static let permissionCenterReloadMessage = NSLocalizedString("permission.center.reload.message", value: "Reload to apply the new permission", comment: "Message shown in permission center when a permission has been changed and reload is needed")
+    static let permissionCenterReloadMessageSingular = NSLocalizedString("permission.center.reload.message.singular", value: "Reload to ask permission again", comment: "Message shown in permission center when one permission has been changed and reload is needed")
+    static let permissionCenterReloadMessagePlural = NSLocalizedString("permission.center.reload.message.plural", value: "Reload to ask permissions again", comment: "Message shown in permission center when multiple permissions have been changed and reload is needed")
     static let permissionCenterReloadButton = NSLocalizedString("permission.center.reload.button", value: "Reload", comment: "Button to reload the page to apply permission changes")
 
     static let privacyDashboardPopupsAlwaysAsk = NSLocalizedString("dashboard.popups.ask", value: "Notify", comment: "Make pop-up windows always request permission for the current domain")

@@ -112,6 +112,10 @@ enum SubscriptionPixel: PixelKitEvent {
     case subscriptionWinBackOfferNewTabPageCTAClicked
     case subscriptionWinBackOfferNewTabPageDismissed
 
+    // New Tab Page Next Steps Card
+    case subscriptionNewTabPageNextStepsCardClicked
+    case subscriptionNewTabPageNextStepsCardDismissed
+
     var name: String {
         switch self {
         case .subscriptionActive: return "m_mac_\(appDistribution)_privacy-pro_app_subscription_active"
@@ -197,6 +201,10 @@ enum SubscriptionPixel: PixelKitEvent {
         case .subscriptionWinBackOfferNewTabPageCTAClicked: return "m_mac_\(appDistribution)_privacy-pro_winback_new_tab_page_cta_clicked"
 
         case .subscriptionWinBackOfferNewTabPageDismissed: return "m_mac_\(appDistribution)_privacy-pro_winback_new_tab_page_dismissed"
+
+            // New Tab Page Next Steps Card
+        case .subscriptionNewTabPageNextStepsCardClicked: return "m_mac_\(appDistribution)_privacy-pro_new_tab_page_next_steps_card_clicked"
+        case .subscriptionNewTabPageNextStepsCardDismissed: return "m_mac_\(appDistribution)_privacy-pro_new_tab_page_next_steps_card_dismissed"
         }
     }
 
@@ -298,6 +306,8 @@ enum SubscriptionPixel: PixelKitEvent {
                 .subscriptionWinBackOfferNewTabPageShown,
                 .subscriptionWinBackOfferNewTabPageCTAClicked,
                 .subscriptionWinBackOfferNewTabPageDismissed,
+                .subscriptionNewTabPageNextStepsCardClicked,
+                .subscriptionNewTabPageNextStepsCardDismissed,
                 .subscriptionTierOptionsRequested,
                 .subscriptionTierOptionsSuccess,
                 .subscriptionTierOptionsFailure,

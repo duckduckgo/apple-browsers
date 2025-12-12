@@ -1,0 +1,119 @@
+{
+    "m_mac_wide_data_import": {
+        "description": "Wide pixel sent at the end of a data import flow",
+        "owners": ["hanyutang-sandra"],
+        "triggers": ["other"],
+        "suffixes": ["daily"],
+        "parameters": [
+            "appVersion",
+            "wideEventAppName",
+            "wideEventAppVersion",
+            "wideEventPlatform",
+            "wideEventType",
+            "wideEventSampleRate",
+            "wideEventFeatureStatus",
+            "wideEventFeatureStatusReason",
+            "wideEventErrorDomain",
+            "wideEventErrorCode",
+            "wideEventErrorDescription",
+            "wideEventUnderlyingErrorDomain",
+            "wideEventUnderlyingErrorCode",
+            {
+                "key": "feature.name",
+                "type": "string",
+                "description": "Feature identifier for this wide pixel",
+                "enum": ["data-import"]
+            },
+            {
+                "key": "feature.data.ext.source",
+                "type": "string",
+                "description": "Import source",
+                "enum": [
+                    "chrome",
+                    "safari",
+                    "brave",
+                    "chromium",
+                    "coccoc",
+                    "edge",
+                    "firefox",
+                    "opera",
+                    "operaGX",
+                    "safariTechnologyPreview",
+                    "tor",
+                    "vivaldi",
+                    "yandex",
+                    "fileImport",
+                    "csv",
+                    "bookmarksHTML",
+                    "onePassword8",
+                    "onePassword7",
+                    "bitwarden",
+                    "lastPass"
+                ]
+            },
+            // Per-type status
+            {
+                "keyPattern": "feature\\.data\\.ext\\.(bookmarks|passwords|creditCards)_status",
+                "type": "string",
+                "description": "Final status of each import type",
+                "enum": ["SUCCESS", "FAILURE", "CANCELLED", "UNKNOWN"]
+            },
+            // Per-type status reasons
+            {
+                "keyPattern": "feature\\.data\\.ext\\.(bookmarks|passwords|creditCards)_status_reason",
+                "type": "string",
+                "description": "Optional reason accompanying the per-type status",
+                "enum": ["partial_data", "timeout"]
+            },
+            // Overall latency
+            {
+                "key": "feature.data.ext.latency_ms",
+                "type": "integer",
+                "description": "Overall data import latency (in ms)"
+            },
+            // Per-type importer latencies
+            {
+                "keyPattern": "feature\\.data\\.ext\\.(bookmarks|passwords|creditCards)_importer_latency_ms",
+                "type": "integer",
+                "description": "Latency for each importer types (in ms)"
+            },
+            // Per-type error domains
+            {
+                "keyPattern": "feature\\.data\\.ext\\.(bookmarks|passwords|creditCards)_error\\.domain",
+                "type": "string",
+                "description": "Error domain for each import type failures"
+            },
+            // Per-type error codes
+            {
+                "keyPattern": "feature\\.data\\.ext\\.(bookmarks|passwords|creditCards)_error\\.code",
+                "type": "integer",
+                "description": "Error code for each import type failures"
+            },
+            // Per-type error descriptions
+            {
+                "keyPattern": "feature\\.data\\.ext\\.(bookmarks|passwords|creditCards)_error\\.description",
+                "type": "string",
+                "description": "Human-readable error description for each import type failures",
+                "examples": ["noData", "decryptionError", "dataCorrupted", "keychainError", "other"]
+            },
+            // Per-type underlying error domains
+            {
+                "keyPattern": "feature\\.data\\.ext\\.(bookmarks|passwords|creditCards)_error\\.underlying_domain[0-9]?",
+                "type": "string",
+                "description": "Underlying error domain for each import type failures"
+            },
+            // Per-type underlying error codes
+            {
+                "keyPattern": "feature\\.data\\.ext\\.(bookmarks|passwords|creditCards)_error\\.underlying_code[0-9]?",
+                "type": "integer",
+                "description": "Underlying error code for each import type failures"
+            },
+            {
+                "key": "context.name",
+                "type": "string",
+                "description": "Context name for the flow",
+                "enum": ["funnel_default_macos"]
+            }
+        ]
+    }
+}

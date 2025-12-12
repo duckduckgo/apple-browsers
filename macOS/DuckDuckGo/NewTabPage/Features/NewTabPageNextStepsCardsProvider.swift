@@ -104,6 +104,8 @@ extension HomePage.Models.FeatureType {
             self = .duckplayer
         case .addAppToDockMac:
             self = .dock
+        case .subscription:
+            self = .subscription
         }
     }
 }
@@ -121,6 +123,8 @@ extension NewTabPageDataModel.CardID {
             self = .addAppToDockMac
         case .importBookmarksAndPasswords:
             self = .bringStuff
+        case .subscription:
+            self = .subscription
         }
     }
 }

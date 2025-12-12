@@ -342,6 +342,8 @@ final class AddressBarViewController: NSViewController {
         if let searchModeToggleControl = addressBarButtonsViewController?.searchModeToggleControl {
             addressBarTextField.customToggleControl = searchModeToggleControl
         }
+
+        addressBarTextField.aiChatTogglePopoverCoordinator = addressBarButtonsViewController?.aiChatTogglePopoverCoordinator
     }
 
     override func viewWillDisappear() {
@@ -834,7 +836,8 @@ final class AddressBarViewController: NSViewController {
         let isAddressBarFocused = view.window?.firstResponder == addressBarTextField.currentEditor()
         let adjustedMinX: CGFloat = (!self.isSelected || self.mode.isEditing) ? minX : Constants.defaultActiveTextFieldMinX
 
-        let isToggleVisible = isAddressBarFocused && featureFlagger.isFeatureOn(.aiChatOmnibarToggle)
+        let isOmnibarToggleFeatureEnabled = isAddressBarFocused && featureFlagger.isFeatureOn(.aiChatOmnibarToggle) && aiChatSettings.isAIFeaturesEnabled
+        let isToggleVisible = isOmnibarToggleFeatureEnabled && aiChatSettings.showSearchAndDuckAIToggle
         let textMargin: CGFloat = 20
 
         if theme.addressBarStyleProvider.shouldShowNewSearchIcon {
@@ -1029,6 +1032,9 @@ final class AddressBarViewController: NSViewController {
         // If we have an AddressBarMenuButton, forward the event
         guard !(viewWithinAddressBar is AddressBarMenuButton) else { return event }
 
+        // If we have a CustomToggleControl, forward the event to let it handle its context menu
+        guard !(viewWithinAddressBar is CustomToggleControl) else { return event }
+
         // If the farthest view of the point location is a NSButton or LottieAnimationView don't show contextual menu
         guard viewWithinAddressBar.shouldShowArrowCursor == false else { return nil }
 
@@ -1091,6 +1097,10 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
 
     func addressBarButtonsViewControllerHideAskAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
         aiChatSettings.showShortcutInAddressBarWhenTyping = false
+    }
+
+    func addressBarButtonsViewControllerHideSearchModeToggleClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
+        aiChatSettings.showSearchAndDuckAIToggle = false
     }
 
     func addressBarButtonsViewControllerCancelButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {

@@ -166,18 +166,18 @@ struct Terminating: TerminatingHandling {
                                      pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes,
                                      error: errorToReport,
                                      withAdditionalParameters: additionalParams)
+
         switch mode {
-        case .immediately(let message):
+        case .immediately(let debugMessage):
             Thread.sleep(forTimeInterval: 1)
-            fatalError(message)
-        case .afterAlert(let reason):
-            if !Bundle.main.supportsScenes {
-                let window = UIWindow(frame: UIScreen.main.bounds)
-                window.backgroundColor = .white
-                window.makeKeyAndVisible()
-                UIApplication.shared.setWindow(window)
-                alertAndTerminate(window: window)
-            }
+            fatalError(debugMessage)
+        case .afterAlert:
+            /// We do nothing here because the app jumps into the `Terminating` state
+            /// directly from `Launching` (something threw there). At this point
+            /// there is no window available. We need to wait for `scene(_:willConnectTo:)`
+            /// to be called - that's where `alertAndTerminate(window:)` will actually run.
+            /// See: `func respond(to event: AppEvent, in terminating: TerminatingHandling)` in `AppStateMachine`.
+            break
         }
     }
 

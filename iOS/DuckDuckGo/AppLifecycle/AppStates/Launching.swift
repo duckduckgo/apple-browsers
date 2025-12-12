@@ -61,7 +61,7 @@ struct Launching: LaunchingHandling {
         // Initialize configuration with the key-value store
         configuration = AppConfiguration(appKeyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
 
-        var isBookmarksDBFilePresent: Bool = true
+        var isBookmarksDBFilePresent: Bool?
         if BoolFileMarker(name: .hasSuccessfullySetupBookmarksDatabaseBefore)?.isPresent ?? false {
             isBookmarksDBFilePresent = FileManager.default.fileExists(atPath: BookmarksDatabase.defaultDBFileURL.path)
         }
@@ -191,7 +191,8 @@ struct Launching: LaunchingHandling {
                                               winBackOfferService: winBackOfferService,
                                               modalPromptCoordinationService: modalPromptCoordinationService,
                                               mobileCustomization: mobileCustomization,
-                                              productSurfaceTelemetry: productSurfaceTelemetry)
+                                              productSurfaceTelemetry: productSurfaceTelemetry,
+                                              sharedSecureVault: configuration.persistentStoresConfiguration.sharedSecureVault)
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components

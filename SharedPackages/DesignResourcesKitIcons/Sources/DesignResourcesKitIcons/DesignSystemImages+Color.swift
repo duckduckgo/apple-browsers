@@ -213,6 +213,10 @@ public extension DesignSystemImages {
             public static var fire: DesignSystemImage { .init(resource: .fireColor72) }
         }
 
+        public enum Size96 {
+            public static var announcement: DesignSystemImage { .init(resource: .announcement96) }
+        }
+
         public enum Size128 {
             public static var success: DesignSystemImage { .init(resource: .success128) }
             public static var fileDrag: DesignSystemImage { .init(resource: .fileDrag128) }

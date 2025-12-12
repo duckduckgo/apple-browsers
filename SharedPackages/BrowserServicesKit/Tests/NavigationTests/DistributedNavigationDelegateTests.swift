@@ -412,9 +412,8 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
         let uiDelegate = WKUIDelegateMock()
         var newWebView: WKWebView!
         let eDidRequestNewWindow = expectation(description: "eDidRequestNewWindow")
-        uiDelegate.createWebViewWithConfig = { [unowned navigationDelegateProxy] config, _, _ in
+        uiDelegate.createWebViewWithConfig = { config, _, _ in
             newWebView = WKWebView(frame: .zero, configuration: config)
-            newWebView.navigationDelegate = navigationDelegateProxy
             DispatchQueue.main.async {
                 eDidRequestNewWindow.fulfill()
             }
@@ -430,12 +429,8 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
         try server.start(8084)
 
         let eDidFinish = expectation(description: "onDidFinish")
-        var counter = 0
         responder(at: 0).onDidFinish = { [weak self] _ in
-            counter += 1
-            if counter == 1 {
-                self!._webView!.evaluateJavaScript("window.open('')")
-            }
+            self!._webView!.evaluateJavaScript("window.open('')")
             eDidFinish.fulfill()
         }
         var newFrameIdentity: FrameHandle!

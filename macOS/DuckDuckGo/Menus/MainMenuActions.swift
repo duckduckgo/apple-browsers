@@ -321,14 +321,9 @@ extension AppDelegate {
             },
             onResize: { width, height in
                 guard let window = window else { return }
-                let currentFrame = window.frame
-                let newFrame = NSRect(
-                    x: currentFrame.origin.x,
-                    y: currentFrame.origin.y + (currentFrame.height - height), // Adjust Y to keep top position
-                    width: width,
-                    height: height
-                )
-                window.setFrame(newFrame, display: true, animate: true)
+                // For sheets, use origin: .zero - macOS handles sheet positioning automatically
+                let newFrame = NSRect(origin: .zero, size: NSSize(width: width, height: height))
+                window.setFrame(newFrame, display: true, animate: false)
             }
         )
 
@@ -374,14 +369,9 @@ extension AppDelegate {
             },
             onResize: { width, height in
                 guard let window = window else { return }
-                let currentFrame = window.frame
-                let newFrame = NSRect(
-                    x: currentFrame.origin.x,
-                    y: currentFrame.origin.y + (currentFrame.height - height), // Adjust Y to keep top position
-                    width: width,
-                    height: height
-                )
-                window.setFrame(newFrame, display: true, animate: true)
+                // For sheets, use origin: .zero - macOS handles sheet positioning automatically
+                let newFrame = NSRect(origin: .zero, size: NSSize(width: width, height: height))
+                window.setFrame(newFrame, display: true, animate: false)
             }
         )
 
@@ -576,7 +566,7 @@ extension AppDelegate {
         appearancePreferences.isContinueSetUpCardsViewOutdated = false
         appearancePreferences.continueSetUpCardsClosed = false
         appearancePreferences.isContinueSetUpVisible = true
-        HomePage.Models.ContinueSetUpModel.Settings().clear()
+        homePageSetUpDependencies.clearAll()
         NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: NSApp)
     }
 
@@ -598,29 +588,6 @@ extension AppDelegate {
     @objc func debugClearBlockedCookiesPopoverSeenFlag(_ sender: Any?) {
         Application.appDelegate.autoconsentStatsPopoverCoordinator.clearBlockedCookiesPopoverSeenFlag()
         print("DEBUG: Cleared blockedCookiesPopoverSeen flag")
-    }
-
-    @objc func showContentScopeExperiments(_ sender: Any?) {
-        let experiments = contentScopeExperimentsManager.allActiveContentScopeExperiments
-
-        let alert = NSAlert()
-        alert.messageText = "Content Scope Experiments"
-
-        var infoText = "Active Experiments:\n"
-        if experiments.isEmpty {
-            infoText += "No active experiments\n"
-        } else {
-            for (key, data) in experiments {
-                infoText += "\nExperiment: \(key)\n"
-                infoText += "Parent ID: \(data.parentID)\n"
-                infoText += "Cohort ID: \(data.cohortID)\n"
-                infoText += "Enrollment Date: \(data.enrollmentDate)\n"
-            }
-        }
-
-        alert.informativeText = infoText
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
     }
 
     @objc func resetDefaultGrammarChecks(_ sender: Any?) {
@@ -699,10 +666,7 @@ extension AppDelegate {
 
     @objc func resetMakeDuckDuckGoYoursUserSettings(_ sender: Any?) {
         UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowAllFeatures.rawValue)
-        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowMakeDefault.rawValue)
-        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowImport.rawValue)
-        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowDuckPlayer.rawValue)
-        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowEmailProtection.rawValue)
+        homePageSetUpDependencies.clearAll()
     }
 
     @objc func resetOnboarding(_ sender: Any?) {
@@ -1320,7 +1284,7 @@ extension MainViewController {
         NSApp.delegateTyped.appearancePreferences.isContinueSetUpCardsViewOutdated = false
         NSApp.delegateTyped.appearancePreferences.continueSetUpCardsClosed = false
         NSApp.delegateTyped.appearancePreferences.isContinueSetUpVisible = true
-        HomePage.Models.ContinueSetUpModel.Settings().clear()
+        NSApp.delegateTyped.homePageSetUpDependencies.clearAll()
         NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: NSApp)
     }
 

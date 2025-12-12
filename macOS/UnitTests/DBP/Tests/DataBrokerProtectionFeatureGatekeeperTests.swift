@@ -171,7 +171,6 @@ private class MockFeatureAvailability: SubscriptionFeatureAvailability {
     var isTierMessagingEnabled = false
     var isProTierPurchaseEnabled = false
     var isSupportsAlternateStripePaymentFlowEnabled = false
-    var isSubscriptionPurchaseWidePixelMeasurementEnabled: Bool = false
 
     func reset() {
         mockFeatureAvailable = false
@@ -180,6 +179,5 @@ private class MockFeatureAvailability: SubscriptionFeatureAvailability {
         isTierMessagingEnabled = false
         isProTierPurchaseEnabled = false
         isSupportsAlternateStripePaymentFlowEnabled = false
-        isSubscriptionPurchaseWidePixelMeasurementEnabled = false
     }
 }

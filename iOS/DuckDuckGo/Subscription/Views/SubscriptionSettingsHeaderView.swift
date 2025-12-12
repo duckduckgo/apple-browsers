@@ -29,6 +29,12 @@ struct SubscriptionSettingsHeaderView: View {
     }
 
     let state: HeaderState
+    let tierBadge: TierBadgeView.Variant?
+
+    init(state: HeaderState, tierBadge: TierBadgeView.Variant? = nil) {
+        self.state = state
+        self.tierBadge = tierBadge
+    }
 
     var body: some View {
         VStack(alignment: .center, spacing: 8) {
@@ -44,13 +50,18 @@ struct SubscriptionSettingsHeaderView: View {
 
             switch state {
             case .subscribed, .trial:
-                HStack(spacing: 4) {
-                    Circle()
-                        .fill(Color(designSystemColor: .alertGreen))
-                        .frame(width: 8, height: 8)
-                    Text(state == .subscribed ? UserText.subscriptionSubscribed : UserText.trialSubscription)
-                        .daxBodyRegular()
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                HStack(spacing: 8) {
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(Color(designSystemColor: .alertGreen))
+                            .frame(width: 8, height: 8)
+                        Text(state == .subscribed ? UserText.subscriptionSubscribed : UserText.trialSubscription)
+                            .daxBodyRegular()
+                            .foregroundColor(Color(designSystemColor: .textSecondary))
+                    }
+                    if let variant = tierBadge {
+                        TierBadgeView(variant: variant)
+                    }
                 }
             case .expired(let details):
                 Text(details)
@@ -77,7 +88,8 @@ struct SubscriptionSettingsHeaderView: View {
 
 #Preview {
     VStack(spacing: 8) {
-        SubscriptionSettingsHeaderView(state: .subscribed)
+        SubscriptionSettingsHeaderView(state: .subscribed, tierBadge: .plus)
+        SubscriptionSettingsHeaderView(state: .subscribed, tierBadge: .pro)
         SubscriptionSettingsHeaderView(state: .expired("Your subscription expired on April 20, 2027"))
         SubscriptionSettingsHeaderView(state: .activating)
     }

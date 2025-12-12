@@ -4,6 +4,9 @@
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
 
+/* No comment provided by engineer. */
+"Account" = "account";
+
 /* Buton label for Edit action */
 "action.generic.edit" = "Rediger";
 
@@ -35,7 +38,7 @@
 "action.title.aiChat.history" = "Duck.ai-chats";
 
 /* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "Ny AI-chat";
+"action.title.aiChat.new" = "Ny chat";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Duck.ai-indstillinger";
@@ -904,6 +907,12 @@
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Opdater brugernavn?";
 
+/* No comment provided by engineer. */
+"Available Products" = "Tilgængelige produkter";
+
+/* View plans button text during Black Friday campaign */
+"black-friday.campaign.view.plans.cta" = "Spar %d% det første år";
+
 /* Add bookmark screen title */
 "bookmark.addBookmark.title" = "Tilføj bogmærke";
 
@@ -1026,6 +1035,9 @@
 
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Annullering er ikke tilladt mere end én gang";
+
+/* No comment provided by engineer. */
+"Checking for existing account..." = "Tjekker for eksisterende konto...";
 
 /* Close All Tabs */
 "close.all.tabs" = "Luk alle faner";
@@ -1152,6 +1164,9 @@
 
 /* No comment provided by engineer. */
 "Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+
+/* No comment provided by engineer. */
+"Current Subscriptions" = "Nuværende abonnementer";
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "TILPASSET CELLEINDHOLD";
@@ -1676,6 +1691,9 @@
 "error.unknown.try.again" = "Der er opstået en ukendt fejl.";
 
 /* No comment provided by engineer. */
+"External ID: %@" = "Eksternt ID: %@";
+
+/* No comment provided by engineer. */
 "favorite" = "Favorit";
 
 /* No comment provided by engineer. */
@@ -1912,6 +1930,9 @@
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "VÆLG EN KATEGORI";
 
+/* Category for issues with accessing Plus or Pro tier features */
+"feedback.ppro.category.unable-to-access-features" = "Kan ikke få adgang til Plus- eller Pro-funktioner";
+
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Din anonyme feedback er vigtig for os.";
 
@@ -2082,6 +2103,9 @@
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Sidst behandlet: %@";
+
+/* No comment provided by engineer. */
+"Loading available products..." = "Indlæser tilgængelige produkter ...";
 
 /* No comment provided by engineer. */
 "Loading brokers..." = "Indlæser mæglere...";
@@ -2429,6 +2453,12 @@
 "new.address.bar.picker.title" = "Indstilling af adresselinje";
 
 /* No comment provided by engineer. */
+"No active subscriptions" = "Ingen aktive abonnementer";
+
+/* No comment provided by engineer. */
+"No existing subscription found" = "Intet eksisterende abonnement blev fundet";
+
+/* No comment provided by engineer. */
 "No Logs" = "Ingen logfiler";
 
 /* No comment provided by engineer. */
@@ -2436,6 +2466,9 @@
 
 /* No comment provided by engineer. */
 "No results found" = "Ingen resultater fundet";
+
+/* No comment provided by engineer. */
+"No subscriptions available" = "Ingen tilgængelige abonnementer";
 
 /* No comment provided by engineer. */
 "OK" = "Okay";
@@ -2448,6 +2481,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser  hides a cookie popup */
 "omnibar.notification.popup-hidden" = "Pop op-vindue skjult";
+
+/* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
+"omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Forstået";
@@ -2519,7 +2555,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Indstillinger > AI-funktioner.";
 
 /* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Vil du have nemmere adgang til privat AI-chat?";
+"onboarding.highlights.searchExperience.title" = "Vil du have nem adgang til privat AI-chat?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Lad os gøre det!";
@@ -2911,6 +2947,12 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Indstillinger for Search Assist";
 
+/* Settings screen cell subtitle for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.subtitle" = "Vis nye Duck.ai-chats som faner i browseren";
+
+/* Settings screen cell title for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.title" = "Duck.ai fanetilstand";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Skjul AI-genererede billeder";
 
@@ -2925,9 +2967,6 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Placering af adresselinje";
-
-/* Settings screen cell text for experimental menu */
-"settings.appearance.experimental.menu" = "Eksperimentel browsermenu";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Åbn links i tilknyttede apps";
@@ -3055,8 +3094,11 @@
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Importer adgangskoder";
 
-/* Copy for budge on settings item to show an item is new */
+/* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Ny";
+
+/* Copy for badge on settings item to show an item is experimental */
+"settings.item.badge.preview" = "Forhåndsvisning";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tastatur";
@@ -3327,6 +3369,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Hvilket websted er ødelagt?";
+
+/* No comment provided by engineer. */
+"Status" = "Status";
 
 /* No comment provided by engineer. */
 "Status: Invalidated" = "Status: Ugyldiggjort";
@@ -3981,6 +4026,12 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "En besked fra %@:";
+
+/* No comment provided by engineer. */
+"Will attach to EXISTING account" = "Vil blive knyttet til en EKSISTERENDE konto";
+
+/* No comment provided by engineer. */
+"Will create NEW account" = "Vil oprette en NY konto";
 
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "SPAR 25 %";

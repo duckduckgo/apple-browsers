@@ -96,6 +96,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     private(set) var tries = 1
     let vpnConnectionState: String
     let vpnBypassStatus: String
+    let featureFlagger: DBPFeatureFlagging
 
     init(attemptId: UUID = UUID(),
          startTime: Date = Date(),
@@ -105,7 +106,8 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
          isImmediateOperation: Bool = false,
          parentURL: String? = nil,
          vpnConnectionState: String,
-         vpnBypassStatus: String) {
+         vpnBypassStatus: String,
+         featureFlagger: DBPFeatureFlagging) {
         self.attemptId = attemptId
         self.startTime = startTime
         self.lastStateTime = startTime
@@ -116,6 +118,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         self.parentURL = parentURL
         self.vpnConnectionState = vpnConnectionState
         self.vpnBypassStatus = vpnBypassStatus
+        self.featureFlagger = featureFlagger
     }
 
     /// Returned in milliseconds
@@ -137,7 +140,8 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         setStage(.start)
         handler.fire(.optOutStart(dataBroker: dataBrokerURL,
                                   attemptId: attemptId,
-                                  parent: parentURL ?? ""))
+                                  parent: parentURL ?? "",
+                                  clickActionDelayReductionOptimization: featureFlagger.isClickActionDelayReductionOptimizationOn))
     }
 
     func fireOptOutEmailGenerate() {
@@ -265,7 +269,8 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                     actionId: actionID ?? "unknown",
                                     actionType: actionType ?? "unknown",
                                     vpnConnectionState: vpnConnectionState,
-                                    vpnBypassStatus: vpnBypassStatus))
+                                    vpnBypassStatus: vpnBypassStatus,
+                                    clickActionDelayReductionOptimization: featureFlagger.isClickActionDelayReductionOptimizationOn))
     }
 
     func fireOptOutConditionFound() {

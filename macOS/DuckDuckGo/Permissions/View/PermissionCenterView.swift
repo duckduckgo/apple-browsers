@@ -229,6 +229,7 @@ struct PermissionRowView: View {
         (Text(item.permissionType.systemPermissionDisabledText)
             .font(.system(size: 12))
             .foregroundColor(Color(designSystemColor: .textSecondary))
+        + Text(" ")
         + Text(item.permissionType.systemSettingsLinkText)
             .font(.system(size: 12))
             .foregroundColor(.accentColor))

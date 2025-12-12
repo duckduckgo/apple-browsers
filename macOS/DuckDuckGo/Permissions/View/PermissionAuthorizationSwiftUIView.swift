@@ -244,9 +244,10 @@ struct PermissionAuthorizationSwiftUIView: View {
                 stepOneView
 
                 // Divider between steps
-                Divider()
-                    .overlay(Color.black.opacity(0.05))
-                    .blendMode(.plusDarker)
+                Rectangle()
+                    .fill(Color(designSystemColor: .surfaceDecorationPrimary))
+                    .frame(height: 1)
+                    .cornerRadius(100)
 
                 // Step 2: Website permission
                 stepTwoView

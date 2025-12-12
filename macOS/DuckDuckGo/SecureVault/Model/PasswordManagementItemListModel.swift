@@ -495,7 +495,7 @@ final class PasswordManagementItemListModel: ObservableObject {
         case .dateModified:
             displayedSections = PasswordManagementListSection.sections(with: itemsByCategory, by: \.lastUpdated, order: sortDescriptor.order)
         }
-        
+
         // Clear selection if no longer present
         if let currentSelected = selected, !displayedSections.contains(where: { section in
             section.items.contains(currentSelected)
@@ -512,9 +512,9 @@ final class PasswordManagementItemListModel: ObservableObject {
             externalPasswordManagerSelected = true
         } else if shouldDisplaySyncPromoRow {
             syncPromoSelected = true
-        }  else if shouldSelectFirstDomainMatch {
+        } else if shouldSelectFirstDomainMatch {
             let query = filter.lowercased()
-            
+
             for section in displayedSections {
                 if let domainMatch = section.items.first(where: { item in
                     guard case .account(let account) = item else { return false }
@@ -530,7 +530,7 @@ final class PasswordManagementItemListModel: ObservableObject {
             selected(item: nil)
         }
     }
-    
+
     /// - returns: True if the query is present within the domain
     private func domainMatchesQuery(_ domain: String?, query: String) -> Bool {
         guard let domain = domain, !domain.isEmpty, !query.isEmpty else { return false }

@@ -56,7 +56,11 @@ class AutofillLoginListViewModel: ObservableObject {
     var isAuthenticating = false
 
     @Published private var accounts = [SecureVaultModels.WebsiteAccount]()
-    private var accountsToSuggest = [SecureVaultModels.WebsiteAccount]()
+    private var _accountsToSuggest = [SecureVaultModels.WebsiteAccount]()
+    private var accountsToSuggest: [SecureVaultModels.WebsiteAccount] {
+        get { _accountsToSuggest }
+        set { _accountsToSuggest = sortedAccountsForSuggestions(newValue) }
+    }
     private var cancellables: Set<AnyCancellable> = []
     private var appSettings: AppSettings
     private let tld: TLD
@@ -464,21 +468,20 @@ class AutofillLoginListViewModel: ObservableObject {
             )
         }
 
-        let sortedSuggestions = suggestedAccounts.sorted(by: {
+        return suggestedAccounts
+    }
+    
+    private func sortedAccountsForSuggestions(_ accounts: [SecureVaultModels.WebsiteAccount]) -> [SecureVaultModels.WebsiteAccount] {
+        return accounts.sorted(by: {
             autofillDomainNameUrlSort.compareAccountsForSortingAutofill(lhs: $0, rhs: $1, tld: tld) == .orderedAscending
         })
-
-        return sortedSuggestions
     }
 
     private func makeSections(with accounts: [SecureVaultModels.WebsiteAccount]) -> [AutofillLoginListSectionType] {
         var newSections = [AutofillLoginListSectionType]()
 
         if !accountsToSuggest.isEmpty {
-            let sortedSuggestions = accountsToSuggest.sorted(by: {
-                autofillDomainNameUrlSort.compareAccountsForSortingAutofill(lhs: $0, rhs: $1, tld: tld) == .orderedAscending
-            })
-            let accountItems = sortedSuggestions.map { AutofillLoginItem(account: $0,
+            let accountItems = accountsToSuggest.map { AutofillLoginItem(account: $0,
                                                                          tld: tld,
                                                                          autofillDomainNameUrlMatcher: autofillDomainNameUrlMatcher,
                                                                          autofillDomainNameUrlSort: autofillDomainNameUrlSort)

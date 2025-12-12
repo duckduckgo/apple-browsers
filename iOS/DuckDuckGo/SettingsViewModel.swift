@@ -70,6 +70,7 @@ final class SettingsViewModel: ObservableObject {
     let mobileCustomization: MobileCustomization
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     var browsingMenuSheetCapability: BrowsingMenuSheetCapable
+    private let onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider
 
     // Subscription Dependencies
     let isAuthV2Enabled: Bool
@@ -628,6 +629,15 @@ final class SettingsViewModel: ObservableObject {
         aiChatSettings.isAIChatEnabled
     }
 
+    /// Returns true when the onboarding search experience feature is active and the user's choice
+    /// should be shown in settings while activation remains deferred (until Dax Dialogs complete).
+    private var shouldUseDeferredOnboardingSearchExperience: Bool {
+        featureFlagger.isFeatureOn(.onboardingSearchExperience) &&
+        onboardingSearchExperienceProvider.didMakeChoiceDuringOnboarding &&
+        !onboardingSearchExperienceProvider.didApplyOnboardingChoiceSettings &&
+        !legacyViewProvider.daxDialogsManager.hasSeenOnboarding
+    }
+
     // MARK: Default Init
     init(state: SettingsState? = nil,
          legacyViewProvider: SettingsLegacyViewProvider,
@@ -659,7 +669,8 @@ final class SettingsViewModel: ObservableObject {
          winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
          mobileCustomization: MobileCustomization,
          userScriptsDependencies: DefaultScriptSourceProvider.Dependencies,
-         browsingMenuSheetCapability: BrowsingMenuSheetCapable
+         browsingMenuSheetCapability: BrowsingMenuSheetCapable,
+         onboardingSearchExperienceProvider: OnboardingSearchExperienceProvider = OnboardingSearchExperience()
     ) {
 
         self.state = SettingsState.defaults
@@ -693,6 +704,7 @@ final class SettingsViewModel: ObservableObject {
         self.mobileCustomization = mobileCustomization
         self.userScriptsDependencies = userScriptsDependencies
         self.browsingMenuSheetCapability = browsingMenuSheetCapability
+        self.onboardingSearchExperienceProvider = onboardingSearchExperienceProvider
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
     }
@@ -1461,11 +1473,20 @@ extension SettingsViewModel {
 
     var aiChatSearchInputEnabledBinding: Binding<Bool> {
         Binding<Bool>(
-            get: { self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled },
+            get: {
+                if self.shouldUseDeferredOnboardingSearchExperience {
+                    return self.onboardingSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding
+                }
+                return self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled
+            },
             set: { newValue in
-                guard newValue != self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled else { return }
                 self.objectWillChange.send()
-                self.aiChatSettings.enableAIChatSearchInputUserSettings(enable: newValue)
+                if self.shouldUseDeferredOnboardingSearchExperience {
+                    self.onboardingSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoice(enable: newValue)
+                } else {
+                    guard newValue != self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled else { return }
+                    self.aiChatSettings.enableAIChatSearchInputUserSettings(enable: newValue)
+                }
             }
         )
     }

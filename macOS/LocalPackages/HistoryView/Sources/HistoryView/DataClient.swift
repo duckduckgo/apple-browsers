@@ -29,12 +29,6 @@ public protocol DataProviding: AnyObject {
     func visitsBatch(for query: DataModel.HistoryQueryKind, source: DataModel.HistoryQuerySource, limit: Int, offset: Int) async -> DataModel.HistoryItemsBatch
 }
 
-public protocol StyleProviding: AnyObject {
-    var themeAppearance: String { get }
-    var themeName: String { get }
-    var themeStylePublisher: AnyPublisher<(appearance: String, themeName: String), Never> { get }
-}
-
 public enum HistoryViewEvent: Equatable {
     case historyViewError(message: String)
 }

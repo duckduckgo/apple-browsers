@@ -190,6 +190,11 @@ extension DataModel {
         }
     }
 
+    struct ThemeUpdate: Encodable {
+        var theme: String
+        var themeVariant: String
+    }
+
     struct Exception: Codable, Equatable {
         let message: String
     }

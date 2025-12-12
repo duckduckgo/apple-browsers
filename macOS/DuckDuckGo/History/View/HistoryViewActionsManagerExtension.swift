@@ -46,7 +46,8 @@ extension HistoryViewActionsManager {
                 styleProvider: styleProvider,
                 actionsHandler: HistoryViewActionsHandler(dataProvider: dataProvider, bookmarksHandler: bookmarksHandler),
                 errorHandler: HistoryViewErrorHandler()
-            )
+            ),
+            StyleClient(styleProviding: styleProvider)
         ])
     }
 }

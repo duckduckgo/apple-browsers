@@ -230,31 +230,32 @@ struct PermissionAuthorizationSwiftUIView: View {
     // MARK: - Two-Step Permission View
 
     private var twoStepPermissionView: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 20) {
             // Prompt text
             Text(promptText)
                 .font(.system(size: 13, weight: .medium))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, 16)
-                .padding(.top, 16)
 
-            // Step 1: System permission
-            stepOneView
-                .padding(.horizontal, 16)
+            // Steps group
+            VStack(spacing: 16) {
+                // Step 1: System permission
+                stepOneView
 
-            // Divider between steps
-            Divider()
-                .overlay(Color.black.opacity(0.05))
-                .blendMode(.plusDarker)
-                .padding(.horizontal, 16)
+                // Divider between steps
+                Divider()
+                    .overlay(Color.black.opacity(0.05))
+                    .blendMode(.plusDarker)
 
-            // Step 2: Website permission
-            stepTwoView
-                .padding(.horizontal, 16)
-                .padding(.bottom, 16)
+                // Step 2: Website permission
+                stepTwoView
+            }
+            .padding(8)
         }
+        .padding(.top, 20)
+        .padding(.horizontal, 16)
+        .padding(.bottom, 16)
         .frame(width: 360)
         .background(Color(designSystemColor: .surfacePrimary))
         .onAppear {

@@ -17,6 +17,7 @@
 //
 
 import SwiftUI
+import DesignResourcesKit
 
 struct BookmarkDialogButtonsView: View {
     private let viewState: ViewState
@@ -40,21 +41,32 @@ struct BookmarkDialogButtonsView: View {
                 Spacer()
             }
 
-            actionButton(action: otherButtonAction, viewState: viewState).accessibilityIdentifier("BookmarkDialogButtonsView.otherButton")
+            actionButton(action: otherButtonAction, viewState: viewState, foregroundColor: .textPrimary, backgroundColor: .controlsFillPrimary)
+                .accessibilityIdentifier("BookmarkDialogButtonsView.otherButton")
 
-            actionButton(action: defaultButtonAction, viewState: viewState).accessibilityIdentifier("BookmarkDialogButtonsView.defaultButton")
+            actionButton(action: defaultButtonAction, viewState: viewState, foregroundColor: .accentContentPrimary, backgroundColor: .accentPrimary)
+                .accessibilityIdentifier("BookmarkDialogButtonsView.defaultButton")
         }
     }
 
     @MainActor
-    private func actionButton(action: Action, viewState: ViewState) -> some View {
+    private func actionButton(action: Action, viewState: ViewState, foregroundColor: DesignSystemColor, backgroundColor: DesignSystemColor) -> some View {
         Button {
             action.action(dismiss.callAsFunction)
         } label: {
             Text(action.title)
                 .frame(height: viewState.height)
                 .frame(maxWidth: viewState.maxWidth)
+                .foregroundColor(Color(designSystemColor: foregroundColor))
         }
+        .buttonStyle(.plain)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(
+            Color(designSystemColor: backgroundColor)
+                .cornerRadius(6)
+                .opacity(action.isDisabled ? 0.4 : 1)
+        )
         .keyboardShortcut(action.keyboardShortCut)
         .disabled(action.isDisabled)
         .ifLet(action.accessibilityIdentifier) { view, value in

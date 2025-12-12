@@ -266,7 +266,12 @@ final class PasswordManagementItemListModel: ObservableObject {
     }
 
     private var shouldSelectFirstDomainMatch: Bool {
-        featureFlagger?.isFeatureOn(.autofillPasswordSearchPrioritizeDomain) == true && !filter.isEmpty
+        guard featureFlagger?.isFeatureOn(.autofillPasswordSearchPrioritizeDomain) == true,
+              !filter.isEmpty else {
+            return false
+        }
+
+        return sortDescriptor.category == .allItems || sortDescriptor.category == .logins
     }
 
     @Published var sortDescriptor = SecureVaultSorting.default {

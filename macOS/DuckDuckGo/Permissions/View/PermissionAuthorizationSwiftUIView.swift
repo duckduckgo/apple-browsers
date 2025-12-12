@@ -18,6 +18,7 @@
 
 import AppKit
 import Combine
+import DesignResourcesKitIcons
 import SwiftUI
 import UserNotifications
 

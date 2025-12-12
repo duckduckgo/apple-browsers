@@ -152,10 +152,10 @@ struct ReloadBannerView: View {
             Button(action: onReload) {
                 Text(UserText.permissionCenterReloadButton)
                     .font(.system(size: 13))
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .foregroundColor(Color(designSystemColor: .permissionReloadButtonText))
                     .padding(.horizontal, 12)
                     .padding(.vertical, 4)
-                    .background(Color(NSColor.unemphasizedSelectedContentBackgroundColor))
+                    .background(Color(designSystemColor: .permissionReloadButtonBackground))
                     .cornerRadius(4)
                     .overlay(
                         RoundedRectangle(cornerRadius: 4)

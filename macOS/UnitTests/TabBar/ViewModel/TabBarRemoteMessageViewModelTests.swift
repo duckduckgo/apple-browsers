@@ -99,24 +99,22 @@ class TabBarRemoteMessageViewModelTests: XCTestCase {
     func testWhenValidTabBarMessageFollowedByMalformed_thenRemoteMessageIsCleared() {
         let mock = MockTabBarRemoteMessageProvider()
         let viewModel = TabBarRemoteMessageViewModel(activeRemoteMessageModel: mock, isFireWindow: false)
-        let validMessageExpectation = XCTestExpectation(description: "Publisher should emit a valid message")
-        let clearedExpectation = XCTestExpectation(description: "Publisher should emit nil after malformed message")
-
-        var didReceiveValidMessage = false
+        
+        var receivedMessages: [TabBarRemoteMessage?] = []
         viewModel.$remoteMessage
-            .sink { remoteMessage in
-                if !didReceiveValidMessage, remoteMessage != nil {
-                    didReceiveValidMessage = true
-                    validMessageExpectation.fulfill()
-                } else if didReceiveValidMessage, remoteMessage == nil {
-                    clearedExpectation.fulfill()
-                }
+            .dropFirst() // Drop value when subscribing
+            .prefix(2) // Get only the two emitted values
+            .collect() // Collect the messages in an array
+            .sink { remoteMessages in
+                receivedMessages = remoteMessages
             }.store(in: &cancellables)
-
+        
         mock.emitRemoteMessage(createTabBarRemoteMessage())
         mock.emitRemoteMessage(createMalformedTabBarRemoteMessage())
-
-        wait(for: [validMessageExpectation, clearedExpectation], timeout: 1.0)
+        
+        XCTAssertEqual(receivedMessages.count, 2)
+        XCTAssertNotNil(receivedMessages[0]) // First Item is a valid message
+        XCTAssertNil(receivedMessages[1]) // Last Item is a nil message
     }
 
     // MARK: - Utilities

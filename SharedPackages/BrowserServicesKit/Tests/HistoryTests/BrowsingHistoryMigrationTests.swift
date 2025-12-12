@@ -79,6 +79,7 @@ class BrowsingHistoryMigrationTests: XCTestCase {
         try commonMigrationTestForDatabase(name: "BrowsingHistory_V1")
     }
 
+    // swiftlint:disable:next large_tuple
     func commonMigrationTestForDatabase(name: String) throws {
         // Copy V1 database to temp location
         try copyDatabase(name: name, fromDirectory: resourceURLDir, toDirectory: location)

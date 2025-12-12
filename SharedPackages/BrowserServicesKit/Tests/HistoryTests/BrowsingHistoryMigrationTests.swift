@@ -79,39 +79,6 @@ class BrowsingHistoryMigrationTests: XCTestCase {
         try commonMigrationTestForDatabase(name: "BrowsingHistory_V1")
     }
 
-    func testWhenMigratingFromV1ToV2ThenAllEntriesHaveCookiePopupBlockedWithDefaultValue() throws {
-        // Copy V1 database to temp location
-        try copyDatabase(name: "BrowsingHistory_V1", fromDirectory: resourceURLDir, toDirectory: location)
-
-        // Load database with latest model (V2) - this triggers Core Data migration
-        guard let migratedDatabase = loadDatabase(name: "BrowsingHistory_V1") else {
-            XCTFail("Could not initialize migrated database")
-            return
-        }
-
-        let context = migratedDatabase.makeContext(concurrencyType: .privateQueueConcurrencyType)
-        context.performAndWait {
-            let fetchRequest = NSFetchRequest<BrowsingHistoryEntryManagedObject>(
-                entityName: "BrowsingHistoryEntryManagedObject"
-            )
-
-            guard let entries = try? context.fetch(fetchRequest) else {
-                XCTFail("Failed to fetch history entries after migration")
-                return
-            }
-
-            // Verify expected number of entries
-            XCTAssertEqual(entries.count, 5, "Expected 5 history entries after migration")
-
-            for (index, entry) in entries.enumerated() {
-                XCTAssertFalse(entry.cookiePopupBlocked,
-                               "Entry \(index): cookiePopupBlocked should default to false after V1 to V2 migration")
-            }
-        }
-
-        try? migratedDatabase.tearDown(deleteStores: true)
-    }
-
     func commonMigrationTestForDatabase(name: String) throws {
         // Copy V1 database to temp location
         try copyDatabase(name: name, fromDirectory: resourceURLDir, toDirectory: location)

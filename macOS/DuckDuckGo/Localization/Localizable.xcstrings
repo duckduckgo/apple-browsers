@@ -18425,7 +18425,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Always allow 2"
+            "value" : "Always allow"
           }
         },
         "es" : {
@@ -18605,7 +18605,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Always deny 2"
+            "value" : "Always deny"
           }
         },
         "es" : {
@@ -64370,10 +64370,58 @@
       "comment" : "Title for permission center popover, %@ is the domain name",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Berechtigungen für „%@“"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Permissions for “%@”"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permisos para \"%@\""
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autorisations pour « %@ »"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autorizzazioni per “%@”"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Machtigingen voor \"%@\""
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uprawnienia do domeny „%@”"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permissões para “%@”"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешения для сайта %@"
           }
         }
       }
@@ -64634,9 +64682,57 @@
       "comment" : "Prompt asking if domain %@ can use location",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to use your current location?"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "Allow %@ to use your current location?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to use your current location?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to use your current location?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to use your current location?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to use your current location?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to use your current location?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to use your current location?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Allow %@ to use your current location?"
           }
         }

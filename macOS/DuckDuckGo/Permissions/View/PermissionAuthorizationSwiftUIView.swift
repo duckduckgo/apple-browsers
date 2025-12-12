@@ -372,13 +372,14 @@ struct PermissionAuthorizationSwiftUIView: View {
     private var systemPermissionDisabledView: some View {
         (Text(permissionType.systemPermissionDisabledText)
             .font(.system(size: 12))
-            .foregroundColor(Color(designSystemColor: .textPrimary))
+            .foregroundColor(Color(designSystemColor: .textSecondary))
         + Text(" ")
         + Text(permissionType.systemSettingsLinkText)
             .font(.system(size: 12))
-            .foregroundColor(Color(designSystemColor: .textLink)))
-            .frame(maxWidth: .infinity, alignment: .leading)
+            .foregroundColor(.accentColor))
+            .lineSpacing(6)
             .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
             .cursor(.pointingHand)
             .onTapGesture {
                 openSystemSettings()

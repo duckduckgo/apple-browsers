@@ -24,6 +24,17 @@ import WebKit
 import UniformTypeIdentifiers
 import os.log
 
+enum DownloadError: Error, LocalizedError {
+    case failedToGenerateUniqueFilename(underlyingError: Error)
+    
+    var errorDescription: String? {
+        switch self {
+        case .failedToGenerateUniqueFilename(let underlyingError):
+            return "Failed to generate unique filename: \(underlyingError.localizedDescription)"
+        }
+    }
+}
+
 protocol DownloadManaging {
     var downloadList: Set<Download> { get }
     var downloadsDirectoryFiles: [URL] { get throws }
@@ -157,7 +168,13 @@ extension DownloadManager {
 
     private func convertToUniqueFilename(_ filename: String) throws -> String {
         let downloadingFilenames = Set(downloadList.map { $0.filename })
-        let downloadedFilenames = Set(try downloadsDirectoryFiles.map { $0.lastPathComponent })
+        let downloadedFilenames: Set<String>
+        do {
+            downloadedFilenames = Set(try downloadsDirectoryFiles.map { $0.lastPathComponent })
+        } catch {
+            Logger.general.error("Failed to generate unique filename: \(error.localizedDescription)")
+            throw DownloadError.failedToGenerateUniqueFilename(underlyingError: error)
+        }
         let list = downloadingFilenames.union(downloadedFilenames)
 
         var fileExtension = downloadsDirectoryHandler.downloadsDirectory.appendingPathComponent(filename).pathExtension

@@ -61,9 +61,9 @@ class DownloadManager: DownloadManaging {
                       suggestedFilename: String? = nil,
                       downloadSession: DownloadSession? = nil,
                       cookieStore: WKHTTPCookieStore? = nil,
-                      temporary: Bool? = nil) -> Download? {
+                      temporary: Bool? = nil) throws -> Download? {
 
-        guard let metaData = downloadMetaData(for: response, suggestedFilename: suggestedFilename),
+        guard let metaData = try downloadMetaData(for: response, suggestedFilename: suggestedFilename),
               let url = response.url
         else { return nil }
 
@@ -96,16 +96,16 @@ class DownloadManager: DownloadManaging {
                       suggestedFilename: String? = nil,
                       downloadSession: DownloadSession? = nil,
                       cookieStore: WKHTTPCookieStore? = nil,
-                      temporary: Bool? = nil) -> Download? {
-        makeDownload(response: navigationResponse.response,
-                     suggestedFilename: suggestedFilename,
-                     downloadSession: downloadSession,
-                     cookieStore: cookieStore,
-                     temporary: temporary)
+                      temporary: Bool? = nil) throws -> Download? {
+        try makeDownload(response: navigationResponse.response,
+                         suggestedFilename: suggestedFilename,
+                         downloadSession: downloadSession,
+                         cookieStore: cookieStore,
+                         temporary: temporary)
     }
 
-    func downloadMetaData(for response: URLResponse, suggestedFilename: String? = nil) -> DownloadMetadata? {
-        let filename = filename(forSuggestedFilename: suggestedFilename ?? response.suggestedFilename,
+    func downloadMetaData(for response: URLResponse, suggestedFilename: String? = nil) throws -> DownloadMetadata? {
+        let filename = try filename(forSuggestedFilename: suggestedFilename ?? response.suggestedFilename,
                                 mimeType: response.mimeType)
         return DownloadMetadata(response, filename: filename)
     }
@@ -155,9 +155,9 @@ class DownloadManager: DownloadManaging {
 
 extension DownloadManager {
 
-    private func convertToUniqueFilename(_ filename: String) -> String {
+    private func convertToUniqueFilename(_ filename: String) throws -> String {
         let downloadingFilenames = Set(downloadList.map { $0.filename })
-        let downloadedFilenames = Set(downloadsDirectoryFiles.map { $0.lastPathComponent })
+        let downloadedFilenames = Set(try downloadsDirectoryFiles.map { $0.lastPathComponent })
         let list = downloadingFilenames.union(downloadedFilenames)
 
         var fileExtension = downloadsDirectoryHandler.downloadsDirectory.appendingPathComponent(filename).pathExtension
@@ -176,9 +176,9 @@ extension DownloadManager {
         return newFilename
     }
 
-    private func filename(forSuggestedFilename suggestedFilename: String?, mimeType: String?) -> String {
+    private func filename(forSuggestedFilename suggestedFilename: String?, mimeType: String?) throws -> String {
         let filename = sanitizeFilename(suggestedFilename, mimeType: mimeType)
-        return convertToUniqueFilename(filename)
+        return try convertToUniqueFilename(filename)
     }
 
     private func sanitizeFilename(_ originalFilename: String?, mimeType: String?) -> String {

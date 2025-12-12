@@ -26,7 +26,7 @@ import os.log
 
 protocol DownloadManaging {
     var downloadList: Set<Download> { get }
-    var downloadsDirectoryFiles: [URL] { get }
+    var downloadsDirectoryFiles: [URL] { get throws }
     func cancelDownload(_ download: Download)
     func cancelAllDownloads()
     func markAllDownloadsSeen()
@@ -244,6 +244,10 @@ extension NSNotification.Name {
 
 
 extension DownloadManager {
-    var downloadsDirectoryFiles: [URL] { (try? downloadsDirectoryHandler.downloadsDirectoryFiles) ?? [] }
+    var downloadsDirectoryFiles: [URL] {
+        get throws {
+            try downloadsDirectoryHandler.downloadsDirectoryFiles
+        }
+    }
     var downloadsDirectory: URL { downloadsDirectoryHandler.downloadsDirectory }
 }

@@ -40,22 +40,20 @@ struct VPNRoutingTableResolver {
     }
 
     var excludedRoutes: [IPAddressRange] {
-        var routes = VPNRoutingRange.alwaysExcludedIPv4Range + VPNRoutingRange.alwaysExcludedIPv6Range
+        var routes = VPNRoutingRange.alwaysExcludedIPv4Range
 
         if excludeLocalNetworks {
             routes += VPNRoutingRange.localNetworkRangeWithoutDNS
-            routes += VPNRoutingRange.localIPv6NetworkRange
         }
 
         return routes
     }
 
     var includedRoutes: [IPAddressRange] {
-        var routes = VPNRoutingRange.publicIPv4NetworkRange + [VPNRoutingRange.fullIPv6RoutingRange] + dnsRoutes()
+        var routes = VPNRoutingRange.publicNetworkRange + dnsRoutes()
 
         if !excludeLocalNetworks {
             routes += VPNRoutingRange.localNetworkRange
-            routes += VPNRoutingRange.localIPv6NetworkRange
         }
 
         return routes

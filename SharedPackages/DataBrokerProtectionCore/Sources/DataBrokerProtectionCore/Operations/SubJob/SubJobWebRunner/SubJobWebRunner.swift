@@ -159,6 +159,7 @@ public extension SubJobWebRunning {
         }
 
         if featureFlagger.isClickActionDelayReductionOptimizationOn && action is ClickAction {
+            Logger.action.log("Executing click action delay BEFORE click: \(self.clickAwaitTime)s")
             try? await Task.sleep(nanoseconds: UInt64(clickAwaitTime) * 1_000_000_000)
         }
 
@@ -284,6 +285,7 @@ public extension SubJobWebRunning {
             // When click delay optimization is OFF, wait after click (legacy behavior)
             // When ON, the delay happens before the click in runNextAction
             if !featureFlagger.isClickActionDelayReductionOptimizationOn {
+                Logger.action.log("Executing click action delay AFTER click: \(self.clickAwaitTime)s")
                 try? await Task.sleep(nanoseconds: UInt64(clickAwaitTime) * 1_000_000_000)
             }
             await executeNextStep()

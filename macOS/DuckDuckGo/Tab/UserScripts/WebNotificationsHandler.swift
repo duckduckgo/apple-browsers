@@ -323,8 +323,13 @@ final class WebNotificationsHandler: NSObject, Subfeature {
             return RequestPermissionResponse(permission: Permission.denied.rawValue)
         }
 
-        // Two-step UI handles system authorization, just return granted
-        Logger.general.debug("WebNotificationsHandler: Permission granted through two-step UI")
+        // Ensure system authorization (requests if not determined, checks if already granted/denied)
+        guard await ensureSystemAuthorization() else {
+            Logger.general.debug("WebNotificationsHandler: System authorization not granted")
+            return RequestPermissionResponse(permission: Permission.denied.rawValue)
+        }
+
+        Logger.general.debug("WebNotificationsHandler: Permission granted")
         return RequestPermissionResponse(permission: Permission.granted.rawValue)
     }
 

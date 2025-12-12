@@ -289,6 +289,9 @@ public enum FeatureFlag: String {
     
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212305240287488?focus=true
     case dataImportWideEventMeasurement
+
+    // https://app.asana.com/1/137249556945/project/414709148257752/task/1212395110448661?focus=true
+    case appRatingPrompt
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -311,7 +314,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .migrateKeychainAccessibility,
              .dataImportWideEventMeasurement,
              .browsingMenuSheetPresentation,
-             .ampBackgroundTaskSupport:
+             .ampBackgroundTaskSupport,
+             .appRatingPrompt:
             true
         default:
             false
@@ -380,7 +384,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .granularFireButtonOptions,
              .fullDuckAIModeExperimentalSetting,
              .dataImportWideEventMeasurement,
-             .ampBackgroundTaskSupport:
+             .ampBackgroundTaskSupport,
+             .appRatingPrompt:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -605,6 +610,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.fullDuckAIModeExperimentalSetting))
         case .dataImportWideEventMeasurement:
             return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
+        case .appRatingPrompt:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.appRatingPrompt))
         }
     }
 }

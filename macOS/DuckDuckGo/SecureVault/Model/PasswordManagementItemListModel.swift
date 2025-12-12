@@ -510,9 +510,15 @@ final class PasswordManagementItemListModel: ObservableObject {
 
         if shouldDisplayExternalPasswordManagerRow {
             externalPasswordManagerSelected = true
-        } else if shouldDisplaySyncPromoRow {
+            return
+        }
+
+        if shouldDisplaySyncPromoRow {
             syncPromoSelected = true
-        } else if shouldSelectFirstDomainMatch {
+            return
+        }
+
+        if shouldSelectFirstDomainMatch {
             let query = filter.lowercased()
 
             for section in displayedSections {
@@ -524,7 +530,10 @@ final class PasswordManagementItemListModel: ObservableObject {
                     return
                 }
             }
-        } else if let firstSection = displayedSections.first, let selectedItem = firstSection.items.first {
+            // Fall through if no domain match found
+        }
+
+        if let firstSection = displayedSections.first, let selectedItem = firstSection.items.first {
             selected(item: selectedItem)
         } else {
             selected(item: nil)

@@ -180,6 +180,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1206226850447395/task/1211661206210892?focus=true
     case experimentalBrowsingMenu
+
+    ///  https://app.asana.com/1/137249556945/project/414709148257752/task/1212395110448661?focus=true
+    case appRatingPrompt
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {

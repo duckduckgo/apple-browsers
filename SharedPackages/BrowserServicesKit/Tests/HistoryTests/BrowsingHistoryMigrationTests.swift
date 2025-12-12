@@ -102,10 +102,10 @@ class BrowsingHistoryMigrationTests: XCTestCase {
 
             // Verify expected number of entries
             XCTAssertEqual(entries.count, 5, "Expected 5 history entries after migration")
-            
+
             for (index, entry) in entries.enumerated() {
                 XCTAssertFalse(entry.cookiePopupBlocked,
-                              "Entry \(index): cookiePopupBlocked should default to false after V1 to V2 migration")
+                               "Entry \(index): cookiePopupBlocked should default to false after V1 to V2 migration")
             }
         }
 
@@ -160,21 +160,21 @@ class BrowsingHistoryMigrationTests: XCTestCase {
 
                 // Verify identifier
                 XCTAssertEqual(entry.identifier, expected.uuid,
-                              "Entry \(index): Identifier mismatch")
+                               "Entry \(index): Identifier mismatch")
 
                 // Verify URL
                 XCTAssertEqual(entry.url?.absoluteString, expected.url,
-                              "Entry \(index): URL mismatch")
+                               "Entry \(index): URL mismatch")
 
                 // Verify title (can be nil)
                 XCTAssertEqual(entry.title, expected.title,
-                              "Entry \(index): Title mismatch")
+                               "Entry \(index): Title mismatch")
 
                 // Verify lastVisit (with small tolerance for date comparison)
                 if let lastVisit = entry.lastVisit {
                     let timeInterval = lastVisit.timeIntervalSince1970
                     XCTAssertEqual(timeInterval, expected.lastVisit, accuracy: 1.0,
-                                  "Entry \(index): Last visit date mismatch")
+                                   "Entry \(index): Last visit date mismatch")
                 } else {
                     XCTFail("Entry \(index): Last visit is nil")
                 }
@@ -189,28 +189,28 @@ class BrowsingHistoryMigrationTests: XCTestCase {
                     expectedNumberOfTotalVisits = Int64(expected.visitCount)
                 }
                 XCTAssertEqual(entry.numberOfTotalVisits, expectedNumberOfTotalVisits,
-                              "Entry \(index): Number of total visits mismatch")
+                               "Entry \(index): Number of total visits mismatch")
 
                 // Verify tracker-related attributes
                 XCTAssertEqual(entry.trackersFound, expected.trackersFound,
-                              "Entry \(index): trackersFound mismatch")
+                               "Entry \(index): trackersFound mismatch")
                 XCTAssertEqual(entry.numberOfTrackersBlocked, expected.trackersBlocked,
-                              "Entry \(index): numberOfTrackersBlocked mismatch")
+                               "Entry \(index): numberOfTrackersBlocked mismatch")
                 XCTAssertEqual(entry.blockedTrackingEntities, expected.blockedEntities,
-                              "Entry \(index): blockedTrackingEntities mismatch")
+                               "Entry \(index): blockedTrackingEntities mismatch")
 
                 // Verify failedToLoad
                 XCTAssertEqual(entry.failedToLoad, expected.failedToLoad,
-                              "Entry \(index): failedToLoad mismatch")
+                               "Entry \(index): failedToLoad mismatch")
 
                 // Verify new attribute exists and has default value
                 XCTAssertFalse(entry.cookiePopupBlocked,
-                              "Entry \(index): cookiePopupBlocked should default to false for migrated entries")
+                               "Entry \(index): cookiePopupBlocked should default to false for migrated entries")
 
                 // Verify visits relationship for entries that should have visits
                 let entryVisits = (entry.visits as? Set<PageVisitManagedObject>) ?? []
                 XCTAssertEqual(entryVisits.count, expected.visitCount,
-                              "Entry \(index): Visit count mismatch")
+                               "Entry \(index): Visit count mismatch")
 
                 // Verify visit dates for entries with visits
                 if expected.visitCount > 0 {
@@ -230,17 +230,17 @@ class BrowsingHistoryMigrationTests: XCTestCase {
                     }
 
                     XCTAssertEqual(sortedVisits.count, expectedVisitDates.count,
-                                  "Entry \(index): Visit count mismatch")
+                                   "Entry \(index): Visit count mismatch")
                     for (visitIndex, visit) in sortedVisits.enumerated() {
                         if let visitDate = visit.date {
                             let visitTimeInterval = visitDate.timeIntervalSince1970
                             XCTAssertEqual(visitTimeInterval, expectedVisitDates[visitIndex], accuracy: 1.0,
-                                          "Entry \(index), Visit \(visitIndex): Date mismatch")
+                                           "Entry \(index), Visit \(visitIndex): Date mismatch")
                         } else {
                             XCTFail("Entry \(index), Visit \(visitIndex): Date is nil")
                         }
                         XCTAssertEqual(visit.historyEntry?.identifier, expected.uuid,
-                                      "Entry \(index), Visit \(visitIndex): Relationship mismatch")
+                                       "Entry \(index), Visit \(visitIndex): Relationship mismatch")
                     }
                 }
             }

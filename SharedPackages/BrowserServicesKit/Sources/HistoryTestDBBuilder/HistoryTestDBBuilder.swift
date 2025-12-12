@@ -168,6 +168,7 @@ struct HistoryTestDBBuilder {
         print("✅ Created BrowsingHistory_V1 database with 5 entries")
     }
 
+    // swiftlint:disable force_cast
     private static func createHistoryEntry(
         identifier: UUID,
         url: URL,
@@ -212,7 +213,7 @@ struct HistoryTestDBBuilder {
 
         return entry
     }
+    // swiftlint:enable force_cast
 }
 
 // swiftlint:enable force_try
-

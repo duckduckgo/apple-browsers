@@ -47,6 +47,7 @@ struct ExternalSchemeInfo: Identifiable {
     let id: String // scheme name
     let scheme: String
     var decision: PersistedPermissionDecision
+    var isPendingRemoval: Bool = false
 
     /// Display text like 'Open "mailto" links'
     var displayText: String {
@@ -68,6 +69,8 @@ struct PermissionCenterItem: Identifiable {
     var blockedPopups: [BlockedPopup]
     /// For external apps: grouped external schemes
     var externalSchemes: [ExternalSchemeInfo]
+    /// Whether the permission is pending removal (will be removed on reload)
+    var isPendingRemoval: Bool = false
 
     /// Whether the permission is currently in use (e.g., camera/mic actively recording)
     var isInUse: Bool {
@@ -224,6 +227,11 @@ final class PermissionCenterViewModel: ObservableObject {
         let previousDecision = permissionManager.permission(forDomain: domain, permissionType: permissionType)
         permissionManager.setPermission(decision, forDomain: domain, permissionType: permissionType)
 
+        // Update the item's decision in the list
+        if let index = permissionItems.firstIndex(where: { $0.permissionType == permissionType }) {
+            permissionItems[index].decision = decision
+        }
+
         // Fire pixel for decision change
         if previousDecision != decision {
             PixelKit.fire(PermissionPixel.permissionCenterChanged(permissionType: permissionType, from: previousDecision, to: decision))
@@ -255,6 +263,12 @@ final class PermissionCenterViewModel: ObservableObject {
         let previousDecision = permissionManager.permission(forDomain: domain, permissionType: permissionType)
         permissionManager.setPermission(decision, forDomain: domain, permissionType: permissionType)
 
+        // Update the scheme's decision in the list
+        if let itemIndex = permissionItems.firstIndex(where: { $0.isGroupedExternalApps }),
+           let schemeIndex = permissionItems[itemIndex].externalSchemes.firstIndex(where: { $0.scheme == scheme }) {
+            permissionItems[itemIndex].externalSchemes[schemeIndex].decision = decision
+        }
+
         // Fire pixel for decision change
         if previousDecision != decision {
             PixelKit.fire(PermissionPixel.permissionCenterChanged(permissionType: permissionType, from: previousDecision, to: decision))
@@ -274,23 +288,14 @@ final class PermissionCenterViewModel: ObservableObject {
         // Show reload banner
         markReloadNeeded()
 
-        // Update the grouped item by removing this scheme
-        if let index = permissionItems.firstIndex(where: { $0.isGroupedExternalApps }) {
-            permissionItems[index].externalSchemes.removeAll { $0.scheme == scheme }
-
-            // If no more schemes, remove the entire row
-            if permissionItems[index].externalSchemes.isEmpty {
-                permissionItems.remove(at: index)
-            }
+        // Mark the scheme as pending removal instead of removing it
+        if let itemIndex = permissionItems.firstIndex(where: { $0.isGroupedExternalApps }),
+           let schemeIndex = permissionItems[itemIndex].externalSchemes.firstIndex(where: { $0.scheme == scheme }) {
+            permissionItems[itemIndex].externalSchemes[schemeIndex].isPendingRemoval = true
         }
 
         // Notify that a permission was removed
         onPermissionRemoved?()
-
-        // Dismiss popover if no permissions left and no reload banner
-        if permissionItems.isEmpty && !showReloadBanner {
-            dismissPopover()
-        }
     }
 
     /// Updates the popup decision (special handling for popups)
@@ -358,8 +363,10 @@ final class PermissionCenterViewModel: ObservableObject {
         // Show reload banner
         markReloadNeeded()
 
-        // Also remove from UI immediately
-        permissionItems.removeAll { $0.permissionType == permissionType }
+        // Mark as pending removal instead of removing immediately
+        if let index = permissionItems.firstIndex(where: { $0.permissionType == permissionType }) {
+            permissionItems[index].isPendingRemoval = true
+        }
 
         // Reset temporary popup allowance when removing popup permission
         if permissionType == .popups {
@@ -369,11 +376,6 @@ final class PermissionCenterViewModel: ObservableObject {
 
         // Notify that a permission was removed (to update UI like permission button visibility)
         onPermissionRemoved?()
-
-        // Dismiss popover if no permissions left and no reload banner
-        if permissionItems.isEmpty && !showReloadBanner {
-            dismissPopover()
-        }
     }
 
     // MARK: - Private Methods
@@ -487,15 +489,6 @@ final class PermissionCenterViewModel: ObservableObject {
     }
 
     private func subscribeToPermissionChanges() {
-        // Subscribe to persisted permission changes
-        permissionManager.permissionPublisher
-            .filter { [weak self] in $0.domain == self?.domain }
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.loadPermissions()
-            }
-            .store(in: &cancellables)
-
         // Subscribe to runtime permission state changes (active, inactive, etc.)
         usedPermissionsPublisher?
             .receive(on: DispatchQueue.main)

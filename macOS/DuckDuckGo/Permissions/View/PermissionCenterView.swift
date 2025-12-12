@@ -166,11 +166,13 @@ struct ReloadBannerView: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 12)
-        .background(Color(designSystemColor: .permissionWarningBackground))
-        .cornerRadius(8)
-        .overlay(
+        .background(
             RoundedRectangle(cornerRadius: 8)
-                .stroke(Color(designSystemColor: .lines), lineWidth: 1)
+                .fill(Color(designSystemColor: .permissionWarningBackground))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .strokeBorder(Color.black.opacity(0.1), lineWidth: 1)
+                )
         )
     }
 }
@@ -204,12 +206,14 @@ struct PermissionRowView: View {
                 // Permission name
                 Text(item.displayName)
                     .font(.system(size: 13))
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .foregroundColor(item.isPendingRemoval ? Color(designSystemColor: .textSecondary) : Color(designSystemColor: .textPrimary))
 
                 Spacer()
 
                 // Decision dropdown
                 decisionPopUpButton
+                    .disabled(item.isPendingRemoval)
+                    .opacity(item.isPendingRemoval ? 0.5 : 1.0)
 
                 // Remove button with hover effect
                 Button(action: onRemove) {
@@ -222,26 +226,28 @@ struct PermissionRowView: View {
                 .buttonStyle(PlainButtonStyle())
                 .background(
                     RoundedRectangle(cornerRadius: 5)
-                        .fill(isRemoveButtonHovered ? Color(.buttonMouseOver) : Color.clear)
+                        .fill(isRemoveButtonHovered && !item.isPendingRemoval ? Color(.buttonMouseOver) : Color.clear)
                 )
                 .onHover { hovering in
                     isRemoveButtonHovered = hovering
                 }
                 .help(UserText.permissionCenterResetTooltip)
+                .disabled(item.isPendingRemoval)
+                .opacity(item.isPendingRemoval ? 0.5 : 1.0)
             }
             .padding(.leading, 12)
             .padding(.trailing, 12)
             .padding(.vertical, 12)
 
             // System disabled warning (if applicable)
-            if item.isSystemDisabled {
+            if item.isSystemDisabled && !item.isPendingRemoval {
                 systemDisabledWarning
                     .padding(.leading, 44)
                     .padding(.trailing, 12)
                     .padding(.bottom, 12)
             }
         }
-        .background(item.isSystemDisabled ? Color(designSystemColor: .permissionWarningBackground) : Color.clear)
+        .background(item.isSystemDisabled && !item.isPendingRemoval ? Color(designSystemColor: .permissionWarningBackground) : Color.clear)
         .onChange(of: currentDecision) { newValue in
             onDecisionChanged(newValue)
         }
@@ -255,17 +261,25 @@ struct PermissionRowView: View {
 
     // MARK: - Subviews
 
-    @ViewBuilder
     private var permissionIcon: some View {
-        // Icon color: red if currently in use, otherwise secondary
-        let iconColor: Color = item.isInUse ? Color(NSColor.systemRed) : Color(designSystemColor: .textSecondary)
+        // Icon color: red if currently in use, secondary otherwise (dimmed if pending removal)
+        let iconColor: Color = {
+            if item.isPendingRemoval {
+                return Color(designSystemColor: .textSecondary).opacity(0.5)
+            } else if item.isInUse {
+                return Color(NSColor.systemRed)
+            } else {
+                return Color(designSystemColor: .textSecondary)
+            }
+        }()
         // Icon style:
+        // - Outline when pending removal
         // - Solid + red if currently in use (active)
         // - Solid if "Always Allow" is set (even if not in use)
         // - Outline for "Always Ask" or "Never Allow" when not in use
-        let useSolidIcon = item.isInUse || item.decision == .allow
+        let useSolidIcon = !item.isPendingRemoval && (item.isInUse || item.decision == .allow)
         let icon = (useSolidIcon ? item.permissionType.solidIcon : nil) ?? item.permissionType.icon
-        Image(nsImage: icon)
+        return Image(nsImage: icon)
             .foregroundColor(iconColor)
     }
 
@@ -358,18 +372,20 @@ struct PopupPermissionRowView: View {
             HStack(spacing: 8) {
                 // Icon
                 Image(nsImage: DesignSystemImages.Glyphs.Size16.popupBlocked)
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .foregroundColor(item.isPendingRemoval ? Color(designSystemColor: .textSecondary).opacity(0.5) : Color(designSystemColor: .textSecondary))
                     .frame(width: 24, height: 24)
 
                 // Permission name
                 Text(item.displayName)
                     .font(.system(size: 13))
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .foregroundColor(item.isPendingRemoval ? Color(designSystemColor: .textSecondary) : Color(designSystemColor: .textPrimary))
 
                 Spacer()
 
                 // Decision dropdown
                 popupDecisionPopUpButton
+                    .disabled(item.isPendingRemoval)
+                    .opacity(item.isPendingRemoval ? 0.5 : 1.0)
 
                 // Remove button with hover effect
                 Button(action: onRemove) {
@@ -382,19 +398,21 @@ struct PopupPermissionRowView: View {
                 .buttonStyle(PlainButtonStyle())
                 .background(
                     RoundedRectangle(cornerRadius: 5)
-                        .fill(isRemoveButtonHovered ? Color(.buttonMouseOver) : Color.clear)
+                        .fill(isRemoveButtonHovered && !item.isPendingRemoval ? Color(.buttonMouseOver) : Color.clear)
                 )
                 .onHover { hovering in
                     isRemoveButtonHovered = hovering
                 }
                 .help(UserText.permissionCenterResetTooltip)
+                .disabled(item.isPendingRemoval)
+                .opacity(item.isPendingRemoval ? 0.5 : 1.0)
             }
             .padding(.leading, 12)
             .padding(.trailing, 12)
             .padding(.vertical, 12)
 
-            // Blocked popups section (if any)
-            if !item.blockedPopups.isEmpty {
+            // Blocked popups section (if any) - hide when pending removal
+            if !item.blockedPopups.isEmpty && !item.isPendingRemoval {
                 VStack(alignment: .leading, spacing: 4) {
                     // Header: "Blocked X pop-ups"
                     if let headerText = item.blockedPopupsHeaderText {
@@ -533,12 +551,14 @@ struct ExternalSchemeRowView: View {
             // Description text
             Text(schemeInfo.displayText)
                 .font(.system(size: 12))
-                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .foregroundColor(schemeInfo.isPendingRemoval ? Color(designSystemColor: .textSecondary).opacity(0.5) : Color(designSystemColor: .textSecondary))
 
             Spacer()
 
             // Decision dropdown
             decisionPopUpButton
+                .disabled(schemeInfo.isPendingRemoval)
+                .opacity(schemeInfo.isPendingRemoval ? 0.5 : 1.0)
 
             // Remove button with hover effect
             Button(action: onRemove) {
@@ -551,12 +571,14 @@ struct ExternalSchemeRowView: View {
             .buttonStyle(PlainButtonStyle())
             .background(
                 RoundedRectangle(cornerRadius: 5)
-                    .fill(isRemoveButtonHovered ? Color(.buttonMouseOver) : Color.clear)
+                    .fill(isRemoveButtonHovered && !schemeInfo.isPendingRemoval ? Color(.buttonMouseOver) : Color.clear)
             )
             .onHover { hovering in
                 isRemoveButtonHovered = hovering
             }
             .help(UserText.permissionCenterResetTooltip)
+            .disabled(schemeInfo.isPendingRemoval)
+            .opacity(schemeInfo.isPendingRemoval ? 0.5 : 1.0)
         }
         .padding(.leading, 44)
         .padding(.trailing, 12)

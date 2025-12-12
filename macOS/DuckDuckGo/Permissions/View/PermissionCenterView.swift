@@ -226,12 +226,13 @@ struct PermissionRowView: View {
 
     private var systemDisabledWarning: some View {
         HStack(alignment: .top, spacing: 8) {
-            Image(nsImage: item.permissionType.icon)
+            Image(nsImage: DesignSystemImages.Glyphs.Size16.osBlocked)
                 .foregroundColor(Color(designSystemColor: .textPrimary))
 
             (Text(item.permissionType.systemPermissionDisabledText)
                 .font(.system(size: 12))
                 .foregroundColor(Color(designSystemColor: .textPrimary))
+            + Text(" ")
             + Text(item.permissionType.systemSettingsLinkText)
                 .font(.system(size: 12))
                 .foregroundColor(Color(designSystemColor: .textLink)))

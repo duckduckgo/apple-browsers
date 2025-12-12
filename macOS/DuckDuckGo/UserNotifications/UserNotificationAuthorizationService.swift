@@ -27,20 +27,20 @@ protocol UserNotificationAuthorizationServicing: AnyObject {
 
     /// Returns the cached authorization status (sync, may be briefly stale at app launch)
     var cachedAuthorizationStatus: UNAuthorizationStatus { get }
-    
+
     /// Publisher that emits when authorization status changes
     /// Initial value will be .notDetermined, then updated after first async fetch
     var authorizationStatusPublisher: AnyPublisher<UNAuthorizationStatus, Never> { get }
-    
+
     /// Request notification authorization from the system
     func requestAuthorization(options: UNAuthorizationOptions) async throws -> Bool
 }
 
 final class UserNotificationAuthorizationService: UserNotificationAuthorizationServicing {
     @PublishedAfter private var currentAuthorizationStatus: UNAuthorizationStatus = .notDetermined
-    
+
     private var appActivationCancellable: AnyCancellable?
-    
+
     var authorizationStatus: UNAuthorizationStatus {
         get async {
             let settings = await UNUserNotificationCenter.current().notificationSettings()
@@ -51,19 +51,19 @@ final class UserNotificationAuthorizationService: UserNotificationAuthorizationS
     var cachedAuthorizationStatus: UNAuthorizationStatus {
         currentAuthorizationStatus
     }
-    
+
     var authorizationStatusPublisher: AnyPublisher<UNAuthorizationStatus, Never> {
         $currentAuthorizationStatus.eraseToAnyPublisher()
     }
-    
+
     init(appActivationPublisher: AnyPublisher<Notification, Never> = NotificationCenter.default
             .publisher(for: NSApplication.didBecomeActiveNotification)
             .eraseToAnyPublisher()) {
-        
+
         Task {
             await updateAuthorizationStatus()
         }
-        
+
         self.appActivationCancellable = appActivationPublisher
             .sink { [weak self] _ in
                 Task { [weak self] in
@@ -71,13 +71,13 @@ final class UserNotificationAuthorizationService: UserNotificationAuthorizationS
                 }
             }
     }
-    
+
     func requestAuthorization(options: UNAuthorizationOptions) async throws -> Bool {
         let granted = try await UNUserNotificationCenter.current().requestAuthorization(options: options)
         await updateAuthorizationStatus()
         return granted
     }
-    
+
     private func updateAuthorizationStatus() async {
         let newStatus = await authorizationStatus
         if newStatus != currentAuthorizationStatus {
@@ -85,6 +85,3 @@ final class UserNotificationAuthorizationService: UserNotificationAuthorizationS
         }
     }
 }
-
-
-

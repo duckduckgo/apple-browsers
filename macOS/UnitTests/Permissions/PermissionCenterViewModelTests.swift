@@ -110,8 +110,4 @@ final class MockSystemPermissionManager: SystemPermissionManagerProtocol {
         completion(authorizationStateToReturn)
         return nil
     }
-
-    var notificationAuthorizationStatePublisher: AnyPublisher<SystemPermissionAuthorizationState, Never> {
-        Just(.authorized).eraseToAnyPublisher()
-    }
 }

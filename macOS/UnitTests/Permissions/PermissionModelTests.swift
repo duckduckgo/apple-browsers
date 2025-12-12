@@ -1122,39 +1122,6 @@ final class PermissionModelTests: XCTestCase {
         XCTAssertEqual(model.permissions, [.geolocation: .denied])
     }
 
-    @MainActor
-    func testWhenNotificationAuthorizationStateChangesToNotDeterminedThenPermissionIsRemoved() async {
-        featureFlaggerMock.enabledFeatures = [.newPermissionView]
-
-        // Set up notification permission in inactive state (granted but not active)
-        model.permissions[.notification] = .inactive
-        webView.urlValue = URL(string: "https://example.com")
-
-        // Simulate system authorization changing to notDetermined (e.g., user reset in System Settings)
-        systemPermissionManagerMock.notificationAuthorizationStateSubject.send(.notDetermined)
-
-        // Wait for async processing
-        try? await Task.sleep(nanoseconds: 100_000_000)
-
-        // Verify permission was removed
-        XCTAssertNil(model.permissions[.notification])
-    }
-
-    @MainActor
-    func testWhenNotificationAuthorizationStateChangesToAuthorizedThenStateRemainsActive() async {
-        featureFlaggerMock.enabledFeatures = [.newPermissionView]
-
-        model.permissions[.notification] = .active
-
-        // Simulate system authorization confirming as authorized
-        systemPermissionManagerMock.notificationAuthorizationStateSubject.send(.authorized)
-
-        try? await Task.sleep(nanoseconds: 100_000_000)
-
-        // State should remain active
-        XCTAssertEqual(model.permissions[.notification], .active)
-    }
-
     // MARK: - System Permission Disabled Tests (New Permission View)
 
     func testWhenNewPermissionViewEnabledAndSystemPermissionDeniedThenQueryIsShown() {

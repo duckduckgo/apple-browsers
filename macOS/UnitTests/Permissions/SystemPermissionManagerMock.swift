@@ -34,12 +34,8 @@ final class SystemPermissionManagerMock: SystemPermissionManagerProtocol {
     /// Completion to call when authorization is requested (simulates async response)
     var authorizationRequestCompletion: ((PermissionType) -> SystemPermissionAuthorizationState)?
 
-    /// Subject for controlling notification authorization state changes in tests
+    /// Subject for controlling notification authorization state in tests
     var notificationAuthorizationStateSubject = CurrentValueSubject<SystemPermissionAuthorizationState, Never>(.notDetermined)
-
-    var notificationAuthorizationStatePublisher: AnyPublisher<SystemPermissionAuthorizationState, Never> {
-        notificationAuthorizationStateSubject.eraseToAnyPublisher()
-    }
 
     func authorizationState(for permissionType: PermissionType) async -> SystemPermissionAuthorizationState {
         if permissionType == .notification {

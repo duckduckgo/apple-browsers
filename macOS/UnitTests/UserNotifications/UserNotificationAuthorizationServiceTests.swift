@@ -176,6 +176,3 @@ final class UserNotificationAuthorizationServiceMock: UserNotificationAuthorizat
         }
     }
 }
-
-
-

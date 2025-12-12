@@ -198,6 +198,8 @@ struct PermissionAuthorizationSwiftUIView: View {
     @State private var authorizationCancellable: AnyCancellable?
     @State private var appActiveCancellable: AnyCancellable?
 
+    private let stepIndicatorSize: CGFloat = 32
+
     private var promptText: String {
         switch permissionType {
         case .geolocation:
@@ -328,7 +330,7 @@ struct PermissionAuthorizationSwiftUIView: View {
     @ViewBuilder
     private var stepOneView: some View {
         HStack(spacing: 12) {
-            stepIndicator(step: 1, isActive: systemPermissionState != .authorized)
+            stepIndicator(step: 1, isActive: systemPermissionState != .authorized, isCompleted: systemPermissionState == .authorized)
 
             switch systemPermissionState {
             case .initial:
@@ -354,17 +356,11 @@ struct PermissionAuthorizationSwiftUIView: View {
                     .cornerRadius(8)
 
             case .authorized:
-                HStack(spacing: 8) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(Color(NSColor.systemGreen))
-                        .font(.system(size: 20))
-
-                    Text(permissionType.systemPermissionEnabledText)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(Color(NSColor.systemGreen))
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .frame(height: 36)
+                Text(permissionType.systemPermissionEnabledText)
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundColor(Color(designSystemColor: .textSuccess))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .frame(height: 36)
 
             case .alreadyDenied, .denied:
                 systemPermissionDisabledView
@@ -431,21 +427,30 @@ struct PermissionAuthorizationSwiftUIView: View {
         }
     }
 
-    private func stepIndicator(step: Int, isActive: Bool) -> some View {
+    private func stepIndicator(step: Int, isActive: Bool, isCompleted: Bool = false) -> some View {
         ZStack {
-            if isActive {
+            if isCompleted {
+                // Completed state: green checkmark
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundColor(Color(designSystemColor: .textSuccess))
+                    .frame(width: stepIndicatorSize, height: stepIndicatorSize)
+            } else if isActive {
+                // Active state: filled circle with number
                 Circle()
                     .fill(Color.primary)
-                    .frame(width: 28, height: 28)
+                    .frame(width: stepIndicatorSize, height: stepIndicatorSize)
+                Text("\(step)")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(Color(NSColor.windowBackgroundColor))
             } else {
+                // Inactive state: outlined circle with number
                 Circle()
                     .stroke(Color.secondary.opacity(0.4), lineWidth: 1)
-                    .frame(width: 28, height: 28)
+                    .frame(width: stepIndicatorSize, height: stepIndicatorSize)
+                Text("\(step)")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(Color.secondary.opacity(0.6))
             }
-
-            Text("\(step)")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(isActive ? Color(NSColor.windowBackgroundColor) : Color.secondary.opacity(0.6))
         }
     }
 

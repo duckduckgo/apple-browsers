@@ -137,6 +137,7 @@ public enum SharedDesignSystemColor {
     case textLink
     case textPrimary
     case textSecondary
+    case textSuccess
     case textTertiary
 
     // Tone

@@ -222,6 +222,8 @@ extension SharedColorPaletteDefinition {
             return textPrimary
         case .textSecondary:
             return textSecondary
+        case .textSuccess:
+            return DynamicColor(lightColor: .green60, darkColor: .green30)
         case .textTertiary:
             return textTertiary
 

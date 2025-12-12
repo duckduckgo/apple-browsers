@@ -105,7 +105,8 @@ class DownloadManager: DownloadManaging {
     }
 
     func downloadMetaData(for response: URLResponse, suggestedFilename: String? = nil) -> DownloadMetadata? {
-        let filename = filename(forSuggestedFilename: suggestedFilename ?? response.suggestedFilename, mimeType: response.mimeType)
+        let filename = filename(forSuggestedFilename: suggestedFilename ?? response.suggestedFilename,
+                                mimeType: response.mimeType)
         return DownloadMetadata(response, filename: filename)
     }
 
@@ -156,7 +157,7 @@ extension DownloadManager {
 
     private func convertToUniqueFilename(_ filename: String) -> String {
         let downloadingFilenames = Set(downloadList.map { $0.filename })
-        let downloadedFilenames = Set(downloadsDirectoryHandler.downloadsDirectoryFiles.map { $0.lastPathComponent })
+        let downloadedFilenames = Set(downloadsDirectoryFiles.map { $0.lastPathComponent })
         let list = downloadingFilenames.union(downloadedFilenames)
 
         var fileExtension = downloadsDirectoryHandler.downloadsDirectory.appendingPathComponent(filename).pathExtension
@@ -243,6 +244,6 @@ extension NSNotification.Name {
 
 
 extension DownloadManager {
-    var downloadsDirectoryFiles: [URL] { downloadsDirectoryHandler.downloadsDirectoryFiles }
+    var downloadsDirectoryFiles: [URL] { (try? downloadsDirectoryHandler.downloadsDirectoryFiles) ?? [] }
     var downloadsDirectory: URL { downloadsDirectoryHandler.downloadsDirectory }
 }

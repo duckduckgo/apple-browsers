@@ -31,8 +31,9 @@ class DownloadsListDataSource {
     
     init(downloadManager: DownloadManaging = AppDependencyProvider.shared.downloadManager) {
         self.downloadManager = downloadManager
+        let downloadsDirectoryFiles = (try? downloadManager.downloadsDirectoryFiles) ?? []
         model = DownloadsListModel(ongoingDownloads: downloadManager.downloadList.filter { !$0.temporary }.map { AnyDownloadListRepresentable($0) },
-                                   completeDownloads: downloadManager.downloadsDirectoryFiles.map { AnyDownloadListRepresentable($0) })
+                                   completeDownloads: downloadsDirectoryFiles.map { AnyDownloadListRepresentable($0) })
         downloadManager.startMonitoringDownloadsDirectoryChanges()
         setupChangeListeners()
     }
@@ -62,8 +63,9 @@ class DownloadsListDataSource {
     }
     
     private func updateModel() {
+        let downloadsDirectoryFiles = (try? downloadManager.downloadsDirectoryFiles) ?? []
         let ongoingDownloads = downloadManager.downloadList.filter { !$0.temporary }.map { AnyDownloadListRepresentable($0) }
-        let completeDownloads = downloadManager.downloadsDirectoryFiles.map { AnyDownloadListRepresentable($0) }
+        let completeDownloads = downloadsDirectoryFiles.map { AnyDownloadListRepresentable($0) }
         let temporaryDirectoryURLs = deleteDownloadsHelper.temporaryDirectoryURLs.value
         
         model.update(ongoingDownloads: ongoingDownloads,

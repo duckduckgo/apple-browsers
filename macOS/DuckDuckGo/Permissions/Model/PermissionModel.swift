@@ -407,10 +407,10 @@ final class PermissionModel {
                 return false
             case .allow:
                 // User has "Always Allow" stored - but check system permission first
-                // If system permission is disabled, show dialog instead of auto-granting
-                // Only applies when new permission view is enabled (two-step authorization flow)
+                // If system permission is disabled, return denied (don't show prompt)
+                // Only applies when new permission view is enabled
                 if featureFlagger.isFeatureOn(.newPermissionView), await isSystemPermissionDisabled(for: permission) {
-                    return nil
+                    return false
                 }
             case .ask:
                 // if at least one permission is not set: ask

@@ -1481,6 +1481,7 @@ extension SettingsViewModel {
             },
             set: { newValue in
                 if self.shouldUseDeferredOnboardingSearchExperience {
+                    guard newValue != self.onboardingSearchExperienceProvider.didEnableAIChatSearchInputDuringOnboarding else { return }
                     self.objectWillChange.send()
                     self.onboardingSearchExperienceProvider.storeAIChatSearchInputDuringOnboardingChoice(enable: newValue)
                 } else {

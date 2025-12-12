@@ -36,7 +36,7 @@ struct PermissionCenterView: View {
         } else if hasExternalApps {
             return 380
         }
-        return 380
+        return 360
     }
 
     var body: some View {
@@ -135,10 +135,10 @@ struct ReloadBannerView: View {
     var body: some View {
         HStack(spacing: 0) {
             // Reload icon
-            Image(systemName: "arrow.clockwise")
+            Image(nsImage: DesignSystemImages.Glyphs.Size16.reload)
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(Color(designSystemColor: .textSecondary))
-                .padding(.leading, 6)
+                .padding(.leading, 4)
 
             // Message
             Text(message)

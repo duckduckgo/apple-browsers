@@ -204,8 +204,10 @@ final class PasswordManagementItemListModelTests: XCTestCase {
 extension PasswordManagementItemListModel {
 
     convenience init(onItemSelected: @escaping (_ old: SecureVaultItem?, _ new: SecureVaultItem?) -> Void,
-                     onAddItemSelected: @escaping (_ category: SecureVaultSorting.Category) -> Void) {
+                     onAddItemSelected: @escaping (_ category: SecureVaultSorting.Category) -> Void,
+                     featureFlagger: FeatureFlagger? = nil) {
         self.init(passwordManagerCoordinator: PasswordManagerCoordinatingMock(), syncPromoManager: SyncPromoManager(),
+                  featureFlagger: featureFlagger,
                   onItemSelected: onItemSelected,
                   onAddItemSelected: onAddItemSelected)
     }

@@ -76,9 +76,15 @@ public enum SharedDesignSystemColor {
     case containerFillPrimary
     case containerFillSecondary
     case containerFillTertiary
+    case containerBorderPrimary
+    case containerBorderSecondary
     case containerBorderTertiary
 
     // Controls
+    case controlsBorderPrimary
+    case controlsBorderSecondary
+    case controlsBorderTertiary
+    case controlsBorderQuaternary
     case controlsFillPrimary
     case controlsFillSecondary
     case controlsFillTertiary
@@ -105,12 +111,10 @@ public enum SharedDesignSystemColor {
     case iconsSecondary
     case iconsTertiary
 
-    // Placeholders
-    case placeholderShade12
-
     // System
     case lines
-    case spinner
+    case spinnerStart
+    case spinnerFinal
 
     // Shadows
     case shadowPrimary
@@ -137,21 +141,9 @@ public enum SharedDesignSystemColor {
     // Tone
     case toneShadePrimary
 
-    // Fire Dialog View
-    case fireDialogBackground
-    case fireDialogPillBackground
-    case fireDialogPillBorder
-    case fireDialogPillSelectedSegmentBackground
-    case fireDialogPillSelectedSegmentBorder
-    case fireDialogPillSelectedSegmentShadow
-    case fireDialogPillSelectedSegmentTopStroke
-    case fireDialogPillSelectedSegmentIconBackground
-    case fireDialogPillSegmentMouseOver
-    case fireDialogPillSegmentMouseDown
-    case fireDialogPillHoverOverlay
-    case fireDialogToggleKnob
-    case fireDialogSectionBackground
-    case fireDialogSectionBorder
+    // Permission Center
+    case permissionCenterBackground
+    case permissionCenterContainerBackground
 }
 
 #endif

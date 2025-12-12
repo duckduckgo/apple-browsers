@@ -23,14 +23,27 @@ final class BookmarkHTMLImporter: DataImporter {
 
     let fileURL: URL
     let bookmarkImporter: BookmarkImporter
+    let maxFavoritesCount: Int?
+    let otherBookmarksFolderTitle: String
 
-    init(fileURL: URL, bookmarkImporter: BookmarkImporter) {
+    init(fileURL: URL,
+         bookmarkImporter: BookmarkImporter,
+         maxFavoritesCount: Int? = nil,
+         otherBookmarksFolderTitle: String = UserText.otherBookmarksImportedFolderTitle) {
         self.fileURL = fileURL
         self.bookmarkImporter = bookmarkImporter
+        self.maxFavoritesCount = maxFavoritesCount
+        self.otherBookmarksFolderTitle = otherBookmarksFolderTitle
     }
 
     var totalBookmarks: Int {
         (try? bookmarkReaderResult.get().bookmarks.numberOfBookmarks) ?? 0
+    }
+
+    var totalFavoritesCount: Int {
+        guard let importedData = try? bookmarkReaderResult.get() else { return 0 }
+        let bookmarkBarCount = importedData.bookmarks.topLevelFolders.bookmarkBar?.children?.count ?? 0
+        return min(bookmarkBarCount, maxFavoritesCount ?? Int.max)
     }
 
     var importableTypes: [DataImport.DataType] {
@@ -47,7 +60,7 @@ final class BookmarkHTMLImporter: DataImporter {
         switch self.bookmarkReaderResult {
         case let .success(importedData):
             let source: BookmarkImportSource = importedData.source ?? .thirdPartyBrowser(.bookmarksHTML)
-            let bookmarksResult = self.bookmarkImporter.importBookmarks(importedData.bookmarks, source: source, markRootBookmarksAsFavoritesByDefault: true, maxFavoritesCount: nil)
+            let bookmarksResult = self.bookmarkImporter.importBookmarks(importedData.bookmarks, source: source, markRootBookmarksAsFavoritesByDefault: true, maxFavoritesCount: maxFavoritesCount)
             return .success(.init(bookmarksResult))
 
         case let .failure(error):
@@ -56,7 +69,7 @@ final class BookmarkHTMLImporter: DataImporter {
     }
 
     private lazy var bookmarkReaderResult: DataImportResult<HTMLImportedBookmarks> = {
-        let bookmarkReader = BookmarkHTMLReader(bookmarksFileURL: self.fileURL)
+        let bookmarkReader = BookmarkHTMLReader(bookmarksFileURL: self.fileURL, otherBookmarksFolderTitle: self.otherBookmarksFolderTitle)
         return bookmarkReader.readBookmarks()
     }()
 }

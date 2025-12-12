@@ -61,7 +61,7 @@ struct Launching: LaunchingHandling {
         // Initialize configuration with the key-value store
         configuration = AppConfiguration(appKeyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
 
-        var isBookmarksDBFilePresent: Bool = true
+        var isBookmarksDBFilePresent: Bool?
         if BoolFileMarker(name: .hasSuccessfullySetupBookmarksDatabaseBefore)?.isPresent ?? false {
             isBookmarksDBFilePresent = FileManager.default.fileExists(atPath: BookmarksDatabase.defaultDBFileURL.path)
         }
@@ -86,12 +86,15 @@ struct Launching: LaunchingHandling {
         let configurationService = RemoteConfigurationService()
         let crashCollectionService = CrashCollectionService()
         let statisticsService = StatisticsService()
+
+        let productSurfaceTelemetry = PixelProductSurfaceTelemetry(featureFlagger: featureFlagger, dailyPixelFiring: DailyPixel.self)
         let reportingService = ReportingService(fireproofing: fireproofing,
                                                 featureFlagging: featureFlagger,
                                                 userDefaults: UserDefaults.app,
                                                 pixelKit: PixelKit.shared,
                                                 appDependencies: AppDependencyProvider.shared,
-                                                privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager)
+                                                privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
+                                                productSurfaceTelemetry: productSurfaceTelemetry)
         let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
                                       privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
                                       keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
@@ -117,7 +120,7 @@ struct Launching: LaunchingHandling {
         let subscriptionService = SubscriptionService(privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager, featureFlagger: featureFlagger)
         let maliciousSiteProtectionService = MaliciousSiteProtectionService(featureFlagger: featureFlagger,
                                                                             privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager)
-        let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService(featureFlagger: featureFlagger)
+        let systemSettingsPiPTutorialService = SystemSettingsPiPTutorialService()
         let wideEventService = WideEventService(
             wideEvent: AppDependencyProvider.shared.wideEvent,
             featureFlagger: featureFlagger,
@@ -187,7 +190,9 @@ struct Launching: LaunchingHandling {
                                               launchSourceManager: launchSourceManager,
                                               winBackOfferService: winBackOfferService,
                                               modalPromptCoordinationService: modalPromptCoordinationService,
-                                              mobileCustomization: mobileCustomization)
+                                              mobileCustomization: mobileCustomization,
+                                              productSurfaceTelemetry: productSurfaceTelemetry,
+                                              sharedSecureVault: configuration.persistentStoresConfiguration.sharedSecureVault)
 
         // MARK: - UI-Dependent Services Setup
         // Initialize and configure services that depend on UI components

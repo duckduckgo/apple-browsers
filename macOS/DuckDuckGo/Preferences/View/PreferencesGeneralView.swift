@@ -100,35 +100,30 @@ extension Preferences {
 
                     PreferencePaneSubSection {
                         Picker(selection: $startupModel.restorePreviousSession, content: {
-                            if featureFlagger.isFeatureOn(.openFireWindowByDefault) {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    HStack(spacing: 0) {
-                                        Text(UserText.openANew)
-                                        Picker("", selection: $startupModel.startupWindowType) {
-                                            ForEach(StartupWindowType.allCases, id: \.self) { windowType in
-                                                Text(windowType.displayName).tag(windowType)
-                                                    .accessibilityIdentifier({
-                                                        switch windowType {
-                                                        case .window:
-                                                            "PreferencesGeneralView.stateRestorePicker.openANewWindow.regular"
-                                                        case .fireWindow:
-                                                            "PreferencesGeneralView.stateRestorePicker.openANewWindow.fireWindow"
-                                                        }
-                                                    }())
-                                            }
+                            VStack(alignment: .leading, spacing: 4) {
+                                HStack(spacing: 0) {
+                                    Text(UserText.openANew)
+                                    Picker("", selection: $startupModel.startupWindowType) {
+                                        ForEach(StartupWindowType.allCases, id: \.self) { windowType in
+                                            Text(windowType.displayName).tag(windowType)
+                                                .accessibilityIdentifier({
+                                                    switch windowType {
+                                                    case .window:
+                                                        "PreferencesGeneralView.stateRestorePicker.openANewWindow.regular"
+                                                    case .fireWindow:
+                                                        "PreferencesGeneralView.stateRestorePicker.openANewWindow.fireWindow"
+                                                    }
+                                                }())
                                         }
-                                        .pickerStyle(.menu)
-                                        .fixedSize()
-                                        .disabled(startupModel.restorePreviousSession)
                                     }
+                                    .pickerStyle(.menu)
+                                    .fixedSize()
+                                    .disabled(startupModel.restorePreviousSession)
                                 }
-                                .tag(false)
-                                .padding(.bottom, 4)
-                            } else {
-                                Text(UserText.showHomePage).tag(false)
-                                    .padding(.bottom, 4)
-                                    .accessibilityIdentifier("PreferencesGeneralView.stateRestorePicker.openANewWindow")
                             }
+                            .tag(false)
+                            .padding(.bottom, 4)
+
                             Text(UserText.reopenAllWindowsFromLastSession).tag(true)
                                 .accessibilityIdentifier("PreferencesGeneralView.stateRestorePicker.reopenAllWindowsFromLastSession")
                         }, label: {})

@@ -409,6 +409,20 @@ final class DBPUICommunicationViewModelScanStateExtensionsTests: XCTestCase {
         XCTAssertTrue(areDatesEqualsOnDayMonthAndYear(date1: Date().tomorrow, date2: Date(timeIntervalSince1970: result.scanSchedule.nextScan.date)))
     }
 
+    func testNextScans_whenPreferredRunDateIsInThePast_thenDisplayDateIsClampedToNow() {
+        let pastPreferredRunDate = Date().addingTimeInterval(-3600)
+        let now = Date()
+
+        let brokerProfileQueryData: [BrokerProfileQueryData] = [
+            .mock(dataBrokerName: "Broker #1", url: "broker1.com", preferredRunDate: pastPreferredRunDate)
+        ]
+
+        let result = DBPUIScanAndOptOutMaintenanceState(from: brokerProfileQueryData)
+
+        let nextScanDate = Date(timeIntervalSince1970: result.scanSchedule.nextScan.date)
+        XCTAssertGreaterThanOrEqual(nextScanDate, now)
+    }
+
     func testBrokersWithMixedScanProgress_areOrderedByLastRunDate_andHaveCorrectStatus() {
 
         // Given
@@ -544,6 +558,21 @@ final class DBPUICommunicationViewModelScanStateExtensionsTests: XCTestCase {
 
         XCTAssertEqual(result.scanSchedule.nextScan.dataBrokers.count, 1)
         XCTAssertEqual(result.scanSchedule.nextScan.dataBrokers.first?.name, "Active Broker")
+    }
+
+    func testWhenProfileQueryIsDeprecated_thenInProgressOptOutsExcludesItButCompletedOptOutsIncludesIt() {
+        let brokerProfileQueryData: [BrokerProfileQueryData] = [
+            .mock(dataBrokerName: "Active InProgress", extractedProfile: .mockWithoutRemovedDate, deprecated: false),
+            .mock(dataBrokerName: "Deprecated InProgress", extractedProfile: .mockWithoutRemovedDate, deprecated: true),
+            .mock(dataBrokerName: "Deprecated Completed", extractedProfile: .mockWithRemovedDate, deprecated: true)
+        ]
+
+        let result = DBPUIScanAndOptOutMaintenanceState(from: brokerProfileQueryData)
+
+        XCTAssertEqual(result.inProgressOptOuts.count, 1)
+        XCTAssertEqual(result.inProgressOptOuts.first?.dataBroker.name, "Active InProgress")
+        XCTAssertEqual(result.completedOptOuts.count, 1)
+        XCTAssertEqual(result.completedOptOuts.first?.dataBroker.name, "Deprecated Completed")
     }
 }
 

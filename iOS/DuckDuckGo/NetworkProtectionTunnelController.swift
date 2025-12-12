@@ -300,8 +300,8 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             resetControllerStartWideEventMeasurement()
             try await startWithError()
         case .connected:
-            // Intentional no-op
-            break
+            Logger.networkProtection.error("Start requested while already connected - stopping VPN to allow recovery")
+            await stop()
         default:
             try await start(tunnelManager)
         }

@@ -28,6 +28,7 @@ import PixelKit
 import PrivacyStats
 import AutoconsentStats
 import Suggestions
+import Subscription
 
 typealias HistoryProviderCoordinating = HistoryCoordinating & SuggestionContainer.HistoryProvider
 
@@ -61,20 +62,11 @@ final class NewTabPageCoordinator {
         tabsPreferences: TabsPreferences,
         newTabPageAIChatShortcutSettingProvider: NewTabPageAIChatShortcutSettingProviding,
         winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator,
+        subscriptionCardVisibilityManager: HomePageSubscriptionCardVisibilityManaging,
+        protectionsReportModel: NewTabPageProtectionsReportModel,
+        homePageContinueSetUpModelPersistor: HomePageContinueSetUpModelPersisting,
         fireDailyPixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .legacyDaily) }
     ) {
-
-        let settingsMigrator = NewTabPageProtectionsReportSettingsMigrator(legacyKeyValueStore: legacyKeyValueStore)
-        let protectionsReportModel = NewTabPageProtectionsReportModel(
-            privacyStats: privacyStats,
-            autoconsentStats: autoconsentStats,
-            keyValueStore: keyValueStore,
-            burnAnimationSettingChanges: visualizeFireAnimationDecider.shouldShowFireAnimationPublisher,
-            showBurnAnimation: visualizeFireAnimationDecider.shouldShowFireAnimation,
-            isAutoconsentEnabled: { cookiePopupProtectionPreferences.isAutoconsentEnabled },
-            getLegacyIsViewExpandedSetting: settingsMigrator.isViewExpanded,
-            getLegacyActiveFeedSetting: settingsMigrator.activeFeed
-        )
 
         actionsManager = NewTabPageActionsManager(
             appearancePreferences: appearancePreferences,
@@ -98,7 +90,9 @@ final class NewTabPageCoordinator {
             windowControllersManager: windowControllersManager,
             tabsPreferences: tabsPreferences,
             newTabPageAIChatShortcutSettingProvider: newTabPageAIChatShortcutSettingProvider,
-            winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator
+            winBackOfferPromotionViewCoordinator: winBackOfferPromotionViewCoordinator,
+            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
+            homePageContinueSetUpModelPersistor: homePageContinueSetUpModelPersistor
         )
         newTabPageShownPixelSender = NewTabPageShownPixelSender(
             appearancePreferences: appearancePreferences,

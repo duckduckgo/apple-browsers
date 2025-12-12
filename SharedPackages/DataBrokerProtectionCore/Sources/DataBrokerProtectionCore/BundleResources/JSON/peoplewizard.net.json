@@ -1,7 +1,7 @@
 {
   "name": "PeopleWizard.net",
   "url": "peoplewizard.net",
-  "version": "0.5.0",
+  "version": "0.7.0",
   "parent": "peoplewhiz.com",
   "addedDatetime": 1709445600000,
   "optOutUrl": "https://peoplewizard.net/optout",
@@ -54,5 +54,5 @@
     "maintenanceScan": 120,
     "maxAttempts": -1
   },
-  "removedAt": null
+  "removedAt": 1763406024934
 }

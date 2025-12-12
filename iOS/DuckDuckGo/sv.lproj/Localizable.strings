@@ -35,7 +35,7 @@
 "action.title.aiChat.history" = "Duck.ai-chattar";
 
 /* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "AI-chatt";
+"action.title.aiChat.new" = "Ny chatt";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Duck.ai-inställningar";
@@ -89,7 +89,7 @@
 "action.title.newBackgroundTabForUrl" = "Öppna i bakgrunden";
 
 /* Create New Tab action */
-"action.title.newTabAction" = "Ny";
+"action.title.newTabAction" = "Ny flik";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Öppna i ny flik";
@@ -2911,6 +2911,12 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Inställningar för Search Assist";
 
+/* Settings screen cell subtitle for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.subtitle" = "Visa nya Duck.ai-chattar som flikar i webbläsaren";
+
+/* Settings screen cell title for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.title" = "Flikläge för Duck.ai";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Dölj AI-genererade bilder";
 
@@ -2925,6 +2931,9 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Adressfältsläge";
+
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Experimentell webbläsarmeny";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Öppna länkar i associerade appar";
@@ -3052,8 +3061,11 @@
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Importera lösenord";
 
-/* Copy for budge on settings item to show an item is new */
+/* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Ny";
+
+/* Copy for badge on settings item to show an item is experimental */
+"settings.item.badge.preview" = "Förhandsvisning";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tangentbord";

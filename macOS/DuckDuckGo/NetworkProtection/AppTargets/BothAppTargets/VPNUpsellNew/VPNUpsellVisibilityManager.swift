@@ -57,7 +57,6 @@ final class VPNUpsellVisibilityManager: ObservableObject {
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let defaultBrowserProvider: DefaultBrowserProvider
     private let contextualOnboardingPublisher: AnyPublisher<Bool, Never>
-    private let featureFlagger: FeatureFlagger
     private let timerDuration: TimeInterval
     private let autoDismissDays: Int
     private var persistor: VPNUpsellUserDefaultsPersisting
@@ -76,7 +75,6 @@ final class VPNUpsellVisibilityManager: ObservableObject {
          subscriptionManager: any SubscriptionAuthV1toV2Bridge,
          defaultBrowserProvider: DefaultBrowserProvider,
          contextualOnboardingPublisher: AnyPublisher<Bool, Never>,
-         featureFlagger: FeatureFlagger,
          persistor: VPNUpsellUserDefaultsPersisting,
          timerDuration: TimeInterval = Constants.timeIntervalBeforeShowingUpsell,
          autoDismissDays: Int = Constants.autoDismissDays,
@@ -86,7 +84,6 @@ final class VPNUpsellVisibilityManager: ObservableObject {
         self.subscriptionManager = subscriptionManager
         self.defaultBrowserProvider = defaultBrowserProvider
         self.contextualOnboardingPublisher = contextualOnboardingPublisher
-        self.featureFlagger = featureFlagger
         self.timerDuration = timerDuration
         self.autoDismissDays = autoDismissDays
         self.persistor = persistor
@@ -135,10 +132,6 @@ final class VPNUpsellVisibilityManager: ObservableObject {
         isNewUser && !subscriptionManager.isUserAuthenticated
     }
 
-    private var isFeatureOn: Bool {
-        featureFlagger.isFeatureOn(.vpnToolbarUpsell)
-    }
-
     private var shouldDismiss: Bool {
         shouldDismissAutomatically || persistor.vpnUpsellDismissed
     }
@@ -154,7 +147,7 @@ final class VPNUpsellVisibilityManager: ObservableObject {
     private func checkPurchaseEligibility() {
         switch subscriptionManager.currentEnvironment.purchasePlatform {
         case .appStore:
-            subscriptionManager.canPurchasePublisher
+            subscriptionManager.hasAppStoreProductsAvailablePublisher
                 .sink { [weak self] canPurchase in
                     self?.canUserPurchaseSubject.send(canPurchase)
                 }
@@ -322,7 +315,7 @@ final class VPNUpsellVisibilityManager: ObservableObject {
             return
         }
 
-        guard isFeatureOn, isUserEligible else {
+        guard isUserEligible else {
             state = .notEligible
             return
         }

@@ -204,4 +204,28 @@ class FaviconManagerTests: XCTestCase {
         XCTAssertEqual(referenceCache.getFaviconURLForHostCalls.count, 4)
         XCTAssertEqual(referenceCache.getFaviconURLForHostCalls.map(\.sizeCategory), [.huge, .large, .medium, .small])
     }
+
+    // MARK: getCachedFavicon(forUrlOrAnySubdomain:)
+
+    @MainActor
+    func testFaviconForURLOrAnySubdomainReturnsCachedFaviconForSameHostmaneWithDivergentSubdomain() async throws {
+        let host = "example.com"
+        let domainURL = try XCTUnwrap("https://\(host)".url)
+        let faviconURL = try XCTUnwrap("https://www.\(host)/path/favicon.ico".url)
+
+        let cacheMap: [URL: Favicon] = [
+            faviconURL: Favicon(identifier: UUID(), url: faviconURL, image: nil, relation: .favicon, documentUrl: domainURL, dateCreated: Date())
+        ]
+
+        referenceCache.getFaviconURLForHost = { _, _ in
+            faviconURL
+        }
+
+        imageCache.getFaviconWithURL = { url in
+            cacheMap[url]
+        }
+
+        XCTAssertNil(faviconManager.getCachedFavicon(for: domainURL, sizeCategory: .small))
+        XCTAssertNotNil(faviconManager.getCachedFavicon(forUrlOrAnySubdomain: domainURL, sizeCategory: .small, fallBackToSmaller: false))
+    }
 }

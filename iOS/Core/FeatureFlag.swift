@@ -93,9 +93,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866468401462
     case syncPromotionPasswords
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866468468677
-    case onboardingHighlights
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711364768
     case autofillSurveys
 
@@ -110,6 +107,12 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866710074694
     case dbpEmailConfirmationDecoupling
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212258549430653
+    case dbpForegroundRunningOnAppActive
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212258549430659
+    case dbpForegroundRunningWhenDashboardOpen
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711635701
     case crashReportOptInStatusResetting
@@ -126,9 +129,6 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866469645735
     case privacyProAuthV2
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866610578312
-    case setAsDefaultBrowserPiPVideoTutorial
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866470028133
     case experimentalAddressBar
@@ -159,12 +159,6 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866463389447
     case showSettingsCompleteSetupSection
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866611125558
-    case scheduledSetDefaultBrowserPrompts
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866470962985
-    case scheduledSetDefaultBrowserPromptsForInactiveUsers
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866607644644
     case canPromoteImportPasswordsInPasswordManagement
@@ -200,20 +194,11 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866469585479
     case daxEasterEggLogos
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866714477935
-    case subscriptionPurchaseWidePixelMeasurement
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866471806081
     case showAIChatAddressBarChoiceScreen
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866714634010
     case newDeviceSyncPrompt
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866712760347
-    case embeddedSERPSettings
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866611049398
-    case authV2WideEventEnabled
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866468857577
     case winBackOffer
@@ -236,11 +221,17 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614199859
     case forgetAllInSettings
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212397873940926?focus=true
+    case ampBackgroundTaskSupport
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866470156149
     case duckAiDataClearing
     
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614122594
     case fullDuckAIMode
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212197756955039
+    case fadeOutOnToggle
 
     /// macOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015252281641
     /// iOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015250423471
@@ -277,6 +268,21 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1201462886803403/task/1211326076710245?focus=true
     case migrateKeychainAccessibility
+
+    /// https://app.asana.com/1/137249556945/project/481882893211075/task/1212057154681076?focus=true
+    case productTelemeterySurfaceUsage
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212229431540900
+    case granularFireButtonOptions
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1212281244797425?focus=true
+    case fullDuckAIModeExperimentalSetting
+    
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212305240287488?focus=true
+    case dataImportWideEventMeasurement
+
+    // https://app.asana.com/1/137249556945/project/414709148257752/task/1212395110448661?focus=true
+    case appRatingPrompt
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -285,18 +291,19 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .canScanUrlBasedSyncSetupBarcodes,
              .canInterceptSyncSetupUrls,
              .supportsAlternateStripePaymentFlow,
-             .setAsDefaultBrowserPiPVideoTutorial,
              .createFireproofFaviconUpdaterSecureVaultInBackground,
              .daxEasterEggLogos,
-             .subscriptionPurchaseWidePixelMeasurement,
              .newDeviceSyncPrompt,
-             .authV2WideEventEnabled,
-             .embeddedSERPSettings,
+             .dbpForegroundRunningOnAppActive,
+             .dbpForegroundRunningWhenDashboardOpen,
              .syncCreditCards,
              .unifiedURLPredictor,
-             .forgetAllInSettings,
              .vpnConnectionWidePixelMeasurement,
-             .migrateKeychainAccessibility:
+             .migrateKeychainAccessibility,
+             .dataImportWideEventMeasurement,
+             .browsingMenuSheetPresentation,
+             .ampBackgroundTaskSupport,
+             .appRatingPrompt:
             true
         default:
             false
@@ -326,21 +333,17 @@ extension FeatureFlag: FeatureFlagDescribing {
              .paidAIChat,
              .canInterceptSyncSetupUrls,
              .exchangeKeysToSyncWithAnotherDevice,
-             .setAsDefaultBrowserPiPVideoTutorial,
              .supportsAlternateStripePaymentFlow,
              .personalInformationRemoval,
              .createFireproofFaviconUpdaterSecureVaultInBackground,
-             .scheduledSetDefaultBrowserPrompts,
-             .scheduledSetDefaultBrowserPromptsForInactiveUsers,
              .duckAISearchParameter,
              .inactivityNotification,
              .daxEasterEggLogos,
              .dbpEmailConfirmationDecoupling,
              .dbpRemoteBrokerDelivery,
-             .subscriptionPurchaseWidePixelMeasurement,
+             .dbpForegroundRunningOnAppActive,
+             .dbpForegroundRunningWhenDashboardOpen,
              .showAIChatAddressBarChoiceScreen,
-             .embeddedSERPSettings,
-             .authV2WideEventEnabled,
              .winBackOffer,
              .syncCreditCards,
              .unifiedURLPredictor,
@@ -350,6 +353,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .onboardingSearchExperience,
              .duckAiDataClearing,
              .fullDuckAIMode,
+             .fadeOutOnToggle,
              .attributedMetrics,
              .vpnConnectionWidePixelMeasurement,
              .storeSerpSettings,
@@ -361,7 +365,12 @@ extension FeatureFlag: FeatureFlagDescribing {
              .browsingMenuSheetPresentation,
              .autofillExtensionSettings,
              .canPromoteAutofillExtensionInBrowser,
-             .canPromoteAutofillExtensionInPasswordManagement:
+             .canPromoteAutofillExtensionInPasswordManagement,
+             .granularFireButtonOptions,
+             .fullDuckAIModeExperimentalSetting,
+             .dataImportWideEventMeasurement,
+             .ampBackgroundTaskSupport,
+             .appRatingPrompt:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -390,7 +399,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                .sslCertificatesBypass,
                .syncPromotionBookmarks,
                .syncPromotionPasswords,
-               .onboardingHighlights,
                .autofillSurveys,
                .autocompleteTabs,
                .adAttributionReporting,
@@ -403,7 +411,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                .canPromoteImportPasswordsInBrowser,
                .canPromoteImportPasswordsInPasswordManagement,
                .newDeviceSyncPrompt,
-               .migrateKeychainAccessibility:
+               .migrateKeychainAccessibility,
+               .productTelemeterySurfaceUsage:
             return false
         }
     }
@@ -460,8 +469,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncPromotionSubfeature.bookmarks))
         case .syncPromotionPasswords:
             return .remoteReleasable(.subfeature(SyncPromotionSubfeature.passwords))
-        case .onboardingHighlights:
-            return .internalOnly()
         case .autofillSurveys:
             return .remoteReleasable(.feature(.autofillSurveys))
         case .autocompleteTabs:
@@ -472,6 +479,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DBPSubfeature.remoteBrokerDelivery))
         case .dbpEmailConfirmationDecoupling:
             return .remoteReleasable(.subfeature(DBPSubfeature.emailConfirmationDecoupling))
+        case .dbpForegroundRunningOnAppActive:
+            return .remoteReleasable(.subfeature(DBPSubfeature.foregroundRunningOnAppActive))
+        case .dbpForegroundRunningWhenDashboardOpen:
+            return .remoteReleasable(.subfeature(DBPSubfeature.foregroundRunningWhenDashboardOpen))
         case .crashReportOptInStatusResetting:
             return .internalOnly()
         case .syncSeamlessAccountSwitching:
@@ -482,8 +493,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.scamProtection))
         case .privacyProAuthV2:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
-        case .setAsDefaultBrowserPiPVideoTutorial:
-            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.defaultBrowserTutorial))
         case .widgetReporting:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.widgetReporting))
         case .experimentalAddressBar:
@@ -506,10 +515,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.keepSession))
         case .showSettingsCompleteSetupSection:
             return .remoteReleasable(.subfeature(OnboardingSubfeature.showSettingsCompleteSetupSection))
-        case .scheduledSetDefaultBrowserPrompts:
-            return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserPrompts))
-        case .scheduledSetDefaultBrowserPromptsForInactiveUsers:
-            return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserPromptsInactiveUser))
         case .supportsAlternateStripePaymentFlow:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
         case .personalInformationRemoval:
@@ -524,16 +529,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.inactivityNotification))
         case .daxEasterEggLogos:
             return .remoteReleasable(.feature(.daxEasterEggLogos))
-        case .subscriptionPurchaseWidePixelMeasurement:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.subscriptionPurchaseWidePixelMeasurement))
         case .showAIChatAddressBarChoiceScreen:
             return .remoteReleasable(.subfeature(AIChatSubfeature.showAIChatAddressBarChoiceScreen))
         case .newDeviceSyncPrompt:
             return .remoteReleasable(.subfeature(SyncSubfeature.newDeviceSyncPrompt))
-        case .embeddedSERPSettings:
-            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.embeddedSERPSettings))
-        case .authV2WideEventEnabled:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.authV2WideEventEnabled))
         case .winBackOffer:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.winBackOffer))
         case .blackFridayCampaign:
@@ -548,10 +547,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.vpnMenuItem))
         case .forgetAllInSettings:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.forgetAllInSettings))
+        case .ampBackgroundTaskSupport:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.ampBackgroundTaskSupport))
         case .duckAiDataClearing:
             return .remoteReleasable(.feature(.duckAiDataClearing))
         case .fullDuckAIMode:
             return .remoteReleasable(.subfeature(AIChatSubfeature.fullDuckAIMode))
+        case .fadeOutOnToggle:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.fadeOutOnToggle))
         case .attributedMetrics:
             return .remoteReleasable(.feature(.attributedMetrics))
         case .vpnConnectionWidePixelMeasurement:
@@ -569,7 +572,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .allowProTierPurchase:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.allowProTierPurchase))
         case .browsingMenuSheetPresentation:
-            return .disabled
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.experimentalBrowsingMenu))
         case .autofillExtensionSettings:
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillExtensionSettings))
         case .canPromoteAutofillExtensionInBrowser:
@@ -578,6 +581,16 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AutofillSubfeature.canPromoteAutofillExtensionInPasswordManagement))
         case .migrateKeychainAccessibility:
             return .remoteReleasable(.subfeature(AutofillSubfeature.migrateKeychainAccessibility))
+        case .productTelemeterySurfaceUsage:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.productTelemetrySurfaceUsage))
+        case .granularFireButtonOptions:
+            return .disabled
+        case .fullDuckAIModeExperimentalSetting:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.fullDuckAIModeExperimentalSetting))
+        case .dataImportWideEventMeasurement:
+            return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
+        case .appRatingPrompt:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.appRatingPrompt))
         }
     }
 }

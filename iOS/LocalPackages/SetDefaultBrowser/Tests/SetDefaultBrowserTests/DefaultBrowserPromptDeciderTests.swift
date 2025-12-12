@@ -48,8 +48,6 @@ final class DefaultBrowserPromptDeciderTests {
     @Test("Check No Modal Is Presented When Prompt Is Permanently Dismissed")
     func checkPromptIsNilWhenPromptIsPermanentlyDismissed() {
         // GIVEN
-        featureFlaggerMock.isDefaultBrowserPromptsForActiveUsersFeatureEnabled = true
-        featureFlaggerMock.isDefaultBrowserPromptsForInactiveUsersFeatureEnabled = true
         storeMock.isPromptPermanentlyDismissed = true
         makeSUT()
         #expect(!userTypeProviderMock.didCallCurrentUserType)

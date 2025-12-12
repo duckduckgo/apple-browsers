@@ -38,12 +38,6 @@ struct Simulated {
         rootViewController.view.backgroundColor = .red
         webView.frame = CGRect(x: 10, y: 10, width: 300, height: 300)
 
-        if !Bundle.main.supportsScenes {
-            let window = UIWindow(frame: UIScreen.main.bounds)
-            configure(window)
-            UIApplication.shared.setWindow(window)
-        }
-
         let request = URLRequest(url: URL(string: "about:blank")!)
         webView.load(request)
     }

@@ -20,5 +20,5 @@ import Foundation
 import os.log
 
 public extension Logger {
-    static var secureStorage = { Logger(subsystem: "General", category: "Secure Storage") }()
+    static let secureStorage = Logger(subsystem: "General", category: "Secure Storage")
 }

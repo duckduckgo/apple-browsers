@@ -78,4 +78,12 @@ extension NavigationEngagementPixel: PixelKitEvent {
         nil
     }
 
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .navigateToURL,
+                .navigateToBookmark:
+            return [.pixelSource]
+        }
+    }
+
 }

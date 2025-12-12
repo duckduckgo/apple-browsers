@@ -20,7 +20,6 @@ import AppLauncher
 import BrowserServicesKit
 import Common
 import LoginItems
-import NetworkExtension
 import VPN
 import NetworkProtectionIPC
 import NetworkProtectionUI
@@ -110,6 +109,17 @@ final class VPNUninstaller: VPNUninstalling {
                 return nil
             case .cancelled(let reason):
                 return ["reason": reason.rawValue]
+            }
+        }
+
+        var standardParameters: [PixelKitStandardParameter]? {
+            switch self {
+            case .prevented,
+                    .begin,
+                    .cancelled,
+                    .success,
+                    .failure:
+                return [.pixelSource]
             }
         }
 

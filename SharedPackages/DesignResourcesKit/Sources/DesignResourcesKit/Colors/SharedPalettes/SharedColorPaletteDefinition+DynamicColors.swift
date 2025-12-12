@@ -116,10 +116,22 @@ extension SharedColorPaletteDefinition {
             return containerFillSecondary
         case .containerFillTertiary:
             return containerFillTertiary
+        case .containerBorderPrimary:
+            return containerBorderPrimary
+        case .containerBorderSecondary:
+            return containerBorderSecondary
         case .containerBorderTertiary:
             return containerBorderTertiary
 
         /// Controls Colors
+        case .controlsBorderPrimary:
+            return controlsBorderPrimary
+        case .controlsBorderSecondary:
+            return controlsBorderSecondary
+        case .controlsBorderTertiary:
+            return controlsBorderTertiary
+        case .controlsBorderQuaternary:
+            return controlsBorderQuaternary
         case .controlsFillPrimary:
             return controlsFillPrimary
         case .controlsFillSecondary:
@@ -165,17 +177,15 @@ extension SharedColorPaletteDefinition {
         case .iconsTertiary:
             return iconsTertiary
 
-        /// Placeholder
-        case .placeholderShade12:
-            // Non-specialized, we'll always use the default
-            return FigmaColorPalette.placeholderShade12
-
         /// System
         case .lines:
             return lines
-        case .spinner:
+        case .spinnerStart:
             // Non-specialized, we'll always use the default
-            return FigmaColorPalette.spinner
+            return FigmaColorPalette.spinnerStart
+        case .spinnerFinal:
+            // Non-specialized, we'll always use the default
+            return FigmaColorPalette.spinnerFinal
 
         /// Shadow Colors
         case .shadowPrimary:
@@ -217,35 +227,11 @@ extension SharedColorPaletteDefinition {
         case .toneShadePrimary:
             return toneShadePrimary
 
-        /// Fire Dialog
-        case .fireDialogBackground:
-            return DynamicColor(lightColor: .white, darkColor: Color(0x272524))
-        case .fireDialogPillBackground:
-            return DynamicColor(lightColor: .xF7F7F7, darkColor: .x1C1C1E)
-        case .fireDialogPillBorder:
-            return DynamicColor(lightColor: Color(0xE8E8E8), darkColor: Color(0x5C5C5C))
-        case .fireDialogPillSelectedSegmentBackground:
-            return DynamicColor(lightColor: .white, darkColor: .gray85)
-        case .fireDialogPillSelectedSegmentBorder:
-            return DynamicColor(lightColor: .gray20, darkColor: Color(0x4D4D4D))
-        case .fireDialogPillSelectedSegmentShadow:
-            return DynamicColor(lightColor: .gray20.opacity(0.05), darkColor: .clear)
-        case .fireDialogPillSelectedSegmentTopStroke:
-            return DynamicColor(lightColor: .clear, darkColor: Color(0x333333))
-        case .fireDialogPillSegmentMouseOver:
-            return DynamicColor(lightColor: Color(0xE0E0E0), darkColor: Color(0x333333))
-        case .fireDialogPillSegmentMouseDown:
-            return DynamicColor(lightColor: .gray30, darkColor: Color(0x404145))
-        case .fireDialogPillHoverOverlay:
-            return DynamicColor(lightColor: .black.opacity(0.06), darkColor: .white.opacity(0.06))
-        case .fireDialogPillSelectedSegmentIconBackground:
-            return DynamicColor(lightColor: Color(designSystemColor: .accentPrimary).opacity(0.12), darkColor: Color(designSystemColor: .accentPrimary).opacity(0.2))
-        case .fireDialogToggleKnob:
-            return DynamicColor(lightColor: .white, darkColor: Color(0x121827))
-        case .fireDialogSectionBackground:
-            return DynamicColor(lightColor: Color(0xFCFCFC), darkColor: Color(0x393939))
-        case .fireDialogSectionBorder:
-            return DynamicColor(lightColor: Color(0xEDEDED), darkColor: Color(0x424242))
+        /// Permission Center
+        case .permissionCenterBackground:
+            return DynamicColor(lightColor: .white, darkColor: Color(0x333333))
+        case .permissionCenterContainerBackground:
+            return DynamicColor(lightColor: Color(0x000000).opacity(0.03), darkColor: Color(0xFFFFFF).opacity(0.06))
         }
     }
 }

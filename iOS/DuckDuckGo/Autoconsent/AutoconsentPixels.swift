@@ -93,6 +93,28 @@ enum AutoconsentPixel: PixelKitEvent, PixelKitEventWithCustomPrefix {
         }
     }
 
+    var standardParameters: [PixelKitStandardParameter]? {
+        switch self {
+        case .acInit,
+                .missedPopup,
+                .errorMultiplePopups,
+                .errorOptoutFailed,
+                .popupFound,
+                .done,
+                .doneCosmetic,
+                .animationShown,
+                .animationShownCosmetic,
+                .disabledForSite,
+                .detectedByPatterns,
+                .detectedByBoth,
+                .detectedOnlyRules,
+                .selfTestOk,
+                .selfTestFail,
+                .summary:
+            return [.pixelSource]
+        }
+    }
+
         
     var namePrefix: String {
 #if os(macOS)

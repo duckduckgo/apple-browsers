@@ -85,7 +85,9 @@ public extension DBPUIScanAndOptOutMaintenanceState {
                                                                parentBrokerOptOutJobData: parentBrokerOptOutJobData)
 
                 if extractedProfile.removedDate == nil {
-                    inProgressOptOuts.append(profileMatch)
+                    if !$0.profileQuery.deprecated {
+                        inProgressOptOuts.append(profileMatch)
+                    }
                 } else {
                     removedProfiles.append(profileMatch)
                 }
@@ -99,7 +101,7 @@ public extension DBPUIScanAndOptOutMaintenanceState {
                         if let extractedProfileRemovedDate = extractedProfile.removedDate,
                            mirrorSite.wasExtant(on: extractedProfileRemovedDate) {
                             removedProfiles.append(mirrorSiteMatch)
-                        } else {
+                        } else if !$0.profileQuery.deprecated {
                             inProgressOptOuts.append(mirrorSiteMatch)
                         }
                     }
@@ -146,8 +148,9 @@ public extension DBPUIScanAndOptOutMaintenanceState {
                                                                      laterDate: eightDaysAfterToday)
 
         let earliestScanPreferredRunDate = nonRemovedBrokerProfileQueryData.earliestScanPreferredRunDate() ?? currentDate
+        let displayDate = max(earliestScanPreferredRunDate, currentDate)
 
-        return DBPUIScanDate(date: earliestScanPreferredRunDate.timeIntervalSince1970, dataBrokers: brokers)
+        return DBPUIScanDate(date: displayDate.timeIntervalSince1970, dataBrokers: brokers)
     }
 }
 

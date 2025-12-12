@@ -63,8 +63,11 @@ public struct RemoteMessagingConfigMatcher {
                 let filteredItems = items.filter { item in
                     rulesEvaluator(item.id, item.matchingRules, item.exclusionRules)
                 }
-                // Skip message if no items remain after filtering.
-                guard !filteredItems.isEmpty else { return nil }
+                // Skip message if no items remain after filtering or there are only empty sections.
+                guard
+                    !filteredItems.isEmpty,
+                    filteredItems.hasContentItems()
+                else { return nil }
 
                 // If items have been filtered return new content with items otherwise return the same message.
                 return items != filteredItems ? message.withFilteredItems(filteredItems) : message
@@ -204,6 +207,21 @@ private extension RemoteMessageModelType {
             return self
         case let .cardsList(titleText, placeholder, _, primaryActionText, primaryAction):
             return .cardsList(titleText: titleText, placeholder: placeholder, items: items, primaryActionText: primaryActionText, primaryAction: primaryAction)
+        }
+    }
+
+}
+
+private extension [RemoteMessageModelType.ListItem] {
+
+    func hasContentItems() -> Bool {
+        self.contains { item in
+            switch item.type {
+            case .twoLinesItem:
+                return true
+            case .titledSection:
+                return false
+            }
         }
     }
 

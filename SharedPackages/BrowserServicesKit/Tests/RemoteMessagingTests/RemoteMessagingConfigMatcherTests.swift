@@ -583,8 +583,8 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
         // GIVEN
         let rule1 = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
         let items = [
-            listItem(id: "item1", matchingRules: [1]), // Will pass
-            listItem(id: "item2", matchingRules: [1])  // Will pass
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [1]), // Will pass
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item2", matchingRules: [1])  // Will pass
         ]
         let expectedMessage = cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: items)
         let remoteConfig = RemoteConfigModel(messages: [expectedMessage], rules: [rule1])
@@ -603,8 +603,8 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
         // Invalid rule applied at item level
         let rule2 = RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [OSMatchingAttribute(value: "nonexistent_os", fallback: nil)])
         let items = [
-            listItem(id: "item1", matchingRules: [2]), // Will fail
-            listItem(id: "item2", matchingRules: [2])  // Will fail
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [2]), // Will fail
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item2", matchingRules: [2])  // Will fail
         ]
         let remoteConfig = RemoteConfigModel(messages: [cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: items)], rules: [rule1, rule2])
 
@@ -622,8 +622,8 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
         // Invalid rule
         let rule2 = RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [OSMatchingAttribute(value: "nonexistent_os", fallback: nil)])
         let items = [
-            listItem(id: "item1", matchingRules: [1]), // Will pass
-            listItem(id: "item2", matchingRules: [2])  // Will fail
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [1]), // Will pass
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item2", matchingRules: [2])  // Will fail
         ]
         let expectedItem = try XCTUnwrap(items.first)
         let expectedMessage = cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: [expectedItem])
@@ -640,8 +640,8 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
         // GIVEN
         let validRule = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
         let items = [
-            listItem(id: "item1", matchingRules: []), // No rules -> Will pass
-            listItem(id: "item2", matchingRules: [])  // No rules -> Will pass
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: []), // No rules -> Will pass
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item2", matchingRules: [])  // No rules -> Will pass
         ]
         let expectedMessage = cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: items)
         let remoteConfig = RemoteConfigModel(messages: [expectedMessage], rules: [validRule])
@@ -657,8 +657,8 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
         // GIVEN
         let validRule = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
         let items = [
-            listItem(id: "item1", matchingRules: [1]), // Will pass
-            listItem(id: "item2", exclusionRules: [1]) // Will be excluded (rule matches)
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [1]), // Will pass
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item2", exclusionRules: [1]) // Will be excluded (rule matches)
         ]
         let expectedItem = try XCTUnwrap(items.first)
         let expectedMessage = cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: [expectedItem])
@@ -678,8 +678,8 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
         // Invalid rule
         let invalidRule = RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [OSMatchingAttribute(value: "nonexistent_os", fallback: nil)])
         let items = [
-            listItem(id: "item1", matchingRules: [1]),  // Would pass, but shouldn't be evaluated
-            listItem(id: "item2", matchingRules: [1])   // Would pass, but shouldn't be evaluated
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [1]),  // Would pass, but shouldn't be evaluated
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item2", matchingRules: [1])   // Would pass, but shouldn't be evaluated
         ]
 
         let remoteConfig = RemoteConfigModel(messages: [cardsListMessage(id: "1", matchingRules: [2], exclusionRules: [], items: items)], rules: [validRule, invalidRule])
@@ -723,8 +723,8 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
         ]
 
         let items = [
-            listItem(id: "item1", matchingRules: [2]),
-            listItem(id: "item2", matchingRules: [3])
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [2]),
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item2", matchingRules: [3])
         ]
         let remoteConfig = RemoteConfigModel(messages: [cardsListMessage(id: "cards_message", matchingRules: [1], exclusionRules: [], items: items)], rules: [rule1, rule2, rule3])
         setupSUT(percentileStore: percentileStore)
@@ -753,8 +753,8 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
         ]
 
         let items = [
-            listItem(id: "item1", matchingRules: [2]),
-            listItem(id: "item2", matchingRules: [3])
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [2]),
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item2", matchingRules: [3])
         ]
         let expectedItem = try XCTUnwrap(items.first)
         let expectedMessage = cardsListMessage(id: "cards_message", matchingRules: [1], exclusionRules: [], items: [expectedItem])
@@ -785,8 +785,8 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
         ]
 
         let items = [
-            listItem(id: "item1", matchingRules: [2]),
-            listItem(id: "item2", matchingRules: [3])
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [2]),
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item2", matchingRules: [3])
         ]
         let remoteConfig = RemoteConfigModel(messages: [cardsListMessage(id: "cards_message", matchingRules: [1], exclusionRules: [], items: items)], rules: [rule1, rule2, rule3])
         setupSUT(percentileStore: percentileStore)
@@ -808,8 +808,8 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
         ]
 
         let items = [
-            listItem(id: "item1", matchingRules: []),    // No rules = auto-pass
-            listItem(id: "item2", matchingRules: [])     // No rules = auto-pass
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: []),    // No rules = auto-pass
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item2", matchingRules: [])     // No rules = auto-pass
         ]
         let expectedMessage = cardsListMessage(id: "cards_message", matchingRules: [1], exclusionRules: [], items: items)
         let remoteConfig = RemoteConfigModel(messages: [expectedMessage], rules: [rule1])
@@ -820,6 +820,143 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
 
         // THEN
         XCTAssertEqual(result, expectedMessage, "Should return message with all items when items have no percentile rules")
+    }
+
+    // MARK: - Titled Section Filtering Tests
+
+    func testWhenSectionPassesMatchingRulesAndSectionIsNotEmpty_ThenReturnSection() {
+        // GIVEN
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        let items = [
+            RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section1", titleText: "Features", matchingRules: [1]),  // Will pass
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [])
+        ]
+        let expectedMessage = cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: items)
+        let remoteConfig = RemoteConfigModel(messages: [expectedMessage], rules: [rule1])
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        XCTAssertEqual(result, expectedMessage)
+    }
+
+    func testWhenSectionFailsMatchingRules_ThenSectionIsFiltered() {
+        // GIVEN
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        let rule2 = RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [OSMatchingAttribute(value: "nonexistent_os", fallback: nil)])
+        let items = [
+            RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section1", titleText: "Features", matchingRules: [2]),  // Will fail
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [])
+        ]
+        let expectedMessage = cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: [items[1]])
+        let remoteConfig = RemoteConfigModel(messages: [cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: items)], rules: [rule1, rule2])
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        XCTAssertEqual(result, expectedMessage)
+    }
+
+    func testWhenSectionMatchesExclusionRules_ThenSectionIsFiltered() {
+        // GIVEN
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        let items = [
+            RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section1", titleText: "Features", exclusionRules: [1]),  // Will be excluded
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [])
+        ]
+        let expectedMessage = cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: [items[1]])
+        let remoteConfig = RemoteConfigModel(messages: [cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: items)], rules: [rule1])
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        XCTAssertEqual(result, expectedMessage)
+    }
+
+    func testWhenMixedListWithSectionAndItemsAppliesRulesCorrectly() throws {
+        // GIVEN
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        let rule2 = RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [OSMatchingAttribute(value: "nonexistent_os", fallback: nil)])
+
+        let items = [
+            RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section1", titleText: "Features", matchingRules: [1]),  // Will pass
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [1]),  // Will pass
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item2", matchingRules: [2])   // Will fail
+        ]
+
+        let expectedItems = [
+            items[0],  // Section passes
+            items[1]   // Item1 passes
+        ]
+        let expectedMessage = cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: expectedItems)
+        let remoteConfig = RemoteConfigModel(messages: [expectedMessage], rules: [rule1, rule2])
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        let resultMessage = try XCTUnwrap(result)
+        guard case let .cardsList(_, _, resultItems, _, _) = resultMessage.content else {
+            XCTFail("Expected cardsList content")
+            return
+        }
+        XCTAssertEqual(resultItems.count, 2, "Should have section and one item")
+        XCTAssertEqual(resultItems.first?.id, "section1")
+        XCTAssertEqual(resultItems.last?.id, "item1")
+    }
+
+    func testWhenSectionWithNoRules_ThenSectionPassesAutomatically() {
+        // GIVEN
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        let items = [
+            RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section1", titleText: "Features", matchingRules: []),  // No rules -> Will pass
+            RemoteMessageModelType.ListItem.makeTwoLinesListItem(id: "item1", matchingRules: [])
+        ]
+        let expectedMessage = cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: items)
+        let remoteConfig = RemoteConfigModel(messages: [expectedMessage], rules: [rule1])
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        XCTAssertEqual(result, expectedMessage)
+    }
+
+    func testWhenOnlySectionsInList_ThenReturnNilMessage() {
+        // GIVEN
+        // Sections without actual items are meaningless
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        let items = [
+            RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section1", titleText: "Features", matchingRules: [1]),
+            RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section2", titleText: "Improvements", matchingRules: [1])
+        ]
+        let remoteConfig = RemoteConfigModel(messages: [cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: items)], rules: [rule1])
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        XCTAssertNil(result, "Message with only sections (no actual content items) should be discarded")
+    }
+
+    func testWhenOnlySectionsInListAndAllExcluded_ThenReturnNilMessage() {
+        // GIVEN
+        let rule1 = RemoteConfigRule(id: 1, targetPercentile: nil, attributes: [OSMatchingAttribute(value: AppVersion.shared.osVersionMajorMinorPatch, fallback: nil)])
+        let rule2 = RemoteConfigRule(id: 2, targetPercentile: nil, attributes: [OSMatchingAttribute(value: "nonexistent_os", fallback: nil)])
+        let items = [
+            RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section1", titleText: "Features", matchingRules: [2]),
+            RemoteMessageModelType.ListItem.makeTitledSectionListItem(id: "section2", titleText: "Improvements", matchingRules: [2])
+        ]
+        let remoteConfig = RemoteConfigModel(messages: [cardsListMessage(id: "1", matchingRules: [1], exclusionRules: [], items: items)], rules: [rule1, rule2])
+
+        // WHEN
+        let result = matcher.evaluate(remoteConfig: remoteConfig)
+
+        // THEN
+        XCTAssertNil(result, "Message should be nil when all sections are filtered out")
     }
 }
 
@@ -878,19 +1015,6 @@ private extension RemoteMessagingConfigMatcherTests {
                                   matchingRules: matchingRules,
                                   exclusionRules: exclusionRules,
                                   isMetricsEnabled: true
-        )
-    }
-
-    func listItem(id: String, matchingRules: [Int] = [], exclusionRules: [Int] = []) -> RemoteMessageModelType.ListItem {
-        return RemoteMessageModelType.ListItem(
-            id: id,
-            type: .twoLinesItem,
-            titleText: "Item \(id)",
-            descriptionText: "Description for \(id)",
-            placeholderImage: .announce,
-            action: .dismiss,
-            matchingRules: matchingRules,
-            exclusionRules: exclusionRules
         )
     }
 

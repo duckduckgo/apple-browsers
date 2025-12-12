@@ -78,7 +78,8 @@ public enum RemoteMessageResponse {
     }
 
     enum JsonListItemType: String, CaseIterable {
-       case twoLinesItem = "two_line_list_item"
+        case twoLinesItem = "two_line_list_item"
+        case titledSection = "section_title"
     }
 
     enum JsonSurface: String, CaseIterable {

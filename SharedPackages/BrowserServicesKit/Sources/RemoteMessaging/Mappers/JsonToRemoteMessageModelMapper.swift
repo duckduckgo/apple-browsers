@@ -438,23 +438,29 @@ private extension JsonToRemoteMessageModelMapper {
             let validator = MappingValidator(root: jsonListItem)
 
             let id = try validator.notEmpty(\.id)
-            let titleText = try validator.notEmpty(\.titleText)
             let jsonType = try validator.mapEnum(\.type, to: RemoteMessageResponse.JsonListItemType.self)
-            let descriptionText = jsonListItem.descriptionText ?? ""
-            let placeHolderImage = mapToPlaceholder(jsonListItem.placeholder)
-            let remoteAction = try validator.compactMap(\.primaryAction) { action in
-                mapToAction(action, surveyActionMapper: surveyActionMapper)
+
+            let listItemType: RemoteMessageModelType.ListItem.ListItemType
+            switch jsonType {
+            case .twoLinesItem:
+                let titleText = try validator.notEmpty(\.titleText)
+                let descriptionText = jsonListItem.descriptionText ?? ""
+                let placeHolderImage = mapToPlaceholder(jsonListItem.placeholder)
+                let remoteAction = try validator.compactMap(\.primaryAction) { action in
+                    mapToAction(action, surveyActionMapper: surveyActionMapper)
+                }
+                listItemType = .twoLinesItem(titleText: titleText, descriptionText: descriptionText, placeholderImage: placeHolderImage, action: remoteAction)
+            case .titledSection:
+                let titleText = try validator.notEmpty(\.titleText)
+                listItemType = .titledSection(titleText: titleText)
             }
+
             let matchingRules = jsonListItem.matchingRules ?? []
             let exclusionRules = jsonListItem.exclusionRules ?? []
 
             return RemoteMessageModelType.ListItem(
                 id: id,
-                type: RemoteMessageModelType.ListItem.ListItemType(from: jsonType),
-                titleText: titleText,
-                descriptionText: descriptionText,
-                placeholderImage: placeHolderImage,
-                action: remoteAction,
+                type: listItemType,
                 matchingRules: matchingRules,
                 exclusionRules: exclusionRules
             )
@@ -475,7 +481,46 @@ private extension JsonToRemoteMessageModelMapper {
                 Logger.remoteMessaging.debug("\(error.localizedDescription, privacy: .public)")
             }
         }
-        return items
+        return removeOrphanedSections(from: items)
+    }
+
+    // Removes orphaned sections from a list of items to ensure message structure integrity. Returns an empty array if a list contains only sections with no content items.
+    //
+    // This method performs the following cleanup operations:
+    // 1. Removes any trailing sections at the end of the list that have no content items following them.
+    // 2. Removes sections in the middle of the list that have no content items until the next section.
+    // 3. Removes sections at the beginning of the list if they have no content items before the next section.
+    static func removeOrphanedSections(from items: [RemoteMessageModelType.ListItem]) -> [RemoteMessageModelType.ListItem] {
+        // If list is empty or has no content items at all, return empty
+        let containsItems = items.contains(where: { item in
+            switch item.type {
+            case .titledSection:
+                return false
+            case .twoLinesItem:
+                return true
+            }
+        })
+        guard containsItems else { return [] }
+
+        var result: [RemoteMessageModelType.ListItem] = []
+        var pendingSections: [RemoteMessageModelType.ListItem] = []
+
+        for item in items {
+            switch item.type {
+            case .titledSection:
+                // Hold the section temporarily until we see if there are items following it
+                // Remove all pending sections before adding a new one.
+                pendingSections.removeAll()
+                pendingSections.append(item)
+            case .twoLinesItem:
+                // We found a content item, so add all pending sections followed by this item
+                result.append(contentsOf: pendingSections)
+                pendingSections.removeAll()
+                result.append(item)
+            }
+        }
+
+        return result
     }
 
 }
@@ -490,19 +535,6 @@ private extension JsonToRemoteMessageModelMapper {
             return [.newTabPage, .tabBar]
         case .cardsList:
             return [.modal, .dedicatedTab]
-        }
-    }
-
-}
-
-// MARK: - Item Helpers
-
-extension RemoteMessageModelType.ListItem.ListItemType {
-
-    init(from jsonType: RemoteMessageResponse.JsonListItemType) {
-        switch jsonType {
-        case .twoLinesItem:
-            self = .twoLinesItem
         }
     }
 

@@ -27,7 +27,7 @@ public extension RemoteMessageModel {
         placeholder: RemotePlaceholder? = nil,
         items: [RemoteMessageModelType.ListItem] = [],
         primaryActionText: String = "Done",
-        primaryAction: RemoteAction = .dismiss
+        primaryAction: RemoteAction = .dismiss,
     ) -> RemoteMessageModel {
         let content: RemoteMessageModelType = .cardsList(
             titleText: titleText,
@@ -51,23 +51,79 @@ public extension RemoteMessageModel {
 
 public extension RemoteMessageModelType.ListItem {
 
-    static func makeListItem(
+    static func makeTwoLinesListItem(
         id: String = "item-1",
-        type: ListItemType = .twoLinesItem,
         titleText: String = "Item Title",
         descriptionText: String = "Item Description",
         placeholder: RemotePlaceholder = .announce,
-        action: RemoteAction? = nil
+        action: RemoteAction? = nil,
+        matchingRules: [Int] = [],
+        exclusionRules: [Int] = []
     ) -> RemoteMessageModelType.ListItem {
-        return RemoteMessageModelType.ListItem(
+        RemoteMessageModelType.ListItem(
             id: id,
-            type: type,
-            titleText: titleText,
-            descriptionText: descriptionText,
-            placeholderImage: placeholder,
-            action: action,
-            matchingRules: [],
-            exclusionRules: []
+            type: .twoLinesItem(
+                titleText: titleText,
+                descriptionText: descriptionText,
+                placeholderImage: placeholder,
+                action: action
+            ),
+            matchingRules: matchingRules,
+            exclusionRules: exclusionRules
         )
     }
+
+    static func makeTitledSectionListItem(
+        id: String = "section-1",
+        titleText: String = "Section Title",
+        matchingRules: [Int] = [],
+        exclusionRules: [Int] = []
+    ) -> RemoteMessageModelType.ListItem {
+        RemoteMessageModelType.ListItem(
+            id: id,
+            type: .titledSection(titleText: titleText),
+            matchingRules: matchingRules,
+            exclusionRules: exclusionRules
+        )
+    }
+}
+
+public extension RemoteMessageModelType.ListItem {
+
+    var titleText: String? {
+        switch type {
+        case let .titledSection(titleText):
+            return titleText
+        case let .twoLinesItem(titleText, _, _, _):
+            return titleText
+        }
+    }
+
+    var descriptionText: String? {
+        switch type {
+        case.titledSection:
+            return nil
+        case let .twoLinesItem(_, descriptionText, _, _):
+            return descriptionText
+        }
+    }
+
+    var placeholderImage: RemotePlaceholder? {
+        switch type {
+        case.titledSection:
+            return nil
+        case let .twoLinesItem(_, _, placeholderImage, _):
+            return placeholderImage
+        }
+    }
+
+    var action: RemoteAction? {
+        switch type {
+        case.titledSection:
+            return nil
+        case let .twoLinesItem(_, _, _, action):
+            return action
+        }
+    }
+    
 }

@@ -27,7 +27,6 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
     var appearancePreferences: AppearancePreferences!
     var userBackgroundImagesManager: CapturingUserBackgroundImagesManager!
     var openFilePanelCalls: Int = 0
-    var themeManager: MockThemeManager!
     private var customizationModel: NewTabPageCustomizationModel!
     private var provider: NewTabPageCustomizationProvider!
 
@@ -38,8 +37,6 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
         storageLocation = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         userBackgroundImagesManager = CapturingUserBackgroundImagesManager(storageLocation: storageLocation, maximumNumberOfImages: 4)
         openFilePanelCalls = 0
-
-        themeManager = MockThemeManager()
 
         customizationModel = NewTabPageCustomizationModel(
             appearancePreferences: appearancePreferences,
@@ -61,7 +58,6 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
         customizationModel = nil
         provider = nil
         userBackgroundImagesManager = nil
-        themeManager = nil
     }
 
     func testThatCustomizerOpenerReturnsSettingsModelCustomizerOpener() {

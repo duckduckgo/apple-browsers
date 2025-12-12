@@ -431,11 +431,15 @@ struct PermissionAuthorizationSwiftUIView: View {
         ZStack {
             if isCompleted {
                 // Completed state: green checkmark
-                Image(systemName: "checkmark.circle.fill")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: stepIndicatorSize, height: stepIndicatorSize)
-                    .foregroundColor(Color(designSystemColor: .textSuccess))
+                ZStack {
+                    Circle()
+                        .fill(Color(designSystemColor: .textSuccess))
+                        .frame(width: stepIndicatorSize, height: stepIndicatorSize)
+                    
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundColor(.white)
+                }
             } else if isActive {
                 // Active state: filled circle with number
                 Circle()

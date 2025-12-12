@@ -295,7 +295,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .suppressEmptyPopUpsOnApproval,
                 .popupPermissionButtonPersistence,
                 .tabClosingEventRecreation,
-                .dataImportWideEventMeasurement:
+                .dataImportWideEventMeasurement,
+                .tabProgressIndicator:
             true
         default:
             false
@@ -523,7 +524,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .scheduledDefaultBrowserAndDockPromptsInactiveUser:
             return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPromptsInactiveUser))
         case .tabProgressIndicator:
-            return .remoteReleasable(.feature(.tabProgressIndicator))
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.tabProgressIndicator))
         case .attributedMetrics:
             return .remoteReleasable(.feature(.attributedMetrics))
         case .vpnConnectionWidePixelMeasurement:

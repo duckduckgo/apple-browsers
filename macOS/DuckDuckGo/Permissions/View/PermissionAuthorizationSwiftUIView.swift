@@ -255,7 +255,6 @@ struct PermissionAuthorizationSwiftUIView: View {
                 // Step 2: Website permission
                 stepTwoView
             }
-            .padding(8)
         }
         .padding(.top, 20)
         .padding(.horizontal, 16)

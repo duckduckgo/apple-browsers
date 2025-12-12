@@ -64342,6 +64342,18 @@
         }
       }
     },
+    "permission.center.system.notification.not.determined" : {
+      "comment" : "Warning shown when system notification permission has not been requested yet",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "System notifications disabled,"
+          }
+        }
+      }
+    },
     "permission.center.system.settings.notifications" : {
       "comment" : "Link text to open System Settings Notifications panel",
       "extractionState" : "extracted_with_value",
@@ -64362,6 +64374,18 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Permissions for “%@”"
+          }
+        }
+      }
+    },
+    "permission.center.turn.on.notifications" : {
+      "comment" : "Link text to request system notification permission",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "turn them on."
           }
         }
       }

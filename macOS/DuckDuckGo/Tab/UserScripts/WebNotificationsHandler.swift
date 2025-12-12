@@ -308,9 +308,6 @@ final class WebNotificationsHandler: NSObject, Subfeature {
 
         var cancellables = Set<AnyCancellable>()
 
-        // We need to force permissions to update as we need to ensure
-        await permissionModel.updateNotificationsPermission()
-
         // Request permission through PermissionModel (shows UI, handles storage)
         // Fire Windows: permissions cleared on burn via burnPermissions()
         let grantedInUI: Bool = await withCheckedContinuation { continuation in

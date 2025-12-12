@@ -79,7 +79,6 @@ final class PermissionModel {
             self.subscribe(to: webView)
             self.subscribe(to: permissionManager)
         }
-        self.subscribeToNotificationService()
     }
 
     private func subscribe(to webView: WKWebView) {
@@ -113,16 +112,6 @@ final class PermissionModel {
                                     forDomain: value.domain,
                                     to: value.decision)
         }.store(in: &cancellables)
-    }
-
-    private func subscribeToNotificationService() {
-        systemPermissionManager.notificationAuthorizationStatePublisher
-            .sink { [weak self] state in
-                Task { @MainActor [weak self] in
-                    await self?.notificationAuthorizationStateDidChange(to: state)
-                }
-            }
-            .store(in: &cancellables)
     }
 
     private func resetPermissions() {
@@ -169,44 +158,9 @@ final class PermissionModel {
                         permissions.geolocation.update(with: currentState)
                     }
                 }
-            case .notification:
-                Task { @MainActor [weak self] in
-                    await self?.updateNotificationsPermission()
-                }
-            case .popups, .externalScheme:
+            case .notification, .popups, .externalScheme:
                 continue
             }
-        }
-    }
-
-    /// Updates notification permissions
-    ///
-    /// This was moved out of ``updatePermissions`` because it's not async, and we need an async method that can
-    /// await completion.
-    func updateNotificationsPermission() async {
-        guard featureFlagger.isFeatureOn(.newPermissionView),
-              permissions.notification != nil else {
-            return
-        }
-
-        let systemState = await systemPermissionManager.authorizationState(for: .notification)
-        await notificationAuthorizationStateDidChange(to: systemState)
-    }
-
-    private func notificationAuthorizationStateDidChange(to state: SystemPermissionAuthorizationState) async {
-        guard featureFlagger.isFeatureOn(.newPermissionView),
-              permissions.notification != nil else {
-            return
-        }
-
-        if state == .notDetermined {
-            // Remove from persistent storage
-            if let domain = currentDomain {
-                permissionManager.removePermission(forDomain: domain, permissionType: .notification)
-            }
-
-            // Remove from tracking (triggers UI update to close popover)
-            permissions.notification = nil
         }
     }
 

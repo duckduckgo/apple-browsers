@@ -57,7 +57,13 @@ struct PermissionCenterItem: Identifiable {
     let permissionType: PermissionType
     let domain: String
     var decision: PersistedPermissionDecision
-    var isSystemDisabled: Bool
+    var systemAuthorizationState: SystemPermissionAuthorizationState?
+
+    /// Whether system permission is disabled (denied, restricted, or not determined)
+    var isSystemDisabled: Bool {
+        guard let state = systemAuthorizationState else { return false }
+        return state != .authorized
+    }
 
     /// Current state of the permission (active, inactive, etc.)
     var state: PermissionState
@@ -389,7 +395,7 @@ final class PermissionCenterViewModel: ObservableObject {
             permissionType: permissionType,
             domain: domain,
             decision: decision,
-            isSystemDisabled: false, // Will be updated async for permissions that require system permission
+            systemAuthorizationState: nil, // Will be updated async for permissions that require system permission
             state: state,
             blockedPopups: blockedPopups,
             externalSchemes: []
@@ -420,14 +426,27 @@ final class PermissionCenterViewModel: ObservableObject {
             permissionType: representativeType,
             domain: domain,
             decision: .ask,
-            isSystemDisabled: false,
+            systemAuthorizationState: nil,
             state: state,
             blockedPopups: [],
             externalSchemes: externalSchemes
         )
     }
 
-    /// Asynchronously checks system disabled state for permissions that require it
+    /// Requests system permission for a permission type (e.g., notifications)
+    /// Called when user taps "turn them on" in the yellow alert for notDetermined state
+    func requestSystemPermission(for permissionType: PermissionType) {
+        systemPermissionManager.requestAuthorization(for: permissionType) { [weak self] _ in
+            guard let self else { return }
+
+            // Refresh state after request
+            if let item = self.permissionItems.first(where: { $0.permissionType == permissionType }) {
+                self.checkSystemDisabledAsync(for: item)
+            }
+        }
+    }
+
+    /// Asynchronously checks system authorization state for permissions that require it
     /// Uses weak self to handle case where popover is dismissed before check completes
     private func checkSystemDisabledAsync(for item: PermissionCenterItem) {
         guard item.permissionType.requiresSystemPermission else { return }
@@ -437,27 +456,12 @@ final class PermissionCenterViewModel: ObservableObject {
 
             let authState = await self.systemPermissionManager.authorizationState(for: item.permissionType)
 
-            // For notifications: if system permission is notDetermined, remove local permission entirely
-            // This handles the case where user reset permissions in System Settings
-            if item.permissionType == .notification && authState == .notDetermined {
-                self.permissionManager.removePermission(forDomain: self.domain, permissionType: .notification)
-                self.permissionItems.removeAll { $0.permissionType == .notification }
-
-                // Dismiss popover if no permissions left
-                if self.permissionItems.isEmpty {
-                    self.dismissPopover()
-                }
-                return
-            }
-
-            let isSystemDisabled = authState != .authorized
-
-            // Update the item in the array if it still exists and status differs
+            // Update the item in the array if it still exists and state differs
             // Note: If loadPermissions() was called during the async check, the array might have been rebuilt,
             // but updating the new item with the same id is acceptable behavior
             if let index = self.permissionItems.firstIndex(where: { $0.id == item.id }),
-               self.permissionItems[index].isSystemDisabled != isSystemDisabled {
-                self.permissionItems[index].isSystemDisabled = isSystemDisabled
+               self.permissionItems[index].systemAuthorizationState != authState {
+                self.permissionItems[index].systemAuthorizationState = authState
             }
         }
     }

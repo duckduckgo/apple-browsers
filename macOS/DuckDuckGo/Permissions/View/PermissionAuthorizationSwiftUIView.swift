@@ -436,8 +436,7 @@ struct PermissionAuthorizationSwiftUIView: View {
                         .fill(Color(designSystemColor: .textSuccess))
                         .frame(width: stepIndicatorSize, height: stepIndicatorSize)
                     
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 12, weight: .bold))
+                    Image(nsImage: DesignSystemImages.Glyphs.Size12.check)
                         .foregroundColor(.white)
                 }
             } else if isActive {

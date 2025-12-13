@@ -292,6 +292,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .canInterceptSyncSetupUrls,
              .supportsAlternateStripePaymentFlow,
              .createFireproofFaviconUpdaterSecureVaultInBackground,
+             .aiFeaturesSettingsUpdate,
+             .duckAISearchParameter,
              .daxEasterEggLogos,
              .newDeviceSyncPrompt,
              .dbpForegroundRunningOnAppActive,
@@ -522,9 +524,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .createFireproofFaviconUpdaterSecureVaultInBackground:
             return .remoteReleasable(.subfeature(AutofillSubfeature.createFireproofFaviconUpdaterSecureVaultInBackground))
         case .aiFeaturesSettingsUpdate:
-            return .enabled
+            return .remoteReleasable(.subfeature(AIChatSubfeature.aiFeaturesSettingsUpdate))
         case .duckAISearchParameter:
-            return .enabled
+            return .remoteReleasable(.subfeature(AIChatSubfeature.duckAISearchParameter))
         case .inactivityNotification:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.inactivityNotification))
         case .daxEasterEggLogos:

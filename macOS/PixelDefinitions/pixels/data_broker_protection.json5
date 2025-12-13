@@ -20,7 +20,19 @@
         "owners": ["quanganhdo", "edulpn", "THISISDINOSAUR"],
         "triggers": ["other"],
         "suffixes": [],
-        "parameters": ["appVersion", "pixelSource", "dbpDataBroker", "dbpParentBroker", "dbpAttemptId"]
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            "dbpDataBroker",
+            "dbpParentBroker",
+            "dbpAttemptId",
+            {
+                "key": "click_action_delay_reduction_optimization",
+                "description": "Whether the click action delay reduction optimization feature flag is enabled",
+                "type": "string",
+                "enum": ["true", "false"]
+            }
+        ]
     },
     "m_mac_dbp_optout_stage_email-generate": {
         "description": "Fired at the email generation stage of an opt-out attempt.",
@@ -256,6 +268,12 @@
                 "description": "VPN bypass status when the attempt succeeded",
                 "type": "string",
                 "enum": ["on", "off", "unsupported", "unknown"]
+            },
+            {
+                "key": "click_action_delay_reduction_optimization",
+                "description": "Whether the click action delay reduction optimization feature flag is enabled",
+                "type": "string",
+                "enum": ["true", "false"]
             }
         ]
     },
@@ -315,6 +333,12 @@
                 "description": "VPN bypass status when the failure happened",
                 "type": "string",
                 "enum": ["on", "off", "unsupported", "unknown"]
+            },
+            {
+                "key": "click_action_delay_reduction_optimization",
+                "description": "Whether the click action delay reduction optimization feature flag is enabled",
+                "type": "string",
+                "enum": ["true", "false"]
             }
         ]
     },

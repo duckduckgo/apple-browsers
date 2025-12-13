@@ -95,17 +95,17 @@ struct PermissionCenterView: View {
                     }
                 }
             }
-            .background(Color(designSystemColor: .containerFillTertiary))
+            .background(Color(designSystemColor: .permissionCenterContainerBackground))
             .cornerRadius(8)
             .overlay(
                 RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color(NSColor.separatorColor), lineWidth: 1)
+                    .stroke(Color(designSystemColor: .lines), lineWidth: 1)
             )
             .padding(.horizontal, 16)
             .padding(.bottom, 16)
         }
         .frame(width: popoverWidth)
-        .background(Color(designSystemColor: .containerFillPrimary))
+        .background(Color(designSystemColor: .permissionCenterBackground))
     }
 }
 
@@ -152,14 +152,15 @@ struct PermissionRowView: View {
                         .foregroundColor(Color(designSystemColor: .textSecondary))
                 }
                 .buttonStyle(PlainButtonStyle())
-                .frame(width: 16, height: 16)
+                .frame(width: 24, height: 24)
                 .background(
-                    RoundedRectangle(cornerRadius: 3)
+                    RoundedRectangle(cornerRadius: 5)
                         .fill(isRemoveButtonHovered ? Color(.buttonMouseOver) : Color.clear)
                 )
                 .onHover { hovering in
                     isRemoveButtonHovered = hovering
                 }
+                .help(UserText.permissionCenterResetTooltip)
             }
             .padding(.leading, 12)
             .padding(.trailing, 12)
@@ -190,42 +191,10 @@ struct PermissionRowView: View {
     @ViewBuilder
     private var permissionIcon: some View {
         let iconColor: Color = item.isInUse ? Color(NSColor.systemRed) : Color(designSystemColor: .textSecondary)
-
-        switch item.permissionType {
-        case .camera:
-            // Use filled icon if allowed or in use, outline otherwise
-            if item.isAllowed {
-                Image(nsImage: DesignSystemImages.Glyphs.Size16.permissionCameraSolid)
-                    .foregroundColor(iconColor)
-            } else {
-                Image(nsImage: DesignSystemImages.Glyphs.Size16.permissionCamera)
-                    .foregroundColor(iconColor)
-            }
-        case .microphone:
-            if item.isAllowed {
-                Image(nsImage: DesignSystemImages.Glyphs.Size16.permissionMicrophoneSolid)
-                    .foregroundColor(iconColor)
-            } else {
-                Image(nsImage: DesignSystemImages.Glyphs.Size16.permissionMicrophone)
-                    .foregroundColor(iconColor)
-            }
-        case .geolocation:
-            if item.isAllowed {
-                Image(nsImage: DesignSystemImages.Glyphs.Size16.permissionsLocationSolid)
-                    .foregroundColor(iconColor)
-            } else {
-                Image(nsImage: DesignSystemImages.Glyphs.Size16.permissionsLocation)
-                    .foregroundColor(iconColor)
-            }
-        case .popups:
-            // Popups only have outline icon
-            Image(nsImage: DesignSystemImages.Glyphs.Size16.popupBlocked)
-                .foregroundColor(iconColor)
-        case .externalScheme:
-            // External apps only have outline icon
-            Image(nsImage: DesignSystemImages.Glyphs.Size16.openIn)
-                .foregroundColor(iconColor)
-        }
+        // Use solid icon if allowed and available, otherwise use outline icon
+        let icon = (item.isAllowed ? item.permissionType.solidIcon : nil) ?? item.permissionType.icon
+        Image(nsImage: icon)
+            .foregroundColor(iconColor)
     }
 
     private var decisionPopUpButton: some View {
@@ -336,14 +305,15 @@ struct PopupPermissionRowView: View {
                         .foregroundColor(Color(designSystemColor: .textSecondary))
                 }
                 .buttonStyle(PlainButtonStyle())
-                .frame(width: 16, height: 16)
+                .frame(width: 24, height: 24)
                 .background(
-                    RoundedRectangle(cornerRadius: 3)
+                    RoundedRectangle(cornerRadius: 5)
                         .fill(isRemoveButtonHovered ? Color(.buttonMouseOver) : Color.clear)
                 )
                 .onHover { hovering in
                     isRemoveButtonHovered = hovering
                 }
+                .help(UserText.permissionCenterResetTooltip)
             }
             .padding(.leading, 12)
             .padding(.trailing, 12)
@@ -443,7 +413,7 @@ struct ExternalAppsPermissionRowView: View {
             }
             .padding(.leading, 12)
             .padding(.trailing, 12)
-            .padding(.vertical, 12)
+            .padding(.vertical, 8)
 
             // Individual scheme rows
             ForEach(item.externalSchemes) { schemeInfo in
@@ -503,14 +473,15 @@ struct ExternalSchemeRowView: View {
                     .foregroundColor(Color(designSystemColor: .textSecondary))
             }
             .buttonStyle(PlainButtonStyle())
-            .frame(width: 16, height: 16)
+            .frame(width: 24, height: 24)
             .background(
-                RoundedRectangle(cornerRadius: 3)
+                RoundedRectangle(cornerRadius: 5)
                     .fill(isRemoveButtonHovered ? Color(.buttonMouseOver) : Color.clear)
             )
             .onHover { hovering in
                 isRemoveButtonHovered = hovering
             }
+            .help(UserText.permissionCenterResetTooltip)
         }
         .padding(.leading, 44)
         .padding(.trailing, 12)

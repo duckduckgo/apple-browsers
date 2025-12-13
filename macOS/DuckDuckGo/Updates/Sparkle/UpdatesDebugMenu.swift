@@ -30,6 +30,9 @@ final class UpdatesDebugMenu: NSMenu {
             NSMenuItem(title: "Reset last update check", action: #selector(resetLastUpdateCheck))
                 .targetting(self)
             NSMenuItem.separator()
+            NSMenuItem(title: "Show Browser Updated Popover", action: #selector(showBrowserUpdatedPopover))
+                .targetting(self)
+            NSMenuItem.separator()
             NSMenuItem(title: "Test Update Pixels") {
                 NSMenuItem(title: "Success (Expected)", action: #selector(testUpdateSuccessOnNextLaunch))
                     .targetting(self)
@@ -71,6 +74,15 @@ final class UpdatesDebugMenu: NSMenu {
 
     @objc func testUnexpectedUpdateSuccessOnNextLaunch() {
         SparkleDebugHelper.configureUnexpectedUpdateSuccess()
+    }
+
+    @objc func showBrowserUpdatedPopover() {
+        let presenter = UpdateNotificationPresenter()
+        presenter.showUpdateNotification(
+            icon: NSImage.successCheckmark,
+            text: UserText.browserUpdatedNotification,
+            buttonText: UserText.viewDetails
+        )
     }
 
 }

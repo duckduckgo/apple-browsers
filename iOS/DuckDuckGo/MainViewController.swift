@@ -3055,7 +3055,7 @@ extension MainViewController: OmniBarDelegate {
 
     /// Delegate method called when the omnibar branding area is tapped while in AI Chat mode.
     func onAIChatBrandingPressed() {
-        DailyPixel.fireDailyAndCount(pixel: .addressBarClickOnAIChat)
+        Pixel.fire(pixel: .addressBarClickOnAIChat)
         viewCoordinator.omniBar.beginEditing(animated: true, forTextEntryMode: .aiChat)
     }
 }

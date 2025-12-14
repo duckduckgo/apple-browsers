@@ -51,16 +51,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
 
     let userContentController = WKUserContentController()
 
-    var encryptedMessagingParams: [String: Any] {
-        return [
-            "messageHandling": [
-                "iv": Array(repeating: UInt8(1), count: 32),
-                "key": Array(repeating: UInt8(1), count: 32),
-                "secret": userScript.generatedSecret,
-                "methodName": "test-methodName"
-            ] as [String: Any]
-        ]
-    }
+    var mockBody: [String: Any] = [:]
 
     let tld = TLD()
 
@@ -82,7 +73,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         userScript.vaultDelegate = delegate
 
         let mockWebView = MockWebView()
-        let message = MockWKScriptMessage(name: "pmHandlerGetAccounts", body: encryptedMessagingParams, webView: mockWebView)
+        let message = MockWKScriptMessage(name: "pmHandlerGetAccounts", body: mockBody, webView: mockWebView)
 
         let expect = expectation(description: #function)
         userScript.userContentController(userContentController, didReceive: message) {
@@ -125,7 +116,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         delegate.tld = tld
         userScript.vaultDelegate = delegate
 
-        var body = encryptedMessagingParams
+        var body = mockBody
         body["id"] = "\(randomAccountId)"
 
         let mockWebView = MockWebView()
@@ -174,7 +165,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         delegate.tld = tld
         userScript.vaultDelegate = delegate
 
-        var body = encryptedMessagingParams
+        var body = mockBody
         body["id"] = "\(randomAccountId)"
 
         let mockWebView = MockWebView()
@@ -220,7 +211,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         delegate.tld = tld
         userScript.vaultDelegate = delegate
 
-        var body = encryptedMessagingParams
+        var body = mockBody
         body["id"] = "\(randomAccountId)"
 
         let mockWebView = MockWebView()
@@ -264,7 +255,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         let delegate = GetCredentialsDelegate()
         userScript.vaultDelegate = delegate
 
-        var body = encryptedMessagingParams
+        var body = mockBody
         body["id"] = "\(randomAccountId)"
 
         let mockWebView = MockWebView()
@@ -284,17 +275,18 @@ class AutofillVaultUserScriptTests: XCTestCase {
     @available(macOS 11, iOS 14, *)
     func testWhenStoreDataCalled_ThenDelegateIsCalled() {
 
+        hostProvider = MockHostProvider(host: "example.com")
+
         let delegate = MockSecureVaultDelegate()
         userScript.vaultDelegate = delegate
 
-        var body = encryptedMessagingParams
+        var body = mockBody
         body["credentials"] = ["username": "username@example.com", "password": "password"]
 
         let mockWebView = MockWebView()
-        let message = MockUserScriptMessage(name: "storeFormData", body: body,
-                                          host: "example.com", webView: mockWebView)
+        let message = MockWKScriptMessage(name: "storeFormData", body: body, webView: mockWebView)
 
-        userScript.processEncryptedMessage(message, from: userContentController)
+        userScript.userContentController(userContentController, didReceive: message) { _, _ in }
 
         XCTAssertEqual(delegate.lastDomain, "example.com")
         XCTAssertEqual(delegate.lastUsername, "username@example.com")
@@ -327,7 +319,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         let delegate = GetCreditCardDelegate()
         userScript.vaultDelegate = delegate
 
-        var body = encryptedMessagingParams
+        var body = mockBody
         body["id"] = "\(randomCardId)"
 
         let mockWebView = MockWebView()
@@ -384,7 +376,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         let delegate = GetCreditCardDelegate()
         userScript.vaultDelegate = delegate
 
-        var body = encryptedMessagingParams
+        var body = mockBody
         body["id"] = "\(randomIdentityId)"
 
         let mockWebView = MockWebView()
@@ -408,55 +400,59 @@ class AutofillVaultUserScriptTests: XCTestCase {
 
     func testWhenShowPasswordManagementUIIsCalled_ThenDelegateIsCalled() {
 
+        hostProvider = MockHostProvider(host: "example.com")
+
         let delegate = MockSecureVaultDelegate()
         userScript.vaultDelegate = delegate
 
         let mockWebView = MockWebView()
-        let message = MockUserScriptMessage(name: "pmHandlerOpenManagePasswords", body: encryptedMessagingParams,
-                                          host: "example.com", webView: mockWebView)
+        let message = MockWKScriptMessage(name: "pmHandlerOpenManagePasswords", body: mockBody, webView: mockWebView)
 
-        userScript.processEncryptedMessage(message, from: userContentController)
+        userScript.userContentController(userContentController, didReceive: message) { _, _ in }
 
         XCTAssertEqual(delegate.lastDomain, "example.com")
     }
 
     func testWhenShowCardManagementUIIsCalled_ThenDelegateIsCalled() {
 
+        hostProvider = MockHostProvider(host: "example.com")
+
         let delegate = MockSecureVaultDelegate()
         userScript.vaultDelegate = delegate
 
         let mockWebView = MockWebView()
-        let message = MockUserScriptMessage(name: "pmHandlerOpenManageCreditCards", body: encryptedMessagingParams,
-                                          host: "example.com", webView: mockWebView)
+        let message = MockWKScriptMessage(name: "pmHandlerOpenManageCreditCards", body: mockBody, webView: mockWebView)
 
-        userScript.processEncryptedMessage(message, from: userContentController)
+        userScript.userContentController(userContentController, didReceive: message) { _, _ in }
 
         XCTAssertEqual(delegate.lastDomain, "example.com")
     }
 
     func testWhenShowIdentityManagementUIIsCalled_ThenDelegateIsCalled() {
 
+        hostProvider = MockHostProvider(host: "example.com")
+
         let delegate = MockSecureVaultDelegate()
         userScript.vaultDelegate = delegate
 
         let mockWebView = MockWebView()
-        let message = MockUserScriptMessage(name: "pmHandlerOpenManageIdentities", body: encryptedMessagingParams,
-                                          host: "example.com", webView: mockWebView)
+        let message = MockWKScriptMessage(name: "pmHandlerOpenManageIdentities", body: mockBody, webView: mockWebView)
 
-        userScript.processEncryptedMessage(message, from: userContentController)
+        userScript.userContentController(userContentController, didReceive: message) { _, _ in }
 
         XCTAssertEqual(delegate.lastDomain, "example.com")
     }
 
     func testWhenGetRuntimeConfigurationIsCalled_ThenDelegateIsCalled() {
+        hostProvider = MockHostProvider(host: "example.com")
+
         let delegate = MockSecureVaultDelegate()
         userScript.vaultDelegate = delegate
 
         let mockWebView = MockWebView()
-        let message = MockUserScriptMessage(name: "getRuntimeConfiguration", body: encryptedMessagingParams,
-                                            host: "example.com", webView: mockWebView)
+        let message = MockWKScriptMessage(name: "getRuntimeConfiguration", body: mockBody, webView: mockWebView)
 
-        userScript.processEncryptedMessage(message, from: userContentController)
+        userScript.userContentController(userContentController, didReceive: message) { _, _ in }
 
         XCTAssertEqual(delegate.lastDomain, "example.com")
     }
@@ -505,15 +501,15 @@ class AutofillVaultUserScriptTests: XCTestCase {
         let delegate = MockSecureVaultDelegate()
         userScript.vaultDelegate = delegate
 
-        var body = encryptedMessagingParams
+        var body = mockBody
         body["mainType"] = "credentials"
         body["subType"] = "username"
         body["trigger"] = "userInitiated"
 
         let mockWebView = MockWebView()
-        let message = MockUserScriptMessage(name: "getAutofillData", body: body, host: "example.com", webView: mockWebView)
+        let message = MockWKScriptMessage(name: "getAutofillData", body: body, webView: mockWebView)
 
-        userScript.processEncryptedMessage(message, from: userContentController)
+        userScript.userContentController(userContentController, didReceive: message) { _, _ in }
 
         let predicate = NSPredicate(block: { _, _ -> Bool in
             return !delegate.receivedCallbacks.isEmpty
@@ -531,15 +527,15 @@ class AutofillVaultUserScriptTests: XCTestCase {
         let delegate = MockSecureVaultDelegate()
         userScript.vaultDelegate = delegate
 
-        var body = encryptedMessagingParams
+        var body = mockBody
         body["mainType"] = "creditCards" // <- unsupported main type
         body["subType"] = "anything_else"
         body["trigger"] = "userInitiated"
 
         let mockWebView = MockWebView()
-        let message = MockUserScriptMessage(name: "getAutofillData", body: body, host: "example.com", webView: mockWebView)
+        let message = MockWKScriptMessage(name: "getAutofillData", body: body, webView: mockWebView)
 
-        userScript.processEncryptedMessage(message, from: userContentController)
+        userScript.userContentController(userContentController, didReceive: message) { _, _ in }
         XCTAssertNil(delegate.lastSubtype)
     }
 
@@ -548,15 +544,15 @@ class AutofillVaultUserScriptTests: XCTestCase {
         let delegate = MockSecureVaultDelegate()
         userScript.vaultDelegate = delegate
 
-        var body = encryptedMessagingParams
+        var body = mockBody
         body["mainType"] = "credentials"
         body["subType"] = "anything_else"
         body["trigger"] = "userInitiated"
 
         let mockWebView = MockWebView()
-        let message = MockUserScriptMessage(name: "getAutofillData", body: body, host: "example.com", webView: mockWebView)
+        let message = MockWKScriptMessage(name: "getAutofillData", body: body, webView: mockWebView)
 
-        userScript.processEncryptedMessage(message, from: userContentController)
+        userScript.userContentController(userContentController, didReceive: message) { _, _ in }
         XCTAssertNil(delegate.lastSubtype)
     }
 
@@ -590,7 +586,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         userScript.vaultDelegate = delegate
 
         // Construct the message body
-        var body = encryptedMessagingParams
+        var body = mockBody
         body["mainType"] = "creditCards"
         body["subType"] = "cardNumber"
         body["trigger"] = "userInitiated"
@@ -642,7 +638,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         userScript.vaultDelegate = delegate
 
         // Construct the message body
-        var body = encryptedMessagingParams
+        var body = mockBody
         body["mainType"] = "creditCards"
 
         let mockWebView = MockWebView()
@@ -676,7 +672,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         let delegate = FocusDelegate()
         userScript.vaultDelegate = delegate
 
-        var body = encryptedMessagingParams
+        var body = mockBody
         body["mainType"] = "creditCards"
 
         let mockWebView = MockWebView()
@@ -732,7 +728,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         let expectations = mainTypes.map { expectation(description: "Response for mainType: \($0)") }
 
         for (index, mainType) in mainTypes.enumerated() {
-            var body = encryptedMessagingParams
+            var body = mockBody
             body["mainType"] = mainType
 
             let mockWebView = MockWebView()
@@ -799,7 +795,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
                                          secondCallExpectation: secondDelegateCallExpect)
         userScript.vaultDelegate = delegate
 
-        var body = encryptedMessagingParams
+        var body = mockBody
         body["mainType"] = "creditCards"
 
         let mockWebView = MockWebView()
@@ -917,13 +913,13 @@ class AutofillVaultUserScriptTests: XCTestCase {
         let expGet = expectation(description: "getData no-action")
 
         // Send focus message
-        var focusBody = encryptedMessagingParams
+        var focusBody = mockBody
         focusBody["mainType"] = "creditCards"
 
         userScript.userContentController(userContentController,
                                          didReceive: MockWKScriptMessage(name: "getAutofillDataFocus",
-                                                                         body: focusBody,
-                                                                         webView: MockWebView())
+                                                                           body: focusBody,
+                                                                           webView: MockWebView())
         ) { result, error in
             defer { expFocus.fulfill() }
 
@@ -941,15 +937,15 @@ class AutofillVaultUserScriptTests: XCTestCase {
         }
 
         // Send getData message
-        var getDataBody = encryptedMessagingParams
+        var getDataBody = mockBody
         getDataBody["mainType"] = "creditCards"
         getDataBody["subType"] = "cardNumber"
         getDataBody["trigger"] = "userInitiated"
 
         userScript.userContentController(userContentController,
                                          didReceive: MockWKScriptMessage(name: "getAutofillData",
-                                                                         body: getDataBody,
-                                                                         webView: MockWebView())
+                                                                           body: getDataBody,
+                                                                           webView: MockWebView())
         ) { result, error in
             defer { expGet.fulfill() }
 
@@ -979,7 +975,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         userScript.vaultDelegate = delegate
 
         // Send message with invalid body structure
-        var body = encryptedMessagingParams
+        var body = mockBody
         body["invalidKey"] = "invalidValue" // Missing mainType
 
         let mockWebView = MockWebView()
@@ -1119,14 +1115,6 @@ class MockSecureVaultDelegate: AutofillSecureVaultDelegate {
 
     func autofillUserScript(_: AutofillUserScript, didSendPixel pixel: AutofillUserScript.JSPixel) {
     }
-}
-
-struct NoneEncryptingEncrypter: UserScriptEncrypter {
-
-    func encryptReply(_ reply: String, key: [UInt8], iv: [UInt8]) throws -> (ciphertext: Data, tag: Data) {
-        return (reply.data(using: .utf8)!, Data())
-    }
-
 }
 
 struct MockHostProvider: UserScriptHostProvider {

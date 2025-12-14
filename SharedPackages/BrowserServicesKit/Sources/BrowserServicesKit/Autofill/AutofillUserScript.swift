@@ -221,7 +221,7 @@ extension AutofillUserScript: WKScriptMessageHandlerWithReply {
                                       didReceive message: WKScriptMessage,
                                       replyHandler: @escaping (Any?, String?) -> Void) {
         guard let messageHandler = messageHandlerFor(message.name) else {
-            assertionFailure("Unsupported message")
+            replyHandler(nil, "Unsupported message")
             return
         }
 
@@ -237,7 +237,7 @@ extension AutofillUserScript: WKScriptMessageHandlerWithReply {
 extension AutofillUserScript: WKScriptMessageHandler {
 
     public func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        processEncryptedMessage(message, from: userContentController)
+        // unsupported
     }
 
 }

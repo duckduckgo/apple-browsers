@@ -142,7 +142,6 @@ final class PermissionCenterViewModel: ObservableObject {
     @Published private(set) var permissionItems: [PermissionCenterItem] = []
     @Published var backgroundColor: NSColor = NSColor(designSystemColor: .permissionCenterBackground)
     @Published private(set) var showReloadBanner: Bool = false
-    @Published private(set) var changedPermissionsCount: Int = 0
 
     // MARK: - Dependencies
 
@@ -253,7 +252,6 @@ final class PermissionCenterViewModel: ObservableObject {
     /// Marks that a reload is needed to apply permission changes
     private func markReloadNeeded() {
         showReloadBanner = true
-        changedPermissionsCount += 1
         setPermissionsNeedReload?()
     }
 

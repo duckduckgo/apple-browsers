@@ -64315,26 +64315,14 @@
         }
       }
     },
-    "permission.center.reload.message.plural" : {
-      "comment" : "Message shown in permission center when multiple permissions have been changed and reload is needed",
+    "permission.center.reload.message" : {
+      "comment" : "Message shown in permission center when permissions have been changed and reload is needed",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Reload to ask permissions again"
-          }
-        }
-      }
-    },
-    "permission.center.reload.message.singular" : {
-      "comment" : "Message shown in permission center when one permission has been changed and reload is needed",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Reload to ask permission again"
+            "value" : "Reload for changes to take effect"
           }
         }
       }

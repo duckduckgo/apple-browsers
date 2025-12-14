@@ -309,6 +309,17 @@ class TabTests: XCTestCase {
         XCTAssertFalse(tab.isAITab)
     }
 
+    func testWhenCustomDebugURLIsMalformedThenIsAITabReturnsFalse() {
+        // Given - Malformed URL without scheme results in nil host
+        let debugSettings = MockAIChatDebugSettings()
+        debugSettings.customURL = "mydevserver"
+        let aboutBlankURL = URL(string: "about:blank")!
+        let tab = Tab(link: Link(title: "Blank", url: aboutBlankURL), aichatDebugSettings: debugSettings)
+
+        // Then - Should not match even though both hosts are nil
+        XCTAssertFalse(tab.isAITab)
+    }
+
     func testWhenURLIsDuckAIThenIsAITabReturnsTrueRegardlessOfDebugSettings() {
         // Given - Standard duck.ai URL should work even with different debug settings
         let debugSettings = MockAIChatDebugSettings()

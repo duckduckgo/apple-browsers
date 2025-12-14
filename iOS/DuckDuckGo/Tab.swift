@@ -197,7 +197,9 @@ private extension URL {
         if isDuckAIURL { return true }
         guard let customURLString = debugSettings.customURL,
               !customURLString.isEmpty,
-              let customURL = URL(string: customURLString) else { return false }
-        return host?.lowercased() == customURL.host?.lowercased()
+              let customURL = URL(string: customURLString),
+              let customHost = customURL.host,
+              let host = self.host else { return false }
+        return host.lowercased() == customHost.lowercased()
     }
 }

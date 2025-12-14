@@ -171,6 +171,14 @@ let package = Package(
             ],
             path: "Sources/BookmarksTestDBBuilder"
         ),
+        .executableTarget(
+            name: "HistoryTestDBBuilder",
+            dependencies: [
+                "History",
+                "Persistence",
+            ],
+            path: "Sources/HistoryTestDBBuilder"
+        ),
         .target(
             name: "BookmarksTestsUtils",
             dependencies: [
@@ -534,6 +542,12 @@ let package = Package(
             dependencies: [
                 "SharedObjCTestsUtils",
                 "History",
+                "BookmarksTestsUtils",
+            ],
+            resources: [
+                .copy("Resources/BrowsingHistory_V1.sqlite"),
+                .copy("Resources/BrowsingHistory_V1.sqlite-shm"),
+                .copy("Resources/BrowsingHistory_V1.sqlite-wal"),
             ]
         ),
         .testTarget(

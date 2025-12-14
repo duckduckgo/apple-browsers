@@ -21,6 +21,7 @@ import Foundation
 import Core
 import CoreData
 import os.log
+import BrowserServicesKit
 
 protocol AppRatingPromptStorage {
     
@@ -37,13 +38,15 @@ protocol AppRatingPromptStorage {
 class AppRatingPrompt {
 
     var storage: AppRatingPromptStorage
-    
+    var featureFlagger: FeatureFlagger
+
     var uniqueAccessDays: Int {
         storage.uniqueAccessDays ?? 0
     }
 
-    init(storage: AppRatingPromptStorage = AppRatingPromptCoreDataStorage()) {
+    init(storage: AppRatingPromptStorage = AppRatingPromptCoreDataStorage(), featureFlagger: FeatureFlagger) {
         self.storage = storage
+        self.featureFlagger = featureFlagger
     }
     
     func registerUsage(onDate date: Date = Date()) {
@@ -56,6 +59,8 @@ class AppRatingPrompt {
     }
     
     func shouldPrompt(onDate date: Date = Date()) -> Bool {
+        guard featureFlagger.isFeatureOn(.appRatingPrompt) else { return false }
+        
         // To keep the database migration "lightweight" we just need to check if lastShown has been set yet.
         //  If it has then this user won't see any more prompts, which is preferable to seeing too many or too frequently.
         if uniqueAccessDays >= 3 && storage.firstShown == nil && storage.lastShown == nil {

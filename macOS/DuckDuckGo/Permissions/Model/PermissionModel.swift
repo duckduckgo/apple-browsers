@@ -29,6 +29,8 @@ final class PermissionModel {
 
     @PublishedAfter private(set) var permissions = Permissions()
     @PublishedAfter private(set) var authorizationQuery: PermissionAuthorizationQuery?
+    /// Set to true when permissions are changed in the Permission Center and a reload is needed
+    @PublishedAfter private(set) var permissionsNeedReload = false
 
     private(set) var authorizationQueries = [PermissionAuthorizationQuery]() {
         didSet {
@@ -118,6 +120,7 @@ final class PermissionModel {
         }
         authorizationQueries = []
         removedPermissions.removeAll()
+        clearPermissionsNeedReload()
     }
 
     private func updatePermissions() {
@@ -192,8 +195,8 @@ final class PermissionModel {
                         if remember == true {
                             // User chose "Always Allow" or "Never Allow"
                             self.permissionManager.setPermission(granted ? .allow : .deny, forDomain: domain, permissionType: permission)
-                        } else if granted, self.featureFlagger.isFeatureOn(.newPermissionView) {
-                            // User chose one-time "Allow" - store .ask so permission center button is visible on subsequent visits
+                        } else if self.featureFlagger.isFeatureOn(.newPermissionView) {
+                            // User chose one-time "Allow" or "Deny" (i.e., remember is false or nil) – store .ask so the permission center button is visible on subsequent visits for both cases
                             self.permissionManager.setPermission(.ask, forDomain: domain, permissionType: permission)
                         }
                     }
@@ -297,6 +300,16 @@ final class PermissionModel {
         } else {
             assertionFailure("webView URL should not be nil when removing a permission")
         }
+    }
+
+    /// Marks that permissions were changed and a reload is needed to apply changes
+    func setPermissionsNeedReload() {
+        permissionsNeedReload = true
+    }
+
+    /// Clears the reload flag (called when page reloads)
+    func clearPermissionsNeedReload() {
+        permissionsNeedReload = false
     }
 
     // MARK: - WebView delegated methods

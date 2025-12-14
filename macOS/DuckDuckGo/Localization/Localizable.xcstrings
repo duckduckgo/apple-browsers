@@ -63877,55 +63877,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Erlaube „%1$@“, dein %2$@ zu benutzen?"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Allow “%1$@“ to use your %2$@?"
+            "value" : "Allow “%1$@“ to use your %2$@ once?"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "¿Permitir que \"%1$@\" use tu %2$@?"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Autoriser « %1$@ » à utiliser votre %2$@ ?"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Consenti a \"%1$@\" di utilizzare %2$@?"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "'%1$@' toestaan om je %2$@ te gebruiken?"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Zezwolić domenie „%1$@” na użycie Twojego urządzenia/funkcji %2$@?"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Permitir que \"%1$@\" utilize %2$@?"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Открыть сайту %1$@ доступ (%2$@)?"
           }
         }
@@ -64303,14 +64303,38 @@
         }
       }
     },
-    "permission.center.reset.tooltip" : {
-      "comment" : "Tooltip for the remove/reset permission button in permission center",
+    "permission.center.reload.button" : {
+      "comment" : "Button to reload the page to apply permission changes",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Reset permission"
+            "value" : "Reload"
+          }
+        }
+      }
+    },
+    "permission.center.reload.message" : {
+      "comment" : "Message shown in permission center when permissions have been changed and reload is needed",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Reload for changes to take effect"
+          }
+        }
+      }
+    },
+    "permission.center.reset.tooltip" : {
+      "comment" : "Tooltip for the remove permission button in permission center",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Remove permission"
           }
         }
       }
@@ -64568,13 +64592,25 @@
       }
     },
     "permission.geolocation.prompt.format" : {
-      "comment" : "Prompt asking if domain %@ can use location",
+      "comment" : "Prompt asking if domain %@ can use location once",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Allow %@ to use your current location?"
+            "value" : "Allow “%@“ to use your current location once?"
+          }
+        }
+      }
+    },
+    "permission.menu-header.device.format" : {
+      "comment" : "Menu header for permission settings for domain %@ to use camera/mic/location (%@)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow “%1$@” to use your %2$@?"
           }
         }
       }

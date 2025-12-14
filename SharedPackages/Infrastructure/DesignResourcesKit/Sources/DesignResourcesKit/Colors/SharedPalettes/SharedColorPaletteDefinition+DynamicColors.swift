@@ -232,6 +232,12 @@ extension SharedColorPaletteDefinition {
             return DynamicColor(lightColor: .white, darkColor: Color(0x333333))
         case .permissionCenterContainerBackground:
             return DynamicColor(lightColor: Color(0x000000).opacity(0.03), darkColor: Color(0xFFFFFF).opacity(0.06))
+        case .permissionWarningBackground:
+            return DynamicColor(lightColor: Color(0xFFF0C2), darkColor: Color(0xC18010).opacity(0.16))
+        case .permissionReloadButtonBackground:
+            return DynamicColor(lightColor: .white, darkColor: Color(0x857A6E))
+        case .permissionReloadButtonText:
+            return DynamicColor(lightColor: Color(0x333333), darkColor: Color(0xE8E8E8))
         }
     }
 }

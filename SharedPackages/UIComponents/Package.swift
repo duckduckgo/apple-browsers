@@ -32,8 +32,8 @@ let package = Package(
             targets: ["UIComponents"]),
     ],
     dependencies: [
-        .package(path: "../DesignResourcesKit"),
-        .package(path: "../DesignResourcesKitIcons")
+        .package(path: "../Infrastructure/DesignResourcesKit"),
+        .package(path: "../Infrastructure/DesignResourcesKitIcons")
     ],
     targets: [
         .target(

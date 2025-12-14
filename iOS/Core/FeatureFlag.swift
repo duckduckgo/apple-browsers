@@ -283,6 +283,8 @@ public enum FeatureFlag: String {
 
     // https://app.asana.com/1/137249556945/project/414709148257752/task/1212395110448661?focus=true
     case appRatingPrompt
+
+    case wideEventPostEndpoint
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -305,7 +307,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .dataImportWideEventMeasurement,
              .browsingMenuSheetPresentation,
              .ampBackgroundTaskSupport,
-             .appRatingPrompt:
+             .appRatingPrompt,
+             .wideEventPostEndpoint:
             true
         default:
             false
@@ -372,7 +375,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .fullDuckAIModeExperimentalSetting,
              .dataImportWideEventMeasurement,
              .ampBackgroundTaskSupport,
-             .appRatingPrompt:
+             .appRatingPrompt,
+             .wideEventPostEndpoint:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -593,6 +597,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
         case .appRatingPrompt:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.appRatingPrompt))
+        case .wideEventPostEndpoint:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.wideEventPostEndpoint))
         }
     }
 }

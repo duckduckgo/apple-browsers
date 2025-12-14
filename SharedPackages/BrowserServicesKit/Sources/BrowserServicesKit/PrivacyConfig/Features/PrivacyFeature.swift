@@ -144,6 +144,8 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Feature Flag for the Tab Spinner
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866479296718
     case tabProgressIndicator
+
+    case wideEventPostEndpoint
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -183,6 +185,8 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     ///  https://app.asana.com/1/137249556945/project/414709148257752/task/1212395110448661?focus=true
     case appRatingPrompt
+
+    case wideEventPostEndpoint
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {

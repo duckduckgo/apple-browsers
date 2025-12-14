@@ -111,7 +111,7 @@ final class AppDependencyProvider: DependencyProvider {
     let vpnSettings = VPNSettings(defaults: .networkProtectionGroupDefaults)
     let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
     let persistentPixel: PersistentPixelFiring = PersistentPixel()
-    let wideEvent: WideEventManaging = WideEvent()
+    let wideEvent: WideEventManaging
 
     private init() {
         let featureFlaggerOverrides = FeatureFlagLocalOverrides(keyValueStore: UserDefaults(suiteName: FeatureFlag.localOverrideStoreName)!,
@@ -135,6 +135,9 @@ final class AppDependencyProvider: DependencyProvider {
             self.contentScopeExperimentsManager = defaultFeatureFlagger
             featureFlagger = defaultFeatureFlagger
         }
+
+        let wideEvent = WideEvent(sendPOSTEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.wideEventPostEndpoint) })
+        self.wideEvent = wideEvent
 
         configurationURLProvider = ConfigurationURLProvider(defaultProvider: AppConfigurationURLProvider(featureFlagger: featureFlagger), internalUserDecider: internalUserDecider, store: CustomConfigurationURLStorage(defaults: UserDefaults(suiteName: Global.appConfigurationGroupName) ?? UserDefaults()))
         configurationManager = ConfigurationManager(fetcher: ConfigurationFetcher(store: configurationStore, configurationURLProvider: configurationURLProvider, eventMapping: ConfigurationManager.configurationDebugEvents), store: configurationStore)

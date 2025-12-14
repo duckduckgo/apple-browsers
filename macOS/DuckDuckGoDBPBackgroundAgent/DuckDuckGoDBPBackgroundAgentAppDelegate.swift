@@ -121,12 +121,14 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
 
         let authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(subscriptionManager: subscriptionManager)
 
+        let dbpFeatureFlagger = DBPFeatureFlagger(configurationManager: configurationManager,
+                                                  privacyConfigurationManager: privacyConfigurationManager)
+
         manager = DataBrokerProtectionAgentManagerProvider.agentManager(
             authenticationManager: authenticationManager,
             configurationManager: configurationManager,
             privacyConfigurationManager: privacyConfigurationManager,
-            featureFlagger: DBPFeatureFlagger(configurationManager: configurationManager,
-                                              privacyConfigurationManager: privacyConfigurationManager),
+            featureFlagger: dbpFeatureFlagger,
             wideEvent: WideEvent(),
             vpnBypassService: VPNBypassService()
         )

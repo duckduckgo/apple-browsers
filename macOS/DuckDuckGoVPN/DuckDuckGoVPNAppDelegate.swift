@@ -156,7 +156,10 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         experimentManager: nil,
         for: FeatureFlag.self)
     private let wideEventVPNAppStorageSuiteName: String = "com.duckduckgo.vpn.wideEvent"
-    private lazy var wideEvent = WideEvent(storage: WideEventUserDefaultsStorage(userDefaults: UserDefaults(suiteName: wideEventVPNAppStorageSuiteName) ?? .standard))
+    private lazy var wideEvent = WideEvent(
+        storage: WideEventUserDefaultsStorage(userDefaults: UserDefaults(suiteName: wideEventVPNAppStorageSuiteName) ?? .standard),
+        sendPOSTEnabled: { [featureFlagger] in featureFlagger.isFeatureOn(.wideEventPostEndpoint) }
+    )
 
     public init(accountManager: any AccountManager,
                 subscriptionManagerV2: any SubscriptionManagerV2,

@@ -274,6 +274,8 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212357739558636?focus=true
     case dataImportWideEventMeasurement
+
+    case wideEventPostEndpoint
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -296,7 +298,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .popupPermissionButtonPersistence,
                 .tabClosingEventRecreation,
                 .dataImportWideEventMeasurement,
-                .tabProgressIndicator:
+                .tabProgressIndicator,
+                .wideEventPostEndpoint:
             true
         default:
             false
@@ -382,7 +385,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .webNotifications,
                 .newPermissionView,
                 .firstTimeQuitSurvey,
-                .dataImportWideEventMeasurement:
+                .dataImportWideEventMeasurement,
+                .wideEventPostEndpoint:
             return true
         case .sslCertificatesBypass,
                 .appendAtbToSerpQueries,
@@ -559,6 +563,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .dataImportWideEventMeasurement:
             return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
+        case .wideEventPostEndpoint:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.wideEventPostEndpoint))
         }
 
     }

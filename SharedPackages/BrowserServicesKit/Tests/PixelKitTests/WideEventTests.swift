@@ -615,7 +615,7 @@ final class WideEventSendingTests: XCTestCase {
         wideEvent = WideEvent(
             storage: WideEventUserDefaultsStorage(userDefaults: testDefaults),
             sender: mockSender,
-            sendPOSTEnabled: true
+            sendPOSTEnabled: { true }
         )
     }
 
@@ -642,7 +642,7 @@ final class WideEventSendingTests: XCTestCase {
         let disabledWideEvent = WideEvent(
             storage: WideEventUserDefaultsStorage(userDefaults: testDefaults),
             sender: mockSender,
-            sendPOSTEnabled: false
+            sendPOSTEnabled: { false }
         )
 
         let data = MockWideEventData(contextData: WideEventContextData(name: "test"))
@@ -656,6 +656,42 @@ final class WideEventSendingTests: XCTestCase {
 
         XCTAssertEqual(mockSender.capturedCalls.count, 1)
         XCTAssertFalse(mockSender.capturedCalls[0].sendPOSTEnabled)
+    }
+
+    func testSendPOSTEnabledClosureIsEvaluatedAtSendTime() throws {
+        var featureFlagEnabled = false
+
+        let dynamicWideEvent = WideEvent(
+            storage: WideEventUserDefaultsStorage(userDefaults: testDefaults),
+            sender: mockSender,
+            sendPOSTEnabled: { featureFlagEnabled }
+        )
+
+        let data1 = MockWideEventData(contextData: WideEventContextData(name: "test1"))
+        dynamicWideEvent.startFlow(data1)
+
+        let expectation1 = XCTestExpectation(description: "First flow completed")
+        dynamicWideEvent.completeFlow(data1, status: .success) { _, _ in
+            expectation1.fulfill()
+        }
+        wait(for: [expectation1], timeout: 1.0)
+
+        XCTAssertEqual(mockSender.capturedCalls.count, 1)
+        XCTAssertFalse(mockSender.capturedCalls[0].sendPOSTEnabled)
+
+        featureFlagEnabled = true
+
+        let data2 = MockWideEventData(contextData: WideEventContextData(name: "test2"))
+        dynamicWideEvent.startFlow(data2)
+
+        let expectation2 = XCTestExpectation(description: "Second flow completed")
+        dynamicWideEvent.completeFlow(data2, status: .success) { _, _ in
+            expectation2.fulfill()
+        }
+        wait(for: [expectation2], timeout: 1.0)
+
+        XCTAssertEqual(mockSender.capturedCalls.count, 2)
+        XCTAssertTrue(mockSender.capturedCalls[1].sendPOSTEnabled)
     }
 
     func testWideEventPassesCorrectPixelNameToSender() throws {

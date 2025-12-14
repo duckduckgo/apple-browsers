@@ -153,6 +153,11 @@ public final class DefaultWideEventSending: WideEventSending {
             return
         }
 
+#if DEBUG
+        if let jsonString = String(data: jsonData, encoding: .utf8) {
+            Self.logger.debug("Wide event POST request:\nEndpoint: \(Self.postEndpoint.absoluteString, privacy: .public)\nPayload: \(jsonString, privacy: .public)")
+        }
+#else
         let headers = ["Content-Type": "application/json"]
 
         postRequestHandler(Self.postEndpoint, jsonData, headers) { success, error in
@@ -162,6 +167,7 @@ public final class DefaultWideEventSending: WideEventSending {
                 Self.logger.error("Wide event POST request failed: \(String(describing: error), privacy: .public)")
             }
         }
+#endif
     }
 
     private func buildJSONPayload(from parameters: [String: String]) -> Data? {

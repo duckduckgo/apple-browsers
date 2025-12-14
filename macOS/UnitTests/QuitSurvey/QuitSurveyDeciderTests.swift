@@ -28,6 +28,14 @@ final class MockQuitSurveyPersistor: QuitSurveyPersistor {
     var hasQuitAppBefore: Bool = false
 }
 
+final class MockReinstallingUserDetecting: ReinstallingUserDetecting {
+    var isReinstallingUser: Bool = false
+
+    func checkForReinstallingUser() throws {
+        // No-op for tests
+    }
+}
+
 // MARK: - Tests
 
 @MainActor
@@ -40,6 +48,7 @@ final class QuitSurveyDeciderTests: XCTestCase {
     private var dataClearingPersistor: MockFireButtonPreferencesPersistor!
     private var downloadManager: FileDownloadManagerMock!
     private var persistor: MockQuitSurveyPersistor!
+    private var reinstallUserDetection: MockReinstallingUserDetecting!
     private var currentDate: Date!
     private var installDate: Date!
 
@@ -57,6 +66,7 @@ final class QuitSurveyDeciderTests: XCTestCase {
 
         downloadManager = FileDownloadManagerMock()
         persistor = MockQuitSurveyPersistor()
+        reinstallUserDetection = MockReinstallingUserDetecting()
 
         currentDate = Date()
         installDate = currentDate.addingTimeInterval(-1 * 24 * 60 * 60) // 1 day ago
@@ -71,6 +81,7 @@ final class QuitSurveyDeciderTests: XCTestCase {
         dataClearingPersistor = nil
         downloadManager = nil
         persistor = nil
+        reinstallUserDetection = nil
         super.tearDown()
     }
 
@@ -81,6 +92,7 @@ final class QuitSurveyDeciderTests: XCTestCase {
             downloadManager: downloadManager,
             installDate: installDate,
             persistor: persistor,
+            reinstallUserDetection: reinstallUserDetection,
             dateProvider: { [unowned self] in self.currentDate }
         )
     }
@@ -184,6 +196,22 @@ final class QuitSurveyDeciderTests: XCTestCase {
 
     func testWhenUserHasQuitBeforeThenShouldNotShowSurvey() {
         persistor.hasQuitAppBefore = true
+        createDecider()
+
+        XCTAssertFalse(decider.shouldShowQuitSurvey)
+    }
+
+    // MARK: - Reinstalling User Tests
+
+    func testWhenUserIsNotReinstallingThenShouldShowSurvey() {
+        reinstallUserDetection.isReinstallingUser = false
+        createDecider()
+
+        XCTAssertTrue(decider.shouldShowQuitSurvey)
+    }
+
+    func testWhenUserIsReinstallingThenShouldNotShowSurvey() {
+        reinstallUserDetection.isReinstallingUser = true
         createDecider()
 
         XCTAssertFalse(decider.shouldShowQuitSurvey)

@@ -1,2 +1,1 @@
-• Added a little more delight to the tracker blocking animation in the address bar.
-• This update also includes various other improvements and bug fixes.
+• This update includes various bug fixes and improvements.

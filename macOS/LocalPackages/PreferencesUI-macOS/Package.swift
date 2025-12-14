@@ -12,7 +12,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../SwiftUIExtensions"),
-        .package(path: "../../../SharedPackages/DesignResourcesKit")
+        .package(path: "../../../SharedPackages/Infrastructure/DesignResourcesKit")
     ],
     targets: [
         .target(

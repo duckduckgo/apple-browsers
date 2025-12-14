@@ -18,6 +18,7 @@
 
 import AppKit
 import Combine
+import PixelKit
 import SwiftUI
 
 // MARK: - PermissionAuthorizationType
@@ -30,6 +31,7 @@ enum PermissionAuthorizationType {
     case cameraAndMicrophone
     case geolocation
     case popups
+    case notification
     case externalScheme(scheme: String)
 
     /// Creates the appropriate type from an array of PermissionType
@@ -42,6 +44,7 @@ enum PermissionAuthorizationType {
             case .microphone: self = .microphone
             case .geolocation: self = .geolocation
             case .popups: self = .popups
+            case .notification: self = .notification
             case .externalScheme(let scheme): self = .externalScheme(scheme: scheme)
             }
         } else {
@@ -62,6 +65,8 @@ enum PermissionAuthorizationType {
             return UserText.permissionGeolocation
         case .popups:
             return UserText.permissionPopups
+        case .notification:
+            return UserText.permissionNotification
         case .externalScheme(scheme: let scheme):
             guard let url = URL(string: scheme + URL.NavigationalScheme.separator),
                   let app = NSWorkspace.shared.application(toOpen: url)
@@ -75,7 +80,7 @@ enum PermissionAuthorizationType {
         switch self {
         case .geolocation:
             return true
-        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .notification, .externalScheme:
             return false
         }
     }
@@ -87,7 +92,7 @@ enum PermissionAuthorizationType {
         switch self {
         case .geolocation:
             return UserText.permissionSystemLocationEnable
-        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .notification, .externalScheme:
             return "" // Not used for these types
         }
     }
@@ -97,7 +102,7 @@ enum PermissionAuthorizationType {
         switch self {
         case .geolocation:
             return UserText.permissionSystemLocationWaiting
-        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .notification, .externalScheme:
             return ""
         }
     }
@@ -107,7 +112,7 @@ enum PermissionAuthorizationType {
         switch self {
         case .geolocation:
             return UserText.permissionSystemLocationEnabled
-        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .notification, .externalScheme:
             return ""
         }
     }
@@ -117,7 +122,7 @@ enum PermissionAuthorizationType {
         switch self {
         case .geolocation:
             return UserText.permissionSystemLocationDisabled
-        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .notification, .externalScheme:
             return ""
         }
     }
@@ -127,7 +132,7 @@ enum PermissionAuthorizationType {
         switch self {
         case .geolocation:
             return UserText.permissionSystemSettingsLocation
-        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .notification, .externalScheme:
             return ""
         }
     }
@@ -137,7 +142,17 @@ enum PermissionAuthorizationType {
         switch self {
         case .geolocation:
             return URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices")
-        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .notification, .externalScheme:
+            return nil
+        }
+    }
+
+    /// URL to learn more about this permission type (for help pages)
+    var learnMoreURL: URL? {
+        switch self {
+        case .geolocation:
+            return URL(string: "https://help.duckduckgo.com/privacy/device-location-services")
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .notification, .externalScheme:
             return nil
         }
     }
@@ -151,6 +166,7 @@ enum PermissionAuthorizationType {
         case .cameraAndMicrophone: return .camera // Use camera for system permission checks
         case .geolocation: return .geolocation
         case .popups: return .popups
+        case .notification: return .notification
         case .externalScheme(let scheme): return .externalScheme(scheme: scheme)
         }
     }
@@ -163,6 +179,7 @@ struct PermissionAuthorizationSwiftUIView: View {
     let permissionType: PermissionAuthorizationType
     let onDeny: () -> Void
     let onAllow: () -> Void
+    let onLearnMore: (() -> Void)?
     let systemPermissionManager: SystemPermissionManagerProtocol
 
     /// State for the system permission step in two-step flow
@@ -177,6 +194,7 @@ struct PermissionAuthorizationSwiftUIView: View {
 
     @State private var systemPermissionState: SystemPermissionState = .initial
     @State private var authorizationCancellable: AnyCancellable?
+    @State private var appActiveCancellable: AnyCancellable?
 
     // MARK: - Computed Properties
 
@@ -194,6 +212,8 @@ struct PermissionAuthorizationSwiftUIView: View {
             return String(format: UserText.devicePermissionAuthorizationFormat, domain, permissionType.localizedDescription.lowercased())
         case .popups:
             return String(format: UserText.popupWindowsPermissionAuthorizationFormat, domain, permissionType.localizedDescription.lowercased())
+        case .notification:
+            return String(format: UserText.devicePermissionAuthorizationFormat, domain, permissionType.localizedDescription.lowercased())
         case .externalScheme:
             if domain.isEmpty {
                 return String(format: UserText.externalSchemePermissionAuthorizationNoDomainFormat, permissionType.localizedDescription)
@@ -233,12 +253,22 @@ struct PermissionAuthorizationSwiftUIView: View {
             // Step 2: Website permission
             stepTwoView
                 .padding(.horizontal, 16)
-                .padding(.bottom, 16)
+                .padding(.bottom, permissionType.learnMoreURL != nil ? 0 : 16)
+
+            // Learn more link (for geolocation)
+            if permissionType.learnMoreURL != nil {
+                learnMoreView
+            }
         }
         .frame(width: 360)
         .background(Color(designSystemColor: .containerFillPrimary))
         .onAppear {
             initializeSystemPermissionState()
+            subscribeToAppActiveNotification()
+        }
+        .onDisappear {
+            appActiveCancellable?.cancel()
+            appActiveCancellable = nil
         }
     }
 
@@ -254,6 +284,43 @@ struct PermissionAuthorizationSwiftUIView: View {
             systemPermissionState = .authorized
         case .notDetermined:
             break // Keep initial state
+        }
+    }
+
+    /// Subscribe to app becoming active to re-check system permission state
+    /// This allows the UI to update when user returns from System Settings
+    private func subscribeToAppActiveNotification() {
+        appActiveCancellable = NotificationCenter.default
+            .publisher(for: NSApplication.didBecomeActiveNotification)
+            .sink { [systemPermissionManager, permissionType] _ in
+                recheckSystemPermissionState(
+                    manager: systemPermissionManager,
+                    permissionType: permissionType
+                )
+            }
+    }
+
+    /// Re-check system permission state when app becomes active
+    /// Updates UI if user enabled permission in System Settings
+    private func recheckSystemPermissionState(
+        manager: SystemPermissionManagerProtocol,
+        permissionType: PermissionAuthorizationType
+    ) {
+        // Only re-check if we were in a denied state
+        guard systemPermissionState == .alreadyDenied || systemPermissionState == .denied else { return }
+
+        let authState = manager.authorizationState(for: permissionType.asPermissionType)
+        switch authState {
+        case .authorized:
+            // User granted permission in System Settings
+            systemPermissionState = .authorized
+        case .notDetermined:
+            // Location Services was re-enabled but app permission not yet requested
+            // Transition to initial state to show "Enable Location" button
+            systemPermissionState = .initial
+        case .denied, .restricted, .systemDisabled:
+            // Still in a denied state, no change needed
+            break
         }
     }
 
@@ -322,51 +389,43 @@ struct PermissionAuthorizationSwiftUIView: View {
 
     private func openSystemSettings() {
         guard let url = permissionType.systemSettingsURL else { return }
+        PixelKit.fire(PermissionPixel.systemPreferencesOpened(permissionType: permissionType.asPermissionType))
         NSWorkspace.shared.open(url)
     }
 
     @ViewBuilder
     private var stepTwoView: some View {
         let isEnabled = systemPermissionState == .authorized
-        let requiresRestart = systemPermissionState == .alreadyDenied || systemPermissionState == .denied
 
         HStack(spacing: 12) {
             stepIndicator(step: 2, isActive: isEnabled)
 
-            if requiresRestart {
-                Text(UserText.permissionRestartApp)
-                    .font(.system(size: 13))
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .frame(height: 36)
-            } else {
-                HStack(spacing: 8) {
-                    Button(action: onDeny) {
-                        Text(UserText.permissionPopupDenyButton)
-                            .font(.system(size: 13))
-                            .foregroundColor(isEnabled ? Color(designSystemColor: .textPrimary) : Color(designSystemColor: .textSecondary))
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 36)
-                            .background(isEnabled ? Color(designSystemColor: .controlsFillPrimary) : Color(designSystemColor: .controlsFillSecondary))
-                            .cornerRadius(8)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    .disabled(!isEnabled)
-                    .accessibilityIdentifier("PermissionAuthorizationSwiftUIView.denyButton")
-
-                    Button(action: onAllow) {
-                        Text(UserText.permissionPopupAllowButton)
-                            .font(.system(size: 13))
-                            .foregroundColor(isEnabled ? Color(designSystemColor: .textPrimary) : Color(designSystemColor: .textSecondary))
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 36)
-                            .background(isEnabled ? Color(designSystemColor: .controlsFillPrimary) : Color(designSystemColor: .controlsFillSecondary))
-                            .cornerRadius(8)
-                    }
-                    .buttonStyle(PlainButtonStyle())
-                    .disabled(!isEnabled)
-                    .accessibilityIdentifier("PermissionAuthorizationSwiftUIView.allowButton")
+            HStack(spacing: 8) {
+                Button(action: onDeny) {
+                    Text(UserText.permissionPopupDenyButton)
+                        .font(.system(size: 13))
+                        .foregroundColor(isEnabled ? Color(designSystemColor: .textPrimary) : Color(designSystemColor: .textSecondary))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 36)
+                        .background(isEnabled ? Color(designSystemColor: .controlsFillPrimary) : Color(designSystemColor: .controlsFillSecondary))
+                        .cornerRadius(8)
                 }
+                .buttonStyle(PlainButtonStyle())
+                .disabled(!isEnabled)
+                .accessibilityIdentifier("PermissionAuthorizationSwiftUIView.denyButton")
+
+                Button(action: onAllow) {
+                    Text(UserText.permissionPopupAllowButton)
+                        .font(.system(size: 13))
+                        .foregroundColor(isEnabled ? Color(designSystemColor: .textPrimary) : Color(designSystemColor: .textSecondary))
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 36)
+                        .background(isEnabled ? Color(designSystemColor: .controlsFillPrimary) : Color(designSystemColor: .controlsFillSecondary))
+                        .cornerRadius(8)
+                }
+                .buttonStyle(PlainButtonStyle())
+                .disabled(!isEnabled)
+                .accessibilityIdentifier("PermissionAuthorizationSwiftUIView.allowButton")
             }
         }
     }
@@ -386,6 +445,26 @@ struct PermissionAuthorizationSwiftUIView: View {
             Text("\(step)")
                 .font(.system(size: 13, weight: .semibold))
                 .foregroundColor(isActive ? Color(NSColor.windowBackgroundColor) : Color.secondary.opacity(0.6))
+        }
+    }
+
+    // MARK: - Learn More Link View
+
+    @ViewBuilder
+    private var learnMoreView: some View {
+        VStack(spacing: 0) {
+            Divider()
+
+            Button(action: {
+                onLearnMore?()
+            }) {
+                Text(UserText.permissionPopupLearnMoreLink)
+                    .font(.system(size: 13))
+                    .foregroundColor(.accentColor)
+            }
+            .buttonStyle(PlainButtonStyle())
+            .cursor(.pointingHand)
+            .padding(.vertical, 12)
         }
     }
 
@@ -418,7 +497,7 @@ struct PermissionAuthorizationSwiftUIView: View {
                 .padding(.horizontal, 16)
                 .padding(.top, 16)
 
-            HStack(spacing: 12) {
+            HStack(spacing: 8) {
                 Button(action: onDeny) {
                     Text(UserText.permissionPopupDenyButton)
                         .font(.system(size: 13))
@@ -444,7 +523,12 @@ struct PermissionAuthorizationSwiftUIView: View {
                 .accessibilityIdentifier("PermissionAuthorizationSwiftUIView.allowButton")
             }
             .padding(.horizontal, 16)
-            .padding(.bottom, 16)
+            .padding(.bottom, permissionType.learnMoreURL != nil ? 0 : 16)
+
+            // Learn more link (for geolocation)
+            if permissionType.learnMoreURL != nil {
+                learnMoreView
+            }
         }
         .frame(width: 360)
         .background(Color(designSystemColor: .containerFillPrimary))
@@ -458,11 +542,13 @@ extension PermissionAuthorizationSwiftUIView {
         domain: String,
         permissionType: PermissionAuthorizationType,
         onDeny: @escaping () -> Void,
-        onAllow: @escaping () -> Void
+        onAllow: @escaping () -> Void,
+        onLearnMore: (() -> Void)? = nil
     ) {
         self.domain = domain
         self.permissionType = permissionType
         self.onDeny = onDeny
+        self.onLearnMore = onLearnMore
         self.onAllow = onAllow
         self.systemPermissionManager = SystemPermissionManager()
     }
@@ -472,22 +558,12 @@ extension PermissionAuthorizationSwiftUIView {
 
 extension PermissionType {
 
-    /// Whether this permission type requires a two-step authorization flow (system permission first, then website permission)
-    var requiresSystemPermission: Bool {
-        switch self {
-        case .geolocation:
-            return true
-        case .camera, .microphone, .popups, .externalScheme:
-            return false
-        }
-    }
-
     /// Text shown when system permission was previously disabled (prefix before link)
     var systemPermissionDisabledText: String {
         switch self {
         case .geolocation:
             return UserText.permissionSystemLocationDisabled
-        case .camera, .microphone, .popups, .externalScheme:
+        case .camera, .microphone, .popups, .notification, .externalScheme:
             return ""
         }
     }
@@ -497,7 +573,7 @@ extension PermissionType {
         switch self {
         case .geolocation:
             return UserText.permissionSystemSettingsLocation
-        case .camera, .microphone, .popups, .externalScheme:
+        case .camera, .microphone, .popups, .notification, .externalScheme:
             return ""
         }
     }
@@ -507,7 +583,7 @@ extension PermissionType {
         switch self {
         case .geolocation:
             return URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices")
-        case .camera, .microphone, .popups, .externalScheme:
+        case .camera, .microphone, .popups, .notification, .externalScheme:
             return nil
         }
     }

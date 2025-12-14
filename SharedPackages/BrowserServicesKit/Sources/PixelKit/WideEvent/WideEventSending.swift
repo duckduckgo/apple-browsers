@@ -37,6 +37,7 @@ public final class DefaultWideEventSending: WideEventSending {
 
     private let pixelKitProvider: () -> PixelKit?
     private let postRequestHandler: POSTRequestHandler
+    private let isUsingCustomHandler: Bool
 
     public init(
         pixelKitProvider: @escaping () -> PixelKit? = { PixelKit.shared },
@@ -44,6 +45,7 @@ public final class DefaultWideEventSending: WideEventSending {
     ) {
         self.pixelKitProvider = pixelKitProvider
         self.postRequestHandler = postRequestHandler ?? Self.defaultPOSTRequestHandler
+        self.isUsingCustomHandler = postRequestHandler != nil
     }
 
     public func send<T: WideEventData>(
@@ -157,8 +159,12 @@ public final class DefaultWideEventSending: WideEventSending {
         Self.logger.info("Wide event POST request:\nEndpoint: \(Self.postEndpoint.absoluteString, privacy: .public)\nPayload: \(jsonString, privacy: .public)")
 
 #if DEBUG
-        Self.logger.debug("Wide event POST request skipped (debug mode)")
-#else
+        if !isUsingCustomHandler {
+            Self.logger.debug("Wide event POST request skipped (debug mode)")
+            return
+        }
+#endif
+
         let headers = ["Content-Type": "application/json"]
 
         postRequestHandler(Self.postEndpoint, jsonData, headers) { success, error in
@@ -168,7 +174,6 @@ public final class DefaultWideEventSending: WideEventSending {
                 Self.logger.error("Wide event POST request failed: \(String(describing: error), privacy: .public)")
             }
         }
-#endif
     }
 
     private func buildJSONPayload(from parameters: [String: String]) -> Data? {

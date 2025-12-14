@@ -94,24 +94,28 @@ public class Tab: NSObject, NSCoding {
 
     /// Type of tab: web or AI Chat, derived from the current URL
     private var type: TabType {
-        if let link, link.url.isDuckAIURL {
+        if let link, link.url.isDuckAIURL(debugSettings: aichatDebugSettings) {
             return .aiChat
         }
         return .web
     }
+    
+    private let aichatDebugSettings: AIChatDebugSettingsHandling
 
     public init(uid: String? = nil,
                 link: Link? = nil,
                 viewed: Bool = false,
                 desktop: Bool = AppWidthObserver.shared.isLargeWidth,
                 lastViewedDate: Date? = nil,
-                daxEasterEggLogoURL: String? = nil) {
+                daxEasterEggLogoURL: String? = nil,
+                aichatDebugSettings: AIChatDebugSettingsHandling = AIChatDebugSettings()) {
         self.uid = uid ?? UUID().uuidString
         self.link = link
         self.viewed = viewed
         self.isDesktop = desktop
         self.lastViewedDate = lastViewedDate
         self.daxEasterEggLogoURL = daxEasterEggLogoURL
+        self.aichatDebugSettings = aichatDebugSettings
     }
 
     public convenience required init?(coder decoder: NSCoder) {
@@ -180,4 +184,16 @@ public class Tab: NSObject, NSCoding {
         observersHolder = observersHolder.filter { $0.observer != nil }
     }
 
+}
+
+// MARK: - URL+AIChat Debug Support
+
+private extension URL {
+    /// Returns `true` if the URL is a Duck AI URL or matches the custom debug domain.
+    func isDuckAIURL(debugSettings: AIChatDebugSettingsHandling) -> Bool {
+        if isDuckAIURL { return true }
+        guard let customURLString = debugSettings.customURL,
+              let customURL = URL(string: customURLString) else { return false }
+        return host == customURL.host
+    }
 }

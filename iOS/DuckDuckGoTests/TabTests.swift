@@ -276,6 +276,17 @@ class TabTests: XCTestCase {
         XCTAssertTrue(tab.isAITab)
     }
 
+    func testWhenTabHostMatchesCustomDebugHostWithDifferentCaseThenIsAITabReturnsTrue() {
+        // Given
+        let debugSettings = MockAIChatDebugSettings()
+        debugSettings.customURL = "https://Dev.Duck.AI"
+        let url = URL(string: "https://dev.duck.ai/chat")!
+        let tab = Tab(link: Link(title: "Dev AI", url: url), aichatDebugSettings: debugSettings)
+
+        // Then
+        XCTAssertTrue(tab.isAITab)
+    }
+
     func testWhenCustomDebugURLIsNilThenFallsBackToStandardCheck() {
         // Given
         let debugSettings = MockAIChatDebugSettings()

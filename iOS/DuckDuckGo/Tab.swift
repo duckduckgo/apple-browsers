@@ -190,10 +190,14 @@ public class Tab: NSObject, NSCoding {
 
 private extension URL {
     /// Returns `true` if the URL is a Duck AI URL or matches the custom debug domain.
+    ///
+    /// - Matching is based on the host only, not the full URL.
+    /// - If `debugSettings.customURL` is `nil`, empty, or invalid, returns the standard `isDuckAIURL` result.
     func isDuckAIURL(debugSettings: AIChatDebugSettingsHandling) -> Bool {
         if isDuckAIURL { return true }
         guard let customURLString = debugSettings.customURL,
+              !customURLString.isEmpty,
               let customURL = URL(string: customURLString) else { return false }
-        return host == customURL.host
+        return host?.lowercased() == customURL.host?.lowercased()
     }
 }

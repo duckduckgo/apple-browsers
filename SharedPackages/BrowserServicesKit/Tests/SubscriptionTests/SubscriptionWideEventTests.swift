@@ -32,9 +32,9 @@ final class SubscriptionWideEventTests: XCTestCase {
 
         testSuiteName = "\(type(of: self))-\(UUID().uuidString)"
         testDefaults = UserDefaults(suiteName: testSuiteName) ?? .standard
-        wideEvent = WideEvent(storage: WideEventUserDefaultsStorage(userDefaults: testDefaults), pixelKitProvider: { PixelKit.shared })
-        firedPixels.removeAll()
         setupMockPixelKit()
+        wideEvent = WideEvent(storage: WideEventUserDefaultsStorage(userDefaults: testDefaults))
+        firedPixels.removeAll()
     }
 
     override func tearDown() {

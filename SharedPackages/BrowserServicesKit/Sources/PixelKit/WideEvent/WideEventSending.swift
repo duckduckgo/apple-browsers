@@ -1,0 +1,218 @@
+//
+//  WideEventSending.swift
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+import Foundation
+import os.log
+
+public protocol WideEventSending {
+    func send<T: WideEventData>(
+        _ data: T,
+        status: WideEventStatus,
+        sendPOSTEnabled: Bool,
+        onComplete: @escaping PixelKit.CompletionBlock
+    )
+}
+
+public final class DefaultWideEventSending: WideEventSending {
+
+    public typealias POSTRequestHandler = (URL, Data, [String: String], @escaping (Bool, Error?) -> Void) -> Void
+
+    private static let logger = Logger(subsystem: "PixelKit", category: "Wide Event Sending")
+    private static let postEndpoint = URL(string: "https://improving.duckduckgo.com/e")!
+
+    private let pixelKitProvider: () -> PixelKit?
+    private let postRequestHandler: POSTRequestHandler
+
+    public init(
+        pixelKitProvider: @escaping () -> PixelKit? = { PixelKit.shared },
+        postRequestHandler: POSTRequestHandler? = nil
+    ) {
+        self.pixelKitProvider = pixelKitProvider
+        self.postRequestHandler = postRequestHandler ?? Self.defaultPOSTRequestHandler
+    }
+
+    public func send<T: WideEventData>(
+        _ data: T,
+        status: WideEventStatus,
+        sendPOSTEnabled: Bool,
+        onComplete: @escaping PixelKit.CompletionBlock
+    ) {
+        let pixelName = Self.generatePixelName(for: T.pixelName)
+        let parameters = generateFinalParameters(from: data, status: status)
+
+        guard !parameters.isEmpty else {
+            Self.logger.warning("Cannot fire wide event: empty parameters \(pixelName, privacy: .public)")
+            onComplete(false, WideEventError.invalidParameters("Parameters should not be empty"))
+            return
+        }
+
+        firePixels(pixelName: pixelName, parameters: parameters, onComplete: onComplete)
+
+        if sendPOSTEnabled {
+            sendPOSTRequest(data: data, status: status)
+        }
+    }
+
+    private func generateFinalParameters<T: WideEventData>(from data: T, status: WideEventStatus) -> [String: String] {
+        var parameters: [String: String] = [:]
+
+        parameters.merge(data.globalData.pixelParameters(), uniquingKeysWith: { _, new in new })
+        parameters.merge(data.appData.pixelParameters(), uniquingKeysWith: { _, new in new })
+        parameters.merge(data.contextData.pixelParameters(), uniquingKeysWith: { _, new in new })
+        parameters.merge(data.pixelParameters(), uniquingKeysWith: { _, new in new })
+
+        if let errorData = data.errorData {
+            parameters.merge(errorData.pixelParameters(), uniquingKeysWith: { _, new in new })
+        }
+
+        parameters[WideEventParameter.Feature.status] = status.description
+
+        switch status {
+        case .success(let reason?), .unknown(let reason):
+            parameters[WideEventParameter.Feature.statusReason] = reason
+        case .failure, .cancelled, .success(nil):
+            break
+        }
+
+        return parameters
+    }
+
+    private static func generatePixelName(for name: String) -> String {
+        #if os(macOS)
+        return "m_mac_wide_\(name)"
+        #elseif os(iOS)
+        return "m_ios_wide_\(name)"
+        #else
+        fatalError("Unsupported platform, please define a new pixel name if you're adding a new platform")
+        #endif
+    }
+
+    private func firePixels(pixelName: String, parameters: [String: String], onComplete: @escaping PixelKit.CompletionBlock) {
+        guard let pixelKit = pixelKitProvider() else {
+            Self.logger.error("Cannot fire wide event: PixelKit not initialized")
+            onComplete(false, WideEventError.invalidFlowState)
+            return
+        }
+
+        let event = WideEventPixelKitEvent(name: pixelName, parameters: parameters, standardParameters: [])
+
+        pixelKit.fire(
+            event,
+            frequency: .daily,
+            withHeaders: nil,
+            withAdditionalParameters: nil,
+            allowedQueryReservedCharacters: nil,
+            includeAppVersionParameter: true,
+            onComplete: { success, error in
+                if success {
+                    Self.logger.info("Daily wide event pixel fired successfully: \(pixelName, privacy: .public)")
+                } else {
+                    Self.logger.error("Daily wide event failed to fire: \(pixelName, privacy: .public), error: \(String(describing: error), privacy: .public)")
+                }
+            }
+        )
+
+        pixelKit.fire(
+            event,
+            frequency: .standard,
+            withHeaders: nil,
+            withAdditionalParameters: nil,
+            allowedQueryReservedCharacters: nil,
+            includeAppVersionParameter: true,
+            onComplete: { success, error in
+                if success {
+                    Self.logger.info("Wide event fired successfully: \(pixelName, privacy: .public)")
+                } else {
+                    Self.logger.error("Wide event failed to fire: \(pixelName, privacy: .public), error: \(String(describing: error), privacy: .public)")
+                }
+                onComplete(success, error)
+            }
+        )
+    }
+
+    private func sendPOSTRequest<T: WideEventData>(data: T, status: WideEventStatus) {
+        let parameters = generateFinalParameters(from: data, status: status)
+
+        guard let jsonData = buildJSONPayload(from: parameters) else {
+            Self.logger.error("Failed to build JSON payload for wide event POST request")
+            return
+        }
+
+        let headers = ["Content-Type": "application/json"]
+
+        postRequestHandler(Self.postEndpoint, jsonData, headers) { success, error in
+            if success {
+                Self.logger.info("Wide event POST request sent successfully")
+            } else {
+                Self.logger.error("Wide event POST request failed: \(String(describing: error), privacy: .public)")
+            }
+        }
+    }
+
+    private func buildJSONPayload(from parameters: [String: String]) -> Data? {
+        let nested = nestedDictionary(from: parameters)
+        return try? JSONSerialization.data(withJSONObject: nested, options: [])
+    }
+
+    private func nestedDictionary(from parameters: [String: String]) -> [String: Any] {
+        var root: [String: Any] = [:]
+
+        for key in parameters.keys.sorted() {
+            guard let value = parameters[key] else {
+                continue
+            }
+
+            let parts = key.split(separator: ".").map(String.init)
+            assign(value: value, path: parts, dict: &root)
+        }
+
+        return root
+    }
+
+    private func assign(value: String, path: [String], dict: inout [String: Any]) {
+        guard let first = path.first else {
+            return
+        }
+
+        if path.count == 1 {
+            dict[first] = value
+            return
+        }
+
+        var child = dict[first] as? [String: Any] ?? [:]
+        assign(value: value, path: Array(path.dropFirst()), dict: &child)
+        dict[first] = child
+    }
+
+    private static func defaultPOSTRequestHandler(
+        url: URL,
+        body: Data,
+        headers: [String: String],
+        onComplete: @escaping (Bool, Error?) -> Void
+    ) {
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.httpBody = body
+        headers.forEach { request.setValue($1, forHTTPHeaderField: $0) }
+
+        URLSession.shared.dataTask(with: request) { _, response, error in
+            let success = (response as? HTTPURLResponse)?.statusCode == 200
+            onComplete(success, error)
+        }.resume()
+    }
+}

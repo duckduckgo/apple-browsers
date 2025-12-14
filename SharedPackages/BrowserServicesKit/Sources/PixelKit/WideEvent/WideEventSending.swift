@@ -153,10 +153,11 @@ public final class DefaultWideEventSending: WideEventSending {
             return
         }
 
+        let jsonString = String(data: jsonData, encoding: .utf8) ?? "{}"
+        Self.logger.info("Wide event POST request:\nEndpoint: \(Self.postEndpoint.absoluteString, privacy: .public)\nPayload: \(jsonString, privacy: .public)")
+
 #if DEBUG
-        if let jsonString = String(data: jsonData, encoding: .utf8) {
-            Self.logger.debug("Wide event POST request:\nEndpoint: \(Self.postEndpoint.absoluteString, privacy: .public)\nPayload: \(jsonString, privacy: .public)")
-        }
+        Self.logger.debug("Wide event POST request skipped (debug mode)")
 #else
         let headers = ["Content-Type": "application/json"]
 

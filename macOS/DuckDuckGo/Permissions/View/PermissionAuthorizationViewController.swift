@@ -219,6 +219,11 @@ final class PermissionAuthorizationViewController: NSViewController {
             onAllow: { [weak self] in
                 self?.handleAllow()
             },
+            onLearnMore: permissionType.learnMoreURL != nil ? {
+                if let url = permissionType.learnMoreURL {
+                    Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
+                }
+            } : nil,
             systemPermissionManager: systemPermissionManager
         )
 

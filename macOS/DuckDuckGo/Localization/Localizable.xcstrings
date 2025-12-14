@@ -64598,7 +64598,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Allow %@ to use your current location once?"
+            "value" : "Allow “%@“ to use your current location once?"
           }
         }
       }

@@ -967,6 +967,9 @@ struct UserText {
     static let devicePermissionAuthorizationFormat = NSLocalizedString("permission.authorization.format",
                                                                        value: "Allow “%@“ to use your %@ once?",
                                                                        comment: "Popover asking for domain %@ to use camera/mic (%@)")
+    static let permissionMenuHeaderDeviceFormat = NSLocalizedString("permission.menu-header.device.format",
+                                                                    value: "Allow “%@” to use your %@?",
+                                                                    comment: "Menu header for permission settings for domain %@ to use camera/mic/location (%@)")
     static let popupWindowsPermissionAuthorizationFormat = NSLocalizedString("permission.authorization.popups.format",
                                                                              value: "Allow “%@” to open a pop-up window?",
                                                                              comment: "Popover asking for domain %@ to open a pop-up window")

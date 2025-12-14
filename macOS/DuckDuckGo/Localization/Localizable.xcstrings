@@ -64603,6 +64603,18 @@
         }
       }
     },
+    "permission.menu-header.device.format" : {
+      "comment" : "Menu header for permission settings for domain %@ to use camera/mic/location (%@)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow “%1$@” to use your %2$@?"
+          }
+        }
+      }
+    },
     "permission.microphone" : {
       "comment" : "Microphone input media device name",
       "extractionState" : "extracted_with_value",

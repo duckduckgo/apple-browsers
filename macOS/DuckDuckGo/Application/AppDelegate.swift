@@ -375,9 +375,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return firstLaunchDate.daysSinceNow() >= 2
     }
 
+    let memoryUsageMonitor: MemoryUsageMonitor
+
     @MainActor
     // swiftlint:disable cyclomatic_complexity
     override init() {
+        memoryUsageMonitor = MemoryUsageMonitor(interval: 1.0, logger: .memory)
         // will not add crash handlers and will fire pixel on applicationDidFinishLaunching if didCrashDuringCrashHandlersSetUp == true
         let didCrashDuringCrashHandlersSetUp = UserDefaultsWrapper(key: .didCrashDuringCrashHandlersSetUp, defaultValue: false)
         _didCrashDuringCrashHandlersSetUp = didCrashDuringCrashHandlersSetUp
@@ -1094,6 +1097,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         defer {
             didFinishLaunching = true
         }
+
+        memoryUsageMonitor.start()
 
         Task {
             await subscriptionManagerV1?.loadInitialData()

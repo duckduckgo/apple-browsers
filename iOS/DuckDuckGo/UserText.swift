@@ -1829,6 +1829,10 @@ public struct UserText {
     public static let settingsEnableDuckAIFullModeTitle = NSLocalizedString("settings.aifeatures.full.mode.title", value: "Duck.ai Tabs Mode", comment: "Settings screen cell title for enabling Duck.ai as tabs")
     
     public static let settingsEnableDuckAIFullModeSubtitle = NSLocalizedString("settings.aifeatures.full.mode.subtitle", value: "Show new Duck.ai Chats as tabs in the browser", comment: "Settings screen cell subtitle for enabling Duck.ai as tabs")
+    
+    public static let settingsAutomaticPageContextTitle = NSLocalizedString("settings.aifeatures.automatic.context.title", value: "Automatically Send Context", comment: "Settings screen cell title for enabling automatic page context")
+    
+    public static let settingsAutomaticPageContextSubtitle = NSLocalizedString("settings.aifeatures.automatic.context.subtitle", value: "Automatically send page context to Duck.ai", comment: "Settings screen cell subtitle for enabling automatic page context")
 
     public static let settingsAiFeaturesSearchAssist = NSLocalizedString("settings.aifeatures.assist", value: "Search Assist Settings", comment: "Title of search assist settings link")
 
@@ -2183,5 +2187,24 @@ public struct UserText {
             static let skip = NSLocalizedString("onboarding.privacypro.promo.buttons.skip", value: "Skip", comment: "Button to continue the onboarding process.")
 
         }
+    }
+    
+    // MARK: - Fire Confirmation
+    
+    public static let fireConfirmationTitle = NSLocalizedString("fire.confirmation.title", value: "Choose What To Delete", comment: "Title for fire button confirmation screen")
+    public static let fireConfirmationTabsTitle = NSLocalizedString("fire.confirmation.tabs.title", value: "Tabs", comment: "Tabs option title in fire confirmation")
+    public static let fireConfirmationDataTitle = NSLocalizedString("fire.confirmation.data.title", value: "Cookies and Site Data", comment: "Cookies and site data option title in fire confirmation")
+    public static let fireConfirmationAIChatsTitle = NSLocalizedString("fire.confirmation.aichats.title", value: "Duck.ai Chats", comment: "AI Chats option title in fire confirmation")
+    public static let fireConfirmationDataSubtitleHistoryDisabled = NSLocalizedString("fire.confirmation.data.subtitle.historyDisabled", value: "May sign you out of accounts", comment: "Subtitle for cookies/site data when history is disabled")
+    public static let fireConfirmationAIChatsSubtitle = NSLocalizedString("fire.confirmation.aichats.subtitle", value: "Delete all chats", comment: "AI Chats option subtitle in fire confirmation")
+    
+    public static func fireConfirmationTabsSubtitle(withCount count: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "fire.confirmation.tabs.subtitle.withCount", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, count)
+    }
+    
+    public static func fireConfirmationDataSubtitle(withCount count: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "fire.confirmation.data.subtitle.withCount", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, count)
     }
 }

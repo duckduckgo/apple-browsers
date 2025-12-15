@@ -1178,14 +1178,22 @@ class MainViewController: UIViewController {
     }
 
     @IBAction func onFirePressed() {
-
-        func showClearDataAlert() {
-            let alert = ForgetDataAlert.buildAlert(forgetTabsAndDataHandler: { [weak self] in
-                self?.forgetAllWithAnimation {}
-            })
-            self.present(controller: alert, fromView: self.viewCoordinator.toolbar)
+    
+        func showFireConfirmation() {
+            let presenter = FireConfirmationPresenter(featureFlagger: featureFlagger)
+            let source: UIView = tabsBarController?.fireButton ?? viewCoordinator.toolbar
+            presenter.presentFireConfirmation(
+                on: self,
+                attachPopoverTo: source,
+                onConfirm: { [weak self] in
+                    self?.forgetAllWithAnimation {}
+                },
+                onCancel: {
+                    // TODO: - Maybe add pixel
+                }
+            )
         }
-
+        
         Pixel.fire(pixel: .forgetAllPressedBrowsing)
         
         performActionIfAITab { DailyPixel.fireDailyAndCount(pixel: .aiChatFireButtonTapped) }
@@ -1196,7 +1204,7 @@ class MainViewController: UIViewController {
         // Dismiss dax dialog and pulse animation when the user taps on the Fire Button.
         currentTab?.dismissContextualDaxFireDialog()
         ViewHighlighter.hideAll()
-        showClearDataAlert()
+        showFireConfirmation()
         
         performCancel()
     }
@@ -2801,7 +2809,7 @@ extension MainViewController: OmniBarDelegate {
         let isiPad = UIDevice.current.userInterfaceIdiom == .pad
         controller.modalPresentationStyle = isiPad ? .popover : .pageSheet
 
-        if let popoverController = controller.popoverPresentationController  {
+        if let popoverController = controller.popoverPresentationController {
             popoverController.sourceView = omniBar.barView.menuButton
             controller.additionalSafeAreaInsets = UIEdgeInsets(top: 0, left: 0, bottom: 16, right: 0)
             controller.preferredContentSize = CGSize(width: 320, height: model.estimatedContentHeight)

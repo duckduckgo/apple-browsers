@@ -40,8 +40,6 @@
         "AIChatTests\/test_disableAIChatOmnibarFromSettings_buttonIsRemovedFromOmnibar()",
         "BookmarkSearchTests\/testShowInFolderFunctionalityOnBookmarksPanel()",
         "FireWindowTests\/testCrendentialsAreAutoFilledInFireWindows()",
-        "NewPermissionViewPopupTests",
-        "NewPermissionViewTests",
         "PermissionsTests"
       ],
       "target" : {

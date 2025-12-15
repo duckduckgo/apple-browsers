@@ -436,7 +436,7 @@ private extension NSMenuItem {
         case .externalScheme(scheme: let scheme):
             title = String(format: UserText.permissionMenuHeaderExternalSchemeFormat, permission.localizedDescription.lowercased(), scheme)
         case .notification:
-            title = UserText.notificationPermissionAuthorizationFormat
+            title = String(format: UserText.notificationPermissionAuthorizationFormat, domain)
         case .popups:
             title = String(format: UserText.permissionMenuHeaderPopupWindowsFormat, domain)
         }

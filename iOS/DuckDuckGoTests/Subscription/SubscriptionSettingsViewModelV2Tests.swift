@@ -222,16 +222,19 @@ final class SubscriptionSettingsViewModelV2Tests: XCTestCase {
         await waitForSubscriptionUpdate()
 
         // When
+        let stripeViewExpectation = expectation(description: "Stripe view shown")
+        sut.$state
+            .map { $0.isShowingStripeView }
+            .filter { $0 == true }
+            .first()
+            .sink { _ in stripeViewExpectation.fulfill() }
+            .store(in: &cancellables)
+
         sut.viewAllPlans()
 
-        // Then - Stripe triggers async portal URL fetch, then shows stripe view
-        let expectation = expectation(description: "Stripe view shown")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            if self.sut.state.isShowingStripeView {
-                expectation.fulfill()
-            }
-        }
-        await fulfillment(of: [expectation], timeout: 2.0)
+        // Then - Wait for isShowingStripeView to become true
+        await fulfillment(of: [stripeViewExpectation], timeout: 2.0)
+        XCTAssertTrue(sut.state.isShowingStripeView)
     }
 
     func testViewAllPlans_WhenUnknownPlatform_SetsIsShowingInternalSubscriptionNoticeTrue() async {

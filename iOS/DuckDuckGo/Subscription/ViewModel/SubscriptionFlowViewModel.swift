@@ -96,6 +96,16 @@ final class SubscriptionFlowViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.personalInformationRemoval)
     }
 
+    /// Returns the subscription URL type based on the current flow type
+    private var currentSubscriptionURL: SubscriptionURL {
+        switch flowType {
+        case .firstPurchase:
+            return .purchase
+        case .planUpdate:
+            return .plans
+        }
+    }
+
     private let webViewSettings: AsyncHeadlessWebViewSettings
 
     init(purchaseURL: URL,
@@ -131,6 +141,8 @@ final class SubscriptionFlowViewModel: ObservableObject {
         self.webViewModel = AsyncHeadlessWebViewViewModel(userScript: userScript,
                                                           subFeature: subFeature,
                                                           settings: webViewSettings)
+
+        self.state.viewTitle = flowType.navigationTitle
     }
 
     // Observe transaction status
@@ -359,15 +371,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
         DispatchQueue.main.async {
             self.resetState()
         }
-        var subscriptionURL: SubscriptionURL {
-            switch flowType {
-            case .firstPurchase:
-                    .purchase
-            case .planUpdate:
-                    .plans
-            }
-        }
-        if webViewModel.url != subscriptionManager.url(for: subscriptionURL).forComparison() {
+        if webViewModel.url != subscriptionManager.url(for: currentSubscriptionURL).forComparison() {
             self.webViewModel.navigationCoordinator.navigateTo(url: purchaseURL)
         }
         await self.setupTransactionObserver()

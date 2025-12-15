@@ -384,7 +384,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .webNotifications,
                 .newPermissionView,
                 .firstTimeQuitSurvey,
-                .autofillPasswordSearchPrioritizeDomain:
+                .autofillPasswordSearchPrioritizeDomain,
                 .dataImportWideEventMeasurement:
             return true
         case .sslCertificatesBypass,

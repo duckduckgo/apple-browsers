@@ -274,7 +274,7 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// Prioritize results where the domain matches the search query when searching passwords & autofill
     case autofillPasswordSearchPrioritizeDomain
-  
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212357739558636?focus=true
     case dataImportWideEventMeasurement
 }

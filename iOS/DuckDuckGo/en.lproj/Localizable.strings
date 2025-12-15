@@ -1894,6 +1894,24 @@
 /* No comment provided by engineer. */
 "findinpage.title" = "Find in Page";
 
+/* AI Chats option subtitle in fire confirmation */
+"fire.confirmation.aichats.subtitle" = "Delete all chats";
+
+/* AI Chats option title in fire confirmation */
+"fire.confirmation.aichats.title" = "Duck.ai Chats";
+
+/* Subtitle for cookies/site data when history is disabled */
+"fire.confirmation.data.subtitle.historyDisabled" = "May sign you out of accounts";
+
+/* Cookies and site data option title in fire confirmation */
+"fire.confirmation.data.title" = "Cookies and Site Data";
+
+/* Tabs option title in fire confirmation */
+"fire.confirmation.tabs.title" = "Tabs";
+
+/* Title for fire button confirmation screen */
+"fire.confirmation.title" = "Choose What To Delete";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Airstream";
 
@@ -2800,6 +2818,12 @@ Take back control of your personal information with the browser designed for dat
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Search Assist Settings";
 
+/* Settings screen cell subtitle for enabling automatic page context */
+"settings.aifeatures.automatic.context.subtitle" = "Automatically send page context to Duck.ai";
+
+/* Settings screen cell title for enabling automatic page context */
+"settings.aifeatures.automatic.context.title" = "Automatically Send Context";
+
 /* Settings screen cell subtitle for enabling Duck.ai as tabs */
 "settings.aifeatures.full.mode.subtitle" = "Show new Duck.ai Chats as tabs in the browser";
 
@@ -2834,7 +2858,7 @@ Take back control of your personal information with the browser designed for dat
 "settings.autoclear.tabs.and.data" = "Clear Tabs and Data";
 
 /* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
-"settings.autoclear.tabs.and.data.with.aichat" = "Clear Tabs, Data and Duck.ai Chats";
+"settings.autoclear.tabs.and.data.with.aichat" = "Clear Tabs, Data, and Duck.ai Chats";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Search Suggestions";
@@ -3358,6 +3382,9 @@ Take back control of your personal information with the browser designed for dat
 /* Text for the 'Windows' button */
 "subscription.pir.windows" = "Windows";
 
+/* Navigation title for the subscription plans page */
+"subscription.plans.title" = "Subscription Plans";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Completing purchase...";
 
@@ -3447,6 +3474,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Free Trial Active";
+
+/* View All Plans button to see available subscription tiers */
+"subscription.view.all.plans" = "View All Plans";
 
 /* Message confirming that recovery code was copied to clipboard */
 "sync.code.copied" = "Recovery code copied to clipboard";

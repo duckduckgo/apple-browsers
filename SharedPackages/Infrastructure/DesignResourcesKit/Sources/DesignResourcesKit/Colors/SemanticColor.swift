@@ -74,6 +74,9 @@ public enum DesignSystemColor {
     case iconsSecondary
     case iconsTertiary
 
+    // Destructive
+    case destructivePrimary
+
     // Buttons/Primary
     case buttonsPrimaryDefault
     case buttonsPrimaryPressed
@@ -110,6 +113,9 @@ public enum DesignSystemColor {
     case buttonsDeleteGhostText
     case buttonsDeleteGhostTextPressed
     case buttonsDeleteGhostTextDisabled
+
+    // Buttons/DestructivePrimary
+    case buttonsDestructivePrimaryPressed
 
     // Decorations
     case decorationPrimary

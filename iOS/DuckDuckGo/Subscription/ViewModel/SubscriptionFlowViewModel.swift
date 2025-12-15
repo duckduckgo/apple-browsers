@@ -359,7 +359,15 @@ final class SubscriptionFlowViewModel: ObservableObject {
         DispatchQueue.main.async {
             self.resetState()
         }
-        if webViewModel.url != subscriptionManager.url(for: .purchase).forComparison() {
+        var subscriptionURL: SubscriptionURL {
+            switch flowType {
+            case .firstPurchase:
+                    .purchase
+            case .planUpdate:
+                    .plans
+            }
+        }
+        if webViewModel.url != subscriptionManager.url(for: subscriptionURL).forComparison() {
             self.webViewModel.navigationCoordinator.navigateTo(url: purchaseURL)
         }
         await self.setupTransactionObserver()

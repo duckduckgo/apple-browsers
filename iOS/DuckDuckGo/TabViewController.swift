@@ -492,6 +492,11 @@ class TabViewController: UIViewController {
     let sharedSecureVault: (any AutofillSecureVault)?
     
     private(set) var aiChatContentHandler: AIChatContentHandling
+    lazy var aiChatContextualSheetCoordinator: AIChatContextualSheetCoordinator = {
+        let coordinator = AIChatContextualSheetCoordinator()
+        coordinator.delegate = self
+        return coordinator
+    }()
     let subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling
 
     required init?(coder aDecoder: NSCoder,

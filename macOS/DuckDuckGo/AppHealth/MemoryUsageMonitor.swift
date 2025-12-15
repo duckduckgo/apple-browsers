@@ -73,8 +73,8 @@ final class MemoryUsageMonitor: @unchecked Sendable {
     }
 
     /// Creates a new memory usage monitor.
-    /// - Parameter interval: The interval between reports. Defaults to 5 seconds.
-    init(interval: TimeInterval = 5.0, logger: Logger? = nil) {
+    /// - Parameter interval: The interval between reports. Defaults to 3 seconds.
+    init(interval: TimeInterval = 3.0, logger: Logger? = nil) {
         self.interval = interval
         self.logger = logger
         self.memoryReportPublisher = memoryReportSubject.eraseToAnyPublisher()
@@ -218,6 +218,7 @@ final class MemoryUsageDisplayer {
 
         memoryUsageMonitorView = label
         viewUpdatesCancellable = memoryUsageMonitor.memoryReportPublisher
+            .prepend(memoryUsageMonitor.getCurrentMemoryUsage())
             .sink { [weak label] report in
                 label?.stringValue = report.usedMemoryString
                 label?.sizeToFit()

@@ -879,7 +879,7 @@ private extension XCUIElement {
     /// - Returns: An optional Int representing the button index of the deny button, if found.
     func indexOfDenyButtonOnSystemDialog() -> Int? {
         // First, try to find a button with a deny-like title
-        let denyTitles = ["Don't Allow", "Don't Allow", "Deny", "Cancel", "No", "Not Now", "Later"]
+        let denyTitles = ["Don't Allow", "Deny", "Cancel", "No", "Not Now", "Later"]
 
         for buttonIndex in 0 ... 4 {
             let button = self.buttons.element(boundBy: buttonIndex)

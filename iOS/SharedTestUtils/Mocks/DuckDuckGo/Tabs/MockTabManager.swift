@@ -22,10 +22,10 @@ import Foundation
 
 @MainActor
 class MockTabManager: TabManaging {
-    var count: Int = 0
+    nonisolated(unsafe) var count: Int = 0
     private(set) var prepareAllTabsExceptCurrentCalled = false
     private(set) var prepareCurrentTabCalled = false
-    private(set) var removeAllCalled = false
+    nonisolated(unsafe) private(set) var removeAllCalled = false
     
     func prepareAllTabsExceptCurrentForDataClearing() {
         prepareAllTabsExceptCurrentCalled = true
@@ -35,7 +35,7 @@ class MockTabManager: TabManaging {
         prepareCurrentTabCalled = true
     }
     
-    func removeAll() {
+    nonisolated func removeAll() {
         removeAllCalled = true
     }
 }

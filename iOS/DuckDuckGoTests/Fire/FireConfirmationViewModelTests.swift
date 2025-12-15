@@ -89,7 +89,6 @@ final class FireConfirmationViewModelTests: XCTestCase {
             isEnabledByUser: false,
             historyFeatureEnabled: false
         ),
-        tld: TLD = TLD(),
         fireproofing: Fireproofing = TestFireproofing(),
         aiChatSettings: AIChatSettingsProvider = MockAIChatSettingsProvider(),
         settingsStore: FireConfirmationSettingsStoring? = nil,
@@ -99,7 +98,6 @@ final class FireConfirmationViewModelTests: XCTestCase {
         return FireConfirmationViewModel(
             tabsModel: tabsModel,
             historyManager: historyManager,
-            tld: tld,
             fireproofing: fireproofing,
             aiChatSettings: aiChatSettings,
             keyValueFilesStore: mockKeyValueStore,

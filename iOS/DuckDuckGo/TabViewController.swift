@@ -132,7 +132,7 @@ class TabViewController: UIViewController {
     let progressWorker = WebProgressWorker()
 
     private(set) var webView: WKWebView!
-    private lazy var appRatingPrompt: AppRatingPrompt = AppRatingPrompt()
+    private lazy var appRatingPrompt: AppRatingPrompt = AppRatingPrompt(featureFlagger: self.featureFlagger)
     public weak var privacyDashboard: PrivacyDashboardViewController?
     
     private var storageCache: StorageCache = AppDependencyProvider.shared.storageCache

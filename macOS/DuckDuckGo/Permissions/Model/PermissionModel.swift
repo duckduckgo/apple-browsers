@@ -33,6 +33,8 @@ final class PermissionModel {
 
     @PublishedAfter private(set) var permissions = Permissions()
     @PublishedAfter private(set) var authorizationQuery: PermissionAuthorizationQuery?
+    /// Set to true when permissions are changed in the Permission Center and a reload is needed
+    @PublishedAfter private(set) var permissionsNeedReload = false
 
     private(set) var authorizationQueries = [PermissionAuthorizationQuery]() {
         didSet {
@@ -123,6 +125,7 @@ final class PermissionModel {
         }
         authorizationQueries = []
         removedPermissions.removeAll()
+        clearPermissionsNeedReload()
     }
 
     private func updatePermissions() {
@@ -194,13 +197,13 @@ final class PermissionModel {
 
                 if case .success( (let granted, let remember) ) = result {
                     for permission in permissions {
-                        if remember == true {
-                            // User chose "Always Allow" or "Never Allow"
+                        // Notifications are always permanent (no "allow once" concept)
+                        let isPersisting = remember == true || permission == .notification
+                        if isPersisting {
                             self.permissionManager.setPermission(granted ? .allow : .deny, forDomain: domain, permissionType: permission)
-                        } else if granted, self.featureFlagger.isFeatureOn(.newPermissionView) {
-                            // For notifications, store .allow (always allow). For other permissions, store .ask (one-time allow)
-                            let decision: PersistedPermissionDecision = permission == .notification ? .allow : .ask
-                            self.permissionManager.setPermission(decision, forDomain: domain, permissionType: permission)
+                        } else if self.featureFlagger.isFeatureOn(.newPermissionView) {
+                            // Other permissions: one-time decisions store .ask for permission center visibility
+                            self.permissionManager.setPermission(.ask, forDomain: domain, permissionType: permission)
                         }
                     }
                 }
@@ -339,6 +342,16 @@ final class PermissionModel {
         default:
             return false
         }
+    }
+
+    /// Marks that permissions were changed and a reload is needed to apply changes
+    func setPermissionsNeedReload() {
+        permissionsNeedReload = true
+    }
+
+    /// Clears the reload flag (called when page reloads)
+    func clearPermissionsNeedReload() {
+        permissionsNeedReload = false
     }
 
     // MARK: - WebView delegated methods

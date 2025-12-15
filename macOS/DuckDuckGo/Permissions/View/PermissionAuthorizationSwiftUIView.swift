@@ -19,6 +19,7 @@
 import AppKit
 import Combine
 import DesignResourcesKitIcons
+import PixelKit
 import SwiftUI
 import UserNotifications
 
@@ -160,6 +161,16 @@ enum PermissionAuthorizationType {
         }
     }
 
+    /// URL to learn more about this permission type (for help pages)
+    var learnMoreURL: URL? {
+        switch self {
+        case .geolocation:
+            return URL(string: "https://help.duckduckgo.com/privacy/device-location-services")
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .notification, .externalScheme:
+            return nil
+        }
+    }
+
     /// Converts back to a single PermissionType for system permission checks.
     /// For cameraAndMicrophone, returns .camera as both require the same system permission flow.
     var asPermissionType: PermissionType {
@@ -183,6 +194,7 @@ struct PermissionAuthorizationSwiftUIView: View {
     let showsTwoStepUI: Bool
     let onDeny: () -> Void
     let onAllow: () -> Void
+    let onLearnMore: (() -> Void)?
     let systemPermissionManager: SystemPermissionManagerProtocol
 
     /// State for the system permission step in two-step flow
@@ -254,6 +266,11 @@ struct PermissionAuthorizationSwiftUIView: View {
 
                 // Step 2: Website permission
                 stepTwoView
+
+                // Learn more link (for geolocation)
+                if permissionType.learnMoreURL != nil {
+                    learnMoreView
+                }
             }
         }
         .padding(.top, 20)
@@ -388,6 +405,7 @@ struct PermissionAuthorizationSwiftUIView: View {
 
     private func openSystemSettings() {
         guard let url = permissionType.systemSettingsURL else { return }
+        PixelKit.fire(PermissionPixel.systemPreferencesOpened(permissionType: permissionType.asPermissionType))
         NSWorkspace.shared.open(url)
     }
 
@@ -460,6 +478,21 @@ struct PermissionAuthorizationSwiftUIView: View {
         }
     }
 
+    // MARK: - Learn More Link View
+
+    @ViewBuilder
+    private var learnMoreView: some View {
+        Button(action: {
+            onLearnMore?()
+        }) {
+            Text(UserText.permissionPopupLearnMoreLink)
+                .font(.system(size: 13))
+                .foregroundColor(.accentColor)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .cursor(.pointingHand)
+    }
+
     private func requestSystemPermission() {
         systemPermissionState = .waiting
 
@@ -515,7 +548,13 @@ struct PermissionAuthorizationSwiftUIView: View {
                 .accessibilityIdentifier("PermissionAuthorizationSwiftUIView.allowButton")
             }
             .padding(.horizontal, 16)
-            .padding(.bottom, 16)
+            .padding(.bottom, permissionType.learnMoreURL != nil ? 0 : 16)
+
+            // Learn more link (for geolocation)
+            if permissionType.learnMoreURL != nil {
+                learnMoreView
+                    .padding(.bottom, 16)
+            }
         }
         .frame(width: 360)
         .background(Color(designSystemColor: .surfacePrimary))
@@ -530,12 +569,14 @@ extension PermissionAuthorizationSwiftUIView {
         permissionType: PermissionAuthorizationType,
         showsTwoStepUI: Bool = false,
         onDeny: @escaping () -> Void,
-        onAllow: @escaping () -> Void
+        onAllow: @escaping () -> Void,
+        onLearnMore: (() -> Void)? = nil
     ) {
         self.domain = domain
         self.permissionType = permissionType
         self.showsTwoStepUI = showsTwoStepUI
         self.onDeny = onDeny
+        self.onLearnMore = onLearnMore
         self.onAllow = onAllow
         self.systemPermissionManager = SystemPermissionManager()
     }

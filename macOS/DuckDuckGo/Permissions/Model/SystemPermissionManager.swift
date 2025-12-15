@@ -98,7 +98,7 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
         case .geolocation:
             return isGeolocationAuthorizationRequired
         case .notification:
-            return notificationService.cachedAuthorizationStatus == .notDetermined
+            return isNotificationAuthorizationRequired
         case .camera, .microphone, .popups, .externalScheme:
             return false // These don't require system permission through our two-step flow
         }
@@ -155,6 +155,15 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
             return true
         case .authorized, .denied, .restricted:
             return false
+        }
+    }
+
+    private var isNotificationAuthorizationRequired: Bool {
+        switch notificationService.cachedAuthorizationStatus {
+        case .authorized, .provisional:
+            return false
+        default:
+            return true
         }
     }
 

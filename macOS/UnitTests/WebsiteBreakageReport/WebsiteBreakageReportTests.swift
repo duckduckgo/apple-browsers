@@ -26,7 +26,7 @@ import PixelKitTestingUtilities
 class WebsiteBreakageReportTests: XCTestCase {
 
     func testReportBrokenSitePixel() {
-        fire(NonStandardEvent(NonStandardPixel.brokenSiteReport),
+        fire(NonStandardPixel.brokenSiteReport,
              frequency: .standard,
              and: .expect(pixelName: "epbf_macos_desktop"),
              file: #filePath,
@@ -34,7 +34,7 @@ class WebsiteBreakageReportTests: XCTestCase {
     }
 
     func testReportBrokenSiteShownPixel() {
-        fire(NonStandardEvent(NonStandardPixel.brokenSiteReportShown),
+        fire(NonStandardPixel.brokenSiteReportShown,
              frequency: .standard,
              and: .expect(pixelName: "m_report-broken-site_shown"),
              file: #filePath,
@@ -42,7 +42,7 @@ class WebsiteBreakageReportTests: XCTestCase {
     }
 
     func testReportBrokenSiteSentPixel() {
-        fire(NonStandardEvent(NonStandardPixel.brokenSiteReportSent),
+        fire(NonStandardPixel.brokenSiteReportSent,
              frequency: .standard,
              and: .expect(pixelName: "m_report-broken-site_sent"),
              file: #filePath,

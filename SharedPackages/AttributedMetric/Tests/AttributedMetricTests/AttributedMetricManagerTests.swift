@@ -148,7 +148,7 @@ final class AttributedMetricManagerTests: XCTestCase {
 
         let fixture = createTestFixture { pixelName, _, parameters, _, _, _ in
             switch pixelName {
-            case "m_mac_attributed_metric_retention_week":
+            case "attributed_metric_retention_week":
                 guard let countString = parameters["count"],
                       let count = Int(countString) else {
                     XCTFail("Missing or invalid count parameter for pixel: \(pixelName)")
@@ -174,7 +174,7 @@ final class AttributedMetricManagerTests: XCTestCase {
                     XCTFail("Unexpected week count: \(count)")
                 }
 
-            case "m_mac_attributed_metric_retention_month":
+            case "attributed_metric_retention_month":
                 guard let countString = parameters["count"],
                       let count = Int(countString) else {
                     XCTFail("Missing or invalid count parameter for pixel: \(pixelName)")
@@ -200,7 +200,7 @@ final class AttributedMetricManagerTests: XCTestCase {
                     XCTFail("Unexpected month count: \(count)")
                 }
 
-            case "m_mac_attributed_metric_data_store_error":
+            case "attributed_metric_data_store_error":
                 // Ignore data store errors in this test (expected in test environment)
                 break
 
@@ -290,7 +290,7 @@ final class AttributedMetricManagerTests: XCTestCase {
 
         let fixture = createTestFixture { pixelName, _, parameters, _, _, _ in
             switch pixelName {
-            case "m_mac_attributed_metric_active_past_week":
+            case "attributed_metric_active_past_week":
                 capturedDays = self.extractIntParameter(parameters, key: "days")
                 capturedDaysSinceInstalled = self.extractIntParameter(parameters, key: "daysSinceInstalled")
                 if capturedDays == nil {
@@ -299,10 +299,10 @@ final class AttributedMetricManagerTests: XCTestCase {
                 }
                 pixelFireCount += 1
                 pixelExpectation.fulfill()
-            case "m_mac_attributed_metric_average_searches_past_week_first_month", "m_mac_attributed_metric_retention_week":
+            case "attributed_metric_average_searches_past_week_first_month", "attributed_metric_retention_week":
                 // These pixels fire during userDidSearch and appDidStart, ignore them in this test
                 break
-            case "m_mac_attributed_metric_data_store_error":
+            case "attributed_metric_data_store_error":
                 break
             default:
                 break // Ignore other pixels in this test
@@ -352,7 +352,7 @@ final class AttributedMetricManagerTests: XCTestCase {
         var capturedDaysSinceInstalled: Int?
 
         let fixture = createTestFixture { pixelName, _, parameters, _, _, _ in
-            if pixelName == "m_mac_attributed_metric_active_past_week" {
+            if pixelName == "attributed_metric_active_past_week" {
                 capturedDaysSinceInstalled = self.extractIntParameter(parameters, key: "daysSinceInstalled")
                 pixelExpectation.fulfill()
             }
@@ -401,14 +401,14 @@ final class AttributedMetricManagerTests: XCTestCase {
 
         let fixture = createTestFixture { pixelName, _, parameters, _, _, _ in
             switch pixelName {
-            case "m_mac_attributed_metric_average_searches_past_week_first_month":
+            case "attributed_metric_average_searches_past_week_first_month":
                 capturedCount = self.extractIntParameter(parameters, key: "count")
                 if capturedCount == nil {
                     XCTFail("Missing or invalid count parameter")
                     return
                 }
                 pixelExpectation.fulfill()
-            case "m_mac_attributed_metric_data_store_error":
+            case "attributed_metric_data_store_error":
                 break
             default:
                 break // Ignore other pixels
@@ -454,7 +454,7 @@ final class AttributedMetricManagerTests: XCTestCase {
 
         let fixture = createTestFixture { pixelName, _, parameters, _, _, _ in
             switch pixelName {
-            case "m_mac_attributed_metric_average_searches_past_week":
+            case "attributed_metric_average_searches_past_week":
                 capturedCount = self.extractIntParameter(parameters, key: "count")
                 if capturedCount == nil {
                     XCTFail("Missing or invalid count parameter")
@@ -462,7 +462,7 @@ final class AttributedMetricManagerTests: XCTestCase {
                 }
                 hasDayAverage = parameters["day_average"] != nil
                 pixelExpectation.fulfill()
-            case "m_mac_attributed_metric_data_store_error":
+            case "attributed_metric_data_store_error":
                 break
             default:
                 break // Ignore other pixels
@@ -510,14 +510,14 @@ final class AttributedMetricManagerTests: XCTestCase {
 
         let fixture = createTestFixture { pixelName, _, parameters, _, _, _ in
             switch pixelName {
-            case "m_mac_attributed_metric_average_ad_clicks_past_week":
+            case "attributed_metric_average_ad_clicks_past_week":
                 capturedCount = self.extractIntParameter(parameters, key: "count")
                 if capturedCount == nil {
                     XCTFail("Missing or invalid count parameter")
                     return
                 }
                 pixelExpectation.fulfill()
-            case "m_mac_attributed_metric_data_store_error":
+            case "attributed_metric_data_store_error":
                 break
             default:
                 XCTFail("Unexpected pixel fired: \(pixelName)")
@@ -564,14 +564,14 @@ final class AttributedMetricManagerTests: XCTestCase {
 
         let fixture = createTestFixture { pixelName, _, parameters, _, _, _ in
             switch pixelName {
-            case "m_mac_attributed_metric_average_duck_ai_usage_past_week":
+            case "attributed_metric_average_duck_ai_usage_past_week":
                 capturedCount = self.extractIntParameter(parameters, key: "count")
                 if capturedCount == nil {
                     XCTFail("Missing or invalid count parameter")
                     return
                 }
                 pixelExpectation.fulfill()
-            case "m_mac_attributed_metric_data_store_error":
+            case "attributed_metric_data_store_error":
                 break
             default:
                 XCTFail("Unexpected pixel fired: \(pixelName)")
@@ -620,14 +620,14 @@ final class AttributedMetricManagerTests: XCTestCase {
         let fixture = createTestFixture(
             pixelHandler: { pixelName, _, parameters, _, _, _ in
                 switch pixelName {
-                case "m_mac_attributed_metric_subscribed":
+                case "attributed_metric_subscribed":
                     capturedLength = self.extractIntParameter(parameters, key: "month")
                     if capturedLength == nil {
                         XCTFail("Missing or invalid length parameter")
                         return
                     }
                     pixelExpectation.fulfill()
-                case "m_mac_attributed_metric_data_store_error":
+                case "attributed_metric_data_store_error":
                     break
                 default:
                     XCTFail("Unexpected pixel fired: \(pixelName)")
@@ -672,14 +672,14 @@ final class AttributedMetricManagerTests: XCTestCase {
         let fixture = createTestFixture(
             pixelHandler: { pixelName, _, parameters, _, _, _ in
                 switch pixelName {
-                case "m_mac_attributed_metric_subscribed":
+                case "attributed_metric_subscribed":
                     capturedMonth = self.extractIntParameter(parameters, key: "month")
                     if capturedMonth == nil {
                         XCTFail("Missing or invalid month parameter")
                         return
                     }
                     pixelExpectation.fulfill()
-                case "m_mac_attributed_metric_data_store_error":
+                case "attributed_metric_data_store_error":
                     break
                 default:
                     XCTFail("Unexpected pixel fired: \(pixelName)")
@@ -724,14 +724,14 @@ final class AttributedMetricManagerTests: XCTestCase {
         let fixture = createTestFixture(
             pixelHandler: { pixelName, _, parameters, _, _, _ in
                 switch pixelName {
-                case "m_mac_attributed_metric_subscribed":
+                case "attributed_metric_subscribed":
                     capturedMonth = self.extractIntParameter(parameters, key: "month")
                     if capturedMonth == nil {
                         XCTFail("Missing or invalid length parameter")
                         return
                     }
                     pixelExpectation.fulfill()
-                case "m_mac_attributed_metric_data_store_error":
+                case "attributed_metric_data_store_error":
                     break
                 default:
                     break // Ignore other pixels that might fire on app start
@@ -781,14 +781,14 @@ final class AttributedMetricManagerTests: XCTestCase {
         let fixture = createTestFixture(
             pixelHandler: { pixelName, _, parameters, _, _, _ in
                 switch pixelName {
-                case "m_mac_attributed_metric_subscribed":
+                case "attributed_metric_subscribed":
                     capturedMonth = self.extractIntParameter(parameters, key: "month")
                     if capturedMonth == nil {
                         XCTFail("Missing or invalid length parameter")
                         return
                     }
                     pixelExpectation.fulfill()
-                case "m_mac_attributed_metric_data_store_error":
+                case "attributed_metric_data_store_error":
                     break
                 default:
                     break // Ignore other pixels that might fire on app start
@@ -843,14 +843,14 @@ final class AttributedMetricManagerTests: XCTestCase {
 
         let fixture = createTestFixture { pixelName, _, parameters, _, _, _ in
             switch pixelName {
-            case "m_mac_attributed_metric_synced_device":
+            case "attributed_metric_synced_device":
                 capturedDevices = self.extractIntParameter(parameters, key: "number_of_devices")
                 if capturedDevices == nil {
                     XCTFail("Missing or invalid devices parameter")
                     return
                 }
                 pixelExpectation.fulfill()
-            case "m_mac_attributed_metric_data_store_error":
+            case "attributed_metric_data_store_error":
                 break
             default:
                 XCTFail("Unexpected pixel fired: \(pixelName)")
@@ -885,7 +885,7 @@ final class AttributedMetricManagerTests: XCTestCase {
         var pixelFired = false
 
         let fixture = createTestFixture { pixelName, _, _, _, _, _ in
-            if pixelName == "m_mac_attributed_metric_synced_device" {
+            if pixelName == "attributed_metric_synced_device" {
                 pixelFired = true
             }
         }

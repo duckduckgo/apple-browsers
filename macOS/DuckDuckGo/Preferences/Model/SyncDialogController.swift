@@ -205,7 +205,7 @@ final class SyncDialogController {
                 } else {
                     self.presentDialog(for: .syncWithAnotherDevice(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQR))
                 }
-                PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeScreenShown(.connect).withoutMacPrefix)
+                PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeScreenShown(.connect), doNotEnforcePrefix: true)
             } catch {
                 if syncService.account == nil {
                     if isRecovery {
@@ -229,7 +229,7 @@ final class SyncDialogController {
         do {
             try await syncService.disconnect()
         } catch {
-            PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserSwitchedLogoutError.withoutMacPrefix)
+            PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserSwitchedLogoutError, doNotEnforcePrefix: true)
         }
 
         do {
@@ -237,17 +237,17 @@ final class SyncDialogController {
             let registeredDevices = try await syncService.login(recoveryKey, deviceName: device.name, deviceType: device.type)
             mapDevices(registeredDevices)
         } catch {
-            PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserSwitchedLoginError.withoutMacPrefix)
+            PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserSwitchedLoginError, doNotEnforcePrefix: true)
         }
-        PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserSwitchedAccount.withoutMacPrefix)
+        PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserSwitchedAccount, doNotEnforcePrefix: true)
     }
 
     private func fireCodeCopiedPixel(code: String) {
         guard let syncCode = try? SyncCode.decodeBase64String(code) else { return }
         if syncCode.exchangeKey != nil {
-            PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeCodeCopied(.exchange).withoutMacPrefix)
+            PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeCodeCopied(.exchange), doNotEnforcePrefix: true)
         } else if syncCode.connect != nil {
-            PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeCodeCopied(.connect).withoutMacPrefix)
+            PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeCodeCopied(.connect), doNotEnforcePrefix: true)
         }
     }
 
@@ -289,7 +289,7 @@ final class SyncDialogController {
                 self.codeForDisplayOrPasting = codeForDisplayOrPasting
                 self.stringForQR = stringForQR
                 self.presentDialog(for: .syncWithAnotherDevice(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQR))
-                PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeScreenShown(.exchange).withoutMacPrefix)
+                PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeScreenShown(.exchange), doNotEnforcePrefix: true)
             } catch {
                 managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice, description: error.localizedDescription)
                 PixelKit.fire(DebugEvent(GeneralPixel.syncLoginError(error: error)))
@@ -472,7 +472,7 @@ extension SyncDialogController: ManagementDialogModelDelegate {
     }
 
     func userConfirmedSwitchAccounts(recoveryCode: String) {
-        PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserAcceptedSwitchingAccount.withoutMacPrefix)
+        PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserAcceptedSwitchingAccount, doNotEnforcePrefix: true)
         guard let recoveryKey = try? SyncCode.decodeBase64String(recoveryCode).recovery else {
             return
         }
@@ -491,9 +491,9 @@ extension SyncDialogController: ManagementDialogModelDelegate {
                 return
             }
             if syncCode.connect != nil {
-                PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedAbandoned(.connect).withoutMacPrefix)
+                PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedAbandoned(.connect), doNotEnforcePrefix: true)
             } else if syncCode.exchangeKey != nil {
-                PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedAbandoned(.exchange).withoutMacPrefix)
+                PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedAbandoned(.exchange), doNotEnforcePrefix: true)
             }
         default:
             break
@@ -501,11 +501,11 @@ extension SyncDialogController: ManagementDialogModelDelegate {
     }
 
     func switchAccountsCancelled() {
-        PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserCancelledSwitchingAccount.withoutMacPrefix)
+        PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserCancelledSwitchingAccount, doNotEnforcePrefix: true)
     }
 
     func enterCodeViewDidAppear() {
-        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupManualCodeEntryScreenShown.withoutMacPrefix)
+        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupManualCodeEntryScreenShown, doNotEnforcePrefix: true)
     }
 
     func didEndFlow() {
@@ -645,7 +645,7 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
     private func handleAccountAlreadyExists(_ recoveryKey: SyncCode.RecoveryKey) async {
         if devices.count > 1 {
             managementDialogModel.showSwitchAccountsMessage()
-            PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncAskUserToSwitchAccount.withoutMacPrefix)
+            PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncAskUserToSwitchAccount, doNotEnforcePrefix: true)
         } else {
             await switchAccounts(recoveryKey: recoveryKey)
             managementDialogModel.endFlow()
@@ -659,14 +659,14 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
             return
         }
         guard setupSource != .recovery, setupSource != .unknown else { return }
-        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupManualCodeEnteredSuccess(setupSource).withoutMacPrefix)
+        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupManualCodeEnteredSuccess(setupSource), doNotEnforcePrefix: true)
     }
 
     private func sendCodeParsingFailedPixel(setupRole: SyncSetupRole) {
         guard case .receiver(_, let codeSource) = setupRole, case .pastedCode = codeSource else {
             return
         }
-        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupManualCodeEnteredFailed.withoutMacPrefix)
+        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupManualCodeEnteredFailed, doNotEnforcePrefix: true)
     }
 
     private func sendSetupEndedSuccessfullyPixel(setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
@@ -675,6 +675,6 @@ extension SyncDialogController: SyncConnectionControllerDelegate {
             return
         }
         guard setupSource != .recovery, setupSource != .unknown else { return }
-        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedSuccessful(setupSource).withoutMacPrefix)
+        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedSuccessful(setupSource), doNotEnforcePrefix: true)
     }
 }

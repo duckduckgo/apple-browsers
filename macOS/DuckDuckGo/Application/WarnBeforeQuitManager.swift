@@ -19,6 +19,16 @@
 import AppKit
 import Combine
 import SwiftUI
+import QuartzCore
+
+// MARK: - State Machine
+
+enum QuitConfirmationState: Equatable {
+    case idle
+    case active
+    case holding(targetTime: CFTimeInterval)
+    case completed(shouldQuit: Bool)
+}
 
 /// Manages the "Warn Before Quitting" feature that prevents accidental app termination.
 ///
@@ -34,15 +44,10 @@ final class WarnBeforeQuitManager {
     @UserDefaultsWrapper(key: .warnBeforeQuitting, defaultValue: true)
     private var warnBeforeQuitting: Bool
 
-    private let viewModel = WarnBeforeQuitViewModel()
-    private var overlayWindow: NSWindow?
-    private var overlayHostingView: NSHostingView<WarnBeforeQuitView>?
-
     private var holdStartTime: Date?
     private var progressTimer: Timer?
     private var keyMonitor: Any?
     private var mouseMonitor: Any?
-    private var isOverlayVisible = false
     private var hasReleasedKeyAfterShowing = false
 
     /// Time required to hold CMD+Q to quit the app (in seconds)
@@ -51,21 +56,40 @@ final class WarnBeforeQuitManager {
     private let quickTapThreshold: TimeInterval = 0.15
     /// Progress update interval for smooth animation
     private let progressUpdateInterval: TimeInterval = 0.016 // ~60fps
+    
+    // State machine for OverlayPresenter
+    private let stateSubject: AsyncStream<QuitConfirmationState>.Continuation
+    private let stateStreamStorage: AsyncStream<QuitConfirmationState>
+    
+    var stateStream: AsyncStream<QuitConfirmationState> {
+        stateStreamStorage
+    }
+    
+    private var currentState: QuitConfirmationState = .idle {
+        didSet {
+            stateSubject.yield(currentState)
+        }
+    }
 
     // MARK: - Initialization
 
     init() {
-        setupViewModel()
+        // Create AsyncStream
+        var continuation: AsyncStream<QuitConfirmationState>.Continuation!
+        let stream = AsyncStream<QuitConfirmationState> { continuation = $0 }
+        self.stateSubject = continuation
+        self.stateStreamStorage = stream
     }
 
     deinit {
+        stateSubject.finish()
+        
         if let monitor = keyMonitor {
             NSEvent.removeMonitor(monitor)
         }
         if let monitor = mouseMonitor {
             NSEvent.removeMonitor(monitor)
         }
-        overlayWindow?.orderOut(nil)
     }
 
     // MARK: - Public Interface
@@ -81,104 +105,42 @@ final class WarnBeforeQuitManager {
             return true
         }
 
-        if isOverlayVisible {
-            // Overlay is already visible
+        switch currentState {
+        case .idle:
+            currentState = .active
+            hasReleasedKeyAfterShowing = false
+            installKeyMonitor()
+            return false
+            
+        case .active:
             if hasReleasedKeyAfterShowing {
-                // User released and pressed CMD+Q again - start the hold timer
                 startHoldTimer()
             }
-            // If hasn't released yet, this is just key repeat - ignore
+            return false
+            
+        case .holding, .completed:
             return false
         }
-
-        // First press - just show the overlay, no timer yet
-        showOverlay()
-        installKeyMonitor()
-        return false
     }
 
     /// Disables the warning and allows immediate quit
     func disableWarning() {
         warnBeforeQuitting = false
-        hideOverlay()
-        performQuit()
+        currentState = .completed(shouldQuit: true)
+    }
+    
+    func reset() {
+        guard case .completed = currentState else { return }
+        currentState = .idle
     }
 
-    // MARK: - Private Methods
-
-    private func setupViewModel() {
-        viewModel.onDontAskAgain = { [weak self] in
-            self?.disableWarning()
-        }
-    }
-
-    private func showOverlay() {
-        guard let keyWindow = NSApp.keyWindow ?? NSApp.mainWindow ?? NSApp.windows.first(where: { $0.isVisible }) else {
-            return
-        }
-
-        isOverlayVisible = true
-        hasReleasedKeyAfterShowing = false
-        holdStartTime = nil
-        viewModel.resetProgress()
-
-        // Create the overlay window if needed
-        if overlayWindow == nil {
-            createOverlayWindow()
-        }
-
-        guard let overlayWindow else { return }
-
-        // Position overlay at top center of the key window
-        let windowFrame = keyWindow.frame
-        let overlaySize = CGSize(width: 520, height: 90)
-        let overlayOrigin = CGPoint(
-            x: windowFrame.midX - overlaySize.width / 2,
-            y: windowFrame.maxY - overlaySize.height - 80
-        )
-
-        overlayWindow.setFrame(CGRect(origin: overlayOrigin, size: overlaySize), display: true)
-
-        keyWindow.addChildWindow(overlayWindow, ordered: .above)
-        overlayWindow.makeKeyAndOrderFront(nil)
-    }
-
-    private func createOverlayWindow() {
-        let window = NSWindow(
-            contentRect: .zero,
-            styleMask: [.borderless],
-            backing: .buffered,
-            defer: false
-        )
-        window.isOpaque = false
-        window.backgroundColor = .clear
-        window.level = .floating
-        window.hasShadow = true
-        window.isReleasedWhenClosed = false
-
-        let hostingView = NSHostingView(rootView: WarnBeforeQuitView(viewModel: viewModel))
-        window.contentView = hostingView
-
-        overlayWindow = window
-        overlayHostingView = hostingView
-    }
-
-    private func hideOverlay() {
-        stopHoldTimer()
-        removeKeyMonitor()
-        viewModel.resetProgress()
-        hasReleasedKeyAfterShowing = false
-
-        if let parentWindow = overlayWindow?.parent {
-            parentWindow.removeChildWindow(overlayWindow!)
-        }
-        overlayWindow?.orderOut(nil)
-        isOverlayVisible = false
-    }
+    // MARK: - Private
 
     private func startHoldTimer() {
+        let targetTime = CACurrentMediaTime() + requiredHoldDuration
+        currentState = .holding(targetTime: targetTime)
+        
         holdStartTime = Date()
-        viewModel.resetProgress()
 
         progressTimer?.invalidate()
         progressTimer = Timer.scheduledTimer(withTimeInterval: progressUpdateInterval, repeats: true) { [weak self] _ in
@@ -199,8 +161,6 @@ final class WarnBeforeQuitManager {
 
         let elapsed = Date().timeIntervalSince(holdStartTime)
         let progress = CGFloat(elapsed / requiredHoldDuration)
-
-        viewModel.updateProgress(progress)
 
         if progress >= 1.0 {
             performQuit()
@@ -238,19 +198,14 @@ final class WarnBeforeQuitManager {
     }
 
     private func handleMouseEvent(_ event: NSEvent) {
-        guard let overlayWindow, isOverlayVisible else { return }
-
-        // Check if click is outside the overlay window
-        if event.window !== overlayWindow {
-            // Click was outside the overlay - dismiss it
-            hideOverlay()
-        }
+        // Click outside dismisses overlay
+        currentState = .completed(shouldQuit: false)
     }
 
     private func handleKeyEvent(_ event: NSEvent) {
         // Check if Escape is pressed - dismiss the overlay
         if event.type == .keyDown && event.keyCode == 53 { // Escape key
-            hideOverlay()
+            currentState = .completed(shouldQuit: false)
             return
         }
 
@@ -291,11 +246,9 @@ final class WarnBeforeQuitManager {
         hasReleasedKeyAfterShowing = true
         // Stop timer if running
         stopHoldTimer()
-        viewModel.resetProgress()
     }
 
     private func performQuit() {
-        hideOverlay()
-        NSApp.terminate(nil)
+        currentState = .completed(shouldQuit: true)
     }
 }

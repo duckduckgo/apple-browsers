@@ -43,7 +43,7 @@ struct WarnBeforeQuitView: View {
                     .animation(.linear(duration: 0.05), value: viewModel.progress)
 
                 // ⌘Q text
-                Text("⌘Q")
+                Text(verbatim: "⌘Q")
                     .font(.system(size: 16, weight: .medium, design: .rounded))
                     .foregroundColor(.white)
             }

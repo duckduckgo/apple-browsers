@@ -1723,7 +1723,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private func setUpWarnBeforeQuitManager() {
-        warnBeforeQuitManager = WarnBeforeQuitManager()
+        let manager = WarnBeforeQuitManager()
+        warnBeforeQuitManager = manager
+        
+        let presenter = OverlayPresenter(
+            stateStream: manager.stateStream,
+            manager: manager
+        )
+        
+        // Set up callback for "Don't Show Again" button
+        presenter.onDontAskAgain = { [weak manager] in
+            manager?.disableWarning()
+        }
     }
 
     private func setUpAutofillPixelReporter() {

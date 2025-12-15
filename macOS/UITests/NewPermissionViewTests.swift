@@ -101,7 +101,7 @@ class NewPermissionViewTests: UITestCase {
         let cameraButton = app.webViews.buttons["Camera"]
         cameraButton.clickAfterExistenceTestSucceeds()
 
-        // Wait for and handle TCC system dialog
+        // TCC system dialog appears FIRST for camera/microphone
         XCTAssert(
             notificationCenter.buttons.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The notification center didn't appear. This can happen because the TCC setting at the start of the test wasn't correct – check the app.resetPermissions behavior."
@@ -111,11 +111,11 @@ class NewPermissionViewTests: UITestCase {
             "OK"
         ))
         let allowButton = notificationCenter.buttons.element(boundBy: allowButtonIndex)
-        allowButton.clickAfterExistenceTestSucceeds() // Click system camera permissions dialog
+        allowButton.clickAfterExistenceTestSucceeds()
 
-        // Handle the new SwiftUI permission authorization popover
+        // THEN browser's SwiftUI permission authorization popover appears
         let permissionsPopoverAllowButton = app.popovers.buttons["PermissionAuthorizationSwiftUIView.allowButton"]
-        permissionsPopoverAllowButton.clickAfterExistenceTestSucceeds()
+        permissionsPopoverAllowButton.clickAfterExistenceTestSucceeds() // Click system camera permissions dialog
 
         // Wait for website button to turn green
         var websitePermissionsColorIsGreen = false
@@ -159,6 +159,461 @@ class NewPermissionViewTests: UITestCase {
             "The camera permission should be set to 'Always ask' after a one-time allow."
         )
     }
+
+    func test_cameraPermissions_withDeniedTCCChallenge_showCorrectStateInBrowser() throws {
+        addressBarTextField.typeURLAfterExistenceTestSucceeds(permissionsSiteURL)
+
+        let cameraButton = app.webViews.buttons["Camera"]
+        cameraButton.clickAfterExistenceTestSucceeds()
+
+        // TCC system dialog appears FIRST for camera/microphone - deny this time
+        XCTAssert(
+            notificationCenter.buttons.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "The notification center didn't appear. This can happen because the TCC setting at the start of the test wasn't correct – check the app.resetPermissions behavior."
+        )
+        // Use the more robust deny button finder that looks for the button that's NOT an allow button
+        let denyButtonIndex = try XCTUnwrap(
+            notificationCenter.indexOfDenyButtonOnSystemDialog(),
+            "Could not find deny button in TCC dialog. Available buttons: \(notificationCenter.buttons.allElementsBoundByIndex.map { $0.title })"
+        )
+        let denyButton = notificationCenter.buttons.element(boundBy: denyButtonIndex)
+        denyButton.clickAfterExistenceTestSucceeds() // Click system camera permissions dialog to deny
+
+        // Browser's permission popover should not appear when TCC is denied
+        let permissionsPopoverAllowButton = app.popovers.buttons["PermissionAuthorizationSwiftUIView.allowButton"]
+        XCTAssertTrue(
+            permissionsPopoverAllowButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+            "The permissions popover in the browser should not appear when camera permission has been denied at system level."
+        )
+
+        // Wait for website button to turn red
+        var websitePermissionsColorIsRed = false
+        for _ in 1 ... 4 {
+            websitePermissionsColorIsRed = try websitePermissionsButtonIsExpectedColor(cameraButton, is: .red)
+            if websitePermissionsColorIsRed {
+                break
+            }
+            usleep(500_000)
+        }
+        XCTAssertTrue(
+            websitePermissionsColorIsRed,
+            "After a few attempts to wait for permissions.site to update their button animation after the TCC dialog, their button has to be red."
+        )
+
+        // The permission center button should not appear when system permission is denied
+        let permissionCenterButton = app.buttons["AddressBarButtonsViewController.permissionCenterButton"]
+        XCTAssertTrue(
+            permissionCenterButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+            "The permission center button should not appear when camera permission has been denied at system level."
+        )
+    }
+
+    func test_cameraPermissions_withAcceptedTCCChallenge_whereNeverAllowIsSelected_alwaysDenies() throws {
+        addressBarTextField.typeURLAfterExistenceTestSucceeds(permissionsSiteURL)
+
+        let cameraButton = app.webViews.buttons["Camera"]
+        cameraButton.clickAfterExistenceTestSucceeds()
+
+        // TCC system dialog appears FIRST for camera/microphone
+        XCTAssert(
+            notificationCenter.buttons.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "The notification center didn't appear. This can happen because the TCC setting at the start of the test wasn't correct – check the app.resetPermissions behavior."
+        )
+        let allowButtonIndex = try XCTUnwrap(notificationCenter.indexOfSystemModelDialogButtonOnElement(
+            titled: "Allow",
+            "OK"
+        ))
+        let allowButton = notificationCenter.buttons.element(boundBy: allowButtonIndex)
+        allowButton.clickAfterExistenceTestSucceeds()
+
+        // THEN browser's SwiftUI permission authorization popover appears
+        let permissionsPopoverAllowButton = app.popovers.buttons["PermissionAuthorizationSwiftUIView.allowButton"]
+        permissionsPopoverAllowButton.clickAfterExistenceTestSucceeds()
+
+        // Wait for website button to turn green
+        var websitePermissionsColorIsGreen = false
+        for _ in 1 ... 4 {
+            websitePermissionsColorIsGreen = try websitePermissionsButtonIsExpectedColor(cameraButton, is: .green)
+            if websitePermissionsColorIsGreen {
+                break
+            }
+            usleep(500_000)
+        }
+        XCTAssertTrue(
+            websitePermissionsColorIsGreen,
+            "After a few attempts to wait for permissions.site to update their button animation after the TCC dialog, their button has to be green."
+        )
+
+        // Click the permission center button and change to "Never allow"
+        let permissionCenterButton = app.buttons["AddressBarButtonsViewController.permissionCenterButton"]
+        permissionCenterButton.clickAfterExistenceTestSucceeds()
+
+        let permissionCenterPopover = app.popovers.firstMatch
+        XCTAssertTrue(
+            permissionCenterPopover.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Permission center popover didn't appear in a reasonable timeframe."
+        )
+
+        // Find and click the dropdown to change to "Never allow"
+        let cameraDecisionDropdown = permissionCenterPopover.popUpButtons.firstMatch
+        XCTAssertTrue(
+            cameraDecisionDropdown.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Camera permission dropdown didn't appear in the permission center."
+        )
+        cameraDecisionDropdown.click()
+
+        // Select "Never allow" from the dropdown menu
+        let neverAllowMenuItem = app.menuItems["Never allow"]
+        neverAllowMenuItem.clickAfterExistenceTestSucceeds()
+
+        // Close the popover by clicking elsewhere or pressing Escape
+        app.typeKey(.escape, modifierFlags: [])
+
+        // Navigate to the site again and try to use camera
+        app.enforceSingleWindow()
+        addressBarTextField.typeURL(permissionsSiteURL)
+
+        // Try clicking camera button multiple times - should stay red
+        for _ in 1 ... 4 {
+            cameraButton.clickAfterExistenceTestSucceeds()
+        }
+
+        XCTAssertTrue(
+            try websitePermissionsButtonIsExpectedColor(cameraButton, is: .red),
+            "Even if we click the button for the denied resource many times, when we have set 'Never allow' for the resource, the permission button will remain red"
+        )
+
+        // TCC dialog should not appear
+        XCTAssert(
+            notificationCenter.buttons.firstMatch.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+            "Even if we click the button for the denied resource many times, when we have set 'Never allow' for the resource, the TCC dialog permission alert will not be on the screen"
+        )
+
+        // Permission popover should not appear
+        XCTAssert(
+            permissionsPopoverAllowButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+            "Even if we click the button for the denied resource many times, when we have set 'Never allow' for the resource, the permission popover will not be on the screen"
+        )
+    }
+
+    // MARK: - Microphone Permission Tests
+
+    func test_microphonePermissions_withAcceptedTCCChallenge_showCorrectStateInBrowser() throws {
+        addressBarTextField.typeURLAfterExistenceTestSucceeds(permissionsSiteURL)
+
+        let microphoneButton = app.webViews.buttons["Microphone"]
+        microphoneButton.clickAfterExistenceTestSucceeds()
+
+        // TCC system dialog appears FIRST for camera/microphone
+        XCTAssert(
+            notificationCenter.buttons.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "The notification center didn't appear. This can happen because the TCC setting at the start of the test wasn't correct – check the app.resetPermissions behavior."
+        )
+        let allowButtonIndex = try XCTUnwrap(notificationCenter.indexOfSystemModelDialogButtonOnElement(
+            titled: "Allow",
+            "OK"
+        ))
+        let allowButton = notificationCenter.buttons.element(boundBy: allowButtonIndex)
+        allowButton.clickAfterExistenceTestSucceeds()
+
+        // THEN browser's SwiftUI permission authorization popover appears
+        let permissionsPopoverAllowButton = app.popovers.buttons["PermissionAuthorizationSwiftUIView.allowButton"]
+        permissionsPopoverAllowButton.clickAfterExistenceTestSucceeds()
+
+        // Wait for website button to turn green
+        var websitePermissionsColorIsGreen = false
+        for _ in 1 ... 4 {
+            websitePermissionsColorIsGreen = try websitePermissionsButtonIsExpectedColor(microphoneButton, is: .green)
+            if websitePermissionsColorIsGreen {
+                break
+            }
+            usleep(500_000)
+        }
+        XCTAssertTrue(
+            websitePermissionsColorIsGreen,
+            "After a few attempts to wait for permissions.site to update their button animation after the TCC dialog, their button has to be green."
+        )
+
+        // Click the permission center button
+        let permissionCenterButton = app.buttons["AddressBarButtonsViewController.permissionCenterButton"]
+        permissionCenterButton.clickAfterExistenceTestSucceeds()
+
+        // Verify the permission center popover appears
+        let permissionCenterPopover = app.popovers.firstMatch
+        XCTAssertTrue(
+            permissionCenterPopover.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Permission center popover didn't appear in a reasonable timeframe."
+        )
+
+        // Find the microphone permission dropdown and verify "Always ask" is the current selection
+        let microphoneDecisionDropdown = permissionCenterPopover.popUpButtons.firstMatch
+        XCTAssertTrue(
+            microphoneDecisionDropdown.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Microphone permission dropdown didn't appear in the permission center."
+        )
+
+        let dropdownValue = microphoneDecisionDropdown.value as? String ?? ""
+        XCTAssertEqual(
+            dropdownValue,
+            "Always ask",
+            "The microphone permission should be set to 'Always ask' after a one-time allow."
+        )
+    }
+
+    func test_microphonePermissions_withDeniedTCCChallenge_showCorrectStateInBrowser() throws {
+        addressBarTextField.typeURLAfterExistenceTestSucceeds(permissionsSiteURL)
+
+        let microphoneButton = app.webViews.buttons["Microphone"]
+        microphoneButton.clickAfterExistenceTestSucceeds()
+
+        // TCC system dialog appears FIRST for camera/microphone - deny this time
+        XCTAssert(
+            notificationCenter.buttons.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "The notification center didn't appear. This can happen because the TCC setting at the start of the test wasn't correct – check the app.resetPermissions behavior."
+        )
+        // Use the more robust deny button finder that looks for the button that's NOT an allow button
+        let denyButtonIndex = try XCTUnwrap(
+            notificationCenter.indexOfDenyButtonOnSystemDialog(),
+            "Could not find deny button in TCC dialog. Available buttons: \(notificationCenter.buttons.allElementsBoundByIndex.map { $0.title })"
+        )
+        let denyButton = notificationCenter.buttons.element(boundBy: denyButtonIndex)
+        denyButton.clickAfterExistenceTestSucceeds()
+
+        // Browser's permission popover should not appear when TCC is denied
+        let permissionsPopoverAllowButton = app.popovers.buttons["PermissionAuthorizationSwiftUIView.allowButton"]
+        XCTAssertTrue(
+            permissionsPopoverAllowButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+            "The permissions popover in the browser should not appear when microphone permission has been denied at system level."
+        )
+
+        // Wait for website button to turn red
+        var websitePermissionsColorIsRed = false
+        for _ in 1 ... 4 {
+            websitePermissionsColorIsRed = try websitePermissionsButtonIsExpectedColor(microphoneButton, is: .red)
+            if websitePermissionsColorIsRed {
+                break
+            }
+            usleep(500_000)
+        }
+        XCTAssertTrue(
+            websitePermissionsColorIsRed,
+            "After between one and four attempts to wait for permissions.site to update their button animation after the TCC dialog, their button has to be red."
+        )
+
+        // The permission center button should not appear when system permission is denied
+        let permissionCenterButton = app.buttons["AddressBarButtonsViewController.permissionCenterButton"]
+        XCTAssertTrue(
+            permissionCenterButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+            "The permission center button should not appear when microphone permission has been denied at system level."
+        )
+    }
+
+    func test_microphonePermissions_withAcceptedTCCChallenge_whereNeverAllowIsSelected_alwaysDenies() throws {
+        addressBarTextField.typeURLAfterExistenceTestSucceeds(permissionsSiteURL)
+
+        let microphoneButton = app.webViews.buttons["Microphone"]
+        microphoneButton.clickAfterExistenceTestSucceeds()
+
+        // TCC system dialog appears FIRST for camera/microphone
+        XCTAssert(
+            notificationCenter.buttons.firstMatch.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "The notification center didn't appear. This can happen because the TCC setting at the start of the test wasn't correct – check the app.resetPermissions behavior."
+        )
+        let allowButtonIndex = try XCTUnwrap(notificationCenter.indexOfSystemModelDialogButtonOnElement(
+            titled: "Allow",
+            "OK"
+        ))
+        let allowButton = notificationCenter.buttons.element(boundBy: allowButtonIndex)
+        allowButton.clickAfterExistenceTestSucceeds()
+
+        // THEN browser's SwiftUI permission authorization popover appears
+        let permissionsPopoverAllowButton = app.popovers.buttons["PermissionAuthorizationSwiftUIView.allowButton"]
+        permissionsPopoverAllowButton.clickAfterExistenceTestSucceeds()
+
+        // Wait for website button to turn green
+        var websitePermissionsColorIsGreen = false
+        for _ in 1 ... 4 {
+            websitePermissionsColorIsGreen = try websitePermissionsButtonIsExpectedColor(microphoneButton, is: .green)
+            if websitePermissionsColorIsGreen {
+                break
+            }
+            usleep(500_000)
+        }
+        XCTAssertTrue(
+            websitePermissionsColorIsGreen,
+            "After a few attempts to wait for permissions.site to update their button animation after the TCC dialog, their button has to be green."
+        )
+
+        // Click the permission center button and change to "Never allow"
+        let permissionCenterButton = app.buttons["AddressBarButtonsViewController.permissionCenterButton"]
+        permissionCenterButton.clickAfterExistenceTestSucceeds()
+
+        let permissionCenterPopover = app.popovers.firstMatch
+        XCTAssertTrue(
+            permissionCenterPopover.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Permission center popover didn't appear in a reasonable timeframe."
+        )
+
+        // Find and click the dropdown to change to "Never allow"
+        let microphoneDecisionDropdown = permissionCenterPopover.popUpButtons.firstMatch
+        XCTAssertTrue(
+            microphoneDecisionDropdown.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Microphone permission dropdown didn't appear in the permission center."
+        )
+        microphoneDecisionDropdown.click()
+
+        // Select "Never allow" from the dropdown menu
+        let neverAllowMenuItem = app.menuItems["Never allow"]
+        neverAllowMenuItem.clickAfterExistenceTestSucceeds()
+
+        // Close the popover
+        app.typeKey(.escape, modifierFlags: [])
+
+        // Navigate to the site again and try to use microphone
+        app.enforceSingleWindow()
+        addressBarTextField.typeURL(permissionsSiteURL)
+
+        // Try clicking microphone button multiple times - should stay red
+        for _ in 1 ... 4 {
+            microphoneButton.clickAfterExistenceTestSucceeds()
+        }
+
+        XCTAssertTrue(
+            try websitePermissionsButtonIsExpectedColor(microphoneButton, is: .red),
+            "Even if we click the button for the denied resource many times, when we have set 'Never allow' for the resource, the permission button will remain red"
+        )
+
+        // TCC dialog should not appear
+        XCTAssert(
+            notificationCenter.buttons.firstMatch.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+            "Even if we click the button for the denied resource many times, when we have set 'Never allow' for the resource, the TCC dialog permission alert will not be on the screen"
+        )
+
+        // Permission popover should not appear
+        XCTAssert(
+            permissionsPopoverAllowButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+            "Even if we click the button for the denied resource many times, when we have set 'Never allow' for the resource, the permission popover will not be on the screen"
+        )
+    }
+
+    // MARK: - Location Permission Tests
+
+    func test_locationPermissions_whenAccepted_showCorrectStateInBrowser() throws {
+        addressBarTextField.typeURLAfterExistenceTestSucceeds(permissionsSiteURL)
+
+        let locationButton = app.webViews.buttons["Location"]
+        locationButton.clickAfterExistenceTestSucceeds()
+
+        // Location uses the new two-step authorization flow in the SwiftUI view
+        // Handle the permission authorization popover
+        let permissionsPopoverAllowButton = app.popovers.buttons["PermissionAuthorizationSwiftUIView.allowButton"]
+        permissionsPopoverAllowButton.clickAfterExistenceTestSucceeds()
+
+        // Wait for website button to turn green (location button often doesn't turn green reliably on permission.site)
+        var websitePermissionsColorIsGreen = false
+        for _ in 1 ... 4 {
+            websitePermissionsColorIsGreen = try websitePermissionsButtonIsExpectedColor(locationButton, is: .green)
+            if websitePermissionsColorIsGreen {
+                break
+            }
+            usleep(500_000)
+        }
+        // We would like to be able to test here that the permission.site "Location" button turns green here, but it frequently doesn't turn green
+        // when location permissions are granted.
+
+        // Click the permission center button
+        let permissionCenterButton = app.buttons["AddressBarButtonsViewController.permissionCenterButton"]
+        permissionCenterButton.clickAfterExistenceTestSucceeds()
+
+        // Verify the permission center popover appears
+        let permissionCenterPopover = app.popovers.firstMatch
+        XCTAssertTrue(
+            permissionCenterPopover.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Permission center popover didn't appear in a reasonable timeframe."
+        )
+
+        // Find the location permission dropdown and verify "Always ask" is the current selection
+        let locationDecisionDropdown = permissionCenterPopover.popUpButtons.firstMatch
+        XCTAssertTrue(
+            locationDecisionDropdown.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Location permission dropdown didn't appear in the permission center."
+        )
+
+        let dropdownValue = locationDecisionDropdown.value as? String ?? ""
+        XCTAssertEqual(
+            dropdownValue,
+            "Always ask",
+            "The location permission should be set to 'Always ask' after a one-time allow."
+        )
+    }
+
+    func test_locationPermissions_whenNeverAllowIsSelected_alwaysDenies() throws {
+        addressBarTextField.typeURLAfterExistenceTestSucceeds(permissionsSiteURL)
+
+        let locationButton = app.webViews.buttons["Location"]
+        locationButton.clickAfterExistenceTestSucceeds()
+
+        // Handle the permission authorization popover
+        let permissionsPopoverAllowButton = app.popovers.buttons["PermissionAuthorizationSwiftUIView.allowButton"]
+        permissionsPopoverAllowButton.clickAfterExistenceTestSucceeds()
+
+        // Wait for website button to turn green
+        var websitePermissionsColorIsGreen = false
+        for _ in 1 ... 4 {
+            websitePermissionsColorIsGreen = try websitePermissionsButtonIsExpectedColor(locationButton, is: .green)
+            if websitePermissionsColorIsGreen {
+                break
+            }
+            usleep(500_000)
+        }
+        // We would like to be able to test here that the permission.site "Location" button turns green here, but it frequently doesn't turn green
+        // when location permissions are granted.
+
+        // Click the permission center button and change to "Never allow"
+        let permissionCenterButton = app.buttons["AddressBarButtonsViewController.permissionCenterButton"]
+        permissionCenterButton.clickAfterExistenceTestSucceeds()
+
+        let permissionCenterPopover = app.popovers.firstMatch
+        XCTAssertTrue(
+            permissionCenterPopover.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Permission center popover didn't appear in a reasonable timeframe."
+        )
+
+        // Find and click the dropdown to change to "Never allow"
+        let locationDecisionDropdown = permissionCenterPopover.popUpButtons.firstMatch
+        XCTAssertTrue(
+            locationDecisionDropdown.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Location permission dropdown didn't appear in the permission center."
+        )
+        locationDecisionDropdown.click()
+
+        // Select "Never allow" from the dropdown menu
+        let neverAllowMenuItem = app.menuItems["Never allow"]
+        neverAllowMenuItem.clickAfterExistenceTestSucceeds()
+
+        // Close the popover
+        app.typeKey(.escape, modifierFlags: [])
+
+        // Navigate to the site again and try to use location
+        app.enforceSingleWindow()
+        addressBarTextField.typeURL(permissionsSiteURL)
+
+        // Try clicking location button multiple times - should stay red
+        for _ in 1 ... 4 {
+            locationButton.clickAfterExistenceTestSucceeds()
+        }
+
+        XCTAssertTrue( // Location does turn red when permission is denied
+            try websitePermissionsButtonIsExpectedColor(locationButton, is: .red),
+            "Even if we click the button for the denied resource many times, when we have set 'Never allow' for the resource, the permission button will remain red"
+        )
+
+        // Permission popover should not appear
+        XCTAssert(
+            permissionsPopoverAllowButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+            "Even if we click the button for the denied resource many times, when we have set 'Never allow' for the resource, the permission popover will not be on the screen"
+        )
+    }
 }
 
 // MARK: - Private Helpers
@@ -192,6 +647,46 @@ private extension XCUIElement {
             let button = self.buttons.element(boundBy: buttonIndex)
             if button.exists, titled.contains(button.title) {
                 return buttonIndex
+            }
+        }
+        return nil
+    }
+
+    /// Finds the deny/cancel button in a system dialog by looking for common deny button patterns.
+    /// This is more robust than matching exact deny button titles which can vary across macOS versions and locales.
+    /// - Returns: An optional Int representing the button index of the deny button, if found.
+    func indexOfDenyButtonOnSystemDialog() -> Int? {
+        // First, try to find a button with a deny-like title
+        let denyTitles = ["Don't Allow", "Don't Allow", "Deny", "Cancel", "No", "Not Now", "Later"]
+
+        for buttonIndex in 0 ... 4 {
+            let button = self.buttons.element(boundBy: buttonIndex)
+            if button.exists {
+                let title = button.title
+                // Check if this is a deny button by title
+                for denyTitle in denyTitles {
+                    if title.localizedCaseInsensitiveCompare(denyTitle) == .orderedSame {
+                        return buttonIndex
+                    }
+                }
+                // Also check if title contains "Don" and "Allow" (handles various apostrophe encodings)
+                if title.lowercased().contains("don") && title.lowercased().contains("allow") {
+                    return buttonIndex
+                }
+            }
+        }
+
+        // Fallback: find a button that's not Allow/OK and not a single character (like "?")
+        let allowTitles = ["Allow", "OK", "Allow Once", "Allow While Using App"]
+        for buttonIndex in 0 ... 4 {
+            let button = self.buttons.element(boundBy: buttonIndex)
+            if button.exists {
+                let title = button.title
+                let isAllowButton = allowTitles.contains { title.localizedCaseInsensitiveContains($0) }
+                let isHelpButton = title.count <= 1 // Skip single-char buttons like "?"
+                if !isAllowButton && !isHelpButton {
+                    return buttonIndex
+                }
             }
         }
         return nil

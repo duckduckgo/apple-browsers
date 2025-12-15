@@ -1538,7 +1538,9 @@ extension SettingsViewModel {
         }
 
         Pixel.fire(pixel: .settingsWhatsNewOpen)
-        presentViewController(viewController, modal: true)
+        // Set Modal false to prevent caller to set fullScreen modal presentation style.
+        // Coordinator already sets the appropriate presentation style for iPhone and iPad.
+        presentViewController(viewController, modal: false)
     }
     
 }

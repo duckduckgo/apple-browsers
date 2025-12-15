@@ -1245,6 +1245,7 @@ extension Pixel {
         case settingsMoreSearchSettings
         case settingsRefreshButtonPositionAddressBar
         case settingsRefreshButtonPositionMenu
+        case settingsWhatsNewOpen
 
         /// [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210619010364082)
         case settingsOpenAssistSettings
@@ -1649,7 +1650,8 @@ extension Pixel.Event {
         case .settingsOpenAssistSettings: return "m_settings_open_assist_settings"
         case .settingsRefreshButtonPositionAddressBar: return "m_settings_refresh_button_position_address_bar"
         case .settingsRefreshButtonPositionMenu: return "m_settings_refresh_button_position_menu"
-            
+        case .settingsWhatsNewOpen: return "m_settings_whats-new_open"
+
         case .experimentalBrowsingMenuEnabled: return "m_experimental-browsing-menu_enabled"
         case .experimentalBrowsingMenuDisabled: return "m_experimental-browsing-menu_disabled"
         case .experimentalBrowsingMenuUsed: return "m_experimental-browsing-menu_used"

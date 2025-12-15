@@ -1537,6 +1537,7 @@ extension SettingsViewModel {
             return
         }
 
+        Pixel.fire(pixel: .settingsWhatsNewOpen)
         presentViewController(viewController, modal: true)
     }
     

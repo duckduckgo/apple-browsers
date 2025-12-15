@@ -58,7 +58,7 @@ final class AIChatContextualSheetCoordinatorTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        sut = AIChatContextualSheetCoordinator()
+        sut = AIChatContextualSheetCoordinator(voiceSearchHelper: MockVoiceSearchHelper())
         mockDelegate = MockDelegate()
         mockPresentingVC = MockPresentingViewController()
         sut.delegate = mockDelegate

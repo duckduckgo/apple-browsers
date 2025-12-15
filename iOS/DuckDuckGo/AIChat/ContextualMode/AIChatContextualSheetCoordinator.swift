@@ -35,8 +35,16 @@ final class AIChatContextualSheetCoordinator {
 
     weak var delegate: AIChatContextualSheetCoordinatorDelegate?
 
+    private let voiceSearchHelper: VoiceSearchHelperProtocol
+
     /// The retained sheet view controller for this tab's active chat session.
     private(set) var sheetViewController: AIChatContextualSheetViewController?
+
+    // MARK: - Initialization
+
+    init(voiceSearchHelper: VoiceSearchHelperProtocol) {
+        self.voiceSearchHelper = voiceSearchHelper
+    }
 
     // MARK: - Public Methods
 
@@ -50,7 +58,7 @@ final class AIChatContextualSheetCoordinator {
         if let existingSheet = sheetViewController {
             sheetVC = existingSheet
         } else {
-            sheetVC = AIChatContextualSheetViewController()
+            sheetVC = AIChatContextualSheetViewController(voiceSearchHelper: voiceSearchHelper)
             sheetVC.delegate = self
             sheetViewController = sheetVC
         }

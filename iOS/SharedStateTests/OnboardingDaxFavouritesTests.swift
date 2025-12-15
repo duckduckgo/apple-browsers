@@ -112,7 +112,8 @@ import Combine
                                     keyValueStore: try! MockKeyValueFileStore(),
                                     daxDialogsManager: DummyDaxDialogsManager(),
                                     aiChatSettings: MockAIChatSettingsProvider(),
-                                    productSurfaceTelemetry: MockProductSurfaceTelemetry()
+                                    productSurfaceTelemetry: MockProductSurfaceTelemetry(),
+                                    voiceSearchHelper: MockVoiceSearchHelper()
         )
         sut = MainViewController(
             privacyConfigurationManager: mockConfigManager,

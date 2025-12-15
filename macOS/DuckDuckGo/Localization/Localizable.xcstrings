@@ -64253,7 +64253,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Allow this website to send you notifications?"
+            "value" : "Allow “%@“ to send you notifications?"
           }
         }
       }
@@ -65478,6 +65478,18 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "System notifications are disabled. First, turn them on in"
+          }
+        }
+      }
+    },
+    "permission.popover.system.notification.disabled.standalone" : {
+      "comment" : "Warning shown in standalone system-disabled permission view",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "System notifications disabled.\nTurn them on in"
           }
         }
       }

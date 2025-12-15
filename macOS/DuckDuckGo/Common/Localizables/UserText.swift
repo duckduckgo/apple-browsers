@@ -968,7 +968,7 @@ struct UserText {
                                                                        value: "Allow “%@“ to use your %@ once?",
                                                                        comment: "Popover asking for domain %@ to use camera/mic (%@)")
     static let notificationPermissionAuthorizationFormat = NSLocalizedString("permission.authorization.notifications.format",
-                                                                             value: "Allow this website to send you notifications?",
+                                                                             value: "Allow “%@“ to send you notifications?",
                                                                              comment: "Popover asking for domain %@ to send notifications")
     static let permissionMenuHeaderDeviceFormat = NSLocalizedString("permission.menu-header.device.format",
                                                                     value: "Allow “%@” to use your %@?",
@@ -1059,6 +1059,7 @@ struct UserText {
     static let permissionCenterTurnOnNotifications = NSLocalizedString("permission.center.turn.on.notifications", value: "turn them on.", comment: "Link text to request system notification permission")
     static let permissionCenterSystemSettingsNotifications = NSLocalizedString("permission.center.system.settings.notifications", value: "System Settings → Notifications", comment: "Link text to open System Settings Notifications panel")
     static let permissionPopoverSystemNotificationDisabled = NSLocalizedString("permission.popover.system.notification.disabled", value: "System notifications are disabled. First, turn them on in", comment: "Warning shown in permission popover when system notifications are disabled")
+    static let permissionPopoverSystemNotificationDisabledStandalone = NSLocalizedString("permission.popover.system.notification.disabled.standalone", value: "System notifications disabled.\nTurn them on in", comment: "Warning shown in standalone system-disabled permission view")
     static let permissionCenterResetTooltip = NSLocalizedString("permission.center.reset.tooltip", value: "Remove permission", comment: "Tooltip for the remove permission button in permission center")
     static let permissionCenterReloadMessage = NSLocalizedString("permission.center.reload.message", value: "Reload for changes to take effect", comment: "Message shown in permission center when permissions have been changed and reload is needed")
     static let permissionCenterReloadButton = NSLocalizedString("permission.center.reload.button", value: "Reload", comment: "Button to reload the page to apply permission changes")

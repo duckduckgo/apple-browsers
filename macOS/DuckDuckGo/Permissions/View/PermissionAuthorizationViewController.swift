@@ -216,11 +216,15 @@ final class PermissionAuthorizationViewController: NSViewController {
             domain: query.domain,
             permissionType: permissionType,
             showsTwoStepUI: showsTwoStepUI,
+            isSystemPermissionDisabled: query.isSystemPermissionDisabled,
             onDeny: { [weak self] in
                 self?.handleDeny()
             },
             onAllow: { [weak self] in
                 self?.handleAllow()
+            },
+            onDismiss: { [weak self] in
+                self?.handleDismiss()
             },
             onLearnMore: permissionType.learnMoreURL != nil ? {
                 if let url = permissionType.learnMoreURL {
@@ -257,6 +261,12 @@ final class PermissionAuthorizationViewController: NSViewController {
         fireAuthorizationPixel(decision: .allow)
         dismiss()
         query?.handleDecision(grant: true, remember: nil)
+    }
+
+    private func handleDismiss() {
+        isAuthorizationInProgress = false
+        query?.cancel()
+        dismiss()
     }
 
     private func fireAuthorizationPixel(decision: PermissionPixel.AuthorizationDecision) {

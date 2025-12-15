@@ -170,6 +170,7 @@ final class PermissionModel {
     private func queryAuthorization(for permissions: [PermissionType],
                                     domain: String,
                                     url: URL?,
+                                    isSystemPermissionDisabled: Bool = false,
                                     decisionHandler: @escaping (Bool) -> Void) {
 
         var queryPtr: UnsafeMutableRawPointer?
@@ -227,6 +228,7 @@ final class PermissionModel {
 
         // Set state to .requested so the authorization popover can be shown
         permissions.forEach { self.permissions[$0].authorizationQueried(query, updateQueryIfAlreadyRequested: $0 == .popups) }
+        query.isSystemPermissionDisabled = isSystemPermissionDisabled
         authorizationQueries.append(query)
     }
 
@@ -420,10 +422,8 @@ final class PermissionModel {
                 return false
             case .allow:
                 // User has "Always Allow" stored - but check system permission first
-                // If system permission is disabled, return denied (don't show prompt)
-                // Only applies when new permission view is enabled
                 if featureFlagger.isFeatureOn(.newPermissionView), await isSystemPermissionDisabled(for: permission) {
-                    return false
+                    return nil
                 }
             case .ask:
                 // if at least one permission is not set: ask
@@ -461,7 +461,16 @@ final class PermissionModel {
             }
             switch shouldGrant {
             case .none:
-                self.queryAuthorization(for: permissions, domain: domain, url: url, decisionHandler: wrappedDecisionHandler)
+                // Check if this is "app=allow but system=disabled" case
+                let isSystemDisabled: Bool = {
+                    guard let permission = permissions.first,
+                          permission.requiresSystemPermission,
+                          self.featureFlagger.isFeatureOn(.newPermissionView) else { return false }
+                    return self.permissionManager.permission(forDomain: domain, permissionType: permission) == .allow
+                }()
+                self.queryAuthorization(for: permissions, domain: domain, url: url,
+                                        isSystemPermissionDisabled: isSystemDisabled,
+                                        decisionHandler: wrappedDecisionHandler)
             case .some(true):
                 wrappedDecisionHandler(true)
             case .some(false):

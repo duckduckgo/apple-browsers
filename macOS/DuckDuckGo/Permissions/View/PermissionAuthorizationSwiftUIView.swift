@@ -137,6 +137,18 @@ enum PermissionAuthorizationType {
         }
     }
 
+    /// Text for standalone system-disabled view (includes newline after first sentence)
+    var systemPermissionDisabledTextStandalone: String {
+        switch self {
+        case .geolocation:
+            return systemPermissionDisabledText
+        case .notification:
+            return UserText.permissionPopoverSystemNotificationDisabledStandalone
+        case .camera, .microphone, .cameraAndMicrophone, .popups, .externalScheme:
+            return ""
+        }
+    }
+
     /// Link text for opening System Settings
     var systemSettingsLinkText: String {
         switch self {
@@ -192,8 +204,10 @@ struct PermissionAuthorizationSwiftUIView: View {
     let domain: String
     let permissionType: PermissionAuthorizationType
     let showsTwoStepUI: Bool
+    let isSystemPermissionDisabled: Bool
     let onDeny: () -> Void
     let onAllow: () -> Void
+    let onDismiss: () -> Void
     let onLearnMore: (() -> Void)?
     let systemPermissionManager: SystemPermissionManagerProtocol
 
@@ -235,7 +249,9 @@ struct PermissionAuthorizationSwiftUIView: View {
     // MARK: - Body
 
     var body: some View {
-        if showsTwoStepUI {
+        if isSystemPermissionDisabled {
+            systemDisabledPermissionView
+        } else if showsTwoStepUI {
             twoStepPermissionView
         } else {
             standardPermissionView
@@ -277,7 +293,7 @@ struct PermissionAuthorizationSwiftUIView: View {
         .padding(.horizontal, 16)
         .padding(.bottom, 16)
         .frame(width: 360)
-        .background(Color(designSystemColor: .surfacePrimary))
+        .background(Color(designSystemColor: .containerFillPrimary))
         .onAppear {
             initializeSystemPermissionState()
             subscribeToAppActiveNotification()
@@ -342,6 +358,26 @@ struct PermissionAuthorizationSwiftUIView: View {
                 break
             }
         }
+    }
+
+    /// Subscribe to app becoming active to dismiss when system permission is granted
+    /// Used by systemDisabledPermissionView when app permission is "always allow" but system is disabled
+    private func subscribeToAppActiveNotificationForDismissal() {
+        appActiveCancellable = NotificationCenter.default
+            .publisher(for: NSApplication.didBecomeActiveNotification)
+            .sink { [systemPermissionManager, permissionType, onAllow, onDismiss] _ in
+                Task { @MainActor in
+                    let authState = await systemPermissionManager.authorizationState(for: permissionType.asPermissionType)
+                    switch authState {
+                    case .denied, .restricted, .systemDisabled:
+                        break
+                    case .authorized:
+                        onAllow()
+                    case .notDetermined:
+                        onDismiss()
+                    }
+                }
+            }
     }
 
     @ViewBuilder
@@ -510,6 +546,43 @@ struct PermissionAuthorizationSwiftUIView: View {
         }
     }
 
+    // MARK: - System Disabled Permission View
+
+    private var systemDisabledPermissionView: some View {
+        VStack(spacing: 20) {
+            Text(promptText)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+
+        (Text(permissionType.systemPermissionDisabledTextStandalone)
+            .font(.system(size: 12))
+            .foregroundColor(Color(designSystemColor: .textSecondary))
+        + Text(" ")
+        + Text(permissionType.systemSettingsLinkText)
+            .font(.system(size: 12))
+            .foregroundColor(.accentColor))
+            .lineSpacing(6)
+            .multilineTextAlignment(.center)
+            .fixedSize(horizontal: false, vertical: true)
+            .cursor(.pointingHand)
+            .onTapGesture {
+                openSystemSettings()
+            }
+        }
+        .padding(16)
+        .frame(width: 360)
+        .background(Color(designSystemColor: .containerFillPrimary))
+        .onAppear {
+            subscribeToAppActiveNotificationForDismissal()
+        }
+        .onDisappear {
+            appActiveCancellable?.cancel()
+            appActiveCancellable = nil
+        }
+    }
+
     // MARK: - Standard Permission View
 
     private var standardPermissionView: some View {
@@ -557,7 +630,7 @@ struct PermissionAuthorizationSwiftUIView: View {
             }
         }
         .frame(width: 360)
-        .background(Color(designSystemColor: .surfacePrimary))
+        .background(Color(designSystemColor: .containerFillPrimary))
     }
 }
 
@@ -568,16 +641,20 @@ extension PermissionAuthorizationSwiftUIView {
         domain: String,
         permissionType: PermissionAuthorizationType,
         showsTwoStepUI: Bool = false,
+        isSystemPermissionDisabled: Bool = false,
         onDeny: @escaping () -> Void,
         onAllow: @escaping () -> Void,
+        onDismiss: @escaping () -> Void,
         onLearnMore: (() -> Void)? = nil
     ) {
         self.domain = domain
         self.permissionType = permissionType
         self.showsTwoStepUI = showsTwoStepUI
+        self.isSystemPermissionDisabled = isSystemPermissionDisabled
         self.onDeny = onDeny
-        self.onLearnMore = onLearnMore
         self.onAllow = onAllow
+        self.onDismiss = onDismiss
+        self.onLearnMore = onLearnMore
         self.systemPermissionManager = SystemPermissionManager()
     }
 }
@@ -631,7 +708,8 @@ struct PermissionAuthorizationSwiftUIView_Previews: PreviewProvider {
             permissionType: .geolocation,
             showsTwoStepUI: true,
             onDeny: {},
-            onAllow: {}
+            onAllow: {},
+            onDismiss: {}
         )
         .previewDisplayName("Geolocation - Two Step")
 
@@ -639,7 +717,8 @@ struct PermissionAuthorizationSwiftUIView_Previews: PreviewProvider {
             domain: "apple.com",
             permissionType: .camera,
             onDeny: {},
-            onAllow: {}
+            onAllow: {},
+            onDismiss: {}
         )
         .previewDisplayName("Camera")
 
@@ -647,7 +726,8 @@ struct PermissionAuthorizationSwiftUIView_Previews: PreviewProvider {
             domain: "apple.com",
             permissionType: .cameraAndMicrophone,
             onDeny: {},
-            onAllow: {}
+            onAllow: {},
+            onDismiss: {}
         )
         .previewDisplayName("Camera and Microphone")
     }

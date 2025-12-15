@@ -160,6 +160,7 @@ extension HomePage.Models {
 
         private func performDefaultBrowserAction() {
             do {
+                firePixel(GeneralPixel.defaultRequestedFromHomepageSetupView)
                 try defaultBrowserProvider.presentDefaultBrowserPrompt()
             } catch {
                 defaultBrowserProvider.openSystemPreferences()
@@ -185,11 +186,13 @@ extension HomePage.Models {
         }
 
         func performDockAction() {
+            firePixel(GeneralPixel.userAddedToDockFromNewTabPageCard, includeAppVersionParameter: false)
             dockCustomizer.addToDock()
         }
 
         @MainActor
         private func performSubscriptionAction() {
+            firePixel(SubscriptionPixel.subscriptionNewTabPageNextStepsCardClicked)
             guard let url = SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.newTabPageNextStepsCard.rawValue)?.url else {
                 return
             }
@@ -212,6 +215,7 @@ extension HomePage.Models {
             case .emailProtection:
                 persistor.shouldShowEmailProtectionSetting = false
             case .subscription:
+                firePixel(SubscriptionPixel.subscriptionNewTabPageNextStepsCardDismissed)
                 subscriptionCardVisibilityManager.dismissSubscriptionCard()
             }
             refreshFeaturesMatrix()
@@ -224,27 +228,13 @@ extension HomePage.Models {
         }
 
         private func fireNextStepsCardClickedPixel(for featureType: FeatureType) {
-            switch featureType {
-            case .defaultBrowser:
-                firePixel(GeneralPixel.defaultRequestedFromHomepageSetupView)
-            case .dock:
-                firePixel(GeneralPixel.userAddedToDockFromNewTabPageCard, includeAppVersionParameter: false)
-            case .subscription:
-                firePixel(SubscriptionPixel.subscriptionNewTabPageNextStepsCardClicked)
-            default:
-                let card = NewTabPageDataModel.CardID(featureType)
-                firePixel(NewTabPagePixel.nextStepsCardClicked(card.rawValue))
-            }
+            let card = NewTabPageDataModel.CardID(featureType)
+            firePixel(NewTabPagePixel.nextStepsCardClicked(card.rawValue))
         }
 
         private func fireNextStepsCardDismissedPixel(for featureType: FeatureType) {
-            switch featureType {
-            case .subscription:
-                firePixel(SubscriptionPixel.subscriptionNewTabPageNextStepsCardDismissed)
-            default:
-                let card = NewTabPageDataModel.CardID(featureType)
-                firePixel(NewTabPagePixel.nextStepsCardDismissed(card.rawValue))
-            }
+            let card = NewTabPageDataModel.CardID(featureType)
+            firePixel(NewTabPagePixel.nextStepsCardDismissed(card.rawValue))
         }
 
         private func observeSubscriptionCardVisibilityChanges() {

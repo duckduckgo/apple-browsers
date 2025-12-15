@@ -82,19 +82,21 @@ final class NewTabPageNextStepsCardsProvider: NewTabPageNextStepsCardsProviding 
     @MainActor
     func willDisplayCards(_ cards: [NewTabPageDataModel.CardID]) {
         appearancePreferences.continueSetUpCardsViewDidAppear()
+        fireAddToDockPixelIfNeeded(cards)
         fireNextStepsCardShownPixels(cards)
+    }
+
+    private func fireAddToDockPixelIfNeeded(_ cards: [NewTabPageDataModel.CardID]) {
+        guard cards.contains(.addAppToDockMac) else {
+            return
+        }
+        pixelHandler(GeneralPixel.addToDockNewTabPageCardPresented, .uniqueByName, false)
     }
 
     private func fireNextStepsCardShownPixels(_ cards: [NewTabPageDataModel.CardID]) {
         for card in cards {
-            switch card {
-            case .addAppToDockMac:
-                // Uses existing pixel with unique frequency (fires once ever)
-                pixelHandler(GeneralPixel.addToDockNewTabPageCardPresented, .uniqueByName, false)
-            default:
-                // Fires once per card (unique by name + key parameter)
-                pixelHandler(NewTabPagePixel.nextStepsCardShown(card.rawValue), .uniqueByNameAndParameters, false)
-            }
+            // Fires once per card (unique by name + key parameter)
+            pixelHandler(NewTabPagePixel.nextStepsCardShown(card.rawValue), .uniqueByNameAndParameters, false)
         }
     }
 }

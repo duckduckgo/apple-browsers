@@ -76,7 +76,7 @@
                 "key": "key",
                 "type": "string",
                 "description": "Next Steps card that was clicked",
-                "enum": ["duckplayer", "emailProtection", "bringStuff"]
+                "enum": ["duckplayer", "emailProtection", "bringStuff", "addAppToDockMac", "defaultApp", "subscription"]
             }
         ]
     },
@@ -92,7 +92,7 @@
                 "key": "key",
                 "type": "string",
                 "description": "Next Steps card that was dismissed",
-                "enum": ["duckplayer", "emailProtection", "bringStuff", "addAppToDockMac", "defaultApp"]
+                "enum": ["duckplayer", "emailProtection", "bringStuff", "addAppToDockMac", "defaultApp", "subscription"]
             }
         ]
     },
@@ -107,7 +107,7 @@
                 "key": "key",
                 "type": "string",
                 "description": "Next Steps card that was shown",
-                "enum": ["duckplayer", "emailProtection", "bringStuff", "defaultApp", "subscription"]
+                "enum": ["duckplayer", "emailProtection", "bringStuff", "addAppToDockMac", "defaultApp", "subscription"]
             }
         ]
     }

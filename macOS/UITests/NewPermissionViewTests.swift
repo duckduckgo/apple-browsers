@@ -695,6 +695,147 @@ class NewPermissionViewTests: UITestCase {
             "The external apps permission should be set to 'Always ask' after denying once."
         )
     }
+
+}
+
+// MARK: - Popup Permission Tests with New Permission View
+
+/// Tests for popup blocking with the new permission view enabled.
+/// These tests require additional popup-related feature flags.
+final class NewPermissionViewPopupTests: UITestCase {
+
+    private enum PopupTimeout {
+        static let testingThreshold: TimeInterval = 2.0
+    }
+
+    private var addressBarTextField: XCUIElement!
+    private var popupDelayedURL: URL!
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        continueAfterFailure = false
+
+        // Enable newPermissionView AND popup blocking features with reduced timeout
+        app = XCUIApplication.setUp(
+            environment: [
+                "POPUP_TIMEOUT_OVERRIDE": String(PopupTimeout.testingThreshold)
+            ],
+            featureFlags: [
+                "newPermissionView": true,
+                "popupBlocking": true,
+                "extendedUserInitiatedPopupTimeout": true,
+                "suppressEmptyPopUpsOnApproval": true,
+                "allowPopupsForCurrentPage": true,
+                "popupPermissionButtonPersistence": true
+            ]
+        )
+
+        popupDelayedURL = URL.testsServer.appendingPathComponent("popup-delayed.html")
+        addressBarTextField = app.addressBar
+        app.enforceSingleWindow()
+    }
+
+    override func tearDown() {
+        // Burn all data to clear permissions between tests
+        app.fireButton.click()
+        app.fireDialogSegmentedControl.buttons["Everything"].click()
+        app.fireDialogTabsToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
+        app.fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
+        app.fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
+        app.fireDialogBurnButton.click()
+
+        // Wait for fire animation to complete
+        _ = app.fakeFireButton.waitForNonExistence(timeout: UITests.Timeouts.fireAnimation)
+
+        super.tearDown()
+    }
+
+    /// Tests that the new popup blocked SwiftUI popover appears automatically when a popup is blocked
+    func test_popupPermissions_blockedPopupShowsSwiftUIPopover() throws {
+        addressBarTextField.pasteURL(popupDelayedURL, pressingEnter: true)
+
+        let webView = app.webViews["Popup Delayed Test"]
+        XCTAssertTrue(
+            webView.waitForExistence(timeout: UITests.Timeouts.localTestServer),
+            "Web view didn't appear in a reasonable timeframe."
+        )
+
+        // Click button that triggers a popup beyond the timeout (will be blocked)
+        let beyondTimeoutButton = webView.links["Open Popup (Beyond Timeout)"]
+        XCTAssertTrue(
+            beyondTimeoutButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Beyond timeout button didn't appear."
+        )
+        beyondTimeoutButton.click()
+
+        // The popup blocked popover should appear AUTOMATICALLY with the SwiftUI view
+        let popover = app.popovers.firstMatch
+        XCTAssertTrue(
+            popover.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Popup blocked popover should appear automatically when popup is blocked."
+        )
+
+        // Verify the popover contains the "Pop-Up Blocked" text
+        let blockedText = popover.staticTexts.containing(\.value, containing: "Pop-Up Blocked").firstMatch
+        XCTAssertTrue(
+            blockedText.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Pop-Up Blocked text should appear in the popover."
+        )
+
+        // Verify the "Open" button exists in the SwiftUI popover
+        let openButton = popover.buttons["Open"]
+        XCTAssertTrue(
+            openButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Open button should appear in the popup blocked popover."
+        )
+    }
+
+    /// Tests that clicking "Open" in the popup blocked popover opens the blocked popup
+    func test_popupPermissions_openButtonOpensBlockedPopup() throws {
+        addressBarTextField.pasteURL(popupDelayedURL, pressingEnter: true)
+
+        let webView = app.webViews["Popup Delayed Test"]
+        XCTAssertTrue(
+            webView.waitForExistence(timeout: UITests.Timeouts.localTestServer),
+            "Web view didn't appear in a reasonable timeframe."
+        )
+
+        // Click button that triggers a popup beyond the timeout (will be blocked)
+        let beyondTimeoutButton = webView.links["Open Popup (Beyond Timeout)"]
+        XCTAssertTrue(
+            beyondTimeoutButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Beyond timeout button didn't appear."
+        )
+        beyondTimeoutButton.click()
+
+        // The popup blocked popover should appear AUTOMATICALLY
+        let popover = app.popovers.firstMatch
+        XCTAssertTrue(
+            popover.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Popup blocked popover should appear automatically when popup is blocked."
+        )
+
+        // Click the "Open" button to open the blocked popup
+        let openButton = popover.buttons["Open"]
+        XCTAssertTrue(
+            openButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Open button should appear in the popup blocked popover."
+        )
+        openButton.click()
+
+        // Verify popup window opened
+        let popupWindow = app.windows["Example Domain"]
+        XCTAssertTrue(
+            popupWindow.waitForExistence(timeout: UITests.Timeouts.navigation),
+            "Popup should open after clicking 'Open' button."
+        )
+
+        // Verify we now have 2 windows (main + popup)
+        XCTAssertEqual(
+            app.windows.count, 2,
+            "Should have main window + opened popup window."
+        )
+    }
 }
 
 // MARK: - Private Helpers

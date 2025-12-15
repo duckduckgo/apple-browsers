@@ -22,6 +22,7 @@ import SwiftUI
 import DesignResourcesKit
 import Core
 import Networking
+import Subscription
 import VPN
 import UIComponents
 import BrowserServicesKit
@@ -329,6 +330,7 @@ struct SubscriptionSettingsView: View {
                                                                                                     vpnMetadataCollector: DefaultVPNMetadataCollector(),
                                                                                                     dbpMetadataCollector: DefaultDBPMetadataCollector(),
                                                                                                     isPaidAIChatFeatureEnabled: { settingsViewModel.subscriptionFeatureAvailability.isPaidAIChatEnabled },
+                                                                                                    isProTierPurchaseEnabled: { settingsViewModel.subscriptionFeatureAvailability.isProTierPurchaseEnabled },
                                                                                                     source: .ppro)),
                        isActive: $isShowingSupportView) {
             EmptyView()
@@ -479,6 +481,7 @@ struct SubscriptionSettingsViewV2: View {
     @State var isShowingConnectionError = false
     @State var isShowingSubscriptionError = false
     @State var isShowingSupportView = false
+    @State var isShowingPlansView = false
 
     var body: some View {
         optionsView
@@ -499,13 +502,13 @@ struct SubscriptionSettingsViewV2: View {
         Section {
             switch configuration {
             case .subscribed:
-                SubscriptionSettingsHeaderView(state: .subscribed)
+                SubscriptionSettingsHeaderView(state: .subscribed, tierBadge: viewModel.tierBadgeToDisplay)
             case .expired:
                 SubscriptionSettingsHeaderView(state: .expired(viewModel.state.subscriptionDetails))
             case .activating:
                 SubscriptionSettingsHeaderView(state: .activating)
             case .trial:
-                SubscriptionSettingsHeaderView(state: .trial)
+                SubscriptionSettingsHeaderView(state: .trial, tierBadge: viewModel.tierBadgeToDisplay)
             }
         }
         .listRowBackground(Color.clear)
@@ -550,6 +553,8 @@ struct SubscriptionSettingsViewV2: View {
 
             switch configuration {
             case .subscribed, .expired, .trial:
+                viewAllPlansView
+
                 let active = viewModel.state.subscriptionInfo?.isActive ?? false
                 let isEligibleForWinBackCampaign = settingsViewModel.state.subscription.isWinBackEligible
                 SettingsCustomCell(content: {
@@ -607,6 +612,20 @@ struct SubscriptionSettingsViewV2: View {
                 restorePurchaseView
                 removeFromDeviceView
             }
+        }
+    }
+
+    @ViewBuilder
+    var viewAllPlansView: some View {
+        if viewModel.shouldShowViewAllPlans {
+            SettingsCustomCell(content: {
+                Text(UserText.subscriptionViewAllPlans)
+                    .daxBodyRegular()
+                    .foregroundColor(Color(designSystemColor: .accent))
+            },
+                               action: { viewModel.viewAllPlans() },
+                               disclosureIndicator: true,
+                               isButton: true)
         }
     }
 
@@ -783,14 +802,29 @@ struct SubscriptionSettingsViewV2: View {
                        isActive: $isShowingGoogleView) {
             EmptyView()
         }.hidden()
-        
+
         NavigationLink(destination: UnifiedFeedbackRootView(viewModel: UnifiedFeedbackFormViewModel(subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
                                                                                                     vpnMetadataCollector: DefaultVPNMetadataCollector(), dbpMetadataCollector: DefaultDBPMetadataCollector(),
                                                                                                     isPaidAIChatFeatureEnabled: { settingsViewModel.subscriptionFeatureAvailability.isPaidAIChatEnabled },
+                                                                                                    isProTierPurchaseEnabled: { settingsViewModel.subscriptionFeatureAvailability.isProTierPurchaseEnabled },
                                                                                                     source: .ppro)),
                        isActive: $isShowingSupportView) {
             EmptyView()
         }.hidden()
+
+        NavigationLink(
+            destination: SubscriptionContainerViewFactory.makePlansFlowV2(
+                redirectURLComponents: SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.appSettings.rawValue),
+                navigationCoordinator: subscriptionNavigationCoordinator,
+                subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
+                subscriptionFeatureAvailability: settingsViewModel.subscriptionFeatureAvailability,
+                userScriptsDependencies: settingsViewModel.userScriptsDependencies,
+                internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                dataBrokerProtectionViewControllerProvider: settingsViewModel.dataBrokerProtectionViewControllerProvider,
+                wideEvent: AppDependencyProvider.shared.wideEvent),
+            isActive: $isShowingPlansView
+        ) { EmptyView() }
+            .hidden()
 
         List {
             headerSection
@@ -835,6 +869,14 @@ struct SubscriptionSettingsViewV2: View {
         }
         .onChange(of: isShowingInternalSubscriptionNotice) { value in
             viewModel.displayInternalSubscriptionNotice(value)
+        }
+
+        // Plans View binding
+        .onChange(of: viewModel.state.isShowingPlansView) { value in
+            isShowingPlansView = value
+        }
+        .onChange(of: isShowingPlansView) { value in
+            viewModel.displayPlansView(value)
         }
 
         // Removal Notice

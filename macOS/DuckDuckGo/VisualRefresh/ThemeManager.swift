@@ -32,7 +32,11 @@ final class ThemeManager: ObservableObject, ThemeManaging {
     private var cancellables = Set<AnyCancellable>()
     private var appearancePreferences: AppearancePreferences
     private let featureFlagger: FeatureFlagger
-    @Published private(set) var theme: ThemeStyleProviding
+    @Published private(set) var theme: ThemeStyleProviding {
+        didSet {
+            switchDesignSystemPalette(to: theme.name.designColorPalette)
+        }
+    }
 
     var themePublisher: Published<any ThemeStyleProviding>.Publisher {
         $theme
@@ -43,6 +47,7 @@ final class ThemeManager: ObservableObject, ThemeManaging {
         self.featureFlagger = featureFlagger
         self.theme = ThemeStyle.buildThemeStyle(themeName: appearancePreferences.themeName, featureFlagger: featureFlagger)
 
+        switchDesignSystemPalette(to: theme.name.designColorPalette)
         subscribeToThemeNameChanges(appearancePreferences: appearancePreferences)
         subscribeToInternalUserChanges(internalUserDecider: internalUserDecider)
     }
@@ -69,22 +74,18 @@ final class ThemeManager: ObservableObject, ThemeManaging {
 
 private extension ThemeManager {
 
+    /// Relay the change to all of our observers
     func switchToTheme(named themeName: ThemeName) {
-        /// Required to get `DesignResourcesKit` instantiate new Colors with the new Palette
-        DesignSystemPalette.current = themeName.designColorPalette
-
-        /// Relay the change to all of our observers
         theme = ThemeStyle.buildThemeStyle(themeName: themeName, featureFlagger: featureFlagger)
     }
 
-    func resetThemeNameIfNeeded(isInternalUser: Bool) {
-        /// Internal Users should not see the `.default` theme
-        if isInternalUser, appearancePreferences.themeName == .default {
-            appearancePreferences.themeName = .figma
-            return
-        }
+    /// Required to get `DesignResourcesKit` instantiate new Colors with the new Palette
+    func switchDesignSystemPalette(to palette: DesignResourcesKit.ColorPalette) {
+        DesignSystemPalette.current = palette
+    }
 
-        /// Non Internal Users should only see the `.default` theme
+    /// Non Internal Users should only see the `.default` theme
+    func resetThemeNameIfNeeded(isInternalUser: Bool) {
         if isInternalUser == false, appearancePreferences.themeName != .default {
             appearancePreferences.themeName = .default
         }

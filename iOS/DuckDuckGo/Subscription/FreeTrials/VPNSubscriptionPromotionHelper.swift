@@ -36,9 +36,6 @@ protocol VPNSubscriptionPromotionHelping {
 
     /// Records when the promo has been shown to the user.
     func subscriptionPromoWasShown()
-
-    /// Fires a pixel when the network protection promotion is tapped by the user.
-    func fireTapPixel()
 }
 
 enum VPNSubscriptionPromotionStatus {
@@ -126,10 +123,5 @@ struct VPNSubscriptionPromotionHelper: VPNSubscriptionPromotionHelping {
     func subscriptionPromoWasShown() {
         guard featureFlagger.isFeatureOn(.vpnMenuItem) else { return }
         freeTrialBadgePersistor.incrementViewCount()
-    }
-
-    /// Fires a pixel when the promotion is tapped by the user.
-    func fireTapPixel() {
-        pixelFiring.fire(.browsingMenuVPN, withAdditionalParameters: ["status": subscriptionPromoStatus.pixelParameter])
     }
 }

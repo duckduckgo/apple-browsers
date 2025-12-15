@@ -19,7 +19,6 @@
 import Combine
 import Common
 import LoginItems
-import NetworkExtension
 import VPN
 import ServiceManagement
 import SwiftUI

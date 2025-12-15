@@ -161,7 +161,7 @@ final class SuggestionContainer: SuggestionContainerProtocol {
             var usedUrls = Set<String>() // deduplicate
             return openTabViewModels.compactMap { model in
                 guard model.tab !== selectedTab,
-                      model.tab.content.isUrl
+                      model.tab.content.displaysContentInWebView
                         || model.tab.content.urlForWebView?.isSettingsURL == true
                         || model.tab.content.urlForWebView == .bookmarks,
                       let url = model.tab.content.userEditableUrl,

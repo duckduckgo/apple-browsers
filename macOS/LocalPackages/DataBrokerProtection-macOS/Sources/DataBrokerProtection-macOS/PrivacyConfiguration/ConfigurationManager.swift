@@ -27,7 +27,7 @@ import PixelKit
 import DataBrokerProtectionCore
 
 public extension Logger {
-    static var config: Logger = { Logger(subsystem: Bundle.main.bundleIdentifier ?? "DuckDuckGo", category: "Configuration") }()
+    static let config: Logger = { Logger(subsystem: Bundle.main.bundleIdentifier ?? "DuckDuckGo", category: "Configuration") }()
 }
 
 public final class ConfigurationManager: DefaultConfigurationManager {

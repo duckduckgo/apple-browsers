@@ -945,9 +945,8 @@ class AddressBarTests: XCTestCase {
     }
 
     @MainActor
-    func test_WhenSiteCertificateNil_ThenAddressBarShowsStandardShieldIcon() async throws {
+    func test_WhenSiteCertificateNil_ThenAddressBarShowsShieldAnimation() async throws {
         // GIVEN
-        let expectedImage = NSApp.delegateTyped.themeManager.theme.addressBarStyleProvider.privacyShieldStyleProvider.icon
         let evaluator = MockCertificateEvaluator()
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .userEntered("")), webViewConfiguration: schemeHandler.webViewConfiguration(), certificateTrustEvaluator: evaluator, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab]))
@@ -958,15 +957,16 @@ class AddressBarTests: XCTestCase {
 
         _=try await tabLoadedPromise.value
 
-        // THEN
-        let shieldImage = mainViewController.navigationBarViewController.addressBarViewController!.addressBarButtonsViewController!.privacyDashboardButton.image!
-        XCTAssertImagesEqual(shieldImage, expectedImage)
+        // THEN - For protected sites, the shield is now shown via Lottie animation instead of static image
+        let addressBarButtonsVC = mainViewController.navigationBarViewController.addressBarViewController!.addressBarButtonsViewController!
+        XCTAssertFalse(addressBarButtonsVC.shieldAnimationView.isHidden, "Shield animation should be visible for protected sites")
+        XCTAssertTrue(addressBarButtonsVC.shieldDotAnimationView.isHidden, "Shield dot animation should be hidden for protected sites")
+        XCTAssertNil(addressBarButtonsVC.privacyDashboardButton.image, "Static image should be nil when using Lottie animation")
     }
 
     @MainActor
-    func test_WhenSiteCertificateValid_ThenAddressBarShowsStandardShieldIcon() async throws {
+    func test_WhenSiteCertificateValid_ThenAddressBarShowsShieldAnimation() async throws {
         // GIVEN
-        let expectedImage = NSApp.delegateTyped.themeManager.theme.addressBarStyleProvider.privacyShieldStyleProvider.icon
         let evaluator = MockCertificateEvaluator()
         evaluator.isValidCertificate = true
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .userEntered("")), webViewConfiguration: schemeHandler.webViewConfiguration(), certificateTrustEvaluator: evaluator, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
@@ -978,9 +978,11 @@ class AddressBarTests: XCTestCase {
 
         _=try await tabLoadedPromise.value
 
-        // THEN
-        let shieldImage = mainViewController.navigationBarViewController.addressBarViewController!.addressBarButtonsViewController!.privacyDashboardButton.image!
-        XCTAssertImagesEqual(shieldImage, expectedImage)
+        // THEN - For protected sites with valid certificate, the shield is shown via Lottie animation
+        let addressBarButtonsVC = mainViewController.navigationBarViewController.addressBarViewController!.addressBarButtonsViewController!
+        XCTAssertFalse(addressBarButtonsVC.shieldAnimationView.isHidden, "Shield animation should be visible for protected sites")
+        XCTAssertTrue(addressBarButtonsVC.shieldDotAnimationView.isHidden, "Shield dot animation should be hidden for valid certificate")
+        XCTAssertNil(addressBarButtonsVC.privacyDashboardButton.image, "Static image should be nil when using Lottie animation")
     }
 
     @MainActor

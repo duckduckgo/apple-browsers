@@ -42,6 +42,16 @@ final class PermissionManagerMock: PermissionManagerProtocol {
         savedPermissions[domain.droppingWwwPrefix()]?[permissionType] != nil
     }
 
+    func hasAnyPermissionPersisted(forDomain domain: String) -> Bool {
+        guard let domainPermissions = savedPermissions[domain.droppingWwwPrefix()] else { return false }
+        return !domainPermissions.isEmpty
+    }
+
+    func persistedPermissionTypes(forDomain domain: String) -> [PermissionType] {
+        guard let domainPermissions = savedPermissions[domain.droppingWwwPrefix()] else { return [] }
+        return Array(domainPermissions.keys)
+    }
+
     func permission(forDomain domain: String, permissionType: PermissionType) -> PersistedPermissionDecision {
         guard let allow = savedPermissions[domain.droppingWwwPrefix()]?[permissionType] else { return .ask }
         return PersistedPermissionDecision(allow: allow, isRemoved: false)

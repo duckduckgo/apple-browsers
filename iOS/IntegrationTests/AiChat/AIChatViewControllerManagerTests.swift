@@ -479,7 +479,10 @@ private final class MockDownloadsDirectoryHandler: DownloadsDirectoryHandling {
     
     var createDownloadsDirectoryIfNeededCallCount: Int = 0
 
-    var downloadsDirectoryFiles: [URL] = []
+    private var _downloadsDirectoryFiles: [URL] = []
+    var downloadsDirectoryFiles: [URL] {
+        get throws { _downloadsDirectoryFiles }
+    }
     var downloadsDirectory: URL = URL(string: "/tmp/downloads")!
 
     func downloadsDirectoryExists() -> Bool {

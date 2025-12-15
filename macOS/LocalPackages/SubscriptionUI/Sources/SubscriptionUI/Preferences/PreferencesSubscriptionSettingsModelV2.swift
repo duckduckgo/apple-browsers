@@ -30,7 +30,19 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
     @Published var subscriptionDetails: String?
     @Published var subscriptionStatus: DuckDuckGoSubscription.Status = .unknown
     @Published private var hasActiveTrialOffer: Bool = false
+    @Published private(set) var subscriptionTier: TierName?
     private var subscriptionPlatform: DuckDuckGoSubscription.Platform?
+
+    /// Returns the tier badge variant to display, or nil if badge should not be shown
+    /// Shows badge if tier is Pro, or if Pro tier purchase feature flag is enabled
+    var tierBadgeToDisplay: TierBadgeView.Variant? {
+        guard let tier = subscriptionTier else { return nil }
+        guard tier == .pro || isProTierPurchaseEnabled() else { return nil }
+        switch tier {
+        case .plus: return .plus
+        case .pro: return .pro
+        }
+    }
 
     @Published var email: String?
     var hasEmail: Bool { !(email?.isEmpty ?? true) }
@@ -59,6 +71,7 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
     private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     private let blackFridayCampaignProvider: BlackFridayCampaignProviding
     private let userEventHandler: (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void
+    private let isProTierPurchaseEnabled: () -> Bool
     private var fetchSubscriptionDetailsTask: Task<(), Never>?
 
     private var subscriptionChangeObserver: Any?
@@ -84,13 +97,15 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
                 subscriptionStateUpdate: AnyPublisher<PreferencesSidebarSubscriptionState, Never>,
                 keyValueStore: ThrowingKeyValueStoring,
                 winBackOfferVisibilityManager: WinBackOfferVisibilityManaging,
-                blackFridayCampaignProvider: BlackFridayCampaignProviding) {
+                blackFridayCampaignProvider: BlackFridayCampaignProviding,
+                isProTierPurchaseEnabled: @escaping () -> Bool) {
         self.subscriptionManager = subscriptionManager
         self.userEventHandler = userEventHandler
         self.keyValueStore = keyValueStore
         self.rebrandingMessageDismissed = (try? keyValueStore.object(forKey: rebrandingDismissedKey) as? Bool) ?? false
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.blackFridayCampaignProvider = blackFridayCampaignProvider
+        self.isProTierPurchaseEnabled = isProTierPurchaseEnabled
         Task {
             await self.updateSubscription(cachePolicy: .cacheFirst)
         }
@@ -318,6 +333,7 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
                 subscriptionPlatform = subscription.platform
                 subscriptionStatus = subscription.status
                 hasActiveTrialOffer = subscription.hasActiveTrialOffer
+                subscriptionTier = subscription.tier
             }
         } catch {
             Logger.subscription.error("Error getting subscription: \(error, privacy: .public)")

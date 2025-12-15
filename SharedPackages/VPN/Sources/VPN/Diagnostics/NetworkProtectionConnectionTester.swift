@@ -31,11 +31,8 @@ import os.log
 ///
 @MainActor
 final class NetworkProtectionConnectionTester: ConnectionTesting {
-    enum Result {
-        case connected
-        case reconnected(failureCount: Int)
-        case disconnected(failureCount: Int)
-    }
+
+    typealias Result = ConnectionTestingResult
 
     enum TesterError: Error {
         case couldNotFindInterface(named: String)
@@ -81,15 +78,14 @@ final class NetworkProtectionConnectionTester: ConnectionTesting {
     // MARK: - Test result handling
 
     private var failureCount = 0
-    private let resultHandler: @MainActor (Result) -> Void
+    var resultHandler: (@MainActor (Result) -> Void)?
 
     private var simulateFailure = false
 
     // MARK: - Init & deinit
 
-    init(timerQueue: DispatchQueue, resultHandler: @escaping @MainActor (Result) -> Void) {
+    init(timerQueue: DispatchQueue) {
         self.timerQueue = timerQueue
-        self.resultHandler = resultHandler
 
         Logger.networkProtectionMemory.debug("[+] \(String(describing: self), privacy: .public)")
     }
@@ -251,9 +247,9 @@ final class NetworkProtectionConnectionTester: ConnectionTesting {
     @MainActor
     private func handleConnected() {
         if failureCount == 0 {
-            resultHandler(.connected)
+            resultHandler?(.connected)
         } else if failureCount > 0 {
-            resultHandler(.reconnected(failureCount: failureCount))
+            resultHandler?(.reconnected(failureCount: failureCount))
             failureCount = 0
         }
     }
@@ -261,6 +257,6 @@ final class NetworkProtectionConnectionTester: ConnectionTesting {
     @MainActor
     private func handleDisconnected() {
         failureCount += 1
-        resultHandler(.disconnected(failureCount: failureCount))
+        resultHandler?(.disconnected(failureCount: failureCount))
     }
 }

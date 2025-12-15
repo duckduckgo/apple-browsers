@@ -46,7 +46,6 @@ protocol SwitchBarHandling: AnyObject {
 
     var isUsingExpandedBottomBarHeight: Bool { get }
     var isUsingFadeOutAnimation: Bool { get }
-    var isUsingSmallerBottomInput: Bool { get }
 
     var currentTextPublisher: AnyPublisher<String, Never> { get }
     var toggleStatePublisher: AnyPublisher<TextEntryMode, Never> { get }
@@ -106,10 +105,6 @@ final class SwitchBarHandler: SwitchBarHandling {
 
     var isUsingFadeOutAnimation: Bool {
         featureFlagger.isFeatureOn(.fadeOutOnToggle) && devicePlatform.isIphone
-    }
-
-    var isUsingSmallerBottomInput: Bool {
-        isUsingFadeOutAnimation && featureFlagger.isFeatureOn(.fadeOutOnToggleSmallerBottomInput)
     }
 
     var isVoiceSearchEnabled: Bool {

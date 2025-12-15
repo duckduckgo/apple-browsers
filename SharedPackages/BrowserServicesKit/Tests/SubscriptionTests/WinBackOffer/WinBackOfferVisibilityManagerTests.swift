@@ -438,7 +438,8 @@ final class WinBackOfferVisibilityManagerTests: XCTestCase {
             expiresOrRenewsAt: expiryDate,
             platform: .apple,
             status: status,
-            activeOffers: []
+            activeOffers: [],
+            tier: nil
         )
     }
 }

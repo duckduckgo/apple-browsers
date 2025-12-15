@@ -48,7 +48,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     var subscriptionPlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
 
     let stripePurchaseFlow: StripePurchaseFlow
-    let subscriptionErrorReporter = DefaultSubscriptionErrorReporter()
+    let subscriptionErrorReporter = DefaultSubscriptionEventReporter()
     let subscriptionSuccessPixelHandler: SubscriptionAttributionPixelHandling
     let uiHandler: SubscriptionUIHandling
 
@@ -330,7 +330,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             case .failure(let error):
                 await showSomethingWentWrongAlert()
                 switch error {
-                case .noProductsFound:
+                case .noProductsFound, .tieredProductsApiCallFailed, .tieredProductsEmptyProductsFromAPI, .tieredProductsEmptyAfterFiltering, .tieredProductsTierCreationFailed:
                     subscriptionErrorReporter.report(subscriptionActivationError: .failedToGetSubscriptionOptions)
                 case .accountCreationFailed(let creationError):
                     subscriptionErrorReporter.report(subscriptionActivationError: .accountCreationFailed(creationError))

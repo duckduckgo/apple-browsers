@@ -22,7 +22,7 @@ import NewTabPage
 final class CapturingNewTabPageCustomBackgroundProvider: NewTabPageCustomBackgroundProviding {
     var customizerOpener: NewTabPageCustomizerOpener = NewTabPageCustomizerOpener()
 
-    var customizerData: NewTabPageDataModel.CustomizerData = .init(background: .default, theme: .none, userColor: nil, userImages: [], defaultStyles: nil)
+    var customizerData: NewTabPageDataModel.CustomizerData = .init(background: .default, theme: .none, themeVariant: .default, userColor: nil, userImages: [])
 
     @Published
     var background: NewTabPageDataModel.Background = .default
@@ -34,8 +34,13 @@ final class CapturingNewTabPageCustomBackgroundProvider: NewTabPageCustomBackgro
     @Published
     var theme: NewTabPageDataModel.Theme?
 
-    var themePublisher: AnyPublisher<NewTabPageDataModel.Theme?, Never> {
-        $theme.dropFirst().removeDuplicates().eraseToAnyPublisher()
+    @Published
+    var themeVariant: NewTabPage.NewTabPageDataModel.ThemeVariant?
+
+    var themeStylePublisher: AnyPublisher<(NewTabPage.NewTabPageDataModel.Theme?, NewTabPage.NewTabPageDataModel.ThemeVariant?), Never> {
+        $theme
+            .combineLatest($themeVariant)
+            .eraseToAnyPublisher()
     }
 
     @Published

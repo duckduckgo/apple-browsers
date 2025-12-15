@@ -169,7 +169,6 @@ final class FireConfirmationViewModelTests: XCTestCase {
     }
     
     // MARK: - clearDataSubtitle Tests
-
     func testWhenHistoryIsDisabledThenClearDataSubtitleReturnsStaticText() {
         // Given
         let historyManager = MockHistoryManager(

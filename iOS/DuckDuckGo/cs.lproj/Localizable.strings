@@ -4,6 +4,9 @@
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
 
+/* No comment provided by engineer. */
+"Account" = "account";
+
 /* Buton label for Edit action */
 "action.generic.edit" = "Upravit";
 
@@ -35,7 +38,7 @@
 "action.title.aiChat.history" = "Chaty Duck.ai";
 
 /* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "Nový AI Chat";
+"action.title.aiChat.new" = "Nový chat";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Nastavení Duck.ai";
@@ -904,6 +907,12 @@
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Aktualizovat uživatelské jméno?";
 
+/* No comment provided by engineer. */
+"Available Products" = "Dostupné produkty";
+
+/* View plans button text during Black Friday campaign */
+"black-friday.campaign.view.plans.cta" = "Ušetři za první rok %d%%";
+
 /* Add bookmark screen title */
 "bookmark.addBookmark.title" = "Přidat záložku";
 
@@ -1026,6 +1035,9 @@
 
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Zrušení není povoleno víc než jednou";
+
+/* No comment provided by engineer. */
+"Checking for existing account..." = "Kontrola existujícího účtu...";
 
 /* Close All Tabs */
 "close.all.tabs" = "Zavřít všechny karty";
@@ -1152,6 +1164,9 @@
 
 /* No comment provided by engineer. */
 "Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+
+/* No comment provided by engineer. */
+"Current Subscriptions" = "Aktuální předplatná";
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "VLASTNÍ OBSAH BUŇKY";
@@ -1676,6 +1691,9 @@
 "error.unknown.try.again" = "Vyskytla se neznámá chyba";
 
 /* No comment provided by engineer. */
+"External ID: %@" = "Externí ID: %@";
+
+/* No comment provided by engineer. */
 "favorite" = "Oblíbené";
 
 /* No comment provided by engineer. */
@@ -1912,6 +1930,9 @@
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "VYBER KATEGORII";
 
+/* Category for issues with accessing Plus or Pro tier features */
+"feedback.ppro.category.unable-to-access-features" = "Nemám přístup k funkcím úrovně Plus nebo Pro";
+
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Vaše anonymní zpětná vazba je pro nás důležitá.";
 
@@ -2082,6 +2103,9 @@
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Naposledy zpracováno: %@";
+
+/* No comment provided by engineer. */
+"Loading available products..." = "Načítání dostupných produktů...";
 
 /* No comment provided by engineer. */
 "Loading brokers..." = "Načítání zprostředkovatelů…";
@@ -2429,6 +2453,12 @@
 "new.address.bar.picker.title" = "Možnost adresního řádku";
 
 /* No comment provided by engineer. */
+"No active subscriptions" = "Žádná aktivní předplatná";
+
+/* No comment provided by engineer. */
+"No existing subscription found" = "Žádná existující předplatná nebyla nalezena";
+
+/* No comment provided by engineer. */
 "No Logs" = "Žádné záznamy";
 
 /* No comment provided by engineer. */
@@ -2436,6 +2466,9 @@
 
 /* No comment provided by engineer. */
 "No results found" = "Nebyly nalezeny žádné výsledky";
+
+/* No comment provided by engineer. */
+"No subscriptions available" = "Žádná předplatná nejsou k dispozici";
 
 /* No comment provided by engineer. */
 "OK" = "DOBŘE";
@@ -2448,6 +2481,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser  hides a cookie popup */
 "omnibar.notification.popup-hidden" = "Skryté vyskakovací okno";
+
+/* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
+"omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Mám to";
@@ -2911,6 +2947,12 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Nastavení vyhledávání s funkcí Assist";
 
+/* Settings screen cell subtitle for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.subtitle" = "Zobrazovat nové chaty Duck.ai jako karty v prohlížeči";
+
+/* Settings screen cell title for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.title" = "Režim karet Duck.ai";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Skrýt obrázky vygenerované umělou inteligencí";
 
@@ -2925,9 +2967,6 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Pozice adresního řádku";
-
-/* Settings screen cell text for experimental menu */
-"settings.appearance.experimental.menu" = "Experimentální nabídka prohlížeče";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Otevřít odkazy v přidružených aplikacích";
@@ -3055,8 +3094,11 @@
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Importovat hesla";
 
-/* Copy for budge on settings item to show an item is new */
+/* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Nová";
+
+/* Copy for badge on settings item to show an item is experimental */
+"settings.item.badge.preview" = "Náhled";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klávesnice";
@@ -3327,6 +3369,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Které webové stránky jsou poškozené?";
+
+/* No comment provided by engineer. */
+"Status" = "Stav";
 
 /* No comment provided by engineer. */
 "Status: Invalidated" = "Stav: Neplatné";
@@ -3981,6 +4026,12 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Zpráva od %@:";
+
+/* No comment provided by engineer. */
+"Will attach to EXISTING account" = "Připojí se ke STÁVAJÍCÍMU účtu";
+
+/* No comment provided by engineer. */
+"Will create NEW account" = "Vytvoří NOVÝ účet";
 
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "UŠETŘI 25 %";

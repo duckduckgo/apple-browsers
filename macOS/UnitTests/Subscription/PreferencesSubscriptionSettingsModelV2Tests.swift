@@ -36,6 +36,7 @@ final class PreferencesSubscriptionSettingsModelV2Tests: XCTestCase {
     var userEvents: [PreferencesSubscriptionSettingsModelV2.UserEvent] = []
     var subscriptionStateSubject: PassthroughSubject<PreferencesSidebarSubscriptionState, Never>!
     var cancellables: Set<AnyCancellable> = []
+    var isProTierPurchaseEnabled: Bool = false
 
     override func setUp() {
         super.setUp()
@@ -46,8 +47,14 @@ final class PreferencesSubscriptionSettingsModelV2Tests: XCTestCase {
         mockBlackFridayCampaignProvider = MockBlackFridayCampaignProvider()
         userEvents = []
         subscriptionStateSubject = PassthroughSubject<PreferencesSidebarSubscriptionState, Never>()
+        isProTierPurchaseEnabled = false
 
-        sut = PreferencesSubscriptionSettingsModelV2(
+        sut = makeSUT()
+    }
+
+    private func makeSUT(subscription: DuckDuckGoSubscription? = nil) -> PreferencesSubscriptionSettingsModelV2 {
+        mockSubscriptionManager.resultSubscription = subscription
+        return PreferencesSubscriptionSettingsModelV2(
             userEventHandler: { [weak self] event in
                 self?.userEvents.append(event)
             },
@@ -55,7 +62,8 @@ final class PreferencesSubscriptionSettingsModelV2Tests: XCTestCase {
             subscriptionStateUpdate: subscriptionStateSubject.eraseToAnyPublisher(),
             keyValueStore: mockKeyValueStore,
             winBackOfferVisibilityManager: mockWinBackOfferManager,
-            blackFridayCampaignProvider: mockBlackFridayCampaignProvider
+            blackFridayCampaignProvider: mockBlackFridayCampaignProvider,
+            isProTierPurchaseEnabled: { [weak self] in self?.isProTierPurchaseEnabled ?? false }
         )
     }
 
@@ -134,5 +142,78 @@ final class PreferencesSubscriptionSettingsModelV2Tests: XCTestCase {
 
         // Then
         XCTAssertEqual(buttonTitle, UserText.winBackCampaignLoggedInPreferencesCTA)
+    }
+
+    // MARK: - Tier Badge Display Tests
+
+    func testTierBadgeToDisplay_WhenNoTier_ReturnsNil() {
+        // Given
+        sut = makeSUT(subscription: SubscriptionMockFactory.subscription(status: .autoRenewable, tier: nil))
+
+        // Wait for async subscription update
+        let expectation = expectation(description: "Subscription status updated")
+        sut.$subscriptionStatus
+            .dropFirst()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        wait(for: [expectation], timeout: 1.0)
+
+        // Then
+        XCTAssertNil(sut.tierBadgeToDisplay)
+    }
+
+    func testTierBadgeToDisplay_WhenProTier_AlwaysReturnsPro() {
+        // Given - Pro tier with feature flag OFF
+        isProTierPurchaseEnabled = false
+        sut = makeSUT(subscription: SubscriptionMockFactory.subscription(status: .autoRenewable, tier: .pro))
+
+        // Wait for async subscription update
+        let expectation = expectation(description: "Subscription status updated")
+        sut.$subscriptionStatus
+            .dropFirst()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        wait(for: [expectation], timeout: 1.0)
+
+        // Then
+        XCTAssertEqual(sut.tierBadgeToDisplay, .pro)
+    }
+
+    func testTierBadgeToDisplay_WhenPlusTierAndFeatureFlagEnabled_ReturnsPlus() {
+        // Given - Plus tier with feature flag ON
+        isProTierPurchaseEnabled = true
+        sut = makeSUT(subscription: SubscriptionMockFactory.subscription(status: .autoRenewable, tier: .plus))
+
+        // Wait for async subscription update
+        let expectation = expectation(description: "Subscription status updated")
+        sut.$subscriptionStatus
+            .dropFirst()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        wait(for: [expectation], timeout: 1.0)
+
+        // Then
+        XCTAssertEqual(sut.tierBadgeToDisplay, .plus)
+    }
+
+    func testTierBadgeToDisplay_WhenPlusTierAndFeatureFlagDisabled_ReturnsNil() {
+        // Given - Plus tier with feature flag OFF
+        isProTierPurchaseEnabled = false
+        sut = makeSUT(subscription: SubscriptionMockFactory.subscription(status: .autoRenewable, tier: .plus))
+
+        // Wait for async subscription update
+        let expectation = expectation(description: "Subscription status updated")
+        sut.$subscriptionStatus
+            .dropFirst()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        wait(for: [expectation], timeout: 1.0)
+
+        // Then
+        XCTAssertNil(sut.tierBadgeToDisplay)
     }
 }

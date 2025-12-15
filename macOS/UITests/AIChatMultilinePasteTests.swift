@@ -163,6 +163,42 @@ class AIChatMultilinePasteTests: UITestCase {
         )
     }
 
+    /// Tests that pressing SHIFT + ENTER in the address bar toggles to Duck.ai mode when the aiChatOmnibarToggle feature flag is ON
+    func test_shiftEnter_withToggleSettingON_togglesToDuckAIMode() throws {
+        // Navigate to AI Chat settings and enable the Search/Duck.ai toggle
+        addressBarTextField.typeURL(URL(string: "duck://settings/aichat")!)
+
+        let toggleSetting = app.checkBoxes[AccessibilityIdentifiers.showSearchAndDuckAIToggle]
+        XCTAssertTrue(toggleSetting.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Search/Duck.ai toggle setting should exist")
+
+        // Ensure the toggle is ON
+        if toggleSetting.value as? Bool == false {
+            toggleSetting.click()
+        }
+        XCTAssertEqual(toggleSetting.value as? Bool, true, "Search/Duck.ai toggle should be ON")
+
+        // Close settings and go to a new tab
+        app.typeKey("w", modifierFlags: .command)
+        app.openNewTab()
+
+        // Focus the address bar using keyboard shortcut to ensure it's in editing mode
+        app.activateAddressBar()
+        XCTAssertTrue(addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence))
+
+        // Type some text in the address bar
+        addressBarTextField.typeText("test query")
+
+        // Press SHIFT + ENTER to toggle to Duck.ai mode
+        app.typeKey(.return, modifierFlags: [.shift])
+
+        // Verify the Duck.ai panel appeared by checking for the container view
+        let aiChatContainerView = app.windows.firstMatch.descendants(matching: .any)[AccessibilityIdentifiers.aiChatOmnibarContainerView]
+        XCTAssertTrue(
+            aiChatContainerView.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Duck.ai container view should appear after pressing SHIFT + ENTER with toggle setting ON"
+        )
+    }
+
     // MARK: - Helper Methods
 
     private func copyTextToClipboard(_ text: String) {

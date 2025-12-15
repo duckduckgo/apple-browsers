@@ -21,5 +21,5 @@ import Foundation
 import os.log
 
 public extension Logger {
-    static let daxEasterEgg = { Logger(subsystem: "DaxEasterEgg", category: "") }()
+    static let daxEasterEgg = Logger(subsystem: "DaxEasterEgg", category: "")
 }

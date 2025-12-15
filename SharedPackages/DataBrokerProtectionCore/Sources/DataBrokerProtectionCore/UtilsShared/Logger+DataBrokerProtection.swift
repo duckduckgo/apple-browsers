@@ -22,24 +22,12 @@ import os.log
 public extension Logger {
     static let dbpSubsystem = "PIR"
 
-    static var dataBrokerProtection = {
-        Logger(subsystem: dbpSubsystem, category: DataBrokerProtectionLoggerCategory.dataBrokerProtection.rawValue)
-    }()
-    static var action = {
-        Logger(subsystem: dbpSubsystem, category: DataBrokerProtectionLoggerCategory.action.rawValue)
-    }()
-    static var service = {
-        Logger(subsystem: dbpSubsystem, category: DataBrokerProtectionLoggerCategory.service.rawValue)
-    }()
-    static var backgroundAgent = {
-        Logger(subsystem: dbpSubsystem, category: DataBrokerProtectionLoggerCategory.backgroundAgent.rawValue)
-    }()
-    static var backgroundAgentMemoryManagement = {
-        Logger(subsystem: dbpSubsystem, category: DataBrokerProtectionLoggerCategory.backgroundAgentMemoryManagement.rawValue)
-    }()
-    static var pixel = {
-        Logger(subsystem: dbpSubsystem, category: DataBrokerProtectionLoggerCategory.pixel.rawValue)
-    }()
+    static let dataBrokerProtection = Logger(subsystem: dbpSubsystem, category: DataBrokerProtectionLoggerCategory.dataBrokerProtection.rawValue)
+    static let action = Logger(subsystem: dbpSubsystem, category: DataBrokerProtectionLoggerCategory.action.rawValue)
+    static let service = Logger(subsystem: dbpSubsystem, category: DataBrokerProtectionLoggerCategory.service.rawValue)
+    static let backgroundAgent = Logger(subsystem: dbpSubsystem, category: DataBrokerProtectionLoggerCategory.backgroundAgent.rawValue)
+    static let backgroundAgentMemoryManagement = Logger(subsystem: dbpSubsystem, category: DataBrokerProtectionLoggerCategory.backgroundAgentMemoryManagement.rawValue)
+    static let pixel = Logger(subsystem: dbpSubsystem, category: DataBrokerProtectionLoggerCategory.pixel.rawValue)
 
     func log(_ context: PIRActionLogContext, message: String? = nil) {
         self.log("\(context.formattedContext, privacy: .public) \(message ?? "", privacy: .public)")

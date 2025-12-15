@@ -1846,6 +1846,7 @@ final class AddressBarButtonsViewController: NSViewController {
         let viewModel = PermissionCenterViewModel(
             domain: domain,
             usedPermissions: tabViewModel.usedPermissions,
+            usedPermissionsPublisher: tabViewModel.$usedPermissions.eraseToAnyPublisher(),
             popupQueries: popupQueries,
             permissionManager: permissionManager,
             featureFlagger: featureFlagger,

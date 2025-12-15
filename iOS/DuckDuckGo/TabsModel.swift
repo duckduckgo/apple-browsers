@@ -20,7 +20,11 @@
 import Foundation
 import Core
 
-public class TabsModel: NSObject, NSCoding {
+protocol TabsModeling {
+    var count: Int { get }
+}
+
+public class TabsModel: NSObject, NSCoding, TabsModeling {
 
     private struct NSCodingKeys {
         static let legacyIndex = "currentIndex"

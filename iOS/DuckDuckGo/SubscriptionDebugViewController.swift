@@ -31,6 +31,7 @@ final class SubscriptionDebugViewController: UITableViewController {
 
     private let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
     private lazy var subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
+    private let reporter: SubscriptionDataReporting
 
     private var subscriptionManagerV1: SubscriptionManager {
         AppDependencyProvider.shared.subscriptionManager!
@@ -46,8 +47,14 @@ final class SubscriptionDebugViewController: UITableViewController {
         AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.currentEnvironment
     }
 
-    // swiftlint:disable:next force_cast
-    private let reporter = (UIApplication.shared.delegate as! AppDelegate).debugSubscriptionDataReporter as! SubscriptionDataReporter
+    init?(coder: NSCoder, subscriptionDataReporter: SubscriptionDataReporting) {
+        self.reporter = subscriptionDataReporter
+        super.init(coder: coder)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("Use init(coder:subscriptionDataReporter:) instead")
+    }
 
     private let titles = [
         Sections.authorization: "Authentication",
@@ -464,6 +471,10 @@ final class SubscriptionDebugViewController: UITableViewController {
         dateFormatter.dateStyle = .short
         dateFormatter.timeStyle = .none
         let reportedParameters = reporter.randomizedParameters(for: .debug).map { "\($0.key)=\($0.value)" }
+        
+        // Cast to concrete type to access debug properties
+        guard let reporter = reporter as? SubscriptionDataReporter else { return }
+        
         let message = """
                 isReinstall=\(reporter.isReinstall().toString) (variant=\(reporter._variantName ?? "unknown"))
                 fireButtonUsed=\(reporter.isFireButtonUser().toString) (count=\(reporter._fireCount))

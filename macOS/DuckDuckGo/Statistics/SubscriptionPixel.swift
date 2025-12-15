@@ -73,6 +73,11 @@ enum SubscriptionPixel: PixelKitEvent {
     case subscriptionOfferYearlyPriceClick
     case subscriptionAddEmailSuccess
     case subscriptionWelcomeFAQClick
+    // Tier Options
+    case subscriptionTierOptionsRequested
+    case subscriptionTierOptionsSuccess
+    case subscriptionTierOptionsFailure(error: Error)
+    case subscriptionTierOptionsUnexpectedProTier
     // Auth v2
     case subscriptionInvalidRefreshTokenDetected(SubscriptionPixelHandler.Source)
     case subscriptionInvalidRefreshTokenSignedOut
@@ -106,6 +111,10 @@ enum SubscriptionPixel: PixelKitEvent {
     case subscriptionWinBackOfferNewTabPageShown
     case subscriptionWinBackOfferNewTabPageCTAClicked
     case subscriptionWinBackOfferNewTabPageDismissed
+
+    // New Tab Page Next Steps Card
+    case subscriptionNewTabPageNextStepsCardClicked
+    case subscriptionNewTabPageNextStepsCardDismissed
 
     var name: String {
         switch self {
@@ -152,6 +161,11 @@ enum SubscriptionPixel: PixelKitEvent {
         case .subscriptionOfferYearlyPriceClick: return "m_mac_\(appDistribution)_privacy-pro_offer_yearly-price_click"
         case .subscriptionAddEmailSuccess: return "m_mac_\(appDistribution)_privacy-pro_app_add-email_success_u"
         case .subscriptionWelcomeFAQClick: return "m_mac_\(appDistribution)_privacy-pro_welcome_faq_click_u"
+            // Tier Options
+        case .subscriptionTierOptionsRequested: return "m_mac_\(appDistribution)_subscription_tier-options_requested"
+        case .subscriptionTierOptionsSuccess: return "m_mac_\(appDistribution)_subscription_tier-options_success"
+        case .subscriptionTierOptionsFailure: return "m_mac_\(appDistribution)_subscription_tier-options_failure"
+        case .subscriptionTierOptionsUnexpectedProTier: return "m_mac_\(appDistribution)_subscription_tier-options_unexpected-pro-tier"
             // Auth v2
         case .subscriptionInvalidRefreshTokenDetected: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_detected"
         case .subscriptionInvalidRefreshTokenSignedOut: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_signed_out"
@@ -187,6 +201,10 @@ enum SubscriptionPixel: PixelKitEvent {
         case .subscriptionWinBackOfferNewTabPageCTAClicked: return "m_mac_\(appDistribution)_privacy-pro_winback_new_tab_page_cta_clicked"
 
         case .subscriptionWinBackOfferNewTabPageDismissed: return "m_mac_\(appDistribution)_privacy-pro_winback_new_tab_page_dismissed"
+
+            // New Tab Page Next Steps Card
+        case .subscriptionNewTabPageNextStepsCardClicked: return "m_mac_\(appDistribution)_privacy-pro_new_tab_page_next_steps_card_clicked"
+        case .subscriptionNewTabPageNextStepsCardDismissed: return "m_mac_\(appDistribution)_privacy-pro_new_tab_page_next_steps_card_dismissed"
         }
     }
 
@@ -194,6 +212,7 @@ enum SubscriptionPixel: PixelKitEvent {
         static let errorKey = "error"
         static let policyCacheKey = "policycache"
         static let sourceKey = "source"
+        static let platformKey = "platform"
     }
 
     var parameters: [String: String]? {
@@ -286,7 +305,13 @@ enum SubscriptionPixel: PixelKitEvent {
                 .subscriptionWinBackOfferSettingsPageCTAClicked,
                 .subscriptionWinBackOfferNewTabPageShown,
                 .subscriptionWinBackOfferNewTabPageCTAClicked,
-                .subscriptionWinBackOfferNewTabPageDismissed:
+                .subscriptionWinBackOfferNewTabPageDismissed,
+                .subscriptionNewTabPageNextStepsCardClicked,
+                .subscriptionNewTabPageNextStepsCardDismissed,
+                .subscriptionTierOptionsRequested,
+                .subscriptionTierOptionsSuccess,
+                .subscriptionTierOptionsFailure,
+                .subscriptionTierOptionsUnexpectedProTier:
             return [.pixelSource]
         }
     }

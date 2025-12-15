@@ -762,9 +762,8 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Test Site Performance (DDG vs Safari)", action: #selector(MainViewController.testCurrentSitePerformance))
                     .withAccessibilityIdentifier("MainMenu.testCurrentSitePerformance")
             }
-            NSMenuItem(title: "Content Scopes Experiment") {
-                NSMenuItem(title: "Show Active Experiments", action: #selector(AppDelegate.showContentScopeExperiments))
-            }
+            NSMenuItem(title: "Content Scope Experiments")
+                .submenu(ContentScopeExperimentsMenu())
             NSMenuItem(title: "Reset Data") {
                 NSMenuItem(title: "Reset Default Grammar Checks", action: #selector(AppDelegate.resetDefaultGrammarChecks))
                 NSMenuItem(title: "Reset Autofill Data", action: #selector(AppDelegate.resetSecureVaultData)).withAccessibilityIdentifier("MainMenu.resetSecureVaultData")
@@ -835,6 +834,9 @@ final class MainMenu: NSMenu {
 
             NSMenuItem(title: "Attributed Metrics")
                 .submenu(AttributedMetricDebugMenu())
+
+            NSMenuItem(title: "Reinstall Detection")
+                .submenu(ReinstallUserDetectionDebugMenu())
 
             NSMenuItem(title: "AppStore Updates")
                 .submenu(AppStoreUpdatesDebugMenu())

@@ -29,6 +29,7 @@ import PrivacyStats
 import SharedTestUtilities
 import XCTest
 import RemoteMessagingTestsUtils
+import SubscriptionTestingUtilities
 @testable import DuckDuckGo_Privacy_Browser
 
 final class MockPrivacyStats: PrivacyStatsCollecting {
@@ -66,7 +67,6 @@ final class MockAutoconsentStats: AutoconsentStatsCollecting {
 final class NewTabPageCoordinatorTests: XCTestCase {
     var coordinator: NewTabPageCoordinator!
     var appearancePreferences: AppearancePreferences!
-    var themeManager: ThemeManaging!
     var customizationModel: NewTabPageCustomizationModel!
     var notificationCenter: NotificationCenter!
     var keyValueStore: MockKeyValueFileStore!
@@ -74,11 +74,15 @@ final class NewTabPageCoordinatorTests: XCTestCase {
     var featureFlagger: FeatureFlagger!
     var windowControllersManager: (WindowControllersManagerProtocol & AIChatTabManaging)!
     var tabsPreferences: TabsPreferences!
+    var subscriptionCardVisibilityManager: MockHomePageSubscriptionCardVisibilityManaging!
+    var homePageContinueSetUpModelPersisting: MockHomePageContinueSetUpModelPersisting!
 
     @MainActor
     override func setUp() async throws {
         try await super.setUp()
 
+        subscriptionCardVisibilityManager = MockHomePageSubscriptionCardVisibilityManaging()
+        homePageContinueSetUpModelPersisting = MockHomePageContinueSetUpModelPersisting()
         notificationCenter = NotificationCenter()
         keyValueStore = try MockKeyValueFileStore()
         firePixelCalls.removeAll()
@@ -91,15 +95,12 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             featureFlagger: featureFlagger
         )
 
-        themeManager = MockThemeManager()
-
         customizationModel = NewTabPageCustomizationModel(
             appearancePreferences: appearancePreferences,
             userBackgroundImagesManager: nil,
             sendPixel: { _ in },
             openFilePanel: { nil },
-            showAddImageFailedAlert: {},
-            themeManager: themeManager
+            showAddImageFailedAlert: {}
         )
 
         windowControllersManager = WindowControllersManagerMock()
@@ -168,7 +169,9 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             tabsPreferences: tabsPreferences,
             newTabPageAIChatShortcutSettingProvider: MockNewTabPageAIChatShortcutSettingProvider(),
             winBackOfferPromotionViewCoordinator: WinBackOfferPromotionViewCoordinator(winBackOfferVisibilityManager: MockWinBackOfferVisibilityManager()),
+            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
             protectionsReportModel: protectionsReportModel,
+            homePageContinueSetUpModelPersistor: homePageContinueSetUpModelPersisting,
             fireDailyPixel: { self.firePixelCalls.append($0) }
         )
     }
@@ -182,8 +185,9 @@ final class NewTabPageCoordinatorTests: XCTestCase {
         keyValueStore = nil
         notificationCenter = nil
         tabsPreferences = nil
-        themeManager = nil
         windowControllersManager = nil
+        subscriptionCardVisibilityManager = nil
+        homePageContinueSetUpModelPersisting = nil
     }
 
     func testWhenNewTabPageAppearsThenPixelIsSent() {

@@ -132,7 +132,7 @@ class TabViewController: UIViewController {
     let progressWorker = WebProgressWorker()
 
     private(set) var webView: WKWebView!
-    private lazy var appRatingPrompt: AppRatingPrompt = AppRatingPrompt()
+    private lazy var appRatingPrompt: AppRatingPrompt = AppRatingPrompt(featureFlagger: self.featureFlagger)
     public weak var privacyDashboard: PrivacyDashboardViewController?
     
     private var storageCache: StorageCache = AppDependencyProvider.shared.storageCache
@@ -239,7 +239,8 @@ class TabViewController: UIViewController {
     let bookmarksDatabase: CoreDataDatabase
     lazy var faviconUpdater = FireproofFaviconUpdater(bookmarksDatabase: bookmarksDatabase,
                                                       tab: tabModel,
-                                                      favicons: Favicons.shared)
+                                                      favicons: Favicons.shared,
+                                                      sharedSecureVault: sharedSecureVault)
 
     private let refreshControl = UIRefreshControl()
 
@@ -347,8 +348,6 @@ class TabViewController: UIViewController {
         switch event {
         case .ampBlockingRulesCompilationFailed:
             domainEvent = .ampBlockingRulesCompilationFailed
-        case .ampKeywordDetectionPerformance:
-            domainEvent = .ampKeywordDetectionPerformance
         }
         Pixel.fire(pixel: domainEvent,
                    withAdditionalParameters: params ?? [:],
@@ -358,8 +357,8 @@ class TabViewController: UIViewController {
     private lazy var linkProtection: LinkProtection = {
         LinkProtection(privacyManager: privacyConfigurationManager,
                        contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
-                       errorReporting: Self.debugEvents)
-
+                       errorReporting: Self.debugEvents,
+                       useBackgroundTaskProtection: featureFlagger.isFeatureOn(.ampBackgroundTaskSupport))
     }()
     
     private lazy var referrerTrimming: ReferrerTrimming = {
@@ -411,7 +410,8 @@ class TabViewController: UIViewController {
                                    keyValueStore: ThrowingKeyValueStoring,
                                    daxDialogsManager: DaxDialogsManaging,
                                    aiChatSettings: AIChatSettingsProvider,
-                                   productSurfaceTelemetry: ProductSurfaceTelemetry) -> TabViewController {
+                                   productSurfaceTelemetry: ProductSurfaceTelemetry,
+                                   sharedSecureVault: (any AutofillSecureVault)? = nil) -> TabViewController {
 
         let storyboard = UIStoryboard(name: "Tab", bundle: nil)
         let controller = storyboard.instantiateViewController(identifier: "TabViewController", creator: { coder in
@@ -439,7 +439,8 @@ class TabViewController: UIViewController {
                               keyValueStore: keyValueStore,
                               daxDialogsManager: daxDialogsManager,
                               aiChatSettings: aiChatSettings,
-                              productSurfaceTelemetry: productSurfaceTelemetry
+                              productSurfaceTelemetry: productSurfaceTelemetry,
+                              sharedSecureVault: sharedSecureVault
             )
         })
         return controller
@@ -488,8 +489,10 @@ class TabViewController: UIViewController {
     let daxDialogsManager: DaxDialogsManaging
     let aiChatSettings: AIChatSettingsProvider
     let aiChatFullModeFeature: AIChatFullModeFeatureProviding
+    let sharedSecureVault: (any AutofillSecureVault)?
     
     private(set) var aiChatContentHandler: AIChatContentHandling
+    let subscriptionAIChatStateHandler: SubscriptionAIChatStateHandling
 
     required init?(coder aDecoder: NSCoder,
                    tabModel: Tab,
@@ -519,7 +522,8 @@ class TabViewController: UIViewController {
                    adClickExternalOpenDetector: AdClickExternalOpenDetector = AdClickExternalOpenDetector(),
                    aiChatSettings: AIChatSettingsProvider,
                    productSurfaceTelemetry: ProductSurfaceTelemetry,
-                   aiChatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature()) {
+                   aiChatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
+                   sharedSecureVault: (any AutofillSecureVault)? = nil) {
 
         self.tabModel = tabModel
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -546,6 +550,7 @@ class TabViewController: UIViewController {
         self.keyValueStore = keyValueStore
         self.adClickExternalOpenDetector = adClickExternalOpenDetector
         self.daxDialogsManager = daxDialogsManager
+        self.sharedSecureVault = sharedSecureVault
         self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {
             return AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.isSubscriptionPurchaseEligible
         }
@@ -553,11 +558,17 @@ class TabViewController: UIViewController {
         self.aiChatSettings = aiChatSettings
         self.aiChatFullModeFeature = aiChatFullModeFeature
         self.aiChatContentHandler = AIChatContentHandler(aiChatSettings: aiChatSettings, featureDiscovery: featureDiscovery)
+        self.subscriptionAIChatStateHandler = SubscriptionAIChatStateHandler()
 
         self.productSurfaceTelemetry = productSurfaceTelemetry
 
         super.init(coder: aDecoder)
-        
+
+        // Reload AI Chat when subscription state changes
+        subscriptionAIChatStateHandler.onSubscriptionStateChanged = { [weak self] in
+            self?.reloadAIChatIfNeeded()
+        }
+
         // Assign itself as tabNavigationHandler for DuckPlayer
         duckPlayerNavigationHandler.tabNavigationHandler = self
 
@@ -1582,7 +1593,7 @@ extension TabViewController: WKNavigationDelegate {
                        withAdditionalParameters: [PixelParameters.canAutoPreviewMIMEType: "1"])
             return policy
         } else if shouldTriggerDownloadAction(for: navigationResponse),
-                  let downloadMetadata = AppDependencyProvider.shared.downloadManager.downloadMetaData(for: navigationResponse.response) {
+                  let downloadMetadata = try? AppDependencyProvider.shared.downloadManager.downloadMetaData(for: navigationResponse.response) {
             // 3a. We know it is a download, but allow WebKit handle the "data" scheme natively
             if urlNavigationalScheme == .data {
                 return .download
@@ -2460,9 +2471,24 @@ extension TabViewController {
 
         if case .blob = SchemeHandler.schemeType(for: url) {
             return (.download, nil)
-        } else if let download = downloadManager.makeDownload(navigationResponse: navigationResponse, cookieStore: cookieStore) {
-            downloadManager.startDownload(download)
-            return (.cancel, download)
+        } else {
+            do {
+                if let download = try downloadManager.makeDownload(navigationResponse: navigationResponse, cookieStore: cookieStore) {
+                    downloadManager.startDownload(download)
+                    return (.cancel, download)
+                }
+            } catch let error as DownloadError {
+                Logger.general.error("Failed to create download: \(error.localizedDescription, privacy: .public)")
+                DispatchQueue.main.async {
+                    let addressBarBottom = self.appSettings.currentAddressBarPosition.isBottom
+                    ActionMessageView.present(message: UserText.messageDownloadFailed,
+                                              presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom))
+                }
+            } catch {
+                assertionFailure("Expected DownloadError")
+                Logger.general.error("Failed to create download: Unkown Error)")
+            }
+            
         }
 
         return (.cancel, nil)
@@ -2477,19 +2503,20 @@ extension TabViewController {
      */
     private func setupOrClearTemporaryDownload(for response: URLResponse) -> WKNavigationResponsePolicy? {
         let downloadManager = AppDependencyProvider.shared.downloadManager
+        let cookieStore = webView.configuration.websiteDataStore.httpCookieStore
         guard response.url != nil,
-              let downloadMetaData = downloadManager.downloadMetaData(for: response),
-              !downloadMetaData.mimeType.isHTML
+              let downloadMetaData = try? downloadManager.downloadMetaData(for: response),
+              !downloadMetaData.mimeType.isHTML,
+              let download = try? downloadManager.makeDownload(response: response,
+                                                               cookieStore: cookieStore,
+                                                               temporary: true)
         else {
             temporaryDownloadForPreviewedFile?.cancel()
             temporaryDownloadForPreviewedFile = nil
             return nil
         }
 
-        let cookieStore = webView.configuration.websiteDataStore.httpCookieStore
-        temporaryDownloadForPreviewedFile = downloadManager.makeDownload(response: response,
-                                                                         cookieStore: cookieStore,
-                                                                         temporary: true)
+        temporaryDownloadForPreviewedFile = download
         return .allow
     }
 
@@ -2502,10 +2529,13 @@ extension TabViewController {
             withExtendedLifetime(delegate) {
                 let downloadManager = AppDependencyProvider.shared.downloadManager
                 guard let self = self,
-                      let downloadMetadata = downloadManager.downloadMetaData(for: navigationResponse.response,
-                                                                              suggestedFilename: suggestedFilename)
+                      let downloadMetadata = try? downloadManager.downloadMetaData(for: navigationResponse.response,
+                                                                                   suggestedFilename: suggestedFilename)
                 else {
                     callback(nil)
+                    delegate.decideDestinationCallback = nil
+                    delegate.downloadDidFailCallback = nil
+                    self?.blobDownloadTargetFrame = nil
                     return
                 }
 
@@ -2559,11 +2589,26 @@ extension TabViewController {
                           isTemporary: Bool) -> URL? {
 
         let downloadSession = WKDownloadSession(download)
-        let download = downloadManager.makeDownload(response: response,
+        let download: Download?
+        do {
+            download = try downloadManager.makeDownload(response: response,
                                                     suggestedFilename: suggestedFilename,
                                                     downloadSession: downloadSession,
                                                     cookieStore: nil,
                                                     temporary: isTemporary)
+        } catch let error as DownloadError {
+            Logger.general.error("Failed to transfer download: \(error.description, privacy: .public)")
+            DispatchQueue.main.async {
+                let addressBarBottom = self.appSettings.currentAddressBarPosition.isBottom
+                ActionMessageView.present(message: UserText.messageDownloadFailed,
+                                          presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom))
+            }
+            return nil
+        } catch {
+            assertionFailure("Expected DownloadError")
+            Logger.general.error("Failed to transfer download: Unkown Error)")
+            return nil
+        }
 
         self.temporaryDownloadForPreviewedFile = isTemporary ? download : nil
         self.mostRecentAutoPreviewDownloadID = isTemporary ? download?.id : nil

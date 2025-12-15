@@ -32,7 +32,7 @@ final class PopupHandlingTabExtension {
     private let tabsPreferences: TabsPreferences
     private let burnerMode: BurnerMode
     private let permissionModel: PermissionModel
-    private let createChildTab: (WKWebViewConfiguration, WKNavigationAction, NewWindowPolicy) -> Tab?
+    private let createChildTab: (WKWebViewConfiguration?, SecurityOrigin?, NewWindowPolicy) -> Tab?
     private let presentTab: (Tab, NewWindowPolicy) -> Void
     private let newWindowPolicyDecisionMakers: () -> [NewWindowPolicyDecisionMaking]?
     private let featureFlagger: FeatureFlagger
@@ -43,6 +43,7 @@ final class PopupHandlingTabExtension {
     // Navigation hotkey handler properties
     private let isTabPinned: () -> Bool
     private let isBurner: Bool
+    private let isInPopUpWindow: () -> Bool
     private var onNewWindow: ((WKNavigationAction) -> NewWindowPolicyDecision?)?
 
     private var cancellables = Set<AnyCancellable>()
@@ -72,7 +73,7 @@ final class PopupHandlingTabExtension {
     init(tabsPreferences: TabsPreferences,
          burnerMode: BurnerMode,
          permissionModel: PermissionModel,
-         createChildTab: @escaping (WKWebViewConfiguration, WKNavigationAction, NewWindowPolicy) -> Tab?,
+         createChildTab: @escaping (WKWebViewConfiguration?, SecurityOrigin?, NewWindowPolicy) -> Tab?,
          presentTab: @escaping (Tab, NewWindowPolicy) -> Void,
          newWindowPolicyDecisionMakers: @escaping () -> [NewWindowPolicyDecisionMaking]?,
          featureFlagger: FeatureFlagger,
@@ -81,7 +82,8 @@ final class PopupHandlingTabExtension {
          machAbsTimeProvider: @escaping () -> TimeInterval = CACurrentMediaTime,
          interactionEventsPublisher: some Publisher<WebViewInteractionEvent, Never>,
          isTabPinned: @escaping () -> Bool,
-         isBurner: Bool) {
+         isBurner: Bool,
+         isInPopUpWindow: @escaping () -> Bool) {
         self.tabsPreferences = tabsPreferences
         self.burnerMode = burnerMode
         self.permissionModel = permissionModel
@@ -94,6 +96,7 @@ final class PopupHandlingTabExtension {
         self.machAbsTimeProvider = machAbsTimeProvider
         self.isTabPinned = isTabPinned
         self.isBurner = isBurner
+        self.isInPopUpWindow = isInPopUpWindow
 
         interactionEventsPublisher
             .filter { event in
@@ -261,8 +264,11 @@ final class PopupHandlingTabExtension {
                                     isUserInitiated: Bool) -> WKWebView? {
         // disable opening 'javascript:' links in new tab
         guard navigationAction.request.url?.navigationalScheme != .javascript else { return nil }
+        // disable opening internal pages in pop-up windows
+        guard TabContent.contentFromURL(navigationAction.request.url, source: .link).isExternalUrl || !kind.isPopup else { return nil }
 
-        guard let childTab = createChildTab(configuration, navigationAction, kind) else { return nil }
+        let securityOrigin = navigationAction.safeSourceFrame.map { SecurityOrigin($0.securityOrigin) }
+        guard let childTab = createChildTab(configuration, securityOrigin, kind) else { return nil }
 
         presentTab(childTab, kind)
 
@@ -411,12 +417,18 @@ extension PopupHandlingTabExtension: NavigationResponder {
 
     /// Redirect Navigation Actions to the new window/tab for user actions with key modifiers (⌘-click, middle mouse button press…)
     func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
+        // Prevent pop-ups opening internal pages (bookmarks, history, settings, etc.)
+        if isInPopUpWindow(),
+           !TabContent.contentFromURL(navigationAction.url, source: .link).isExternalUrl {
+            return .cancel
+        }
+
         // Must be targeting an existing frame (not a new window/tab)
         guard let targetFrame = navigationAction.targetFrame else { return .next }
 
         // Check if the navigation action is a link activation (clicked link, etc.)
         let isLinkActivated = !navigationAction.isTargetingNewWindow
-            && (navigationAction.navigationType.isLinkActivated || (navigationAction.navigationType == .other && navigationAction.isUserInitiated))
+        && (navigationAction.navigationType.isLinkActivated || (navigationAction.navigationType == .other && navigationAction.isUserInitiated))
         // Must be a link activation (clicked link, etc.)
         guard isLinkActivated else { return .next }
 

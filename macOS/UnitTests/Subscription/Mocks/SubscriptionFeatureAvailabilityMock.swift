@@ -26,7 +26,6 @@ public final class SubscriptionFeatureAvailabilityMock: SubscriptionFeatureAvail
     public var isPaidAIChatEnabled: Bool = true
     public var isSubscriptionPurchaseAllowed: Bool
     public var isSupportsAlternateStripePaymentFlowEnabled: Bool = false
-    public var isSubscriptionPurchaseWidePixelMeasurementEnabled: Bool = true
 
     public init(isSubscriptionPurchaseAllowed: Bool, usesUnifiedFeedbackForm: Bool) {
         self.isSubscriptionPurchaseAllowed = isSubscriptionPurchaseAllowed

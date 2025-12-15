@@ -4,6 +4,9 @@
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
 
+/* No comment provided by engineer. */
+"Account" = "account";
+
 /* Buton label for Edit action */
 "action.generic.edit" = "Editar";
 
@@ -35,7 +38,7 @@
 "action.title.aiChat.history" = "Chats Duck.ai";
 
 /* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "Novo AI Chat";
+"action.title.aiChat.new" = "Nova conversa";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Definições do Duck.ai";
@@ -904,6 +907,12 @@
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Atualizar nome de utilizador?";
 
+/* No comment provided by engineer. */
+"Available Products" = "Produtos disponíveis";
+
+/* View plans button text during Black Friday campaign */
+"black-friday.campaign.view.plans.cta" = "Poupa %d%% no primeiro ano";
+
 /* Add bookmark screen title */
 "bookmark.addBookmark.title" = "Adicionar marcador";
 
@@ -1026,6 +1035,9 @@
 
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Não podes cancelar mais do que uma vez";
+
+/* No comment provided by engineer. */
+"Checking for existing account..." = "A verificar a conta existente...";
 
 /* Close All Tabs */
 "close.all.tabs" = "Fechar todos os separadores";
@@ -1151,7 +1163,10 @@
 "crash.report.dialog.title" = "Enviar relatórios de falhas automaticamente?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Contagem atual de recusas: %@";
+"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+
+/* No comment provided by engineer. */
+"Current Subscriptions" = "Subscrições atuais";
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "CONTEÚDO PERSONALIZADO DA CÉLULA";
@@ -1643,7 +1658,7 @@
 "Enrolled: %@" = "Inscritos: %@";
 
 /* No comment provided by engineer. */
-"Entry Pill" = "Pílula de Entrada";
+"Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Iniciar sessão";
@@ -1674,6 +1689,9 @@
 
 /* Generic error message on a dialog for when the cause is not known. */
 "error.unknown.try.again" = "Ocorreu um erro desconhecido";
+
+/* No comment provided by engineer. */
+"External ID: %@" = "ID externo: %@";
 
 /* No comment provided by engineer. */
 "favorite" = "Favorito";
@@ -1912,6 +1930,9 @@
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "SELECIONA UMA CATEGORIA";
 
+/* Category for issues with accessing Plus or Pro tier features */
+"feedback.ppro.category.unable-to-access-features" = "Não é possível aceder às funcionalidades dos níveis Plus ou Pro";
+
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Os seus comentários anônimos são importantes para nós.";
 
@@ -2082,6 +2103,9 @@
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Último processamento: %@";
+
+/* No comment provided by engineer. */
+"Loading available products..." = "A carregar produtos disponíveis…";
 
 /* No comment provided by engineer. */
 "Loading brokers..." = "A carregar mediadores…";
@@ -2429,6 +2453,12 @@
 "new.address.bar.picker.title" = "Opção da barra de endereço";
 
 /* No comment provided by engineer. */
+"No active subscriptions" = "Sem subscrições ativas";
+
+/* No comment provided by engineer. */
+"No existing subscription found" = "Não foi encontra qualquer subscrição existente";
+
+/* No comment provided by engineer. */
 "No Logs" = "Sem registos";
 
 /* No comment provided by engineer. */
@@ -2436,6 +2466,9 @@
 
 /* No comment provided by engineer. */
 "No results found" = "Nenhum resultado encontrado";
+
+/* No comment provided by engineer. */
+"No subscriptions available" = "Não há subscrições disponíveis";
 
 /* No comment provided by engineer. */
 "OK" = "OK";
@@ -2448,6 +2481,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser  hides a cookie popup */
 "omnibar.notification.popup-hidden" = "Pop-up ocultado";
+
+/* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
+"omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Entendi";
@@ -2519,7 +2555,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Definições > Funcionalidades de IA.";
 
 /* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Queres acesso mais fácil ao chat privado com IA?";
+"onboarding.highlights.searchExperience.title" = "Queres acesso fácil ao chat privado com IA?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Vamos lá!";
@@ -2774,7 +2810,7 @@
 "Primary / First Action" = "Ação principal/Primeira ação";
 
 /* No comment provided by engineer. */
-"Priming Modal" = "Modal de Priming";
+"Priming Modal" = "Priming Modal";
 
 /* No comment provided by engineer. */
 "Privacy Protections" = "Proteções de Privacidade";
@@ -2816,7 +2852,7 @@
 "Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
 
 /* No comment provided by engineer. */
-"Reset Priming Modal State" = "Redefinir o Estado Modal de Priming";
+"Reset Priming Modal State" = "Reset Priming Modal State";
 
 /* No comment provided by engineer. */
 "Results" = "Resultados";
@@ -2911,6 +2947,12 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Definições do Assist de pesquisa";
 
+/* Settings screen cell subtitle for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.subtitle" = "Mostrar os novos Duck.ai Chats como separadores no navegador";
+
+/* Settings screen cell title for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.title" = "Modo de separadores Duck.ai";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Ocultar Imagens Geradas por IA";
 
@@ -2925,9 +2967,6 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Posição da barra de endereços";
-
-/* Settings screen cell text for experimental menu */
-"settings.appearance.experimental.menu" = "Menu experimental do navegador";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Abrir links nas aplicações associadas";
@@ -3055,8 +3094,11 @@
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Importar palavras-passe";
 
-/* Copy for budge on settings item to show an item is new */
+/* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Novo";
+
+/* Copy for badge on settings item to show an item is experimental */
+"settings.item.badge.preview" = "Pré-visualização";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Teclado";
@@ -3327,6 +3369,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Que site está com falhas?";
+
+/* No comment provided by engineer. */
+"Status" = "Estado";
 
 /* No comment provided by engineer. */
 "Status: Invalidated" = "Estado: Inválido";
@@ -3981,6 +4026,12 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Uma mensagem de %@:";
+
+/* No comment provided by engineer. */
+"Will attach to EXISTING account" = "Será anexado à conta EXISTENTE";
+
+/* No comment provided by engineer. */
+"Will create NEW account" = "Vou criar uma NOVA conta";
 
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "POUPA 25%";

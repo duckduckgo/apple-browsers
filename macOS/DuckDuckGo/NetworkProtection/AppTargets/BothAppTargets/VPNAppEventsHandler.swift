@@ -25,7 +25,6 @@ import LoginItems
 import VPN
 import NetworkProtectionUI
 import NetworkProtectionIPC
-import NetworkExtension
 import PixelKit
 import Subscription
 

@@ -208,6 +208,7 @@ class MainViewController: UIViewController {
     let experimentalAIChatManager: ExperimentalAIChatManager
     let daxDialogsManager: DaxDialogsManaging
     let dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?
+    let remoteMessagingDebugHandler: RemoteMessagingDebugHandling
 
     var appDidFinishLaunchingStartTime: CFAbsoluteTime?
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
@@ -294,7 +295,8 @@ class MainViewController: UIViewController {
         mobileCustomization: MobileCustomization,
         remoteMessagingActionHandler: RemoteMessagingActionHandling,
         productSurfaceTelemetry: ProductSurfaceTelemetry,
-        fireExecutor: FireExecutor
+        fireExecutor: FireExecutor,
+        remoteMessagingDebugHandler: RemoteMessagingDebugHandling
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -340,9 +342,10 @@ class MainViewController: UIViewController {
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.mobileCustomization = mobileCustomization
         self.aichatFullModeFeature = aichatFullModeFeature
+        self.remoteMessagingDebugHandler = remoteMessagingDebugHandler
         self.productSurfaceTelemetry = productSurfaceTelemetry
-
         self.fireExecutor = fireExecutor
+
         super.init(nibName: nil, bundle: nil)
         
         tabManager.delegate = self
@@ -1524,7 +1527,7 @@ class MainViewController: UIViewController {
         Logger.daxEasterEgg.debug("RefreshOmniBar - Stored Logo: \(tab.tabModel.daxEasterEggLogoURL ?? "nil")")
         viewCoordinator.omniBar.setDaxEasterEggLogoURL(tab.tabModel.daxEasterEggLogoURL)
 
-        if aichatFullModeFeature.isAvailable && tab.tabModel.isAITab {
+        if aichatFullModeFeature.isAvailable && tab.isAITab {
             viewCoordinator.omniBar.enterAIChatMode()
         } else {
             viewCoordinator.omniBar.startBrowsing()
@@ -3066,7 +3069,7 @@ extension MainViewController: OmniBarDelegate {
 
     /// Delegate method called when the omnibar branding area is tapped while in AI Chat mode.
     func onAIChatBrandingPressed() {
-        DailyPixel.fireDailyAndCount(pixel: .addressBarClickOnAIChat)
+        Pixel.fire(pixel: .addressBarClickOnAIChat)
         viewCoordinator.omniBar.beginEditing(animated: true, forTextEntryMode: .aiChat)
     }
 }

@@ -63,6 +63,10 @@ enum NewWindowPolicy: Equatable {
         if case .tab(selected: true, burner: _, contextMenuInitiated: _) = self { return true }
         return false
     }
+    var isPopup: Bool {
+        if case .popup = self { return true }
+        return false
+    }
 
     /**
      * Forces selecting a tab if `true` is passed as argument.

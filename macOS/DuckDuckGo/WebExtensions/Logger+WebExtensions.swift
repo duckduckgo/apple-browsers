@@ -20,5 +20,5 @@ import Foundation
 import os.log
 
 public extension Logger {
-    static var webExtensions = { Logger(subsystem: "WebExtensions", category: "") }()
+    static let webExtensions = Logger(subsystem: "WebExtensions", category: "")
 }

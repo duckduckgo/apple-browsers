@@ -162,7 +162,8 @@ import Combine
             mobileCustomization: MobileCustomization(isFeatureEnabled: false, keyValueStore: MockThrowingKeyValueStore()),
             remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
             productSurfaceTelemetry: MockProductSurfaceTelemetry(),
-            fireExecutor: fireExecutor
+            fireExecutor: fireExecutor,
+            remoteMessagingDebugHandler: MockRemoteMessagingDebugHandler()
         )
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIViewController()

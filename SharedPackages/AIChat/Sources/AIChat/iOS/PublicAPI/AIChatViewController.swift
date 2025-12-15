@@ -116,6 +116,7 @@ extension AIChatViewController {
     public override func viewDidLoad() {
         super.viewDidLoad()
         self.view.backgroundColor = .black
+        self.view.accessibilityIdentifier = "AIChatViewController"
 
         if presentationMode == .modal {
             setupTitleBar()

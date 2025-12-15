@@ -24,7 +24,6 @@ public enum SubscriptionPageFeatureFlag {
     case tierMessaging
     case proTierPurchase
     case supportsAlternateStripePaymentFlow
-    case subscriptionPurchaseWidePixelMeasurement
 }
 
 public protocol SubscriptionPageFeatureFlagProviding {
@@ -38,7 +37,6 @@ public protocol SubscriptionFeatureAvailability {
     var isProTierPurchaseEnabled: Bool { get }
     /// Indicates whether the alternate Stripe payment flow is supported for subscriptions.
     var isSupportsAlternateStripePaymentFlowEnabled: Bool { get }
-    var isSubscriptionPurchaseWidePixelMeasurementEnabled: Bool { get }
 }
 
 public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAvailability {
@@ -92,10 +90,6 @@ public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAv
     /// - Returns: `true` if the alternate Stripe payment flow is supported, `false` otherwise.
     public var isSupportsAlternateStripePaymentFlowEnabled: Bool {
         featureFlagProvider.isEnabled(.supportsAlternateStripePaymentFlow)
-    }
-
-    public var isSubscriptionPurchaseWidePixelMeasurementEnabled: Bool {
-        featureFlagProvider.isEnabled(.subscriptionPurchaseWidePixelMeasurement)
     }
 
     // MARK: - Conditions

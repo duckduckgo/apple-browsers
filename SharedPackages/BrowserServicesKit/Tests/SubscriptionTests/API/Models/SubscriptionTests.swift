@@ -30,7 +30,8 @@ final class SubscriptionTests: XCTestCase {
                                 expiresOrRenewsAt: Date(timeIntervalSince1970: 2000),
                                 platform: .apple,
                                 status: .autoRenewable,
-                                activeOffers: [DuckDuckGoSubscription.Offer(type: .trial)])
+                                activeOffers: [DuckDuckGoSubscription.Offer(type: .trial)],
+                                tier: nil)
         let b = DuckDuckGoSubscription(productId: "1",
                                 name: "a",
                                 billingPeriod: .monthly,
@@ -38,7 +39,8 @@ final class SubscriptionTests: XCTestCase {
                                 expiresOrRenewsAt: Date(timeIntervalSince1970: 2000),
                                 platform: .apple,
                                 status: .autoRenewable,
-                                activeOffers: [DuckDuckGoSubscription.Offer(type: .trial)])
+                                activeOffers: [DuckDuckGoSubscription.Offer(type: .trial)],
+                                tier: nil)
         let c = DuckDuckGoSubscription(productId: "2",
                                 name: "a",
                                 billingPeriod: .monthly,
@@ -46,7 +48,8 @@ final class SubscriptionTests: XCTestCase {
                                 expiresOrRenewsAt: Date(timeIntervalSince1970: 2000),
                                 platform: .apple,
                                 status: .autoRenewable,
-                                activeOffers: [])
+                                activeOffers: [],
+                                tier: nil)
         XCTAssertEqual(a, b)
         XCTAssertNotEqual(a, c)
     }
@@ -264,11 +267,81 @@ final class SubscriptionTests: XCTestCase {
         // Then
         XCTAssertTrue(hasActiveTrialOffer)
     }
+
+    // MARK: - Tier Decoding Tests
+
+    func testTierDecoding_WithPlusTier() throws {
+        let rawSubscription = """
+        {
+            \"productId\": \"ddg-privacy-pro-sandbox-monthly-renews-us\",
+            \"name\": \"Monthly Subscription\",
+            \"billingPeriod\": \"Monthly\",
+            \"startedAt\": 1718104783000,
+            \"expiresOrRenewsAt\": 1723375183000,
+            \"platform\": \"stripe\",
+            \"status\": \"Auto-Renewable\",
+            \"activeOffers\": [],
+            \"tier\": \"plus\"
+        }
+        """
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dateDecodingStrategy = .millisecondsSince1970
+        let subscription = try decoder.decode(DuckDuckGoSubscription.self, from: Data(rawSubscription.utf8))
+
+        XCTAssertEqual(subscription.tier, .plus)
+    }
+
+    func testTierDecoding_WithProTier() throws {
+        let rawSubscription = """
+        {
+            \"productId\": \"ddg-privacy-pro-sandbox-monthly-renews-us\",
+            \"name\": \"Monthly Subscription\",
+            \"billingPeriod\": \"Monthly\",
+            \"startedAt\": 1718104783000,
+            \"expiresOrRenewsAt\": 1723375183000,
+            \"platform\": \"stripe\",
+            \"status\": \"Auto-Renewable\",
+            \"activeOffers\": [],
+            \"tier\": \"pro\"
+        }
+        """
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dateDecodingStrategy = .millisecondsSince1970
+        let subscription = try decoder.decode(DuckDuckGoSubscription.self, from: Data(rawSubscription.utf8))
+
+        XCTAssertEqual(subscription.tier, .pro)
+    }
+
+    func testTierDecoding_WithoutTier_ReturnsNil() throws {
+        let rawSubscription = """
+        {
+            \"productId\": \"ddg-privacy-pro-sandbox-monthly-renews-us\",
+            \"name\": \"Monthly Subscription\",
+            \"billingPeriod\": \"Monthly\",
+            \"startedAt\": 1718104783000,
+            \"expiresOrRenewsAt\": 1723375183000,
+            \"platform\": \"stripe\",
+            \"status\": \"Auto-Renewable\",
+            \"activeOffers\": []
+        }
+        """
+
+        let decoder = JSONDecoder()
+        decoder.keyDecodingStrategy = .convertFromSnakeCase
+        decoder.dateDecodingStrategy = .millisecondsSince1970
+        let subscription = try decoder.decode(DuckDuckGoSubscription.self, from: Data(rawSubscription.utf8))
+
+        XCTAssertNil(subscription.tier)
+    }
 }
 
 extension DuckDuckGoSubscription {
 
-    static func make(withStatus status: DuckDuckGoSubscription.Status, activeOffers: [DuckDuckGoSubscription.Offer] = []) -> DuckDuckGoSubscription {
+    static func make(withStatus status: DuckDuckGoSubscription.Status, activeOffers: [DuckDuckGoSubscription.Offer] = [], tier: TierName? = nil) -> DuckDuckGoSubscription {
         DuckDuckGoSubscription(productId: UUID().uuidString,
                      name: "Subscription test #1",
                      billingPeriod: .monthly,
@@ -276,6 +349,7 @@ extension DuckDuckGoSubscription {
                      expiresOrRenewsAt: Date().addingTimeInterval(TimeInterval.days(+30)),
                      platform: .apple,
                      status: status,
-                     activeOffers: activeOffers)
+                     activeOffers: activeOffers,
+                     tier: tier)
     }
 }

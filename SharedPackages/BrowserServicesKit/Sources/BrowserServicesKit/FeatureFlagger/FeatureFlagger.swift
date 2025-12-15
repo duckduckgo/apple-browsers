@@ -154,9 +154,6 @@ public enum FeatureFlagSource {
     /// Completely disabled in all configurations
     case disabled
 
-    /// Completely enabled in all configurations
-    case enabled
-
     /// Enabled for internal users only. Cannot be toggled remotely
     case internalOnly((any FeatureFlagCohortDescribing)? = nil)
 
@@ -392,8 +389,6 @@ public class DefaultFeatureFlagger: FeatureFlagger {
         switch featureFlag.source {
         case .disabled:
             return false
-        case .enabled:
-            return true
         case .internalOnly:
             return internalUserDecider.isInternalUser
         case .remoteDevelopment(let featureType):

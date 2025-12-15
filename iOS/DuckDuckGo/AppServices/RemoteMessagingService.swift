@@ -26,7 +26,7 @@ import Persistence
 import BackgroundTasks
 import DDGSync
 
-final class RemoteMessagingService {
+final class RemoteMessagingService: RemoteMessagingDebugHandling {
 
     let remoteMessagingClient: RemoteMessagingClient
     let remoteMessagingActionHandler: RemoteMessagingActionHandler

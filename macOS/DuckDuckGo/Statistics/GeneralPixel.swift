@@ -21,6 +21,7 @@ import PixelKit
 import BrowserServicesKit
 import DDGSync
 import Configuration
+import Suggestions
 
 enum GeneralPixel: PixelKitEvent {
 
@@ -292,6 +293,12 @@ enum GeneralPixel: PixelKitEvent {
     case autocompleteClickOpenTab(from: AutocompleteSource)
     case autocompleteToggledOff
     case autocompleteToggledOn
+
+    /// Event Trigger: User selects a suggestion by clicking with the mouse
+    case suggestionSubmittedMouse(suggestionCategory: SuggestionPixelCategory?)
+
+    /// Event Trigger: User selects a suggestion by pressing enter
+    case suggestionSubmittedKeyboard(suggestionCategory: SuggestionPixelCategory?)
 
     // Onboarding
     case onboardingExceptionReported(message: String, id: String)
@@ -975,6 +982,8 @@ enum GeneralPixel: PixelKitEvent {
         case .autocompleteClickOpenTab: return "m_mac_autocomplete_click_opentab"
         case .autocompleteToggledOff: return "m_mac_autocomplete_toggled_off"
         case .autocompleteToggledOn: return "m_mac_autocomplete_toggled_on"
+        case .suggestionSubmittedMouse: return "m_mac_suggestion_submitted_mouse"
+        case .suggestionSubmittedKeyboard: return "m_mac_suggestion_submitted_keyboard"
 
             // Onboarding
         case .onboardingExceptionReported: return "m_mac_onboarding_exception-reported"
@@ -1454,6 +1463,13 @@ enum GeneralPixel: PixelKitEvent {
                 .autocompleteClickOpenTab(from: let source):
             return ["source": source.rawValue]
 
+        case .suggestionSubmittedMouse(let category),
+             .suggestionSubmittedKeyboard(let category):
+            if let category {
+                return ["suggestionCategory": category.rawValue]
+            }
+            return nil
+
         case .updaterAborted(let reason):
             return ["reason": reason]
 
@@ -1671,6 +1687,8 @@ enum GeneralPixel: PixelKitEvent {
                 .autocompleteClickOpenTab,
                 .autocompleteToggledOff,
                 .autocompleteToggledOn,
+                .suggestionSubmittedMouse,
+                .suggestionSubmittedKeyboard,
                 .onboardingExceptionReported,
                 .windowFullscreen,
                 .windowSplitScreen,
@@ -2021,4 +2039,35 @@ enum GeneralPixel: PixelKitEvent {
         case addressBar = "address_bar"
     }
 
+}
+
+// MARK: - Suggestion Pixel Types
+
+/// Category of the selected suggestion in the search box
+enum SuggestionPixelCategory: String, CaseIterable {
+    case website = "website"
+    case bookmark = "bookmark"
+    case historyEntry = "history"
+    case openTab = "tab"
+    case phrase = "phrase"
+    case internalPage = "internal-page"
+
+    init?(from suggestion: Suggestion) {
+        switch suggestion {
+        case .website:
+            self = .website
+        case .bookmark:
+            self = .bookmark
+        case .historyEntry:
+            self = .historyEntry
+        case .openTab:
+            self = .openTab
+        case .phrase:
+            self = .phrase
+        case .internalPage:
+            self = .internalPage
+        case .unknown, .askAIChat:
+            return nil
+        }
+    }
 }

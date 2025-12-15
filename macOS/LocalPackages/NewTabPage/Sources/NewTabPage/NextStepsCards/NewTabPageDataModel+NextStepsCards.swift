@@ -26,6 +26,7 @@ public extension NewTabPageDataModel {
         case emailProtection
         case duckplayer
         case addAppToDockMac
+        case subscription
     }
 }
 

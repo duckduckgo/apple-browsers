@@ -35,7 +35,9 @@ final class BadgeNotificationAnimationModel: ObservableObject {
     }
 }
 
+// MARK: - Animation Timing (from iOS PR #2402)
+
 private enum AnimationDefaultConsts {
-    static let totalDuration: CGFloat = 0.3
-    static let secondPhaseDelay: CGFloat = 3.0
+    static let totalDuration: CGFloat = 0.3      // Slide animation duration
+    static let secondPhaseDelay: CGFloat = 1.75  // Total notification display time (matches iOS)
 }

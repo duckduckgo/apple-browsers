@@ -62,7 +62,7 @@ final class FaviconsTabExtension {
 
     @MainActor
     func loadCachedFavicon(oldValue: TabContent? = nil, isBurner: Bool, error: Error? = nil) {
-        guard let content, content.isUrl, let url = content.urlForWebView, error == nil else {
+        guard let content, content.isExternalUrl, let url = content.urlForWebView, error == nil else {
             // Load default Favicon for SpecialURL(s) such as newtab
             favicon = content?.displayedFavicon(error: error, isBurner: isBurner)
             return

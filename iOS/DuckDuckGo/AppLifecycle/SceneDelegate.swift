@@ -51,7 +51,10 @@ final class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         /// - Services depending on the previous window are recreated.
         ///
         /// A tracking pixel is sent on consecutive reconnects to verify that this scenario occurs in practice.
-        /// If confirmed to never happen, these temporary transitions should be removed.
+        ///
+        /// Update: On iOS 17 and later, this behaves as expected.
+        /// However, on iOS 16 and below, we've confirmed that a connected scene *can* unexpectedly disconnect and later reconnect.
+        /// Because of this, the recovery path must remain in place for older OS versions.
     }
 
     /// See: `Foreground.swift` -> `onTransition()`

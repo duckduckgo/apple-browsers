@@ -35,6 +35,8 @@ import SERPSettings
 import AutoconsentStats
 
 protocol TabDelegate: ContentOverlayUserScriptDelegate {
+    var isInPopUpWindow: Bool { get }
+
     func tabWillStartNavigation(_ tab: Tab, isUserInitiated: Bool)
     func tabDidStartNavigation(_ tab: Tab)
     func tab(_ tab: Tab, createdChild childTab: Tab, of kind: NewWindowPolicy)
@@ -323,6 +325,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                           isTabPinned: { tabGetter().map { tab in pinnedTabsManagerProvider.pinnedTabsManager(for: tab)?.isTabPinned(tab) ?? false } ?? false },
                           isTabBurner: burnerMode.isBurner,
                           isTabLoadedInSidebar: isLoadedInSidebar,
+                          isInPopUpWindow: { tabGetter()?.delegate?.isInPopUpWindow ?? false },
                           contentPublisher: _content.projectedValue.eraseToAnyPublisher(),
                           setContent: { tabGetter()?.setContent($0) },
                           closeTab: { tabGetter().map { $0.delegate?.closeTab($0) } },
@@ -337,7 +340,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                           tabsPreferences: tabsPreferences,
                           burnerMode: burnerMode,
                           urlProvider: { tabGetter()?.url },
-                          createChildTab: { tabGetter()?.createChildTab(with: $0, for: $1, of: $2) },
+                          createChildTab: { tabGetter()?.createChildTab(with: $0, securityOrigin: $1, of: $2) },
                           presentTab: { childTab, kind in tabGetter().map { $0.delegate?.tab($0, createdChild: childTab, of: kind) } },
                           newWindowPolicyDecisionMakers: { tabGetter()?.newWindowPolicyDecisionMakers }
                          ),
@@ -610,12 +613,12 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         if let url = webView.url {
             let content = TabContent.contentFromURL(url, source: .webViewUpdated)
 
-            if self.content.isUrl, self.content.urlForWebView == url {
+            if self.content.displaysContentInWebView, self.content.urlForWebView == url {
                 // ignore content updates when tab.content has userEntered or credential set but equal url as it comes from the WebView url updated event
             } else if content != self.content {
                 self.content = content
             }
-        } else if self.content.isUrl,
+        } else if self.content.isExternalUrl,
                   // DuckURLSchemeHandler redirects duck:// address to a simulated request
                   // ignore webView.url temporarily switching to `nil`
                   self.content.urlForWebView?.isDuckPlayer != true {
@@ -956,7 +959,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         }
 
         self.content = content.forceReload()
-        if webView.url == nil, content.isUrl {
+        if webView.url == nil, content.displaysContentInWebView {
             // load from cache or interactionStateData when called by lazy loader
             return reloadIfNeeded(source: .lazyLoad)
         } else {
@@ -1489,14 +1492,14 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
 
     /// Factory method to create a child Tab
     @MainActor
-    func createChildTab(with configuration: WKWebViewConfiguration,
-                        for navigationAction: WKNavigationAction,
+    func createChildTab(with configuration: WKWebViewConfiguration?,
+                        securityOrigin: SecurityOrigin?,
                         of kind: NewWindowPolicy) -> Tab? {
 
         let tab = Tab(content: .none,
                       webViewConfiguration: configuration,
                       parentTab: self,
-                      securityOrigin: navigationAction.safeSourceFrame.map { SecurityOrigin($0.securityOrigin) },
+                      securityOrigin: securityOrigin,
                       burnerMode: burnerMode,
                       canBeClosedWithBack: kind.isSelectedTab,
                       webViewSize: webView.superview?.bounds.size ?? .zero)

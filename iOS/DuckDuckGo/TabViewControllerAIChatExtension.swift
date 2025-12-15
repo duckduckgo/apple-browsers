@@ -73,4 +73,10 @@ extension TabViewController: AITabController {
         let newChatURL = aiChatContentHandler.buildQueryURL(query: nil, autoSend: false, tools: nil)
         delegate?.tab(self, didRequestNewTabForUrl: newChatURL, openedByPage: false, inheritingAttribution: nil)
     }
+
+    /// Reloads the AI Chat if this is an AI tab.
+    func reloadAIChatIfNeeded() {
+        guard isAITab else { return }
+        webView.reload()
+    }
 }

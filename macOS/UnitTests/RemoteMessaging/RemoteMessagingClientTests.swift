@@ -185,7 +185,8 @@ final class RemoteMessagingClientTests: XCTestCase {
             expiresOrRenewsAt: Date(timeIntervalSince1970: 2000),
             platform: .google,
             status: .autoRenewable,
-            activeOffers: []
+            activeOffers: [],
+            tier: nil
         )
         subscriptionAuthV1toV2Bridge.returnSubscription = .success(subscription)
         availabilityProvider.isRemoteMessagingAvailable = true

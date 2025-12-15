@@ -27,9 +27,9 @@ import BrowserServicesKit
 struct WhatsNewDebugView: View {
     @StateObject private var viewModel: WhatsNewDebugViewModel
 
-    init(keyValueStore: ThrowingKeyValueStoring) {
+    init(keyValueStore: ThrowingKeyValueStoring, remoteMessagingDebugHandler: RemoteMessagingDebugHandling? = nil) {
         let store =  PromptCooldownKeyValueFilesStore(keyValueStore: keyValueStore, eventMapper: .init(mapping: { _, _, _, _ in }))
-        self._viewModel = StateObject(wrappedValue: WhatsNewDebugViewModel(store: store))
+        self._viewModel = StateObject(wrappedValue: WhatsNewDebugViewModel(store: store, remoteMessagingDebugHandler: remoteMessagingDebugHandler))
     }
 
     var body: some View {
@@ -61,6 +61,7 @@ struct WhatsNewDebugView: View {
 
 private final class WhatsNewDebugViewModel: ObservableObject {
     private let store: PromptCooldownStore
+    private let remoteMessagingDebugHandler: RemoteMessagingDebugHandling?
 
     private static let dateFormatter: DateFormatter = {
         let formatter = DateFormatter()
@@ -75,8 +76,9 @@ private final class WhatsNewDebugViewModel: ObservableObject {
     @Published private(set) var isCooldownPeriodActive: Bool = false
     @Published private(set) var formattedCooldownPeriod: String = ""
 
-    init(store: PromptCooldownStore) {
+    init(store: PromptCooldownStore, remoteMessagingDebugHandler: RemoteMessagingDebugHandling? = nil) {
         self.store = store
+        self.remoteMessagingDebugHandler = remoteMessagingDebugHandler
         self.database = Database.shared
         updateUI()
     }
@@ -99,7 +101,7 @@ private final class WhatsNewDebugViewModel: ObservableObject {
         } catch {
             assertionFailure("Failed to save after delete all")
         }
-        (UIApplication.shared.delegate as? AppDelegate)?.debugRefreshRemoteMessages()
+        remoteMessagingDebugHandler?.refreshRemoteMessages()
     }
 
     private func updateUI() {

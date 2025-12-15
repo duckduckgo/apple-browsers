@@ -47,7 +47,6 @@ final class WideEventService {
     // Runs at app launch, and sends pixels which were abandoned during a flow, such as the user exiting the app during
     // the flow, or the app crashing.
     func sendAbandonedPixels(completion: @escaping () -> Void) {
-        let shouldSendSubscriptionPurchaseWidePixel = featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement)
         let shouldSendVPNConnectionWidePixel = featureFlagger.isFeatureOn(.vpnConnectionWidePixelMeasurement)
         let shouldSendDataImportWideEvent = featureFlagger.isFeatureOn(.dataImportWideEventMeasurement)
         
@@ -56,10 +55,8 @@ final class WideEventService {
 
             Task {
                 await self.sendAbandonedSubscriptionRestorePixels()
-                
-                if shouldSendSubscriptionPurchaseWidePixel {
-                    await self.sendAbandonedSubscriptionPurchasePixels()
-                }
+
+                await self.sendAbandonedSubscriptionPurchasePixels()
                 if shouldSendVPNConnectionWidePixel {
                     await self.sendAbandonedVPNConnectionPixels()
                 }
@@ -77,7 +74,6 @@ final class WideEventService {
 
     // Sends pixels which are currently incomplete but may complete later.
     func sendDelayedPixels(completion: @escaping () -> Void) {
-        let shouldSendSubscriptionPurchaseWidePixel = featureFlagger.isFeatureOn(.subscriptionPurchaseWidePixelMeasurement)
         let shouldSendVPNConnectionWidePixel = featureFlagger.isFeatureOn(.vpnConnectionWidePixelMeasurement)
         let shouldSendDataImportWideEvent = featureFlagger.isFeatureOn(.dataImportWideEventMeasurement)
 
@@ -86,10 +82,8 @@ final class WideEventService {
 
             Task {
                 await self.sendDelayedSubscriptionRestorePixels()
-                
-                if shouldSendSubscriptionPurchaseWidePixel {
-                    await self.sendDelayedSubscriptionPurchasePixels()
-                }
+
+                await self.sendDelayedSubscriptionPurchasePixels()
                 if shouldSendVPNConnectionWidePixel {
                     await self.sendDelayedVPNConnectionPixels()
                 }

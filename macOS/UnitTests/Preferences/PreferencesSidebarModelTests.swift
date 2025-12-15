@@ -63,7 +63,8 @@ final class PreferencesSidebarModelTests: XCTestCase {
             expiresOrRenewsAt: expiresAt,
             platform: .stripe,
             status: .autoRenewable,
-            activeOffers: []
+            activeOffers: [],
+            tier: nil
         )
         mockSubscriptionManager.returnSubscription = .success(subscription)
         mockSubscriptionManager.enabledFeatures = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidAIChat] // All enabled

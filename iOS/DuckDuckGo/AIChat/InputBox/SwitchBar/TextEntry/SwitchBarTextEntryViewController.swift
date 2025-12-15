@@ -22,6 +22,13 @@ import SwiftUI
 import Combine
 import UIComponents
 
+final class SwitchBarTextEntryButtonsContainerView: UIView {
+    override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        let hitView = super.hitTest(point, with: event)
+        return hitView === self ? nil : hitView
+    }
+}
+
 class SwitchBarTextEntryViewController: UIViewController {
 
     // MARK: - Properties
@@ -29,7 +36,9 @@ class SwitchBarTextEntryViewController: UIViewController {
     private let handler: SwitchBarHandling
     private let containerView = CompositeShadowView()
 
-    let buttonsContainerView = UIView()
+    private(set) lazy var buttonsContainerView: UIView = {
+        handler.isUsingFadeOutAnimation ? SwitchBarTextEntryButtonsContainerView() : UIView()
+    }()
 
     private var isUsingOverlayButtonsLayout: Bool {
         handler.isUsingExpandedBottomBarHeight

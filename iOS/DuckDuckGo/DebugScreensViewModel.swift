@@ -241,7 +241,7 @@ class DebugScreensViewModel: ObservableObject {
     }
 
     func fetchRemoteMessagingConfiguration() {
-        (UIApplication.shared.delegate as? AppDelegate)?.debugRefreshRemoteMessages()
+        dependencies.remoteMessagingDebugHandler.refreshRemoteMessages()
     }
 
     func fetchConfiguration(for configuration: Configuration, completion: @escaping (Bool) -> Void = { _ in }) {

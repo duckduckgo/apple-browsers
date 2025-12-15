@@ -330,10 +330,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                                                              freeTrialEligible: freeTrialEligible,
                                                              contextData: WideEventContextData(name: origin ?? ""))
                 self.wideEventData = data
-
-                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
-                    wideEvent.startFlow(data)
-                }
+                wideEvent.startFlow(data)
 
                 // 5: No existing subscription was found, so proceed with the remaining purchase flow
                 let purchaseTransactionJWS: String
@@ -387,12 +384,10 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
 
                     // Complete the wide event flow if the purchase step fails:
                     if error == .cancelledByUser {
-                        if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
-                            wideEvent.completeFlow(data, status: .cancelled, onComplete: { _, _ in })
-                        }
+                        wideEvent.completeFlow(data, status: .cancelled, onComplete: { _, _ in })
                     } else if error == .activeSubscriptionAlreadyPresent {
                         // If we found a subscription, then this is not a purchase flow - discard the purchase pixel.
-                        if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let data = self.wideEventData {
+                        if let data = self.wideEventData {
                             wideEvent.discardFlow(data)
                             self.wideEventData = nil
                         }
@@ -408,9 +403,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                             data.markAsFailed(at: .accountPayment, error: error)
                         }
 
-                        if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
-                            wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
-                        }
+                        wideEvent.completeFlow(data, status: .failure, onComplete: { _, _ in })
                     }
 
                     return nil
@@ -495,20 +488,18 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
             let emailAccessToken = try? EmailManager().getToken()
             let contextName = await originFrom(originalMessage: message) ?? ""
 
-            if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled {
-                let data = SubscriptionPurchaseWideEventData(purchasePlatform: .stripe,
-                                                             subscriptionIdentifier: nil, // Not available for Stripe
-                                                             freeTrialEligible: true, // Always true for Stripe
-                                                             contextData: WideEventContextData(name: contextName))
+            let data = SubscriptionPurchaseWideEventData(purchasePlatform: .stripe,
+                                                         subscriptionIdentifier: nil, // Not available for Stripe
+                                                         freeTrialEligible: true, // Always true for Stripe
+                                                         contextData: WideEventContextData(name: contextName))
 
-                wideEvent.startFlow(data)
-                self.wideEventData = data
-            }
+            wideEvent.startFlow(data)
+            self.wideEventData = data
 
             let result = await stripePurchaseFlow.prepareSubscriptionPurchase(emailAccessToken: emailAccessToken)
             switch result {
             case .success(let success):
-                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let wideEventData = self.wideEventData {
+                if let wideEventData = self.wideEventData {
                     if let accountCreationDuration = success.accountCreationDuration {
                         wideEventData.createAccountDuration = accountCreationDuration
                     }
@@ -528,7 +519,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
 
                 await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate(type: "canceled"))
 
-                if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let wideEventData = self.wideEventData {
+                if let wideEventData = self.wideEventData {
                     wideEventData.markAsFailed(at: .accountCreate, error: error)
                     wideEvent.updateFlow(wideEventData)
                     wideEvent.completeFlow(wideEventData, status: .failure, onComplete: { _, _ in })
@@ -597,7 +588,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         sendSubscriptionUpgradeFromFreemiumNotificationIfFreemiumActivated()
         notificationCenter.post(name: .subscriptionDidChange, object: self)
 
-        if subscriptionFeatureAvailability.isSubscriptionPurchaseWidePixelMeasurementEnabled, let data = self.wideEventData {
+        if let data = self.wideEventData {
             accountActivationDuration.complete()
             data.activateAccountDuration = accountActivationDuration
             wideEvent.updateFlow(data)

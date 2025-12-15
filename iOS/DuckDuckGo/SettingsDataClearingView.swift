@@ -62,27 +62,25 @@ struct SettingsDataClearingView: View {
                     Text(UserText.settingsClearAIChatHistoryFooter)
                 }
             }
-            
-            if viewModel.isForgetAllInSettingsEnabled {
-                Section(footer: Text(footnoteText)) {
-                    SettingsCellView(action: {
-                        Pixel.fire(pixel: .forgetAllPressedSettings)
-                        isShowingBurnAlert = true
-                    }, customView: {
-                        AnyView(
-                            HStack(alignment: .center) {
-                                Image(uiImage: DesignSystemImages.Glyphs.Size24.fireSolid)
-                                    .tintIfAvailable(Color(designSystemColor: .icons))
-                                Text(forgetAllTitle)
-                                    .foregroundStyle(Color(designSystemColor: .accent))
-                                Spacer()
-                            }
-                        )
-                    }, isButton: true)
-                    .accessibilityIdentifier("Settings.DataClearing.Button.ForgetAll")
-                    .forgetDataConfirmationDialog(isPresented: $isShowingBurnAlert,
-                                                  onConfirm: viewModel.forgetAll)
-                }
+
+            Section(footer: Text(footnoteText)) {
+                SettingsCellView(action: {
+                    Pixel.fire(pixel: .forgetAllPressedSettings)
+                    isShowingBurnAlert = true
+                }, customView: {
+                    AnyView(
+                        HStack(alignment: .center) {
+                            Image(uiImage: DesignSystemImages.Glyphs.Size24.fireSolid)
+                                .tintIfAvailable(Color(designSystemColor: .icons))
+                            Text(forgetAllTitle)
+                                .foregroundStyle(Color(designSystemColor: .accent))
+                            Spacer()
+                        }
+                    )
+                }, isButton: true)
+                .accessibilityIdentifier("Settings.DataClearing.Button.ForgetAll")
+                .forgetDataConfirmationDialog(isPresented: $isShowingBurnAlert,
+                                              onConfirm: viewModel.forgetAll)
             }
         }
         .applySettingsListModifiers(title: UserText.dataClearing,

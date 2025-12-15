@@ -86,7 +86,6 @@ public enum PrivacyFeature: String {
     case duckAiDataClearing
     case serp
     case popupBlocking
-    case tabProgressIndicator
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -142,6 +141,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212206087745586?focus=true
     case tabClosingEventRecreation
 
+    /// Feature Flag for the Tab Spinner
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866479296718
+    case tabProgressIndicator
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -167,6 +169,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211660503405838?focus=true
     case forgetAllInSettings
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212397873940926?focus=true
+    case ampBackgroundTaskSupport
+
     /// https://app.asana.com/1/137249556945/project/481882893211075/task/1212057154681076?focus=true
     case productTelemetrySurfaceUsage
 
@@ -175,6 +180,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1206226850447395/task/1211661206210892?focus=true
     case experimentalBrowsingMenu
+
+    ///  https://app.asana.com/1/137249556945/project/414709148257752/task/1212395110448661?focus=true
+    case appRatingPrompt
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -259,6 +267,12 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Adds support for passing currently visible website context to the sidebar
     case pageContext
+
+    /// Enables updated AI features settings screen
+    case aiFeaturesSettingsUpdate
+
+    /// Append the kbg disable parameter only when Duck AI features are not shown
+    case duckAISearchParameter
 
     /// Show AI Chat address bar choice screen
     case showAIChatAddressBarChoiceScreen
@@ -388,9 +402,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case privacyProOnboardingPromotion
     case paidAIChat
     case supportsAlternateStripePaymentFlow
-    case subscriptionPurchaseWidePixelMeasurement
     case vpnConnectionWidePixelMeasurement
-    case authV2WideEventEnabled
     case winBackOffer
     case vpnMenuItem
     case blackFridayCampaign

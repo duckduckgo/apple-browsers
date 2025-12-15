@@ -49,9 +49,7 @@ final class WideEventServiceTests: XCTestCase {
         super.tearDown()
     }
     
-    func testRunCleanup_whenFeatureFlagDisabled_completesImmediately() {
-        featureFlagger.enabledFeatureFlags = []
-        
+    func testRunCleanup_withoutPendingData_completesImmediately() {
         let expectation = expectation(description: "Completion called")
         service.sendAbandonedPixels {
             expectation.fulfill()
@@ -61,20 +59,7 @@ final class WideEventServiceTests: XCTestCase {
         XCTAssertTrue(wideEventMock.completions.isEmpty)
     }
     
-    func testRunCleanup_whenFeatureFlagEnabled_processesData() {
-        featureFlagger.enabledFeatureFlags = [.subscriptionPurchaseWidePixelMeasurement]
-        
-        let expectation = expectation(description: "Completion called")
-        service.sendAbandonedPixels {
-            expectation.fulfill()
-        }
-        
-        waitForExpectations(timeout: 1.0)
-    }
-    
     func testPerformCleanup_withActivateAccountDuration_recentStart_doesNotSendPixel() {
-        featureFlagger.enabledFeatureFlags = [.subscriptionPurchaseWidePixelMeasurement]
-        
         let recentStart = Date().addingTimeInterval(-60)
         let interval = WideEvent.MeasuredInterval(start: recentStart, end: nil)
         let data = createMockWideEventData(activateAccountDuration: interval)
@@ -90,7 +75,6 @@ final class WideEventServiceTests: XCTestCase {
     }
     
     func testPerformCleanup_withActivateAccountDuration_oldStart_noEntitlements_sendsUnknownPixel() {
-        featureFlagger.enabledFeatureFlags = [.subscriptionPurchaseWidePixelMeasurement]
         subscriptionBridge.subscriptionFeatures = []
         
         let oldStart = Date().addingTimeInterval(-5 * 60 * 60)
@@ -116,7 +100,6 @@ final class WideEventServiceTests: XCTestCase {
     }
     
     func testPerformCleanup_withActivateAccountDuration_hasEntitlements_sendsSuccessPixel() {
-        featureFlagger.enabledFeatureFlags = [.subscriptionPurchaseWidePixelMeasurement]
         subscriptionBridge.subscriptionFeatures = [.networkProtection]
         
         let oldStart = Date().addingTimeInterval(-3 * 60 * 60)
@@ -142,8 +125,6 @@ final class WideEventServiceTests: XCTestCase {
     }
     
     func testPerformCleanup_withActivateAccountDuration_userNotAuthenticated_sendsUnknownPixel() {
-        featureFlagger.enabledFeatureFlags = [.subscriptionPurchaseWidePixelMeasurement]
-        
         let oldStart = Date().addingTimeInterval(-5 * 60 * 60)
         let interval = WideEvent.MeasuredInterval(start: oldStart, end: nil)
         let data = createMockWideEventData(activateAccountDuration: interval)
@@ -167,7 +148,6 @@ final class WideEventServiceTests: XCTestCase {
     }
     
     func testPerformCleanup_withActivateAccountDuration_entitlementsError_sendsUnknownPixel() {
-        featureFlagger.enabledFeatureFlags = [.subscriptionPurchaseWidePixelMeasurement]
         subscriptionBridge.subscriptionFeatures = []
         
         let oldStart = Date().addingTimeInterval(-5 * 60 * 60)
@@ -193,8 +173,6 @@ final class WideEventServiceTests: XCTestCase {
     }
     
     func testPerformCleanup_withoutActivateAccountDuration_sendsPartialDataPixel() {
-        featureFlagger.enabledFeatureFlags = [.subscriptionPurchaseWidePixelMeasurement]
-        
         let data = createMockWideEventData()
         wideEventMock.started = [data]
 
@@ -216,7 +194,6 @@ final class WideEventServiceTests: XCTestCase {
     }
     
     func testPerformCleanup_withMultipleData_processesAll() {
-        featureFlagger.enabledFeatureFlags = [.subscriptionPurchaseWidePixelMeasurement]
         subscriptionBridge.subscriptionFeatures = [.networkProtection]
         
         let start = Date().addingTimeInterval(-1 * 60 * 60)

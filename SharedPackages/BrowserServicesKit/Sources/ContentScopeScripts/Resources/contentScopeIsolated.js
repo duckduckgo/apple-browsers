@@ -2182,7 +2182,7 @@
 
   // src/wrapper-utils.js
   init_define_import_meta_trackerLookup();
-  var ddgShimMark = Symbol("ddgShimMark");
+  var ddgShimMark = /* @__PURE__ */ Symbol("ddgShimMark");
   function defineProperty(object, propertyName, descriptor) {
     objectDefineProperty(object, propertyName, descriptor);
   }
@@ -2722,7 +2722,15 @@
           this.wkSend(handler, data2);
         });
         const cipher = new this.globals.Uint8Array([...ciphertext, ...tag]);
-        const decrypted = await this.decrypt(cipher, key, iv);
+        const decrypted = await this.decrypt(
+          /** @type {BufferSource} */
+          /** @type {unknown} */
+          cipher,
+          /** @type {BufferSource} */
+          /** @type {unknown} */
+          key,
+          iv
+        );
         return this.globals.JSONparse(decrypted || "{}");
       } catch (e) {
         if (e instanceof MissingHandler) {
@@ -12502,6 +12510,15 @@ ul.messages {
           jsPerformance,
           referrer
         };
+        const getOpener = this.getFeatureSettingEnabled("opener", "enabled");
+        if (getOpener) {
+          result.opener = !!window.opener;
+        }
+        const getReloaded = this.getFeatureSettingEnabled("reloaded", "enabled");
+        if (getReloaded) {
+          result.pageReloaded = window.performance.navigation && window.performance.navigation.type === 1 || /** @type {PerformanceNavigationTiming[]} */
+          window.performance.getEntriesByType("navigation").map((nav) => nav.type).includes("reload");
+        }
         const detectorSettings = this.getFeatureSetting("interferenceTypes", "webInterferenceDetection");
         if (detectorSettings) {
           result.detectorData = {

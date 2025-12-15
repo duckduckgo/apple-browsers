@@ -21,6 +21,9 @@ import SwiftUI
 import SwiftUIExtensions
 
 typealias PopoverStyle = SwiftUIExtensions.PopoverStyle
+typealias PopoverButtonLayout = SwiftUIExtensions.PopoverButtonLayout
+typealias PopoverButtonStyle = SwiftUIExtensions.PopoverButtonStyle
+typealias PopoverConfiguration = SwiftUIExtensions.PopoverConfiguration
 
 final class PopoverMessageViewController: NSHostingController<PopoverMessageView>, NSPopoverDelegate {
 
@@ -37,10 +40,11 @@ final class PopoverMessageViewController: NSHostingController<PopoverMessageView
     private var onDismiss: (() -> Void)?
     private var onAutoDismiss: (() -> Void)?
 
+    /// Initialize with PopoverConfiguration for simplified setup
     init(title: String? = nil,
          message: String,
          image: NSImage? = nil,
-         popoverStyle: PopoverStyle = .basic,
+         configuration: PopoverConfiguration = .default,
          autoDismissDuration: TimeInterval? = Constants.autoDismissDuration,
          maxWidth: CGFloat? = nil,
          shouldShowCloseButton: Bool = false,
@@ -57,12 +61,54 @@ final class PopoverMessageViewController: NSHostingController<PopoverMessageView
         self.viewModel = PopoverMessageViewModel(title: title,
                                                  message: message,
                                                  image: image,
+                                                 configuration: configuration,
+                                                 maxWidth: maxWidth,
+                                                 shouldShowCloseButton: shouldShowCloseButton,
+                                                 shouldPresentMultiline: presentMultiline,
+                                                 buttonText: buttonText,
+                                                 buttonAction: buttonAction,
+                                                 clickAction: clickAction,
+                                                 dismissAction: nil,
+                                                 onClose: onClose)
+        let contentView = PopoverMessageView(viewModel: self.viewModel)
+
+        super.init(rootView: contentView)
+
+        self.viewModel.dismissAction = { [weak self] in
+            self?.dismissPopover(isAutoDismiss: false)
+        }
+        self.rootView = createContentView()
+    }
+
+    /// Legacy initializer for backward compatibility
+    init(title: String? = nil,
+         message: String,
+         image: NSImage? = nil,
+         popoverStyle: PopoverStyle,
+         autoDismissDuration: TimeInterval? = Constants.autoDismissDuration,
+         maxWidth: CGFloat? = nil,
+         shouldShowCloseButton: Bool = false,
+         presentMultiline: Bool = false,
+         buttonText: String? = nil,
+         buttonAction: (() -> Void)? = nil,
+         buttonLayout: PopoverButtonLayout = .horizontal,
+         clickAction: (() -> Void)? = nil,
+         onClose: (() -> Void)? = nil,
+         onDismiss: (() -> Void)? = nil,
+         onAutoDismiss: (() -> Void)? = nil) {
+        self.autoDismissDuration = autoDismissDuration
+        self.onDismiss = onDismiss
+        self.onAutoDismiss = onAutoDismiss
+        self.viewModel = PopoverMessageViewModel(title: title,
+                                                 message: message,
+                                                 image: image,
                                                  popoverStyle: popoverStyle,
                                                  maxWidth: maxWidth,
                                                  shouldShowCloseButton: shouldShowCloseButton,
                                                  shouldPresentMultiline: presentMultiline,
                                                  buttonText: buttonText,
                                                  buttonAction: buttonAction,
+                                                 buttonLayout: buttonLayout,
                                                  clickAction: clickAction,
                                                  dismissAction: nil,
                                                  onClose: onClose)

@@ -4,6 +4,9 @@
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
 
+/* No comment provided by engineer. */
+"Account" = "account";
+
 /* Buton label for Edit action */
 "action.generic.edit" = "Redaguoti";
 
@@ -35,7 +38,7 @@
 "action.title.aiChat.history" = "„Duck.ai“ pokalbiai";
 
 /* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "Naujas DI pokalbis";
+"action.title.aiChat.new" = "Naujas pokalbis";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "„Duck.ai“ nustatymai";
@@ -904,6 +907,12 @@
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Atnaujinti naudotojo vardą?";
 
+/* No comment provided by engineer. */
+"Available Products" = "Prieinami produktai";
+
+/* View plans button text during Black Friday campaign */
+"black-friday.campaign.view.plans.cta" = "Sutaupykite %d%% pirmaisiais metais";
+
 /* Add bookmark screen title */
 "bookmark.addBookmark.title" = "Pridėti žymę";
 
@@ -1026,6 +1035,9 @@
 
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Atšaukti negalima daugiau nei vieną kartą";
+
+/* No comment provided by engineer. */
+"Checking for existing account..." = "Esamos paskyros tikrinimas...";
 
 /* Close All Tabs */
 "close.all.tabs" = "Uždaryti visas korteles";
@@ -1152,6 +1164,9 @@
 
 /* No comment provided by engineer. */
 "Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+
+/* No comment provided by engineer. */
+"Current Subscriptions" = "Dabartinės prenumeratos";
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "PASIRINKTINIS LANGELIŲ TURINYS";
@@ -1676,6 +1691,9 @@
 "error.unknown.try.again" = "Atsirado nežinoma klaida";
 
 /* No comment provided by engineer. */
+"External ID: %@" = "Išorinis ID: %@";
+
+/* No comment provided by engineer. */
 "favorite" = "Mėgstamas";
 
 /* No comment provided by engineer. */
@@ -1912,6 +1930,9 @@
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "PASIRINKITE KATEGORIJĄ";
 
+/* Category for issues with accessing Plus or Pro tier features */
+"feedback.ppro.category.unable-to-access-features" = "Nepavyksta pasiekti „Plus“ arba „Pro“ lygio funkcijų";
+
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Jūsų anoniminiai atsiliepimai mums labai svarbūs.";
 
@@ -2082,6 +2103,9 @@
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Paskutinį kartą apdorota: %@";
+
+/* No comment provided by engineer. */
+"Loading available products..." = "Įkeliami pasiekiami produktai...";
 
 /* No comment provided by engineer. */
 "Loading brokers..." = "Kraunami brokeriai...";
@@ -2429,6 +2453,12 @@
 "new.address.bar.picker.title" = "Adreso juostos parinktis";
 
 /* No comment provided by engineer. */
+"No active subscriptions" = "Nėra aktyvių prenumeratų";
+
+/* No comment provided by engineer. */
+"No existing subscription found" = "Nerasta jokių esamų prenumeratų";
+
+/* No comment provided by engineer. */
 "No Logs" = "Nėra žurnalų";
 
 /* No comment provided by engineer. */
@@ -2436,6 +2466,9 @@
 
 /* No comment provided by engineer. */
 "No results found" = "Rezultatų nerasta";
+
+/* No comment provided by engineer. */
+"No subscriptions available" = "Prenumeratų nėra";
 
 /* No comment provided by engineer. */
 "OK" = "GERAI";
@@ -2448,6 +2481,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser  hides a cookie popup */
 "omnibar.notification.popup-hidden" = "Iškylantysis langas paslėptas";
+
+/* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
+"omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Supratau";
@@ -2519,7 +2555,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Nustatymai > DI funkcijos.";
 
 /* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Norite lengviau pasiekti privačius DI pokalbius?";
+"onboarding.highlights.searchExperience.title" = "Norite lengvos prieigos prie privačių DI pokalbių?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Pirmyn!";
@@ -2911,6 +2947,12 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "„Assist“ paieškos nustatymai";
 
+/* Settings screen cell subtitle for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.subtitle" = "Rodyti naujus „Duck.ai“ pokalbius kaip skirtukus naršyklėje";
+
+/* Settings screen cell title for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.title" = "„Duck.ai“ skirtukų režimas";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Slėpti DI generuotus vaizdus";
 
@@ -2925,9 +2967,6 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Adreso juostos padėtis";
-
-/* Settings screen cell text for experimental menu */
-"settings.appearance.experimental.menu" = "Eksperimentinis naršyklės meniu";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Atidaryti nuorodas susijusiose programose";
@@ -3055,8 +3094,11 @@
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Importuoti slaptažodžius";
 
-/* Copy for budge on settings item to show an item is new */
+/* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Naujas";
+
+/* Copy for badge on settings item to show an item is experimental */
+"settings.item.badge.preview" = "Peržiūrėti";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Klaviatūra";
@@ -3327,6 +3369,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Kuri svetainė neveikia?";
+
+/* No comment provided by engineer. */
+"Status" = "Būsena";
 
 /* No comment provided by engineer. */
 "Status: Invalidated" = "Būsena: Negaliojanti";
@@ -3981,6 +4026,12 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Pranešimas iš %@:";
+
+/* No comment provided by engineer. */
+"Will attach to EXISTING account" = "Bus pridėta prie ESAMOS sąskaitos";
+
+/* No comment provided by engineer. */
+"Will create NEW account" = "Sukurs NAUJĄ paskyrą";
 
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "SUTAUPYKITE 25%";

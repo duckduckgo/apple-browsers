@@ -30,6 +30,16 @@ struct SettingsOthersView: View {
 
     var body: some View {
         Section {
+            // What's New
+            if viewModel.shouldShowWhatsNew {
+                SettingsCellView(
+                    label: UserText.settingsWhatsNew,
+                    image: Image(uiImage: DesignSystemImages.Color.Size24.rocket),
+                    action: { viewModel.openWhatsNew() },
+                    isButton: true
+                )
+            }
+
             // About
             NavigationLink(destination: AboutView().environmentObject(viewModel)) {
 #if (ALPHA && !DEBUG)
@@ -87,15 +97,6 @@ struct SettingsOthersView: View {
                              action: { viewModel.openOtherPlatforms() },
                              webLinkIndicator: true,
                              isButton: true)
-
-            if viewModel.shouldShowWhatsNew {
-                SettingsCellView(
-                    label: "What's New",
-                    image: Image(uiImage: DesignSystemImages.Color.Size24.rocket),
-                    action: { viewModel.openWhatsNew() },
-                    isButton: true
-                )
-            }
         }
     }
 

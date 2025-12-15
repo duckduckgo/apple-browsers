@@ -202,16 +202,6 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
     /// Returns the appropriate action for "View All Plans" based on:
     /// - Subscription platform: where the subscription was purchased
     /// - Current app platform: App Store version vs Stripe (Sparkling) version
-    ///
-    /// Matrix:
-    /// | Subscription | Current App | Action |
-    /// |--------------|-------------|--------|
-    /// | Apple        | AppStore    | Plans page (can manage in-app) |
-    /// | Apple        | Stripe      | Apple manage subscription |
-    /// | Stripe       | AppStore    | Stripe portal |
-    /// | Stripe       | Stripe      | Plans page (can manage in-app) |
-    /// | Google       | Any         | Google sheet |
-    /// | Unknown      | Any         | Internal alert |
     @MainActor
     func viewAllPlansAction() -> ViewAllPlansAction {
         guard let subscriptionPlatform = subscriptionPlatform else {

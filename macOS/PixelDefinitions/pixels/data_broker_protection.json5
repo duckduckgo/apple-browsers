@@ -29,8 +29,7 @@
             {
                 "key": "click_action_delay_reduction_optimization",
                 "description": "Whether the click action delay reduction optimization feature flag is enabled",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             }
         ]
     },
@@ -272,8 +271,7 @@
             {
                 "key": "click_action_delay_reduction_optimization",
                 "description": "Whether the click action delay reduction optimization feature flag is enabled",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             }
         ]
     },
@@ -337,8 +335,7 @@
             {
                 "key": "click_action_delay_reduction_optimization",
                 "description": "Whether the click action delay reduction optimization feature flag is enabled",
-                "type": "string",
-                "enum": ["true", "false"]
+                "type": "boolean"
             }
         ]
     },

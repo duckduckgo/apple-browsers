@@ -1346,6 +1346,8 @@
 		37E307B32D075B6500599500 /* NewTabPagePrivacyStatsEventHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37E307B12D075B5E00599500 /* NewTabPagePrivacyStatsEventHandler.swift */; };
 		37E3E8022DAE58660056DEED /* TabCrashRecoveryExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37E3E8012DAE58620056DEED /* TabCrashRecoveryExtension.swift */; };
 		37E3E8032DAE58660056DEED /* TabCrashRecoveryExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37E3E8012DAE58620056DEED /* TabCrashRecoveryExtension.swift */; };
+		37E477902EF006E6006369D6 /* MemoryUsageMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37E4778F2EF006E1006369D6 /* MemoryUsageMonitor.swift */; };
+		37E477912EF006E6006369D6 /* MemoryUsageMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37E4778F2EF006E1006369D6 /* MemoryUsageMonitor.swift */; };
 		37E7948D2EB9E955007BF23C /* DefaultBrowserAndDockPromptUserActivityStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37E7948B2EB9E955007BF23C /* DefaultBrowserAndDockPromptUserActivityStorage.swift */; };
 		37E7948E2EB9E955007BF23C /* DefaultBrowserAndDockPromptUserActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37E794882EB9E955007BF23C /* DefaultBrowserAndDockPromptUserActivity.swift */; };
 		37E7948F2EB9E955007BF23C /* DefaultBrowserAndDockPromptUserActivityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37E7948A2EB9E955007BF23C /* DefaultBrowserAndDockPromptUserActivityProvider.swift */; };
@@ -4775,6 +4777,7 @@
 		37E307AD2D07482F00599500 /* NewTabPagePixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPagePixel.swift; sourceTree = "<group>"; };
 		37E307B12D075B5E00599500 /* NewTabPagePrivacyStatsEventHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPagePrivacyStatsEventHandler.swift; sourceTree = "<group>"; };
 		37E3E8012DAE58620056DEED /* TabCrashRecoveryExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabCrashRecoveryExtension.swift; sourceTree = "<group>"; };
+		37E4778F2EF006E1006369D6 /* MemoryUsageMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemoryUsageMonitor.swift; sourceTree = "<group>"; };
 		37E75733296F4F0500E1C162 /* UnitTestsAppStore.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = UnitTestsAppStore.xcconfig; sourceTree = "<group>"; };
 		37E75734296F4F0500E1C162 /* IntegrationTestsAppStore.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = IntegrationTestsAppStore.xcconfig; sourceTree = "<group>"; };
 		37E794882EB9E955007BF23C /* DefaultBrowserAndDockPromptUserActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptUserActivity.swift; sourceTree = "<group>"; };
@@ -11955,6 +11958,7 @@
 		ED7478162E845958008628A1 /* AppHealth */ = {
 			isa = PBXGroup;
 			children = (
+				37E4778F2EF006E1006369D6 /* MemoryUsageMonitor.swift */,
 				ED4470142EB2676A003DC918 /* HangReportingFeatureMonitor.swift */,
 				EDCFFF812E9A61AB00ABD9F9 /* WatchdogSleepMonitor.swift */,
 				ED7478172E845D35008628A1 /* HangPixel.swift */,
@@ -14277,6 +14281,7 @@
 				84E7205C2EAA1232002618BD /* MockThemeManager.swift in Sources */,
 				1DC9DD1E2DB041760029D4A5 /* NSAlert+Tab.swift in Sources */,
 				7B0C7F0D2EDF132200A338FD /* WebNotificationsTabExtension.swift in Sources */,
+				37E477902EF006E6006369D6 /* MemoryUsageMonitor.swift in Sources */,
 				CC951AEB2EB528490047E245 /* DefaultBrowserAndDockPromptService.swift in Sources */,
 				3706FB83293F65D500E42796 /* NSApplicationExtension.swift in Sources */,
 				E274EFF72E1D55D500373C41 /* NewTabPageOmnibarSuggestionsProvider.swift in Sources */,
@@ -16348,6 +16353,7 @@
 				F188268D2BBF01C300D9AC4F /* PixelDataModel.xcdatamodeld in Sources */,
 				7B430EA12A71411A00BAC4A1 /* NetworkProtectionSimulateFailureMenu.swift in Sources */,
 				1E7E2E942902AC0E00C01B54 /* PrivacyDashboardPermissionHandler.swift in Sources */,
+				37E477912EF006E6006369D6 /* MemoryUsageMonitor.swift in Sources */,
 				AA9FF95F24A1FB690039E328 /* TabCollectionViewModel.swift in Sources */,
 				1D6860552D370A40006FC53E /* WebExtensionPathsStore.swift in Sources */,
 				4BF0E5052AD2551A00FFEC9E /* NetworkProtectionPixelEvent.swift in Sources */,

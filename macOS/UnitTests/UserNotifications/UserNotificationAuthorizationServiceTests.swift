@@ -19,7 +19,7 @@
 import XCTest
 import Combine
 import UserNotifications
-@testable import DuckDuckGo
+@testable import DuckDuckGo_Privacy_Browser
 
 final class UserNotificationAuthorizationServiceTests: XCTestCase {
 
@@ -83,7 +83,7 @@ final class UserNotificationAuthorizationServiceTests: XCTestCase {
 
         let status = await service.authorizationStatus
 
-        XCTAssertTrue([.notDetermined, .denied, .authorized, .provisional, .ephemeral].contains(status))
+        XCTAssertTrue([.notDetermined, .denied, .authorized, .provisional].contains(status))
     }
 
     func testWhenMultipleSubscribersExistThenAllReceiveUpdates() async throws {

@@ -104,7 +104,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         }
 
         let shouldShowWinBackOfferUrgencyMessage = winBackOfferService.shouldShowUrgencyMessage
-        let isCurrentPIRUser = isDuckDuckGoSubscriber && ((try? dbpRunPrerequisitesDelegate?.meetsProfileRunPrequisite) ?? false)
+        let isCurrentPIRUser = (await dbpRunPrerequisitesDelegate?.validateRunPrerequisites()) ?? false
 
         let surveyActionMapper: DefaultRemoteMessagingSurveyURLBuilder
 

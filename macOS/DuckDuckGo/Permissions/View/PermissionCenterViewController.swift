@@ -17,9 +17,14 @@
 //
 
 import AppKit
+import Combine
+import DesignResourcesKit
 import SwiftUI
 
 final class PermissionCenterViewController: NSViewController {
+
+    let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    var themeUpdateCancellable: AnyCancellable?
 
     let viewModel: PermissionCenterViewModel
     private var hostingView: NSHostingView<PermissionCenterView>?
@@ -35,12 +40,16 @@ final class PermissionCenterViewController: NSViewController {
     }
 
     override func loadView() {
-        view = NSView()
+        let backgroundView = NSView()
+        backgroundView.wantsLayer = true
+        view = backgroundView
+        applyBackgroundColor(themeManager.theme.colorsProvider.popoverBackgroundColor)
     }
 
     override func viewDidLoad() {
         super.viewDidLoad()
         setupHostingView()
+        subscribeToThemeChanges()
     }
 
     private func setupHostingView() {
@@ -58,11 +67,28 @@ final class PermissionCenterViewController: NSViewController {
 
         self.hostingView = hostingView
     }
+
+    private func applyBackgroundColor(_ color: NSColor) {
+        view.layer?.backgroundColor = color.cgColor
+        viewModel.backgroundColor = color
+    }
+}
+
+// MARK: - ThemeUpdateListening
+
+extension PermissionCenterViewController: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        applyBackgroundColor(theme.colorsProvider.popoverBackgroundColor)
+    }
 }
 
 // MARK: - PermissionCenterPopover
 
 final class PermissionCenterPopover: NSPopover {
+
+    let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    var themeUpdateCancellable: AnyCancellable?
 
     let viewController: PermissionCenterViewController
 
@@ -73,10 +99,22 @@ final class PermissionCenterPopover: NSPopover {
         self.contentViewController = viewController
         self.behavior = .transient
         self.animates = true
+
+        subscribeToThemeChanges()
+        applyThemeStyle(theme: themeManager.theme)
     }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+}
+
+// MARK: - ThemeUpdateListening
+
+extension PermissionCenterPopover: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        backgroundColor = theme.colorsProvider.popoverBackgroundColor
     }
 }

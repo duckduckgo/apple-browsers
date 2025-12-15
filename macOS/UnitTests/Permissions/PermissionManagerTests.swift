@@ -238,6 +238,37 @@ final class PermissionManagerTests: XCTestCase {
 
 }
 
+// MARK: - Notification Permission Tests
+
+extension PermissionManagerTests {
+
+    /// Tests that notification permissions can be stored and retrieved.
+    func testNotificationPermissionCanBeStoredAndRetrieved() {
+        store.permissions = []
+
+        manager.setPermission(.allow, forDomain: "example.com", permissionType: .notification)
+
+        let result = manager.permission(forDomain: "example.com", permissionType: .notification)
+        XCTAssertEqual(result, .allow)
+    }
+
+    /// Tests that notification permissions are cleared on burn.
+    func testNotificationPermissionsClearedOnBurn() {
+        let notificationEntity = PermissionEntity(
+            permission: .init(id: .init(), decision: .allow),
+            domain: "notifications.example.com",
+            type: .notification
+        )
+        store.permissions = [notificationEntity]
+
+        let fireproofDomains = FireproofDomains(store: FireproofDomainsStoreMock(), tld: Application.appDelegate.tld)
+        manager.burnPermissions(except: fireproofDomains) {}
+
+        let result = manager.permission(forDomain: "notifications.example.com", permissionType: .notification)
+        XCTAssertEqual(result, .ask, "Notification permission should be cleared after burn")
+    }
+}
+
 fileprivate extension PermissionEntity {
     static let entity1 = PermissionEntity(permission: .init(id: .init(), decision: .allow),
                                           domain: "duckduckgo.com",

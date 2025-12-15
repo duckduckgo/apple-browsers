@@ -424,6 +424,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
         super.stopTunnel(with: reason, completionHandler: completionHandler)
     }
 
+    @MainActor
     @objc init() {
 #if DEBUG
         Pixel.isDryRun = true

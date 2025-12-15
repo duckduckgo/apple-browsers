@@ -37,6 +37,9 @@
 /* Open AI Chat history action in the menu list */
 "action.title.aiChat.history" = "Duck.ai Sohbetleri";
 
+/* Start new AI Chat action in the menu list */
+"action.title.aiChat.new" = "Yeni Sohbet";
+
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Duck.ai Ayarları";
 
@@ -87,6 +90,9 @@
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Arka Planda Aç";
+
+/* Create New Tab action */
+"action.title.newTabAction" = "Yeni Sekme";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Yeni Sekmede Aç";

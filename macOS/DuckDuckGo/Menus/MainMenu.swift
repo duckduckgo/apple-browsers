@@ -835,6 +835,9 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "Attributed Metrics")
                 .submenu(AttributedMetricDebugMenu())
 
+            NSMenuItem(title: "Reinstall Detection")
+                .submenu(ReinstallUserDetectionDebugMenu())
+
             NSMenuItem(title: "AppStore Updates")
                 .submenu(AppStoreUpdatesDebugMenu())
 

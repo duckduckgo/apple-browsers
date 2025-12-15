@@ -37,6 +37,9 @@
 /* Open AI Chat history action in the menu list */
 "action.title.aiChat.history" = "Chaty Duck.ai";
 
+/* Start new AI Chat action in the menu list */
+"action.title.aiChat.new" = "Nový chat";
+
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Nastavení Duck.ai";
 
@@ -87,6 +90,9 @@
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Otevřít na pozadí";
+
+/* Create New Tab action */
+"action.title.newTabAction" = "Nová karta";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Otevřít v nové kartě";

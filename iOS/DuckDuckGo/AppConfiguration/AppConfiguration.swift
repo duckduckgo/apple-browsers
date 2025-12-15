@@ -38,7 +38,7 @@ struct AppConfiguration {
         self.appKeyValueStore = appKeyValueStore
     }
 
-    func start(isBookmarksDBFilePresent: Bool) throws {
+    func start(isBookmarksDBFilePresent: Bool?) throws {
         KeyboardConfiguration.disableHardwareKeyboardForUITests()
         PixelConfiguration.configure(with: featureFlagger)
 

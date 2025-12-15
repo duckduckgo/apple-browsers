@@ -37,6 +37,9 @@
 /* Open AI Chat history action in the menu list */
 "action.title.aiChat.history" = "Duck.ai-chatter";
 
+/* Start new AI Chat action in the menu list */
+"action.title.aiChat.new" = "Ny chat";
+
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Innstillinger for Duck.ai";
 
@@ -87,6 +90,9 @@
 
 /* Open in New Background Tab action */
 "action.title.newBackgroundTabForUrl" = "Åpne i bakgrunnen";
+
+/* Create New Tab action */
+"action.title.newTabAction" = "Ny fane";
 
 /* Open in New Tab action */
 "action.title.newTabForUrl" = "Åpne i ny fane";

@@ -295,7 +295,7 @@ final class PermissionContextMenu: NSMenu {
             deeplink = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone")!
         case .geolocation:
             deeplink = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_LocationServices")!
-        case .popups, .externalScheme:
+        case .popups, .notification, .externalScheme:
             assertionFailure("No settings available")
             return
         }
@@ -352,7 +352,7 @@ private extension NSMenuItem {
     static func alwaysAsk(_ permission: PermissionType, on domain: String, target: PermissionContextMenu, isChecked: Bool) -> NSMenuItem {
         let title: String
         switch permission {
-        case .camera, .microphone, .geolocation, .externalScheme:
+        case .camera, .microphone, .geolocation, .notification, .externalScheme:
             title = UserText.privacyDashboardPermissionAsk
         case .popups:
             title = UserText.privacyDashboardPopupsAlwaysAsk
@@ -431,8 +431,8 @@ private extension NSMenuItem {
     static func persistenceHeaderItem(for permission: PermissionType, on domain: String) -> NSMenuItem {
         let title: String
         switch permission {
-        case .camera, .microphone, .geolocation:
-            title = String(format: UserText.devicePermissionAuthorizationFormat, domain, permission.localizedDescription.lowercased())
+        case .camera, .microphone, .geolocation, .notification:
+            title = String(format: UserText.permissionMenuHeaderDeviceFormat, domain, permission.localizedDescription.lowercased())
         case .externalScheme(scheme: let scheme):
             title = String(format: UserText.permissionMenuHeaderExternalSchemeFormat, permission.localizedDescription.lowercased(), scheme)
         case .popups:

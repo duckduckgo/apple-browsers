@@ -20,7 +20,6 @@ import Common
 import Foundation
 import VPN
 import NetworkProtectionUI
-import NetworkExtension
 import SystemExtensions
 import LoginItems
 import NetworkProtectionIPC

@@ -782,7 +782,6 @@ extension Pixel {
         
         case contentBlockingCompilationTaskPerformance(iterationCount: Int, timeBucketAggregation: CompileTimeBucketAggregation)
         case ampBlockingRulesCompilationFailed
-        case ampKeywordDetectionPerformance
 
         case webKitDidTerminate
         case webKitTerminationDidReloadCurrentTab
@@ -2225,7 +2224,6 @@ extension Pixel.Event {
         case .contentBlockingCompilationTaskPerformance(let iterationCount, let timeBucketAggregation):
             return "m_content_blocking_compilation_loops_\(iterationCount)_time_\(timeBucketAggregation)"
         case .ampBlockingRulesCompilationFailed: return "m_debug_amp_rules_compilation_failed"
-        case .ampKeywordDetectionPerformance: return "m_debug_amp-keyword-detection-performance"
 
         case .webKitDidTerminate: return "m_d_wkt"
         case .webKitDidTerminateDuringWarmup: return "m_d_webkit-terminated-during-warmup"
@@ -2838,8 +2836,8 @@ extension Pixel.Event {
         case .aiChatLegacyOmnibarBackButtonPressed: return "m_aichat_legacy_omnibar_back_button_pressed"
         
         // MARK: AI Chat History Deletion
-        case .aiChatHistoryDeleteSuccessful: return "m_ios_aichat_history_delete_successful"
-        case .aiChatHistoryDeleteFailed: return "m_ios_aichat_history_delete_failed"
+        case .aiChatHistoryDeleteSuccessful: return "m_aichat_history_delete_successful"
+        case .aiChatHistoryDeleteFailed: return "m_aichat_history_delete_failed"
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"

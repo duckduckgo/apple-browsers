@@ -19,19 +19,46 @@
 import Cocoa
 
 protocol NavigationBarBadgeAnimatorDelegate: AnyObject {
-    func didFinishAnimating()
+    func didFinishAnimating(type: NavigationBarBadgeAnimationView.AnimationType)
 }
 
 final class NavigationBarBadgeAnimator: NSObject {
-    var queuedAnimation: QueueData?
+
+    // Priority queue system to manage the animations
+    enum AnimationPriority: Comparable {
+        case high  // Tracker notifications (shown first)
+        case low   // Cookie notifications (shown after trackers)
+
+        static func < (lhs: AnimationPriority, rhs: AnimationPriority) -> Bool {
+            switch (lhs, rhs) {
+            case (.low, .high): return true
+            default: return false
+            }
+        }
+    }
+
+    struct QueuedAnimation {
+        let type: NavigationBarBadgeAnimationView.AnimationType
+        let priority: AnimationPriority
+        var selectedTab: Tab?
+        let buttonsContainer: NSView
+        let notificationBadgeContainer: NavigationBarBadgeAnimationView
+    }
+
     private var animationID: UUID?
     private(set) var isAnimating = false
-    weak var delegate: NavigationBarBadgeAnimatorDelegate?
+    /// Tracks whether the shield animation is playing (managed externally by AddressBarButtonsViewController)
+    /// Used to prevent new badge animations from starting while shield animation is in progress
+    var isShieldAnimationInProgress = false
+    private(set) var animationQueue: [QueuedAnimation] = []
+    private(set) var currentAnimationPriority: AnimationPriority?
+    private(set) var currentAnimationType: NavigationBarBadgeAnimationView.AnimationType?
+    private var currentTab: Tab?
+    private var shouldAutoProcessNextAnimation = true
+    private weak var currentButtonsContainer: NSView?
+    private weak var currentNotificationContainer: NavigationBarBadgeAnimationView?
 
-    struct QueueData {
-        var selectedTab: Tab?
-        var animationType: NavigationBarBadgeAnimationView.AnimationType
-    }
+    weak var delegate: NavigationBarBadgeAnimatorDelegate?
 
     private enum ButtonsFade {
         case start
@@ -41,12 +68,12 @@ final class NavigationBarBadgeAnimator: NSObject {
     func showNotification(withType type: NavigationBarBadgeAnimationView.AnimationType,
                           buttonsContainer: NSView,
                           notificationBadgeContainer: NavigationBarBadgeAnimationView) {
-        queuedAnimation = nil
-
         isAnimating = true
 
         let newAnimationID = UUID()
         self.animationID = newAnimationID
+        self.currentButtonsContainer = buttonsContainer
+        self.currentNotificationContainer = notificationBadgeContainer
 
         notificationBadgeContainer.prepareAnimation(type)
 
@@ -59,8 +86,23 @@ final class NavigationBarBadgeAnimator: NSObject {
                     self?.animateButtonsFade(.end,
                                        buttonsContainer: buttonsContainer,
                                        notificationBadgeContainer: notificationBadgeContainer) {
+                        // Capture the type before clearing state
+                        let finishedType = self?.currentAnimationType
                         self?.isAnimating = false
-                        self?.delegate?.didFinishAnimating()
+                        self?.currentAnimationPriority = nil
+                        self?.currentAnimationType = nil
+                        self?.currentButtonsContainer = nil
+                        self?.currentNotificationContainer = nil
+                        if let finishedType = finishedType {
+                            self?.delegate?.didFinishAnimating(type: finishedType)
+                        }
+
+                        // Only auto-process next animation if flag is set
+                        // (tracker notifications will manually process after shield animation)
+                        if self?.shouldAutoProcessNextAnimation == true {
+                            self?.processNextAnimation()
+                        }
+                        self?.shouldAutoProcessNextAnimation = true  // Reset for next animation
                     }
                 }
             }
@@ -93,5 +135,98 @@ final class NavigationBarBadgeAnimator: NSObject {
                 completionHandler()
             }
         }
+    }
+
+    // MARK: - Priority Queue Management
+
+    func enqueueAnimation(_ type: NavigationBarBadgeAnimationView.AnimationType,
+                          priority: AnimationPriority,
+                          tab: Tab? = nil,
+                          buttonsContainer: NSView,
+                          notificationBadgeContainer: NavigationBarBadgeAnimationView) {
+        let queuedAnimation = QueuedAnimation(
+            type: type,
+            priority: priority,
+            selectedTab: tab,
+            buttonsContainer: buttonsContainer,
+            notificationBadgeContainer: notificationBadgeContainer
+        )
+
+        // Add to queue
+        animationQueue.append(queuedAnimation)
+
+        // Sort by priority (high priority first) - matches iOS behavior
+        animationQueue.sort { $0.priority > $1.priority }
+
+        // Start processing if not already animating and shield animation is not in progress
+        if !isAnimating && !isShieldAnimationInProgress {
+            processNextAnimation()
+        }
+    }
+
+    func processNextAnimation() {
+        guard !isAnimating, !isShieldAnimationInProgress, !animationQueue.isEmpty else { return }
+
+        let nextAnimation = animationQueue.removeFirst()
+        currentAnimationPriority = nextAnimation.priority
+        currentAnimationType = nextAnimation.type
+        currentTab = nextAnimation.selectedTab
+
+        // For tracker notifications, disable auto-processing so shield animation can play first
+        // This must be set when the animation STARTS, not when it's queued
+        if case .trackersBlocked = nextAnimation.type {
+            shouldAutoProcessNextAnimation = false
+        }
+
+        showNotification(
+            withType: nextAnimation.type,
+            buttonsContainer: nextAnimation.buttonsContainer,
+            notificationBadgeContainer: nextAnimation.notificationBadgeContainer
+        )
+    }
+
+    func cancelPendingAnimations() {
+        // Clear the queue
+        animationQueue.removeAll()
+
+        // Reset flags to default state
+        shouldAutoProcessNextAnimation = true
+        isShieldAnimationInProgress = false
+
+        // Stop current animation and restore UI state
+        if isAnimating {
+            // Restore buttons container visibility
+            currentButtonsContainer?.alphaValue = 1
+            // Hide notification container
+            currentNotificationContainer?.alphaValue = 0
+            currentNotificationContainer?.removeAnimation()
+
+            isAnimating = false
+            animationID = nil
+            currentAnimationPriority = nil
+            currentAnimationType = nil
+            currentTab = nil
+            currentButtonsContainer = nil
+            currentNotificationContainer = nil
+        }
+    }
+
+    func handleTabSwitch(to tab: Tab) {
+        // If current animation is for a different tab, cancel it
+        if let currentTab = currentTab, currentTab !== tab {
+            cancelPendingAnimations()
+        }
+
+        // Remove queued animations for different tabs
+        animationQueue.removeAll { queuedAnimation in
+            guard let queuedTab = queuedAnimation.selectedTab else { return false }
+            return queuedTab !== tab
+        }
+    }
+
+    /// Sets whether to automatically process the next animation after the current one completes
+    /// Used for tracker notifications that need to play shield animation before processing next in queue
+    func setAutoProcessNextAnimation(_ enabled: Bool) {
+        shouldAutoProcessNextAnimation = enabled
     }
 }

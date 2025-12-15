@@ -321,36 +321,22 @@ struct PermissionRowView: View {
     private var systemDisabledWarning: some View {
         if isNotificationNotDetermined {
             // Show variant for notDetermined: "System notifications disabled, turn them on."
-            (Text(UserText.permissionCenterSystemNotificationNotDetermined)
-                .font(.system(size: 12))
-                .foregroundColor(Color(designSystemColor: .textSecondary))
-            + Text(" ")
-            + Text(UserText.permissionCenterTurnOnNotifications)
-                .font(.system(size: 12))
-                .foregroundColor(.accentColor))
-                .lineSpacing(6)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .cursor(.pointingHand)
-                .onTapGesture {
-                    onRequestSystemPermission?()
-                }
+            SystemPermissionWarningView(
+                prefixText: UserText.permissionCenterSystemNotificationNotDetermined,
+                linkText: UserText.permissionCenterTurnOnNotifications,
+                linkColor: .accentColor
+            ) {
+                onRequestSystemPermission?()
+            }
         } else {
             // Show standard variant: link to System Settings
-            (Text(item.permissionType.systemPermissionDisabledText)
-                .font(.system(size: 12))
-                .foregroundColor(Color(designSystemColor: .textSecondary))
-            + Text(" ")
-            + Text(item.permissionType.systemSettingsLinkText)
-                .font(.system(size: 12))
-                .foregroundColor(.accentColor))
-                .lineSpacing(6)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .cursor(.pointingHand)
-                .onTapGesture {
-                    openSystemSettings()
-                }
+            SystemPermissionWarningView(
+                prefixText: item.permissionType.systemPermissionDisabledText,
+                linkText: item.permissionType.systemSettingsLinkText,
+                linkColor: .accentColor
+            ) {
+                openSystemSettings()
+            }
         }
     }
 

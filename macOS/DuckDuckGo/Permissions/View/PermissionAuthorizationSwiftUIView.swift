@@ -423,20 +423,12 @@ struct PermissionAuthorizationSwiftUIView: View {
 
     /// View shown when system permission was already denied - displays link to System Settings
     private var systemPermissionDisabledView: some View {
-        (Text(permissionType.systemPermissionDisabledText)
-            .font(.system(size: 12))
-            .foregroundColor(Color(designSystemColor: .textSecondary))
-        + Text(" ")
-        + Text(permissionType.systemSettingsLinkText)
-            .font(.system(size: 12))
-            .foregroundColor(Color(designSystemColor: .textLink)))
-            .lineSpacing(6)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .cursor(.pointingHand)
-            .onTapGesture {
-                openSystemSettings()
-            }
+        SystemPermissionWarningView(
+            prefixText: permissionType.systemPermissionDisabledText,
+            linkText: permissionType.systemSettingsLinkText
+        ) {
+            openSystemSettings()
+        }
     }
 
     private func openSystemSettings() {

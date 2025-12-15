@@ -35,37 +35,67 @@ class PermissionsTests: UITestCase {
     private var notificationCenter: XCUIApplication!
     private var addressBarTextField: XCUIElement!
     private var permissionsSiteURL: URL!
-    private var historyMenuBarItem: XCUIElement!
-    private var clearAllHistoryMenuItem: XCUIElement!
-    private var clearAllHistoryAlertClearButton: XCUIElement!
-    private var fakeFireButton: XCUIElement!
+
+    // Fire Dialog Element Accessors
+    private var fireDialogTitle: XCUIElement { app.fireDialogTitle }
+    private var fireDialogHistoryToggle: XCUIElement { app.fireDialogHistoryToggle }
+    private var fireDialogCookiesToggle: XCUIElement { app.fireDialogCookiesToggle }
+    private var fireDialogTabsToggle: XCUIElement { app.fireDialogTabsToggle }
+    private var fireDialogBurnButton: XCUIElement { app.fireDialogBurnButton }
 
     override func setUpWithError() throws {
         try super.setUpWithError()
         continueAfterFailure = false
-        app = XCUIApplication.setUp()
 
         permissionsSiteURL = try XCTUnwrap(URL(string: "https://permission.site"), "It wasn't possible to unwrap a URL that the tests depend on.")
         notificationCenter = XCUIApplication(bundleIdentifier: "com.apple.UserNotificationCenter")
-        addressBarTextField = app.addressBar
-        historyMenuBarItem = app.menuBarItems["History"]
-        clearAllHistoryMenuItem = app.menuItems["HistoryMenu.clearAllHistory"]
-        clearAllHistoryAlertClearButton = app.buttons["ClearAllHistoryAndDataAlert.clearButton"]
-        fakeFireButton = app.buttons["FireViewController.fakeFireButton"]
 
-        app.resetAuthorizationStatus(for: .camera) // These resets work much better before launch.
+        // Reset permissions BEFORE app launch - this is critical for TCC dialogs to appear
+        app = XCUIApplication()
+        app.resetAuthorizationStatus(for: .camera)
         app.resetAuthorizationStatus(for: .microphone)
 
-        app.activate()
-        historyMenuBarItem.clickAfterExistenceTestSucceeds()
-        clearAllHistoryMenuItem.clickAfterExistenceTestSucceeds()
-        clearAllHistoryAlertClearButton.clickAfterExistenceTestSucceeds() // Manually remove the history
-        XCTAssertTrue( // Let any ongoing fire animation or data processes complete
-            fakeFireButton.waitForNonExistence(timeout: UITests.Timeouts.fireAnimation),
+        // Now set up and launch the app
+        app = XCUIApplication.setUp()
+        addressBarTextField = app.addressBar
+        app.enforceSingleWindow()
+
+        // Clear history using Fire Dialog
+        XCTAssertTrue(
+            app.historyMenu.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "History menu bar item didn't appear in a reasonable timeframe."
+        )
+        app.historyMenu.click()
+
+        XCTAssertTrue(
+            app.clearAllHistoryMenuItem.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Clear all history item didn't appear in a reasonable timeframe."
+        )
+        app.clearAllHistoryMenuItem.click()
+
+        // Fire Dialog should appear instead of old alert
+        XCTAssertTrue(
+            fireDialogTitle.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Fire dialog didn't appear in a reasonable timeframe."
+        )
+
+        // Select "Everything" scope to clear all history
+        app.fireDialogSegmentedControl.buttons["Everything"].click()
+
+        // Ensure toggles are enabled
+        fireDialogHistoryToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
+        fireDialogCookiesToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
+        fireDialogTabsToggle.toggleCheckboxIfNeeded(to: true, ensureHittable: { _ in })
+
+        // Click burn button to clear history
+        fireDialogBurnButton.click()
+
+        // Wait for fire animation to complete
+        XCTAssertTrue(
+            app.fakeFireButton.waitForNonExistence(timeout: UITests.Timeouts.fireAnimation),
             "Fire animation didn't finish and cease existing in a reasonable timeframe."
         )
 
-        app.enforceSingleWindow()
         XCTAssertTrue(
             addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "The address bar text field didn't become available in a reasonable timeframe before starting the test."
@@ -103,7 +133,7 @@ class PermissionsTests: UITestCase {
             "After a few attempts to wait for permissions.site to update their button animation after the TCC dialog, their button has to be green."
         )
 
-        let navigationBarViewControllerPermissionButton = app.buttons["NavigationBarViewController.cameraPermissionButton"]
+        let navigationBarViewControllerPermissionButton = app.buttons["AddressBarButtonsViewController.cameraButton"]
         navigationBarViewControllerPermissionButton.clickAfterExistenceTestSucceeds()
 
         let permissionContextMenuAlwaysAsk = app.menuItems["PermissionContextMenu.alwaysAsk"]
@@ -154,7 +184,7 @@ class PermissionsTests: UITestCase {
             "After a few attempts to wait for permissions.site to update their button animation after the TCC dialog, their button has to be red."
         )
 
-        let navigationBarViewControllerPermissionButton = app.buttons["NavigationBarViewController.cameraPermissionButton"]
+        let navigationBarViewControllerPermissionButton = app.buttons["AddressBarButtonsViewController.cameraButton"]
         XCTAssertTrue( // Prove that the browser's permission button does not appear
             navigationBarViewControllerPermissionButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
             "The permissions button in the browser should not appear when camera permission has been denied."
@@ -192,7 +222,7 @@ class PermissionsTests: UITestCase {
             "After a few attempts to wait for permissions.site to update their button animation after the TCC dialog, their button has to be green."
         )
 
-        let navigationBarViewControllerPermissionButton = app.buttons["NavigationBarViewController.cameraPermissionButton"]
+        let navigationBarViewControllerPermissionButton = app.buttons["AddressBarButtonsViewController.cameraButton"]
         navigationBarViewControllerPermissionButton.clickAfterExistenceTestSucceeds()
 
         let permissionContextMenuAlwaysAsk = app.menuItems["PermissionContextMenu.alwaysAsk"]
@@ -259,7 +289,7 @@ class PermissionsTests: UITestCase {
             "After a few attempts to wait for permissions.site to update their button animation after the TCC dialog, their button has to be green."
         )
 
-        let navigationBarViewControllerPermissionButton = app.buttons["NavigationBarViewController.microphonePermissionButton"]
+        let navigationBarViewControllerPermissionButton = app.buttons["AddressBarButtonsViewController.microphoneButton"]
         navigationBarViewControllerPermissionButton.clickAfterExistenceTestSucceeds()
 
         let permissionContextMenuAlwaysAsk = app.menuItems["PermissionContextMenu.alwaysAsk"]
@@ -310,7 +340,7 @@ class PermissionsTests: UITestCase {
             "After between one and four attempts to wait for permissions.site to update their button animation after the TCC dialog, their button has to be red."
         )
 
-        let navigationBarViewControllerPermissionButton = app.buttons["NavigationBarViewController.microphonePermissionButton"]
+        let navigationBarViewControllerPermissionButton = app.buttons["AddressBarButtonsViewController.microphoneButton"]
         XCTAssertTrue( // Prove that the browser's permission button does not appear
             navigationBarViewControllerPermissionButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
             "The permissions button in the browser should not appear when microphone permission has been denied."
@@ -348,7 +378,7 @@ class PermissionsTests: UITestCase {
             "After a few attempts to wait for permissions.site to update their button animation after the TCC dialog, their button has to be green."
         )
 
-        let navigationBarViewControllerPermissionButton = app.buttons["NavigationBarViewController.microphonePermissionButton"]
+        let navigationBarViewControllerPermissionButton = app.buttons["AddressBarButtonsViewController.microphoneButton"]
         navigationBarViewControllerPermissionButton.clickAfterExistenceTestSucceeds()
 
         let permissionContextMenuAlwaysAsk = app.menuItems["PermissionContextMenu.alwaysAsk"]
@@ -402,7 +432,7 @@ class PermissionsTests: UITestCase {
         // We would like to be able to test here that the permission.site "Location" button turns green here, but it frequently doesn't turn green
         // when location permissions are granted.
 
-        let navigationBarViewControllerPermissionButton = app.buttons["NavigationBarViewController.geolocationPermissionButton"]
+        let navigationBarViewControllerPermissionButton = app.buttons["AddressBarButtonsViewController.geolocationButton"]
         navigationBarViewControllerPermissionButton.clickAfterExistenceTestSucceeds()
 
         let permissionContextMenuAlwaysAsk = app.menuItems["PermissionContextMenu.alwaysAsk"]
@@ -437,7 +467,7 @@ class PermissionsTests: UITestCase {
         // We would like to be able to test here that the permission.site "Location" button turns green here, but it frequently doesn't turn green
         // when location permissions are granted.
 
-        let navigationBarViewControllerPermissionButton = app.buttons["NavigationBarViewController.geolocationPermissionButton"]
+        let navigationBarViewControllerPermissionButton = app.buttons["AddressBarButtonsViewController.geolocationButton"]
         navigationBarViewControllerPermissionButton.clickAfterExistenceTestSucceeds()
 
         let permissionContextMenuAlwaysAsk = app.menuItems["PermissionContextMenu.alwaysAsk"]

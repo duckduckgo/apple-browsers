@@ -29,64 +29,72 @@ struct SettingsDataClearingView: View {
     @State private var isShowingBurnAlert: Bool = false
 
     var body: some View {
-        List {
-            Section {
-                // Fire Button Animation
-                SettingsPickerCellView(useImprovedPicker: settingsViewModel.useImprovedPicker,
-                                       label: UserText.settingsFirebutton,
-                                       options: FireButtonAnimationType.allCases,
-                                       selectedOption: settingsViewModel.fireButtonAnimationBinding)
-            }
-
-            Section {
-                // Fireproof Sites
-                SettingsCellView(label: UserText.settingsFireproofSites,
-                                  action: { settingsViewModel.presentLegacyView(.fireproofSites) },
-                                 disclosureIndicator: true,
-                                 isButton: true)
-
-                // Automatically Clear Data
-                SettingsCellView(label: UserText.settingsClearData,
-                                  action: { settingsViewModel.presentLegacyView(.autoclearData) },
-                                  accessory: .rightDetail(settingsViewModel.state.autoclearDataEnabled
-                                                         ? UserText.autoClearAccessoryOn
-                                                         : UserText.autoClearAccessoryOff),
-                                  disclosureIndicator: true,
-                                  isButton: true)
-            }
-
-            if settingsViewModel.isAIChatEnabled && settingsViewModel.isDuckAiDataClearingEnabled {
-                Section {
-                    SettingsCellView(label: UserText.settingsClearAIChatHistory,
-                                     accessory: .toggle(isOn: settingsViewModel.autoClearAIChatHistoryBinding))
-                } footer: {
-                    Text(UserText.settingsClearAIChatHistoryFooter)
-                }
+        VStack(spacing: 0) {
+            // Header section
+            if viewModel.newUIEnabled {
+                DataClearingHeaderView()
             }
             
-            Section(footer: Text(footnoteText)) {
-                SettingsCellView(action: {
-                    Pixel.fire(pixel: .forgetAllPressedSettings)
-                    isShowingBurnAlert = true
-                }, customView: {
-                    AnyView(
-                        HStack(alignment: .center) {
-                            Image(uiImage: DesignSystemImages.Glyphs.Size24.fireSolid)
-                                .tintIfAvailable(Color(designSystemColor: .icons))
-                            Text(forgetAllTitle)
-                                .foregroundStyle(Color(designSystemColor: .accent))
-                            Spacer()
-                        }
-                    )
-                }, isButton: true)
-                .accessibilityIdentifier("Settings.DataClearing.Button.ForgetAll")
-                .forgetDataConfirmationDialog(isPresented: $isShowingBurnAlert,
-                                              onConfirm: settingsViewModel.forgetAll)
+            List {
+                Section {
+                    // Fire Button Animation
+                    SettingsPickerCellView(useImprovedPicker: settingsViewModel.useImprovedPicker,
+                                           label: UserText.settingsFirebutton,
+                                           options: FireButtonAnimationType.allCases,
+                                           selectedOption: settingsViewModel.fireButtonAnimationBinding)
+                }
+
+                Section {
+                    // Fireproof Sites
+                    SettingsCellView(label: UserText.settingsFireproofSites,
+                                      action: { settingsViewModel.presentLegacyView(.fireproofSites) },
+                                     disclosureIndicator: true,
+                                     isButton: true)
+
+                    // Automatically Clear Data
+                    SettingsCellView(label: UserText.settingsClearData,
+                                      action: { settingsViewModel.presentLegacyView(.autoclearData) },
+                                      accessory: .rightDetail(settingsViewModel.state.autoclearDataEnabled
+                                                             ? UserText.autoClearAccessoryOn
+                                                             : UserText.autoClearAccessoryOff),
+                                      disclosureIndicator: true,
+                                      isButton: true)
+                }
+
+                if settingsViewModel.isAIChatEnabled && settingsViewModel.isDuckAiDataClearingEnabled {
+                    Section {
+                        SettingsCellView(label: UserText.settingsClearAIChatHistory,
+                                         accessory: .toggle(isOn: settingsViewModel.autoClearAIChatHistoryBinding))
+                    } footer: {
+                        Text(UserText.settingsClearAIChatHistoryFooter)
+                    }
+                }
+                
+                Section(footer: Text(footnoteText)) {
+                    SettingsCellView(action: {
+                        Pixel.fire(pixel: .forgetAllPressedSettings)
+                        isShowingBurnAlert = true
+                    }, customView: {
+                        AnyView(
+                            HStack(alignment: .center) {
+                                Image(uiImage: DesignSystemImages.Glyphs.Size24.fireSolid)
+                                    .tintIfAvailable(Color(designSystemColor: .icons))
+                                Text(forgetAllTitle)
+                                    .foregroundStyle(Color(designSystemColor: .accent))
+                                Spacer()
+                            }
+                        )
+                    }, isButton: true)
+                    .accessibilityIdentifier("Settings.DataClearing.Button.ForgetAll")
+                    .forgetDataConfirmationDialog(isPresented: $isShowingBurnAlert,
+                                                  onConfirm: settingsViewModel.forgetAll)
+                }
             }
+            .applySettingsListModifiers(title: UserText.dataClearing,
+                                        displayMode: .inline,
+                                        viewModel: settingsViewModel)
         }
-        .applySettingsListModifiers(title: UserText.dataClearing,
-                                    displayMode: .inline,
-                                    viewModel: settingsViewModel)
+        .background(Color(designSystemColor: .background))
         .onFirstAppear {
             Pixel.fire(pixel: .settingsDataClearingOpen)
         }
@@ -102,5 +110,42 @@ struct SettingsDataClearingView: View {
         let shouldIncludeAIChat = settingsViewModel.appSettings.autoClearAIChatHistory
 
         return shouldIncludeAIChat ? UserText.settingsDataClearingForgetAllWithAiChatFootnote : UserText.settingsDataClearingForgetAllFootnote
+    }
+}
+
+private struct DataClearingHeaderView: View {
+    var body: some View {
+        VStack(spacing: Constants.outerStackSpacing) {
+            VStack(spacing: Constants.innerStackSpacing) {
+                // Fire illustration
+                Image(uiImage: DesignSystemImages.Color.Size72.fire)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: Constants.iconSize, height: Constants.iconSize)
+                
+                // Title
+                Text(UserText.dataClearing)
+                    .daxTitle2()
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .multilineTextAlignment(.center)
+            }
+            
+            // Description
+            Text(UserText.settingsDataClearingDescription)
+                .daxBodyRegular()
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(Constants.padding)
+        .frame(maxWidth: .infinity)
+        .background(.clear)
+    }
+    
+    enum Constants {
+        static let outerStackSpacing: CGFloat = 12
+        static let innerStackSpacing: CGFloat = 8
+        static let iconSize: CGFloat = 64
+        static let padding: EdgeInsets = .init(top: 32, leading: 32, bottom: 8, trailing: 32)
     }
 }

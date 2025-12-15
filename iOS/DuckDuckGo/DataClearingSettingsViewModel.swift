@@ -23,12 +23,17 @@ import SwiftUI
 final class DataClearingSettingsViewModel: ObservableObject {
     
     // MARK: - Dependencies
+    private lazy var featureFlagger = AppDependencyProvider.shared.featureFlagger
     
     // MARK: - Delegate
         
     // MARK: - Published State
     
     // MARK: - Computed Properties
+    
+    var newUIEnabled: Bool {
+        featureFlagger.isFeatureOn(.granularFireButtonOptions)
+    }
     
     // MARK: - Bindings
     

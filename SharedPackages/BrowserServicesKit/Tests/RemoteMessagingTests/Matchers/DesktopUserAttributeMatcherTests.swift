@@ -148,6 +148,32 @@ class DesktopUserAttributeMatcherTests: XCTestCase {
                        .fail)
     }
 
+    // MARK: - PIRCurrentUser
+
+    func testWhenIsCurrentPIRUserMatchesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(isCurrentPIRUser: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: PIRCurrentUserMatchingAttribute(value: true, fallback: nil)),
+                       .match)
+    }
+
+    func testWhenIsCurrentPIRUserDoesNotMatchThenReturnFail() throws {
+        setUpUserAttributeMatcher(isCurrentPIRUser: false)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: PIRCurrentUserMatchingAttribute(value: true, fallback: nil)),
+                       .fail)
+    }
+
+    func testWhenIsNotCurrentPIRUserMatchesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(isCurrentPIRUser: false)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: PIRCurrentUserMatchingAttribute(value: false, fallback: nil)),
+                       .match)
+    }
+
+    func testWhenIsNotCurrentPIRUserDoesNotMatchThenReturnFail() throws {
+        setUpUserAttributeMatcher(isCurrentPIRUser: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: PIRCurrentUserMatchingAttribute(value: false, fallback: nil)),
+                       .fail)
+    }
+
     // MARK: - DeprecatedMacRemoteMessage
 
     func testWhenNoDismissedMessageIdsAreProvidedThenReturnFail() throws {
@@ -178,7 +204,7 @@ class DesktopUserAttributeMatcherTests: XCTestCase {
 
     // MARK: -
 
-    private func setUpUserAttributeMatcher(dismissedMessageIds: [String] = [], dismissedDeprecatedMacRemoteMessageIds: [String] = []) {
+    private func setUpUserAttributeMatcher(dismissedMessageIds: [String] = [], dismissedDeprecatedMacRemoteMessageIds: [String] = [], isCurrentPIRUser: Bool = false) {
         matcher = DesktopUserAttributeMatcher(
             statisticsStore: mockStatisticsStore,
             featureDiscovery: mockFeatureDiscovery,
@@ -204,6 +230,7 @@ class DesktopUserAttributeMatcherTests: XCTestCase {
             isDuckPlayerOnboarded: true,
             isDuckPlayerEnabled: false,
             isCurrentFreemiumPIRUser: false,
+            isCurrentPIRUser: isCurrentPIRUser,
             dismissedDeprecatedMacRemoteMessageIds: dismissedDeprecatedMacRemoteMessageIds,
             enabledFeatureFlags: []
         )

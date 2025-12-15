@@ -221,6 +221,11 @@ struct FreemiumPIRCurrentUserMatchingAttribute: SingleValueMatching {
     var fallback: Bool?
 }
 
+struct PIRCurrentUserMatchingAttribute: SingleValueMatching {
+    var value: Bool?
+    var fallback: Bool?
+}
+
 struct MessageShownMatchingAttribute: SingleValueMatching {
     var value: [String]? = []
     var fallback: Bool?

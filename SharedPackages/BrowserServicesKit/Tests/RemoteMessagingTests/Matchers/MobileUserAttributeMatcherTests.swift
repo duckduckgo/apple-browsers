@@ -101,7 +101,33 @@ class MobileUserAttributeMatcherTests: XCTestCase {
                        .fail)
     }
 
-    private func setUpUserAttributeMatcher(dismissedMessageIds: [String] = [], isSyncEnabled: Bool = false) {
+    // MARK: - PIRCurrentUser
+
+    func testWhenIsCurrentPIRUserMatchesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(isCurrentPIRUser: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: PIRCurrentUserMatchingAttribute(value: true, fallback: nil)),
+                       .match)
+    }
+
+    func testWhenIsCurrentPIRUserDoesNotMatchThenReturnFail() throws {
+        setUpUserAttributeMatcher(isCurrentPIRUser: false)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: PIRCurrentUserMatchingAttribute(value: true, fallback: nil)),
+                       .fail)
+    }
+
+    func testWhenIsNotCurrentPIRUserMatchesThenReturnMatch() throws {
+        setUpUserAttributeMatcher(isCurrentPIRUser: false)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: PIRCurrentUserMatchingAttribute(value: false, fallback: nil)),
+                       .match)
+    }
+
+    func testWhenIsNotCurrentPIRUserDoesNotMatchThenReturnFail() throws {
+        setUpUserAttributeMatcher(isCurrentPIRUser: true)
+        XCTAssertEqual(matcher.evaluate(matchingAttribute: PIRCurrentUserMatchingAttribute(value: false, fallback: nil)),
+                       .fail)
+    }
+
+    private func setUpUserAttributeMatcher(dismissedMessageIds: [String] = [], isSyncEnabled: Bool = false, isCurrentPIRUser: Bool = false) {
         matcher = MobileUserAttributeMatcher(
             statisticsStore: mockStatisticsStore,
             featureDiscovery: mockFeatureDiscovery,
@@ -127,7 +153,8 @@ class MobileUserAttributeMatcherTests: XCTestCase {
             shownMessageIds: [],
             enabledFeatureFlags: [],
             isSyncEnabled: isSyncEnabled,
-            shouldShowWinBackOfferUrgencyMessage: false
+            shouldShowWinBackOfferUrgencyMessage: false,
+            isCurrentPIRUser: isCurrentPIRUser
         )
     }
 }

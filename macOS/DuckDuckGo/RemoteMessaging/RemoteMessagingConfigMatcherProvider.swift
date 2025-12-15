@@ -25,6 +25,7 @@ import VPN
 import Subscription
 import Freemium
 import FeatureFlags
+import DataBrokerProtection_macOS
 
 extension DefaultWaitlistActivationDateStore: VPNActivationDateProviding {}
 
@@ -40,7 +41,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         internalUserDecider: InternalUserDecider,
         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
         featureFlagger: FeatureFlagger,
-        themeManager: ThemeManaging
+        themeManager: ThemeManaging,
+        dbpDataManager: DataBrokerProtectionDataManaging? = nil
     ) {
         self.init(
             bookmarksDatabase: bookmarksDatabase,
@@ -54,7 +56,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             variantManager: DefaultVariantManager(database: database),
             subscriptionManager: subscriptionManager,
             featureFlagger: featureFlagger,
-            themeManager: themeManager
+            themeManager: themeManager,
+            dbpDataManager: dbpDataManager
         )
     }
 
@@ -70,7 +73,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         variantManager: @escaping @autoclosure () -> VariantManager,
         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
         featureFlagger: FeatureFlagger,
-        themeManager: ThemeManaging
+        themeManager: ThemeManaging,
+        dbpDataManager: DataBrokerProtectionDataManaging? = nil
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.appearancePreferences = appearancePreferences
@@ -84,6 +88,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
         self.themeManager = themeManager
+        self.dbpDataManager = dbpDataManager
     }
 
     let bookmarksDatabase: CoreDataDatabase
@@ -98,6 +103,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
     let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     let featureFlagger: FeatureFlagger
     let themeManager: ThemeManaging
+    let dbpDataManager: DataBrokerProtectionDataManaging?
 
     func refreshConfigMatcher(using store: RemoteMessagingStoring) async -> RemoteMessagingConfigMatcher {
 
@@ -178,6 +184,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
 
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
         let isCurrentFreemiumDBPUser = !subscriptionManager.isUserAuthenticated && freemiumDBPUserStateManager.didActivate
+        let isCurrentPIRUser = isDuckDuckGoSubscriber && ((try? dbpDataManager?.fetchProfile()) != nil)
 
         let pinnedTabsCount: Int = await MainActor.run {
             pinnedTabsManagerProvider.currentPinnedTabManagers.map { $0.tabCollection.tabs.count }.reduce(0, +)
@@ -215,6 +222,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        isDuckPlayerOnboarded: duckPlayerPreferencesPersistor.youtubeOverlayAnyButtonPressed,
                                                        isDuckPlayerEnabled: duckPlayerPreferencesPersistor.duckPlayerModeBool != false,
                                                        isCurrentFreemiumPIRUser: isCurrentFreemiumDBPUser,
+                                                       isCurrentPIRUser: isCurrentPIRUser,
                                                        dismissedDeprecatedMacRemoteMessageIds: deprecatedRemoteMessageStorage.dismissedMessageIDs(),
                                                        enabledFeatureFlags: enabledFeatureFlags
                                                       ),

@@ -28,6 +28,7 @@ import Bookmarks
 import RemoteMessaging
 import os.log
 import DDGSync
+import DataBrokerProtection_iOS
 
 final class RemoteMessagingClient: RemoteMessagingProcessing {
 
@@ -63,7 +64,8 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         duckPlayerStorage: DuckPlayerStorage,
         configurationURLProvider: ConfigurationURLProviding,
         syncService: DDGSyncing,
-        winBackOfferService: WinBackOfferService
+        winBackOfferService: WinBackOfferService,
+        dbpRunPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate? = nil
     ) {
         let provider = RemoteMessagingConfigMatcherProvider(
             bookmarksDatabase: bookmarksDatabase,
@@ -71,7 +73,8 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
             internalUserDecider: internalUserDecider,
             duckPlayerStorage: duckPlayerStorage,
             syncService: syncService,
-            winBackOfferService: winBackOfferService
+            winBackOfferService: winBackOfferService,
+            dbpRunPrerequisitesDelegate: dbpRunPrerequisitesDelegate
         )
         let configFetcher = RemoteMessagingConfigFetcher(
             configurationFetcher: ConfigurationFetcher(store: configurationStore, urlSession: .session(), configurationURLProvider: configurationURLProvider, eventMapping: nil),

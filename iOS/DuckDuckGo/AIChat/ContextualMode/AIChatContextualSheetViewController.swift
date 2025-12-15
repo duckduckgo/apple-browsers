@@ -20,7 +20,7 @@
 import DesignResourcesKitIcons
 import UIKit
 
-// MARK: - Delegate Protocol
+/// Delegate protocol for contextual sheet related actions
 protocol AIChatContextualSheetViewControllerDelegate: AnyObject {
     
     /// Called when the user requests to load a URL externally (e.g., tapping a link)
@@ -36,7 +36,7 @@ protocol AIChatContextualSheetViewControllerDelegate: AnyObject {
     func aiChatContextualSheetViewControllerDidRequestNewChat(_ viewController: AIChatContextualSheetViewController)
 }
 
-// MARK: - View Controller
+/// Contextual sheet view controller. Configures UX and actions.
 final class AIChatContextualSheetViewController: UIViewController {
 
     // MARK: - Constants

@@ -184,7 +184,9 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
 
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
         let isCurrentFreemiumDBPUser = !subscriptionManager.isUserAuthenticated && freemiumDBPUserStateManager.didActivate
-        let isCurrentPIRUser = isDuckDuckGoSubscriber && ((try? dbpDataManager?.fetchProfile()) != nil)
+
+        let hasPIREntitlement = (try? await subscriptionManager.isFeatureIncludedInSubscription(.dataBrokerProtection)) ?? false
+        let isCurrentPIRUser = hasPIREntitlement && ((try? dbpDataManager?.fetchProfile()) != nil)
 
         let pinnedTabsCount: Int = await MainActor.run {
             pinnedTabsManagerProvider.currentPinnedTabManagers.map { $0.tabCollection.tabs.count }.reduce(0, +)

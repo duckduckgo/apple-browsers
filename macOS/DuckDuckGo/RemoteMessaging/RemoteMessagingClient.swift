@@ -26,6 +26,7 @@ import Persistence
 import PixelKit
 import RemoteMessaging
 import Subscription
+import DataBrokerProtection_macOS
 
 protocol RemoteMessagingStoreProviding {
     func makeRemoteMessagingStore(database: CoreDataDatabase, availabilityProvider: RemoteMessagingAvailabilityProviding) -> RemoteMessagingStoring

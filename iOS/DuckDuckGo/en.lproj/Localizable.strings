@@ -2869,6 +2869,9 @@ Take back control of your personal information with the browser designed for dat
 /* Section footer Autolock description */
 "settings.autolock.description" = "If Touch ID, Face ID, or a system passcode is enabled, you'll be asked to unlock the app when opening it.";
 
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "Automatic Data Clearing";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Browser Feedback";
 
@@ -2877,6 +2880,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Settings screen cell text for clearing AI chat history */
 "settings.clear.aichat.history.title" = "Clear Duck.ai Chats";
+
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "Clear Browsing Data";
 
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Automatically Clear Data";
@@ -2904,6 +2910,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Data Clearing";
+
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "Deleting your data can help protect your privacy online. Use the Fire Button to clear data manually, or set up automatic clearing.";
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Default Browser";
@@ -2949,6 +2958,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Settings screen cell text for Fireproof Sites */
 "settings.fireproof.sites" = "Fireproof Sites";
+
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Fireproofed Sites";
 
 /* The name of the settings subsection containing general settings */
 "settings.general" = "General";

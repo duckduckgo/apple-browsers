@@ -24,13 +24,37 @@ import WebKit
 import UniformTypeIdentifiers
 import os.log
 
-enum DownloadError: Error, LocalizedError {
-    case failedToGenerateUniqueFilename(underlyingError: Error)
+enum DownloadError: DDGError {
+    case failedToGenerateUniqueFilename(underlying: Error)
     
-    var errorDescription: String? {
+    var errorDomain: String { "com.duckduckgo.downloads" }
+        
+    var errorCode: Int {
         switch self {
-        case .failedToGenerateUniqueFilename(let underlyingError):
-            return "Failed to generate unique filename: \(underlyingError.localizedDescription)"
+        case .failedToGenerateUniqueFilename:
+            return 1
+        }
+    }
+    
+    var underlyingError: Error? {
+        switch self {
+        case .failedToGenerateUniqueFilename(underlying: let underlyingError):
+            return underlyingError
+        }
+    }
+    
+    var description: String {
+        switch self {
+        case .failedToGenerateUniqueFilename:
+            return "Failed to generate unique filename"
+        }
+    }
+    
+    /// Compares two DownloadError instances by their error type and underlying error.
+    public static func == (lhs: DownloadError, rhs: DownloadError) -> Bool {
+        switch (lhs, rhs) {
+        case (.failedToGenerateUniqueFilename(let lhsError), .failedToGenerateUniqueFilename(let rhsError)):
+            return String(describing: lhsError) == String(describing: rhsError)
         }
     }
 }
@@ -172,8 +196,8 @@ extension DownloadManager {
         do {
             downloadedFilenames = Set(try downloadsDirectoryFiles.map { $0.lastPathComponent })
         } catch {
-            Logger.general.error("Failed to generate unique filename: \(error.localizedDescription)")
-            throw DownloadError.failedToGenerateUniqueFilename(underlyingError: error)
+            Logger.general.error("Failed to generate unique filename: \(error.localizedDescription, privacy: .public)")
+            throw DownloadError.failedToGenerateUniqueFilename(underlying: error)
         }
         let list = downloadingFilenames.union(downloadedFilenames)
 

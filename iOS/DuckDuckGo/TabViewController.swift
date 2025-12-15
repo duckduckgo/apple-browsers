@@ -2477,14 +2477,18 @@ extension TabViewController {
                     downloadManager.startDownload(download)
                     return (.cancel, download)
                 }
-            } catch {
-                Logger.general.error("Failed to create download: \(error.localizedDescription)")
+            } catch let error as DownloadError {
+                Logger.general.error("Failed to create download: \(error.localizedDescription, privacy: .public)")
                 DispatchQueue.main.async {
                     let addressBarBottom = self.appSettings.currentAddressBarPosition.isBottom
                     ActionMessageView.present(message: UserText.messageDownloadFailed,
                                               presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom))
                 }
+            } catch {
+                assertionFailure("Expected DownloadError")
+                Logger.general.error("Failed to create download: Unkown Error)")
             }
+            
         }
 
         return (.cancel, nil)
@@ -2592,13 +2596,17 @@ extension TabViewController {
                                                     downloadSession: downloadSession,
                                                     cookieStore: nil,
                                                     temporary: isTemporary)
-        } catch {
-            Logger.general.error("Failed to transfer download: \(error.localizedDescription)")
+        } catch let error as DownloadError {
+            Logger.general.error("Failed to transfer download: \(error.description, privacy: .public)")
             DispatchQueue.main.async {
                 let addressBarBottom = self.appSettings.currentAddressBarPosition.isBottom
                 ActionMessageView.present(message: UserText.messageDownloadFailed,
                                           presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom))
             }
+            return nil
+        } catch {
+            assertionFailure("Expected DownloadError")
+            Logger.general.error("Failed to transfer download: Unkown Error)")
             return nil
         }
 

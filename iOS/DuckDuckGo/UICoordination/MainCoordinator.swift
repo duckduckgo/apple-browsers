@@ -148,7 +148,8 @@ final class MainCoordinator {
                                         textZoomCoordinator: textZoomCoordinator,
                                         historyManager: historyManager,
                                         featureFlagger: featureFlagger,
-                                        privacyConfigurationManager: privacyConfigurationManager)
+                                        privacyConfigurationManager: privacyConfigurationManager,
+                                        appSettings: AppDependencyProvider.shared.appSettings)
         controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
                                         bookmarksDatabase: bookmarksDatabase,
                                         historyManager: historyManager,

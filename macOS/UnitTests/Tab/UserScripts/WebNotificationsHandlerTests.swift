@@ -483,6 +483,24 @@ final class WebNotificationsHandlerTests: XCTestCase {
         XCTAssertTrue(mockNotificationService.addedRequests.isEmpty)
     }
 
+    /// When permission model returns false for isPermissionGranted, notification should be blocked.
+    func testWhenPermissionModelDeniesPermissionThenShowNotificationDoesNotPost() async {
+        mockNotificationService.authorizationStatusToReturn = .authorized
+        mockPermissionModel.isPermissionGrantedResult = false
+
+        let params: [String: Any] = [
+            "id": "test-permission-blocked",
+            "title": "Permission Blocked Test"
+        ]
+        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params)
+
+        let handlerFunc = handler.handler(forMethodNamed: "showNotification")
+        _ = try? await handlerFunc?(params, mockMessage)
+
+        XCTAssertTrue(mockPermissionModel.isPermissionGrantedCalled)
+        XCTAssertTrue(mockNotificationService.addedRequests.isEmpty)
+    }
+
     // MARK: - Icon Fetching Tests
 
     func testWhenIconURLProvidedThenIconFetcherIsCalled() async {

@@ -90,6 +90,59 @@ final class PermissionCenterViewModelTests: XCTestCase {
         XCTAssertTrue(types.contains(.camera))
         XCTAssertTrue(types.contains(.geolocation))
     }
+
+    // MARK: - requestSystemPermission Tests
+
+    /// Verifies requestSystemPermission calls the system permission manager with correct permission type.
+    func testWhenRequestSystemPermissionCalledThenSystemManagerRequestsAuthorization() {
+        var usedPermissions = Permissions()
+        usedPermissions[.notification] = .active(query: nil)
+
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: usedPermissions,
+            permissionManager: mockPermissionManager,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        viewModel.requestSystemPermission(for: .notification)
+
+        XCTAssertTrue(mockSystemPermissionManager.requestAuthorizationCalled)
+        XCTAssertEqual(mockSystemPermissionManager.lastRequestedPermissionType, .notification)
+    }
+
+    /// Verifies permission item's systemAuthorizationState updates after authorization request completes.
+    func testWhenSystemPermissionGrantedThenPermissionItemStateUpdates() async throws {
+        mockSystemPermissionManager.authorizationStateToReturn = .notDetermined
+
+        var usedPermissions = Permissions()
+        usedPermissions[.notification] = .active(query: nil)
+
+        let viewModel = PermissionCenterViewModel(
+            domain: "example.com",
+            usedPermissions: usedPermissions,
+            permissionManager: mockPermissionManager,
+            featureFlagger: mockFeatureFlagger,
+            removePermission: { _ in },
+            dismissPopover: { },
+            systemPermissionManager: mockSystemPermissionManager
+        )
+
+        // Change the state that will be returned after request
+        mockSystemPermissionManager.authorizationStateToReturn = .authorized
+
+        viewModel.requestSystemPermission(for: .notification)
+
+        // Wait for async state update
+        try await Task.sleep(nanoseconds: 100 * NSEC_PER_MSEC)
+
+        // Find the notification item and verify its system state was updated
+        let notificationItem = viewModel.permissionItems.first { $0.permissionType == .notification }
+        XCTAssertEqual(notificationItem?.systemAuthorizationState, .authorized)
+    }
 }
 
 // MARK: - Mock System Permission Manager
@@ -97,16 +150,20 @@ final class PermissionCenterViewModelTests: XCTestCase {
 final class MockSystemPermissionManager: SystemPermissionManagerProtocol {
 
     var authorizationStateToReturn: SystemPermissionAuthorizationState = .authorized
+    private(set) var requestAuthorizationCalled = false
+    private(set) var lastRequestedPermissionType: PermissionType?
 
     func authorizationState(for permissionType: PermissionType) async -> SystemPermissionAuthorizationState {
         return authorizationStateToReturn
     }
 
-    func isAuthorizationRequired(for permissionType: PermissionType) async -> Bool {
+    func isAuthorizationRequired(for permissionType: PermissionType) -> Bool {
         return false
     }
 
     func requestAuthorization(for permissionType: PermissionType, completion: @escaping (SystemPermissionAuthorizationState) -> Void) -> AnyCancellable? {
+        requestAuthorizationCalled = true
+        lastRequestedPermissionType = permissionType
         completion(authorizationStateToReturn)
         return nil
     }

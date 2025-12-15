@@ -1122,6 +1122,112 @@ final class PermissionModelTests: XCTestCase {
         XCTAssertEqual(model.permissions, [.geolocation: .denied])
     }
 
+    // MARK: - isPermissionGranted() Tests
+
+    /// Returns true when persisted decision is .allow, regardless of session state.
+    func testWhenPersistedDecisionIsAllowThenIsPermissionGrantedReturnsTrue() {
+        let domain = "example.com"
+        permissionManagerMock.setPermission(.allow, forDomain: domain, permissionType: .notification)
+
+        XCTAssertTrue(model.isPermissionGranted(.notification, forDomain: domain))
+    }
+
+    /// Returns true when session state is .active (permission granted and in use).
+    func testWhenSessionStateIsActiveThenIsPermissionGrantedReturnsTrue() {
+        let domain = URL.duckDuckGo.host!
+        webView.urlValue = URL.duckDuckGo
+
+        // Simulate active camera permission
+        if #available(macOS 12, *) {
+            webView.cameraCaptureState = .active
+        } else {
+            webView.mediaCaptureState = .activeCamera
+        }
+
+        XCTAssertTrue(model.isPermissionGranted(.camera, forDomain: domain))
+    }
+
+    /// Returns true when session state is .inactive (permission granted but not currently active).
+    func testWhenSessionStateIsInactiveThenIsPermissionGrantedReturnsTrue() {
+        let domain = URL.duckDuckGo.host!
+        webView.urlValue = URL.duckDuckGo
+
+        // Simulate inactive camera permission (was active, now inactive)
+        if #available(macOS 12, *) {
+            webView.cameraCaptureState = .active
+            webView.cameraCaptureState = .none
+        } else {
+            webView.mediaCaptureState = .activeCamera
+            webView.mediaCaptureState = []
+        }
+
+        XCTAssertTrue(model.isPermissionGranted(.camera, forDomain: domain))
+    }
+
+    /// Returns true when session state is .paused (permission granted but muted).
+    func testWhenSessionStateIsPausedThenIsPermissionGrantedReturnsTrue() {
+        let domain = URL.duckDuckGo.host!
+        webView.urlValue = URL.duckDuckGo
+
+        // Simulate paused camera permission
+        if #available(macOS 12, *) {
+            webView.cameraCaptureState = .active
+            webView.cameraCaptureState = .muted
+        } else {
+            webView.mediaCaptureState = .activeCamera
+            webView.mediaCaptureState = .mutedCamera
+        }
+
+        XCTAssertTrue(model.isPermissionGranted(.camera, forDomain: domain))
+    }
+
+    /// Returns false when permission is denied (user explicitly denied in this session).
+    func testWhenSessionStateIsDeniedThenIsPermissionGrantedReturnsFalse() {
+        let domain = "example.com"
+        webView.urlValue = URL(string: "https://\(domain)")!
+
+        // Set up permission as denied via model.permissions dictionary
+        // Simulate a denied permission by requesting and denying
+        let c = model.$authorizationQuery.sink {
+            $0?.handleDecision(grant: false)
+        }
+
+        let e = expectation(description: "Permission denied")
+        model.permissions([.notification], requestedForDomain: domain) { granted in
+            XCTAssertFalse(granted)
+            e.fulfill()
+        }
+
+        withExtendedLifetime(c) {
+            waitForExpectations(timeout: 1)
+        }
+
+        XCTAssertFalse(model.isPermissionGranted(.notification, forDomain: domain))
+    }
+
+    /// Returns false when no permission exists (nil state).
+    func testWhenNoPermissionExistsThenIsPermissionGrantedReturnsFalse() {
+        let domain = "example.com"
+
+        XCTAssertFalse(model.isPermissionGranted(.notification, forDomain: domain))
+    }
+
+    /// Returns false when persisted decision is .deny.
+    func testWhenPersistedDecisionIsDenyThenIsPermissionGrantedReturnsFalse() {
+        let domain = "example.com"
+        permissionManagerMock.setPermission(.deny, forDomain: domain, permissionType: .notification)
+
+        XCTAssertFalse(model.isPermissionGranted(.notification, forDomain: domain))
+    }
+
+    /// Returns false when persisted decision is .ask (not yet decided).
+    func testWhenPersistedDecisionIsAskThenIsPermissionGrantedReturnsFalse() {
+        let domain = "example.com"
+        permissionManagerMock.setPermission(.ask, forDomain: domain, permissionType: .notification)
+
+        XCTAssertFalse(model.isPermissionGranted(.notification, forDomain: domain))
+    }
+
     // MARK: - System Permission Disabled Tests (New Permission View)
 
     func testWhenNewPermissionViewEnabledAndSystemPermissionDeniedThenQueryIsShown() {

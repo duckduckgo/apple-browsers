@@ -293,7 +293,7 @@ struct PermissionAuthorizationSwiftUIView: View {
         .padding(.horizontal, 16)
         .padding(.bottom, 16)
         .frame(width: 360)
-        .background(Color(designSystemColor: .containerFillPrimary))
+        .background(Color(designSystemColor: .surfaceSecondary))
         .onAppear {
             initializeSystemPermissionState()
             subscribeToAppActiveNotification()
@@ -429,7 +429,7 @@ struct PermissionAuthorizationSwiftUIView: View {
         + Text(" ")
         + Text(permissionType.systemSettingsLinkText)
             .font(.system(size: 12))
-            .foregroundColor(.accentColor))
+            .foregroundColor(Color(designSystemColor: .textLink)))
             .lineSpacing(6)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -523,7 +523,7 @@ struct PermissionAuthorizationSwiftUIView: View {
         }) {
             Text(UserText.permissionPopupLearnMoreLink)
                 .font(.system(size: 13))
-                .foregroundColor(.accentColor)
+                .foregroundColor(Color(designSystemColor: .textLink))
         }
         .buttonStyle(PlainButtonStyle())
         .cursor(.pointingHand)
@@ -562,7 +562,7 @@ struct PermissionAuthorizationSwiftUIView: View {
         + Text(" ")
         + Text(permissionType.systemSettingsLinkText)
             .font(.system(size: 12))
-            .foregroundColor(.accentColor))
+            .foregroundColor(Color(designSystemColor: .textLink)))
             .lineSpacing(6)
             .multilineTextAlignment(.center)
             .fixedSize(horizontal: false, vertical: true)
@@ -573,7 +573,7 @@ struct PermissionAuthorizationSwiftUIView: View {
         }
         .padding(16)
         .frame(width: 360)
-        .background(Color(designSystemColor: .containerFillPrimary))
+        .background(Color(designSystemColor: .surfaceSecondary))
         .onAppear {
             subscribeToAppActiveNotificationForDismissal()
         }
@@ -630,7 +630,7 @@ struct PermissionAuthorizationSwiftUIView: View {
             }
         }
         .frame(width: 360)
-        .background(Color(designSystemColor: .containerFillPrimary))
+        .background(Color(designSystemColor: .surfaceSecondary))
     }
 }
 

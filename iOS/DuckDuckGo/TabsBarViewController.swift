@@ -131,11 +131,18 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     @IBAction func onFireButtonPressed() {
         
         func showClearDataAlert() {
-            let alert = ForgetDataAlert.buildAlert(forgetTabsAndDataHandler: { [weak self] in
-                guard let self = self else { return }
-                self.delegate?.tabsBarDidRequestForgetAll(self)
-            })
-            self.present(controller: alert, fromView: fireButton)
+            let presenter = FireConfirmationPresenter(featureFlagger: AppDependencyProvider.shared.featureFlagger)
+            presenter.presentFireConfirmation(
+                on: self,
+                attachPopoverTo: fireButton,
+                onConfirm: { [weak self] in
+                    guard let self = self else { return }
+                    self.delegate?.tabsBarDidRequestForgetAll(self)
+                },
+                onCancel: {
+                    // TODO: - Maybe add pixel
+                }
+            )
         }
 
         delegate?.tabsBarDidRequestFireEducationDialog(self)

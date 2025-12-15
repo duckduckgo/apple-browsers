@@ -85,11 +85,7 @@ What source type should this feature flag use?
      • Always off for external users
      • No remote control
      
-  d) .enabled - Always on for everyone
-     • No toggle capability
-     • Use for features ready for full rollout
-     
-  e) .disabled - Always off for everyone
+  d) .disabled - Always off for everyone
      • Placeholder for future features
      • Code is present but inactive
 
@@ -155,7 +151,7 @@ Which option? (a is recommended for new features)
 
 **Explanation:** The default value is used when:
 - Remote config is unavailable
-- Flag source is local-only (`.internalOnly`, `.enabled`, `.disabled`)
+- Flag source is local-only (`.internalOnly`, `.disabled`)
 - Network is down or config fetch fails
 
 ### Question 4: Local Overriding
@@ -264,8 +260,6 @@ public var source: FeatureFlagSource {
         // OR
         return .internalOnly()
         // OR
-        return .enabled
-        // OR
         return .disabled
     }
 }
@@ -297,10 +291,6 @@ case .experimentalFeature:
 // Internal only
 case .debugFeature:
     return .internalOnly()
-
-// Always enabled
-case .stableFeature:
-    return .enabled
 
 // Always disabled (placeholder)
 case .futureFeature:
@@ -768,4 +758,3 @@ For more information, see:
 - `feature-flags.md` - Type-safe feature flag patterns
 - `abn-experiment-framework.md` - A/B testing with feature flags
 - `SharedPackages/BrowserServicesKit/Sources/BrowserServicesKit/FeatureFlagger/FeatureFlagger.swift` - Core implementation
-

@@ -1285,17 +1285,11 @@ final class TabBarViewItem: NSCollectionViewItem {
     }
 
     private func activePermissionIcon(for permissionType: PermissionType) -> NSImage {
-        switch permissionType {
-        case .camera:
-            return DesignSystemImages.Glyphs.Size16.permissionCameraSolid
-        case .microphone:
-            return DesignSystemImages.Glyphs.Size16.permissionMicrophoneSolid
-        case .geolocation:
-            return DesignSystemImages.Glyphs.Size16.permissionsLocationSolid
-        case .popups, .externalScheme:
+        guard let solidIcon = permissionType.solidIcon else {
             assertionFailure("Unexpected permission type for active icon: \(permissionType)")
-            return DesignSystemImages.Glyphs.Size16.permissionCameraSolid
+            return permissionType.icon
         }
+        return solidIcon
     }
 
     private func updateSeparatorView() {

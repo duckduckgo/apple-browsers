@@ -48,6 +48,9 @@ final class FirePopoverViewController: NSViewController {
     private let historyCoordinating: HistoryCoordinating
     private let themeManager: ThemeManaging
 
+    @IBOutlet weak var backgroundView: ColorView!
+    @IBOutlet weak var mainButtonsBackgroundView: ColorView!
+
     @IBOutlet weak var closeTabsLabel: NSTextField!
     @IBOutlet weak var openFireWindowsTitleLabel: NSTextField!
     @IBOutlet weak var fireWindowDescriptionLabel: NSTextField!
@@ -124,6 +127,7 @@ final class FirePopoverViewController: NSViewController {
         collectionView.delegate = self
         collectionView.dataSource = self
 
+        refreshBackgroundColor()
         updateBurnerButtonAppearance()
 
         if firePopoverViewModel.tabCollectionViewModel?.isBurner ?? false {
@@ -149,6 +153,11 @@ final class FirePopoverViewController: NSViewController {
         if burnerWindowButton.wantsLayer {
             addCircularBackground(to: burnerWindowButton)
         }
+    }
+
+    private func refreshBackgroundColor() {
+        backgroundView.backgroundColor = NSColor(designSystemColor: .surfacePrimary)
+        mainButtonsBackgroundView.backgroundColor = NSColor(designSystemColor: .surfacePrimary)
     }
 
     private func updateBurnerButtonAppearance() {

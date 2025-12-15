@@ -627,6 +627,11 @@ struct UserText {
     static let aiChatChatWithAITooltip = NSLocalizedString("aichat.ask-privately.tooltip", value: "Ask privately", comment: "Tooltip for the chat with AI segment in the toggle control")
     static let aiChatToggleSearchLabel = NSLocalizedString("aichat.toggle.search.label", value: "Search", comment: "Label for the search segment in the address bar toggle control")
     static let aiChatToggleAskLabel = NSLocalizedString("aichat.toggle.ask.label", value: "Duck.ai", comment: "Label for the ask AI segment in the address bar toggle control")
+
+    // AI Chat Toggle Popover
+    static let aiChatTogglePopoverTitle = NSLocalizedString("aichat.toggle.popover.title", value: "NEW! Two ways to search privately", comment: "Title for the AI Chat toggle introduction popover")
+    static let aiChatTogglePopoverMessage = NSLocalizedString("aichat.toggle.popover.message", value: "Search as usual or get answers with AI. Either way, your information stays private.", comment: "Message for the AI Chat toggle introduction popover")
+    static let aiChatTogglePopoverButton = NSLocalizedString("aichat.toggle.popover.button", value: "Customize AI Features", comment: "Button text for customizing AI features in the toggle popover")
     static let aiChatSendButtonTooltip = NSLocalizedString("aichat.send-button.tooltip", value: "Send", comment: "Tooltip for the send button in AI chat omnibar")
     static let aiChatOmnibarPlaceholder = NSLocalizedString("aichat.omnibar.placeholder", value: "Ask privately", comment: "Placeholder text shown in the Duck.ai chat input field")
     static let moreSearchSettings = NSLocalizedString("settings.more-search-settings", value: "More Search Settings", comment: "The button name in preferences for More Search Settings")
@@ -960,8 +965,11 @@ struct UserText {
                                                                          value: "“%@“ website would like to use your current location.",
                                                                          comment: "Popover asking for domain %@ to use location")
     static let devicePermissionAuthorizationFormat = NSLocalizedString("permission.authorization.format",
-                                                                       value: "Allow “%@“ to use your %@?",
+                                                                       value: "Allow “%@“ to use your %@ once?",
                                                                        comment: "Popover asking for domain %@ to use camera/mic (%@)")
+    static let permissionMenuHeaderDeviceFormat = NSLocalizedString("permission.menu-header.device.format",
+                                                                    value: "Allow “%@” to use your %@?",
+                                                                    comment: "Menu header for permission settings for domain %@ to use camera/mic/location (%@)")
     static let popupWindowsPermissionAuthorizationFormat = NSLocalizedString("permission.authorization.popups.format",
                                                                              value: "Allow “%@” to open a pop-up window?",
                                                                              comment: "Popover asking for domain %@ to open a pop-up window")
@@ -982,6 +990,7 @@ struct UserText {
     static let permissionCameraAndMicrophone = NSLocalizedString("permission.cameraAndmicrophone", value: "Camera and Microphone", comment: "camera and microphone input media devices name")
     static let permissionGeolocation = NSLocalizedString("permission.geolocation", value: "Location", comment: "User's Geolocation permission access name")
     static let permissionPopups = NSLocalizedString("permission.popups", value: "Pop-ups", comment: "Open pop-up windows permission access name")
+    static let permissionNotification = NSLocalizedString("permission.notification", value: "Notifications", comment: "Web notifications permission access name")
 
     static let permissionMuteFormat = NSLocalizedString("permission.mute", value: "Pause %@ use on “%@”", comment: "Temporarily pause input media device %@ access for %@2 website")
     static let permissionUnmuteFormat = NSLocalizedString("permission.unmute", value: "Resume %@ use on “%@”", comment: "Resume input media device %@ access for %@ website")
@@ -1028,17 +1037,20 @@ struct UserText {
     static let permissionSystemLocationDisabled = NSLocalizedString("permission.system.location.disabled", value: "System location disabled. Turn it on in ", comment: "Text shown when system location was previously denied. Followed by a link to System Settings")
     static let permissionSystemSettingsLocation = NSLocalizedString("permission.system.settings.location", value: "System Settings → Privacy", comment: "Link text to open System Settings Privacy section for location")
     static let permissionRestartApp = NSLocalizedString("permission.restart.app", value: "Restart the DuckDuckGo application", comment: "Text shown when app restart is required for permission changes to take effect")
-    static let permissionGeolocationPromptFormat = NSLocalizedString("permission.geolocation.prompt.format", value: "Allow %@ to use your current location?", comment: "Prompt asking if domain %@ can use location")
+    static let permissionGeolocationPromptFormat = NSLocalizedString("permission.geolocation.prompt.format", value: "Allow “%@“ to use your current location once?", comment: "Prompt asking if domain %@ can use location once")
     static let permissionPopupNeverAllowButton = NSLocalizedString("permission.popup.never.allow.button", value: "Never Allow", comment: "Button that denies permission and remembers the decision for future requests")
 
     // Permission Center
     static let permissionCenterTitle = NSLocalizedString("permission.center.title", value: "Permissions for “%@”", comment: "Title for permission center popover, %@ is the domain name")
-    static let permissionCenterAlwaysAsk = NSLocalizedString("permission.center.always.ask", value: "Always Ask", comment: "Permission center dropdown option to always ask for permission")
-    static let permissionCenterAlwaysAllow = NSLocalizedString("permission.center.always.allow", value: "Always Allow", comment: "Permission center dropdown option to always allow permission")
-    static let permissionCenterNeverAllow = NSLocalizedString("permission.center.never.allow", value: "Never Allow", comment: "Permission center dropdown option to never allow permission")
+    static let permissionCenterAlwaysAsk = NSLocalizedString("permission.center.always.ask", value: "Always ask", comment: "Permission center dropdown option to always ask for permission")
+    static let permissionCenterAlwaysAllow = NSLocalizedString("permission.center.always.allow", value: "Always allow", comment: "Permission center dropdown option to always allow permission")
+    static let permissionCenterNeverAllow = NSLocalizedString("permission.center.never.allow", value: "Never allow", comment: "Permission center dropdown option to never allow permission")
     static let permissionCenterExternalSchemeDescription = NSLocalizedString("permission.center.external.scheme.description", value: "%@ to open “%@” links", comment: "Description for external scheme permission, first %@ is domain, second %@ is scheme name")
     static let permissionCenterExternalApps = NSLocalizedString("permission.center.external.apps", value: "External apps", comment: "Permission center header for external app permissions")
     static let permissionCenterExternalSchemeFormat = NSLocalizedString("permission.center.external.scheme.format", value: "Open “%@” links", comment: "Format for external scheme row, %@ is scheme name like mailto or sms")
+    static let permissionCenterResetTooltip = NSLocalizedString("permission.center.reset.tooltip", value: "Remove permission", comment: "Tooltip for the remove permission button in permission center")
+    static let permissionCenterReloadMessage = NSLocalizedString("permission.center.reload.message", value: "Reload for changes to take effect", comment: "Message shown in permission center when permissions have been changed and reload is needed")
+    static let permissionCenterReloadButton = NSLocalizedString("permission.center.reload.button", value: "Reload", comment: "Button to reload the page to apply permission changes")
 
     static let privacyDashboardPopupsAlwaysAsk = NSLocalizedString("dashboard.popups.ask", value: "Notify", comment: "Make pop-up windows always request permission for the current domain")
 
@@ -2166,4 +2178,17 @@ struct UserText {
     static let winBackCampaignLastDayMessageCTA = NSLocalizedString("win-back.campaign.last-day.message.cta", value: "See Offer", comment: "CTA of the message displayed on the last day of the win-back campaign")
 
     static let winBackCampaignMenuBadgeText = NSLocalizedString("win-back.campaign.menu.badge.text", value: "SAVE 25%", comment: "Text for the badge displayed on the Subscription menu item during the win-back campaign")
+
+    // MARK: - OmniBar Notifications
+    static let omnibarNotificationCookiesManaged = NSLocalizedString("omnibar.notification.cookies.managed", value: "Cookies Managed", comment: "Text displayed when cookies are managed by DuckDuckGo")
+    static let omnibarNotificationPopupHidden = NSLocalizedString("omnibar.notification.popup.hidden", value: "Pop-up Hidden", comment: "Text displayed when a pop-up is hidden by DuckDuckGo")
+
+    static func omnibarNotificationTrackersBlocked(_ count: Int) -> String {
+        let template = NSLocalizedString(
+            "omnibar.notification.trackers.blocked",
+            value: "%d Trackers Blocked",
+            comment: "Text displayed when trackers are blocked. The %d is the number of trackers blocked."
+        )
+        return String.localizedStringWithFormat(template, count)
+    }
 }

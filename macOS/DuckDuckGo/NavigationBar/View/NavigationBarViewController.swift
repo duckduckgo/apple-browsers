@@ -188,6 +188,7 @@ final class NavigationBarViewController: NSViewController {
     }
 
     private let sessionRestorePromptCoordinator: SessionRestorePromptCoordinating
+    private let memoryUsageDisplayer: MemoryUsageDisplayer
 
     var isInPopUpWindow: Bool {
         tabCollectionViewModel.isPopup
@@ -233,6 +234,7 @@ final class NavigationBarViewController: NSViewController {
                        downloadsPreferences: DownloadsPreferences,
                        tabsPreferences: TabsPreferences,
                        accessibilityPreferences: AccessibilityPreferences,
+                       memoryUsageMonitor: MemoryUsageMonitor,
                        showTab: @escaping (Tab.TabContent) -> Void = { content in
                            Task { @MainActor in
                                Application.appDelegate.windowControllersManager.showTab(with: content)
@@ -268,6 +270,7 @@ final class NavigationBarViewController: NSViewController {
                 downloadsPreferences: downloadsPreferences,
                 tabsPreferences: tabsPreferences,
                 accessibilityPreferences: accessibilityPreferences,
+                memoryUsageMonitor: memoryUsageMonitor,
                 showTab: showTab
             )
         }!
@@ -301,6 +304,7 @@ final class NavigationBarViewController: NSViewController {
         downloadsPreferences: DownloadsPreferences,
         tabsPreferences: TabsPreferences,
         accessibilityPreferences: AccessibilityPreferences,
+        memoryUsageMonitor: MemoryUsageMonitor,
         showTab: @escaping (Tab.TabContent) -> Void
     ) {
 
@@ -345,6 +349,7 @@ final class NavigationBarViewController: NSViewController {
         self.showTab = showTab
         self.vpnUpsellVisibilityManager = vpnUpsellVisibilityManager
         self.sessionRestorePromptCoordinator = sessionRestorePromptCoordinator
+        self.memoryUsageDisplayer = MemoryUsageDisplayer(memoryUsageMonitor: memoryUsageMonitor, featureFlagger: featureFlagger)
         goBackButtonMenuDelegate = NavigationButtonMenuDelegate(
             buttonType: .back,
             tabCollectionViewModel: tabCollectionViewModel,
@@ -358,6 +363,8 @@ final class NavigationBarViewController: NSViewController {
             tabsPreferences: tabsPreferences
         )
         super.init(coder: coder)
+
+        memoryUsageDisplayer.presenter = self
     }
 
     required init?(coder: NSCoder) {
@@ -491,6 +498,8 @@ final class NavigationBarViewController: NSViewController {
                 await WebExtensionNavigationBarUpdater(webExtensionManager: webExtensionManager, container: self?.menuButtons).runUpdateLoop()
             }
         }
+
+        memoryUsageDisplayer.setUpMemoryMonitorView()
     }
 
     override func viewWillAppear() {
@@ -2215,6 +2224,18 @@ extension NavigationBarViewController: AddressBarViewControllerDelegate {
         }
     }
 }
+
+extension NavigationBarViewController: MemoryUsagePresenting {
+    func embedMemoryUsageView(_ memoryUsageView: NSView) {
+        memoryUsageView.translatesAutoresizingMaskIntoConstraints = false
+        view.addSubview(memoryUsageView)
+        NSLayoutConstraint.activate([
+            memoryUsageView.bottomAnchor.constraint(equalTo: view.bottomAnchor, constant: -1),
+            memoryUsageView.trailingAnchor.constraint(equalTo: addressBarContainer.leadingAnchor, constant: -4)
+        ])
+    }
+}
+
 // MARK: - DEBUG
 #if DEBUG || REVIEW
 extension NavigationBarViewController {

@@ -43,7 +43,7 @@ final class PersistentStoresConfiguration {
     }
 
     func configure(syncKeyValueStore: ThrowingKeyValueStoring,
-                   isBookmarksDBFilePresent: Bool) throws {
+                   isBookmarksDBFilePresent: Bool?) throws {
         try loadDatabase()
         try loadAndMigrateBookmarksDatabase(syncKeyValueStore: syncKeyValueStore, isBookmarksDBFilePresent: isBookmarksDBFilePresent)
         initializeSharedSecureVault()
@@ -64,13 +64,13 @@ final class PersistentStoresConfiguration {
         }
     }
 
-    private func loadAndMigrateBookmarksDatabase(syncKeyValueStore: ThrowingKeyValueStoring, isBookmarksDBFilePresent: Bool) throws {
+    private func loadAndMigrateBookmarksDatabase(syncKeyValueStore: ThrowingKeyValueStoring, isBookmarksDBFilePresent: Bool?) throws {
         do {
             // Create a simple counter store with just atomic writes (no encryption for debugging data)
             let appSupportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
             let counterStore = try KeyValueFileStore(location: appSupportDir, name: "BookmarksStructureLostCounter", writeOptions: [.atomic, .noFileProtection])
             let validator = BookmarksDatabaseSetup.makeValidator(counterStore: counterStore, isBookmarksDBFilePresent: isBookmarksDBFilePresent)
-            try BookmarksDatabaseSetup().loadStoreAndMigrate(bookmarksDatabase: bookmarksDatabase, validator: validator, isBookmarksDBFilePresent: isBookmarksDBFilePresent)
+            try BookmarksDatabaseSetup().loadStoreAndMigrate(bookmarksDatabase: bookmarksDatabase, validator: validator)
         } catch let error as BookmarksDatabaseError {
             throw TerminationError.bookmarksDatabase(error)
         } catch {

@@ -67,7 +67,7 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
         switch permissionType {
         case .geolocation:
             return geolocationAuthorizationState
-        case .camera, .microphone, .popups, .externalScheme:
+        case .camera, .microphone, .popups, .notification, .externalScheme:
             return .authorized // These don't require system permission through our two-step flow
         }
     }
@@ -77,7 +77,7 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
         switch permissionType {
         case .geolocation:
             return isGeolocationAuthorizationRequired
-        case .camera, .microphone, .popups, .externalScheme:
+        case .camera, .microphone, .popups, .notification, .externalScheme:
             return false // These don't require system permission through our two-step flow
         }
     }
@@ -88,7 +88,7 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
         switch permissionType {
         case .geolocation:
             return requestGeolocationAuthorization(completion: completion)
-        case .camera, .microphone, .popups, .externalScheme:
+        case .camera, .microphone, .popups, .notification, .externalScheme:
             // These don't require system permission through our two-step flow
             completion(.authorized)
             return nil

@@ -375,6 +375,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return firstLaunchDate.daysSinceNow() >= 2
     }
 
+    let memoryUsageMonitor: MemoryUsageMonitor
+
     @MainActor
     // swiftlint:disable cyclomatic_complexity
     override init() {
@@ -784,7 +786,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             privacyConfigurationManager: privacyConfigurationManager,
             internalUserDecider: internalUserDecider
         )
-        newTabPageCustomizationModel = NewTabPageCustomizationModel(themeManager: themeManager, appearancePreferences: appearancePreferences)
+        newTabPageCustomizationModel = NewTabPageCustomizationModel(appearancePreferences: appearancePreferences)
 
         fireCoordinator = FireCoordinator(tld: tld,
                                           featureFlagger: featureFlagger,
@@ -1026,6 +1028,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                settingsProvider: settingsProvider)
         self.attributedMetricManager.addNotificationsObserver()
 
+        memoryUsageMonitor = MemoryUsageMonitor(logger: .memory)
+
         super.init()
 
         appContentBlocking?.userContentUpdating.userScriptDependenciesProvider = self
@@ -1245,6 +1249,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         userChurnScheduler.start()
+
+        memoryUsageMonitor.enableIfNeeded(featureFlagger: featureFlagger)
 
         PixelKit.fire(NonStandardEvent(GeneralPixel.launch))
     }

@@ -886,10 +886,8 @@ private extension XCUIElement {
             if button.exists {
                 let title = button.title
                 // Check if this is a deny button by title
-                for denyTitle in denyTitles {
-                    if title.localizedCaseInsensitiveCompare(denyTitle) == .orderedSame {
-                        return buttonIndex
-                    }
+                for denyTitle in denyTitles where title.localizedCaseInsensitiveCompare(denyTitle) == .orderedSame {
+                    return buttonIndex
                 }
                 // Also check if title contains "Don" and "Allow" (handles various apostrophe encodings)
                 if title.lowercased().contains("don") && title.lowercased().contains("allow") {

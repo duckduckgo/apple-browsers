@@ -167,4 +167,3 @@ final class SystemPermissionManagerTests: XCTestCase {
         XCTAssertFalse(sut.isAuthorizationRequired(for: .popups))
     }
 }
-

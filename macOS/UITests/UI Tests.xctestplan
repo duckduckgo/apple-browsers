@@ -39,7 +39,10 @@
         "AIChatTests\/test_availableAIChatInOmnibarDefaultSettings()",
         "AIChatTests\/test_disableAIChatOmnibarFromSettings_buttonIsRemovedFromOmnibar()",
         "BookmarkSearchTests\/testShowInFolderFunctionalityOnBookmarksPanel()",
-        "FireWindowTests\/testCrendentialsAreAutoFilledInFireWindows()"
+        "FireWindowTests\/testCrendentialsAreAutoFilledInFireWindows()",
+        "NewPermissionViewPopupTests",
+        "NewPermissionViewTests",
+        "PermissionsTests"
       ],
       "target" : {
         "containerPath" : "container:DuckDuckGo-macOS.xcodeproj",

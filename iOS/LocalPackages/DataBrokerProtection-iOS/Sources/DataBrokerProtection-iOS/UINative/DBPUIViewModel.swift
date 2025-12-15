@@ -231,7 +231,7 @@ extension DBPUIViewModel: DBPUICommunicationDelegate {
 
     @MainActor
     public func needBackgroundAppRefresh() async -> Bool {
-        UIApplication.shared.backgroundRefreshStatus != .available
+        UIApplication.shared.backgroundRefreshStatus != .available && ProcessInfo.processInfo.isLowPowerModeEnabled == false
     }
 
     @MainActor

@@ -20,5 +20,5 @@ import Foundation
 import os.log
 
 public extension Logger {
-    static var networking = { Logger(subsystem: "Networking", category: "") }()
+    static let networking = Logger(subsystem: "Networking", category: "")
 }

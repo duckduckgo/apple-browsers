@@ -277,7 +277,7 @@ func fileImportInstructionsBuilder(source: DataImport.Source, dataType: DataImpo
 
     case (.safari, .passwords), (.safariTechnologyPreview, .passwords):
         if #available(macOS 15.2, *) {
-            NSLocalizedString("import.csv.instructions.safari.macos15-2", value: """
+            NSLocalizedString("import.csv.instructions.safari.macos15-2.old", value: """
             %d Open **Safari**
             %d Open the **File menu → Export Browsing Data to File...**
             %d Select **passwords** and save the file someplace you can find it (e.g., Desktop)

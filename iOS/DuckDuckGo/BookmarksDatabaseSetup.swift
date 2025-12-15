@@ -25,7 +25,7 @@ import Persistence
 import Common
 
 public extension BoolFileMarker.Name {
-    static let hasSuccessfullySetupBookmarksDatabaseBefore = BoolFileMarker.Name(rawValue: "bookmarks-db-setup-successfully")
+    static let hasSuccessfullySetupBookmarksDatabaseBefore = BoolFileMarker.Name(rawValue: "bookmarks-db-setup-successfully-2")
 }
 
 struct BookmarksDatabaseSetup {
@@ -41,20 +41,22 @@ struct BookmarksDatabaseSetup {
         self.migrationAssertion = migrationAssertion
     }
 
-    static func makeValidator(counterStore: ThrowingKeyValueStoring? = nil, isBookmarksDBFilePresent: Bool = false) -> BookmarksStateValidator {
+    static func makeValidator(counterStore: ThrowingKeyValueStoring? = nil, isBookmarksDBFilePresent: Bool? = false) -> BookmarksStateValidator {
         return BookmarksStateValidator(keyValueStore: UserDefaults.app) { validationError, additionalParams in
             switch validationError {
             case .bookmarksStructureLost:
                 var enhancedParams = additionalParams ?? [:]
                 
-                // Track frequency of structure lost events (temporary debugging, capped at 5 for privacy)
+                // Count frequency of structure lost events (temporary debugging, capped at 5 for privacy)
                 if let store = counterStore {
                     let currentCount = (try? store.object(forKey: "bookmarks_structure_lost_count") as? Int) ?? 0
                     let newCount = min(currentCount + 1, 5)
                     try? store.set(newCount, forKey: "bookmarks_structure_lost_count")
                     enhancedParams["occurrence-count"] = String(newCount)
                 }
-                enhancedParams["is-bookmarks-db-file-present"] = String(isBookmarksDBFilePresent)
+                if let isBookmarksDBFilePresent {
+                    enhancedParams["is-bookmarks-db-file-present"] = String(isBookmarksDBFilePresent)
+                }
 
                 DailyPixel.fireDailyAndCount(pixel: .debugBookmarksStructureLost,
                                 withAdditionalParameters: enhancedParams)
@@ -74,8 +76,7 @@ struct BookmarksDatabaseSetup {
 
     func loadStoreAndMigrate(bookmarksDatabase: CoreDataStoring,
                              formFactorFavoritesMigrator: BookmarkFormFactorFavoritesMigrating = BookmarkFormFactorFavoritesMigration(),
-                             validator: BookmarksStateValidation = Self.makeValidator(),
-                             isBookmarksDBFilePresent: Bool = false) throws {
+                             validator: BookmarksStateValidation = Self.makeValidator()) throws {
         let oldFavoritesOrder: [String]?
         do {
             oldFavoritesOrder = try formFactorFavoritesMigrator.getFavoritesOrderFromPreV4Model(

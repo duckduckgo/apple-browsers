@@ -209,8 +209,7 @@ final class AppStateMachine {
     private func respond(to event: AppEvent, in launching: LaunchingHandling) {
         switch event {
         case .willConnectToWindow(let window):
-            let connected = launching.makeConnectedState(window: window,
-                                                         actionToHandle: actionToHandle)
+            let connected = launching.makeConnectedState(window: window, actionToHandle: actionToHandle)
             currentState = .connected(connected)
         default:
             handleUnexpectedEvent(event, for: .launching(launching))
@@ -232,7 +231,7 @@ final class AppStateMachine {
             actionToHandle = nil
             currentState = .background(background)
         case .willEnterForeground:
-            // This is now fixed for scenes and is always called after the scene connects.
+            // This has been fixed on Apple side for scenes and is always called after the scene connects.
             // However, we only transition to Foreground after didBecomeActive, since both events occur in sequence.
             // We may revisit this if any UI glitches appear, as some work could potentially happen earlier in willEnterForeground.
             break
@@ -252,9 +251,7 @@ final class AppStateMachine {
             currentState = .background(background)
         case .willResignActive:
             foreground.willLeave()
-        case .willConnectToWindow(let window):
-            DailyPixel.fireDailyAndCount(pixel: .sceneDidDisconnectAndAttemptedToReconnect,
-                                         withAdditionalParameters: [PixelParameters.osVersion: UIDevice.current.systemVersion])
+        case .willConnectToWindow(let window): // Please remove once we stop supporting iOS 16
             currentState = .connected(foreground.makeConnectedState(window: window, actionToHandle: actionToHandle))
         default:
             handleUnexpectedEvent(event, for: .foreground(foreground))
@@ -274,9 +271,7 @@ final class AppStateMachine {
             actionToHandle = nil
         case .willEnterForeground:
             background.willLeave()
-        case .willConnectToWindow(let window):
-            DailyPixel.fireDailyAndCount(pixel: .sceneDidDisconnectAndAttemptedToReconnect,
-                                         withAdditionalParameters: [PixelParameters.osVersion: UIDevice.current.systemVersion])
+        case .willConnectToWindow(let window): // Please remove once we stop supporting iOS 16
             currentState = .connected(background.makeConnectedState(window: window, actionToHandle: actionToHandle))
         default:
             handleUnexpectedEvent(event, for: .background(background))

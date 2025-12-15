@@ -38,6 +38,7 @@ public enum SubscriptionURL {
     case manageEmail
     case manageSubscriptionsInAppStore
     case identityTheftRestoration
+    case plans
 
     public enum StaticURLs {
         public static let defaultBaseSubscriptionURL = URL(string: "https://duckduckgo.com/subscriptions")!
@@ -82,6 +83,8 @@ public enum SubscriptionURL {
                 StaticURLs.manageSubscriptionsInMacAppStoreURL
             case .identityTheftRestoration:
                 baseURL.replacing(path: "identity-theft-restoration")
+            case .plans:
+                baseURL.appendingPathComponent("plans")
             }
         }()
 

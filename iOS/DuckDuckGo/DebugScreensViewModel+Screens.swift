@@ -98,8 +98,8 @@ extension DebugScreensViewModel {
             .view(title: "Bookmarks", { _ in
                 BookmarksDebugRootView()
             }),
-            .view(title: "Remote Messaging", { _ in
-                RemoteMessagingDebugRootView()
+            .view(title: "Remote Messaging", { dependencies in
+                RemoteMessagingDebugRootView(remoteMessagingDebugHandler: dependencies.remoteMessagingDebugHandler)
             }),
             .view(title: "Settings Cells Demo", { _ in
                 SettingsCellDemoDebugView()
@@ -137,8 +137,8 @@ extension DebugScreensViewModel {
             .view(title: "Modal Prompt Coordination", { d in
                 ModalPromptCoordinationDebugView(keyValueStore: d.keyValueStore)
             }),
-            .view(title: "What's New", { d in
-                WhatsNewDebugView(keyValueStore: d.keyValueStore)
+            .view(title: "What's New", { dependencies in
+                WhatsNewDebugView(keyValueStore: dependencies.keyValueStore, remoteMessagingDebugHandler: dependencies.remoteMessagingDebugHandler)
             }),
 
             // MARK: Controllers
@@ -203,9 +203,9 @@ extension DebugScreensViewModel {
             .controller(title: "Logging", { _ in
                 return LoggingDebugViewController()
             }),
-            .controller(title: "Subscription", { _ in
+            .controller(title: "Subscription", { dependencies in
                 return self.debugStoryboard.instantiateViewController(identifier: "SubscriptionDebugViewController") { coder in
-                    SubscriptionDebugViewController(coder: coder)
+                    SubscriptionDebugViewController(coder: coder, subscriptionDataReporter: dependencies.subscriptionDataReporter)
                 }
             }),
             .controller(title: "Configuration URLs", { _ in

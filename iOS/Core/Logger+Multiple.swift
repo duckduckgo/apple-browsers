@@ -21,10 +21,10 @@ import Foundation
 import os.log
 
 public extension Logger {
-    static var adAttribution = { Logger(subsystem: "AD Attribution", category: "") }()
-    static var lifecycle = { Logger(subsystem: "Lifecycle", category: "") }()
-    static var configuration = { Logger(subsystem: "Configuration", category: "") }()
-    static var duckPlayer = { Logger(subsystem: "DuckPlayer", category: "") }()
-    static var launchSource = { Logger(subsystem: "LaunchSource", category: "") }()
-    static var addressBarPicker = { Logger(subsystem: "AddressBar Picker", category: "") }()
+    static let adAttribution = Logger(subsystem: "AD Attribution", category: "")
+    static let lifecycle = Logger(subsystem: "Lifecycle", category: "")
+    static let configuration = Logger(subsystem: "Configuration", category: "")
+    static let duckPlayer = Logger(subsystem: "DuckPlayer", category: "")
+    static let launchSource = Logger(subsystem: "LaunchSource", category: "")
+    static let addressBarPicker = Logger(subsystem: "AddressBar Picker", category: "")
 }

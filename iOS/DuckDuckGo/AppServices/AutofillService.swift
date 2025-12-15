@@ -109,7 +109,9 @@ final class AutofillService {
             return
         }
         let importPasswordsStatusHandler = ImportPasswordsViaSyncStatusHandler(syncService: syncService.sync)
-        importPasswordsStatusHandler.checkSyncSuccessStatus()
+        Task {
+            await importPasswordsStatusHandler.checkSyncSuccessStatus()
+        }
     }
 
     // MARK: - Suspend

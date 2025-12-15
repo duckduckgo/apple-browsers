@@ -4,6 +4,9 @@
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
 
+/* No comment provided by engineer. */
+"Account" = "fiókodhoz";
+
 /* Buton label for Edit action */
 "action.generic.edit" = "Szerkesztés";
 
@@ -35,7 +38,7 @@
 "action.title.aiChat.history" = "Duck.ai-csevegések";
 
 /* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "Új AI-csevegés";
+"action.title.aiChat.new" = "Új csevegés";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "A Duck.ai beállításai";
@@ -904,6 +907,12 @@
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Frissíted a felhasználónevet?";
 
+/* No comment provided by engineer. */
+"Available Products" = "Elérhető termékek";
+
+/* View plans button text during Black Friday campaign */
+"black-friday.campaign.view.plans.cta" = "Spórolj %d%%-ot az első évben";
+
 /* Add bookmark screen title */
 "bookmark.addBookmark.title" = "Könyvjelző mentése";
 
@@ -1026,6 +1035,9 @@
 
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "A visszavonás egynél többször nem engedélyezett";
+
+/* No comment provided by engineer. */
+"Checking for existing account..." = "Meglévő fiók keresése...";
 
 /* Close All Tabs */
 "close.all.tabs" = "Összes lap bezárása";
@@ -1152,6 +1164,9 @@
 
 /* No comment provided by engineer. */
 "Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+
+/* No comment provided by engineer. */
+"Current Subscriptions" = "Jelenlegi előfizetések";
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "EGYÉNI CELLATARTALOM";
@@ -1676,6 +1691,9 @@
 "error.unknown.try.again" = "Ismeretlen hiba történt";
 
 /* No comment provided by engineer. */
+"External ID: %@" = "Külső azonosító: %@";
+
+/* No comment provided by engineer. */
 "favorite" = "Kedvenc";
 
 /* No comment provided by engineer. */
@@ -1912,6 +1930,9 @@
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "VÁLASSZ KATEGÓRIÁT";
 
+/* Category for issues with accessing Plus or Pro tier features */
+"feedback.ppro.category.unable-to-access-features" = "Nem sikerült hozzáférni a Plusz vagy a Pro szintű funkciókhoz";
+
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Anonim visszajelzésed fontos számunkra.";
 
@@ -2082,6 +2103,9 @@
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Utolsó feldolgozás: %@";
+
+/* No comment provided by engineer. */
+"Loading available products..." = "Elérhető termékek betöltése...";
 
 /* No comment provided by engineer. */
 "Loading brokers..." = "Brókerek betöltése…";
@@ -2429,6 +2453,12 @@
 "new.address.bar.picker.title" = "Címsorbeállítás";
 
 /* No comment provided by engineer. */
+"No active subscriptions" = "Nincsenek aktív előfizetéseid";
+
+/* No comment provided by engineer. */
+"No existing subscription found" = "Nem található meglévő előfizetés";
+
+/* No comment provided by engineer. */
 "No Logs" = "Nincsenek naplók";
 
 /* No comment provided by engineer. */
@@ -2436,6 +2466,9 @@
 
 /* No comment provided by engineer. */
 "No results found" = "Nincs találat";
+
+/* No comment provided by engineer. */
+"No subscriptions available" = "Nincsenek előfizetések";
 
 /* No comment provided by engineer. */
 "OK" = "OK";
@@ -2448,6 +2481,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser  hides a cookie popup */
 "omnibar.notification.popup-hidden" = "Felugró ablak elrejtve";
+
+/* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
+"omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Megvan";
@@ -2519,7 +2555,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Beállítások > AI-funkciók";
 
 /* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Szeretnél könnyebben hozzáférni a privát AI-csevegéshez?";
+"onboarding.highlights.searchExperience.title" = "Szeretnél könnyedén hozzáférni a privát AI-csevegéshez?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Rajta, csináljuk!";
@@ -2911,6 +2947,12 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Keresési asszisztens beállításai";
 
+/* Settings screen cell subtitle for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.subtitle" = "Az új Duck.ai-csevegések megjelenítése böngészőlapként";
+
+/* Settings screen cell title for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.title" = "Duck.ai lap mód";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "AI által generált képek elrejtése";
 
@@ -2925,9 +2967,6 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Címsor elhelyezkedése";
-
-/* Settings screen cell text for experimental menu */
-"settings.appearance.experimental.menu" = "Kísérleti böngészési menü";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Hivatkozások megnyitása társított alkalmazásokban";
@@ -3055,8 +3094,11 @@
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Jelszavak importálása";
 
-/* Copy for budge on settings item to show an item is new */
+/* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Új";
+
+/* Copy for badge on settings item to show an item is experimental */
+"settings.item.badge.preview" = "Előnézet";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Billentyűzet";
@@ -3327,6 +3369,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Melyik weboldal nem működik?”";
+
+/* No comment provided by engineer. */
+"Status" = "Állapot";
 
 /* No comment provided by engineer. */
 "Status: Invalidated" = "Állapot: Érvénytelenítve";
@@ -3981,6 +4026,12 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "%@ üzenete:";
+
+/* No comment provided by engineer. */
+"Will attach to EXISTING account" = "MEGLÉVŐ fiókhoz lesz társítva";
+
+/* No comment provided by engineer. */
+"Will create NEW account" = "ÚJ fiókot fog létrehozni";
 
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "SPÓROLJ 25%-OT";

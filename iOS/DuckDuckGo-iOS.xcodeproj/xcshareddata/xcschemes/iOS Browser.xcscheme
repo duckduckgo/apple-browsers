@@ -196,7 +196,7 @@
                BlueprintIdentifier = "FoundationExtensionsTests"
                BuildableName = "FoundationExtensionsTests"
                BlueprintName = "FoundationExtensionsTests"
-               ReferencedContainer = "container:../SharedPackages/SystemFrameworksExtensions">
+               ReferencedContainer = "container:../SharedPackages/Infrastructure/SystemFrameworksExtensions">
             </BuildableReference>
          </TestableReference>
       </Testables>

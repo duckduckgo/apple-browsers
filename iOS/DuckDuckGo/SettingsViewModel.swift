@@ -136,10 +136,6 @@ final class SettingsViewModel: ObservableObject {
     // This affects UI: shows Done button and hides Search Assist link
     var openedFromSERPSettingsButton: Bool = false
 
-    var isForgetAllInSettingsEnabled: Bool {
-        featureFlagger.isFeatureOn(.forgetAllInSettings)
-    }
-
     // Indicates if the Paid AI Chat feature flag is enabled for the current user/session.
     var isPaidAIChatEnabled: Bool {
         featureFlagger.isFeatureOn(.paidAIChat)
@@ -1499,6 +1495,18 @@ extension SettingsViewModel {
                 withAnimation {
                     self.objectWillChange.send()
                     self.aiChatSettings.enableAIChatFullModeSetting(enable: newValue)
+                }
+            }
+        )
+    }
+    
+    var isAutomaticContextAttachmentEnabled: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.aiChatSettings.isAutomaticContextAttachmentEnabled },
+            set: { newValue in
+                withAnimation {
+                    self.objectWillChange.send()
+                    self.aiChatSettings.enableAutomaticContextAttachment(enable: newValue)
                 }
             }
         )

@@ -4,6 +4,9 @@
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
 
+/* No comment provided by engineer. */
+"Account" = "акаунт";
+
 /* Buton label for Edit action */
 "action.generic.edit" = "Редактиране";
 
@@ -35,7 +38,7 @@
 "action.title.aiChat.history" = "Чатове с Duck.ai";
 
 /* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "AI Chat";
+"action.title.aiChat.new" = "Нов чат";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Настройки на Duck.ai";
@@ -904,6 +907,12 @@
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Актуализиране на потребителското име?";
 
+/* No comment provided by engineer. */
+"Available Products" = "Налични продукти";
+
+/* View plans button text during Black Friday campaign */
+"black-friday.campaign.view.plans.cta" = "Спестете %d%% за първата година";
+
 /* Add bookmark screen title */
 "bookmark.addBookmark.title" = "Добави отметка";
 
@@ -1026,6 +1035,9 @@
 
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Отменянето не е позволено повече от веднъж";
+
+/* No comment provided by engineer. */
+"Checking for existing account..." = "Проверка за съществуващ акаунт...";
 
 /* Close All Tabs */
 "close.all.tabs" = "Затваряне на всички раздели";
@@ -1152,6 +1164,9 @@
 
 /* No comment provided by engineer. */
 "Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+
+/* No comment provided by engineer. */
+"Current Subscriptions" = "Текущи абонаменти";
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "ПЕРСОНАЛИЗИРАНО СЪДЪРЖАНИЕ НА КЛЕТКИ";
@@ -1676,6 +1691,9 @@
 "error.unknown.try.again" = "Възникна неизвестна грешка";
 
 /* No comment provided by engineer. */
+"External ID: %@" = "Външен ID: %@";
+
+/* No comment provided by engineer. */
 "favorite" = "Любим";
 
 /* No comment provided by engineer. */
@@ -1912,6 +1930,9 @@
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "ИЗБЕРЕТЕ КАТЕГОРИЯ";
 
+/* Category for issues with accessing Plus or Pro tier features */
+"feedback.ppro.category.unable-to-access-features" = "Няма достъп до функциите от ниво Plus или Pro";
+
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Вашите анонимни отзиви са важни за нас.";
 
@@ -2082,6 +2103,9 @@
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Последно обработено: %@";
+
+/* No comment provided by engineer. */
+"Loading available products..." = "Зареждане на налични продукти...";
 
 /* No comment provided by engineer. */
 "Loading brokers..." = "Зареждане на брокери...";
@@ -2429,6 +2453,12 @@
 "new.address.bar.picker.title" = "Опция за адресната лента";
 
 /* No comment provided by engineer. */
+"No active subscriptions" = "Няма активни абонаменти";
+
+/* No comment provided by engineer. */
+"No existing subscription found" = "Не е намерен съществуващ абонамент";
+
+/* No comment provided by engineer. */
 "No Logs" = "Без регистри";
 
 /* No comment provided by engineer. */
@@ -2436,6 +2466,9 @@
 
 /* No comment provided by engineer. */
 "No results found" = "Няма намерени резултати";
+
+/* No comment provided by engineer. */
+"No subscriptions available" = "Няма налични абонаменти";
 
 /* No comment provided by engineer. */
 "OK" = "ОК";
@@ -2448,6 +2481,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser  hides a cookie popup */
 "omnibar.notification.popup-hidden" = "Изскачащият прозорец е скрит";
+
+/* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
+"omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Разбрах";
@@ -2519,7 +2555,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Настройки > AI Функции.";
 
 /* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Искаш ли по-лесен достъп до поверителен AI чат?";
+"onboarding.highlights.searchExperience.title" = "Искаш ли лесен достъп до поверителен чат с изкуствен интелект?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Да го направим!";
@@ -2911,6 +2947,12 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Настройки за Assist при търсене";
 
+/* Settings screen cell subtitle for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.subtitle" = "Показване на новите чатове на Duck.ai като раздели в браузъра";
+
+/* Settings screen cell title for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.title" = "Режим на раздели на Duck.ai";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Скриване на изображения, генерирани от изкуствен интелект";
 
@@ -2925,9 +2967,6 @@
 
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Позиция на адресната лента";
-
-/* Settings screen cell text for experimental menu */
-"settings.appearance.experimental.menu" = "Експериментално меню на браузъра";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Отваряне на връзките в свързаните приложения";
@@ -3055,8 +3094,11 @@
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Импортиране на пароли";
 
-/* Copy for budge on settings item to show an item is new */
+/* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Нов";
+
+/* Copy for badge on settings item to show an item is experimental */
+"settings.item.badge.preview" = "Преглед";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Клавиатура";
@@ -3327,6 +3369,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Кой уебсайт е повреден?";
+
+/* No comment provided by engineer. */
+"Status" = "Статус";
 
 /* No comment provided by engineer. */
 "Status: Invalidated" = "Статус: Невалидно";
@@ -3981,6 +4026,12 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Съобщение от %@:";
+
+/* No comment provided by engineer. */
+"Will attach to EXISTING account" = "Will attach to EXISTING account";
+
+/* No comment provided by engineer. */
+"Will create NEW account" = "Will create NEW account";
 
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "Спести 25%!";

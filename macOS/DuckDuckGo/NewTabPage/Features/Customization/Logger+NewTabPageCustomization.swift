@@ -20,5 +20,5 @@ import Foundation
 import os.log
 
 public extension Logger {
-    static var newTabPageCustomization = { Logger(subsystem: "NewTabPageCustomization", category: "") }()
+    static let newTabPageCustomization = Logger(subsystem: "NewTabPageCustomization", category: "")
 }

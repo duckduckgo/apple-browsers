@@ -1429,7 +1429,15 @@ public struct UserText {
     public static let settingsCookiePopups = NSLocalizedString("settings.cookie.popups", value: "Manage Cookie Pop-ups", comment: "Settings screen cell text for Cookie popups")
     public static let settingsUnprotectedSites = NSLocalizedString("settings.unprotected.sites", value: "Unprotected Sites", comment: "Settings screen cell text for Unprotected Sites")
     public static let settingsFireproofSites = NSLocalizedString("settings.fireproof.sites", value: "Fireproof Sites", comment: "Settings screen cell text for Fireproof Sites")
+    public static let settingsFireproofedSites = NSLocalizedString("settings.fireproofed.sites", value: "Fireproofed Sites", comment: "Settings screen cell text for Fireproofed Sites")
+    public static func settingsFireproofedSitesSubtitle(withCount count: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "settings.fireproofed.sites.subtitle", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, count)
+    }
     public static let settingsClearData = NSLocalizedString("settings.clear.data", value: "Automatically Clear Data", comment: "Settings screen cell text for Automatically Clearing Data")
+    public static let settingsAutomaticDataClearing = NSLocalizedString("settings.automatic.data.clearing.title", value: "Automatic Data Clearing", comment: "Settings row title for automatic data clearing")
+    public static let settingsDataClearingDescription = NSLocalizedString("settings.data.clearing.description", value: "Deleting your data can help protect your privacy online. Use the Fire Button to clear data manually, or set up automatic clearing.", comment: "Data Clearing settings header description")
+    public static let settingsClearBrowsingData = NSLocalizedString("settings.clear.browsing.data", value: "Clear Browsing Data", comment: "Button to clear browsing data")
     public static let settingsAutoClearTabsAndData = NSLocalizedString("settings.autoclear.tabs.and.data", value: "Clear Tabs and Data", comment: "Autoclear action option to clear tabs and data")
     public static let settingsAutoClearTabsAndDataWithAIChat = NSLocalizedString("settings.autoclear.tabs.and.data.with.aichat", value: "Clear Tabs, Data, and Duck.ai Chats", comment: "Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled")
     public static let settingsClearAIChatHistory = NSLocalizedString("settings.clear.aichat.history.title", value: "Clear Duck.ai Chats", comment: "Settings screen cell text for clearing AI chat history")

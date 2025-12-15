@@ -206,7 +206,8 @@ class DownloadManagerTests: XCTestCase {
     }
     
     func testRTLSanitizing() throws {
-        let spoofedName = "test.‮gpj‬" // U+202E + U+202C character
+        // Use Unicode escape sequences to avoid hidden bidirectional characters
+        let spoofedName = "test.\u{202E}gpj\u{202C}"
         let expectedName = "test.gpj"
         let notificationCenter = NotificationCenter()
         let downloadManager = DownloadManager(notificationCenter)

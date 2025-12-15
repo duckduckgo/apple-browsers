@@ -59221,12 +59221,6 @@
               "formatSpecifier" : "d",
               "variations" : {
                 "plural" : {
-                  "many" : {
-                    "stringUnit" : {
-                      "state" : "translated",
-                      "value" : "%arg Tracker wurden blockiert"
-                    }
-                  },
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
@@ -59289,12 +59283,6 @@
               "formatSpecifier" : "d",
               "variations" : {
                 "plural" : {
-                  "many" : {
-                    "stringUnit" : {
-                      "state" : "translated",
-                      "value" : "%arg rastreadores bloqueados"
-                    }
-                  },
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
@@ -59323,12 +59311,6 @@
               "formatSpecifier" : "d",
               "variations" : {
                 "plural" : {
-                  "many" : {
-                    "stringUnit" : {
-                      "state" : "translated",
-                      "value" : "%arg traqueurs bloqués"
-                    }
-                  },
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
@@ -59357,12 +59339,6 @@
               "formatSpecifier" : "d",
               "variations" : {
                 "plural" : {
-                  "many" : {
-                    "stringUnit" : {
-                      "state" : "translated",
-                      "value" : "%arg sistemi di tracciamento bloccati"
-                    }
-                  },
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
@@ -59391,12 +59367,6 @@
               "formatSpecifier" : "d",
               "variations" : {
                 "plural" : {
-                  "many" : {
-                    "stringUnit" : {
-                      "state" : "translated",
-                      "value" : "%arg trackers geblokkeerd"
-                    }
-                  },
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
@@ -59465,12 +59435,6 @@
               "formatSpecifier" : "d",
               "variations" : {
                 "plural" : {
-                  "many" : {
-                    "stringUnit" : {
-                      "state" : "translated",
-                      "value" : "%arg rastreadores bloqueados"
-                    }
-                  },
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
@@ -65669,7 +65633,7 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Allow %@ to use your current location?"
           }
         },
@@ -65731,6 +65695,48 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Allow “%1$@” to use your %2$@?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to use your current location?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to use your current location?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to use your current location?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to use your current location?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to use your current location?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to use your current location?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to use your current location?"
           }
         }
       }
@@ -66474,55 +66480,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nicht zulassen"
+            "value" : "Deny"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Don't Allow"
+            "value" : "Deny"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No permitir"
+            "value" : "Deny"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ne pas autoriser"
+            "value" : "Deny"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Non consentire"
+            "value" : "Deny"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Niet toestaan"
+            "value" : "Deny"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nie zezwalaj"
+            "value" : "Deny"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Não permitir"
+            "value" : "Deny"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Не разрешать"
+            "value" : "Deny"
           }
         }
       }

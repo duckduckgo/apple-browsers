@@ -21,6 +21,8 @@ import XCTest
 
 /// UI Tests for the new permission authorization view and permission center (behind the newPermissionView feature flag).
 /// These tests verify the SwiftUI-based permission UI that replaces the legacy storyboard-based permission UI.
+/// Note: Restricted to macOS 26+ due to differences in system permission dialogs across macOS versions.
+@available(macOS 26, *)
 class NewPermissionViewTests: UITestCase {
 
     private var notificationCenter: XCUIApplication!

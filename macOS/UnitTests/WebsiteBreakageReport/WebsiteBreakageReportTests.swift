@@ -28,6 +28,7 @@ class WebsiteBreakageReportTests: XCTestCase {
     func testReportBrokenSitePixel() {
         fire(NonStandardPixel.brokenSiteReport,
              frequency: .standard,
+             doNotEnforcePrefix: true,
              and: .expect(pixelName: "epbf_macos_desktop"),
              file: #filePath,
              line: #line)
@@ -36,6 +37,7 @@ class WebsiteBreakageReportTests: XCTestCase {
     func testReportBrokenSiteShownPixel() {
         fire(NonStandardPixel.brokenSiteReportShown,
              frequency: .standard,
+             doNotEnforcePrefix: true,
              and: .expect(pixelName: "m_report-broken-site_shown"),
              file: #filePath,
              line: #line)
@@ -44,6 +46,7 @@ class WebsiteBreakageReportTests: XCTestCase {
     func testReportBrokenSiteSentPixel() {
         fire(NonStandardPixel.brokenSiteReportSent,
              frequency: .standard,
+             doNotEnforcePrefix: true,
              and: .expect(pixelName: "m_report-broken-site_sent"),
              file: #filePath,
              line: #line)

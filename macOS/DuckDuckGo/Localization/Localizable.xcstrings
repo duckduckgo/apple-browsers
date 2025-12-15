@@ -1832,10 +1832,58 @@
       "comment" : "Button to hide duck.ai toggle in address bar",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Umschalter von Duck.ai-Ansicht ausblenden"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Hide Duck.ai Toggle"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar alternar Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquer le bouton Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nascondi l'interruttore Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-schakelaar verbergen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ukryj przełącznik Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar botão para ativar/desativar o Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скрыть переключатель Duck.ai"
           }
         }
       }
@@ -2144,10 +2192,58 @@
       "comment" : "Tooltip for the chat with AI segment in the toggle control",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privat fragen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Ask privately"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pregunta en privado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demander en privé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiedi in privato"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vraag privé"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapytaj prywatnie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perguntar em privado"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Задать вопрос (конфиденциально)"
           }
         }
       }
@@ -2156,10 +2252,58 @@
       "comment" : "Placeholder text shown in the Duck.ai chat input field",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privat fragen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Ask privately"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pregunta en privado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Demander en privé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chiedi in privato"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vraag privé"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zapytaj prywatnie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Perguntar em privado"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Задать вопрос (конфиденциально)"
           }
         }
       }
@@ -2168,10 +2312,58 @@
       "comment" : "Tooltip for the search the web segment in the toggle control",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privat suchen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Search Privately"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busca de manera privada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faites une recherche privée"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerca privatamente"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privé zoeken"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Szukaj prywatnie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pesquisar em privado"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Конфиденциальный поиск"
           }
         }
       }
@@ -2420,9 +2612,57 @@
       "comment" : "Label for the ask AI segment in the address bar toggle control",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "Duck.ai"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Duck.ai"
           }
         }
@@ -2432,10 +2672,58 @@
       "comment" : "Button text for customizing AI features in the toggle popover",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "KI-Funktionen anpassen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Customize AI Features"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personalizar funciones de IA"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personnaliser les fonctionnalités IA"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personalizza le funzionalità di AI"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AI-functies aanpassen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dostosuj funkcje AI"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personalizar funcionalidades de IA"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Настроить функции ИИ"
           }
         }
       }
@@ -2444,10 +2732,58 @@
       "comment" : "Message for the AI Chat toggle introduction popover",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suche  wie gewohnt oder erhalte Antworten mithilfe von KI. Deine Daten bleiben auf jeden Fall privat."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Search as usual or get answers with AI. Either way, your information stays private."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busca como siempre u obtén respuestas con IA. De cualquier manera, tu información sigue siendo privada."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Effectuez des recherches comme d'habitude ou obtenez des réponses grâce à l'IA. Dans tous les cas, vos informations restent privées."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerca come al solito oppure ottieni risposte con l'AI. In ogni caso, le tue informazioni rimangono private."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zoek zoals gewoonlijk of krijg antwoorden met AI. Hoe dan ook, je gegevens blijven privé."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyszukuj jak zwykle lub uzyskuj odpowiedzi od AI. W każdym przypadku Twoje dane pozostaną prywatne."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pesquisa normalmente ou obtém respostas com IA. De qualquer forma, as tuas informações permanecem privadas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Обычный поиск либо ответы от ИИ. Ваши данные в любом случае остаются в тайне."
           }
         }
       }
@@ -2456,10 +2792,58 @@
       "comment" : "Title for the AI Chat toggle introduction popover",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neu! Zwei Möglichkeiten zur privaten Suche"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "NEW! Two ways to search privately"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¡NUEVO! Dos formas de buscar de manera privada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NOUVEAUTÉ ! Deux façons de faire une recherche privée"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NOVITÀ! Due modi per cercare privatamente"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NIEUW! Twee manieren om privé te zoeken"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NOWOŚĆ! Dwa sposoby prywatnego wyszukiwania"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "NOVO! Duas formas de pesquisar de forma privada"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "НОВИНКА! Два способа конфиденциального поиска"
           }
         }
       }
@@ -2468,9 +2852,57 @@
       "comment" : "Label for the search segment in the address bar toggle control",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "Search"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Search"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Search"
           }
         }
@@ -58737,12 +59169,6 @@
               "formatSpecifier" : "d",
               "variations" : {
                 "plural" : {
-                  "many" : {
-                    "stringUnit" : {
-                      "state" : "translated",
-                      "value" : "%arg Tracker wurden blockiert"
-                    }
-                  },
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
@@ -58805,12 +59231,6 @@
               "formatSpecifier" : "d",
               "variations" : {
                 "plural" : {
-                  "many" : {
-                    "stringUnit" : {
-                      "state" : "translated",
-                      "value" : "%arg rastreadores bloqueados"
-                    }
-                  },
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
@@ -58839,12 +59259,6 @@
               "formatSpecifier" : "d",
               "variations" : {
                 "plural" : {
-                  "many" : {
-                    "stringUnit" : {
-                      "state" : "translated",
-                      "value" : "%arg traqueurs bloqués"
-                    }
-                  },
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
@@ -58873,12 +59287,6 @@
               "formatSpecifier" : "d",
               "variations" : {
                 "plural" : {
-                  "many" : {
-                    "stringUnit" : {
-                      "state" : "translated",
-                      "value" : "%arg sistemi di tracciamento bloccati"
-                    }
-                  },
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
@@ -58907,12 +59315,6 @@
               "formatSpecifier" : "d",
               "variations" : {
                 "plural" : {
-                  "many" : {
-                    "stringUnit" : {
-                      "state" : "translated",
-                      "value" : "%arg trackers geblokkeerd"
-                    }
-                  },
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
@@ -58981,12 +59383,6 @@
               "formatSpecifier" : "d",
               "variations" : {
                 "plural" : {
-                  "many" : {
-                    "stringUnit" : {
-                      "state" : "translated",
-                      "value" : "%arg rastreadores bloqueados"
-                    }
-                  },
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
@@ -64259,10 +64655,58 @@
       "comment" : "Permission center header for external app permissions",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Externe Apps"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "External apps"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aplicaciones externas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mes apps externes"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "App esterne"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Externe apps"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aplikacje zewnętrzne"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aplicações externas"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Внешние приложения"
           }
         }
       }
@@ -64271,10 +64715,58 @@
       "comment" : "Description for external scheme permission, first %@ is domain, second %@ is scheme name",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ zum Öffnen von „%2$@“-Links"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$@ to open “%2$@” links"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ para abrir los enlaces \"%2$@\""
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ pour ouvrir les liens « %2$@ »"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ per aprire i link “%2$@”"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ om \"%2$@\"-links te openen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ do otwierania linków „%2$@”"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ para abrir os links “%2$@”"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Использовать %1$@ для ссылок «%2$@»"
           }
         }
       }
@@ -64283,10 +64775,58 @@
       "comment" : "Format for external scheme row, %@ is scheme name like mailto or sms",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "„%@“-Links öffnen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Open “%@” links"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir enlaces \"%@\""
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir les liens « %@ »"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri i link “%@”"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "“%@”-links openen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwieraj linki „%@”"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir links de “%@”"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открывать ссылки «%@»"
           }
         }
       }
@@ -64343,10 +64883,58 @@
       "comment" : "Title for permission center popover, %@ is the domain name",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Berechtigungen für „%@“"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Permissions for “%@”"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permisos para \"%@\""
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autorisations pour « %@ »"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autorizzazioni per “%@”"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Machtigingen voor \"%@\""
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Uprawnienia do domeny „%@”"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permissões para “%@”"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешения для сайта %@"
           }
         }
       }
@@ -64595,6 +65183,12 @@
       "comment" : "Prompt asking if domain %@ can use location once",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to use your current location?"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
@@ -64611,6 +65205,48 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Allow “%1$@” to use your %2$@?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to use your current location?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to use your current location?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to use your current location?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to use your current location?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to use your current location?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to use your current location?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Allow %@ to use your current location?"
           }
         }
       }
@@ -64931,10 +65567,58 @@
       "comment" : "Button to allow pop-ups when blocked popup has no URL",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pop-ups zulassen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Allow Pop-ups"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir ventanas emergentes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autoriser les fenêtres contextuelles"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consenti popup"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pop-ups toestaan"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zezwól na wyskakujące okienka"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir pop-ups"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить всплывающие окна"
           }
         }
       }
@@ -65003,9 +65687,57 @@
       "comment" : "Button that grants permission and remembers the decision for future requests",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Always Allow"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "Always Allow"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Always Allow"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Always Allow"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Always Allow"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Always Allow"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Always Allow"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Always Allow"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Always Allow"
           }
         }
@@ -65015,9 +65747,57 @@
       "comment" : "Button that denies permission and remembers the decision for future requests",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never Allow"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "Never Allow"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never Allow"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never Allow"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never Allow"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never Allow"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never Allow"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never Allow"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Never Allow"
           }
         }
@@ -65087,9 +65867,57 @@
       "comment" : "Button that denies permission for this request only",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deny"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "Deny"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deny"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deny"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deny"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deny"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deny"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deny"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Deny"
           }
         }
@@ -65159,9 +65987,57 @@
       "comment" : "Button that denies permission and remembers the decision for future requests",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never Allow"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "Never Allow"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never Allow"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never Allow"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never Allow"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never Allow"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never Allow"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Never Allow"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Never Allow"
           }
         }
@@ -65171,10 +66047,58 @@
       "comment" : "Button to open a blocked pop-up",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Öffnen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Open"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Openen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть"
           }
         }
       }
@@ -65644,9 +66568,57 @@
       "comment" : "Text shown when app restart is required for permission changes to take effect",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restart the DuckDuckGo application"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "Restart the DuckDuckGo application"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restart the DuckDuckGo application"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restart the DuckDuckGo application"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restart the DuckDuckGo application"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restart the DuckDuckGo application"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restart the DuckDuckGo application"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Restart the DuckDuckGo application"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Restart the DuckDuckGo application"
           }
         }
@@ -65656,9 +66628,57 @@
       "comment" : "Text shown when system location was previously denied. Followed by a link to System Settings",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System location disabled. Turn it on in "
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "System location disabled. Turn it on in "
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System location disabled. Turn it on in "
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System location disabled. Turn it on in "
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System location disabled. Turn it on in "
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System location disabled. Turn it on in "
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System location disabled. Turn it on in "
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System location disabled. Turn it on in "
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "System location disabled. Turn it on in "
           }
         }
@@ -65668,9 +66688,57 @@
       "comment" : "Button to enable system location services",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable System Location"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "Enable System Location"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable System Location"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable System Location"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable System Location"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable System Location"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable System Location"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enable System Location"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Enable System Location"
           }
         }
@@ -65680,9 +66748,57 @@
       "comment" : "Text shown after system location permission has been granted",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System location enabled!"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "System location enabled!"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System location enabled!"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System location enabled!"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System location enabled!"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System location enabled!"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System location enabled!"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System location enabled!"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "System location enabled!"
           }
         }
@@ -65692,9 +66808,57 @@
       "comment" : "Text shown while waiting for user to respond to system location permission dialog",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waiting for system permission…"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "Waiting for system permission…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waiting for system permission…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waiting for system permission…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waiting for system permission…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waiting for system permission…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waiting for system permission…"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waiting for system permission…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Waiting for system permission…"
           }
         }
@@ -65704,9 +66868,57 @@
       "comment" : "Link text to open System Settings Privacy section for location",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System Settings → Privacy"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "System Settings → Privacy"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System Settings → Privacy"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System Settings → Privacy"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System Settings → Privacy"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System Settings → Privacy"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System Settings → Privacy"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "System Settings → Privacy"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "System Settings → Privacy"
           }
         }
@@ -76568,10 +77780,58 @@
       "comment" : "Option to show AI Chat shortcut in the address bar",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-Shortcut"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Duck.ai Shortcut"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Acceso directo a Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Raccourci Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scorciatoia Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-snelkoppeling"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skrót Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atalho Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ярлык Duck.ai"
           }
         }
       }
@@ -76580,10 +77840,58 @@
       "comment" : "Option to show AI Chat toggle in the address bar",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Umschalter von Duck.ai"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Duck.ai Toggle"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alternar Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bouton Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Interruttore Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-schakelaar"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przełącznik Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Botão para ativar/desativar o Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Переключатель Duck.ai"
           }
         }
       }
@@ -89642,10 +90950,58 @@
       "comment" : "Label shown on the search suggestion cell indicating the action will search the web",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privat suchen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Search privately"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Busca de manera privada"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faites une recherche privée"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerca privatamente"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privé zoeken"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Szukaj prywatnie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pesquisar em privado"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Конфиденциальный поиск"
           }
         }
       }

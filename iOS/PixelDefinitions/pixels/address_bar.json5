@@ -11,7 +11,7 @@
         "description": "Fires when user clicks address bar while on AI Chat",
         "owners": ["aataraxiaa"],
         "triggers": ["other"],
-        "suffixes": ["first_daily_count", "platform", "form_factor"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
     "m_addressbar_focus_clear_entry_aichat": {

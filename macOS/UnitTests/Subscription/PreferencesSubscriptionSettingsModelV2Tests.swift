@@ -52,8 +52,10 @@ final class PreferencesSubscriptionSettingsModelV2Tests: XCTestCase {
         sut = makeSUT()
     }
 
-    private func makeSUT(subscription: DuckDuckGoSubscription? = nil) -> PreferencesSubscriptionSettingsModelV2 {
+    private func makeSUT(subscription: DuckDuckGoSubscription? = nil,
+                         purchasePlatform: SubscriptionEnvironment.PurchasePlatform = .appStore) -> PreferencesSubscriptionSettingsModelV2 {
         mockSubscriptionManager.resultSubscription = subscription
+        mockSubscriptionManager.currentEnvironment = SubscriptionEnvironment(serviceEnvironment: .staging, purchasePlatform: purchasePlatform)
         return PreferencesSubscriptionSettingsModelV2(
             userEventHandler: { [weak self] event in
                 self?.userEvents.append(event)
@@ -215,5 +217,243 @@ final class PreferencesSubscriptionSettingsModelV2Tests: XCTestCase {
 
         // Then
         XCTAssertNil(sut.tierBadgeToDisplay)
+    }
+
+    // MARK: - Should Show View All Plans Tests
+
+    func testShouldShowViewAllPlans_WhenActiveSubscriptionAndFeatureFlagEnabled_ReturnsTrue() {
+        // Given - Active subscription with feature flag ON
+        isProTierPurchaseEnabled = true
+        sut = makeSUT(subscription: SubscriptionMockFactory.subscription(status: .autoRenewable, tier: .plus))
+
+        // Wait for async subscription update
+        let expectation = expectation(description: "Subscription status updated")
+        sut.$subscriptionStatus
+            .dropFirst()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        wait(for: [expectation], timeout: 1.0)
+
+        // Then
+        XCTAssertTrue(sut.shouldShowViewAllPlans)
+    }
+
+    func testShouldShowViewAllPlans_WhenActiveProTierSubscription_ReturnsTrue() {
+        // Given - Active Pro tier subscription with feature flag OFF
+        isProTierPurchaseEnabled = false
+        sut = makeSUT(subscription: SubscriptionMockFactory.subscription(status: .autoRenewable, tier: .pro))
+
+        // Wait for async subscription update
+        let expectation = expectation(description: "Subscription status updated")
+        sut.$subscriptionStatus
+            .dropFirst()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        wait(for: [expectation], timeout: 1.0)
+
+        // Then
+        XCTAssertTrue(sut.shouldShowViewAllPlans)
+    }
+
+    func testShouldShowViewAllPlans_WhenExpiredSubscription_ReturnsFalse() {
+        // Given - Expired subscription
+        isProTierPurchaseEnabled = true
+        sut = makeSUT(subscription: SubscriptionMockFactory.subscription(status: .expired, tier: .plus))
+
+        // Wait for async subscription update
+        let expectation = expectation(description: "Subscription status updated")
+        sut.$subscriptionStatus
+            .dropFirst()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        wait(for: [expectation], timeout: 1.0)
+
+        // Then
+        XCTAssertFalse(sut.shouldShowViewAllPlans)
+    }
+
+    func testShouldShowViewAllPlans_WhenPlusTierAndFeatureFlagDisabled_ReturnsFalse() {
+        // Given - Plus tier with feature flag OFF
+        isProTierPurchaseEnabled = false
+        sut = makeSUT(subscription: SubscriptionMockFactory.subscription(status: .autoRenewable, tier: .plus))
+
+        // Wait for async subscription update
+        let expectation = expectation(description: "Subscription status updated")
+        sut.$subscriptionStatus
+            .dropFirst()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        wait(for: [expectation], timeout: 1.0)
+
+        // Then
+        XCTAssertFalse(sut.shouldShowViewAllPlans)
+    }
+
+    // MARK: - View All Plans Action Tests
+
+    @MainActor
+    func testViewAllPlansAction_WhenAppleSubscriptionOnAppStoreApp_ReturnsNavigateToPlans() {
+        // Given - Apple subscription on App Store app (platforms match)
+        sut = makeSUT(subscription: SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple, tier: .plus),
+                      purchasePlatform: .appStore)
+
+        // Wait for async subscription update
+        let expectation = expectation(description: "Subscription status updated")
+        sut.$subscriptionStatus
+            .dropFirst()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        wait(for: [expectation], timeout: 1.0)
+
+        // When
+        let action = sut.viewAllPlansAction()
+
+        // Then
+        if case .navigateToPlans(let navigationAction) = action {
+            navigationAction()
+            XCTAssertTrue(userEvents.contains { event in
+                if case .openURL(.plans) = event { return true }
+                return false
+            })
+        } else {
+            XCTFail("Expected navigateToPlans action")
+        }
+    }
+
+    @MainActor
+    func testViewAllPlansAction_WhenAppleSubscriptionOnStripeApp_PresentsAppleSheet() {
+        // Given - Apple subscription on Stripe app (platforms don't match)
+        sut = makeSUT(subscription: SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .apple, tier: .plus),
+                      purchasePlatform: .stripe)
+
+        // Wait for async subscription update
+        let expectation = expectation(description: "Subscription status updated")
+        sut.$subscriptionStatus
+            .dropFirst()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        wait(for: [expectation], timeout: 1.0)
+
+        // When
+        let action = sut.viewAllPlansAction()
+
+        // Then - Should show Apple dialog with instructions
+        if case .presentSheet(.apple) = action {
+            // Success
+        } else {
+            XCTFail("Expected presentSheet(.apple) action")
+        }
+    }
+
+    @MainActor
+    func testViewAllPlansAction_WhenStripeSubscriptionOnStripeApp_ReturnsNavigateToPlans() {
+        // Given - Stripe subscription on Stripe app (platforms match)
+        sut = makeSUT(subscription: SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .stripe, tier: .plus),
+                      purchasePlatform: .stripe)
+
+        // Wait for async subscription update
+        let expectation = expectation(description: "Subscription status updated")
+        sut.$subscriptionStatus
+            .dropFirst()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        wait(for: [expectation], timeout: 1.0)
+
+        // When
+        let action = sut.viewAllPlansAction()
+
+        // Then
+        if case .navigateToPlans(let navigationAction) = action {
+            navigationAction()
+            XCTAssertTrue(userEvents.contains { event in
+                if case .openURL(.plans) = event { return true }
+                return false
+            })
+        } else {
+            XCTFail("Expected navigateToPlans action")
+        }
+    }
+
+    @MainActor
+    func testViewAllPlansAction_WhenStripeSubscriptionOnAppStoreApp_ReturnsNavigateToManageSubscription() {
+        // Given - Stripe subscription on App Store app (platforms don't match)
+        sut = makeSUT(subscription: SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .stripe, tier: .plus),
+                      purchasePlatform: .appStore)
+
+        // Wait for async subscription update
+        let expectation = expectation(description: "Subscription status updated")
+        sut.$subscriptionStatus
+            .dropFirst()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        wait(for: [expectation], timeout: 1.0)
+
+        // When
+        let action = sut.viewAllPlansAction()
+
+        // Then - Should navigate to Stripe portal
+        if case .navigateToManageSubscription = action {
+            // Success - Stripe subscriptions on App Store app redirect to Stripe portal
+        } else {
+            XCTFail("Expected navigateToManageSubscription action for Stripe portal")
+        }
+    }
+
+    @MainActor
+    func testViewAllPlansAction_WhenGooglePlatform_PresentsGoogleSheet() {
+        // Given - Google platform subscription
+        sut = makeSUT(subscription: SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .google, tier: .plus))
+
+        // Wait for async subscription update
+        let expectation = expectation(description: "Subscription status updated")
+        sut.$subscriptionStatus
+            .dropFirst()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        wait(for: [expectation], timeout: 1.0)
+
+        // When
+        let action = sut.viewAllPlansAction()
+
+        // Then
+        if case .presentSheet(.google) = action {
+            // Success
+        } else {
+            XCTFail("Expected presentSheet(.google) action")
+        }
+    }
+
+    @MainActor
+    func testViewAllPlansAction_WhenUnknownPlatform_ShowsInternalSubscriptionAlert() {
+        // Given - Unknown platform subscription
+        sut = makeSUT(subscription: SubscriptionMockFactory.subscription(status: .autoRenewable, platform: .unknown, tier: .plus))
+
+        // Wait for async subscription update
+        let expectation = expectation(description: "Subscription status updated")
+        sut.$subscriptionStatus
+            .dropFirst()
+            .sink { _ in expectation.fulfill() }
+            .store(in: &cancellables)
+
+        wait(for: [expectation], timeout: 1.0)
+
+        // When
+        let action = sut.viewAllPlansAction()
+
+        // Then
+        if case .showInternalSubscriptionAlert = action {
+            // Success
+        } else {
+            XCTFail("Expected showInternalSubscriptionAlert action")
+        }
     }
 }

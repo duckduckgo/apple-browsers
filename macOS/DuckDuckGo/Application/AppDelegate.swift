@@ -380,7 +380,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     // swiftlint:disable cyclomatic_complexity
     override init() {
-        memoryUsageMonitor = MemoryUsageMonitor(interval: 1.0, logger: .memory)
         // will not add crash handlers and will fire pixel on applicationDidFinishLaunching if didCrashDuringCrashHandlersSetUp == true
         let didCrashDuringCrashHandlersSetUp = UserDefaultsWrapper(key: .didCrashDuringCrashHandlersSetUp, defaultValue: false)
         _didCrashDuringCrashHandlersSetUp = didCrashDuringCrashHandlersSetUp
@@ -1029,6 +1028,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                settingsProvider: settingsProvider)
         self.attributedMetricManager.addNotificationsObserver()
 
+        memoryUsageMonitor = MemoryUsageMonitor()
+
         super.init()
 
         appContentBlocking?.userContentUpdating.userScriptDependenciesProvider = self
@@ -1097,8 +1098,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         defer {
             didFinishLaunching = true
         }
-
-        memoryUsageMonitor.start()
 
         Task {
             await subscriptionManagerV1?.loadInitialData()
@@ -1250,6 +1249,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         userChurnScheduler.start()
+
+        memoryUsageMonitor.enableIfNeeded(featureFlagger: featureFlagger)
 
         PixelKit.fire(NonStandardEvent(GeneralPixel.launch))
     }

@@ -2834,7 +2834,7 @@ Take back control of your personal information with the browser designed for dat
 "settings.autoclear.tabs.and.data" = "Clear Tabs and Data";
 
 /* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
-"settings.autoclear.tabs.and.data.with.aichat" = "Clear Tabs, Data and Duck.ai Chats";
+"settings.autoclear.tabs.and.data.with.aichat" = "Clear Tabs, Data, and Duck.ai Chats";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Search Suggestions";

@@ -74,7 +74,7 @@ public class DBPIOSInterface {
                               errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                               completionHandler: (() -> Void)?)
         func runEmailConfirmationJobs() async throws
-        func fireWeeklyPixels()
+        func fireWeeklyPixels() async
     }
 
     public protocol AuthenticationDelegate: AnyObject {

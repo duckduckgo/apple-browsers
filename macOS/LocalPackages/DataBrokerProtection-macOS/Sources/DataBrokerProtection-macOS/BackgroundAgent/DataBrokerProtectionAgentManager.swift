@@ -308,7 +308,7 @@ extension DataBrokerProtectionAgentManager {
 
         // Stats pixels only fire for authenticated users (they relate to opt-outs)
         guard isAuthenticated else { return }
-        
+
         // This will try to fire the stats pixels
         statsPixels.tryToFireStatsPixels()
 

@@ -24,45 +24,46 @@ import DesignResourcesKitIcons
 
 struct SettingsDataClearingView: View {
 
-    @EnvironmentObject var viewModel: SettingsViewModel
+    @EnvironmentObject var settingsViewModel: SettingsViewModel
+    @ObservedObject var viewModel: DataClearingSettingsViewModel
     @State private var isShowingBurnAlert: Bool = false
 
     var body: some View {
         List {
             Section {
                 // Fire Button Animation
-                SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,
+                SettingsPickerCellView(useImprovedPicker: settingsViewModel.useImprovedPicker,
                                        label: UserText.settingsFirebutton,
                                        options: FireButtonAnimationType.allCases,
-                                       selectedOption: viewModel.fireButtonAnimationBinding)
+                                       selectedOption: settingsViewModel.fireButtonAnimationBinding)
             }
 
             Section {
                 // Fireproof Sites
                 SettingsCellView(label: UserText.settingsFireproofSites,
-                                  action: { viewModel.presentLegacyView(.fireproofSites) },
+                                  action: { settingsViewModel.presentLegacyView(.fireproofSites) },
                                  disclosureIndicator: true,
                                  isButton: true)
 
                 // Automatically Clear Data
                 SettingsCellView(label: UserText.settingsClearData,
-                                  action: { viewModel.presentLegacyView(.autoclearData) },
-                                  accessory: .rightDetail(viewModel.state.autoclearDataEnabled
+                                  action: { settingsViewModel.presentLegacyView(.autoclearData) },
+                                  accessory: .rightDetail(settingsViewModel.state.autoclearDataEnabled
                                                          ? UserText.autoClearAccessoryOn
                                                          : UserText.autoClearAccessoryOff),
                                   disclosureIndicator: true,
                                   isButton: true)
             }
 
-            if viewModel.isAIChatEnabled && viewModel.isDuckAiDataClearingEnabled {
+            if settingsViewModel.isAIChatEnabled && settingsViewModel.isDuckAiDataClearingEnabled {
                 Section {
                     SettingsCellView(label: UserText.settingsClearAIChatHistory,
-                                     accessory: .toggle(isOn: viewModel.autoClearAIChatHistoryBinding))
+                                     accessory: .toggle(isOn: settingsViewModel.autoClearAIChatHistoryBinding))
                 } footer: {
                     Text(UserText.settingsClearAIChatHistoryFooter)
                 }
             }
-
+            
             Section(footer: Text(footnoteText)) {
                 SettingsCellView(action: {
                     Pixel.fire(pixel: .forgetAllPressedSettings)
@@ -80,25 +81,25 @@ struct SettingsDataClearingView: View {
                 }, isButton: true)
                 .accessibilityIdentifier("Settings.DataClearing.Button.ForgetAll")
                 .forgetDataConfirmationDialog(isPresented: $isShowingBurnAlert,
-                                              onConfirm: viewModel.forgetAll)
+                                              onConfirm: settingsViewModel.forgetAll)
             }
         }
         .applySettingsListModifiers(title: UserText.dataClearing,
                                     displayMode: .inline,
-                                    viewModel: viewModel)
+                                    viewModel: settingsViewModel)
         .onFirstAppear {
             Pixel.fire(pixel: .settingsDataClearingOpen)
         }
     }
 
     private var forgetAllTitle: String {
-        let shouldIncludeAIChat = viewModel.appSettings.autoClearAIChatHistory
+        let shouldIncludeAIChat = settingsViewModel.appSettings.autoClearAIChatHistory
 
         return shouldIncludeAIChat ? UserText.actionForgetAllWithAIChat : UserText.actionForgetAll
     }
 
     private var footnoteText: String {
-        let shouldIncludeAIChat = viewModel.appSettings.autoClearAIChatHistory
+        let shouldIncludeAIChat = settingsViewModel.appSettings.autoClearAIChatHistory
 
         return shouldIncludeAIChat ? UserText.settingsDataClearingForgetAllWithAiChatFootnote : UserText.settingsDataClearingForgetAllFootnote
     }

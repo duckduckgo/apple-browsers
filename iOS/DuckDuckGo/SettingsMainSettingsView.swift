@@ -93,7 +93,9 @@ struct SettingsMainSettingsView: View {
         }
 
         @ViewBuilder func buildDataClearing(viewModel: SettingsViewModel) -> AnyView {
-            AnyView(NavigationLink(destination: SettingsDataClearingView().environmentObject(viewModel)) {
+            let dataClearingViewModel = DataClearingSettingsViewModel()
+            let view = SettingsDataClearingView(viewModel: dataClearingViewModel).environmentObject(viewModel)
+            AnyView(NavigationLink(destination: view) {
                 SettingsCellView(label: UserText.dataClearing,
                                  image: Image(uiImage: DesignSystemImages.Color.Size24.fire))
             })

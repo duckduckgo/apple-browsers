@@ -108,7 +108,7 @@ final class MemoryUsageMonitor: @unchecked Sendable {
             while !Task.isCancelled {
                 let report = self.getCurrentMemoryUsage()
 
-                self.logger?.info("Memory usage: \(report.usedMB, format: .fixed(precision: 2)) MB")
+                self.logger?.info("Memory usage: \(report.usedMemoryString)")
                 await MainActor.run {
                     self.memoryReportSubject.send(report)
                 }

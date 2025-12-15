@@ -1028,7 +1028,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                settingsProvider: settingsProvider)
         self.attributedMetricManager.addNotificationsObserver()
 
-        memoryUsageMonitor = MemoryUsageMonitor()
+        memoryUsageMonitor = MemoryUsageMonitor(logger: .memory)
 
         super.init()
 

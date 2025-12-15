@@ -199,7 +199,8 @@ final class PermissionModel {
                 if case .success( (let granted, let remember) ) = result {
                     for permission in permissions {
                         // Notifications are always permanent (no "allow once" concept)
-                        let isPersisting = remember == true || permission == .notification
+                        // But don't overwrite if user explicitly set "Always Ask"
+                        let isPersisting = remember == true || (permission == .notification && !permissionManager.hasPermissionPersisted(forDomain: domain, permissionType: .notification))
                         if isPersisting {
                             self.permissionManager.setPermission(granted ? .allow : .deny, forDomain: domain, permissionType: permission)
                         } else if self.featureFlagger.isFeatureOn(.newPermissionView) {

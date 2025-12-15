@@ -44,6 +44,14 @@ final class DataClearingSettingsViewModel: ObservableObject {
     var useImprovedPicker: Bool {
         featureFlagger.isFeatureOn(.mobileCustomization)
     }
+
+    var clearDataButtonTitle: String {
+        if newUIEnabled {
+            return UserText.settingsClearBrowsingData
+        }
+        let shouldIncludeAIChat = appSettings.autoClearAIChatHistory
+        return shouldIncludeAIChat ? UserText.actionForgetAllWithAIChat : UserText.actionForgetAll
+    }
     
     // MARK: - Bindings
     

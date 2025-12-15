@@ -52,7 +52,7 @@ final class SettingsViewModel: ObservableObject {
     private let voiceSearchHelper: VoiceSearchHelperProtocol
     private let syncPausedStateManager: any SyncPausedStateManaging
     var emailManager: EmailManager { EmailManager() }
-    private let historyManager: HistoryManaging
+    private(set) var historyManager: HistoryManaging
     let subscriptionDataReporter: SubscriptionDataReporting?
     let textZoomCoordinator: TextZoomCoordinating
     let aiChatSettings: AIChatSettingsProvider
@@ -117,6 +117,7 @@ final class SettingsViewModel: ObservableObject {
     var onRequestPresentLegacyView: ((UIViewController, _ modal: Bool) -> Void)?
     var onRequestPopLegacyView: (() -> Void)?
     var onRequestDismissSettings: (() -> Void)?
+    var onRequestPresentFireConfirmation: ((_ onConfirm: @escaping () -> Void, _ onCancel: @escaping () -> Void) -> Void)?
 
     // View State
     @Published private(set) var state: SettingsState
@@ -1012,6 +1013,16 @@ extension SettingsViewModel {
     
     @MainActor func dismissSettings() {
         onRequestDismissSettings?()
+    }
+    
+    @MainActor
+    func presentFireConfirmation() {
+        onRequestPresentFireConfirmation?({ [weak self] in
+            // TODO: - Use granular options when FireExecutor is merged.
+            self?.forgetAll()
+        }, {
+            // Cancelled - no action needed
+        })
     }
 
 }

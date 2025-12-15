@@ -26,7 +26,6 @@ struct SettingsDataClearingView: View {
 
     @EnvironmentObject var settingsViewModel: SettingsViewModel
     @StateObject private var viewModel = DataClearingSettingsViewModel()
-    @State private var isShowingBurnAlert: Bool = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -73,21 +72,11 @@ struct SettingsDataClearingView: View {
                 Section(footer: Text(footnoteText)) {
                     SettingsCellView(action: {
                         Pixel.fire(pixel: .forgetAllPressedSettings)
-                        isShowingBurnAlert = true
+                        settingsViewModel.presentFireConfirmation()
                     }, customView: {
-                        AnyView(
-                            HStack(alignment: .center) {
-                                Image(uiImage: DesignSystemImages.Glyphs.Size24.fireSolid)
-                                    .tintIfAvailable(Color(designSystemColor: .icons))
-                                Text(forgetAllTitle)
-                                    .foregroundStyle(Color(designSystemColor: .accent))
-                                Spacer()
-                            }
-                        )
+                        forgetAllButtonContent
                     }, isButton: true)
                     .accessibilityIdentifier("Settings.DataClearing.Button.ForgetAll")
-                    .forgetDataConfirmationDialog(isPresented: $isShowingBurnAlert,
-                                                  onConfirm: settingsViewModel.forgetAll)
                 }
             }
             .applySettingsListModifiers(title: UserText.dataClearing,
@@ -100,10 +89,16 @@ struct SettingsDataClearingView: View {
         }
     }
 
-    private var forgetAllTitle: String {
-        let shouldIncludeAIChat = settingsViewModel.appSettings.autoClearAIChatHistory
-
-        return shouldIncludeAIChat ? UserText.actionForgetAllWithAIChat : UserText.actionForgetAll
+    private var forgetAllButtonContent: AnyView {
+        AnyView(
+            HStack(alignment: .center) {
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.fireSolid)
+                    .tintIfAvailable(Color(designSystemColor: .icons))
+                Text(viewModel.clearDataButtonTitle)
+                    .foregroundStyle(Color(designSystemColor: .accent))
+                Spacer()
+            }
+        )
     }
 
     private var footnoteText: String {

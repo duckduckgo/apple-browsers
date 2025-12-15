@@ -2905,6 +2905,36 @@ Take back control of your personal information with the browser designed for dat
 /* Footer text explaining when data will be cleared when auto clear is enabled */
 "settings.autoclear.toggle.footer" = "Data will be deleted upon restart of the app.";
 
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "Close all open tabs";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "Tabs";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "App Exit, Inactive for 15 Minutes";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "App Exit, Inactive for 1 Hour";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "App Exit, Inactive for 30 Minutes";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "App Exit, Inactive for 5 Minutes";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "App Exit Only";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "App exit is defined by swiping the app to close it while inactivity is when the app is in the background.";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "Desired Timing";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "Data will be deleted upon restart of the app.";
+
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Search Suggestions";
 

@@ -174,7 +174,7 @@
                 "messageType": "medium",
                 "titleText": "Here goes a title",
                 "descriptionText": "description",
-                "placeholder": "Radar"
+                "placeholder": "RadarCheckGreen"
             },
             "metrics": {
                 "state": "enabled"
@@ -204,7 +204,7 @@
                 "messageType": "medium",
                 "titleText": "Here goes a title",
                 "descriptionText": "description",
-                "placeholder": "RadarNew"
+                "placeholder": "Radar"
             },
             "metrics": {
                 "state": "enabled"
@@ -219,7 +219,7 @@
                 "messageType": "medium",
                 "titleText": "Here goes a title",
                 "descriptionText": "description",
-                "placeholder": "RadarCheck"
+                "placeholder": "RadarCheckPurple"
             },
             "metrics": {
                 "state": "enabled"
@@ -388,7 +388,7 @@
                 "type": "two_line_list_item",
                 "titleText": "Hide AI Images in Search",
                 "descriptionText": "Easily hide AI images from your search results",
-                "placeholder": "Radar",
+                "placeholder": "RadarCheckGreen",
                 "primaryAction": {
                   "type": "url_in_context",
                   "value": "https://example.com"
@@ -410,7 +410,7 @@
                 "type": "two_line_list_item",
                 "titleText": "Hide AI Images in Search",
                 "descriptionText": "Easily hide AI images from your search results",
-                "placeholder": "RadarNew",
+                "placeholder": "Radar",
                 "primaryAction": {
                   "type": "url_in_context",
                   "value": "https://example.com"
@@ -421,7 +421,7 @@
                 "type": "two_line_list_item",
                 "titleText": "Hide AI Images in Search",
                 "descriptionText": "Easily hide AI images from your search results",
-                "placeholder": "RadarCheck",
+                "placeholder": "RadarCheckPurple",
                 "primaryAction": {
                   "type": "url_in_context",
                   "value": "https://example.com"

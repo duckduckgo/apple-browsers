@@ -120,8 +120,8 @@ extension NewTabPageDataModel {
         case duckai = "DuckAi"
         case pir = "PIR"
         case radar = "Radar"
-        case radarNew = "RadarNew"
-        case radarCheck = "RadarCheck"
+        case radarCheckGreen = "RadarCheckGreen"
+        case radarCheckPurple = "RadarCheckPurple"
         case subscriptionIcon = "Subscription"
 
         init(_ placeholder: RemotePlaceholder) {
@@ -142,10 +142,10 @@ extension NewTabPageDataModel {
                 self = .pir
             case .radar:
                 self = .radar
-            case .radarNew:
-                self = .radarNew
-            case .radarCheck:
-                self = .radarCheck
+            case .radarCheckGreen:
+                self = .radarCheckGreen
+            case .radarCheckPurple:
+                self = .radarCheckPurple
             case .subscription:
                 self = .subscriptionIcon
             default:

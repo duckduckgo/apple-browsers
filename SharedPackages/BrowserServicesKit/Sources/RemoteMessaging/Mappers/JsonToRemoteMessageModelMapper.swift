@@ -340,10 +340,10 @@ struct JsonToRemoteMessageModelMapper {
             return .imageAI
         case .radar:
             return .radar
-        case .radarNew:
-            return .radarNew
-        case .radarCheck:
-            return .radarCheck
+        case .radarCheckGreen:
+            return .radarCheckGreen
+        case .radarCheckPurple:
+            return .radarCheckPurple
         case .keyImport:
             return .keyImport
         case .mobileCustomization:

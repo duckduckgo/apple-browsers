@@ -25,7 +25,7 @@ import DesignResourcesKitIcons
 struct SettingsDataClearingView: View {
 
     @EnvironmentObject var settingsViewModel: SettingsViewModel
-    @ObservedObject var viewModel: DataClearingSettingsViewModel
+    @StateObject private var viewModel = DataClearingSettingsViewModel()
     @State private var isShowingBurnAlert: Bool = false
 
     var body: some View {
@@ -38,10 +38,10 @@ struct SettingsDataClearingView: View {
             List {
                 Section {
                     // Fire Button Animation
-                    SettingsPickerCellView(useImprovedPicker: settingsViewModel.useImprovedPicker,
+                    SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,
                                            label: UserText.settingsFirebutton,
                                            options: FireButtonAnimationType.allCases,
-                                           selectedOption: settingsViewModel.fireButtonAnimationBinding)
+                                           selectedOption: viewModel.fireButtonAnimationBinding)
                 }
 
                 Section {

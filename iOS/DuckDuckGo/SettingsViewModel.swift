@@ -236,24 +236,6 @@ final class SettingsViewModel: ObservableObject {
             }
         )
     }
-    var fireButtonAnimationBinding: Binding<FireButtonAnimationType> {
-        Binding<FireButtonAnimationType>(
-            get: { self.state.fireButtonAnimation },
-            set: {
-                Pixel.fire(pixel: .settingsFireButtonSelectorPressed)
-                self.appSettings.currentFireButtonAnimation = $0
-                self.state.fireButtonAnimation = $0
-                NotificationCenter.default.post(name: AppUserDefaults.Notifications.currentFireButtonAnimationChange, object: self)
-                self.animator.animate {
-                    // no op
-                } onTransitionCompleted: {
-                    // no op
-                } completion: {
-                    // no op
-                }
-            }
-        )
-    }
 
     // MARK: - Actions
 
@@ -718,7 +700,6 @@ extension SettingsViewModel {
         self.state = SettingsState(
             appThemeStyle: appSettings.currentThemeStyle,
             appIcon: AppIconManager.shared.appIcon,
-            fireButtonAnimation: appSettings.currentFireButtonAnimation,
             textZoom: SettingsState.TextZoom(level: appSettings.defaultTextZoomLevel),
             addressBar: SettingsState.AddressBar(enabled: !isPad, position: appSettings.currentAddressBarPosition),
             showsFullURL: appSettings.showFullSiteAddress,

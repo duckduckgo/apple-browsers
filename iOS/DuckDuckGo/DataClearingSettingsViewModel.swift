@@ -19,15 +19,21 @@
 
 import Foundation
 import SwiftUI
+import Core
 
+@MainActor
 final class DataClearingSettingsViewModel: ObservableObject {
     
     // MARK: - Dependencies
     private lazy var featureFlagger = AppDependencyProvider.shared.featureFlagger
+    private let appSettings: AppSettings
+    private let animator: FireButtonAnimator
     
     // MARK: - Delegate
         
     // MARK: - Published State
+    
+    @Published var fireButtonAnimation: FireButtonAnimationType
     
     // MARK: - Computed Properties
     
@@ -35,9 +41,38 @@ final class DataClearingSettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.granularFireButtonOptions)
     }
     
+    var useImprovedPicker: Bool {
+        featureFlagger.isFeatureOn(.mobileCustomization)
+    }
+    
     // MARK: - Bindings
     
+    var fireButtonAnimationBinding: Binding<FireButtonAnimationType> {
+        Binding<FireButtonAnimationType>(
+            get: { self.fireButtonAnimation },
+            set: {
+                Pixel.fire(pixel: .settingsFireButtonSelectorPressed)
+                self.appSettings.currentFireButtonAnimation = $0
+                self.fireButtonAnimation = $0
+                NotificationCenter.default.post(name: AppUserDefaults.Notifications.currentFireButtonAnimationChange, object: self)
+                self.animator.animate {
+                    // no op
+                } onTransitionCompleted: {
+                    // no op
+                } completion: {
+                    // no op
+                }
+            }
+        )
+    }
+    
     // MARK: - Initialization
+    
+    init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings) {
+        self.appSettings = appSettings
+        self.animator = FireButtonAnimator(appSettings: appSettings)
+        self.fireButtonAnimation = appSettings.currentFireButtonAnimation
+    }
     
     // MARK: - Actions
     

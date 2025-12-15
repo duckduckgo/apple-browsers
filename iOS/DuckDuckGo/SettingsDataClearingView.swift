@@ -69,7 +69,7 @@ struct SettingsDataClearingView: View {
                     }
                 }
                 
-                Section(footer: Text(footnoteText)) {
+                Section {
                     SettingsCellView(action: {
                         Pixel.fire(pixel: .forgetAllPressedSettings)
                         settingsViewModel.presentFireConfirmation()
@@ -77,6 +77,10 @@ struct SettingsDataClearingView: View {
                         forgetAllButtonContent
                     }, isButton: true)
                     .accessibilityIdentifier("Settings.DataClearing.Button.ForgetAll")
+                } footer: {
+                    if !viewModel.newUIEnabled {
+                        Text(footnoteText)
+                    }
                 }
             }
             .applySettingsListModifiers(title: UserText.dataClearing,

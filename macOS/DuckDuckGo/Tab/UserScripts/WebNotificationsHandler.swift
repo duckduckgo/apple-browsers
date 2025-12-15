@@ -48,6 +48,18 @@ extension UNUserNotificationCenter: WebNotificationService {
     // UNUserNotificationCenter already provides the required methods
 }
 
+/// Abstraction for permission model operations needed by WebNotificationsHandler.
+protocol WebNotificationPermissionProviding: AnyObject {
+
+    /// Checks if a permission is currently granted for a domain.
+    func isPermissionGranted(_ permission: PermissionType, forDomain domain: String) -> Bool
+
+    /// Requests permissions through the UI flow.
+    func request(_ permissions: [PermissionType], forDomain domain: String, url: URL?) -> Future<Bool, Never>
+}
+
+extension PermissionModel: WebNotificationPermissionProviding {}
+
 // MARK: - WebNotificationsHandler
 
 /// Bridges the JavaScript `Notification` API polyfill to native macOS notifications.
@@ -73,7 +85,7 @@ final class WebNotificationsHandler: NSObject, Subfeature {
     weak var webView: WKWebView?
 
     /// The permission model for handling permission requests through the standard UI flow.
-    weak var permissionModel: PermissionModel?
+    weak var permissionModel: (any WebNotificationPermissionProviding)?
 
     private var isWebNotificationsEnabled: Bool {
         featureFlagger.isFeatureOn(.webNotifications)

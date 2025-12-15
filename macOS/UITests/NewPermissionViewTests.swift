@@ -614,6 +614,87 @@ class NewPermissionViewTests: UITestCase {
             "Even if we click the button for the denied resource many times, when we have set 'Never allow' for the resource, the permission popover will not be on the screen"
         )
     }
+
+    // MARK: - External Scheme Permission Tests
+
+    func test_externalSchemePermissions_whenDenied_doesNotOpenExternalApp() throws {
+        // Navigate to the w3schools mailto test page
+        let mailtoTestURL = URL(string: "https://www.w3schools.com/tags/tryit.asp?filename=tryhtml_link_mailto")!
+        addressBarTextField.typeURLAfterExistenceTestSucceeds(mailtoTestURL)
+
+        // Wait for the page to load - the "Send email" link is inside an iframe
+        // The iframe has id "iframeResult" and the link is inside it
+        let webView = app.webViews.firstMatch
+        XCTAssertTrue(
+            webView.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Web view didn't appear in a reasonable timeframe."
+        )
+
+        // Give the page time to fully load including the iframe
+        sleep(3)
+
+        // Find and click the "Send email" link - it's in the iframe result area
+        // The link text is "Send email"
+        let sendEmailLink = webView.links["Send email"]
+        if sendEmailLink.waitForExistence(timeout: UITests.Timeouts.elementExistence) {
+            sendEmailLink.click()
+        } else {
+            // Try finding it as a static text or other element type
+            let sendEmailText = webView.staticTexts["Send email"]
+            if sendEmailText.waitForExistence(timeout: UITests.Timeouts.elementExistence) {
+                sendEmailText.click()
+            } else {
+                XCTFail("Could not find 'Send email' link on the page")
+                return
+            }
+        }
+
+        // The browser's permission authorization popover should appear for external scheme (mailto:)
+        let permissionsPopoverDenyButton = app.popovers.buttons["PermissionAuthorizationSwiftUIView.denyButton"]
+        XCTAssertTrue(
+            permissionsPopoverDenyButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "The external scheme permission popover didn't appear after clicking mailto link."
+        )
+
+        // Click Deny to prevent opening the Mail app
+        permissionsPopoverDenyButton.click()
+
+        // Verify the popover is dismissed
+        XCTAssertTrue(
+            permissionsPopoverDenyButton.waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
+            "The permission popover should be dismissed after clicking Deny."
+        )
+
+        // The permission center button should appear (since we interacted with a permission)
+        let permissionCenterButton = app.buttons["AddressBarButtonsViewController.permissionCenterButton"]
+        XCTAssertTrue(
+            permissionCenterButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "The permission center button should appear after denying external scheme permission."
+        )
+
+        // Open permission center and verify the external scheme permission is shown
+        permissionCenterButton.click()
+
+        let permissionCenterPopover = app.popovers.firstMatch
+        XCTAssertTrue(
+            permissionCenterPopover.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Permission center popover didn't appear in a reasonable timeframe."
+        )
+
+        // Verify the external apps permission dropdown exists and shows "Always ask"
+        let externalAppsDropdown = permissionCenterPopover.popUpButtons.firstMatch
+        XCTAssertTrue(
+            externalAppsDropdown.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "External apps permission dropdown didn't appear in the permission center."
+        )
+
+        let dropdownValue = externalAppsDropdown.value as? String ?? ""
+        XCTAssertEqual(
+            dropdownValue,
+            "Always ask",
+            "The external apps permission should be set to 'Always ask' after denying once."
+        )
+    }
 }
 
 // MARK: - Private Helpers

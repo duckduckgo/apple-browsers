@@ -158,6 +158,7 @@ final class SettingsViewModel: ObservableObject {
 
     var isDuckAiDataClearingEnabled: Bool {
         featureFlagger.isFeatureOn(.duckAiDataClearing)
+        && !featureFlagger.isFeatureOn(.granularFireButtonOptions)
     }
 
     var shouldShowHideAIGeneratedImagesSection: Bool {

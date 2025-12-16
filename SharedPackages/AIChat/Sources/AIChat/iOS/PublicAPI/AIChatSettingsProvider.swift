@@ -50,9 +50,6 @@ public protocol AIChatSettingsProvider {
     /// The user settings state for automatically attaching page context
     var isAutomaticContextAttachmentEnabled: Bool { get }
 
-    /// The user settings state for automatically attaching page context
-    var isAutomaticContextAttachmentEnabled: Bool { get }
-
     /// Updates the user settings state for AI Chat overall.
     func enableAIChat(enable: Bool)
 

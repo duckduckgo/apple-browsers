@@ -36,7 +36,7 @@ final class AIChatContextualInputViewController: UIViewController {
     // MARK: - Constants
 
     private enum Constants {
-        static let padding: CGFloat = 20
+        static let horizontalPadding: CGFloat = 20
     }
 
     // MARK: - Properties
@@ -114,13 +114,13 @@ private extension AIChatContextualInputViewController {
         topConstraint.priority = .required
 
         NSLayoutConstraint.activate([
-            quickActionsContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.padding),
-            quickActionsContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.padding),
+            quickActionsContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
+            quickActionsContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
             quickActionsContainer.bottomAnchor.constraint(equalTo: nativeInputViewController.view.topAnchor),
             quickActionsContainer.heightAnchor.constraint(equalToConstant: 0),
 
-            nativeInputViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.padding),
-            nativeInputViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.padding),
+            nativeInputViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
+            nativeInputViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
             topConstraint,
             bottomConstraint!,
         ])

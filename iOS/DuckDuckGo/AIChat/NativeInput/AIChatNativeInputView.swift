@@ -40,16 +40,15 @@ final class AIChatNativeInputView: UIView {
 
     private enum Constants {
         static let fontSize: CGFloat = 16
-        static let textContainerInset = UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 44)
+        static let textContainerInset = UIEdgeInsets(top: 12, left: 12, bottom: 12, right: 48)
         static let placeholderTopOffset: CGFloat = 12
         static let placeholderHorizontalOffset: CGFloat = 16
         static let placeholderTrailingSpacing: CGFloat = 8
-        static let buttonSize: CGFloat = 44
-        static let submitButtonSize: CGFloat = 32
-        static let bottomBarHeight: CGFloat = 44
-        static let bottomBarHorizontalPadding: CGFloat = 6
+        static let buttonSize: CGFloat = 40
+        static let bottomBarHeight: CGFloat = 40
+        static let bottomBarHorizontalPadding: CGFloat = 8
         static let cornerRadius: CGFloat = 12
-        static let textViewMinHeight: CGFloat = 44
+        static let textViewMinHeight: CGFloat = 48
         static let textViewMaxHeight: CGFloat = 200
     }
 
@@ -154,7 +153,7 @@ final class AIChatNativeInputView: UIView {
     private lazy var submitButtonContainer: UIView = {
         let view = UIView()
         view.backgroundColor = .clear
-        view.layer.cornerRadius = Constants.submitButtonSize / 2
+        view.layer.cornerRadius = Constants.buttonSize / 2
         view.translatesAutoresizingMaskIntoConstraints = false
         return view
     }()
@@ -245,7 +244,7 @@ private extension AIChatNativeInputView {
             placeholderLabel.trailingAnchor.constraint(equalTo: topRightButton.leadingAnchor, constant: -Constants.placeholderTrailingSpacing),
 
             topRightButton.topAnchor.constraint(equalTo: mainContainer.topAnchor),
-            topRightButton.trailingAnchor.constraint(equalTo: mainContainer.trailingAnchor),
+            topRightButton.trailingAnchor.constraint(equalTo: mainContainer.trailingAnchor, constant: -Constants.bottomBarHorizontalPadding),
             topRightButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
             topRightButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
 
@@ -257,7 +256,7 @@ private extension AIChatNativeInputView {
             bottomBar.topAnchor.constraint(equalTo: chipContainer.bottomAnchor),
             bottomBar.leadingAnchor.constraint(equalTo: mainContainer.leadingAnchor),
             bottomBar.trailingAnchor.constraint(equalTo: mainContainer.trailingAnchor),
-            bottomBar.bottomAnchor.constraint(equalTo: mainContainer.bottomAnchor),
+            bottomBar.bottomAnchor.constraint(equalTo: mainContainer.bottomAnchor, constant: -Constants.bottomBarHorizontalPadding),
             bottomBar.heightAnchor.constraint(equalToConstant: Constants.bottomBarHeight),
 
             attachButton.leadingAnchor.constraint(equalTo: bottomBar.leadingAnchor, constant: Constants.bottomBarHorizontalPadding),
@@ -265,10 +264,10 @@ private extension AIChatNativeInputView {
             attachButton.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
             attachButton.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
 
-            submitButtonContainer.trailingAnchor.constraint(equalTo: mainContainer.trailingAnchor, constant: -Constants.bottomBarHorizontalPadding),
+            submitButtonContainer.trailingAnchor.constraint(equalTo: bottomBar.trailingAnchor, constant: -Constants.bottomBarHorizontalPadding),
             submitButtonContainer.centerYAnchor.constraint(equalTo: bottomBar.centerYAnchor),
-            submitButtonContainer.widthAnchor.constraint(equalToConstant: Constants.submitButtonSize),
-            submitButtonContainer.heightAnchor.constraint(equalToConstant: Constants.submitButtonSize),
+            submitButtonContainer.widthAnchor.constraint(equalToConstant: Constants.buttonSize),
+            submitButtonContainer.heightAnchor.constraint(equalToConstant: Constants.buttonSize),
 
             submitButton.centerXAnchor.constraint(equalTo: submitButtonContainer.centerXAnchor),
             submitButton.centerYAnchor.constraint(equalTo: submitButtonContainer.centerYAnchor),

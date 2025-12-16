@@ -55,8 +55,22 @@ final class DataClearingSettingsViewModel: ObservableObject {
         return shouldIncludeAIChat ? UserText.actionForgetAllWithAIChat : UserText.actionForgetAll
     }
     
+    var fireproofedSitesTitle: String {
+        newUIEnabled ? UserText.settingsFireproofedSites : UserText.settingsFireproofSites
+    }
+    
     var fireproofedSitesSubtitle: String {
         UserText.settingsFireproofedSitesSubtitle(withCount: fireproofedSitesCount)
+    }
+    
+    var autoClearTitle: String {
+        newUIEnabled ? UserText.settingsAutomaticDataClearing : UserText.settingsClearData
+    }
+    
+    var footnoteText: String {
+        let shouldIncludeAIChat = appSettings.autoClearAIChatHistory
+
+        return shouldIncludeAIChat ? UserText.settingsDataClearingForgetAllWithAiChatFootnote : UserText.settingsDataClearingForgetAllFootnote
     }
     
     // MARK: - Bindings

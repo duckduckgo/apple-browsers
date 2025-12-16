@@ -49,14 +49,14 @@ struct SettingsDataClearingView: View {
 
                 Section {
                     // Fireproof Sites
-                    SettingsCellView(label: UserText.settingsFireproofSites,
+                    SettingsCellView(label: viewModel.fireproofedSitesTitle,
                                      subtitle: viewModel.fireproofedSitesSubtitle,
                                       action: { settingsViewModel.presentLegacyView(.fireproofSites) },
                                      disclosureIndicator: true,
                                      isButton: true)
 
                     // Automatically Clear Data
-                    SettingsCellView(label: UserText.settingsClearData,
+                    SettingsCellView(label: viewModel.autoClearTitle,
                                       action: { settingsViewModel.presentLegacyView(.autoclearData) },
                                       accessory: .rightDetail(settingsViewModel.state.autoclearDataEnabled
                                                              ? UserText.autoClearAccessoryOn
@@ -84,7 +84,7 @@ struct SettingsDataClearingView: View {
                     .accessibilityIdentifier("Settings.DataClearing.Button.ForgetAll")
                 } footer: {
                     if !viewModel.newUIEnabled {
-                        Text(footnoteText)
+                        Text(viewModel.footnoteText)
                     }
                 }
             }
@@ -108,12 +108,6 @@ struct SettingsDataClearingView: View {
                 Spacer()
             }
         )
-    }
-
-    private var footnoteText: String {
-        let shouldIncludeAIChat = settingsViewModel.appSettings.autoClearAIChatHistory
-
-        return shouldIncludeAIChat ? UserText.settingsDataClearingForgetAllWithAiChatFootnote : UserText.settingsDataClearingForgetAllFootnote
     }
 }
 

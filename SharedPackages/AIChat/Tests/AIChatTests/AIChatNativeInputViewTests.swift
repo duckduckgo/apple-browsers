@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+#if os(iOS)
 import XCTest
 @testable import AIChat
 
@@ -140,3 +141,4 @@ final class AIChatNativeInputViewTests: XCTestCase {
         XCTAssertTrue(sut.isAttachButtonHidden)
     }
 }
+#endif

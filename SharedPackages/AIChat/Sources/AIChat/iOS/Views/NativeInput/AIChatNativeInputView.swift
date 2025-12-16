@@ -357,3 +357,4 @@ extension AIChatNativeInputView: UITextViewDelegate {
         delegate?.nativeInputViewDidChangeText(self, text: text)
     }
 }
+#endif

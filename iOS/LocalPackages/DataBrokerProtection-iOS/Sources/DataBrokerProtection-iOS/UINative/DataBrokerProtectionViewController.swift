@@ -148,6 +148,8 @@ final public class DataBrokerProtectionViewController: UIViewController {
     }
 
     private func subscribeToBackgroundRefreshNotifications() {
+        cancellables.removeAll()
+
         NotificationCenter.default.publisher(for: UIApplication.backgroundRefreshStatusDidChangeNotification)
             .sink { [weak self] _ in
                 self?.notifyBackgroundAppRefreshChange()

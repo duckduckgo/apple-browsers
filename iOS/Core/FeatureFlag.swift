@@ -286,6 +286,9 @@ public enum FeatureFlag: String {
 
     // https://app.asana.com/1/137249556945/project/414709148257752/task/1212395110448661?focus=true
     case appRatingPrompt
+    
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211652685709102?focus=true
+    case contextualDuckAIMode
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -295,6 +298,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .canInterceptSyncSetupUrls,
              .supportsAlternateStripePaymentFlow,
              .createFireproofFaviconUpdaterSecureVaultInBackground,
+             .aiFeaturesSettingsUpdate,
+             .duckAISearchParameter,
              .daxEasterEggLogos,
              .newDeviceSyncPrompt,
              .dbpForegroundRunningOnAppActive,
@@ -374,7 +379,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .fullDuckAIModeExperimentalSetting,
              .dataImportWideEventMeasurement,
              .ampBackgroundTaskSupport,
-             .appRatingPrompt:
+             .appRatingPrompt,
+             .contextualDuckAIMode:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -526,9 +532,9 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .createFireproofFaviconUpdaterSecureVaultInBackground:
             return .remoteReleasable(.subfeature(AutofillSubfeature.createFireproofFaviconUpdaterSecureVaultInBackground))
         case .aiFeaturesSettingsUpdate:
-            return .enabled
+            return .remoteReleasable(.subfeature(AIChatSubfeature.aiFeaturesSettingsUpdate))
         case .duckAISearchParameter:
-            return .enabled
+            return .remoteReleasable(.subfeature(AIChatSubfeature.duckAISearchParameter))
         case .inactivityNotification:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.inactivityNotification))
         case .daxEasterEggLogos:
@@ -597,6 +603,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillPasswordSearchPrioritizeDomain))
         case .appRatingPrompt:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.appRatingPrompt))
+        case .contextualDuckAIMode:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.contextualDuckAIMode))
         }
     }
 }

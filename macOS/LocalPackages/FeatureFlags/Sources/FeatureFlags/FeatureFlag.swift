@@ -277,6 +277,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212357739558636?focus=true
     case dataImportWideEventMeasurement
+
+    /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1212437820560561?focus=true
+    case memoryUsageMonitor
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -284,6 +287,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         switch self {
         case .supportsAlternateStripePaymentFlow,
                 .refactorOfSyncPreferences,
+                .duckAISearchParameter,
                 .syncCreditCards,
                 .syncIdentities,
                 .dataImportNewSafariFilePicker,
@@ -385,7 +389,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .newPermissionView,
                 .firstTimeQuitSurvey,
                 .autofillPasswordSearchPrioritizeDomain,
-                .dataImportWideEventMeasurement:
+                .dataImportWideEventMeasurement,
+                .memoryUsageMonitor:
             return true
         case .sslCertificatesBypass,
                 .appendAtbToSerpQueries,
@@ -491,7 +496,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .supportsAlternateStripePaymentFlow:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.supportsAlternateStripePaymentFlow))
         case .duckAISearchParameter:
-            return .enabled
+            return .remoteReleasable(.subfeature(AIChatSubfeature.duckAISearchParameter))
         case .fireDialog:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.fireDialog))
         case .fireDialogIndividualSitesLink:
@@ -564,8 +569,9 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillPasswordSearchPrioritizeDomain))
         case .dataImportWideEventMeasurement:
             return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
+        case .memoryUsageMonitor:
+            return .disabled
         }
-
     }
 }
 

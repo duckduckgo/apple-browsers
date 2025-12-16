@@ -30,6 +30,7 @@ struct RemoteMessagingSurfacesProviderTest {
             (.small(titleText: "", descriptionText: ""), .newTabPage),
             (.medium(titleText: "", descriptionText: "", placeholder: .announce), .newTabPage),
             (.bigSingleAction(titleText: "", descriptionText: "", placeholder: .announce, primaryActionText: "", primaryAction: .dismiss), .newTabPage),
+            (.bigSingleAction(titleText: "", descriptionText: "", placeholder: .announce, primaryActionText: "", primaryAction: .dismiss), .tabBar),
             (.bigTwoAction(titleText: "", descriptionText: "", placeholder: .announce, primaryActionText: "", primaryAction: .dismiss, secondaryActionText: "", secondaryAction: .dismiss), .newTabPage),
             (.promoSingleAction(titleText: "", descriptionText: "", placeholder: .announce, actionText: "", action: .dismiss), .newTabPage),
             (.cardsList(titleText: "", placeholder: nil, items: [], primaryActionText: "", primaryAction: .dismiss), .dedicatedTab)

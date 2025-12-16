@@ -1,7 +1,7 @@
 {
   "name": "PeopleSearcher",
   "url": "peoplesearcher.com",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "parent": "privatereports.com",
   "optOutUrl": "https://www.peoplesearcher.com/optOut/name/landing",
   "steps": [
@@ -11,56 +11,48 @@
       "actions": [
         {
           "actionType": "navigate",
-          "url": "https://www.peoplesearcher.com/name/search-result",
-          "id": "d9feac74-c3bd-468d-9dd3-ccca59afaf6f"
+          "url": "https://www.peoplesearcher.com/optOut/name/landing",
+          "id": "5a163537-6f89-4652-9a87-0b8054e72bbf"
         },
         {
           "actionType": "expectation",
           "expectations": [
             {
               "type": "element",
-              "selector": "#bottomModifySearch"
+              "selector": ".search-wrapper"
             }
           ],
-          "id": "3628b64b-a958-4b9b-99ff-38ac45a3bd22"
+          "id": "4331a086-569b-443e-ad37-d63941c70550"
         },
         {
           "actionType": "fillForm",
           "dataSource": "userProfile",
-          "selector": "#bottomModifySearch",
+          "selector": ".search-wrapper",
           "elements": [
             {
               "type": "firstName",
-              "selector": "#firstName-bottom"
-            },
-            {
-              "type": "middleName",
-              "selector": "#middleName-bottom"
+              "selector": "#firstName"
             },
             {
               "type": "lastName",
-              "selector": "#lastName-bottom"
-            },
-            {
-              "type": "city",
-              "selector": "#city-bottom"
+              "selector": "#lastName"
             },
             {
               "type": "state",
-              "selector": "#state-bottom"
+              "selector": "#state"
             }
           ],
-          "id": "8c98e963-5239-40dd-a53e-587b0932e604"
+          "id": "dc30fab6-473e-4509-b474-c4a79e60d330"
         },
         {
           "actionType": "click",
           "elements": [
             {
               "type": "button",
-              "selector": "#ux-2"
+              "selector": "button[type='submit']"
             }
           ],
-          "id": "67016aba-7d1f-4e1c-9da2-2e3b8e3ad9d1"
+          "id": "3fdcae4f-58f1-49af-a46b-a0ba6e5839f5"
         },
         {
           "actionType": "expectation",

@@ -269,6 +269,12 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Adds support for passing currently visible website context to the sidebar
     case pageContext
 
+    /// Enables updated AI features settings screen
+    case aiFeaturesSettingsUpdate
+
+    /// Append the kbg disable parameter only when Duck AI features are not shown
+    case duckAISearchParameter
+
     /// Show AI Chat address bar choice screen
     case showAIChatAddressBarChoiceScreen
 
@@ -307,6 +313,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Controls different input sizes and fade out animation for toggle.
     case fadeOutOnToggle
+
+    /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
+    case contextualDuckAIMode
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

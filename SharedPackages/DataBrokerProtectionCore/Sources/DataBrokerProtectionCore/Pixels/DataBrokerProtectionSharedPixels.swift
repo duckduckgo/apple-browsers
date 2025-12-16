@@ -92,6 +92,7 @@ public enum DataBrokerProtectionSharedPixels {
         public static let jsFile = "jsFile"
         public static let dataBrokerJsonFileKey = "data_broker_json_file"
         public static let removedAtParamKey = "removed_at"
+        public static let isAuthenticated = "isAuthenticated"
     }
 
     case httpError(error: Error, code: Int, dataBroker: String, version: String)
@@ -140,14 +141,14 @@ public enum DataBrokerProtectionSharedPixels {
     case optOutFinish(dataBroker: String, attemptId: UUID, duration: Double, parent: String)
 
     // KPIs - engagement
-    case dailyActiveUser
-    case weeklyActiveUser
-    case monthlyActiveUser
+    case dailyActiveUser(isAuthenticated: Bool)
+    case weeklyActiveUser(isAuthenticated: Bool)
+    case monthlyActiveUser(isAuthenticated: Bool)
 
     // KPIs - events
-    case weeklyReportBackgroundTaskSession(started: Int, orphaned: Int, completed: Int, terminated: Int, durationMinMs: Double, durationMaxMs: Double, durationMedianMs: Double)
-    case weeklyReportStalledScans(numTotal: Int, numStalled: Int, totalByBroker: String, stalledByBroker: String)
-    case weeklyReportStalledOptOuts(numTotal: Int, numStalled: Int, totalByBroker: String, stalledByBroker: String)
+    case weeklyReportBackgroundTaskSession(started: Int, orphaned: Int, completed: Int, terminated: Int, durationMinMs: Double, durationMaxMs: Double, durationMedianMs: Double, isAuthenticated: Bool)
+    case weeklyReportStalledScans(numTotal: Int, numStalled: Int, totalByBroker: String, stalledByBroker: String, isAuthenticated: Bool)
+    case weeklyReportStalledOptOuts(numTotal: Int, numStalled: Int, totalByBroker: String, stalledByBroker: String, isAuthenticated: Bool)
     case scanningEventNewMatch
     case scanningEventReAppearance
 
@@ -175,7 +176,7 @@ public enum DataBrokerProtectionSharedPixels {
     // Custom stats
     case customDataBrokerStatsOptoutSubmit(dataBrokerURL: String, optOutSubmitSuccessRate: Double)
     case customGlobalStatsOptoutSubmit(optOutSubmitSuccessRate: Double)
-    case weeklyChildBrokerOrphanedOptOuts(dataBrokerURL: String, childParentRecordDifference: Int, calculatedOrphanedRecords: Int)
+    case weeklyChildBrokerOrphanedOptOuts(dataBrokerURL: String, childParentRecordDifference: Int, calculatedOrphanedRecords: Int, isAuthenticated: Bool)
 
     // UserScript
     case userScriptLoadJSFailed(jsFile: String, error: Error)
@@ -425,24 +426,27 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                     Consts.parentKey: parent,
                     Consts.actionIDKey: actionId,
                     Consts.actionTypeKey: actionType]
-        case .weeklyReportBackgroundTaskSession(let started, let orphaned, let completed, let terminated, let durationMinMs, let durationMaxMs, let durationMedianMs):
+        case .weeklyReportBackgroundTaskSession(let started, let orphaned, let completed, let terminated, let durationMinMs, let durationMaxMs, let durationMedianMs, let isAuthenticated):
             return [Consts.started: String(started),
                     Consts.orphaned: String(orphaned),
                     Consts.completed: String(completed),
                     Consts.terminated: String(terminated),
                     Consts.durationMinMs: String(durationMinMs),
                     Consts.durationMaxMs: String(durationMaxMs),
-                    Consts.durationMedianMs: String(durationMedianMs)]
-        case .weeklyReportStalledScans(let numTotal, let numStalled, let totalByBroker, let stalledByBroker):
+                    Consts.durationMedianMs: String(durationMedianMs),
+                    Consts.isAuthenticated: isAuthenticated ? "true" : "false"]
+        case .weeklyReportStalledScans(let numTotal, let numStalled, let totalByBroker, let stalledByBroker, let isAuthenticated):
             return [Consts.numTotal: String(numTotal),
                     Consts.numStalled: String(numStalled),
                     Consts.totalByBroker: totalByBroker,
-                    Consts.stalledByBroker: stalledByBroker]
-        case .weeklyReportStalledOptOuts(let numTotal, let numStalled, let totalByBroker, let stalledByBroker):
+                    Consts.stalledByBroker: stalledByBroker,
+                    Consts.isAuthenticated: isAuthenticated ? "true" : "false"]
+        case .weeklyReportStalledOptOuts(let numTotal, let numStalled, let totalByBroker, let stalledByBroker, let isAuthenticated):
             return [Consts.numTotal: String(numTotal),
                     Consts.numStalled: String(numStalled),
                     Consts.totalByBroker: totalByBroker,
-                    Consts.stalledByBroker: stalledByBroker]
+                    Consts.stalledByBroker: stalledByBroker,
+                    Consts.isAuthenticated: isAuthenticated ? "true" : "false"]
         case .optOutJobAt7DaysConfirmed(let dataBroker),
                 .optOutJobAt7DaysUnconfirmed(let dataBroker),
                 .optOutJobAt14DaysConfirmed(let dataBroker),
@@ -452,10 +456,11 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                 .optOutJobAt42DaysConfirmed(let dataBroker),
                 .optOutJobAt42DaysUnconfirmed(let dataBroker):
             return [Consts.dataBrokerParamKey: dataBroker]
-        case .dailyActiveUser,
-                .weeklyActiveUser,
-                .monthlyActiveUser,
-                .scanningEventNewMatch,
+        case .dailyActiveUser(let isAuthenticated),
+                .weeklyActiveUser(let isAuthenticated),
+                .monthlyActiveUser(let isAuthenticated):
+            return [Consts.isAuthenticated: isAuthenticated ? "true" : "false"]
+        case .scanningEventNewMatch,
                 .scanningEventReAppearance,
                 .secureVaultInitError,
                 .secureVaultKeyStoreUpdateError,
@@ -486,10 +491,11 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                     Consts.optOutSubmitSuccessRate: String(optOutSubmitSuccessRate)]
         case .customGlobalStatsOptoutSubmit(let optOutSubmitSuccessRate):
             return [Consts.optOutSubmitSuccessRate: String(optOutSubmitSuccessRate)]
-        case .weeklyChildBrokerOrphanedOptOuts(let dataBrokerURL, let childParentRecordDifference, let calculatedOrphanedRecords):
+        case .weeklyChildBrokerOrphanedOptOuts(let dataBrokerURL, let childParentRecordDifference, let calculatedOrphanedRecords, let isAuthenticated):
             return [Consts.dataBrokerParamKey: dataBrokerURL,
                     Consts.childParentRecordDifference: String(childParentRecordDifference),
-                    Consts.calculatedOrphanedRecords: String(calculatedOrphanedRecords)]
+                    Consts.calculatedOrphanedRecords: String(calculatedOrphanedRecords),
+                    Consts.isAuthenticated: isAuthenticated ? "true" : "false"]
         case .userScriptLoadJSFailed(let jsFile, _):
             return [Consts.jsFile: jsFile]
         case .serviceEmailConfirmationLinkClientReceived(let dataBrokerURL, let brokerVersion, let linkAgeMs):

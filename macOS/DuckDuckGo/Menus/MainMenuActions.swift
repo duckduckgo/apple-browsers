@@ -1379,6 +1379,11 @@ extension MainViewController {
         WindowsManager.openPopUpWindow(with: tab, origin: nil, contentSize: nil)
     }
 
+    @objc func alwaysShowFirstTimeQuitSurvey(_ sender: Any?) {
+        let persistor = QuitSurveyUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
+        persistor.alwaysShowQuitSurvey = !persistor.alwaysShowQuitSurvey
+    }
+
     @objc func removeUserScripts(_ sender: Any?) {
         tabCollectionViewModel.selectedTab?.userContentController?.cleanUpBeforeClosing()
         tabCollectionViewModel.selectedTab?.reload()

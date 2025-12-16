@@ -1499,7 +1499,8 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
 
     @MainActor
     private func refreshErrorHTMLIfNeeded(themeName: ThemeName) {
-        guard let error else {
+        // No need to reload the HTML for `Special Errors` as `SpecialErrorPageUserScript` will relay an `onThemeUpdate` JS message
+        guard let error, error.requiresSpecialErrorHTMLPage == false else {
             return
         }
 

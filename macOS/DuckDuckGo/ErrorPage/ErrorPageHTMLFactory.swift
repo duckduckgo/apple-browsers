@@ -55,3 +55,10 @@ private extension String {
         replacingOccurrences(of: "$THEME_VARIANT$", with: "\(themeName.rawValue)")
     }
 }
+
+extension WKError {
+
+    var requiresSpecialErrorHTMLPage: Bool {
+        _nsError is MaliciousSiteError || _nsError.isServerCertificateUntrusted
+    }
+}

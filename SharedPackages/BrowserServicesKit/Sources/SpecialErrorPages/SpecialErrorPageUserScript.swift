@@ -57,6 +57,7 @@ public final class SpecialErrorPageUserScript: NSObject, Subfeature {
 
     public weak var broker: UserScriptMessageBroker?
     public weak var delegate: SpecialErrorPageUserScriptDelegate?
+    public weak var webView: WKWebView?
 
     public func with(broker: UserScriptMessageBroker) {
         self.broker = broker

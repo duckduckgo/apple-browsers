@@ -92,7 +92,6 @@ final class AddBookmarkPopover: NSPopover {
     }
 }
 
-
 extension AddBookmarkPopover: ThemeUpdateListening {
 
     func applyThemeStyle(theme: ThemeStyleProviding) {

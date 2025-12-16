@@ -42,7 +42,8 @@ final class AIChatContextualSheetViewController: UIViewController {
     // MARK: - Constants
 
     private enum Constants {
-        static let headerHeight: CGFloat = 56
+        static let headerTopPadding: CGFloat = 16
+        static let headerHeight: CGFloat = 44
         static let headerButtonSize: CGFloat = 44
         static let headerHorizontalPadding: CGFloat = 8
         static let daxIconSize: CGFloat = 24
@@ -53,6 +54,9 @@ final class AIChatContextualSheetViewController: UIViewController {
     // MARK: - Properties
 
     weak var delegate: AIChatContextualSheetViewControllerDelegate?
+
+    private let voiceSearchHelper: VoiceSearchHelperProtocol
+    private lazy var contextualInputViewController = AIChatContextualInputViewController(voiceSearchHelper: voiceSearchHelper)
 
     // MARK: - UI Components
 
@@ -151,7 +155,8 @@ final class AIChatContextualSheetViewController: UIViewController {
 
     // MARK: - Initialization
 
-    init() {
+    init(voiceSearchHelper: VoiceSearchHelperProtocol) {
+        self.voiceSearchHelper = voiceSearchHelper
         super.init(nibName: nil, bundle: nil)
         configureModalPresentation()
     }
@@ -165,6 +170,7 @@ final class AIChatContextualSheetViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        showContextualInput()
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -190,12 +196,51 @@ final class AIChatContextualSheetViewController: UIViewController {
     @objc private func closeButtonTapped() {
         delegate?.aiChatContextualSheetViewControllerDidRequestDismiss(self)
     }
+
+    // MARK: - Child View Controller Management
+
+    private func showContextualInput() {
+        contextualInputViewController.delegate = self
+        embedChildViewController(contextualInputViewController)
+    }
+
+    private func embedChildViewController(_ childVC: UIViewController) {
+        addChild(childVC)
+        childVC.view.translatesAutoresizingMaskIntoConstraints = false
+        contentContainerView.addSubview(childVC.view)
+
+        NSLayoutConstraint.activate([
+            childVC.view.topAnchor.constraint(equalTo: contentContainerView.topAnchor),
+            childVC.view.leadingAnchor.constraint(equalTo: contentContainerView.leadingAnchor),
+            childVC.view.trailingAnchor.constraint(equalTo: contentContainerView.trailingAnchor),
+            childVC.view.bottomAnchor.constraint(equalTo: contentContainerView.bottomAnchor),
+        ])
+
+        childVC.didMove(toParent: self)
+    }
+}
+
+// MARK: - AIChatContextualInputViewControllerDelegate
+
+extension AIChatContextualSheetViewController: AIChatContextualInputViewControllerDelegate {
+
+    func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSubmitPrompt prompt: String) {
+        // TODO: Handle submit - transition to web view
+    }
+
+    func contextualInputViewControllerDidTapVoice(_ viewController: AIChatContextualInputViewController) {
+        // TODO: Handle voice input
+    }
+
+    func contextualInputViewControllerDidTapAttach(_ viewController: AIChatContextualInputViewController) {
+        // TODO: Handle attach
+    }
 }
 
 // MARK: - Private UI Setup Methods
 private extension AIChatContextualSheetViewController {
     
-    private func setupUI() {
+    func setupUI() {
         view.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
 
         // Add header
@@ -222,10 +267,10 @@ private extension AIChatContextualSheetViewController {
         setupConstraints()
     }
 
-    private func setupConstraints() {
+    func setupConstraints() {
         NSLayoutConstraint.activate([
             // Header
-            headerView.topAnchor.constraint(equalTo: view.topAnchor),
+            headerView.topAnchor.constraint(equalTo: view.topAnchor, constant: Constants.headerTopPadding),
             headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             headerView.heightAnchor.constraint(equalToConstant: Constants.headerHeight),
@@ -276,7 +321,7 @@ private extension AIChatContextualSheetViewController {
         ])
     }
     
-    private func updateButtonContainerCornerRadii() {
+    func updateButtonContainerCornerRadii() {
         let leftHeight = leftButtonContainer.bounds.height
         leftButtonContainer.layer.cornerRadius = leftHeight / 2
 
@@ -284,11 +329,11 @@ private extension AIChatContextualSheetViewController {
         rightButtonContainer.layer.cornerRadius = rightHeight / 2
     }
     
-    private func configureModalPresentation() {
+    func configureModalPresentation() {
         modalPresentationStyle = .pageSheet
     }
 
-    private func configureSheetPresentation() {
+    func configureSheetPresentation() {
         guard let sheet = sheetPresentationController else { return }
 
         sheet.detents = [.medium(), .large()]

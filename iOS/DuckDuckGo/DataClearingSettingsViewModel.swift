@@ -21,6 +21,7 @@ import Foundation
 import SwiftUI
 import Core
 import AIChat
+import BrowserServicesKit
 
 @MainActor
 protocol DataClearingSettingsViewModelDelegate: AnyObject {
@@ -38,7 +39,7 @@ final class DataClearingSettingsViewModel: ObservableObject {
     
     // MARK: - Dependencies
 
-    private lazy var featureFlagger = AppDependencyProvider.shared.featureFlagger
+    private let featureFlagger: FeatureFlagger
     private let appSettings: AppSettings
     private let aiChatSettings: AIChatSettingsProvider
     private let animator: FireButtonAnimator
@@ -126,10 +127,12 @@ final class DataClearingSettingsViewModel: ObservableObject {
     // MARK: - Initialization
     
     init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          aiChatSettings: AIChatSettingsProvider,
          fireproofing: Fireproofing,
          delegate: DataClearingSettingsViewModelDelegate) {
         self.appSettings = appSettings
+        self.featureFlagger = featureFlagger
         self.aiChatSettings = aiChatSettings
         self.animator = FireButtonAnimator(appSettings: appSettings)
         self.fireButtonAnimation = appSettings.currentFireButtonAnimation

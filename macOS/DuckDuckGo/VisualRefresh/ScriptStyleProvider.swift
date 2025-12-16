@@ -20,7 +20,9 @@ import Foundation
 import Combine
 import Common
 
-final class ScriptStyleProvider {
+/// # Note: This component is used by HistoryView + SpecialErrorPages
+///
+final class ScriptStyleProvider: ScriptStyleProviding {
     let themeManager: ThemeManaging
 
     var themeAppearance: String {
@@ -47,11 +49,4 @@ final class ScriptStyleProvider {
     init(themeManager: ThemeManaging) {
         self.themeManager = themeManager
     }
-}
-
-
-/// This Style Provider component is used by the History View and Special Pages
-///
-extension ScriptStyleProvider: ScriptStyleProviding {
-
 }

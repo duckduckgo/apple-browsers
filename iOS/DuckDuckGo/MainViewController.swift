@@ -2987,7 +2987,7 @@ extension MainViewController: OmniBarDelegate {
     func onAIChatPressed() {
         hideSuggestionTray()
 
-        if let currentTab, aiChatContextualModeFeature.isAvailable {
+        if let currentTab, aiChatContextualModeFeature.isAvailable, newTabPageViewController == nil {
             currentTab.presentContextualAIChatSheet(from: self)
         } else {
             openAIChatFromAddressBar()

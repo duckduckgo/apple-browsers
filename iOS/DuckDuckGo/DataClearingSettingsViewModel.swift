@@ -165,8 +165,9 @@ final class DataClearingSettingsViewModel: ObservableObject {
         appDataClearingObserver = NotificationCenter.default.addObserver(forName: AppUserDefaults.Notifications.appDataClearingUpdated,
                                                                          object: nil,
                                                                          queue: .main) { [weak self] _ in
-            guard let settings = self?.appSettings else { return }
-            self?.updateAutoclearDataEnabled()
+            Task { @MainActor in
+                self?.updateAutoclearDataEnabled()
+            }
         }
     }
     

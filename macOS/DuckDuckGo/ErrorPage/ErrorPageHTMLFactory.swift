@@ -26,9 +26,9 @@ import WebKit
 
 enum ErrorPageHTMLFactory {
 
-    static func html(for error: WKError, header: String? = nil, featureFlagger: FeatureFlagger, themeManager: ThemeManaging) -> String {
+    static func html(for error: WKError, header: String? = nil, featureFlagger: FeatureFlagger, themeName: ThemeName) -> String {
         buildHTML(for: error, header: header, featureFlagger: featureFlagger)
-            .replaceThemePlaceholder(themeManager: themeManager)
+            .replaceThemePlaceholder(themeName: themeName)
     }
 }
 
@@ -51,7 +51,7 @@ private extension ErrorPageHTMLFactory {
 
 private extension String {
 
-    func replaceThemePlaceholder(themeManager: ThemeManaging) -> String {
-        replacingOccurrences(of: "$THEME_VARIANT$", with: "\(themeManager.theme.name.rawValue)")
+    func replaceThemePlaceholder(themeName: ThemeName) -> String {
+        replacingOccurrences(of: "$THEME_VARIANT$", with: "\(themeName.rawValue)")
     }
 }

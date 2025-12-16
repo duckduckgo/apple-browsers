@@ -93,6 +93,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     let navigationDidEndPublisher = PassthroughSubject<Tab, Never>()
 
     private let themeManager: ThemeManaging
+    private var themeCancellable: AnyCancellable?
 
     private var extensions: TabExtensions
     // accesing TabExtensions‘ Public Protocols projecting tab.extensions.extensionName to tab.extensionName
@@ -406,6 +407,13 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
 
             crashIndicatorModel.setUp(with: crashRecoveryExtension.tabDidCrashPublisher)
         }
+
+        themeCancellable = themeManager.themePublisher
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] theme in
+                self?.refreshErrorHTMLIfNeeded(themeName: theme.name)
+            }
     }
 
 #if DEBUG
@@ -1472,7 +1480,7 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
 
     @MainActor
     private func loadErrorHTML(_ error: WKError, header: String, forUnreachableURL url: URL, alternate: Bool) {
-        let html = ErrorPageHTMLFactory.html(for: error, header: header, featureFlagger: featureFlagger, themeManager: themeManager)
+        let html = ErrorPageHTMLFactory.html(for: error, header: header, featureFlagger: featureFlagger, themeName: themeManager.theme.name)
 
         // Fire error page shown pixel when error page is actually loaded
         if error.code == WKError.Code.webContentProcessTerminated {
@@ -1487,6 +1495,16 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
             // this should be updated using an error page update script call when (if) we have a dynamic error page content implemented
             webView.setDocumentHtml(html)
         }
+    }
+
+    @MainActor
+    private func refreshErrorHTMLIfNeeded(themeName: ThemeName) {
+        guard let error else {
+            return
+        }
+
+        let html = ErrorPageHTMLFactory.html(for: error, header: UserText.errorPageHeader, featureFlagger: featureFlagger, themeName: themeName)
+        webView.setDocumentHtml(html)
     }
 
     func renderingProgressDidChange(progressEvents: UInt) {

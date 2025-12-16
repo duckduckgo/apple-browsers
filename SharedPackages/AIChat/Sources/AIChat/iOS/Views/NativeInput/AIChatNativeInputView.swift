@@ -17,6 +17,7 @@
 //  limitations under the License.
 //
 
+#if os(iOS)
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIKit

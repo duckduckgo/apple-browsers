@@ -199,7 +199,7 @@ final class PermissionModel {
                 if case .success( (let granted, let remember) ) = result {
                     for permission in permissions {
                         // Preserve existing Always Allow/Deny decisions; don't downgrade to Ask
-                        let isPersisting = remember == true || permissionManager.permission(forDomain: domain, permissionType: permission) != .ask
+                        let isPersisting = remember == true || (permission == .notification && permissionManager.hasPermissionPersisted(forDomain: domain, permissionType: permission) && permissionManager.permission(forDomain: domain, permissionType: permission) != .ask)
                         if isPersisting {
                             self.permissionManager.setPermission(granted ? .allow : .deny, forDomain: domain, permissionType: permission)
                         } else if self.featureFlagger.isFeatureOn(.newPermissionView) {

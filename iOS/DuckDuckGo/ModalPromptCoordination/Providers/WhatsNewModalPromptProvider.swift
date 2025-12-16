@@ -25,7 +25,7 @@ import RemoteMessaging
 @MainActor
 final class WhatsNewCoordinator: NSObject, ModalPromptProvider {
     enum DisplayContext: Equatable {
-        // // Shown via modal prompt coordination schedule when a remote message is delivered.
+        // Shown via modal prompt coordination schedule when a remote message is delivered.
         case scheduled
         // Shown when user opened the prompt on-demand.
         case onDemand

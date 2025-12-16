@@ -57,7 +57,6 @@ extension ModalPromptProvider {
 }
 
 /// A protocol for modal prompts that can be shown on-demand by the user.
-/// /// This protocol is designed for prompts that have already been shown automatically by the system
 /// (e.g., via modal prompt coordination) and can be re-accessed later by the user when needed.
 @MainActor
 protocol OnDemandModalPromptProvider {

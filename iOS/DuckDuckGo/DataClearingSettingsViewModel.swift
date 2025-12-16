@@ -20,6 +20,7 @@
 import Foundation
 import SwiftUI
 import Core
+import AIChat
 
 @MainActor
 final class DataClearingSettingsViewModel: ObservableObject {
@@ -28,6 +29,7 @@ final class DataClearingSettingsViewModel: ObservableObject {
 
     private lazy var featureFlagger = AppDependencyProvider.shared.featureFlagger
     private let appSettings: AppSettings
+    private let aiChatSettings: AIChatSettingsProvider
     private let animator: FireButtonAnimator
     private let fireproofing: Fireproofing
     
@@ -37,7 +39,7 @@ final class DataClearingSettingsViewModel: ObservableObject {
     
     @Published var fireButtonAnimation: FireButtonAnimationType
     
-    // MARK: - Computed Properties
+    // MARK: - Elements Visibility
     
     var newUIEnabled: Bool {
         featureFlagger.isFeatureOn(.granularFireButtonOptions)
@@ -46,6 +48,13 @@ final class DataClearingSettingsViewModel: ObservableObject {
     var useImprovedPicker: Bool {
         featureFlagger.isFeatureOn(.mobileCustomization)
     }
+    
+    var showAIChatsToggle: Bool {
+        if newUIEnabled { return false }
+        return aiChatSettings.isAIChatEnabled && featureFlagger.isFeatureOn(.duckAiDataClearing)
+    }
+    
+    // MARK: - Elements Cnntent
 
     var clearDataButtonTitle: String {
         if newUIEnabled {
@@ -97,8 +106,10 @@ final class DataClearingSettingsViewModel: ObservableObject {
     // MARK: - Initialization
     
     init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
+         aiChatSettings: AIChatSettingsProvider,
          fireproofing: Fireproofing) {
         self.appSettings = appSettings
+        self.aiChatSettings = aiChatSettings
         self.animator = FireButtonAnimator(appSettings: appSettings)
         self.fireButtonAnimation = appSettings.currentFireButtonAnimation
         self.fireproofing = fireproofing

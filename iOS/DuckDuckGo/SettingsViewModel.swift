@@ -156,11 +156,6 @@ final class SettingsViewModel: ObservableObject {
         featureFlagger.isFeatureOn(.aiFeaturesSettingsUpdate)
     }
 
-    var isDuckAiDataClearingEnabled: Bool {
-        featureFlagger.isFeatureOn(.duckAiDataClearing)
-        && !featureFlagger.isFeatureOn(.granularFireButtonOptions)
-    }
-
     var shouldShowHideAIGeneratedImagesSection: Bool {
         featureFlagger.isFeatureOn(.showHideAIGeneratedImagesSection)
     }
@@ -245,6 +240,7 @@ final class SettingsViewModel: ObservableObject {
     private(set) lazy var dataClearingViewModel: DataClearingSettingsViewModel = {
         DataClearingSettingsViewModel(
             appSettings: appSettings,
+            aiChatSettings: aiChatSettings,
             fireproofing: legacyViewProvider.fireproofing
         )
     }()

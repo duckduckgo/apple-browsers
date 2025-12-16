@@ -65,7 +65,7 @@ struct SettingsDataClearingView: View {
                                       isButton: true)
                 }
 
-                if settingsViewModel.isAIChatEnabled && settingsViewModel.isDuckAiDataClearingEnabled {
+                if viewModel.showAIChatsToggle {
                     Section {
                         SettingsCellView(label: UserText.settingsClearAIChatHistory,
                                          accessory: .toggle(isOn: settingsViewModel.autoClearAIChatHistoryBinding))

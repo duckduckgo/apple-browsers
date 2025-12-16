@@ -167,6 +167,16 @@ final class PermissionModel {
         }
     }
 
+    private func persistsWhen(permission: PermissionType, domain: String) -> Bool {
+        switch permission {
+        case .notification:
+            return !permissionManager.hasPermissionPersisted(forDomain: domain, permissionType: permission)
+                || permissionManager.permission(forDomain: domain, permissionType: permission) != .ask
+        default:
+            return false
+        }
+    }
+
     private func queryAuthorization(for permissions: [PermissionType],
                                     domain: String,
                                     url: URL?,
@@ -199,7 +209,7 @@ final class PermissionModel {
                 if case .success( (let granted, let remember) ) = result {
                     for permission in permissions {
                         // Preserve existing Always Allow/Deny decisions; don't downgrade to Ask
-                        let isPersisting = remember == true || (permission == .notification && permissionManager.hasPermissionPersisted(forDomain: domain, permissionType: permission) && permissionManager.permission(forDomain: domain, permissionType: permission) != .ask)
+                        let isPersisting = remember == true || persistsWhen(permission: permission, domain: domain)
                         if isPersisting {
                             self.permissionManager.setPermission(granted ? .allow : .deny, forDomain: domain, permissionType: permission)
                         } else if self.featureFlagger.isFeatureOn(.newPermissionView) {

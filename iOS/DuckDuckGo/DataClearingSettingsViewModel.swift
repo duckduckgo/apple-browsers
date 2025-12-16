@@ -23,7 +23,18 @@ import Core
 import AIChat
 
 @MainActor
+protocol DataClearingSettingsViewModelDelegate: AnyObject {
+    func navigateToFireproofSites()
+    func navigateToAutoClearData()
+    func presentFireConfirmation()
+}
+
+@MainActor
 final class DataClearingSettingsViewModel: ObservableObject {
+    
+    // MARK: - Observers
+    
+    private var appDataClearingObserver: Any?
     
     // MARK: - Dependencies
 
@@ -34,10 +45,13 @@ final class DataClearingSettingsViewModel: ObservableObject {
     private let fireproofing: Fireproofing
     
     // MARK: - Delegate
+    
+    weak var delegate: DataClearingSettingsViewModelDelegate?
         
     // MARK: - Published State
     
-    @Published var fireButtonAnimation: FireButtonAnimationType
+    @Published private var fireButtonAnimation: FireButtonAnimationType
+    @Published private var autoclearDataEnabled: Bool = false
     
     // MARK: - Elements Visibility
     
@@ -82,6 +96,12 @@ final class DataClearingSettingsViewModel: ObservableObject {
         return shouldIncludeAIChat ? UserText.settingsDataClearingForgetAllWithAiChatFootnote : UserText.settingsDataClearingForgetAllFootnote
     }
     
+    var autoClearAccessibilityLabel: String {
+        autoclearDataEnabled
+        ? UserText.autoClearAccessoryOn
+        : UserText.autoClearAccessoryOff
+    }
+    
     // MARK: - Bindings
     
     var fireButtonAnimationBinding: Binding<FireButtonAnimationType> {
@@ -107,20 +127,54 @@ final class DataClearingSettingsViewModel: ObservableObject {
     
     init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          aiChatSettings: AIChatSettingsProvider,
-         fireproofing: Fireproofing) {
+         fireproofing: Fireproofing,
+         delegate: DataClearingSettingsViewModelDelegate) {
         self.appSettings = appSettings
         self.aiChatSettings = aiChatSettings
         self.animator = FireButtonAnimator(appSettings: appSettings)
         self.fireButtonAnimation = appSettings.currentFireButtonAnimation
         self.fireproofing = fireproofing
+        self.delegate = delegate
+        updateAutoclearDataEnabled()
+        setupObserver()
+    }
+    
+    deinit {
+        appDataClearingObserver = nil
     }
     
     // MARK: - Actions
     
+    func openFireproofSites() {
+        delegate?.navigateToFireproofSites()
+    }
+    
+    func openAutoClearData() {
+        delegate?.navigateToAutoClearData()
+    }
+    
+    func presentFireConfirmation() {
+        Pixel.fire(pixel: .forgetAllPressedSettings)
+        delegate?.presentFireConfirmation()
+    }
+    
     
     // MARK: - Private Helpers
     
+    private func setupObserver() {
+        appDataClearingObserver = NotificationCenter.default.addObserver(forName: AppUserDefaults.Notifications.appDataClearingUpdated,
+                                                                         object: nil,
+                                                                         queue: .main) { [weak self] _ in
+            guard let settings = self?.appSettings else { return }
+            self?.updateAutoclearDataEnabled()
+        }
+    }
+    
     private var fireproofedSitesCount: Int {
         fireproofing.allowedDomains.count
+    }
+    
+    private func updateAutoclearDataEnabled() {
+        autoclearDataEnabled = !appSettings.autoClearAction.isEmpty
     }
 }

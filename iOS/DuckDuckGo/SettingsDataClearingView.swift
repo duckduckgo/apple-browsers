@@ -51,16 +51,14 @@ struct SettingsDataClearingView: View {
                     // Fireproof Sites
                     SettingsCellView(label: viewModel.fireproofedSitesTitle,
                                      subtitle: viewModel.fireproofedSitesSubtitle,
-                                      action: { settingsViewModel.presentLegacyView(.fireproofSites) },
+                                     action: { viewModel.openFireproofSites() },
                                      disclosureIndicator: true,
                                      isButton: true)
 
                     // Automatically Clear Data
                     SettingsCellView(label: viewModel.autoClearTitle,
-                                      action: { settingsViewModel.presentLegacyView(.autoclearData) },
-                                      accessory: .rightDetail(settingsViewModel.state.autoclearDataEnabled
-                                                             ? UserText.autoClearAccessoryOn
-                                                             : UserText.autoClearAccessoryOff),
+                                     action: { viewModel.openAutoClearData() },
+                                     accessory: .rightDetail(viewModel.autoClearAccessibilityLabel),
                                       disclosureIndicator: true,
                                       isButton: true)
                 }
@@ -76,8 +74,7 @@ struct SettingsDataClearingView: View {
                 
                 Section {
                     SettingsCellView(action: {
-                        Pixel.fire(pixel: .forgetAllPressedSettings)
-                        settingsViewModel.presentFireConfirmation()
+                        viewModel.presentFireConfirmation()
                     }, customView: {
                         forgetAllButtonContent
                     }, isButton: true)

@@ -72,7 +72,6 @@ struct SettingsState {
     // Privacy properties
     var sendDoNotSell: Bool
     var autoconsentEnabled: Bool
-    var autoclearDataEnabled: Bool
     var autoClearAIChatHistory: Bool
     var applicationLock: Bool
 
@@ -133,7 +132,6 @@ struct SettingsState {
             showMenuInSheet: false,
             sendDoNotSell: true,
             autoconsentEnabled: false,
-            autoclearDataEnabled: false,
             autoClearAIChatHistory: false,
             applicationLock: false,
             autocomplete: true,

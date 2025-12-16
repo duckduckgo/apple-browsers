@@ -38,7 +38,7 @@ extension HistoryViewActionsManager {
             featureFlagger: featureFlagger,
             tld: tld
         )
-        let styleProvider = HistoryViewStyleProvider(themeManager: themeManager)
+        let styleProvider = ScriptStyleProvider(themeManager: themeManager)
 
         self.init(scriptClients: [
             DataClient(

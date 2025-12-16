@@ -123,7 +123,7 @@ final class UserScripts: UserScriptsProvider {
 
         specialErrorPageUserScript = SpecialErrorPageUserScript(localeStrings: SpecialErrorPageUserScript.localeStrings(for: lenguageCode),
                                                                 languageCode: lenguageCode,
-                                                                styleProvider: SpecialErrorPageStyleProvider(themeManager: themeManager))
+                                                                styleProvider: ScriptStyleProvider(themeManager: themeManager))
 
         onboardingUserScript = OnboardingUserScript(onboardingActionsManager: sourceProvider.onboardingActionsManager!)
 

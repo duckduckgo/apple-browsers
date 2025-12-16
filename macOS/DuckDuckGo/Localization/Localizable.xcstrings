@@ -83464,7 +83464,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Ad Blocker didn't work"
+            "value" : "Ad blocker didn't work"
           }
         },
         "es" : {
@@ -83584,7 +83584,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Couldn't find incognito"
+            "value" : "Couldn't find Incognito mode"
           }
         },
         "es" : {
@@ -83644,7 +83644,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Fire Button removed too much"
+            "value" : "Fire Button deleted too much"
           }
         },
         "es" : {
@@ -83884,7 +83884,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Hard to find Settings"
+            "value" : "Hard to find settings"
           }
         },
         "es" : {
@@ -84664,7 +84664,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Asked to disable Ad Blocker"
+            "value" : "Asked to disable ad blocker"
           }
         },
         "es" : {

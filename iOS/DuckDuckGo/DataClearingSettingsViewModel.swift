@@ -68,7 +68,7 @@ final class DataClearingSettingsViewModel: ObservableObject {
         return aiChatSettings.isAIChatEnabled && featureFlagger.isFeatureOn(.duckAiDataClearing)
     }
     
-    // MARK: - Elements Cnntent
+    // MARK: - Elements Content
 
     var clearDataButtonTitle: String {
         if newUIEnabled {

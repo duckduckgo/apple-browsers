@@ -94,6 +94,9 @@ struct SettingsDataClearingView: View {
                                     viewModel: settingsViewModel)
         .background(Color(designSystemColor: .background))
         .modifier(ScrollBounceBehaviorModifier())
+        .onAppear {
+            viewModel.refreshFireproofedSitesCount()
+        }
         .onFirstAppear {
             Pixel.fire(pixel: .settingsDataClearingOpen)
         }

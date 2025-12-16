@@ -53,6 +53,7 @@ final class DataClearingSettingsViewModel: ObservableObject {
     
     @Published private var fireButtonAnimation: FireButtonAnimationType
     @Published private var autoclearDataEnabled: Bool = false
+    @Published private var fireproofedSitesCount: Int = 0
     
     // MARK: - Elements Visibility
     
@@ -138,6 +139,7 @@ final class DataClearingSettingsViewModel: ObservableObject {
         self.fireButtonAnimation = appSettings.currentFireButtonAnimation
         self.fireproofing = fireproofing
         self.delegate = delegate
+        refreshFireproofedSitesCount()
         updateAutoclearDataEnabled()
         setupObserver()
     }
@@ -164,6 +166,10 @@ final class DataClearingSettingsViewModel: ObservableObject {
         delegate?.presentFireConfirmation()
     }
     
+    func refreshFireproofedSitesCount() {
+        fireproofedSitesCount = fireproofing.allowedDomains.count
+    }
+    
     
     // MARK: - Private Helpers
     
@@ -175,10 +181,6 @@ final class DataClearingSettingsViewModel: ObservableObject {
                 self?.updateAutoclearDataEnabled()
             }
         }
-    }
-    
-    private var fireproofedSitesCount: Int {
-        fireproofing.allowedDomains.count
     }
     
     private func updateAutoclearDataEnabled() {

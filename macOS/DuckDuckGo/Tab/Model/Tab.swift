@@ -92,6 +92,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     let reloadPublisher = PassthroughSubject<Void, Never>()
     let navigationDidEndPublisher = PassthroughSubject<Tab, Never>()
 
+    private let themeManager: ThemeManaging
+
     private var extensions: TabExtensions
     // accesing TabExtensions‘ Public Protocols projecting tab.extensions.extensionName to tab.extensionName
     // allows extending Tab functionality while maintaining encapsulation
@@ -147,7 +149,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                      aiChatSidebarProvider: AIChatSidebarProviding? = nil,
                      newTabPageShownPixelSender: NewTabPageShownPixelSender? = nil,
                      tabCrashAggregator: TabCrashAggregator? = nil,
-                     autoconsentStats: AutoconsentStatsCollecting? = nil
+                     autoconsentStats: AutoconsentStatsCollecting? = nil,
+                     themeManager: ThemeManaging? = nil
     ) {
 
         let duckPlayer = duckPlayer
@@ -156,8 +159,9 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         ?? (AppVersion.runType.requiresEnvironment ? StatisticsLoader.shared : nil)
         let privacyFeatures = privacyFeatures ?? NSApp.delegateTyped.privacyFeatures
         let internalUserDecider = NSApp.delegateTyped.internalUserDecider
-        var faviconManager = faviconManagement
         let fireproofDomains = fireproofDomains ?? NSApp.delegateTyped.fireproofDomains
+
+        var faviconManager = faviconManagement
         if burnerMode.isBurner {
             faviconManager = FaviconManager(
                 cacheType: .inMemory,
@@ -210,7 +214,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                   aiChatSidebarProvider: aiChatSidebarProvider ?? NSApp.delegateTyped.aiChatSidebarProvider,
                   newTabPageShownPixelSender: newTabPageShownPixelSender ?? NSApp.delegateTyped.newTabPageCoordinator.newTabPageShownPixelSender,
                   tabCrashAggregator: tabCrashAggregator ?? NSApp.delegateTyped.tabCrashAggregator,
-                  autoconsentStats: autoconsentStats ?? NSApp.delegateTyped.autoconsentStats
+                  autoconsentStats: autoconsentStats ?? NSApp.delegateTyped.autoconsentStats,
+                  themeManager: themeManager ?? NSApp.delegateTyped.themeManager
         )
     }
 
@@ -260,7 +265,8 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
          aiChatSidebarProvider: AIChatSidebarProviding,
          newTabPageShownPixelSender: NewTabPageShownPixelSender,
          tabCrashAggregator: TabCrashAggregator,
-         autoconsentStats: AutoconsentStatsCollecting
+         autoconsentStats: AutoconsentStatsCollecting,
+         themeManager: ThemeManaging
     ) {
         self._id = id
         self.uuid = uuid ?? UUID().uuidString
@@ -282,6 +288,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         self.lastSelectedAt = lastSelectedAt
         self.startupPreferences = startupPreferences
         self.tabsPreferences = tabsPreferences
+        self.themeManager = themeManager
 
         self.specialPagesUserScript = SpecialPagesUserScript()
         specialPagesUserScript?
@@ -1465,7 +1472,7 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
 
     @MainActor
     private func loadErrorHTML(_ error: WKError, header: String, forUnreachableURL url: URL, alternate: Bool) {
-        let html = ErrorPageHTMLFactory.html(for: error, featureFlagger: featureFlagger, header: header)
+        let html = ErrorPageHTMLFactory.html(for: error, header: header, featureFlagger: featureFlagger, themeManager: themeManager)
 
         // Fire error page shown pixel when error page is actually loaded
         if error.code == WKError.Code.webContentProcessTerminated {

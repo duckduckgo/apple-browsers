@@ -18,7 +18,7 @@
 //
 
 import XCTest
-@testable import DuckDuckGo
+@testable import AIChat
 
 final class AIChatNativeInputViewTests: XCTestCase {
 

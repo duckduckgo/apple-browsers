@@ -225,15 +225,12 @@ final class AIChatContextualSheetViewController: UIViewController {
 extension AIChatContextualSheetViewController: AIChatContextualInputViewControllerDelegate {
 
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSubmitPrompt prompt: String) {
-        // TODO: Handle submit - transition to web view
     }
 
     func contextualInputViewControllerDidTapVoice(_ viewController: AIChatContextualInputViewController) {
-        // TODO: Handle voice input
     }
 
     func contextualInputViewControllerDidTapAttach(_ viewController: AIChatContextualInputViewController) {
-        // TODO: Handle attach
     }
 }
 
@@ -243,25 +240,20 @@ private extension AIChatContextualSheetViewController {
     func setupUI() {
         view.backgroundColor = UIColor(designSystemColor: .backgroundTertiary)
 
-        // Add header
         view.addSubview(headerView)
 
-        // Left button container with expand and new chat buttons
         headerView.addSubview(leftButtonContainer)
         leftButtonContainer.addSubview(leftButtonStack)
         leftButtonStack.addArrangedSubview(expandButton)
         leftButtonStack.addArrangedSubview(newChatButton)
 
-        // Title
         headerView.addSubview(titleContainer)
         titleContainer.addArrangedSubview(daxIcon)
         titleContainer.addArrangedSubview(titleLabel)
 
-        // Right button container with close button
         headerView.addSubview(rightButtonContainer)
         rightButtonContainer.addSubview(closeButton)
 
-        // Add content container
         view.addSubview(contentContainerView)
 
         setupConstraints()
@@ -269,43 +261,34 @@ private extension AIChatContextualSheetViewController {
 
     func setupConstraints() {
         NSLayoutConstraint.activate([
-            // Header
             headerView.topAnchor.constraint(equalTo: view.topAnchor, constant: Constants.headerTopPadding),
             headerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             headerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             headerView.heightAnchor.constraint(equalToConstant: Constants.headerHeight),
 
-            // Left button container
             leftButtonContainer.leadingAnchor.constraint(equalTo: headerView.leadingAnchor, constant: Constants.headerHorizontalPadding),
             leftButtonContainer.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
 
-            // Left button stack inside container
             leftButtonStack.topAnchor.constraint(equalTo: leftButtonContainer.topAnchor),
             leftButtonStack.leadingAnchor.constraint(equalTo: leftButtonContainer.leadingAnchor),
             leftButtonStack.trailingAnchor.constraint(equalTo: leftButtonContainer.trailingAnchor),
             leftButtonStack.bottomAnchor.constraint(equalTo: leftButtonContainer.bottomAnchor),
 
-            // Expand button size
             expandButton.widthAnchor.constraint(equalToConstant: Constants.headerButtonSize),
             expandButton.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
 
-            // New chat button size
             newChatButton.widthAnchor.constraint(equalToConstant: Constants.headerButtonSize),
             newChatButton.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
 
-            // Title container (centered)
             titleContainer.centerXAnchor.constraint(equalTo: headerView.centerXAnchor),
             titleContainer.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
 
-            // Dax icon size
             daxIcon.widthAnchor.constraint(equalToConstant: Constants.daxIconSize),
             daxIcon.heightAnchor.constraint(equalToConstant: Constants.daxIconSize),
 
-            // Right button container
             rightButtonContainer.trailingAnchor.constraint(equalTo: headerView.trailingAnchor, constant: -Constants.headerHorizontalPadding),
             rightButtonContainer.centerYAnchor.constraint(equalTo: headerView.centerYAnchor),
 
-            // Close button inside right container
             closeButton.topAnchor.constraint(equalTo: rightButtonContainer.topAnchor),
             closeButton.leadingAnchor.constraint(equalTo: rightButtonContainer.leadingAnchor),
             closeButton.trailingAnchor.constraint(equalTo: rightButtonContainer.trailingAnchor),
@@ -313,11 +296,10 @@ private extension AIChatContextualSheetViewController {
             closeButton.widthAnchor.constraint(equalToConstant: Constants.headerButtonSize),
             closeButton.heightAnchor.constraint(equalToConstant: Constants.headerButtonSize),
 
-            // Content container
             contentContainerView.topAnchor.constraint(equalTo: headerView.bottomAnchor),
             contentContainerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             contentContainerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            contentContainerView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            contentContainerView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
     }
     

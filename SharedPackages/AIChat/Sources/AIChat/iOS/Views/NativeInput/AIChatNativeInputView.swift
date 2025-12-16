@@ -17,13 +17,14 @@
 //  limitations under the License.
 //
 
+import DesignResourcesKit
 import DesignResourcesKitIcons
 import UIKit
 
 // MARK: - Delegate Protocol
 
 /// Delegate protocol for handling user interactions with the native input view.
-protocol AIChatNativeInputViewDelegate: AnyObject {
+public protocol AIChatNativeInputViewDelegate: AnyObject {
     func nativeInputViewDidChangeText(_ view: AIChatNativeInputView, text: String)
     func nativeInputViewDidTapSubmit(_ view: AIChatNativeInputView, text: String)
     func nativeInputViewDidTapVoice(_ view: AIChatNativeInputView)
@@ -34,7 +35,7 @@ protocol AIChatNativeInputViewDelegate: AnyObject {
 // MARK: - View
 
 /// Native text input view with multi-line support, voice/clear button, and submit functionality.
-final class AIChatNativeInputView: UIView {
+public final class AIChatNativeInputView: UIView {
 
     // MARK: - Constants
 
@@ -54,9 +55,9 @@ final class AIChatNativeInputView: UIView {
 
     // MARK: - Properties
 
-    weak var delegate: AIChatNativeInputViewDelegate?
+    public weak var delegate: AIChatNativeInputViewDelegate?
 
-    var text: String {
+    public var text: String {
         get { textView.text ?? "" }
         set {
             textView.text = newValue
@@ -66,15 +67,15 @@ final class AIChatNativeInputView: UIView {
         }
     }
 
-    var placeholder = "" {
+    public var placeholder = "" {
         didSet { placeholderLabel.text = placeholder }
     }
 
-    var isVoiceButtonEnabled = true {
+    public var isVoiceButtonEnabled = true {
         didSet { updateButtonStates() }
     }
 
-    var isAttachButtonHidden = false {
+    public var isAttachButtonHidden = false {
         didSet { attachButton.isHidden = isAttachButtonHidden }
     }
 
@@ -175,32 +176,32 @@ final class AIChatNativeInputView: UIView {
 
     // MARK: - Initialization
 
-    override init(frame: CGRect) {
+    public override init(frame: CGRect) {
         super.init(frame: frame)
         setupUI()
     }
 
-    required init?(coder: NSCoder) {
+    public required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
 
     // MARK: - Public Methods
 
     @discardableResult
-    override func becomeFirstResponder() -> Bool {
+    public override func becomeFirstResponder() -> Bool {
         return textView.becomeFirstResponder()
     }
 
     @discardableResult
-    override func resignFirstResponder() -> Bool {
+    public override func resignFirstResponder() -> Bool {
         return textView.resignFirstResponder()
     }
 
-    override var isFirstResponder: Bool {
+    public override var isFirstResponder: Bool {
         return textView.isFirstResponder
     }
 
-    override func layoutSubviews() {
+    public override func layoutSubviews() {
         super.layoutSubviews()
         updateTextViewHeight()
     }
@@ -293,6 +294,7 @@ private extension AIChatNativeInputView {
 
     func updateButtonStates() {
         let hasText = !text.isEmpty
+        let hasSubmittableText = !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
 
         if hasText {
             topRightButton.setImage(DesignSystemImages.Glyphs.Size24.clear, for: .normal)
@@ -307,8 +309,8 @@ private extension AIChatNativeInputView {
             isShowingClearButton = false
         }
 
-        submitButton.isEnabled = hasText
-        if hasText {
+        submitButton.isEnabled = hasSubmittableText
+        if hasSubmittableText {
             submitButton.setImage(DesignSystemImages.Glyphs.Size24.arrowRight, for: .normal)
             submitButtonContainer.backgroundColor = UIColor(designSystemColor: .accent)
             submitButton.tintColor = .white
@@ -348,7 +350,7 @@ private extension AIChatNativeInputView {
 
 extension AIChatNativeInputView: UITextViewDelegate {
 
-    func textViewDidChange(_ textView: UITextView) {
+    public func textViewDidChange(_ textView: UITextView) {
         updatePlaceholderVisibility()
         updateButtonStates()
         updateTextViewHeight()

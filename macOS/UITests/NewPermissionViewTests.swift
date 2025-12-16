@@ -37,9 +37,7 @@ class NewPermissionViewTests: UITestCase {
 
     override func setUpWithError() throws {
         // Skip tests on macOS versions below 26 due to differences in system permission dialogs
-        if #available(macOS 26, *) {
-            // Continue with test setup
-        } else {
+        if #unavailable(macOS 26) {
             throw XCTSkip("NewPermissionViewTests require macOS 26 or later due to system permission dialog differences")
         }
 

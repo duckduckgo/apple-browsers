@@ -1503,7 +1503,10 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
             return
         }
 
-        let html = ErrorPageHTMLFactory.html(for: error, header: UserText.errorPageHeader, featureFlagger: featureFlagger, themeName: themeName)
+        let processDidCrash = error.userInfo[WKProcessTerminationReason.userInfoKey] != nil
+        let header = processDidCrash ? UserText.webProcessCrashPageHeader : UserText.errorPageHeader
+        let html = ErrorPageHTMLFactory.html(for: error, header: header, featureFlagger: featureFlagger, themeName: themeName)
+
         webView.setDocumentHtml(html)
     }
 

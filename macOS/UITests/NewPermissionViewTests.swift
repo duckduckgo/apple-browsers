@@ -22,7 +22,6 @@ import XCTest
 /// UI Tests for the new permission authorization view and permission center (behind the newPermissionView feature flag).
 /// These tests verify the SwiftUI-based permission UI that replaces the legacy storyboard-based permission UI.
 /// Note: Restricted to macOS 26+ due to differences in system permission dialogs across macOS versions.
-@available(macOS 26, *)
 class NewPermissionViewTests: UITestCase {
 
     private var notificationCenter: XCUIApplication!
@@ -37,6 +36,13 @@ class NewPermissionViewTests: UITestCase {
     private var fireDialogBurnButton: XCUIElement { app.fireDialogBurnButton }
 
     override func setUpWithError() throws {
+        // Skip tests on macOS versions below 26 due to differences in system permission dialogs
+        if #available(macOS 26, *) {
+            // Continue with test setup
+        } else {
+            throw XCTSkip("NewPermissionViewTests require macOS 26 or later due to system permission dialog differences")
+        }
+
         try super.setUpWithError()
         continueAfterFailure = false
 

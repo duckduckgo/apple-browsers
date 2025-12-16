@@ -40,6 +40,7 @@ final public class DataBrokerProtectionViewController: UIViewController {
     private let feedbackViewCreator: () -> (any View)
     private let openURLHandler: (URL) -> Void
     private var reloadObserver: NSObjectProtocol?
+    private var cancellables = Set<AnyCancellable>()
 
     private lazy var webUIViewModel: DBPUIViewModel = {
         guard let pixelKit = PixelKit.shared else {
@@ -137,11 +138,33 @@ final public class DataBrokerProtectionViewController: UIViewController {
     override public func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         webUIViewModel.viewDidAppear()
+        subscribeToBackgroundRefreshNotifications()
     }
 
     override public func viewDidDisappear(_ animated: Bool) {
+        cancellables.removeAll()
         webUIViewModel.viewDidDisappear()
         super.viewDidDisappear(animated)
+    }
+
+    private func subscribeToBackgroundRefreshNotifications() {
+        NotificationCenter.default.publisher(for: UIApplication.backgroundRefreshStatusDidChangeNotification)
+            .sink { [weak self] _ in
+                self?.notifyBackgroundAppRefreshChange()
+            }
+            .store(in: &cancellables)
+
+        NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange)
+            .sink { [weak self] _ in
+                self?.notifyBackgroundAppRefreshChange()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func notifyBackgroundAppRefreshChange() {
+        Task { @MainActor in
+            await webUIViewModel.sendBackgroundAppRefreshDidChange(into: webView)
+        }
     }
 }
 

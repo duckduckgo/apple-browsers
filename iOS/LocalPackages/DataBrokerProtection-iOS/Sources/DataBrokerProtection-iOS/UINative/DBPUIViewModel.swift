@@ -101,6 +101,12 @@ public final class DBPUIViewModel {
     func viewDidDisappear() {
         userEventsDelegate?.dashboardDidClose()
     }
+
+    @MainActor
+    func sendBackgroundAppRefreshDidChange(into webView: WKWebView) async {
+        let needBackgroundAppRefresh = await self.needBackgroundAppRefresh()
+        communicationLayer?.sendBackgroundAppRefreshDidChange(needBackgroundAppRefresh: needBackgroundAppRefresh, into: webView)
+    }
 }
 
 extension DBPUIViewModel: DBPUICommunicationDelegate {

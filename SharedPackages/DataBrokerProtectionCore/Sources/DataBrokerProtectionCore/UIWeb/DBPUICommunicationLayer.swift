@@ -88,6 +88,7 @@ public enum DBPUIReceivedMethodName: String {
 
 public enum DBPUISendableMethodName: String {
     case setState
+    case backgroundAppRefreshDidChange
 }
 
 public struct DBPUICommunicationLayer: Subfeature {
@@ -331,6 +332,13 @@ public struct DBPUICommunicationLayer: Subfeature {
 
     func sendMessageToUI(method: DBPUISendableMethodName, params: DBPUISendableMessage, into webView: WKWebView) {
         broker?.push(method: method.rawValue, params: params, for: self, into: webView)
+    }
+
+    public func sendBackgroundAppRefreshDidChange(needBackgroundAppRefresh: Bool, into webView: WKWebView) {
+        Logger.dataBrokerProtection.log("needBackgroundAppRefresh changed to \(needBackgroundAppRefresh)")
+
+        let params = DBPUIBackgroundAppRefreshDidChange(needBackgroundAppRefresh: needBackgroundAppRefresh)
+        sendMessageToUI(method: .backgroundAppRefreshDidChange, params: params, into: webView)
     }
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {

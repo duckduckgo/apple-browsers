@@ -117,7 +117,11 @@ class FireExecutor {
             delegate?.didFinishBurningTabs()
         }
         let shouldBurnData = options.contains(.data)
-        let shouldBurnAIChats = options.contains(.aiChats)
+        
+        // Skip clearing AI chats if on old UI and clearing ai chats is disabled by the user.
+        let legacyAIChatsEnabled = featureFlagger.isFeatureOn(.granularFireButtonOptions) || appSettings.autoClearAIChatHistory // TODO: - Removed the check when granularFireButtonOptions is removed.
+        
+        let shouldBurnAIChats = options.contains(.aiChats) && legacyAIChatsEnabled
 
         if shouldBurnData { delegate?.willStartBurningData() }
         if shouldBurnAIChats { delegate?.willStartBurningAIHistory() }
@@ -192,9 +196,6 @@ class FireExecutor {
     
     private func burnAIHistory() async {
         // Skip clearing AI chats if on old UI and clearing ai chats is disabled by the user.
-        guard featureFlagger.isFeatureOn(.granularFireButtonOptions) || appSettings.autoClearAIChatHistory else {
-            return
-        }
         let result = await aiChatHistoryCleaner.cleanAIChatHistory()
         switch result {
         case .success:

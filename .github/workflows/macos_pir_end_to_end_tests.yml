@@ -145,7 +145,6 @@ jobs:
     - name: Run PIR e2e Tests
       id: run-tests
       run: |
-        launchctl setenv PRIVACYPRO_STAGING_TOKEN '${{ secrets.PRIVACYPRO_STAGING_TOKEN }}'
         launchctl setenv PRIVACYPRO_STAGING_ACCESS_TOKEN_V2 '${{ secrets.PRIVACYPRO_STAGING_ACCESS_TOKEN_V2 }}'
         set -o pipefail && xcodebuild test \
           -scheme "macOS PIR E2E Tests" \
@@ -159,7 +158,6 @@ jobs:
           | tee xcodebuild.log \
           | tee pir-e2e-tests.log
       env:
-          PRIVACYPRO_STAGING_TOKEN: ${{ secrets.PRIVACYPRO_STAGING_TOKEN }}
           PRIVACYPRO_STAGING_ACCESS_TOKEN_V2: ${{ secrets.PRIVACYPRO_STAGING_ACCESS_TOKEN_V2 }}
 
     - name: Report job duration

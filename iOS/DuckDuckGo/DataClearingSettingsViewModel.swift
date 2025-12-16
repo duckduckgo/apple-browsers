@@ -84,8 +84,11 @@ final class DataClearingSettingsViewModel: ObservableObject {
         newUIEnabled ? UserText.settingsFireproofedSites : UserText.settingsFireproofSites
     }
     
-    var fireproofedSitesSubtitle: String {
-        UserText.settingsFireproofedSitesSubtitle(withCount: fireproofedSitesCount)
+    var fireproofedSitesSubtitle: String? {
+        guard newUIEnabled else {
+            return nil
+        }
+        return UserText.settingsFireproofedSitesSubtitle(withCount: fireproofedSitesCount)
     }
     
     var autoClearTitle: String {

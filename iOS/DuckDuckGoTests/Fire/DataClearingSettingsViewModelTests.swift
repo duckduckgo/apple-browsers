@@ -173,6 +173,7 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
 
     func testWhenNoFireproofedSitesThenSubtitleShowsZeroCount() {
         // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.granularFireButtonOptions]
         mockFireproofing.fireproofedDomains = []
 
         // When
@@ -184,6 +185,7 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
 
     func testWhenFireproofedSitesExistThenSubtitleShowsCount() {
         // Given
+        mockFeatureFlagger.enabledFeatureFlags = [.granularFireButtonOptions]
         mockFireproofing.fireproofedDomains = ["example.com"]
 
         // When
@@ -191,6 +193,18 @@ final class DataClearingSettingsViewModelTests: XCTestCase {
 
         // Then
         XCTAssertEqual(viewModel.fireproofedSitesSubtitle, "1 site excluded from clearing")
+    }
+
+    func testWhenNewUIDisabledThenSubtitleIsNil() {
+        // Given
+        mockFeatureFlagger.enabledFeatureFlags = []
+        mockFireproofing.fireproofedDomains = ["example.com"]
+
+        // When
+        let viewModel = makeViewModel()
+
+        // Then
+        XCTAssertNil(viewModel.fireproofedSitesSubtitle)
     }
 
     // MARK: - Auto Clear Accessibility Label Tests

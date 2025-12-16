@@ -71,4 +71,13 @@ class ErrorPageHTMLFactoryTests: XCTestCase {
         XCTAssertTrue(html.contains("NSURLErrorDomain")) // Check if the domain is included in the HTML
     }
 
+    func testThemeVariableGetsReplacedWithThemeName() {
+        let url = URL(string: "https://example.com")!
+        let networkTimeoutError = NSError(domain: NSURLErrorDomain, code: NSURLErrorTimedOut, userInfo: [NSURLErrorFailingURLErrorKey: url])
+        let html = ErrorPageHTMLFactory.html(for: WKError(_nsError: networkTimeoutError as NSError), featureFlagger: MockFeatureFlagger(), themeName: .violet)
+
+        XCTAssertNotNil(html)
+        XCTAssertTrue(html.contains("violet"))
+        XCTAssertFalse(html.contains("$THEME_VARIANT$"))
+    }
 }

@@ -140,6 +140,9 @@ final class DataClearingSettingsViewModel: ObservableObject {
     }
     
     deinit {
+        if let token = appDataClearingObserver {
+            NotificationCenter.default.removeObserver(token)
+        }
         appDataClearingObserver = nil
     }
     

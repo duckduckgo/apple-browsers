@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Combine
 import Common
 import CoreLocation
@@ -61,9 +62,9 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
     private let notificationService: UserNotificationAuthorizationServicing
 
     init(geolocationService: GeolocationServiceProtocol = GeolocationService.shared,
-         notificationService: UserNotificationAuthorizationServicing = UserNotificationAuthorizationService()) {
+         notificationService: UserNotificationAuthorizationServicing? = nil) {
         self.geolocationService = geolocationService
-        self.notificationService = notificationService
+        self.notificationService = notificationService ?? NSApp.delegateTyped.notificationService
     }
 
     // MARK: - Public Methods

@@ -21,6 +21,7 @@ import Core
 import SwiftUI
 import DesignResourcesKit
 import DesignResourcesKitIcons
+import DuckUI
 
 struct SettingsDataClearingView: View {
 
@@ -32,14 +33,17 @@ struct SettingsDataClearingView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
+        List {
             // Header section
             if viewModel.newUIEnabled {
-                DataClearingHeaderView()
-            }
-            
-            List {
                 Section {
+                    DataClearingHeaderView()
+                }
+                .listRowInsets(EdgeInsets())
+                .listRowBackground(Color.clear)
+            }
+
+            Section {
                     // Fire Button Animation
                     SettingsPickerCellView(useImprovedPicker: viewModel.useImprovedPicker,
                                            label: UserText.settingsFirebutton,
@@ -84,12 +88,12 @@ struct SettingsDataClearingView: View {
                         Text(viewModel.footnoteText)
                     }
                 }
-            }
-            .applySettingsListModifiers(title: UserText.dataClearing,
-                                        displayMode: .inline,
-                                        viewModel: settingsViewModel)
         }
+        .applySettingsListModifiers(title: UserText.dataClearing,
+                                    displayMode: .inline,
+                                    viewModel: settingsViewModel)
         .background(Color(designSystemColor: .background))
+        .modifier(ScrollBounceBehaviorModifier())
         .onFirstAppear {
             Pixel.fire(pixel: .settingsDataClearingOpen)
         }
@@ -141,6 +145,6 @@ private struct DataClearingHeaderView: View {
         static let outerStackSpacing: CGFloat = 12
         static let innerStackSpacing: CGFloat = 8
         static let iconSize: CGFloat = 64
-        static let padding: EdgeInsets = .init(top: 32, leading: 32, bottom: 8, trailing: 32)
+        static let padding: EdgeInsets = .init(top: 0, leading: 16, bottom: 8, trailing: 16)
     }
 }

@@ -102,6 +102,7 @@ final class FireExecutorTests: XCTestCase {
     private var mockHistoryCleaner: MockHistoryCleaner!
     private var mockBookmarkDatabaseCleaner: MockBookmarkDatabaseCleaner!
     private var mockDelegate: MockFireExecutorDelegate!
+    private var mockAppSettings: AppSettingsMock!
     
     override func setUp() {
         super.setUp()
@@ -118,6 +119,8 @@ final class FireExecutorTests: XCTestCase {
         mockHistoryCleaner = MockHistoryCleaner()
         mockBookmarkDatabaseCleaner = MockBookmarkDatabaseCleaner()
         mockDelegate = MockFireExecutorDelegate()
+        mockAppSettings = AppSettingsMock()
+        mockFeatureFlagger.enabledFeatureFlags = [.granularFireButtonOptions]
     }
     
     override func tearDown() {
@@ -134,6 +137,7 @@ final class FireExecutorTests: XCTestCase {
         mockHistoryCleaner = nil
         mockBookmarkDatabaseCleaner = nil
         mockDelegate = nil
+        mockAppSettings = nil
         super.tearDown()
     }
     
@@ -155,7 +159,8 @@ final class FireExecutorTests: XCTestCase {
             featureFlagger: mockFeatureFlagger,
             privacyConfigurationManager: mockPrivacyConfigurationManager,
             dataStore: MockWebsiteDataStore(),
-            aiChatHistoryCleaner: mockHistoryCleaner
+            aiChatHistoryCleaner: mockHistoryCleaner,
+            appSettings: mockAppSettings
         )
     }
     

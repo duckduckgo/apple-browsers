@@ -123,7 +123,8 @@ import Combine
                                         textZoomCoordinator: textZoomCoordinator,
                                         historyManager: historyManager,
                                         featureFlagger: featureFlagger,
-                                        privacyConfigurationManager: mockConfigManager)
+                                        privacyConfigurationManager: mockConfigManager,
+                                        appSettings: AppSettingsMock())
         sut = MainViewController(
             privacyConfigurationManager: mockConfigManager,
             bookmarksDatabase: db,

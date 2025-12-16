@@ -17,11 +17,15 @@
 //
 
 import AppKit
+import Combine
 import SwiftUI
 
 final class AddBookmarkPopover: NSPopover {
 
     private let bookmarkManager: BookmarkManager
+
+    let themeManager: ThemeManaging = NSApp.delegateTyped.themeManager
+    var themeUpdateCancellable: AnyCancellable?
 
     var isNew: Bool = false
     var bookmark: Bookmark? {
@@ -49,6 +53,8 @@ final class AddBookmarkPopover: NSPopover {
 
         animates = false
         behavior = .transient
+
+        applyThemeStyle()
     }
 
     required init?(coder: NSCoder) {
@@ -84,5 +90,12 @@ final class AddBookmarkPopover: NSPopover {
     func popoverWillClose() {
         bookmark = nil
     }
+}
 
+
+extension AddBookmarkPopover: ThemeUpdateListening {
+
+    func applyThemeStyle(theme: ThemeStyleProviding) {
+        backgroundColor = theme.colorsProvider.popoverBackgroundColor
+    }
 }

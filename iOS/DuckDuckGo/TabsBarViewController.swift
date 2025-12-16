@@ -22,6 +22,8 @@ import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import BrowserServicesKit
+import AIChat
+import Persistence
 
 protocol TabsBarDelegate: NSObjectProtocol {
     
@@ -59,6 +61,10 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     }()
 
     weak var delegate: TabsBarDelegate?
+    var historyManager: HistoryManaging?
+    var fireproofing: Fireproofing?
+    var aiChatSettings: AIChatSettingsProvider?
+    var keyValueStore: ThrowingKeyValueStoring?
     private weak var tabsModel: TabsModel?
 
     private lazy var tabSwitcherButton: TabSwitcherButton = TabSwitcherStaticButton()
@@ -131,7 +137,16 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     @IBAction func onFireButtonPressed() {
         
         func showClearDataAlert() {
-            let presenter = FireConfirmationPresenter(featureFlagger: AppDependencyProvider.shared.featureFlagger)
+            guard let aiChatSettings, let tabsModel, let historyManager, let fireproofing, let keyValueStore else {
+                assertionFailure("TabsBarViewController is not configured properly. Check MainViewController.loadTabsBarIfNeeded()")
+                return
+            }
+            let presenter = FireConfirmationPresenter(tabsModel: tabsModel,
+                                                      featureFlagger: AppDependencyProvider.shared.featureFlagger,
+                                                      historyManager: historyManager,
+                                                      fireproofing: fireproofing,
+                                                      aiChatSettings: aiChatSettings,
+                                                      keyValueFilesStore: keyValueStore)
             presenter.presentFireConfirmation(
                 on: self,
                 attachPopoverTo: fireButton,

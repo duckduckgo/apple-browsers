@@ -22,11 +22,20 @@ import UIKit
 import SwiftUI
 import BrowserServicesKit
 import Common
+import Core
+import AIChat
+import Persistence
 
 struct FireConfirmationPresenter {
     
+    let tabsModel: TabsModelProtocol
     let featureFlagger: FeatureFlagger
+    let historyManager: HistoryManaging
+    let fireproofing: Fireproofing
+    let aiChatSettings: AIChatSettingsProvider
+    let keyValueFilesStore: ThrowingKeyValueStoring
     
+    @MainActor
     func presentFireConfirmation(on viewController: UIViewController,
                                  attachPopoverTo source: AnyObject,
                                  onConfirm: @escaping () -> Void,
@@ -36,7 +45,9 @@ struct FireConfirmationPresenter {
             return
         }
         
-        let viewModel = makeViewModel(dismissing: viewController, onConfirm: onConfirm, onCancel: onCancel)
+        let viewModel = makeViewModel(dismissing: viewController,
+                                      onConfirm: onConfirm,
+                                      onCancel: onCancel)
         let hostingController = makeHostingController(with: viewModel)
         let presentingWidth = viewController.view.frame.width
         
@@ -47,10 +58,16 @@ struct FireConfirmationPresenter {
         viewController.present(hostingController, animated: true)
     }
     
+    @MainActor
     private func makeViewModel(dismissing viewController: UIViewController,
                                onConfirm: @escaping () -> Void,
                                onCancel: @escaping () -> Void) -> FireConfirmationViewModel {
         FireConfirmationViewModel(
+            tabsModel: tabsModel,
+            historyManager: historyManager,
+            fireproofing: fireproofing,
+            aiChatSettings: aiChatSettings,
+            keyValueFilesStore: keyValueFilesStore,
             onConfirm: { [weak viewController] in
                 viewController?.dismiss(animated: true) {
                     onConfirm()

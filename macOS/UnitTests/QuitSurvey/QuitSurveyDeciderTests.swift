@@ -25,6 +25,7 @@ import SharedTestUtilities
 // MARK: - Mocks
 
 final class MockQuitSurveyPersistor: QuitSurveyPersistor {
+    var pendingReturnUserReasons: String?
     var hasQuitAppBefore: Bool = false
 }
 
@@ -157,29 +158,22 @@ final class QuitSurveyDeciderTests: XCTestCase {
         XCTAssertTrue(decider.shouldShowQuitSurvey)
     }
 
-    func testWhenUserInstalled13DaysAgoThenShouldShowSurvey() {
-        installDate = currentDate.addingTimeInterval(-13 * 24 * 60 * 60)
+    func testWhenUserInstalled3DaysAgoThenShouldShowSurvey() {
+        installDate = currentDate.addingTimeInterval(-3 * 24 * 60 * 60)
         createDecider()
 
         XCTAssertTrue(decider.shouldShowQuitSurvey)
     }
 
-    func testWhenUserInstalled14DaysAgoThenShouldShowSurvey() {
-        installDate = currentDate.addingTimeInterval(-14 * 24 * 60 * 60)
-        createDecider()
-
-        XCTAssertTrue(decider.shouldShowQuitSurvey)
-    }
-
-    func testWhenUserInstalled15DaysAgoThenShouldNotShowSurvey() {
-        installDate = currentDate.addingTimeInterval(-15 * 24 * 60 * 60)
+    func testWhenUserInstalled4DaysAgoThenShouldNotShowSurvey() {
+        installDate = currentDate.addingTimeInterval(-4 * 24 * 60 * 60)
         createDecider()
 
         XCTAssertFalse(decider.shouldShowQuitSurvey)
     }
 
-    func testWhenUserInstalled30DaysAgoThenShouldNotShowSurvey() {
-        installDate = currentDate.addingTimeInterval(-30 * 24 * 60 * 60)
+    func testWhenUserInstalled14DaysAgoThenShouldNotShowSurvey() {
+        installDate = currentDate.addingTimeInterval(-14 * 24 * 60 * 60)
         createDecider()
 
         XCTAssertFalse(decider.shouldShowQuitSurvey)

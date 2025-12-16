@@ -22,6 +22,7 @@ import XCTest
 final class DataClientTests: XCTestCase {
     private var client: DataClient!
     private var dataProvider: CapturingDataProvider!
+    private var styleProvider: MockStyleProvider!
     private var actionsHandler: CapturingActionsHandler!
     private var errorHandler: CapturingErrorHandler!
     private var userScript: HistoryViewUserScript!
@@ -30,9 +31,10 @@ final class DataClientTests: XCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
         dataProvider = CapturingDataProvider()
+        styleProvider = MockStyleProvider()
         actionsHandler = CapturingActionsHandler()
         errorHandler = CapturingErrorHandler()
-        client = DataClient(dataProvider: dataProvider, actionsHandler: actionsHandler, errorHandler: errorHandler)
+        client = DataClient(dataProvider: dataProvider, styleProvider: styleProvider, actionsHandler: actionsHandler, errorHandler: errorHandler)
 
         userScript = HistoryViewUserScript()
         messageHelper = .init(userScript: userScript)
@@ -44,6 +46,17 @@ final class DataClientTests: XCTestCase {
     func testThatInitialSetupReturnsConfiguration() async throws {
         let configuration: DataModel.Configuration = try await messageHelper.handleMessage(named: .initialSetup)
         XCTAssertEqual(configuration.platform, .init(name: "macos"))
+    }
+
+    func testThatInitialSetupReturnsThemeAndVariant() async throws {
+        let expectedThemeApperance = "dark"
+        let expectedThemeName = "violet"
+        styleProvider.themeAppearance = expectedThemeApperance
+        styleProvider.themeName = expectedThemeName
+
+        let configuration: DataModel.Configuration = try await messageHelper.handleMessage(named: .initialSetup)
+        XCTAssertEqual(configuration.theme, expectedThemeApperance)
+        XCTAssertEqual(configuration.themeVariant, expectedThemeName)
     }
 
     func testThatInitialSetupResetsDataProviderCache() async throws {

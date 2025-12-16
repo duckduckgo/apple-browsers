@@ -46,6 +46,7 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
         var isShowingFAQView: Bool = false
         var isShowingLearnMoreView: Bool = false
         var isShowingPlansView: Bool = false
+        var isShowingUpgradeView: Bool = false
         var subscriptionInfo: DuckDuckGoSubscription?
         var isLoadingSubscriptionInfo: Bool = false
 
@@ -74,8 +75,6 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
 
     public let usesUnifiedFeedbackForm: Bool
 
-    @Published var showRebrandingMessage: Bool = false
-
     /// Returns the tier badge variant to display, or nil if badge should not be shown
     /// Shows badge if tier is Pro, or if Pro tier purchase feature flag is enabled
     var tierBadgeToDisplay: TierBadgeView.Variant? {
@@ -99,6 +98,55 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
         return featureFlagger.isFeatureOn(.allowProTierPurchase) || subscriptionInfo.tier == .pro
     }
 
+    /// Returns true if "Upgrade" section should be shown
+    /// Requirements:
+    /// - Subscription is active
+    /// - Pro tier purchase feature flag is enabled
+    /// - Backend reports available upgrades
+    var shouldShowUpgrade: Bool {
+        guard let subscriptionInfo = state.subscriptionInfo,
+              subscriptionInfo.isActive else {
+            return false
+        }
+        guard featureFlagger.isFeatureOn(.allowProTierPurchase) else { return false }
+        return firstAvailableUpgradeTier != nil
+    }
+
+    /// Returns the first available upgrade tier name, sorted by order (lowest order first)
+    var firstAvailableUpgradeTier: String? {
+        state.subscriptionInfo?.availableChanges?.upgrade
+            .sorted { $0.order < $1.order }
+            .first?.tier
+    }
+
+    /// Handles navigation to plans page based on subscription platform
+    /// - Parameters:
+    ///   - goToUpgrade: If true, navigates to /plans?goToUpgrade=true for direct upgrade flow
+    func navigateToPlans(goToUpgrade: Bool = false) {
+        guard let platform = state.subscriptionInfo?.platform else { return }
+
+        switch platform {
+        case .apple:
+            if goToUpgrade {
+                state.isShowingUpgradeView = true
+            } else {
+                state.isShowingPlansView = true
+            }
+        case .google:
+            displayGoogleView(true)
+        case .stripe:
+            Task { await manageStripeSubscription() }
+        case .unknown:
+            displayInternalSubscriptionNotice(true)
+        }
+    }
+
+    func displayUpgradeView(_ value: Bool) {
+        if value != state.isShowingUpgradeView {
+            state.isShowingUpgradeView = value
+        }
+    }
+
     /// Handles the "View All Plans" action based on subscription platform
     /// - For Apple: signals to show plans webview
     /// - For Google: signals to show Google info screen
@@ -120,7 +168,6 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
     }
 
     private let keyValueStorage: KeyValueStoring
-    private let bannerDismissedKey = "SubscriptionSettingsV2BannerDismissed"
 
     init(subscriptionManager: SubscriptionManagerV2 = AppDependencyProvider.shared.subscriptionManagerV2!,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
@@ -134,8 +181,6 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
         self.state = State(faqURL: subscriptionFAQURL, learnMoreURL: learnMoreURL, userScriptsDependencies: userScriptsDependencies)
         self.usesUnifiedFeedbackForm = subscriptionManager.isUserAuthenticated
         self.keyValueStorage = keyValueStorage
-        let rebrandingMessageDismissed = keyValueStorage.object(forKey: bannerDismissedKey) as? Bool ?? false
-        self.showRebrandingMessage = !rebrandingMessageDismissed
         setupNotificationObservers()
     }
 
@@ -407,11 +452,6 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
         if UIApplication.shared.canOpenURL(url) {
             UIApplication.shared.open(url)
         }
-    }
-
-    func dismissRebrandingMessage() {
-        keyValueStorage.set(true, forKey: bannerDismissedKey)
-        showRebrandingMessage = false
     }
 
     deinit {

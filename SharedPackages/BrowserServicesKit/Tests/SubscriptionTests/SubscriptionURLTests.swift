@@ -54,7 +54,8 @@ final class SubscriptionURLTests: XCTestCase {
                                               .activationFlowSuccess,
                                               .manageEmail,
                                               .identityTheftRestoration,
-                                              .plans]
+                                              .plans,
+                                              .upgrade]
 
         for urlType in allURLTypes {
             // When
@@ -76,7 +77,8 @@ final class SubscriptionURLTests: XCTestCase {
                                               .activationFlowSuccess,
                                               .manageEmail,
                                               .identityTheftRestoration,
-                                              .plans]
+                                              .plans,
+                                              .upgrade]
 
         for urlType in allURLTypes {
             // When
@@ -128,6 +130,42 @@ final class SubscriptionURLTests: XCTestCase {
 
         // When
         let url = SubscriptionURL.plans.subscriptionURL(withCustomBaseURL: customBaseURL, environment: .production)
+
+        // Then
+        XCTAssertEqual(url, expectedURL)
+    }
+
+    // MARK: - Upgrade URL Tests
+
+    func testUpgradeURLForProduction() throws {
+        // Given
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans?goToUpgrade=true")!
+
+        // When
+        let url = SubscriptionURL.upgrade.subscriptionURL(environment: .production)
+
+        // Then
+        XCTAssertEqual(url, expectedURL)
+    }
+
+    func testUpgradeURLForStaging() throws {
+        // Given
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans?goToUpgrade=true&environment=staging")!
+
+        // When
+        let url = SubscriptionURL.upgrade.subscriptionURL(environment: .staging)
+
+        // Then
+        XCTAssertEqual(url, expectedURL)
+    }
+
+    func testCustomBaseSubscriptionURLForUpgradeURL() throws {
+        // Given
+        let customBaseURL = URL(string: "https://dax.duck.co/subscriptions")!
+        let expectedURL = URL(string: "https://dax.duck.co/subscriptions/plans?goToUpgrade=true")!
+
+        // When
+        let url = SubscriptionURL.upgrade.subscriptionURL(withCustomBaseURL: customBaseURL, environment: .production)
 
         // Then
         XCTAssertEqual(url, expectedURL)
@@ -323,6 +361,73 @@ final class SubscriptionURLTests: XCTestCase {
 
         // When
         let components = SubscriptionURL.purchaseURLComponentsWithOriginAndFeaturePage(origin: origin, featurePage: featurePage, environment: .production)
+
+        // Then
+        XCTAssertNotNil(components)
+        XCTAssertEqual(components?.url, expectedURL)
+    }
+
+    // MARK: - plansURLComponents Tests
+
+    func testPlansURLComponentsForProduction() throws {
+        // Given
+        let origin = "funnel_appsettings_ios"
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans?origin=funnel_appsettings_ios")!
+
+        // When
+        let components = SubscriptionURL.plansURLComponents(origin, environment: .production)
+
+        // Then
+        XCTAssertNotNil(components)
+        XCTAssertEqual(components?.url, expectedURL)
+    }
+
+    func testPlansURLComponentsForStaging() throws {
+        // Given
+        let origin = "funnel_appsettings_ios"
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans?environment=staging&origin=funnel_appsettings_ios")!
+
+        // When
+        let components = SubscriptionURL.plansURLComponents(origin, environment: .staging)
+
+        // Then
+        XCTAssertNotNil(components)
+        XCTAssertEqual(components?.url, expectedURL)
+    }
+
+    func testPlansURLComponentsWithGoToUpgradeForProduction() throws {
+        // Given
+        let origin = "funnel_appsettings_ios"
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans?goToUpgrade=true&origin=funnel_appsettings_ios")!
+
+        // When
+        let components = SubscriptionURL.plansURLComponents(origin, goToUpgrade: true, environment: .production)
+
+        // Then
+        XCTAssertNotNil(components)
+        XCTAssertEqual(components?.url, expectedURL)
+    }
+
+    func testPlansURLComponentsWithGoToUpgradeForStaging() throws {
+        // Given
+        let origin = "funnel_appsettings_ios"
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans?goToUpgrade=true&environment=staging&origin=funnel_appsettings_ios")!
+
+        // When
+        let components = SubscriptionURL.plansURLComponents(origin, goToUpgrade: true, environment: .staging)
+
+        // Then
+        XCTAssertNotNil(components)
+        XCTAssertEqual(components?.url, expectedURL)
+    }
+
+    func testPlansURLComponentsWithEmptyOrigin() throws {
+        // Given
+        let origin = ""
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions/plans?origin=")!
+
+        // When
+        let components = SubscriptionURL.plansURLComponents(origin, environment: .production)
 
         // Then
         XCTAssertNotNil(components)

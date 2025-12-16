@@ -26,10 +26,10 @@ import DuckUI
 struct SettingsDataClearingView: View {
 
     @EnvironmentObject var settingsViewModel: SettingsViewModel
-    @StateObject private var viewModel: DataClearingSettingsViewModel
+    @ObservedObject private var viewModel: DataClearingSettingsViewModel
     
     init(viewModel: DataClearingSettingsViewModel) {
-        _viewModel = StateObject(wrappedValue: viewModel)
+        self.viewModel = viewModel
     }
 
     var body: some View {

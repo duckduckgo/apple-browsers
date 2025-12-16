@@ -27,6 +27,7 @@ extension HistoryViewActionsManager {
         historyCoordinator: HistoryDataSource,
         bookmarksHandler: HistoryViewBookmarksHandling,
         featureFlagger: FeatureFlagger,
+        themeManager: ThemeManaging,
         fireproofStatusProvider: DomainFireproofStatusProviding,
         tld: TLD,
         fire: @escaping () async -> FireProtocol
@@ -37,12 +38,16 @@ extension HistoryViewActionsManager {
             featureFlagger: featureFlagger,
             tld: tld
         )
+        let styleProvider = HistoryViewStyleProvider(themeManager: themeManager)
+
         self.init(scriptClients: [
             DataClient(
                 dataProvider: dataProvider,
+                styleProvider: styleProvider,
                 actionsHandler: HistoryViewActionsHandler(dataProvider: dataProvider, bookmarksHandler: bookmarksHandler),
                 errorHandler: HistoryViewErrorHandler()
-            )
+            ),
+            StyleClient(styleProviding: styleProvider)
         ])
     }
 }

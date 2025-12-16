@@ -412,13 +412,20 @@ private struct QuitSurveyNegativeView: View {
                 .padding([.leading, .trailing], 24)
 
             Button {
-                viewModel.quit()
+                viewModel.submitFeedback()
             } label: {
-                Text(UserText.quitSurveySubmitAndQuit)
-                    .frame(maxWidth: .infinity)
+                HStack(spacing: 8) {
+                    if viewModel.isSubmitting {
+                        ProgressView()
+                            .controlSize(.small)
+                            .progressViewStyle(.circular)
+                    }
+                    Text(viewModel.isSubmitting ? UserText.quitSurveySubmitting : UserText.quitSurveySubmitAndQuit)
+                }
+                .frame(maxWidth: .infinity)
             }
-            .disabled(!viewModel.shouldEnableSubmit)
-            .buttonStyle(DefaultActionButtonStyle(enabled: viewModel.shouldEnableSubmit))
+            .disabled(!viewModel.shouldEnableSubmit || viewModel.isSubmitting)
+            .buttonStyle(DefaultActionButtonStyle(enabled: viewModel.shouldEnableSubmit && !viewModel.isSubmitting))
             .padding([.leading, .trailing], 24)
             .padding(.bottom, 16)
         }

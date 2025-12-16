@@ -55,18 +55,51 @@ final class QuitSurveyViewModel: ObservableObject {
     @Published var selectedOptions: Set<String> = []
     @Published var feedbackText: String = ""
     @Published private(set) var autoQuitCountdown: Int = 5
+    @Published private(set) var isSubmitting: Bool = false
 
     // MARK: - Configuration
 
-    let availableOptions: [QuitSurveyOption] = [
-        QuitSurveyOption(id: "browser-is-slow", text: UserText.quitSurveyOptionBrowserIsSlow),
-        QuitSurveyOption(id: "browser-doesnt-work-as-expected", text: UserText.quitSurveyOptionBrowserDoesntWork),
-        QuitSurveyOption(id: "no-extensions", text: UserText.quitSurveyOptionNoExtensions),
-        QuitSurveyOption(id: "websites-dont-work-as-expected", text: UserText.quitSurveyOptionWebsitesDontWork),
-        QuitSurveyOption(id: "issues-importing-my-stuff", text: UserText.quitSurveyOptionImportIssues),
-        QuitSurveyOption(id: "not-seeing-privacy-benefits", text: UserText.quitSurveyOptionNoPrivacyBenefits),
-        QuitSurveyOption(id: "something-else", text: UserText.quitSurveyOptionSomethingElse)
+    private static let allOptions: [QuitSurveyOption] = [
+        QuitSurveyOption(id: "asked-to-disable-ad-blocker", text: UserText.quitSurveyOptionAskedToDisableAdBlocker),
+        QuitSurveyOption(id: "pages-froze", text: UserText.quitSurveyOptionPagesFroze),
+        QuitSurveyOption(id: "pages-loaded-slowly", text: UserText.quitSurveyOptionPagesLoadedSlowly),
+        QuitSurveyOption(id: "more-captchas", text: UserText.quitSurveyOptionMoreCaptchas),
+        QuitSurveyOption(id: "couldnt-check-out", text: UserText.quitSurveyOptionCouldntCheckOut),
+        QuitSurveyOption(id: "couldnt-sign-in-to-bank", text: UserText.quitSurveyOptionCouldntSignInToBank),
+        QuitSurveyOption(id: "videos-didnt-play", text: UserText.quitSurveyOptionVideosDidntPlay),
+        QuitSurveyOption(id: "browser-crashed", text: UserText.quitSurveyOptionBrowserCrashed),
+        QuitSurveyOption(id: "tabs-opened-slowly", text: UserText.quitSurveyOptionTabsOpenedSlowly),
+        QuitSurveyOption(id: "slowed-my-computer", text: UserText.quitSurveyOptionSlowedMyComputer),
+        QuitSurveyOption(id: "slow-to-open", text: UserText.quitSurveyOptionSlowToOpen),
+        QuitSurveyOption(id: "couldnt-disable-ai", text: UserText.quitSurveyOptionCouldntDisableAI),
+        QuitSurveyOption(id: "bad-ai-responses", text: UserText.quitSurveyOptionBadAIResponses),
+        QuitSurveyOption(id: "hard-to-find-settings", text: UserText.quitSurveyOptionHardToFindSettings),
+        QuitSurveyOption(id: "hard-to-manage-downloads", text: UserText.quitSurveyOptionHardToManageDownloads),
+        QuitSurveyOption(id: "shortcuts-didnt-work", text: UserText.quitSurveyOptionShortcutsDidntWork),
+        QuitSurveyOption(id: "navigation-unfamiliar", text: UserText.quitSurveyOptionNavigationUnfamiliar),
+        QuitSurveyOption(id: "fire-button-removed-too-much", text: UserText.quitSurveyOptionFireButtonRemovedTooMuch),
+        QuitSurveyOption(id: "couldnt-find-incognito", text: UserText.quitSurveyOptionCouldntFindIncognito),
+        QuitSurveyOption(id: "password-manager-unavailable", text: UserText.quitSurveyOptionPasswordManagerUnavailable),
+        QuitSurveyOption(id: "ad-blocker-didnt-work", text: UserText.quitSurveyOptionAdBlockerDidntWork),
+        QuitSurveyOption(id: "couldnt-skip-onboarding", text: UserText.quitSurveyOptionCouldntSkipOnboarding),
+        QuitSurveyOption(id: "onboarding-wasnt-helpful", text: UserText.quitSurveyOptionOnboardingWasntHelpful),
+        QuitSurveyOption(id: "couldnt-import-bookmarks", text: UserText.quitSurveyOptionCouldntImportBookmarks),
+        QuitSurveyOption(id: "couldnt-import-passwords", text: UserText.quitSurveyOptionCouldntImportPasswords),
+        QuitSurveyOption(id: "couldnt-import-pay-details", text: UserText.quitSurveyOptionCouldntImportPayDetails),
+        QuitSurveyOption(id: "couldnt-change-search-engine", text: UserText.quitSurveyOptionCouldntChangeSearchEngine),
+        QuitSurveyOption(id: "unexpected-search-results", text: UserText.quitSurveyOptionUnexpectedSearchResults),
+        QuitSurveyOption(id: "benefits-unclear", text: UserText.quitSurveyOptionBenefitsUnclear),
+        QuitSurveyOption(id: "privacy-concerns", text: UserText.quitSurveyOptionPrivacyConcerns),
+        QuitSurveyOption(id: "unsure-how-history-is-handled", text: UserText.quitSurveyOptionUnsureHowHistoryIsHandled),
+        QuitSurveyOption(id: "just-trying-it-out", text: UserText.quitSurveyOptionJustTryingItOut),
+        QuitSurveyOption(id: "not-ready-to-switch-browsers", text: UserText.quitSurveyOptionNotReadyToSwitchBrowsers),
+        QuitSurveyOption(id: "had-to-re-sign-in", text: UserText.quitSurveyOptionHadToReSignIn),
+        QuitSurveyOption(id: "sign-in-hassles", text: UserText.quitSurveyOptionSignInHassles)
     ]
+
+    private static let somethingElseOption = QuitSurveyOption(id: "something-else", text: UserText.quitSurveyOptionSomethingElse)
+
+    let availableOptions: [QuitSurveyOption]
 
     private let feedbackSender: FeedbackSenderImplementing
     private let onQuit: () -> Void
@@ -90,6 +123,10 @@ final class QuitSurveyViewModel: ObservableObject {
     ) {
         self.feedbackSender = feedbackSender
         self.onQuit = onQuit
+
+        // Select 8 random options + "Something else"
+        let randomOptions = Array(Self.allOptions.shuffled().prefix(8))
+        self.availableOptions = randomOptions + [Self.somethingElseOption]
     }
 
     // MARK: - Actions
@@ -119,18 +156,23 @@ final class QuitSurveyViewModel: ObservableObject {
     }
 
     func submitFeedback() {
+        isSubmitting = true
+
         let feedback = Feedback.from(
             selectedPillIds: Array(selectedOptions),
             text: feedbackText,
             appVersion: AppVersion.shared.versionNumber,
-            category: .bug,
-            problemCategory: ProblemCategory.allCategories.first { $0.isSomethingElseCategory } ?? ProblemCategory.allCategories.first!
+            category: .firstTimeQuitSurvey,
+            problemCategory: Self.firstTimeQuitSurveyCategory
         )
 
-        feedbackSender.sendFeedback(feedback)
-        Logger.general.debug("Quit survey feedback submitted")
-
-        quit()
+        feedbackSender.sendFeedback(feedback) { [weak self] in
+            DispatchQueue.main.async {
+                Logger.general.debug("Quit survey feedback submitted")
+                self?.isSubmitting = false
+                self?.quit()
+            }
+        }
     }
 
     func quit() {
@@ -167,4 +209,8 @@ final class QuitSurveyViewModel: ObservableObject {
     deinit {
         autoQuitTimer?.invalidate()
     }
+
+    private static let firstTimeQuitSurveyCategory = ProblemCategory(id: "first-time-quit-survey",
+                                                                     text: "First time quit survey",
+                                                                     subcategories: [])
 }

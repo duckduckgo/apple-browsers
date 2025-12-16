@@ -294,8 +294,7 @@ public final class DataBrokerProtectionAgentManager {
 
 extension DataBrokerProtectionAgentManager {
     func fireMonitoringPixels() async {
-        // Only send pixels for authenticated users
-        guard await authenticationManager.isUserAuthenticated else { return }
+        let isAuthenticated = await authenticationManager.isUserAuthenticated
 
         let database = jobDependencies.database
         let engagementPixels = DataBrokerProtectionEngagementPixels(database: database, handler: sharedPixelsHandler, repository: engagementPixelRepository)
@@ -303,9 +302,13 @@ extension DataBrokerProtectionAgentManager {
         let statsPixels = DataBrokerProtectionStatsPixels(database: database, handler: sharedPixelsHandler, repository: statsPixelRepository)
 
         // This will fire the DAU/WAU/MAU pixels,
-        engagementPixels.fireEngagementPixel()
+        engagementPixels.fireEngagementPixel(isAuthenticated: isAuthenticated)
         // This will try to fire the event weekly report pixels
-        eventPixels.tryToFireWeeklyPixels()
+        eventPixels.tryToFireWeeklyPixels(isAuthenticated: isAuthenticated)
+
+        // Stats pixels only fire for authenticated users (they relate to opt-outs)
+        guard isAuthenticated else { return }
+
         // This will try to fire the stats pixels
         statsPixels.tryToFireStatsPixels()
 

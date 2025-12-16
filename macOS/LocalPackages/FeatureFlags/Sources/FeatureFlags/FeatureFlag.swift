@@ -277,6 +277,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212357739558636?focus=true
     case dataImportWideEventMeasurement
+
+    /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1212437820560561?focus=true
+    case memoryUsageMonitor
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -386,7 +389,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .webNotifications,
                 .newPermissionView,
                 .firstTimeQuitSurvey,
-                .dataImportWideEventMeasurement:
+                .dataImportWideEventMeasurement,
+                .memoryUsageMonitor:
             return true
         case .sslCertificatesBypass,
                 .appendAtbToSerpQueries,
@@ -565,8 +569,9 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .dataImportWideEventMeasurement:
             return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
+        case .memoryUsageMonitor:
+            return .disabled
         }
-
     }
 }
 

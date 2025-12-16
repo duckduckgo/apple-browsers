@@ -19,6 +19,7 @@
 
 import AIChat
 import Foundation
+import UIKit
 
 /// Protocol for tab controllers that support AIChat content loading.
 protocol AITabController {
@@ -36,6 +37,9 @@ protocol AITabController {
     
     /// Opens a new AI chat in a new tab.
     func openNewChatInNewTab()
+    
+    /// Presents the contextual AI chat sheet over the current tab. Re-presents an active chat if it exists.
+    func presentContextualAIChatSheet(from presentingViewController: UIViewController)
 }
 
 // MARK: - AITabController
@@ -78,5 +82,25 @@ extension TabViewController: AITabController {
     func reloadAIChatIfNeeded() {
         guard isAITab else { return }
         webView.reload()
+    }
+
+    /// Presents the contextual AI chat sheet over the current tab. Re-presents an active chat if it exists.
+    ///
+    /// - Parameter presentingViewController: The view controller to present the sheet from.
+    func presentContextualAIChatSheet(from presentingViewController: UIViewController) {
+        aiChatContextualSheetCoordinator.presentSheet(from: presentingViewController)
+    }
+}
+
+// MARK: - AIChatContextualSheetCoordinatorDelegate
+extension TabViewController: AIChatContextualSheetCoordinatorDelegate {
+
+    func aiChatContextualSheetCoordinator(_ coordinator: AIChatContextualSheetCoordinator, didRequestToLoad url: URL) {
+        delegate?.tab(self, didRequestNewTabForUrl: url, openedByPage: false, inheritingAttribution: nil)
+    }
+
+    func aiChatContextualSheetCoordinatorDidRequestExpand(_ coordinator: AIChatContextualSheetCoordinator) {
+        let duckAIURL = aiChatContentHandler.buildQueryURL(query: nil, autoSend: false, tools: nil)
+        delegate?.tab(self, didRequestNewTabForUrl: duckAIURL, openedByPage: false, inheritingAttribution: nil)
     }
 }

@@ -63,5 +63,52 @@
                 "description": "Loading time of the new tab page in milliseconds"
             }
         ]
+    },
+    // https://app.asana.com/1/137249556945/project/1209825025475019/task/1212347087296991?focus=true
+    "m_mac_new-tab-page_next-steps_clicked": {
+        "description": "Fires when a user clicks on a Next Steps card on the New Tab Page. Used to understand onboarding engagement.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "key",
+                "type": "string",
+                "description": "Next Steps card that was clicked",
+                "enum": ["duckplayer", "emailProtection", "bringStuff", "addAppToDockMac", "defaultApp", "subscription"]
+            }
+        ]
+    },
+    // https://app.asana.com/1/137249556945/project/1209825025475019/task/1212347087296991?focus=true
+    "m_mac_new-tab-page_next-steps_dismissed": {
+        "description": "Fires when a user dismisses a Next Steps card on the New Tab Page. Used to understand onboarding engagement.",
+        "owners": ["rachelmcr"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": [
+            "appVersion",
+            {
+                "key": "key",
+                "type": "string",
+                "description": "Next Steps card that was dismissed",
+                "enum": ["duckplayer", "emailProtection", "bringStuff", "addAppToDockMac", "defaultApp", "subscription"]
+            }
+        ]
+    },
+    // https://app.asana.com/1/137249556945/project/1209825025475019/task/1212347087296991?focus=true
+    "m_mac_new-tab-page_next-steps_shown": {
+        "description": "Fires when a Next Steps card is shown on the New Tab Page. Used to understand onboarding engagement.",
+        "owners": ["rachelmcr"],
+        "triggers": ["new_tab"],
+        "suffixes": [],
+        "parameters": [
+            {
+                "key": "key",
+                "type": "string",
+                "description": "Next Steps card that was shown",
+                "enum": ["duckplayer", "emailProtection", "bringStuff", "addAppToDockMac", "defaultApp", "subscription"]
+            }
+        ]
     }
 }

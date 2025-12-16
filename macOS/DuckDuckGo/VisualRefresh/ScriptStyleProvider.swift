@@ -18,8 +18,7 @@
 
 import Foundation
 import Combine
-import HistoryView
-import SpecialErrorPages
+import Common
 
 final class ScriptStyleProvider {
     let themeManager: ThemeManaging
@@ -53,6 +52,6 @@ final class ScriptStyleProvider {
 
 /// This Style Provider component is used by the History View and Special Pages
 ///
-extension ScriptStyleProvider: SpecialErrorPageStyleProviding, HistoryView.StyleProviding {
-    
+extension ScriptStyleProvider: ScriptStyleProviding {
+
 }

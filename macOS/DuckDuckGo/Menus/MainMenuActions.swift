@@ -710,6 +710,11 @@ extension AppDelegate {
         UserDefaults.standard.set(Date.monthAgo, forKey: UserDefaultsWrapper<Any>.Key.firstLaunchDate.rawValue)
     }
 
+    @objc func resetQuitSurveyWasShown(_ sender: Any?) {
+        let persistor = QuitSurveyUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
+        persistor.hasQuitAppBefore = false
+    }
+
     @objc func resetTipKit(_ sender: Any?) {
         TipKitDebugOptionsUIActionHandler().resetTipKitTapped()
     }

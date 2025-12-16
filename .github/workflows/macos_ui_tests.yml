@@ -355,6 +355,15 @@ jobs:
         path: "macOS/DerivedData/Logs/Test/*.xcresult"
         retention-days: 7
 
+    - name: Upload app console log
+      uses: actions/upload-artifact@v4
+      if: always() && steps.check-failures.outputs.had_failures == 'true'
+      with:
+        name: "app-console-${{ matrix.test }}-macos${{ matrix.os-version }}"
+        path: "macOS/app-console.log"
+        if-no-files-found: warn
+        retention-days: 7
+
     - name: Organize logs for upload
       if: failure() || cancelled()
       run: |

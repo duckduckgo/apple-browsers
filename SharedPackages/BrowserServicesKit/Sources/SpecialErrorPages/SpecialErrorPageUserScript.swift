@@ -32,17 +32,9 @@ public protocol SpecialErrorPageUserScriptDelegate: AnyObject {
 
 }
 
-public protocol SpecialErrorPageStyleProviding: AnyObject {
-    var themeAppearance: String { get }
-    var themeName: String { get }
-    var themeStylePublisher: AnyPublisher<(appearance: String, themeName: String), Never> { get }
-}
-
 struct LocalizedInfo: Encodable, Equatable {
-
     let title: String
     let note: String
-
 }
 
 public final class SpecialErrorPageUserScript: NSObject, Subfeature {
@@ -72,9 +64,9 @@ public final class SpecialErrorPageUserScript: NSObject, Subfeature {
 
     private let localeStrings: String?
     private let languageCode: String
-    private let styleProvider: SpecialErrorPageStyleProviding?
+    private let styleProvider: ScriptStyleProviding?
 
-    public init(localeStrings: String?, languageCode: String, styleProvider: SpecialErrorPageStyleProviding? = nil) {
+    public init(localeStrings: String?, languageCode: String, styleProvider: ScriptStyleProviding? = nil) {
         self.localeStrings = localeStrings
         self.languageCode = languageCode
         self.styleProvider = styleProvider

@@ -25,7 +25,11 @@ import DesignResourcesKitIcons
 struct SettingsDataClearingView: View {
 
     @EnvironmentObject var settingsViewModel: SettingsViewModel
-    @StateObject private var viewModel = DataClearingSettingsViewModel()
+    @StateObject private var viewModel: DataClearingSettingsViewModel
+    
+    init(viewModel: DataClearingSettingsViewModel) {
+        _viewModel = StateObject(wrappedValue: viewModel)
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -46,6 +50,7 @@ struct SettingsDataClearingView: View {
                 Section {
                     // Fireproof Sites
                     SettingsCellView(label: UserText.settingsFireproofSites,
+                                     subtitle: viewModel.fireproofedSitesSubtitle,
                                       action: { settingsViewModel.presentLegacyView(.fireproofSites) },
                                      disclosureIndicator: true,
                                      isButton: true)

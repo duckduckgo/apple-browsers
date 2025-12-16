@@ -238,6 +238,16 @@ final class SettingsViewModel: ObservableObject {
             }
         )
     }
+    
+    // MARK: - Child View Models
+    
+    @MainActor
+    private(set) lazy var dataClearingViewModel: DataClearingSettingsViewModel = {
+        DataClearingSettingsViewModel(
+            appSettings: appSettings,
+            fireproofing: legacyViewProvider.fireproofing
+        )
+    }()
 
     // MARK: - Actions
 

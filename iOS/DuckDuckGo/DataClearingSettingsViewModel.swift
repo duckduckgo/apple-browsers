@@ -25,9 +25,11 @@ import Core
 final class DataClearingSettingsViewModel: ObservableObject {
     
     // MARK: - Dependencies
+
     private lazy var featureFlagger = AppDependencyProvider.shared.featureFlagger
     private let appSettings: AppSettings
     private let animator: FireButtonAnimator
+    private let fireproofing: Fireproofing
     
     // MARK: - Delegate
         
@@ -53,6 +55,10 @@ final class DataClearingSettingsViewModel: ObservableObject {
         return shouldIncludeAIChat ? UserText.actionForgetAllWithAIChat : UserText.actionForgetAll
     }
     
+    var fireproofedSitesSubtitle: String {
+        UserText.settingsFireproofedSitesSubtitle(withCount: fireproofedSitesCount)
+    }
+    
     // MARK: - Bindings
     
     var fireButtonAnimationBinding: Binding<FireButtonAnimationType> {
@@ -76,12 +82,20 @@ final class DataClearingSettingsViewModel: ObservableObject {
     
     // MARK: - Initialization
     
-    init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings) {
+    init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
+         fireproofing: Fireproofing) {
         self.appSettings = appSettings
         self.animator = FireButtonAnimator(appSettings: appSettings)
         self.fireButtonAnimation = appSettings.currentFireButtonAnimation
+        self.fireproofing = fireproofing
     }
     
     // MARK: - Actions
     
+    
+    // MARK: - Private Helpers
+    
+    private var fireproofedSitesCount: Int {
+        fireproofing.allowedDomains.count
+    }
 }

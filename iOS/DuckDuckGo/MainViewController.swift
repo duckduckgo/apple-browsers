@@ -189,7 +189,6 @@ class MainViewController: UIViewController {
 
     var postClear: (() -> Void)?
     var clearInProgress = false
-    var dataStoreWarmup: DataStoreWarmup? = DataStoreWarmup()
 
     required init?(coder: NSCoder) {
         fatalError("Use init?(code:")
@@ -3556,7 +3555,8 @@ extension MainViewController: TabSwitcherDelegate {
 
     func tabSwitcherDidRequestCloseAll(tabSwitcher: TabSwitcherViewController) {
         Task {
-            await self.forgetTabs()
+            let options = FireOptions.tabs
+            await fireExecutor.burn(options: options, fireContext: .autoClearWhileActive)
             tabSwitcher.dismiss()
         }
     }
@@ -3625,7 +3625,9 @@ extension MainViewController: GestureToolbarButtonDelegate {
     
 }
 
-extension MainViewController: AutoClearWorker {
+// MARK: - Fire Button Logic
+
+extension MainViewController {
 
     func clearNavigationStack() {
         dismissOmniBar()
@@ -3635,55 +3637,6 @@ extension MainViewController: AutoClearWorker {
                 self?.clearNavigationStack()
             }
         }
-    }
-
-    func forgetTabs() async {
-        let options: FireOptions = .tabs
-        await fireExecutor.burn(options: options)
-    }
-
-    func refreshUIAfterClear() {
-        showBars()
-        attachHomeScreen()
-        tabsBarController?.refresh(tabsModel: tabManager.model)
-
-        if !autoClearInProgress {
-            // We don't need to refresh tabs if autoclear is in progress as nothing has happened yet
-            swipeTabsCoordinator?.refresh(tabsModel: tabManager.model)
-        }
-    }
-
-    @MainActor
-    func willStartClearing(_: AutoClear) {
-        autoClearInProgress = true
-    }
-
-    @MainActor
-    func autoClearDidFinishClearing(_: AutoClear, isLaunching: Bool) {
-        autoClearInProgress = false
-        if autoClearShouldRefreshUIAfterClear && isLaunching == false {
-            refreshUIAfterClear()
-        }
-
-        autoClearShouldRefreshUIAfterClear = true
-    }
-
-    @MainActor
-    func forgetData() async {
-        var options: FireOptions = .data
-        if appSettings.autoClearAIChatHistory {
-            options.insert(.aiChats)
-        }
-        await fireExecutor.burn(options: options)
-    }
-
-    @MainActor
-    func forgetData(applicationState: DataStoreWarmup.ApplicationState) async {
-        var options: FireOptions = .data
-        if appSettings.autoClearAIChatHistory {
-            options.insert(.aiChats)
-        }
-        await fireExecutor.burn(options: options, applicationState: applicationState)
     }
 
     func forgetAllWithAnimation(options: FireOptions,
@@ -3720,6 +3673,17 @@ extension MainViewController: AutoClearWorker {
             }
 
             self.daxDialogsManager.clearedBrowserData()
+        }
+    }
+    
+    private func refreshUIAfterClear() {
+        showBars()
+        attachHomeScreen()
+        tabsBarController?.refresh(tabsModel: tabManager.model)
+
+        if !autoClearInProgress {
+            // We don't need to refresh tabs if autoclear is in progress as nothing has happened yet
+            swipeTabsCoordinator?.refresh(tabsModel: tabManager.model)
         }
     }
     

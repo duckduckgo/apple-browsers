@@ -22,18 +22,6 @@ import UIKit
 import Core
 import BrowserServicesKit
 
-protocol AutoClearWorker {
-
-    func clearNavigationStack()
-    func forgetData() async
-    func forgetData(applicationState: DataStoreWarmup.ApplicationState) async
-    func forgetTabs() async
-
-    func willStartClearing(_: AutoClear)
-    func autoClearDidFinishClearing(_: AutoClear, isLaunching: Bool)
-    
-}
-
 protocol AutoClearing {
 
     var isClearingEnabled: Bool { get }

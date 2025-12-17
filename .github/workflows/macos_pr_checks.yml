@@ -561,6 +561,32 @@ jobs:
           git update-index --refresh
           git diff-index --quiet HEAD --
 
+  translation-check:
+    name: Translation Check
+
+    runs-on: ubuntu-latest
+
+    needs: should-run-checks
+    if: github.event_name == 'pull_request' && needs.should-run-checks.outputs.should_run == 'true'
+
+    defaults:
+      run:
+        working-directory: .
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Check translations
+        run: python3 scripts/check_new_string_translations.py --platform macOS
+
   create-asana-task:
     name: Create Asana Task
     needs: [bats, tests, release-build, verify-npm-bundles, private-api]

@@ -344,6 +344,32 @@ jobs:
         pixel-params: |
           runner: ${{ env.RUNS_ON }}
 
+  translation-check:
+    name: Translation Check
+
+    runs-on: ubuntu-latest
+
+    needs: should-run-checks
+    if: github.event_name == 'pull_request' && needs.should-run-checks.outputs.should_run == 'true'
+
+    defaults:
+      run:
+        working-directory: .
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Check translations
+        run: python3 scripts/check_new_string_translations.py --platform iOS
+
   create-asana-task:
     name: Create Asana Task
     needs: [unit-tests, shellcheck, release-build]

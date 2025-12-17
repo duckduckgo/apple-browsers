@@ -25,13 +25,6 @@ private enum AIChatQuickActionsViewConstants {
     static let chipSpacing: CGFloat = 8
 }
 
-// MARK: - Delegate Protocol
-
-/// Delegate protocol for handling quick action selection events.
-public protocol AIChatQuickActionsViewDelegate: AnyObject {
-    func quickActionsView<Action: AIChatQuickActionType>(_ view: AIChatQuickActionsView<Action>, didSelectAction action: Action)
-}
-
 // MARK: - View
 
 /// A vertically stacked container view for quick action chips.
@@ -39,7 +32,7 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
 
     // MARK: - Properties
 
-    public weak var delegate: AIChatQuickActionsViewDelegate?
+    public var onActionSelected: ((Action) -> Void)?
     private var actions: [Action] = []
 
     // MARK: - UI Components
@@ -113,7 +106,7 @@ extension AIChatQuickActionsView: AIChatQuickActionChipViewDelegate {
     public func quickActionChipViewDidTap(_ view: AIChatQuickActionChipView) {
         guard let index = stackView.arrangedSubviews.firstIndex(of: view),
               index < actions.count else { return }
-        delegate?.quickActionsView(self, didSelectAction: actions[index])
+        onActionSelected?(actions[index])
     }
 }
 #endif

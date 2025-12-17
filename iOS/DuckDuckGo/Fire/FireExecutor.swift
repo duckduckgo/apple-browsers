@@ -143,9 +143,9 @@ class FireExecutor: FireExecuting {
         // When granularFireButtonOptions FF is OFF, we use legacy behavior:
         // - AI chats clear automatically with data if autoClearAIChatHistory is enabled
         // When FF is ON, user explicitly chooses whether to clear AI chats via FireOptions
-        let legacyAIChatsEnabled = featureFlagger.isFeatureOn(.granularFireButtonOptions) || appSettings.autoClearAIChatHistory // TODO: - Removed the check when granularFireButtonOptions is removed.
+        let shouldAllowAIChatsBurn = featureFlagger.isFeatureOn(.granularFireButtonOptions) || appSettings.autoClearAIChatHistory // TODO: - Removed the check when granularFireButtonOptions is removed.
         
-        let shouldBurnAIChats = options.contains(.aiChats) && legacyAIChatsEnabled
+        let shouldBurnAIChats = options.contains(.aiChats) && shouldAllowAIChatsBurn
 
         if shouldBurnData { delegate?.willStartBurningData() }
         if shouldBurnAIChats { delegate?.willStartBurningAIHistory() }

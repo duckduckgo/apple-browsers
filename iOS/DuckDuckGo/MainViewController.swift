@@ -2734,7 +2734,7 @@ extension MainViewController: OmniBarDelegate {
         case .website:
             Pixel.fire(pixel: .browsingMenuOpened)
 
-            if tab.isError || tab.link == nil {
+            if tab.isError {
                 Pixel.fire(pixel: .browsingMenuOpenedError)
                 if browsingMenuSheetCapability.isEnabled {
                     Pixel.fire(pixel: .experimentalBrowsingMenuDisplayedError)

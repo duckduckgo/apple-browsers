@@ -3556,7 +3556,7 @@ extension MainViewController: TabSwitcherDelegate {
     func tabSwitcherDidRequestCloseAll(tabSwitcher: TabSwitcherViewController) {
         Task {
             let options = FireOptions.tabs
-            await fireExecutor.burn(options: options, fireContext: .autoClearWhileActive)
+            await fireExecutor.burn(options: options, applicationState: .unknown, fireContext: .autoClearWhileActive)
             tabSwitcher.dismiss()
         }
     }
@@ -3649,7 +3649,7 @@ extension MainViewController {
         fireExecutor.prepare(for: options)
         
         fireButtonAnimator.animate {
-            await self.fireExecutor.burn(options: options, fireContext: .manualFire)
+            await self.fireExecutor.burn(options: options, applicationState: .unknown, fireContext: .manualFire)
             Instruments.shared.endTimedEvent(for: spid)
             self.daxDialogsManager.resumeRegularFlow()
         } onTransitionCompleted: {

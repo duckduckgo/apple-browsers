@@ -1285,7 +1285,7 @@ extension SettingsViewModel {
 
     func forgetAll(with options: FireOptions) {
         Task {
-            await fireExecutor?.burn(options: options, fireContext: .manualFire)
+            await fireExecutor?.burn(options: options, applicationState: .unknown, fireContext: .manualFire)
         }
     }
 

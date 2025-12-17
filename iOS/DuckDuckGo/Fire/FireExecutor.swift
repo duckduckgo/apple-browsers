@@ -60,14 +60,6 @@ protocol FireExecuting: AnyObject {
     var delegate: FireExecutorDelegate? { get set }
 }
 
-extension FireExecuting {
-    @MainActor
-    func burn(options: FireOptions,
-              fireContext: FireContext) async {
-        await burn(options: options, applicationState: .unknown, fireContext: fireContext)
-    }
-}
-
 class FireExecutor: FireExecuting {
     
     // MARK: - Variables
@@ -137,6 +129,9 @@ class FireExecutor: FireExecuting {
     func burn(options: FireOptions,
               applicationState: DataStoreWarmup.ApplicationState = .unknown,
               fireContext: FireContext) async {
+        if delegate == nil {
+            assertionFailure("Delegate should be not be nil. This leads to unexpected behavior.")
+        }
         delegate?.willStartBurning(fireContext: fireContext)
         if options.contains(.tabs) {
             delegate?.willStartBurningTabs()
@@ -145,7 +140,9 @@ class FireExecutor: FireExecuting {
         }
         let shouldBurnData = options.contains(.data)
         
-        // Skip clearing AI chats if on old UI and clearing ai chats is disabled by the user.
+        // When granularFireButtonOptions FF is OFF, we use legacy behavior:
+        // - AI chats clear automatically with data if autoClearAIChatHistory is enabled
+        // When FF is ON, user explicitly chooses whether to clear AI chats via FireOptions
         let legacyAIChatsEnabled = featureFlagger.isFeatureOn(.granularFireButtonOptions) || appSettings.autoClearAIChatHistory // TODO: - Removed the check when granularFireButtonOptions is removed.
         
         let shouldBurnAIChats = options.contains(.aiChats) && legacyAIChatsEnabled

@@ -52,7 +52,7 @@ protocol FireExecutorDelegate: AnyObject {
     func didFinishBurning(fireContext: FireContext)
 }
 
-protocol FireExecuting {
+protocol FireExecuting: AnyObject {
     @MainActor func prepare(for options: FireOptions)
     @MainActor func burn(options: FireOptions,
                          applicationState: DataStoreWarmup.ApplicationState,

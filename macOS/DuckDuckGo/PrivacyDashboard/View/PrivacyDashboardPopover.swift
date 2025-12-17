@@ -62,6 +62,7 @@ final class PrivacyDashboardPopover: NSPopover {
             webTrackingProtectionPreferences: webTrackingProtectionPreferences
         )
 
+        subscribeToThemeChanges()
         applyThemeStyle()
     }
 

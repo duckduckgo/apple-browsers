@@ -54,6 +54,7 @@ final class AddBookmarkPopover: NSPopover {
         animates = false
         behavior = .transient
 
+        subscribeToThemeChanges()
         applyThemeStyle()
     }
 

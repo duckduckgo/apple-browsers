@@ -65,7 +65,8 @@ struct SettingsDataClearingView: View {
 
             Section(footer: Text(footnoteText)) {
                 SettingsCellView(action: {
-                    Pixel.fire(pixel: .forgetAllPressedSettings)
+                    DailyPixel.fireDailyAndCount(pixel: .forgetAllPressedSettings,
+                                                  pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
                     isShowingBurnAlert = true
                 }, customView: {
                     AnyView(

@@ -3,28 +3,28 @@
         "description": "Fired when user pressed the Fire button while browsing",
         "owners": ["dus7", "hassaanelgarem"],
         "triggers": ["other"],
-        "suffixes": ["platform", "form_factor"],
+        "suffixes": ["platform", "form_factor", "daily_standard"],
         "parameters": ["appVersion"]
     },
     "mf_tp": {
         "description": "Fired when user pressed the Fire button in the tab switcher",
         "owners": ["dus7", "hassaanelgarem"],
         "triggers": ["other"],
-        "suffixes": ["platform", "form_factor"],
+        "suffixes": ["platform", "form_factor", "daily_standard"],
         "parameters": ["appVersion"]
     },
     "m_forget-all-pressed_settings": {
         "description": "Fired when user pressed the button to clear data in Data Clearing Settings",
         "owners": ["dus7", "hassaanelgarem"],
         "triggers": ["other"],
-        "suffixes": ["platform", "form_factor"],
+        "suffixes": ["platform", "form_factor", "daily_standard"],
         "parameters": ["appVersion"]
     },
     "mf": {
         "description": "Fired when user confirmed the Fire button action and data clearing is executed",
         "owners": ["dus7", "hassaanelgarem"],
         "triggers": ["other"],
-        "suffixes": ["platform", "form_factor"],
+        "suffixes": ["platform", "form_factor", "daily_standard"],
         "parameters": ["appVersion"]
     }
 }

@@ -1206,7 +1206,8 @@ class MainViewController: UIViewController {
             )
         }
         
-        Pixel.fire(pixel: .forgetAllPressedBrowsing)
+        DailyPixel.fireDailyAndCount(pixel: .forgetAllPressedBrowsing,
+                                      pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
         
         performActionIfAITab { DailyPixel.fireDailyAndCount(pixel: .aiChatFireButtonTapped) }
         
@@ -3745,7 +3746,8 @@ extension MainViewController: AutoClearWorker {
 
     func forgetAllWithAnimation(transitionCompletion: (() -> Void)? = nil, showNextDaxDialog: Bool = false) {
         let spid = Instruments.shared.startTimedEvent(.clearingData)
-        Pixel.fire(pixel: .forgetAllExecuted)
+        DailyPixel.fireDailyAndCount(pixel: .forgetAllExecuted,
+                                      pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
         productSurfaceTelemetry.dataClearingUsed()
 
         tabManager.prepareAllTabsExceptCurrentForDataClearing()

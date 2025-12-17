@@ -38,5 +38,29 @@
         "suffixes": ["first_daily_count", "platform", "form_factor"],
         "parameters": ["appVersion"],
         "expires": "2026-01-12"
+    },
+    "m_experimental-browsing-menu_displayed_ai-chat": {
+        "description": "Fires when the experimental browsing menu is displayed to the user on the AI Chat page",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-01-19"
+    },
+    "m_experimental-browsing-menu_displayed_error": {
+        "description": "Fires when the experimental browsing menu is displayed to the user on an error page",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-01-19"
+    },
+    "m_experimental-browsing-menu_dismissed": {
+        "description": "Fires when the experimental browsing menu is dismissed by the user",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"],
+        "expires": "2026-01-19"
     }
 }

@@ -156,6 +156,7 @@ public final class DataBrokerProtectionIOSManager {
     private let subscriptionManager: DataBrokerProtectionSubscriptionManaging
     private let wideEventSweeper: DBPWideEventSweeper?
     private let eventsHandler: EventMapping<JobEvent>
+    private let isWebViewInspectable: Bool
     private lazy var brokerUpdater: BrokerJSONServiceProvider? = {
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
             directoryName: DatabaseConstants.directoryName,
@@ -208,7 +209,8 @@ public final class DataBrokerProtectionIOSManager {
          subscriptionManager: DataBrokerProtectionSubscriptionManaging,
          wideEvent: WideEventManaging?,
          eventsHandler: EventMapping<JobEvent>,
-         engagementPixelsRepository: DataBrokerProtectionEngagementPixelsRepository = DataBrokerProtectionEngagementPixelsUserDefaults(userDefaults: .dbp)
+         engagementPixelsRepository: DataBrokerProtectionEngagementPixelsRepository = DataBrokerProtectionEngagementPixelsUserDefaults(userDefaults: .dbp),
+         isWebViewInspectable: Bool = false
     ) {
         self.queueManager = queueManager
         self.jobDependencies = jobDependencies
@@ -228,6 +230,7 @@ public final class DataBrokerProtectionIOSManager {
         self.subscriptionManager = subscriptionManager
         self.wideEventSweeper = wideEvent.map { DBPWideEventSweeper(wideEvent: $0) }
         self.eventsHandler = eventsHandler
+        self.isWebViewInspectable = isWebViewInspectable
 
         self.queueManager.delegate = self
 
@@ -465,7 +468,8 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DataBrokerProtectionVi
                                                   contentScopeProperties: self.jobDependencies.contentScopeProperties,
                                                   webUISettings: DataBrokerProtectionWebUIURLSettings(.dbp),
                                                   openURLHandler: quickLinkOpenURLHandler,
-                                                  feedbackViewCreator: feedbackViewCreator)
+                                                  feedbackViewCreator: feedbackViewCreator,
+                                                  isWebViewInspectable: isWebViewInspectable)
     }
 }
 

@@ -42,6 +42,7 @@ final public class DataBrokerProtectionViewController: UIViewController {
     private let openURLHandler: (URL) -> Void
     private var reloadObserver: NSObjectProtocol?
     private var cancellables = Set<AnyCancellable>()
+    private let isWebViewInspectable: Bool
 
     private lazy var webUIViewModel: DBPUIViewModel = {
         guard let pixelKit = PixelKit.shared else {
@@ -83,7 +84,8 @@ final public class DataBrokerProtectionViewController: UIViewController {
                 contentScopeProperties: ContentScopeProperties,
                 webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
                 openURLHandler: @escaping (URL) -> Void,
-                feedbackViewCreator: @escaping () -> (any View)) {
+                feedbackViewCreator: @escaping () -> (any View),
+                isWebViewInspectable: Bool = false) {
         self.openURLHandler = openURLHandler
         self.feedbackViewCreator = feedbackViewCreator
         self.webUISettings = webUISettings
@@ -93,6 +95,7 @@ final public class DataBrokerProtectionViewController: UIViewController {
         self.userEventsDelegate = userEventsDelegate
         self.privacyConfigManager = privacyConfigManager
         self.contentScopeProperties = contentScopeProperties
+        self.isWebViewInspectable = isWebViewInspectable
 
         super.init(nibName: nil, bundle: nil)
     }
@@ -124,11 +127,9 @@ final public class DataBrokerProtectionViewController: UIViewController {
             webView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
 
-        #if DEBUG
         if #available(iOS 16.4, *) {
-            webView.isInspectable = true
+            webView.isInspectable = isWebViewInspectable
         }
-        #endif
     }
 
     private func setupLoadingView() {

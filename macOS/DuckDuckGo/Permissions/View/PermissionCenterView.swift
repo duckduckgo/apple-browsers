@@ -88,6 +88,9 @@ struct PermissionCenterView: View {
                                 },
                                 onRemove: {
                                     viewModel.removePermission(item.permissionType)
+                                },
+                                onRequestSystemPermission: {
+                                    viewModel.requestSystemPermission(for: item.permissionType)
                                 }
                             )
                         }
@@ -177,14 +180,19 @@ struct PermissionRowView: View {
     let item: PermissionCenterItem
     let onDecisionChanged: (PersistedPermissionDecision) -> Void
     let onRemove: () -> Void
+    let onRequestSystemPermission: (() -> Void)?
 
     @State private var isRemoveButtonHovered = false
     @State private var currentDecision: PersistedPermissionDecision
 
-    init(item: PermissionCenterItem, onDecisionChanged: @escaping (PersistedPermissionDecision) -> Void, onRemove: @escaping () -> Void) {
+    init(item: PermissionCenterItem,
+         onDecisionChanged: @escaping (PersistedPermissionDecision) -> Void,
+         onRemove: @escaping () -> Void,
+         onRequestSystemPermission: (() -> Void)? = nil) {
         self.item = item
         self.onDecisionChanged = onDecisionChanged
         self.onRemove = onRemove
+        self.onRequestSystemPermission = onRequestSystemPermission
         self._currentDecision = State(initialValue: item.decision)
     }
 
@@ -304,19 +312,32 @@ struct PermissionRowView: View {
         }
     }
 
+    /// Whether this is a notification permission that hasn't been requested from the system yet
+    private var isNotificationNotDetermined: Bool {
+        item.permissionType == .notification && item.systemAuthorizationState == .notDetermined
+    }
+
+    @ViewBuilder
     private var systemDisabledWarning: some View {
-        (Text(item.permissionType.systemPermissionDisabledText)
-            .font(.system(size: 12))
-            .foregroundColor(Color(designSystemColor: .textSecondary))
-        + Text(item.permissionType.systemSettingsLinkText)
-            .font(.system(size: 12))
-            .foregroundColor(.accentColor))
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .cursor(.pointingHand)
-            .onTapGesture {
+        if isNotificationNotDetermined {
+            // Show variant for notDetermined: "System notifications disabled, turn them on."
+            SystemPermissionWarningView(
+                prefixText: UserText.permissionCenterSystemNotificationNotDetermined,
+                linkText: UserText.permissionCenterTurnOnNotifications,
+                linkColor: .accentColor
+            ) {
+                onRequestSystemPermission?()
+            }
+        } else {
+            // Show standard variant: link to System Settings
+            SystemPermissionWarningView(
+                prefixText: item.permissionType.systemPermissionDisabledText,
+                linkText: item.permissionType.systemSettingsLinkText,
+                linkColor: .accentColor
+            ) {
                 openSystemSettings()
             }
+        }
     }
 
     private func openSystemSettings() {

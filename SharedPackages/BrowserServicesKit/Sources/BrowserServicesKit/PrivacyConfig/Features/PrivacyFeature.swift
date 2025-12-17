@@ -144,6 +144,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Feature Flag for the Tab Spinner
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866479296718
     case tabProgressIndicator
+
+    /// Web Notifications API polyfill - allows websites to show notifications via native macOS Notification Center
+    /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211395954816928?focus=true
+    case webNotifications
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -220,6 +224,7 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case canPromoteAutofillExtensionInBrowser
     case canPromoteAutofillExtensionInPasswordManagement
     case migrateKeychainAccessibility
+    case autofillPasswordSearchPrioritizeDomain
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
@@ -401,7 +406,6 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case allowPurchase
     case allowPurchaseStripe
     case useUnifiedFeedback
-    case privacyProAuthV2
     case privacyProOnboardingPromotion
     case paidAIChat
     case supportsAlternateStripePaymentFlow

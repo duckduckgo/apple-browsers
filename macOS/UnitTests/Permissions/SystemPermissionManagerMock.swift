@@ -34,12 +34,34 @@ final class SystemPermissionManagerMock: SystemPermissionManagerProtocol {
     /// Completion to call when authorization is requested (simulates async response)
     var authorizationRequestCompletion: ((PermissionType) -> SystemPermissionAuthorizationState)?
 
-    func authorizationState(for permissionType: PermissionType) -> SystemPermissionAuthorizationState {
+    /// Subject for controlling notification authorization state in tests
+    var notificationAuthorizationStateSubject = CurrentValueSubject<SystemPermissionAuthorizationState, Never>(.notDetermined)
+
+    func authorizationState(for permissionType: PermissionType) async -> SystemPermissionAuthorizationState {
+        if permissionType == .notification {
+            return notificationAuthorizationStateSubject.value
+        }
+        return authorizationStates[permissionType] ?? defaultAuthorizationState
+    }
+
+    func cachedAuthorizationState(for permissionType: PermissionType) -> SystemPermissionAuthorizationState {
+        if permissionType == .notification {
+            return notificationAuthorizationStateSubject.value
+        }
         return authorizationStates[permissionType] ?? defaultAuthorizationState
     }
 
     func isAuthorizationRequired(for permissionType: PermissionType) -> Bool {
-        let state = authorizationState(for: permissionType)
+        if permissionType == .notification {
+            let state = notificationAuthorizationStateSubject.value
+            switch state {
+            case .notDetermined, .systemDisabled:
+                return true
+            case .authorized, .denied, .restricted:
+                return false
+            }
+        }
+        let state = authorizationStates[permissionType] ?? defaultAuthorizationState
         switch state {
         case .notDetermined, .systemDisabled:
             return true
@@ -56,7 +78,13 @@ final class SystemPermissionManagerMock: SystemPermissionManagerProtocol {
             let state = customCompletion(permissionType)
             completion(state)
         } else {
-            completion(authorizationState(for: permissionType))
+            let state: SystemPermissionAuthorizationState
+            if permissionType == .notification {
+                state = notificationAuthorizationStateSubject.value
+            } else {
+                state = authorizationStates[permissionType] ?? defaultAuthorizationState
+            }
+            completion(state)
         }
 
         return AnyCancellable {}

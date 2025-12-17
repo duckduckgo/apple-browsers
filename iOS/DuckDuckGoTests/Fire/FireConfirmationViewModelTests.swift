@@ -56,7 +56,7 @@ final class FireConfirmationViewModelTests: XCTestCase {
         }
     }
     
-    private class TestFireproofing: Fireproofing {
+    class TestFireproofing: Fireproofing {
         var fireproofedDomains: [String] = []
         var allowedDomains: [String] { fireproofedDomains }
         var loginDetectionEnabled: Bool = false

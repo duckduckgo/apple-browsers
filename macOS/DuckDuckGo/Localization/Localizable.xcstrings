@@ -18899,7 +18899,7 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Immer erlauben"
           }
         },
@@ -18911,43 +18911,43 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Permitir siempre"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Toujours autoriser"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Consenti sempre"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Altijd toestaan"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Zawsze zezwalaj"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Permitir sempre"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Разрешать всегда"
           }
         }
@@ -19079,7 +19079,7 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Immer ablehnen"
           }
         },
@@ -19091,43 +19091,43 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Rechazar siempre"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Toujours refuser"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Rifiuta sempre"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Altijd weigeren"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Zawsze odmawiaj"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Negar sempre"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Не разрешать"
           }
         }
@@ -59221,6 +59221,12 @@
               "formatSpecifier" : "d",
               "variations" : {
                 "plural" : {
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg Tracker wurden blockiert"
+                    }
+                  },
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
@@ -59283,6 +59289,12 @@
               "formatSpecifier" : "d",
               "variations" : {
                 "plural" : {
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg rastreadores bloqueados"
+                    }
+                  },
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
@@ -59311,6 +59323,12 @@
               "formatSpecifier" : "d",
               "variations" : {
                 "plural" : {
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg traqueurs bloqués"
+                    }
+                  },
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
@@ -59339,6 +59357,12 @@
               "formatSpecifier" : "d",
               "variations" : {
                 "plural" : {
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg sistemi di tracciamento bloccati"
+                    }
+                  },
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
@@ -59367,6 +59391,12 @@
               "formatSpecifier" : "d",
               "variations" : {
                 "plural" : {
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg trackers geblokkeerd"
+                    }
+                  },
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
@@ -59435,6 +59465,12 @@
               "formatSpecifier" : "d",
               "variations" : {
                 "plural" : {
+                  "many" : {
+                    "stringUnit" : {
+                      "state" : "translated",
+                      "value" : "%arg rastreadores bloqueados"
+                    }
+                  },
                   "one" : {
                     "stringUnit" : {
                       "state" : "translated",
@@ -64325,8 +64361,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Erlaube „%1$@“, dein %2$@ zu benutzen?"
+            "state" : "translated",
+            "value" : "„%1$@“ erlauben, dein/e %2$@ einmal zu verwenden?"
           }
         },
         "en" : {
@@ -64337,44 +64373,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "¿Permitir que \"%1$@\" use tu %2$@?"
+            "state" : "translated",
+            "value" : "¿Permitir que «%1$@» use tu %2$@ una vez?"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Autoriser « %1$@ » à utiliser votre %2$@ ?"
+            "state" : "translated",
+            "value" : "Autoriser « %1$@ » à utiliser votre %2$@ une seule fois ?"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Consenti a \"%1$@\" di utilizzare %2$@?"
+            "state" : "translated",
+            "value" : "Consenti a \"%1$@\" di utilizzare %2$@ una volta?"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "'%1$@' toestaan om je %2$@ te gebruiken?"
+            "state" : "translated",
+            "value" : "Mag “%1$@“ je %2$@ eenmalig gebruiken?"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Zezwolić domenie „%1$@” na użycie Twojego urządzenia/funkcji %2$@?"
+            "state" : "translated",
+            "value" : "Zezwolić domenie „%1$@” na jednokrotne użycie Twojego urządzenia (%2$@)?"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Permitir que \"%1$@\" utilize %2$@?"
+            "state" : "translated",
+            "value" : "Permitir que \"%1$@\" utilize %2$@ uma vez?"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Открыть сайту %1$@ доступ (%2$@)?"
+            "state" : "translated",
+            "value" : "Открыть сайту %1$@ доступ на один раз (%2$@)?"
           }
         }
       }
@@ -64443,10 +64479,58 @@
       "comment" : "Popover asking for domain %@ to send notifications",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Soll %@ dir Benachrichtigungen senden?"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Allow “%@“ to send you notifications?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Permitir que \"%@\" te envíe notificaciones?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autoriser « %@ » à vous envoyer des notifications ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consenti a “%@” di inviarti notifiche?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mag “%@“ je meldingen sturen?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czy „%@” może Ci wysyłać powiadomienia?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Permitir que \"%@\" envie notificações?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Разрешить сайту %@ отправлять вам уведомления?"
           }
         }
       }
@@ -65055,10 +65139,58 @@
       "comment" : "Button to reload the page to apply permission changes",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neu laden"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Reload"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volver a cargar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recharger"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ricarica"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opnieuw laden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Załaduj ponownie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recarregar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Перезагрузить"
           }
         }
       }
@@ -65067,10 +65199,58 @@
       "comment" : "Message shown in permission center when permissions have been changed and reload is needed",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neu laden, damit die Änderungen wirksam werden"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Reload for changes to take effect"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vuelve a cargar para que los cambios surtan efecto"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recharger pour que les changements prennent effet"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ricarica per rendere effettive le modifiche"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vernieuw de pagina om de wijzigingen door te voeren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przeładuj, aby zmiany zaczęły obowiązywać"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recarregar para que as alterações entrem em vigor"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Чтобы изменения вступили в силу, требуется перезапуск."
           }
         }
       }
@@ -65079,10 +65259,58 @@
       "comment" : "Tooltip for the remove permission button in permission center",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Berechtigung entfernen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Remove permission"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Eliminar el permiso"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Supprimer l'autorisation"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rimuovi autorizzazione"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toestemming verwijderen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usuń uprawnienie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Remover permissão"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удалить разрешение"
           }
         }
       }
@@ -65153,8 +65381,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Systembenachrichtigungen deaktiviert,"
+            "state" : "translated",
+            "value" : "Systembenachrichtigungen sind deaktiviert."
           }
         },
         "en" : {
@@ -65165,44 +65393,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Notificaciones del sistema desactivadas,"
+            "state" : "translated",
+            "value" : "Notificaciones del sistema desactivadas."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Notifications système désactivées,"
+            "state" : "translated",
+            "value" : "Notifications système désactivées."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Le notifiche di sistema sono disattivate,"
+            "state" : "translated",
+            "value" : "Le notifiche di sistema sono disabilitate."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Systeemmeldingen zijn uitgeschakeld,"
+            "state" : "translated",
+            "value" : "Systeemmeldingen zijn uitgeschakeld."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Powiadomienia systemowe wyłączone,"
+            "state" : "translated",
+            "value" : "Powiadomienia systemowe są wyłączone."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Notificações do sistema desativadas,"
+            "state" : "translated",
+            "value" : "Notificações do sistema desativadas."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Системные уведомления отключены,"
+            "state" : "translated",
+            "value" : "Системные уведомления отключены."
           }
         }
       }
@@ -65333,8 +65561,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Aktiviere sie."
+            "state" : "translated",
+            "value" : "Schalte sie ein"
           }
         },
         "en" : {
@@ -65345,44 +65573,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "actívalas."
+            "state" : "translated",
+            "value" : "Actívalas"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "les activer."
+            "state" : "translated",
+            "value" : "Activez-les"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "attivale."
+            "state" : "translated",
+            "value" : "Attivale"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Systeemmeldingen aanzetten."
+            "state" : "translated",
+            "value" : "Zet ze aan"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "włącz je."
+            "state" : "translated",
+            "value" : "Włącz je"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "ativa-as."
+            "state" : "translated",
+            "value" : "Ativa-as"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "включите их."
+            "state" : "translated",
+            "value" : "Включите их"
           }
         }
       }
@@ -65634,7 +65862,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Allow %@ to use your current location?"
+            "value" : "„%@“ erlauben, deinen aktuellen Standort einmalig zu verwenden?"
           }
         },
         "en" : {
@@ -65645,44 +65873,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Allow %@ to use your current location?"
+            "state" : "translated",
+            "value" : "¿Permitir que “%@“ use tu ubicación actual una vez?"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Allow %@ to use your current location?"
+            "state" : "translated",
+            "value" : "Autoriser « %@ » à utiliser votre position actuelle une seule fois ?"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Allow %@ to use your current location?"
+            "state" : "translated",
+            "value" : "Consenti a \"%@\" di utilizzare la tua posizione attuale una volta?"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Allow %@ to use your current location?"
+            "state" : "translated",
+            "value" : "Mag \"%@\" je huidige locatie één keer gebruiken?"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Allow %@ to use your current location?"
+            "state" : "translated",
+            "value" : "Zezwolić domenie „%@” na jednokrotne użycie Twojej lokalizacji?"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Allow %@ to use your current location?"
+            "state" : "translated",
+            "value" : "Permitir que \"%@\" utilize a tua localização atual uma vez?"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Allow %@ to use your current location?"
+            "state" : "translated",
+            "value" : "Открыть сайту %@ доступ к вашей текущей геопозиции на один раз?"
           }
         }
       }
@@ -65691,6 +65919,12 @@
       "comment" : "Menu header for permission settings for domain %@ to use camera/mic/location (%@)",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "„%1$@“ erlauben, dein/e/n %2$@ zu verwenden?"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
@@ -65700,43 +65934,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Allow %@ to use your current location?"
+            "value" : "¿Permitir que \"%1$@\" use tu %2$@?"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Allow %@ to use your current location?"
+            "value" : "Autoriser « %1$@ » à utiliser votre %2$@ ?"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Allow %@ to use your current location?"
+            "value" : "Consenti a \"%1$@\" di utilizzare %2$@?"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Allow %@ to use your current location?"
+            "value" : "Mag '%1$@' je %2$@ gebruiken?"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Allow %@ to use your current location?"
+            "value" : "Zezwolić domenie „%1$@” na użycie Twojego urządzenia/funkcji (%2$@)?"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Allow %@ to use your current location?"
+            "value" : "Permitir que \"%1$@\" utilize %2$@?"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Allow %@ to use your current location?"
+            "value" : "Открыть сайту %1$@ доступ (%2$@)?"
           }
         }
       }
@@ -66105,10 +66339,58 @@
       "comment" : "Warning shown in standalone system-disabled permission view",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Systembenachrichtigungen sind deaktiviert.\nSchalte sie ein unter"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "System notifications disabled.\nTurn them on in"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notificaciones del sistema desactivadas.\nActívalas en"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notifications système désactivées.\nActivez-les dans"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le notifiche di sistema sono disabilitate.\nAttivale in"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Systeemmeldingen zijn uitgeschakeld.\nZet ze aan in"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Powiadomienia systemowe są wyłączone.\nWłącz je w"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Notificações do sistema desativadas.\nAtiva-as em"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Системные уведомления отключены.\nВключите их в разделе"
           }
         }
       }
@@ -75633,7 +75915,7 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Kein Zugriff auf Plus- oder Pro-Funktionen möglich"
+            "value" : "Unable to access Plus or Pro tier features"
           }
         },
         "en" : {
@@ -75645,43 +75927,43 @@
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No puedes acceder a las funciones de los niveles Plus o Pro"
+            "value" : "Unable to access Plus or Pro tier features"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Impossible d'accéder aux fonctionnalités des niveaux Plus ou Pro"
+            "value" : "Unable to access Plus or Pro tier features"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Impossibile accedere alle funzionalità del livello Plus o Pro"
+            "value" : "Unable to access Plus or Pro tier features"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Toegang tot Plus- of Pro-functies niet mogelijk"
+            "value" : "Unable to access Plus or Pro tier features"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Brak dostępu do funkcji poziomu Plus lub Pro"
+            "value" : "Unable to access Plus or Pro tier features"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Não é possível aceder às funcionalidades dos níveis Plus ou Pro"
+            "value" : "Unable to access Plus or Pro tier features"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Нет доступа к функциям уровня Plus или Pro"
+            "value" : "Unable to access Plus or Pro tier features"
           }
         }
       }
@@ -83183,48 +83465,6 @@
             "state" : "translated",
             "value" : "Браузер закроется автоматически через %d сек..."
           }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El navegador se cerrará automáticamente en %d segundos..."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le navigateur se fermera automatiquement dans %d secondes..."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il browser si chiuderà automaticamente tra %d secondi..."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "De browser wordt over %d seconden automatisch afgesloten..."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Przeglądarka zostanie automatycznie zamknięta za %d s..."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O navegador vai fechar automaticamente em %d segundos…"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Браузер автоматически закроется через %d сек..."
-          }
         }
       }
     },
@@ -83405,48 +83645,6 @@
             "state" : "translated",
             "value" : "Как вам браузер DuckDuckGo?"
           }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Antes de irte, ¿cómo has sido tu primera vez explorando el navegador DuckDuckGo?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Avant de partir, comment s'est passée votre première expérience avec le navigateur DuckDuckGo ?"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Prima di andare, com'è stata la tua prima esperienza con il browser DuckDuckGo?"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Voordat je gaat, hoe was je eerste ervaring met het verkennen van de DuckDuckGo-browser?"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zanim wyjdziesz, daj nam znać, jakie masz pierwsze wrażenia z odkrywania przeglądarki DuckDuckGo?"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Antes de ires, como foi a tua primeira experiência com o navegador DuckDuckGo?"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Прежде чем уйти, расскажите о своих впечатлениях от первого знакомства с браузером DuckDuckGo?"
-          }
         }
       }
     },
@@ -83507,48 +83705,6 @@
             "state" : "translated",
             "value" : "Есть над чем поработать"
           }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mal, necesita mejorar"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mauvaise expérience, il y a des améliorations à apporter"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Negativa, ha bisogno di miglioramenti"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Slecht, er valt heel wat te verbeteren"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Złe, przeglądarka wymaga dopracowania"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mau, precisa de ser trabalhado"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Плохо, нужно доработать"
-          }
         }
       }
     },
@@ -83608,989 +83764,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "С какими проблемами вы столкнулись?"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No ves los beneficios de la privacidad"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Je ne vois pas les avantages en matière de confidentialité"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Non vedo vantaggi in termini di privacy"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Geen privacyvoordelen zien"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nie widzę korzyści w zakresie prywatności"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Não considero que seja vantajoso para a privacidade"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не вижу преимуществ в плане конфиденциальности"
-          }
-        }
-      }
-    },    "quit-survey.option.something-else" : {
-      "comment" : "Quit survey feedback option for other issues",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Etwas anderes"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Something else"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Otro problema"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Autre chose"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Qualcos'altro"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Iets anders"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Coś innego"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Outra coisa"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Что-то другое"
-          }
-        }
-      }
-    },
-    "quit-survey.option.sign-in-hassles" : {
-      "comment" : "Quit survey feedback option - ecosystem",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Probleme bei der Anmeldung"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Sign in hassles"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Problemas al iniciar sesión"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Difficultés de connexion"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Problemi di accesso"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Inlogproblemen"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Problemy z logowaniem"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Problemas ao iniciar sessão"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Проблемы со входом"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Los sitios web no funcionan como esperabas"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les sites Web ne fonctionnent pas comme prévu"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "I siti web non funzionano come previsto"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Websites werken niet zoals verwacht"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Witryny internetowe nie działają zgodnie z oczekiwaniami"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Os websites não funcionam como esperado"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Веб-сайты работают не так, как ожидалось"
-          }
-        }
-      }
-    },
-    "quit-survey.option.had-to-re-sign-in" : {
-      "comment" : "Quit survey feedback option - ecosystem",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Musste mich erneut anmelden"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Had to re-sign in"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tuve que volver a iniciar sesión"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "J'ai dû me reconnecter"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ho dovuto riaccedere"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Moest opnieuw inloggen"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Musiałem(-am) się ponownie zalogować"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tive de iniciar sessão novamente"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Пришлось входить заново"
-          }
-        }
-      }
-    },
-    "quit-survey.option.not-ready-to-switch-browsers" : {
-      "comment" : "Quit survey feedback option - value proposition",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Noch nicht bereit, den Browser zu wechseln"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Not ready to switch browsers"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No estoy listo para cambiar de navegador"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pas prêt à changer de navigateur"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Non sono pronto a cambiare browser"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nog niet klaar om van browser te wisselen"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nie jestem gotowy(-a) na zmianę przeglądarki"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Não estou pronto para mudar de navegador"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не готов менять браузер"
-          }
-        }
-      }
-    },
-    "quit-survey.option.just-trying-it-out" : {
-      "comment" : "Quit survey feedback option - value proposition",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nur ausprobiert"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Just trying it out"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Solo lo estaba probando"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Je voulais juste essayer"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Stavo solo provando"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ik probeerde het gewoon uit"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tylko testowałem(-am)"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Estava só a experimentar"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Просто пробовал"
-          }
-        }
-      }
-    },
-    "quit-survey.option.unsure-how-history-is-handled" : {
-      "comment" : "Quit survey feedback option - value proposition",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unsicher, wie der Verlauf behandelt wird"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Unsure how history is handled"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No sé cómo se gestiona el historial"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pas sûr de comment l'historique est géré"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Non so come viene gestita la cronologia"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Onzeker hoe geschiedenis wordt behandeld"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nie wiem, jak obsługiwana jest historia"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Não sei como o histórico é gerido"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Непонятно, что происходит с историей"
-          }
-        }
-      }
-    },
-    "quit-survey.option.privacy-concerns" : {
-      "comment" : "Quit survey feedback option - value proposition",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Datenschutzbedenken"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Privacy concerns"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Preocupaciones de privacidad"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Préoccupations de confidentialité"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Problemi di privacy"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Privacyzorgen"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Obawy dotyczące prywatności"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Preocupações de privacidade"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Опасения о конфиденциальности"
-          }
-        }
-      }
-    },
-    "quit-survey.option.benefits-unclear" : {
-      "comment" : "Quit survey feedback option - value proposition",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vorteile unklar"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Benefits unclear"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Beneficios poco claros"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Avantages pas clairs"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vantaggi poco chiari"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Voordelen onduidelijk"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Korzyści niejasne"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Benefícios pouco claros"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Преимущества неясны"
-          }
-        }
-      }
-    },
-    "quit-survey.option.unexpected-search-results" : {
-      "comment" : "Quit survey feedback option - search",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Unerwartete Suchergebnisse"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Unexpected search results"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Resultados de búsqueda inesperados"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Résultats de recherche inattendus"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Risultati di ricerca inaspettati"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Onverwachte zoekresultaten"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nieoczekiwane wyniki wyszukiwania"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Resultados de pesquisa inesperados"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Неожиданные результаты поиска"
-          }
-        }
-      }
-    },
-    "quit-survey.option.couldnt-change-search-engine" : {
-      "comment" : "Quit survey feedback option - search",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Suchmaschine konnte nicht geändert werden"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Couldn't change search engine"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No pude cambiar el motor de búsqueda"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Impossible de changer de moteur de recherche"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Non sono riuscito a cambiare motore di ricerca"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kon zoekmachine niet wijzigen"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nie mogłem(-am) zmienić wyszukiwarki"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Não consegui mudar o motor de busca"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не удалось сменить поисковик"
-          }
-        }
-      }
-    },
-    "quit-survey.option.couldnt-import-pay-details" : {
-      "comment" : "Quit survey feedback option - onboarding",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zahlungsdaten konnten nicht importiert werden"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Couldn't import pay details"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No pude importar los datos de pago"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Impossible d'importer les données de paiement"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Non sono riuscito a importare i dati di pagamento"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kon betaalgegevens niet importeren"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nie mogłem(-am) zaimportować danych płatniczych"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Não consegui importar dados de pagamento"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не удалось импортировать платёжные данные"
-          }
-        }
-      }
-    },
-    "quit-survey.option.couldnt-import-passwords" : {
-      "comment" : "Quit survey feedback option - onboarding",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Passwörter konnten nicht importiert werden"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Couldn't import passwords"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No pude importar las contraseñas"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Impossible d'importer les mots de passe"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Non sono riuscito a importare le password"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kon wachtwoorden niet importeren"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nie mogłem(-am) zaimportować haseł"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Não consegui importar palavras-passe"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не удалось импортировать пароли"
-          }
-        }
-      }
-    },
-    "quit-survey.option.couldnt-import-bookmarks" : {
-      "comment" : "Quit survey feedback option - onboarding",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lesezeichen konnten nicht importiert werden"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Couldn't import bookmarks"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No pude importar los marcadores"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Impossible d'importer les favoris"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Non sono riuscito a importare i segnalibri"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kon bladwijzers niet importeren"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nie mogłem(-am) zaimportować zakładek"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Não consegui importar marcadores"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не удалось импортировать закладки"
-          }
-        }
-      }
-    },
-    "quit-survey.option.onboarding-wasnt-helpful" : {
-      "comment" : "Quit survey feedback option - onboarding",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Einführung war nicht hilfreich"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Onboarding wasn't helpful"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La introducción no fue útil"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "L'accueil n'était pas utile"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "L'onboarding non è stato utile"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Introductie was niet nuttig"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wprowadzenie nie było pomocne"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A introdução não foi útil"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Знакомство не помогло"
-          }
-        }
-      }
-    },
-    "quit-survey.option.couldnt-skip-onboarding" : {
-      "comment" : "Quit survey feedback option - onboarding",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Einführung konnte nicht übersprungen werden"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Couldn't skip onboarding"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No pude omitir la introducción"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Impossible de passer l'accueil"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Non sono riuscito a saltare l'onboarding"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kon introductie niet overslaan"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nie mogłem(-am) pominąć wprowadzenia"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Não consegui ignorar a introdução"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не удалось пропустить знакомство"
           }
         }
       }
@@ -84655,422 +83828,62 @@
         }
       }
     },
-    "quit-survey.option.password-manager-unavailable" : {
-      "comment" : "Quit survey feedback option - features/extensions",
+    "quit-survey.option.asked-to-disable-ad-blocker" : {
+      "comment" : "Quit survey feedback option - site breakage",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Passwort-Manager nicht verfügbar"
+            "value" : "Aufforderung, den Werbeblocker zu deaktivieren"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Password manager unavailable"
+            "value" : "Asked to disable Ad Blocker"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gestor de contraseñas no disponible"
+            "value" : "Me pidieron desactivar el bloqueador de anuncios"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gestionnaire de mots de passe indisponible"
+            "value" : "On m'a demandé de désactiver le bloqueur de publicités"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gestore password non disponibile"
+            "value" : "Mi è stato chiesto di disattivare il blocco pubblicità"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Wachtwoordbeheer niet beschikbaar"
+            "value" : "Gevraagd om advertentieblokkering uit te schakelen"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Menedżer haseł niedostępny"
+            "value" : "Prośba o wyłączenie blokowania reklam"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gestor de palavras-passe indisponível"
+            "value" : "Pediram-me para desativar o bloqueador de anúncios"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Менеджер паролей недоступен"
-          }
-        }
-      }
-    },
-    "quit-survey.option.couldnt-find-incognito" : {
-      "comment" : "Quit survey feedback option - features",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Inkognito-Modus nicht gefunden"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Couldn't find incognito"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No encontré el modo incógnito"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Impossible de trouver le mode incognito"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Non ho trovato la modalità incognito"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kon incognito niet vinden"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nie znalazłem(-am) trybu incognito"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Não encontrei o modo incógnito"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не нашёл режим инкогнито"
-          }
-        }
-      }
-    },
-    "quit-survey.option.fire-button-removed-too-much" : {
-      "comment" : "Quit survey feedback option - Fire Button",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fire-Button hat zu viel gelöscht"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Fire Button removed too much"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "El botón Fire eliminó demasiado"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le bouton Fire a supprimé trop de choses"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il pulsante Fire ha rimosso troppo"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fire-knop verwijderde te veel"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Przycisk Fire usunął za dużo"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "O botão Fire eliminou demasiado"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Кнопка Fire удалила слишком много"
-          }
-        }
-      }
-    },
-    "quit-survey.option.navigation-unfamiliar" : {
-      "comment" : "Quit survey feedback option - UI",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Navigation ungewohnt"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Navigation unfamiliar"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Navegación poco familiar"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Navigation peu familière"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Navigazione poco familiare"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Onbekende navigatie"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nieznana nawigacja"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Navegação pouco familiar"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Непривычная навигация"
-          }
-        }
-      }
-    },
-    "quit-survey.option.shortcuts-didnt-work" : {
-      "comment" : "Quit survey feedback option - UI",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tastenkombinationen funktionierten nicht"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Shortcuts didn't work"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Los atajos no funcionaron"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les raccourcis ne fonctionnaient pas"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le scorciatoie non funzionavano"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sneltoetsen werkten niet"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Skróty nie działały"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Os atalhos não funcionaram"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Горячие клавиши не работали"
-          }
-        }
-      }
-    },
-    "quit-survey.option.hard-to-manage-downloads" : {
-      "comment" : "Quit survey feedback option - UI",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Downloads schwer zu verwalten"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Hard to manage downloads"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Difícil gestionar descargas"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Difficile de gérer les téléchargements"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Difficile gestire i download"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Moeilijk om downloads te beheren"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trudno było zarządzać pobieraniem"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Difícil gerir transferências"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сложно управлять загрузками"
-          }
-        }
-      }
-    },
-    "quit-survey.option.hard-to-find-settings" : {
-      "comment" : "Quit survey feedback option - UI",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Einstellungen schwer zu finden"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Hard to find Settings"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Difícil encontrar Ajustes"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Difficile de trouver les Paramètres"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Difficile trovare le Impostazioni"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Moeilijk om Instellingen te vinden"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trudno było znaleźć Ustawienia"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Difícil encontrar as Definições"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сложно найти настройки"
+            "value" : "Просят отключить блокировщик рекламы"
           }
         }
       }
@@ -85135,6 +83948,246 @@
         }
       }
     },
+    "quit-survey.option.benefits-unclear" : {
+      "comment" : "Quit survey feedback option - value proposition",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vorteile unklar"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Benefits unclear"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beneficios poco claros"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avantages pas clairs"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vantaggi poco chiari"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Voordelen onduidelijk"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Korzyści niejasne"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Benefícios pouco claros"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Преимущества неясны"
+          }
+        }
+      }
+    },
+    "quit-survey.option.browser-crashed" : {
+      "comment" : "Quit survey feedback option - performance",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browser abgestürzt"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Browser crashed"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El navegador se bloqueó"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le navigateur a planté"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il browser si è bloccato"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Browser crashte"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przeglądarka się zawieszała"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O navegador bloqueou"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Браузер вылетал"
+          }
+        }
+      }
+    },
+    "quit-survey.option.couldnt-change-search-engine" : {
+      "comment" : "Quit survey feedback option - search",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Suchmaschine konnte nicht geändert werden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't change search engine"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pude cambiar el motor de búsqueda"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de changer de moteur de recherche"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non sono riuscito a cambiare motore di ricerca"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kon zoekmachine niet wijzigen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie mogłem(-am) zmienić wyszukiwarki"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não consegui mudar o motor de busca"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось сменить поисковик"
+          }
+        }
+      }
+    },
+    "quit-survey.option.couldnt-check-out" : {
+      "comment" : "Quit survey feedback option - site breakage",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bezahlen nicht möglich"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't check out"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pude pagar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de passer à la caisse"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non sono riuscito a pagare"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kon niet afrekenen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie mogłem(-am) sfinalizować zakupu"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não consegui finalizar a compra"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось оформить заказ"
+          }
+        }
+      }
+    },
     "quit-survey.option.couldnt-disable-ai" : {
       "comment" : "Quit survey feedback option - AI",
       "extractionState" : "extracted_with_value",
@@ -85191,6 +84244,1266 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Не удалось отключить ИИ"
+          }
+        }
+      }
+    },
+    "quit-survey.option.couldnt-find-incognito" : {
+      "comment" : "Quit survey feedback option - features",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inkognito-Modus nicht gefunden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't find incognito"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No encontré el modo incógnito"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de trouver le mode incognito"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non ho trovato la modalità incognito"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kon incognito niet vinden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie znalazłem(-am) trybu incognito"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não encontrei o modo incógnito"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не нашёл режим инкогнито"
+          }
+        }
+      }
+    },
+    "quit-survey.option.couldnt-import-bookmarks" : {
+      "comment" : "Quit survey feedback option - onboarding",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lesezeichen konnten nicht importiert werden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't import bookmarks"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pude importar los marcadores"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible d'importer les favoris"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non sono riuscito a importare i segnalibri"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kon bladwijzers niet importeren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie mogłem(-am) zaimportować zakładek"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não consegui importar marcadores"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось импортировать закладки"
+          }
+        }
+      }
+    },
+    "quit-survey.option.couldnt-import-passwords" : {
+      "comment" : "Quit survey feedback option - onboarding",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passwörter konnten nicht importiert werden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't import passwords"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pude importar las contraseñas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible d'importer les mots de passe"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non sono riuscito a importare le password"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kon wachtwoorden niet importeren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie mogłem(-am) zaimportować haseł"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não consegui importar palavras-passe"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось импортировать пароли"
+          }
+        }
+      }
+    },
+    "quit-survey.option.couldnt-import-pay-details" : {
+      "comment" : "Quit survey feedback option - onboarding",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zahlungsdaten konnten nicht importiert werden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't import pay details"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pude importar los datos de pago"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible d'importer les données de paiement"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non sono riuscito a importare i dati di pagamento"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kon betaalgegevens niet importeren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie mogłem(-am) zaimportować danych płatniczych"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não consegui importar dados de pagamento"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось импортировать платёжные данные"
+          }
+        }
+      }
+    },
+    "quit-survey.option.couldnt-sign-in-to-bank" : {
+      "comment" : "Quit survey feedback option - site breakage",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anmeldung bei der Bank nicht möglich"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't sign in to bank"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pude iniciar sesión en el banco"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de me connecter à ma banque"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non sono riuscito ad accedere alla banca"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kon niet inloggen bij bank"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie mogłem(-am) zalogować się do banku"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não consegui iniciar sessão no banco"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось войти в банк"
+          }
+        }
+      }
+    },
+    "quit-survey.option.couldnt-skip-onboarding" : {
+      "comment" : "Quit survey feedback option - onboarding",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einführung konnte nicht übersprungen werden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Couldn't skip onboarding"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No pude omitir la introducción"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Impossible de passer l'accueil"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non sono riuscito a saltare l'onboarding"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kon introductie niet overslaan"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie mogłem(-am) pominąć wprowadzenia"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não consegui ignorar a introdução"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не удалось пропустить знакомство"
+          }
+        }
+      }
+    },
+    "quit-survey.option.fire-button-removed-too-much" : {
+      "comment" : "Quit survey feedback option - Fire Button",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fire-Button hat zu viel gelöscht"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Fire Button removed too much"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El botón Fire eliminó demasiado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le bouton Fire a supprimé trop de choses"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il pulsante Fire ha rimosso troppo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fire-knop verwijderde te veel"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Przycisk Fire usunął za dużo"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O botão Fire eliminou demasiado"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Кнопка Fire удалила слишком много"
+          }
+        }
+      }
+    },
+    "quit-survey.option.had-to-re-sign-in" : {
+      "comment" : "Quit survey feedback option - ecosystem",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Musste mich erneut anmelden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Had to re-sign in"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tuve que volver a iniciar sesión"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "J'ai dû me reconnecter"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ho dovuto riaccedere"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moest opnieuw inloggen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Musiałem(-am) się ponownie zalogować"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tive de iniciar sessão novamente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пришлось входить заново"
+          }
+        }
+      }
+    },
+    "quit-survey.option.hard-to-find-settings" : {
+      "comment" : "Quit survey feedback option - UI",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einstellungen schwer zu finden"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hard to find Settings"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Difícil encontrar Ajustes"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Difficile de trouver les Paramètres"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Difficile trovare le Impostazioni"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moeilijk om Instellingen te vinden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trudno było znaleźć Ustawienia"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Difícil encontrar as Definições"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сложно найти настройки"
+          }
+        }
+      }
+    },
+    "quit-survey.option.hard-to-manage-downloads" : {
+      "comment" : "Quit survey feedback option - UI",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Downloads schwer zu verwalten"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hard to manage downloads"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Difícil gestionar descargas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Difficile de gérer les téléchargements"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Difficile gestire i download"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moeilijk om downloads te beheren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Trudno było zarządzać pobieraniem"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Difícil gerir transferências"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сложно управлять загрузками"
+          }
+        }
+      }
+    },
+    "quit-survey.option.just-trying-it-out" : {
+      "comment" : "Quit survey feedback option - value proposition",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nur ausprobiert"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Just trying it out"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo lo estaba probando"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je voulais juste essayer"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stavo solo provando"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ik probeerde het gewoon uit"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tylko testowałem(-am)"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Estava só a experimentar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Просто пробовал"
+          }
+        }
+      }
+    },
+    "quit-survey.option.more-captchas" : {
+      "comment" : "Quit survey feedback option - site breakage",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mehr CAPTCHAs"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "More CAPTCHAs"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Más CAPTCHAs"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus de CAPTCHAs"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Più CAPTCHA"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meer CAPTCHA's"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Więcej CAPTCHA"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mais CAPTCHAs"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Больше CAPTCHA"
+          }
+        }
+      }
+    },
+    "quit-survey.option.navigation-unfamiliar" : {
+      "comment" : "Quit survey feedback option - UI",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Navigation ungewohnt"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Navigation unfamiliar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Navegación poco familiar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Navigation peu familière"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Navigazione poco familiare"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Onbekende navigatie"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieznana nawigacja"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Navegação pouco familiar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Непривычная навигация"
+          }
+        }
+      }
+    },
+    "quit-survey.option.not-ready-to-switch-browsers" : {
+      "comment" : "Quit survey feedback option - value proposition",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Noch nicht bereit, den Browser zu wechseln"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Not ready to switch browsers"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No estoy listo para cambiar de navegador"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas prêt à changer de navigateur"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non sono pronto a cambiare browser"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nog niet klaar om van browser te wisselen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie jestem gotowy(-a) na zmianę przeglądarki"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não estou pronto para mudar de navegador"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Не готов менять браузер"
+          }
+        }
+      }
+    },
+    "quit-survey.option.onboarding-wasnt-helpful" : {
+      "comment" : "Quit survey feedback option - onboarding",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Einführung war nicht hilfreich"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Onboarding wasn't helpful"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La introducción no fue útil"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'accueil n'était pas utile"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "L'onboarding non è stato utile"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Introductie was niet nuttig"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wprowadzenie nie było pomocne"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A introdução não foi útil"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Знакомство не помогло"
+          }
+        }
+      }
+    },
+    "quit-survey.option.pages-froze" : {
+      "comment" : "Quit survey feedback option - site breakage",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seiten eingefroren"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Pages froze"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las páginas se congelaron"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les pages se sont figées"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le pagine si sono bloccate"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pagina's bevroren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strony się zawieszały"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As páginas bloquearam"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Страницы зависали"
+          }
+        }
+      }
+    },
+    "quit-survey.option.pages-loaded-slowly" : {
+      "comment" : "Quit survey feedback option - site breakage",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seiten haben langsam geladen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Pages loaded slowly"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las páginas cargaron lentamente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les pages se sont chargées lentement"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le pagine si sono caricate lentamente"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pagina's laadden langzaam"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Strony ładowały się wolno"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As páginas carregaram lentamente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Страницы загружались медленно"
+          }
+        }
+      }
+    },
+    "quit-survey.option.password-manager-unavailable" : {
+      "comment" : "Quit survey feedback option - features/extensions",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passwort-Manager nicht verfügbar"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Password manager unavailable"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gestor de contraseñas no disponible"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gestionnaire de mots de passe indisponible"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gestore password non disponibile"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wachtwoordbeheer niet beschikbaar"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Menedżer haseł niedostępny"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gestor de palavras-passe indisponível"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Менеджер паролей недоступен"
+          }
+        }
+      }
+    },
+    "quit-survey.option.privacy-concerns" : {
+      "comment" : "Quit survey feedback option - value proposition",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Datenschutzbedenken"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Privacy concerns"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preocupaciones de privacidad"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Préoccupations de confidentialité"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Problemi di privacy"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Privacyzorgen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obawy dotyczące prywatności"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Preocupações de privacidade"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Опасения о конфиденциальности"
+          }
+        }
+      }
+    },
+    "quit-survey.option.shortcuts-didnt-work" : {
+      "comment" : "Quit survey feedback option - UI",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tastenkombinationen funktionierten nicht"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Shortcuts didn't work"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Los atajos no funcionaron"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les raccourcis ne fonctionnaient pas"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le scorciatoie non funzionavano"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sneltoetsen werkten niet"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Skróty nie działały"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Os atalhos não funcionaram"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Горячие клавиши не работали"
+          }
+        }
+      }
+    },
+    "quit-survey.option.sign-in-hassles" : {
+      "comment" : "Quit survey feedback option - ecosystem",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Probleme bei der Anmeldung"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Sign in hassles"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Problemas al iniciar sesión"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Difficultés de connexion"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Problemi di accesso"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inlogproblemen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Problemy z logowaniem"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Problemas ao iniciar sessão"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Проблемы со входом"
           }
         }
       }
@@ -85315,6 +85628,66 @@
         }
       }
     },
+    "quit-survey.option.something-else" : {
+      "comment" : "Quit survey feedback option for other issues",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Etwas anderes"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Something else"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otro problema"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Autre chose"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Qualcos'altro"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Iets anders"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coś innego"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Outra coisa"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Что-то другое"
+          }
+        }
+      }
+    },
     "quit-survey.option.tabs-opened-slowly" : {
       "comment" : "Quit survey feedback option - performance",
       "extractionState" : "extracted_with_value",
@@ -85375,62 +85748,122 @@
         }
       }
     },
-    "quit-survey.option.browser-crashed" : {
-      "comment" : "Quit survey feedback option - performance",
+    "quit-survey.option.unexpected-search-results" : {
+      "comment" : "Quit survey feedback option - search",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Browser abgestürzt"
+            "value" : "Unerwartete Suchergebnisse"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Browser crashed"
+            "value" : "Unexpected search results"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "El navegador se bloqueó"
+            "value" : "Resultados de búsqueda inesperados"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Le navigateur a planté"
+            "value" : "Résultats de recherche inattendus"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Il browser si è bloccato"
+            "value" : "Risultati di ricerca inaspettati"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Browser crashte"
+            "value" : "Onverwachte zoekresultaten"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Przeglądarka się zawieszała"
+            "value" : "Nieoczekiwane wyniki wyszukiwania"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O navegador bloqueou"
+            "value" : "Resultados de pesquisa inesperados"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Браузер вылетал"
+            "value" : "Неожиданные результаты поиска"
+          }
+        }
+      }
+    },
+    "quit-survey.option.unsure-how-history-is-handled" : {
+      "comment" : "Quit survey feedback option - value proposition",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Unsicher, wie der Verlauf behandelt wird"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Unsure how history is handled"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No sé cómo se gestiona el historial"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas sûr de comment l'historique est géré"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non so come viene gestita la cronologia"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Onzeker hoe geschiedenis wordt behandeld"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie wiem, jak obsługiwana jest historia"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não sei como o histórico é gerido"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Непонятно, что происходит с историей"
           }
         }
       }
@@ -85495,366 +85928,7 @@
         }
       }
     },
-    "quit-survey.option.couldnt-sign-in-to-bank" : {
-      "comment" : "Quit survey feedback option - site breakage",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Anmeldung bei der Bank nicht möglich"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Couldn't sign in to bank"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No pude iniciar sesión en el banco"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Impossible de me connecter à ma banque"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Non sono riuscito ad accedere alla banca"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kon niet inloggen bij bank"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nie mogłem(-am) zalogować się do banku"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Não consegui iniciar sessão no banco"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не удалось войти в банк"
-          }
-        }
-      }
-    },
-    "quit-survey.option.couldnt-check-out" : {
-      "comment" : "Quit survey feedback option - site breakage",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bezahlen nicht möglich"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Couldn't check out"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No pude pagar"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Impossible de passer à la caisse"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Non sono riuscito a pagare"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Kon niet afrekenen"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nie mogłem(-am) sfinalizować zakupu"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Não consegui finalizar a compra"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Не удалось оформить заказ"
-          }
-        }
-      }
-    },
-    "quit-survey.option.more-captchas" : {
-      "comment" : "Quit survey feedback option - site breakage",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mehr CAPTCHAs"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "More CAPTCHAs"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Más CAPTCHAs"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Plus de CAPTCHAs"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Più CAPTCHA"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Meer CAPTCHA's"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Więcej CAPTCHA"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mais CAPTCHAs"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Больше CAPTCHA"
-          }
-        }
-      }
-    },
-    "quit-survey.option.pages-loaded-slowly" : {
-      "comment" : "Quit survey feedback option - site breakage",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Seiten haben langsam geladen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Pages loaded slowly"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Las páginas cargaron lentamente"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les pages se sont chargées lentement"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le pagine si sono caricate lentamente"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pagina's laadden langzaam"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Strony ładowały się wolno"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "As páginas carregaram lentamente"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Страницы загружались медленно"
-          }
-        }
-      }
-    },
-    "quit-survey.option.pages-froze" : {
-      "comment" : "Quit survey feedback option - site breakage",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Seiten eingefroren"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Pages froze"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Las páginas se congelaron"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Les pages se sont figées"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le pagine si sono bloccate"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pagina's bevroren"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Strony się zawieszały"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "As páginas bloquearam"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Страницы зависали"
-          }
-        }
-      }
-    },
-    "quit-survey.option.asked-to-disable-ad-blocker" : {
-      "comment" : "Quit survey feedback option - site breakage",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aufforderung, den Werbeblocker zu deaktivieren"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Asked to disable Ad Blocker"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Me pidieron desactivar el bloqueador de anuncios"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "On m'a demandé de désactiver le bloqueur de publicités"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Mi è stato chiesto di disattivare il blocco pubblicità"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gevraagd om advertentieblokkering uit te schakelen"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Prośba o wyłączenie blokowania reklam"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Pediram-me para desativar o bloqueador de anúncios"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Просят отключить блокировщик рекламы"
-          }
-        }
-      }
-    },    "quit-survey.positive-option" : {
+    "quit-survey.positive-option" : {
       "comment" : "Positive response option in quit survey",
       "extractionState" : "extracted_with_value",
       "localizations" : {
@@ -85910,48 +85984,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Отлично"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bien, y lo volveré a usar pronto"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bonne expérience, je l'utiliserai à nouveau bientôt"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "È andata bene, e lo userò di nuovo presto"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Goed, en ik zal er snel weer gebruik van maken"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dobrze, i wkrótce znów go użyję"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bom, e vou usá-lo novamente em breve"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Все хорошо, и я скоро снова им воспользуюсь"
           }
         }
       }
@@ -86013,48 +86045,6 @@
             "state" : "translated",
             "value" : "Спасибо, что поделились мнением!"
           }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¡Gracias y nos vemos pronto!"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Merci et à bientôt !"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Grazie e a presto!"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bedankt en tot snel!"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dzięki i do zobaczenia wkrótce!"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Obrigado e até breve!"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Спасибо и до скорой встречи!"
-          }
         }
       }
     },
@@ -86114,48 +86104,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Закрыть"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Salir ahora"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fermer maintenant"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Esci ora"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nu afsluiten"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wyjdź teraz"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Desistir já"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Выйти сейчас"
           }
         }
       }

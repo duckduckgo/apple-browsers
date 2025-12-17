@@ -1054,7 +1054,7 @@ extension AddressBarTextField {
         case openTab(URL)
 
         func toAttributedString(size: CGFloat, isBurner: Bool) -> NSAttributedString {
-            let suffixColor = isBurner ? NSColor.burnerAccent : NSColor.addressBarSuffix
+            let suffixColor = isBurner ? NSColor.burnerAccent : NSColor(designSystemColor: .accentTextPrimary)
             let attrs: [NSAttributedString.Key: Any] = [
                 .font: NSFont.systemFont(ofSize: size, weight: .light),
                 .foregroundColor: suffixColor
@@ -1161,6 +1161,10 @@ extension AddressBarTextField: NSTextFieldDelegate {
         if suggestionContainerViewModel?.suggestionContainer.result?.count ?? 0 > 0 {
             showSuggestionWindow()
         }
+    }
+
+    func refreshStyle() {
+        updateAttributedStringValue()
     }
 
     func moveCursorToEnd() {

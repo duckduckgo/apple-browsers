@@ -35,16 +35,40 @@ struct FireOptions: OptionSet {
     static let all: FireOptions = [.tabs, .data, .aiChats]
 }
 
+enum FireContext {
+    case manualFire              // User pressed Fire Button
+    case autoClearOnLaunch       // Auto-clear during app launch
+    case autoClearWhileActive    // Auto-clear while app is running (time-based)
+}
+
 protocol FireExecutorDelegate: AnyObject {
+    func willStartBurning(fireContext: FireContext)
     func willStartBurningTabs()
     func didFinishBurningTabs()
     func willStartBurningData()
     func didFinishBurningData()
     func willStartBurningAIHistory()
     func didFinishBurningAIHistory()
+    func didFinishBurning(fireContext: FireContext)
 }
 
-class FireExecutor {
+protocol FireExecuting {
+    @MainActor func prepare(for options: FireOptions)
+    @MainActor func burn(options: FireOptions,
+                         applicationState: DataStoreWarmup.ApplicationState,
+                         fireContext: FireContext) async
+    var delegate: FireExecutorDelegate? { get set }
+}
+
+extension FireExecuting {
+    @MainActor
+    func burn(options: FireOptions,
+              fireContext: FireContext) async {
+        await burn(options: options, applicationState: .unknown, fireContext: fireContext)
+    }
+}
+
+class FireExecutor: FireExecuting {
     
     // MARK: - Variables
     
@@ -110,7 +134,10 @@ class FireExecutor {
     }
     
     @MainActor
-    func burn(options: FireOptions, applicationState: DataStoreWarmup.ApplicationState = .unknown) async {
+    func burn(options: FireOptions,
+              applicationState: DataStoreWarmup.ApplicationState = .unknown,
+              fireContext: FireContext) async {
+        delegate?.willStartBurning(fireContext: fireContext)
         if options.contains(.tabs) {
             delegate?.willStartBurningTabs()
             burnTabs()
@@ -132,6 +159,7 @@ class FireExecutor {
 
         if shouldBurnData { delegate?.didFinishBurningData() }
         if shouldBurnAIChats { delegate?.didFinishBurningAIHistory() }
+        delegate?.didFinishBurning(fireContext: fireContext)
     }
     
     // MARK: Burn Tabs Helpers

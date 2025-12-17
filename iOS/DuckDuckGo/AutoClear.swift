@@ -20,6 +20,7 @@
 import Foundation
 import UIKit
 import Core
+import BrowserServicesKit
 
 protocol AutoClearWorker {
 
@@ -46,35 +47,32 @@ protocol AutoClearing {
 
 final class AutoClear: AutoClearing {
 
-    private let worker: AutoClearWorker
+    private let worker: FireExecuting
     private var timestamp: TimeInterval?
-
     private let appSettings: AppSettings
+    private let featureFlagger: FeatureFlagger
 
     var isClearingEnabled: Bool {
         return AutoClearSettingsModel(settings: appSettings) != nil
     }
 
-    init(worker: AutoClearWorker, appSettings: AppSettings = AppDependencyProvider.shared.appSettings) {
+    init(worker: FireExecuting,
+         appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
+         featureFlagger: FeatureFlagger) {
         self.worker = worker
         self.appSettings = appSettings
+        self.featureFlagger = featureFlagger
     }
 
     @MainActor
     func clearDataIfEnabled(launching: Bool = false, applicationState: DataStoreWarmup.ApplicationState = .unknown) async {
-        guard let settings = AutoClearSettingsModel(settings: appSettings) else { return }
-
-        worker.willStartClearing(self)
-
-        if settings.action.contains(.clearTabs) {
-            await worker.forgetTabs()
+        guard var options = AutoClearSettingsModel(settings: appSettings)?.action else { return }
+        if shouldInjectAIChatsFireOption(into: options) {
+            options.insert(.aiChats)
         }
-
-        if settings.action.contains(.clearData) {
-            await worker.forgetData(applicationState: applicationState)
-        }
-
-        worker.autoClearDidFinishClearing(self, isLaunching: launching)
+        let fireContext: FireContext = launching ? .autoClearOnLaunch : .autoClearWhileActive
+        worker.prepare(for: options)
+        await worker.burn(options: options, applicationState: applicationState, fireContext: fireContext)
     }
 
     /// Note: function is parametrised because of tests.
@@ -111,8 +109,14 @@ final class AutoClear: AutoClearing {
     @MainActor
     func clearDataDueToTimeExpired(applicationState: DataStoreWarmup.ApplicationState) async {
         timestamp = nil
-        worker.clearNavigationStack()
         await clearDataIfEnabled(applicationState: applicationState)
+    }
+    
+    private func shouldInjectAIChatsFireOption(into options: FireOptions) -> Bool {
+        options.contains(.data)
+            && !options.contains(.aiChats)
+            && !featureFlagger.isFeatureOn(.granularFireButtonOptions)
+            && appSettings.autoClearAIChatHistory
     }
 
 }

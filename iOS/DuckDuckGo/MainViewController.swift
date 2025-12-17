@@ -102,7 +102,7 @@ class MainViewController: UIViewController {
     let tabManager: TabManager
     let previewsSource: TabPreviewsSource
     let appSettings: AppSettings
-    let fireExecutor: FireExecutor
+    var fireExecutor: FireExecuting
     private var launchTabObserver: LaunchTabNotification.Observer?
     var isNewTabPageVisible: Bool {
         newTabPageViewController != nil
@@ -296,7 +296,7 @@ class MainViewController: UIViewController {
         mobileCustomization: MobileCustomization,
         remoteMessagingActionHandler: RemoteMessagingActionHandling,
         productSurfaceTelemetry: ProductSurfaceTelemetry,
-        fireExecutor: FireExecutor,
+        fireExecutor: FireExecuting,
         remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
         aiChatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature()
     ) {
@@ -3696,7 +3696,7 @@ extension MainViewController: AutoClearWorker {
         fireExecutor.prepare(for: options)
         
         fireButtonAnimator.animate {
-            await self.fireExecutor.burn(options: options)
+            await self.fireExecutor.burn(options: options, fireContext: .manualFire)
             Instruments.shared.endTimedEvent(for: spid)
             self.daxDialogsManager.resumeRegularFlow()
         } onTransitionCompleted: {
@@ -3752,6 +3752,19 @@ extension MainViewController: AutoClearWorker {
 }
 
 extension MainViewController: FireExecutorDelegate {
+    
+    func willStartBurning(fireContext: FireContext) {
+        switch fireContext {
+        case .manualFire:
+            return
+        case .autoClearOnLaunch:
+            autoClearInProgress = true
+        case .autoClearWhileActive:
+            autoClearInProgress = true
+            clearNavigationStack()
+        }
+    }
+    
     func willStartBurningTabs() {
         omniBar.endEditing()
         findInPageView?.done()
@@ -3778,6 +3791,22 @@ extension MainViewController: FireExecutorDelegate {
     func didFinishBurningAIHistory() {
         Task {
             await aiChatViewControllerManager.killSessionAndResetTimer()
+        }
+    }
+    
+    func didFinishBurning(fireContext: FireContext) {
+        switch fireContext {
+        case .manualFire:
+            return
+        case .autoClearOnLaunch:
+            autoClearInProgress = false
+            autoClearShouldRefreshUIAfterClear = true
+        case .autoClearWhileActive:
+            autoClearInProgress = false
+            if autoClearShouldRefreshUIAfterClear {
+                refreshUIAfterClear()
+            }
+            autoClearShouldRefreshUIAfterClear = true
         }
     }
 }

@@ -191,7 +191,7 @@ final class SubscriptionSettingsViewModelV2Tests: XCTestCase {
         await waitForSubscriptionUpdate()
 
         // When
-        sut.viewAllPlans()
+        sut.navigateToPlans()
 
         // Then
         XCTAssertTrue(sut.state.isShowingPlansView)
@@ -206,7 +206,7 @@ final class SubscriptionSettingsViewModelV2Tests: XCTestCase {
         await waitForSubscriptionUpdate()
 
         // When
-        sut.viewAllPlans()
+        sut.navigateToPlans()
 
         // Then
         XCTAssertTrue(sut.state.isShowingGoogleView)
@@ -230,7 +230,7 @@ final class SubscriptionSettingsViewModelV2Tests: XCTestCase {
             .sink { _ in stripeViewExpectation.fulfill() }
             .store(in: &cancellables)
 
-        sut.viewAllPlans()
+        sut.navigateToPlans()
 
         // Then - Wait for isShowingStripeView to become true
         await fulfillment(of: [stripeViewExpectation], timeout: 2.0)
@@ -246,7 +246,7 @@ final class SubscriptionSettingsViewModelV2Tests: XCTestCase {
         await waitForSubscriptionUpdate()
 
         // When
-        sut.viewAllPlans()
+        sut.navigateToPlans()
 
         // Then
         XCTAssertTrue(sut.state.isShowingInternalSubscriptionNotice)

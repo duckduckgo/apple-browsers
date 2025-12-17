@@ -147,26 +147,6 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
         }
     }
 
-    /// Handles the "View All Plans" action based on subscription platform
-    /// - For Apple: signals to show plans webview
-    /// - For Google: signals to show Google info screen
-    /// - For Stripe: opens Stripe Customer Portal
-    /// - For Unknown: signals to show internal subscription notice
-    func viewAllPlans() {
-        guard let platform = state.subscriptionInfo?.platform else { return }
-
-        switch platform {
-        case .apple:
-            state.isShowingPlansView = true
-        case .google:
-            displayGoogleView(true)
-        case .stripe:
-            Task { await manageStripeSubscription() }
-        case .unknown:
-            displayInternalSubscriptionNotice(true)
-        }
-    }
-
     private let keyValueStorage: KeyValueStoring
 
     init(subscriptionManager: SubscriptionManagerV2 = AppDependencyProvider.shared.subscriptionManagerV2!,

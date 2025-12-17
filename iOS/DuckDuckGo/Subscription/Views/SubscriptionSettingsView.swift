@@ -653,7 +653,7 @@ struct SubscriptionSettingsViewV2: View {
                     .daxBodyRegular()
                     .foregroundColor(Color(designSystemColor: .accent))
             },
-                               action: { viewModel.viewAllPlans() },
+                               action: { viewModel.navigateToPlans() },
                                disclosureIndicator: true,
                                isButton: true)
         }

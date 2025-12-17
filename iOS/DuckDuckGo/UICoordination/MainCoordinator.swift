@@ -138,7 +138,8 @@ final class MainCoordinator {
                                 daxDialogsManager: daxDialogsManager,
                                 aiChatSettings: aiChatSettings,
                                 productSurfaceTelemetry: productSurfaceTelemetry,
-                                sharedSecureVault: sharedSecureVault)
+                                sharedSecureVault: sharedSecureVault,
+                                voiceSearchHelper: voiceSearchHelper)
         controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
                                         bookmarksDatabase: bookmarksDatabase,
                                         bookmarksDatabaseCleaner: syncService.syncDataProviders.bookmarksAdapter.databaseCleaner,

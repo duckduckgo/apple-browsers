@@ -220,6 +220,7 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case canPromoteAutofillExtensionInBrowser
     case canPromoteAutofillExtensionInPasswordManagement
     case migrateKeychainAccessibility
+    case autofillPasswordSearchPrioritizeDomain
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
@@ -312,6 +313,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Controls different input sizes and fade out animation for toggle.
     case fadeOutOnToggle
+
+    /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
+    case contextualDuckAIMode
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {

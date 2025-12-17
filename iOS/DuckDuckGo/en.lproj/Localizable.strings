@@ -1894,6 +1894,24 @@
 /* No comment provided by engineer. */
 "findinpage.title" = "Find in Page";
 
+/* AI Chats option subtitle in fire confirmation */
+"fire.confirmation.aichats.subtitle" = "Delete all chats";
+
+/* AI Chats option title in fire confirmation */
+"fire.confirmation.aichats.title" = "Duck.ai Chats";
+
+/* Subtitle for cookies/site data when history is disabled */
+"fire.confirmation.data.subtitle.historyDisabled" = "May sign you out of accounts";
+
+/* Cookies and site data option title in fire confirmation */
+"fire.confirmation.data.title" = "Cookies and Site Data";
+
+/* Tabs option title in fire confirmation */
+"fire.confirmation.tabs.title" = "Tabs";
+
+/* Title for fire button confirmation screen */
+"fire.confirmation.title" = "Choose What To Delete";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Airstream";
 
@@ -2799,6 +2817,12 @@ Take back control of your personal information with the browser designed for dat
 
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Search Assist Settings";
+
+/* Settings screen cell subtitle for enabling automatic page context */
+"settings.aifeatures.automatic.context.subtitle" = "Automatically send page context to Duck.ai";
+
+/* Settings screen cell title for enabling automatic page context */
+"settings.aifeatures.automatic.context.title" = "Automatically Send Context";
 
 /* Settings screen cell subtitle for enabling Duck.ai as tabs */
 "settings.aifeatures.full.mode.subtitle" = "Show new Duck.ai Chats as tabs in the browser";

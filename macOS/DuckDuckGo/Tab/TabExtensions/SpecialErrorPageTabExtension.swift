@@ -67,16 +67,26 @@ final class SpecialErrorPageTabExtension {
         webViewPublisher.sink { [weak self] webView in
             MainActor.assumeMainThread {
                 self?.webView = webView
+                self?.setupUserScriptWebView()
             }
         }.store(in: &cancellables)
         scriptsPublisher.sink { [weak self] scripts in
             MainActor.assumeMainThread {
                 self?.specialErrorPageUserScript = scripts.specialErrorPageUserScript
                 self?.specialErrorPageUserScript?.delegate = self
+                self?.setupUserScriptWebView()
             }
         }.store(in: &cancellables)
     }
 
+    @MainActor
+    private func setupUserScriptWebView() {
+        guard let webView = webView as? WKWebView else {
+            return
+        }
+
+        specialErrorPageUserScript?.webView = webView
+    }
 }
 
 extension SpecialErrorPageTabExtension: NavigationResponder {

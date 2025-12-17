@@ -886,7 +886,7 @@ extension DataBrokerProtectionDatabase {
             let scansNotRun = scans.filter { $0.lastRunDate == nil }
             return scansNotRun.count == 0
         } catch {
-            handleError(error, context: "DataBrokerProtectionDatabase.tbd")
+            handleError(error, context: "DataBrokerProtectionDatabase.haveAllScansRunAtLeastOnce")
             throw error
         }
     }

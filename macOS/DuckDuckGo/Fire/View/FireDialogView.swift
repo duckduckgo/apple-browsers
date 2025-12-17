@@ -233,7 +233,7 @@ struct FireDialogView: ModalView {
             selectedSegmentTopStroke: Color(designSystemColor: .highlightPrimary),
             hoverSegmentBackground: Color(designSystemColor: .controlsFillPrimary),
             pressedSegmentBackground: Color(designSystemColor: .controlsFillSecondary),
-            hoverOverlay: Color(designSystemColor: .controlsFillPrimary)
+            hoverOverlay: Color(designSystemColor: .toneTintPrimary)
         )
         .frame(height: 84)
         .accessibilityIdentifier("FireDialogView.segmentedControl")

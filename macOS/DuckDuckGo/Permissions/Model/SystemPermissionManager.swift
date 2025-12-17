@@ -40,8 +40,11 @@ enum SystemPermissionAuthorizationState {
 /// Protocol for managing system-level permissions required before website permissions can be granted
 protocol SystemPermissionManagerProtocol: AnyObject {
 
-    /// Returns the current authorization state for the given permission type
+    /// Returns the current authorization state for the given permission type (async, always fresh)
     func authorizationState(for permissionType: PermissionType) async -> SystemPermissionAuthorizationState
+
+    /// Returns the cached authorization state for the given permission type (sync, may be briefly stale at app launch)
+    func cachedAuthorizationState(for permissionType: PermissionType) -> SystemPermissionAuthorizationState
 
     /// Returns true if system authorization is required for the given permission type
     func isAuthorizationRequired(for permissionType: PermissionType) -> Bool
@@ -69,26 +72,26 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
 
     // MARK: - Public Methods
 
-    /// Returns the current authorization state for the given permission type
+    /// Returns the current authorization state for the given permission type (async, always fresh)
     func authorizationState(for permissionType: PermissionType) async -> SystemPermissionAuthorizationState {
         switch permissionType {
         case .geolocation:
-            // Geolocation can be checked synchronously
             return geolocationAuthorizationState
         case .notification:
-            let status = await notificationService.authorizationStatus
-            switch status {
-            case .authorized, .provisional, .ephemeral:
-                return .authorized
-            case .denied:
-                return .denied
-            case .notDetermined:
-                return .notDetermined
-            @unknown default:
-                return .notDetermined
-            }
+            return await notificationService.authorizationStatus.asSystemPermissionState
         case .camera, .microphone, .popups, .externalScheme:
-            // These don't require system permission through our two-step flow
+            return .authorized
+        }
+    }
+
+    /// Returns the cached authorization state for the given permission type (sync, may be briefly stale at app launch)
+    func cachedAuthorizationState(for permissionType: PermissionType) -> SystemPermissionAuthorizationState {
+        switch permissionType {
+        case .geolocation:
+            return geolocationAuthorizationState
+        case .notification:
+            return notificationService.cachedAuthorizationStatus.asSystemPermissionState
+        case .camera, .microphone, .popups, .externalScheme:
             return .authorized
         }
     }
@@ -207,4 +210,21 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
 /// Helper class to hold a cancellable reference for proper capture semantics in closures
 private final class CancellableHolder {
     var cancellable: AnyCancellable?
+}
+
+// MARK: - UNAuthorizationStatus Conversion
+
+private extension UNAuthorizationStatus {
+    var asSystemPermissionState: SystemPermissionAuthorizationState {
+        switch self {
+        case .authorized, .provisional, .ephemeral:
+            return .authorized
+        case .denied:
+            return .denied
+        case .notDetermined:
+            return .notDetermined
+        @unknown default:
+            return .notDetermined
+        }
+    }
 }

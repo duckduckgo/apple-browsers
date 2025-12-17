@@ -44,6 +44,13 @@ final class SystemPermissionManagerMock: SystemPermissionManagerProtocol {
         return authorizationStates[permissionType] ?? defaultAuthorizationState
     }
 
+    func cachedAuthorizationState(for permissionType: PermissionType) -> SystemPermissionAuthorizationState {
+        if permissionType == .notification {
+            return notificationAuthorizationStateSubject.value
+        }
+        return authorizationStates[permissionType] ?? defaultAuthorizationState
+    }
+
     func isAuthorizationRequired(for permissionType: PermissionType) -> Bool {
         if permissionType == .notification {
             let state = notificationAuthorizationStateSubject.value

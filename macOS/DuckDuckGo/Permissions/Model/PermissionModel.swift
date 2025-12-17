@@ -404,7 +404,7 @@ final class PermissionModel {
         }
     }
 
-    private func shouldGrantPermission(for permissions: [PermissionType], requestedForDomain domain: String) async -> Bool? {
+    private func shouldGrantPermission(for permissions: [PermissionType], requestedForDomain domain: String) -> Bool? {
         for permission in permissions {
             var grant: PersistedPermissionDecision
             let stored = permissionManager.permission(forDomain: domain, permissionType: permission)
@@ -432,7 +432,7 @@ final class PermissionModel {
                 return false
             case .allow:
                 // User has "Always Allow" stored - but check system permission first
-                if featureFlagger.isFeatureOn(.newPermissionView), await isSystemPermissionDisabled(for: permission) {
+                if featureFlagger.isFeatureOn(.newPermissionView), isSystemPermissionDisabled(for: permission) {
                     return nil
                 }
             case .ask:
@@ -443,16 +443,16 @@ final class PermissionModel {
         return true
     }
 
-    /// Checks if system-level permission is disabled for the given permission type
-    private func isSystemPermissionDisabled(for permissionType: PermissionType) async -> Bool {
+    /// Checks if system-level permission is disabled for the given permission type (uses cached state for sync access)
+    private func isSystemPermissionDisabled(for permissionType: PermissionType) -> Bool {
         guard permissionType.requiresSystemPermission else { return false }
 
-        let authState = await systemPermissionManager.authorizationState(for: permissionType)
+        let authState = systemPermissionManager.cachedAuthorizationState(for: permissionType)
         return authState == .denied || authState == .restricted || authState == .systemDisabled
     }
 
     /// Request user authorization for provided PermissionTypes
-    /// The decisionHandler will be called synchronously if there‘s a permanent (stored) permission granted or denied
+    /// The decisionHandler will be called synchronously if there's a permanent (stored) permission granted or denied
     /// If no permanent decision is stored a new AuthorizationQuery will be initialized and published via $authorizationQuery
     func permissions(_ permissions: [PermissionType], requestedForDomain domain: String, url: URL? = nil, decisionHandler: @escaping (Bool) -> Void) {
         guard !permissions.isEmpty else {
@@ -461,33 +461,31 @@ final class PermissionModel {
             return
         }
 
-        Task { @MainActor in
-            let shouldGrant = await shouldGrantPermission(for: permissions, requestedForDomain: domain)
-            let wrappedDecisionHandler = { [weak self] (isGranted: Bool) in
-                decisionHandler(isGranted)
-                if isGranted {
-                    self?.permissionGranted(for: permissions[0])
-                }
+        let shouldGrant = shouldGrantPermission(for: permissions, requestedForDomain: domain)
+        let wrappedDecisionHandler = { [weak self] (isGranted: Bool) in
+            decisionHandler(isGranted)
+            if isGranted {
+                self?.permissionGranted(for: permissions[0])
             }
-            switch shouldGrant {
-            case .none:
-                // Check if this is "app=allow but system=disabled" case
-                let isSystemDisabled: Bool = {
-                    guard let permission = permissions.first,
-                          permission.requiresSystemPermission,
-                          self.featureFlagger.isFeatureOn(.newPermissionView) else { return false }
-                    return self.permissionManager.permission(forDomain: domain, permissionType: permission) == .allow
-                }()
-                self.queryAuthorization(for: permissions, domain: domain, url: url,
-                                        isSystemPermissionDisabled: isSystemDisabled,
-                                        decisionHandler: wrappedDecisionHandler)
-            case .some(true):
-                wrappedDecisionHandler(true)
-            case .some(false):
-                wrappedDecisionHandler(false)
-                for permission in permissions {
-                    self.permissions[permission].denied()
-                }
+        }
+        switch shouldGrant {
+        case .none:
+            // Check if this is "app=allow but system=disabled" case
+            let isSystemDisabled: Bool = {
+                guard let permission = permissions.first,
+                      permission.requiresSystemPermission,
+                      self.featureFlagger.isFeatureOn(.newPermissionView) else { return false }
+                return self.permissionManager.permission(forDomain: domain, permissionType: permission) == .allow
+            }()
+            self.queryAuthorization(for: permissions, domain: domain, url: url,
+                                    isSystemPermissionDisabled: isSystemDisabled,
+                                    decisionHandler: wrappedDecisionHandler)
+        case .some(true):
+            wrappedDecisionHandler(true)
+        case .some(false):
+            wrappedDecisionHandler(false)
+            for permission in permissions {
+                self.permissions[permission].denied()
             }
         }
     }

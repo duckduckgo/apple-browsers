@@ -1364,6 +1364,10 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     public func fetchAllOptOutEmailConfirmations() throws -> [OptOutEmailConfirmationJobData] {
         return []
     }
+
+    public func haveAllScansRunAtLeastOnce() throws -> Bool {
+        return true
+    }
 }
 
 public final class MockAppVersion: AppVersionNumberProvider {
@@ -1817,13 +1821,13 @@ public final class MockBrokerProfileJob: BrokerProfileJob, @unchecked Sendable {
 
     public convenience init(id: Int64,
                             jobType: JobType,
-                            errorDelegate: BrokerProfileJobErrorDelegate,
+                            statusReportingDelegate: BrokerProfileJobStatusReportingDelegate,
                             shouldError: Bool = false) {
 
         self.init(dataBrokerID: id,
                   jobType: jobType,
                   showWebView: false,
-                  errorDelegate: errorDelegate,
+                  statusReportingDelegate: statusReportingDelegate,
                   jobDependencies: MockBrokerProfileJobDependencies())
 
         self.shouldError = shouldError
@@ -1831,11 +1835,11 @@ public final class MockBrokerProfileJob: BrokerProfileJob, @unchecked Sendable {
 
     public override func main() {
         if shouldError {
-            errorDelegate?.dataBrokerOperationDidError(DataBrokerProtectionError.noActionFound,
-                                                       withBrokerURL: nil,
-                                                       version: nil,
-                                                       stepType: nil,
-                                                       dataBrokerParent: nil)
+            statusReportingDelegate?.dataBrokerOperationDidError(DataBrokerProtectionError.noActionFound,
+                                                                 withBrokerURL: nil,
+                                                                 version: nil,
+                                                                 stepType: nil,
+                                                                 dataBrokerParent: nil)
         }
 
         finish()
@@ -1873,7 +1877,7 @@ public final class MockBrokerProfileJob: BrokerProfileJob, @unchecked Sendable {
     }
 }
 
-public final class MockBrokerProfileJobErrorDelegate: BrokerProfileJobErrorDelegate {
+public final class MockBrokerProfileJobStatusReportingDelegate: BrokerProfileJobStatusReportingDelegate {
 
     public var operationErrors: [Error] = []
     public var dataBrokerOperationDidErrorCalled = false
@@ -2010,7 +2014,7 @@ public final class MockDataBrokerOperationsCreator: BrokerProfileJobProviding {
     public func createJobs(with jobType: JobType,
                            withPriorityDate priorityDate: Date?,
                            showWebView: Bool,
-                           errorDelegate: BrokerProfileJobErrorDelegate,
+                           statusReportingDelegate: BrokerProfileJobStatusReportingDelegate,
                            jobDependencies: BrokerProfileJobDependencyProviding) throws -> [BrokerProfileJob] {
         guard !shouldError else { throw DataBrokerProtectionError.unknown("")}
         self.createdType = jobType

@@ -191,7 +191,7 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
                                 showingInternalSubscriptionAlert.toggle()
                             }
                         }
-                        .buttonStyle(StandardButtonStyle(topPadding: 8, bottomPadding: 8 ,horizontalPadding: 12, cornerRadius: 6))
+                        .buttonStyle(StandardButtonStyle(topPadding: 8, bottomPadding: 8, horizontalPadding: 12, cornerRadius: 6))
                     }
                     Spacer()
                 }

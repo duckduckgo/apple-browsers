@@ -34,6 +34,13 @@ enum AIChatContextualQuickAction: String, CaseIterable, AIChatQuickActionType {
         }
     }
 
+    var prompt: String {
+        switch self {
+        case .summarize:
+            return "summarize"
+        }
+    }
+
     var icon: UIImage? {
         switch self {
         case .summarize:

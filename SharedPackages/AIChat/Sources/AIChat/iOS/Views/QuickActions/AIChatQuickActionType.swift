@@ -23,6 +23,7 @@ import UIKit
 public protocol AIChatQuickActionType: Equatable {
     var id: String { get }
     var title: String { get }
+    var prompt: String { get }
     var icon: UIImage? { get }
 }
 #endif

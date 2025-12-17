@@ -230,7 +230,7 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     }
 
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectQuickAction action: AIChatContextualQuickAction) {
-        contextualInputViewController(viewController, didSubmitPrompt: action.title)
+        contextualInputViewController(viewController, didSubmitPrompt: action.prompt)
     }
 
     func contextualInputViewControllerDidTapVoice(_ viewController: AIChatContextualInputViewController) {

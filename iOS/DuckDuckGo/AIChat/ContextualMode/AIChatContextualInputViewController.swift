@@ -40,6 +40,7 @@ final class AIChatContextualInputViewController: UIViewController {
     private enum Constants {
         static let horizontalPadding: CGFloat = 20
         static let quickActionsBottomSpacing: CGFloat = 12
+        static let keyboardSpacing: CGFloat = 20
     }
 
     // MARK: - Properties
@@ -60,10 +61,13 @@ final class AIChatContextualInputViewController: UIViewController {
     private lazy var quickActionsView: AIChatQuickActionsView<AIChatContextualQuickAction> = {
         let view = AIChatQuickActionsView<AIChatContextualQuickAction>()
         view.translatesAutoresizingMaskIntoConstraints = false
+        view.setContentCompressionResistancePriority(.required, for: .vertical)
         return view
     }()
 
-    private var bottomConstraint: NSLayoutConstraint?
+    private var isFirstAppearance = true
+    private var safeAreaBottomConstraint: NSLayoutConstraint?
+    private var keyboardBottomConstraint: NSLayoutConstraint?
 
     // MARK: - Initialization
 
@@ -83,18 +87,25 @@ final class AIChatContextualInputViewController: UIViewController {
         setupUI()
         configureNativeInput()
         configureQuickActions()
-        registerForKeyboardNotifications()
+        setupKeyboardObservers()
     }
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        bottomConstraint?.constant = 0
-        view.setNeedsLayout()
-        view.layoutIfNeeded()
-    }
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
 
-    deinit {
-        NotificationCenter.default.removeObserver(self)
+        // Workaround: UIKeyboardLayoutGuide has known issues on first appearance in sheets.
+        // The layout frame isn't properly initialized until after the view has appeared.
+        // We use a safe area constraint initially, then switch to keyboard layout guide here.
+        //
+        // References:
+        // - https://useyourloaf.com/blog/keyboard-layout-guide/ (notes it was "badly broken when first introduced")
+        // - https://developer.apple.com/forums/thread/746826 (keyboard layout issues with sheet presentation)
+        if isFirstAppearance {
+            isFirstAppearance = false
+            safeAreaBottomConstraint?.isActive = false
+            keyboardBottomConstraint = nativeInputViewController.view.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor)
+            keyboardBottomConstraint?.isActive = true
+        }
     }
 
     // MARK: - Public Methods
@@ -121,9 +132,6 @@ private extension AIChatContextualInputViewController {
         quickActionsScrollView.addSubview(quickActionsView)
         embedNativeInputViewController()
 
-        bottomConstraint = nativeInputViewController.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
-        bottomConstraint?.priority = .defaultHigh
-
         NSLayoutConstraint.activate([
             quickActionsScrollView.topAnchor.constraint(equalTo: view.topAnchor),
             quickActionsScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
@@ -137,34 +145,14 @@ private extension AIChatContextualInputViewController {
             quickActionsView.widthAnchor.constraint(equalTo: quickActionsScrollView.frameLayoutGuide.widthAnchor),
             quickActionsView.heightAnchor.constraint(greaterThanOrEqualTo: quickActionsScrollView.frameLayoutGuide.heightAnchor),
 
+            nativeInputViewController.view.topAnchor.constraint(greaterThanOrEqualTo: quickActionsView.bottomAnchor, constant: Constants.quickActionsBottomSpacing),
             nativeInputViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalPadding),
             nativeInputViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalPadding),
-            bottomConstraint!,
+            nativeInputViewController.view.bottomAnchor.constraint(lessThanOrEqualTo: view.safeAreaLayoutGuide.bottomAnchor),
         ])
-    }
 
-    func registerForKeyboardNotifications() {
-        NotificationCenter.default.addObserver(
-            self,
-            selector: #selector(keyboardWillChangeFrame(_:)),
-            name: UIResponder.keyboardWillChangeFrameNotification,
-            object: nil
-        )
-    }
-
-    @objc func keyboardWillChangeFrame(_ notification: Notification) {
-        guard let userInfo = notification.userInfo,
-              let endFrame = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect,
-              let duration = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? TimeInterval,
-              let curve = userInfo[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt else { return }
-
-        let keyboardFrameInView = view.convert(endFrame, from: nil)
-        let overlap = max(0, view.bounds.maxY - keyboardFrameInView.minY)
-        bottomConstraint?.constant = -overlap
-
-        UIView.animate(withDuration: duration, delay: 0, options: UIView.AnimationOptions(rawValue: curve << 16)) {
-            self.view.layoutIfNeeded()
-        }
+        safeAreaBottomConstraint = nativeInputViewController.view.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        safeAreaBottomConstraint?.isActive = true
     }
 
     func embedNativeInputViewController() {
@@ -194,6 +182,29 @@ private extension AIChatContextualInputViewController {
             y: max(0, quickActionsScrollView.contentSize.height - quickActionsScrollView.bounds.height)
         )
         quickActionsScrollView.setContentOffset(bottomOffset, animated: false)
+    }
+
+    func setupKeyboardObservers() {
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillShow),
+            name: UIResponder.keyboardWillShowNotification,
+            object: nil
+        )
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(keyboardWillHide),
+            name: UIResponder.keyboardWillHideNotification,
+            object: nil
+        )
+    }
+
+    @objc func keyboardWillShow(_ notification: Notification) {
+        keyboardBottomConstraint?.constant = -Constants.keyboardSpacing
+    }
+
+    @objc func keyboardWillHide(_ notification: Notification) {
+        keyboardBottomConstraint?.constant = 0
     }
 }
 

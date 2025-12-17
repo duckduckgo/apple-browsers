@@ -217,6 +217,7 @@ extension TabViewController {
                  image: smallIcon ? DesignSystemImages.Glyphs.Size16.aiChat : DesignSystemImages.Glyphs.Size24.aiChat,
                  action: { [weak self] in
             self?.openAIChat()
+            Pixel.fire(pixel: .browsingMenuAIChat)
         })
     }
     
@@ -475,6 +476,7 @@ extension TabViewController {
                  image: smallIcon ? DesignSystemImages.Glyphs.Size16.aiChatAdd : DesignSystemImages.Glyphs.Size24.aiChatAdd,
                  action: { [weak self] in
             DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuNewChatTabTapped)
+            Pixel.fire(pixel: .browsingMenuAIChat)
             self?.openNewChatInNewTab()
         })
     }

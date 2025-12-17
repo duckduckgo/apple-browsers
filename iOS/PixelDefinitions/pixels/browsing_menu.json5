@@ -33,5 +33,12 @@
         "triggers": ["other"],
         "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
+    },
+    "m_menu_ai-chat": {
+        "description": "Fires when the user taps the AI chat option from the browsing menu",
+        "owners": ["dus7"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
     }
 }

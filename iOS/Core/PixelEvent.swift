@@ -169,6 +169,7 @@ extension Pixel {
         case browsingMenuRefreshPage
         case browsingMenuNewDuckAddress
         case browsingMenuVPN
+        case browsingMenuAIChat
 
         case addressBarShare
         case addressBarSettings
@@ -1661,6 +1662,7 @@ extension Pixel.Event {
         case .browsingMenuRefreshPage: return "m_menu_refresh_page"
         case .browsingMenuNewDuckAddress: return "m_menu_new_duck_address"
         case .browsingMenuVPN: return "m_menu_vpn"
+        case .browsingMenuAIChat: return "m_menu_ai-chat"
 
         case .browsingMenuShare: return "m_browsingmenu_share"
         case .browsingMenuListPrint: return "m_browsing_menu_list_print"

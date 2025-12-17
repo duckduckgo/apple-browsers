@@ -302,7 +302,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .popupPermissionButtonPersistence,
                 .tabClosingEventRecreation,
                 .dataImportWideEventMeasurement,
-                .tabProgressIndicator:
+                .tabProgressIndicator,
+                .autofillPasswordSearchPrioritizeDomain:
             true
         default:
             false

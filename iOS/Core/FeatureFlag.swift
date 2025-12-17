@@ -311,7 +311,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .dataImportWideEventMeasurement,
              .browsingMenuSheetPresentation,
              .ampBackgroundTaskSupport,
-             .appRatingPrompt:
+             .appRatingPrompt,
+             .autofillPasswordSearchPrioritizeDomain:
             true
         default:
             false

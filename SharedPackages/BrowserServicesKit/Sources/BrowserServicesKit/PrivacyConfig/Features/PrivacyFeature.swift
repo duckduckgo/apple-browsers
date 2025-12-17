@@ -554,6 +554,8 @@ public enum PopupBlockingSubfeature: String, PrivacySubfeature {
         .popupBlocking
     }
 
+    case createWebViewGatingFailsafe
+
     /// Use extended user-initiated popup timeout (extends from 1s to 6s)
     case extendedUserInitiatedPopupTimeout
 

@@ -383,6 +383,10 @@ extension DataBrokerProtectionAgentManager: JobQueueManagerDelegate {
         }
     }
 
+    public func queueManagerDidCompleteIndividualJob(_ queueManager: any DataBrokerProtectionCore.JobQueueManaging) {
+
+    }
+
 }
 
 extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {

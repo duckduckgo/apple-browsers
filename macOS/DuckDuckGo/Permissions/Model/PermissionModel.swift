@@ -23,7 +23,11 @@ import CoreLocation
 import FeatureFlags
 import Foundation
 import Navigation
+import UserNotifications
 import WebKit
+import os.log
+
+typealias NotificationAuthorizationProvider = @Sendable () async -> UNAuthorizationStatus
 
 final class PermissionModel {
 
@@ -67,6 +71,7 @@ final class PermissionModel {
          geolocationService: GeolocationServiceProtocol = GeolocationService.shared,
          systemPermissionManager: SystemPermissionManagerProtocol = SystemPermissionManager(),
          featureFlagger: FeatureFlagger) {
+
         self.permissionManager = permissionManager
         self.geolocationService = geolocationService
         self.systemPermissionManager = systemPermissionManager
@@ -156,15 +161,26 @@ final class PermissionModel {
                         permissions.geolocation.update(with: currentState)
                     }
                 }
-            case .popups, .externalScheme, .notification:
+            case .notification, .popups, .externalScheme:
                 continue
             }
+        }
+    }
+
+    private func persistsWhen(permission: PermissionType, domain: String) -> Bool {
+        switch permission {
+        case .notification:
+            return !permissionManager.hasPermissionPersisted(forDomain: domain, permissionType: permission)
+                || permissionManager.permission(forDomain: domain, permissionType: permission) != .ask
+        default:
+            return false
         }
     }
 
     private func queryAuthorization(for permissions: [PermissionType],
                                     domain: String,
                                     url: URL?,
+                                    isSystemPermissionDisabled: Bool = false,
                                     decisionHandler: @escaping (Bool) -> Void) {
 
         var queryPtr: UnsafeMutableRawPointer?
@@ -192,11 +208,12 @@ final class PermissionModel {
 
                 if case .success( (let granted, let remember) ) = result {
                     for permission in permissions {
-                        if remember == true {
-                            // User chose "Always Allow" or "Never Allow"
+                        // Preserve existing Always Allow/Deny decisions; don't downgrade to Ask
+                        let isPersisting = remember == true || persistsWhen(permission: permission, domain: domain)
+                        if isPersisting {
                             self.permissionManager.setPermission(granted ? .allow : .deny, forDomain: domain, permissionType: permission)
                         } else if self.featureFlagger.isFeatureOn(.newPermissionView) {
-                            // User chose one-time "Allow" or "Deny" (i.e., remember is false or nil) – store .ask so the permission center button is visible on subsequent visits for both cases
+                            // Other permissions: one-time decisions store .ask for permission center visibility
                             self.permissionManager.setPermission(.ask, forDomain: domain, permissionType: permission)
                         }
                     }
@@ -221,6 +238,7 @@ final class PermissionModel {
 
         // Set state to .requested so the authorization popover can be shown
         permissions.forEach { self.permissions[$0].authorizationQueried(query, updateQueryIfAlreadyRequested: $0 == .popups) }
+        query.isSystemPermissionDisabled = isSystemPermissionDisabled
         authorizationQueries.append(query)
     }
 
@@ -302,6 +320,42 @@ final class PermissionModel {
         }
     }
 
+    /// Checks if a permission is granted (either persistently via "Always Allow" or for this session via one-time grant).
+    ///
+    /// Permission states indicating "granted":
+    /// - `.active`: Permission granted and actively in use (e.g., camera streaming, geolocation updating)
+    /// - `.inactive`: Permission granted but not currently active (e.g., camera granted but off, notification granted but idle)
+    /// - `.paused`: Permission granted and in use but muted (e.g., camera on but muted)
+    ///
+    /// When user grants permission, it transitions from `.requested` to `.inactive` (see PermissionState.granted()).
+    /// For media permissions (camera/mic), WebView tracking then updates to `.active` when used.
+    /// For notifications, it stays `.inactive` (no WebView tracking for notification usage).
+    ///
+    /// This matches the existing pattern in PermissionModel.updatePermissions():
+    /// "(.active or .inactive means it was granted or actively used)"
+    ///
+    /// - Parameters:
+    ///   - permission: The permission type to check
+    ///   - domain: The domain to check permission for
+    /// - Returns: `true` if permission is granted (persistent or session), `false` otherwise
+    func isPermissionGranted(_ permission: PermissionType, forDomain domain: String) -> Bool {
+        // Check persisted decision first (Always Allow)
+        let persistentDecision = permissionManager.permission(forDomain: domain, permissionType: permission)
+        if persistentDecision == .allow {
+            return true
+        }
+
+        // Check runtime/session state (one-time grant for this session)
+        // States .active, .inactive, .paused all indicate permission was granted
+        let sessionState = permissions[permission]
+        switch sessionState {
+        case .active, .inactive, .paused:
+            return true
+        default:
+            return false
+        }
+    }
+
     /// Marks that permissions were changed and a reload is needed to apply changes
     func setPermissionsNeedReload() {
         permissionsNeedReload = true
@@ -378,8 +432,6 @@ final class PermissionModel {
                 return false
             case .allow:
                 // User has "Always Allow" stored - but check system permission first
-                // If system permission is disabled, show dialog instead of auto-granting
-                // Only applies when new permission view is enabled (two-step authorization flow)
                 if featureFlagger.isFeatureOn(.newPermissionView), isSystemPermissionDisabled(for: permission) {
                     return nil
                 }
@@ -391,16 +443,16 @@ final class PermissionModel {
         return true
     }
 
-    /// Checks if system-level permission is disabled for the given permission type
+    /// Checks if system-level permission is disabled for the given permission type (uses cached state for sync access)
     private func isSystemPermissionDisabled(for permissionType: PermissionType) -> Bool {
         guard permissionType.requiresSystemPermission else { return false }
 
-        let authState = systemPermissionManager.authorizationState(for: permissionType)
+        let authState = systemPermissionManager.cachedAuthorizationState(for: permissionType)
         return authState == .denied || authState == .restricted || authState == .systemDisabled
     }
 
     /// Request user authorization for provided PermissionTypes
-    /// The decisionHandler will be called synchronously if there‘s a permanent (stored) permission granted or denied
+    /// The decisionHandler will be called synchronously if there's a permanent (stored) permission granted or denied
     /// If no permanent decision is stored a new AuthorizationQuery will be initialized and published via $authorizationQuery
     func permissions(_ permissions: [PermissionType], requestedForDomain domain: String, url: URL? = nil, decisionHandler: @escaping (Bool) -> Void) {
         guard !permissions.isEmpty else {
@@ -410,7 +462,7 @@ final class PermissionModel {
         }
 
         let shouldGrant = shouldGrantPermission(for: permissions, requestedForDomain: domain)
-        let decisionHandler = { [weak self, decisionHandler] isGranted in
+        let wrappedDecisionHandler = { [weak self] (isGranted: Bool) in
             decisionHandler(isGranted)
             if isGranted {
                 self?.permissionGranted(for: permissions[0])
@@ -418,11 +470,20 @@ final class PermissionModel {
         }
         switch shouldGrant {
         case .none:
-            queryAuthorization(for: permissions, domain: domain, url: url, decisionHandler: decisionHandler)
+            // Check if this is "app=allow but system=disabled" case
+            let isSystemDisabled: Bool = {
+                guard let permission = permissions.first,
+                      permission.requiresSystemPermission,
+                      self.featureFlagger.isFeatureOn(.newPermissionView) else { return false }
+                return self.permissionManager.permission(forDomain: domain, permissionType: permission) == .allow
+            }()
+            self.queryAuthorization(for: permissions, domain: domain, url: url,
+                                    isSystemPermissionDisabled: isSystemDisabled,
+                                    decisionHandler: wrappedDecisionHandler)
         case .some(true):
-            decisionHandler(true)
+            wrappedDecisionHandler(true)
         case .some(false):
-            decisionHandler(false)
+            wrappedDecisionHandler(false)
             for permission in permissions {
                 self.permissions[permission].denied()
             }

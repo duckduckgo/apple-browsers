@@ -37,6 +37,7 @@ show_help() {
     echo "  -a, --all               Show all dependencies (including transitive)"
     echo "  -q, --quiet             Only show packages with updates"
     echo "  -j, --json              Output as JSON"
+    echo "  -l, --list              Print only the list of direct dependencies (one per line)"
     echo "  --no-color              Disable colored output"
 }
 
@@ -44,6 +45,7 @@ QUIET=false
 JSON_OUTPUT=false
 NO_COLOR=false
 SHOW_ALL=false
+LIST_OUTPUT=false
 SEARCH_PATH="."
 
 while [[ $# -gt 0 ]]; do
@@ -52,6 +54,7 @@ while [[ $# -gt 0 ]]; do
         -a|--all) SHOW_ALL=true; shift ;;
         -q|--quiet) QUIET=true; shift ;;
         -j|--json) JSON_OUTPUT=true; shift ;;
+        -l|--list) LIST_OUTPUT=true; shift ;;
         --no-color) NO_COLOR=true; shift ;;
         -*) echo "Unknown option: $1"; show_help; exit 1 ;;
         *) SEARCH_PATH="$1"; shift ;;
@@ -327,6 +330,15 @@ main() {
     if [[ "$pkg_count" -eq 0 ]]; then
         echo -e "${RED}No direct dependencies found${NC}" >&2
         exit 1
+    fi
+
+    # If list output is requested, just print package names and exit
+    if [[ "$LIST_OUTPUT" == true ]]; then
+        while IFS='|' read -r url version; do
+            [[ -z "$url" ]] && continue
+            get_package_name "$url"
+        done < "$FILTERED_PKGS_FILE" | sort -u
+        exit 0
     fi
 
     if [[ "$JSON_OUTPUT" != true ]]; then

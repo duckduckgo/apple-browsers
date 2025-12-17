@@ -36,17 +36,20 @@ public enum HistoryViewEvent: Equatable {
 public final class DataClient: HistoryViewUserScriptClient {
 
     private let dataProvider: DataProviding
+    private let styleProvider: ScriptStyleProviding
     private let actionsHandler: ActionsHandling
     private let contextMenuPresenterProvider: ContextMenuPresenterProvider
     private let errorHandler: EventMapping<HistoryViewEvent>?
 
     public init(
         dataProvider: DataProviding,
+        styleProvider: ScriptStyleProviding,
         actionsHandler: ActionsHandling,
         contextMenuPresenterProvider: @escaping ContextMenuPresenterProvider = DefaultContextMenuPresenterProvider(),
         errorHandler: EventMapping<HistoryViewEvent>?
     ) {
         self.dataProvider = dataProvider
+        self.styleProvider = styleProvider
         self.actionsHandler = actionsHandler
         self.contextMenuPresenterProvider = contextMenuPresenterProvider
         self.errorHandler = errorHandler
@@ -96,7 +99,9 @@ public final class DataClient: HistoryViewUserScriptClient {
         return DataModel.Configuration(
             env: env,
             locale: Bundle.main.preferredLocalizations.first ?? "en",
-            platform: .init(name: "macos")
+            platform: .init(name: "macos"),
+            theme: styleProvider.themeAppearance,
+            themeVariant: styleProvider.themeName
         )
     }
 

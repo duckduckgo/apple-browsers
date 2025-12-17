@@ -55,6 +55,10 @@ class SettingsHostingController: UIHostingController<AnyView> {
             self?.navigationController?.dismiss(animated: true)
         }
 
+        viewModel.onRequestPresentFireConfirmation = { [weak self] onConfirm, onCancel in
+            self?.presentFireConfirmation(onConfirm: onConfirm, onCancel: onCancel)
+        }
+
         self.rootView = AnyView(SettingsRootView(viewModel: viewModel))
 
         decorateNavigationBar()
@@ -85,5 +89,23 @@ class SettingsHostingController: UIHostingController<AnyView> {
             vc.modalPresentationStyle = .fullScreen
         }
         navigationController?.present(vc, animated: true)
+    }
+
+    @MainActor
+    func presentFireConfirmation(onConfirm: @escaping () -> Void, onCancel: @escaping () -> Void) {
+        let presenter = FireConfirmationPresenter(
+            tabsModel: viewProvider.tabManager.model,
+            featureFlagger: AppDependencyProvider.shared.featureFlagger,
+            historyManager: viewModel.historyManager,
+            fireproofing: viewProvider.fireproofing,
+            aiChatSettings: viewModel.aiChatSettings,
+            keyValueFilesStore: viewProvider.keyValueStore
+        )
+        presenter.presentFireConfirmation(
+            on: self,
+            attachPopoverTo: view,
+            onConfirm: onConfirm,
+            onCancel: onCancel
+        )
     }
 }

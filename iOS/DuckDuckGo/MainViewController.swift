@@ -255,6 +255,7 @@ class MainViewController: UIViewController {
     let productSurfaceTelemetry: ProductSurfaceTelemetry
 
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
+    private let aiChatContextualModeFeature: AIChatContextualModeFeatureProviding
 
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -300,7 +301,8 @@ class MainViewController: UIViewController {
         mobileCustomization: MobileCustomization,
         remoteMessagingActionHandler: RemoteMessagingActionHandling,
         remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
-        productSurfaceTelemetry: ProductSurfaceTelemetry
+        productSurfaceTelemetry: ProductSurfaceTelemetry,
+        aiChatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature()
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -349,6 +351,7 @@ class MainViewController: UIViewController {
         self.aichatFullModeFeature = aichatFullModeFeature
         self.remoteMessagingDebugHandler = remoteMessagingDebugHandler
         self.productSurfaceTelemetry = productSurfaceTelemetry
+        self.aiChatContextualModeFeature = aiChatContextualModeFeature
 
         super.init(nibName: nil, bundle: nil)
         
@@ -659,6 +662,10 @@ class MainViewController: UIViewController {
         addChild(controller)
         controller.view.frame = viewCoordinator.tabBarContainer.bounds
         controller.delegate = self
+        controller.historyManager = historyManager
+        controller.fireproofing = fireproofing
+        controller.aiChatSettings = aiChatSettings
+        controller.keyValueStore = keyValueStore
         viewCoordinator.tabBarContainer.addSubview(controller.view)
         tabsBarController = controller
         controller.didMove(toParent: self)
@@ -1180,7 +1187,12 @@ class MainViewController: UIViewController {
     @IBAction func onFirePressed() {
     
         func showFireConfirmation() {
-            let presenter = FireConfirmationPresenter(featureFlagger: featureFlagger)
+            let presenter = FireConfirmationPresenter(tabsModel: tabManager.model,
+                                                      featureFlagger: featureFlagger,
+                                                      historyManager: historyManager,
+                                                      fireproofing: fireproofing,
+                                                      aiChatSettings: aiChatSettings,
+                                                      keyValueFilesStore: keyValueStore)
             let source: UIView = tabsBarController?.fireButton ?? viewCoordinator.toolbar
             presenter.presentFireConfirmation(
                 on: self,
@@ -2974,7 +2986,12 @@ extension MainViewController: OmniBarDelegate {
 
     func onAIChatPressed() {
         hideSuggestionTray()
-        openAIChatFromAddressBar()
+
+        if let currentTab, aiChatContextualModeFeature.isAvailable, newTabPageViewController == nil {
+            currentTab.presentContextualAIChatSheet(from: self)
+        } else {
+            openAIChatFromAddressBar()
+        }
     }
 
     private func shareCurrentURLFromAddressBar() {

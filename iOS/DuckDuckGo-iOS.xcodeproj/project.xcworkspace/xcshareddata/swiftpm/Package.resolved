@@ -95,8 +95,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/privacy-dashboard",
       "state" : {
-        "revision" : "92c9c3970ddc6062fa2952e05098fdaea499ab6a",
-        "version" : "9.5.0"
+        "revision" : "0f8925a4fc8f2b98df6bc7294b49fc4c1561bf16",
+        "version" : "9.7.0"
       }
     },
     {

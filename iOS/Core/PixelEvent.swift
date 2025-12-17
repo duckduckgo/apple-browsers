@@ -1144,8 +1144,6 @@ extension Pixel {
         case subscriptionInvalidRefreshTokenDetected
         case subscriptionInvalidRefreshTokenSignedOut
         case subscriptionInvalidRefreshTokenRecovered
-        case subscriptionAuthV2MigrationFailed2
-        case subscriptionAuthV2MigrationSucceeded
         case subscriptionAuthV2GetTokensError2
 
         case settingsSubscriptionAccountWithNoSubscriptionFound
@@ -2566,8 +2564,6 @@ extension Pixel.Event {
         case .subscriptionInvalidRefreshTokenDetected: return "m_privacy-pro_auth_invalid_refresh_token_detected"
         case .subscriptionInvalidRefreshTokenSignedOut: return "m_privacy-pro_auth_invalid_refresh_token_signed_out"
         case .subscriptionInvalidRefreshTokenRecovered: return "m_privacy-pro_auth_invalid_refresh_token_recovered"
-        case .subscriptionAuthV2MigrationFailed2: return "m_privacy-pro_auth_v2_migration_failure2"
-        case .subscriptionAuthV2MigrationSucceeded: return "m_privacy-pro_auth_v2_migration_success"
         case .subscriptionAuthV2GetTokensError2: return "m_privacy-pro_auth_v2_get_tokens_error2"
 
         case .settingsSubscriptionAccountWithNoSubscriptionFound: return "m_settings_privacy-pro_account_with_no_subscription_found"

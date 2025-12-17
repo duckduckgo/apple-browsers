@@ -1,5 +1,5 @@
 //
-//  HistoryViewStyleProvider.swift
+//  ScriptStyleProvider.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,11 +17,12 @@
 //
 
 import Foundation
-import AppKit
-import HistoryView
 import Combine
+import Common
 
-final class HistoryViewStyleProvider: HistoryView.StyleProviding {
+/// # Note: This component is used by HistoryView + SpecialErrorPages
+///
+final class ScriptStyleProvider: ScriptStyleProviding {
     let themeManager: ThemeManaging
 
     var themeAppearance: String {

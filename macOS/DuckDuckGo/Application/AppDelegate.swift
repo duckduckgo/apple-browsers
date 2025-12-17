@@ -235,11 +235,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let displaysTabsProgressIndicator: Bool
 
     let wideEvent: WideEventManaging
-    let isUsingAuthV2: Bool
+    let isUsingAuthV2: Bool = true
     var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
     let subscriptionManagerV1: (any SubscriptionManager)?
     let subscriptionManagerV2: (any SubscriptionManagerV2)?
-    let subscriptionAuthMigrator: AuthMigrator
     static let deadTokenRecoverer = DeadTokenRecoverer()
 
     public let subscriptionUIHandler: SubscriptionUIHandling
@@ -616,12 +615,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                             legacyTokenStorage: legacyTokenStorage,
                                             authService: authService,
                                             refreshEventMapping: authRefreshWideEventMapper)
-        let isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
-        subscriptionAuthMigrator = AuthMigrator(oAuthClient: authClient,
-                                                    pixelHandler: pixelHandler,
-                                                    isAuthV2Enabled: isAuthV2Enabled)
-        self.isUsingAuthV2 = subscriptionAuthMigrator.isReadyToUseAuthV2
-
         if self.isUsingAuthV2 {
             // MARK: V2
             Logger.general.log("Configuring Subscription V2")
@@ -1301,10 +1294,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if isSubscriptionActive {
                 PixelKit.fire(SubscriptionPixel.subscriptionActive(AuthVersion.v1), frequency: .legacyDaily)
             }
-        }
-
-        Task {
-            await subscriptionAuthMigrator.migrateAuthV1toAuthV2IfNeeded()
         }
 
         Task { @MainActor in

@@ -25,6 +25,7 @@ import PixelKit
 import WebKit
 import Combine
 import DataBrokerProtectionCore
+import os.log
 
 final public class DataBrokerProtectionViewController: UIViewController {
 
@@ -150,17 +151,16 @@ final public class DataBrokerProtectionViewController: UIViewController {
     private func subscribeToBackgroundRefreshNotifications() {
         cancellables.removeAll()
 
-        NotificationCenter.default.publisher(for: UIApplication.backgroundRefreshStatusDidChangeNotification)
-            .sink { [weak self] _ in
-                self?.notifyBackgroundAppRefreshChange()
-            }
-            .store(in: &cancellables)
-
-        NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange)
-            .sink { [weak self] _ in
-                self?.notifyBackgroundAppRefreshChange()
-            }
-            .store(in: &cancellables)
+        Publishers.MergeMany(
+            NotificationCenter.default.publisher(for: UIApplication.backgroundRefreshStatusDidChangeNotification),
+            NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange),
+            NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
+        )
+        .sink { [weak self] notification in
+            Logger.dataBrokerProtection.debug("Background refresh state may have changed: \(notification.name.rawValue)")
+            self?.notifyBackgroundAppRefreshChange()
+        }
+        .store(in: &cancellables)
     }
 
     private func notifyBackgroundAppRefreshChange() {

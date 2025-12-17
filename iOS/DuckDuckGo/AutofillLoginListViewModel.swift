@@ -265,11 +265,6 @@ class AutofillLoginListViewModel: ObservableObject {
                 accountsToSuggest = filteredAccounts.filter { account in
                     domainMatchesQuery(account.domain, query: query)
                 }
-
-                // Remove domain matches from the main results list to avoid duplicates
-                filteredAccounts = filteredAccounts.filter { account in
-                    !domainMatchesQuery(account.domain, query: query)
-                }
             }
         } else if !isSearching {
             // When search is cleared and not searching, restore suggestions based on `currentTabUrl`

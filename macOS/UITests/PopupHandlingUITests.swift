@@ -795,7 +795,7 @@ final class PopupHandlingUITests: UITestCase {
     /// Tests ServiceNow-like scenario where Cmd+click on a link that also triggers window.open() calls
     /// Verifies that only one tab opens (event consumption prevents extra tabs) and extra window.open() calls are blocked
     func testServiceNowCommandClickOnlyOpensOneTab() throws {
-        guard #available(macOS 15, *) else { throw XCTSkip("WebKit issue fixed in macOS 15, matches Safari behavior") }
+//        guard #available(macOS 15, *) else { throw XCTSkip("WebKit issue fixed in macOS 15, matches Safari behavior") }
 
         addressBarTextField.pasteURL(serviceNowURL, pressingEnter: true)
         let webView = app.webViews["Simulate ServiceNow Cmd+Click Bug"]

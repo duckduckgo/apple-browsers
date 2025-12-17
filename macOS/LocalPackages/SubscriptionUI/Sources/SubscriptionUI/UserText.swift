@@ -223,6 +223,12 @@ enum UserText {
 
     static let viewPlansExpiredButtonTitle = NSLocalizedString("subscription.preferences.button.view.plans", bundle: Bundle.module, value: "View Plans", comment: "Button for viewing subscription plans on expired subscription")
 
+    // MARK: - Upgrade section
+    static let upgradeSectionCaption = "Unlock smarter, more powerful AI with higher limits"
+    static func upgradeButton(tierName: String) -> String {
+        return String(format: "Upgrade to %@", tierName.capitalized)
+    }
+
     // MARK: - Change plan or billing dialogs
     static let viewAllPlansButtonTitle = NSLocalizedString("subscription.preferences.button.view.all.plans", bundle: Bundle.module, value: "View All Plans", comment: "Button for viewing all available subscription plans")
     static let changeSubscriptionDialogTitle = NSLocalizedString("subscription.dialog.change.title", bundle: Bundle.module, value: "Change Plan or Billing", comment: "Change plan or billing dialog title")

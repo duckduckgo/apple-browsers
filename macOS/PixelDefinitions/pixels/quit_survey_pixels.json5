@@ -1,0 +1,54 @@
+// Quit Survey pixels for first-time quit survey feature
+{
+    "m_mac_quit-survey-shown": {
+        "description": "Fired when the quit survey is shown to the user (first-time quit for new users within 14 days)",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_quit-survey-thumbs-up": {
+        "description": "Fired when the user selects thumbs up (positive response) in the quit survey",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_quit-survey-thumbs-down": {
+        "description": "Fired when the user selects thumbs down (negative response) in the quit survey",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_quit-survey-reasons-submission": {
+        "description": "Fired when the user submits their reasons after selecting thumbs down. Format: 'reason-id=1' (selected), 'reason-id=0' (shown but not selected), 'reason-id=-1' (not shown)",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "reasons",
+                "description": "Comma-separated list of reason IDs with their selection state: 1=selected, 0=not selected, -1=not shown",
+                "type": "string"
+            }
+        ]
+    },
+    "m_mac_quit-survey-reasons-return": {
+        "description": "Fired once when the user returns to the app after completing the quit survey with thumbs down",
+        "owners": ["jotaemepereira"],
+        "triggers": ["other"],
+        "suffixes": ["count"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "reasons",
+                "description": "Comma-separated list of reason IDs with their selection state: 1=selected, 0=not selected, -1=not shown (same as submission)",
+                "type": "string"
+            }
+        ]
+    }
+}

@@ -51,10 +51,12 @@ struct QuitSurveyFlowView: View {
     var onResize: ((CGFloat, CGFloat) -> Void)?
 
     init(
+        persistor: QuitSurveyPersistor? = nil,
         onQuit: @escaping () -> Void,
         onResize: ((CGFloat, CGFloat) -> Void)? = nil
     ) {
         self._viewModel = StateObject(wrappedValue: QuitSurveyViewModel(
+            persistor: persistor,
             onQuit: onQuit
         ))
         self.onResize = onResize

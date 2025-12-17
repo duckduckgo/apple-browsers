@@ -20,10 +20,11 @@ import Combine
 import Foundation
 import os.log
 import Common
+import PixelKit
 
 // MARK: - Survey Option Model
 
-struct QuitSurveyOption: Identifiable, Hashable {
+struct QuitSurveyOption: Identifiable, Hashable, Equatable {
     let id: String
     let text: String
 
@@ -102,6 +103,7 @@ final class QuitSurveyViewModel: ObservableObject {
     let availableOptions: [QuitSurveyOption]
 
     private let feedbackSender: FeedbackSenderImplementing
+    private var persistor: QuitSurveyPersistor?
     private let onQuit: () -> Void
     private var autoQuitTimer: Timer?
 
@@ -119,24 +121,29 @@ final class QuitSurveyViewModel: ObservableObject {
 
     init(
         feedbackSender: FeedbackSenderImplementing = FeedbackSender(),
+        persistor: QuitSurveyPersistor? = nil,
         onQuit: @escaping () -> Void
     ) {
         self.feedbackSender = feedbackSender
+        self.persistor = persistor
         self.onQuit = onQuit
 
         // Select 8 random options + "Something else"
         let randomOptions = Array(Self.allOptions.shuffled().prefix(8))
         self.availableOptions = randomOptions + [Self.somethingElseOption]
+        fireSurveyShown()
     }
 
     // MARK: - Actions
 
     func selectPositiveResponse() {
+        fireSurveyThumbsUp()
         state = .positiveResponse
         startAutoQuitTimer()
     }
 
     func selectNegativeResponse() {
+        fireSurveyThumbsDown()
         state = .negativeFeedback
     }
 
@@ -166,6 +173,12 @@ final class QuitSurveyViewModel: ObservableObject {
             problemCategory: Self.firstTimeQuitSurveyCategory
         )
 
+        let reasons = getReasonsForPixel()
+        fireThumbsDownPixelSubmission(reasons: reasons)
+
+        // Store reasons for the return user pixel (fired on next app launch)
+        persistor?.pendingReturnUserReasons = reasons
+
         feedbackSender.sendFeedback(feedback) { [weak self] in
             DispatchQueue.main.async {
                 Logger.general.debug("Quit survey feedback submitted")
@@ -182,6 +195,50 @@ final class QuitSurveyViewModel: ObservableObject {
 
     func closeAndQuit() {
         quit()
+    }
+
+    // MARK: - Pixels
+
+    private func fireSurveyShown() {
+        PixelKit.fire(QuitSurveyPixels.quitSurveyShown)
+    }
+
+    private func fireSurveyThumbsUp() {
+        PixelKit.fire(QuitSurveyPixels.quitSurveyThumbsUp)
+    }
+
+    private func fireSurveyThumbsDown() {
+        PixelKit.fire(QuitSurveyPixels.quitSurveyThumbsDown)
+    }
+
+    private func fireThumbsDownPixelSubmission(reasons: String) {
+        PixelKit.fire(QuitSurveyPixels.quitSurveyThumbsDownSubmission(reasons: reasons))
+    }
+
+    /// This methods calculates the parameters for the thumbs down submission pixel.
+    /// The reasons are calculated in the following way:
+    /// - The selected reasons get a 1
+    /// - The non-selected reasons get a 0
+    /// - The non-shown reasons get a -1
+    private func getReasonsForPixel() -> String {
+        let selectedReasons = selectedOptions
+            .map { "\($0)=1" }
+            .joined(separator: ",")
+        let nonSelectedReasons = availableOptions
+            .compactMap(\.id)
+            .filter { !selectedOptions.contains($0) }
+            .map { "\($0)=0" }
+            .joined(separator: ",")
+        let nonShownReasons = Self.allOptions
+            .filter { !availableOptions.contains($0) }
+            .map { "\($0.id)=-1" }
+            .joined(separator: ",")
+
+        if nonSelectedReasons.isEmpty {
+            return "\(selectedReasons),\(nonShownReasons)"
+        } else {
+            return "\(selectedReasons),\(nonSelectedReasons),\(nonShownReasons)"
+        }
     }
 
     // MARK: - Auto Quit Timer

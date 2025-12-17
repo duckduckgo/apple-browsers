@@ -20,6 +20,7 @@ import Foundation
 import UserScript
 import WebKit
 import Common
+import Combine
 
 public protocol SpecialErrorPageUserScriptDelegate: AnyObject {
 
@@ -32,10 +33,8 @@ public protocol SpecialErrorPageUserScriptDelegate: AnyObject {
 }
 
 struct LocalizedInfo: Encodable, Equatable {
-
     let title: String
     let note: String
-
 }
 
 public final class SpecialErrorPageUserScript: NSObject, Subfeature {
@@ -65,10 +64,12 @@ public final class SpecialErrorPageUserScript: NSObject, Subfeature {
 
     private let localeStrings: String?
     private let languageCode: String
+    private let styleProvider: ScriptStyleProviding?
 
-    public init(localeStrings: String?, languageCode: String) {
+    public init(localeStrings: String?, languageCode: String, styleProvider: ScriptStyleProviding? = nil) {
         self.localeStrings = localeStrings
         self.languageCode = languageCode
+        self.styleProvider = styleProvider
     }
 
     public func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
@@ -101,7 +102,13 @@ public final class SpecialErrorPageUserScript: NSObject, Subfeature {
         let platform = Platform(name: "macos")
 #endif
         guard let errorData = delegate?.errorData else { return nil }
-        return InitialSetupResult(env: env, locale: languageCode, localeStrings: localeStrings, platform: platform, errorData: errorData)
+        return InitialSetupResult(env: env,
+                                  locale: languageCode,
+                                  localeStrings: localeStrings,
+                                  platform: platform,
+                                  errorData: errorData,
+                                  theme: styleProvider?.themeAppearance,
+                                  themeVariant: styleProvider?.themeName)
     }
 
     @MainActor
@@ -143,13 +150,35 @@ extension SpecialErrorPageUserScript {
     }
 
     struct InitialSetupResult: Encodable, Equatable {
-
         let env: String
         let locale: String
         let localeStrings: String?
         let platform: Platform
         let errorData: SpecialErrorData
+        let theme: String?
+        let themeVariant: String?
 
+        enum CodingKeys: String, CodingKey {
+            case env
+            case locale
+            case localeStrings
+            case platform
+            case errorData
+            case theme
+            case themeVariant
+        }
+
+        func encode(to encoder: Encoder) throws {
+            var container = encoder.container(keyedBy: CodingKeys.self)
+            try container.encode(env, forKey: .env)
+            try container.encode(locale, forKey: .locale)
+            try container.encode(localeStrings, forKey: .localeStrings)
+            try container.encode(platform, forKey: .platform)
+            try container.encode(errorData, forKey: .errorData)
+
+            // We're explicitly skipping Theme / ThemeVariant as they're currently not in use in iOS
+            try container.encodeIfPresent(theme, forKey: .theme)
+            try container.encodeIfPresent(themeVariant, forKey: .themeVariant)
+        }
     }
-
 }

@@ -98,7 +98,14 @@ final class AutoClear: AutoClearing {
         timestamp = nil
         await clearDataIfEnabled(applicationState: applicationState)
     }
-    
+    // Determine whether to inject the `.aiChats` fire option.
+    // 
+    // Criteria:
+    // 1. Only inject on the legacy Fire button UI (i.e., granular fire options feature flag is OFF).
+    // 2. The user has enabled "auto-clear AI chat history" in settings.
+    // 3. FireOptions currently include `.data` but do NOT already include `.aiChats`.
+    // 
+    // This ensures .aiChats is only injected in the correct (legacy UI) scenarios.
     private func shouldInjectAIChatsFireOption(into options: FireOptions) -> Bool {
         options.contains(.data)
             && !options.contains(.aiChats)

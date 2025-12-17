@@ -121,8 +121,8 @@ extension TabSwitcherViewController {
             )
         }
 
-        DailyPixel.fireDailyAndCount(pixel: .forgetAllPressedTabSwitching,
-                                      pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
+        Pixel.fire(pixel: .forgetAllPressedTabSwitching)
+        DailyPixel.fire(pixel: .forgetAllPressedTabSwitcherDaily)
         ViewHighlighter.hideAll()
         presentFireConfirmation()
     }

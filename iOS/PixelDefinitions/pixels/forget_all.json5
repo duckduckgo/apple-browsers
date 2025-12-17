@@ -3,14 +3,14 @@
         "description": "Fired when user pressed the Fire button while browsing",
         "owners": ["dus7", "hassaanelgarem"],
         "triggers": ["other"],
-        "suffixes": ["platform", "form_factor", "daily_standard"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
     "mf_tp": {
         "description": "Fired when user pressed the Fire button in the tab switcher",
         "owners": ["dus7", "hassaanelgarem"],
         "triggers": ["other"],
-        "suffixes": ["platform", "form_factor", "daily_standard"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     },
     "m_forget-all-pressed_settings": {
@@ -24,7 +24,28 @@
         "description": "Fired when user confirmed the Fire button action and data clearing is executed",
         "owners": ["dus7", "hassaanelgarem"],
         "triggers": ["other"],
-        "suffixes": ["platform", "form_factor", "daily_standard"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_forget-all-pressed_browsing_daily": {
+        "description": "Fired daily when user pressed the Fire button while browsing",
+        "owners": ["dus7", "hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_forget-all-pressed_tab-switcher_daily": {
+        "description": "Fired daily when user pressed the Fire button in the tab switcher",
+        "owners": ["dus7", "hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
+        "parameters": ["appVersion"]
+    },
+    "m_forget-all-executed_daily": {
+        "description": "Fired daily when user confirmed the Fire button action and data clearing is executed",
+        "owners": ["dus7", "hassaanelgarem"],
+        "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     }
 }

@@ -39,7 +39,7 @@
         "parameters": ["appVersion"],
         "expires": "2026-01-19"
     },
-    "m_experimental-browsing-menu_displayed_ai-chat": {
+    "m_experimental-browsing-menu_displayed_aichat": {
         "description": "Fires when the experimental browsing menu is displayed to the user on the AI Chat page",
         "owners": ["dus7"],
         "triggers": ["other"],

@@ -1635,7 +1635,7 @@ extension Pixel.Event {
         case .experimentalBrowsingMenuUsed: return "m_experimental-browsing-menu_used"
         case .experimentalBrowsingMenuDisplayed: return "m_experimental-browsing-menu_displayed"
         case .experimentalBrowsingMenuDisplayedNTP: return "m_experimental-browsing-menu_displayed_ntp"
-        case .experimentalBrowsingMenuDisplayedAIChat: return "m_experimental-browsing-menu_displayed_ai-chat"
+        case .experimentalBrowsingMenuDisplayedAIChat: return "m_experimental-browsing-menu_displayed_aichat"
         case .experimentalBrowsingMenuDisplayedError: return "m_experimental-browsing-menu_displayed_error"
         case .experimentalBrowsingMenuDismissed: return "m_experimental-browsing-menu_dismissed"
         case .browsingMenuOpened: return "mb"
@@ -1662,7 +1662,7 @@ extension Pixel.Event {
         case .browsingMenuRefreshPage: return "m_menu_refresh_page"
         case .browsingMenuNewDuckAddress: return "m_menu_new_duck_address"
         case .browsingMenuVPN: return "m_menu_vpn"
-        case .browsingMenuAIChat: return "m_menu_ai-chat"
+        case .browsingMenuAIChat: return "m_menu_aichat"
 
         case .browsingMenuShare: return "m_browsingmenu_share"
         case .browsingMenuListPrint: return "m_browsing_menu_list_print"

@@ -591,7 +591,7 @@ public final class PixelKit {
             // Is a Debug event not already prefixed
             return "m_mac_debug_\(debugEvent.name)"
         } else if doNotEnforcePrefix {
-            // Special kind of pixel event that don't follow the standard naming conventions
+            // For pixels event that don't follow the standard naming conventions
             return pixelName
         } else {
             return "m_mac_\(pixelName)"

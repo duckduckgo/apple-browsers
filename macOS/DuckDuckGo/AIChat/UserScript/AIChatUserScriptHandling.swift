@@ -24,6 +24,8 @@ import Foundation
 import PixelKit
 import UserScript
 import OSLog
+import BrowserServicesKit
+import DDGSync
 
 protocol AIChatMetricReportingHandling {
     func didReportMetric(_ metric: AIChatMetric, completion: (() -> Void)?)
@@ -88,6 +90,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private let pixelFiring: PixelFiring?
     private let statisticsLoader: StatisticsLoader?
     private let syncHandler: AIChatSyncHandling
+    private let featureFlagger: FeatureFlagger
     private let migrationStore = AIChatMigrationStore()
 
     init(
@@ -97,6 +100,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         pixelFiring: PixelFiring?,
         statisticsLoader: StatisticsLoader?,
         syncHandler: AIChatSyncHandling,
+        featureFlagger: FeatureFlagger,
         notificationCenter: NotificationCenter = .default
     ) {
         self.storage = storage
@@ -106,6 +110,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.statisticsLoader = statisticsLoader
         self.syncHandler = syncHandler
         self.notificationCenter = notificationCenter
+        self.featureFlagger = featureFlagger
         self.aiChatNativePromptPublisher = aiChatNativePromptSubject.eraseToAnyPublisher()
         self.pageContextPublisher = pageContextSubject.eraseToAnyPublisher()
         self.pageContextRequestedPublisher = pageContextRequestedSubject.eraseToAnyPublisher()
@@ -299,41 +304,83 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func getSyncStatus(params: Any, message: UserScriptMessage) -> Encodable? {
         do {
-            return AIChatPayloadResponse(payload: try syncHandler.getSyncStatus())
+            return AIChatPayloadResponse(payload: try syncHandler.getSyncStatus(featureAvailable: featureFlagger.isFeatureOn(.aiChatSync)))
         } catch {
-            return AIChatErrorResponse(reason: "invalid_params")
+            return AIChatErrorResponse(reason: "internal error")
         }
     }
 
     @MainActor func getScopedSyncAuthToken(params: Any, message: UserScriptMessage) async -> Encodable? {
+        guard featureFlagger.isFeatureOn(.aiChatSync) else {
+            return AIChatErrorResponse(reason: "sync disabled")
+        }
+
         do {
             return AIChatPayloadResponse(payload: try await syncHandler.getScopedToken())
         } catch {
-            return AIChatErrorResponse(reason: "invalid_params")
+            let reason: String
+            switch error {
+            case SyncError.accountNotFound:
+                reason = "sync off"
+            case SyncError.noToken:
+                reason = "token unavailable"
+            case SyncError.invalidDataInResponse:
+                reason = "invalid response"
+            case SyncError.unexpectedStatusCode:
+                reason = "unexpected status code"
+            case AIChatSyncHandler.Errors.emptyResponse:
+                reason = "empty response"
+            default:
+                reason = "internal error"
+            }
+            return AIChatErrorResponse(reason: reason)
         }
     }
 
     func encryptWithSyncMasterKey(params: Any, message: UserScriptMessage) -> Encodable? {
+        guard featureFlagger.isFeatureOn(.aiChatSync) else {
+            return AIChatErrorResponse(reason: "sync disabled")
+        }
+
+        guard syncHandler.isSyncTurnedOn() else {
+            return AIChatErrorResponse(reason: "sync off")
+        }
+
         guard let dict = params as? [String: Any], let data = dict["data"] as? String else {
-            return AIChatErrorResponse(reason: "invalid_params")
+            return AIChatErrorResponse(reason: "invalid parameters")
         }
 
         do {
             return AIChatPayloadResponse(payload: try syncHandler.encrypt(data))
         } catch {
-            return AIChatErrorResponse(reason: "invalid_params")
+            let reason: String
+            switch error {
+            case SyncError.failedToEncryptValue:
+                reason = "encryption failed"
+            default:
+                reason = "internal error"
+            }
+            return AIChatErrorResponse(reason: reason)
         }
     }
 
     func decryptWithSyncMasterKey(params: Any, message: UserScriptMessage) -> Encodable? {
+        guard featureFlagger.isFeatureOn(.aiChatSync) else {
+            return AIChatErrorResponse(reason: "sync disabled")
+        }
+
+        guard syncHandler.isSyncTurnedOn() else {
+            return AIChatErrorResponse(reason: "sync off")
+        }
+
         guard let dict = params as? [String: Any], let data = dict["data"] as? String else {
-            return AIChatErrorResponse(reason: "invalid_params")
+            return AIChatErrorResponse(reason: "invalid parameters")
         }
 
         do {
             return AIChatPayloadResponse(payload: try syncHandler.decrypt(data))
         } catch {
-            return AIChatErrorResponse(reason: "invalid_params")
+            return AIChatErrorResponse(reason: "internal error")
         }
     }
 
@@ -345,6 +392,14 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     public func sendToSetupSync(params: Any, message: UserScriptMessage) -> Encodable? {
+        guard featureFlagger.isFeatureOn(.aiChatSync) else {
+            return AIChatErrorResponse(reason: "setup disabled")
+        }
+
+        guard syncHandler.isSyncTurnedOn() == false else {
+            return AIChatErrorResponse(reason: "sync already enabled")
+        }
+
         Task { @MainActor in
             DeviceSyncCoordinator()?.startDeviceSyncFlow(source: .aiChat, completion: nil)
         }
@@ -354,7 +409,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     func setAIChatHistoryEnabled(params: Any, message: UserScriptMessage) -> Encodable? {
         guard let dict = params as? [String: Any],
               let enabled = dict["enabled"] as? Bool else {
-            return AIChatErrorResponse(reason: "invalid_params")
+            return AIChatErrorResponse(reason: "invalid parameters")
         }
 
         syncHandler.setAIChatHistoryEnabled(enabled)

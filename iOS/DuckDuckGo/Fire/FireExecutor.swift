@@ -82,6 +82,7 @@ class FireExecutor: FireExecuting {
     private var burnInProgress = false
     private var dataStoreWarmup: DataStoreWarmup? = DataStoreWarmup()
     private let aiChatHistoryCleaner: HistoryCleaning
+    private var isPrepared = false
     
     // MARK: - Init
     
@@ -123,6 +124,7 @@ class FireExecutor: FireExecuting {
         if options.contains(.tabs) {
             prepareForBurningTabs()
         }
+        isPrepared = true
     }
     
     @MainActor
@@ -132,6 +134,12 @@ class FireExecutor: FireExecuting {
         if delegate == nil {
             assertionFailure("Delegate should be not be nil. This leads to unexpected behavior.")
         }
+        
+        // Ensure prepare() was called for tabs if needed
+        if options.contains(.tabs) && !isPrepared {
+            prepareForBurningTabs()
+        }
+        
         delegate?.willStartBurning(fireContext: fireContext)
         if options.contains(.tabs) {
             delegate?.willStartBurningTabs()
@@ -157,6 +165,9 @@ class FireExecutor: FireExecuting {
         if shouldBurnData { delegate?.didFinishBurningData() }
         if shouldBurnAIChats { delegate?.didFinishBurningAIHistory() }
         delegate?.didFinishBurning(fireContext: fireContext)
+        
+        // Reset prepared state for next burn cycle
+        isPrepared = false
     }
     
     // MARK: Burn Tabs Helpers

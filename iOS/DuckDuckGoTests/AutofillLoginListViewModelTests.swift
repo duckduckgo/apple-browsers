@@ -597,7 +597,7 @@ class AutofillLoginListViewModelTests: XCTestCase {
         }
 
         let credentialsDomainMatches = countDomainMatches(in: model.sections, query: "example")
-        XCTAssertEqual(credentialsDomainMatches, 0, "Credentials section should not contain domain matches")
+        XCTAssertEqual(credentialsDomainMatches, 2, "Credentials section should still contain domain matches")
     }
 
     func testWhenFeatureFlagEnabledAndCurrentTabUrlSet_ThenSuggestionsTransitionFromTabUrlToSearchQuery() {

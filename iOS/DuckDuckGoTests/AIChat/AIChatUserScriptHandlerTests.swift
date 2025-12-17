@@ -169,6 +169,9 @@ final class MockAIChatFullModeFeatureProviding: AIChatFullModeFeatureProviding {
 
 /// Mock implementation of AIChatSyncHandling for testing
 final class MockAIChatSyncHandling: AIChatSyncHandling {
+
+    var syncTurnedOn = false
+
     var syncStatus: AIChatSyncHandler.SyncStatus = AIChatSyncHandler.SyncStatus(syncAvailable: false,
                                                                                 userId: nil,
                                                                                 deviceId: nil,
@@ -182,7 +185,11 @@ final class MockAIChatSyncHandling: AIChatSyncHandling {
     private(set) var decryptCalls: [String] = []
     private(set) var setAIChatHistoryEnabledCalls: [Bool] = []
 
-    func getSyncStatus() throws -> AIChatSyncHandler.SyncStatus {
+    func isSyncTurnedOn() -> Bool {
+        syncTurnedOn
+    }
+
+    func getSyncStatus(featureAvailable: Bool) throws -> AIChatSyncHandler.SyncStatus {
         syncStatus
     }
 

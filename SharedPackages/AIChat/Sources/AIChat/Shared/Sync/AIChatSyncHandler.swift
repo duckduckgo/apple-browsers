@@ -21,7 +21,8 @@ import DDGSync
 
 public protocol AIChatSyncHandling {
 
-    func getSyncStatus() throws -> AIChatSyncHandler.SyncStatus
+    func isSyncTurnedOn() -> Bool
+    func getSyncStatus(featureAvailable: Bool) throws -> AIChatSyncHandler.SyncStatus
     func getScopedToken() async throws -> AIChatSyncHandler.SyncToken
     func encrypt(_ string: String) throws -> AIChatSyncHandler.EncryptedData
     func decrypt(_ string: String) throws -> AIChatSyncHandler.DecryptedData
@@ -32,6 +33,7 @@ public class AIChatSyncHandler: AIChatSyncHandling {
 
     public enum Errors: Error {
         case internalError
+        case emptyResponse
     }
 
     public struct SyncStatus: Codable {
@@ -66,7 +68,19 @@ public class AIChatSyncHandler: AIChatSyncHandling {
         }
     }
 
-    public func getSyncStatus() throws -> SyncStatus {
+    public func isSyncTurnedOn() -> Bool {
+        sync.authState != .initializing && sync.account != nil
+    }
+
+    public func getSyncStatus(featureAvailable: Bool) throws -> SyncStatus {
+        guard featureAvailable else {
+            return SyncStatus(syncAvailable: false,
+                              userId: nil,
+                              deviceId: nil,
+                              deviceName: nil,
+                              deviceType: nil)
+        }
+
         try validateSetup()
 
         guard let account = sync.account else {
@@ -87,8 +101,9 @@ public class AIChatSyncHandler: AIChatSyncHandling {
     public func getScopedToken() async throws -> SyncToken {
         try validateSetup()
 
-        guard let token = try await sync.mainTokenRescope(to: "ai_chats") else {
-            throw Errors.internalError
+        guard let token = try await sync.mainTokenRescope(to: "ai_chats"),
+                token.isEmpty == false else {
+            throw Errors.emptyResponse
         }
 
         return SyncToken(token: token)

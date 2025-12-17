@@ -159,6 +159,16 @@ extension PermissionType {
         }
     }
 
+    /// Whether this permission type requires system-level permission to be enabled
+    var requiresSystemPermission: Bool {
+        switch self {
+        case .geolocation:
+            return true
+        case .camera, .microphone, .popups, .notification, .externalScheme:
+            return false
+        }
+    }
+
 }
 
 extension Array where Element == PermissionType {

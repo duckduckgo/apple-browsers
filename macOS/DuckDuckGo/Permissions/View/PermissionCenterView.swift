@@ -18,6 +18,7 @@
 
 import AppKit
 import DesignResourcesKitIcons
+import PixelKit
 import SwiftUI
 
 // MARK: - PermissionCenterView
@@ -40,72 +41,132 @@ struct PermissionCenterView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Header
-            Text(String(format: UserText.permissionCenterTitle, viewModel.domain))
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(Color(designSystemColor: .textPrimary))
-                .padding(.leading, 20)
-                .padding(.trailing, 16)
-                .padding(.top, 16)
-                .padding(.bottom, 12)
+            // Header - only show if there are permission items
+            if !viewModel.permissionItems.isEmpty {
+                Text(String(format: UserText.permissionCenterTitle, viewModel.domain))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .padding(.leading, 20)
+                    .padding(.trailing, 16)
+                    .padding(.top, 16)
+                    .padding(.bottom, 12)
 
-            // Permission rows in a rounded container
-            VStack(spacing: 0) {
-                ForEach(viewModel.permissionItems) { item in
-                    switch item.permissionType {
-                    case .popups:
-                        PopupPermissionRowView(
-                            item: item,
-                            currentDecision: viewModel.currentPopupDecision(),
-                            showAllowForThisVisitOption: viewModel.showAllowPopupsForThisVisitOption,
-                            onDecisionChanged: { decision in
-                                viewModel.setPopupDecision(decision)
-                            },
-                            onOpenPopup: { popup in
-                                viewModel.openBlockedPopup(popup)
-                            },
-                            onRemove: {
-                                viewModel.removePermission(item.permissionType)
-                            }
-                        )
-                    case .externalScheme:
-                        ExternalAppsPermissionRowView(
-                            item: item,
-                            onDecisionChanged: { scheme, decision in
-                                viewModel.setExternalSchemeDecision(decision, for: scheme)
-                            },
-                            onRemoveScheme: { scheme in
-                                viewModel.removeExternalScheme(scheme)
-                            }
-                        )
-                    default:
-                        PermissionRowView(
-                            item: item,
-                            onDecisionChanged: { decision in
-                                viewModel.setDecision(decision, for: item.permissionType)
-                            },
-                            onRemove: {
-                                viewModel.removePermission(item.permissionType)
-                            }
-                        )
-                    }
+                // Permission rows in a rounded container
+                VStack(spacing: 0) {
+                    ForEach(viewModel.permissionItems) { item in
+                        switch item.permissionType {
+                        case .popups:
+                            PopupPermissionRowView(
+                                item: item,
+                                currentDecision: viewModel.currentPopupDecision(),
+                                showAllowForThisVisitOption: viewModel.showAllowPopupsForThisVisitOption,
+                                onDecisionChanged: { decision in
+                                    viewModel.setPopupDecision(decision)
+                                },
+                                onOpenPopup: { popup in
+                                    viewModel.openBlockedPopup(popup)
+                                },
+                                onRemove: {
+                                    viewModel.removePermission(item.permissionType)
+                                }
+                            )
+                        case .externalScheme:
+                            ExternalAppsPermissionRowView(
+                                item: item,
+                                onDecisionChanged: { scheme, decision in
+                                    viewModel.setExternalSchemeDecision(decision, for: scheme)
+                                },
+                                onRemoveScheme: { scheme in
+                                    viewModel.removeExternalScheme(scheme)
+                                }
+                            )
+                        default:
+                            PermissionRowView(
+                                item: item,
+                                onDecisionChanged: { decision in
+                                    viewModel.setDecision(decision, for: item.permissionType)
+                                },
+                                onRemove: {
+                                    viewModel.removePermission(item.permissionType)
+                                }
+                            )
+                        }
 
-                    if item.id != viewModel.permissionItems.last?.id {
-                        Divider()
+                        if item.id != viewModel.permissionItems.last?.id {
+                            Divider()
+                        }
                     }
                 }
+                .background(Color(designSystemColor: .permissionCenterContainerBackground))
+                .cornerRadius(8)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color(designSystemColor: .lines), lineWidth: 1)
+                )
+                .padding(.horizontal, 16)
+                .padding(.bottom, viewModel.showReloadBanner ? 12 : 16)
             }
-            .background(Color(designSystemColor: .permissionCenterContainerBackground))
-            .cornerRadius(8)
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color(designSystemColor: .lines), lineWidth: 1)
-            )
-            .padding(.horizontal, 16)
-            .padding(.bottom, 16)
+
+            // Reload banner
+            if viewModel.showReloadBanner {
+                ReloadBannerView(onReload: viewModel.reload)
+                    .padding(.horizontal, 16)
+                    .padding(.top, viewModel.permissionItems.isEmpty ? 16 : 0)
+                    .padding(.bottom, 16)
+            }
         }
         .frame(width: popoverWidth)
-        .background(Color(designSystemColor: .permissionCenterBackground))
+        .background(Color(viewModel.backgroundColor))
+    }
+}
+
+// MARK: - ReloadBannerView
+
+struct ReloadBannerView: View {
+    let onReload: () -> Void
+
+    var body: some View {
+        HStack(spacing: 0) {
+            // Reload icon
+            Image(nsImage: DesignSystemImages.Glyphs.Size16.reload)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .padding(.leading, 4)
+
+            // Message
+            Text(UserText.permissionCenterReloadMessage)
+                .font(.system(size: 12))
+                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .padding(.leading, 12)
+
+            Spacer(minLength: 2)
+
+            // Reload button
+            Button(action: onReload) {
+                Text(UserText.permissionCenterReloadButton)
+                    .font(.system(size: 13))
+                    .foregroundColor(Color(designSystemColor: .permissionReloadButtonText))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 4)
+                    .background(Color(designSystemColor: .permissionReloadButtonBackground))
+                    .cornerRadius(4)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 4)
+                            .stroke(Color(designSystemColor: .lines), lineWidth: 0.5)
+                    )
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(Color(designSystemColor: .permissionWarningBackground))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 8)
+                        .strokeBorder(Color(designSystemColor: .lines), lineWidth: 1)
+                )
+        )
     }
 }
 
@@ -138,43 +199,48 @@ struct PermissionRowView: View {
                 // Permission name
                 Text(item.displayName)
                     .font(.system(size: 13))
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .foregroundColor(item.isPendingRemoval ? Color(designSystemColor: .textSecondary) : Color(designSystemColor: .textPrimary))
 
                 Spacer()
 
                 // Decision dropdown
                 decisionPopUpButton
+                    .disabled(item.isPendingRemoval)
+                    .opacity(item.isPendingRemoval ? 0.5 : 1.0)
 
                 // Remove button with hover effect
                 Button(action: onRemove) {
                     Image(systemName: "xmark")
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .frame(width: 24, height: 24)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(PlainButtonStyle())
-                .frame(width: 24, height: 24)
                 .background(
                     RoundedRectangle(cornerRadius: 5)
-                        .fill(isRemoveButtonHovered ? Color(.buttonMouseOver) : Color.clear)
+                        .fill(isRemoveButtonHovered && !item.isPendingRemoval ? Color(.buttonMouseOver) : Color.clear)
                 )
                 .onHover { hovering in
                     isRemoveButtonHovered = hovering
                 }
                 .help(UserText.permissionCenterResetTooltip)
+                .disabled(item.isPendingRemoval)
+                .opacity(item.isPendingRemoval ? 0.5 : 1.0)
             }
             .padding(.leading, 12)
             .padding(.trailing, 12)
             .padding(.vertical, 12)
 
             // System disabled warning (if applicable)
-            if item.isSystemDisabled {
+            if item.isSystemDisabled && !item.isPendingRemoval {
                 systemDisabledWarning
                     .padding(.leading, 44)
                     .padding(.trailing, 12)
                     .padding(.bottom, 12)
             }
         }
-        .background(item.isSystemDisabled ? Color(.permissionWarningBackground) : Color.clear)
+        .background(item.isSystemDisabled && !item.isPendingRemoval ? Color(designSystemColor: .permissionWarningBackground) : Color.clear)
         .onChange(of: currentDecision) { newValue in
             onDecisionChanged(newValue)
         }
@@ -188,12 +254,25 @@ struct PermissionRowView: View {
 
     // MARK: - Subviews
 
-    @ViewBuilder
     private var permissionIcon: some View {
-        let iconColor: Color = item.isInUse ? Color(NSColor.systemRed) : Color(designSystemColor: .textSecondary)
-        // Use solid icon if allowed and available, otherwise use outline icon
-        let icon = (item.isAllowed ? item.permissionType.solidIcon : nil) ?? item.permissionType.icon
-        Image(nsImage: icon)
+        // Icon color: red if currently in use, secondary otherwise (dimmed if pending removal)
+        let iconColor: Color = {
+            if item.isPendingRemoval {
+                return Color(designSystemColor: .textSecondary).opacity(0.5)
+            } else if item.isInUse {
+                return Color(NSColor.systemRed)
+            } else {
+                return Color(designSystemColor: .textSecondary)
+            }
+        }()
+        // Icon style:
+        // - Outline when pending removal
+        // - Solid + red if currently in use (active)
+        // - Solid if "Always Allow" is set (even if not in use)
+        // - Outline for "Always Ask" or "Never Allow" when not in use
+        let useSolidIcon = !item.isPendingRemoval && (item.isInUse || item.decision == .allow)
+        let icon = (useSolidIcon ? item.permissionType.solidIcon : nil) ?? item.permissionType.icon
+        return Image(nsImage: icon)
             .foregroundColor(iconColor)
     }
 
@@ -242,6 +321,7 @@ struct PermissionRowView: View {
 
     private func openSystemSettings() {
         guard let url = item.permissionType.systemSettingsURL else { return }
+        PixelKit.fire(PermissionPixel.systemPreferencesOpened(permissionType: item.permissionType))
         NSWorkspace.shared.open(url)
     }
 }
@@ -285,35 +365,40 @@ struct PopupPermissionRowView: View {
             HStack(spacing: 8) {
                 // Icon
                 Image(nsImage: DesignSystemImages.Glyphs.Size16.popupBlocked)
-                    .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .foregroundColor(item.isPendingRemoval ? Color(designSystemColor: .textSecondary).opacity(0.5) : Color(designSystemColor: .textSecondary))
                     .frame(width: 24, height: 24)
 
                 // Permission name
                 Text(item.displayName)
                     .font(.system(size: 13))
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .foregroundColor(item.isPendingRemoval ? Color(designSystemColor: .textSecondary) : Color(designSystemColor: .textPrimary))
 
                 Spacer()
 
                 // Decision dropdown
                 popupDecisionPopUpButton
+                    .disabled(item.isPendingRemoval)
+                    .opacity(item.isPendingRemoval ? 0.5 : 1.0)
 
                 // Remove button with hover effect
                 Button(action: onRemove) {
                     Image(systemName: "xmark")
                         .font(.system(size: 10, weight: .semibold))
                         .foregroundColor(Color(designSystemColor: .textSecondary))
+                        .frame(width: 24, height: 24)
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(PlainButtonStyle())
-                .frame(width: 24, height: 24)
                 .background(
                     RoundedRectangle(cornerRadius: 5)
-                        .fill(isRemoveButtonHovered ? Color(.buttonMouseOver) : Color.clear)
+                        .fill(isRemoveButtonHovered && !item.isPendingRemoval ? Color(.buttonMouseOver) : Color.clear)
                 )
                 .onHover { hovering in
                     isRemoveButtonHovered = hovering
                 }
                 .help(UserText.permissionCenterResetTooltip)
+                .disabled(item.isPendingRemoval)
+                .opacity(item.isPendingRemoval ? 0.5 : 1.0)
             }
             .padding(.leading, 12)
             .padding(.trailing, 12)
@@ -326,7 +411,7 @@ struct PopupPermissionRowView: View {
                     if let headerText = item.blockedPopupsHeaderText {
                         Text(headerText)
                             .font(.system(size: 11))
-                            .foregroundColor(Color(designSystemColor: .textSecondary))
+                            .foregroundColor(item.isPendingRemoval ? Color(designSystemColor: .textSecondary).opacity(0.5) : Color(designSystemColor: .textSecondary))
                             .padding(.bottom, 4)
                     }
 
@@ -336,12 +421,13 @@ struct PopupPermissionRowView: View {
                         Button(action: { onOpenPopup(popup) }) {
                             Text(popupLinkText(for: popup))
                                 .font(.system(size: 12))
-                                .foregroundColor(.accentColor)
+                                .foregroundColor(item.isPendingRemoval ? Color.accentColor.opacity(0.5) : .accentColor)
                                 .lineLimit(1)
                                 .truncationMode(.middle)
                         }
                         .buttonStyle(PlainButtonStyle())
-                        .cursor(.pointingHand)
+                        .cursor(item.isPendingRemoval ? .arrow : .pointingHand)
+                        .disabled(item.isPendingRemoval)
                     }
                 }
                 .padding(.leading, 44)
@@ -459,29 +545,34 @@ struct ExternalSchemeRowView: View {
             // Description text
             Text(schemeInfo.displayText)
                 .font(.system(size: 12))
-                .foregroundColor(Color(designSystemColor: .textSecondary))
+                .foregroundColor(schemeInfo.isPendingRemoval ? Color(designSystemColor: .textSecondary).opacity(0.5) : Color(designSystemColor: .textSecondary))
 
             Spacer()
 
             // Decision dropdown
             decisionPopUpButton
+                .disabled(schemeInfo.isPendingRemoval)
+                .opacity(schemeInfo.isPendingRemoval ? 0.5 : 1.0)
 
             // Remove button with hover effect
             Button(action: onRemove) {
                 Image(systemName: "xmark")
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundColor(Color(designSystemColor: .textSecondary))
+                    .frame(width: 24, height: 24)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(PlainButtonStyle())
-            .frame(width: 24, height: 24)
             .background(
                 RoundedRectangle(cornerRadius: 5)
-                    .fill(isRemoveButtonHovered ? Color(.buttonMouseOver) : Color.clear)
+                    .fill(isRemoveButtonHovered && !schemeInfo.isPendingRemoval ? Color(.buttonMouseOver) : Color.clear)
             )
             .onHover { hovering in
                 isRemoveButtonHovered = hovering
             }
             .help(UserText.permissionCenterResetTooltip)
+            .disabled(schemeInfo.isPendingRemoval)
+            .opacity(schemeInfo.isPendingRemoval ? 0.5 : 1.0)
         }
         .padding(.leading, 44)
         .padding(.trailing, 12)

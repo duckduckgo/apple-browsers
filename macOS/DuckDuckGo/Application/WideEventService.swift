@@ -29,6 +29,7 @@ final class WideEventService {
     private let activationTimeoutInterval: TimeInterval = .hours(4)
     private let restoreTimeoutInterval: TimeInterval = .minutes(15)
     private let vpnConnectionBrowserStartTimeoutInterval: TimeInterval = .minutes(15)
+    private let dataImportTimeoutInterval: TimeInterval = .minutes(15)
 
     init(wideEvent: WideEventManaging, featureFlagger: FeatureFlagger, subscriptionBridge: SubscriptionAuthV1toV2Bridge) {
         self.wideEvent = wideEvent
@@ -46,6 +47,11 @@ final class WideEventService {
         if featureFlagger.isFeatureOn(.vpnConnectionWidePixelMeasurement) {
             await sendAbandonedVPNConnectionPixels()
             await sendDelayedVPNConnectionPixels()
+        }
+
+        if featureFlagger.isFeatureOn(.dataImportWideEventMeasurement) {
+            await sendAbandonedDatImportPixels()
+            await sendDelayedDataImportPixels()
         }
     }
 
@@ -191,4 +197,41 @@ final class WideEventService {
         }
      }
 
+    // MARK: - Data Import
+
+    // In the data import flow, we consider the pixel abandoned if:
+    // - The flow is open and has not completed AND
+    // - The duration interval is closed (never started OR has closed)
+    private func sendAbandonedDatImportPixels() async {
+        let pending: [DataImportWideEventData] = wideEvent.getAllFlowData(DataImportWideEventData.self)
+
+        for data in pending {
+            if data.overallDuration?.start != nil && data.overallDuration?.end == nil {
+                continue
+            }
+
+            _ = try? await wideEvent.completeFlow(data, status: .unknown(reason: DataImportWideEventData.StatusReason.partialData.rawValue))
+        }
+    }
+
+    // In the data import flow, we consider the pixel delayed if:
+    // - The flow is open and has not completed AND
+    // - The duration interval has started, but has not completed AND
+    // - The start time till now has exceed the maximum allowed time (if not, we consider it to be still in progress and allow it to continue)
+    private func sendDelayedDataImportPixels() async {
+        let pending: [DataImportWideEventData] = wideEvent.getAllFlowData(DataImportWideEventData.self)
+
+        for data in pending {
+            guard let start = data.overallDuration?.start, data.overallDuration?.end == nil else {
+                continue
+            }
+
+            let deadline = start.addingTimeInterval(dataImportTimeoutInterval)
+            if Date() < deadline {
+                continue
+            }
+
+            _ = try? await wideEvent.completeFlow(data, status: .unknown(reason: DataImportWideEventData.StatusReason.timeout.rawValue))
+        }
+    }
 }

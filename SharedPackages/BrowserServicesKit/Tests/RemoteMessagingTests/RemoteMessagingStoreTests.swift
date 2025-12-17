@@ -415,6 +415,20 @@ class RemoteMessagingStoreTests: XCTestCase {
         XCTAssertEqual(result, message)
     }
 
+    func testWhenFetchScheduledRemoteMessageAndSurfaceIsTabBarAndScheduledMessageSurfaceMatchesThenReturnMessage() async throws {
+        // GIVEN
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+        let message = RemoteMessageModel(id: "1", surfaces: .tabBar, content: .small(titleText: "", descriptionText: ""), matchingRules: [], exclusionRules: [], isMetricsEnabled: false)
+        let processorResult = RemoteMessagingConfigProcessor.ProcessorResult(version: 1, message: message)
+        await store.saveProcessedResult(processorResult)
+
+        // WHEN
+        let result = store.fetchScheduledRemoteMessage(surfaces: .tabBar)
+
+        // THEN
+        XCTAssertEqual(result, message)
+    }
+
     func testWhenFetchScheduledRemoteMessageAndSurfaceIsAllCasesAndScheduledMessageSurfaceIsNewTabThenReturnMessage() async throws {
         // GIVEN
         XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
@@ -447,6 +461,20 @@ class RemoteMessagingStoreTests: XCTestCase {
         // GIVEN
         XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
         let message = RemoteMessageModel(id: "1", surfaces: .dedicatedTab, content: .small(titleText: "", descriptionText: ""), matchingRules: [], exclusionRules: [], isMetricsEnabled: false)
+        let processorResult = RemoteMessagingConfigProcessor.ProcessorResult(version: 1, message: message)
+        await store.saveProcessedResult(processorResult)
+
+        // WHEN
+        let result = store.fetchScheduledRemoteMessage(surfaces: .allCases)
+
+        // THEN
+        XCTAssertEqual(result, message)
+    }
+
+    func testWhenFetchScheduledRemoteMessageAndSurfaceIsAllCasesAndScheduledMessageSurfaceIsTabBarThenReturnMessage() async throws {
+        // GIVEN
+        XCTAssertNil(store.fetchScheduledRemoteMessage(surfaces: .allCases))
+        let message = RemoteMessageModel(id: "1", surfaces: .tabBar, content: .small(titleText: "", descriptionText: ""), matchingRules: [], exclusionRules: [], isMetricsEnabled: false)
         let processorResult = RemoteMessagingConfigProcessor.ProcessorResult(version: 1, message: message)
         await store.saveProcessedResult(processorResult)
 

@@ -38,6 +38,15 @@ final class AIChatDebugMenu: NSMenu {
 
             NSMenuItem.separator()
 
+            NSMenuItem(title: "Toggle Popover") {
+                NSMenuItem(title: "Show Toggle Popover", action: #selector(showTogglePopover))
+                    .targetting(self)
+                NSMenuItem(title: "Reset Toggle Popover Seen Flag", action: #selector(resetTogglePopoverSeenFlag))
+                    .targetting(self)
+            }
+
+            NSMenuItem.separator()
+
             NSMenuItem(title: "Reset Toggle Animation", action: #selector(resetToggleAnimation))
                 .targetting(self)
         }
@@ -72,6 +81,21 @@ final class AIChatDebugMenu: NSMenu {
         UserDefaults.standard.hasInteractedWithSearchDuckAIToggle = false
     }
 
+    @MainActor @objc func showTogglePopover() {
+        resetTogglePopoverSeenFlag()
+
+        guard let mainWindowController = NSApp.delegateTyped.windowControllersManager.lastKeyMainWindowController,
+              let addressBarButtonsVC = mainWindowController.mainViewController.navigationBarViewController.addressBarViewController?.addressBarButtonsViewController,
+              let toggleControl = addressBarButtonsVC.searchModeToggleControl else {
+            return
+        }
+        addressBarButtonsVC.aiChatTogglePopoverCoordinator?.showPopoverForDebug(relativeTo: toggleControl)
+    }
+
+    @MainActor @objc func resetTogglePopoverSeenFlag() {
+        AIChatTogglePopoverCoordinator(windowControllersManager: NSApp.delegateTyped.windowControllersManager).clearPopoverSeenFlag()
+    }
+
     private func updateWebUIMenuItemsState() {
         customURLLabelMenuItem.title = "Custom URL: [\(debugStorage.customURL ?? "")]"
     }
@@ -98,5 +122,4 @@ final class AIChatDebugMenu: NSMenu {
             _ = callback(nil)
         }
     }
-
 }

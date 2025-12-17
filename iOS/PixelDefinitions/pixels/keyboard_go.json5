@@ -4,6 +4,7 @@
         "description": "Fires when user taps keyboard go button while on AI Chat",
         "owners": ["aataraxiaa"],
         "triggers": ["other"],
+        "suffixes": ["platform", "form_factor"],
         "parameters": ["appVersion"]
     }
 }

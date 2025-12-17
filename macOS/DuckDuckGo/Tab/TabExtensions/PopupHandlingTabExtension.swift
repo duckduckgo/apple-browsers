@@ -104,7 +104,6 @@ final class PopupHandlingTabExtension {
 
         interactionEventsPublisher
             .filter { event in
-
                 switch event {
                 case .mouseDown, .keyDown, .middleMouseDown:
                     guard featureFlagger.isFeatureOn(.popupBlocking),

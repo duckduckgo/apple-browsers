@@ -80,6 +80,7 @@ final class AddressBarTextField: NSTextField {
         }
     }
     weak var customToggleControl: NSControl?
+    weak var aiChatTogglePopoverCoordinator: AIChatTogglePopoverCoordinating?
 
     /// Flag to prevent loops when updating value from shared state
     private var isUpdatingFromSharedState = false
@@ -718,6 +719,11 @@ final class AddressBarTextField: NSTextField {
     private func showSuggestionWindow() {
         guard let window = window, let suggestionWindow = suggestionWindowController?.window else {
             Logger.general.error("AddressBarTextField: Window not available")
+            return
+        }
+
+        /// Don't show suggestions when the AI Chat toggle popover is visible to prevent UI conflicts
+        if aiChatTogglePopoverCoordinator?.isPopoverBeingPresented() == true {
             return
         }
 

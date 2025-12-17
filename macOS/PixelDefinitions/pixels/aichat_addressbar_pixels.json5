@@ -55,5 +55,26 @@
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
         "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_toggle_popover_shown": {
+        "description": "Fired when the toggle popover is shown to the user",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_toggle_popover_dismiss_button_clicked": {
+        "description": "Fired when the user clicks the X button to dismiss the toggle popover",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_aichat_toggle_popover_customize_button_clicked": {
+        "description": "Fired when the user clicks the settings button in the toggle popover",
+        "owners": ["Bunn"],
+        "triggers": ["other"],
+        "suffixes": ["first_daily_count"],
+        "parameters": ["appVersion", "pixelSource"]
     }
 }

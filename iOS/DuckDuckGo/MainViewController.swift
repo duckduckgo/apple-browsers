@@ -255,6 +255,7 @@ class MainViewController: UIViewController {
     let productSurfaceTelemetry: ProductSurfaceTelemetry
 
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
+    private let aiChatContextualModeFeature: AIChatContextualModeFeatureProviding
 
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -300,7 +301,8 @@ class MainViewController: UIViewController {
         mobileCustomization: MobileCustomization,
         remoteMessagingActionHandler: RemoteMessagingActionHandling,
         remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
-        productSurfaceTelemetry: ProductSurfaceTelemetry
+        productSurfaceTelemetry: ProductSurfaceTelemetry,
+        aiChatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature()
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -349,6 +351,7 @@ class MainViewController: UIViewController {
         self.aichatFullModeFeature = aichatFullModeFeature
         self.remoteMessagingDebugHandler = remoteMessagingDebugHandler
         self.productSurfaceTelemetry = productSurfaceTelemetry
+        self.aiChatContextualModeFeature = aiChatContextualModeFeature
 
         super.init(nibName: nil, bundle: nil)
         
@@ -659,6 +662,10 @@ class MainViewController: UIViewController {
         addChild(controller)
         controller.view.frame = viewCoordinator.tabBarContainer.bounds
         controller.delegate = self
+        controller.historyManager = historyManager
+        controller.fireproofing = fireproofing
+        controller.aiChatSettings = aiChatSettings
+        controller.keyValueStore = keyValueStore
         viewCoordinator.tabBarContainer.addSubview(controller.view)
         tabsBarController = controller
         controller.didMove(toParent: self)
@@ -1178,14 +1185,27 @@ class MainViewController: UIViewController {
     }
 
     @IBAction func onFirePressed() {
-
-        func showClearDataAlert() {
-            let alert = ForgetDataAlert.buildAlert(forgetTabsAndDataHandler: { [weak self] in
-                self?.forgetAllWithAnimation {}
-            })
-            self.present(controller: alert, fromView: self.viewCoordinator.toolbar)
+    
+        func showFireConfirmation() {
+            let presenter = FireConfirmationPresenter(tabsModel: tabManager.model,
+                                                      featureFlagger: featureFlagger,
+                                                      historyManager: historyManager,
+                                                      fireproofing: fireproofing,
+                                                      aiChatSettings: aiChatSettings,
+                                                      keyValueFilesStore: keyValueStore)
+            let source: UIView = tabsBarController?.fireButton ?? viewCoordinator.toolbar
+            presenter.presentFireConfirmation(
+                on: self,
+                attachPopoverTo: source,
+                onConfirm: { [weak self] in
+                    self?.forgetAllWithAnimation {}
+                },
+                onCancel: {
+                    // TODO: - Maybe add pixel
+                }
+            )
         }
-
+        
         Pixel.fire(pixel: .forgetAllPressedBrowsing)
         
         performActionIfAITab { DailyPixel.fireDailyAndCount(pixel: .aiChatFireButtonTapped) }
@@ -1196,7 +1216,7 @@ class MainViewController: UIViewController {
         // Dismiss dax dialog and pulse animation when the user taps on the Fire Button.
         currentTab?.dismissContextualDaxFireDialog()
         ViewHighlighter.hideAll()
-        showClearDataAlert()
+        showFireConfirmation()
         
         performCancel()
     }
@@ -1513,7 +1533,7 @@ class MainViewController: UIViewController {
         Logger.daxEasterEgg.debug("RefreshOmniBar - Stored Logo: \(tab.tabModel.daxEasterEggLogoURL ?? "nil")")
         viewCoordinator.omniBar.setDaxEasterEggLogoURL(tab.tabModel.daxEasterEggLogoURL)
 
-        if aichatFullModeFeature.isAvailable && tab.tabModel.isAITab {
+        if aichatFullModeFeature.isAvailable && tab.isAITab {
             viewCoordinator.omniBar.enterAIChatMode()
         } else {
             viewCoordinator.omniBar.startBrowsing()
@@ -2801,7 +2821,7 @@ extension MainViewController: OmniBarDelegate {
         let isiPad = UIDevice.current.userInterfaceIdiom == .pad
         controller.modalPresentationStyle = isiPad ? .popover : .pageSheet
 
-        if let popoverController = controller.popoverPresentationController  {
+        if let popoverController = controller.popoverPresentationController {
             popoverController.sourceView = omniBar.barView.menuButton
             controller.additionalSafeAreaInsets = UIEdgeInsets(top: 0, left: 0, bottom: 16, right: 0)
             controller.preferredContentSize = CGSize(width: 320, height: model.estimatedContentHeight)
@@ -2966,7 +2986,12 @@ extension MainViewController: OmniBarDelegate {
 
     func onAIChatPressed() {
         hideSuggestionTray()
-        openAIChatFromAddressBar()
+
+        if let currentTab, aiChatContextualModeFeature.isAvailable, newTabPageViewController == nil {
+            currentTab.presentContextualAIChatSheet(from: self)
+        } else {
+            openAIChatFromAddressBar()
+        }
     }
 
     private func shareCurrentURLFromAddressBar() {
@@ -3055,7 +3080,7 @@ extension MainViewController: OmniBarDelegate {
 
     /// Delegate method called when the omnibar branding area is tapped while in AI Chat mode.
     func onAIChatBrandingPressed() {
-        DailyPixel.fireDailyAndCount(pixel: .addressBarClickOnAIChat)
+        Pixel.fire(pixel: .addressBarClickOnAIChat)
         viewCoordinator.omniBar.beginEditing(animated: true, forTextEntryMode: .aiChat)
     }
 }

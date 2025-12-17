@@ -270,7 +270,9 @@ extension TabExtensionsBuilder {
                                 trackersPublisher: contentBlocking.trackersPublisher,
                                 urlPublisher: args.contentPublisher.map { content in content.displaysContentInWebView ? content.urlForWebView : nil },
                                 titlePublisher: args.titlePublisher,
-                                popupManagedPublisher: autoconsentTabExtension.popupManagedPublisher)
+                                popupManagedPublisher: autoconsentTabExtension.popupManagedPublisher,
+                                scriptsPublisher: userScripts.compactMap { $0 },
+                                webViewPublisher: args.webViewFuture)
         }
         add {
             PrivacyStatsTabExtension(

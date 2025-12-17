@@ -432,7 +432,7 @@ private extension NSMenuItem {
         let title: String
         switch permission {
         case .camera, .microphone, .geolocation, .notification:
-            title = String(format: UserText.devicePermissionAuthorizationFormat, domain, permission.localizedDescription.lowercased())
+            title = String(format: UserText.permissionMenuHeaderDeviceFormat, domain, permission.localizedDescription.lowercased())
         case .externalScheme(scheme: let scheme):
             title = String(format: UserText.permissionMenuHeaderExternalSchemeFormat, permission.localizedDescription.lowercased(), scheme)
         case .popups:

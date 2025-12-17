@@ -330,6 +330,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DatabaseDelegate {
     }
 
     public func deleteAllUserProfileData() throws {
+        queueManager.stop()
         try database.deleteProfileData()
         DataBrokerProtectionSettings(defaults: .dbp).resetBrokerDeliveryData()
     }

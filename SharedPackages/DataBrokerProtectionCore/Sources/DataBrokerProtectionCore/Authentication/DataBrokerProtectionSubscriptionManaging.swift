@@ -46,6 +46,7 @@ public final class DataBrokerProtectionSubscriptionManager: DataBrokerProtection
             if !isAuthV2Enabled {
                 Logger.dataBrokerProtection.error("🐕 not auth v2")
                 tokenKey = "PRIVACYPRO_STAGING_TOKEN"
+                assertionFailure("AuthV1 no longer supported in E2E runs")
             } else {
                 Logger.dataBrokerProtection.error("🐕 auth v2")
                 tokenKey = "PRIVACYPRO_STAGING_ACCESS_TOKEN_V2"

@@ -100,6 +100,7 @@ public extension DesignSystemImages {
             public static var arrowLeft: DesignSystemImage { .init(resource: .arrowLeft16) }
             public static var arrowRight: DesignSystemImage { .init(resource: .arrowRight16) }
             public static var assistAlt: DesignSystemImage { .init(resource: .assistAlt16) }
+            public static var attach: DesignSystemImage { .init(resource: .attach16) }
             public static var audio: DesignSystemImage { .init(resource: .audio16) }
             public static var audioMute: DesignSystemImage { .init(resource: .audioMute16) }
             public static var bookmark: DesignSystemImage { .init(resource: .bookmark16) }

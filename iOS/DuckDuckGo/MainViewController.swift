@@ -2770,9 +2770,11 @@ extension MainViewController: OmniBarDelegate {
                                                menuEntries: menuEntries,
                                                daxDialogsManager: daxDialogsManager,
                                                productSurfaceTelemetry: productSurfaceTelemetry)
-        browsingMenu.onDismiss = {
+        browsingMenu.onDismiss = { wasActionSelected in
             self.viewCoordinator.menuToolbarButton.isEnabled = true
-            Pixel.fire(pixel: .browsingMenuDismissed)
+            if !wasActionSelected {
+                Pixel.fire(pixel: .browsingMenuDismissed)
+            }
         }
 
         let controller = browsingMenu
@@ -2807,9 +2809,11 @@ extension MainViewController: OmniBarDelegate {
         let controller = BrowsingMenuSheetViewController(
             rootView: BrowsingMenuSheetView(model: model,
                                             highlightRowWithTag: highlightTag,
-                                            onDismiss: {
+                                            onDismiss: { wasActionSelected in
                                                 self.viewCoordinator.menuToolbarButton.isEnabled = true
-                                                Pixel.fire(pixel: .experimentalBrowsingMenuDismissed)
+                                                if !wasActionSelected {
+                                                    Pixel.fire(pixel: .experimentalBrowsingMenuDismissed)
+                                                }
                                             })
         )
 

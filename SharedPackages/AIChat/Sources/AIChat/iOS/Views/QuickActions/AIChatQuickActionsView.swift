@@ -1,0 +1,119 @@
+//
+//  AIChatQuickActionsView.swift
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
+#if os(iOS)
+import UIKit
+
+// MARK: - Constants
+
+private enum AIChatQuickActionsViewConstants {
+    static let chipSpacing: CGFloat = 8
+}
+
+// MARK: - Delegate Protocol
+
+/// Delegate protocol for handling quick action selection events.
+public protocol AIChatQuickActionsViewDelegate: AnyObject {
+    func quickActionsView<Action: AIChatQuickActionType>(_ view: AIChatQuickActionsView<Action>, didSelectAction action: Action)
+}
+
+// MARK: - View
+
+/// A vertically stacked container view for quick action chips.
+public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView {
+
+    // MARK: - Properties
+
+    public weak var delegate: AIChatQuickActionsViewDelegate?
+    private var actions: [Action] = []
+
+    // MARK: - UI Components
+
+    private lazy var stackView: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = AIChatQuickActionsViewConstants.chipSpacing
+        stack.alignment = .leading
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        return stack
+    }()
+
+    // MARK: - Initialization
+
+    public override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
+    }
+
+    public required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    // MARK: - Configuration
+
+    public func configure(with actions: [Action]) {
+        self.actions = actions
+        stackView.arrangedSubviews.forEach {
+            stackView.removeArrangedSubview($0)
+            $0.removeFromSuperview()
+        }
+
+        for action in actions {
+            let chipView = AIChatQuickActionChipView()
+            chipView.configure(with: action)
+            chipView.delegate = self
+            stackView.addArrangedSubview(chipView)
+        }
+    }
+}
+
+// MARK: - Private Setup
+
+private extension AIChatQuickActionsView {
+
+    func setupUI() {
+        addSubview(stackView)
+        setupConstraints()
+        setupAccessibility()
+    }
+
+    func setupConstraints() {
+        NSLayoutConstraint.activate([
+            stackView.topAnchor.constraint(greaterThanOrEqualTo: topAnchor),
+            stackView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            stackView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            stackView.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor),
+        ])
+    }
+
+    func setupAccessibility() {
+        isAccessibilityElement = false
+    }
+}
+
+// MARK: - AIChatQuickActionChipViewDelegate
+
+extension AIChatQuickActionsView: AIChatQuickActionChipViewDelegate {
+
+    public func quickActionChipViewDidTap(_ view: AIChatQuickActionChipView) {
+        guard let index = stackView.arrangedSubviews.firstIndex(of: view),
+              index < actions.count else { return }
+        delegate?.quickActionsView(self, didSelectAction: actions[index])
+    }
+}
+#endif

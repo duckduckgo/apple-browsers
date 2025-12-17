@@ -76,12 +76,6 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
     @Published var email: String?
     var hasEmail: Bool { !(email?.isEmpty ?? true) }
 
-    @Published private(set) var rebrandingMessageDismissed: Bool = false
-
-    public var showRebrandingMessage: Bool {
-        return !rebrandingMessageDismissed
-    }
-
     var expiredSubscriptionPurchaseButtonTitle: String {
         if winBackOfferVisibilityManager.isOfferAvailable {
             UserText.winBackCampaignLoggedInPreferencesCTA
@@ -96,7 +90,6 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
 
     private let subscriptionManager: SubscriptionManagerV2
     private let keyValueStore: ThrowingKeyValueStoring
-    private let rebrandingDismissedKey = "hasDismissedSubscriptionRebrandingMessage"
     private let winBackOfferVisibilityManager: WinBackOfferVisibilityManaging
     private let blackFridayCampaignProvider: BlackFridayCampaignProviding
     private let userEventHandler: (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void
@@ -131,7 +124,6 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
         self.subscriptionManager = subscriptionManager
         self.userEventHandler = userEventHandler
         self.keyValueStore = keyValueStore
-        self.rebrandingMessageDismissed = (try? keyValueStore.object(forKey: rebrandingDismissedKey) as? Bool) ?? false
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.blackFridayCampaignProvider = blackFridayCampaignProvider
         self.isProTierPurchaseEnabled = isProTierPurchaseEnabled
@@ -465,10 +457,6 @@ hasActiveTrialOffer: \(hasTrialOffer, privacy: .public)
         return dateFormatter
     }()
 
-    public func dismissRebrandingMessage() {
-        rebrandingMessageDismissed = true
-        try? keyValueStore.set(true, forKey: rebrandingDismissedKey)
-    }
 }
 
 enum ManageSubscriptionSheet: Identifiable {

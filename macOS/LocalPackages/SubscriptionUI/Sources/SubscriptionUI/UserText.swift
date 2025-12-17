@@ -279,9 +279,6 @@ enum UserText {
 
     static let subscriptionAppleIDSyncFailedAlertTitle = NSLocalizedString("subscription.alert.subscription.apple-id.sync-failed.title", bundle: Bundle.module, value: "Something Went Wrong When Syncing Your Apple Account", comment: "Alert message when the subscription failed to restore")
 
-    // MARK: - Rebranding Message
-    static let preferencesSubscriptionRebrandingMessage = NSLocalizedString("subscription.preferences.subscription.rebranding.message", bundle: Bundle.module, value: "Privacy Pro is now just called the DuckDuckGo subscription", comment: "Message informing users that Subscription is now called the DuckDuckGo subscription")
-
     // MARK: - Win-back Offer
     static let winBackCampaignLoggedOutPreferencesTitle = NSLocalizedString("win-back.campaign.logged-out.preferences.title", value: "We want you back! Get 25% off.", comment: "Title of the message displayed for logged out users to resubscribe during the win-back campaign")
     static let winBackCampaignLoggedInPreferencesMessage = NSLocalizedString("win-back.campaign.logged-in.preferences.message", value: "Stay protected with our VPN, private AI, and more. Resubscribe today and save 25%. Limited time offer.", comment: "Message of the message displayed for logged in users to resubscribe during the win-back campaign")

@@ -100,6 +100,8 @@ public struct DBPUICommunicationLayer: Subfeature {
     public var featureName: String = "dbpuiCommunication"
     weak public var broker: UserScriptMessageBroker?
 
+    private let outboundBroker: UserScriptMessageBroker = UserScriptMessageBroker(context: "dbpui", requiresRunInPageContentWorld: true)
+
     weak public var delegate: DBPUICommunicationDelegate?
 
     private enum Constants {
@@ -338,7 +340,8 @@ public struct DBPUICommunicationLayer: Subfeature {
         Logger.dataBrokerProtection.log("needBackgroundAppRefresh changed to \(needBackgroundAppRefresh)")
 
         let params = DBPUIBackgroundAppRefreshDidChange(needBackgroundAppRefresh: needBackgroundAppRefresh)
-        sendMessageToUI(method: .backgroundAppRefreshDidChange, params: params, into: webView)
+        outboundBroker.push(method: DBPUISendableMethodName.backgroundAppRefreshDidChange.rawValue,
+                            params: params, for: self, into: webView)
     }
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {

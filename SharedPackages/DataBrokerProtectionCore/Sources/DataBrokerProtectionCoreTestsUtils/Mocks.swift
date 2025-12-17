@@ -1892,6 +1892,10 @@ public final class MockBrokerProfileJobStatusReportingDelegate: BrokerProfileJob
         dataBrokerOperationDidErrorCalled = true
         operationErrors.append(error)
     }
+
+    public func dataBrokerOperationDidCompleteSuccessfully(withBrokerURL brokerURL: String?, version: String?, dataBrokerParent: String?) {
+
+    }
 }
 
 public final class MockDBPFeatureFlagger: DBPFeatureFlagging {
@@ -2359,6 +2363,20 @@ public final class MockDataBrokerProtectionEventPixelsRepository: DataBrokerProt
 
     public func getLatestWeeklyPixel() -> Date? {
         return customGetLatestWeeklyPixel
+    }
+
+    public func markInitialScansTotalDurationPixelSent() {
+    }
+
+    public func markInitialScansStarted() {
+    }
+
+    public func hasInitialScansTotalDurationPixelBeenSent() -> Bool {
+        return false
+    }
+
+    public func initialScansStartDate() -> Date? {
+        return nil
     }
 
     public func clear() {

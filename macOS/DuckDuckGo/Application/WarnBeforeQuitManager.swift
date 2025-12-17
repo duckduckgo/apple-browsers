@@ -302,7 +302,6 @@ final class WarnBeforeQuitManager: ApplicationTerminationDecider {
                         return event // Let click be processed by the system
 
                     default:
-                        assertionFailure("WarnBeforeQuitManager: Unexpected event type: \(event.type)")
                         return event
                     }
                 }

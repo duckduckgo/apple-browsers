@@ -365,6 +365,8 @@ extension JobQueueManager: BrokerProfileJobStatusReportingDelegate {
         default:
             pixelHandler.fire(.otherError(error: error, dataBroker: brokerURL, version: version))
         }
+
+        delegate?.queueManagerDidCompleteIndividualJob(self)
     }
 
     public func dataBrokerOperationDidCompleteSuccessfully(withBrokerURL brokerURL: String?, version: String?, dataBrokerParent: String?) {

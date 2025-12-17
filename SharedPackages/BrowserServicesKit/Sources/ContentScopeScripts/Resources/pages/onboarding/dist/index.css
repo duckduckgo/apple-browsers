@@ -722,19 +722,24 @@ h2 {
   --switch-width: 40px;
   --switch-height: 20px;
   --switch-handle-size: 12px;
-  --switch-handle-color-checked: white;
   --switch-handle-offset: 4px;
-  --switch-handle-color: var(--color-black-at-60);
   --switch-checked-offset: translateX(calc(100% + 8px));
-  --track-bg-color: var(--color-black-at-3);
-  --track-border: 1px solid var(--track-border-color);
-  --track-border-color: var(--color-black-at-60);
   --track-border-radius: 11px;
-  --track-bg-color-active: var(--color-black-at-9);
-  --track-bg-color-checked: var(--ddg-color-primary);
-  --track-border-color-checked: var(--ddg-color-primary);
-  --track-bg-color-checked-active: #2B55CA;
-  --track-border-color-checked-active: #2B55CA;
+  --track-border: 1px solid var(--track-border-color);
+  --track-border-color: var(--ds-color-theme-control-border-secondary, var(--ds-color-theme-default-light-control-border-secondary));
+  --track-bg-color: var(--ds-color-theme-control-fill-primary, var(--ds-color-theme-default-light-control-fill-primary));
+  --switch-handle-color: var(--ds-color-theme-icons-secondary, var(--ds-color-theme-default-light-icons-secondary));
+  --track-border-color-hover: var(--ds-color-theme-control-border-tertiary, var(--ds-color-theme-default-light-control-border-tertiary));
+  --track-bg-color-hover: var(--ds-color-theme-control-fill-secondary, var(--ds-color-theme-default-light-control-fill-secondary));
+  --track-border-color-active: var(--ds-color-theme-control-border-quaternary, var(--ds-color-theme-default-light-control-border-quaternary));
+  --track-bg-color-active: var(--ds-color-theme-control-fill-tertiary, var(--ds-color-theme-default-light-control-fill-tertiary));
+  --track-border-color-checked: var(--ds-color-theme-accent-primary, var(--ds-color-theme-default-light-accent-primary));
+  --track-bg-color-checked: var(--ds-color-theme-accent-primary, var(--ds-color-theme-default-light-accent-primary));
+  --switch-handle-color-checked: var(--ds-color-theme-accent-content-secondary, var(--ds-color-theme-default-light-accent-content-secondary));
+  --track-border-color-checked-hover: var(--ds-color-theme-accent-secondary, var(--ds-color-theme-default-light-accent-secondary));
+  --track-bg-color-checked-hover: var(--ds-color-theme-accent-secondary, var(--ds-color-theme-default-light-accent-secondary));
+  --track-border-color-checked-active: var(--ds-color-theme-accent-tertiary, var(--ds-color-theme-default-light-accent-tertiary));
+  --track-bg-color-checked-active: var(--ds-color-theme-accent-tertiary, var(--ds-color-theme-default-light-accent-tertiary));
   vertical-align: top;
   isolation: isolate;
   align-items: flex-start;
@@ -743,26 +748,41 @@ h2 {
   position: relative;
 }
 .Switch_label[data-theme=dark] {
-  --track-border-color: var(--color-white-at-60);
-  --track-bg-color: var(--color-black-at-9);
-  --track-bg-color-active: var(--color-white-at-9);
-  --switch-handle-color: var(--color-white-at-84);
-  --switch-handle-color-checked: black;
-  --track-bg-color-checked: var(--ddg-color-primary-dark);
-  --track-border-color-checked: var(--ddg-color-primary-dark);
-  --track-bg-color-checked-active: var(--ddg-color-primary);
-  --track-border-color-checked-active: var(--ddg-color-primary);
+  --track-border-color: var(--ds-color-theme-control-border-secondary, var(--ds-color-theme-default-dark-control-border-secondary));
+  --track-bg-color: var(--ds-color-theme-control-fill-primary, var(--ds-color-theme-default-dark-control-fill-primary));
+  --switch-handle-color: var(--ds-color-theme-icons-secondary, var(--ds-color-theme-default-dark-icons-secondary));
+  --track-border-color-hover: var(--ds-color-theme-control-border-tertiary, var(--ds-color-theme-default-dark-control-border-tertiary));
+  --track-bg-color-hover: var(--ds-color-theme-control-fill-secondary, var(--ds-color-theme-default-dark-control-fill-secondary));
+  --track-border-color-active: var(--ds-color-theme-control-border-quaternary, var(--ds-color-theme-default-dark-control-border-quaternary));
+  --track-bg-color-active: var(--ds-color-theme-control-fill-tertiary, var(--ds-color-theme-default-dark-control-fill-tertiary));
+  --track-border-color-checked: var(--ds-color-theme-accent-primary, var(--ds-color-theme-default-dark-accent-primary));
+  --track-bg-color-checked: var(--ds-color-theme-accent-primary, var(--ds-color-theme-default-dark-accent-primary));
+  --switch-handle-color-checked: var(--ds-color-theme-accent-content-secondary, var(--ds-color-theme-default-dark-accent-content-secondary));
+  --track-border-color-checked-hover: var(--ds-color-theme-accent-secondary, var(--ds-color-theme-default-dark-accent-secondary));
+  --track-bg-color-checked-hover: var(--ds-color-theme-accent-secondary, var(--ds-color-theme-default-dark-accent-secondary));
+  --track-border-color-checked-active: var(--ds-color-theme-accent-tertiary, var(--ds-color-theme-default-dark-accent-tertiary));
+  --track-bg-color-checked-active: var(--ds-color-theme-accent-tertiary, var(--ds-color-theme-default-dark-accent-tertiary));
 }
 .Switch_label[data-platform-name=macos] {
   --switch-width: 26px;
   --switch-height: 15px;
   --switch-handle-size: 13px;
   --switch-handle-offset: 1px;
-  --switch-handle-color: var(--color-white-at-84);
   --switch-checked-offset: translateX(calc(100% - 2px));
-  --track-bg-color: var(--color-black-at-9);
-  --track-border: 0;
   --track-border-radius: 10px;
+  --track-border: 0;
+  --track-bg-color: var(--color-black-at-9);
+  --switch-handle-color: var(--color-white-at-84);
+  --track-bg-color-hover: var(--track-bg-color);
+  --track-border-color-hover: var(--track-border-color);
+  --track-bg-color-checked-hover: var(--track-bg-color-checked);
+  --track-border-color-checked-hover: var(--track-border-color-checked);
+  --track-bg-color-checked: var(--ds-color-theme-accent-primary, var(--ds-color-theme-default-light-accent-primary));
+  --track-border-color-checked: var(--ds-color-theme-accent-primary, var(--ds-color-theme-default-light-accent-primary));
+  --switch-handle-color-checked: white;
+  --track-bg-color-active: var(--track-bg-color);
+  --track-bg-color-checked-active: var(--ds-color-theme-accent-secondary, var(--ds-color-theme-default-light-accent-secondary));
+  --track-border-color-checked-active: var(--ds-color-theme-accent-secondary, var(--ds-color-theme-default-light-accent-secondary));
 }
 .Switch_label[data-platform-name=macos][data-size=medium] {
   --switch-width: 32px;
@@ -771,7 +791,12 @@ h2 {
 }
 .Switch_label[data-platform-name=macos][data-theme=dark] {
   --track-bg-color: var(--color-white-at-9);
+  --switch-handle-color: var(--color-white-at-84);
+  --track-bg-color-checked: var(--ds-color-theme-accent-primary, var(--ds-color-theme-default-dark-accent-primary));
+  --track-border-color-checked: var(--ds-color-theme-accent-primary, var(--ds-color-theme-default-dark-accent-primary));
   --switch-handle-color-checked: #CECECE;
+  --track-bg-color-checked-active: var(--ds-color-theme-accent-secondary, var(--ds-color-theme-default-dark-accent-secondary));
+  --track-border-color-checked-active: var(--ds-color-theme-accent-secondary, var(--ds-color-theme-default-dark-accent-secondary));
 }
 .Switch_input {
   box-sizing: border-box;
@@ -790,8 +815,13 @@ h2 {
   appearance: auto;
   background-color: initial;
 }
+.Switch_input:hover + .Switch_switch:after {
+  background-color: var(--track-bg-color-hover);
+  border-color: var(--track-border-color-hover);
+}
 .Switch_input:active + .Switch_switch:after {
   background-color: var(--track-bg-color-active);
+  border-color: var(--track-border-color-active);
 }
 .Switch_input:checked + .Switch_switch:before {
   transform: var(--switch-checked-offset);
@@ -806,13 +836,11 @@ h2 {
   border-color: var(--track-border-color-checked);
 }
 [data-theme=dark][data-platform-name=macos] .Switch_input:checked + .Switch_switch:after {
-  background:
-    linear-gradient(
-      180deg,
-      #3969EF 0%,
-      #2C4AAC 0.01%,
-      #3152BF 100%);
   box-shadow: 0px 0px 1px 1px rgba(255, 255, 255, 0.10) inset, 0px 0px 0px 0.5px rgba(255, 255, 255, 0.06) inset;
+}
+.Switch_input:checked:hover + .Switch_switch:after {
+  background-color: var(--track-bg-color-checked-hover);
+  border-color: var(--track-border-color-checked-hover);
 }
 .Switch_input:checked:active + .Switch_switch:after {
   background-color: var(--track-bg-color-checked-active);

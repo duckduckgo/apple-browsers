@@ -62,16 +62,27 @@ struct WarnBeforeQuitView: View {
             Spacer()
 
             // "Don‘t Show Again" button
-            Button {
-                viewModel.dontAskAgainTapped()
-            } label: {
-                Text(UserText.confirmDontShowAgain)
-                    .font(.system(size: 13))
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
-            }
-            .buttonStyle(DontAskAgainButtonStyle())
+            Text(UserText.confirmDontShowAgain)
+                .font(.system(size: 13))
+                .foregroundColor(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.white.opacity(0.4), lineWidth: 1)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.white.opacity(0.1))
+                        )
+                )
+                // Fires on mouseDown event to trigger the `onDontAskAgain` callback
+                // before the popup is dismissed by the click event
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 0)
+                        .onChanged { _ in
+                            viewModel.dontAskAgainTapped()
+                        }
+                )
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
@@ -80,27 +91,14 @@ struct WarnBeforeQuitView: View {
                 .fill(Color.black.opacity(0.85))
         )
         .frame(width: 520)
+        .onHover { isHovering in
+            viewModel.hoverChanged(isHovering)
+        }
     }
 }
 
-private struct DontAskAgainButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(Color.white.opacity(0.4), lineWidth: 1)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(configuration.isPressed ? Color.white.opacity(0.2) : Color.white.opacity(0.1))
-                    )
-            )
-    }
-}
-
-#if DEBUG
 #Preview {
     WarnBeforeQuitView(viewModel: WarnBeforeQuitViewModel())
         .padding(40)
         .background(Color.gray)
 }
-#endif

@@ -61,14 +61,6 @@ extension AppDelegate {
 #endif
     }
 
-    @MainActor
-    @objc func handleQuitAction(_ sender: Any?) {
-        guard warnBeforeQuitManager.handleQuitRequest() else {
-            return
-        }
-        NSApp.terminate(sender)
-    }
-
     // MARK: - File
 
     @objc func newWindow(_ sender: Any?) {

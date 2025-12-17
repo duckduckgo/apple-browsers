@@ -25,81 +25,73 @@ import SwiftUI
 /// Observes state changes from WarnBeforeQuitManager and updates the UI accordingly.
 @MainActor
 final class OverlayPresenter {
-    
+
     // MARK: - Properties
-    
+
     private(set) var overlayWindow: NSWindow?
     private let viewModel = WarnBeforeQuitViewModel()
     private var observationTask: Task<Void, Never>?
     private var progressTask: Task<Void, Never>?
-    
-    private weak var manager: WarnBeforeQuitManager?
-    
-    var onDontAskAgain: (() -> Void)? {
-        get { viewModel.onDontAskAgain }
-        set { viewModel.onDontAskAgain = newValue }
-    }
-    
+
     let windowProvider: @MainActor () -> NSWindow?
-    
+
     // MARK: - Initialization
-    
-    init(stateStream: AsyncStream<QuitConfirmationState>,
-         manager: WarnBeforeQuitManager,
+
+    init(onDontAskAgain: @escaping () -> Void,
+         onHoverChange: @escaping (Bool) -> Void,
          windowProvider: @MainActor @escaping () -> NSWindow? = { NSApp.keyWindow ?? NSApp.mainWindow }) {
         self.windowProvider = windowProvider
-        self.manager = manager
-        
-        // Start observing state changes
+        self.viewModel.onDontAskAgain = onDontAskAgain
+        self.viewModel.onHoverChange = onHoverChange
+    }
+
+    /// Subscribes to the manager's state stream. Keeps the presenter alive as long as the stream is active.
+    func subscribe(to stateStream: AsyncStream<QuitConfirmationState>) {
         observationTask = Task { @MainActor in
             for await state in stateStream {
                 self.handle(state: state)
             }
         }
     }
-    
+
     deinit {
         observationTask?.cancel()
         progressTask?.cancel()
     }
-    
+
     // MARK: - Private
-    
+
     private func handle(state: QuitConfirmationState) {
         switch state {
         case .idle:
             break
-            
-        case .active:
+
+        case .holding(let startTime, let targetTime):
             show()
-            viewModel.resetProgress()
+            startProgressAnimation(startTime: startTime, targetTime: targetTime)
+
+        case .waitingForSecondPress:
+            // Show overlay if not already shown (in case key was released immediately)
+            show()
+            // Stop progress animation and reset
             progressTask?.cancel()
-            
-        case .holding(let targetTime):
-            show()
-            startProgressAnimation(targetTime: targetTime)
-            
-        case .completed(let shouldQuit):
+            viewModel.resetProgress()
+
+        case .completed:
             hide()
-            
-            if shouldQuit {
-                NSApp.terminate(nil)
-            } else {
-                // Reset state machine to allow next quit request
-                manager?.reset()
-            }
+            // Just hide - don't call terminate, the decider framework handles that
         }
     }
-    
+
     private func show() {
         guard let keyWindow = windowProvider() else { return }
-        
+
         if overlayWindow == nil {
             overlayWindow = createOverlayWindow()
         }
-        
+
         guard let overlayWindow else { return }
-        
+
         // Position overlay at top center of the key window
         let windowFrame = keyWindow.frame
         let overlaySize = CGSize(width: 520, height: 90)
@@ -107,24 +99,24 @@ final class OverlayPresenter {
             x: windowFrame.midX - overlaySize.width / 2,
             y: windowFrame.maxY - overlaySize.height - 80
         )
-        
+
         overlayWindow.setFrame(CGRect(origin: overlayOrigin, size: overlaySize), display: true)
-        
+
         // Add as child window to ensure it stays on top
         keyWindow.addChildWindow(overlayWindow, ordered: .above)
         overlayWindow.makeKeyAndOrderFront(nil)
     }
-    
+
     private func hide() {
         progressTask?.cancel()
         viewModel.resetProgress()
-        
+
         if let parentWindow = overlayWindow?.parent {
             parentWindow.removeChildWindow(overlayWindow!)
         }
         overlayWindow?.orderOut(nil)
     }
-    
+
     private func createOverlayWindow() -> NSWindow {
         let window = NSWindow(
             contentRect: .zero,
@@ -132,37 +124,40 @@ final class OverlayPresenter {
             backing: .buffered,
             defer: false
         )
-        
+
         window.isOpaque = false
         window.backgroundColor = .clear
         window.level = .floating
         window.hasShadow = true
         window.isReleasedWhenClosed = false
-        
+
         let hostingView = NSHostingView(rootView: WarnBeforeQuitView(viewModel: viewModel))
         window.contentView = hostingView
-        
+
         return window
     }
-    
-    private func startProgressAnimation(targetTime: CFTimeInterval) {
+
+    private func startProgressAnimation(startTime: TimeInterval, targetTime: TimeInterval) {
         progressTask?.cancel()
-        
+
+        let duration = targetTime - startTime
+
         progressTask = Task {
             while !Task.isCancelled {
-                let now = CACurrentMediaTime()
-                let elapsed = now - (targetTime - 0.42) // config.holdDuration
-                let progress = CGFloat(max(0, min(1, elapsed / 0.42)))
-                
+                let now = Date().timeIntervalSinceReferenceDate
+                let elapsed = now - startTime
+                let progress = CGFloat(max(0, min(1, elapsed / duration)))
+
+                // Check cancellation before updating
+                guard !Task.isCancelled else { break }
                 viewModel.updateProgress(progress)
-                
+
                 if progress >= 1.0 {
                     break
                 }
-                
+
                 try? await Task.sleep(nanoseconds: 16_000_000) // ~60fps
             }
         }
     }
 }
-

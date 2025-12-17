@@ -206,7 +206,7 @@ extension NSEvent.KeyEquivalent: ExpressibleByStringLiteral, ExpressibleByUnicod
             assertionFailure("wrong type of event \(event)")
             return nil
         }
-        guard let characters = event.characters else { return nil }
+        guard let characters = event.charactersIgnoringModifiers, !characters.isEmpty else { return nil }
         self.init(characters: characters, modifierFlags: event.modifierFlags)
     }
 

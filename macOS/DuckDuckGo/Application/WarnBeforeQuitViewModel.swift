@@ -26,6 +26,7 @@ final class WarnBeforeQuitViewModel: ObservableObject {
     @Published private(set) var progress: CGFloat = 0
 
     var onDontAskAgain: (() -> Void)?
+    var onHoverChange: ((Bool) -> Void)?
 
     func updateProgress(_ newProgress: CGFloat) {
         progress = min(1.0, max(0, newProgress))
@@ -37,5 +38,9 @@ final class WarnBeforeQuitViewModel: ObservableObject {
 
     func dontAskAgainTapped() {
         onDontAskAgain?()
+    }
+
+    func hoverChanged(_ isHovering: Bool) {
+        onHoverChange?(isHovering)
     }
 }

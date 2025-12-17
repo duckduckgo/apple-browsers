@@ -110,7 +110,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let featureFlagOverridesPublishingHandler = FeatureFlagOverridesPublishingHandler<FeatureFlag>()
     private var appIconChanger: AppIconChanger!
     private var autoClearHandler: AutoClearHandler!
-    private(set) var warnBeforeQuitManager: WarnBeforeQuitManager!
     private(set) var autofillPixelReporter: AutofillPixelReporter?
 
     private(set) var syncDataProviders: SyncDataProvidersSource?
@@ -1131,8 +1130,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let urlEventHandlerResult = urlEventHandler.applicationDidFinishLaunching()
 
         setUpAutoClearHandler()
-        setUpWarnBeforeQuitManager()
-
         BWManager.shared.initCommunication()
 
         if case .normal = AppVersion.runType,
@@ -1368,18 +1365,51 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 downloadListCoordinator: downloadListCoordinator
             ),
 
-            // 3. Update controller cleanup
+            // 3. Warn before quit confirmation
+            {
+                // Don't show "warn before quit" if autoclear warning will be shown
+                let willShowAutoClearWarning = dataClearingPreferences.isAutoClearEnabled && dataClearingPreferences.isWarnBeforeClearingEnabled
+
+                // Don't show if no window is open
+                let hasWindow = windowControllersManager.lastKeyMainWindowController?.window != nil
+
+                guard featureFlagger.isFeatureOn(.warnBeforeQuit),
+                      !willShowAutoClearWarning,
+                      hasWindow,
+                      let currentEvent = NSApp.currentEvent,
+                      let manager = WarnBeforeQuitManager(
+                        currentEvent: currentEvent,
+                        isWarningEnabled: { [weak self] in
+                            self?.warnBeforeQuitting ?? true
+                        }
+                      ) else { return ApplicationTerminationDecider?.none }
+
+                let presenter = OverlayPresenter(
+                    anchorViewProvider: nil,
+                    onDontAskAgain: { [weak self] in
+                        self?.warnBeforeQuitting = false
+                    },
+                    onHoverChange: { [weak manager] isHovering in
+                        manager?.setMouseHovering(isHovering)
+                    }
+                )
+                // Subscribe to state stream (the Task keeps presenter alive)
+                presenter.subscribe(to: manager.stateStream)
+                return manager
+            }(),
+
+            // 4. Update controller cleanup
             updateController.map(UpdateControllerAppTerminationDecider.init),
 
-            // 4. State restoration
+            // 5. State restoration
             StateRestorationAppTerminationDecider(
                 stateRestorationManager: stateRestorationManager
             ),
 
-            // 5. Auto-clear (burn on quit)
+            // 6. Auto-clear (burn on quit)
             autoClearHandler,
 
-            // 6. Privacy stats cleanup
+            // 7. Privacy stats cleanup
             PrivacyStatsAppTerminationDecider(
                 privacyStats: privacyStats
             ),
@@ -1718,22 +1748,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.autoClearHandler = autoClearHandler
         DispatchQueue.main.async {
             autoClearHandler.handleAppLaunch()
-        }
-    }
-
-    @MainActor
-    private func setUpWarnBeforeQuitManager() {
-        let manager = WarnBeforeQuitManager()
-        warnBeforeQuitManager = manager
-        
-        let presenter = OverlayPresenter(
-            stateStream: manager.stateStream,
-            manager: manager
-        )
-        
-        // Set up callback for "Don't Show Again" button
-        presenter.onDontAskAgain = { [weak manager] in
-            manager?.disableWarning()
         }
     }
 

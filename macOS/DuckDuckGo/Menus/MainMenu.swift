@@ -217,7 +217,7 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: UserText.mainMenuAppShowAll, action: #selector(NSApplication.unhideAllApplications))
             NSMenuItem.separator()
 
-            NSMenuItem(title: UserText.mainMenuAppQuitDuckDuckGo, action: #selector(AppDelegate.handleQuitAction), keyEquivalent: "q")
+            NSMenuItem(title: UserText.mainMenuAppQuitDuckDuckGo, action: #selector(NSApplication.terminate), keyEquivalent: "q")
         }
     }
 

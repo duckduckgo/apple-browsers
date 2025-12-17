@@ -111,6 +111,9 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let alertGreen = DynamicColor(lightColor: .alertGreen, darkColor: .alertGreen)
     private static let alertYellow = DynamicColor(lightColor: .alertYellow, darkColor: .alertYellow)
 
+    // Destructive
+    private static let destructivePrimary = DynamicColor(lightColor: .alertRed, darkColor: .alertRed20)
+
     // Buttons/Primary
     private static let buttonsPrimaryDefault = DynamicColor(lightColor: .blue50, darkColor: .blue30)
     private static let buttonsPrimaryPressed = DynamicColor(lightColor: .blue70, darkColor: .blue50)
@@ -147,6 +150,9 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let buttonsDeleteGhostTextPressed = DynamicColor(lightColor: .alertRed70, darkColor: .alertRed10)
     private static let buttonsDeleteGhostText = DynamicColor(lightColor: .alertRedOnLight, darkColor: .alertRedOnDark)
     private static let buttonsDeleteGhostTextDisabled = DynamicColor(lightColor: .shade(0.36), darkColor: .tint(0.36))
+
+    // Buttons/DestructivePrimary
+    private static let buttonsDestructivePrimaryPressed = DynamicColor(lightColor: .alertRed80, darkColor: .alertRed40)
 
     static func dynamicColor(for designSystemColor: DesignSystemColor) -> DynamicColor {
         switch designSystemColor {
@@ -189,6 +195,9 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .textSecondary: return textSecondary
         case .textSelectionFill: return textSelectionFill
 
+        // Destructive
+        case .destructivePrimary: return destructivePrimary
+
             // Buttons/SecondaryFill
         case .buttonsSecondaryFillDefault: return buttonsSecondaryFillDefault
         case .buttonsSecondaryFillPressed: return buttonsSecondaryFillPressed
@@ -225,6 +234,9 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .buttonsDeleteGhostText: return buttonsDeleteGhostText
         case .buttonsDeleteGhostTextPressed: return buttonsDeleteGhostTextPressed
         case .buttonsDeleteGhostTextDisabled: return buttonsDeleteGhostTextDisabled
+
+            // Buttons/DestructivePrimary
+        case .buttonsDestructivePrimaryPressed: return buttonsDestructivePrimaryPressed
         }
     }
 

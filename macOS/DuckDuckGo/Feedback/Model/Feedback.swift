@@ -25,6 +25,7 @@ struct Feedback {
         case generalFeedback
         case designFeedback
         case bug
+        case firstTimeQuitSurvey // Same as a bug but with another description
         case featureRequest
         case other
         case usability
@@ -82,6 +83,8 @@ extension Feedback.Category {
             return "Via Report a Problem Form"
         case .featureRequest:
             return "Via Request New Feature Form"
+        case .firstTimeQuitSurvey:
+            return "Via First Quit Time Survey"
         default:
             return "other"
         }

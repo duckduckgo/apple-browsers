@@ -202,7 +202,10 @@ extension MainViewController {
                                       tabManager: self.tabManager,
                                       aiChatSettings: self.aiChatSettings,
                                       appSettings: self.appSettings,
-                                      productSurfaceTelemetry: self.productSurfaceTelemetry)
+                                      productSurfaceTelemetry: self.productSurfaceTelemetry,
+                                      historyManager: self.historyManager,
+                                      fireproofing: self.fireproofing,
+                                      keyValueStore: self.keyValueStore)
         }) else {
             assertionFailure()
             return

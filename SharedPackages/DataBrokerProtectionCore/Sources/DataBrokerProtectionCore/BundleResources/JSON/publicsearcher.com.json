@@ -1,7 +1,7 @@
 {
   "name": "PublicSearcher",
   "url": "publicsearcher.com",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "parent": "privatereports.com",
   "optOutUrl": "https://www.publicsearcher.com/optOut/name/landingPage",
   "steps": [
@@ -11,56 +11,48 @@
       "actions": [
         {
           "actionType": "navigate",
-          "url": "https://www.publicsearcher.com/nameSearch/searchResult",
-          "id": "588c6312-6485-4fbd-9d39-3a81152ea2db"
+          "url": "https://www.publicsearcher.com/optOut/name/landingPage",
+          "id": "331b4f4e-5534-43f5-90f8-589c89d59a8d"
         },
         {
           "actionType": "expectation",
           "expectations": [
             {
               "type": "element",
-              "selector": "#email-form-2"
+              "selector": ".search-wrapper"
             }
           ],
-          "id": "5a09da2a-add9-4b5f-9409-1433b4fb91b8"
+          "id": "9a72ae74-eb07-4735-9da7-f5e67018b53a"
         },
         {
           "actionType": "fillForm",
           "dataSource": "userProfile",
-          "selector": "#email-form-2",
+          "selector": ".search-wrapper",
           "elements": [
             {
               "type": "firstName",
-              "selector": "#First-Name-2"
-            },
-            {
-              "type": "middleName",
-              "selector": "#Middle-Name-3"
+              "selector": "#firstName"
             },
             {
               "type": "lastName",
-              "selector": "#Last-Name-3"
-            },
-            {
-              "type": "city",
-              "selector": "#City-3"
+              "selector": "#lastName"
             },
             {
               "type": "state",
-              "selector": "#State"
+              "selector": "#state"
             }
           ],
-          "id": "fa88671c-208f-4691-8d79-ff55af5168ff"
+          "id": "12a78bc7-1dca-423f-8c37-f5d85ccbf7e0"
         },
         {
           "actionType": "click",
           "elements": [
             {
               "type": "button",
-              "selector": "#ux-1"
+              "selector": "button[type='submit']"
             }
           ],
-          "id": "e3e57efc-6726-4b8b-944c-cf0ae8e5742e"
+          "id": "2489dee9-2b59-40bb-8ec4-88ef15c7c5c3"
         },
         {
           "actionType": "expectation",
@@ -160,37 +152,38 @@
           "elements": [
             {
               "type": "button",
-              "selector": ".srp-view-more",
+              "selector": ".result .more",
               "multiple": true,
               "failSilently": true
             }
           ],
-          "id": "e0e3ee9d-7c7f-4e1f-8796-620fc5c110a4"
+          "id": "539c6e87-95d1-45e2-930b-32a2707a88cc"
         },
         {
           "actionType": "extract",
-          "selector": ".srp-table-item",
+          "selector": "//li[contains(@class, 'searchedPerson')]",
           "noResultsSelector": "//div[contains(text(), 'unable to find')]|//h2[contains(text(), 'too many results')]",
           "profile": {
             "name": {
-              "selector": ".srp-name"
+              "selector": ".//a/div[1]//h3"
             },
             "age": {
-              "selector": ".srp-item-age"
+              "selector": ".//a/div[1]//h4",
+              "afterText": "Age:"
             },
             "relativesList": {
-              "selector": ".srp-item-relatives .srp-item-relative",
+              "selector": ".//strong[contains(text(), 'relative')]/following-sibling::text()",
               "findElements": true
             },
             "addressCityState": {
-              "selector": ".srp-item-locations .srp-item-location",
+              "selector": ".//strong[contains(text(), 'Locations:')]/following-sibling::text()",
               "findElements": true
             },
             "profileUrl": {
               "identifierType": "hash"
             }
           },
-          "id": "37bd2a07-9c66-492f-855a-311b5fa44849"
+          "id": "0aa28805-62ab-4f8f-814e-56612537b735"
         }
       ]
     },

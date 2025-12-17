@@ -2193,4 +2193,23 @@ public struct UserText {
 
         }
     }
+    
+    // MARK: - Fire Confirmation
+    
+    public static let fireConfirmationTitle = NSLocalizedString("fire.confirmation.title", value: "Choose What To Delete", comment: "Title for fire button confirmation screen")
+    public static let fireConfirmationTabsTitle = NSLocalizedString("fire.confirmation.tabs.title", value: "Tabs", comment: "Tabs option title in fire confirmation")
+    public static let fireConfirmationDataTitle = NSLocalizedString("fire.confirmation.data.title", value: "Cookies and Site Data", comment: "Cookies and site data option title in fire confirmation")
+    public static let fireConfirmationAIChatsTitle = NSLocalizedString("fire.confirmation.aichats.title", value: "Duck.ai Chats", comment: "AI Chats option title in fire confirmation")
+    public static let fireConfirmationDataSubtitleHistoryDisabled = NSLocalizedString("fire.confirmation.data.subtitle.historyDisabled", value: "May sign you out of accounts", comment: "Subtitle for cookies/site data when history is disabled")
+    public static let fireConfirmationAIChatsSubtitle = NSLocalizedString("fire.confirmation.aichats.subtitle", value: "Delete all chats", comment: "AI Chats option subtitle in fire confirmation")
+    
+    public static func fireConfirmationTabsSubtitle(withCount count: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "fire.confirmation.tabs.subtitle.withCount", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, count)
+    }
+    
+    public static func fireConfirmationDataSubtitle(withCount count: Int) -> String {
+        let format = Bundle.main.localizedString(forKey: "fire.confirmation.data.subtitle.withCount", value: nil, table: nil)
+        return String.localizedStringWithFormat(format, count)
+    }
 }

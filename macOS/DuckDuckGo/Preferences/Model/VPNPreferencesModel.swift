@@ -172,6 +172,10 @@ final class VPNPreferencesModel: ObservableObject {
         subscribeToDNSSettingsChanges()
     }
 
+    deinit {
+        cancellables.removeAll()
+    }
+
     private func subscribeToAppRoutingRulesChanges() {
         proxySettings.appRoutingRulesPublisher
             .map { rules in

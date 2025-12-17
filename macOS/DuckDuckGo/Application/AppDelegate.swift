@@ -375,6 +375,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return firstLaunchDate.daysSinceNow() >= 2
     }
 
+    let memoryUsageMonitor: MemoryUsageMonitor
+
     @MainActor
     // swiftlint:disable cyclomatic_complexity
     override init() {
@@ -807,6 +809,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 contentScopeExperimentsManager: self.contentScopeExperimentsManager,
                 onboardingNavigationDelegate: windowControllersManager,
                 appearancePreferences: appearancePreferences,
+                themeManager: themeManager,
                 startupPreferences: startupPreferences,
                 webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                 cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
@@ -835,6 +838,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             contentScopeExperimentsManager: self.contentScopeExperimentsManager,
             onboardingNavigationDelegate: windowControllersManager,
             appearancePreferences: appearancePreferences,
+            themeManager: themeManager,
             startupPreferences: startupPreferences,
             webTrackingProtectionPreferences: webTrackingProtectionPreferences,
             cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
@@ -1025,6 +1029,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                subscriptionStateProvider: subscriptionStateProvider,
                                                                settingsProvider: settingsProvider)
         self.attributedMetricManager.addNotificationsObserver()
+
+        memoryUsageMonitor = MemoryUsageMonitor(logger: .memory)
 
         super.init()
 
@@ -1246,6 +1252,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         userChurnScheduler.start()
 
+        memoryUsageMonitor.enableIfNeeded(featureFlagger: featureFlagger)
+
         PixelKit.fire(NonStandardEvent(GeneralPixel.launch))
     }
 
@@ -1265,6 +1273,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidBecomeActive(_ notification: Notification) {
         guard didFinishLaunching else { return }
+
+        // Fire quit survey return user pixel if the user completed the survey and returned within 8-14 day window
+        let quitSurveyPersistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)
+        QuitSurveyReturnUserHandler(
+            persistor: quitSurveyPersistor,
+            installDate: AppDelegate.firstLaunchDate
+        ).fireReturnUserPixelIfNeeded()
 
         fireDailyActiveUserPixels()
         fireDailyFireWindowConfigurationPixels()
@@ -1406,7 +1421,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor private func showQuitSurvey() {
         var quitSurveyWindow: NSWindow?
 
+        let persistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)
         let surveyView = QuitSurveyFlowView(
+            persistor: persistor,
             onQuit: {
                 if let parentWindow = quitSurveyWindow?.sheetParent {
                     parentWindow.endSheet(quitSurveyWindow!)

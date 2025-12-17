@@ -204,7 +204,9 @@ final class BrokerProfileJobActionTests: XCTestCase {
             operationAwaitTime: 0,
             stageCalculator: stageCalculator,
             pixelHandler: pixelHandler,
-            executionConfig: BrokerJobExecutionConfig(optimizedClickAwaitTime: 0, legacyClickAwaitTime: 0),
+            executionConfig: BrokerJobExecutionConfig(optimizedClickAwaitTimeForOptOut: 0.0,
+                                                      legacyClickAwaitTimeForOptOut: 0.0,
+                                                      clickAwaitTimeForScan: 0.0),
             actionsHandlerMode: .optOut,
             shouldRunNextStep: { true }
         )

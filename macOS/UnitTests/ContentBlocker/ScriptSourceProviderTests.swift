@@ -86,6 +86,7 @@ final class ScriptSourceProviderTests: XCTestCase {
             featureFlagger: featureFlagger,
             onboardingNavigationDelegate: CapturingOnboardingNavigation(),
             appearancePreferences: appearancePreferences,
+            themeManager: MockThemeManager(),
             startupPreferences: startupPreferences,
             windowControllersManager: windowControllersManager,
             bookmarkManager: MockBookmarkManager(),

@@ -53,7 +53,7 @@ final class NavigationBarBadgeAnimator: NSObject {
     private(set) var animationQueue: [QueuedAnimation] = []
     private(set) var currentAnimationPriority: AnimationPriority?
     private(set) var currentAnimationType: NavigationBarBadgeAnimationView.AnimationType?
-    private var currentTab: Tab?
+    private weak var currentTab: Tab?
     private var shouldAutoProcessNextAnimation = true
     private weak var currentButtonsContainer: NSView?
     private weak var currentNotificationContainer: NavigationBarBadgeAnimationView?

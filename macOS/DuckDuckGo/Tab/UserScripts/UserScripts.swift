@@ -119,8 +119,11 @@ final class UserScripts: UserScriptsProvider {
         )
 
         let lenguageCode = Locale.current.languageCode ?? "en"
+        let themeManager = NSApp.delegateTyped.themeManager
+
         specialErrorPageUserScript = SpecialErrorPageUserScript(localeStrings: SpecialErrorPageUserScript.localeStrings(for: lenguageCode),
-                                                                languageCode: lenguageCode)
+                                                                languageCode: lenguageCode,
+                                                                styleProvider: ScriptStyleProvider(themeManager: themeManager))
 
         onboardingUserScript = OnboardingUserScript(onboardingActionsManager: sourceProvider.onboardingActionsManager!)
 

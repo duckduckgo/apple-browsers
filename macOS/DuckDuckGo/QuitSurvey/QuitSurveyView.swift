@@ -51,10 +51,12 @@ struct QuitSurveyFlowView: View {
     var onResize: ((CGFloat, CGFloat) -> Void)?
 
     init(
+        persistor: QuitSurveyPersistor? = nil,
         onQuit: @escaping () -> Void,
         onResize: ((CGFloat, CGFloat) -> Void)? = nil
     ) {
         self._viewModel = StateObject(wrappedValue: QuitSurveyViewModel(
+            persistor: persistor,
             onQuit: onQuit
         ))
         self.onResize = onResize
@@ -412,13 +414,20 @@ private struct QuitSurveyNegativeView: View {
                 .padding([.leading, .trailing], 24)
 
             Button {
-                viewModel.quit()
+                viewModel.submitFeedback()
             } label: {
-                Text(UserText.quitSurveySubmitAndQuit)
-                    .frame(maxWidth: .infinity)
+                HStack(spacing: 8) {
+                    if viewModel.isSubmitting {
+                        ProgressView()
+                            .controlSize(.small)
+                            .progressViewStyle(.circular)
+                    }
+                    Text(viewModel.isSubmitting ? UserText.quitSurveySubmitting : UserText.quitSurveySubmitAndQuit)
+                }
+                .frame(maxWidth: .infinity)
             }
-            .disabled(!viewModel.shouldEnableSubmit)
-            .buttonStyle(DefaultActionButtonStyle(enabled: viewModel.shouldEnableSubmit))
+            .disabled(!viewModel.shouldEnableSubmit || viewModel.isSubmitting)
+            .buttonStyle(DefaultActionButtonStyle(enabled: viewModel.shouldEnableSubmit && !viewModel.isSubmitting))
             .padding([.leading, .trailing], 24)
             .padding(.bottom, 16)
         }

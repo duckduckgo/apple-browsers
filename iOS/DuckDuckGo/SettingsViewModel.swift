@@ -116,7 +116,7 @@ final class SettingsViewModel: ObservableObject {
     var onRequestPresentLegacyView: ((UIViewController, _ modal: Bool) -> Void)?
     var onRequestPopLegacyView: (() -> Void)?
     var onRequestDismissSettings: (() -> Void)?
-    var onRequestPresentFireConfirmation: ((_ onConfirm: @escaping () -> Void, _ onCancel: @escaping () -> Void) -> Void)?
+    var onRequestPresentFireConfirmation: ((_ onConfirm: @escaping (FireOptions) -> Void, _ onCancel: @escaping () -> Void) -> Void)?
 
     // View State
     @Published private(set) var state: SettingsState
@@ -1283,8 +1283,8 @@ extension SettingsViewModel {
         }
     }
 
-    func forgetAll() {
-        autoClearActionDelegate?.performDataClearing()
+    func forgetAll(with options: FireOptions) {
+        autoClearActionDelegate?.performDataClearing(with: options)
     }
 
     func restoreAccountPurchase() async {
@@ -1508,9 +1508,8 @@ extension SettingsViewModel: DataClearingSettingsViewModelDelegate {
     }
     
     func presentFireConfirmation() {
-        onRequestPresentFireConfirmation?({ [weak self] in
-            // TODO: - Use granular options when FireExecutor is merged.
-            self?.forgetAll()
+        onRequestPresentFireConfirmation?({ [weak self] options in
+            self?.forgetAll(with: options)
         }, {
             // Cancelled - no action needed
         })

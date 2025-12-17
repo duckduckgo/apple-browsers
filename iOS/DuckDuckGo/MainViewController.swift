@@ -4121,8 +4121,8 @@ extension MainViewController: MainViewEditingStateTransitioning {
 
 // MARK: AutoClear Action Delegate
 extension MainViewController: SettingsAutoClearActionDelegate {
-    func performDataClearing() {
-        forgetAllWithAnimation(options: .all)
+    func performDataClearing(with options: FireOptions) {
+        forgetAllWithAnimation(options: options)
     }
 }
 

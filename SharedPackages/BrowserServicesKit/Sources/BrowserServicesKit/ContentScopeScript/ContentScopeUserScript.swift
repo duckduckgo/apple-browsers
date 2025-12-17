@@ -291,9 +291,10 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
         let jsonProperties = try JSONEncoder().encode(properties)
         var dict = try JSONSerialization.jsonObject(with: jsonProperties, options: []) as? [String: Any] ?? [:]
         dict["messagingContextName"] = messagingContextName
+
         let encoded = try JSONSerialization.data(withJSONObject: dict, options: [])
         guard let result = String(data: encoded, encoding: .utf8) else {
-            throw NSError(domain: "ContentScopeUserScript", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to encode properties"])
+            throw EncodingError.invalidValue(properties, EncodingError.Context(codingPath: [], debugDescription: "Failed to convert ContentScopeProperties to dictionary" ))
         }
         return result
     }

@@ -124,5 +124,5 @@ public extension RemoteMessageModelType.ListItem {
             return action
         }
     }
-    
+
 }

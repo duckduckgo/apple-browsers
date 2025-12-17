@@ -229,7 +229,6 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         XCTAssertEqual(primaryActionText, "Original Primary Action")
         XCTAssertEqual(primaryAction, .dismiss)
 
-
         // Message Item fields
         let firstItem = try XCTUnwrap(items.first)
         XCTAssertEqual(firstItem.id, "item1")

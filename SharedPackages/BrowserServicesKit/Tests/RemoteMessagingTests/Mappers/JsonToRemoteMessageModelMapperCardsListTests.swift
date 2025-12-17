@@ -700,7 +700,7 @@ struct JsonToRemoteMessageModelMapperTitledSectionTests {
             itemIDs: ["item1"]
         )
         let item = RemoteMessageResponse.JsonListItem.mockTwoLinesListItem(id: "item1")
-        let jsonContent = RemoteMessageResponse.JsonContent.mockCardsListMessage(listItems: [sectionWithExtraFields,item])
+        let jsonContent = RemoteMessageResponse.JsonContent.mockCardsListMessage(listItems: [sectionWithExtraFields, item])
 
         // WHEN
         let result = try #require(JsonToRemoteMessageModelMapper.mapToContent(content: jsonContent, surveyActionMapper: surveyActionMapper))

@@ -377,10 +377,10 @@ struct JsonToRemoteMessageModelMapperCardsListWithSectionsIntegrationTests {
         #expect(fifthItem.action == .urlInContext(value: "https://example.com"))
     }
 
-    @Test("Check Section And List Items with Matching and Exclusion Rules Map Correctly")
+    @Test("Check Section With Empty Item Id Is Discarded")
     func listItemsWithMatchingAndExclusionRulesMapped() throws {
         // WHEN
-        let message = try #require(config.messages.first(where: { $0.id == "cards_list_with_sections_and_rules" }))
+        let message = try #require(config.messages.first(where: { $0.id == "cards_list_with_sections_and_empty_ids" }))
 
         guard case let .cardsList(_, _, items, _, _) = message.content else {
             Issue.record("Expected cardsList content type")
@@ -388,32 +388,16 @@ struct JsonToRemoteMessageModelMapperCardsListWithSectionsIntegrationTests {
         }
 
         // THEN
-        #expect(items.count == 5)
+        #expect(items.count == 4)
 
         // Verify first item
-        let firstItem = try #require(items[safe: 0])
-        #expect(firstItem.matchingRules == [])
-        #expect(firstItem.exclusionRules == [])
-
+        #expect(items[safe: 0]?.id == "hide_search_images")
         // Verify second item
-        let secondItem = try #require(items[safe: 1])
-        #expect(secondItem.matchingRules == [])
-        #expect(secondItem.exclusionRules == [])
-
+        #expect(items[safe: 1]?.id == "enhanced_scam_blocker")
         // Verify third item
-        let thirdItem = try #require(items[safe: 2])
-        #expect(thirdItem.matchingRules == [])
-        #expect(thirdItem.exclusionRules == [])
-
-        // Verify fourth item (section)
-        let fourthItem = try #require(items[safe: 3])
-        #expect(fourthItem.matchingRules == [1])
-        #expect(fourthItem.exclusionRules == [2])
-
-        // Verify fifth item
-        let fifthItem = try #require(items[safe: 4])
-        #expect(fifthItem.matchingRules == [1])
-        #expect(fifthItem.exclusionRules == [2])
+        #expect(items[safe: 2]?.id == "duck_ai_chat")
+        // Verify fourth item item (section is discarded because no item ids provided)
+        #expect(items[safe: 3]?.id == "privacy_pro_item")
     }
 
 }

@@ -76,14 +76,13 @@ public extension RemoteMessageModelType.ListItem {
     static func makeTitledSectionListItem(
         id: String = "section-1",
         titleText: String = "Section Title",
-        matchingRules: [Int] = [],
-        exclusionRules: [Int] = []
+        itemIDs: [String] = []
     ) -> RemoteMessageModelType.ListItem {
         RemoteMessageModelType.ListItem(
             id: id,
-            type: .titledSection(titleText: titleText),
-            matchingRules: matchingRules,
-            exclusionRules: exclusionRules
+            type: .titledSection(titleText: titleText, itemIDs: itemIDs),
+            matchingRules: [],
+            exclusionRules: []
         )
     }
 }
@@ -92,7 +91,7 @@ public extension RemoteMessageModelType.ListItem {
 
     var titleText: String? {
         switch type {
-        case let .titledSection(titleText):
+        case let .titledSection(titleText, _):
             return titleText
         case let .twoLinesItem(titleText, _, _, _):
             return titleText

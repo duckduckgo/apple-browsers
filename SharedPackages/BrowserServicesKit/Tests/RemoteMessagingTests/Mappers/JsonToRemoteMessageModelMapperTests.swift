@@ -303,8 +303,7 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
         let section = RemoteMessageModelType.ListItem.makeTitledSectionListItem(
             id: "section1",
             titleText: "Original Section Title",
-            matchingRules: [1, 2],
-            exclusionRules: [3]
+            itemIDs: ["item1"]
         )
         var message = RemoteMessageModel.makeCardsListMessage(id: "test", titleText: "Original Title", items: [section], primaryActionText: "Done")
 
@@ -327,9 +326,7 @@ class JsonToRemoteMessageModelMapperTests: XCTestCase {
 
         let firstItem = try XCTUnwrap(items.first)
         XCTAssertEqual(firstItem.id, "section1")
-        XCTAssertEqual(firstItem.type, .titledSection(titleText: "Translated Section Title"))
-        XCTAssertEqual(firstItem.matchingRules, [1, 2])
-        XCTAssertEqual(firstItem.exclusionRules, [3])
+        XCTAssertEqual(firstItem.type, .titledSection(titleText: "Translated Section Title", itemIDs: ["item1"]))
     }
 
     func testThatMixedListWithBothItemTypesTranslatesCorrectly() throws {

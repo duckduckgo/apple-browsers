@@ -102,8 +102,8 @@ public struct RemoteMessageModel: Equatable, Codable {
                 switch item.type {
                 case let .twoLinesItem(titleText, descriptionText, placeholderImage, action):
                     translatedItemType = .twoLinesItem(titleText: translatedItem.titleText ?? titleText, descriptionText: translatedItem.descriptionText ?? descriptionText, placeholderImage: placeholderImage, action: action)
-                case let .titledSection(titleText):
-                    translatedItemType = .titledSection(titleText: translatedItem.titleText ?? titleText)
+                case let .titledSection(titleText, itemIDs):
+                    translatedItemType = .titledSection(titleText: translatedItem.titleText ?? titleText, itemIDs: itemIDs)
                 }
 
                 return RemoteMessageModelType.ListItem(
@@ -197,9 +197,11 @@ public extension RemoteMessageModelType.ListItem {
         ///   - action: Optional action triggered when the card is tapped
         case twoLinesItem(titleText: String, descriptionText: String, placeholderImage: RemotePlaceholder, action: RemoteAction?)
 
-        /// Represents a section header with just a title.
-        /// - Parameter titleText: The section header text (required, translatable)
-        case titledSection(titleText: String)
+        /// Represents a section header with a title and an array of item IDs belonging to this section.
+        /// - Parameters:
+        ///   - titleText: The section header text (required, translatable)
+        ///   - itemIDs: Array of item IDs that belong to this section. Used to determine if the section should be displayed after filtering.
+        case titledSection(titleText: String, itemIDs: [String])
     }
 
 }

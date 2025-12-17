@@ -47,7 +47,8 @@
           {
             "id": "privacy_pro_section",
             "type": "section_title",
-            "titleText": "Become a DuckDuckPro!"
+            "titleText": "Become a DuckDuckPro!",
+            "itemIDs": ["privacy_pro_item"]
           },
           {
             "id": "privacy_pro_item",
@@ -69,7 +70,7 @@
       }
     },
     {
-      "id": "cards_list_with_sections_and_rules",
+      "id": "cards_list_with_sections_and_empty_ids",
       "surfaces": [
         "modal"
       ],
@@ -115,12 +116,7 @@
             "id": "privacy_pro_section",
             "type": "section_title",
             "titleText": "Become a DuckDuckPro!",
-            "matchingRules": [
-              1
-            ],
-            "exclusionRules": [
-                2
-            ]
+            "itemIDs": []
           },
           {
             "id": "privacy_pro_item",
@@ -131,13 +127,7 @@
             "primaryAction": {
               "type": "url_in_context",
               "value": "https://example.com"
-            },
-            "matchingRules": [
-              1
-            ],
-            "exclusionRules": [
-                2
-            ]
+            }
           }
         ],
         "primaryActionText": "Got It",
@@ -148,14 +138,5 @@
       }
     }
   ],
-  "rules": [
-    {
-      "id": 1,
-      "attributes": {}
-    },
-    {
-      "id": 2,
-      "attributes": {}
-    }
-  ]
+  "rules": []
 }

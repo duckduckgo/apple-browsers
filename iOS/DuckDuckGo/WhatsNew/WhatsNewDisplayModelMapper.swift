@@ -56,7 +56,7 @@ struct WhatsNewDisplayModelMapper: WhatsNewDisplayModelMapping {
             remoteListItems.map { remoteListItem in
                 switch remoteListItem.type {
                     // Map Title Section Item
-                case let .titledSection(titleText):
+                case let .titledSection(titleText, _):
                     return RemoteMessagingUI.CardsListDisplayModel.Item.section(title: titleText)
                     // Map Two Lines Card Item
                 case let .twoLinesItem(titleText, descriptionText, placeholderImage, action):

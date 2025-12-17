@@ -2725,14 +2725,23 @@ extension MainViewController: OmniBarDelegate {
             if browsingMenuSheetCapability.isEnabled {
                 Pixel.fire(pixel: .experimentalBrowsingMenuDisplayedNTP)
             }
-        case .aiChatTab, .website:
+        case .aiChatTab:
+            Pixel.fire(pixel: .browsingMenuOpened)
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuOpened)
+            if browsingMenuSheetCapability.isEnabled {
+                Pixel.fire(pixel: .experimentalBrowsingMenuDisplayedAIChat)
+            }
+        case .website:
             Pixel.fire(pixel: .browsingMenuOpened)
 
-            if browsingMenuSheetCapability.isEnabled {
+            if tab.isError || tab.link == nil {
+                Pixel.fire(pixel: .browsingMenuOpenedError)
+                if browsingMenuSheetCapability.isEnabled {
+                    Pixel.fire(pixel: .experimentalBrowsingMenuDisplayedError)
+                }
+            } else if browsingMenuSheetCapability.isEnabled {
                 Pixel.fire(pixel: .experimentalBrowsingMenuDisplayed)
             }
-
-            performActionIfAITab { DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuOpened) }
         }
     }
 
@@ -2763,6 +2772,7 @@ extension MainViewController: OmniBarDelegate {
                                                productSurfaceTelemetry: productSurfaceTelemetry)
         browsingMenu.onDismiss = {
             self.viewCoordinator.menuToolbarButton.isEnabled = true
+            Pixel.fire(pixel: .browsingMenuDismissed)
         }
 
         let controller = browsingMenu
@@ -2799,6 +2809,7 @@ extension MainViewController: OmniBarDelegate {
                                             highlightRowWithTag: highlightTag,
                                             onDismiss: {
                                                 self.viewCoordinator.menuToolbarButton.isEnabled = true
+                                                Pixel.fire(pixel: .experimentalBrowsingMenuDismissed)
                                             })
         )
 

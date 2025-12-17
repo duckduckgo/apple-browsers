@@ -578,6 +578,7 @@ extension TabViewController {
 
         return BrowsingMenuEntry.regular(name: title, image: image) { [weak self] in
             (self?.parent as? MainViewController)?.newEmailAddress()
+            Pixel.fire(pixel: .browsingMenuNewDuckAddress)
         }
     }
 
@@ -784,6 +785,7 @@ extension TabViewController {
                                          showNotificationDot: showNotificationDot,
                                          customDotColor: customDotColor) { [weak self] in
             self?.onOpenVPNAction(with: vpnPromoHelper)
+            Pixel.fire(pixel: .browsingMenuVPN)
         }
     }
 

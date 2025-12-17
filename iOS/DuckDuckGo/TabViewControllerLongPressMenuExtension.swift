@@ -125,7 +125,8 @@ extension TabViewController {
             keyValueStore: keyValueStore,
             daxDialogsManager: daxDialogsManager,
             aiChatSettings: aiChatSettings,
-            productSurfaceTelemetry: productSurfaceTelemetry)
+            productSurfaceTelemetry: productSurfaceTelemetry,
+            voiceSearchHelper: voiceSearchHelper)
 
         tabController.isLinkPreview = true
         let configuration = WKWebViewConfiguration.nonPersistent()

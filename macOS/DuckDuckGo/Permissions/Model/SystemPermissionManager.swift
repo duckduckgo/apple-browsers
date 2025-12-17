@@ -161,7 +161,7 @@ final class SystemPermissionManager: SystemPermissionManagerProtocol {
 
     private var isNotificationAuthorizationRequired: Bool {
         switch notificationService.cachedAuthorizationStatus {
-        case .authorized, .provisional:
+        case .authorized, .provisional, .ephemeral:
             return false
         default:
             return true

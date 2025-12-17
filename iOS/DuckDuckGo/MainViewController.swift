@@ -255,6 +255,7 @@ class MainViewController: UIViewController {
     let productSurfaceTelemetry: ProductSurfaceTelemetry
 
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
+    private let aiChatContextualModeFeature: AIChatContextualModeFeatureProviding
 
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -300,7 +301,8 @@ class MainViewController: UIViewController {
         mobileCustomization: MobileCustomization,
         remoteMessagingActionHandler: RemoteMessagingActionHandling,
         remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
-        productSurfaceTelemetry: ProductSurfaceTelemetry
+        productSurfaceTelemetry: ProductSurfaceTelemetry,
+        aiChatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature()
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -349,6 +351,7 @@ class MainViewController: UIViewController {
         self.aichatFullModeFeature = aichatFullModeFeature
         self.remoteMessagingDebugHandler = remoteMessagingDebugHandler
         self.productSurfaceTelemetry = productSurfaceTelemetry
+        self.aiChatContextualModeFeature = aiChatContextualModeFeature
 
         super.init(nibName: nil, bundle: nil)
         
@@ -2983,7 +2986,12 @@ extension MainViewController: OmniBarDelegate {
 
     func onAIChatPressed() {
         hideSuggestionTray()
-        openAIChatFromAddressBar()
+
+        if let currentTab, aiChatContextualModeFeature.isAvailable, newTabPageViewController == nil {
+            currentTab.presentContextualAIChatSheet(from: self)
+        } else {
+            openAIChatFromAddressBar()
+        }
     }
 
     private func shareCurrentURLFromAddressBar() {

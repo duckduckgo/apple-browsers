@@ -277,9 +277,19 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1212437820560561?focus=true
     case memoryUsageMonitor
+
+    /// Autoconsent heuristic action experiment
+    case autoconsentHeuristicAction
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
+
+    /// Cohorts for the autoconsent heuristic action experiment
+    public enum AutoconsentHeuristicActionCohort: String, FeatureFlagCohortDescribing {
+        case control
+        case treatment
+    }
+
     public var defaultValue: Bool {
         switch self {
         case .supportsAlternateStripePaymentFlow,
@@ -308,6 +318,8 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var cohortType: (any FeatureFlagCohortDescribing.Type)? {
         switch self {
+        case .autoconsentHeuristicAction:
+            return AutoconsentHeuristicActionCohort.self
         default:
             return nil
         }
@@ -386,7 +398,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .newPermissionView,
                 .firstTimeQuitSurvey,
                 .dataImportWideEventMeasurement,
-                .memoryUsageMonitor:
+                .memoryUsageMonitor,
+                .autoconsentHeuristicAction:
             return true
         case .sslCertificatesBypass,
                 .appendAtbToSerpQueries,
@@ -565,6 +578,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
         case .memoryUsageMonitor:
             return .disabled
+        case .autoconsentHeuristicAction:
+            return .remoteReleasable(.subfeature(AutoconsentSubfeature.heuristicAction))
         }
     }
 }

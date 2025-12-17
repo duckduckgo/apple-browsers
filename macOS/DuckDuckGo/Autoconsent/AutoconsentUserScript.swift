@@ -24,6 +24,7 @@ import PrivacyDashboard
 import PixelKit
 import os.log
 import Combine
+import FeatureFlags
 
 protocol AutoconsentUserScriptDelegate: AnyObject {
     func autoconsentUserScript(consentStatus: CookieConsentInfo)
@@ -344,6 +345,15 @@ extension AutoconsentUserScript {
             }
         }
 
+        // Resolve the cohort for the heuristic experiment
+        let enableHeuristicAction: Bool
+        if let cohort = Application.appDelegate.featureFlagger.resolveCohort(for: FeatureFlag.autoconsentHeuristicAction) as? FeatureFlag.AutoconsentHeuristicActionCohort {
+            enableHeuristicAction = (cohort == .treatment)
+        } else {
+            enableHeuristicAction = false // default if not enrolled
+        }
+        Logger.autoconsent.debug("enableHeuristicAction: \(enableHeuristicAction)")
+
         let autoconsentConfig = [
             "type": "initResp",
             "rules": [
@@ -358,7 +368,8 @@ extension AutoconsentUserScript {
                 "detectRetries": 20,
                 "isMainWorld": false,
                 "enableFilterList": enableFilterList,
-                "enableHeuristicDetection": true
+                "enableHeuristicDetection": true,
+                "enableHeuristicAction": enableHeuristicAction
             ] as [String: Any?]
         ] as [String: Any?]
 

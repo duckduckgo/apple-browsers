@@ -20,13 +20,6 @@
 import DesignResourcesKit
 import UIKit
 
-// MARK: - Delegate Protocol
-
-/// Delegate protocol for handling chip tap events.
-public protocol AIChatQuickActionChipViewDelegate: AnyObject {
-    func quickActionChipViewDidTap(_ view: AIChatQuickActionChipView)
-}
-
 // MARK: - View
 
 /// A pill-shaped chip view displaying a quick action with icon and label.
@@ -48,7 +41,7 @@ public final class AIChatQuickActionChipView: UIView {
 
     // MARK: - Properties
 
-    public weak var delegate: AIChatQuickActionChipViewDelegate?
+    var onTap: (() -> Void)?
 
     // MARK: - UI Components
 
@@ -150,7 +143,7 @@ private extension AIChatQuickActionChipView {
     }
 
     @objc func handleTap() {
-        delegate?.quickActionChipViewDidTap(self)
+        onTap?()
     }
 }
 

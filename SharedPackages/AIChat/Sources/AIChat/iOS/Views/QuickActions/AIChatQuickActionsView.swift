@@ -33,7 +33,6 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
     // MARK: - Properties
 
     public var onActionSelected: ((Action) -> Void)?
-    private var actions: [Action] = []
 
     // MARK: - UI Components
 
@@ -60,7 +59,6 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
     // MARK: - Configuration
 
     public func configure(with actions: [Action]) {
-        self.actions = actions
         stackView.arrangedSubviews.forEach {
             stackView.removeArrangedSubview($0)
             $0.removeFromSuperview()
@@ -69,7 +67,9 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
         for action in actions {
             let chipView = AIChatQuickActionChipView()
             chipView.configure(with: action)
-            chipView.delegate = self
+            chipView.onTap = { [weak self] in
+                self?.onActionSelected?(action)
+            }
             stackView.addArrangedSubview(chipView)
         }
     }
@@ -80,33 +80,15 @@ public final class AIChatQuickActionsView<Action: AIChatQuickActionType>: UIView
 private extension AIChatQuickActionsView {
 
     func setupUI() {
+        isAccessibilityElement = false
         addSubview(stackView)
-        setupConstraints()
-        setupAccessibility()
-    }
 
-    func setupConstraints() {
         NSLayoutConstraint.activate([
             stackView.topAnchor.constraint(greaterThanOrEqualTo: topAnchor),
             stackView.bottomAnchor.constraint(equalTo: bottomAnchor),
             stackView.leadingAnchor.constraint(equalTo: leadingAnchor),
             stackView.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor),
         ])
-    }
-
-    func setupAccessibility() {
-        isAccessibilityElement = false
-    }
-}
-
-// MARK: - AIChatQuickActionChipViewDelegate
-
-extension AIChatQuickActionsView: AIChatQuickActionChipViewDelegate {
-
-    public func quickActionChipViewDidTap(_ view: AIChatQuickActionChipView) {
-        guard let index = stackView.arrangedSubviews.firstIndex(of: view),
-              index < actions.count else { return }
-        onActionSelected?(actions[index])
     }
 }
 #endif

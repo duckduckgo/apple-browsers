@@ -65,7 +65,6 @@ final class AIChatContextualInputViewController: UIViewController {
         return view
     }()
 
-    private var isFirstAppearance = true
     private var safeAreaBottomConstraint: NSLayoutConstraint?
     private var keyboardBottomConstraint: NSLayoutConstraint?
 
@@ -88,24 +87,6 @@ final class AIChatContextualInputViewController: UIViewController {
         configureNativeInput()
         configureQuickActions()
         setupKeyboardObservers()
-    }
-
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-
-        // Workaround: UIKeyboardLayoutGuide has known issues on first appearance in sheets.
-        // The layout frame isn't properly initialized until after the view has appeared.
-        // We use a safe area constraint initially, then switch to keyboard layout guide here.
-        //
-        // References:
-        // - https://useyourloaf.com/blog/keyboard-layout-guide/ (notes it was "badly broken when first introduced")
-        // - https://developer.apple.com/forums/thread/746826 (keyboard layout issues with sheet presentation)
-        if isFirstAppearance {
-            isFirstAppearance = false
-            safeAreaBottomConstraint?.isActive = false
-            keyboardBottomConstraint = nativeInputViewController.view.bottomAnchor.constraint(equalTo: view.keyboardLayoutGuide.topAnchor)
-            keyboardBottomConstraint?.isActive = true
-        }
     }
 
     // MARK: - Public Methods
@@ -199,8 +180,25 @@ private extension AIChatContextualInputViewController {
         )
     }
 
+    // Workaround: UIKeyboardLayoutGuide has known issues on first appearance in sheets.
+    // The layout frame isn't properly initialized until after the view has appeared.
+    // We use a safe area constraint initially, then switch to keyboard layout guide when the keyboard appears.
+    //
+    // References:
+    // - https://useyourloaf.com/blog/keyboard-layout-guide/ (notes it was "badly broken when first introduced")
+    // - https://developer.apple.com/forums/thread/746826 (keyboard layout issues with sheet presentation)
+
     @objc func keyboardWillShow(_ notification: Notification) {
-        keyboardBottomConstraint?.constant = -Constants.keyboardSpacing
+        if keyboardBottomConstraint == nil {
+            safeAreaBottomConstraint?.isActive = false
+            keyboardBottomConstraint = nativeInputViewController.view.bottomAnchor.constraint(
+                equalTo: view.keyboardLayoutGuide.topAnchor,
+                constant: -Constants.keyboardSpacing
+            )
+            keyboardBottomConstraint?.isActive = true
+        } else {
+            keyboardBottomConstraint?.constant = -Constants.keyboardSpacing
+        }
     }
 
     @objc func keyboardWillHide(_ notification: Notification) {

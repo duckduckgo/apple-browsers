@@ -123,6 +123,9 @@ final public class DataBrokerProtectionViewController: UIViewController {
             webView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             webView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
+        if #available(iOS 16.4, *) {
+            webView.isInspectable = true
+        }
     }
 
     private func setupLoadingView() {

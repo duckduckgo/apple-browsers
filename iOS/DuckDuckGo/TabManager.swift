@@ -69,6 +69,7 @@ class TabManager: TabManaging {
     private let aiChatSettings: AIChatSettingsProvider
     private let productSurfaceTelemetry: ProductSurfaceTelemetry
     private let sharedSecureVault: (any AutofillSecureVault)?
+    private let voiceSearchHelper: VoiceSearchHelperProtocol
 
     weak var delegate: TabDelegate?
     weak var aiChatContentDelegate: AIChatContentHandlingDelegate?
@@ -104,7 +105,8 @@ class TabManager: TabManaging {
          daxDialogsManager: DaxDialogsManaging,
          aiChatSettings: AIChatSettingsProvider,
          productSurfaceTelemetry: ProductSurfaceTelemetry,
-         sharedSecureVault: (any AutofillSecureVault)? = nil
+         sharedSecureVault: (any AutofillSecureVault)? = nil,
+         voiceSearchHelper: VoiceSearchHelperProtocol
     ) {
         self.model = model
         self.persistence = persistence
@@ -134,6 +136,7 @@ class TabManager: TabManaging {
         self.aiChatSettings = aiChatSettings
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.sharedSecureVault = sharedSecureVault
+        self.voiceSearchHelper = voiceSearchHelper
         registerForNotifications()
     }
 
@@ -176,9 +179,11 @@ class TabManager: TabManaging {
                                                               specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
                                                               featureDiscovery: featureDiscovery,
                                                               keyValueStore: keyValueStore,
-                                                              daxDialogsManager: daxDialogsManager, aiChatSettings: aiChatSettings,
+                                                              daxDialogsManager: daxDialogsManager,
+                                                              aiChatSettings: aiChatSettings,
                                                               productSurfaceTelemetry: productSurfaceTelemetry,
-                                                              sharedSecureVault: sharedSecureVault)
+                                                              sharedSecureVault: sharedSecureVault,
+                                                              voiceSearchHelper: voiceSearchHelper)
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
                                  interactionStateData: interactionState,
@@ -278,7 +283,8 @@ class TabManager: TabManaging {
                                                               daxDialogsManager: daxDialogsManager,
                                                               aiChatSettings: aiChatSettings,
                                                               productSurfaceTelemetry: productSurfaceTelemetry,
-                                                              sharedSecureVault: sharedSecureVault)
+                                                              sharedSecureVault: sharedSecureVault,
+                                                              voiceSearchHelper: voiceSearchHelper)
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
                                  consumeCookies: !model.hasActiveTabs,

@@ -112,7 +112,8 @@ import Combine
                                     keyValueStore: try! MockKeyValueFileStore(),
                                     daxDialogsManager: DummyDaxDialogsManager(),
                                     aiChatSettings: MockAIChatSettingsProvider(),
-                                    productSurfaceTelemetry: MockProductSurfaceTelemetry()
+                                    productSurfaceTelemetry: MockProductSurfaceTelemetry(),
+                                    voiceSearchHelper: MockVoiceSearchHelper()
         )
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: mockWebsiteDataManager,

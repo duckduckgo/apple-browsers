@@ -60,7 +60,7 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
         repository.customGetLatestWeeklyPixel = Date().yesterday
         let sut = DataBrokerProtectionEventPixels(database: database, repository: repository, handler: handler)
 
-        sut.tryToFireWeeklyPixels()
+        sut.tryToFireWeeklyPixels(isAuthenticated: true)
 
         XCTAssertFalse(repository.wasMarkWeeklyPixelSentCalled)
     }
@@ -74,7 +74,7 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
         repository.customGetLatestWeeklyPixel = eightDaysSinceToday
         let sut = DataBrokerProtectionEventPixels(database: database, repository: repository, handler: handler)
 
-        sut.tryToFireWeeklyPixels()
+        sut.tryToFireWeeklyPixels(isAuthenticated: true)
 
         XCTAssertTrue(repository.wasMarkWeeklyPixelSentCalled)
     }
@@ -83,7 +83,7 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
         repository.customGetLatestWeeklyPixel = nil
         let sut = DataBrokerProtectionEventPixels(database: database, repository: repository, handler: handler)
 
-        sut.tryToFireWeeklyPixels()
+        sut.tryToFireWeeklyPixels(isAuthenticated: true)
 
         XCTAssertTrue(repository.wasMarkWeeklyPixelSentCalled)
     }
@@ -250,7 +250,8 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
 
     let pixelName = DataBrokerProtectionSharedPixels.weeklyChildBrokerOrphanedOptOuts(dataBrokerURL: "",
                                                                                       childParentRecordDifference: 0,
-                                                                                      calculatedOrphanedRecords: 0).name
+                                                                                      calculatedOrphanedRecords: 0,
+                                                                                      isAuthenticated: true).name
 
     func testFireWeeklyChildBrokerOrphanedOptOutsPixels_whenChildAndParentHaveSameProfiles_thenDoesNotFire() {
         // Given
@@ -280,7 +281,7 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
         repository.customGetLatestWeeklyPixel = nil
 
         // When
-        sut.tryToFireWeeklyPixels()
+        sut.tryToFireWeeklyPixels(isAuthenticated: true)
 
         // Then
         let pixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
@@ -318,7 +319,7 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
         repository.customGetLatestWeeklyPixel = nil
 
         // When
-        sut.tryToFireWeeklyPixels()
+        sut.tryToFireWeeklyPixels(isAuthenticated: true)
 
         // Then
         let pixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
@@ -326,7 +327,8 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
         let parameters = firedPixel.params
         XCTAssertEqual(parameters, [DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey: childURL,
                                     DataBrokerProtectionSharedPixels.Consts.calculatedOrphanedRecords: "3",
-                                    DataBrokerProtectionSharedPixels.Consts.childParentRecordDifference: "0"])
+                                    DataBrokerProtectionSharedPixels.Consts.childParentRecordDifference: "0",
+                                    DataBrokerProtectionSharedPixels.Consts.isAuthenticated: "true"])
     }
 
     func testFireWeeklyChildBrokerOrphanedOptOutsPixels_whenThereAreMultipleChildBrokers_thenFiresOnceForEach() {
@@ -368,7 +370,7 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
         repository.customGetLatestWeeklyPixel = nil
 
         // When
-        sut.tryToFireWeeklyPixels()
+        sut.tryToFireWeeklyPixels(isAuthenticated: true)
 
         // Then
         let pixels = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
@@ -379,17 +381,20 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
         let child1Pixel = firedPixels.filter { $0.params![DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey] == childURL1 }.first!
         XCTAssertEqual(child1Pixel.params, [DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey: childURL1,
                                             DataBrokerProtectionSharedPixels.Consts.calculatedOrphanedRecords: "1",
-                                            DataBrokerProtectionSharedPixels.Consts.childParentRecordDifference: "1"])
+                                            DataBrokerProtectionSharedPixels.Consts.childParentRecordDifference: "1",
+                                            DataBrokerProtectionSharedPixels.Consts.isAuthenticated: "true"])
 
         let child2Pixel = firedPixels.filter { $0.params![DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey] == childURL2 }.first!
         XCTAssertEqual(child2Pixel.params, [DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey: childURL2,
                                             DataBrokerProtectionSharedPixels.Consts.calculatedOrphanedRecords: "2",
-                                            DataBrokerProtectionSharedPixels.Consts.childParentRecordDifference: "1"])
+                                            DataBrokerProtectionSharedPixels.Consts.childParentRecordDifference: "1",
+                                            DataBrokerProtectionSharedPixels.Consts.isAuthenticated: "true"])
 
         let child3Pixel = firedPixels.filter { $0.params![DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey] == childURL3 }.first!
         XCTAssertEqual(child3Pixel.params, [DataBrokerProtectionSharedPixels.Consts.dataBrokerParamKey: childURL3,
                                             DataBrokerProtectionSharedPixels.Consts.calculatedOrphanedRecords: "1",
-                                            DataBrokerProtectionSharedPixels.Consts.childParentRecordDifference: "-1"])
+                                            DataBrokerProtectionSharedPixels.Consts.childParentRecordDifference: "-1",
+                                            DataBrokerProtectionSharedPixels.Consts.isAuthenticated: "true"])
     }
 
     #if os(iOS)
@@ -429,7 +434,7 @@ final class DataBrokerProtectionEventPixelsTests: XCTestCase {
 
         let sut = DataBrokerProtectionEventPixels(database: database, repository: repository, handler: handler)
 
-        sut.tryToFireWeeklyPixels()
+        sut.tryToFireWeeklyPixels(isAuthenticated: true)
 
         let sessionPixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired
             .first { $0.name.contains("weekly-report_background-task_session") }

@@ -220,6 +220,7 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case canPromoteAutofillExtensionInBrowser
     case canPromoteAutofillExtensionInPasswordManagement
     case migrateKeychainAccessibility
+    case autofillPasswordSearchPrioritizeDomain
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
@@ -401,7 +402,6 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case allowPurchase
     case allowPurchaseStripe
     case useUnifiedFeedback
-    case privacyProAuthV2
     case privacyProOnboardingPromotion
     case paidAIChat
     case supportsAlternateStripePaymentFlow

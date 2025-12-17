@@ -138,7 +138,8 @@ final class MainCoordinator {
                                 daxDialogsManager: daxDialogsManager,
                                 aiChatSettings: aiChatSettings,
                                 productSurfaceTelemetry: productSurfaceTelemetry,
-                                sharedSecureVault: sharedSecureVault)
+                                sharedSecureVault: sharedSecureVault,
+                                voiceSearchHelper: voiceSearchHelper)
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: websiteDataManager,
                                         daxDialogsManager: daxDialogsManager,

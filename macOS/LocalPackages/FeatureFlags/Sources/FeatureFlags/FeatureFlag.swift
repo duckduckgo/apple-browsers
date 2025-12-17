@@ -77,9 +77,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866616130440
     case syncSeamlessAccountSwitching
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866474590440
-    case privacyProAuthV2
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614764239
     case tabCrashDebugging
 
@@ -272,6 +269,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1204006570077678/task/1212242893241885?focus=true
     case firstTimeQuitSurvey
 
+    /// Prioritize results where the domain matches the search query when searching passwords & autofill
+    case autofillPasswordSearchPrioritizeDomain
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212357739558636?focus=true
     case dataImportWideEventMeasurement
 
@@ -299,7 +299,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .popupPermissionButtonPersistence,
                 .tabClosingEventRecreation,
                 .dataImportWideEventMeasurement,
-                .tabProgressIndicator:
+                .tabProgressIndicator,
+                .autofillPasswordSearchPrioritizeDomain:
             true
         default:
             false
@@ -324,7 +325,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .webExtensions,
                 .autoUpdateInDEBUG,
                 .updatesWontAutomaticallyRestartApp,
-                .privacyProAuthV2,
                 .scamSiteProtection,
                 .tabCrashDebugging,
                 .maliciousSiteProtection,
@@ -385,6 +385,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .webNotifications,
                 .newPermissionView,
                 .firstTimeQuitSurvey,
+                .autofillPasswordSearchPrioritizeDomain,
                 .dataImportWideEventMeasurement,
                 .memoryUsageMonitor:
             return true
@@ -441,8 +442,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.syncIdentities))
         case .scamSiteProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.scamProtection))
-        case .privacyProAuthV2:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
         case .tabCrashDebugging:
             return .disabled
         case .delayedWebviewPresentation:
@@ -561,6 +560,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.tabClosingEventRecreation))
         case .firstTimeQuitSurvey:
             return .disabled
+        case .autofillPasswordSearchPrioritizeDomain:
+            return .remoteReleasable(.subfeature(AutofillSubfeature.autofillPasswordSearchPrioritizeDomain))
         case .dataImportWideEventMeasurement:
             return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
         case .memoryUsageMonitor:

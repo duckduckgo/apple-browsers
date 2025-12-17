@@ -202,10 +202,9 @@ final class BrokerProfileJobActionTests: XCTestCase {
             captchaService: captchaService,
             featureFlagger: MockDBPFeatureFlagger(),
             operationAwaitTime: 0,
-            clickAwaitTime: 0,
             stageCalculator: stageCalculator,
             pixelHandler: pixelHandler,
-            executionConfig: BrokerJobExecutionConfig(),
+            executionConfig: BrokerJobExecutionConfig(optimizedClickAwaitTime: 0, legacyClickAwaitTime: 0),
             actionsHandlerMode: .optOut,
             shouldRunNextStep: { true }
         )

@@ -47,7 +47,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
     private let operationAwaitTime: TimeInterval
     public let shouldRunNextStep: () -> Bool
     public var retriesCountOnError: Int = 0
-    public let clickAwaitTime: TimeInterval
+    public let clickAwaitTime: TimeInterval = 0.0
     public let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     public var postLoadingSiteStartTime: Date?
     public let executionConfig: BrokerJobExecutionConfig
@@ -61,7 +61,6 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
                 featureFlagger: DBPFeatureFlagging,
                 cookieHandler: CookieHandler = BrokerCookieHandler(),
                 operationAwaitTime: TimeInterval = 3,
-                clickAwaitTime: TimeInterval = 0,
                 stageDurationCalculator: StageDurationCalculator,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
                 executionConfig: BrokerJobExecutionConfig,
@@ -75,7 +74,6 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
         self.operationAwaitTime = operationAwaitTime
         self.stageCalculator = stageDurationCalculator
         self.shouldRunNextStep = shouldRunNextStep
-        self.clickAwaitTime = clickAwaitTime
         self.cookieHandler = cookieHandler
         self.pixelHandler = pixelHandler
         self.executionConfig = executionConfig

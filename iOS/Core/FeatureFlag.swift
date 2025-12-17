@@ -280,6 +280,9 @@ public enum FeatureFlag: String {
     
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212305240287488?focus=true
     case dataImportWideEventMeasurement
+    
+    /// Sort domain matches higher than other matches when searching saved passwords
+    case autofillPasswordSearchPrioritizeDomain
 
     // https://app.asana.com/1/137249556945/project/414709148257752/task/1212395110448661?focus=true
     case appRatingPrompt
@@ -308,7 +311,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .dataImportWideEventMeasurement,
              .browsingMenuSheetPresentation,
              .ampBackgroundTaskSupport,
-             .appRatingPrompt:
+             .appRatingPrompt,
+             .autofillPasswordSearchPrioritizeDomain:
             true
         default:
             false
@@ -371,6 +375,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .autofillExtensionSettings,
              .canPromoteAutofillExtensionInBrowser,
              .canPromoteAutofillExtensionInPasswordManagement,
+             .autofillPasswordSearchPrioritizeDomain,
              .granularFireButtonOptions,
              .fullDuckAIModeExperimentalSetting,
              .dataImportWideEventMeasurement,
@@ -595,6 +600,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.fullDuckAIModeExperimentalSetting))
         case .dataImportWideEventMeasurement:
             return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
+        case .autofillPasswordSearchPrioritizeDomain:
+            return .remoteReleasable(.subfeature(AutofillSubfeature.autofillPasswordSearchPrioritizeDomain))
         case .appRatingPrompt:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.appRatingPrompt))
         case .contextualDuckAIMode:

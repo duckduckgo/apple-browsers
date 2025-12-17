@@ -568,6 +568,136 @@ class AutofillLoginListViewModelTests: XCTestCase {
         XCTAssertNil(model.getSurveyToPresent())
     }
 
+    func testWhenFeatureFlagEnabledAndQueryMatchesDomain_ThenDomainMatchesAreInSuggestionsSection() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.autofillPasswordSearchPrioritizeDomain])
+
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "user1", domain: "example.com", created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "2", title: nil, username: "example", domain: "test.com", created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "3", title: nil, username: "user3", domain: "example.org", created: Date(), lastUpdated: Date())
+        ]
+
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
+                                                   tld: tld,
+                                                   secureVault: vault,
+                                                   syncService: syncService,
+                                                   keyValueStore: mockStore,
+                                                   featureFlagger: featureFlagger)
+
+        model.updateData()
+        model.isSearching = true
+        model.filterData(with: "example")
+
+        let suggestionsSection = findSuggestionsSection(in: model.sections)
+        XCTAssertNotNil(suggestionsSection, "Should have a suggestions section when feature flag is enabled and query matches domains")
+
+        if case .suggestions(_, let items) = suggestionsSection! {
+            let domainMatches = items.filter { $0.account.domain?.lowercased().contains("example") == true }
+            XCTAssertEqual(domainMatches.count, 2, "Should have 2 domain matches (example.com and example.org)")
+        }
+
+        let credentialsDomainMatches = countDomainMatches(in: model.sections, query: "example")
+        XCTAssertEqual(credentialsDomainMatches, 2, "Credentials section should still contain domain matches")
+    }
+
+    func testWhenFeatureFlagEnabledAndCurrentTabUrlSet_ThenSuggestionsTransitionFromTabUrlToSearchQuery() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.autofillPasswordSearchPrioritizeDomain])
+
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "user1", domain: "example.com", created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "2", title: nil, username: "user2", domain: "test.com", created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "3", title: nil, username: "user3", domain: "example.org", created: Date(), lastUpdated: Date())
+        ]
+
+        let currentTabUrl = URL(string: "https://example.com")
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
+                                                   tld: tld,
+                                                   secureVault: vault,
+                                                   currentTabUrl: currentTabUrl,
+                                                   syncService: syncService,
+                                                   keyValueStore: mockStore,
+                                                   featureFlagger: featureFlagger)
+
+        model.updateData()
+        model.isSearching = false
+
+        // Initial state: should have suggestions based on currentTabUrl
+        var suggestionsSection = findSuggestionsSection(in: model.sections)
+        XCTAssertNotNil(suggestionsSection, "Should have suggestions section based on currentTabUrl before searching")
+        assertSuggestionsContainsDomain(suggestionsSection, domain: "example.com", message: "Suggestions should contain account matching currentTabUrl")
+
+        // Start searching with query that matches a different domain
+        model.isSearching = true
+        model.filterData(with: "test")
+
+        suggestionsSection = findSuggestionsSection(in: model.sections)
+        XCTAssertNotNil(suggestionsSection, "Should have suggestions section based on search query domain matches")
+        assertSuggestionsContainsDomain(suggestionsSection, domain: "test.com", message: "Suggestions should contain account matching search query domain")
+        assertSuggestionsDoesNotContainDomain(suggestionsSection, domain: "example.com", message: "Suggestions should not contain account that matched currentTabUrl when searching")
+
+        // Search with query that has no domain matches
+        model.filterData(with: "user")
+        XCTAssertNil(findSuggestionsSection(in: model.sections), "Should have no suggestions section when search query doesn't match any domains")
+
+        // Clear search - should restore suggestions based on currentTabUrl
+        model.isSearching = false
+        model.filterData(with: nil)
+        suggestionsSection = findSuggestionsSection(in: model.sections)
+        XCTAssertNotNil(suggestionsSection, "Should restore suggestions based on currentTabUrl when search is cleared")
+        assertSuggestionsContainsDomain(suggestionsSection, domain: "example.com", message: "Suggestions should be restored to currentTabUrl matches when search is cleared")
+    }
+
+    func testWhenFeatureFlagEnabledAndSearchCleared_ThenSuggestionsAreCleared() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.autofillPasswordSearchPrioritizeDomain])
+
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "user1", domain: "example.com", created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "2", title: nil, username: "user2", domain: "test.com", created: Date(), lastUpdated: Date())
+        ]
+
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
+                                                   tld: tld,
+                                                   secureVault: vault,
+                                                   syncService: syncService,
+                                                   keyValueStore: mockStore,
+                                                   featureFlagger: featureFlagger)
+
+        model.updateData()
+        model.isSearching = true
+        model.filterData(with: "example")
+
+        XCTAssertTrue(hasSuggestionsSection(in: model.sections), "Should have suggestions section when query matches domain")
+
+        model.isSearching = false
+        model.filterData(with: nil)
+
+        XCTAssertFalse(hasSuggestionsSection(in: model.sections), "Suggestions section should be cleared when search is cleared")
+    }
+
+    func testWhenFeatureFlagDisabledAndQueryMatchesDomain_ThenDomainMatchesNotPrioritized() {
+        let featureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
+
+        vault.storedAccounts = [
+            SecureVaultModels.WebsiteAccount(id: "1", title: nil, username: "user1", domain: "example.com", created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "2", title: nil, username: "example", domain: "test.com", created: Date(), lastUpdated: Date()),
+            SecureVaultModels.WebsiteAccount(id: "3", title: nil, username: "user3", domain: "example.org", created: Date(), lastUpdated: Date())
+        ]
+
+        let model = MockAutofillLoginListViewModel(appSettings: appSettings,
+                                                   tld: tld,
+                                                   secureVault: vault,
+                                                   syncService: syncService,
+                                                   keyValueStore: mockStore,
+                                                   featureFlagger: featureFlagger)
+
+        model.updateData()
+        model.isSearching = true
+        model.filterData(with: "example")
+
+        XCTAssertNil(findSuggestionsSection(in: model.sections), "Should not have suggestions section when feature flag is disabled")
+        XCTAssertEqual(countCredentialsItems(in: model.sections), 3, "All 3 matching items should be in credentials sections when feature flag is disabled")
+    }
+
 }
 
 class AutofillLoginListSectionTypeTests: XCTestCase {
@@ -686,6 +816,59 @@ class AutofillLoginListItemViewModelTests: XCTestCase {
                                                    autofillDomainNameUrlSort: autofillDomainNameUrlSort)
         // Diacritics should be grouped with the root letter (in most cases), and grouping should be case insensative
         XCTAssertEqual(result.count, 1)
+    }
+}
+
+// MARK: - Test Helpers
+
+extension AutofillLoginListViewModelTests {
+    func findSuggestionsSection(in sections: [AutofillLoginListSectionType]) -> AutofillLoginListSectionType? {
+        sections.first {
+            if case .suggestions = $0 {
+                return true
+            }
+            
+            return false
+        }
+    }
+
+    func hasSuggestionsSection(in sections: [AutofillLoginListSectionType]) -> Bool {
+        findSuggestionsSection(in: sections) != nil
+    }
+
+    func assertSuggestionsContainsDomain(_ section: AutofillLoginListSectionType?, domain: String, message: String) {
+        guard case .suggestions(_, let items) = section else {
+            XCTFail("Expected suggestions section")
+            return
+        }
+        XCTAssertNotNil(items.first { $0.account.domain == domain }, message)
+    }
+
+    func assertSuggestionsDoesNotContainDomain(_ section: AutofillLoginListSectionType?, domain: String, message: String) {
+        guard case .suggestions(_, let items) = section else {
+            XCTFail("Expected suggestions section")
+            return
+        }
+        XCTAssertNil(items.first { $0.account.domain == domain }, message)
+    }
+
+    func countDomainMatches(in sections: [AutofillLoginListSectionType], query: String) -> Int {
+        var count = 0
+        for section in sections {
+            if case .credentials(_, let items) = section {
+                count += items.filter { $0.account.domain?.lowercased().contains(query.lowercased()) == true }.count
+            }
+        }
+        return count
+    }
+
+    func countCredentialsItems(in sections: [AutofillLoginListSectionType]) -> Int {
+        sections.reduce(0) { total, section in
+            if case .credentials(_, let items) = section {
+                return total + items.count
+            }
+            return total
+        }
     }
 }
 

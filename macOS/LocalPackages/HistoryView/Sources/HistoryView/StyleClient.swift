@@ -23,18 +23,12 @@ import os.log
 import UserScriptActionsManager
 import WebKit
 
-public protocol StyleProviding: AnyObject {
-    var themeAppearance: String { get }
-    var themeName: String { get }
-    var themeStylePublisher: AnyPublisher<(appearance: String, themeName: String), Never> { get }
-}
-
 public final class StyleClient: HistoryViewUserScriptClient {
 
-    private let styleProviding: StyleProviding
+    private let styleProviding: ScriptStyleProviding
     private var cancellables: Set<AnyCancellable> = []
 
-    public init(styleProviding: StyleProviding) {
+    public init(styleProviding: ScriptStyleProviding) {
         self.styleProviding = styleProviding
         super.init()
 

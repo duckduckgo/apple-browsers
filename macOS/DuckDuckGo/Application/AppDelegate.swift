@@ -57,6 +57,7 @@ import VPN
 import VPNAppState
 import WebKit
 import AttributedMetric
+import Foundation
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
 

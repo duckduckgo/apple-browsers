@@ -63,7 +63,7 @@ public extension PixelKit {
         public static let dashboardTriggerOrigin = "trigger_origin"
 
         // Themes
-        public static let themeName = "theme"
+        public static let themeName = "themeName"
 
         // VPN
         public static let vpnBreakageCategory = "breakageCategory"

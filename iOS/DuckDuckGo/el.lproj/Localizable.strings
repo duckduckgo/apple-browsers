@@ -1043,9 +1043,6 @@
 "close.all.tabs" = "Κλείσιμο όλων των καρτελών";
 
 /* No comment provided by engineer. */
-"Cohort: %@" = "Ομάδα: %@";
-
-/* No comment provided by engineer. */
 "Configuration" = "Διαμόρφωση";
 
 /* No comment provided by engineer. */
@@ -1655,9 +1652,6 @@
 "empty.search" = "Δεν βρέθηκαν αντιστοιχίες";
 
 /* No comment provided by engineer. */
-"Enrolled: %@" = "Εγγεγραμμένοι: %@";
-
-/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1713,9 +1707,6 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Αγαπημένα μόνο για κινητά";
-
-/* No comment provided by engineer. */
-"Feature: %@" = "Λειτουργία: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Αποκλεισμός διαφημίσεων και αναδυόμενων παραθύρων";
@@ -1930,9 +1921,6 @@
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "ΕΠΙΛΕΞΤΕ ΚΑΤΗΓΟΡΙΑ";
 
-/* Category for issues with accessing Plus or Pro tier features */
-"feedback.ppro.category.unable-to-access-features" = "Δεν είναι δυνατή η πρόσβαση στις λειτουργίες επιπέδου Plus ή Pro";
-
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Τα ανώνυμα σχόλιά σας είναι σημαντικά για εμάς.";
 
@@ -1965,6 +1953,24 @@
 
 /* No comment provided by engineer. */
 "findinpage.title" = "Εύρεση στη σελίδα";
+
+/* AI Chats option subtitle in fire confirmation */
+"fire.confirmation.aichats.subtitle" = "Διαγραφή όλων των συνομιλιών";
+
+/* AI Chats option title in fire confirmation */
+"fire.confirmation.aichats.title" = "Συνομιλίες Duck.ai";
+
+/* Subtitle for cookies/site data when history is disabled */
+"fire.confirmation.data.subtitle.historyDisabled" = "Μπορεί να σας αποσυνδέσει από τους λογαριασμούς";
+
+/* Cookies and site data option title in fire confirmation */
+"fire.confirmation.data.title" = "Cookie και δεδομένα ιστότοπου";
+
+/* Tabs option title in fire confirmation */
+"fire.confirmation.tabs.title" = "Καρτέλες";
+
+/* Title for fire button confirmation screen */
+"fire.confirmation.title" = "Επιλέξτε τι να διαγράψετε";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Ρεύμα αέρα";
@@ -2968,6 +2974,9 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Θέση γραμμής διευθύνσεων";
 
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Πειραματικό μενού προγράμματος περιήγησης";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Ανοίξτε τους συνδέσμους στις σχετικές εφαρμογές";
 
@@ -2976,9 +2985,6 @@
 
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Εκκαθάριση καρτελών και δεδομένων";
-
-/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
-"settings.autoclear.tabs.and.data.with.aichat" = "Εκκαθάριση καρτελών, δεδομένων και συνομιλιών Duck.ai";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Προτάσεις αναζήτησης";
@@ -3378,9 +3384,6 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Αποθηκευμένο όνομα κεντρικού υπολογιστή: %@";
-
-/* No comment provided by engineer. */
-"Subfeature: %@" = "Δευτερεύουσα λειτουργία: % @";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Προσθήκη σε συσκευή";

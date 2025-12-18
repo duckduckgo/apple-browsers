@@ -1043,9 +1043,6 @@
 "close.all.tabs" = "Închide toate filele";
 
 /* No comment provided by engineer. */
-"Cohort: %@" = "Cohortă: %@";
-
-/* No comment provided by engineer. */
 "Configuration" = "Configurație";
 
 /* No comment provided by engineer. */
@@ -1655,9 +1652,6 @@
 "empty.search" = "Nu s-au găsit potriviri";
 
 /* No comment provided by engineer. */
-"Enrolled: %@" = "Înscris: %@";
-
-/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1713,9 +1707,6 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Doar favoritele pentru mobil";
-
-/* No comment provided by engineer. */
-"Feature: %@" = "Funcție: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Blocarea anunțurilor și ferestrelor pop-up";
@@ -1930,9 +1921,6 @@
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "SELECTEAZĂ O CATEGORIE";
 
-/* Category for issues with accessing Plus or Pro tier features */
-"feedback.ppro.category.unable-to-access-features" = "Nu poți accesa funcțiile de nivel Plus sau Pro";
-
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Feedbackul dvs. anonim este important pentru noi.";
 
@@ -1965,6 +1953,24 @@
 
 /* No comment provided by engineer. */
 "findinpage.title" = "Găsire în pagină";
+
+/* AI Chats option subtitle in fire confirmation */
+"fire.confirmation.aichats.subtitle" = "Șterge toate chaturile";
+
+/* AI Chats option title in fire confirmation */
+"fire.confirmation.aichats.title" = "Chaturi Duck.ai";
+
+/* Subtitle for cookies/site data when history is disabled */
+"fire.confirmation.data.subtitle.historyDisabled" = "Te poate deconecta de la conturi";
+
+/* Cookies and site data option title in fire confirmation */
+"fire.confirmation.data.title" = "Date privind modulele cookie și site-ul";
+
+/* Tabs option title in fire confirmation */
+"fire.confirmation.tabs.title" = "File";
+
+/* Title for fire button confirmation screen */
+"fire.confirmation.title" = "Alege ce să ștergi";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Curent de aer";
@@ -2968,6 +2974,9 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Poziția barei de adrese";
 
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Meniu browser experimental";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Deschide linkuri în aplicațiile asociate";
 
@@ -2976,9 +2985,6 @@
 
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Șterge filele și datele";
-
-/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
-"settings.autoclear.tabs.and.data.with.aichat" = "Șterge filele, datele și chaturile Duck.ai";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Sugestii de căutare";
@@ -3378,9 +3384,6 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Numele gazdă stocat: %@";
-
-/* No comment provided by engineer. */
-"Subfeature: %@" = "Sub-funcție: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Adaugă pe dispozitiv";

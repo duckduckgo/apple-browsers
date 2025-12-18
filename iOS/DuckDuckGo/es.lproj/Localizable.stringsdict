@@ -2,6 +2,38 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>fire.confirmation.data.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Eliminar de 1 sitio. Puede que cierre sesión en tus cuentas.</string>
+			<key>other</key>
+			<string>Eliminar de %1$d sitios. Puede que cierre sesión en tus cuentas.</string>
+		</dict>
+	</dict>
+	<key>fire.confirmation.tabs.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Cerrar pestaña</string>
+			<key>other</key>
+			<string>Cerrar todas las %1$d pestañas</string>
+		</dict>
+	</dict>
 	<key>bookmark.deleteFolderAlert.message</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

@@ -2,6 +2,46 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>fire.confirmation.data.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Izbriši iz 1 strani. Morda boste odjavljeni iz računov.</string>
+			<key>two</key>
+			<string>Izbriši iz %1$d strani. Morda boste odjavljeni iz računov.</string>
+			<key>few</key>
+			<string>Izbriši iz %1$d strani. Morda boste odjavljeni iz računov.</string>
+			<key>other</key>
+			<string>Izbriši iz %1$d strani. Morda boste odjavljeni iz računov.</string>
+		</dict>
+	</dict>
+	<key>fire.confirmation.tabs.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zapri zavihek</string>
+			<key>two</key>
+			<string>Zapri %1$d zavihka</string>
+			<key>few</key>
+			<string>Zapri vse %1$d zavihke</string>
+			<key>other</key>
+			<string>Zapri vseh %1$d zavihkov</string>
+		</dict>
+	</dict>
 	<key>bookmark.deleteFolderAlert.message</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

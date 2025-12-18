@@ -1043,9 +1043,6 @@
 "close.all.tabs" = "Затваряне на всички раздели";
 
 /* No comment provided by engineer. */
-"Cohort: %@" = "Кохорта: %@";
-
-/* No comment provided by engineer. */
 "Configuration" = "Конфигурация";
 
 /* No comment provided by engineer. */
@@ -1655,9 +1652,6 @@
 "empty.search" = "Няма намерени съвпадения";
 
 /* No comment provided by engineer. */
-"Enrolled: %@" = "Записани: %@";
-
-/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1713,9 +1707,6 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Само любими на мобилни устройства";
-
-/* No comment provided by engineer. */
-"Feature: %@" = "Функция: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Блокиране на реклами и изскачащи прозорци";
@@ -1930,9 +1921,6 @@
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "ИЗБЕРЕТЕ КАТЕГОРИЯ";
 
-/* Category for issues with accessing Plus or Pro tier features */
-"feedback.ppro.category.unable-to-access-features" = "Няма достъп до функциите от ниво Plus или Pro";
-
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Вашите анонимни отзиви са важни за нас.";
 
@@ -1965,6 +1953,24 @@
 
 /* No comment provided by engineer. */
 "findinpage.title" = "Намери в страницата";
+
+/* AI Chats option subtitle in fire confirmation */
+"fire.confirmation.aichats.subtitle" = "Изтриване на всички чатове";
+
+/* AI Chats option title in fire confirmation */
+"fire.confirmation.aichats.title" = "Чатове с Duck.ai";
+
+/* Subtitle for cookies/site data when history is disabled */
+"fire.confirmation.data.subtitle.historyDisabled" = "Може да те отпише от акаунтите";
+
+/* Cookies and site data option title in fire confirmation */
+"fire.confirmation.data.title" = "Бисквитки и данни за сайта";
+
+/* Tabs option title in fire confirmation */
+"fire.confirmation.tabs.title" = "Раздели";
+
+/* Title for fire button confirmation screen */
+"fire.confirmation.title" = "Избери какво да изтриеш";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Въздушна струя";
@@ -2968,6 +2974,9 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Позиция на адресната лента";
 
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Експериментално меню на браузъра";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Отваряне на връзките в свързаните приложения";
 
@@ -2976,9 +2985,6 @@
 
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Изчистване на раздели и данни";
-
-/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
-"settings.autoclear.tabs.and.data.with.aichat" = "Изчистване на раздели, данни и чатове с Duck.ai";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Предложения за търсене";
@@ -3378,9 +3384,6 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Запазено име на хост: %@";
-
-/* No comment provided by engineer. */
-"Subfeature: %@" = "Подфункция: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Добавяне към устройството";

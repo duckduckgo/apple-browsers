@@ -4,6 +4,9 @@
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
 
+/* No comment provided by engineer. */
+"Account" = "account";
+
 /* Buton label for Edit action */
 "action.generic.edit" = "Redigera";
 
@@ -904,6 +907,12 @@
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Uppdatera användarnamn?";
 
+/* No comment provided by engineer. */
+"Available Products" = "Tillgängliga produkter";
+
+/* View plans button text during Black Friday campaign */
+"black-friday.campaign.view.plans.cta" = "Spara %d %% första året";
+
 /* Add bookmark screen title */
 "bookmark.addBookmark.title" = "Lägg till bokmärke";
 
@@ -1027,11 +1036,11 @@
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Det är inte tillåtet att avbryta mer än en gång";
 
+/* No comment provided by engineer. */
+"Checking for existing account..." = "Söker efter befintligt konto ...";
+
 /* Close All Tabs */
 "close.all.tabs" = "Stäng alla flikar";
-
-/* No comment provided by engineer. */
-"Cohort: %@" = "Kohort: %@";
 
 /* No comment provided by engineer. */
 "Configuration" = "Konfiguration";
@@ -1152,6 +1161,9 @@
 
 /* No comment provided by engineer. */
 "Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+
+/* No comment provided by engineer. */
+"Current Subscriptions" = "Nuvarande abonnemang";
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "ANPASSAT CELLINNEHÅLL";
@@ -1640,9 +1652,6 @@
 "empty.search" = "Inga träffar hittades";
 
 /* No comment provided by engineer. */
-"Enrolled: %@" = "Inskriven: %@";
-
-/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1676,6 +1685,9 @@
 "error.unknown.try.again" = "Ett okänt fel har inträffat";
 
 /* No comment provided by engineer. */
+"External ID: %@" = "Extern ID: %@";
+
+/* No comment provided by engineer. */
 "favorite" = "Favorit";
 
 /* No comment provided by engineer. */
@@ -1695,9 +1707,6 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Endast mobila favoriter";
-
-/* No comment provided by engineer. */
-"Feature: %@" = "Funktion: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Blockering av annonser och poppuppfönster";
@@ -1945,6 +1954,24 @@
 /* No comment provided by engineer. */
 "findinpage.title" = "Hitta på sidan";
 
+/* AI Chats option subtitle in fire confirmation */
+"fire.confirmation.aichats.subtitle" = "Radera alla chattar";
+
+/* AI Chats option title in fire confirmation */
+"fire.confirmation.aichats.title" = "Duck.ai-chattar";
+
+/* Subtitle for cookies/site data when history is disabled */
+"fire.confirmation.data.subtitle.historyDisabled" = "Kan logga ut dig från konton";
+
+/* Cookies and site data option title in fire confirmation */
+"fire.confirmation.data.title" = "Cookies och webbplatsdata";
+
+/* Tabs option title in fire confirmation */
+"fire.confirmation.tabs.title" = "Flikar";
+
+/* Title for fire button confirmation screen */
+"fire.confirmation.title" = "Välj vad som ska raderas";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Luftström";
 
@@ -2082,6 +2109,9 @@
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Senast bearbetad: %@";
+
+/* No comment provided by engineer. */
+"Loading available products..." = "Läser in tillgängliga produkter ...";
 
 /* No comment provided by engineer. */
 "Loading brokers..." = "Läser in mäklare ...";
@@ -2429,6 +2459,12 @@
 "new.address.bar.picker.title" = "Alternativ för adressfält";
 
 /* No comment provided by engineer. */
+"No active subscriptions" = "Inga aktiva abonnemang";
+
+/* No comment provided by engineer. */
+"No existing subscription found" = "Inget befintligt abonnemang hittades";
+
+/* No comment provided by engineer. */
 "No Logs" = "Inga loggar";
 
 /* No comment provided by engineer. */
@@ -2436,6 +2472,9 @@
 
 /* No comment provided by engineer. */
 "No results found" = "Inga resultat hittades";
+
+/* No comment provided by engineer. */
+"No subscriptions available" = "Inga abonnemang tillgängliga";
 
 /* No comment provided by engineer. */
 "OK" = "OK";
@@ -2448,6 +2487,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser  hides a cookie popup */
 "omnibar.notification.popup-hidden" = "Popup-fönster dolt";
+
+/* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
+"omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Jag fattar";
@@ -2519,7 +2561,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Inställningar > AI-funktioner.";
 
 /* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Vill du ha enklare tillgång till privat AI-chatt?";
+"onboarding.highlights.searchExperience.title" = "Vill du ha enkel tillgång till privat AI-chatt?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Vi kör!";
@@ -2944,9 +2986,6 @@
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Rensa flikar och data";
 
-/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
-"settings.autoclear.tabs.and.data.with.aichat" = "Rensa flikar, data och Duck.ai-chattar";
-
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Sökförslag";
 
@@ -3338,13 +3377,13 @@
 "siteFeedback.urlPlaceholder" = "Vilken webbplats är skadad?";
 
 /* No comment provided by engineer. */
+"Status" = "Status";
+
+/* No comment provided by engineer. */
 "Status: Invalidated" = "Status: Ogiltig";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Lagrade värdnamn: %@";
-
-/* No comment provided by engineer. */
-"Subfeature: %@" = "Underfunktion: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Lägg till på enheten";
@@ -3990,6 +4029,12 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Ett meddelande från %@:";
+
+/* No comment provided by engineer. */
+"Will attach to EXISTING account" = "Bifogas till BEFINTLIGT konto";
+
+/* No comment provided by engineer. */
+"Will create NEW account" = "Will create NEW account";
 
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "SPARA 25 %";

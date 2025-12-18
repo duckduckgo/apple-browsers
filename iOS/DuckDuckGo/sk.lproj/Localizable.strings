@@ -1043,9 +1043,6 @@
 "close.all.tabs" = "Zatvoriť všetky karty";
 
 /* No comment provided by engineer. */
-"Cohort: %@" = "Kohorta: %@";
-
-/* No comment provided by engineer. */
 "Configuration" = "Konfigurácia";
 
 /* No comment provided by engineer. */
@@ -1655,9 +1652,6 @@
 "empty.search" = "Nenašli sa žiadne zhody";
 
 /* No comment provided by engineer. */
-"Enrolled: %@" = "Zaregistrovaných: %@";
-
-/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1713,9 +1707,6 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Iba obľúbené mobilné položky";
-
-/* No comment provided by engineer. */
-"Feature: %@" = "Funkcia: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Blokovanie reklám a automaticky otváraných okien";
@@ -1930,9 +1921,6 @@
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "VYBERTE KATEGÓRIU";
 
-/* Category for issues with accessing Plus or Pro tier features */
-"feedback.ppro.category.unable-to-access-features" = "Nie je možné získať prístup k funkciám úrovne Plus alebo Pro";
-
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Anonymná spätná väzba je pre nás dôležitá.";
 
@@ -1965,6 +1953,24 @@
 
 /* No comment provided by engineer. */
 "findinpage.title" = "Hľadať na stránke";
+
+/* AI Chats option subtitle in fire confirmation */
+"fire.confirmation.aichats.subtitle" = "Zmazať všetky čety";
+
+/* AI Chats option title in fire confirmation */
+"fire.confirmation.aichats.title" = "Chaty Duck.ai";
+
+/* Subtitle for cookies/site data when history is disabled */
+"fire.confirmation.data.subtitle.historyDisabled" = "Môže ťa to odhlásiť z účtov";
+
+/* Cookies and site data option title in fire confirmation */
+"fire.confirmation.data.title" = "Súbory cookie a údaje o lokalite";
+
+/* Tabs option title in fire confirmation */
+"fire.confirmation.tabs.title" = "Karty";
+
+/* Title for fire button confirmation screen */
+"fire.confirmation.title" = "Vyber, čo chceš odstrániť";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Prúd vzduchu";
@@ -2968,6 +2974,9 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Poloha riadku s adresou";
 
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Experimentálna ponuka prehliadača";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Otvárať odkazy v pridružených aplikáciách";
 
@@ -2976,9 +2985,6 @@
 
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Vymazať karty a údaje";
-
-/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
-"settings.autoclear.tabs.and.data.with.aichat" = "Vymazať karty, údaje a chaty Duck.ai";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Návrhy na vyhľadávanie";
@@ -3378,9 +3384,6 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Uložený názov hostiteľa: %@";
-
-/* No comment provided by engineer. */
-"Subfeature: %@" = "Podfunkcia: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Pridať do zariadenia";

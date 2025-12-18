@@ -1043,9 +1043,6 @@
 "close.all.tabs" = "Aizvērt visas cilnes";
 
 /* No comment provided by engineer. */
-"Cohort: %@" = "Kohorta: %@";
-
-/* No comment provided by engineer. */
 "Configuration" = "Konfigurācija";
 
 /* No comment provided by engineer. */
@@ -1655,9 +1652,6 @@
 "empty.search" = "Sakritības nav atrastas";
 
 /* No comment provided by engineer. */
-"Enrolled: %@" = "Reģistrēts: %@";
-
-/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1713,9 +1707,6 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Tikai mobilā izlase";
-
-/* No comment provided by engineer. */
-"Feature: %@" = "Funkcija: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Reklāmu un uznirstošo logu bloķēšana";
@@ -1930,9 +1921,6 @@
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "ATLASĪT KATEGORIJU";
 
-/* Category for issues with accessing Plus or Pro tier features */
-"feedback.ppro.category.unable-to-access-features" = "Nevar piekļūt Plus vai Pro līmeņa funkcijām";
-
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Tavas anonīmās atsauksmes mums ir svarīgas.";
 
@@ -1965,6 +1953,24 @@
 
 /* No comment provided by engineer. */
 "findinpage.title" = "Atrast lapā";
+
+/* AI Chats option subtitle in fire confirmation */
+"fire.confirmation.aichats.subtitle" = "Dzēst visas tērzēšanas sarunas";
+
+/* AI Chats option title in fire confirmation */
+"fire.confirmation.aichats.title" = "Duck.ai tērzēšanas";
+
+/* Subtitle for cookies/site data when history is disabled */
+"fire.confirmation.data.subtitle.historyDisabled" = "Var izrakstīt tevi no kontiem";
+
+/* Cookies and site data option title in fire confirmation */
+"fire.confirmation.data.title" = "Sīkfaili un vietnes dati";
+
+/* Tabs option title in fire confirmation */
+"fire.confirmation.tabs.title" = "Cilnes";
+
+/* Title for fire button confirmation screen */
+"fire.confirmation.title" = "Izvēlies, ko dzēst";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Gaisa plūsma";
@@ -2968,6 +2974,9 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Adreses joslas pozīcija";
 
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Eksperimentāla pārlūka izvēlne";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Atvērt saites saistītajās lietotnēs";
 
@@ -2976,9 +2985,6 @@
 
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Notīrīt cilnes un datus";
-
-/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
-"settings.autoclear.tabs.and.data.with.aichat" = "Notīrīt cilnes, datus un Duck.ai tērzēšanu";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Meklēšanas ieteikumi";
@@ -3378,9 +3384,6 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Saglabātais resursdatora nosaukums: %@";
-
-/* No comment provided by engineer. */
-"Subfeature: %@" = "Apakšfunkcija: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Pievienot ierīcei";

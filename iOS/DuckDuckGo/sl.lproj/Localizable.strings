@@ -1043,9 +1043,6 @@
 "close.all.tabs" = "Zapri vse zavihke";
 
 /* No comment provided by engineer. */
-"Cohort: %@" = "Kohorta: %@";
-
-/* No comment provided by engineer. */
 "Configuration" = "Konfiguracija";
 
 /* No comment provided by engineer. */
@@ -1655,9 +1652,6 @@
 "empty.search" = "Ni zadetkov";
 
 /* No comment provided by engineer. */
-"Enrolled: %@" = "Včlanjenih: %@";
-
-/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1713,9 +1707,6 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Priljubljene samo iz mobilne naprave";
-
-/* No comment provided by engineer. */
-"Feature: %@" = "Funkcija: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Blokiranje oglasov in pojavnih oken";
@@ -1930,9 +1921,6 @@
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "IZBERITE KATEGORIJO";
 
-/* Category for issues with accessing Plus or Pro tier features */
-"feedback.ppro.category.unable-to-access-features" = "Ne morem dostopati do funkcij naročnine Plus ali Pro";
-
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Vaše anonimne povratne informacije so nam pomembne.";
 
@@ -1965,6 +1953,24 @@
 
 /* No comment provided by engineer. */
 "findinpage.title" = "Najdi na strani";
+
+/* AI Chats option subtitle in fire confirmation */
+"fire.confirmation.aichats.subtitle" = "Izbriši vse klepete";
+
+/* AI Chats option title in fire confirmation */
+"fire.confirmation.aichats.title" = "Klepeti Duck.ai";
+
+/* Subtitle for cookies/site data when history is disabled */
+"fire.confirmation.data.subtitle.historyDisabled" = "Morda boste odjavljeni iz računov";
+
+/* Cookies and site data option title in fire confirmation */
+"fire.confirmation.data.title" = "Piškotki in podatki spletnega mesta";
+
+/* Tabs option title in fire confirmation */
+"fire.confirmation.tabs.title" = "Zavihki";
+
+/* Title for fire button confirmation screen */
+"fire.confirmation.title" = "Izberite, kaj želite izbrisati";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Zračni tok";
@@ -2968,6 +2974,9 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Položaj naslovne vrstice";
 
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Eksperimentalni meni brskalnika";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Odpri povezave v povezanih aplikacijah";
 
@@ -2976,9 +2985,6 @@
 
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Počisti zavihke in podatke";
-
-/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
-"settings.autoclear.tabs.and.data.with.aichat" = "Počisti zavihke, podatke in klepete Duck.ai";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Predlogi za iskanje";
@@ -3378,9 +3384,6 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Shranjeno ime gostitelja: %@";
-
-/* No comment provided by engineer. */
-"Subfeature: %@" = "Podfunkcija: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Dodajte v napravo";

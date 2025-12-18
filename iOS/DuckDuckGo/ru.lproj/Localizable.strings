@@ -1043,9 +1043,6 @@
 "close.all.tabs" = "Закрыть все вкладки";
 
 /* No comment provided by engineer. */
-"Cohort: %@" = "Когорта: %@";
-
-/* No comment provided by engineer. */
 "Configuration" = "Конфигурация";
 
 /* No comment provided by engineer. */
@@ -1655,9 +1652,6 @@
 "empty.search" = "Ничего не найдено";
 
 /* No comment provided by engineer. */
-"Enrolled: %@" = "Внесено: %@";
-
-/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1713,9 +1707,6 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Только избранное с телефона";
-
-/* No comment provided by engineer. */
-"Feature: %@" = "Функция: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Блокировка рекламы и всплывающих окон";
@@ -1930,9 +1921,6 @@
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "ВЫБЕРИТЕ КАТЕГОРИЮ";
 
-/* Category for issues with accessing Plus or Pro tier features */
-"feedback.ppro.category.unable-to-access-features" = "Нет доступа к функциям уровня Plus или Pro";
-
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Ваш отзыв важен для нас. Он полностью анонимный.";
 
@@ -1965,6 +1953,24 @@
 
 /* No comment provided by engineer. */
 "findinpage.title" = "Найти на странице";
+
+/* AI Chats option subtitle in fire confirmation */
+"fire.confirmation.aichats.subtitle" = "Удалить все чаты";
+
+/* AI Chats option title in fire confirmation */
+"fire.confirmation.aichats.title" = "Чаты Duck.ai";
+
+/* Subtitle for cookies/site data when history is disabled */
+"fire.confirmation.data.subtitle.historyDisabled" = "Операция может сопровождаться выходом из учетных записей.";
+
+/* Cookies and site data option title in fire confirmation */
+"fire.confirmation.data.title" = "Куки-файлы и данные сайтов";
+
+/* Tabs option title in fire confirmation */
+"fire.confirmation.tabs.title" = "Вкладки";
+
+/* Title for fire button confirmation screen */
+"fire.confirmation.title" = "Выбрать, что удалить";
 
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Воздушный поток";
@@ -2968,6 +2974,9 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Положение адресной строки";
 
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Пробное меню браузера";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Открывать ссылки в связанных приложениях";
 
@@ -2976,9 +2985,6 @@
 
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Сбросить вкладки и данные";
-
-/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
-"settings.autoclear.tabs.and.data.with.aichat" = "Очистить вкладки, данные и чаты Duck.ai";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Поисковые рекомендации";
@@ -3378,9 +3384,6 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Сохраненное имя хоста: %@";
-
-/* No comment provided by engineer. */
-"Subfeature: %@" = "Подфункция: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Добавление на устройство";

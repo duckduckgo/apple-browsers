@@ -67,6 +67,17 @@ enum SettingsPixel: PixelKitEvent {
     case themeAppearanceChanged
 
     /**
+     * Event Trigger: Browser Theme Name settings was changed.
+     *
+     * > Note: This is a unique pixel.
+     *
+     * Anomaly Investigation:
+     * - Anomaly in this pixel may mean an increase/drop in app use.
+     *
+     */
+    case themeNameChanged(name: ThemeName)
+
+    /**
      * Event Trigger: Website zoom setting was changed.
      *
      * > Note: This is a unique pixel.
@@ -131,6 +142,7 @@ enum SettingsPixel: PixelKitEvent {
             }
         case .showFullURLSettingToggled: return "settings_full_url_toggled_u"
         case .themeAppearanceChanged: return "settings_theme_appearance_changed_u"
+        case .themeNameChanged: return "settings_theme_name_changed_u"
         case .websiteZoomSettingChanged: return "settings_zoom_changed_u"
         case .dataClearingSettingToggled: return "settings_auto_clear_toggled_u"
         case .syncAppIconWithThemeTurnedOn: return "settings_sync_app_icon_with_theme_turned_on"
@@ -139,7 +151,12 @@ enum SettingsPixel: PixelKitEvent {
     }
 
     var parameters: [String: String]? {
-        nil
+        switch self {
+        case .themeNameChanged(let name):
+            return ["theme_name": name.rawValue]
+        default:
+            return nil
+        }
     }
 
     var standardParameters: [PixelKitStandardParameter]? {
@@ -147,6 +164,7 @@ enum SettingsPixel: PixelKitEvent {
         case .settingsPaneOpened,
                 .showFullURLSettingToggled,
                 .themeAppearanceChanged,
+                .themeNameChanged,
                 .websiteZoomSettingChanged,
                 .dataClearingSettingToggled,
                 .syncAppIconWithThemeTurnedOn,

@@ -89,6 +89,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866616923544
     case dbpEmailConfirmationDecoupling
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212397941080401
+    case dbpClickActionDelayReductionOptimization
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717382557
     case syncSetupBarcodeIsUrlBased
 
@@ -104,17 +107,8 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717945014
     case aiChatSidebar
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866475785434
-    case aiChatTextSummarization
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866718657077
-    case aiChatTextTranslation
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615582950
     case aiChatPageContext
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866617720317
-    case aiChatImprovements
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866617328244
     case aiChatKeepSession
@@ -278,6 +272,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1212437820560561?focus=true
     case memoryUsageMonitor
+
+    /// https://app.asana.com/1/137249556945/project/1201462886803403/task/1211837879355661?focus=true
+    case aiChatSync
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -301,6 +298,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .tabClosingEventRecreation,
                 .dataImportWideEventMeasurement,
                 .tabProgressIndicator,
+                .firstTimeQuitSurvey,
                 .autofillPasswordSearchPrioritizeDomain:
             true
         default:
@@ -339,10 +337,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .willSoonDropBigSurSupport,
                 .hangReporting,
 				.aiChatSidebar,
-                .aiChatTextSummarization,
-                .aiChatTextTranslation,
                 .aiChatPageContext,
-                .aiChatImprovements,
                 .aiChatKeepSession,
                 .aiChatOmnibarToggle,
                 .aiChatOmnibarCluster,
@@ -355,6 +350,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .newSyncEntryPoints,
                 .dbpEmailConfirmationDecoupling,
                 .dbpRemoteBrokerDelivery,
+                .dbpClickActionDelayReductionOptimization,
                 .syncFeatureLevel3,
                 .themes,
                 .appStoreUpdateFlow,
@@ -388,7 +384,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .firstTimeQuitSurvey,
                 .autofillPasswordSearchPrioritizeDomain,
                 .dataImportWideEventMeasurement,
-                .memoryUsageMonitor:
+                .memoryUsageMonitor,
+                .aiChatSync:
             return true
         case .sslCertificatesBypass,
                 .appendAtbToSerpQueries,
@@ -451,6 +448,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DBPSubfeature.remoteBrokerDelivery))
         case .dbpEmailConfirmationDecoupling:
             return .remoteReleasable(.subfeature(DBPSubfeature.emailConfirmationDecoupling))
+        case .dbpClickActionDelayReductionOptimization:
+            return .remoteReleasable(.subfeature(DBPSubfeature.clickActionDelayReductionOptimization))
         case .syncSetupBarcodeIsUrlBased:
             return .remoteReleasable(.subfeature(SyncSubfeature.syncSetupBarcodeIsUrlBased))
         case .exchangeKeysToSyncWithAnotherDevice:
@@ -461,14 +460,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.paidAIChat))
         case .aiChatSidebar:
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebar))
-        case .aiChatTextSummarization:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.textSummarization))
-        case .aiChatTextTranslation:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.textTranslation))
         case .aiChatPageContext:
             return .remoteReleasable(.subfeature(AIChatSubfeature.pageContext))
-        case .aiChatImprovements:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.improvements))
         case .aiChatKeepSession:
             return .remoteReleasable(.subfeature(AIChatSubfeature.keepSession))
         case .aiChatOmnibarToggle:
@@ -560,12 +553,14 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .tabClosingEventRecreation:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.tabClosingEventRecreation))
         case .firstTimeQuitSurvey:
-            return .disabled
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.firstTimeQuitSurvey))
         case .autofillPasswordSearchPrioritizeDomain:
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillPasswordSearchPrioritizeDomain))
         case .dataImportWideEventMeasurement:
             return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
         case .memoryUsageMonitor:
+            return .disabled
+        case .aiChatSync:
             return .disabled
         }
     }

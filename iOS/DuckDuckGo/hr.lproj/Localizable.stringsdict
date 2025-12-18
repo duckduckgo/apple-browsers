@@ -756,5 +756,25 @@ Ja sam ih blokirao!
 			<string>Odabrano kartica: %1$d</string>
 		</dict>
 	</dict>
+	<key>settings.fireproofed.sites.subtitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d lokacija isključena iz brisanja</string>
+			<key>few</key>
+			<string>%1$d lokacije isključene iz brisanja</string>
+			<key>many</key>
+			<string>%1$d lokacija isključenih iz brisanja</string>
+			<key>other</key>
+			<string>%1$d lokacija isključenih iz brisanja</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

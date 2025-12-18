@@ -249,4 +249,93 @@ final class BrokerProfileJobProviderTests: XCTestCase {
             XCTAssertLessThanOrEqual(result.count, 1, "Should create at most 1 job for \(jobType)")
         }
     }
+
+    // MARK: - Click Delay Optimization Tests
+
+    func testWhenClickDelayOptimizationIsOn_thenCreateOptOutRunnerUsesOptimizedDelay() {
+        // Given
+        let featureFlagger = MockDBPFeatureFlagger(isClickActionDelayReductionOptimizationOn: true)
+        let dependencies = BrokerProfileJobDependencies(
+            database: mockDatabase,
+            contentScopeProperties: ContentScopeProperties.mock,
+            privacyConfig: PrivacyConfigurationManagingMock(),
+            executionConfig: mockSchedulerConfig,
+            notificationCenter: .default,
+            pixelHandler: mockPixelHandler,
+            eventsHandler: mockEventsHandler,
+            dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard),
+            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            captchaService: CaptchaServiceMock(),
+            featureFlagger: featureFlagger
+        )
+
+        // When
+        let runner = dependencies.createOptOutRunner(
+            profileQuery: BrokerProfileQueryData.mock(),
+            stageDurationCalculator: MockStageDurationCalculator(),
+            shouldRunNextStep: { true }
+        )
+
+        // Then
+        let concreteRunner = runner as! BrokerProfileOptOutSubJobWebRunner
+        XCTAssertEqual(concreteRunner.clickAwaitTime, 3, "Should use optimized 3s delay when flag is ON")
+    }
+
+    func testWhenClickDelayOptimizationIsOff_thenCreateOptOutRunnerUsesLegacyDelay() {
+        // Given
+        let featureFlagger = MockDBPFeatureFlagger(isClickActionDelayReductionOptimizationOn: false)
+        let dependencies = BrokerProfileJobDependencies(
+            database: mockDatabase,
+            contentScopeProperties: ContentScopeProperties.mock,
+            privacyConfig: PrivacyConfigurationManagingMock(),
+            executionConfig: mockSchedulerConfig,
+            notificationCenter: .default,
+            pixelHandler: mockPixelHandler,
+            eventsHandler: mockEventsHandler,
+            dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard),
+            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            captchaService: CaptchaServiceMock(),
+            featureFlagger: featureFlagger
+        )
+
+        // When
+        let runner = dependencies.createOptOutRunner(
+            profileQuery: BrokerProfileQueryData.mock(),
+            stageDurationCalculator: MockStageDurationCalculator(),
+            shouldRunNextStep: { true }
+        )
+
+        // Then
+        let concreteRunner = runner as! BrokerProfileOptOutSubJobWebRunner
+        XCTAssertEqual(concreteRunner.clickAwaitTime, 40, "Should use legacy 40s delay when flag is OFF")
+    }
+
+    func testCreateScanRunner_alwaysUsesZeroClickDelay() {
+        // Given
+        let featureFlagger = MockDBPFeatureFlagger(isClickActionDelayReductionOptimizationOn: true)
+        let dependencies = BrokerProfileJobDependencies(
+            database: mockDatabase,
+            contentScopeProperties: ContentScopeProperties.mock,
+            privacyConfig: PrivacyConfigurationManagingMock(),
+            executionConfig: mockSchedulerConfig,
+            notificationCenter: .default,
+            pixelHandler: mockPixelHandler,
+            eventsHandler: mockEventsHandler,
+            dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard),
+            emailConfirmationDataService: MockEmailConfirmationDataServiceProvider(),
+            captchaService: CaptchaServiceMock(),
+            featureFlagger: featureFlagger
+        )
+
+        // When
+        let runner = dependencies.createScanRunner(
+            profileQuery: BrokerProfileQueryData.mock(),
+            stageDurationCalculator: MockStageDurationCalculator(),
+            shouldRunNextStep: { true }
+        )
+
+        // Then
+        let concreteRunner = runner as! BrokerProfileScanSubJobWebRunner
+        XCTAssertEqual(concreteRunner.clickAwaitTime, 0, "Scan runner should always use 0s delay")
+    }
 }

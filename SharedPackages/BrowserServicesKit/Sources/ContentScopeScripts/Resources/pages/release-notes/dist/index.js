@@ -718,6 +718,7 @@
 
   // shared/components/Text/Text.module.css
   var Text_default = {
+    root: "Text_root",
     "title-1": "Text_title-1",
     strictSpacing: "Text_strictSpacing",
     "title-2": "Text_title-2",
@@ -735,7 +736,7 @@
 
   // shared/components/Text/Text.js
   function Text({ as: Comp = "p", variant, strictSpacing = true, className, children }) {
-    return /* @__PURE__ */ _(Comp, { className: (0, import_classnames4.default)({ [Text_default[`${variant}`]]: variant, [Text_default.strictSpacing]: strictSpacing }, className) }, children);
+    return /* @__PURE__ */ _(Comp, { className: (0, import_classnames4.default)(Text_default.root, className, { [Text_default[`${variant}`]]: !!variant, [Text_default.strictSpacing]: strictSpacing }) }, children);
   }
 
   // pages/release-notes/app/settings.provider.js

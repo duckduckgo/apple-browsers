@@ -92,7 +92,7 @@ class SettingsHostingController: UIHostingController<AnyView> {
     }
 
     @MainActor
-    func presentFireConfirmation(onConfirm: @escaping () -> Void, onCancel: @escaping () -> Void) {
+    func presentFireConfirmation(onConfirm: @escaping (FireOptions) -> Void, onCancel: @escaping () -> Void) {
         let presenter = FireConfirmationPresenter(
             tabsModel: viewProvider.tabManager.model,
             featureFlagger: AppDependencyProvider.shared.featureFlagger,

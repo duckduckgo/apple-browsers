@@ -1895,15 +1895,18 @@ public final class MockDBPFeatureFlagger: DBPFeatureFlagging {
     public let isEmailConfirmationDecouplingFeatureOn: Bool
     public let isForegroundRunningOnAppActiveFeatureOn: Bool
     public let isForegroundRunningWhenDashboardOpenFeatureOn: Bool
+    public let isClickActionDelayReductionOptimizationOn: Bool
 
     public init(isRemoteBrokerDeliveryFeatureOn: Bool = true,
                 isEmailConfirmationDecouplingFeatureOn: Bool = false,
                 isForegroundRunningOnAppActiveFeatureOn: Bool = true,
-                isForegroundRunningWhenDashboardOpenFeatureOn: Bool = true) {
+                isForegroundRunningWhenDashboardOpenFeatureOn: Bool = true,
+                isClickActionDelayReductionOptimizationOn: Bool = false) {
         self.isRemoteBrokerDeliveryFeatureOn = isRemoteBrokerDeliveryFeatureOn
         self.isEmailConfirmationDecouplingFeatureOn = isEmailConfirmationDecouplingFeatureOn
         self.isForegroundRunningOnAppActiveFeatureOn = isForegroundRunningOnAppActiveFeatureOn
         self.isForegroundRunningWhenDashboardOpenFeatureOn = isForegroundRunningWhenDashboardOpenFeatureOn
+        self.isClickActionDelayReductionOptimizationOn = isClickActionDelayReductionOptimizationOn
     }
 }
 

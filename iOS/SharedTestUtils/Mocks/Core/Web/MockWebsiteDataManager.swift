@@ -23,10 +23,14 @@ import WKAbstractions
 @testable import Core
 
 class MockWebsiteDataManager: WebsiteDataManaging {
+    private(set) var clearCallCount = 0
+
     func removeCookies(forDomains domains: [String], fromDataStore: any DDGWebsiteDataStore) async {}
     
     func consumeCookies(into httpCookieStore: any DDGHTTPCookieStore) async {}
     
-    func clear(dataStore: any DDGWebsiteDataStore) async {}
+    func clear(dataStore: any DDGWebsiteDataStore) async {
+        clearCallCount += 1
+    }
 
 }

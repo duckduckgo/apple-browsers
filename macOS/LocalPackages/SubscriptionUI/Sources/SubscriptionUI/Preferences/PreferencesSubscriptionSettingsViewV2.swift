@@ -182,6 +182,19 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
                 .padding(.bottom, 8)
 
             VStack(alignment: .leading, spacing: 14) {
+                if model.shouldShowViewAllPlans {
+                    TextButton(UserText.viewAllPlansButtonTitle, weight: .semibold) {
+                        switch model.viewAllPlansAction() {
+                        case .navigateToPlans(let navigationAction),
+                             .navigateToManageSubscription(let navigationAction):
+                            navigationAction()
+                        case .presentSheet(let sheet):
+                            manageSubscriptionSheet = sheet
+                        case .showInternalSubscriptionAlert:
+                            showingInternalSubscriptionAlert.toggle()
+                        }
+                    }
+                }
                 TextButton(UserText.updatePlanOrCancelButton, weight: .semibold) {
                     Task {
                         switch await model.changePlanOrBillingAction() {

@@ -233,7 +233,7 @@ struct FireDialogView: ModalView {
             selectedSegmentTopStroke: Color(designSystemColor: .highlightPrimary),
             hoverSegmentBackground: Color(designSystemColor: .controlsFillPrimary),
             pressedSegmentBackground: Color(designSystemColor: .controlsFillSecondary),
-            hoverOverlay: Color(designSystemColor: .controlsFillPrimary)
+            hoverOverlay: Color(designSystemColor: .toneTintPrimary)
         )
         .frame(height: 84)
         .accessibilityIdentifier("FireDialogView.segmentedControl")
@@ -354,7 +354,13 @@ struct FireDialogView: ModalView {
                             .resizable()
                             .frame(width: 12, height: 12)
                     }
-                    .buttonStyle(StandardButtonStyle(topPadding: 6, bottomPadding: 6, horizontalPadding: 6))
+                    .buttonStyle(
+                        StandardButtonStyle(topPadding: 6,
+                                            bottomPadding: 6,
+                                            horizontalPadding: 6,
+                                            backgroundColor: Color(designSystemColor: .controlsFillPrimary),
+                                            backgroundPressedColor: Color(designSystemColor: .controlsFillPrimary))
+                    )
                     .clipShape(Circle())
                     .accessibilityLabel(UserText.close)
                     .accessibilityIdentifier("FireDialogView.sitesOverlayCloseButton")

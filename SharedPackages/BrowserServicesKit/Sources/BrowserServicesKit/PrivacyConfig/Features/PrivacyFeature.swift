@@ -148,6 +148,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// Feature Flag for the First Time Quit Survey
     /// https://app.asana.com/1/137249556945/inbox/1203972458584425/item/1212200919350194/story/1212483080081687
     case firstTimeQuitSurvey
+
+    /// Web Notifications API polyfill - allows websites to show notifications via native macOS Notification Center
+    /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211395954816928?focus=true
+    case webNotifications
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {

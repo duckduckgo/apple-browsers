@@ -182,6 +182,14 @@ final class AddressBarButtonsViewController: NSViewController {
             externalSchemeButton.action = #selector(externalSchemeButtonAction(_:))
         }
     }
+    @IBOutlet weak var notificationButton: PermissionButton? {
+        didSet {
+            notificationButton?.isHidden = true
+            notificationButton?.target = self
+            notificationButton?.action = #selector(notificationButtonAction(_:))
+        }
+    }
+    @IBOutlet weak var notificationButtonHeightConstraint: NSLayoutConstraint?
 
     /// Width of the left buttons container (Privacy Dashboard button, Permissions buttons…)
     /// Used to adjust the Passive Address Bar leading constraint
@@ -594,8 +602,10 @@ final class AddressBarButtonsViewController: NSViewController {
         tabViewModel?.tab.popupHandling?.pageInitiatedPopupPublisher.sink { [weak self] _ in
             self?.updateAllPermissionButtons()
         }.store(in: &permissionsCancellables)
-        tabViewModel?.$permissionAuthorizationQuery.dropFirst().sink { [weak self] _ in
-            self?.updateAllPermissionButtons()
+        tabViewModel?.$permissionAuthorizationQuery
+            .receive(on: DispatchQueue.main)
+            .dropFirst().sink { [weak self] _ in
+                self?.updateAllPermissionButtons()
         }.store(in: &permissionsCancellables)
     }
 
@@ -691,6 +701,9 @@ final class AddressBarButtonsViewController: NSViewController {
         externalSchemeButton.buttonState = tabViewModel.usedPermissions.externalScheme
         let title = String(format: UserText.permissionExternalSchemeOpenFormat, tabViewModel.usedPermissions.first(where: { $0.key.isExternalScheme })?.key.localizedDescription ?? "")
         externalSchemeButton.setAccessibilityTitle(title)
+
+        notificationButton?.buttonState = tabViewModel.usedPermissions.notification
+        notificationButton?.setAccessibilityTitle(UserText.permissionNotification)
     }
 
     private func showOrHidePermissionPopoverIfNeeded() {
@@ -1862,16 +1875,8 @@ final class AddressBarButtonsViewController: NSViewController {
             grantPermission: { [weak tabViewModel] query in
                 tabViewModel?.tab.permissions.allow(query)
             },
-            reloadPage: { [weak tabViewModel] in
-                tabViewModel?.tab.permissions.clearPermissionsNeedReload()
-                tabViewModel?.tab.reload()
-            },
-            setPermissionsNeedReload: { [weak tabViewModel] in
-                tabViewModel?.tab.permissions.setPermissionsNeedReload()
-            },
             hasTemporaryPopupAllowance: tabViewModel.tab.popupHandling?.popupsTemporarilyAllowedForCurrentPage ?? false,
-            pageInitiatedPopupOpened: tabViewModel.tab.popupHandling?.pageInitiatedPopupOpened ?? false,
-            permissionsNeedReload: tabViewModel.permissionsNeedReload
+            pageInitiatedPopupOpened: tabViewModel.tab.popupHandling?.pageInitiatedPopupOpened ?? false
         )
 
         let popover = PermissionCenterPopover(viewModel: viewModel)
@@ -2004,6 +2009,25 @@ final class AddressBarButtonsViewController: NSViewController {
         let domain = url.isFileURL ? .localhost : (url.host ?? "")
 
         PermissionContextMenu(permissionManager: permissionManager, permissions: permissions, domain: domain, delegate: self, featureFlagger: featureFlagger)
+            .popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height), in: sender)
+    }
+
+    @IBAction func notificationButtonAction(_ sender: NSButton) {
+        guard let tabViewModel,
+              let state = tabViewModel.usedPermissions.notification
+        else {
+            Logger.general.error("Selected tab view model is nil or no notification state")
+            return
+        }
+        if case .requested(let query) = state {
+            openPermissionAuthorizationPopover(for: query)
+            return
+        }
+
+        let url = tabViewModel.tab.content.urlForWebView ?? .empty
+        let domain = url.isFileURL ? .localhost : (url.host ?? "")
+
+        PermissionContextMenu(permissionManager: permissionManager, permissions: [(.notification, state)], domain: domain, delegate: self, featureFlagger: featureFlagger)
             .popUp(positioning: nil, at: NSPoint(x: 0, y: sender.bounds.height), in: sender)
     }
 
@@ -2572,8 +2596,25 @@ extension AddressBarButtonsViewController: NSPopoverDelegate {
             updateBookmarkButtonVisibility()
         case popovers.zoomPopover:
             updateZoomButtonVisibility()
-        case is PermissionAuthorizationPopover,
-            is PopupBlockedPopover:
+        case let authPopover as PermissionAuthorizationPopover:
+            if let button = popover.positioningView as? AddressBarButton {
+                button.backgroundColor = .clear
+                button.mouseOverColor = .buttonMouseOver
+            } else {
+                assertionFailure("Unexpected popover positioningView: \(popover.positioningView?.description ?? "<nil>"), expected PermissionButton")
+            }
+            // If popover was closed while authorization was no longer in progress (e.g., system permission denied),
+            // treat this as a denial of the website permission to prevent the popover from re-appearing
+            if !authPopover.viewController.isAuthorizationInProgress,
+               let query = authPopover.viewController.query {
+                query.handleDecision(grant: false, remember: nil)
+            }
+            updatePermissionCenterButtonIcon()
+            // Check for other pending permission requests after popover closes
+            DispatchQueue.main.async { [weak self] in
+                self?.updateAllPermissionButtons()
+            }
+        case is PopupBlockedPopover:
             if let button = popover.positioningView as? AddressBarButton {
                 button.backgroundColor = .clear
                 button.mouseOverColor = .buttonMouseOver
@@ -2649,8 +2690,7 @@ extension TabViewModel {
 
         // Also show when a page-initiated popup was auto-allowed (due to "Always Allow" setting)
         // so user can access permission center to change the decision
-        // Also show when permissions were changed and a reload is needed
-        return (shouldShowWhileFocused || (!isTextFieldEditorFirstResponder && (isAnyPermissionPresent || pageInitiatedPopupOpened || hasAnyPersistedPermissions || permissionsNeedReload)))
+        return (shouldShowWhileFocused || (!isTextFieldEditorFirstResponder && (isAnyPermissionPresent || pageInitiatedPopupOpened || hasAnyPersistedPermissions)))
         && !isShowingErrorPage
     }
 

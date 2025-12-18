@@ -255,6 +255,7 @@ public enum FeatureFlag: String, CaseIterable {
     case popupPermissionButtonPersistence
 
     /// Web Notifications API polyfill - allows websites to show notifications via native macOS Notification Center
+    /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211395954816928?focus=true
     case webNotifications
 
     /// New permission management view
@@ -554,7 +555,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .popupPermissionButtonPersistence:
             return .remoteReleasable(.subfeature(PopupBlockingSubfeature.popupPermissionButtonPersistence))
         case .webNotifications:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webNotifications))
         case .newPermissionView:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.newPermissionView))
         case .tabClosingEventRecreation:

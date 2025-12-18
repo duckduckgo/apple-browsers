@@ -31,5 +31,5 @@ jobs:
         run: |
           set -o pipefail
           mint run swiftlint lint --reporter github-actions-logging --strict --quiet \
-            | tee >(grep -oP 'file=[^,]+,line=\d+' \
+            | tee >(grep -oE 'file=[^,]+,line=[0-9]+' \
             | sed -E 's/file=([^,]+),line=([0-9]+)/\1:\2/' >&2 || true)

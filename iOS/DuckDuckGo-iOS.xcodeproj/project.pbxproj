@@ -1656,6 +1656,8 @@
 		C1935A222C89CA9F001AD72D /* AutofillSurveyManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1935A212C89CA9F001AD72D /* AutofillSurveyManagerTests.swift */; };
 		C1935A242C89CC6D001AD72D /* AutofillHeaderViewFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1935A232C89CC6D001AD72D /* AutofillHeaderViewFactoryTests.swift */; };
 		C1963863283794A000298D4D /* BookmarksCachingSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1963862283794A000298D4D /* BookmarksCachingSearch.swift */; };
+		C19888EA2EF166CB004612AD /* DaxEasterEggLogoStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C19888E92EF166CB004612AD /* DaxEasterEggLogoStore.swift */; };
+		C19888EC2EF18B69004612AD /* DaxEasterEggLogoStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C19888EB2EF18B69004612AD /* DaxEasterEggLogoStoreTests.swift */; };
 		C19D90D12CFE3A7F00D17DF3 /* AutofillLoginListSectionType.swift in Sources */ = {isa = PBXBuildFile; fileRef = C19D90D02CFE3A7F00D17DF3 /* AutofillLoginListSectionType.swift */; };
 		C1A1AEDC2EBCF97400D49A2F /* AutofillExtensionPromptViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A1AEDA2EBCF97400D49A2F /* AutofillExtensionPromptViewController.swift */; };
 		C1A1AEDD2EBCF97400D49A2F /* AutofillExtensionPromptViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1A1AEDB2EBCF97400D49A2F /* AutofillExtensionPromptViewModel.swift */; };
@@ -4007,6 +4009,8 @@
 		C1935A212C89CA9F001AD72D /* AutofillSurveyManagerTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AutofillSurveyManagerTests.swift; sourceTree = "<group>"; };
 		C1935A232C89CC6D001AD72D /* AutofillHeaderViewFactoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillHeaderViewFactoryTests.swift; sourceTree = "<group>"; };
 		C1963862283794A000298D4D /* BookmarksCachingSearch.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarksCachingSearch.swift; sourceTree = "<group>"; };
+		C19888E92EF166CB004612AD /* DaxEasterEggLogoStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxEasterEggLogoStore.swift; sourceTree = "<group>"; };
+		C19888EB2EF18B69004612AD /* DaxEasterEggLogoStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DaxEasterEggLogoStoreTests.swift; sourceTree = "<group>"; };
 		C19D90D02CFE3A7F00D17DF3 /* AutofillLoginListSectionType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillLoginListSectionType.swift; sourceTree = "<group>"; };
 		C1A001092D08635100372C87 /* lt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = lt; path = lt.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C1A0010A2D08635100372C87 /* lt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = lt; path = lt.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -7916,6 +7920,7 @@
 		C10C39932E44E185001410EA /* DaxEasterEggLogos */ = {
 			isa = PBXGroup;
 			children = (
+				C19888EB2EF18B69004612AD /* DaxEasterEggLogoStoreTests.swift */,
 				C10C39942E44E1B7001410EA /* DaxEasterEggHandlerTests.swift */,
 				C14CA6482E589F6A0060FA7B /* DaxEasterEggLogoCacheTests.swift */,
 			);
@@ -8507,6 +8512,7 @@
 		C1ED4DAA2E44AFD1003298A5 /* DaxEasterEggLogos */ = {
 			isa = PBXGroup;
 			children = (
+				C19888E92EF166CB004612AD /* DaxEasterEggLogoStore.swift */,
 				C17023A92E589C6E00090178 /* DaxEasterEggLogoCache.swift */,
 				C11D666A2E48BD4300934CB5 /* DaxEasterEggPresenter.swift */,
 				C106BAC42E4628DD00DDF54A /* DaxEasterEggZoomTransitionAnimator.swift */,
@@ -11100,6 +11106,7 @@
 				4BEEEA992E24670800B0BE00 /* DBPDebugWebViewWindowManager.swift in Sources */,
 				D6D95CE32B6D9F8800960317 /* AsyncHeadlessWebViewModel.swift in Sources */,
 				9F03113A2DF7C6B700AC4DB5 /* Logger+VideoPlayer.swift in Sources */,
+				C19888EA2EF166CB004612AD /* DaxEasterEggLogoStore.swift in Sources */,
 				C185ED612BD4329700BAE9DC /* ImportPasswordsViaSyncStatusHandler.swift in Sources */,
 				F1849C6B2D6E3C98000589A4 /* DebugScreen.swift in Sources */,
 				F1849C6C2D6E3C98000589A4 /* DebugScreensViewModel.swift in Sources */,
@@ -12029,6 +12036,7 @@
 				9FE7CD5E2E14C81A006691AB /* MockDefaultBrowserPromptUserActivityStorage.swift in Sources */,
 				9F387DFD2EA8BFA4006861F8 /* MockModalPromptCoordinationManager.swift in Sources */,
 				56A3CDE52DF2F37F00DDE757 /* SubscriptionPagesUseSubscriptionFeatureV2Tests.swift in Sources */,
+				C19888EC2EF18B69004612AD /* DaxEasterEggLogoStoreTests.swift in Sources */,
 				98E563FF2DE8B32D00E6E75F /* DuckPlayerMocks.swift in Sources */,
 				98E564002DE8B32D00E6E75F /* MockTimer.swift in Sources */,
 				9FB099162EEA3F6C00CB7394 /* WhatsNewRepositoryTests.swift in Sources */,

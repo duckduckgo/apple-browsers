@@ -349,10 +349,11 @@ extension AutoconsentUserScript {
         let enableHeuristicAction: Bool
         if let cohort = Application.appDelegate.featureFlagger.resolveCohort(for: FeatureFlag.autoconsentHeuristicAction) as? FeatureFlag.AutoconsentHeuristicActionCohort {
             enableHeuristicAction = (cohort == .treatment)
+            Logger.autoconsent.debug("cohort: \(String(describing: cohort)), enableHeuristicAction: \(enableHeuristicAction)")
         } else {
             enableHeuristicAction = false // default if not enrolled
+            Logger.autoconsent.debug("no cohort, enableHeuristicAction: \(enableHeuristicAction)")
         }
-        Logger.autoconsent.debug("enableHeuristicAction: \(enableHeuristicAction)")
 
         let autoconsentConfig = [
             "type": "initResp",
@@ -426,6 +427,10 @@ extension AutoconsentUserScript {
         }
         Logger.autoconsent.debug("Cookie popup found: \(String(describing: messageData))")
         firePixel(pixel: .popupFound)
+        
+        PixelKit.fireExperimentPixel(for: FeatureFlag.autoconsentHeuristicAction.rawValue, metric: "popupHandled", conversionWindowDays: 0...1, value: "true")
+        PixelKit.fireExperimentPixel(for: FeatureFlag.autoconsentHeuristicAction.rawValue, metric: "popupHandled", conversionWindowDays: 0...5, value: "true")
+        PixelKit.fireExperimentPixel(for: FeatureFlag.autoconsentHeuristicAction.rawValue, metric: "popupHandled", conversionWindowDays: 0...10, value: "true")
 
         // Check for reload loop
         detectReloadLoop(cmpName: messageData.cmp)

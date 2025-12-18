@@ -1,4 +1,4 @@
-import asana, {Client} from 'asana'
+import * as Asana from 'asana'
 import {info, setFailed, getInput, debug, setOutput} from '@actions/core'
 import {context, getOctokit} from '@actions/github'
 import {
@@ -23,8 +23,8 @@ const USER_MAP: {[key: string]: string} = JSON.parse(
 type PRState = 'Open' | 'Closed' | 'Merged' | 'Approved' | 'Draft'
 
 type PRFields = {
-  url: asana.resources.CustomField
-  status: asana.resources.CustomField
+  url: Asana.resources.CustomField
+  status: Asana.resources.CustomField
 }
 
 // Extended event types for review request actions
@@ -38,7 +38,7 @@ type ReviewRequestRemovedEvent = PullRequestEvent & {
   requested_reviewer?: User
 }
 
-const client = Client.create({
+const client = Asana.Client.create({
   defaultHeaders: {
     'asana-enable':
       'new_user_task_lists,new_project_templates,new_goal_memberships'
@@ -100,7 +100,7 @@ async function findPRTaskForReviewer(
   customFields: PRFields,
   prURL: string,
   reviewerAsanaId: string
-): Promise<asana.resources.Tasks.Type | null> {
+): Promise<Asana.resources.Tasks.Type | null> {
   // Search for tasks with the PR URL, then filter by assignee locally
   // (Asana's assignee.any filter may not work reliably with searchInWorkspace)
   try {
@@ -112,7 +112,7 @@ async function findPRTaskForReviewer(
 
     // Filter locally by assignee to ensure we get the right task
     const matchingTask = prTasks.data.find(
-      (task: asana.resources.Tasks.Type) =>
+      (task: Asana.resources.Tasks.Type) =>
         task.assignee?.gid === reviewerAsanaId
     )
 
@@ -162,8 +162,8 @@ async function findPRTaskForReviewer(
 async function findAllPRTasks(
   customFields: PRFields,
   prURL: string
-): Promise<asana.resources.Tasks.Type[]> {
-  const tasks: asana.resources.Tasks.Type[] = []
+): Promise<Asana.resources.Tasks.Type[]> {
+  const tasks: Asana.resources.Tasks.Type[] = []
 
   try {
     const prTasks = await client.tasks.searchInWorkspace(ASANA_WORKSPACE_ID, {
@@ -215,11 +215,11 @@ async function createPRTaskForReviewer(
   customFields: PRFields,
   automatedPR: boolean,
   followers: string[] | undefined
-): Promise<asana.resources.Tasks.Type> {
+): Promise<Asana.resources.Tasks.Type> {
   const title = `Code review for PR #${prNumber} (@${reviewerGithubLogin}): ${prTitle}`
   info(`Creating new PR task for reviewer ${reviewerGithubLogin}`)
 
-  const data: asana.resources.Tasks.CreateParams & {workspace: string} = {
+  const data: Asana.resources.Tasks.CreateParams & {workspace: string} = {
     workspace: ASANA_WORKSPACE_ID,
     // eslint-disable-next-line camelcase
     resource_subtype: 'approval',
@@ -250,7 +250,7 @@ async function createPRTaskForReviewer(
  * Reopen a closed task
  */
 async function reopenTask(
-  task: asana.resources.Tasks.Type,
+  task: Asana.resources.Tasks.Type,
   prStatus: string,
   customFields: PRFields
 ): Promise<void> {
@@ -271,7 +271,7 @@ async function reopenTask(
 /**
  * Close a task (mark as rejected since review request was removed)
  */
-async function closeTask(task: asana.resources.Tasks.Type): Promise<void> {
+async function closeTask(task: Asana.resources.Tasks.Type): Promise<void> {
   info(`Closing task ${task.gid}`)
   await client.tasks.updateTask(task.gid, {
     completed: true,
@@ -311,12 +311,12 @@ function getFollowers(
  */
 async function findParentTaskId(
   body: string
-): Promise<{parentTaskId: string | null; openShipReviewTask: asana.resources.Tasks.Type | null}> {
+): Promise<{parentTaskId: string | null; openShipReviewTask: Asana.resources.Tasks.Type | null}> {
   const asanaTaskMatch = body.match(
     /Task\/Issue URL:.*https:\/\/app.asana.*\/([0-9]+).*/
   )
   let parentTaskId = asanaTaskMatch && asanaTaskMatch[1]
-  let openShipReviewTask: asana.resources.Tasks.Type | null = null
+  let openShipReviewTask: Asana.resources.Tasks.Type | null = null
 
   if (parentTaskId) {
     info(`Found Asana task mention with parent ID: ${parentTaskId}`)
@@ -329,7 +329,7 @@ async function findParentTaskId(
       })
       openShipReviewTask =
         subTasks.data.find(
-          (t: asana.resources.Tasks.Type) =>
+          (t: Asana.resources.Tasks.Type) =>
             t.name.startsWith('Ship Review') && !t.completed
         ) || null
     } catch (e) {
@@ -355,7 +355,7 @@ async function getOrCreateTaskForReviewer(
   prStatus: string,
   parentTaskId: string | null,
   automatedPR: boolean
-): Promise<asana.resources.Tasks.Type | null> {
+): Promise<Asana.resources.Tasks.Type | null> {
   const prURL = payload.pull_request.html_url
   const reviewerAsanaId = getUserIdFromLogin(reviewerLogin)
 
@@ -412,7 +412,7 @@ async function handleReviewRequested(
   payload: ReviewRequestedEvent,
   customFields: PRFields,
   prStatus: string
-): Promise<asana.resources.Tasks.Type | null> {
+): Promise<Asana.resources.Tasks.Type | null> {
   const requestedReviewer = payload.requested_reviewer
   if (!requestedReviewer) {
     info('No requested_reviewer in payload')
@@ -502,7 +502,7 @@ async function handlePROpened(
   payload: PullRequestEvent,
   customFields: PRFields,
   prStatus: string
-): Promise<asana.resources.Tasks.Type[]> {
+): Promise<Asana.resources.Tasks.Type[]> {
   const githubAuthor = payload.pull_request.user.login
   const automatedPR = isImportantAutomatedPR(payload)
   const authorAsanaId = getUserIdFromLogin(githubAuthor)
@@ -579,7 +579,7 @@ async function handlePROpened(
   // Create tasks for reviewers that were assigned when the PR was opened
   const body = payload.pull_request.body || ''
   const {parentTaskId} = await findParentTaskId(body)
-  const createdTasks: asana.resources.Tasks.Type[] = []
+  const createdTasks: Asana.resources.Tasks.Type[] = []
 
   for (const reviewerLogin of allReviewers.keys()) {
     const task = await getOrCreateTaskForReviewer(
@@ -659,7 +659,7 @@ async function handlePullRequestReview(
     return
   }
 
-  const updateParams: asana.resources.Tasks.UpdateParams = {
+  const updateParams: Asana.resources.Tasks.UpdateParams = {
     // eslint-disable-next-line camelcase
     custom_fields: {
       [customFields.status.gid]: prStatus
@@ -732,7 +732,7 @@ ${truncatedBody}`
     payload.pull_request.merged
 
   for (const task of tasks) {
-    const updateParams: asana.resources.Tasks.UpdateParams = {
+    const updateParams: Asana.resources.Tasks.UpdateParams = {
       // eslint-disable-next-line camelcase
       custom_fields: {
         [customFields.status.gid]: prStatus
@@ -855,8 +855,8 @@ async function findCustomFields(workspaceGid: string): Promise<PRFields> {
   )
   // pull all fields from the API with the streaming
   const stream = apiResponse.stream()
-  const customFields: asana.resources.CustomFields.Type[] = []
-  stream.on('data', (field: asana.resources.CustomFields.Type) => {
+  const customFields: Asana.resources.CustomFields.Type[] = []
+  stream.on('data', (field: Asana.resources.CustomFields.Type) => {
     customFields.push(field)
   })
   await new Promise<void>(resolve => stream.on('end', resolve))
@@ -875,8 +875,8 @@ async function findCustomFields(workspaceGid: string): Promise<PRFields> {
     debug(`${CUSTOM_FIELD_NAMES.status} field GID: ${githubStatusField?.gid}`)
   }
   return {
-    url: githubUrlField as asana.resources.CustomField,
-    status: githubStatusField as asana.resources.CustomField
+    url: githubUrlField as Asana.resources.CustomField,
+    status: githubStatusField as Asana.resources.CustomField
   }
 }
 

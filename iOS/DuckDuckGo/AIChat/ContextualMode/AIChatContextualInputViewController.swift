@@ -230,4 +230,3 @@ extension AIChatContextualInputViewController: AIChatNativeInputViewControllerDe
         scrollQuickActionsToBottom()
     }
 }
-

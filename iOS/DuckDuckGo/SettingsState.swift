@@ -61,7 +61,6 @@ struct SettingsState {
     // Appearance properties
     var appThemeStyle: ThemeStyle
     var appIcon: AppIcon
-    var fireButtonAnimation: FireButtonAnimationType
     var textZoom: TextZoom
     var addressBar: AddressBar
     var showsFullURL: Bool
@@ -73,7 +72,6 @@ struct SettingsState {
     // Privacy properties
     var sendDoNotSell: Bool
     var autoconsentEnabled: Bool
-    var autoclearDataEnabled: Bool
     var autoClearAIChatHistory: Bool
     var applicationLock: Bool
 
@@ -125,7 +123,6 @@ struct SettingsState {
         return SettingsState(
             appThemeStyle: .systemDefault,
             appIcon: AppIconManager.shared.appIcon,
-            fireButtonAnimation: .fireRising,
             textZoom: TextZoom(level: .percent100),
             addressBar: AddressBar(enabled: false, position: .top),
             showsFullURL: false,
@@ -135,7 +132,6 @@ struct SettingsState {
             showMenuInSheet: false,
             sendDoNotSell: true,
             autoconsentEnabled: false,
-            autoclearDataEnabled: false,
             autoClearAIChatHistory: false,
             applicationLock: false,
             autocomplete: true,

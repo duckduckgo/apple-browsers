@@ -24,14 +24,20 @@ import Common
 
 public protocol DataBrokerProtectionEventPixelsRepository {
     func markWeeklyPixelSent()
-
     func getLatestWeeklyPixel() -> Date?
+
+    func markInitialScansTotalDurationPixelSent()
+    func markInitialScansStarted()
+    func hasInitialScansTotalDurationPixelBeenSent() -> Bool
+    func initialScansStartDate() -> Date?
 }
 
 public final class DataBrokerProtectionEventPixelsUserDefaults: DataBrokerProtectionEventPixelsRepository {
 
     enum Consts {
         static let weeklyPixelKey = "macos.browser.data-broker-protection.eventsWeeklyPixelKey"
+        static let initialScansTotalDurationPixelKey = "dbp.eventsInitialScansTotalDurationPixelKey"
+        static let initialScansStartDateKey = "dbp.eventsInitialScansStartDateKey"
     }
 
     private let userDefaults: UserDefaults
@@ -46,6 +52,23 @@ public final class DataBrokerProtectionEventPixelsUserDefaults: DataBrokerProtec
 
     public func getLatestWeeklyPixel() -> Date? {
         userDefaults.object(forKey: Consts.weeklyPixelKey) as? Date
+    }
+
+    public func markInitialScansTotalDurationPixelSent() {
+        userDefaults.set(true, forKey: Consts.initialScansTotalDurationPixelKey)
+    }
+
+    public func markInitialScansStarted() {
+        userDefaults.set(Date(), forKey: Consts.initialScansStartDateKey)
+        userDefaults.set(false, forKey: Consts.initialScansTotalDurationPixelKey)
+    }
+
+    public func hasInitialScansTotalDurationPixelBeenSent() -> Bool {
+        userDefaults.object(forKey: Consts.initialScansTotalDurationPixelKey) as? Bool ?? false
+    }
+
+    public func initialScansStartDate() -> Date? {
+        userDefaults.object(forKey: Consts.initialScansStartDateKey) as? Date
     }
 }
 
@@ -70,9 +93,9 @@ public final class DataBrokerProtectionEventPixels {
         self.handler = handler
     }
 
-    public func tryToFireWeeklyPixels() {
+    public func tryToFireWeeklyPixels(isAuthenticated: Bool) {
         if shouldWeFireWeeklyPixel() {
-            fireWeeklyReportPixels()
+            fireWeeklyReportPixels(isAuthenticated: isAuthenticated)
             repository.markWeeklyPixelSent()
 
             #if os(iOS)
@@ -89,6 +112,24 @@ public final class DataBrokerProtectionEventPixels {
         handler.fire(.scanningEventReAppearance)
     }
 
+    public func hasInitialScansTotalDurationPixelBeenSent() -> Bool {
+        return repository.hasInitialScansTotalDurationPixelBeenSent()
+    }
+
+    public func markInitialScansStarted() {
+        repository.markInitialScansStarted()
+    }
+
+    public func fireInitialScansTotalDurationPixel(numberOfProfileQueries: Int) {
+        guard let startDate = repository.initialScansStartDate() else {
+            Logger.dataBrokerProtection.error("Tried to fire initial scans duration pixel but no start date found")
+            return
+        }
+        let timeIntervalSinceStart = Date().timeIntervalSince(startDate) * 1000
+        handler.fire(.initialScanTotalDuration(duration: timeIntervalSinceStart.rounded(.towardZero), profileQueries: numberOfProfileQueries))
+        repository.markInitialScansTotalDurationPixelSent()
+    }
+
     private func shouldWeFireWeeklyPixel() -> Bool {
         guard let lastPixelFiredDate = repository.getLatestWeeklyPixel() else {
             return true // Last pixel fired date is not present. We should fire it
@@ -97,7 +138,7 @@ public final class DataBrokerProtectionEventPixels {
         return didWeekPassedBetweenDates(start: lastPixelFiredDate, end: Date())
     }
 
-    public func fireWeeklyReportPixels() {
+    public func fireWeeklyReportPixels(isAuthenticated: Bool) {
         let data: [BrokerProfileQueryData]
 
         do {
@@ -106,18 +147,18 @@ public final class DataBrokerProtectionEventPixels {
             Logger.dataBrokerProtection.error("Database error: when attempting to fireWeeklyReportPixels, error: \(error.localizedDescription, privacy: .public)")
             return
         }
-        fireWeeklyChildBrokerOrphanedOptOutsPixels(for: data)
+        fireWeeklyChildBrokerOrphanedOptOutsPixels(for: data, isAuthenticated: isAuthenticated)
 
         #if os(iOS)
-        fireBackgroundTaskSessionMetrics()
+        fireBackgroundTaskSessionMetrics(isAuthenticated: isAuthenticated)
         #endif
 
         #if os(iOS) || DEBUG
-        fireStalledOperationMetrics(for: data)
+        fireStalledOperationMetrics(for: data, isAuthenticated: isAuthenticated)
         #endif
     }
 
-    private func fireBackgroundTaskSessionMetrics() {
+    private func fireBackgroundTaskSessionMetrics(isAuthenticated: Bool) {
         do {
             let events = try database.fetchBackgroundTaskEvents(since: .daysAgo(7))
 
@@ -135,20 +176,22 @@ public final class DataBrokerProtectionEventPixels {
                 terminated: metrics.terminated,
                 durationMinMs: Double(metrics.durationMinMs),
                 durationMaxMs: Double(metrics.durationMaxMs),
-                durationMedianMs: metrics.durationMedianMs
+                durationMedianMs: metrics.durationMedianMs,
+                isAuthenticated: isAuthenticated
             ))
         } catch {
             Logger.dataBrokerProtection.error("Failed to fetch background task events: \(error.localizedDescription, privacy: .public)")
         }
     }
 
-    private func fireStalledOperationMetrics(for data: [BrokerProfileQueryData]) {
+    private func fireStalledOperationMetrics(for data: [BrokerProfileQueryData], isAuthenticated: Bool) {
         let scanMetrics = StalledOperationCalculator.scan.calculate(from: data)
         handler.fire(.weeklyReportStalledScans(
             numTotal: scanMetrics.total,
             numStalled: scanMetrics.stalled,
             totalByBroker: scanMetrics.totalByBroker.encodeToJSON() ?? "{}",
-            stalledByBroker: scanMetrics.stalledByBroker.encodeToJSON() ?? "{}"
+            stalledByBroker: scanMetrics.stalledByBroker.encodeToJSON() ?? "{}",
+            isAuthenticated: isAuthenticated
         ))
 
         let optOutMetrics = StalledOperationCalculator.optOut.calculate(from: data)
@@ -156,7 +199,8 @@ public final class DataBrokerProtectionEventPixels {
             numTotal: optOutMetrics.total,
             numStalled: optOutMetrics.stalled,
             totalByBroker: optOutMetrics.totalByBroker.encodeToJSON() ?? "{}",
-            stalledByBroker: optOutMetrics.stalledByBroker.encodeToJSON() ?? "{}"
+            stalledByBroker: optOutMetrics.stalledByBroker.encodeToJSON() ?? "{}",
+            isAuthenticated: isAuthenticated
         ))
     }
 
@@ -192,7 +236,7 @@ extension DataBrokerProtectionEventPixels {
         return weeklyOptOuts
     }
 
-    func fireWeeklyChildBrokerOrphanedOptOutsPixels(for data: [BrokerProfileQueryData]) {
+    func fireWeeklyChildBrokerOrphanedOptOutsPixels(for data: [BrokerProfileQueryData], isAuthenticated: Bool) {
         let brokerURLsToQueryData = Dictionary(grouping: data, by: { $0.dataBroker.url })
         let childBrokerURLsToOrphanedProfilesCount = childBrokerURLsToOrphanedProfilesWeeklyCount(for: data)
         for (childBrokerURL, value) in childBrokerURLsToOrphanedProfilesCount {
@@ -211,7 +255,8 @@ extension DataBrokerProtectionEventPixels {
             }
             handler.fire(.weeklyChildBrokerOrphanedOptOuts(dataBrokerURL: childBrokerURL,
                                                            childParentRecordDifference: recordsCountDifference,
-                                                           calculatedOrphanedRecords: value))
+                                                           calculatedOrphanedRecords: value,
+                                                           isAuthenticated: isAuthenticated))
         }
     }
 

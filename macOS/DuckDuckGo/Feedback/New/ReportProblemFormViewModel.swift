@@ -119,7 +119,7 @@ final class ReportProblemFormViewModel: ObservableObject {
                                      category: .bug,
                                      problemCategory: category)
 
-        feedbackSender.sendFeedback(feedback)
+        feedbackSender.sendFeedback(feedback, completionHandler: nil)
         showThankYou = true
     }
 }

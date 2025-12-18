@@ -100,7 +100,8 @@ extension AIChatMessageHandler {
                                             supportsAIChatFullMode: false,
                                             appVersion: appVersion,
                                             supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint,
-                                            supportsOpenAIChatLink: defaults.supportsOpenAIChatLink)
+                                            supportsOpenAIChatLink: defaults.supportsOpenAIChatLink,
+                                            supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync))
         } else {
             return AIChatNativeConfigValues(isAIChatHandoffEnabled: defaults.isAIChatHandoffEnabled,
                                             supportsClosingAIChat: defaults.supportsClosingAIChat,
@@ -114,7 +115,8 @@ extension AIChatMessageHandler {
                                             supportsAIChatFullMode: defaults.supportsAIChatFullMode,
                                             appVersion: appVersion,
                                             supportsHomePageEntryPoint: defaults.supportsHomePageEntryPoint,
-                                            supportsOpenAIChatLink: defaults.supportsOpenAIChatLink)
+                                            supportsOpenAIChatLink: defaults.supportsOpenAIChatLink,
+                                            supportsAIChatSync: featureFlagger.isFeatureOn(.aiChatSync))
         }
     }
 

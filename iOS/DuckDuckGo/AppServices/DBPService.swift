@@ -83,7 +83,6 @@ final class DBPService: NSObject {
                 },
                 eventsHandler: eventsHandler,
                 isWebViewInspectable: isWebViewInspectable)
-
         } else {
             assertionFailure("PixelKit not set up")
             self.dbpIOSManager = nil
@@ -120,6 +119,10 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
 
     var isForegroundRunningWhenDashboardOpenFeatureOn: Bool {
         appDependencies.featureFlagger.isFeatureOn(.dbpForegroundRunningWhenDashboardOpen)
+    }
+
+    var isClickActionDelayReductionOptimizationOn: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpClickActionDelayReductionOptimization)
     }
 
     init(appDependencies: DependencyProvider) {

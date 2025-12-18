@@ -79,6 +79,7 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                        featureFlagger: featureFlagger,
                                        onboardingNavigationDelegate: CapturingOnboardingNavigation(),
                                        appearancePreferences: appearancePreferences,
+                                       themeManager: MockThemeManager(),
                                        startupPreferences: startupPreferences,
                                        windowControllersManager: windowControllersManager,
                                        bookmarkManager: MockBookmarkManager(),

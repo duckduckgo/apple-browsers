@@ -153,7 +153,7 @@ enum SettingsPixel: PixelKitEvent {
     var parameters: [String: String]? {
         switch self {
         case .themeNameChanged(let name):
-            return ["themeName": name.rawValue]
+            return [PixelKit.Parameters.themeName: name.rawValue]
         default:
             return nil
         }

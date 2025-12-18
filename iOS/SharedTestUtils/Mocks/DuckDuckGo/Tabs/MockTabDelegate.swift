@@ -169,7 +169,8 @@ extension TabViewController {
             keyValueStore: try! MockKeyValueFileStore(),
             daxDialogsManager: DummyDaxDialogsManager(),
             aiChatSettings: MockAIChatSettingsProvider(),
-            productSurfaceTelemetry: MockProductSurfaceTelemetry()
+            productSurfaceTelemetry: MockProductSurfaceTelemetry(),
+            voiceSearchHelper: MockVoiceSearchHelper()
         )
         tab.attachWebView(configuration: WKWebViewConfiguration.nonPersistent(), andLoadRequest: nil as URLRequest?, consumeCookies: false, customWebView: customWebView)
         return tab

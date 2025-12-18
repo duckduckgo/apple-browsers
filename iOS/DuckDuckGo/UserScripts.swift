@@ -87,7 +87,7 @@ final class UserScripts: UserScriptsProvider {
         autoconsentUserScript = AutoconsentUserScript(config: sourceProvider.privacyConfigurationManager.privacyConfig)
 
         let experimentalManager: ExperimentalAIChatManager = .init(featureFlagger: featureFlagger)
-        let aiChatScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalManager)
+        let aiChatScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalManager, syncHandler: AIChatSyncHandler(sync: sourceProvider.sync), featureFlagger: featureFlagger)
         aiChatUserScript = AIChatUserScript(handler: aiChatScriptHandler,
                                             debugSettings: aiChatDebugSettings)
         serpSettingsUserScript = SERPSettingsUserScript(serpSettingsProviding: SERPSettingsProvider(aiChatProvider: AIChatSettings(), featureFlagger: featureFlagger))

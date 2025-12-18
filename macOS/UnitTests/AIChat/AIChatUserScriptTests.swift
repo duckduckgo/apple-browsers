@@ -128,6 +128,7 @@ final class AIChatUserScriptTests: XCTestCase {
     }
 }
 
+// swiftlint:disable inclusive_language
 final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     var didOpenSettings = false
     var didGetConfigValues = false
@@ -160,6 +161,14 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
     var didGetMigrationDataByIndex = false
     var didGetMigrationInfo = false
     var didClearMigrationData = false
+
+    // Sync tracking flags
+    var didGetSyncStatus = false
+    var didGetScopedSyncAuthToken = false
+    var didEncryptWithSyncMasterKey = false
+    var didDecryptWithSyncMasterKey = false
+    var didSendToSyncSettings = false
+    var didSendToSetupSync = false
 
     var messageHandling: any DuckDuckGo_Privacy_Browser.AIChatMessageHandling
 
@@ -266,6 +275,42 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         return nil
     }
 
+    // MARK: - Sync stubs
+
+    func getSyncStatus(params: Any, message: UserScriptMessage) -> Encodable? {
+        didGetSyncStatus = true
+        return nil
+    }
+
+    func getScopedSyncAuthToken(params: Any, message: UserScriptMessage) async -> Encodable? {
+        didGetScopedSyncAuthToken = true
+        return nil
+    }
+
+    func encryptWithSyncMasterKey(params: Any, message: UserScriptMessage) -> Encodable? {
+        didEncryptWithSyncMasterKey = true
+        return nil
+    }
+
+    func decryptWithSyncMasterKey(params: Any, message: UserScriptMessage) -> Encodable? {
+        didDecryptWithSyncMasterKey = true
+        return nil
+    }
+
+    func sendToSyncSettings(params: Any, message: UserScriptMessage) -> Encodable? {
+        didSendToSyncSettings = true
+        return nil
+    }
+
+    func sendToSetupSync(params: Any, message: UserScriptMessage) -> Encodable? {
+        didSendToSetupSync = true
+        return nil
+    }
+
+    func setAIChatHistoryEnabled(params: Any, message: any UserScriptMessage) -> (any Encodable)? {
+        return nil
+    }
+
     // Migration data mocks
     func storeMigrationData(params: Any, message: UserScriptMessage) -> Encodable? {
         didStoreMigrationData = true
@@ -283,8 +328,8 @@ final class MockAIChatUserScriptHandler: AIChatUserScriptHandling {
         didClearMigrationData = true
         return nil
     }
-
 }
+// swiftlint:enable inclusive_language
 
 final class AIChatMockDebugSettings: AIChatDebugURLSettingsRepresentable {
     var customURLHostname: String?

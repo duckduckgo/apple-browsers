@@ -2438,7 +2438,7 @@ private extension DataImport.BrowserProfile {
     /// Creates a test profile closure that accepts a FileStoreMock
     static func test(fileStore: FileStoreMock) -> (ThirdPartyBrowser) -> Self {
         return { browser in
-            let profile = Self.init(browser: browser, profileURL: .profile(named: "Test Profile"), fileStore: fileStore)
+            let profile = Self(browser: browser, profileURL: .profile(named: "Test Profile"), fileStore: fileStore)
             Self.configureFileStore(fileStore, for: profile)
             return profile
         }
@@ -2446,7 +2446,7 @@ private extension DataImport.BrowserProfile {
 
     static func test2(fileStore: FileStoreMock) -> (ThirdPartyBrowser) -> Self {
         return { browser in
-            let profile = Self.init(browser: browser, profileURL: .profile(named: "Test Profile 2"), fileStore: fileStore)
+            let profile = Self(browser: browser, profileURL: .profile(named: "Test Profile 2"), fileStore: fileStore)
             Self.configureFileStore(fileStore, for: profile)
             return profile
         }
@@ -2454,7 +2454,7 @@ private extension DataImport.BrowserProfile {
 
     static func test3(fileStore: FileStoreMock) -> (ThirdPartyBrowser) -> Self {
         return { browser in
-            let profile = Self.init(browser: browser, profileURL: .profile(named: "Test Profile 3"), fileStore: fileStore)
+            let profile = Self(browser: browser, profileURL: .profile(named: "Test Profile 3"), fileStore: fileStore)
             Self.configureFileStore(fileStore, for: profile)
             return profile
         }
@@ -2476,7 +2476,7 @@ private extension DataImport.BrowserProfile {
                 profileURL = .profile(named: DataImport.BrowserProfileList.Constants.chromiumDefaultProfileName)
             }
 
-            let profile = Self.init(browser: browser, profileURL: profileURL, fileStore: fileStore)
+            let profile = Self(browser: browser, profileURL: profileURL, fileStore: fileStore)
             Self.configureFileStore(fileStore, for: profile)
             return profile
         }

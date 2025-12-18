@@ -362,6 +362,8 @@ final class AddressBarTextField: NSTextField {
     }
 
     func addressBarEnterPressed() {
+        aiChatTogglePopoverCoordinator?.dismissPopover()
+
         let selectedRowContent = suggestionContainerViewModel?.selectedRowContent
         let selectedSuggestion = suggestionContainerViewModel?.selectedSuggestionViewModel?.suggestion
         let selectedSuggestionCategory = selectedSuggestion.flatMap { SuggestionPixelCategory(from: $0) }
@@ -1430,6 +1432,8 @@ private extension NSMenuItem {
 extension AddressBarTextField: SuggestionViewControllerDelegate {
 
     func suggestionViewControllerDidConfirmSelection(_ suggestionViewController: SuggestionViewController) {
+        aiChatTogglePopoverCoordinator?.dismissPopover()
+
         let selectedRowContent = suggestionContainerViewModel?.selectedRowContent
         let selectedSuggestion = suggestionContainerViewModel?.selectedSuggestionViewModel?.suggestion
         let selectedSuggestionCategory = selectedSuggestion.flatMap { SuggestionPixelCategory(from: $0) }

@@ -113,6 +113,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private(set) var syncDataProviders: SyncDataProvidersSource?
     private(set) var syncService: DDGSyncing?
+    private(set) var syncAIChatsCleaner: SyncAIChatsCleaning?
     private var isSyncInProgressCancellable: AnyCancellable?
     private var syncFeatureFlagsCancellable: AnyCancellable?
     private var screenLockedCancellable: AnyCancellable?
@@ -148,6 +149,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let brokenSitePromptLimiter: BrokenSitePromptLimiter
     let fireCoordinator: FireCoordinator
     let permissionManager: PermissionManager
+    let notificationService: UserNotificationAuthorizationServicing
     let recentlyClosedCoordinator: RecentlyClosedCoordinating
     let downloadManager: FileDownloadManagerProtocol
     let downloadListCoordinator: DownloadListCoordinator
@@ -235,11 +237,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let displaysTabsProgressIndicator: Bool
 
     let wideEvent: WideEventManaging
-    let isUsingAuthV2: Bool
+    let isUsingAuthV2: Bool = true
     var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
     let subscriptionManagerV1: (any SubscriptionManager)?
     let subscriptionManagerV2: (any SubscriptionManagerV2)?
-    let subscriptionAuthMigrator: AuthMigrator
     static let deadTokenRecoverer = DeadTokenRecoverer()
 
     public let subscriptionUIHandler: SubscriptionUIHandling
@@ -616,12 +617,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                             legacyTokenStorage: legacyTokenStorage,
                                             authService: authService,
                                             refreshEventMapping: authRefreshWideEventMapper)
-        let isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
-        subscriptionAuthMigrator = AuthMigrator(oAuthClient: authClient,
-                                                    pixelHandler: pixelHandler,
-                                                    isAuthV2Enabled: isAuthV2Enabled)
-        self.isUsingAuthV2 = subscriptionAuthMigrator.isReadyToUseAuthV2
-
         if self.isUsingAuthV2 {
             // MARK: V2
             Logger.general.log("Configuring Subscription V2")
@@ -752,6 +747,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains)
         permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db), featureFlagger: featureFlagger)
 #endif
+        notificationService = UserNotificationAuthorizationService()
 
         webCacheManager = WebCacheManager(fireproofDomains: fireproofDomains)
 
@@ -796,7 +792,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                           fireproofDomains: fireproofDomains,
                                           faviconManagement: faviconManager,
                                           windowControllersManager: windowControllersManager,
-                                          pixelFiring: PixelKit.shared)
+                                          pixelFiring: PixelKit.shared,
+                                          syncAIChatsCleaner: { Application.appDelegate.syncAIChatsCleaner })
 
         var appContentBlocking: AppContentBlocking?
 #if DEBUG
@@ -809,6 +806,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 contentScopeExperimentsManager: self.contentScopeExperimentsManager,
                 onboardingNavigationDelegate: windowControllersManager,
                 appearancePreferences: appearancePreferences,
+                themeManager: themeManager,
                 startupPreferences: startupPreferences,
                 webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                 cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
@@ -837,6 +835,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             contentScopeExperimentsManager: self.contentScopeExperimentsManager,
             onboardingNavigationDelegate: windowControllersManager,
             appearancePreferences: appearancePreferences,
+            themeManager: themeManager,
             startupPreferences: startupPreferences,
             webTrackingProtectionPreferences: webTrackingProtectionPreferences,
             cookiePopupProtectionPreferences: cookiePopupProtectionPreferences,
@@ -1272,6 +1271,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidBecomeActive(_ notification: Notification) {
         guard didFinishLaunching else { return }
 
+        // Fire quit survey return user pixel if the user completed the survey and returned within 8-14 day window
+        let quitSurveyPersistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)
+        QuitSurveyReturnUserHandler(
+            persistor: quitSurveyPersistor,
+            installDate: AppDelegate.firstLaunchDate
+        ).fireReturnUserPixelIfNeeded()
+
         fireDailyActiveUserPixels()
         fireDailyFireWindowConfigurationPixels()
 
@@ -1292,10 +1298,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if isSubscriptionActive {
                 PixelKit.fire(SubscriptionPixel.subscriptionActive(AuthVersion.v1), frequency: .legacyDaily)
             }
-        }
-
-        Task {
-            await subscriptionAuthMigrator.migrateAuthV1toAuthV2IfNeeded()
         }
 
         Task { @MainActor in
@@ -1412,7 +1414,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor private func showQuitSurvey() {
         var quitSurveyWindow: NSWindow?
 
+        let persistor = QuitSurveyUserDefaultsPersistor(keyValueStore: keyValueStore)
         let surveyView = QuitSurveyFlowView(
+            persistor: persistor,
             onQuit: {
                 if let parentWindow = quitSurveyWindow?.sheetParent {
                     parentWindow.endSheet(quitSurveyWindow!)
@@ -1561,6 +1565,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             keyValueStore: keyValueStore,
             environment: environment
         )
+        let syncAIChatsCleaner = SyncAIChatsCleaner(sync: syncService,
+                                                    keyValueStore: keyValueStore,
+                                                    featureFlagger: featureFlagger)
+        syncService.setCustomOperations([AIChatDeleteOperation(cleaner: syncAIChatsCleaner)])
+
         syncService.initializeIfNeeded()
         syncDataProviders.setUpDatabaseCleaners(syncService: syncService)
 
@@ -1573,6 +1582,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         self.syncDataProviders = syncDataProviders
         self.syncService = syncService
+        self.syncAIChatsCleaner = syncAIChatsCleaner
 
         isSyncInProgressCancellable = syncService.isSyncInProgressPublisher
             .filter { $0 }
@@ -1709,7 +1719,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let autoClearHandler = AutoClearHandler(dataClearingPreferences: dataClearingPreferences,
                                                 startupPreferences: startupPreferences,
                                                 fireViewModel: fireCoordinator.fireViewModel,
-                                                stateRestorationManager: self.stateRestorationManager)
+                                                stateRestorationManager: self.stateRestorationManager,
+                                                syncAIChatsCleaner: syncAIChatsCleaner)
         self.autoClearHandler = autoClearHandler
         DispatchQueue.main.async {
             autoClearHandler.handleAppLaunch()

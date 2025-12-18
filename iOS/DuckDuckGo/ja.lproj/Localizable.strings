@@ -98,7 +98,7 @@
 "action.title.newTabForUrl" = "新しいタブで開く";
 
 /* Open action */
-"action.title.open" = "オープン価格";
+"action.title.open" = "開く";
 
 /* Button: Open passwords list */
 "action.title.passwords" = "パスワード";
@@ -2837,7 +2837,7 @@
 "prompt.custom.url.scheme.dontopen" = "キャンセル";
 
 /* Confirm action */
-"prompt.custom.url.scheme.open" = "オープン価格";
+"prompt.custom.url.scheme.open" = "開く";
 
 /* No comment provided by engineer. */
 "prompt.custom.url.scheme.prompt" = "DuckDuckGoを離れてこのコンテンツを表示しますか？";

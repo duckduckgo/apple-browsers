@@ -69,12 +69,12 @@ struct BrowsingMenuSheetView: View {
     @Environment(\.verticalSizeClass) var verticalSizeClass
 
     private let model: BrowsingMenuModel
-    private let onDismiss: () -> Void
+    private let onDismiss: (_ wasActionSelected: Bool) -> Void
 
     @State private var highlightTag: BrowsingMenuModel.Entry.Tag?
-    @State private var actionToPerform: () -> Void = {}
+    @State private var actionToPerform: (() -> Void)?
 
-    init(model: BrowsingMenuModel, highlightRowWithTag: BrowsingMenuModel.Entry.Tag? = nil, onDismiss: @escaping () -> Void) {
+    init(model: BrowsingMenuModel, highlightRowWithTag: BrowsingMenuModel.Entry.Tag? = nil, onDismiss: @escaping (_ wasActionSelected: Bool) -> Void) {
         self.model = model
         self.onDismiss = onDismiss
         _highlightTag = State(initialValue: highlightRowWithTag)
@@ -93,8 +93,8 @@ struct BrowsingMenuSheetView: View {
         .background(.thickMaterial)
         .background(Color(designSystemColor: .background).opacity(0.1))
         .onDisappear(perform: {
-            actionToPerform()
-            onDismiss()
+            actionToPerform?()
+            onDismiss(actionToPerform != nil)
         })
         .floatingToolbar(
             footerItems: model.footerItems,
@@ -312,7 +312,7 @@ private extension View {
 private extension View {
     func floatingToolbar(
         footerItems: [BrowsingMenuModel.Entry],
-        actionToPerform: Binding<() -> Void>,
+        actionToPerform: Binding<(() -> Void)?>,
         presentationMode: Binding<PresentationMode>,
         showsLabels: Bool
     ) -> some View {
@@ -327,7 +327,7 @@ private extension View {
 
 private struct FloatingToolbarModifier: ViewModifier {
     let footerItems: [BrowsingMenuModel.Entry]
-    @Binding var actionToPerform: () -> Void
+    @Binding var actionToPerform: (() -> Void)?
     let presentationMode: Binding<PresentationMode>
     let showsLabels: Bool
 

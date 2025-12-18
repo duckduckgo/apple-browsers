@@ -61,7 +61,13 @@ struct PermissionCenterItem: Identifiable {
     let permissionType: PermissionType
     let domain: String
     var decision: PersistedPermissionDecision
-    var isSystemDisabled: Bool
+    var systemAuthorizationState: SystemPermissionAuthorizationState?
+
+    /// Whether system permission is disabled (denied, restricted, or not determined)
+    var isSystemDisabled: Bool {
+        guard let state = systemAuthorizationState else { return false }
+        return state != .authorized
+    }
 
     /// Current state of the permission (active, inactive, etc.)
     var state: PermissionState
@@ -426,8 +432,7 @@ final class PermissionCenterViewModel: ObservableObject {
             if !externalSchemes.contains(permissionType) {
                 externalSchemes.append(permissionType)
             }
-        } else if permissionType != .notification {
-            // Notification permissions are not shown in the Permission Center
+        } else {
             if !other.contains(permissionType) {
                 other.append(permissionType)
             }
@@ -436,23 +441,29 @@ final class PermissionCenterViewModel: ObservableObject {
 
     private func buildPermissionItem(for permissionType: PermissionType) -> PermissionCenterItem {
         let decision = permissionManager.permission(forDomain: domain, permissionType: permissionType)
-        let isSystemDisabled = checkSystemDisabled(for: permissionType)
         let state = usedPermissions[permissionType] ?? .inactive
 
         let blockedPopups: [BlockedPopup] = permissionType == .popups
             ? popupQueries.map { BlockedPopup(url: $0.url, query: $0) }
             : []
 
-        return PermissionCenterItem(
+        let item = PermissionCenterItem(
             id: permissionType,
             permissionType: permissionType,
             domain: domain,
             decision: decision,
-            isSystemDisabled: isSystemDisabled,
+            systemAuthorizationState: nil, // Will be updated async for permissions that require system permission
             state: state,
             blockedPopups: blockedPopups,
             externalSchemes: []
         )
+
+        // Async check for permissions that require system permission
+        if permissionType.requiresSystemPermission {
+            checkSystemDisabledAsync(for: item)
+        }
+
+        return item
     }
 
     private func buildExternalSchemesItem(from externalSchemePermissions: [PermissionType]) -> PermissionCenterItem? {
@@ -472,18 +483,44 @@ final class PermissionCenterViewModel: ObservableObject {
             permissionType: representativeType,
             domain: domain,
             decision: .ask,
-            isSystemDisabled: false,
+            systemAuthorizationState: nil,
             state: state,
             blockedPopups: [],
             externalSchemes: externalSchemes
         )
     }
 
-    private func checkSystemDisabled(for permissionType: PermissionType) -> Bool {
-        guard permissionType.requiresSystemPermission else { return false }
+    /// Requests system permission for a permission type (e.g., notifications)
+    /// Called when user taps "turn them on" in the yellow alert for notDetermined state
+    func requestSystemPermission(for permissionType: PermissionType) {
+        systemPermissionManager.requestAuthorization(for: permissionType) { [weak self] _ in
+            guard let self else { return }
 
-        let authState = systemPermissionManager.authorizationState(for: permissionType)
-        return authState == .denied || authState == .restricted || authState == .systemDisabled
+            // Refresh state after request
+            if let item = self.permissionItems.first(where: { $0.permissionType == permissionType }) {
+                self.checkSystemDisabledAsync(for: item)
+            }
+        }
+    }
+
+    /// Asynchronously checks system authorization state for permissions that require it
+    /// Uses weak self to handle case where popover is dismissed before check completes
+    private func checkSystemDisabledAsync(for item: PermissionCenterItem) {
+        guard item.permissionType.requiresSystemPermission else { return }
+
+        Task { @MainActor [weak self] in
+            guard let self else { return }
+
+            let authState = await self.systemPermissionManager.authorizationState(for: item.permissionType)
+
+            // Update the item in the array if it still exists and state differs
+            // Note: If loadPermissions() was called during the async check, the array might have been rebuilt,
+            // but updating the new item with the same id is acceptable behavior
+            if let index = self.permissionItems.firstIndex(where: { $0.id == item.id }),
+               self.permissionItems[index].systemAuthorizationState != authState {
+                self.permissionItems[index].systemAuthorizationState = authState
+            }
+        }
     }
 
     private func subscribeToPermissionChanges() {

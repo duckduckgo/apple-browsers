@@ -90,6 +90,13 @@ final class AIChatSidebar: NSObject {
         }
     }
 
+    /// Resets the sidebar state for a fresh chat session.
+    /// This clears the saved URL (with chatID) and restoration data
+    public func resetForNewChat() {
+        aiChatURL = nil
+        restorationData = nil
+    }
+
     /// Subscribes to restoration data updates from the sidebar view controller.
     /// This method is called automatically when the sidebarViewController is set.
     private func subscribeToRestorationDataUpdates() {

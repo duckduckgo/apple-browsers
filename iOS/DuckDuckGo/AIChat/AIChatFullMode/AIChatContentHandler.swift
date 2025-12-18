@@ -38,9 +38,12 @@ extension AIChatUserScript: AIChatUserScriptProviding { }
 protocol AIChatContentHandlingDelegate: AnyObject {
     /// Called when the content handler receives a request to open AIChat settings.
     func aiChatContentHandlerDidReceiveOpenSettingsRequest(_ handler: AIChatContentHandling)
-    
+
     /// Called when the content handler receives a request to close the AIChat interface.
     func aiChatContentHandlerDidReceiveCloseChatRequest(_ handler: AIChatContentHandling)
+
+    /// Called when the content handler receives a request to open Sync settings.
+    func aiChatContentHandlerDidReceiveOpenSyncSettingsRequest(_ handler: AIChatContentHandling)
 }
 
 /// Handles content initialization, payload management, and URL building for AIChat.
@@ -168,6 +171,8 @@ extension AIChatContentHandler: AIChatUserScriptDelegate {
             delegate?.aiChatContentHandlerDidReceiveOpenSettingsRequest(self)
         case .closeAIChat:
             delegate?.aiChatContentHandlerDidReceiveCloseChatRequest(self)
+        case .sendToSyncSettings, .sendToSetupSync:
+            delegate?.aiChatContentHandlerDidReceiveOpenSyncSettingsRequest(self)
         default:
             break
         }

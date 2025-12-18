@@ -2977,12 +2977,55 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Išjungti, kad nuorodos automatiškai neatsidarytų kitose įdiegtose programose.";
 
+/* Subtitle explaining what the cookies option does in auto clear settings */
+"settings.autoclear.cookies.subtitle" = "Ištrinkite visus svetainės duomenis, įskaitant aplankytas svetaines. Gali jus atjungti nuo paskyrų.";
+
+/* Title for the cookies and site data option in auto clear settings */
+"settings.autoclear.cookies.title" = "Slapukai ir svetainės duomenys";
+
+/* Subtitle explaining what the Duck.ai chats option does in auto clear settings */
+"settings.autoclear.duckai.chats.subtitle" = "Ištrinti visus pokalbius, įskaitant prisegtus";
+
+/* Title for the Duck.ai chats option in auto clear settings */
+"settings.autoclear.duckai.chats.title" = "„Duck.ai“ pokalbiai";
+
+/* Section header for the auto clear options */
+"settings.autoclear.section.header" = "Valyti";
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Valyti skirtukus ir duomenis";
 
 /* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
 "settings.autoclear.tabs.and.data.with.aichat" = "Išvalyti skirtukus, duomenis ir „Duck.ai“ pokalbius";
 
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "Uždaryti visus atidarytus skirtukus";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "Kortelės";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Išeinant iš programos, po 15 min. neveikimo";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "Išeinant iš programos, po 1 val. neveikimo";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Išeinant iš programos, po 30 min. neveikimo";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "Išeinant iš programos, po 5 min. neveikimo";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "Tik išeinant iš programos";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "Išėjimas iš programos apibrėžiamas kaip programos uždarymas braukiant, o neaktyvumas – fone veikianti programa.";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "Pageidaujamas laikas";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "Duomenys bus ištrinti iš naujo paleidus programą.";
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Paieškos pasiūlymai";
 
@@ -3001,6 +3044,8 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Jei įjungtas „Touch ID“, „Face ID“ arba sistemos slaptažodis, prieš atidarydami programą būsite paprašyti ją atrakinti.";
 
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "Automatinis duomenų išvalymas";
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Naršyklės atsiliepimai";
 
@@ -3010,6 +3055,8 @@
 /* Settings screen cell text for clearing AI chat history */
 "settings.clear.aichat.history.title" = "Išvalyti „Duck.ai“ pokalbius";
 
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "Išvalyti naršymo duomenis";
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Automatiškai valyti duomenis";
 
@@ -3037,6 +3084,8 @@
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Duomenų valymas";
 
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "Ištrindamas duomenis gali padėti apsaugoti savo privatumą internete. Jei nori išvalyti duomenis rankiniu būdu, naudok „Fire Button“ arba nustatyk automatinį valymą.";
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Numatytoji naršyklė";
 
@@ -3082,6 +3131,8 @@
 /* Settings screen cell text for Fireproof Sites */
 "settings.fireproof.sites" = "Apsaugoti svetaines";
 
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Apsaugoti svetaines";
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Bendrai";
 

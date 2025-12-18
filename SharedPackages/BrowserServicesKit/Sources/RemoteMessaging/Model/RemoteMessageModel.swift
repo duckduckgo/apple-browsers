@@ -229,7 +229,11 @@ public enum RemotePlaceholder: String, Codable, CaseIterable {
     case aiChat = "RemoteDuckAi"
     case visualDesignUpdate = "RemoteVisualDesignUpdate"
     case imageAI = "RemoteImageAI"
-    case radar = "RemoteRadar"
+    case radar = "RemoteMessageRadar"
+    case radarCheckGreen = "RemoteRadar"
+    case radarCheckPurple = "RemoteMessageRadarCheck"
     case keyImport = "RemoteKeyImport"
     case mobileCustomization = "RemoteMobileCustomization"
+    case pir = "RemoteMessagePIR"
+    case subscription = "RemoteMessageSubscription"
 }

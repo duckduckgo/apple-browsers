@@ -118,6 +118,11 @@ extension NewTabPageDataModel {
         case appUpdate = "AppUpdate"
         case subscription = "PrivacyPro"
         case duckai = "DuckAi"
+        case pir = "PIR"
+        case radar = "Radar"
+        case radarCheckGreen = "RadarCheckGreen"
+        case radarCheckPurple = "RadarCheckPurple"
+        case subscriptionIcon = "Subscription"
 
         init(_ placeholder: RemotePlaceholder) {
             switch placeholder {
@@ -133,6 +138,16 @@ extension NewTabPageDataModel {
                 self = .subscription
             case .aiChat:
                 self = .duckai
+            case .pir:
+                self = .pir
+            case .radar:
+                self = .radar
+            case .radarCheckGreen:
+                self = .radarCheckGreen
+            case .radarCheckPurple:
+                self = .radarCheckPurple
+            case .subscription:
+                self = .subscriptionIcon
             default:
                 self = .ddgAnnounce
             }

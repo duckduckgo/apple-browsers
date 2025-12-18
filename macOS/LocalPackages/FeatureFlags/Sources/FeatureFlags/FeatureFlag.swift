@@ -272,6 +272,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1212437820560561?focus=true
     case memoryUsageMonitor
+
+    /// https://app.asana.com/1/137249556945/project/1201462886803403/task/1211837879355661?focus=true
+    case aiChatSync
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -295,6 +298,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .tabClosingEventRecreation,
                 .dataImportWideEventMeasurement,
                 .tabProgressIndicator,
+                .firstTimeQuitSurvey,
                 .autofillPasswordSearchPrioritizeDomain:
             true
         default:
@@ -380,7 +384,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .firstTimeQuitSurvey,
                 .autofillPasswordSearchPrioritizeDomain,
                 .dataImportWideEventMeasurement,
-                .memoryUsageMonitor:
+                .memoryUsageMonitor,
+                .aiChatSync:
             return true
         case .sslCertificatesBypass,
                 .appendAtbToSerpQueries,
@@ -548,12 +553,14 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .tabClosingEventRecreation:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.tabClosingEventRecreation))
         case .firstTimeQuitSurvey:
-            return .disabled
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.firstTimeQuitSurvey))
         case .autofillPasswordSearchPrioritizeDomain:
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillPasswordSearchPrioritizeDomain))
         case .dataImportWideEventMeasurement:
             return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
         case .memoryUsageMonitor:
+            return .disabled
+        case .aiChatSync:
             return .disabled
         }
     }

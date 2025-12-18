@@ -20,6 +20,7 @@
 import ContentBlocking
 import BrowserServicesKit
 import Core
+import DDGSync
 
 final class ContentBlockingService {
 
@@ -28,12 +29,15 @@ final class ContentBlockingService {
     public let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
 
     init(appSettings: AppSettings,
+         contentBlocking: ContentBlocking,
+         sync: DDGSyncing,
          fireproofing: Fireproofing,
          contentScopeExperimentsManager: ContentScopeExperimentsManaging) {
 
-        common = ContentBlocking.shared
+        common = contentBlocking
 
         userScriptsDependencies = DefaultScriptSourceProvider.Dependencies(appSettings: appSettings,
+                                                                           sync: sync,
                                                                            privacyConfigurationManager: common.privacyConfigurationManager,
                                                                            contentBlockingManager: common.contentBlockingManager,
                                                                            fireproofing: fireproofing,

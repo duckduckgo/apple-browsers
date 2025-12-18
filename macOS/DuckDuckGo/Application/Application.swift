@@ -57,7 +57,8 @@ final class Application: NSApplication {
             privacyConfigurationManager: delegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
             isFireWindowDefault: delegate.visualizeFireSettingsDecider.isOpenFireWindowByDefaultEnabled,
             configurationURLProvider: delegate.configurationURLProvider,
-            contentScopePreferences: delegate.contentScopePreferences
+            contentScopePreferences: delegate.contentScopePreferences,
+            quitSurveyPersistor: QuitSurveyUserDefaultsPersistor(keyValueStore: delegate.keyValueStore)
         )
         self.mainMenu = mainMenu
 

@@ -41,7 +41,7 @@ enum BrokerProfileJobQueueMode {
     var priorityDate: Date? {
         switch self {
         case .idle, .immediate:
-            return nil
+            return Date()
         case .scheduled:
             return Date()
         }

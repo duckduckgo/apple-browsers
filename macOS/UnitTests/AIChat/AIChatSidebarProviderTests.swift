@@ -497,18 +497,19 @@ final class AIChatSidebarProviderTests: XCTestCase {
 
     // MARK: - Reset Sidebar Tests
 
-    func testWhenResetSidebarCalledThenRestorationDataIsCleared() {
+    func testWhenResetSidebarCalledThenSidebarIsRemoved() {
         // Given
         let tabID = "reset-test-tab"
         _ = provider.makeSidebarViewController(for: tabID, burnerMode: .regular)
         provider.sidebarsByTab[tabID]?.updateRestorationData("test-data")
-        XCTAssertNotNil(provider.sidebarsByTab[tabID]?.restorationData)
+        XCTAssertNotNil(provider.sidebarsByTab[tabID])
 
         // When
         provider.resetSidebar(for: tabID)
 
-        // Then
-        XCTAssertNil(provider.sidebarsByTab[tabID]?.restorationData)
+        // Then - sidebar should be removed from dictionary
+        XCTAssertNil(provider.sidebarsByTab[tabID])
+        XCTAssertEqual(provider.sidebarsByTab.count, 0)
     }
 
     func testWhenResetSidebarCalledForNonExistentTabThenNothingHappens() {
@@ -527,21 +528,6 @@ final class AIChatSidebarProviderTests: XCTestCase {
         XCTAssertNotNil(provider.sidebarsByTab[existingTabID]?.restorationData)
     }
 
-    func testWhenResetSidebarCalledThenSidebarRemainsInDictionary() {
-        // Given
-        let tabID = "reset-preserve-tab"
-        _ = provider.makeSidebarViewController(for: tabID, burnerMode: .regular)
-        provider.sidebarsByTab[tabID]?.updateRestorationData("test-data")
-        XCTAssertEqual(provider.sidebarsByTab.count, 1)
-
-        // When
-        provider.resetSidebar(for: tabID)
-
-        // Then - sidebar should still exist in dictionary, just with cleared data
-        XCTAssertEqual(provider.sidebarsByTab.count, 1)
-        XCTAssertNotNil(provider.sidebarsByTab[tabID])
-    }
-
     func testWhenResetSidebarCalledThenOtherTabsAreNotAffected() {
         // Given
         let tabID1 = "tab1"
@@ -554,9 +540,9 @@ final class AIChatSidebarProviderTests: XCTestCase {
         // When
         provider.resetSidebar(for: tabID1)
 
-        // Then - tab2 should be unaffected
-        XCTAssertNil(provider.sidebarsByTab[tabID1]?.restorationData)
-        XCTAssertNotNil(provider.sidebarsByTab[tabID2]?.restorationData)
+        // Then - tab1 should be removed, tab2 should be unaffected
+        XCTAssertNil(provider.sidebarsByTab[tabID1])
+        XCTAssertNotNil(provider.sidebarsByTab[tabID2])
         XCTAssertEqual(provider.sidebarsByTab[tabID2]?.restorationData, "data2")
     }
 
@@ -577,10 +563,14 @@ final class AIChatSidebarProviderTests: XCTestCase {
 
         // When - Reset before creating new sidebar (simulating new handoff)
         keepSessionProvider.resetSidebar(for: tabID)
+        XCTAssertNil(keepSessionProvider.sidebarsByTab[tabID]) // Sidebar was removed
+
+        // Creating new sidebar should create a fresh one
         let newViewController = keepSessionProvider.makeSidebarViewController(for: tabID, burnerMode: .regular)
 
         // Then - Should have a fresh sidebar without restoration data
         XCTAssertNotNil(newViewController)
+        XCTAssertNotNil(keepSessionProvider.sidebarsByTab[tabID])
         XCTAssertNil(keepSessionProvider.sidebarsByTab[tabID]?.restorationData)
     }
 

@@ -32,7 +32,7 @@ enum GeneralPixel: PixelKitEvent {
     case crashReportCRCIDMissing
     case compileRulesWait(onboardingShown: OnboardingShown, waitTime: CompileRulesWaitTime, result: WaitResult)
     case launch
-    case dailyActiveUser
+    case dailyActiveUser(themeName: ThemeName)
     case dailyDefaultBrowser(isDefault: Bool)
     case dailyAddedToDock(isAddedToDock: Bool)
     case dailyFireWindowConfigurationStartupFireWindowEnabled(startupFireWindow: Bool)
@@ -1336,6 +1336,10 @@ enum GeneralPixel: PixelKitEvent {
             if let version {
                 params[PixelKit.Parameters.sourceBrowserVersion] = version
             }
+            return params
+
+        case .dailyActiveUser(themeName: let themeName):
+            let params = [PixelKit.Parameters.themeName: themeName.rawValue]
             return params
 
         case .favoritesImportFailed(source: _, sourceVersion: let version, error: let error):

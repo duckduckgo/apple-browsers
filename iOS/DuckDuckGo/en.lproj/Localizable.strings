@@ -2380,6 +2380,9 @@ https://duckduckgo.com/mac";
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Address bar option";
 
+/* A test string used to verify localization checks are working */
+"new.test.string" = "This is a new test string";
+
 /* Display title for Duck.ai in our address bar */
 "omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
 

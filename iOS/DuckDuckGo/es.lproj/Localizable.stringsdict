@@ -612,5 +612,19 @@
 			<string>%1$d sitios excluidos de la limpieza</string>
 		</dict>
 	</dict>
+	<key>testString.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tests@</string>
+		<key>tests</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%d tests</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

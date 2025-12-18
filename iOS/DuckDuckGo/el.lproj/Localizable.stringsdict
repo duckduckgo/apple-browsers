@@ -2,6 +2,20 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>testString.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tests@</string>
+		<key>tests</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%d tests</string>
+		</dict>
+	</dict>
 	<key>bookmark.deleteFolderAlert.message</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>
@@ -610,6 +624,20 @@
 			<string>%1$d ιστότοπος εξαιρέθηκε από την εκκαθάριση</string>
 			<key>other</key>
 			<string>%1$d ιστότοποι εξαιρέθηκαν από την εκκαθάριση</string>
+		</dict>
+	</dict>
+	<key>testString.withCount - 2</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tests@</string>
+		<key>tests</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>other</key>
+			<string>%d tests</string>
 		</dict>
 	</dict>
 </dict>

@@ -71,6 +71,9 @@ enum SettingsPixel: PixelKitEvent {
      *
      * > Note: This is a unique pixel.
      *
+     * > Related links:
+     * [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1212520579673409?focus=true)
+     *
      * Anomaly Investigation:
      * - Anomaly in this pixel may mean an increase/drop in app use.
      *

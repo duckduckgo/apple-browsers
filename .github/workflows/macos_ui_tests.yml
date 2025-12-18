@@ -386,7 +386,7 @@ jobs:
         cp "xcodebuild.log" "$archive_name/" || echo "No xcodebuild.log found"
         cp "app-console.log" "$archive_name/" || echo "No app-console.log found"
         find DerivedData/Logs/Test -name "*.xcresult" -print -exec cp -rf {} "$archive_name/" \; 2>&1 || echo "No .xcresult files found"
-        cp -rf ~/Library/Logs/DiagnosticReports "$archive_name/"
+        cp -rf ~/Library/Logs/DiagnosticReports "$archive_name/" || echo "No DiagnosticReports found"
 
         # Store archive name for upload step
         echo "ARCHIVE_NAME=$archive_name" >> $GITHUB_ENV

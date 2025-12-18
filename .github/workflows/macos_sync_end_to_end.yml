@@ -261,16 +261,35 @@ jobs:
         if-no-files-found: warn
         retention-days: 7
 
+    - name: Organize logs for upload
+      if: failure() || cancelled()
+      working-directory: macOS
+      run: |
+        echo "Current working directory: $(pwd)"
+
+        # Create staging directory with timestamp and OS version
+        timestamp=$(date +"%Y-%m-%d_%H-%M-%S")
+        archive_name="BuildLogs ${{ matrix.runner }} (macOS ${{ matrix.os-version }}) ${timestamp}"
+        echo "Creating archive directory: $archive_name"
+        mkdir -p "$archive_name"
+
+        # locate and copy all files, flattening the structure with verbose output
+        cp "xcodebuild.log" "$archive_name/" || echo "No xcodebuild.log found"
+        cp "ui-tests.log" "$archive_name/" || echo "No ui-tests.log found"
+        cp "ui-tests.xml" "$archive_name/" || echo "No ui-tests.xml found"
+        cp "app-console.log" "$archive_name/" || echo "No app-console.log found"
+        find DerivedData/Logs/Test -name "*.xcresult" -print -exec cp -rf {} "$archive_name/" \; 2>&1 || echo "No .xcresult files found"
+        cp -rf ~/Library/Logs/DiagnosticReports "$archive_name/" || echo "No DiagnosticReports found"
+
+        # Store archive name for upload step
+        echo "ARCHIVE_NAME=$archive_name" >> $GITHUB_ENV
+
     - name: Upload logs when workflow failed
       uses: actions/upload-artifact@v4
       if: failure() || cancelled()
       with:
-        name: "BuildLogs ${{ matrix.runner }}"
-        path: |
-          macOS/xcodebuild.log
-          macOS/app-console.log
-          macOS/DerivedData/Logs/Test/*.xcresult
-          ~/Library/Logs/DiagnosticReports/*
+        name: "${{ env.ARCHIVE_NAME }}"
+        path: "macOS/${{ env.ARCHIVE_NAME }}"
         retention-days: 7
 
   notify-failure:

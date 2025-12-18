@@ -279,9 +279,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Show AI Chat address bar choice screen
     case showAIChatAddressBarChoiceScreen
 
-    /// Adds context menu action for translating text selected on a website.
-    case textTranslation
-
     /// Adds toggle for controlling  'Ask Follow-Up Questions' setting.
     case serpSettingsFollowUpQuestions
 

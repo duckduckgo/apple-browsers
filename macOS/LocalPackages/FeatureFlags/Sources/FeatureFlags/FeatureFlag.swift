@@ -104,9 +104,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717945014
     case aiChatSidebar
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866718657077
-    case aiChatTextTranslation
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615582950
     case aiChatPageContext
 
@@ -336,7 +333,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .willSoonDropBigSurSupport,
                 .hangReporting,
 				.aiChatSidebar,
-                .aiChatTextTranslation,
                 .aiChatPageContext,
                 .aiChatImprovements,
                 .aiChatKeepSession,
@@ -457,8 +453,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.paidAIChat))
         case .aiChatSidebar:
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebar))
-        case .aiChatTextTranslation:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.textTranslation))
         case .aiChatPageContext:
             return .remoteReleasable(.subfeature(AIChatSubfeature.pageContext))
         case .aiChatImprovements:

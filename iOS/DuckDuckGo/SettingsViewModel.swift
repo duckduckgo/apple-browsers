@@ -66,7 +66,7 @@ final class SettingsViewModel: ObservableObject {
     private let urlOpener: URLOpener
     private weak var runPrerequisitesDelegate: DBPIOSInterface.RunPrerequisitesDelegate?
     var dataBrokerProtectionViewControllerProvider: DBPIOSInterface.DataBrokerProtectionViewControllerProvider?
-    weak var fireExecutor: FireExecuting?
+    weak var autoClearActionDelegate: SettingsAutoClearActionDelegate?
     let mobileCustomization: MobileCustomization
     let userScriptsDependencies: DefaultScriptSourceProvider.Dependencies
     var browsingMenuSheetCapability: BrowsingMenuSheetCapable
@@ -1284,9 +1284,7 @@ extension SettingsViewModel {
     }
 
     func forgetAll(with options: FireOptions) {
-        Task {
-            await fireExecutor?.burn(options: options, applicationState: .unknown, fireContext: .manualFire)
-        }
+        autoClearActionDelegate?.performDataClearing(with: options)
     }
 
     func restoreAccountPurchase() async {

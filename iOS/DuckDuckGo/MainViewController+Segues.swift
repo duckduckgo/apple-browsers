@@ -380,7 +380,7 @@ extension MainViewController {
                                                   userScriptsDependencies: userScriptsDependencies,
                                                   browsingMenuSheetCapability: BrowsingMenuSheetCapability.create(using: featureFlagger, keyValueStore: keyValueStore))
 
-        settingsViewModel.fireExecutor = self.fireExecutor
+        settingsViewModel.autoClearActionDelegate = self
         Pixel.fire(pixel: .settingsPresented)
 
         func doLaunch() {

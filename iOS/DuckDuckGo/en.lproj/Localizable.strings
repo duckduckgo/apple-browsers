@@ -1858,6 +1858,9 @@
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "Select a category";
 
+/* Category for issues with accessing Plus or Pro tier features */
+"feedback.ppro.category.unable-to-access-features" = "Unable to access Plus or Pro tier features";
+
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Your anonymous feedback is important to us.";
 
@@ -2815,6 +2818,12 @@ Take back control of your personal information with the browser designed for dat
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Search Assist Settings";
 
+/* Settings screen cell subtitle for enabling automatic page context */
+"settings.aifeatures.automatic.context.subtitle" = "Automatically send page context to Duck.ai";
+
+/* Settings screen cell title for enabling automatic page context */
+"settings.aifeatures.automatic.context.title" = "Automatically Send Context";
+
 /* Settings screen cell subtitle for enabling Duck.ai as tabs */
 "settings.aifeatures.full.mode.subtitle" = "Show new Duck.ai Chats as tabs in the browser";
 
@@ -2864,7 +2873,37 @@ Take back control of your personal information with the browser designed for dat
 "settings.autoclear.tabs.and.data" = "Clear Tabs and Data";
 
 /* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
-"settings.autoclear.tabs.and.data.with.aichat" = "Clear Tabs, Data and Duck.ai Chats";
+"settings.autoclear.tabs.and.data.with.aichat" = "Clear Tabs, Data, and Duck.ai Chats";
+
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "Close all open tabs";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "Tabs";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "App Exit, Inactive for 15 Minutes";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "App Exit, Inactive for 1 Hour";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "App Exit, Inactive for 30 Minutes";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "App Exit, Inactive for 5 Minutes";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "App Exit Only";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "App exit is defined by swiping the app to close it while inactivity is when the app is in the background.";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "Desired Timing";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "Data will be deleted upon restart of the app.";
 
 /* Subtitle explaining what the tabs option does in auto clear settings */
 "settings.autoclear.tabs.subtitle" = "Close all open tabs";
@@ -3430,6 +3469,9 @@ Take back control of your personal information with the browser designed for dat
 /* Text for the 'Windows' button */
 "subscription.pir.windows" = "Windows";
 
+/* Navigation title for the subscription plans page */
+"subscription.plans.title" = "Subscription Plans";
+
 /* Progress view title when completing the purchase */
 "subscription.progress.view.completing.purchase" = "Completing purchase...";
 
@@ -3519,6 +3561,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Subtitle in header when on a free trial subscription */
 "subscription.trial" = "Free Trial Active";
+
+/* View All Plans button to see available subscription tiers */
+"subscription.view.all.plans" = "View All Plans";
 
 /* Message confirming that recovery code was copied to clipboard */
 "sync.code.copied" = "Recovery code copied to clipboard";

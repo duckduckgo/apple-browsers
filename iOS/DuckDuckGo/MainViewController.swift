@@ -208,6 +208,7 @@ class MainViewController: UIViewController {
     let experimentalAIChatManager: ExperimentalAIChatManager
     let daxDialogsManager: DaxDialogsManaging
     let dbpIOSPublicInterface: DBPIOSInterface.PublicInterface?
+    let remoteMessagingDebugHandler: RemoteMessagingDebugHandling
 
     var appDidFinishLaunchingStartTime: CFAbsoluteTime?
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
@@ -250,6 +251,7 @@ class MainViewController: UIViewController {
     let productSurfaceTelemetry: ProductSurfaceTelemetry
 
     private let aichatFullModeFeature: AIChatFullModeFeatureProviding
+    private let aiChatContextualModeFeature: AIChatContextualModeFeatureProviding
 
     init(
         privacyConfigurationManager: PrivacyConfigurationManaging,
@@ -294,7 +296,9 @@ class MainViewController: UIViewController {
         mobileCustomization: MobileCustomization,
         remoteMessagingActionHandler: RemoteMessagingActionHandling,
         productSurfaceTelemetry: ProductSurfaceTelemetry,
-        fireExecutor: FireExecutor
+        fireExecutor: FireExecutor,
+        remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
+        aiChatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature()
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -340,9 +344,11 @@ class MainViewController: UIViewController {
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
         self.mobileCustomization = mobileCustomization
         self.aichatFullModeFeature = aichatFullModeFeature
+        self.remoteMessagingDebugHandler = remoteMessagingDebugHandler
         self.productSurfaceTelemetry = productSurfaceTelemetry
-
         self.fireExecutor = fireExecutor
+        self.aiChatContextualModeFeature = aiChatContextualModeFeature
+
         super.init(nibName: nil, bundle: nil)
         
         tabManager.delegate = self
@@ -1198,6 +1204,7 @@ class MainViewController: UIViewController {
         }
         
         Pixel.fire(pixel: .forgetAllPressedBrowsing)
+        DailyPixel.fire(pixel: .forgetAllPressedBrowsingDaily)
         
         performActionIfAITab { DailyPixel.fireDailyAndCount(pixel: .aiChatFireButtonTapped) }
         
@@ -1524,7 +1531,7 @@ class MainViewController: UIViewController {
         Logger.daxEasterEgg.debug("RefreshOmniBar - Stored Logo: \(tab.tabModel.daxEasterEggLogoURL ?? "nil")")
         viewCoordinator.omniBar.setDaxEasterEggLogoURL(tab.tabModel.daxEasterEggLogoURL)
 
-        if aichatFullModeFeature.isAvailable && tab.tabModel.isAITab {
+        if aichatFullModeFeature.isAvailable && tab.isAITab {
             viewCoordinator.omniBar.enterAIChatMode()
         } else {
             viewCoordinator.omniBar.startBrowsing()
@@ -2716,14 +2723,23 @@ extension MainViewController: OmniBarDelegate {
             if browsingMenuSheetCapability.isEnabled {
                 Pixel.fire(pixel: .experimentalBrowsingMenuDisplayedNTP)
             }
-        case .aiChatTab, .website:
+        case .aiChatTab:
+            Pixel.fire(pixel: .browsingMenuOpened)
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuOpened)
+            if browsingMenuSheetCapability.isEnabled {
+                Pixel.fire(pixel: .experimentalBrowsingMenuDisplayedAIChat)
+            }
+        case .website:
             Pixel.fire(pixel: .browsingMenuOpened)
 
-            if browsingMenuSheetCapability.isEnabled {
+            if tab.isError {
+                Pixel.fire(pixel: .browsingMenuOpenedError)
+                if browsingMenuSheetCapability.isEnabled {
+                    Pixel.fire(pixel: .experimentalBrowsingMenuDisplayedError)
+                }
+            } else if browsingMenuSheetCapability.isEnabled {
                 Pixel.fire(pixel: .experimentalBrowsingMenuDisplayed)
             }
-
-            performActionIfAITab { DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuOpened) }
         }
     }
 
@@ -2752,8 +2768,11 @@ extension MainViewController: OmniBarDelegate {
                                                menuEntries: menuEntries,
                                                daxDialogsManager: daxDialogsManager,
                                                productSurfaceTelemetry: productSurfaceTelemetry)
-        browsingMenu.onDismiss = {
+        browsingMenu.onDismiss = { wasActionSelected in
             self.viewCoordinator.menuToolbarButton.isEnabled = true
+            if !wasActionSelected {
+                Pixel.fire(pixel: .browsingMenuDismissed)
+            }
         }
 
         let controller = browsingMenu
@@ -2788,8 +2807,11 @@ extension MainViewController: OmniBarDelegate {
         let controller = BrowsingMenuSheetViewController(
             rootView: BrowsingMenuSheetView(model: model,
                                             highlightRowWithTag: highlightTag,
-                                            onDismiss: {
+                                            onDismiss: { wasActionSelected in
                                                 self.viewCoordinator.menuToolbarButton.isEnabled = true
+                                                if !wasActionSelected {
+                                                    Pixel.fire(pixel: .experimentalBrowsingMenuDismissed)
+                                                }
                                             })
         )
 
@@ -2977,7 +2999,12 @@ extension MainViewController: OmniBarDelegate {
 
     func onAIChatPressed() {
         hideSuggestionTray()
-        openAIChatFromAddressBar()
+
+        if let currentTab, aiChatContextualModeFeature.isAvailable, newTabPageViewController == nil {
+            currentTab.presentContextualAIChatSheet(from: self)
+        } else {
+            openAIChatFromAddressBar()
+        }
     }
 
     private func shareCurrentURLFromAddressBar() {
@@ -3066,7 +3093,7 @@ extension MainViewController: OmniBarDelegate {
 
     /// Delegate method called when the omnibar branding area is tapped while in AI Chat mode.
     func onAIChatBrandingPressed() {
-        DailyPixel.fireDailyAndCount(pixel: .addressBarClickOnAIChat)
+        Pixel.fire(pixel: .addressBarClickOnAIChat)
         viewCoordinator.omniBar.beginEditing(animated: true, forTextEntryMode: .aiChat)
     }
 }
@@ -3680,6 +3707,7 @@ extension MainViewController: AutoClearWorker {
                                 showNextDaxDialog: Bool = false) {
         let spid = Instruments.shared.startTimedEvent(.clearingData)
         Pixel.fire(pixel: .forgetAllExecuted)
+        DailyPixel.fire(pixel: .forgetAllExecutedDaily)
         productSurfaceTelemetry.dataClearingUsed()
         
         fireExecutor.prepare(for: options)
@@ -3698,7 +3726,7 @@ extension MainViewController: AutoClearWorker {
             // Ideally this should happen once data clearing has finished AND the animation is finished
             if showNextDaxDialog {
                 self.newTabPageViewController?.showNextDaxDialog()
-            } else if KeyboardSettings().onNewTab {
+            } else if options.contains(.tabs) && KeyboardSettings().onNewTab {
                 let showKeyboardAfterFireButton = DispatchWorkItem {
                     if !self.aiChatSettings.isAIChatSearchInputUserSettingsEnabled {
                         self.enterSearch()
@@ -4110,8 +4138,8 @@ extension MainViewController: MainViewEditingStateTransitioning {
 
 // MARK: AutoClear Action Delegate
 extension MainViewController: SettingsAutoClearActionDelegate {
-    func performDataClearing() {
-        forgetAllWithAnimation(options: .all)
+    func performDataClearing(with options: FireOptions) {
+        forgetAllWithAnimation(options: options)
     }
 }
 

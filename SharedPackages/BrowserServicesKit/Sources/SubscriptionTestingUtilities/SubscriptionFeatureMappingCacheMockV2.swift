@@ -27,6 +27,7 @@ public final class SubscriptionFeatureMappingCacheMockV2: SubscriptionFeatureMap
 
     public var mapping: [String: [SubscriptionEntitlement]] = [:]
     public var tierMapping: [String: [TierFeature]] = [:]
+    public var shouldThrowError: Error?
 
     public init() { }
 
@@ -36,7 +37,10 @@ public final class SubscriptionFeatureMappingCacheMockV2: SubscriptionFeatureMap
         return mapping[subscriptionIdentifier] ?? []
     }
 
-    public func subscriptionTierFeatures(for subscriptionIdentifiers: [String]) async -> [String: [TierFeature]] {
+    public func subscriptionTierFeatures(for subscriptionIdentifiers: [String]) async throws -> [String: [TierFeature]] {
+        if let error = shouldThrowError {
+            throw error
+        }
         var result: [String: [TierFeature]] = [:]
         for identifier in subscriptionIdentifiers {
             result[identifier] = tierMapping[identifier] ?? []

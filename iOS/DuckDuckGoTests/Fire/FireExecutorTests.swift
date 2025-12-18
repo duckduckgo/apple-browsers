@@ -102,6 +102,7 @@ final class FireExecutorTests: XCTestCase {
     private var mockHistoryCleaner: MockHistoryCleaner!
     private var mockBookmarkDatabaseCleaner: MockBookmarkDatabaseCleaner!
     private var mockDelegate: MockFireExecutorDelegate!
+    private var mockAppSettings: AppSettingsMock!
     
     override func setUp() {
         super.setUp()
@@ -118,6 +119,8 @@ final class FireExecutorTests: XCTestCase {
         mockHistoryCleaner = MockHistoryCleaner()
         mockBookmarkDatabaseCleaner = MockBookmarkDatabaseCleaner()
         mockDelegate = MockFireExecutorDelegate()
+        mockAppSettings = AppSettingsMock()
+        mockFeatureFlagger.enabledFeatureFlags = [.granularFireButtonOptions]
     }
     
     override func tearDown() {
@@ -134,6 +137,7 @@ final class FireExecutorTests: XCTestCase {
         mockHistoryCleaner = nil
         mockBookmarkDatabaseCleaner = nil
         mockDelegate = nil
+        mockAppSettings = nil
         super.tearDown()
     }
     
@@ -155,7 +159,8 @@ final class FireExecutorTests: XCTestCase {
             featureFlagger: mockFeatureFlagger,
             privacyConfigurationManager: mockPrivacyConfigurationManager,
             dataStore: MockWebsiteDataStore(),
-            aiChatHistoryCleaner: mockHistoryCleaner
+            aiChatHistoryCleaner: mockHistoryCleaner,
+            appSettings: mockAppSettings
         )
     }
     
@@ -185,7 +190,7 @@ final class FireExecutorTests: XCTestCase {
     
     // MARK: - burn Tabs Tests
     
-    func testBurnTabsCallsDelegateAndClearsTabsAndDownloads() async {
+    func testBurnTabsCallsDelegateAndClearsTabs() async {
         // Given
         let executor = makeFireExecutor()
         executor.delegate = mockDelegate
@@ -197,8 +202,9 @@ final class FireExecutorTests: XCTestCase {
         XCTAssertTrue(mockDelegate.willStartBurningTabsCalled)
         XCTAssertTrue(mockDelegate.didFinishBurningTabsCalled)
         XCTAssertTrue(mockTabManager.prepareCurrentTabCalled)
-        XCTAssertEqual(spyDownloadManager.cancelAllDownloadsCallCount, 1)
         XCTAssertTrue(mockTabManager.removeAllCalled)
+        // Downloads are only cancelled when both .tabs and .data are present
+        XCTAssertEqual(spyDownloadManager.cancelAllDownloadsCallCount, 0)
     }
     
     // MARK: - burn Data Tests
@@ -214,6 +220,8 @@ final class FireExecutorTests: XCTestCase {
         // Then
         XCTAssertTrue(mockDelegate.willStartBurningDataCalled)
         XCTAssertTrue(mockDelegate.didFinishBurningDataCalled)
+        // Downloads are only cancelled when both .tabs and .data are present
+        XCTAssertEqual(spyDownloadManager.cancelAllDownloadsCallCount, 0)
     }
     
     func testBurnDataSkipsBookmarkCleanerWhenSyncActive() async {
@@ -273,6 +281,20 @@ final class FireExecutorTests: XCTestCase {
 
         // Then - Verify history is removed
         XCTAssertEqual(mockHistoryManager.removeAllHistoryCallCount, 1)
+    }
+    
+    // MARK: - Burn ongoing downloads
+    
+    func testBurnTabsAndDataCancelsDownloads() async {
+        // Given
+        let executor = makeFireExecutor()
+        executor.delegate = mockDelegate
+        
+        // When
+        await executor.burn(options: [.tabs, .data])
+        
+        // Then
+        XCTAssertEqual(spyDownloadManager.cancelAllDownloadsCallCount, 1)
     }
     
     // MARK: - burn AI History Tests

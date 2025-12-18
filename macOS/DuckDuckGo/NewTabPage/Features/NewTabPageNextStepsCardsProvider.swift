@@ -25,10 +25,14 @@ import UserScript
 final class NewTabPageNextStepsCardsProvider: NewTabPageNextStepsCardsProviding {
     let continueSetUpModel: HomePage.Models.ContinueSetUpModel
     let appearancePreferences: AppearancePreferences
+    private let pixelHandler: (PixelKitEvent, PixelKit.Frequency, Bool) -> Void
 
-    init(continueSetUpModel: HomePage.Models.ContinueSetUpModel, appearancePreferences: AppearancePreferences) {
+    init(continueSetUpModel: HomePage.Models.ContinueSetUpModel,
+         appearancePreferences: AppearancePreferences,
+         pixelHandler: @escaping (PixelKitEvent, PixelKit.Frequency, Bool) -> Void = { PixelKit.fire($0, frequency: $1, includeAppVersionParameter: $2) }) {
         self.continueSetUpModel = continueSetUpModel
         self.appearancePreferences = appearancePreferences
+        self.pixelHandler = pixelHandler
     }
 
     var isViewExpanded: Bool {
@@ -79,15 +83,21 @@ final class NewTabPageNextStepsCardsProvider: NewTabPageNextStepsCardsProviding 
     func willDisplayCards(_ cards: [NewTabPageDataModel.CardID]) {
         appearancePreferences.continueSetUpCardsViewDidAppear()
         fireAddToDockPixelIfNeeded(cards)
+        fireNextStepsCardShownPixels(cards)
     }
 
     private func fireAddToDockPixelIfNeeded(_ cards: [NewTabPageDataModel.CardID]) {
         guard cards.contains(.addAppToDockMac) else {
             return
         }
-        PixelKit.fire(GeneralPixel.addToDockNewTabPageCardPresented,
-                      frequency: .uniqueByName,
-                      includeAppVersionParameter: false)
+        pixelHandler(GeneralPixel.addToDockNewTabPageCardPresented, .uniqueByName, false)
+    }
+
+    private func fireNextStepsCardShownPixels(_ cards: [NewTabPageDataModel.CardID]) {
+        for card in cards {
+            // Fires once per card (unique by name + key parameter)
+            pixelHandler(NewTabPagePixel.nextStepsCardShown(card.rawValue), .uniqueByNameAndParameters, false)
+        }
     }
 }
 
@@ -104,6 +114,8 @@ extension HomePage.Models.FeatureType {
             self = .duckplayer
         case .addAppToDockMac:
             self = .dock
+        case .subscription:
+            self = .subscription
         }
     }
 }
@@ -121,6 +133,8 @@ extension NewTabPageDataModel.CardID {
             self = .addAppToDockMac
         case .importBookmarksAndPasswords:
             self = .bringStuff
+        case .subscription:
+            self = .subscription
         }
     }
 }

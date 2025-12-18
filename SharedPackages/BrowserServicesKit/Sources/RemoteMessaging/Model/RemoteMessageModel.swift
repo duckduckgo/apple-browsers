@@ -92,7 +92,30 @@ public struct RemoteMessageModel: Equatable, Codable {
                                             action: action)
 
         case .cardsList(let titleText, let placeholder, let items, let primaryActionText, let primaryAction):
-            self.content = .cardsList(titleText: titleText, placeholder: placeholder, items: items, primaryActionText: primaryActionText, primaryAction: primaryAction)
+
+            let translatedItems: [RemoteMessageModelType.ListItem] = items.map { item in
+                guard let translatedItem = translation.listItems?[item.id] else {
+                    return item
+                }
+                return RemoteMessageModelType.ListItem(
+                    id: item.id,
+                    type: item.type,
+                    titleText: translatedItem.titleText ?? item.titleText,
+                    descriptionText: translatedItem.descriptionText ?? item.descriptionText,
+                    placeholderImage: item.placeholderImage,
+                    action: item.action,
+                    matchingRules: item.matchingRules,
+                    exclusionRules: item.exclusionRules
+                )
+            }
+
+            self.content = .cardsList(
+                titleText: translation.titleText ?? titleText,
+                placeholder: placeholder,
+                items: translatedItems,
+                primaryActionText: translation.primaryActionText ?? primaryActionText,
+                primaryAction: primaryAction
+            )
         }
     }
 }
@@ -110,8 +133,10 @@ public struct RemoteMessageSurfaceType: OptionSet, Codable, Hashable, Equatable 
     public static let modal = RemoteMessageSurfaceType(rawValue: 1 << 1)
     /// Used to show a remote message in a dedicated tab.
     public static let dedicatedTab = RemoteMessageSurfaceType(rawValue: 1 << 2)
+    /// Used to show a remote message in the tab bar of the browser.
+    public static let tabBar = RemoteMessageSurfaceType(rawValue: 1 << 3)
 
-    public static let allCases: RemoteMessageSurfaceType = [.newTabPage, .modal, .dedicatedTab]
+    public static let allCases: RemoteMessageSurfaceType = [.newTabPage, .modal, .dedicatedTab, .tabBar]
 }
 
 public enum RemoteMessageModelType: Codable, Equatable {

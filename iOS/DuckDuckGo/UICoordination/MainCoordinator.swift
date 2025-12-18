@@ -83,7 +83,8 @@ final class MainCoordinator {
          winBackOfferService: WinBackOfferService,
          modalPromptCoordinationService: ModalPromptCoordinationService,
          mobileCustomization: MobileCustomization,
-         productSurfaceTelemetry: ProductSurfaceTelemetry
+         productSurfaceTelemetry: ProductSurfaceTelemetry,
+         sharedSecureVault: (any AutofillSecureVault)? = nil
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
@@ -136,7 +137,9 @@ final class MainCoordinator {
                                 keyValueStore: keyValueStore,
                                 daxDialogsManager: daxDialogsManager,
                                 aiChatSettings: aiChatSettings,
-                                productSurfaceTelemetry: productSurfaceTelemetry)
+                                productSurfaceTelemetry: productSurfaceTelemetry,
+                                sharedSecureVault: sharedSecureVault,
+                                voiceSearchHelper: voiceSearchHelper)
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: websiteDataManager,
                                         daxDialogsManager: daxDialogsManager,
@@ -146,7 +149,8 @@ final class MainCoordinator {
                                         textZoomCoordinator: textZoomCoordinator,
                                         historyManager: historyManager,
                                         featureFlagger: featureFlagger,
-                                        privacyConfigurationManager: privacyConfigurationManager)
+                                        privacyConfigurationManager: privacyConfigurationManager,
+                                        appSettings: AppDependencyProvider.shared.appSettings)
         controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
                                         bookmarksDatabase: bookmarksDatabase,
                                         historyManager: historyManager,
@@ -183,7 +187,8 @@ final class MainCoordinator {
                                         mobileCustomization: mobileCustomization,
                                         remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler,
                                         productSurfaceTelemetry: productSurfaceTelemetry,
-                                        fireExecutor: fireExecutor)
+                                        fireExecutor: fireExecutor,
+                                        remoteMessagingDebugHandler: remoteMessagingService)
     }
 
     func start() {

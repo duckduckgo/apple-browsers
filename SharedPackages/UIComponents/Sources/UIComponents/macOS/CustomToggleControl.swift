@@ -556,12 +556,29 @@ public final class CustomToggleControl: NSControl {
     // MARK: - Mouse Handling
 
     public override func mouseDown(with event: NSEvent) {
+        if event.buttonNumber == 1 || (event.modifierFlags.contains(.control) && event.buttonNumber == 0) {
+            rightMouseDown(with: event)
+            return
+        }
+
         let location = convert(event.locationInWindow, from: nil)
         selectedSegment = location.x > bounds.width / 2 ? 1 : 0
 
         if isExpanded {
             setExpanded(false, animated: true)
         }
+    }
+
+    public override func rightMouseDown(with event: NSEvent) {
+        if let menu = menu {
+            NSMenu.popUpContextMenu(menu, with: event, for: self)
+        } else {
+            super.rightMouseDown(with: event)
+        }
+    }
+
+    public override func menu(for event: NSEvent) -> NSMenu? {
+        return menu
     }
 
     public override func mouseMoved(with event: NSEvent) {

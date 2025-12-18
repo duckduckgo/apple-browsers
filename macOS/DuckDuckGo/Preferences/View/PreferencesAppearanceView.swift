@@ -198,7 +198,7 @@ extension Preferences {
 
         var body: some View {
             SlidingPickerView(settings: .buildThemesPickerSettings(theme: theme),
-                              allValues: ThemeName.internalUserThemes,
+                              allValues: ThemeName.allCases,
                               selectedValue: $model.themeName) { themeName in
                 AnyView(
                     ThemeView(themeName: themeName)
@@ -215,7 +215,7 @@ extension Preferences {
 
         var body: some View {
             Button {
-                model.themeName = .figma
+                model.themeName = .default
 
             } label: {
                 HStack(spacing: 8) {

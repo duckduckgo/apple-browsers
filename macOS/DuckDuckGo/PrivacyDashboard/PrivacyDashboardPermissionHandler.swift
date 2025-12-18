@@ -84,15 +84,16 @@ final class PrivacyDashboardPermissionHandler {
         }
 
         let authorizationState: PrivacyDashboardPermissionAuthorizationState
-        authorizationState = permissionManager.persistedPermissionTypes.union(usedPermissions.keys).compactMap { permissionType in
-            guard permissionManager.hasPermissionPersisted(forDomain: domain, permissionType: permissionType)
-                    || usedPermissions[permissionType] != nil
-            else {
-                return nil
+        authorizationState = permissionManager.persistedPermissionTypes.union(usedPermissions.keys)
+            .compactMap { permissionType in
+                guard permissionManager.hasPermissionPersisted(forDomain: domain, permissionType: permissionType)
+                        || usedPermissions[permissionType] != nil
+                else {
+                    return nil
+                }
+                let decision = permissionManager.permission(forDomain: domain, permissionType: permissionType)
+                return (permissionType, PermissionAuthorizationState(decision: decision))
             }
-            let decision = permissionManager.permission(forDomain: domain, permissionType: permissionType)
-            return (permissionType, PermissionAuthorizationState(decision: decision))
-        }
 
         var allowedPermissions: [AllowedPermission] = []
 
@@ -131,7 +132,7 @@ final class PrivacyDashboardPermissionHandler {
 extension PermissionType {
     var jsStyle: String {
         switch self {
-        case .camera, .microphone, .geolocation, .popups:
+        case .camera, .microphone, .geolocation, .popups, .notification:
             return self.rawValue
         case .externalScheme:
             return "externalScheme"
@@ -140,7 +141,7 @@ extension PermissionType {
 
     var jsTitle: String {
         switch self {
-        case .camera, .microphone, .geolocation, .popups:
+        case .camera, .microphone, .geolocation, .popups, .notification:
             return self.localizedDescription
         case .externalScheme:
             return String(format: UserText.permissionExternalSchemeOpenFormat, self.localizedDescription)

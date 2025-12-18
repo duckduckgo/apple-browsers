@@ -122,6 +122,7 @@ extension TabSwitcherViewController {
         }
 
         Pixel.fire(pixel: .forgetAllPressedTabSwitching)
+        DailyPixel.fire(pixel: .forgetAllPressedTabSwitcherDaily)
         ViewHighlighter.hideAll()
         presentFireConfirmation()
     }

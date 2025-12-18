@@ -79,12 +79,6 @@ struct ThemeStyle: ThemeStyleProviding {
     let tabBarButtonSize: CGFloat
     let addToolbarShadow: Bool
 
-    static var current: ThemeStyleProviding {
-        let palette = NewColorPalette()
-        let featureFlagger = NSApp.delegateTyped.featureFlagger
-        return buildThemeStyle(name: .default, palette: palette, featureFlagger: featureFlagger)
-    }
-
     static func buildThemeStyle(themeName: ThemeName, featureFlagger: FeatureFlagger) -> ThemeStyle {
         let palette = ThemeColors(themeName: themeName)
         return buildThemeStyle(name: themeName, palette: palette, featureFlagger: featureFlagger)

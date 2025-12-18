@@ -101,9 +101,6 @@ final class AppIconChanger {
         switch themeName {
         case .default:
             iconName = "Browser-Theme-Default"
-        case .figma:
-            // No specific icon for figma theme, use internal user logic
-            return nil
         case .coolGray:
             iconName = "Browser-Theme-CoolGray"
         case .desert:

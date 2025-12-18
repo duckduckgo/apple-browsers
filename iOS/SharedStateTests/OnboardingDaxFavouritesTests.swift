@@ -112,7 +112,8 @@ import Combine
                                     keyValueStore: try! MockKeyValueFileStore(),
                                     daxDialogsManager: DummyDaxDialogsManager(),
                                     aiChatSettings: MockAIChatSettingsProvider(),
-                                    productSurfaceTelemetry: MockProductSurfaceTelemetry()
+                                    productSurfaceTelemetry: MockProductSurfaceTelemetry(),
+                                    voiceSearchHelper: MockVoiceSearchHelper()
         )
         let fireExecutor = FireExecutor(tabManager: tabManager,
                                         websiteDataManager: mockWebsiteDataManager,
@@ -123,7 +124,8 @@ import Combine
                                         textZoomCoordinator: textZoomCoordinator,
                                         historyManager: historyManager,
                                         featureFlagger: featureFlagger,
-                                        privacyConfigurationManager: mockConfigManager)
+                                        privacyConfigurationManager: mockConfigManager,
+                                        appSettings: AppSettingsMock())
         sut = MainViewController(
             privacyConfigurationManager: mockConfigManager,
             bookmarksDatabase: db,
@@ -162,7 +164,8 @@ import Combine
             mobileCustomization: MobileCustomization(isFeatureEnabled: false, keyValueStore: MockThrowingKeyValueStore()),
             remoteMessagingActionHandler: MockRemoteMessagingActionHandler(),
             productSurfaceTelemetry: MockProductSurfaceTelemetry(),
-            fireExecutor: fireExecutor
+            fireExecutor: fireExecutor,
+            remoteMessagingDebugHandler: MockRemoteMessagingDebugHandler()
         )
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIViewController()

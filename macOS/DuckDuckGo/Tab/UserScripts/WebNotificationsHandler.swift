@@ -17,6 +17,7 @@
 //
 
 import BrowserServicesKit
+import Combine
 import Common
 import FeatureFlags
 import Foundation
@@ -43,15 +44,29 @@ protocol WebNotificationService {
     func add(_ request: UNNotificationRequest) async throws
 }
 
-extension UNUserNotificationCenter: WebNotificationService {}
+extension UNUserNotificationCenter: WebNotificationService {
+    // UNUserNotificationCenter already provides the required methods
+}
+
+/// Abstraction for permission model operations needed by WebNotificationsHandler.
+protocol WebNotificationPermissionProviding: AnyObject {
+
+    /// Checks if a permission is currently granted for a domain.
+    func isPermissionGranted(_ permission: PermissionType, forDomain domain: String) -> Bool
+
+    /// Requests permissions through the UI flow.
+    func request(_ permissions: [PermissionType], forDomain domain: String, url: URL?) -> Future<Bool, Never>
+}
+
+extension PermissionModel: WebNotificationPermissionProviding {}
 
 // MARK: - WebNotificationsHandler
 
 /// Bridges the JavaScript `Notification` API polyfill to native macOS notifications.
 ///
 /// This handler receives messages from ContentScopeScripts' webNotifications feature and
-/// translates them into `UNUserNotificationCenter` calls. Notifications are blocked in
-/// Fire Windows to preserve privacy.
+/// translates them into `UNUserNotificationCenter` calls. Permission decisions are stored
+/// via `PermissionManager` and cleared on burn for Fire Windows.
 final class WebNotificationsHandler: NSObject, Subfeature {
 
     let messageOriginPolicy: MessageOriginPolicy = .all
@@ -69,6 +84,13 @@ final class WebNotificationsHandler: NSObject, Subfeature {
     /// The webView associated with this handler's tab, set by `WebNotificationsTabExtension`.
     weak var webView: WKWebView?
 
+    /// The permission model for handling permission requests through the standard UI flow.
+    weak var permissionModel: (any WebNotificationPermissionProviding)?
+
+    private var isWebNotificationsEnabled: Bool {
+        featureFlagger.isFeatureOn(.webNotifications)
+    }
+
     // MARK: - Initialization
 
     init(tabUUID: String,
@@ -84,54 +106,6 @@ final class WebNotificationsHandler: NSObject, Subfeature {
 
     func with(broker: UserScriptMessageBroker) {
         self.broker = broker
-    }
-
-    // MARK: - Constants
-
-    enum MessageNames: String, CaseIterable {
-        case showNotification
-        case closeNotification
-        case requestPermission
-    }
-
-    enum Permission: String {
-        case granted
-        case denied
-    }
-
-    enum NotificationEvent: String {
-        case show
-        case error
-        case click  // Step 4
-        case close  // Step 4
-    }
-
-    enum UserInfoKey {
-        static let notificationId = "notificationId"
-        static let originURL = "originURL"
-        static let tabUUID = "tabUUID"
-    }
-
-    enum MethodName {
-        static let notificationEvent = "notificationEvent"
-    }
-
-    // MARK: - Message Payloads
-
-    struct ShowNotificationPayload: Decodable {
-        let id: String
-        let title: String
-        let body: String?
-        let icon: String?
-        let tag: String?
-    }
-
-    struct CloseNotificationPayload: Decodable {
-        let id: String
-    }
-
-    struct RequestPermissionResponse: Encodable {
-        let permission: String
     }
 
     // MARK: - Subfeature Handler
@@ -152,18 +126,14 @@ final class WebNotificationsHandler: NSObject, Subfeature {
             return { [weak self] params, original in
                 return await self?.handleRequestPermission(params: params, original: original)
             }
+        case .addDebugFlag:
+            return { _, _ in
+                // Debug flag acknowledged but not used by this handler
+                return nil
+            }
         default:
             return nil
         }
-    }
-
-    // MARK: - Fire Window Detection
-
-    /// Detects if the message originates from a Fire Window by checking websiteDataStore persistence.
-    @MainActor
-    private func isFireWindow(_ message: WKScriptMessage) -> Bool {
-        guard let webView = message.webView else { return false }
-        return webView.configuration.websiteDataStore.isPersistent == false
     }
 
     // MARK: - System Authorization
@@ -263,27 +233,43 @@ final class WebNotificationsHandler: NSObject, Subfeature {
             return
         }
 
-        if await isFireWindow(original) {
-            Logger.general.debug("WebNotificationsHandler: Blocked in Fire Window (ID: \(payload.id))")
-            return
-        }
-
         // Block notifications from iframes to prevent content spoofing attacks
-        guard original.frameInfo.isMainFrame else {
+        guard await original.frameInfo.isMainFrame else {
             Logger.general.debug("WebNotificationsHandler: Blocked notification from iframe (ID: \(payload.id))")
-            sendErrorEvent(id: payload.id, to: original.webView)
+            await sendErrorEvent(id: payload.id, to: original.webView)
             return
         }
 
-        guard featureFlagger.isFeatureOn(.webNotifications) else {
+        guard isWebNotificationsEnabled else {
             Logger.general.debug("WebNotificationsHandler: Blocked - feature flag disabled (ID: \(payload.id))")
-            sendErrorEvent(id: payload.id, to: original.webView)
+            await sendErrorEvent(id: payload.id, to: original.webView)
+            return
+        }
+
+        guard featureFlagger.isFeatureOn(.newPermissionView) else {
+            Logger.general.debug("WebNotificationsHandler: Blocked - newPermissionView flag disabled (ID: \(payload.id))")
+            await sendErrorEvent(id: payload.id, to: original.webView)
+            return
+        }
+
+        guard let url = await original.webView?.url,
+              let domain = url.host else {
+            Logger.general.debug("WebNotificationsHandler: Missing domain for permission check (ID: \(payload.id))")
+            await sendErrorEvent(id: payload.id, to: original.webView)
+            return
+        }
+
+        // Check permission (persistent or session). Fire Windows: permissions cleared on burn
+        guard let permissionModel = permissionModel,
+              permissionModel.isPermissionGranted(.notification, forDomain: domain) else {
+            Logger.general.debug("WebNotificationsHandler: Blocked - permission not allowed (ID: \(payload.id))")
+            await sendErrorEvent(id: payload.id, to: original.webView)
             return
         }
 
         guard await isSystemAuthorized() else {
             Logger.general.debug("WebNotificationsHandler: Blocked - not authorized (ID: \(payload.id))")
-            sendErrorEvent(id: payload.id, to: original.webView)
+            await sendErrorEvent(id: payload.id, to: original.webView)
             return
         }
 
@@ -298,38 +284,65 @@ final class WebNotificationsHandler: NSObject, Subfeature {
             return
         }
 
-        guard featureFlagger.isFeatureOn(.webNotifications) else {
+        guard isWebNotificationsEnabled else {
             Logger.general.debug("WebNotificationsHandler: Close blocked - feature flag disabled (ID: \(payload.id))")
             return
         }
 
         Logger.general.debug("WebNotificationsHandler: Notification close requested (ID: \(payload.id))")
-
-        // Step 7 will implement UNUserNotificationCenter.removeDeliveredNotifications() here
     }
 
     private func handleRequestPermission(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.general.debug("WebNotificationsHandler: Permission request received")
 
-        if await isFireWindow(original) {
-            Logger.general.debug("WebNotificationsHandler: Permission denied in Fire Window")
-            return RequestPermissionResponse(permission: Permission.denied.rawValue)
-        }
-
         // Block permission requests from iframes to prevent spoofing
-        guard original.frameInfo.isMainFrame else {
+        guard await original.frameInfo.isMainFrame else {
             Logger.general.debug("WebNotificationsHandler: Permission denied from iframe")
             return RequestPermissionResponse(permission: Permission.denied.rawValue)
         }
 
-        guard featureFlagger.isFeatureOn(.webNotifications) else {
+        guard isWebNotificationsEnabled else {
             Logger.general.debug("WebNotificationsHandler: Permission denied - feature flag disabled")
             return RequestPermissionResponse(permission: Permission.denied.rawValue)
         }
 
-        let authorized = await ensureSystemAuthorization()
-        let permission = authorized ? Permission.granted : Permission.denied
-        return RequestPermissionResponse(permission: permission.rawValue)
+        guard featureFlagger.isFeatureOn(.newPermissionView) else {
+            Logger.general.debug("WebNotificationsHandler: Permission denied - newPermissionView flag disabled")
+            return RequestPermissionResponse(permission: Permission.denied.rawValue)
+        }
+
+        guard let url = await original.webView?.url,
+              let domain = url.host,
+              let permissionModel = permissionModel else {
+            Logger.general.debug("WebNotificationsHandler: Missing dependencies")
+            return RequestPermissionResponse(permission: Permission.denied.rawValue)
+        }
+
+        var cancellables = Set<AnyCancellable>()
+
+        // Request permission through PermissionModel (shows UI, handles storage)
+        // Fire Windows: permissions cleared on burn via burnPermissions()
+        let grantedInUI: Bool = await withCheckedContinuation { continuation in
+            permissionModel.request([.notification], forDomain: domain, url: url)
+                .sink { isGranted in
+                    continuation.resume(returning: isGranted)
+                }
+                .store(in: &cancellables)
+        }
+
+        guard grantedInUI else {
+            Logger.general.debug("WebNotificationsHandler: User denied in permission UI")
+            return RequestPermissionResponse(permission: Permission.denied.rawValue)
+        }
+
+        // Ensure system authorization (requests if not determined, checks if already granted/denied)
+        guard await ensureSystemAuthorization() else {
+            Logger.general.debug("WebNotificationsHandler: System authorization not granted")
+            return RequestPermissionResponse(permission: Permission.denied.rawValue)
+        }
+
+        Logger.general.debug("WebNotificationsHandler: Permission granted")
+        return RequestPermissionResponse(permission: Permission.granted.rawValue)
     }
 
     // MARK: - Event Sending (for native to JS communication)
@@ -339,17 +352,17 @@ final class WebNotificationsHandler: NSObject, Subfeature {
     ///   - id: The notification ID
     ///   - event: The event type (show, close, click, error)
     ///   - webView: The webView to send the event to
-    func sendNotificationEvent(id: String, event: String, to webView: WKWebView?) {
+    func sendNotificationEvent(id: String, event: NotificationEvent, to webView: WKWebView?) {
         guard let webView = webView else { return }
-        broker?.push(method: MethodName.notificationEvent, params: NotificationEventParams(id: id, event: event), for: self, into: webView)
+        broker?.push(method: MethodName.notificationEvent, params: NotificationEventParams(id: id, event: event.rawValue), for: self, into: webView)
     }
 
     private func sendShowEvent(id: String, to webView: WKWebView?) {
-        sendNotificationEvent(id: id, event: NotificationEvent.show.rawValue, to: webView)
+        sendNotificationEvent(id: id, event: .show, to: webView)
     }
 
     private func sendErrorEvent(id: String, to webView: WKWebView?) {
-        sendNotificationEvent(id: id, event: NotificationEvent.error.rawValue, to: webView)
+        sendNotificationEvent(id: id, event: .error, to: webView)
     }
 
     /// Dispatches a click event to JavaScript for the given notification.
@@ -357,7 +370,57 @@ final class WebNotificationsHandler: NSObject, Subfeature {
     /// - Parameter notificationId: The ID of the notification that was clicked.
     func sendClickEvent(notificationId: String) {
         Logger.general.debug("WebNotificationsHandler: Click event for notification (ID: \(notificationId))")
-        sendNotificationEvent(id: notificationId, event: NotificationEvent.click.rawValue, to: webView)
+        sendNotificationEvent(id: notificationId, event: .click, to: webView)
+    }
+}
+
+// MARK: - Nested Types
+
+extension WebNotificationsHandler {
+
+    enum MessageNames: String, CaseIterable {
+        case showNotification
+        case closeNotification
+        case requestPermission
+        case addDebugFlag
+    }
+
+    enum Permission: String {
+        case granted
+        case denied
+    }
+
+    enum NotificationEvent: String {
+        case show
+        case error
+        case click
+        case close
+    }
+
+    enum UserInfoKey {
+        static let notificationId = "notificationId"
+        static let originURL = "originURL"
+        static let tabUUID = "tabUUID"
+    }
+
+    enum MethodName {
+        static let notificationEvent = "notificationEvent"
+    }
+
+    struct ShowNotificationPayload: Decodable {
+        let id: String
+        let title: String
+        let body: String?
+        let icon: String?
+        let tag: String?
+    }
+
+    struct CloseNotificationPayload: Decodable {
+        let id: String
+    }
+
+    struct RequestPermissionResponse: Encodable {
+        let permission: String
     }
 
     struct NotificationEventParams: Encodable {

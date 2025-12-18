@@ -16,10 +16,10 @@
 //  limitations under the License.
 //
 
+import Foundation
 import BrowserServicesKit
 import Combine
 import Common
-import NetworkExtension
 import VPN
 import NetworkProtectionUI
 import LoginItems

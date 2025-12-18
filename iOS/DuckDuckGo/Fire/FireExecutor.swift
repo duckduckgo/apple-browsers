@@ -60,6 +60,7 @@ class FireExecutor {
     private let featureFlagger: FeatureFlagger
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let dataStore: (any DDGWebsiteDataStore)?
+    private let appSettings: AppSettings
     
     weak var delegate: FireExecutorDelegate?
     private var burnInProgress = false
@@ -80,7 +81,8 @@ class FireExecutor {
          featureFlagger: FeatureFlagger,
          privacyConfigurationManager: PrivacyConfigurationManaging,
          dataStore: (any DDGWebsiteDataStore)? = nil,
-         aiChatHistoryCleaner: HistoryCleaning? = nil) {
+         aiChatHistoryCleaner: HistoryCleaning? = nil,
+         appSettings: AppSettings) {
         self.tabManager = tabManager
         self.downloadManager = downloadManager
         self.websiteDataManager = websiteDataManager
@@ -95,6 +97,7 @@ class FireExecutor {
         self.dataStore = dataStore
         self.aiChatHistoryCleaner = aiChatHistoryCleaner ?? HistoryCleaner(featureFlagger: featureFlagger,
                                                                           privacyConfig: privacyConfigurationManager)
+        self.appSettings = appSettings
     }
 
     
@@ -113,8 +116,15 @@ class FireExecutor {
             burnTabs()
             delegate?.didFinishBurningTabs()
         }
+
+        cancelOngoingDownloadsIfNeeded(options)
+        
         let shouldBurnData = options.contains(.data)
-        let shouldBurnAIChats = options.contains(.aiChats)
+        
+        // Skip clearing AI chats if on old UI and clearing ai chats is disabled by the user.
+        let legacyAIChatsEnabled = featureFlagger.isFeatureOn(.granularFireButtonOptions) || appSettings.autoClearAIChatHistory // TODO: - Removed the check when granularFireButtonOptions is removed.
+        
+        let shouldBurnAIChats = options.contains(.aiChats) && legacyAIChatsEnabled
 
         if shouldBurnData { delegate?.willStartBurningData() }
         if shouldBurnAIChats { delegate?.willStartBurningAIHistory() }
@@ -127,6 +137,15 @@ class FireExecutor {
         if shouldBurnAIChats { delegate?.didFinishBurningAIHistory() }
     }
     
+    // MARK: - Clearing Downloads
+    
+    private func cancelOngoingDownloadsIfNeeded(_ options: FireOptions) {
+        guard options.contains(.tabs), options.contains(.data) else {
+            return
+        }
+        downloadManager.cancelAllDownloads()
+    }
+    
     // MARK: Burn Tabs Helpers
     @MainActor
     private func prepareForBurningTabs() {
@@ -136,7 +155,6 @@ class FireExecutor {
     @MainActor
     private func burnTabs() {
         tabManager.prepareCurrentTabForDataClearing()
-        downloadManager.cancelAllDownloads()
         tabManager.removeAll()
         Favicons.shared.clearCache(.tabs)
     }
@@ -188,6 +206,7 @@ class FireExecutor {
     // MARK: - Clear AI History
     
     private func burnAIHistory() async {
+        // Skip clearing AI chats if on old UI and clearing ai chats is disabled by the user.
         let result = await aiChatHistoryCleaner.cleanAIChatHistory()
         switch result {
         case .success:

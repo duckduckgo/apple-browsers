@@ -86,7 +86,6 @@ public enum PrivacyFeature: String {
     case duckAiDataClearing
     case serp
     case popupBlocking
-    case tabProgressIndicator
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -105,9 +104,6 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlySubfeatureForTests
-
-    // Import Safari's bookmarks and favorites to better match Safari's behavior
-    case updateSafariBookmarksImport
 
     /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
     case willSoonDropBigSurSupport
@@ -145,6 +141,17 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212206087745586?focus=true
     case tabClosingEventRecreation
 
+    /// Feature Flag for the Tab Spinner
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866479296718
+    case tabProgressIndicator
+
+    /// Feature Flag for the First Time Quit Survey
+    /// https://app.asana.com/1/137249556945/inbox/1203972458584425/item/1212200919350194/story/1212483080081687
+    case firstTimeQuitSurvey
+
+    /// Web Notifications API polyfill - allows websites to show notifications via native macOS Notification Center
+    /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211395954816928?focus=true
+    case webNotifications
 }
 
 public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
@@ -170,6 +177,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211660503405838?focus=true
     case forgetAllInSettings
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212397873940926?focus=true
+    case ampBackgroundTaskSupport
+
     /// https://app.asana.com/1/137249556945/project/481882893211075/task/1212057154681076?focus=true
     case productTelemetrySurfaceUsage
 
@@ -178,6 +188,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     /// https://app.asana.com/1/137249556945/project/1206226850447395/task/1211661206210892?focus=true
     case experimentalBrowsingMenu
+
+    ///  https://app.asana.com/1/137249556945/project/414709148257752/task/1212395110448661?focus=true
+    case appRatingPrompt
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -215,6 +228,7 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case canPromoteAutofillExtensionInBrowser
     case canPromoteAutofillExtensionInPasswordManagement
     case migrateKeychainAccessibility
+    case autofillPasswordSearchPrioritizeDomain
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
@@ -248,9 +262,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Keep AI Chat session after the user closes it
     case keepSession
 
-    /// Adds context menu action for summarizing text selected on a website.
-    case textSummarization
-
     /// Adds capability to load AI Chat in a sidebar
     case sidebar
 
@@ -263,11 +274,14 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Adds support for passing currently visible website context to the sidebar
     case pageContext
 
+    /// Enables updated AI features settings screen
+    case aiFeaturesSettingsUpdate
+
+    /// Append the kbg disable parameter only when Duck AI features are not shown
+    case duckAISearchParameter
+
     /// Show AI Chat address bar choice screen
     case showAIChatAddressBarChoiceScreen
-
-    /// Adds context menu action for translating text selected on a website.
-    case textTranslation
 
     /// Adds toggle for controlling  'Ask Follow-Up Questions' setting.
     case serpSettingsFollowUpQuestions
@@ -301,6 +315,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Controls different input sizes and fade out animation for toggle.
     case fadeOutOnToggle
+
+    /// Signals that the iOS app should display duck.ai chats in "contextual mode" when opened from specific entry points
+    case contextualDuckAIMode
 }
 
 public enum HtmlNewTabPageSubfeature: String, Equatable, PrivacySubfeature {
@@ -387,13 +404,10 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case allowPurchase
     case allowPurchaseStripe
     case useUnifiedFeedback
-    case privacyProAuthV2
     case privacyProOnboardingPromotion
     case paidAIChat
     case supportsAlternateStripePaymentFlow
-    case subscriptionPurchaseWidePixelMeasurement
     case vpnConnectionWidePixelMeasurement
-    case authV2WideEventEnabled
     case winBackOffer
     case vpnMenuItem
     case blackFridayCampaign
@@ -524,6 +538,7 @@ public enum DataImportSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .dataImport }
 
     case newSafariFilePicker
+    case dataImportWideEventMeasurement
     case newDataImportExperience
 }
 

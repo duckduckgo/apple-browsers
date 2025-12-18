@@ -189,6 +189,41 @@ final class UnifiedFeedbackFormViewModelTests: XCTestCase {
         XCTAssertEqual(sender.capturedSubcategory, "accessSubscriptionModels")
     }
 
+    func testWhenProTierPurchaseEnabled_ThenSubscriptionSubcategoriesIncludesUnableToAccessFeatures() {
+        let featureFlagger = MockFeatureFlagger()
+        featureFlagger.enabledFeatureFlags = [.allowProTierPurchase]
+
+        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
+                                                     vpnMetadataCollector: MockVPNMetadataCollector(),
+                                                     dbpMetadataCollector: MockDBPMetadataCollector(),
+                                                     feedbackSender: MockVPNFeedbackSender(),
+                                                     featureFlagger: featureFlagger)
+
+        let subcategories = viewModel.availableSubscriptionSubcategories
+
+        XCTAssertTrue(subcategories.contains(.selectSubcategory))
+        XCTAssertTrue(subcategories.contains(.otp))
+        XCTAssertTrue(subcategories.contains(.unableToAccessFeatures))
+        XCTAssertTrue(subcategories.contains(.somethingElse))
+    }
+
+    func testWhenProTierPurchaseDisabled_ThenSubscriptionSubcategoriesExcludesUnableToAccessFeatures() {
+        let featureFlagger = MockFeatureFlagger()
+
+        let viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: SubscriptionManagerMock(),
+                                                     vpnMetadataCollector: MockVPNMetadataCollector(),
+                                                     dbpMetadataCollector: MockDBPMetadataCollector(),
+                                                     feedbackSender: MockVPNFeedbackSender(),
+                                                     featureFlagger: featureFlagger)
+
+        let subcategories = viewModel.availableSubscriptionSubcategories
+
+        XCTAssertTrue(subcategories.contains(.selectSubcategory))
+        XCTAssertTrue(subcategories.contains(.otp))
+        XCTAssertFalse(subcategories.contains(.unableToAccessFeatures))
+        XCTAssertTrue(subcategories.contains(.somethingElse))
+    }
+
 }
 
 // MARK: - Mocks

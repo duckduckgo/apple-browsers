@@ -19,6 +19,11 @@
 import XCTest
 import BrowserServicesKit
 import Common
+import NewTabPage
+import PixelKit
+import SubscriptionTestingUtilities
+
+@testable import Subscription
 @testable import DuckDuckGo_Privacy_Browser
 
 final class ContinueSetUpModelTests: XCTestCase {
@@ -34,6 +39,10 @@ final class ContinueSetUpModelTests: XCTestCase {
     var privacyConfigManager: MockPrivacyConfigurationManager!
     var dockCustomizer: DockCustomization!
     var userDefaults: UserDefaults! = UserDefaults(suiteName: "\(Bundle.main.bundleIdentifier!).\(AppVersion.runType)")!
+    var subscriptionCardVisibilityManager: MockHomePageSubscriptionCardVisibilityManaging!
+    var homePageContinueSetUpModelPersisting: MockHomePageContinueSetUpModelPersisting!
+
+    var firedPixels: [(event: PixelKitEvent, includesAppVersionParameter: Bool)] = []
 
     @MainActor override func setUp() {
         UserDefaultsWrapper<Any>.clearAll()
@@ -48,6 +57,10 @@ final class ContinueSetUpModelTests: XCTestCase {
         let config = MockPrivacyConfiguration()
         privacyConfigManager.mockPrivacyConfig = config
         dockCustomizer = DockCustomizerMock()
+        subscriptionCardVisibilityManager = MockHomePageSubscriptionCardVisibilityManaging()
+        homePageContinueSetUpModelPersisting = MockHomePageContinueSetUpModelPersisting()
+
+        firedPixels = []
 
         vm = HomePage.Models.ContinueSetUpModel(
             defaultBrowserProvider: capturingDefaultBrowserProvider,
@@ -56,7 +69,12 @@ final class ContinueSetUpModelTests: XCTestCase {
             tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: tabCollectionVM),
             emailManager: emailManager,
             duckPlayerPreferences: duckPlayerPreferences,
-            privacyConfigurationManager: privacyConfigManager
+            privacyConfigurationManager: privacyConfigManager,
+            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
+            persistor: homePageContinueSetUpModelPersisting,
+            pixelHandler: { pixel, includesAppVersionParameter in
+                self.firedPixels.append((pixel, includesAppVersionParameter))
+            }
         )
     }
 
@@ -72,11 +90,13 @@ final class ContinueSetUpModelTests: XCTestCase {
         duckPlayerPreferences = nil
         privacyConfigManager = nil
         userDefaults = nil
+        subscriptionCardVisibilityManager = nil
+        homePageContinueSetUpModelPersisting = nil
+        firedPixels = []
     }
 
     func testModelReturnsCorrectStrings() {
         XCTAssertEqual(vm.itemsPerRow, HomePage.Models.ContinueSetUpModel.Const.featuresPerRow)
-        XCTAssertEqual(vm.deleteActionTitle, UserText.newTabSetUpRemoveItemAction)
     }
 
     func testModelReturnsCorrectDimensions() {
@@ -94,6 +114,7 @@ final class ContinueSetUpModelTests: XCTestCase {
         capturingDefaultBrowserProvider.isDefault = true
         capturingDataImportProvider.didImport = true
         duckPlayerPreferences.youtubeOverlayAnyButtonPressed = true
+        subscriptionCardVisibilityManager.shouldShowSubscriptionCard = false
 
         vm = HomePage.Models.ContinueSetUpModel(
             defaultBrowserProvider: capturingDefaultBrowserProvider,
@@ -102,15 +123,17 @@ final class ContinueSetUpModelTests: XCTestCase {
             tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: tabCollectionVM),
             emailManager: emailManager,
             duckPlayerPreferences: duckPlayerPreferences,
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
+            persistor: homePageContinueSetUpModelPersisting,
+            pixelHandler: { _, _ in }
         )
 
         XCTAssertFalse(vm.isMoreOrLessButtonNeeded)
     }
 
     @MainActor func testWhenInitializedForTheFirstTimeTheMatrixHasAllElementsInTheRightOrder() {
-        let homePageIsFirstSession = UserDefaultsWrapper<Bool>(key: .homePageIsFirstSession, defaultValue: true)
-        homePageIsFirstSession.wrappedValue = true
+        homePageContinueSetUpModelPersisting.isFirstSession = true
         var expectedMatrix = [[HomePage.Models.FeatureType.duckplayer, .emailProtection]]
         vm = HomePage.Models.ContinueSetUpModel(
             defaultBrowserProvider: capturingDefaultBrowserProvider,
@@ -119,7 +142,9 @@ final class ContinueSetUpModelTests: XCTestCase {
             tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: tabCollectionVM),
             emailManager: emailManager,
             duckPlayerPreferences: duckPlayerPreferences,
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
+            persistor: homePageContinueSetUpModelPersisting
         )
 
         XCTAssertEqual(vm.visibleFeaturesMatrix, expectedMatrix)
@@ -132,9 +157,8 @@ final class ContinueSetUpModelTests: XCTestCase {
     }
 
     @MainActor func testWhenInitializedNotForTheFirstTimeTheMatrixHasAllElementsInTheRightOrder() {
-        let homePageIsFirstSession = UserDefaultsWrapper<Bool>(key: .homePageIsFirstSession, defaultValue: true)
-        homePageIsFirstSession.wrappedValue = false
-        vm = HomePage.Models.ContinueSetUpModel.fixture(appGroupUserDefaults: userDefaults)
+        homePageContinueSetUpModelPersisting.isFirstSession = false
+        vm = HomePage.Models.ContinueSetUpModel.fixture(persistor: homePageContinueSetUpModelPersisting)
         vm.shouldShowAllFeatures = true
 
         XCTAssertEqual(vm.visibleFeaturesMatrix[0][0], HomePage.Models.FeatureType.defaultBrowser)
@@ -173,7 +197,7 @@ final class ContinueSetUpModelTests: XCTestCase {
         let expectedMatrix = expectedFeatureMatrixWithout(types: [.defaultBrowser])
 
         capturingDefaultBrowserProvider.isDefault = true
-        vm = HomePage.Models.ContinueSetUpModel.fixture(defaultBrowserProvider: capturingDefaultBrowserProvider, appGroupUserDefaults: userDefaults)
+        vm = HomePage.Models.ContinueSetUpModel.fixture(defaultBrowserProvider: capturingDefaultBrowserProvider, persistor: homePageContinueSetUpModelPersisting)
 
         vm.shouldShowAllFeatures = true
 
@@ -202,7 +226,7 @@ final class ContinueSetUpModelTests: XCTestCase {
         let expectedMatrix = expectedFeatureMatrixWithout(types: [.importBookmarksAndPasswords])
 
         capturingDataImportProvider.didImport = true
-        vm = HomePage.Models.ContinueSetUpModel.fixture(dataImportProvider: capturingDataImportProvider, appGroupUserDefaults: userDefaults)
+        vm = HomePage.Models.ContinueSetUpModel.fixture(dataImportProvider: capturingDataImportProvider, persistor: homePageContinueSetUpModelPersisting)
 
         vm.shouldShowAllFeatures = true
 
@@ -224,7 +248,7 @@ final class ContinueSetUpModelTests: XCTestCase {
         let expectedMatrix = expectedFeatureMatrixWithout(types: [.emailProtection])
 
         emailStorage.isEmailProtectionEnabled = true
-        vm = HomePage.Models.ContinueSetUpModel.fixture(emailManager: emailManager, appGroupUserDefaults: userDefaults)
+        vm = HomePage.Models.ContinueSetUpModel.fixture(emailManager: emailManager, persistor: homePageContinueSetUpModelPersisting)
 
         vm.shouldShowAllFeatures = true
 
@@ -247,7 +271,7 @@ final class ContinueSetUpModelTests: XCTestCase {
 
         duckPlayerPreferences.youtubeOverlayAnyButtonPressed = false
         duckPlayerPreferences.duckPlayerModeBool = true
-        vm = HomePage.Models.ContinueSetUpModel.fixture(duckPlayerPreferences: duckPlayerPreferences, appGroupUserDefaults: userDefaults)
+        vm = HomePage.Models.ContinueSetUpModel.fixture(duckPlayerPreferences: duckPlayerPreferences, persistor: homePageContinueSetUpModelPersisting)
 
         vm.shouldShowAllFeatures = true
 
@@ -264,7 +288,7 @@ final class ContinueSetUpModelTests: XCTestCase {
 
         duckPlayerPreferences.youtubeOverlayAnyButtonPressed = false
         duckPlayerPreferences.duckPlayerModeBool = false
-        vm = HomePage.Models.ContinueSetUpModel.fixture(duckPlayerPreferences: duckPlayerPreferences, appGroupUserDefaults: userDefaults)
+        vm = HomePage.Models.ContinueSetUpModel.fixture(duckPlayerPreferences: duckPlayerPreferences, persistor: homePageContinueSetUpModelPersisting)
 
         vm.shouldShowAllFeatures = true
 
@@ -281,7 +305,7 @@ final class ContinueSetUpModelTests: XCTestCase {
 
         duckPlayerPreferences.youtubeOverlayAnyButtonPressed = false
         duckPlayerPreferences.duckPlayerModeBool = nil
-        vm = HomePage.Models.ContinueSetUpModel.fixture(duckPlayerPreferences: duckPlayerPreferences, appGroupUserDefaults: userDefaults)
+        vm = HomePage.Models.ContinueSetUpModel.fixture(duckPlayerPreferences: duckPlayerPreferences, persistor: homePageContinueSetUpModelPersisting)
 
         vm.shouldShowAllFeatures = true
 
@@ -298,7 +322,7 @@ final class ContinueSetUpModelTests: XCTestCase {
 
         duckPlayerPreferences.youtubeOverlayAnyButtonPressed = true
         duckPlayerPreferences.duckPlayerModeBool = nil
-        vm = HomePage.Models.ContinueSetUpModel.fixture(duckPlayerPreferences: duckPlayerPreferences, appGroupUserDefaults: userDefaults)
+        vm = HomePage.Models.ContinueSetUpModel.fixture(duckPlayerPreferences: duckPlayerPreferences, persistor: homePageContinueSetUpModelPersisting)
 
         vm.shouldShowAllFeatures = true
 
@@ -315,6 +339,7 @@ final class ContinueSetUpModelTests: XCTestCase {
         emailStorage.isEmailProtectionEnabled = true
         duckPlayerPreferences.youtubeOverlayAnyButtonPressed = true
         capturingDataImportProvider.didImport = true
+        subscriptionCardVisibilityManager.shouldShowSubscriptionCard = false
         dockCustomizer.addToDock()
 
         vm = HomePage.Models.ContinueSetUpModel(
@@ -324,15 +349,16 @@ final class ContinueSetUpModelTests: XCTestCase {
             tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: tabCollectionVM),
             emailManager: emailManager,
             duckPlayerPreferences: duckPlayerPreferences,
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
+            persistor: homePageContinueSetUpModelPersisting
         )
 
         XCTAssertEqual(vm.visibleFeaturesMatrix, [[]])
     }
 
     @MainActor func testDismissedItemsAreRemovedFromVisibleMatrixAndChoicesArePersisted() {
-        let homePageIsFirstSession = UserDefaultsWrapper<Bool>(key: .homePageIsFirstSession, defaultValue: true)
-        homePageIsFirstSession.wrappedValue = true
+        homePageContinueSetUpModelPersisting.isFirstSession = true
         vm = HomePage.Models.ContinueSetUpModel(
             defaultBrowserProvider: capturingDefaultBrowserProvider,
             dockCustomizer: dockCustomizer,
@@ -340,7 +366,9 @@ final class ContinueSetUpModelTests: XCTestCase {
             tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: tabCollectionVM),
             emailManager: emailManager,
             duckPlayerPreferences: duckPlayerPreferences,
-            privacyConfigurationManager: MockPrivacyConfigurationManager()
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
+            persistor: homePageContinueSetUpModelPersisting
         )
         vm.shouldShowAllFeatures = true
         let expectedMatrix = expectedFeatureMatrixWithout(types: [])
@@ -358,17 +386,20 @@ final class ContinueSetUpModelTests: XCTestCase {
         vm.removeItem(for: .emailProtection)
         XCTAssertFalse(vm.visibleFeaturesMatrix.flatMap { $0 }.contains(.emailProtection))
 
+        vm.removeItem(for: .subscription)
+        XCTAssertFalse(vm.visibleFeaturesMatrix.flatMap { $0 }.contains(.subscription))
+
 #if !APPSTORE
         vm.removeItem(for: .dock)
         XCTAssertFalse(vm.visibleFeaturesMatrix.flatMap { $0 }.contains(.dock))
 #endif
 
-        let vm2 = HomePage.Models.ContinueSetUpModel.fixture(appGroupUserDefaults: userDefaults)
+        let vm2 = HomePage.Models.ContinueSetUpModel.fixture(persistor: homePageContinueSetUpModelPersisting, subscriptionCardVisibilityManager: subscriptionCardVisibilityManager)
         XCTAssertTrue(vm2.visibleFeaturesMatrix.flatMap { $0 }.isEmpty)
     }
 
     @MainActor func testShowAllFeatureUserPreferencesIsPersisted() {
-        let vm2 = HomePage.Models.ContinueSetUpModel.fixture(appGroupUserDefaults: userDefaults)
+        let vm2 = HomePage.Models.ContinueSetUpModel.fixture(persistor: homePageContinueSetUpModelPersisting)
         vm2.shouldShowAllFeatures = true
         vm.shouldShowAllFeatures = false
 
@@ -396,7 +427,7 @@ final class ContinueSetUpModelTests: XCTestCase {
 #if !APPSTORE
         let dockCustomizer = DockCustomizerMock()
 
-        let vm = HomePage.Models.ContinueSetUpModel.fixture(appGroupUserDefaults: userDefaults, dockCustomizer: dockCustomizer)
+        let vm = HomePage.Models.ContinueSetUpModel.fixture(persistor: homePageContinueSetUpModelPersisting, dockCustomizer: dockCustomizer)
         vm.shouldShowAllFeatures = true
 
         XCTAssert(vm.visibleFeaturesMatrix.reduce([], +).contains(HomePage.Models.FeatureType.dock))
@@ -407,12 +438,169 @@ final class ContinueSetUpModelTests: XCTestCase {
         let dockCustomizer = DockCustomizerMock()
         dockCustomizer.addToDock()
 
-        let vm = HomePage.Models.ContinueSetUpModel.fixture(appGroupUserDefaults: userDefaults, dockCustomizer: dockCustomizer)
+        let vm = HomePage.Models.ContinueSetUpModel.fixture(persistor: homePageContinueSetUpModelPersisting, dockCustomizer: dockCustomizer)
         vm.shouldShowAllFeatures = true
 
         XCTAssertFalse(vm.visibleFeaturesMatrix.reduce([], +).contains(HomePage.Models.FeatureType.dock))
     }
 
+    @MainActor func testWhenAskedToPerformActionForSubscriptionThenItOpensSubscriptionSite() {
+        vm.performAction(for: .subscription)
+
+        let expectedURL = SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.newTabPageNextStepsCard.rawValue)?.url
+
+        XCTAssertEqual(tabCollectionVM.tabs[1].url, expectedURL)
+    }
+
+    // MARK: - Pixel Tests (Click)
+
+    @MainActor func testWhenAskedToPerformActionForDefaultBrowserThenItFiresPixels() {
+        vm.performAction(for: .defaultBrowser)
+
+        XCTAssertEqual(firedPixels.count, 2)
+
+        // defaultBrowser fires defaultRequestedFromHomepageSetupView
+        let expectedGeneralPixel = GeneralPixel.defaultRequestedFromHomepageSetupView
+        let actualGeneralPixel = firedPixels.first(where: { $0.event.name == expectedGeneralPixel.name })
+        XCTAssertNotNil(actualGeneralPixel)
+        XCTAssertEqual(actualGeneralPixel?.includesAppVersionParameter, true)
+
+        // defaultBrowser fires nextStepsCardClicked
+        let expectedNewTabPagePixel = NewTabPagePixel.nextStepsCardClicked(NewTabPageDataModel.CardID.defaultApp.rawValue)
+        let actualNewTabPagePixel = firedPixels.first(where: { $0.event.name == expectedNewTabPagePixel.name })
+        XCTAssertNotNil(actualNewTabPagePixel)
+        XCTAssertEqual(actualNewTabPagePixel?.event.parameters, expectedNewTabPagePixel.parameters)
+        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
+    }
+
+    @MainActor func testWhenAskedToPerformActionForDockThenItFiresPixels() {
+        vm.performAction(for: .dock)
+
+        XCTAssertEqual(firedPixels.count, 2)
+
+        // dock fires userAddedToDockFromNewTabPageCard
+        let expectedGeneralPixel = GeneralPixel.userAddedToDockFromNewTabPageCard
+        let actualGeneralPixel = firedPixels.first(where: { $0.event.name == expectedGeneralPixel.name })
+        XCTAssertNotNil(actualGeneralPixel)
+        XCTAssertEqual(actualGeneralPixel?.includesAppVersionParameter, false)
+
+        // dock fires nextStepsCardClicked
+        let expectedNewTabPagePixel = NewTabPagePixel.nextStepsCardClicked(NewTabPageDataModel.CardID.addAppToDockMac.rawValue)
+        let actualNewTabPagePixel = firedPixels.first(where: { $0.event.name == expectedNewTabPagePixel.name })
+        XCTAssertNotNil(actualNewTabPagePixel)
+        XCTAssertEqual(actualNewTabPagePixel?.event.parameters, expectedNewTabPagePixel.parameters)
+        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
+    }
+
+    @MainActor func testWhenAskedToPerformActionForDuckplayerThenItFiresPixel() {
+        vm.performAction(for: .duckplayer)
+
+        XCTAssertEqual(firedPixels.count, 1)
+        let expectedPixel = NewTabPagePixel.nextStepsCardClicked(NewTabPageDataModel.CardID.duckplayer.rawValue)
+        XCTAssertEqual(firedPixels.first?.event.name, expectedPixel.name)
+        XCTAssertEqual(firedPixels.first?.event.parameters, expectedPixel.parameters)
+        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
+    }
+
+    @MainActor func testWhenAskedToPerformActionForEmailProtectionThenItFiresPixel() {
+        vm.performAction(for: .emailProtection)
+
+        XCTAssertEqual(firedPixels.count, 1)
+        let expectedPixel = NewTabPagePixel.nextStepsCardClicked(NewTabPageDataModel.CardID.emailProtection.rawValue)
+        XCTAssertEqual(firedPixels.first?.event.name, expectedPixel.name)
+        XCTAssertEqual(firedPixels.first?.event.parameters, expectedPixel.parameters)
+        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
+    }
+
+    @MainActor func testWhenAskedToPerformActionForImportBookmarksAndPasswordsThenItFiresPixel() {
+        vm.performAction(for: .importBookmarksAndPasswords)
+
+        XCTAssertEqual(firedPixels.count, 1)
+        let expectedPixel = NewTabPagePixel.nextStepsCardClicked(NewTabPageDataModel.CardID.bringStuff.rawValue)
+        XCTAssertEqual(firedPixels.first?.event.name, expectedPixel.name)
+        XCTAssertEqual(firedPixels.first?.event.parameters, expectedPixel.parameters)
+        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
+    }
+
+    @MainActor func testWhenAskedToPerformActionForSubscriptionThenItFiresPixels() {
+        vm.performAction(for: .subscription)
+
+        XCTAssertEqual(firedPixels.count, 2)
+
+        // subscription fires subscriptionNewTabPageNextStepsCardClicked
+        let expectedSubscriptionPixel = SubscriptionPixel.subscriptionNewTabPageNextStepsCardClicked
+        let actualSubscriptionPixel = firedPixels.first(where: { $0.event.name == expectedSubscriptionPixel.name })
+        XCTAssertNotNil(actualSubscriptionPixel)
+        XCTAssertEqual(actualSubscriptionPixel?.includesAppVersionParameter, true)
+
+        // subscription fires nextStepsCardClicked
+        let expectedNewTabPagePixel = NewTabPagePixel.nextStepsCardClicked(NewTabPageDataModel.CardID.subscription.rawValue)
+        let actualNewTabPagePixel = firedPixels.first(where: { $0.event.name == expectedNewTabPagePixel.name })
+        XCTAssertNotNil(actualNewTabPagePixel)
+        XCTAssertEqual(actualNewTabPagePixel?.event.parameters, expectedNewTabPagePixel.parameters)
+        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
+    }
+
+    // MARK: - Pixel Tests (Dismiss)
+
+    @MainActor func testWhenDismissingDefaultBrowserCardThenItFiresPixel() {
+        vm.removeItem(for: .defaultBrowser)
+
+        XCTAssertEqual(firedPixels.count, 1)
+        XCTAssertEqual(firedPixels.first?.event.name, NewTabPagePixel.nextStepsCardDismissed(NewTabPageDataModel.CardID.defaultApp.rawValue).name)
+        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
+    }
+
+    @MainActor func testWhenDismissingDockCardThenItFiresPixel() {
+        vm.removeItem(for: .dock)
+
+        XCTAssertEqual(firedPixels.count, 1)
+        XCTAssertEqual(firedPixels.first?.event.name, NewTabPagePixel.nextStepsCardDismissed(NewTabPageDataModel.CardID.addAppToDockMac.rawValue).name)
+        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
+    }
+
+    @MainActor func testWhenDismissingDuckplayerCardThenItFiresPixel() {
+        vm.removeItem(for: .duckplayer)
+
+        XCTAssertEqual(firedPixels.count, 1)
+        XCTAssertEqual(firedPixels.first?.event.name, NewTabPagePixel.nextStepsCardDismissed(NewTabPageDataModel.CardID.duckplayer.rawValue).name)
+        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
+    }
+
+    @MainActor func testWhenDismissingEmailProtectionCardThenItFiresPixel() {
+        vm.removeItem(for: .emailProtection)
+
+        XCTAssertEqual(firedPixels.count, 1)
+        XCTAssertEqual(firedPixels.first?.event.name, NewTabPagePixel.nextStepsCardDismissed(NewTabPageDataModel.CardID.emailProtection.rawValue).name)
+        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
+    }
+
+    @MainActor func testWhenDismissingImportBookmarksAndPasswordsCardThenItFiresPixel() {
+        vm.removeItem(for: .importBookmarksAndPasswords)
+
+        XCTAssertEqual(firedPixels.count, 1)
+        XCTAssertEqual(firedPixels.first?.event.name, NewTabPagePixel.nextStepsCardDismissed(NewTabPageDataModel.CardID.bringStuff.rawValue).name)
+        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
+    }
+
+    @MainActor func testWhenDismissingSubscriptionCardThenItFiresPixels() {
+        vm.removeItem(for: .subscription)
+
+        XCTAssertEqual(firedPixels.count, 2)
+
+        // subscription fires subscriptionNewTabPageNextStepsCardDismissed
+        let expectedSubscriptionPixel = SubscriptionPixel.subscriptionNewTabPageNextStepsCardDismissed
+        let actualSubscriptionPixel = firedPixels.first(where: { $0.event.name == expectedSubscriptionPixel.name })
+        XCTAssertNotNil(actualSubscriptionPixel)
+        XCTAssertEqual(actualSubscriptionPixel?.includesAppVersionParameter, true)
+
+        // subscription fires nextStepsCardClicked
+        let expectedNewTabPagePixel = NewTabPagePixel.nextStepsCardDismissed(NewTabPageDataModel.CardID.subscription.rawValue)
+        let actualNewTabPagePixel = firedPixels.first(where: { $0.event.name == expectedNewTabPagePixel.name })
+        XCTAssertNotNil(actualNewTabPagePixel)
+        XCTAssertEqual(actualNewTabPagePixel?.event.parameters, expectedNewTabPagePixel.parameters)
+        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
+    }
 }
 
 extension HomePage.Models.ContinueSetUpModel {
@@ -422,8 +610,9 @@ extension HomePage.Models.ContinueSetUpModel {
         emailManager: EmailManager = EmailManager(storage: MockEmailStorage()),
         duckPlayerPreferences: DuckPlayerPreferencesPersistor = DuckPlayerPreferencesPersistorMock(),
         privacyConfig: MockPrivacyConfiguration = MockPrivacyConfiguration(),
-        appGroupUserDefaults: UserDefaults,
-        dockCustomizer: DockCustomization = DockCustomizerMock()
+        persistor: HomePageContinueSetUpModelPersisting = MockHomePageContinueSetUpModelPersisting(),
+        dockCustomizer: DockCustomization = DockCustomizerMock(),
+        subscriptionCardVisibilityManager: MockHomePageSubscriptionCardVisibilityManaging = MockHomePageSubscriptionCardVisibilityManaging()
     ) -> HomePage.Models.ContinueSetUpModel {
         privacyConfig.featureSettings = [
             "networkProtection": "disabled"
@@ -438,6 +627,9 @@ extension HomePage.Models.ContinueSetUpModel {
             tabOpener: TabCollectionViewModelTabOpener(tabCollectionViewModel: TabCollectionViewModel(isPopup: false)),
             emailManager: emailManager,
             duckPlayerPreferences: duckPlayerPreferences,
-            privacyConfigurationManager: manager)
+            privacyConfigurationManager: manager,
+            subscriptionCardVisibilityManager: subscriptionCardVisibilityManager,
+            persistor: persistor
+        )
     }
 }

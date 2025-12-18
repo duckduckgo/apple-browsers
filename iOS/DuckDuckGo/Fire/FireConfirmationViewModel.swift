@@ -42,7 +42,6 @@ class FireConfirmationViewModel: ObservableObject {
     // MARK: - Private Variables
     private let tabsModel: TabsModelProtocol
     private let historyManager: HistoryManaging
-    private let tld: TLD
     private let fireproofing: Fireproofing
     private let aiChatSettings: AIChatSettingsProvider
     private let settingsStore: FireConfirmationSettingsStoring
@@ -93,7 +92,6 @@ class FireConfirmationViewModel: ObservableObject {
     
     init(tabsModel: TabsModelProtocol,
          historyManager: HistoryManaging,
-         tld: TLD = AppDependencyProvider.shared.storageCache.tld,
          fireproofing: Fireproofing,
          aiChatSettings: AIChatSettingsProvider,
          keyValueFilesStore: ThrowingKeyValueStoring,
@@ -103,7 +101,6 @@ class FireConfirmationViewModel: ObservableObject {
         self.onCancel = onCancel
         self.tabsModel = tabsModel
         self.historyManager = historyManager
-        self.tld = tld
         self.fireproofing = fireproofing
         self.aiChatSettings = aiChatSettings
         self.settingsStore = FireConfirmationSettingsStore(keyValueFilesStore: keyValueFilesStore)

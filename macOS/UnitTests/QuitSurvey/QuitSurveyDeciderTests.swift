@@ -25,7 +25,17 @@ import SharedTestUtilities
 // MARK: - Mocks
 
 final class MockQuitSurveyPersistor: QuitSurveyPersistor {
+    var alwaysShowQuitSurvey: Bool = false
+    var pendingReturnUserReasons: String?
     var hasQuitAppBefore: Bool = false
+}
+
+final class MockReinstallingUserDetecting: ReinstallingUserDetecting {
+    var isReinstallingUser: Bool = false
+
+    func checkForReinstallingUser() throws {
+        // No-op for tests
+    }
 }
 
 // MARK: - Tests
@@ -40,6 +50,7 @@ final class QuitSurveyDeciderTests: XCTestCase {
     private var dataClearingPersistor: MockFireButtonPreferencesPersistor!
     private var downloadManager: FileDownloadManagerMock!
     private var persistor: MockQuitSurveyPersistor!
+    private var reinstallUserDetection: MockReinstallingUserDetecting!
     private var currentDate: Date!
     private var installDate: Date!
 
@@ -57,6 +68,7 @@ final class QuitSurveyDeciderTests: XCTestCase {
 
         downloadManager = FileDownloadManagerMock()
         persistor = MockQuitSurveyPersistor()
+        reinstallUserDetection = MockReinstallingUserDetecting()
 
         currentDate = Date()
         installDate = currentDate.addingTimeInterval(-1 * 24 * 60 * 60) // 1 day ago
@@ -71,6 +83,7 @@ final class QuitSurveyDeciderTests: XCTestCase {
         dataClearingPersistor = nil
         downloadManager = nil
         persistor = nil
+        reinstallUserDetection = nil
         super.tearDown()
     }
 
@@ -81,6 +94,7 @@ final class QuitSurveyDeciderTests: XCTestCase {
             downloadManager: downloadManager,
             installDate: installDate,
             persistor: persistor,
+            reinstallUserDetection: reinstallUserDetection,
             dateProvider: { [unowned self] in self.currentDate }
         )
     }
@@ -145,29 +159,22 @@ final class QuitSurveyDeciderTests: XCTestCase {
         XCTAssertTrue(decider.shouldShowQuitSurvey)
     }
 
-    func testWhenUserInstalled13DaysAgoThenShouldShowSurvey() {
-        installDate = currentDate.addingTimeInterval(-13 * 24 * 60 * 60)
+    func testWhenUserInstalled3DaysAgoThenShouldShowSurvey() {
+        installDate = currentDate.addingTimeInterval(-3 * 24 * 60 * 60)
         createDecider()
 
         XCTAssertTrue(decider.shouldShowQuitSurvey)
     }
 
-    func testWhenUserInstalled14DaysAgoThenShouldShowSurvey() {
-        installDate = currentDate.addingTimeInterval(-14 * 24 * 60 * 60)
-        createDecider()
-
-        XCTAssertTrue(decider.shouldShowQuitSurvey)
-    }
-
-    func testWhenUserInstalled15DaysAgoThenShouldNotShowSurvey() {
-        installDate = currentDate.addingTimeInterval(-15 * 24 * 60 * 60)
+    func testWhenUserInstalled4DaysAgoThenShouldNotShowSurvey() {
+        installDate = currentDate.addingTimeInterval(-4 * 24 * 60 * 60)
         createDecider()
 
         XCTAssertFalse(decider.shouldShowQuitSurvey)
     }
 
-    func testWhenUserInstalled30DaysAgoThenShouldNotShowSurvey() {
-        installDate = currentDate.addingTimeInterval(-30 * 24 * 60 * 60)
+    func testWhenUserInstalled14DaysAgoThenShouldNotShowSurvey() {
+        installDate = currentDate.addingTimeInterval(-14 * 24 * 60 * 60)
         createDecider()
 
         XCTAssertFalse(decider.shouldShowQuitSurvey)
@@ -184,6 +191,22 @@ final class QuitSurveyDeciderTests: XCTestCase {
 
     func testWhenUserHasQuitBeforeThenShouldNotShowSurvey() {
         persistor.hasQuitAppBefore = true
+        createDecider()
+
+        XCTAssertFalse(decider.shouldShowQuitSurvey)
+    }
+
+    // MARK: - Reinstalling User Tests
+
+    func testWhenUserIsNotReinstallingThenShouldShowSurvey() {
+        reinstallUserDetection.isReinstallingUser = false
+        createDecider()
+
+        XCTAssertTrue(decider.shouldShowQuitSurvey)
+    }
+
+    func testWhenUserIsReinstallingThenShouldNotShowSurvey() {
+        reinstallUserDetection.isReinstallingUser = true
         createDecider()
 
         XCTAssertFalse(decider.shouldShowQuitSurvey)

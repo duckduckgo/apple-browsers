@@ -195,13 +195,3 @@ private struct ToggleRow: View {
         static let toggleTrailingPadding: CGFloat = 16
     }
 }
-
-private struct ScrollBounceBehaviorModifier: ViewModifier {
-    func body(content: Content) -> some View {
-        if #available(iOS 16.4, *) {
-            content.scrollBounceBehavior(.basedOnSize)
-        } else {
-            content
-        }
-    }
-}

@@ -1,13 +1,24 @@
+//
+//  WebKitDeallocSwizzles.swift
+//
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//  http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+//
+
 import Foundation
 import ObjectiveC.runtime
 import WebKit
-
-// MARK: - WebKit teardown stability for tests
-//
-// Some WebKit types are not intended to be user-instantiated/subclassed, but our tests sometimes do.
-// On macOS, WebKit can crash during teardown when deallocating those objects (e.g. `WKFrameInfo`).
-//
-// Swizzling `dealloc` to a no-op is consistent with other WebKit test swizzles used in this codebase.
 
 extension WKFrameInfo {
 
@@ -24,4 +35,3 @@ extension WKFrameInfo {
     @objc
     func swizzled_dealloc() { }
 }
-

@@ -68,7 +68,7 @@ class AutofillEmailUserScriptTests: XCTestCase {
 
         let mockWebView = MockWebView()
         let message = MockUserScriptMessage(name: "emailHandlerGetAddresses", body: encryptedMessagingParams,
-                                          host: "example.com", webView: mockWebView)
+                                            host: "example.com", webView: mockWebView)
         userScript.processEncryptedMessage(message, from: userContentController)
 
         let expectedReply = "reply".data(using: .utf8)?.withUnsafeBytes {
@@ -232,7 +232,6 @@ class MockWKScriptMessage: WKScriptMessage {
     override var frameInfo: WKFrameInfo {
         return mockedFrameInfo
     }
-
 
     init(name: String, body: Any, host: URL = URL(string: "https://duckduckgo.com")!, webView: WKWebView? = nil) {
         self.mockedName = name

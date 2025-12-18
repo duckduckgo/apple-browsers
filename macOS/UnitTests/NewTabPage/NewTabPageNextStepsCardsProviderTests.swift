@@ -226,7 +226,7 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
         let duckplayerPixel = NewTabPagePixel.nextStepsCardShown(NewTabPageDataModel.CardID.duckplayer.rawValue)
         let emailProtectionPixel = NewTabPagePixel.nextStepsCardShown(NewTabPageDataModel.CardID.emailProtection.rawValue)
         let bringStuffPixel = NewTabPagePixel.nextStepsCardShown(NewTabPageDataModel.CardID.bringStuff.rawValue)
-        
+
         XCTAssertTrue(firedPixels.contains(where: { $0.event.name == duckplayerPixel.name }))
         XCTAssertTrue(firedPixels.contains(where: { $0.event.name == emailProtectionPixel.name }))
         XCTAssertTrue(firedPixels.contains(where: { $0.event.name == bringStuffPixel.name }))

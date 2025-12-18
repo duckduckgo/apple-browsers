@@ -150,7 +150,8 @@ class PrivacyIconView: UIView {
     func updateIcon(_ newIcon: PrivacyIcon) {
         guard newIcon != icon else { return }
         icon = newIcon
-        updateShieldImageView(for: newIcon)
+        let shouldAnimateCustomLogo = newIcon == .daxLogo && daxLogoURL != nil
+        updateShieldImageView(for: newIcon, animateCustomLogo: shouldAnimateCustomLogo)
         updateAccessibilityLabels(for: newIcon)
     }
     
@@ -188,7 +189,18 @@ class PrivacyIconView: UIView {
                     } else {
                         self.staticImageView.image = PrivacyIcon.daxLogo.staticImage
                     }
-                }, completion: nil)
+                }, completion: { _ in
+                    if url != nil {
+                        self.animatePopEffect()
+                    }
+                })
+            } else if url != nil {
+                // Custom to custom transition
+                UIView.transition(with: staticImageView, duration: 0.25, options: .transitionCrossDissolve, animations: {
+                    self.staticImageView.kf.setImage(with: url, placeholder: PrivacyIcon.daxLogo.staticImage)
+                }, completion: { _ in
+                    self.animatePopEffect()
+                })
             } else {
                 updateShieldImageView(for: icon)
             }
@@ -206,7 +218,7 @@ class PrivacyIconView: UIView {
         }
     }
 
-    private func updateShieldImageView(for icon: PrivacyIcon) {
+    private func updateShieldImageView(for icon: PrivacyIcon, animateCustomLogo: Bool = false) {
         switch icon {
         case .daxLogo:
             staticImageView.isHidden = false
@@ -226,7 +238,11 @@ class PrivacyIconView: UIView {
                 staticImageView.layer.anchorPoint = CGPoint(x: 0.5, y: 0.5)
 
                 // Load original high-quality image for both display and full-screen
-                staticImageView.kf.setImage(with: url, placeholder: icon.staticImage)
+                staticImageView.kf.setImage(with: url, placeholder: icon.staticImage) { [weak self] _ in
+                    if animateCustomLogo {
+                        self?.animatePopEffect()
+                    }
+                }
             } else {
                 // PDF image (24x24) doesn't need scaleAspectFit - use natural size
                 staticImageView.contentMode = .center
@@ -276,7 +292,18 @@ class PrivacyIconView: UIView {
             accessibilityTraits = .button
         }
     }
-    
+
+    private func animatePopEffect() {
+        let baseTransform = staticImageView.transform
+        let popScale: CGFloat = 1.15
+        let poppedTransform = baseTransform.scaledBy(x: popScale, y: popScale)
+
+        staticImageView.transform = poppedTransform
+        UIView.animate(withDuration: 0.3, delay: 0, usingSpringWithDamping: 0.6, initialSpringVelocity: 0, options: []) {
+            self.staticImageView.transform = baseTransform
+        }
+    }
+
     func refresh() {
         updateShieldImageView(for: icon)
         updateAccessibilityLabels(for: icon)

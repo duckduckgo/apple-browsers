@@ -203,11 +203,26 @@ final class DataImportViewModel: ObservableObject {
     @Published var state: BrowserImportState
     @Published var isLoading = false
     
+    
+    // Wide Event
     private var isDataImportWideEventMeasurementEnabled: Bool {
         AppDependencyProvider.shared.featureFlagger.isFeatureOn(.dataImportWideEventMeasurement)
     }
     private let wideEvent: WideEventManaging
     private var dataImportWideEventData: DataImportWideEventData?
+    enum dataImportWideEventError: Error {
+        case failedToImportData([DataImport.DataType])
+        case noSupportedDataInZip
+        
+        var description: String {
+            switch self {
+            case .failedToImportData(let dataTypes):
+                return "Failed to import data: \(dataTypes.map(\.description).joined(separator: ", "))"
+            case .noSupportedDataInZip:
+                return "No supported data in zip"
+            }
+        }
+    }
 
     init(importScreen: ImportScreen, importManager: DataImportManaging, wideEvent: WideEventManaging = AppDependencyProvider.shared.wideEvent) {
         self.importManager = importManager
@@ -218,6 +233,10 @@ final class DataImportViewModel: ObservableObject {
     func selectFile() {
         setupAndStartWideEvent()
         delegate?.dataImportViewModelDidRequestImportFile(self)
+    }
+    
+    func documentPickerCancelled() {
+        completeAndCleanupWideEvent(with: .unknown(reason: DataImportWideEventData.StatusReason.documentPickerCancelled.rawValue))
     }
 
     func importDataTypes(for contents: ImportArchiveContents) -> [DataImportManager.ImportPreview] {
@@ -242,7 +261,8 @@ final class DataImportViewModel: ObservableObject {
                         self?.isLoading = false
                         ActionMessageView.present(message: UserText.dataImportFailedNoDataInZipErrorMessage)
                     }
-                    completeAndCleanupWideEvent(with: .failure, description: "No supported data found in zip file.")
+                    let error = dataImportWideEventError.noSupportedDataInZip
+                    completeAndCleanupWideEvent(with: .failure, error: error, description: error.description)
                     Pixel.fire(pixel: .importResultUnzipping, withAdditionalParameters: [PixelParameters.source: state.importScreen.rawValue])
                 default:
                     delegate?.dataImportViewModelDidRequestPresentDataPicker(self, contents: contents)
@@ -290,7 +310,8 @@ final class DataImportViewModel: ObservableObject {
                 guard let summary = try await importManager.importFile(at: url, for: fileType) else {
                     Logger.autofill.debug("Failed to import data")
                     presentErrorMessage(for: fileType)
-                    completeAndCleanupWideEvent(with: .failure, description: "Failed to import data with \(fileType)")
+                    let error = dataImportWideEventError.failedToImportData(Array(fileType.matchingDataTypes))
+                    completeAndCleanupWideEvent(with: .failure, error: error, description: error.description)
                     return
                 }
                 completeDurationMeasurement(for: fileType)
@@ -333,7 +354,8 @@ final class DataImportViewModel: ObservableObject {
                     }
                     delegate?.dataImportViewModelDidRequestPresentSummary(self, summary: summary)
                 } else {
-                    completeAndCleanupWideEvent(with: .failure)
+                    let error = dataImportWideEventError.failedToImportData([.passwords, .bookmarks])
+                    completeAndCleanupWideEvent(with: .failure, error: error, description: error.description)
                 }
             } catch {
                 Logger.autofill.debug("Failed to import data: \(error)")
@@ -424,7 +446,8 @@ private extension DataImportViewModel {
         }
         // Complete Failure
         if importSummery.allSatisfy({ !$1.isSuccess }) {
-            completeAndCleanupWideEvent(with: .failure)
+            let error = dataImportWideEventError.failedToImportData(Array(importSummery.keys))
+            completeAndCleanupWideEvent(with: .failure, error: error, description: error.description)
             return
         }
         // Complete Success

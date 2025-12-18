@@ -5,7 +5,12 @@ set -eo pipefail
 if ! [[ $common_sh ]]; then
 	cwd="$(dirname "${BASH_SOURCE[0]}")"
 	source "${cwd}/helpers/common.sh"
-	execute_from_tmp "${BASH_SOURCE[0]}" "$@"
+
+	# If not running in CI, execute the script from a temporary directory
+	# to allow for changing the code while building the app.
+	if [[ -z $CI ]]; then
+		execute_from_tmp "${BASH_SOURCE[0]}" "$@"
+	fi
 fi
 
 developer_apple_id_keychain_identifier="developer-apple-id"

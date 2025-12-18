@@ -75,13 +75,17 @@ final class UserScripts: UserScriptsProvider {
             storage: DefaultAIChatPreferencesStorage(),
             windowControllersManager: sourceProvider.windowControllersManager,
             pixelFiring: PixelKit.shared,
-            statisticsLoader: StatisticsLoader.shared
+            statisticsLoader: StatisticsLoader.shared,
+            // ToDo: do we have better way of passing this?
+            syncHandler: AIChatSyncHandler(sync: NSApp.delegateTyped.syncService!),
+            featureFlagger: sourceProvider.featureFlagger
         )
         aiChatUserScript = AIChatUserScript(handler: aiChatHandler, urlSettings: aiChatDebugURLSettings)
+        let subscriptionFeatureFlagAdapter = SubscriptionUserScriptFeatureFlagAdapter(featureFlagger: sourceProvider.featureFlagger)
         subscriptionUserScript = SubscriptionUserScript(
             platform: .macos,
             subscriptionManager: NSApp.delegateTyped.subscriptionAuthV1toV2Bridge,
-            paidAIChatFlagStatusProvider: { sourceProvider.featureFlagger.isFeatureOn(.paidAIChat) },
+            featureFlagProvider: subscriptionFeatureFlagAdapter,
             navigationDelegate: NSApp.delegateTyped.subscriptionNavigationCoordinator,
             debugHost: aiChatDebugURLSettings.customURLHostname
         )
@@ -118,8 +122,11 @@ final class UserScripts: UserScriptsProvider {
         )
 
         let lenguageCode = Locale.current.languageCode ?? "en"
+        let themeManager = NSApp.delegateTyped.themeManager
+
         specialErrorPageUserScript = SpecialErrorPageUserScript(localeStrings: SpecialErrorPageUserScript.localeStrings(for: lenguageCode),
-                                                                languageCode: lenguageCode)
+                                                                languageCode: lenguageCode,
+                                                                styleProvider: ScriptStyleProvider(themeManager: themeManager))
 
         onboardingUserScript = OnboardingUserScript(onboardingActionsManager: sourceProvider.onboardingActionsManager!)
 

@@ -99,9 +99,10 @@ final class PopupHandlingTabExtension {
         self.isInPopUpWindow = isInPopUpWindow
 
         interactionEventsPublisher
-            .filter { event in
+            .filter { [weak featureFlagger] event in
                 Logger.navigation.debug("PopupHandlingTabExtension.interactionEventsPublisher.filter: event: \(String(describing: event))")
-                guard featureFlagger.isFeatureOn(.popupBlocking),
+                guard let featureFlagger,
+                      featureFlagger.isFeatureOn(.popupBlocking),
                       featureFlagger.isFeatureOn(.extendedUserInitiatedPopupTimeout) else { return false }
 
                 switch event {

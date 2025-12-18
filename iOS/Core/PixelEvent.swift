@@ -63,6 +63,10 @@ extension Pixel {
         case forgetAllExecuted
         case forgetAllDataCleared
         
+        case forgetAllPressedBrowsingDaily
+        case forgetAllPressedTabSwitcherDaily
+        case forgetAllExecutedDaily
+        
         case privacyDashboardOpened
         case privacyDashboardFirstTimeOpenedUnique
 
@@ -138,9 +142,14 @@ extension Pixel {
         case experimentalBrowsingMenuUsed
         case experimentalBrowsingMenuDisplayed
         case experimentalBrowsingMenuDisplayedNTP
+        case experimentalBrowsingMenuDisplayedAIChat
+        case experimentalBrowsingMenuDisplayedError
+        case experimentalBrowsingMenuDismissed
 
         case browsingMenuOpened
         case browsingMenuOpenedNewTabPage
+        case browsingMenuOpenedError
+        case browsingMenuDismissed
         case browsingMenuNewTab
         case browsingMenuAddToBookmarks
         case browsingMenuEditBookmark
@@ -162,6 +171,9 @@ extension Pixel {
         case browsingMenuAIChatNewTabPage
         case browsingMenuAIChatWebPage
         case browsingMenuRefreshPage
+        case browsingMenuNewDuckAddress
+        case browsingMenuVPN
+        case browsingMenuAIChat
 
         case addressBarShare
         case addressBarSettings
@@ -1144,8 +1156,6 @@ extension Pixel {
         case subscriptionInvalidRefreshTokenDetected
         case subscriptionInvalidRefreshTokenSignedOut
         case subscriptionInvalidRefreshTokenRecovered
-        case subscriptionAuthV2MigrationFailed2
-        case subscriptionAuthV2MigrationSucceeded
         case subscriptionAuthV2GetTokensError2
 
         case settingsSubscriptionAccountWithNoSubscriptionFound
@@ -1395,7 +1405,14 @@ extension Pixel {
         
         case aiChatTabSwitcherOpened
         case aiChatFireButtonTapped
-        
+
+        // MARK: AI Chat Sync
+
+        case aiChatSyncScopedSyncTokenError
+        case aiChatSyncEncryptionError
+        case aiChatSyncDecryptionError
+        case aiChatSyncHistoryEnabledError
+
         // MARK: New Address Bar Picker
         case aiChatNewAddressBarPickerDisplayed
         case aiChatNewAddressBarPickerConfirmed
@@ -1572,6 +1589,10 @@ extension Pixel.Event {
         case .forgetAllPressedSettings: return "m_forget-all-pressed_settings"
         case .forgetAllExecuted: return "mf"
         case .forgetAllDataCleared: return "mf_dc"
+        
+        case .forgetAllPressedBrowsingDaily: return "m_forget-all-pressed_browsing_daily"
+        case .forgetAllPressedTabSwitcherDaily: return "m_forget-all-pressed_tab-switcher_daily"
+        case .forgetAllExecutedDaily: return "m_forget-all-executed_daily"
             
         case .privacyDashboardOpened: return "mp"
         case .privacyDashboardFirstTimeOpenedUnique: return "m_privacy_dashboard_first_time_used_unique"
@@ -1634,8 +1655,13 @@ extension Pixel.Event {
         case .experimentalBrowsingMenuUsed: return "m_experimental-browsing-menu_used"
         case .experimentalBrowsingMenuDisplayed: return "m_experimental-browsing-menu_displayed"
         case .experimentalBrowsingMenuDisplayedNTP: return "m_experimental-browsing-menu_displayed_ntp"
+        case .experimentalBrowsingMenuDisplayedAIChat: return "m_experimental-browsing-menu_displayed_aichat"
+        case .experimentalBrowsingMenuDisplayedError: return "m_experimental-browsing-menu_displayed_error"
+        case .experimentalBrowsingMenuDismissed: return "m_experimental-browsing-menu_dismissed"
         case .browsingMenuOpened: return "mb"
         case .browsingMenuOpenedNewTabPage: return "m_nav_menu_ntp"
+        case .browsingMenuOpenedError: return "m_nav_menu_error"
+        case .browsingMenuDismissed: return "m_menu_dismissed"
         case .browsingMenuNewTab: return "mb_tb"
         case .browsingMenuAddToBookmarks: return "mb_abk"
         case .browsingMenuEditBookmark: return "mb_ebk"
@@ -1654,6 +1680,9 @@ extension Pixel.Event {
         case .browsingMenuFireproof: return "mb_f"
         case .browsingMenuAutofill: return "m_nav_autofill_menu_item_pressed"
         case .browsingMenuRefreshPage: return "m_menu_refresh_page"
+        case .browsingMenuNewDuckAddress: return "m_menu_new_duck_address"
+        case .browsingMenuVPN: return "m_menu_vpn"
+        case .browsingMenuAIChat: return "m_menu_aichat"
 
         case .browsingMenuShare: return "m_browsingmenu_share"
         case .browsingMenuListPrint: return "m_browsing_menu_list_print"
@@ -2573,8 +2602,6 @@ extension Pixel.Event {
         case .subscriptionInvalidRefreshTokenDetected: return "m_privacy-pro_auth_invalid_refresh_token_detected"
         case .subscriptionInvalidRefreshTokenSignedOut: return "m_privacy-pro_auth_invalid_refresh_token_signed_out"
         case .subscriptionInvalidRefreshTokenRecovered: return "m_privacy-pro_auth_invalid_refresh_token_recovered"
-        case .subscriptionAuthV2MigrationFailed2: return "m_privacy-pro_auth_v2_migration_failure2"
-        case .subscriptionAuthV2MigrationSucceeded: return "m_privacy-pro_auth_v2_migration_success"
         case .subscriptionAuthV2GetTokensError2: return "m_privacy-pro_auth_v2_get_tokens_error2"
 
         case .settingsSubscriptionAccountWithNoSubscriptionFound: return "m_settings_privacy-pro_account_with_no_subscription_found"
@@ -2845,6 +2872,13 @@ extension Pixel.Event {
         // MARK: AI Chat History Deletion
         case .aiChatHistoryDeleteSuccessful: return "m_aichat_history_delete_successful"
         case .aiChatHistoryDeleteFailed: return "m_aichat_history_delete_failed"
+
+        // MARK: AI Chat Sync
+
+        case .aiChatSyncScopedSyncTokenError: return "m_aichat_sync_internal_scoped-sync-token-error"
+        case .aiChatSyncEncryptionError: return "m_aichat_sync_internal_encryption-error"
+        case .aiChatSyncDecryptionError: return "m_aichat_sync_internal_decryption-error"
+        case .aiChatSyncHistoryEnabledError: return "m_aichat_sync_internal_history_enabled-error"
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"

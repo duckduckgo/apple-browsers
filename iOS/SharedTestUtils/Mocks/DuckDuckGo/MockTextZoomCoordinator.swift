@@ -49,7 +49,12 @@ class MockTextZoomCoordinator: TextZoomCoordinating {
         return nil
     }
 
+    private(set) var resetTextZoomLevelsCallCount = 0
+    private(set) var resetTextZoomLevelsExcludingDomains: [String]?
+    
     func resetTextZoomLevels(excludingDomains: [String]) {
+        resetTextZoomLevelsCallCount += 1
+        resetTextZoomLevelsExcludingDomains = excludingDomains
     }
 
 }

@@ -45,6 +45,7 @@ class MockHistoryManager: HistoryManaging {
     let historyCoordinator: HistoryCoordinating
     var isEnabledByUser: Bool
     var historyFeatureEnabled: Bool
+    private(set) var removeAllHistoryCallCount = 0
 
     convenience init() {
         self.init(historyCoordinator: MockHistoryCoordinator(), isEnabledByUser: false, historyFeatureEnabled: false)
@@ -61,6 +62,7 @@ class MockHistoryManager: HistoryManaging {
     }
 
     func removeAllHistory() async {
+        removeAllHistoryCallCount += 1
     }
 
     func deleteHistoryForURL(_ url: URL) async {

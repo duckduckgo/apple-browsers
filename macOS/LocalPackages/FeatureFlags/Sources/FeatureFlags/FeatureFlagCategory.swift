@@ -50,8 +50,6 @@ extension FeatureFlag: FeatureFlagCategorization {
     public var category: FeatureFlagCategory {
         switch self {
         case .aiChatSidebar,
-                .aiChatTextSummarization,
-                .aiChatTextTranslation,
                 .aiChatPageContext,
                 .duckAISearchParameter,
                 .aiChatImprovements,
@@ -81,8 +79,7 @@ extension FeatureFlag: FeatureFlagCategorization {
         case .dbpEmailConfirmationDecoupling,
                 .dbpRemoteBrokerDelivery:
             return .dbp
-        case .privacyProAuthV2,
-                .paidAIChat,
+        case .paidAIChat,
                 .supportsAlternateStripePaymentFlow,
                 .vpnConnectionWidePixelMeasurement,
                 .blackFridayCampaign,

@@ -45,6 +45,7 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
         var isShowingGoogleView: Bool = false
         var isShowingFAQView: Bool = false
         var isShowingLearnMoreView: Bool = false
+        var isShowingPlansView: Bool = false
         var subscriptionInfo: DuckDuckGoSubscription?
         var isLoadingSubscriptionInfo: Bool = false
 
@@ -83,6 +84,38 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
         switch tier {
         case .plus: return .plus
         case .pro: return .pro
+        }
+    }
+
+    /// Returns true if "View All Plans" option should be shown
+    /// Requirements:
+    /// - Subscription is active
+    /// - Pro tier purchase feature flag is enabled OR user has Pro tier subscription
+    var shouldShowViewAllPlans: Bool {
+        guard let subscriptionInfo = state.subscriptionInfo,
+              subscriptionInfo.isActive else {
+            return false
+        }
+        return featureFlagger.isFeatureOn(.allowProTierPurchase) || subscriptionInfo.tier == .pro
+    }
+
+    /// Handles the "View All Plans" action based on subscription platform
+    /// - For Apple: signals to show plans webview
+    /// - For Google: signals to show Google info screen
+    /// - For Stripe: opens Stripe Customer Portal
+    /// - For Unknown: signals to show internal subscription notice
+    func viewAllPlans() {
+        guard let platform = state.subscriptionInfo?.platform else { return }
+
+        switch platform {
+        case .apple:
+            state.isShowingPlansView = true
+        case .google:
+            displayGoogleView(true)
+        case .stripe:
+            Task { await manageStripeSubscription() }
+        case .unknown:
+            displayInternalSubscriptionNotice(true)
         }
     }
 
@@ -280,6 +313,12 @@ final class SubscriptionSettingsViewModelV2: ObservableObject {
     func displayRemovalNotice(_ value: Bool) {
         if value != state.isShowingRemovalNotice {
             state.isShowingRemovalNotice = value
+        }
+    }
+
+    func displayPlansView(_ value: Bool) {
+        if value != state.isShowingPlansView {
+            state.isShowingPlansView = value
         }
     }
 

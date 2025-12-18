@@ -628,7 +628,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             runPendingJobs(type: .all)
         case .fireWeeklyPixel:
             Task { @MainActor in
-                debuggingDelegate?.fireWeeklyPixels()
+                await debuggingDelegate?.fireWeeklyPixels()
             }
         }
     }

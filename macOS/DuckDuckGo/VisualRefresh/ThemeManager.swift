@@ -24,6 +24,9 @@ import BrowserServicesKit
 import FeatureFlags
 
 protocol ThemeManaging {
+    var effectiveAppearance: ThemeAppearance { get }
+    var effectiveAppearancePublisher: Published<ThemeAppearance>.Publisher { get }
+
     var theme: ThemeStyleProviding { get }
     var themePublisher: Published<any ThemeStyleProviding>.Publisher { get }
 }
@@ -32,6 +35,16 @@ final class ThemeManager: ObservableObject, ThemeManaging {
     private var cancellables = Set<AnyCancellable>()
     private var appearancePreferences: AppearancePreferences
     private let featureFlagger: FeatureFlagger
+
+    /// Effective Appearance is expected to only be either `.light` or `.dark`.
+    /// This allows us to address a FE shortcoming, where `.system` is not supported
+    ///
+    @Published private(set) var effectiveAppearance: ThemeAppearance
+
+    var effectiveAppearancePublisher: Published<ThemeAppearance>.Publisher {
+        $effectiveAppearance
+    }
+
     @Published private(set) var theme: ThemeStyleProviding {
         didSet {
             switchDesignSystemPalette(to: theme.name.designColorPalette)
@@ -46,10 +59,12 @@ final class ThemeManager: ObservableObject, ThemeManaging {
         self.appearancePreferences = appearancePreferences
         self.featureFlagger = featureFlagger
         self.theme = ThemeStyle.buildThemeStyle(themeName: appearancePreferences.themeName, featureFlagger: featureFlagger)
+        self.effectiveAppearance = NSApp.effectiveAppearance.effectiveThemeAppearance
 
         switchDesignSystemPalette(to: theme.name.designColorPalette)
         subscribeToThemeNameChanges(appearancePreferences: appearancePreferences)
         subscribeToInternalUserChanges(internalUserDecider: internalUserDecider)
+        subscribeToSystemAppearance()
     }
 
     private func subscribeToThemeNameChanges(appearancePreferences: AppearancePreferences) {
@@ -67,6 +82,15 @@ final class ThemeManager: ObservableObject, ThemeManaging {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isInternalUser in
                 self?.resetThemeNameIfNeeded(isInternalUser: isInternalUser)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToSystemAppearance() {
+        NSApp.publisher(for: \.effectiveAppearance)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] appearance in
+                self?.effectiveAppearance = appearance.effectiveThemeAppearance
             }
             .store(in: &cancellables)
     }

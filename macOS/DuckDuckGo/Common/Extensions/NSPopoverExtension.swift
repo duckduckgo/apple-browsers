@@ -218,6 +218,15 @@ extension NSPopover {
         }
 
         backgroundView.frame = popoverFrameView.bounds
+
+        /// macOS 26 injects `NSGlassView` below the content. By inserting the `backgroundView` below the `contentView` we intend to place our own `ColorView`
+        /// above the Glass NSView (so that we can effectively theme the Popover).
+        ///
+        if let contentView = contentViewController?.view, popoverFrameView.subviews.contains(contentView) {
+            popoverFrameView.addSubview(backgroundView, positioned: .below, relativeTo: contentView)
+            return
+        }
+
         popoverFrameView.addSubview(backgroundView, positioned: .below, relativeTo: nil)
     }
 

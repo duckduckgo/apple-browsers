@@ -194,6 +194,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866469585479
     case daxEasterEggLogos
 
+    /// Allows users to set an Easter egg logo as their permanent search icon
+    case daxEasterEggPermanentLogo
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866471806081
     case showAIChatAddressBarChoiceScreen
 
@@ -295,6 +298,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .aiFeaturesSettingsUpdate,
              .duckAISearchParameter,
              .daxEasterEggLogos,
+             .daxEasterEggPermanentLogo,
              .newDeviceSyncPrompt,
              .dbpForegroundRunningOnAppActive,
              .dbpForegroundRunningWhenDashboardOpen,
@@ -340,6 +344,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .duckAISearchParameter,
              .inactivityNotification,
              .daxEasterEggLogos,
+             .daxEasterEggPermanentLogo,
              .dbpEmailConfirmationDecoupling,
              .dbpRemoteBrokerDelivery,
              .dbpForegroundRunningOnAppActive,
@@ -531,6 +536,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.inactivityNotification))
         case .daxEasterEggLogos:
             return .remoteReleasable(.feature(.daxEasterEggLogos))
+        case .daxEasterEggPermanentLogo:
+            return .remoteReleasable(.feature(.daxEasterEggPermanentLogo))
         case .showAIChatAddressBarChoiceScreen:
             return .remoteReleasable(.subfeature(AIChatSubfeature.showAIChatAddressBarChoiceScreen))
         case .newDeviceSyncPrompt:

@@ -53,7 +53,7 @@ class MainViewFactory {
                                     daxEasterEggPresenter: DaxEasterEggPresenting? = nil,
                                     mobileCustomization: MobileCustomization) -> MainViewCoordinator {
 
-        let presenter = daxEasterEggPresenter ?? DaxEasterEggPresenter(logoStore: daxEasterEggLogoStore)
+        let presenter = daxEasterEggPresenter ?? DaxEasterEggPresenter(logoStore: daxEasterEggLogoStore, featureFlagger: featureFlagger)
 
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,

@@ -21,6 +21,7 @@ import UIKit
 import Kingfisher
 import Core
 import DesignResourcesKit
+import BrowserServicesKit
 import os.log
 
 /// Utility for calculating DaxEasterEgg logo frames with consistent sizing across components.
@@ -74,18 +75,21 @@ class DaxEasterEggFullScreenViewController: UIViewController {
     private let sourceImage: UIImage?
     private weak var sourceViewController: OmniBarViewController?
     private let logoStore: DaxEasterEggLogoStoring
+    private let featureFlagger: FeatureFlagger
 
     init(imageURL: URL?,
          placeholderImage: UIImage? = nil,
          sourceFrame: CGRect = .zero,
          sourceImage: UIImage? = nil,
          sourceViewController: OmniBarViewController? = nil,
-         logoStore: DaxEasterEggLogoStoring) {
+         logoStore: DaxEasterEggLogoStoring,
+         featureFlagger: FeatureFlagger) {
         self.imageURL = imageURL
         self.sourceFrame = sourceFrame
         self.sourceImage = sourceImage ?? placeholderImage
         self.sourceViewController = sourceViewController
         self.logoStore = logoStore
+        self.featureFlagger = featureFlagger
         super.init(nibName: nil, bundle: nil)
         modalPresentationStyle = .overFullScreen
         transitioningDelegate = self
@@ -139,6 +143,10 @@ class DaxEasterEggFullScreenViewController: UIViewController {
     }
 
     private func setupSetAsLogoButton() {
+        guard featureFlagger.isFeatureOn(.daxEasterEggPermanentLogo) else {
+            setAsLogoButton.isHidden = true
+            return
+        }
         updateSetAsLogoButtonTitle()
         setAsLogoButton.titleLabel?.font = UIFont.boldAppFont(ofSize: 15)
         setAsLogoButton.setTitleColor(UIColor(designSystemColor: .buttonsPrimaryText), for: .normal)

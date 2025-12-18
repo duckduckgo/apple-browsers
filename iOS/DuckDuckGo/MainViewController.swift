@@ -344,7 +344,7 @@ class MainViewController: UIViewController {
         self.systemSettingsPiPTutorialManager = systemSettingsPiPTutorialManager
         self.daxDialogsManager = daxDialogsManager
         self.daxEasterEggLogoStore = daxEasterEggLogoStore
-        self.daxEasterEggPresenter = daxEasterEggPresenter ?? DaxEasterEggPresenter(logoStore: daxEasterEggLogoStore)
+        self.daxEasterEggPresenter = daxEasterEggPresenter ?? DaxEasterEggPresenter(logoStore: daxEasterEggLogoStore, featureFlagger: featureFlagger)
         self.dbpIOSPublicInterface = dbpIOSPublicInterface
         self.launchSourceManager = launchSourceManager
         self.winBackOfferVisibilityManager = winBackOfferVisibilityManager
@@ -3292,7 +3292,10 @@ extension MainViewController: TabDelegate {
 
     private func logoURLForCurrentPage(tab: TabViewController) -> String? {
         guard let url = tab.url, url.isDuckDuckGoSearch else { return nil }
-        return daxEasterEggLogoStore.logoURL ?? tab.tabModel.daxEasterEggLogoURL
+        if featureFlagger.isFeatureOn(.daxEasterEggPermanentLogo) {
+            return daxEasterEggLogoStore.logoURL ?? tab.tabModel.daxEasterEggLogoURL
+        }
+        return tab.tabModel.daxEasterEggLogoURL
     }
 
     func tabDidRequestReportBrokenSite(tab: TabViewController) {

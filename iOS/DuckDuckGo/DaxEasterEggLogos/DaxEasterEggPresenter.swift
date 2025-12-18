@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import BrowserServicesKit
 
 /// Presents Dax Easter Egg logos in full-screen mode with zoom transitions.
 protocol DaxEasterEggPresenting {
@@ -33,9 +34,11 @@ protocol DaxEasterEggPresenting {
 final class DaxEasterEggPresenter: DaxEasterEggPresenting {
 
     private let logoStore: DaxEasterEggLogoStoring
+    private let featureFlagger: FeatureFlagger
 
-    init(logoStore: DaxEasterEggLogoStoring) {
+    init(logoStore: DaxEasterEggLogoStoring, featureFlagger: FeatureFlagger) {
         self.logoStore = logoStore
+        self.featureFlagger = featureFlagger
     }
 
     func presentFullScreen(from presentingViewController: UIViewController,
@@ -48,7 +51,8 @@ final class DaxEasterEggPresenter: DaxEasterEggPresenting {
             sourceFrame: sourceFrame,
             sourceImage: currentImage,
             sourceViewController: sourceViewController,
-            logoStore: logoStore
+            logoStore: logoStore,
+            featureFlagger: featureFlagger
         )
         presentingViewController.present(fullScreenController, animated: true)
     }

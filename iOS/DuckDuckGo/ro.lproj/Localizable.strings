@@ -2990,7 +2990,7 @@
 "settings.autoclear.duckai.chats.title" = "Chaturi Duck.ai";
 
 /* Section header for the auto clear options */
-"settings.autoclear.section.header" = "Cer senin";
+"settings.autoclear.section.header" = "Şterge";
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Șterge filele și datele";
 

@@ -2990,7 +2990,7 @@
 "settings.autoclear.duckai.chats.title" = "Duck.ai chats";
 
 /* Section header for the auto clear options */
-"settings.autoclear.section.header" = "Helder";
+"settings.autoclear.section.header" = "Wissen";
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Tabbladen en gegevens wissen";
 

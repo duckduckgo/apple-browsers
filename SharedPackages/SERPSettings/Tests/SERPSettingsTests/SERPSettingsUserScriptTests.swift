@@ -85,8 +85,11 @@ final class SERPSettingsUserScriptTests: XCTestCase {
 
         let result = try await handler([:], WKScriptMessage())
 
-        XCTAssertTrue(result is EmptyPayload, "Result should be an empty payload, not any other object.")
-        XCTAssertTrue((result as! EmptyPayload).noNativeSettings)
+        if let result = result as? EmptyPayload {
+            XCTAssertTrue(result.noNativeSettings)
+        } else {
+            XCTFail("Result should be an EmptyPayload object")
+        }
     }
 
     func testGetNativeSettingsReturnsPersistedSettings_whenSettingsArePersistedInNative() async throws {

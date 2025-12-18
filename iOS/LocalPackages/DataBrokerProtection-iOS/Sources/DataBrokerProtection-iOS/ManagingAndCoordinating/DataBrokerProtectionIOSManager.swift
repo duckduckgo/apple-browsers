@@ -359,7 +359,6 @@ extension DataBrokerProtectionIOSManager: JobQueueManagerDelegate {
             }
         } catch {
             Logger.dataBrokerProtection.error("Error when calculating if we should send the initial scans duration pixel, error: \(error.localizedDescription, privacy: .public)")
-            return
         }
     }
 }

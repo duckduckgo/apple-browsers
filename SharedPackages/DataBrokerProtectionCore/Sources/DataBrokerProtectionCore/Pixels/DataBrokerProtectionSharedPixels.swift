@@ -89,6 +89,7 @@ public enum DataBrokerProtectionSharedPixels {
         public static let numStalled = "num_stalled"
         public static let totalByBroker = "total_by_broker"
         public static let stalledByBroker = "stalled_by_broker"
+        public static let needBackgroundAppRefresh = "need_background_app_refresh"
         public static let jsFile = "jsFile"
         public static let dataBrokerJsonFileKey = "data_broker_json_file"
         public static let removedAtParamKey = "removed_at"
@@ -140,7 +141,7 @@ public enum DataBrokerProtectionSharedPixels {
     case optOutFinish(dataBroker: String, attemptId: UUID, duration: Double, parent: String)
 
     // KPIs - engagement
-    case dailyActiveUser
+    case dailyActiveUser(needBackgroundAppRefresh: Bool?)
     case weeklyActiveUser
     case monthlyActiveUser
 
@@ -452,8 +453,12 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                 .optOutJobAt42DaysConfirmed(let dataBroker),
                 .optOutJobAt42DaysUnconfirmed(let dataBroker):
             return [Consts.dataBrokerParamKey: dataBroker]
-        case .dailyActiveUser,
-                .weeklyActiveUser,
+        case .dailyActiveUser(let needBackgroundAppRefresh):
+            if let needBackgroundAppRefresh {
+                return [Consts.needBackgroundAppRefresh: needBackgroundAppRefresh.description]
+            }
+            return [:]
+        case .weeklyActiveUser,
                 .monthlyActiveUser,
                 .scanningEventNewMatch,
                 .scanningEventReAppearance,

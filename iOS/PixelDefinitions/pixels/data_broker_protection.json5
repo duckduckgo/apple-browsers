@@ -878,6 +878,21 @@
             "dbpParentBroker"
         ]
     },
+    "m_ios_dbp_engagement_dau": {
+        "description": "Fired daily for active PIR users",
+        "owners": ["quanganhdo"],
+        "triggers": ["scheduled"],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "need_background_app_refresh",
+                "description": "Whether Background App Refresh is required for DBP on this device.",
+                "type": "string",
+                "enum": ["true", "false"]
+            }
+        ]
+    },
     "m_ios_dbp_notification_sent_first_scan_complete": {
         "description": "Fires when the initial scan completion notification is sent.",
         "owners": ["quanganhdo"],

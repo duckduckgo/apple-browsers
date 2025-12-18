@@ -29,6 +29,7 @@ import DataBrokerProtectionCore
 import WebKit
 import BackgroundTasks
 import SwiftUI
+import UIKit
 
 /*
  This class functions as the main coordinator for DBP on iOS (and hence the main decision maker).
@@ -487,7 +488,9 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.OptOutEmailConfirmatio
 
 extension DataBrokerProtectionIOSManager: DBPIOSInterface.PixelsDelegate {
     func tryToFireEngagementPixels() {
-        engagementPixels.fireEngagementPixel()
+        Task { @MainActor in
+            engagementPixels.fireEngagementPixel(needBackgroundAppRefresh: needBackgroundAppRefreshForEngagementPixel())
+        }
     }
 
     func tryToFireWeeklyPixels() {
@@ -497,6 +500,13 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.PixelsDelegate {
     func tryToFireStatsPixels() {
         statsPixels.tryToFireStatsPixels()
         statsPixels.fireCustomStatsPixelsIfNeeded()
+    }
+}
+
+private extension DataBrokerProtectionIOSManager {
+    @MainActor
+    func needBackgroundAppRefreshForEngagementPixel() -> Bool {
+        UIApplication.shared.backgroundRefreshStatus != .available && ProcessInfo.processInfo.isLowPowerModeEnabled == false
     }
 }
 

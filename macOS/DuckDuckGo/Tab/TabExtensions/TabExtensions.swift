@@ -180,7 +180,8 @@ extension TabExtensionsBuilder {
                 WebNotificationsTabExtension(
                     tabUUID: args.tabID,
                     contentScopeUserScriptPublisher: userScripts.compactMap(\.?.contentScopeUserScript),
-                    webViewPublisher: args.webViewFuture
+                    webViewPublisher: args.webViewFuture,
+                    permissionModel: args.permissionModel
                 )
             }
         }

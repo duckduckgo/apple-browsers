@@ -50,10 +50,6 @@ public struct SubscriptionPixelHandler: SubscriptionPixelHandling {
             PixelKit.fire(SubscriptionPixel.subscriptionInvalidRefreshTokenDetected(source), frequency: .dailyAndCount)
         case .subscriptionIsActive:
             PixelKit.fire(SubscriptionPixel.subscriptionActive(AuthVersion.v2), frequency: .legacyDaily)
-        case .migrationFailed(let error):
-            PixelKit.fire(SubscriptionPixel.subscriptionAuthV2MigrationFailed(source, error), frequency: .dailyAndCount)
-        case .migrationSucceeded:
-            PixelKit.fire(SubscriptionPixel.subscriptionAuthV2MigrationSucceeded(source), frequency: .dailyAndCount)
         case .getTokensError(let policy, let error):
             PixelKit.fire(SubscriptionPixel.subscriptionAuthV2GetTokensError(policy, source, error), frequency: .dailyAndCount)
         case .invalidRefreshTokenSignedOut:

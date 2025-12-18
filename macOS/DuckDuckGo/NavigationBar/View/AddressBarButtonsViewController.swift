@@ -234,7 +234,6 @@ final class AddressBarButtonsViewController: NSViewController {
     var textFieldValue: AddressBarTextField.Value? {
         didSet {
             updateButtons()
-            dismissTogglePopoverIfTyping()
         }
     }
     var isMouseOverNavigationBar = false {
@@ -1795,17 +1794,6 @@ final class AddressBarButtonsViewController: NSViewController {
                 isNewUser: AppDelegate.isNewUser,
                 userDidInteractWithToggle: UserDefaults.standard.hasInteractedWithSearchDuckAIToggle
             )
-        }
-    }
-
-    private func dismissTogglePopoverIfTyping() {
-        guard let value = textFieldValue, value.isUserTyped, !value.isEmpty else {
-            return
-        }
-        /// Defer dismissal to the next run loop cycle so the toggle collapse animation
-        /// can start first, then both animations run concurrently without interference
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-            self?.aiChatTogglePopoverCoordinator?.dismissPopover()
         }
     }
 

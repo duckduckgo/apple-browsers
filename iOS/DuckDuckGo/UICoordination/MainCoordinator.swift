@@ -250,6 +250,10 @@ final class MainCoordinator {
         controller.presentNetworkProtectionStatusSettingsModal()
     }
 
+    func presentDataBrokerProtectionDashboard() {
+        controller.presentDataBrokerProtectionDashboard()
+    }
+
     func presentModalPromptIfNeeded() {
         modalPromptCoordinationService.presentModalPromptIfNeeded(from: controller)
     }

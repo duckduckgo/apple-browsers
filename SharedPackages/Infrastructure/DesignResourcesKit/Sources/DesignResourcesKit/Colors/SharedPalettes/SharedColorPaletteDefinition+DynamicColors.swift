@@ -230,6 +230,8 @@ extension SharedColorPaletteDefinition {
         /// Tone Colors
         case .toneShadePrimary:
             return toneShadePrimary
+        case .toneTintPrimary:
+            return FigmaColorPalette.toneTintPrimary
 
         /// Permission Center
         case .permissionCenterBackground:

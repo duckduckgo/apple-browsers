@@ -52,7 +52,6 @@ extension FeatureFlag: FeatureFlagCategorization {
         case .aiChatSidebar,
                 .aiChatPageContext,
                 .duckAISearchParameter,
-                .aiChatImprovements,
                 .aiChatKeepSession,
                 .aiChatDataClearing,
                 .aiChatOmnibarToggle,

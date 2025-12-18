@@ -584,38 +584,12 @@ final class MainMenu: NSMenu {
     }
 
     var aiChatCancellable: AnyCancellable?
-    var privacyConfigCancellable: AnyCancellable?
-    var featureFlagCancellable: AnyCancellable?
     private func subscribeToAIChatPreferences(aiChatMenuConfig: AIChatMenuVisibilityConfigurable) {
         aiChatCancellable = aiChatMenuConfig.valuesChangedPublisher
             .receive(on: DispatchQueue.main)
             .sink(receiveValue: { [weak self] in
                 self?.setupAIChatMenu()
             })
-
-        // Required to support toggle of .aiChatImprovements feature flag, to be removed after release
-        privacyConfigCancellable = privacyConfigurationManager.updatesPublisher
-            .receive(on: DispatchQueue.main)
-            .sink(receiveValue: { [weak self] in
-                guard let self else { return }
-
-                let isAIChatMenuHidden = self.aiChatMenu.isHidden
-                let shouldHideAIChatMenu = !aiChatMenuConfig.shouldDisplayApplicationMenuShortcut
-
-                if isAIChatMenuHidden != shouldHideAIChatMenu {
-                    self.setupAIChatMenu()
-                }
-            })
-
-        guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
-            return
-        }
-
-        featureFlagCancellable = overridesHandler.flagDidChangePublisher
-            .filter { $0.0 == .aiChatImprovements }
-            .sink { [weak self] _ in
-                self?.setupAIChatMenu()
-            }
     }
 
     // Nested recursing functions cause body length

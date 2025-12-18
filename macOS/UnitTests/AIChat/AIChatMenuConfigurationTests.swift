@@ -67,10 +67,11 @@ class AIChatMenuConfigurationTests: XCTestCase {
     }
 
     func testShouldDisplayApplicationMenuShortcut() {
-        mockStorage.showShortcutInApplicationMenu = true
+        remoteSettings.isAIChatEnabled = true
+        mockStorage.isAIFeaturesEnabled = true
         let result = configuration.shouldDisplayApplicationMenuShortcut
 
-        XCTAssertTrue(result, "Application menu shortcut should be displayed when enabled.")
+        XCTAssertTrue(result, "Application menu shortcut should be displayed when AI Chat is enabled.")
     }
 
     func testShouldDisplayAddressBarShortcut() {
@@ -175,12 +176,12 @@ class AIChatMenuConfigurationTests: XCTestCase {
     }
 
     func testShouldDisplayApplicationMenuShortcutWhenRemoteFlagAndStorageAreTrue() {
-        remoteSettings.isApplicationMenuShortcutEnabled = true
-        mockStorage.showShortcutInApplicationMenu = true
+        remoteSettings.isAIChatEnabled = true
+        mockStorage.isAIFeaturesEnabled = true
 
         let result = configuration.shouldDisplayApplicationMenuShortcut
 
-        XCTAssertTrue(result, "Application menu shortcut should be displayed when both remote flag and storage are true.")
+        XCTAssertTrue(result, "Application menu shortcut should be displayed when AI Chat is enabled remotely and locally.")
     }
 
     func testShouldDisplayNewTabPageShortcutWhenStorageIsTrue() {
@@ -227,19 +228,21 @@ class AIChatMenuConfigurationTests: XCTestCase {
     }
 
     func testShouldDisplayTranslationMenuItemWhenApplicationMenuShortcutIsEnabled() {
-        mockStorage.showShortcutInApplicationMenu  = true
+        remoteSettings.isAIChatEnabled = true
+        mockStorage.isAIFeaturesEnabled = true
 
         let result = configuration.shouldDisplayTranslationMenuItem
 
-        XCTAssertTrue(result, "Translation menu item should be displayed when application menu shortcut is enabled.")
+        XCTAssertTrue(result, "Translation menu item should be displayed when AI Chat is enabled.")
     }
 
     func testShouldNotDisplayTranslationMenuItemWhenApplicationMenuShortcutIsDisabled() {
-        mockStorage.showShortcutInApplicationMenu  = false
+        remoteSettings.isAIChatEnabled = false
+        mockStorage.isAIFeaturesEnabled = false
 
         let result = configuration.shouldDisplayTranslationMenuItem
 
-        XCTAssertFalse(result, "Translation menu item should not be displayed when application menu shortcut is disabled.")
+        XCTAssertFalse(result, "Translation menu item should not be displayed when AI Chat is disabled.")
     }
 }
 

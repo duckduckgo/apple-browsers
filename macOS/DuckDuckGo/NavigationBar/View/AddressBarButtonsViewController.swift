@@ -1400,12 +1400,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     @objc func hideAskAIChatButtonAction(_ sender: NSMenuItem) {
-        // With the improvement both buttons have separate setting, without both toggle same option.
-        if aiChatMenuConfig.shouldShowSettingsImprovements {
-            delegate?.addressBarButtonsViewControllerHideAskAIChatButtonClicked(self)
-        } else {
-            delegate?.addressBarButtonsViewControllerHideAIChatButtonClicked(self)
-        }
+        delegate?.addressBarButtonsViewControllerHideAskAIChatButtonClicked(self)
     }
 
     @objc func hideSearchModeToggleAction(_ sender: NSMenuItem) {

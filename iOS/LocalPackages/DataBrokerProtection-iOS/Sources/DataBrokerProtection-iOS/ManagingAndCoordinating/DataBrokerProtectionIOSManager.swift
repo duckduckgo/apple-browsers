@@ -155,6 +155,7 @@ public final class DataBrokerProtectionIOSManager {
     private let settings: DataBrokerProtectionSettings
     private let subscriptionManager: DataBrokerProtectionSubscriptionManaging
     private let wideEventSweeper: DBPWideEventSweeper?
+    private let eventsHandler: EventMapping<JobEvent>
     private lazy var brokerUpdater: BrokerJSONServiceProvider? = {
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(
             directoryName: DatabaseConstants.directoryName,
@@ -206,6 +207,7 @@ public final class DataBrokerProtectionIOSManager {
          settings: DataBrokerProtectionSettings,
          subscriptionManager: DataBrokerProtectionSubscriptionManaging,
          wideEvent: WideEventManaging?,
+         eventsHandler: EventMapping<JobEvent>,
          engagementPixelsRepository: DataBrokerProtectionEngagementPixelsRepository = DataBrokerProtectionEngagementPixelsUserDefaults(userDefaults: .dbp)
     ) {
         self.queueManager = queueManager
@@ -225,6 +227,7 @@ public final class DataBrokerProtectionIOSManager {
         self.settings = settings
         self.subscriptionManager = subscriptionManager
         self.wideEventSweeper = wideEvent.map { DBPWideEventSweeper(wideEvent: $0) }
+        self.eventsHandler = eventsHandler
 
         self.queueManager.delegate = self
 
@@ -326,6 +329,7 @@ extension DataBrokerProtectionIOSManager: DBPIOSInterface.DatabaseDelegate {
         } catch {
             throw error
         }
+        eventsHandler.fire(.profileSaved)
         await startImmediateScanOperations()
     }
 
@@ -663,7 +667,19 @@ private extension DataBrokerProtectionIOSManager {
         }
 
         await checkForEmailConfirmationData()
-        queueManager.startImmediateScanOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
+        queueManager.startImmediateScanOperationsIfPermitted(
+            showWebView: false,
+            jobDependencies: jobDependencies,
+            errorHandler: { [weak self] errors in
+                if errors?.oneTimeError == nil {
+                    self?.eventsHandler.fire(.firstScanCompleted)
+                }
+            }
+        ) { [weak self] in
+            if let hasMatches = try? self?.database.hasMatches(), hasMatches {
+                self?.eventsHandler.fire(.firstScanCompletedAndMatchesFound)
+            }
+            
             DispatchQueue.main.async {
                 backgroundAssertion.release()
             }

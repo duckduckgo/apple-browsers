@@ -31,7 +31,7 @@ protocol TabsBarDelegate: NSObjectProtocol {
     func tabsBar(_ controller: TabsBarViewController, didRemoveTabAtIndex index: Int)
     func tabsBar(_ controller: TabsBarViewController, didRequestMoveTabFromIndex fromIndex: Int, toIndex: Int)
     func tabsBarDidRequestNewTab(_ controller: TabsBarViewController)
-    func tabsBarDidRequestForgetAll(_ controller: TabsBarViewController)
+    func tabsBarDidRequestForgetAll(_ controller: TabsBarViewController, fireOptions: FireOptions)
     func tabsBarDidRequestFireEducationDialog(_ controller: TabsBarViewController)
     func tabsBarDidRequestTabSwitcher(_ controller: TabsBarViewController)
 
@@ -150,9 +150,9 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
             presenter.presentFireConfirmation(
                 on: self,
                 attachPopoverTo: fireButton,
-                onConfirm: { [weak self] in
+                onConfirm: { [weak self] fireOptions in
                     guard let self = self else { return }
-                    self.delegate?.tabsBarDidRequestForgetAll(self)
+                    self.delegate?.tabsBarDidRequestForgetAll(self, fireOptions: fireOptions)
                 },
                 onCancel: {
                     // TODO: - Maybe add pixel
@@ -387,8 +387,8 @@ extension MainViewController: TabsBarDelegate {
         newTab()
     }
     
-    func tabsBarDidRequestForgetAll(_ controller: TabsBarViewController) {
-        forgetAllWithAnimation()
+    func tabsBarDidRequestForgetAll(_ controller: TabsBarViewController, fireOptions: FireOptions) {
+        forgetAllWithAnimation(options: fireOptions)
     }
     
     func tabsBarDidRequestFireEducationDialog(_ controller: TabsBarViewController) {

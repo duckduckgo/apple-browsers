@@ -77,9 +77,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866616130440
     case syncSeamlessAccountSwitching
 
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866474590440
-    case privacyProAuthV2
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866614764239
     case tabCrashDebugging
 
@@ -106,12 +103,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717945014
     case aiChatSidebar
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866475785434
-    case aiChatTextSummarization
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866718657077
-    case aiChatTextTranslation
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615582950
     case aiChatPageContext
@@ -258,6 +249,7 @@ public enum FeatureFlag: String, CaseIterable {
     case popupPermissionButtonPersistence
 
     /// Web Notifications API polyfill - allows websites to show notifications via native macOS Notification Center
+    /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211395954816928?focus=true
     case webNotifications
 
     /// New permission management view
@@ -280,6 +272,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1212437820560561?focus=true
     case memoryUsageMonitor
+
+    /// https://app.asana.com/1/137249556945/project/1201462886803403/task/1211837879355661?focus=true
+    case aiChatSync
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -303,6 +298,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .tabClosingEventRecreation,
                 .dataImportWideEventMeasurement,
                 .tabProgressIndicator,
+                .firstTimeQuitSurvey,
                 .autofillPasswordSearchPrioritizeDomain:
             true
         default:
@@ -328,7 +324,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .webExtensions,
                 .autoUpdateInDEBUG,
                 .updatesWontAutomaticallyRestartApp,
-                .privacyProAuthV2,
                 .scamSiteProtection,
                 .tabCrashDebugging,
                 .maliciousSiteProtection,
@@ -342,8 +337,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .willSoonDropBigSurSupport,
                 .hangReporting,
 				.aiChatSidebar,
-                .aiChatTextSummarization,
-                .aiChatTextTranslation,
                 .aiChatPageContext,
                 .aiChatImprovements,
                 .aiChatKeepSession,
@@ -391,7 +384,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .firstTimeQuitSurvey,
                 .autofillPasswordSearchPrioritizeDomain,
                 .dataImportWideEventMeasurement,
-                .memoryUsageMonitor:
+                .memoryUsageMonitor,
+                .aiChatSync:
             return true
         case .sslCertificatesBypass,
                 .appendAtbToSerpQueries,
@@ -446,8 +440,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.syncIdentities))
         case .scamSiteProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.scamProtection))
-        case .privacyProAuthV2:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
         case .tabCrashDebugging:
             return .disabled
         case .delayedWebviewPresentation:
@@ -466,10 +458,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.paidAIChat))
         case .aiChatSidebar:
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebar))
-        case .aiChatTextSummarization:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.textSummarization))
-        case .aiChatTextTranslation:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.textTranslation))
         case .aiChatPageContext:
             return .remoteReleasable(.subfeature(AIChatSubfeature.pageContext))
         case .aiChatImprovements:
@@ -559,18 +547,20 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .popupPermissionButtonPersistence:
             return .remoteReleasable(.subfeature(PopupBlockingSubfeature.popupPermissionButtonPersistence))
         case .webNotifications:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.webNotifications))
         case .newPermissionView:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.newPermissionView))
         case .tabClosingEventRecreation:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.tabClosingEventRecreation))
         case .firstTimeQuitSurvey:
-            return .disabled
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.firstTimeQuitSurvey))
         case .autofillPasswordSearchPrioritizeDomain:
             return .remoteReleasable(.subfeature(AutofillSubfeature.autofillPasswordSearchPrioritizeDomain))
         case .dataImportWideEventMeasurement:
             return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
         case .memoryUsageMonitor:
+            return .disabled
+        case .aiChatSync:
             return .disabled
         }
     }

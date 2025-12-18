@@ -22,6 +22,7 @@ import FeatureFlags
 import Foundation
 import os.log
 import Persistence
+import AppKit
 
 /// Protocol for deciding whether to show the quit survey.
 @MainActor
@@ -85,6 +86,12 @@ final class QuitSurveyDecider: QuitSurveyDeciding {
         // Condition 1: Feature flag is enabled
         guard featureFlagger.isFeatureOn(.firstTimeQuitSurvey) else { return false }
 
+        // Only for debugging purposes when the debug flag is turned on in the Debug menu.
+        // Only works for internal users.
+        if persistor.alwaysShowQuitSurvey {
+            return true
+        }
+
         // Condition 2: No other quit dialogs will be shown
         let willShowAutoClearDialog = dataClearingPreferences.isAutoClearEnabled && dataClearingPreferences.isWarnBeforeClearingEnabled
         let willShowDownloadsDialog = downloadManager.downloads.contains { $0.state.isDownloading }
@@ -119,10 +126,14 @@ final class QuitSurveyDecider: QuitSurveyDeciding {
 
 protocol QuitSurveyPersistor {
     var hasQuitAppBefore: Bool { get set }
+
     /// Stores the reasons string from the quit survey for the return user pixel.
     /// When set, the return user pixel should be fired on next app launch.
     /// After firing the pixel, this should be cleared to ensure the pixel is only fired once.
     var pendingReturnUserReasons: String? { get set }
+
+    /// Only for internal users, triggered from the debug menu
+    var alwaysShowQuitSurvey: Bool { get set }
 }
 
 final class QuitSurveyUserDefaultsPersistor: QuitSurveyPersistor {
@@ -130,12 +141,16 @@ final class QuitSurveyUserDefaultsPersistor: QuitSurveyPersistor {
     private enum Key: String {
         case hasQuitAppBefore = "quit-survey.has-quit-app-before"
         case pendingReturnUserReasons = "quit-survey.pending-return-user-reasons"
+        case alwaysShowQuitSurvey = "quit-survey.always-show-quit-survey"
     }
 
     private let keyValueStore: ThrowingKeyValueStoring
+    private let internalUserDecider: InternalUserDecider
 
-    init(keyValueStore: ThrowingKeyValueStoring) {
+    init(keyValueStore: ThrowingKeyValueStoring,
+         internalUserDecider: InternalUserDecider = NSApp.delegateTyped.internalUserDecider) {
         self.keyValueStore = keyValueStore
+        self.internalUserDecider = internalUserDecider
     }
 
     var hasQuitAppBefore: Bool {
@@ -177,4 +192,27 @@ final class QuitSurveyUserDefaultsPersistor: QuitSurveyPersistor {
             }
         }
     }
+
+    var alwaysShowQuitSurvey: Bool {
+        get {
+            if !internalUserDecider.isInternalUser {
+                return false
+            }
+
+            do {
+                return try keyValueStore.object(forKey: Key.alwaysShowQuitSurvey.rawValue) as? Bool ?? false
+            } catch {
+                Logger.general.error("Failed to read hasQuitAppBefore from keyValueStore: \(error)")
+                return false
+            }
+        }
+        set {
+            do {
+                try keyValueStore.set(newValue, forKey: Key.alwaysShowQuitSurvey.rawValue)
+            } catch {
+                Logger.general.error("Failed to write hasQuitAppBefore to keyValueStore: \(error)")
+            }
+        }
+    }
+
 }

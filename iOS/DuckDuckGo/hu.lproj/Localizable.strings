@@ -2977,12 +2977,55 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Letiltásával megakadályozhatod, hogy a hivatkozások automatikusan megnyíljanak más telepített alkalmazásokban.";
 
+/* Subtitle explaining what the cookies option does in auto clear settings */
+"settings.autoclear.cookies.subtitle" = "Összes webhelyadat törlése, beleértve a meglátogatott webhelyeket is. Fiókokból való kijelentkezést eredményezhet.";
+
+/* Title for the cookies and site data option in auto clear settings */
+"settings.autoclear.cookies.title" = "Sütik és webhelyadatok";
+
+/* Subtitle explaining what the Duck.ai chats option does in auto clear settings */
+"settings.autoclear.duckai.chats.subtitle" = "Az összes csevegés törlése, beleértve a kitűzött csevegéseket is";
+
+/* Title for the Duck.ai chats option in auto clear settings */
+"settings.autoclear.duckai.chats.title" = "Duck.ai-csevegések";
+
+/* Section header for the auto clear options */
+"settings.autoclear.section.header" = "Törlés";
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Lapok és adatok törlése";
 
 /* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
 "settings.autoclear.tabs.and.data.with.aichat" = "Lapok, adatok és Duck.ai-csevegések törlése";
 
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "Összes megnyitott lap bezárása";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "Lapok";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Kilépés az alkalmazásból 15 perc inaktivitás után";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "Kilépés az alkalmazásból 1 óra inaktivitás után";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Kilépés az alkalmazásból 30 perc inaktivitás után";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "Kilépés az alkalmazásból 5 perc inaktivitás után";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "Kilépés csak az alkalmazásból";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "Az alkalmazásból való kilépést úgy határozzák meg, hogy elhúzva bezárják az alkalmazást inaktivitása alatt, amikor az alkalmazás a háttérben van.";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "Kívánt időzítés";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "Az adatok az alkalmazás újraindításakor törlődnek.";
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Keresési javaslatok";
 
@@ -3001,6 +3044,8 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Ha az ujjlenyomat- vagy az arcfelismerés, illetve rendszerjelszó engedélyezve van, az alkalmazást annak megnyitásakor fel kell oldanod.";
 
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "Automatikus adattörlés";
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Böngésző-visszajelzés";
 
@@ -3010,6 +3055,8 @@
 /* Settings screen cell text for clearing AI chat history */
 "settings.clear.aichat.history.title" = "Duck.ai-csevegések törlése";
 
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "Böngészési adatok törlése";
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Adatok automatikus törlése";
 
@@ -3037,6 +3084,8 @@
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Adattörlés";
 
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "Az adatok törlése segíthet az online adatvédelemben. A Fire Button segítségével manuálisan törölhetők az adatok, illetve beállítható automatikus törlés is.";
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Alapértelmezett böngésző";
 
@@ -3082,6 +3131,8 @@
 /* Settings screen cell text for Fireproof Sites */
 "settings.fireproof.sites" = "Tűzálló weboldalak";
 
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Tűzálló webhelyek";
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Általános";
 

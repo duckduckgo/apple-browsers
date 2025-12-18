@@ -64,7 +64,6 @@ protocol DependencyProvider {
     var subscriptionManager: (any SubscriptionManager)? { get }
     var subscriptionManagerV2: (any SubscriptionManagerV2)? { get }
     var isUsingAuthV2: Bool { get }
-    var subscriptionAuthMigrator: AuthMigrator { get }
 
     // DBP
     var dbpSettings: DataBrokerProtectionSettings { get }
@@ -96,8 +95,7 @@ final class AppDependencyProvider: DependencyProvider {
     let subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
     var subscriptionManager: (any SubscriptionManager)?
     var subscriptionManagerV2: (any SubscriptionManagerV2)?
-    let isUsingAuthV2: Bool
-    public let subscriptionAuthMigrator: AuthMigrator
+    let isUsingAuthV2: Bool = true
     static let deadTokenRecoverer = DeadTokenRecoverer()
 
     let vpnFeatureVisibility: DefaultNetworkProtectionVisibility
@@ -178,13 +176,6 @@ final class AppDependencyProvider: DependencyProvider {
                                             legacyTokenStorage: legacyAccountStorage,
                                             authService: authService,
                                             refreshEventMapping: refreshEventMapper)
-        let isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
-        subscriptionAuthMigrator = AuthMigrator(oAuthClient: authClient,
-                                                pixelHandler: pixelHandler,
-                                                isAuthV2Enabled: isAuthV2Enabled)
-
-        isUsingAuthV2 = subscriptionAuthMigrator.isReadyToUseAuthV2
-
         vpnSettings.isAuthV2Enabled = isUsingAuthV2
         dbpSettings.isAuthV2Enabled = isUsingAuthV2
         vpnSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)

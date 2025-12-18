@@ -2977,12 +2977,55 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Atspējo, lai novērstu saišu automātisku atvēršanu citās instalētajās lietotnēs.";
 
+/* Subtitle explaining what the cookies option does in auto clear settings */
+"settings.autoclear.cookies.subtitle" = "Dzēs visus vietnes datus, tostarp apmeklētās vietnes. Var izrakstīt tevi no kontiem.";
+
+/* Title for the cookies and site data option in auto clear settings */
+"settings.autoclear.cookies.title" = "Sīkfaili un vietnes dati";
+
+/* Subtitle explaining what the Duck.ai chats option does in auto clear settings */
+"settings.autoclear.duckai.chats.subtitle" = "Dzēs visas tērzēšanas sarunas, ieskaitot piespraustās tērzēšanas";
+
+/* Title for the Duck.ai chats option in auto clear settings */
+"settings.autoclear.duckai.chats.title" = "Duck.ai tērzēšanas";
+
+/* Section header for the auto clear options */
+"settings.autoclear.section.header" = "Notīrīt";
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Notīrīt cilnes un datus";
 
 /* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
 "settings.autoclear.tabs.and.data.with.aichat" = "Notīrīt cilnes, datus un Duck.ai tērzēšanu";
 
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "Aizvērt visas atvērtās cilnes";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "Cilnes";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Iziešana no lietotnes, neaktīva 15 minūtes";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "Iziešana no lietotnes, neaktīva 1 stundu";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Iziešana no lietotnes, neaktīva 30 minūtes";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "Iziešana no lietotnes, neaktīva 5 minūtes";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "Tikai iziešana no lietotnes";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "Iziešana no lietotnes tiek veikta, pavelkot lietotni, lai to aizvērtu, un lietotne nav aktīva tad, kad tā darbojas fonā.";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "Vēlamais laiks";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "Dati tiks dzēsti, restartējot lietotni.";
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Meklēšanas ieteikumi";
 
@@ -3001,6 +3044,8 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Ja ir iespējots Touch ID, Face ID vai sistēmas piekļuves kods, atverot lietotni, tev tā būs jāatbloķē.";
 
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "Automātiskā datu dzēšana";
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Atsauksmes par pārlūkprogrammu";
 
@@ -3010,6 +3055,8 @@
 /* Settings screen cell text for clearing AI chat history */
 "settings.clear.aichat.history.title" = "Notīrīt Duck.ai tērzēšanas sarunas";
 
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "Izdzēst pārlūkošanas datus";
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Automātiski notīrīt datus";
 
@@ -3037,6 +3084,8 @@
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Datu notīrīšana";
 
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "Tavu datu dzēšana var palīdzēt aizsargāt tavu privātumu tiešsaistē. Izmanto Fire Button, lai manuāli notīrītu datus, vai arī iestatītu automātisku notīrīšanu.";
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Noklusējuma pārlūks";
 
@@ -3082,6 +3131,8 @@
 /* Settings screen cell text for Fireproof Sites */
 "settings.fireproof.sites" = "Ugunsdrošas vietnes";
 
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Ugunsdrošas vietnes";
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Vispārīgi";
 

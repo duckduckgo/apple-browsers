@@ -3,6 +3,7 @@
 
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
+
 /* Buton label for Edit action */
 "action.generic.edit" = "Editar";
 
@@ -902,6 +903,7 @@
 
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "¿Actualizar nombre de usuario?";
+
 /* Add bookmark screen title */
 "bookmark.addBookmark.title" = "Añadir marcador";
 
@@ -1024,6 +1026,7 @@
 
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "No se permite cancelar más de una vez";
+
 /* Close All Tabs */
 "close.all.tabs" = "Cerrar todas las pestañas";
 
@@ -1149,6 +1152,7 @@
 
 /* No comment provided by engineer. */
 "Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "CONTENIDO DE CELDA PERSONALIZADO";
 
@@ -1639,7 +1643,7 @@
 "Enrolled: %@" = "Inscritos: %@";
 
 /* No comment provided by engineer. */
-"Entry Pill" = "Entry Pill";
+"Entry Pill" = "Píldora de entrada";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Iniciar sesión";
@@ -1670,6 +1674,7 @@
 
 /* Generic error message on a dialog for when the cause is not known. */
 "error.unknown.try.again" = "Se ha producido un error desconocido";
+
 /* No comment provided by engineer. */
 "favorite" = "Favorito";
 
@@ -1939,6 +1944,7 @@
 
 /* No comment provided by engineer. */
 "findinpage.title" = "Buscar en la página";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Corriente de aire";
 
@@ -2076,6 +2082,7 @@
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Procesado por última vez: %@";
+
 /* No comment provided by engineer. */
 "Loading brokers..." = "Cargando intermediarios...";
 
@@ -2420,6 +2427,7 @@
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Opción de la barra de direcciones";
+
 /* No comment provided by engineer. */
 "No Logs" = "Sin registros";
 
@@ -2428,6 +2436,7 @@
 
 /* No comment provided by engineer. */
 "No results found" = "No se han encontrado resultados";
+
 /* No comment provided by engineer. */
 "OK" = "De acuerdo";
 
@@ -2439,6 +2448,7 @@
 
 /* Text displayed on notification appearing in the address bar when the browser  hides a cookie popup */
 "omnibar.notification.popup-hidden" = "Ventana emergente oculta";
+
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Entendido";
 
@@ -2900,6 +2910,7 @@
 
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Configuración de Asistente de búsqueda";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Ocultar imágenes generadas por IA";
 
@@ -2938,7 +2949,6 @@
 
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Borrar";
-
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Borrar datos y pestañas";
 
@@ -2951,17 +2961,17 @@
 /* Title for the tabs option in auto clear settings */
 "settings.autoclear.tabs.title" = "Pestañas";
 
-/* Timing option to clear data on app exit or after 1 hour of inactivity */
-"settings.autoclear.timing.app.exit.inactive.1hour" = "Salir de la aplicación (1 hora de inactividad)";
-
-/* Timing option to clear data on app exit or after 5 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.5min" = "Salir de la aplicación (5 minutos de inactividad)";
-
 /* Timing option to clear data on app exit or after 15 minutes of inactivity */
 "settings.autoclear.timing.app.exit.inactive.15min" = "Salir de la aplicación (15 minutos de inactividad)";
 
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "Salir de la aplicación (1 hora de inactividad)";
+
 /* Timing option to clear data on app exit or after 30 minutes of inactivity */
 "settings.autoclear.timing.app.exit.inactive.30min" = "Salir de la aplicación (30 minutos de inactividad)";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "Salir de la aplicación (5 minutos de inactividad)";
 
 /* Timing option to clear data only on app exit */
 "settings.autoclear.timing.app.exit.only" = "Salir de la aplicación";
@@ -2974,7 +2984,6 @@
 
 /* Footer text explaining when data will be cleared when auto clear is enabled */
 "settings.autoclear.toggle.footer" = "Los datos se borrarán al reiniciar la aplicación.";
-
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Sugerencias de búsqueda";
 
@@ -2995,7 +3004,6 @@
 
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Borrado automático de datos";
-
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Comentarios sobre el navegador";
 
@@ -3007,7 +3015,6 @@
 
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Borrar datos de navegación";
-
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Borrar datos automáticamente";
 
@@ -3037,7 +3044,6 @@
 
 /* Data Clearing settings header description */
 "settings.data.clearing.description" = "Eliminar tus datos puede ayudar a proteger tu privacidad en línea. Usa el Fire Button para borrar los datos manualmente o configura el borrado automático.";
-
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Navegador predeterminado";
 
@@ -3085,7 +3091,6 @@
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Sitios Fireproof";
-
 /* The name of the settings subsection containing general settings */
 "settings.general" = "General";
 
@@ -3101,8 +3106,9 @@
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Importar contraseñas";
 
-/* Copy for badge on settings item to show an item is new */
+/* Copy for budge on settings item to show an item is new */
 "settings.item.badge.new" = "Nuevo";
+
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Teclado";
 
@@ -3372,6 +3378,7 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "¿Qué sitio web no funciona?";
+
 /* No comment provided by engineer. */
 "Status: Invalidated" = "Estado: invalidado";
 
@@ -4025,6 +4032,7 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Un mensaje de %@:";
+
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "AHORRA UN 25 %";
 
@@ -4096,3 +4104,4 @@
 
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "¿Qué quieres importar?";
+

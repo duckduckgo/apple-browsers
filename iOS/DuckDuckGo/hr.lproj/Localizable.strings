@@ -3,6 +3,7 @@
 
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
+
 /* Buton label for Edit action */
 "action.generic.edit" = "Uredi";
 
@@ -902,6 +903,7 @@
 
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Želiš li ažurirati korisničko ime?";
+
 /* Add bookmark screen title */
 "bookmark.addBookmark.title" = "Dodaj knjižnu oznaku";
 
@@ -1024,6 +1026,7 @@
 
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Otkazivanje nije dopušteno više od jednom";
+
 /* Close All Tabs */
 "close.all.tabs" = "Zatvori sve kartice";
 
@@ -1149,6 +1152,7 @@
 
 /* No comment provided by engineer. */
 "Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "PRILAGOĐENI SADRŽAJ ĆELIJA";
 
@@ -1670,6 +1674,7 @@
 
 /* Generic error message on a dialog for when the cause is not known. */
 "error.unknown.try.again" = "Došlo je do nepoznate pogreške";
+
 /* No comment provided by engineer. */
 "favorite" = "Omiljeno";
 
@@ -1939,6 +1944,7 @@
 
 /* No comment provided by engineer. */
 "findinpage.title" = "Pronađi na stranici";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Zračna struja";
 
@@ -2076,6 +2082,7 @@
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Posljednja obrada: %@";
+
 /* No comment provided by engineer. */
 "Loading brokers..." = "Učitavanje brokera...";
 
@@ -2420,6 +2427,7 @@
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Opcija adresne trake";
+
 /* No comment provided by engineer. */
 "No Logs" = "Nema zapisnika";
 
@@ -2428,6 +2436,7 @@
 
 /* No comment provided by engineer. */
 "No results found" = "Nema rezultata";
+
 /* No comment provided by engineer. */
 "OK" = "U redu";
 
@@ -2439,6 +2448,7 @@
 
 /* Text displayed on notification appearing in the address bar when the browser  hides a cookie popup */
 "omnibar.notification.popup-hidden" = "Skočni prozor je sakriven";
+
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Shvatio/la sam";
 
@@ -2900,6 +2910,7 @@
 
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Pretraži postavke Assista";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Sakrij slike generirane umjetnom inteligencijom";
 
@@ -2938,7 +2949,6 @@
 
 /* Section header for the auto clear options */
 "settings.autoclear.section.header" = "Izbriši";
-
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Obriši kartice i podatke";
 
@@ -2951,17 +2961,17 @@
 /* Title for the tabs option in auto clear settings */
 "settings.autoclear.tabs.title" = "Kartice";
 
-/* Timing option to clear data on app exit or after 1 hour of inactivity */
-"settings.autoclear.timing.app.exit.inactive.1hour" = "Izlaz iz aplikacije, neaktivna 1 sat";
-
-/* Timing option to clear data on app exit or after 5 minutes of inactivity */
-"settings.autoclear.timing.app.exit.inactive.5min" = "Izlaz iz aplikacije, neaktivna 5 minuta";
-
 /* Timing option to clear data on app exit or after 15 minutes of inactivity */
 "settings.autoclear.timing.app.exit.inactive.15min" = "Izlaz iz aplikacije, neaktivna 15 minuta";
 
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "Izlaz iz aplikacije, neaktivna 1 sat";
+
 /* Timing option to clear data on app exit or after 30 minutes of inactivity */
 "settings.autoclear.timing.app.exit.inactive.30min" = "Izlaz iz aplikacije, neaktivna 30 minuta";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "Izlaz iz aplikacije, neaktivna 5 minuta";
 
 /* Timing option to clear data only on app exit */
 "settings.autoclear.timing.app.exit.only" = "Samo izlaz iz aplikacije";
@@ -2974,7 +2984,6 @@
 
 /* Footer text explaining when data will be cleared when auto clear is enabled */
 "settings.autoclear.toggle.footer" = "Podaci će biti izbrisani nakon ponovnog pokretanja aplikacije.";
-
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Prijedlozi za pretraživanje";
 
@@ -2995,7 +3004,6 @@
 
 /* Settings row title for automatic data clearing */
 "settings.automatic.data.clearing.title" = "Automatsko brisanje podataka";
-
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Povratne informacije preglednika";
 
@@ -3007,7 +3015,6 @@
 
 /* Button to clear browsing data */
 "settings.clear.browsing.data" = "Izbriši podatke o pregledavanju";
-
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Automatsko brisanje podataka";
 
@@ -3037,7 +3044,6 @@
 
 /* Data Clearing settings header description */
 "settings.data.clearing.description" = "Brisanje podataka može pomoći u zaštiti tvoje privatnosti na mreži. Pomoću Fire Buttona ručno izbriši podatke ili postavi automatsko brisanje.";
-
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Zadani preglednik";
 
@@ -3085,7 +3091,6 @@
 
 /* Settings screen cell text for Fireproofed Sites */
 "settings.fireproofed.sites" = "Zaštićene mrežne lokacije (Fireproof)";
-
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Općenito";
 
@@ -3101,8 +3106,9 @@
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Uvezi lozinke";
 
-/* Copy for badge on settings item to show an item is new */
+/* Copy for budge on settings item to show an item is new */
 "settings.item.badge.new" = "Novo";
+
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tipkovnica";
 
@@ -3372,6 +3378,7 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Koje je web-mjesto neispravno?";
+
 /* No comment provided by engineer. */
 "Status: Invalidated" = "Status: poništeno";
 
@@ -4025,6 +4032,7 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Poruka od %@:";
+
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "UŠTEDI 25 %";
 
@@ -4096,3 +4104,4 @@
 
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Što želiš uvesti?";
+

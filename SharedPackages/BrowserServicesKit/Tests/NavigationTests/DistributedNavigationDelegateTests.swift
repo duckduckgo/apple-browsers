@@ -38,6 +38,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
 
         let decisionStarted = expectation(description: "decidePolicy started")
         let createWebViewCallbackFired = expectation(description: "dispatchCreateWebView callback fired")
+        let navigationDidFail = expectation(description: "navigation did fail")
 
         let lock = NSLock()
         var didFireCallback = false
@@ -66,6 +67,9 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
             }
             return .allow
         }
+        responder(at: 0).onDidFail = { _, _ in
+            navigationDidFail.fulfill()
+        }
 
         let schemeHandler = TestNavigationSchemeHandler(onRequest: { task in
             task.didFailWithError(WKError(.unknown))
@@ -82,7 +86,7 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
         XCTAssertFalse(lock.withLock { didFireCallback })
 
         resumeAllowContinuation()
-        wait(for: [createWebViewCallbackFired], timeout: standardTimeout)
+        wait(for: [createWebViewCallbackFired, navigationDidFail], timeout: standardTimeout)
     }
 
 #if _WEBPAGE_PREFS_CUSTOM_HEADERS_ENABLED

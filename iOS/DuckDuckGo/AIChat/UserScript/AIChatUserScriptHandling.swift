@@ -26,6 +26,7 @@ import OSLog
 import WebKit
 import Common
 import DDGSync
+import Core
 // MARK: - Response Types
 
 /// Response structure for openKeyboard request
@@ -291,6 +292,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             default:
                 reason = "internal error"
             }
+
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSyncScopedSyncTokenError, withAdditionalParameters: ["reason": reason])
             return AIChatErrorResponse(reason: reason)
         }
     }
@@ -305,6 +308,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
 
         guard let dict = params as? [String: Any], let data = dict["data"] as? String else {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSyncEncryptionError, withAdditionalParameters: ["reason": "invalid parameters"])
             return AIChatErrorResponse(reason: "invalid parameters")
         }
 
@@ -318,6 +322,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             default:
                 reason = "internal error"
             }
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSyncEncryptionError, withAdditionalParameters: ["reason": reason])
             return AIChatErrorResponse(reason: reason)
         }
     }
@@ -332,12 +337,15 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         }
 
         guard let dict = params as? [String: Any], let data = dict["data"] as? String else {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSyncDecryptionError, withAdditionalParameters: ["reason": "invalid parameters"])
             return AIChatErrorResponse(reason: "invalid parameters")
         }
 
         do {
             return AIChatPayloadResponse(payload: try syncHandler.decrypt(data))
         } catch {
+            let reason = error.localizedDescription
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSyncDecryptionError, withAdditionalParameters: ["reason": reason])
             return AIChatErrorResponse(reason: "internal error")
         }
     }
@@ -353,6 +361,7 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     func setAIChatHistoryEnabled(params: Any, message: UserScriptMessage) -> Encodable? {
         guard let dict = params as? [String: Any],
               let enabled = dict["enabled"] as? Bool else {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSyncHistoryEnabledError, withAdditionalParameters: ["reason": "invalid parameters"])
             return AIChatErrorResponse(reason: "invalid parameters")
         }
 

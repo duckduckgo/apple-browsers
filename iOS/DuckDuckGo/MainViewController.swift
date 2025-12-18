@@ -3556,7 +3556,7 @@ extension MainViewController: TabSwitcherDelegate {
     func tabSwitcherDidRequestCloseAll(tabSwitcher: TabSwitcherViewController) {
         Task {
             let options = FireOptions.tabs
-            await fireExecutor.burn(options: options, applicationState: .unknown, fireContext: .autoClearWhileActive)
+            await fireExecutor.burn(options: options, applicationState: .unknown, fireContext: .manualFire)
             tabSwitcher.dismiss()
         }
     }

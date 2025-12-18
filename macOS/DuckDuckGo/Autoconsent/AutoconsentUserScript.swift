@@ -279,6 +279,7 @@ extension AutoconsentUserScript {
         // Uncomment to ship the experiment
         if !config.isSubfeatureEnabled(AutoconsentSubfeature.heuristicAction) {
             Logger.autoconsent.debug("heuristic action disabled by remote config")
+            return false
         } else {
             Logger.autoconsent.debug("heuristic action enabled by remote config")
         }
@@ -328,7 +329,7 @@ extension AutoconsentUserScript {
         }
 
         // Resolve the cohort for the heuristic experiment
-        let enableHeuristicAction = isHeuristicActionEnabled()
+        let enableHeuristicAction = isHeuristicActionEnabled() ?? false // default to false if not enrolled
 
         if message.frameInfo.isMainFrame {
             // reset dashboard state

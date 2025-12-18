@@ -1,7 +1,7 @@
 //
-//  MockInternalUserDecider.swift
+//  MockDomainsProtectionStore.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,19 +16,21 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
-import Combine
 import Foundation
 import PrivacyConfig
 
-public class MockInternalUserDecider: InternalUserDecider {
-    public var isInternalUserPublisher: AnyPublisher<Bool, Never> = Just(false).eraseToAnyPublisher()
+public final class MockDomainsProtectionStore: DomainsProtectionStore {
+    public var unprotectedDomains = Set<String>()
 
-    public func markUserAsInternalIfNeeded(forUrl url: URL?, response: HTTPURLResponse?) -> Bool {
-        return true
+    public func disableProtection(forDomain domain: String) {
+        unprotectedDomains.insert(domain)
     }
 
-    public var isInternalUser: Bool = false
+    public func enableProtection(forDomain domain: String) {
+        unprotectedDomains.remove(domain)
+    }
 
-    public init() {}
+    public init(unprotectedDomains: Set<String> = Set<String>()) {
+        self.unprotectedDomains = unprotectedDomains
+    }
 }

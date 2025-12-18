@@ -1,7 +1,7 @@
 //
-//  MockInternalUserDecider.swift
+//  MockEmbeddedDataProvider.swift
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,19 +16,16 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
-import Combine
 import Foundation
 import PrivacyConfig
 
-public class MockInternalUserDecider: InternalUserDecider {
-    public var isInternalUserPublisher: AnyPublisher<Bool, Never> = Just(false).eraseToAnyPublisher()
+public class MockEmbeddedDataProvider: EmbeddedDataProvider {
+    public var embeddedDataEtag: String
 
-    public func markUserAsInternalIfNeeded(forUrl url: URL?, response: HTTPURLResponse?) -> Bool {
-        return true
+    public var embeddedData: Data
+
+    public init(data: Data, etag: String) {
+        embeddedData = data
+        embeddedDataEtag = etag
     }
-
-    public var isInternalUser: Bool = false
-
-    public init() {}
 }

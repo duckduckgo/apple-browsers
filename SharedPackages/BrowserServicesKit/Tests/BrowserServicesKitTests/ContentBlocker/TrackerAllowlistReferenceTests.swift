@@ -19,12 +19,13 @@
 // Tests are disabled on iOS due to WKWebView stability issues on the iOS 17.5+ simulator.
 #if os(macOS)
 
-import XCTest
-import os.log
-import WebKit
 import BrowserServicesKit
-import TrackerRadarKit
 import Common
+import os.log
+import PrivacyConfig
+import TrackerRadarKit
+import WebKit
+import XCTest
 
 struct AllowlistTests: Decodable {
 

@@ -20,9 +20,9 @@ import Foundation
 
 public enum ContentBlockerDebugEvents {
 
-    struct Parameters {
-        static let etag = "etag"
-        static let errorDescription = "error_desc"
+    public struct Parameters {
+        public static let etag = "etag"
+        public static let errorDescription = "error_desc"
     }
 
     public enum Component: String, CustomStringConvertible, CaseIterable {

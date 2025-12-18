@@ -18,7 +18,7 @@
 
 import XCTest
 
-@testable import BrowserServicesKit
+@testable import FeatureFlags
 
 class DefaultInternalUserDeciderTests: XCTestCase {
 

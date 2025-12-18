@@ -23,7 +23,7 @@ public struct PrivacyConfigurationData {
     public typealias FeatureName = String
     public typealias TrackerAllowlistData = [String: [TrackerAllowlist.Entry]]
 
-    enum CodingKeys: String {
+    public enum CodingKeys: String {
         case features
         case unprotectedTemporary
         case trackerAllowlist

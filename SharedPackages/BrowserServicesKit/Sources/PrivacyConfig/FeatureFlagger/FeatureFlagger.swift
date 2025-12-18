@@ -449,7 +449,7 @@ public class DefaultFeatureFlagger: FeatureFlagger {
         }
     }
 
-    func resolveCohort(_ subfeatureID: SubfeatureID, parentID: ParentFeatureID, allowCohortAssignment: Bool = true) -> CohortID? {
+    public func resolveCohort(_ subfeatureID: SubfeatureID, parentID: ParentFeatureID, allowCohortAssignment: Bool = true) -> CohortID? {
         let config = privacyConfigManager.privacyConfig
         let featureState = config.stateFor(subfeatureID: subfeatureID, parentFeatureID: parentID)
         let cohorts = config.cohorts(subfeatureID: subfeatureID, parentFeatureID: parentID)

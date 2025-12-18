@@ -17,7 +17,7 @@
 //
 
 import XCTest
-@testable import BrowserServicesKit
+@testable import FeatureFlags
 
 final class ExperimentsDataStoreTests: XCTestCase {
 

@@ -16,12 +16,13 @@
 //  limitations under the License.
 //
 
-import Foundation
-import WebKit
 import Combine
-import ContentScopeScripts
-import UserScript
 import Common
+import ContentScopeScripts
+import Foundation
+import PrivacyConfig
+import UserScript
+import WebKit
 
 public protocol ContentScopeUserScriptDelegate: AnyObject {
     func contentScopeUserScript(_ script: ContentScopeUserScript, didReceiveDebugFlag debugFlag: String)

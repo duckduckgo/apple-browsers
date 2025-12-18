@@ -17,7 +17,7 @@
 //
 
 import XCTest
-import BrowserServicesKit
+import PrivacyConfigTestsUtils
 
 class MockEmbeddedDataProvider: EmbeddedDataProvider {
     var embeddedDataEtag: String

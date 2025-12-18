@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
+import FeatureFlags
 import PersistenceTestingUtils
 import XCTest
 

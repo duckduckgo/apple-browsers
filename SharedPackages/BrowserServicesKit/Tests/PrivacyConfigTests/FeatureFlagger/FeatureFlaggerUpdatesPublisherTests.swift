@@ -19,7 +19,7 @@
 import XCTest
 import Combine
 import PersistenceTestingUtils
-@testable import BrowserServicesKit
+@testable import FeatureFlags
 
 final class FeatureFlaggerUpdatesPublisherTests: XCTestCase {
 

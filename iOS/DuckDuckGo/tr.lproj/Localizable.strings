@@ -1043,6 +1043,9 @@
 "close.all.tabs" = "Tüm Sekmeleri Kapat";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Grup: %@";
+
+/* No comment provided by engineer. */
 "Configuration" = "Yapılandırma";
 
 /* No comment provided by engineer. */
@@ -1652,6 +1655,9 @@
 "empty.search" = "Eşleşme bulunamadı";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Kayıtlı: %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1707,6 +1713,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Yalnızca Mobil Favoriler";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Özellik: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Reklam ve pop-up engelleme";
@@ -1920,6 +1929,9 @@
 
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "BİR KATEGORİ SEÇİN";
+
+/* Category for issues with accessing Plus or Pro tier features */
+"feedback.ppro.category.unable-to-access-features" = "Plus veya Pro seviye özelliklere erişilemiyor";
 
 /* No comment provided by engineer. */
 "feedback.start.footer" = "İsimsiz geri bildiriminiz bizim için önemlidir.";
@@ -2974,9 +2986,6 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Adres Çubuğu Konumu";
 
-/* Settings screen cell text for experimental menu */
-"settings.appearance.experimental.menu" = "Deneysel Tarayıcı Menüsü";
-
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Bağlantıları İlişkili Uygulamalarda Aç";
 
@@ -2985,6 +2994,9 @@
 
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Sekmeleri ve Verileri Temizle";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Sekmeleri, Verileri ve Duck.ai Sohbetlerini Temizle";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Arama Önerileri";
@@ -3384,6 +3396,9 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Depolanan Ana Bilgisayar Adı: %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Alt özellik: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Cihaza Ekle";

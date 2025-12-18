@@ -1043,6 +1043,9 @@
 "close.all.tabs" = "Fermer tous les onglets";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Cohorte : %@";
+
+/* No comment provided by engineer. */
 "Configuration" = "Configuration";
 
 /* No comment provided by engineer. */
@@ -1652,6 +1655,9 @@
 "empty.search" = "Aucune correspondance trouvée";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Inscriptions : %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1707,6 +1713,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Favoris sur mobile uniquement";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Fonctionnalité : %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Bloquer les publicités et les fenêtres contextuelles";
@@ -1920,6 +1929,9 @@
 
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "SÉLECTIONNER UNE CATÉGORIE";
+
+/* Category for issues with accessing Plus or Pro tier features */
+"feedback.ppro.category.unable-to-access-features" = "Impossible d'accéder aux fonctionnalités des niveaux Plus ou Pro";
 
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Vos commentaires anonymes sont importants pour nous.";
@@ -2974,9 +2986,6 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Position de la barre d'adresse";
 
-/* Settings screen cell text for experimental menu */
-"settings.appearance.experimental.menu" = "Menu expérimental du navigateur";
-
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Ouvrir les liens dans les applications associées";
 
@@ -2985,6 +2994,9 @@
 
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Effacer les onglets et données";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Effacer les onglets, les données et les chats Duck.ai";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Suggestions de recherche";
@@ -3384,6 +3396,9 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Nom d'hôte enregistré : %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Sous-fonctionnalité : %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Ajouter à un appareil";

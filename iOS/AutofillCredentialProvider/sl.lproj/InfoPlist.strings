@@ -1,5 +1,5 @@
 /* Bundle display name */
-"CFBundleDisplayName" = "DuckDuckGo";
+"CFBundleDisplayName" = "AutofillCredentialProvider";
 
 /* Bundle name */
 "CFBundleName" = "AutofillCredentialProvider";

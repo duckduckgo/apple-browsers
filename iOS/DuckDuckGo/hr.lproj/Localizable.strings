@@ -1043,6 +1043,9 @@
 "close.all.tabs" = "Zatvori sve kartice";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Kohorta: %@";
+
+/* No comment provided by engineer. */
 "Configuration" = "Konfiguracija";
 
 /* No comment provided by engineer. */
@@ -1652,6 +1655,9 @@
 "empty.search" = "Nema pronađenih rezultata";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Upisani: %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1707,6 +1713,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Samo favoriti na mobilnom uređaju";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Značajka: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Blokiranje oglasa i skočnih prozora";
@@ -1920,6 +1929,9 @@
 
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "ODABERI KATEGORIJU";
+
+/* Category for issues with accessing Plus or Pro tier features */
+"feedback.ppro.category.unable-to-access-features" = "Ne možeš pristupiti značajkama Plus ili Pro razine";
 
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Tvoje anonimne povratne informacije važne za su nas.";
@@ -2974,9 +2986,6 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Položaj adresne trake";
 
-/* Settings screen cell text for experimental menu */
-"settings.appearance.experimental.menu" = "Eksperimentalni izbornik preglednika";
-
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Otvori veze u povezanim aplikacijama";
 
@@ -2985,6 +2994,9 @@
 
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Obriši kartice i podatke";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Izbriši kartice, podatke i razgovore s Duck.ai";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Prijedlozi za pretraživanje";
@@ -3384,6 +3396,9 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Pohranjeno ime glavnog računala: %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Podznačajka: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Dodaj na uređaj";

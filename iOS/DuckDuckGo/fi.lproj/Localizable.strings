@@ -1043,6 +1043,9 @@
 "close.all.tabs" = "Sulje kaikki välilehdet";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Kohortti: %@";
+
+/* No comment provided by engineer. */
 "Configuration" = "Määritys";
 
 /* No comment provided by engineer. */
@@ -1652,6 +1655,9 @@
 "empty.search" = "Ei hakutuloksia";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Rekisteröitynyt: %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1707,6 +1713,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Vain mobiilisuosikit";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Ominaisuus: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Mainosten ja ponnahdusikkunoiden esto";
@@ -1920,6 +1929,9 @@
 
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "VALITSE KATEGORIA";
+
+/* Category for issues with accessing Plus or Pro tier features */
+"feedback.ppro.category.unable-to-access-features" = "Plus- tai Pro-tason ominaisuuksia ei voi käyttää";
 
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Anonyymi palautteesi on meille tärkeää.";
@@ -2974,9 +2986,6 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Osoitepalkin sijainti";
 
-/* Settings screen cell text for experimental menu */
-"settings.appearance.experimental.menu" = "Kokeellinen selainvalikko";
-
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Avaa linkit liittyvissä sovelluksissa";
 
@@ -2985,6 +2994,9 @@
 
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Tyhjennä välilehdet ja tiedot";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Tyhjennä välilehdet, tiedot ja Duck.ai-keskustelut";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Hakuehdotukset";
@@ -3384,6 +3396,9 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Tallennettu isäntänimi: %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Alaominaisuus: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Lisää laitteeseen";

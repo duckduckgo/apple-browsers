@@ -1043,6 +1043,9 @@
 "close.all.tabs" = "Fechar todos os separadores";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Coorte: %@";
+
+/* No comment provided by engineer. */
 "Configuration" = "Configuração";
 
 /* No comment provided by engineer. */
@@ -1652,6 +1655,9 @@
 "empty.search" = "Nenhuma correspondência encontrada";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Inscritos: %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1707,6 +1713,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Apenas favoritos em dispositivos móveis";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Funcionalidade: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Bloquear anúncios e pop-ups";
@@ -1920,6 +1929,9 @@
 
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "SELECIONA UMA CATEGORIA";
+
+/* Category for issues with accessing Plus or Pro tier features */
+"feedback.ppro.category.unable-to-access-features" = "Não é possível aceder às funcionalidades dos níveis Plus ou Pro";
 
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Os seus comentários anônimos são importantes para nós.";
@@ -2974,9 +2986,6 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Posição da barra de endereços";
 
-/* Settings screen cell text for experimental menu */
-"settings.appearance.experimental.menu" = "Menu experimental do navegador";
-
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Abrir links nas aplicações associadas";
 
@@ -2985,6 +2994,9 @@
 
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Limpar separadores e dados";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Limpar separadores, dados e conversas do Duck.ai";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Sugestões de pesquisa";
@@ -3384,6 +3396,9 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Nome do anfitrião armazenado: %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Sub-funcionalidade: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Adicionar ao dispositivo";

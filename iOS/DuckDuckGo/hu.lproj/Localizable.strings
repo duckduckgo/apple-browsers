@@ -1043,6 +1043,9 @@
 "close.all.tabs" = "Összes lap bezárása";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Kohorsz: %@";
+
+/* No comment provided by engineer. */
 "Configuration" = "Konfiguráció";
 
 /* No comment provided by engineer. */
@@ -1652,6 +1655,9 @@
 "empty.search" = "Nincs találat";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Beiratkozott: %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1707,6 +1713,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Csak mobilon lévő kedvencek";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Funkció: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Hirdetések és felugró ablakok letiltása";
@@ -1920,6 +1929,9 @@
 
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "VÁLASSZ KATEGÓRIÁT";
+
+/* Category for issues with accessing Plus or Pro tier features */
+"feedback.ppro.category.unable-to-access-features" = "Nem sikerült hozzáférni a Plusz vagy a Pro szintű funkciókhoz";
 
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Anonim visszajelzésed fontos számunkra.";
@@ -2974,9 +2986,6 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Címsor elhelyezkedése";
 
-/* Settings screen cell text for experimental menu */
-"settings.appearance.experimental.menu" = "Kísérleti böngészési menü";
-
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Hivatkozások megnyitása társított alkalmazásokban";
 
@@ -2985,6 +2994,9 @@
 
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Lapok és adatok törlése";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Lapok, adatok és Duck.ai-csevegések törlése";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Keresési javaslatok";
@@ -3384,6 +3396,9 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Tárolt állomásnév: %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Alfunkció: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Hozzáadás az eszközhöz";

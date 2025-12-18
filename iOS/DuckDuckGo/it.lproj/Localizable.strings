@@ -1043,6 +1043,9 @@
 "close.all.tabs" = "Chiudi tutte le schede";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Coorte: %@";
+
+/* No comment provided by engineer. */
 "Configuration" = "Configurazione";
 
 /* No comment provided by engineer. */
@@ -1652,6 +1655,9 @@
 "empty.search" = "Nessuna corrispondenza trovata";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Iscritti: %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1707,6 +1713,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Solo preferiti sul dispositivo mobile";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Caratteristica: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Blocco di annunci e popup";
@@ -1920,6 +1929,9 @@
 
 /* Prompt to select a category for Privacy Pro feedback */
 "feedback.ppro.category.select" = "SELEZIONA UNA CATEGORIA";
+
+/* Category for issues with accessing Plus or Pro tier features */
+"feedback.ppro.category.unable-to-access-features" = "Impossibile accedere alle funzionalità del livello Plus o Pro";
 
 /* No comment provided by engineer. */
 "feedback.start.footer" = "Il tuo feedback anonimo è importante per noi.";
@@ -2974,9 +2986,6 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Posizione Barra degli indirizzi";
 
-/* Settings screen cell text for experimental menu */
-"settings.appearance.experimental.menu" = "Menu sperimentale del browser";
-
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Apri i collegamenti nelle loro app associate";
 
@@ -2985,6 +2994,9 @@
 
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Cancella tutte le schede e i dati";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "Chiudi le schede e la chat di Duck.ai ed elimina i dati";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Suggerimenti di ricerca";
@@ -3384,6 +3396,9 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Nome host salvato: %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Funzionalità secondaria: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Aggiungi al dispositivo";

@@ -34,7 +34,7 @@ final class FeedbackSender: FeedbackSenderImplementing {
     func sendFeedback(_ feedback: Feedback, completionHandler: (() -> Void)? = nil) {
 #if DEBUG || REVIEW
         Logger.general.debug("FeedbackSender: Skipping feedback submission in DEBUG / REVIEW build")
-        return
+        completionHandler?()
 #else
 
 #if APPSTORE

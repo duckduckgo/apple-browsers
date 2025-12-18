@@ -1,0 +1,159 @@
+/* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
+"intent.vpn.needs.to.be.enabled.from.app" = "DuckDuckGoアプリからVPNを有効にする必要があります。";
+
+/* Description shown to the user when adding the Duck.ai lock screen widget */
+"lock.screen.widget.aichat.description" = "Duck.aiで新しいAIチャットをすぐに開始";
+
+/* Title shown to the user when adding the Duck.ai lock screen widget */
+"lock.screen.widget.aichat.title" = "Duck.ai";
+
+/* Description shown to the user when adding the Email Protection lock screen widget */
+"lock.screen.widget.email.description" = "新しいプライベートDuck Addressをすぐに生成します。";
+
+/* Title shown to the user when adding the Email Protection lock screen widget */
+"lock.screen.widget.email.title" = "メール保護";
+
+/* Description shown to the user when adding the Search lock screen widget */
+"lock.screen.widget.favorites.description" = "タップするだけでお気に入りのウェブサイトをすばやく開きます。";
+
+/* Title shown to the user when adding the favorites lock screen widget */
+"lock.screen.widget.favorites.title" = "お気に入り";
+
+/* Description shown to the user when adding the Fire Button lock screen widget */
+"lock.screen.widget.fire.description" = "閲覧履歴を即座に削除し、DuckDuckGoで新しいプライベート検索を開始します。";
+
+/* Title shown to the user when adding the Fire Button lock screen widget */
+"lock.screen.widget.fire.title" = "Fire Button";
+
+/* Description shown to the user when adding the Search Passwords lock screen widget */
+"lock.screen.widget.passwords.description" = "保存したDuckDuckGoパスワードをすばやく検索します。";
+
+/* Title shown to the user when adding the Search Passwords lock screen widget */
+"lock.screen.widget.passwords.title" = "パスワードを検索";
+
+/* Description shown to the user when adding the Search lock screen widget */
+"lock.screen.widget.search.description" = "DuckDuckGoですぐにプライベート検索を開始します。";
+
+/* Title shown to the user when adding the Search lock screen widget */
+"lock.screen.widget.search.title" = "Private Search";
+
+/* Description shown to the user when adding the Voice Search lock screen widget */
+"lock.screen.widget.voice.description" = "DuckDuckGoで新しいプライベート音声検索をすぐに開始します。";
+
+/* Title shown to the user when adding the Voice Search lock screen widget */
+"lock.screen.widget.voice.title" = "音声検索";
+
+/* Description for the control widget when connecting */
+"vpn.control.widget.connecting" = "接続中...";
+
+/* Description for the control widget when disconnecting */
+"vpn.control.widget.disconnecting" = "切断中...";
+
+/* Description for the control widget when the location is unknown */
+"vpn.control.widget.location-unknown" = "所在地不明";
+
+/* Description for the control widget when not connected */
+"vpn.control.widget.not-connected" = "接続されていません";
+
+/* Title for the control widget when disabled */
+"vpn.control.widget.off" = "VPNはオフです";
+
+/* Title for the control widget when enabled */
+"vpn.control.widget.on" = "VPNがオンです";
+
+/* Description of quickActions widget in widget gallery */
+"widget.gallery.customshortcuts.description" = "お気に入りのアクションへのショートカットを選択します。";
+
+/* Display name for quick actions widget in widget gallery */
+"widget.gallery.customshortcuts.display.name" = "カスタムショートカット";
+
+/* Description for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.description" = "ショートカットを選択してください";
+
+/* Left label for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.left" = "左ショートカット";
+
+/* Right label for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.right" = "右ショートカット";
+
+/* Title for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.title" = "ショートカットを設定";
+
+/* Description of search passwords widget in widget gallery */
+"widget.gallery.passwords.description" = "保存したDuckDuckGoパスワードをすばやく検索します。";
+
+/* Display name for search passwords widget in widget gallery */
+"widget.gallery.passwords.display.name" = "パスワードを検索";
+
+/* Description of medium quickActions widget in widget gallery */
+"widget.gallery.quickactions.medium.display.description" = "お気に入りのアクションへのショートカット。";
+
+/* Display name for medium quick actions widget in widget gallery */
+"widget.gallery.quickactions.medium.display.name" = "ショートカット";
+
+/* Description of search and favorites widget in widget gallery */
+"widget.gallery.search.and.favorites.description" = "ワンタップでお気に入りのサイトを検索したり、プライベートに訪問したりできます。";
+
+/* Display name for search and favorites widget in widget gallery */
+"widget.gallery.search.and.favorites.display.name" = "検索とお気に入り";
+
+/* Description of search only widget in widget gallery */
+"widget.gallery.search.description" = "DuckDuckGoでプライベート検索をすばやく起動します。";
+
+/* Display name for search only widget in widget gallery */
+"widget.gallery.search.display.name" = "検索";
+
+/* Description of VPN widget in widget gallery */
+"widget.gallery.vpn.description" = "VPN接続を表示および管理します。DuckDuckGoサブスクリプションが必要です。";
+
+/* Display name for VPN widget in widget gallery */
+"widget.gallery.vpn.display.name" = "VPN";
+
+/* CTA shown in the favorites widget empty state. */
+"widget.no.favorites.cta" = "お気に入りに追加";
+
+/* Message shown in the favorites widget empty state. */
+"widget.no.favorites.message" = "お気に入りのサイトにすばやくアクセスします。";
+
+/* Text in passwords widget */
+"widget.passwords" = "パスワードを検索";
+
+/* Placeholder text in search field on the quick actions widget */
+"widget.quickactions.search" = "検索";
+
+/* Placeholder text in search field on the search and favorites widget */
+"widget.search.duckduckgo" = "DuckDuckGoで検索する";
+
+/* VPN connect button text */
+"widget.vpn.button.connect" = "接続する";
+
+/* VPN disconnect button text */
+"widget.vpn.button.disconnect" = "切断";
+
+/* Label for the snooze end date, e.g. 'Until 9:51 AM' */
+"widget.vpn.label.snoozing-until" = "%@まで";
+
+/* VPN Live Activity dismiss button text */
+"widget.vpn.live-activity.button.dismiss" = "無視する";
+
+/* VPN Live Activity wake up button text */
+"widget.vpn.live-activity.button.wake-up" = "起動";
+
+/* VPN Live Activity active label text */
+"widget.vpn.live-activity.label.active" = "VPNはオンです";
+
+/* VPN Live Activity snoozing label text */
+"widget.vpn.live-activity.label.snoozing" = "VPNスヌーズ";
+
+/* Message describing VPN connected status */
+"widget.vpn.status.connected" = "VPNはオンです";
+
+/* Message describing VPN disconnected status */
+"widget.vpn.status.disconnected" = "VPNはオフです";
+
+/* Message describing VPN snoozing status */
+"widget.vpn.status.snoozed" = "VPNはスヌーズ中です";
+
+/* Subtitle describing VPN disconnected status */
+"widget.vpn.subtitle.disconnected" = "接続されていません";
+

@@ -1,3 +1,6 @@
 /* Bundle display name */
-"CFBundleDisplayName" = "DuckDuckGo";
+"CFBundleDisplayName" = "DuckDuckGoで開く";
+
+/* Bundle name */
+"CFBundleName" = "ShareExtension";
 

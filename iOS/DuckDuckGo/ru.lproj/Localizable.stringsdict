@@ -2,6 +2,46 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>fire.confirmation.data.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Данные будут удалены с 1 сайта. Операция может сопровождаться выходом из учетных записей.</string>
+			<key>few</key>
+			<string>Данные будут удалены с %1$d сайтов. Операция может сопровождаться выходом из учетных записей.</string>
+			<key>many</key>
+			<string>Данные будут удалены с %1$d сайтов. Операция может сопровождаться выходом из учетных записей.</string>
+			<key>other</key>
+			<string>Данные будут удалены с сайтов (%1$d). Операция может сопровождаться выходом из учетных записей.</string>
+		</dict>
+	</dict>
+	<key>fire.confirmation.tabs.subtitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Закрыть вкладку</string>
+			<key>few</key>
+			<string>Закрыть все %1$d вкладки</string>
+			<key>many</key>
+			<string>Закрыть все %1$d вкладок</string>
+			<key>other</key>
+			<string>Закрыть все вкладки (%1$d)</string>
+		</dict>
+	</dict>
 	<key>bookmark.deleteFolderAlert.message</key>
 	<dict>
 		<key>NSStringLocalizedFormatKey</key>

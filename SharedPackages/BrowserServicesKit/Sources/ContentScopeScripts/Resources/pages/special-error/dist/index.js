@@ -2232,7 +2232,6 @@
 
   // shared/components/Text/Text.module.css
   var Text_default = {
-    root: "Text_root",
     "title-1": "Text_title-1",
     strictSpacing: "Text_strictSpacing",
     "title-2": "Text_title-2",
@@ -2250,7 +2249,7 @@
 
   // shared/components/Text/Text.js
   function Text({ as: Comp = "p", variant, strictSpacing = true, className, children }) {
-    return /* @__PURE__ */ _(Comp, { className: (0, import_classnames.default)(Text_default.root, className, { [Text_default[`${variant}`]]: !!variant, [Text_default.strictSpacing]: strictSpacing }) }, children);
+    return /* @__PURE__ */ _(Comp, { className: (0, import_classnames.default)({ [Text_default[`${variant}`]]: variant, [Text_default.strictSpacing]: strictSpacing }, className) }, children);
   }
 
   // pages/special-error/app/constants.js
@@ -2676,27 +2675,14 @@
 
   // pages/special-error/app/providers/ThemeProvider.js
   var ThemeContext = Q({
-    /** @type {'light' | 'dark'} */
+    /** @type {BrowserTheme} */
     theme: "light",
     /** @type {ThemeVariant} */
     themeVariant: "default"
   });
-  var darkModeMediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-  function useSystemTheme() {
-    const [systemTheme, setSystemTheme] = d2(
-      /** @type {'light' | 'dark'} */
-      darkModeMediaQuery.matches ? "dark" : "light"
-    );
-    y2(() => {
-      const listener = (e3) => setSystemTheme(e3.matches ? "dark" : "light");
-      darkModeMediaQuery.addEventListener("change", listener);
-      return () => darkModeMediaQuery.removeEventListener("change", listener);
-    }, []);
-    return systemTheme;
-  }
   function ThemeProvider({ children, initialTheme, initialThemeVariant }) {
+    const { isDarkMode } = useEnv();
     const { messaging: messaging2 } = useMessaging();
-    const systemTheme = useSystemTheme();
     const [explicitTheme, setExplicitTheme] = d2(
       /** @type {BrowserTheme | undefined} */
       void 0
@@ -2713,9 +2699,8 @@
       });
       return unsubscribe;
     }, [messaging2]);
-    const browserTheme = explicitTheme ?? initialTheme ?? "system";
+    const theme = explicitTheme ?? initialTheme ?? (isDarkMode ? "dark" : "light");
     const themeVariant = explicitThemeVariant ?? initialThemeVariant ?? "default";
-    const theme = browserTheme === "system" ? systemTheme : browserTheme;
     y2(() => {
       document.body.dataset.theme = theme;
     }, [theme]);

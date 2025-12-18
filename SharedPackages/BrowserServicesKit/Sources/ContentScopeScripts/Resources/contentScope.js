@@ -1428,7 +1428,7 @@
       "pageContext",
       "duckAiDataClearing"
     ],
-    firefox: ["cookie", ...baseFeatures, "clickToLoad", "webInterferenceDetection", "breakageReporting"],
+    firefox: ["cookie", ...baseFeatures, "clickToLoad"],
     chrome: ["cookie", ...baseFeatures, "clickToLoad", "webInterferenceDetection", "breakageReporting"],
     "chrome-mv3": ["cookie", ...baseFeatures, "clickToLoad", "webInterferenceDetection", "breakageReporting"],
     integration: [...baseFeatures, ...otherFeatures]
@@ -2849,15 +2849,9 @@
 
   // src/sendmessage-transport.js
   init_define_import_meta_trackerLookup();
-  var sharedTransport = null;
   function extensionConstructMessagingConfig() {
-    return new TestTransportConfig(getSharedMessagingTransport());
-  }
-  function getSharedMessagingTransport() {
-    if (!sharedTransport) {
-      sharedTransport = new SendMessageMessagingTransport();
-    }
-    return sharedTransport;
+    const messagingTransport = new SendMessageMessagingTransport();
+    return new TestTransportConfig(messagingTransport);
   }
   var SendMessageMessagingTransport = class {
     constructor() {

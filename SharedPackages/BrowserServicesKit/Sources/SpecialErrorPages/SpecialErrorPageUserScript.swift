@@ -40,14 +40,18 @@ struct LocalizedInfo: Encodable, Equatable {
 public final class SpecialErrorPageUserScript: NSObject, Subfeature {
 
     enum MessageName: String, CaseIterable {
-
         case initialSetup
         case reportPageException
         case reportInitException
         case leaveSite
         case visitSite
         case advancedInfo
+        case onThemeUpdate
+    }
 
+    struct ThemeUpdate: Encodable {
+        let theme: String
+        let themeVariant: String
     }
 
     public let messageOriginPolicy: MessageOriginPolicy = .all
@@ -57,6 +61,7 @@ public final class SpecialErrorPageUserScript: NSObject, Subfeature {
 
     public weak var broker: UserScriptMessageBroker?
     public weak var delegate: SpecialErrorPageUserScriptDelegate?
+    public weak var webView: WKWebView?
 
     public func with(broker: UserScriptMessageBroker) {
         self.broker = broker
@@ -64,12 +69,17 @@ public final class SpecialErrorPageUserScript: NSObject, Subfeature {
 
     private let localeStrings: String?
     private let languageCode: String
+    private var styleCancellable: AnyCancellable?
     private let styleProvider: ScriptStyleProviding?
 
     public init(localeStrings: String?, languageCode: String, styleProvider: ScriptStyleProviding? = nil) {
         self.localeStrings = localeStrings
         self.languageCode = languageCode
         self.styleProvider = styleProvider
+
+        super.init()
+
+        subscribeToThemeChangesIfPossible(styleProvider: styleProvider)
     }
 
     public func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
@@ -139,6 +149,28 @@ public final class SpecialErrorPageUserScript: NSObject, Subfeature {
         return nil
     }
 
+}
+
+private extension SpecialErrorPageUserScript {
+
+    func subscribeToThemeChangesIfPossible(styleProvider: ScriptStyleProviding?) {
+        styleCancellable = styleProvider?.themeStylePublisher
+            .sink { [weak self] appearance, themeName in
+                Task { @MainActor in
+                    self?.notifyThemeStyle(appearance: appearance, themeName: themeName)
+                }
+            }
+    }
+
+    @MainActor
+    private func notifyThemeStyle(appearance: String, themeName: String) {
+        guard let broker, let webView else {
+            return
+        }
+
+        let payload = ThemeUpdate(theme: appearance, themeVariant: themeName)
+        broker.push(method: MessageName.onThemeUpdate.rawValue, params: payload, for: self, into: webView)
+    }
 }
 
 extension SpecialErrorPageUserScript {

@@ -37,5 +37,9 @@ class SpyDownloadManager: DownloadManaging {
     
     func cancelDownload(_ download: Download) { }
     
-    func cancelAllDownloads() { }
+    var cancelAllDownloadsCallCount = 0
+    
+    func cancelAllDownloads() {
+        cancelAllDownloadsCallCount += 1
+    }
 }

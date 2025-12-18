@@ -110,7 +110,7 @@ final class QuitSurveyViewModel: ObservableObject {
     // MARK: - Computed Properties
 
     var shouldShowTextInput: Bool {
-        selectedOptions.contains("something-else")
+        !selectedOptions.isEmpty
     }
 
     var shouldEnableSubmit: Bool {

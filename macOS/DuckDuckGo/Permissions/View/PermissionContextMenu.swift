@@ -431,10 +431,12 @@ private extension NSMenuItem {
     static func persistenceHeaderItem(for permission: PermissionType, on domain: String) -> NSMenuItem {
         let title: String
         switch permission {
-        case .camera, .microphone, .geolocation, .notification:
+        case .camera, .microphone, .geolocation:
             title = String(format: UserText.permissionMenuHeaderDeviceFormat, domain, permission.localizedDescription.lowercased())
         case .externalScheme(scheme: let scheme):
             title = String(format: UserText.permissionMenuHeaderExternalSchemeFormat, permission.localizedDescription.lowercased(), scheme)
+        case .notification:
+            title = String(format: UserText.notificationPermissionAuthorizationFormat, domain)
         case .popups:
             title = String(format: UserText.permissionMenuHeaderPopupWindowsFormat, domain)
         }

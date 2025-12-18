@@ -1395,7 +1395,14 @@ extension Pixel {
         
         case aiChatTabSwitcherOpened
         case aiChatFireButtonTapped
-        
+
+        // MARK: AI Chat Sync
+
+        case aiChatSyncScopedSyncTokenError
+        case aiChatSyncEncryptionError
+        case aiChatSyncDecryptionError
+        case aiChatSyncHistoryEnabledError
+
         // MARK: New Address Bar Picker
         case aiChatNewAddressBarPickerDisplayed
         case aiChatNewAddressBarPickerConfirmed
@@ -2838,6 +2845,13 @@ extension Pixel.Event {
         // MARK: AI Chat History Deletion
         case .aiChatHistoryDeleteSuccessful: return "m_aichat_history_delete_successful"
         case .aiChatHistoryDeleteFailed: return "m_aichat_history_delete_failed"
+
+        // MARK: AI Chat Sync
+
+        case .aiChatSyncScopedSyncTokenError: return "m_aichat_sync_internal_scoped-sync-token-error"
+        case .aiChatSyncEncryptionError: return "m_aichat_sync_internal_encryption-error"
+        case .aiChatSyncDecryptionError: return "m_aichat_sync_internal_decryption-error"
+        case .aiChatSyncHistoryEnabledError: return "m_aichat_sync_internal_history_enabled-error"
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"

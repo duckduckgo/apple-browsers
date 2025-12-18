@@ -141,8 +141,8 @@ enum SettingsPixel: PixelKitEvent {
                 return "settings_paid_ai_chat_opened"
             }
         case .showFullURLSettingToggled: return "settings_full_url_toggled_u"
-        case .themeAppearanceChanged: return "settings_theme_appearance_changed_u"
-        case .themeNameChanged: return "settings_theme_name_changed_u"
+        case .themeAppearanceChanged: return "settings_theme_appearance_changed"
+        case .themeNameChanged: return "settings_theme_name_changed"
         case .websiteZoomSettingChanged: return "settings_zoom_changed_u"
         case .dataClearingSettingToggled: return "settings_auto_clear_toggled_u"
         case .syncAppIconWithThemeTurnedOn: return "settings_sync_app_icon_with_theme_turned_on"
@@ -153,7 +153,7 @@ enum SettingsPixel: PixelKitEvent {
     var parameters: [String: String]? {
         switch self {
         case .themeNameChanged(let name):
-            return ["theme_name": name.rawValue]
+            return ["themeName": name.rawValue]
         default:
             return nil
         }

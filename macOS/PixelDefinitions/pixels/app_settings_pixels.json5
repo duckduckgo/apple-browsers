@@ -13,5 +13,19 @@
         "triggers": ["other"],
         "suffixes": ["first_daily_count"],
         "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_settings_theme_appearance_changed_u": {
+        "description": "Fired when Browser Theme Appearance setting is changed",
+        "owners": ["lantean"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_settings_theme_name_changed_u": {
+        "description": "Fired when Browser Theme Name setting is changed",
+        "owners": ["lantean"],
+        "triggers": ["other"],
+        "suffixes": [],
+        "parameters": ["appVersion", "pixelSource", "themeName"]
     }
 }

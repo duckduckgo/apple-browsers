@@ -2,7 +2,7 @@
 
 # SwiftLint build phase script
 # Shared between iOS and macOS projects
-# Runs SwiftLint from SRCROOT, using the platform's .swiftlint.yml
+# Runs SwiftLint from repo root using .swiftlint.yml
 set -u
 
 echo "Running SwiftLint..."
@@ -24,30 +24,28 @@ if [ -z "$MINT" ]; then
   exit 0
 fi
 
-# Run from SRCROOT (iOS/ or macOS/) so SwiftLint picks up the local .swiftlint.yml
-cd "${SRCROOT}" || exit 0
+# Run from repo root where .swiftlint.yml and Mintfile live
+REPO_ROOT="${SRCROOT}/.."
+cd "${REPO_ROOT}" || exit 0
 
-# Check for .swiftlint.yml in current directory
+# Check for required files
 if [ ! -f ".swiftlint.yml" ]; then
-  echo "warning: SwiftLint: No .swiftlint.yml found in ${SRCROOT} — skipping."
+  echo "warning: SwiftLint: No .swiftlint.yml found in ${REPO_ROOT} — skipping."
   exit 0
 fi
 
-# cd to repo root where Mintfile lives, then back to run SwiftLint
-REPO_ROOT="${SRCROOT}/.."
-if [ ! -f "${REPO_ROOT}/Mintfile" ]; then
+if [ ! -f "Mintfile" ]; then
   echo "warning: SwiftLint: Mintfile not found in ${REPO_ROOT} — skipping."
   exit 0
 fi
 
-# Get SwiftLint version (run from repo root for Mintfile)
-SWIFTLINT_VERSION="$(cd "${REPO_ROOT}" && "$MINT" run swiftlint --version 2>/dev/null || true)"
+# Get SwiftLint version
+SWIFTLINT_VERSION="$("$MINT" run swiftlint --version 2>/dev/null || true)"
 
 if [ -n "$SWIFTLINT_VERSION" ]; then
-  echo "SwiftLint: Linting using version $SWIFTLINT_VERSION from ${SRCROOT}"
-  # Run lint from SRCROOT (for local .swiftlint.yml) but use repo root's Mintfile
-  cd "${REPO_ROOT}" && "$MINT" run swiftlint lint --quiet --config "${SRCROOT}/.swiftlint.yml" || true
+  echo "SwiftLint: Linting using version $SWIFTLINT_VERSION"
+  # Run lint from repo root - lints entire project
+  "$MINT" run swiftlint lint --quiet || true
 else
   echo "warning: SwiftLint not available — skipping."
 fi
-

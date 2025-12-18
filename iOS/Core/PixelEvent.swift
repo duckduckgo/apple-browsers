@@ -2851,7 +2851,7 @@ extension Pixel.Event {
         case .aiChatSyncScopedSyncTokenError: return "m_aichat_sync_internal_scoped-sync-token-error"
         case .aiChatSyncEncryptionError: return "m_aichat_sync_internal_encryption-error"
         case .aiChatSyncDecryptionError: return "m_aichat_sync_internal_decryption-error"
-        case .aiChatSyncHistoryEnabledError: return "m_aichat_sync_internal_decryption-error"
+        case .aiChatSyncHistoryEnabledError: return "m_aichat_sync_internal_history_enabled-error"
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"

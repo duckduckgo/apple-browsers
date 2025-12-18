@@ -173,7 +173,6 @@ enum AIChatPixel: PixelKitEvent {
     case aiChatSyncDecryptionError(reason: String)
     case aiChatSyncHistoryEnabledError(reason: String)
 
-
     // MARK: -
 
     var name: String {
@@ -271,7 +270,7 @@ enum AIChatPixel: PixelKitEvent {
         case .aiChatSyncDecryptionError:
             return "aichat_sync_internal_decryption-error"
         case .aiChatSyncHistoryEnabledError:
-            return "aichat_sync_internal_decryption-error"
+            return "aichat_sync_internal_history_enabled-error"
         }
     }
 

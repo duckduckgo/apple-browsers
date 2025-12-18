@@ -180,13 +180,13 @@ private extension AIChatContextualInputViewController {
         )
     }
 
-    // Workaround: UIKeyboardLayoutGuide has known issues on first appearance in sheets.
+    // Note: UIKeyboardLayoutGuide has known issues on first appearance in sheets.
     // The layout frame isn't properly initialized until after the view has appeared.
     // We use a safe area constraint initially, then switch to keyboard layout guide when the keyboard appears.
     //
-    // References:
-    // - https://useyourloaf.com/blog/keyboard-layout-guide/ (notes it was "badly broken when first introduced")
-    // - https://developer.apple.com/forums/thread/746826 (keyboard layout issues with sheet presentation)
+    // Related references:
+    // - https://useyourloaf.com/blog/keyboard-layout-guide/
+    // - https://developer.apple.com/forums/thread/746826
 
     @objc func keyboardWillShow(_ notification: Notification) {
         if keyboardBottomConstraint == nil {

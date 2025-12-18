@@ -53,7 +53,7 @@ enum SettingsPixel: PixelKitEvent {
     case showFullURLSettingToggled
 
     /**
-     * Event Trigger: Browser theme settings was changed.
+     * Event Trigger: Browser Theme Appearance settings was changed.
      *
      * > Note: This is a unique pixel.
      *
@@ -64,7 +64,7 @@ enum SettingsPixel: PixelKitEvent {
      * Anomaly Investigation:
      * - Anomaly in this pixel may mean an increase/drop in app use.
      */
-    case themeSettingChanged
+    case themeAppearanceChanged
 
     /**
      * Event Trigger: Website zoom setting was changed.
@@ -130,7 +130,7 @@ enum SettingsPixel: PixelKitEvent {
                 return "settings_paid_ai_chat_opened"
             }
         case .showFullURLSettingToggled: return "settings_full_url_toggled_u"
-        case .themeSettingChanged: return "settings_theme_changed_u"
+        case .themeAppearanceChanged: return "settings_theme_appearance_changed_u"
         case .websiteZoomSettingChanged: return "settings_zoom_changed_u"
         case .dataClearingSettingToggled: return "settings_auto_clear_toggled_u"
         case .syncAppIconWithThemeTurnedOn: return "settings_sync_app_icon_with_theme_turned_on"
@@ -146,7 +146,7 @@ enum SettingsPixel: PixelKitEvent {
         switch self {
         case .settingsPaneOpened,
                 .showFullURLSettingToggled,
-                .themeSettingChanged,
+                .themeAppearanceChanged,
                 .websiteZoomSettingChanged,
                 .dataClearingSettingToggled,
                 .syncAppIconWithThemeTurnedOn,

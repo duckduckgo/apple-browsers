@@ -254,7 +254,7 @@ final class AppearancePreferences: ObservableObject {
         didSet {
             persistor.themeAppearance = themeAppearance.rawValue
             updateUserInterfaceStyle()
-            pixelFiring?.fire(SettingsPixel.themeSettingChanged, frequency: .uniqueByName)
+            pixelFiring?.fire(SettingsPixel.themeAppearanceChanged, frequency: .standard)
         }
     }
 

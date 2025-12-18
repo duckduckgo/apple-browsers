@@ -27,7 +27,7 @@ import Common
 class AutofillVaultUserScriptTests: XCTestCase {
 
     lazy var hostProvider: UserScriptHostProvider = SecurityOriginHostProvider()
-    
+
     override class func setUp() {
         super.setUp()
         WKFrameInfo.swizzleDealloc()

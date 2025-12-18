@@ -3,10 +3,6 @@
 
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
-
-/* No comment provided by engineer. */
-"Account" = "account";
-
 /* Buton label for Edit action */
 "action.generic.edit" = "Uredi";
 
@@ -38,7 +34,7 @@
 "action.title.aiChat.history" = "Klepeti Duck.ai";
 
 /* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "Nov klepet";
+"action.title.aiChat.new" = "Novi klepet z umetno inteligenco";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Nastavitve Duck.ai";
@@ -906,13 +902,6 @@
 
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Želite posodobiti uporabniško ime?";
-
-/* No comment provided by engineer. */
-"Available Products" = "Razpoložljivi izdelki";
-
-/* View plans button text during Black Friday campaign */
-"black-friday.campaign.view.plans.cta" = "Prihranite %d %% prvo leto";
-
 /* Add bookmark screen title */
 "bookmark.addBookmark.title" = "Dodaj zaznamek";
 
@@ -1035,10 +1024,6 @@
 
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Preklic ni dovoljen več kot enkrat.";
-
-/* No comment provided by engineer. */
-"Checking for existing account..." = "Preverjanje, ali že obstaja račun ...";
-
 /* Close All Tabs */
 "close.all.tabs" = "Zapri vse zavihke";
 
@@ -1164,10 +1149,6 @@
 
 /* No comment provided by engineer. */
 "Current Dismiss Count: %@" = "Current Dismiss Count: %@";
-
-/* No comment provided by engineer. */
-"Current Subscriptions" = "Trenutne naročnine";
-
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "VSEBINA CELICE PO MERI";
 
@@ -1689,10 +1670,6 @@
 
 /* Generic error message on a dialog for when the cause is not known. */
 "error.unknown.try.again" = "Prišlo je do neznane napake.";
-
-/* No comment provided by engineer. */
-"External ID: %@" = "Zunanji ID: %@";
-
 /* No comment provided by engineer. */
 "favorite" = "Priljubljeni";
 
@@ -1962,25 +1939,6 @@
 
 /* No comment provided by engineer. */
 "findinpage.title" = "Najdi na strani";
-
-/* AI Chats option subtitle in fire confirmation */
-"fire.confirmation.aichats.subtitle" = "Izbriši vse klepete";
-
-/* AI Chats option title in fire confirmation */
-"fire.confirmation.aichats.title" = "Klepeti Duck.ai";
-
-/* Subtitle for cookies/site data when history is disabled */
-"fire.confirmation.data.subtitle.historyDisabled" = "Morda boste odjavljeni iz računov";
-
-/* Cookies and site data option title in fire confirmation */
-"fire.confirmation.data.title" = "Piškotki in podatki spletnega mesta";
-
-/* Tabs option title in fire confirmation */
-"fire.confirmation.tabs.title" = "Zavihki";
-
-/* Title for fire button confirmation screen */
-"fire.confirmation.title" = "Izberite, kaj želite izbrisati";
-
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Zračni tok";
 
@@ -2118,10 +2076,6 @@
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Zadnja obdelava: %@";
-
-/* No comment provided by engineer. */
-"Loading available products..." = "Nalaganje razpoložljivih izdelkov ...";
-
 /* No comment provided by engineer. */
 "Loading brokers..." = "Nalaganje posrednikov ...";
 
@@ -2466,13 +2420,6 @@
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Možnost naslovne vrstice";
-
-/* No comment provided by engineer. */
-"No active subscriptions" = "Ni aktivnih naročnin";
-
-/* No comment provided by engineer. */
-"No existing subscription found" = "Ni najdena obstoječa naročnina";
-
 /* No comment provided by engineer. */
 "No Logs" = "Ni dnevnikov";
 
@@ -2481,10 +2428,6 @@
 
 /* No comment provided by engineer. */
 "No results found" = "Ni rezultatov";
-
-/* No comment provided by engineer. */
-"No subscriptions available" = "Na voljo ni nobena naročnina";
-
 /* No comment provided by engineer. */
 "OK" = "V REDU";
 
@@ -2496,10 +2439,6 @@
 
 /* Text displayed on notification appearing in the address bar when the browser  hides a cookie popup */
 "omnibar.notification.popup-hidden" = "Pojavno okno je skrito";
-
-/* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
-"omnibar.notification.trackers-blocked" = "%d Trackers";
-
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Razumem";
 
@@ -2570,7 +2509,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Nastavitvah > Funkcije UI.";
 
 /* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Želite preprost dostop do zasebnega klepeta z umetno inteligenco?";
+"onboarding.highlights.searchExperience.title" = "Želite lažji dostop do zasebnega klepeta z umetno inteligenco?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Pa začnimo!";
@@ -2961,13 +2900,6 @@
 
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Nastavitve modula Search Assist";
-
-/* Settings screen cell subtitle for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.subtitle" = "Prikaži nove klepete Duck.ai kot zavihke v brskalniku";
-
-/* Settings screen cell title for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.title" = "Način zavihkov Duck.ai";
-
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Skrij slike, ki jih ustvari umetna inteligenca";
 
@@ -3171,10 +3103,6 @@
 
 /* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Nov";
-
-/* Copy for badge on settings item to show an item is experimental */
-"settings.item.badge.preview" = "Predogled";
-
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tipkovnica";
 
@@ -3444,10 +3372,6 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Katera spletna stran je poškodovana?";
-
-/* No comment provided by engineer. */
-"Status" = "Stanje";
-
 /* No comment provided by engineer. */
 "Status: Invalidated" = "Status: Neveljaven";
 
@@ -4101,13 +4025,6 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Sporočilo od %@:";
-
-/* No comment provided by engineer. */
-"Will attach to EXISTING account" = "Bo priloženo k OBSTOJEČEMU računu";
-
-/* No comment provided by engineer. */
-"Will create NEW account" = "Bo ustvarjen NOV račun";
-
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "PRIHRANITE 25 %";
 
@@ -4179,4 +4096,3 @@
 
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Kaj želite uvoziti?";
-

@@ -3,10 +3,6 @@
 
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
-
-/* No comment provided by engineer. */
-"Account" = "account";
-
 /* Buton label for Edit action */
 "action.generic.edit" = "Editați";
 
@@ -38,7 +34,7 @@
 "action.title.aiChat.history" = "Chaturi Duck.ai";
 
 /* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "Chat nou";
+"action.title.aiChat.new" = "Chat AI nou";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Setări Duck.ai";
@@ -906,13 +902,6 @@
 
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Actualizezi numele de utilizator?";
-
-/* No comment provided by engineer. */
-"Available Products" = "Produse disponibile";
-
-/* View plans button text during Black Friday campaign */
-"black-friday.campaign.view.plans.cta" = "Economisește %d%% în primul an";
-
 /* Add bookmark screen title */
 "bookmark.addBookmark.title" = "Adăugare semn de carte";
 
@@ -1035,10 +1024,6 @@
 
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Anularea nu este permisă mai mult de o singură dată";
-
-/* No comment provided by engineer. */
-"Checking for existing account..." = "Se verifică dacă există deja un cont...";
-
 /* Close All Tabs */
 "close.all.tabs" = "Închide toate filele";
 
@@ -1164,10 +1149,6 @@
 
 /* No comment provided by engineer. */
 "Current Dismiss Count: %@" = "Current Dismiss Count: %@";
-
-/* No comment provided by engineer. */
-"Current Subscriptions" = "Abonamente existente";
-
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "CONȚINUT PERSONALIZAT CELULE";
 
@@ -1689,10 +1670,6 @@
 
 /* Generic error message on a dialog for when the cause is not known. */
 "error.unknown.try.again" = "S-a produs o eroare necunoscută.";
-
-/* No comment provided by engineer. */
-"External ID: %@" = "Identificator extern: %@";
-
 /* No comment provided by engineer. */
 "favorite" = "Preferință";
 
@@ -1962,25 +1939,6 @@
 
 /* No comment provided by engineer. */
 "findinpage.title" = "Găsire în pagină";
-
-/* AI Chats option subtitle in fire confirmation */
-"fire.confirmation.aichats.subtitle" = "Șterge toate chaturile";
-
-/* AI Chats option title in fire confirmation */
-"fire.confirmation.aichats.title" = "Chaturi Duck.ai";
-
-/* Subtitle for cookies/site data when history is disabled */
-"fire.confirmation.data.subtitle.historyDisabled" = "Te poate deconecta de la conturi";
-
-/* Cookies and site data option title in fire confirmation */
-"fire.confirmation.data.title" = "Date privind modulele cookie și site-ul";
-
-/* Tabs option title in fire confirmation */
-"fire.confirmation.tabs.title" = "File";
-
-/* Title for fire button confirmation screen */
-"fire.confirmation.title" = "Alege ce să ștergi";
-
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Curent de aer";
 
@@ -2118,10 +2076,6 @@
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Ultima procesare: %@";
-
-/* No comment provided by engineer. */
-"Loading available products..." = "Se încarcă produsele disponibile...";
-
 /* No comment provided by engineer. */
 "Loading brokers..." = "Se încarcă brokerii...";
 
@@ -2466,13 +2420,6 @@
 
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Opțiunea bară de adrese";
-
-/* No comment provided by engineer. */
-"No active subscriptions" = "Nu există abonamente active";
-
-/* No comment provided by engineer. */
-"No existing subscription found" = "Nu s-a găsit niciun abonament";
-
 /* No comment provided by engineer. */
 "No Logs" = "Niciun jurnal";
 
@@ -2481,10 +2428,6 @@
 
 /* No comment provided by engineer. */
 "No results found" = "Nu s-a găsit niciun rezultat";
-
-/* No comment provided by engineer. */
-"No subscriptions available" = "Nu există abonamente disponibile";
-
 /* No comment provided by engineer. */
 "OK" = "OK";
 
@@ -2496,10 +2439,6 @@
 
 /* Text displayed on notification appearing in the address bar when the browser  hides a cookie popup */
 "omnibar.notification.popup-hidden" = "Pop-up ascuns";
-
-/* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
-"omnibar.notification.trackers-blocked" = "%d Trackers";
-
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Am înțeles";
 
@@ -2570,7 +2509,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Setări > Funcții IA.";
 
 /* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Vrei acces ușor la chatul privat cu IA?";
+"onboarding.highlights.searchExperience.title" = "Dorești un acces mai ușor la chatul privat cu IA?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Să începem!";
@@ -2961,13 +2900,6 @@
 
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Setări Search Assist";
-
-/* Settings screen cell subtitle for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.subtitle" = "Afișează noile chaturi Duck.ai ca file în browser";
-
-/* Settings screen cell title for enabling Duck.ai as tabs */
-"settings.aifeatures.full.mode.title" = "Modul de file Duck.ai";
-
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Ascunde imaginile generate de IA";
 
@@ -3171,10 +3103,6 @@
 
 /* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Nouă";
-
-/* Copy for badge on settings item to show an item is experimental */
-"settings.item.badge.preview" = "Previzualizare";
-
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tastatură";
 
@@ -3444,10 +3372,6 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Ce site este defect?";
-
-/* No comment provided by engineer. */
-"Status" = "Stare";
-
 /* No comment provided by engineer. */
 "Status: Invalidated" = "Stare: invalidat";
 
@@ -4101,13 +4025,6 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Un mesaj de la %@:";
-
-/* No comment provided by engineer. */
-"Will attach to EXISTING account" = "Se va atașa la un cont EXISTENT";
-
-/* No comment provided by engineer. */
-"Will create NEW account" = "Va crea un cont NOU";
-
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "ECONOMISEȘTE 25%";
 
@@ -4179,4 +4096,3 @@
 
 /* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
 "zip.content.import.types.title" = "Ce dorești să imporți?";
-

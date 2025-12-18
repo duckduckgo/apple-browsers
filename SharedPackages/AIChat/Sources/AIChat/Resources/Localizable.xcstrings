@@ -83,12 +83,6 @@
             "value" : "Download di %@ completato"
           }
         },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@のダウンロードが完了しました"
-          }
-        },
         "lt" : {
           "stringUnit" : {
             "state" : "translated",
@@ -243,12 +237,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Download non riuscito"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ダウンロードに失敗しました"
           }
         },
         "lt" : {
@@ -411,12 +399,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Mostra"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "表示"
           }
         },
         "lt" : {

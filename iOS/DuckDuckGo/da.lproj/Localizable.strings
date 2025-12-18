@@ -4,6 +4,9 @@
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
 
+/* No comment provided by engineer. */
+"Account" = "account";
+
 /* Buton label for Edit action */
 "action.generic.edit" = "Rediger";
 
@@ -35,7 +38,7 @@
 "action.title.aiChat.history" = "Duck.ai-chats";
 
 /* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "Ny AI-chat";
+"action.title.aiChat.new" = "Ny chat";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Duck.ai-indstillinger";
@@ -904,6 +907,12 @@
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Opdater brugernavn?";
 
+/* No comment provided by engineer. */
+"Available Products" = "Tilgængelige produkter";
+
+/* View plans button text during Black Friday campaign */
+"black-friday.campaign.view.plans.cta" = "Spar %d% det første år";
+
 /* Add bookmark screen title */
 "bookmark.addBookmark.title" = "Tilføj bogmærke";
 
@@ -1026,6 +1035,9 @@
 
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Annullering er ikke tilladt mere end én gang";
+
+/* No comment provided by engineer. */
+"Checking for existing account..." = "Tjekker for eksisterende konto...";
 
 /* Close All Tabs */
 "close.all.tabs" = "Luk alle faner";
@@ -1152,6 +1164,9 @@
 
 /* No comment provided by engineer. */
 "Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+
+/* No comment provided by engineer. */
+"Current Subscriptions" = "Nuværende abonnementer";
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "TILPASSET CELLEINDHOLD";
@@ -1676,6 +1691,9 @@
 "error.unknown.try.again" = "Der er opstået en ukendt fejl.";
 
 /* No comment provided by engineer. */
+"External ID: %@" = "Eksternt ID: %@";
+
+/* No comment provided by engineer. */
 "favorite" = "Favorit";
 
 /* No comment provided by engineer. */
@@ -1945,6 +1963,24 @@
 /* No comment provided by engineer. */
 "findinpage.title" = "Find på side";
 
+/* AI Chats option subtitle in fire confirmation */
+"fire.confirmation.aichats.subtitle" = "Slet alle chats";
+
+/* AI Chats option title in fire confirmation */
+"fire.confirmation.aichats.title" = "Duck.ai-chats";
+
+/* Subtitle for cookies/site data when history is disabled */
+"fire.confirmation.data.subtitle.historyDisabled" = "Du kan blive logget ud af konti";
+
+/* Cookies and site data option title in fire confirmation */
+"fire.confirmation.data.title" = "Cookies og webstedsdata";
+
+/* Tabs option title in fire confirmation */
+"fire.confirmation.tabs.title" = "Faner";
+
+/* Title for fire button confirmation screen */
+"fire.confirmation.title" = "Vælg, hvad du vil slette";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Airstream";
 
@@ -2082,6 +2118,9 @@
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Sidst behandlet: %@";
+
+/* No comment provided by engineer. */
+"Loading available products..." = "Indlæser tilgængelige produkter ...";
 
 /* No comment provided by engineer. */
 "Loading brokers..." = "Indlæser mæglere...";
@@ -2429,6 +2468,12 @@
 "new.address.bar.picker.title" = "Indstilling af adresselinje";
 
 /* No comment provided by engineer. */
+"No active subscriptions" = "Ingen aktive abonnementer";
+
+/* No comment provided by engineer. */
+"No existing subscription found" = "Intet eksisterende abonnement blev fundet";
+
+/* No comment provided by engineer. */
 "No Logs" = "Ingen logfiler";
 
 /* No comment provided by engineer. */
@@ -2436,6 +2481,9 @@
 
 /* No comment provided by engineer. */
 "No results found" = "Ingen resultater fundet";
+
+/* No comment provided by engineer. */
+"No subscriptions available" = "Ingen tilgængelige abonnementer";
 
 /* No comment provided by engineer. */
 "OK" = "Okay";
@@ -2448,6 +2496,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser  hides a cookie popup */
 "omnibar.notification.popup-hidden" = "Pop op-vindue skjult";
+
+/* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
+"omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Forstået";
@@ -2519,7 +2570,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Indstillinger > AI-funktioner.";
 
 /* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Vil du have nemmere adgang til privat AI-chat?";
+"onboarding.highlights.searchExperience.title" = "Vil du have nem adgang til privat AI-chat?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Lad os gøre det!";
@@ -2911,6 +2962,12 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Indstillinger for Search Assist";
 
+/* Settings screen cell subtitle for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.subtitle" = "Vis nye Duck.ai-chats som faner i browseren";
+
+/* Settings screen cell title for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.title" = "Duck.ai fanetilstand";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Skjul AI-genererede billeder";
 
@@ -2935,11 +2992,56 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Deaktiver for at forhindre, at links automatisk åbnes i andre installerede apps.";
 
+/* Subtitle explaining what the cookies option does in auto clear settings */
+"settings.autoclear.cookies.subtitle" = "Slet alle webstedsdata, inklusive besøgte sider. Du kan blive logget ud af konti.";
+
+/* Title for the cookies and site data option in auto clear settings */
+"settings.autoclear.cookies.title" = "Cookies og webstedsdata";
+
+/* Subtitle explaining what the Duck.ai chats option does in auto clear settings */
+"settings.autoclear.duckai.chats.subtitle" = "Slet alle chats, inklusive fastgjorte chats";
+
+/* Title for the Duck.ai chats option in auto clear settings */
+"settings.autoclear.duckai.chats.title" = "Duck.ai-chats";
+
+/* Section header for the auto clear options */
+"settings.autoclear.section.header" = "Ryd";
+
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Ryd faner og data";
 
 /* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
 "settings.autoclear.tabs.and.data.with.aichat" = "Ryd faner, data og Duck.ai-chats";
+
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "Luk alle åbne faner";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "Faner";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "App-afslutning, inaktiv i 1 time";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "App-afslutning, inaktiv i 5 minutter";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "App-afslutning, inaktiv i 15 minutter";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "App-afslutning, inaktiv i 30 minutter";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "Kun ved app-afslutning";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "Exit af app er defineret ved at swipe appen for at lukke den, mens inaktivitet er når appen er i baggrunden.";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "Ønsket timing";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "Data vil blive slettet ved genstart af appen.";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Søgeforslag";
@@ -2959,6 +3061,9 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Hvis Touch ID, Face ID eller en systemadgangskode er aktiveret, bliver du bedt om at låse appen op, når du åbner den.";
 
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "Automatisk sletning af data";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Browserfeedback";
 
@@ -2967,6 +3072,9 @@
 
 /* Settings screen cell text for clearing AI chat history */
 "settings.clear.aichat.history.title" = "Ryd Duck.ai-chats";
+
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "Ryd browserdata";
 
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Ryd data automatisk";
@@ -2994,6 +3102,9 @@
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Datarydning";
+
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "Sletning af dine data kan hjælpe med at beskytte dit privatliv online. Brug Fire Button til at rydde data manuelt, eller opsæt automatisk rydning.";
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Standardbrowser";
@@ -3040,6 +3151,9 @@
 /* Settings screen cell text for Fireproof Sites */
 "settings.fireproof.sites" = "Brandsikre websteder";
 
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Fireproof websteder";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Generelt";
 
@@ -3055,8 +3169,11 @@
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Importer adgangskoder";
 
-/* Copy for budge on settings item to show an item is new */
+/* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Ny";
+
+/* Copy for badge on settings item to show an item is experimental */
+"settings.item.badge.preview" = "Forhåndsvisning";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tastatur";
@@ -3327,6 +3444,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Hvilket websted er ødelagt?";
+
+/* No comment provided by engineer. */
+"Status" = "Status";
 
 /* No comment provided by engineer. */
 "Status: Invalidated" = "Status: Ugyldiggjort";
@@ -3981,6 +4101,12 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "En besked fra %@:";
+
+/* No comment provided by engineer. */
+"Will attach to EXISTING account" = "Vil blive knyttet til en EKSISTERENDE konto";
+
+/* No comment provided by engineer. */
+"Will create NEW account" = "Vil oprette en NY konto";
 
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "SPAR 25 %";

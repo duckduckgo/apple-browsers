@@ -4,6 +4,9 @@
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
 
+/* No comment provided by engineer. */
+"Account" = "account";
+
 /* Buton label for Edit action */
 "action.generic.edit" = "Редактировать";
 
@@ -35,7 +38,7 @@
 "action.title.aiChat.history" = "Чаты Duck.ai";
 
 /* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "Запустить AI Chat";
+"action.title.aiChat.new" = "Запустить чат";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Настройки Duck.ai";
@@ -904,6 +907,12 @@
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Обновить имя пользователя?";
 
+/* No comment provided by engineer. */
+"Available Products" = "Доступные продукты";
+
+/* View plans button text during Black Friday campaign */
+"black-friday.campaign.view.plans.cta" = "Сэкономить %d%% в первый год";
+
 /* Add bookmark screen title */
 "bookmark.addBookmark.title" = "Добавить закладку";
 
@@ -1026,6 +1035,9 @@
 
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Отмена допускается только один раз";
+
+/* No comment provided by engineer. */
+"Checking for existing account..." = "Ищем учетную запись...";
 
 /* Close All Tabs */
 "close.all.tabs" = "Закрыть все вкладки";
@@ -1151,7 +1163,10 @@
 "crash.report.dialog.title" = "Автоматически отправлять отчеты о сбоях?";
 
 /* No comment provided by engineer. */
-"Current Dismiss Count: %@" = "Текущее количество отклонений: %@";
+"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+
+/* No comment provided by engineer. */
+"Current Subscriptions" = "Текущие подписки";
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "СОБСТВЕННОЕ СОДЕРЖИМОЕ ЯЧЕЙКИ";
@@ -1676,6 +1691,9 @@
 "error.unknown.try.again" = "Произошла неизвестная ошибка";
 
 /* No comment provided by engineer. */
+"External ID: %@" = "Внешний идентификатор: %@";
+
+/* No comment provided by engineer. */
 "favorite" = "Избранное";
 
 /* No comment provided by engineer. */
@@ -1945,6 +1963,24 @@
 /* No comment provided by engineer. */
 "findinpage.title" = "Найти на странице";
 
+/* AI Chats option subtitle in fire confirmation */
+"fire.confirmation.aichats.subtitle" = "Удалить все чаты";
+
+/* AI Chats option title in fire confirmation */
+"fire.confirmation.aichats.title" = "Чаты Duck.ai";
+
+/* Subtitle for cookies/site data when history is disabled */
+"fire.confirmation.data.subtitle.historyDisabled" = "Операция может сопровождаться выходом из учетных записей.";
+
+/* Cookies and site data option title in fire confirmation */
+"fire.confirmation.data.title" = "Куки-файлы и данные сайтов";
+
+/* Tabs option title in fire confirmation */
+"fire.confirmation.tabs.title" = "Вкладки";
+
+/* Title for fire button confirmation screen */
+"fire.confirmation.title" = "Выбрать, что удалить";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Воздушный поток";
 
@@ -2082,6 +2118,9 @@
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Последняя обработка: %@";
+
+/* No comment provided by engineer. */
+"Loading available products..." = "Загружаем доступные продукты...";
 
 /* No comment provided by engineer. */
 "Loading brokers..." = "Загружаются брокеры...";
@@ -2429,6 +2468,12 @@
 "new.address.bar.picker.title" = "Опция адресной строки";
 
 /* No comment provided by engineer. */
+"No active subscriptions" = "Нет активных подписок";
+
+/* No comment provided by engineer. */
+"No existing subscription found" = "Подписка не найдена";
+
+/* No comment provided by engineer. */
 "No Logs" = "Нет журналов";
 
 /* No comment provided by engineer. */
@@ -2436,6 +2481,9 @@
 
 /* No comment provided by engineer. */
 "No results found" = "Ничего не найдено";
+
+/* No comment provided by engineer. */
+"No subscriptions available" = "Нет доступных подписок";
 
 /* No comment provided by engineer. */
 "OK" = "Хорошо";
@@ -2448,6 +2496,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser  hides a cookie popup */
 "omnibar.notification.popup-hidden" = "Всплывающее окно скрыто";
+
+/* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
+"omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Понятно";
@@ -2519,7 +2570,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Настройки > Функции ИИ";
 
 /* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Нужен удобный доступ к приватному чату с ИИ?";
+"onboarding.highlights.searchExperience.title" = "Нужен удобный доступ к приватному чату с ИИ?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Поехали!";
@@ -2813,7 +2864,7 @@
 "Reset" = "Сбросить";
 
 /* No comment provided by engineer. */
-"Reset Pill Dismiss Count" = "Сбросить счетчик отклонения таблеток";
+"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
 
 /* No comment provided by engineer. */
 "Reset Priming Modal State" = "Reset Priming Modal State";
@@ -2911,6 +2962,12 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Настройки Search Assist";
 
+/* Settings screen cell subtitle for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.subtitle" = "Показывать новые чаты Duck.ai как вкладки браузера";
+
+/* Settings screen cell title for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.title" = "Режим вкладок Duck.ai";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Скрыть ИИ-картинки";
 
@@ -2935,11 +2992,56 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Отключение этой функции не позволит ссылкам автоматически открываться в других приложениях.";
 
+/* Subtitle explaining what the cookies option does in auto clear settings */
+"settings.autoclear.cookies.subtitle" = "Удалить все данные сайтов, включая историю посещений. Операция может сопровождаться выходом из учетных записей.";
+
+/* Title for the cookies and site data option in auto clear settings */
+"settings.autoclear.cookies.title" = "Куки-файлы и данные сайтов";
+
+/* Subtitle explaining what the Duck.ai chats option does in auto clear settings */
+"settings.autoclear.duckai.chats.subtitle" = "Удалить все чаты, включая закрепленные.";
+
+/* Title for the Duck.ai chats option in auto clear settings */
+"settings.autoclear.duckai.chats.title" = "Чаты Duck.ai";
+
+/* Section header for the auto clear options */
+"settings.autoclear.section.header" = "Очистить";
+
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Сбросить вкладки и данные";
 
 /* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
 "settings.autoclear.tabs.and.data.with.aichat" = "Очистить вкладки, данные и чаты Duck.ai";
+
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "Закрыть все открытые вкладки.";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "Вкладки";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "После выхода из приложения, через 1 час бездействия";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "После выхода из приложения, через 5 минут бездействия";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "После выхода из приложения, через 15 минут бездействия";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "После выхода из приложения, через 30 минут бездействия";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "Только после выхода из приложения";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "Под выходом из приложения подразумевается закрытие свайпом, а под бездействием — работа в фоновом режиме.";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "Предпочитаемое время";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "Данные будут удалены при следующем запуске приложения.";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Поисковые рекомендации";
@@ -2959,6 +3061,9 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Если в системе работает технология Touch ID, Face ID или код-пароль, при запуске вам придется разблокировать приложение.";
 
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "Автоматическая очистка данных";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Отзыв о браузере";
 
@@ -2967,6 +3072,9 @@
 
 /* Settings screen cell text for clearing AI chat history */
 "settings.clear.aichat.history.title" = "Очистить чаты Duck.ai";
+
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "Стереть данные браузера";
 
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Автоудаление данных";
@@ -2994,6 +3102,9 @@
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Очистка данных";
+
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "Удаление данных способствует конфиденциальности онлайн. Данные можно стирать автоматически или вручную с помощью кнопки Fire Button.";
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Браузер по умолчанию";
@@ -3040,6 +3151,9 @@
 /* Settings screen cell text for Fireproof Sites */
 "settings.fireproof.sites" = "Огнеупорные сайты";
 
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Огнеупорные сайты";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Основные";
 
@@ -3055,8 +3169,11 @@
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Импорт паролей";
 
-/* Copy for budge on settings item to show an item is new */
+/* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "новый";
+
+/* Copy for badge on settings item to show an item is experimental */
+"settings.item.badge.preview" = "Предпросмотр";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Клавиатура";
@@ -3327,6 +3444,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "На каком сайте возникает проблема?";
+
+/* No comment provided by engineer. */
+"Status" = "Статус";
 
 /* No comment provided by engineer. */
 "Status: Invalidated" = "Статус: недействительный";
@@ -3981,6 +4101,12 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Сообщение от %@:";
+
+/* No comment provided by engineer. */
+"Will attach to EXISTING account" = "Привязывается к ИМЕЮЩЕЙСЯ учетной записи";
+
+/* No comment provided by engineer. */
+"Will create NEW account" = "Будет создана НОВАЯ учетная запись";
 
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "СКИДКА 25%";

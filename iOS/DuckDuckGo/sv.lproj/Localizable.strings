@@ -4,6 +4,9 @@
 /* No comment provided by engineer. */
 "%@ " = "%@ ";
 
+/* No comment provided by engineer. */
+"Account" = "account";
+
 /* Buton label for Edit action */
 "action.generic.edit" = "Redigera";
 
@@ -35,7 +38,7 @@
 "action.title.aiChat.history" = "Duck.ai-chattar";
 
 /* Start new AI Chat action in the menu list */
-"action.title.aiChat.new" = "Ny AI-chatt";
+"action.title.aiChat.new" = "Ny chatt";
 
 /* Open AI Chat settings action in the menu list */
 "action.title.aiChat.settings" = "Duck.ai-inställningar";
@@ -904,6 +907,12 @@
 /* Title displayed on modal asking for the user to update the username */
 "autofill.update-usernamr.title" = "Uppdatera användarnamn?";
 
+/* No comment provided by engineer. */
+"Available Products" = "Tillgängliga produkter";
+
+/* View plans button text during Black Friday campaign */
+"black-friday.campaign.view.plans.cta" = "Spara %d %% första året";
+
 /* Add bookmark screen title */
 "bookmark.addBookmark.title" = "Lägg till bokmärke";
 
@@ -1026,6 +1035,9 @@
 
 /* No comment provided by engineer. */
 "Cancel is not allowed more than once" = "Det är inte tillåtet att avbryta mer än en gång";
+
+/* No comment provided by engineer. */
+"Checking for existing account..." = "Söker efter befintligt konto ...";
 
 /* Close All Tabs */
 "close.all.tabs" = "Stäng alla flikar";
@@ -1152,6 +1164,9 @@
 
 /* No comment provided by engineer. */
 "Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+
+/* No comment provided by engineer. */
+"Current Subscriptions" = "Nuvarande abonnemang";
 
 /* No comment provided by engineer. */
 "CUSTOM CELL CONTENT" = "ANPASSAT CELLINNEHÅLL";
@@ -1676,6 +1691,9 @@
 "error.unknown.try.again" = "Ett okänt fel har inträffat";
 
 /* No comment provided by engineer. */
+"External ID: %@" = "Extern ID: %@";
+
+/* No comment provided by engineer. */
 "favorite" = "Favorit";
 
 /* No comment provided by engineer. */
@@ -1945,6 +1963,24 @@
 /* No comment provided by engineer. */
 "findinpage.title" = "Hitta på sidan";
 
+/* AI Chats option subtitle in fire confirmation */
+"fire.confirmation.aichats.subtitle" = "Radera alla chattar";
+
+/* AI Chats option title in fire confirmation */
+"fire.confirmation.aichats.title" = "Duck.ai-chattar";
+
+/* Subtitle for cookies/site data when history is disabled */
+"fire.confirmation.data.subtitle.historyDisabled" = "Kan logga ut dig från konton";
+
+/* Cookies and site data option title in fire confirmation */
+"fire.confirmation.data.title" = "Cookies och webbplatsdata";
+
+/* Tabs option title in fire confirmation */
+"fire.confirmation.tabs.title" = "Flikar";
+
+/* Title for fire button confirmation screen */
+"fire.confirmation.title" = "Välj vad som ska raderas";
+
 /* No comment provided by engineer. */
 "fireButtonAnimation.airstream.name" = "Luftström";
 
@@ -2082,6 +2118,9 @@
 
 /* No comment provided by engineer. */
 "Last Processed: %@" = "Senast bearbetad: %@";
+
+/* No comment provided by engineer. */
+"Loading available products..." = "Läser in tillgängliga produkter ...";
 
 /* No comment provided by engineer. */
 "Loading brokers..." = "Läser in mäklare ...";
@@ -2429,6 +2468,12 @@
 "new.address.bar.picker.title" = "Alternativ för adressfält";
 
 /* No comment provided by engineer. */
+"No active subscriptions" = "Inga aktiva abonnemang";
+
+/* No comment provided by engineer. */
+"No existing subscription found" = "Inget befintligt abonnemang hittades";
+
+/* No comment provided by engineer. */
 "No Logs" = "Inga loggar";
 
 /* No comment provided by engineer. */
@@ -2436,6 +2481,9 @@
 
 /* No comment provided by engineer. */
 "No results found" = "Inga resultat hittades";
+
+/* No comment provided by engineer. */
+"No subscriptions available" = "Inga abonnemang tillgängliga";
 
 /* No comment provided by engineer. */
 "OK" = "OK";
@@ -2448,6 +2496,9 @@
 
 /* Text displayed on notification appearing in the address bar when the browser  hides a cookie popup */
 "omnibar.notification.popup-hidden" = "Popup-fönster dolt";
+
+/* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
+"omnibar.notification.trackers-blocked" = "%d Trackers";
 
 /* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
 "onboarding.addToDock.buttons.gotIt" = "Jag fattar";
@@ -2519,7 +2570,7 @@
 "onboarding.highlights.searchExperience.footer.settings-path-bold" = "Inställningar > AI-funktioner.";
 
 /* The title of the onboarding dialog popup to select the preferred search experience. */
-"onboarding.highlights.searchExperience.title" = "Vill du ha enklare tillgång till privat AI-chatt?";
+"onboarding.highlights.searchExperience.title" = "Vill du ha enkel tillgång till privat AI-chatt?";
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Vi kör!";
@@ -2911,6 +2962,12 @@
 /* Title of search assist settings link */
 "settings.aifeatures.assist" = "Inställningar för Search Assist";
 
+/* Settings screen cell subtitle for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.subtitle" = "Visa nya Duck.ai-chattar som flikar i webbläsaren";
+
+/* Settings screen cell title for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.title" = "Flikläge för Duck.ai";
+
 /* Title of hide AI-generated images settings link */
 "settings.aifeatures.hide.ai.generated.images" = "Dölj AI-genererade bilder";
 
@@ -2935,11 +2992,56 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Inaktivera för att förhindra att länkar automatiskt öppnas i andra installerade appar.";
 
+/* Subtitle explaining what the cookies option does in auto clear settings */
+"settings.autoclear.cookies.subtitle" = "Radera all webbplatsdata, inklusive besökta webbplatser. Kan logga ut dig från konton.";
+
+/* Title for the cookies and site data option in auto clear settings */
+"settings.autoclear.cookies.title" = "Cookies och webbplatsdata";
+
+/* Subtitle explaining what the Duck.ai chats option does in auto clear settings */
+"settings.autoclear.duckai.chats.subtitle" = "Ta bort alla chattar, inklusive fästa chattar";
+
+/* Title for the Duck.ai chats option in auto clear settings */
+"settings.autoclear.duckai.chats.title" = "Duck.ai-chattar";
+
+/* Section header for the auto clear options */
+"settings.autoclear.section.header" = "Klart";
+
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Rensa flikar och data";
 
 /* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
 "settings.autoclear.tabs.and.data.with.aichat" = "Rensa flikar, data och Duck.ai-chattar";
+
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "Stäng alla öppna flikar";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "Flikar";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "Avsluta app, inaktiv i 1 timme";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "Avsluta app, inaktiv i 5 minuter";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Avsluta app, inaktiv i 15 minuter";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Avsluta app, inaktiv i 30 minuter";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "Lämna endast appen";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "Avslutning av app är då appen sveps för att stängas. Inaktivitet är då appen körs i bakgrunden.";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "Önskad tidpunkt";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "Data kommer att raderas när appen startas om.";
 
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Sökförslag";
@@ -2959,6 +3061,9 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Om Touch ID, Face ID eller ett systemlösenord har aktiverats blir du ombedd att låsa upp appen när du öppnar den.";
 
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "Automatisk datarensning";
+
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Webbläsarfeedback";
 
@@ -2967,6 +3072,9 @@
 
 /* Settings screen cell text for clearing AI chat history */
 "settings.clear.aichat.history.title" = "Rensa Duck.ai-chattar";
+
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "Rensa webbläsardata";
 
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Rensa data automatiskt";
@@ -2994,6 +3102,9 @@
 
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Datarensning";
+
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "Att radera dina data kan bidra till att skydda din integritet online. Använd Fire Button för att rensa data manuellt eller ställa in automatisk rensning.";
 
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Standardwebbläsare";
@@ -3040,6 +3151,9 @@
 /* Settings screen cell text for Fireproof Sites */
 "settings.fireproof.sites" = "Brandsäkra webbplatser";
 
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Fireproof-webbplatser";
+
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Allmänt";
 
@@ -3055,8 +3169,11 @@
 /* The name of Settings category in Complete Your Setup related to importing  passdwords */
 "settings.import.passwords" = "Importera lösenord";
 
-/* Copy for budge on settings item to show an item is new */
+/* Copy for badge on settings item to show an item is new */
 "settings.item.badge.new" = "Ny";
+
+/* Copy for badge on settings item to show an item is experimental */
+"settings.item.badge.preview" = "Förhandsvisning";
 
 /* Settings screen cell for Keyboard */
 "settings.keyboard" = "Tangentbord";
@@ -3327,6 +3444,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Vilken webbplats är skadad?";
+
+/* No comment provided by engineer. */
+"Status" = "Status";
 
 /* No comment provided by engineer. */
 "Status: Invalidated" = "Status: Ogiltig";
@@ -3981,6 +4101,12 @@
 
 /* Alert title explaining the message is shown by a website */
 "webJSAlert.website-message.format" = "Ett meddelande från %@:";
+
+/* No comment provided by engineer. */
+"Will attach to EXISTING account" = "Bifogas till BEFINTLIGT konto";
+
+/* No comment provided by engineer. */
+"Will create NEW account" = "Will create NEW account";
 
 /* Text for the badge displayed on the Subscription menu item during the win-back campaign */
 "win-back.campaign.menu.badge.text" = "SPARA 25 %";

@@ -1,0 +1,4182 @@
+/* No comment provided by engineer. */
+"%@" = "%@";
+
+/* No comment provided by engineer. */
+"%@ " = "%@ ";
+
+/* No comment provided by engineer. */
+"Account" = "アカウント";
+
+/* Buton label for Edit action */
+"action.generic.edit" = "編集";
+
+/* Button label for a generic show action */
+"action.generic.show" = "表示";
+
+/* Button label for Undo action */
+"action.generic.undo" = "元に戻す";
+
+/* Button label for managing favorites */
+"action.manage.favorites" = "管理";
+
+/* Button label for OK action */
+"action.ok" = "OK";
+
+/* Title for text zoom menu item.  %d%% is replaced with percent, e.g. 56% so do not change that please. */
+"action.text-zoom-menu-item" = "ズーム (%d％)";
+
+/* Text zoom menu item */
+"action.text-zoom-sheet-menu-item" = "ズーム";
+
+/* Title for text zoom sheet view.  %d%% is replaced with percent, e.g. 56% so do not change that please. */
+"action.text-zoom-sheet-title" = "テキストズーム (%d％)";
+
+/* Add action - button shown in alert */
+"action.title.add" = "追加する";
+
+/* Open AI Chat history action in the menu list */
+"action.title.aiChat.history" = "Duck.aiチャット";
+
+/* Start new AI Chat action in the menu list */
+"action.title.aiChat.new" = "新しいチャット";
+
+/* Open AI Chat settings action in the menu list */
+"action.title.aiChat.settings" = "Duck.ai 設定";
+
+/* Autofill Logins menu item opening the login list */
+"action.title.autofill.logins" = "パスワード";
+
+/* Confirmation of Add to Bookmarks action in Add All Open Tabs to Bookmarks alert */
+"action.title.bookmark" = "ブックマーク";
+
+/* Button: Open bookmarks list */
+"action.title.bookmarks" = "ブックマーク";
+
+/* Cancel action - button shown in alert */
+"action.title.cancel" = "キャンセル";
+
+/* Copy action */
+"action.title.copy" = "コピー";
+
+/* Floating message indicating URL has been copied */
+"action.title.copy.message" = "URLをコピーしました";
+
+/* Delete action - button shown in alert */
+"action.title.delete" = "削除";
+
+/* Disable protection action */
+"action.title.disable.protection" = "プライバシー保護を無効にする";
+
+/* Downloads menu item opening the downlods list */
+"action.title.downloads" = "ダウンロード";
+
+/* Open AI Chat action in the menu list */
+"action.title.duckai" = "Duck.ai";
+
+/* Edit Bookmark action */
+"action.title.edit.bookmark" = "ブックマークを編集";
+
+/* Enable protection action */
+"action.title.enable.protection" = "プライバシー保護を有効にする";
+
+/* No comment provided by engineer. */
+"action.title.forgetAll" = "タブとデータをクリア";
+
+/* Confirmation message */
+"action.title.forgetAllDone" = "タブとデータがクリアされました";
+
+/* Fire button title when AI chat clearing is enabled */
+"action.title.forgetAllWithAIChat" = "タブ、データ、Duck.aiチャットを消去する";
+
+/* Open in New Background Tab action */
+"action.title.newBackgroundTabForUrl" = "バックグラウンドで開く";
+
+/* Create New Tab action */
+"action.title.newTabAction" = "新しいタブ";
+
+/* Open in New Tab action */
+"action.title.newTabForUrl" = "新しいタブで開く";
+
+/* Open action */
+"action.title.open" = "オープン価格";
+
+/* Button: Open passwords list */
+"action.title.passwords" = "パスワード";
+
+/* Paste and Go action */
+"action.title.pasteAndGo" = "貼り付けて移動";
+
+/* Print action in the menu header */
+"action.title.print" = "印刷";
+
+/* Print action in the menu list */
+"action.title.print.site" = "印刷";
+
+/* Refresh action - button shown in alert */
+"action.title.refresh" = "更新";
+
+/* Refresh page action */
+"action.title.refreshPage" = "ページを再読み込み";
+
+/* Remove Favorite action */
+"action.title.remove.favorite" = "お気に入りを削除";
+
+/* Report broken site action */
+"action.title.reportBrokenSite" = "問題のあるサイトを報告";
+
+/* Action to reload current page in desktop mode */
+"action.title.request.desktop.site" = "デスクトップサイト";
+
+/* Action to reload current page in mobile mode */
+"action.title.request.mobile.site" = "モバイルサイト";
+
+/* Save action - button shown in alert */
+"action.title.save" = "保存";
+
+/* Add to Bookmarks action */
+"action.title.save.bookmark" = "ブックマークを追加";
+
+/* Add to Favorites action */
+"action.title.save.favorite" = "お気に入りに追加";
+
+/* Settings action */
+"action.title.settings" = "設定";
+
+/* Share action */
+"action.title.share" = "共有";
+
+/* New tab menu item opening a new tab */
+"action.title.tab.new" = "新しいタブ";
+
+/* VPN menu item */
+"action.title.vpn" = "VPN";
+
+/* Settings label for bottom position for the address bar */
+"address.bar.bottom" = "下部";
+
+/* Settings label for top position for the address bar */
+"address.bar.top" = "トップ";
+
+/* No comment provided by engineer. */
+"addWidget.button" = "ウィジェットを追加";
+
+/* No comment provided by engineer. */
+"addWidget.description" = "プライベート検索やお気に入りのサイトにすばやくアクセスできます。";
+
+/* No comment provided by engineer. */
+"addWidget.settings.firstParagraph" = "アプリが揺れるまでホーム画面の任意の場所を長押し";
+
+/* No comment provided by engineer. */
+"addWidget.settings.secondParagraph" = "**編集**ボタンをタップし、**ウィジェットを追加**を選択";
+
+/* Replacement string is a plus button icon. */
+"addWidget.settings.secondParagraph.%@" = "プラス%@ボタンをタップします。";
+
+/* No comment provided by engineer. */
+"addWidget.settings.title" = "検索して**DuckDuckGo**を選択します。次にウィジェットを選択します。";
+
+/* No comment provided by engineer. */
+"addWidget.title" = "お気に入りのサイトにワンタップでアクセスします。";
+
+/* Settings screen title for AI features */
+"ai-features.settings.title" = "AI機能";
+
+/* No comment provided by engineer. */
+"alert.message.bookmarkAll" = "既存のブックマークは複製されません。";
+
+/* Description for alert shown when sync error occurs because of bad bookmarks data */
+"alert.sync-bookmarks-bad-data-error-description" = "一部のブックマークは形式が誤っているか長すぎるため、同期されませんでした。";
+
+/* Description for alert shown when sync bookmarks paused for too many items */
+"alert.sync-bookmarks-paused-description" = "ブックマークの最大数に達しました。同期を再開するには、いくつかのブックマークを削除してください。";
+
+/* Title for alert shown when sync bookmarks paused for too many items */
+"alert.sync-bookmarks-paused-title" = "ブックマーク同期が一時停止中です";
+
+/* Description for alert shown when sync error occurs because of bad credentials data */
+"alert.sync-credentials-bad-data-error-description" = "一部のパスワードは形式が誤っているか長すぎるため、同期されませんでした。";
+
+/* Description for alert shown when sync credentials paused for too many items */
+"alert.sync-credentials-paused-description" = "パスワードの最大数に達しました。同期を再開するには、いくつかのパスワードを削除してください。";
+
+/* Title for alert shown when sync credentials paused for too many items */
+"alert.sync-credentials-paused-title" = "パスワード同期が一時停止中です";
+
+/* Description for alert shown when sync error occurs because of bad credit cards data */
+"alert.sync-credit-cards-bad-data-error-description" = "一部のクレジットカードは形式が誤っているか長すぎるため、同期されませんでした。";
+
+/* Description for alert shown when sync credit cards paused for too many items */
+"alert.sync-credit-cards-paused-description" = "クレジットカードの上限に達しました。同期を再開するには、クレジットカードをいくつか削除してください。";
+
+/* Title for alert shown when sync credit cards paused for too many items */
+"alert.sync-credit-cards-paused-title" = "クレジットカード同期が一時停止中です";
+
+/* Title for sync error alert */
+"alert.sync-error" = "Sync & Backupのエラー";
+
+/* Sync error alert action button title, takes the user to the sync settings page. */
+"alert.sync-error-action" = "同期設定";
+
+/* Description for alert shown when user logged off from sync */
+"alert.sync-invalid-login-error-description" = "同期が一時停止されました。このデバイスの同期を続行する場合は、別のデバイスまたはリカバリーコードを使用して再接続してください。";
+
+/* Sync Now button in alert asking if they would like to sync with another device */
+"alert.sync-new-device.button" = "今すぐ同期";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.message" = "「%@」は同期されたDuckDuckGoデータにアクセス可能になります。";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.title" = "新しいデバイスを同期しますか？";
+
+/* Learn more button in alert */
+"alert.sync-paused-alert-learn-more-button" = "詳細情報";
+
+/* Confirmation button in alert */
+"alert.sync-paused-alert-ok-button" = "OK";
+
+/* Title for alert shown when sync paused for an error */
+"alert.sync-paused-title" = "同期が一時停止中です";
+
+/* Switch account button in alert */
+"alert.sync-switch-account-button" = "同期を切り替える";
+
+/* Description for switching sync accounts when there's two */
+"alert.sync-switch-account-message" = "このデバイスはすでに同期されていますが、別のバックアップまたはデバイスと同期してもよろしいですか？切り替えても、このデバイスにすでに同期されているデータは削除されません。";
+
+/* Switch account title in alert */
+"alert.sync-switch-account-title" = "別のSyncに切り替えますか?";
+
+/* Description for alert shown when sync error occurs because of too many requests */
+"alert.sync-too-many-requests-error-description" = "Sync & Backupは一時的に利用できません。";
+
+/* Title of the warning message that tells the user that there was an error with the sync feature. */
+"alert.sync.warning.sync-error" = "同期エラー";
+
+/* Title of the warning message */
+"alert.sync.warning.sync-paused" = "Sync & Backup は一時停止中です";
+
+/* Disable protection alert */
+"alert.title.disable.protection" = "保護されていないサイトに追加する";
+
+/* Disable potection alert placeholder - leave as it is */
+"alert.title.disable.protection.placeholder" = "www.example.com";
+
+/* Save Bookmark action */
+"alert.title.save.bookmark" = "ブックマークを保存";
+
+/* Save Favorite action */
+"alert.title.save.favorite" = "お気に入りを保存";
+
+/* Description for unable to create recovery pdf error */
+"alert.unable-to-create-recovery-pdf-description" = "リカバリーPDFを作成できません。";
+
+/* Description for unable to delete data error */
+"alert.unable-to-delete-data-description" = "サーバー上のデータを削除できません。";
+
+/* Description for unable to merge two accounts error */
+"alert.unable-to-merge-two-accounts-description" = "これらのデバイスをペアリングするには、一方のデバイスでSync & Backupをオフにし、もう一方のデバイスで「別のデバイスと同期」をタップします。";
+
+/* Description for unable to remove device error */
+"alert.unable-to-remove-device-description" = "このデバイスをSync & Backupから削除できません。";
+
+/* Description for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-description" = "申し訳ありません。このコードは無効です。正しいコードが入力またはスキャンされたことを確認してください。";
+
+/* Description for unable to sync to server error */
+"alert.unable-to-sync-to-server-description" = "サーバーに接続できません。";
+
+/* Description for unable to sync with another device error */
+"alert.unable-to-sync-with-other-device-description" = "別のデバイスと同期できません。";
+
+/* Description for unable to turn sync off error */
+"alert.unable-to-turn-sync-off-description" = "Sync & Backupをオフにできません。";
+
+/* Description for unable to update device name error */
+"alert.unable-to-update-device-name-description" = "デバイス名を更新できません。";
+
+/* Shown on authentication screen */
+"app.authentication.unlock" = "DuckDuckGoのロックを解除します。";
+
+/* Authentication Alert Sign In Button */
+"auth.alert.login.button" = "サインイン";
+
+/* Authentication Alert - populated with a domain name */
+"auth.alert.message.encrypted" = "%@にサインインします。ログイン情報は安全に送信されます。";
+
+/* Authentication Alert - populated with a domain name */
+"auth.alert.message.plain" = "%@にログインします。接続が暗号化されていないため、パスワードは安全に送信されません。";
+
+/* Authentication Password field placeholder */
+"auth.alert.password.placeholder" = "パスワード";
+
+/* Authentication Alert Title */
+"auth.alert.title" = "認証が必要です";
+
+/* Authentication User name field placeholder */
+"auth.alert.username.placeholder" = "ユーザー名";
+
+/* No comment provided by engineer. */
+"autoclear.off" = "無効";
+
+/* No comment provided by engineer. */
+"autoclear.on" = "有効";
+
+/* Subtitle for search history items */
+"autocomplete.history.search.duckduckgo" = "DuckDuckGoで検索する";
+
+/* The message text shown in suggestions */
+"autocomplete.history.warning.message" = "検索候補に最近訪問したサイトが含まれるようになりました。設定でオフにするか、いつでも🔥 Fire Buttonでクリアできます。";
+
+/* Title for message show in suggestions */
+"autocomplete.history.warning.title" = "同じプライバシー。\nより優れた検索候補！";
+
+/* Switch to tab hint */
+"autocomplete.switch.to.tab" = "タブに切り替え";
+
+/* Autoconsent for Cookie Management Setting state */
+"autoconsent.disabled" = "無効";
+
+/* Autoconsent for Cookie Management Setting state */
+"autoconsent.enabled" = "有効";
+
+/* No comment provided by engineer. */
+"autoconsent.info.header" = "DuckDuckGoが訪問したサイトでCookie同意ポップアップを検出すると、Cookieを最小限に抑え、プライバシーを最大限に高めるために自動的に設定し、ポップアップを閉じます。一部のサイトではCookie設定を管理するオプションが提供されていないため、このようなポップアップを非表示にすることしかできません。";
+
+/* Message displayed after saving an autofill credit card */
+"autofill.creditcard-saved.toast" = "カードが保存されました";
+
+/* Toast message when a credit card item is deleted */
+"autofill.creditcard.deleted-message-no-title" = "カードが削除されました";
+
+/* Card name label for credit card details on autofill */
+"autofill.creditcard.details.card-name" = "カード名義人名";
+
+/* Card nickname label for credit card details on autofill */
+"autofill.creditcard.details.card-nickname" = "カードのニックネーム";
+
+/* Card number label for credit card details on autofill */
+"autofill.creditcard.details.card-number" = "カード番号";
+
+/* Card number label for credit card details on autofill when editing */
+"autofill.creditcard.details.card-number.required" = "カード番号";
+
+/* Title for toast when copying the credit card name */
+"autofill.creditcard.details.copy-toast.card-name-copied" = "名前がコピーされました";
+
+/* Title for toast when copying the credit card number */
+"autofill.creditcard.details.copy-toast.card-number-copied" = "カード番号がコピーされました";
+
+/* Title for toast when copying the credit card cvv (security code) */
+"autofill.creditcard.details.copy-toast.cvv-copied" = "CVVがコピーされました";
+
+/* Title for toast when copying the credit card expiration date */
+"autofill.creditcard.details.copy-toast.exp-date-copied" = "有効期限がコピーされました";
+
+/* CVV (security code) label for credit card details on autofill */
+"autofill.creditcard.details.cvv" = "CVV";
+
+/* Title for autofill credit card details */
+"autofill.creditcard.details.default-title" = "カード";
+
+/* Delete button when deleting an autofill credit card */
+"autofill.creditcard.details.delete" = "カードを削除";
+
+/* Autofill alert button confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.button" = "カードを削除";
+
+/* Autofill message confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.message" = "このカードを削除してもよろしいですか？";
+
+/* Title when editing autofill credit card details */
+"autofill.creditcard.details.edit-title" = "カードを編集する";
+
+/* Placeholder for card number field on autofill credit card details */
+"autofill.creditcard.details.edit.card-number-placeholder" = "1234 5678 1234 5678";
+
+/* Placeholder for CVV security code field on autofill credit card details */
+"autofill.creditcard.details.edit.cvv-placeholder" = "セキュリティコード";
+
+/* Placeholder for expiration date field on autofill credit card details */
+"autofill.creditcard.details.edit.exp-date-placeholder" = "MM / YY";
+
+/* Expiration date label for credit card details on autofill */
+"autofill.creditcard.details.exp-date" = "有効期限";
+
+/* Title when adding new autofill credit card */
+"autofill.creditcard.details.new-title" = "カードを追加";
+
+/* Placeholder for card name field on autofill credit card details */
+"autofill.creditcard.edit.card-name-placeholder" = "カード名義人名";
+
+/* Placeholder for card nickname field on autofill credit card details */
+"autofill.creditcard.edit.card-nickname-placeholder" = "（例えば、仕事）";
+
+/* Subtitle for view displayed when no autofill credit cards have been saved */
+"autofill.creditcard.empty-view.subtitle.first.paragraph" = "クレジットカードはデバイスに安全に保存されます。";
+
+/* Title for view displayed when autofill has no credit cards saved */
+"autofill.creditcard.empty-view.title" = "まだクレジットカードは保存されていません";
+
+/* Reason for auth when opening credit card list */
+"autofill.creditcard.list.auth.reason" = "デバイスのロックを解除してクレジットカードにアクセス";
+
+/* Credit card row label for credit card expiry date */
+"autofill.creditcard.list.item.expiry" = "有効期限：";
+
+/* Title for screen listing autofill credit cards */
+"autofill.creditcard.list.title" = "クレジットカード";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.subtitle" = "クレジットカードを保護するにはパスコードが必要です。";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.title" = "デバイスを保護してクレジットカードを保存";
+
+/* Title for button to dismiss the save credit card details prompt */
+"autofill.creditcard.save-prompt.dismiss-button" = "保存しない";
+
+/* Title for button to save credit card details */
+"autofill.creditcard.save-prompt.save-button" = "カードを保存";
+
+/* Subitle for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.subtitle" = "クレジットカードはデバイスに安全に保存されます。";
+
+/* Title for prompt asking the user if they wish to save their credit card details */
+"autofill.creditcard.save-prompt.title" = "DuckDuckGoにカード情報を保存してもらいたいですか？";
+
+/* Authentication message shown when asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.authentication" = "クレジットカード情報を入力するには認証してください";
+
+/* Title for prompt asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.title" = "保存したカードを使用しますか？";
+
+/* Message for informing user that they can disable autofill for credit cards in Settings */
+"autofill.creditcards.disable.prompt.message" = "クレジットカードの保存はいつでもオフにできます。";
+
+/* Do not translate - stringsdict entry */
+"autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
+
+/* Do not translate - stringsdict entry */
+"autofill.delete.all.passwords.confirmation.body" = "autofill.delete.all.passwords.confirmation.body";
+
+/* Do not translate - stringsdict entry */
+"autofill.delete.all.passwords.confirmation.title" = "autofill.delete.all.passwords.confirmation.title";
+
+/* Do not translate - stringsdict entry */
+"autofill.delete.all.passwords.sync.confirmation.body" = "autofill.delete.all.passwords.sync.confirmation.body";
+
+/* Open Settings action for disabling autofill in Settings */
+"autofill.disable.prompt.action.open-settings" = "設定を開く";
+
+/* Message for informing user that they can disable autofill in Settings */
+"autofill.disable.prompt.message" = "パスワードの保存はいつでもオフにできます。";
+
+/* Text link to email protection website */
+"autofill.enable.email.protection" = "Email Protectionを有効にする";
+
+/* Button title to dismiss the autofill extension activation view */
+"autofill.extension.activation.done.button.title" = "完了";
+
+/* Title shown when the autofill extension activation succeeds */
+"autofill.extension.activation.title" = "パスワードの自動入力が有効になりました！";
+
+/* Footer text describing what enabling the autofill extension does */
+"autofill.extension.footer" = "DuckDuckGoに保存されたパスワードを、デバイス内のすべてのアプリで自動入力できます。";
+
+/* Header text shown when the autofill extension is disabled */
+"autofill.extension.header.disabled" = "他のアプリで自動入力する";
+
+/* Header text shown when the autofill extension is enabled */
+"autofill.extension.header.enabled" = "他のアプリでの自動入力を有効にする";
+
+/* Dismiss button title for the Autofill extension promotion */
+"autofill.extension.promo.button.dismiss.title" = "設定で後からセットアップ";
+
+/* CTA button title for the Autofill extension promotion */
+"autofill.extension.promo.button.title" = "他のアプリで自動入力をオンにする";
+
+/* Message for the Autofill extension promotion */
+"autofill.extension.promo.message" = "DuckDuckGoを使って、すべてのアプリでパスワードを安全に自動入力します。";
+
+/* Title for the Autofill extension promotion */
+"autofill.extension.promo.title" = "パスワードを入力せずに、アプリに素早くサインイン";
+
+/* Title for screen showing autofill extension settings */
+"autofill.extension.screen.title" = "他のアプリでのパスワード自動入力する";
+
+/* Status text when autofill extension is disabled */
+"autofill.extension.status.off" = "オンにする";
+
+/* Status text when autofill extension is enabled */
+"autofill.extension.status.on" = "有効";
+
+/* Title for autofill extension settings row */
+"autofill.extension.title" = "他のアプリで自動入力する";
+
+/* Button title that opens system settings to turn off the autofill extension */
+"autofill.extension.turn.off.button.title" = "システム設定でオフにする...";
+
+/* Button title that triggers system prompt to turn on the autofill extension */
+"autofill.extension.turn.on.button.title" = "オンにする...";
+
+/* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
+"autofill.hide-card-cvv" = "CVVを隠す";
+
+/* Accessibility title for a Hide Password button replacing displayed password with ***** */
+"autofill.hide-password" = "パスワードを隠す";
+
+/* Button label to get link to download the desktop browser */
+"autofill.import.passwords.via.sync.get-browser-button" = "デスクトップブラウザを入手";
+
+/* Step 1 for instructions to import passwords */
+"autofill.import.passwords.via.sync.instructions.step1" = "MacまたはWindowsでDuckDuckGoを開く";
+
+/* Step 2 for instructions to import passwords. This reads as 'Go to Settings > Passwords' */
+"autofill.import.passwords.via.sync.instructions.step2" = "%1$@ > %2$@ に移動";
+
+/* second parameter for autofill.import.passwords.instructions.step2 */
+"autofill.import.passwords.via.sync.instructions.step2.passwords" = "パスワード";
+
+/* first parameter for autofill.import.passwords.instructions.step2 */
+"autofill.import.passwords.via.sync.instructions.step2.settings" = "設定";
+
+/* Step 3 for instructions to import passwords. This reads as 'Select Import Passwords and follow the steps' */
+"autofill.import.passwords.via.sync.instructions.step3" = "%@を選択し、手順に従ってインポートします";
+
+/* Parameter for autofill.import.passwords.instructions.step3 */
+"autofill.import.passwords.via.sync.instructions.step3.import" = "パスワードをインポート...";
+
+/* Step 4 for instructions to import passwords: Once imported on your computer you can set up sync on this iPhone|iPad|device */
+"autofill.import.passwords.via.sync.instructions.step4" = "コンピュータにインポートしたら、この%@で同期を設定できます。";
+
+/* Title for section with instructions to import passwords */
+"autofill.import.passwords.via.sync.instructions.title" = "デスクトップブラウザからインポート：";
+
+/* Subtitle for screen to import passwords */
+"autofill.import.passwords.via.sync.subtitle" = "デスクトップ版のDuckDuckGoブラウザでパスワードをインポートし、デバイス間で同期します。";
+
+/* Button label to sync passwords with desktop browser */
+"autofill.import.passwords.via.sync.sync-button" = "デスクトップと同期";
+
+/* Title for screen to import passwords by syncing with desktop browser */
+"autofill.import.passwords.via.sync.title" = "デスクトップのパスワードを同期する方法";
+
+/* Disable action for alert when asking the user if they want to keep using autofill */
+"autofill.keep-enabled.alert.disable" = "無効";
+
+/* A link that takes the user to the DuckDuckGo help pages explaining password managers */
+"autofill.learn.more.link.title" = "[詳細はこちら](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)";
+
+/* Button displayed after saving/updating an autofill login that takes the user to the saved login */
+"autofill.login-save-action-button.toast" = "表示";
+
+/* Message displayed after saving an autofill login */
+"autofill.login-saved.toast" = "パスワードが保存されました";
+
+/* Message displayed after updating an autofill login */
+"autofill.login-updated.toast" = "パスワードが更新されました";
+
+/* Menu item text for copying autofill details */
+"autofill.logins.copy-prompt" = "%@をコピー";
+
+/* Title for toast when copying address */
+"autofill.logins.copy-toast.address-copied" = "アドレスがコピーされました";
+
+/* Title for toast when copying notes */
+"autofill.logins.copy-toast.notes-copied" = "ノートがコピーされました";
+
+/* Title for toast when copying password */
+"autofill.logins.copy-toast.password-copied" = "パスワードをコピー";
+
+/* Title for toast when copying username */
+"autofill.logins.copy-toast.username-copied" = "ユーザー名をコピーしました";
+
+/* Title of button in prompt requiring authentication before all passwords are deleted */
+"autofill.logins.delete.all.authentication.prompt.button" = "今すぐ認証する";
+
+/* Title of prompt requiring authentication before all passwords are deleted */
+"autofill.logins.delete.all.authentication.prompt.title" = "すべてのパスワードを削除するには認証が必要です";
+
+/* Reason for authentication when deleting all logins */
+"autofill.logins.delete.all.authentication.reason" = "すべてのパスワードを削除することを確認するために認証してください";
+
+/* Address label for login details on autofill */
+"autofill.logins.details.address" = "ウェブサイトURL";
+
+/* Title for autofill login details */
+"autofill.logins.details.default-title" = "パスワード";
+
+/* Delete button when deleting an autofill login */
+"autofill.logins.details.delete" = "パスワードを削除";
+
+/* Autofill alert button confirming delete autofill login */
+"autofill.logins.details.delete-confirmation.button" = "パスワードを削除";
+
+/* Title when editing autofill login details */
+"autofill.logins.details.edit-title" = "パスワードを編集";
+
+/* Placeholder for password field on autofill login details */
+"autofill.logins.details.edit.password-placeholder" = "パスワード";
+
+/* Placeholder for title field on autofill login details */
+"autofill.logins.details.edit.title-placeholder" = "タイトル";
+
+/* Placeholder for url field on autofill login details */
+"autofill.logins.details.edit.url-placeholder" = "example.com";
+
+/* Placeholder for userbane field on autofill login details */
+"autofill.logins.details.edit.username-placeholder" = "username@example.com";
+
+/* Message displaying when the login was last updated */
+"autofill.logins.details.last-updated" = "最終更新日 %@";
+
+/* Login name label for login details on autofill */
+"autofill.logins.details.login-name" = "タイトル";
+
+/* Title when adding new autofill login */
+"autofill.logins.details.new-title" = "パスワードを追加";
+
+/* Notes label for login details on autofill */
+"autofill.logins.details.notes" = "メモ";
+
+/* Menu item title for option to open website from selected url */
+"autofill.logins.details.open-website-prompt.title" = "ウェブサイトを開く";
+
+/* Password label for login details on autofill */
+"autofill.logins.details.password" = "パスワード";
+
+/* Action text for alert when attempting to save a duplicate login */
+"autofill.logins.details.save-duplicate-alert.action" = "OK";
+
+/* Message for alert when attempting to save a duplicate login */
+"autofill.logins.details.save-duplicate-alert.message" = "このユーザー名とウェブサイトのパスワードはすでに保存されています。";
+
+/* Title for alert when attempting to save a duplicate login */
+"autofill.logins.details.save-duplicate-alert.title" = "重複したパスワード";
+
+/* Username label for login details on autofill */
+"autofill.logins.details.username" = "ユーザー名";
+
+/* Title for button to Import Passwords when autofill has no items */
+"autofill.logins.empty-view.button.title" = "パスワードをインポート";
+
+/* Title for button to sync with the desktop app to fetch your passwords when autofill has no items */
+"autofill.logins.empty-view.import-via-sync.button.title" = "デスクトップパスワードを同期";
+
+/* Subtitle for view displayed when no autofill passwords have been saved */
+"autofill.logins.empty-view.subtitle.first.paragraph" = "別のブラウザから保存したパスワードをDuckDuckGoにインポートできます。";
+
+/* Title for view displayed when autofill has no items */
+"autofill.logins.empty-view.title" = "パスワードはまだ保存されていません";
+
+/* Cancel button for auth when opening login list */
+"autofill.logins.list.auth.cancel" = "キャンセル";
+
+/* Reason for auth when opening login list */
+"autofill.logins.list.auth.reason" = "デバイスのロックを解除してパスワードにアクセス";
+
+/* Title for close navigation button */
+"autofill.logins.list.close-title" = "閉じる";
+
+/* Title for button to delete all saved autofill passwords */
+"autofill.logins.list.delete.all" = "すべて削除";
+
+/* Title for a toggle that enables autofill */
+"autofill.logins.list.enable" = "パスワードを保存して自動入力する";
+
+/* Footer label displayed below table section with option to enable autofill */
+"autofill.logins.list.enable.footer" = "パスワードはデバイスに安全に保存されます。";
+
+/* Toast message when a login item is deleted */
+"autofill.logins.list.login-deleted-message" = "%@のパスワードが削除されました";
+
+/* Toast message when a login item without a title is deleted */
+"autofill.logins.list.login-deleted-message-no-title" = "パスワードが削除されました";
+
+/* Title for a button that allows a user to reset their list of never saved sites */
+"autofill.logins.list.never.saved" = "除外されたサイトをリセット";
+
+/* Cancel button for resetting list of never saved sites */
+"autofill.logins.list.never.saved.reset.action.cancel" = "キャンセル";
+
+/* Confirm button to reset list of never saved sites */
+"autofill.logins.list.never.saved.reset.action.confirm" = "除外されたサイトをリセット";
+
+/* Alert title */
+"autofill.logins.list.never.saved.reset.action.title" = "除外されたサイトをリセットすると、次回これらのサイトにサインインするときにパスワードを保存するように求められます。";
+
+/* Placeholder for search field on autofill login listing */
+"autofill.logins.list.search-placeholder" = "パスワードを検索";
+
+/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
+"autofill.logins.list.settings.footer" = "パスワードは暗号化されています。お客様以外の誰も、当社でさえも、それらを見ることはできません。";
+
+/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
+"autofill.logins.list.settings.passwords.cards.footer" = "パスワードとクレジットカードは暗号化されています。お客様以外の誰も、当社でさえも、それらを見ることはできません。";
+
+/* Section title for group of suggested saved logins */
+"autofill.logins.list.suggested" = "提案";
+
+/* Title for screen listing autofill logins */
+"autofill.logins.list.title" = "パスワード";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.logins.no-auth.subtitle" = "パスワードを保護するには、パスコードが必要です。";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.logins.no-auth.title" = "デバイスを保護してパスワードを保存";
+
+/* Cancel button for auth during login prompt */
+"autofill.logins.prompt.auth.cancel" = "キャンセル";
+
+/* Reason for auth during login prompt */
+"autofill.logins.prompt.auth.reason" = "デバイスのロックを解除して保存したパスワードを使用";
+
+/* Title for section of autofill logins that are an exact match to the current website */
+"autofill.logins.prompt.exact.match.title" = "このウェブサイトから";
+
+/* Button title for autofill login prompt if more options are available */
+"autofill.logins.prompt.more-options" = "その他のオプション";
+
+/* Title for section of autofill logins that are an approximate match to the current website */
+"autofill.logins.prompt.partial.match.title" = "%@から";
+
+/* Title of button for autofill login prompt to use a saved password for a website */
+"autofill.logins.prompt.password.button.title" = "%@のパスワード";
+
+/* Title for autofill login prompt */
+"autofill.logins.prompt.title" = "保存したパスワードを使用しますか？";
+
+/* Subtitle displayed when there are no results on Autofill search, example : No Result (Title) for Duck (Subtitle) */
+"autofill.logins.search.no-results.subtitle" = "対象「%@」";
+
+/* Title displayed when there are no results on Autofill search */
+"autofill.logins.search.no-results.title" = "結果がありません";
+
+/* Do not translate - stringsdict entry */
+"autofill.number.of.passwords" = "autofill.number.of.passwords";
+
+/* Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
+"autofill.onboarding.key-features.secure-storage.biometric.description" = "パスワードは暗号化され、デバイスに保存され、%@でロックされています。";
+
+/* Description of autofill onboarding prompt's secure storage feature */
+"autofill.onboarding.key-features.secure-storage.description" = "パスワードは暗号化され、デバイスに保存され、Face IDまたはパスコードでロックされます。";
+
+/* Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode */
+"autofill.onboarding.key-features.secure-storage.description.parameter.face-id" = "Face IDまたはパスコード";
+
+/* Parameter for the description of autofill onboarding prompt's secure storage feature describing passcode only if no biometry are available */
+"autofill.onboarding.key-features.secure-storage.description.parameter.passcode" = "パスコード";
+
+/* Parameter for the description of autofill onboarding prompt's secure storage feature describing Touch ID biometry + passcode */
+"autofill.onboarding.key-features.secure-storage.description.parameter.touch-id" = "Touch IDまたはパスコード";
+
+/* Title of autofill onboarding prompt's secure storage feature */
+"autofill.onboarding.key-features.secure-storage.title" = "セキュアストレージ";
+
+/* Description of autofill onboarding prompt's sign-in feature */
+"autofill.onboarding.key-features.sign-ins.description" = "ログイン情報を覚える必要はありません。";
+
+/* Title of autofill onboarding prompt's sign-in feature */
+"autofill.onboarding.key-features.sign-ins.title" = "シームレスなサインイン";
+
+/* Description of autofill onboarding prompt's sync feature */
+"autofill.onboarding.key-features.sync.description" = "準備ができたら、エンドツーエンドの暗号化で簡単に設定できます。";
+
+/* Title of autofill onboarding prompt's sync feature */
+"autofill.onboarding.key-features.sync.title" = "デバイス間で同期";
+
+/* Title of autofill onboarding prompt's features list */
+"autofill.onboarding.key-features.title" = "主な機能";
+
+/* Subtitle for prompt to use suggested strong password for creating a login */
+"autofill.password-generation-prompt.subtitle" = "パスワードはデバイスに安全に保存されます。";
+
+/* Title for prompt to use suggested strong password for creating a login */
+"autofill.password-generation-prompt.title" = "DuckDuckGoの強力なパスワードを使用しますか？";
+
+/* Button title choosing to use the suggested generated password for creating a login */
+"autofill.password-generation-prompt.use-generated-password.cta" = "強力なパスワードを使用";
+
+/* Button title choosing to use own password for creating a login */
+"autofill.password-generation-prompt.use-own-password.cta" = "自分で作成";
+
+/* Text for the confirmation message displayed when a user tries activate a Private Email Address */
+"autofill.private.email.mesage.activate.confirm.content" = "%@に送信されたメールは、再び受信トレイに転送されます。";
+
+/* Title for the confirmation message  displayed when a user tries activate a Private Email Address */
+"autofill.private.email.mesage.activate.confirm.title" = "プライベートDuck Addressを再有効化しますか？";
+
+/* Mesasage displayed when a private email address is active */
+"autofill.private.email.mesage.active" = "アクティブ";
+
+/* Text for the confirmation message displayed when a user tries deactivate a Private Email Address */
+"autofill.private.email.mesage.deactivate.confirm.content" = "%@に送信されたメールは、受信トレイに転送されなくなります。";
+
+/* Title for the confirmation message displayed when a user tries deactivate a Private Email Address */
+"autofill.private.email.mesage.deactivate.confirm.title" = "プライベートDuck Addressを無効化しますか？";
+
+/* Mesasage displayed when a user tries to manage a private email address but the service is not available, returns an error or network is down */
+"autofill.private.email.mesage.error" = "このアドレスの管理は一時的に利用できません";
+
+/* Mesasage displayed when a private email address is inactive */
+"autofill.private.email.mesage.inactive" = "無効化されました";
+
+/* Button text for the alert dialog telling the user an updated username is no longer a private email address */
+"autofill.removed.duck.address.button" = "了解";
+
+/* Content for the alert dialog telling the user an updated username is no longer a private email address */
+"autofill.removed.duck.address.content" = "引き続き、個人の受信トレイでこのDuck Addressから受信したメールを管理できます。";
+
+/* Title for the alert dialog telling the user an updated username is no longer a private email address */
+"autofill.removed.duck.address.title" = "プライベートDuck Addressのユーザー名が削除されました";
+
+/* CTA displayed on modal asking if the user never wants to be prompted to save a login for this website agin */
+"autofill.save-login.never-prompt.CTA" = "このサイトで今後尋ねない";
+
+/* Title displayed on modal asking for the user to save the login for the first time */
+"autofill.save-login.new-user.title" = "このパスワードを保存しますか？";
+
+/* CTA displayed on modal asking if the user wants to dismiss the save login action for now */
+"autofill.save-login.no-thanks.CTA" = "いいえ、結構です";
+
+/* Message displayed on modal asking for the user to save the login for the first time */
+"autofill.save-login.security.message" = "DuckDuckGoパスワードと自動入力を使用して、パスワードをデバイスに安全に保存します。";
+
+/* Title displayed on modal asking for the user to save the login */
+"autofill.save-login.title" = "パスワードを保存しますか？";
+
+/* Confirm CTA displayed on modal asking for the user to save the password */
+"autofill.save-password.save.CTA" = "パスワードを保存";
+
+/* Title for the toggle that enables autofill */
+"autofill.settings.ask-to-save-and-autofill" = "保存と自動入力について尋ねる";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.import-passwords.section-header" = "パスワードをインポート";
+
+/* Section header for the autofill passwords options section of the settings screen */
+"autofill.settings.options.section-header" = "パスワードオプション";
+
+/* Title for the button to report that autofill is not working on a site in autofill settings */
+"autofill.settings.report.not.working.button.title" = "自動入力に関する問題を報告";
+
+/* Button title for the confirmation prompt when reporting autofill is not working for a website */
+"autofill.settings.report.not.working.confirmation.button" = "レポートを送信";
+
+/* Message for the confirmation prompt when reporting autofill is not working for a website */
+"autofill.settings.report.not.working.confirmation.message" = "DuckDuckGoに送信されるレポートは匿名で、ユーザー名、パスワード、その他の個人を特定できる情報は含まれません。レポートには、ウェブサイトのURLと一部の自動入力設定のステータスのみが含まれます。";
+
+/* Title for the confirmation prompt when reporting autofill is not working for a website */
+"autofill.settings.report.not.working.confirmation.title" = "%@で自動入力が機能しないことを報告しますか？";
+
+/* Message shown to user when they submit a report that autofill is not working for a website */
+"autofill.settings.report.not.working.sent.confirmation" = "ありがとうございます。ご報告は、DuckDuckGoを誰にとってもより良いものにするために役立ちます。";
+
+/* Subtitle for the row to report that autofill is not working on a site in autofill settings */
+"autofill.settings.report.not.working.subtitle" = "このサイトで自動入力が機能しないことを匿名で報告します。パスワードは共有されません。";
+
+/* Title for the row to report that autofill is not working on a site in autofill settings */
+"autofill.settings.report.not.working.title" = "自動入力が機能していませんか？";
+
+/* Section header for the autofill settings screen */
+"autofill.settings.view.section-header" = "表示";
+
+/* Accessibility title for a Show CVV button displaying actual credit card CVV (security code) instead of *** */
+"autofill.show-card-cvv" = "CVVを表示";
+
+/* Accessibility title for a Show Password button displaying actial password instead of ***** */
+"autofill.show-password" = "パスワードを表示";
+
+/* Message displayed to the user when they are logged out of Email protection. */
+"autofill.signin.to.manage" = "このデバイスでDuck Addressを管理するには%@します。";
+
+/* Message displayed on modal asking for the user to update the password */
+"autofill.update-password.message" = "DuckDuckGoはデバイスに保存されているこのパスワードを更新します。";
+
+/* Confirm CTA displayed on modal asking for the user to update the password */
+"autofill.update-password.save.CTA" = "パスワードを更新";
+
+/* Title displayed on modal asking for the user to update the password */
+"autofill.update-password.title" = "%@のパスワードを更新しますか？";
+
+/* Confirm CTA displayed on modal asking for the user to update the login */
+"autofill.update-username.save.CTA" = "ユーザー名を更新";
+
+/* Title displayed on modal asking for the user to update the username */
+"autofill.update-usernamr.title" = "ユーザー名を更新しますか？";
+
+/* No comment provided by engineer. */
+"Available Products" = "利用可能な製品";
+
+/* View plans button text during Black Friday campaign */
+"black-friday.campaign.view.plans.cta" = "初年度は%d%%割引";
+
+/* Add bookmark screen title */
+"bookmark.addBookmark.title" = "ブックマークを追加";
+
+/* Add favorite screen title */
+"bookmark.addFavorite.title" = "お気に入りに追加";
+
+/* Add folder screen title */
+"bookmark.addFolder.title" = "フォルダーを追加";
+
+/* Add bookmark folder button text */
+"bookmark.addFolderButton" = "フォルダーを追加";
+
+/* Placeholder in the add bookmark form */
+"bookmark.address.placeholder" = "www.example.com";
+
+/* Delete bookmark alert message */
+"bookmark.delete.alert.message" = "これにより「%@」のブックマークが削除されます";
+
+/* Delete bookmark alert title */
+"bookmark.delete.alert.title" = "削除しますか？";
+
+/* The message shown after a bookmark has been deleted */
+"bookmark.deleted.toast" = "ブックマークが削除されました";
+
+/* Delete bookmark folder alert delete button */
+"bookmark.deleteFolderAlert.deleteButton" = "削除";
+
+/* Do not translate - stringsdict entry */
+"bookmark.deleteFolderAlert.message" = "bookmark.deleteFolderAlert.message";
+
+/* Delete bookmark folder alert title */
+"bookmark.deleteFolderAlert.title" = "%@を削除しますか？";
+
+/* Edit bookmark screen title */
+"bookmark.editBookmark.title" = "ブックマークを編集";
+
+/* Edit favorite screen title */
+"bookmark.editFavorite.title" = "お気に入りを編集";
+
+/* Edit folder screen title */
+"bookmark.editFolder.title" = "フォルダを編集";
+
+/* Header for folder selection for bookmarks */
+"bookmark.folderSelect.title" = "位置情報";
+
+/* More options button text */
+"bookmark.moreButton" = "その他";
+
+/* Placeholder in the bookmarks search bar */
+"bookmark.searchbar.placeholder" = "検索";
+
+/* Placeholder in the add bookmark form */
+"bookmark.title.placeholder" = "ウェブサイトのタイトル";
+
+/* Top level bookmarks folder title */
+"bookmark.topLevelFolder.title" = "ブックマーク";
+
+/* Info message after selecting Bookmark All button */
+"bookmarkAll.tabs.failed" = "すべてのタブに新しいブックマークを追加しました";
+
+/* Confirmation message after selecting Bookmark All button */
+"bookmarkAll.tabs.saved" = "すべてのタブがブックマークされました";
+
+/* No comment provided by engineer. */
+"bookmarks.button.hint" = "ブックマーク";
+
+/* Failure message when bookmarks failed to export */
+"bookmarks.export.failed.message" = "ブックマークをエクスポートできませんでした。もう一度お試しください。";
+
+/* Confirmation message that bookmarks have been exported to the file system */
+"bookmarks.export.files.success.message" = "ブックマークがエクスポートされました。";
+
+/* Confirmation message that bookmarks have been shared successfully to another app */
+"bookmarks.export.share.success.message" = "ブックマークが共有されました。";
+
+/* Title of option to export HTML */
+"bookmarks.exportAction.html.title" = "HTMLファイルをエクスポート";
+
+/* Title of option to export bookmarks as HTML */
+"bookmarks.exportAction.title" = "ブックマークをエクスポート";
+
+/* Failure message when bookmarks failed to import */
+"bookmarks.import.failed.message" = "申し訳ありませんが、このファイルはインポートできません。";
+
+/* Confirmation message that bookmarks have been imported */
+"bookmarks.import.success.message" = "ブックマークがインポートされました。";
+
+/* Title of option to import HTML */
+"bookmarks.importAction.html.title" = "HTMLファイルをインポート";
+
+/* Title of option to import HTML */
+"bookmarks.importAction.title" = "ブックマークをインポート";
+
+/* Title of prompt for users where they can choose to import or export an HTML file containing webpage bookmarks */
+"bookmarks.importExport.title" = "他の一般的なブラウザからブックマークをインポートします。";
+
+/* Button to open report form */
+"broken.site.report.menu.title" = "このサイトの問題を報告";
+
+/* Acknowledge button */
+"broken.site.report.missing.description.alert.button" = "了解";
+
+/* It appears as an alert after user tries to send a report without submitting any details */
+"broken.site.report.missing.description.alert.description" = "解決方法をより正確に把握できるよう、このサイトで発生した問題を説明してください。";
+
+/* It appears as an alert after user tries to send a report without submitting any details */
+"broken.site.report.missing.description.alert.title" = "説明が必要です";
+
+/* Message that appears after submitting report */
+"broken.site.report.success.toast" = "あなたのレポートは、DuckDuckGoを皆のためにより良くするのに役立ちます！";
+
+/* No comment provided by engineer. */
+"Broker JSON:" = "ブローカー JSON:";
+
+/* No comment provided by engineer. */
+"Broker: %@" = "ブローカー: %@";
+
+/* No comment provided by engineer. */
+"Brokers" = "ブローカー";
+
+/* No comment provided by engineer. */
+"Cancel is not allowed more than once" = "キャンセルを複数回行うことはできません";
+
+/* No comment provided by engineer. */
+"Checking for existing account..." = "既存アカウントの確認中...";
+
+/* Close All Tabs */
+"close.all.tabs" = "すべてのタブを閉じる";
+
+/* No comment provided by engineer. */
+"Cohort: %@" = "コホート：%@";
+
+/* No comment provided by engineer. */
+"Configuration" = "構成";
+
+/* No comment provided by engineer. */
+"Confirm" = "確認";
+
+/* Button to continue the onboarding process */
+"contextual.onboarding.addToDock.buttons.skip" = "スキップ";
+
+/* Button on the last screen of the onboarding, it will dismiss the onboarding screen. */
+"contextual.onboarding.addToDock.buttons.startBrowsing" = "ブラウジングを開始";
+
+/* Button of the onboarding dialog. On click it shows a dialog with a tutorial video about how to add the DDG browser icon to the device dock. */
+"contextual.onboarding.addToDock.buttons.tutorial" = "使い方を教えて";
+
+/* Message of the last screen of the onboarding that promotes adding the DDG browser icon to the dock. */
+"contextual.onboarding.addToDock.promo.contextual.message" = "このブラウザで閲覧するたびに、不気味な広告は力を失います。\n\n毎日のブラウジングのために、Dockに入れておいてください。";
+
+/* The message of the onboarding dialog popup that promotes adding the DDG browser icon to the dock. */
+"contextual.onboarding.addToDock.promo.intro.message" = "毎日のブラウジングに簡単にアクセスできるように配置します。";
+
+/* The title of the onboarding dialog popup that promotes adding the DDG browser icon to the dock. */
+"contextual.onboarding.addToDock.promo.title" = "Dockに追加してね！";
+
+/* The message of the onboarding dialog popup that explains how to add the DDG browser icon to the dock. */
+"contextual.onboarding.addToDock.tutorial.message" = "ホーム画面でDuckDuckGoアイコンを見つけます。次に、それを押してドラッグして配置します。以上です！";
+
+/* The title of the onboarding dialog popup that explains how to add the DDG browser icon to the dock. */
+"contextual.onboarding.addToDock.tutorial.title" = "Dockへの追加は簡単です。";
+
+/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
+"contextual.onboarding.browsing.multiple.trackers" = "contextual.onboarding.browsing.multiple.trackers";
+
+/* Parameter is domain name (string) */
+"contextual.onboarding.browsing.one.tracker" = "*%1$@*がここでトラッキングを試行していました。それらをブロックしました！\n\n☝️ シールドをタップすると、詳細が表示されます。";
+
+/* Button on the last screen of the onboarding, it will dismiss the onboarding screen. */
+"contextual.onboarding.final-screen.button" = "ハイタッチ！";
+
+/* Title of the last screen of the onboarding to the browser app */
+"contextual.onboarding.final-screen.title" = "完了しました！";
+
+/* During onboarding steps this button is shown and takes either to the next steps or closes the onboarding. */
+"contextual.onboarding.got-it.button" = "了解！";
+
+/* Message of the last screen of the onboarding to the browser app. */
+"contextual.onboarding.highlights.final-screen.message" = "このブラウザで閲覧するたびに、不気味な広告は力を失います。";
+
+/* After the user performs their first search using the browser, this dialog explains the advantages of using DuckDuckGo */
+"contextual.onboarding.highlights.first-search-done.message" = "DuckDuckGo Searchは、プライバシー重視、スピーディ、広告が少ない検索です。";
+
+/* Message of a popover on the browser that invites the user to try a search explaining that their searches are private */
+"contextual.onboarding.highlights.try-a-search.message" = "DuckDuckGoでの検索は常にプライベートです。";
+
+/* Browser Search query for baby ducklings */
+"contextual.onboarding.highlights.try-search.surprise-me" = "アヒルの赤ちゃん";
+
+/* Title of a popover on the new tab page browser that invites the user to try a visiting a website */
+"contextual.onboarding.ntp.try-a-site.title" = "サイトにアクセスしてみてください！";
+
+/* Title of a popover on the browser that invites the user to try a search */
+"contextual.onboarding.try-a-search.title" = "開始する準備はできていますか？\n検索を試してみましょう！";
+
+/* Message of a popover on the browser that invites the user to try visiting a website to explain that we block trackers */
+"contextual.onboarding.try-a-site.message" = "トラッカーが監視できないようにブロックします。";
+
+/* Title of a popover on the browser that invites the user to try a visiting a website */
+"contextual.onboarding.try-a-site.title" = "次は、サイトにアクセスしてみてください！";
+
+/* Message of a popover on the browser that invites the user to try visiting the browser Fire Button. Please leave the line break */
+"contextual.onboarding.try-fire-button.message" = "Fire Buttonで閲覧アクティビティを即座にクリアします。\n\nぜひお試しください！🔥";
+
+/* Browser Search query for how to say duck in english */
+"contextual.onboarding.try-search.option1-English" = "スペイン語で「duck」は";
+
+/* Browser Search query for how to say duck in english */
+"contextual.onboarding.try-search.option1international" = "英語語で「duck」は";
+
+/* Search query for the cast of Mighty Ducks */
+"contextual.onboarding.try-search.option2-english" = "マイティ・ダックスのキャスト";
+
+/* Search query for the cast of Avatar */
+"contextual.onboarding.try-search.option2-international" = "アバターのキャスト";
+
+/* Title for a button that triggers an unknown search query for the user. */
+"contextual.onboarding.try-search.surprise-me-title" = "何が出るかな？";
+
+/* Fourth paragraph of the Control Center VPN Widget Education screen */
+"control.center.vpn.widget.education.paragraph" = "リストで**DuckDuckGo**を見つけて、**VPNコントロール**をタップして追加します";
+
+/* First paragraph of the Control Center Widget Education screen */
+"control.center.widget.education.paragraph.1" = "画面の右上隅から下にスワイプします";
+
+/* Second paragraph of the Control Center Widget Education screen */
+"control.center.widget.education.paragraph.2" = "**コントロールセンター**の左上にある**+**ボタンをタップします";
+
+/* Third paragraph of the Control Center Widget Education screen */
+"control.center.widget.education.paragraph.3" = "画面下部の**コントロールを追加**をタップします";
+
+/* Crash Report always send button title */
+"crash.report.dialog.always.send" = "クラッシュレポートを常に送信";
+
+/* Crash Report hide details button title */
+"crash.report.dialog.hide.details" = "隠す";
+
+/* Crash Report dialog message */
+"crash.report.dialog.message" = "クラッシュレポートは、DuckDuckGoが問題を診断し、製品を改善するのに役立ちます。個人を特定できる情報は含まれていません。";
+
+/* Crash Report never send button title */
+"crash.report.dialog.never.send" = "送信しない";
+
+/* Crash Report show details button title */
+"crash.report.dialog.show.details" = "送信内容を確認する";
+
+/* Crash Report dialog title */
+"crash.report.dialog.title" = "クラッシュレポートを自動的に送信しますか？";
+
+/* No comment provided by engineer. */
+"Current Dismiss Count: %@" = "現在の却下数 : %@";
+
+/* No comment provided by engineer. */
+"Current Subscriptions" = "現在のサブスクリプション";
+
+/* No comment provided by engineer. */
+"CUSTOM CELL CONTENT" = "カスタムセルコンテンツ";
+
+/* No comment provided by engineer. */
+"Custom URL: %@" = "カスタムURL：%@";
+
+/* Button label to select zip or html file for importing */
+"data.import.bookmarks.file-button" = "ブックマークファイルをインポート...";
+
+/* Header for section with instructions for how to export bookmarks from Safari */
+"data.import.bookmarks.instructions.header" = "Safariからブックマークをエクスポートする方法";
+
+/* Subtitle for screen to import bookmarks */
+"data.import.bookmarks.subtitle" = "ブックマークを含むファイルを選択してください。これは通常、ZIPまたはHTMLファイルです。";
+
+/* Title for screen to import bookmarks */
+"data.import.bookmarks.title" = "ブックマークをDuckDuckGoにインポート";
+
+/* Error message displayed when no supported data is found in the zip file */
+"data.import.failed.no-data-in-zip-error-message" = "zipファイル内にサポートされているデータは見つかりませんでした。Safariのエクスポート手順を確認して、もう一度お試しください。";
+
+/* Error message displayed when the user has selected an unsupported file */
+"data.import.failed.unsupported-file-error-message" = "選択したファイルはサポートされていません。別のファイルを選択して、もう一度お試しください。";
+
+/* Error message displayed when the (csv|html|zip) file can't be read. */
+"data.import.failed.zip-read-error-message" = "%@ファイルを読み取れませんでした。ファイル内のデータに問題があるかもしれません。";
+
+/* File type for CSV files */
+"data.import.file-type.csv" = "CSV";
+
+/* File type for HTML files */
+"data.import.file-type.html" = "HTML";
+
+/* File type for ZIP files */
+"data.import.file-type.zip" = "ZIP";
+
+/* Step 2 for instructions to export bookmarks from Safari */
+"data.import.instructions.safari.step2" = "**エクスポート** を選択し、次の画面で**ブックマーク**と**ダウンロードに保存**を選択します。";
+
+/* Step 2 for instructions to export passwords from Safari */
+"data.import.instructions.safari.step2.passwords" = "**エクスポート** を選択し、次の画面で **パスワード** と **ダウンロードに保存** を選択します。";
+
+/* Step 1 for instructions to import passwords from Chrome */
+"data.import.passwords.instructions.chrome.step1" = "Chromeで、**Google パスワード マネージャー**に移動し、**設定**を選択します。";
+
+/* Step 2 for instructions to import passwords. */
+"data.import.passwords.instructions.chrome.step2" = "**パスワードをエクスポート**を選択し、次に**ファイルに保存**を選択して、覚えやすいフォルダにファイルを保存します。";
+
+/* Header for section with instructions for how to export passwords from Safari or Chrome */
+"data.import.passwords.instructions.header" = "パスワードをエクスポートする方法";
+
+/* Step 1 for instructions to import passwords from Safari. 'Open ⚙️ **Settings**, type “Export” in the search bar and pick the **Export** result for Safari to go directly to the option (or go to Apps > Safari in Settings).' */
+"data.import.passwords.instructions.safari.step1" = "⚙️ **設定** を開き、検索バーに「エクスポート」と入力し、Safariの**エクスポート**結果を選択してオプションに直接移動します（または、設定で「アプリ」>「Safari」に移動します）。";
+
+/* Text next to selector for which browser to export passwords from (Safari | Chrome) */
+"data.import.passwords.instructions.selector" = "エクスポート元";
+
+/* Export instructions selector for Chrome */
+"data.import.passwords.instructions.selector.chrome" = "Google Chrome";
+
+/* Export instructions selector for Safari */
+"data.import.passwords.instructions.selector.safari" = "Safari";
+
+/* Title for section with instructions to export passwords from Safari */
+"data.import.passwords.instructions.title" = "Safariからパスワードをエクスポートする方法：";
+
+/* Button label to select zip or csv file for importing */
+"data.import.passwords.select-file-button" = "ファイルを選択...";
+
+/* Subtitle for screen to import passwords */
+"data.import.passwords.subtitle" = "SafariまたはChromeからエクスポートされたパスワードを含むファイルを選択します。これは通常、ZIPまたはCSVファイルです。";
+
+/* Title for screen to import passwords */
+"data.import.passwords.title" = "DuckDuckGoにパスワードをインポート";
+
+/* Data import summary of how many bookmarks were successfully imported. */
+"data.import.summary.bookmarks.success" = "ブックマーク";
+
+/* Title of button to dismiss the screen */
+"data.import.summary.button.title.done" = "完了";
+
+/* Title of button to prompt users to sync and back up their imported data. Reads as 'Sync & Back Up Passwords | Bookmarks | Data' depending on what the user has chosen to import */
+"data.import.summary.button.title.sync" = "同期とバックアップ %@";
+
+/* Parameter for autofill.import.passwords.complete.button.title.sync */
+"data.import.summary.button.title.sync.bookmarks" = "ブックマーク";
+
+/* Parameter for data.import.summary.button.title.sync */
+"data.import.summary.button.title.sync.data" = "データ";
+
+/* Parameter for autofill.import.passwords.complete.button.title.sync */
+"data.import.summary.button.title.sync.passwords" = "パスワード";
+
+/* Title for screen shown after attempting to import data (passwords / bookmarks) */
+"data.import.summary.complete.title" = "インポート完了！";
+
+/* Data import summary of how many credit cards were successfully imported. */
+"data.import.summary.creditcards.success" = "クレジットカード";
+
+/* Data import summary of how many items were not imported as they were duplicates. */
+"data.import.summary.duplicates" = "重複をスキップしました";
+
+/* Data import summary of how many items failed to import. */
+"data.import.summary.failed" = "インポートに失敗しました";
+
+/* Subtitle for screen shown after after attempting to import passwords from file */
+"data.import.summary.passwords.subtitle" = "パスワードファイルを削除できるようになりました。";
+
+/* Data import summary of how many passwords were successfully imported. */
+"data.import.summary.passwords.success" = "パスワード";
+
+/* Title for a section containing only items from past month */
+"date.range.past-month" = "過去1か月間";
+
+/* Title for a section containing only items from past week */
+"date.range.past-week" = "過去1週間";
+
+/* Title for a section containing only items from today */
+"date.range.today" = "今日";
+
+/* Title for a section containing only items from yesterday */
+"date.range.yesterday" = "昨日";
+
+/* First paramter is a string - network name, 2nd parameter is a string - domain name */
+"dax.onboarding.browsing.site.is.major.tracker" = "注意：%1$@が%2$@でのアクティビティを見るのを止めることはできません。\n\nしかし、このブラウザでブラウジングすれば、他の多くのサイトでトラッカーをブロックすることで、%1$@がお客様について全体的に知っていることを減らせます。";
+
+/* Parameters are domain names (strings) */
+"dax.onboarding.browsing.site.owned.by.major.tracker" = "注意：%2$@は%1$@を所有しているので、ここでのアクティビティを見るのを止めることはできません。\n\nしかし、このブラウザでブラウジングすれば、他の多くのサイトでトラッカーをブロックすることで、%2$@がお客様について全体的に知っていることを減らせます。";
+
+/* Got It */
+"dax.onboarding.browsing.site.owned.by.major.tracker.cta" = "了解";
+
+/* No comment provided by engineer. */
+"dax.onboarding.browsing.without.trackers" = "タップやスクロール時に、迷惑なトラッカーをブロックします。\n\nさあ、ブラウジングを続けてください！";
+
+/* Encourage user to add favorite site using the browsing menu. */
+"dax.onboarding.home.add.favorite" = "お気に入りのサイトを瞬時に訪問しましょう！\n\nお気に入りのサイトにアクセスしてください。次に、「⋯」アイコンをタップして、「お気に入りに追加」を選択します。";
+
+/* No comment provided by engineer. */
+"Debug" = "デバッグ";
+
+/* No comment provided by engineer. */
+"Delete" = "削除";
+
+/* Default string used if users device is not iPhone or iPad */
+"device.type.default" = "デバイス";
+
+/* Device type is iPhone */
+"device.type.iphone" = "iPhone";
+
+/* Device type is iPad */
+"device.type.pad" = "iPad";
+
+/* GPC Setting state */
+"donotsell.disabled" = "無効";
+
+/* No comment provided by engineer. */
+"donotsell.disclaimer.learnmore" = "詳細情報";
+
+/* GPC Setting state */
+"donotsell.enabled" = "有効";
+
+/* No comment provided by engineer. */
+"donotsell.info.headertext" = "DuckDuckGoは多くのトラッカーを自動的にブロックします。Global Privacy Control (GPC) を使用すると、参加ウェブサイトに個人データの販売または他社との共有を制限するよう依頼することもできます。";
+
+/* Alert action for starting a file dowload */
+"downloads.alert.action.save-to-downloads" = "ダウンロードに保存";
+
+/* Cancel download action for downloads */
+"downloads.cancel-download.alert.cancel" = "キャンセル";
+
+/* Message for alert when trying to cancel the file download */
+"downloads.cancel-download.alert.message" = "このダウンロードをキャンセルしてもよろしいですか？";
+
+/* Confirm action for alert when trying to cancel the file download */
+"downloads.cancel-download.alert.no" = "いいえ";
+
+/* Title for alert when trying to cancel the file download */
+"downloads.cancel-download.alert.title" = "ダウンロードをキャンセルしますか？";
+
+/* Confirm action for for alert when trying to cancel the file download */
+"downloads.cancel-download.alert.yes" = "はい";
+
+/* Button for deleting all items on downloads list */
+"downloads.downloads-list.delete-all" = "すべて削除";
+
+/* Empty downloads list placholder */
+"downloads.downloads-list.empty" = "まだファイルがダウンロードされていません";
+
+/* Label displaying file download progress. Both parameters are formatted data size measurements e.g. 5MB. First parameter is data size currently downloaded. Second parameter is total expected data size of the file. */
+"downloads.downloads-list.row.downloading" = "ダウンロード中 - %1$@/%2$@";
+
+/* Label displaying file download progress. The parameter is formatted data size measurements currently downloaded e.g. 5MB. */
+"downloads.downloads-list.row.downloadingUnknownTotalSize" = "ダウンロード中 - %@";
+
+/* Downloads list screen title */
+"downloads.downloads-list.title" = "ダウンロード";
+
+/* Additional alert message shown when there are active downloads when using the fire button */
+"downloads.fire-button.alert.message" = "これにより、進行中のダウンロードもキャンセルされます";
+
+/* Message confirming that all files on the downloads list have been deleted */
+"downloads.message.all-files-deleted" = "すべてのファイルが削除されました";
+
+/* Message confirming that the download process has completed. Parameter is downloaded file's filename */
+"downloads.message.download-complete" = "%@のダウンロードが完了しました";
+
+/* Message confirming the file was deleted. Parameter is file's filename */
+"downloads.message.download-deleted" = "%@を削除しました";
+
+/* Message informing that the download has failed due to connection issues */
+"downloads.message.download-failed" = "ダウンロードに失敗しました。インターネット接続を確認してください。";
+
+/* Message confirming that the download process has started. Parameter is downloaded file's filename */
+"downloads.message.download-started" = "%@のダウンロードを開始しました";
+
+/* No comment provided by engineer. */
+"Duck Address" = "Duck Address";
+
+/* Title for message explaining to the user that Duck Player is not available */
+"duck-player.contingency-title" = "Duck Playerは利用できません";
+
+/* Button for the message explaining to the user that Duck Player is not available so the user can learn more */
+"duck-player.video-contingency-cta" = "詳細情報";
+
+/* Message explaining to the user that Duck Player is not available */
+"duck-player.video-contingency-message" = "Duck Playerの機能は、YouTubeの最近の変更の影響を受けています。これらの問題の解決に取り組んでいますので、ご理解のほどよろしくお願い申し上げます。";
+
+/* AI features settings explanation */
+"duckai.preferences.text.markdown" = "DuckDuckGoのAI機能はプライベートでオプションです。データはAIのトレーニングに使用されません。";
+
+/* Description text explaining what the 'Ask Follow-up Questions' toggle does */
+"duckai.settings.allowFollowUpQuestions.section.description" = "DuckDuckGoの検索結果にDuck.aiのボタンとリンクを表示する";
+
+/* Title for section that groups settings related to search results */
+"duckai.settings.allowFollowUpQuestions.section.title" = "検索ショートカット";
+
+/* Toggle text to enable/disable Duck.ai to ask follow-up questions */
+"duckai.settings.allowFollowUpQuestions.toggle" = "フォローアップの質問をする";
+
+/* Title for section that groups shortcuts related to browser */
+"duckai.settings.browserShortcuts.section.title" = "ブラウザのショートカット";
+
+/* Toggle text to enable/disable Duck.ai in the address bar */
+"duckai.settings.enable.address-bar-toggle" = "アドレスバー";
+
+/* Toggle text to enable/disable AI Chat in the browsing menu */
+"duckai.settings.enable.browsing-menu-toggle" = "ブラウザメニュー";
+
+/* Toggle text to enable/disable Duck.ai in tab manager */
+"duckai.settings.enable.tab-switcher-toggle" = "タブ画面";
+
+/* Toggle text to enable/disable Duck.ai in voice search */
+"duckai.settings.enable.voice-search-toggle" = "音声検索";
+
+/* Used in the link to learn more about the AI features. */
+"duckai.settings.learn.more" = "詳細情報";
+
+/* Accessibility label for Duck.ai */
+"duckai.settings.title" = "Duck.ai";
+
+/* No comment provided by engineer. */
+"DuckDuckGo for iOS" = "iOS用DuckDuckGo";
+
+/* Header title for the subscription activation view */
+"duckduckgo.subscription.activate.header.title" = "このデバイスにDuckDuckGoのサブスクリプションを追加";
+
+/* Description for adding subscription via email address */
+"duckduckgo.subscription.activate.via.email.description" = "このデバイスにサブスクリプションを追加するには、メールアドレスを使用してください。";
+
+/* Header for section for activating subscription on other devices */
+"duckduckgo.subscription.add.to.devices.header" = "他のデバイスにサブスクリプションを追加";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"duckduckgo.subscription.add.to.devices.no.email.footer" = "Apple IDを使用するか、メールアドレスをリンクして、サブスクリプションを他のデバイスに追加します。**[詳細はこちら](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"duckduckgo.subscription.add.to.devices.with.email.footer" = "このメールを使用して、他のデバイスのDuckDuckGoアプリでサブスクリプションを追加するには、「設定」>「DuckDuckGoサブスクリプション」>「サブスクリプション登録済み」に移動します。**[詳細はこちら](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* FAQ Description */
+"duckduckgo.subscription.faq.description" = "よくある質問への回答を確認するか、ヘルプページからサブスクリプションサポートにお問い合わせください。";
+
+/* Hero Text for Personal information removal */
+"duckduckgo.subscription.pir.hero" = "デスクトップでDuckDuckGoのサブスクリプションを有効にしてPersonal Information Removalを設定";
+
+/* Remove from device confirmation dialog text */
+"duckduckgo.subscription.remove.from.device.text" = "このデバイスではDuckDuckGoのサブスクリプションにアクセスできなくなります。これはサブスクリプションをキャンセルするものではなく、他のデバイスで引き続き有効です。";
+
+/* Text displayed when DuckPlayer is always enabled */
+"duckPlayer.alwaysEnabled.label" = "常に";
+
+/* Text displayed when DuckPlayer is in 'Ask' mode. */
+"duckPlayer.ask.label" = "毎回確認";
+
+/* Text displayed when DuckPlayer is in off. */
+"duckPlayer.never.label" = "もう表示しない";
+
+/* Settings screen cell text for DuckPlayer settings */
+"duckplayer.open.video.settings.title" = "Duck Player";
+
+/* Content for Duck Player opt-in message */
+"duckplayer.opt-in.message.content" = "Duck Playerはターゲティング広告をブロックし、視聴履歴を保護します。";
+
+/* Title for Duck Player opt-in message */
+"duckplayer.opt-in.message.title" = "YouTubeをより少ない広告とより高いプライバシーで利用";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.opt-in.pill.subtitle" = "ターゲティング広告なしで視聴";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.opt-in.pill.title" = "この動画をDuck Playerで再生";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.pill.subtitle" = "ターゲティング広告なしで視聴";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.play.in.duck.player" = "この動画をDuck Playerで再生";
+
+/* Body text for the modal feature explanation */
+"duckplayer.presentation.modal.body" = "Duck Playerを使用すると、DuckDuckGoでターゲット広告なしでYouTubeを視聴でき、視聴内容がおすすめに影響することはありません。";
+
+/* Button that will dismiss the modal */
+"duckplayer.presentation.modal.dismiss-button" = "了解！";
+
+/* Two line title (separated by \n) for the feature explanation */
+"duckplayer.presentation.modal.title" = "YouTubeの広告にうんざりしていませんか？Duck Playerをお試しください！";
+
+/* Two line title (separated by \n) for the feature explanation */
+"duckplayer.presentation.modal.title.youtube" = "YouTubeの広告にうんざりしていませんか？Duck Playerでは違います！";
+
+/* Button text to resume video in Duck Player */
+"duckplayer.resume.in.duck.player" = "Duck Playerで再開";
+
+/* Footer text explaining the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.footer" = "Duck Playerで開いたビデオは自動的に再生を開始します。Duck Playerで開いたビデオの再生を手動で開始したい場合は、これをオフにしてください。";
+
+/* Label for the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "自動再生動画";
+
+/* Label for the experimental section in Duck Player settings */
+"duckplayer.settings.experimental.label" = "実験的";
+
+/* Footer label in the settings screen for Duck Player */
+"duckplayer.settings.footer" = "DuckDuckGoは、Webを閲覧する際に自分自身を保護するために必要なプライバシーの基本をすべて提供します。";
+
+/* Text explaining what Duck Player is in the settings screen. */
+"duckplayer.settings.info-text" = "Duck Playerを使用すると、DuckDuckGoでターゲット広告なしでYouTubeを視聴でき、視聴内容がおすすめに影響することはありません。";
+
+/* Button that takes the user to learn more about Duck Player. */
+"duckplayer.settings.learn-more" = "詳細情報";
+
+/* Settings screen cell text for DuckPlayer settings to open in new tab */
+"duckplayer.settings.open-new-tab-label" = "新しいタブでDuck Playerを開く";
+
+/* Settings screen cell text for DuckPlayer settings */
+"duckplayer.settings.open-videos-in" = "Duck PlayerでYouTube動画を開く";
+
+/* Footer text explaining the search results toggle in Duck Player settings */
+"duckplayer.settings.search.results.footer" = "DuckDuckGoの検索結果からYouTube動画をクリックすると、Duck Playerで開きます。";
+
+/* Label for the search results toggle in Duck Player settings */
+"duckplayer.settings.search.results.label" = "DuckDuckGo Searchの結果";
+
+/* Message for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.message" = "この設定を有効にするには、すべてのタブを閉じてください。";
+
+/* OK button text for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.ok" = "OK";
+
+/* Title for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.title" = "重要！";
+
+/* Settings screen cell text for DuckPlayer settings */
+"duckplayer.settings.title" = "Duck Player";
+
+/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
+"duckplayer.settings.toggle" = "ここでYouTube動画を開く";
+
+/* Label for the Duck Player variant picker in Duck Player settings */
+"duckplayer.settings.variant.label" = "Duck Playerバリアント";
+
+/* Footer text explaining the YouTube.com option in Duck Player settings */
+"duckplayer.settings.youtube.footer" = "YouTube.comを閲覧中にYouTubeの動画をクリックすると、Duck Playerで開きます。";
+
+/* Label for the YouTube.com option in Duck Player settings */
+"duckplayer.settings.youtube.label" = "YouTube.com";
+
+/* Text for the ask mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.ask" = "自分で選択";
+
+/* Text for the auto mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.auto" = "自動的に開く";
+
+/* Text for the never mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.never" = "表示しない";
+
+/* Button text to open Duck Player settings */
+"duckplayer.toast.open.settings" = "設定を開く";
+
+/* Toast message informing user they can disable Duck Player in settings */
+"duckplayer.toast.turn.off.anytime" = "Duck Playerはいつでもオフにできます";
+
+/* Button text to watch video on YouTube */
+"duckplayer.watch.on.youtube" = "YouTubeで見る";
+
+/* Subtitle explaining how Duck Player protects privacy */
+"duckplayer.welcome.message.content" = "YouTubeに戻るには、Duck Playerを閉じてください。\nこれを希望されない場合は下で無効にできます。";
+
+/* Title for Duck Player welcome message highlighting privacy benefits */
+"duckplayer.welcome.message.text" = "Duck Playerで視聴中です！\nここにはターゲティング広告はありません。";
+
+/* Email protection service offered by DuckDuckGo */
+"email-protection" = "メール保護";
+
+/* Cancel option for the email alias alert */
+"email.aliasAlert.decline" = "キャンセル";
+
+/* Option for generating a private email address */
+"email.aliasAlert.generatePrivateAddress" = "プライベートDuck Addressを生成";
+
+/* Option for generating a private email address */
+"email.aliasAlert.prompt.generatePrivateAddress" = "プライベートDuck Addressを生成";
+
+/* Subtitle for generating a private email address */
+"email.aliasAlert.prompt.generatePrivateAddress.subtitle" = "メールトラッカーをブロックし、アドレスを非表示に";
+
+/* Title for the email alias selection prompt */
+"email.aliasAlert.prompt.title" = "メールアドレスを選択";
+
+/* Subtitle for choosing primary user email address */
+"email.aliasAlert.prompt.useUserAddress.subtitle" = "メールトラッカーをブロックする";
+
+/* Title for the email alias selection alert */
+"email.aliasAlert.title" = "Duck Addressでメールトラッカーをブロックする";
+
+/* Parameter is an email address (string) */
+"email.aliasAlert.useUserAddress" = "%@を使用";
+
+/* Title for the email copy browsing menu alert */
+"email.browsingMenu.alert" = "新しいアドレスがクリップボードにコピーされました";
+
+/* Email option title in the browsing menu */
+"email.browsingMenu.useNewDuckAddress" = "プライベートDuck Addressを生成";
+
+/* Signed in state for the email feature */
+"email.settings.enabled" = "有効";
+
+/* Footer text for the email feature */
+"email.settings.footer" = "このデバイスからEmail Protectionを削除すると、Webを閲覧する際に、個人用Duck Addressまたは新しく生成されたプライベートDuck Addressをメールフィールドに入力するオプションがなくなります。\n\nDuck Addressを完全に削除する場合、またはその他の質問やフィードバックがある場合は、support@duck.comまでお問い合わせください。";
+
+/* Signed out state for the email feature */
+"email.settings.off" = "無効";
+
+/* Subtitle for the email settings cell */
+"email.settings.subtitle" = "メールトラッカーをブロックし、アドレスを非表示に";
+
+/* Option to continue the Email Protection signup */
+"email.signup-prompt.alert.continue" = "セットアップを続行";
+
+/* Option to exit the Email Protection signup */
+"email.signup-prompt.alert.exit" = "セットアップを終了";
+
+/* Title for exiting the Email Protection signup early alert */
+"email.signup-prompt.alert.title" = "今終了すると、Duck Addressは保存されません！";
+
+/* Button title choosing not to sign up for email protection and not to be prompted again */
+"email.signup-prompt.do-not-signup-button.cta" = "再度表示しない";
+
+/* Button title choosing to sign up for email protection */
+"email.signup-prompt.signup-button.cta" = "メールを保護";
+
+/* Subtitle for prompt to sign up for email protection */
+"email.signup-prompt.subtitle" = "一意のランダムアドレスを作成し、隠れたトラッカーを削除してメールを受信トレイに転送します。";
+
+/* Title for prompt to sign up for email protection */
+"email.signup-prompt.title" = "メールを非表示にしてトラッカーをブロック";
+
+/* Empty list state placeholder title */
+"empty.bookmarks" = "ブックマークはまだ追加されていません";
+
+/* Empty list state placeholder subtitle */
+"empty.bookmarks.subtitle" = "ブックマークが別のブラウザに保存されている場合は、DuckDuckGoにインポートできます。";
+
+/* Empty search placeholder on bookmarks search */
+"empty.search" = "一致するものが見つかりませんでした";
+
+/* No comment provided by engineer. */
+"Enrolled: %@" = "登録済み：%@";
+
+/* No comment provided by engineer. */
+"Entry Pill" = "エントリーピル";
+
+/* Button title to Sign In */
+"error.email-protection-sign-in.action" = "サインイン";
+
+/* Alert message */
+"error.email-protection-sign-in.body" = "申し訳ありませんが、このブラウザでEmail Protection機能を再度有効にするには、もう一度サインインしてください。";
+
+/* Alert title */
+"error.email-protection-sign-in.title" = "Email Protectionエラー";
+
+/* Button title to open device settings */
+"error.insufficient-disk-space.action" = "設定を開く";
+
+/* Alert message */
+"error.insufficient-disk-space.body" = "デバイスのストレージ容量が不足しているようです。続行するにはスペースを空けてください。";
+
+/* Alert title */
+"error.insufficient-disk-space.title" = "ストレージが不足しています";
+
+/* Button title that is shutting down the app */
+"error.preemptive-crash.action" = "アプリを閉じる";
+
+/* Alert message */
+"error.preemptive-crash.body" = "アプリに問題があり、終了する必要があります。続行するには、再度開いてください。";
+
+/* Alert title */
+"error.preemptive-crash.title" = "アプリの問題が検出されました";
+
+/* Generic error message on a dialog for when the cause is not known. */
+"error.unknown.try.again" = "不明なエラーが発生しました";
+
+/* No comment provided by engineer. */
+"External ID: %@" = "外部ID：%@";
+
+/* No comment provided by engineer. */
+"favorite" = "お気に入り";
+
+/* No comment provided by engineer. */
+"favorite.menu.edit" = "編集";
+
+/* No comment provided by engineer. */
+"favorite.menu.remove" = "削除";
+
+/* Display Mode for favorites */
+"favorites.settings.all-devices" = "すべてのデバイスのお気に入り";
+
+/* Footer of the favorites settings table */
+"favorites.settings.footer" = "新しいタブに表示するお気に入りを、その発信元に基づいて選択します。";
+
+/* Header of the favorites settings table */
+"favorites.settings.header" = "表示設定";
+
+/* Display Mode for favorites */
+"favorites.settings.mobile-only" = "モバイルのお気に入りのみ";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "機能：%@";
+
+/* No comment provided by engineer. */
+"feedback.browserFeatures.ads" = "広告とポップアップのブロック";
+
+/* No comment provided by engineer. */
+"feedback.browserFeatures.bookmarks" = "ブックマークの作成と管理";
+
+/* No comment provided by engineer. */
+"feedback.browserFeatures.caption" = "どのブラウジング機能を追加または改善できますか？";
+
+/* No comment provided by engineer. */
+"feedback.browserFeatures.description" = "ブラウザ機能の問題";
+
+/* No comment provided by engineer. */
+"feedback.browserFeatures.entry" = "ブラウジング機能が不足しているか、不便";
+
+/* No comment provided by engineer. */
+"feedback.browserFeatures.images" = "画像を操作する";
+
+/* No comment provided by engineer. */
+"feedback.browserFeatures.navigation" = "前進、後退、更新の操作";
+
+/* No comment provided by engineer. */
+"feedback.browserFeatures.other" = "該当なし";
+
+/* No comment provided by engineer. */
+"feedback.browserFeatures.tabs" = "タブの作成と管理";
+
+/* No comment provided by engineer. */
+"feedback.browserFeatures.videos" = "動画を視聴";
+
+/* No comment provided by engineer. */
+"feedback.customization.bookmarks" = "ブックマークの表示方法";
+
+/* No comment provided by engineer. */
+"feedback.customization.caption" = "どのカスタマイズオプションを追加または改善できますか？";
+
+/* No comment provided by engineer. */
+"feedback.customization.description" = "カスタマイズの問題";
+
+/* No comment provided by engineer. */
+"feedback.customization.entry" = "アプリをカスタマイズする方法が十分でない";
+
+/* No comment provided by engineer. */
+"feedback.customization.homeScreen" = "ホーム画面の設定";
+
+/* No comment provided by engineer. */
+"feedback.customization.other" = "該当なし";
+
+/* No comment provided by engineer. */
+"feedback.customization.tabs" = "タブの表示方法";
+
+/* No comment provided by engineer. */
+"feedback.customization.ui" = "アプリの外観";
+
+/* No comment provided by engineer. */
+"feedback.customization.whatIsCleared" = "クリアされるデータ";
+
+/* No comment provided by engineer. */
+"feedback.customization.whenIsCleared" = "データがクリアされるタイミング";
+
+/* No comment provided by engineer. */
+"feedback.ddgSearch.autocomplete" = "より優れたオートコンプリート";
+
+/* No comment provided by engineer. */
+"feedback.ddgSearch.caption" = "どの検索機能を追加または改善できますか？";
+
+/* No comment provided by engineer. */
+"feedback.ddgSearch.description" = "DuckDuckGo Searchの問題";
+
+/* No comment provided by engineer. */
+"feedback.ddgSearch.entry" = "DuckDuckGoの検索が不十分";
+
+/* No comment provided by engineer. */
+"feedback.ddgSearch.languageOrRegion" = "特定の言語または地域での検索";
+
+/* No comment provided by engineer. */
+"feedback.ddgSearch.layout" = "レイアウトはGoogleのようにすべき";
+
+/* No comment provided by engineer. */
+"feedback.ddgSearch.loadTime" = "読み込み時間の短縮";
+
+/* No comment provided by engineer. */
+"feedback.ddgSearch.other" = "該当なし";
+
+/* No comment provided by engineer. */
+"feedback.ddgSearch.technical" = "プログラミング/技術検索";
+
+/* No comment provided by engineer. */
+"feedback.form.caption" = "改善できる点を教えてください";
+
+/* Confirmation button */
+"feedback.form.submit" = "送信";
+
+/* Title of the feedback form */
+"feedback.form.title" = "DuckDuckGoサブスクリプションの改善を支援";
+
+/* Category for Duck.ai feedback */
+"feedback.general.category.ai-chat" = "Duck.ai";
+
+/* Category for Identity Theft Restoration feedback */
+"feedback.general.category.itr" = "Identity Theft Restoration";
+
+/* Category for Personal Info Removal feedback */
+"feedback.general.category.pir" = "個人情報の削除";
+
+/* Category for subscription and payments feedback */
+"feedback.general.category.ppro" = "サブスクリプションと支払い";
+
+/* Prompt to select a category for general feedback */
+"feedback.general.category.select" = "カテゴリーを選択";
+
+/* Category for VPN feedback */
+"feedback.general.category.vpn" = "VPN";
+
+/* Category for access code issues */
+"feedback.itr.category.access-code" = "アクセスコードの問題";
+
+/* Category for issues contacting an advisor */
+"feedback.itr.category.cant-contact-advisor" = "アドバイザーに連絡できません";
+
+/* Prompt to select a category for Identity Theft Restoration feedback */
+"feedback.itr.category.select" = "カテゴリーを選択";
+
+/* Category for other Identity Theft Restoration issues */
+"feedback.itr.category.something-else" = "その他";
+
+/* Category for unhelpful advisor calls */
+"feedback.itr.category.unhelpful" = "アドバイザーへの電話が役に立たなかった";
+
+/* No comment provided by engineer. */
+"feedback.negative.form.genericPlaceholder" = "できるだけ具体的にご記入ください";
+
+/* No comment provided by engineer. */
+"feedback.negative.form.placeholder" = "具体的に含めたい内容はありますか？";
+
+/* No comment provided by engineer. */
+"feedback.negative.header" = "残念です";
+
+/* No comment provided by engineer. */
+"feedback.negative.supplementary" = "最もご不満な点はどれですか？";
+
+/* No comment provided by engineer. */
+"feedback.other.description" = "その他の問題";
+
+/* No comment provided by engineer. */
+"feedback.other.entry" = "該当なし";
+
+/* No comment provided by engineer. */
+"feedback.performance.caption" = "どのような問題が発生していますか？";
+
+/* No comment provided by engineer. */
+"feedback.performance.crashes" = "アプリがクラッシュまたはフリーズする";
+
+/* No comment provided by engineer. */
+"feedback.performance.description" = "パフォーマンスの問題";
+
+/* No comment provided by engineer. */
+"feedback.performance.entry" = "アプリが遅い、バグがある、またはクラッシュする";
+
+/* No comment provided by engineer. */
+"feedback.performance.other" = "該当なし";
+
+/* No comment provided by engineer. */
+"feedback.performance.playback" = "動画またはメディア再生の不具合";
+
+/* No comment provided by engineer. */
+"feedback.performance.slowLoading" = "ウェブページまたは検索結果の読み込みが遅い";
+
+/* Category for when scan finds incorrect records */
+"feedback.pir.category.not-me" = "スキャンで自分のものではない記録が見つかった";
+
+/* Category for when scan doesn't find info on a specific site */
+"feedback.pir.category.nothing-on-site" = "特定のサイトのスキャンで自分の情報が見つからなかった";
+
+/* Category for other Personal Info Removal issues */
+"feedback.pir.category.other" = "その他";
+
+/* Category for when the removal process is stuck */
+"feedback.pir.category.removal-stuck" = "削除プロセスが停止している";
+
+/* Category for when the scan is stuck */
+"feedback.pir.category.scan-stuck" = "記録のスキャンが停止している";
+
+/* Prompt to select a category for Personal Info Removal feedback */
+"feedback.pir.category.select" = "カテゴリーを選択";
+
+/* Header above input field */
+"feedback.positive.form.header" = "詳細を共有する";
+
+/* No comment provided by engineer. */
+"feedback.positive.form.placeholder" = "どのような機能が気に入っていますか？";
+
+/* No comment provided by engineer. */
+"feedback.positive.form.supplementary" = "チームと共有したい詳細はありますか？";
+
+/* No comment provided by engineer. */
+"feedback.positive.header" = "素晴らしいですね！";
+
+/* No comment provided by engineer. */
+"feedback.positive.noThanks" = "いいえ、結構です！完了しました。";
+
+/* Button encouraging uses to share details aboout their feedback */
+"feedback.positive.submit" = "詳細を共有";
+
+/* Category for other Privacy Pro issues */
+"feedback.ppro.category.other" = "その他";
+
+/* Category for one-time password issues */
+"feedback.ppro.category.otp" = "ワンタイムパスワードの問題";
+
+/* Prompt to select a category for Privacy Pro feedback */
+"feedback.ppro.category.select" = "カテゴリーを選択";
+
+/* No comment provided by engineer. */
+"feedback.start.footer" = "お客様の匿名のフィードバックは私たちにとって重要です。";
+
+/* No comment provided by engineer. */
+"feedback.start.header" = "始めましょう！";
+
+/* No comment provided by engineer. */
+"feedback.start.supplementary" = "フィードバックをどのように分類しますか？";
+
+/* No comment provided by engineer. */
+"feedback.submitted.confirmation" = "ありがとうございます！フィードバックが送信されました。";
+
+/* No comment provided by engineer. */
+"feedback.websiteLoading.description" = "ウェブサイトの読み込みの問題";
+
+/* No comment provided by engineer. */
+"feedback.websiteLoading.entry" = "特定のウェブサイトが正しく読み込まれない";
+
+/* No comment provided by engineer. */
+"feedback.websiteLoading.form.placeholder" = "どのコンテンツに影響がありますか？";
+
+/* No comment provided by engineer. */
+"feedback.websiteLoading.form.supplementary" = "これらの問題はどこで発生していますか？";
+
+/* No comment provided by engineer. */
+"feedback.websiteLoading.form.urlPlaceholder" = "どのウェブサイトに問題がありますか？";
+
+/* Used to indicate number of entries found and position of the currently viewed one: e.g. 1 of 10 */
+"findinpage.count" = "%1$d / %2$d";
+
+/* No comment provided by engineer. */
+"findinpage.title" = "ページ内検索";
+
+/* AI Chats option subtitle in fire confirmation */
+"fire.confirmation.aichats.subtitle" = "すべてのチャットを削除";
+
+/* AI Chats option title in fire confirmation */
+"fire.confirmation.aichats.title" = "Duck.aiチャット";
+
+/* Subtitle for cookies/site data when history is disabled */
+"fire.confirmation.data.subtitle.historyDisabled" = "アカウントからサインアウトされる可能性があります";
+
+/* Cookies and site data option title in fire confirmation */
+"fire.confirmation.data.title" = "Cookieとサイトデータ";
+
+/* Tabs option title in fire confirmation */
+"fire.confirmation.tabs.title" = "タブ";
+
+/* Title for fire button confirmation screen */
+"fire.confirmation.title" = "削除する項目を選択してください";
+
+/* No comment provided by engineer. */
+"fireButtonAnimation.airstream.name" = "エアストリーム";
+
+/* No comment provided by engineer. */
+"fireButtonAnimation.fireRising.name" = "インフェルノ";
+
+/* No comment provided by engineer. */
+"fireButtonAnimation.none.name" = "なし";
+
+/* No comment provided by engineer. */
+"fireButtonAnimation.waterSwirl.name" = "ワールプール";
+
+/* Description text above the Share Link button */
+"get.browser.on-your-desktop-go-to" = "コンピューターで次の場所に移動：";
+
+/* Title for the Share Download Link button */
+"get.browser.share-link" = "ダウンロードリンクを共有する";
+
+/* Message displayed in the share action when sharing via email */
+"get.browser.share-link.message" = "DuckDuckGoデスクトップブラウザなら、検索時にプライバシーを保護し、トラッカーをブロックできます。お使いのパソコンでこちらのリンクにアクセスして今すぐダウンロードしましょう。";
+
+/* Title displayed in the share action */
+"get.browser.share-link.title" = "MacまたはWindows用のDuckDuckGoブラウザを入手";
+
+/* Title for the get desktop browser feature */
+"get.browser.title" = "MacまたはWindows用DuckDuckGoを入手";
+
+/* No comment provided by engineer. */
+"home.row.onboarding.header" = "DuckDuckGoをホーム画面に追加しましょう！";
+
+/* No comment provided by engineer. */
+"home.row.reminder.message" = "簡単にアクセスできるように、DuckDuckGoをドックに追加してください！";
+
+/* Home is this context is the bottom home row (dock) */
+"home.row.reminder.title" = "DuckDuckGoをホームに設定";
+
+/* This describes empty tab */
+"homeTab.searchAndFavorites" = "検索またはアドレスを入力";
+
+/* Home tab title */
+"homeTab.title" = "ホーム";
+
+/* No comment provided by engineer. */
+"ID: %@ | %@ | %@" = "ID: %1$@ | %2$@ | %3$@";
+
+/* Title for button of the Import Passwords Promotion banner */
+"import.passwords.promo.button.title" = "パスワードをインポート";
+
+/* Title for button to dismiss the Import Passwords Promotion banner */
+"import.passwords.promo.dismiss.button.title" = "再度確認しない";
+
+/* Message body for the Import Passwords Promotion banner */
+"import.passwords.promo.message" = "別のブラウザからパスワードを迅速かつ安全に転送します。";
+
+/* Title for the Import Passwords Promotion banner */
+"import.passwords.promo.title" = "パスワードをDuckDuckGoにインポート";
+
+/* Placeholder text for the duck.ai input field */
+"input.field.placeholder.duckai" = "非公開で質問";
+
+/* Message that comes up when trying to enable the VPN from intents, asking the user to enable it from the app so it's configured */
+"intent.vpn.needs.to.be.enabled.from.app" = "DuckDuckGoアプリからVPNを有効にする必要があります。";
+
+/* OK title for invite screen alert dismissal button */
+"invite.alert.ok.button" = "OK";
+
+/* Continue button on an invite dialog */
+"invite.dialog.continue.button" = "Continue";
+
+/* Get Started button on an invite dialog */
+"invite.dialog.get.started.button" = "Get Started";
+
+/* Message to show after user enters an unrecognized invite code */
+"invite.dialog.unrecognized.code.message" = "We didn’t recognize this Invite Code.";
+
+/* No comment provided by engineer. */
+"keyCommandAddBookmark" = "ブックマークを追加";
+
+/* No comment provided by engineer. */
+"keyCommandAddFavorite" = "お気に入りに追加";
+
+/* No comment provided by engineer. */
+"keyCommandBrowserBack" = "戻ってブラウズ";
+
+/* No comment provided by engineer. */
+"keyCommandBrowserForward" = "次へ進む";
+
+/* No comment provided by engineer. */
+"keyCommandClose" = "閉じる";
+
+/* No comment provided by engineer. */
+"keyCommandCloseTab" = "タブを閉じる";
+
+/* No comment provided by engineer. */
+"keyCommandFind" = "ページ内検索";
+
+/* No comment provided by engineer. */
+"keyCommandFindNext" = "次を検索";
+
+/* No comment provided by engineer. */
+"keyCommandFindPrevious" = "前を検索";
+
+/* No comment provided by engineer. */
+"keyCommandFire" = "すべてのタブとデータをクリア";
+
+/* No comment provided by engineer. */
+"keyCommandLocation" = "検索または住所を入力";
+
+/* No comment provided by engineer. */
+"keyCommandNewTab" = "新しいタブ";
+
+/* No comment provided by engineer. */
+"keyCommandNextTab" = "次のタブ";
+
+/* No comment provided by engineer. */
+"keyCommandOpenInNewBackgroundTab" = "バックグラウンドでリンクを開く";
+
+/* No comment provided by engineer. */
+"keyCommandOpenInNewTab" = "新しいタブで開く";
+
+/* No comment provided by engineer. */
+"keyCommandPreviousTab" = "前のタブ";
+
+/* No comment provided by engineer. */
+"keyCommandPrint" = "印刷";
+
+/* No comment provided by engineer. */
+"keyCommandReload" = "再読み込み";
+
+/* No comment provided by engineer. */
+"keyCommandSelect" = "選択";
+
+/* No comment provided by engineer. */
+"keyCommandShowAllTabs" = "すべてのタブを表示";
+
+/* No comment provided by engineer. */
+"Last Processed: %@" = "最終処理日：%@";
+
+/* No comment provided by engineer. */
+"Loading available products..." = "利用可能な製品を読み込み中...";
+
+/* No comment provided by engineer. */
+"Loading brokers..." = "ブローカーを読み込み中...";
+
+/* Summary text for the macOS browser waitlist */
+"mac-browser.waitlist.summary" = "DuckDuckGo for Macは、ユーザーが必要とする速度と期待するブラウザ機能を備え、クラス最高のプライバシーに不可欠な要素が満載です。";
+
+/* Title for the macOS waitlist notification */
+"mac-waitlist.available.notification.title" = "DuckDuckGo for Macの準備が整いました！";
+
+/* Title for the copy action */
+"mac-waitlist.copy" = "コピー";
+
+/* Description text above the Share Link button */
+"mac-waitlist.join-waitlist-screen.on-your-computer-go-to" = "Windowsコンピューターで次の場所に移動：";
+
+/* Description text above the Share Link button */
+"mac-waitlist.join-waitlist-screen.on-your-mac-go-to" = "Macで次の場所に移動：";
+
+/* Title for the Share Link button */
+"mac-waitlist.join-waitlist-screen.share-link" = "リンクを共有";
+
+/* Title for the Join Waitlist screen */
+"mac-waitlist.join-waitlist-screen.try-duckduckgo-for-mac" = "DuckDuckGo for Macを入手しましょう！";
+
+/* Title for the macOS waitlist button redirecting to Windows waitlist */
+"mac-waitlist.join-waitlist-screen.windows-waitlist" = "Windows版をお探しの場合は";
+
+/* Title for the settings subtitle */
+"mac-waitlist.settings.browse-privately" = "Mac用アプリでプライベートにブラウジング";
+
+/* Message used when sharing to iMessage */
+"mac-waitlist.share-sheet.message" = "Macでプライベートブラウジングを始める準備はできましたか？\n\nダウンロードするには、MacでこのURLにアクセスしてください。\nhttps://duckduckgo.com/mac";
+
+/* Title for the share sheet entry */
+"mac-waitlist.share-sheet.title" = "DuckDuckGo for Mac";
+
+/* Title for the Mac Waitlist feature */
+"mac-waitlist.title" = "DuckDuckGo Macアプリ";
+
+/* Text explaining what happens when Malicious Site Protection is enabled */
+"malicious-site-protection-with-scam.settings.toggle.message" = "詐欺、フィッシング、またはマルウェアのフラグが立てられたサイトで警告";
+
+/* Button that redirect the user to a web page explaining what Malicious Site Protection is */
+"malicious-site-protection.settings.footer.button.learn-more" = "詳細情報";
+
+/* Footer text for Malicious Site Protection settings warning the user about the risks of disabling the feature */
+"malicious-site-protection.settings.footer.message" = "この機能を無効にすると、個人情報が危険にさらされる可能性があります。";
+
+/* Header text for Malicious Site Protection settings */
+"malicious-site-protection.settings.header" = "サイトの安全に関する警告";
+
+/* Text explaining what happens when Malicious Site Protection is enabled */
+"malicious-site-protection.settings.toggle.message" = "フィッシングまたはマルウェアのフラグが立てられたサイトで警告";
+
+/* No comment provided by engineer. */
+"menu.button.hint" = "ブラウジングメニュー";
+
+/* No comment provided by engineer. */
+"Message" = "メッセージ";
+
+/* No comment provided by engineer. */
+"Message policy hostname" = "メッセージポリシーホスト名";
+
+/* No comment provided by engineer. */
+"Messages" = "メッセージ";
+
+/* The name of the Address Bar button when referenced in settings. */
+"mobile.customization.addressbar.button" = "アドレスバーのボタン";
+
+/* The title of the Address Bar button. */
+"mobile.customization.addressbar.title" = "アドレスバー";
+
+/* A title to indicate that if selected the current button will be hidden from the UI */
+"mobile.customization.option.none.long" = "このボタンを非表示にする";
+
+/* Indicates that no button was selected to be shown in the specified location. */
+"mobile.customization.option.none.short" = "なし";
+
+/* The title of the section in settings containing the customizable buttons. */
+"mobile.customization.section.title" = "カスタマイズ可能なボタン";
+
+/* The label for the toggle that hides and shows the reload button. */
+"mobile.customization.show.reload.button.title" = "リロードボタンを表示する";
+
+/* The name of the address bar button when referenced in settings. */
+"mobile.customization.toolbar.button" = "ツールバーボタン";
+
+/* A label for the access point to customization of the Toolbar. */
+"mobile.customization.toolbar.title" = "ツールバー";
+
+/* Title for back button in navigation bar */
+"navbar.back-button.title" = "戻る";
+
+/* Title for next button in navigation bar to progress forward */
+"navbar.next-button.title" = "次へ";
+
+/* Finish editing bookmarks button */
+"navigation.title.done" = "完了";
+
+/* Edit button */
+"navigation.title.edit" = "編集";
+
+/* String indicating NetP is snoozing when viewed from the settings screen */
+"netP.cell.snoozing" = "スヌーズ";
+
+/* Title for the DuckDuckGo VPN feature */
+"netP.title" = "DUCKDUCKGO VPN";
+
+/* Button title for tooltip about adding VPN widget */
+"network.protection.addwidget.tip.action" = "ウィジェットを追加";
+
+/* Message for tooltip about adding VPN widget */
+"network.protection.addwidget.tip.message" = "ホーム画面から直接VPNのオンとオフを切り替えます。";
+
+/* Title for tooltip about adding VPN widget */
+"network.protection.addwidget.tip.title" = "VPNウィジェットを追加する";
+
+/* The body of the notification when Privacy Pro subscription expired */
+"network.protection.entitlement.expired.notification.body" = "サブスクリプションの有効期限が切れたため、VPNが切断されました。DuckDuckGoに登録してVPNを再接続します。";
+
+/* The body of the notification shown when VPN fails to reconnect */
+"network.protection.failure.notification.body" = "DuckDuckGo VPNの接続に失敗しました。時間を置いてもう一度お試しください。";
+
+/* Title for the VPN FAQ screen. */
+"network.protection.faq.title" = "DuckDuckGo VPNに関するよくある質問";
+
+/* Message for tooltip about geoswitching */
+"network.protection.geoswitching.tip.message" = "世界中のいずれかのサーバーに接続することで、VPNの場所をカスタマイズできます。";
+
+/* Title for tooltip about geoswitching */
+"network.protection.geoswitching.tip.title" = "場所を変更";
+
+/* The body of the notification shown when VPN connection is interrupted */
+"network.protection.interrupted.notification.body" = "DuckDuckGo VPNが中断されました。現在再接続を試行しています...";
+
+/* Message for the network protection invite dialog */
+"network.protection.invite.dialog.message" = "招待コードを入力して開始します。";
+
+/* Title for the network protection invite screen */
+"network.protection.invite.dialog.title" = "DuckDuckGo VPNをお試しください";
+
+/* Prompt for the network protection invite code text field */
+"network.protection.invite.field.prompt" = "招待コード";
+
+/* Message for the network protection invite success view */
+"network.protection.invite.success.message" = "ウェブサイトから自分の位置情報を隠し、インターネットプロバイダーやネットワーク上の他のユーザーからオンラインアクティビティを隠します。";
+
+/* Title for the network protection invite success view */
+"network.protection.invite.success.title" = "成功です！ログインしました。";
+
+/* The title of the notifications shown from VPN */
+"network.protection.notification.title" = "DuckDuckGo";
+
+/* Title text for an iOS quick action that opens VPN settings */
+"network.protection.quick-action.open-vpn" = "VPNを開く";
+
+/* Button title for tooltip about VPN snooze mode */
+"network.protection.snooze.tip.action" = "詳細情報";
+
+/* Message for tooltip about VPN snooze mode */
+"network.protection.snooze.tip.message" = "VPN接続をスヌーズすることで、VPNトラフィックをブロックするサイトやアプリを使用できます。";
+
+/* Title for tooltip about VPN snooze mode */
+"network.protection.snooze.tip.title" = "VPNの競合を回避";
+
+/* The body of the notification when the VPN is snoozed, with a duration string as parameter (e.g, 30 minutes) */
+"network.protection.snoozed.notification.body" = "VPNが%@スヌーズされました";
+
+/* The label for when NetP VPN is connected plus the length of time connected as a formatter HH:MM:SS string */
+"network.protection.status.connected.format" = "接続済み · %@";
+
+/* The label for the NetP VPN when connecting */
+"network.protection.status.connecting" = "接続中...";
+
+/* The label for the NetP VPN when disconnected */
+"network.protection.status.disconnected" = "接続されていません";
+
+/* The label for the NetP VPN when disconnecting */
+"network.protection.status.disconnecting" = "接続を解除しています...";
+
+/* Message label text for the status view when VPN is disconnected */
+"network.protection.status.header.message.off" = "接続してすべてのデバイスのインターネットトラフィックを保護します。";
+
+/* Message label text for the status view when VPN is disconnected */
+"network.protection.status.header.message.on" = "すべてのデバイスのインターネットトラフィックがVPNを通じて保護されます。";
+
+/* Header title label text for the status view when VPN is disconnected */
+"network.protection.status.header.title.off" = "DuckDuckGo VPNがオフです";
+
+/* Header title label text for the status view when VPN is connected */
+"network.protection.status.header.title.on" = "DuckDuckGo VPNはオンです";
+
+/* Header title label text for the status view when VPN is snoozing */
+"network.protection.status.header.title.snoozed" = "DuckDuckGo VPNはスヌーズされています";
+
+/* The status view 'Share Feedback' button which is shown inline on the status view after the temporary free use footer text */
+"network.protection.status.menu.share.feedback" = "フィードバックを共有する";
+
+/* The label for the NetP VPN when paused */
+"network.protection.status.paused" = "一時停止";
+
+/* The label for when NetP VPN is snoozing plus the length of time remaining formatted as '0:00' */
+"network.protection.status.snoozing.format" = "スヌーズ中、残り%@";
+
+/* Snooze button title shown in NetworkProtection's status view. */
+"network.protection.status.view.action.snooze" = "20分間スヌーズする";
+
+/* Wake Up button title shown in NetworkProtection's status view. */
+"network.protection.status.view.action.wake-up" = "起動";
+
+/* Connection details label shown in NetworkProtection's status view. */
+"network.protection.status.view.connection.details" = "接続の詳細";
+
+/* Custom DNS label shown in NetworkProtection's status view. */
+"network.protection.status.view.custom.dns" = "DNSサーバー";
+
+/* Generic connection failed error message shown in NetworkProtection's status view. */
+"network.protection.status.view.error.connection.failed.message" = "時間を置いてもう一度お試しください。";
+
+/* Generic connection failed error title shown in NetworkProtection's status view. */
+"network.protection.status.view.error.connection.failed.title" = "接続に失敗しました。";
+
+/* IP Address label shown in NetworkProtection's status view. */
+"network.protection.status.view.ip.address" = "IPアドレス";
+
+/* Location label shown in NetworkProtection's status view. */
+"network.protection.status.view.location" = "位置情報";
+
+/* Label shown on the title of the settings section in NetworkProtection's status view. */
+"network.protection.status.view.settings.section.title" = "管理";
+
+/* Title label text for the status view when netP is disconnected */
+"network.protection.status.view.title" = "VPN";
+
+/* The body of the notification shown when VPN reconnects successfully */
+"network.protection.success.notification.body" = "DuckDuckGo VPNはオンです。位置情報とオンラインアクティビティは保護されています。";
+
+/* The body of the notification shown when VPN connects successfully with the city + state/country as formatted parameter */
+"network.protection.success.notification.subtitle.including.serverLocation" = "%@経由でデバイストラフィックをルーティングします。";
+
+/* The body of the notification shown when VPN connects successfully with the city + state/country as formatted parameter */
+"network.protection.success.notification.subtitle.snooze.ended.including.serverLocation" = "VPNのスヌーズは終了しました。%@経由でデバイストラフィックをルーティングします。";
+
+/* Title for the button to link to the iOS app settings and enable notifications app-wide. */
+"network.protection.turn.on.notifications.button.title" = "通知をオンにする";
+
+/* Footer text under the button to link to the iOS app settings and enable notifications app-wide. */
+"network.protection.turn.on.notifications.section.footer" = "接続が切断されたり、VPNステータスが変更されたりした場合に、DuckDuckGoから通知を受けるようにします。";
+
+/* Title of the About section in the VPN status screen */
+"network.protection.vpn.about" = "DuckDuckGoについて";
+
+/* Section header for the toggle for VPN notifications. */
+"network.protection.vpn.alerts.section.header" = "通知";
+
+/* List section footer for the toggle for VPN alerts. */
+"network.protection.vpn.alerts.toggle.section.footer" = "接続が切断されたり、VPNステータスが変更されたりした場合に通知を受け取ります。";
+
+/* Title for the toggle for VPN notifications. */
+"network.protection.vpn.alerts.toggle.title" = "VPN通知";
+
+/* Title for the data volume section in the VPN status screen */
+"network.protection.vpn.data-volume" = "データ量";
+
+/* Footer text for the Exclude Local Networks setting item. */
+"network.protection.vpn.exclude.local.networks.setting.footer" = "ローカルトラフィックがVPNをバイパスし、プリンターなどのローカルネットワーク上のデバイスに接続できるようにします。";
+
+/* Header text for the Exclude Local Networks setting item. */
+"network.protection.vpn.exclude.local.networks.setting.header" = "一般";
+
+/* Title for the Exclude Local Networks setting item. */
+"network.protection.vpn.exclude.local.networks.setting.title" = "ローカルネットワークを除外する";
+
+/* Title for the VPN Location screen's All Countries section. */
+"network.protection.vpn.location.all.countries.section.title" = "すべての国";
+
+/* Description of the location type in the VPN status screen */
+"network.protection.vpn.location.connected" = "接続された場所";
+
+/* Subtitle of countries item when there are multiple cities, example : */
+"network.protection.vpn.location.country.item.formatted.cities.count" = "%d都市";
+
+/* Description of the location type in the VPN status screen */
+"network.protection.vpn.location.nearest" = "（最寄り）";
+
+/* Footer describing the VPN Location screen's Recommended section which just has Nearest Available. */
+"network.protection.vpn.location.recommended.section.footer" = "見つけられる最寄りのサーバーに自動的に接続します。";
+
+/* Title for the VPN Location screen's Recommended section. */
+"network.protection.vpn.location.recommended.section.title" = "推奨";
+
+/* Description of the location type in the VPN status screen */
+"network.protection.vpn.location.selected" = "選択した場所";
+
+/* Subtitle for the preferred location item that formats a city and country. E.g Chicago, United States */
+"network.protection.vpn.location.subtitle.formatted.city.and.country" = "%1$@、%2$@";
+
+/* Title for the VPN Location screen. */
+"network.protection.vpn.location.title" = "VPNの位置";
+
+/* Title for the VPN Notifications management screen. */
+"network.protection.vpn.notifications.title" = "VPN通知";
+
+/* Label for the Preferred Location VPN Settings item when the nearest available location is selected. */
+"network.protection.vpn.preferred.location.nearest" = "最寄りの位置";
+
+/* Title for the Preferred Location VPN Settings item. */
+"network.protection.vpn.preferred.location.title" = "優先ロケーション";
+
+/* Footer text for the DNS server setting item. */
+"network.protection.vpn.secure.dns.setting.footer" = "DuckDuckGoは当社のDNSサーバーを介してDNSクエリをルーティングするため、インターネットプロバイダーはお客様がアクセスしたウェブサイトを見ることができません。";
+
+/* Title for the FAQ row in the VPN status screen. */
+"network.protection.vpn.settings.faq" = "よくある質問とサポート";
+
+/* Title for the feedback row in the VPN status screen. */
+"network.protection.vpn.settings.share-feedback" = "VPNに関するフィードバックを共有";
+
+/* Title for the VPN Settings screen. */
+"network.protection.vpn.settings.title" = "VPN設定";
+
+/* Section header for the shortcuts section in VPN settings. */
+"network.protection.vpn.shortcuts.section.header" = "ショートカット";
+
+/* Confirm button for the new address bar picker */
+"new.address.bar.picker.confirm" = "確認";
+
+/* Footer text for the new address bar picker */
+"new.address.bar.picker.footer" = "設定＞AI機能で調整";
+
+/* Not now button for the new address bar picker */
+"new.address.bar.picker.not.now" = "後で";
+
+/* Option for search and AI in the new address bar picker */
+"new.address.bar.picker.search.and.ai" = "検索とDuck.ai";
+
+/* Option for search only in the new address bar picker */
+"new.address.bar.picker.search.only" = "検索のみ表示";
+
+/* Headline for the new address bar picker modal */
+"new.address.bar.picker.subheadline.private" = "プライベートAIチャットに簡単にアクセスしたいですか？";
+
+/* Title for the new address bar picker modal */
+"new.address.bar.picker.title" = "アドレスバーのオプション";
+
+/* No comment provided by engineer. */
+"No active subscriptions" = "アクティブなサブスクリプションはありません";
+
+/* No comment provided by engineer. */
+"No existing subscription found" = "既存のサブスクリプションが見つかりません";
+
+/* No comment provided by engineer. */
+"No Logs" = "ログなし";
+
+/* No comment provided by engineer. */
+"No messages" = "メッセージはありません";
+
+/* No comment provided by engineer. */
+"No results found" = "結果が見つかりません";
+
+/* No comment provided by engineer. */
+"No subscriptions available" = "利用可能なサブスクリプションはありません";
+
+/* No comment provided by engineer. */
+"OK" = "OK";
+
+/* Display title for Duck.ai in our address bar */
+"omnibar.full-ai-chat-mode.display.title" = "Duck.ai";
+
+/* Text displayed on notification appearing in the address bar when the browser  dismissed the cookie popup automatically rejecting it */
+"omnibar.notification.cookies-managed" = "管理対象のCookie";
+
+/* Text displayed on notification appearing in the address bar when the browser  hides a cookie popup */
+"omnibar.notification.popup-hidden" = "ポップアップが非表示";
+
+/* Text displayed on notification appearing in the address bar when the browser blocks trackers. The %d placeholder represents the number of trackers blocked. For languages which translation is longer than 30 characters, we should only translate 'Trackers', instead of 'Trackers Blocked'. Pluralization is handled by Localizable.stringsdict. */
+"omnibar.notification.trackers-blocked" = "%d Trackers";
+
+/* Button on the Add to Dock tutorial screen of the onboarding, it will proceed to the next step of the onboarding. */
+"onboarding.addToDock.buttons.gotIt" = "了解";
+
+/* Button to change the default browser */
+"onboarding.browsers.cta" = "ブラウザを選択";
+
+/* Full message with placeholders: %1$@ will be replaced with 'optional paid subscription' (bold), %2$@ will be replaced with 'VPN' (bold), %2$@ will be replaced with advanced, private AI (bold). */
+"onboarding.duckduckgo.subscription.promo.message" = "DuckDuckGoには%1$@もあり、%2$@および%3$@で利用できます。";
+
+/* Bold text 'advanced, private AI'. This will replace the second placeholder (%3$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.advanced-private-ai-bold" = "高度なプライベートAI";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.duckduckgo.subscription.promo.message.optional-subscription-bold" = "オプションの有料サブスクリプション";
+
+/* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.duckduckgo.subscription.promo.message.vpn-two-more-bold" = "VPN";
+
+/* The message of the option to set the address bar to the bottom. */
+"onboarding.highlights.addressBarPosition.bottom.message" = "簡単にアクセス可能";
+
+/* The title of the option to set the address bar to the bottom. */
+"onboarding.highlights.addressBarPosition.bottom.title" = "下";
+
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.addressBarPosition.cta" = "次へ";
+
+/* Indicates what address bar option (Top/Bottom) is the default one. E.g. Top (Default) */
+"onboarding.highlights.addressBarPosition.default" = "（デフォルト）";
+
+/* The title of the onboarding dialog popup to select the preferred address bar position. */
+"onboarding.highlights.addressBarPosition.title" = "アドレスバーはどこに配置すればよいですか？";
+
+/* The message of the option to set the address bar to the top. */
+"onboarding.highlights.addressBarPosition.top.message" = "見やすい";
+
+/* The title of the option to set the address bar to the top. */
+"onboarding.highlights.addressBarPosition.top.title" = "トップ";
+
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.appIconSelection.cta" = "次へ";
+
+/* The subheader of the onboarding dialog popup to select the preferred App icon. */
+"onboarding.highlights.appIconSelection.message" = "アプリのアイコンを選択します。";
+
+/* The title of the onboarding dialog popup to select the preferred App icon. */
+"onboarding.highlights.appIconSelection.title" = "どの色が一番似合いますか？";
+
+/* The title of the dialog to show the privacy features that DuckDuckGo offers */
+"onboarding.highlights.browsers.title" = "保護が有効になりました！";
+
+/* The title of the fire button CTA to skip erasing the data. */
+"onboarding.highlights.fireDialog.cta.skip" = "スキップ";
+
+/* The title of the onboarding dialog popup */
+"onboarding.highlights.intro.title" = "こんにちは。\n\n保護された状態を維持する、より高速なブラウザの準備はできていますか？";
+
+/* The title of the CTA to progress to the next onboarding screen. */
+"onboarding.highlights.searchExperience.cta" = "次へ";
+
+/* The footer disclaimer text for the search experience onboarding screen. */
+"onboarding.highlights.searchExperience.footer" = "AI機能はプライバシーに配慮されており、利用は任意です。設定＞AI機能から変更できます。";
+
+/* Full footer message with placeholder: %@ will be replaced with 'Settings > AI Features.' (bold). */
+"onboarding.highlights.searchExperience.footer.formatted" = "AI機能はプライバシーに配慮されており、利用は任意です。%@から変更できます。";
+
+/* Bold text 'Settings > AI Features.'. This will replace the placeholder (%@) in the footer string. */
+"onboarding.highlights.searchExperience.footer.settings-path-bold" = "設定＞AI機能。";
+
+/* The title of the onboarding dialog popup to select the preferred search experience. */
+"onboarding.highlights.searchExperience.title" = "プライベートAIチャットに簡単にアクセスしたいですか？";
+
+/* Button to continue the onboarding process */
+"onboarding.intro.cta" = "使用を開始";
+
+/* Button to skip the onboarding process */
+"onboarding.intro.cta.skip" = "すでに確認しています";
+
+/* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
+"onboarding.privacypro.promo.buttons.learnMore" = "詳細情報";
+
+/* Button to continue the onboarding process. */
+"onboarding.privacypro.promo.buttons.skip" = "スキップ";
+
+/* The title of the onboarding dialog that promotes Privacy Pro */
+"onboarding.privacypro.promo.title" = "忘れる前に...";
+
+/* The title of the button to skip the onboarding and start browsing. */
+"onboarding.skip.cta.confirmSkip" = "ブラウジングを開始";
+
+/* The title of the button to resume the onboarding. */
+"onboarding.skip.cta.resumeOnboarding" = "チュートリアルを表示";
+
+/* The message of the skip onboarding dialog popup. */
+"onboarding.skip.message" = "ヒント：Fire Button 🔥 を使うと、タブ、履歴、閲覧データをすべて2回タップするだけで削除できます";
+
+/* The title of the skip onboarding dialog popup */
+"onboarding.skip.title" = "了解！他のヒントはスキップします。";
+
+/* Button on the Subscription promotion onboarding step when the user is eligible for a free trial. Tapping the button navigates to the Subscription paywall. */
+"onboarding.subscription.promo.buttons.tryItForFree" = "無料でお試しください。";
+
+/* Full message with placeholders: %1$@ will be replaced with 'VPN + 2 more premium protections' (bold), %2$@ will be replaced with 'optional paid subscription' (bold). */
+"onboarding.subscription.promo.message" = "DuckDuckGoには、%2$@で利用できる安全な%1$@もあります。";
+
+/* Bold text 'paid Privacy Pro subscription'. This will replace the second placeholder (%2$@) in the following string - onboarding.subscription.promo.message. */
+"onboarding.subscription.promo.message.optional-subscription-bold" = "オプションの有料サブスクリプション";
+
+/* Bold text 'VPN + 2 more premium protections'. This will replace the first placeholder (%1$@) in the following string - onboarding.subscription.promo.messag. */
+"onboarding.subscription.promo.message.vpn-two-more-bold" = "VPN + プレミアム保護をさらに2つ追加";
+
+/* No comment provided by engineer. */
+"onboarding.widgets.continueButton" = "ウィジェットを追加";
+
+/* No comment provided by engineer. */
+"onboarding.widgets.header" = "DuckDuckGoの使用がさらに簡単になりました。";
+
+/* No comment provided by engineer. */
+"onboarding.widgets.skipButton" = "たぶん、後で";
+
+/* No comment provided by engineer. */
+"onboardingContinue" = "続ける";
+
+/* No comment provided by engineer. */
+"onboardingDefaultBrowserMaybeLater" = "たぶん、後で";
+
+/* No comment provided by engineer. */
+"onboardingDefaultBrowserTitle" = "DuckDuckGoをデフォルトのブラウザに設定";
+
+/* No comment provided by engineer. */
+"onboardingSetAsDefaultBrowser" = "デフォルトブラウザとして設定";
+
+/* No comment provided by engineer. */
+"onboardingSkip" = "スキップ";
+
+/* This is on a button presented on the last of the onboarding screens. */
+"onboardingStartBrowsing" = "ブラウジングを開始";
+
+/* No comment provided by engineer. */
+"onboardingWelcomeHeader" = "DuckDuckGoへようこそ！";
+
+/* ’Link’ is link on a website */
+"open.externally.failed" = "そのリンクを開くために必要なアプリが見つかりません";
+
+/* No comment provided by engineer. */
+"Opting Out..." = "オプトアウトしています...";
+
+/* Description for the feedback form when there is an issue with accessing the paid tier models */
+"paid-duck-ai.feedback-form.category.access-subscription-models" = "登録者限定のDuck.aiモデルにアクセスできない";
+
+/* Description for the feedback form when there is an issue with logging into Duck.ai */
+"paid-duck-ai.feedback-form.category.login-third-party-browser" = "他のブラウザでサブスクリプションを使用してDuck.aiにアクセスできない";
+
+/* Title for the category selection state of the paid duck.ai feedback form */
+"paid-duck-ai.feedback-form.category.select-category" = "カテゴリーを選択";
+
+/* Description for the feedback form when the user has an issue not categorized in other options */
+"paid-duck-ai.feedback-form.category.something-else" = "その他の Duck.ai フィードバック";
+
+/* Activate button */
+"pm.activate" = "再有効化";
+
+/* Cancel button */
+"pm.cancel" = "キャンセル";
+
+/* Deactivate button */
+"pm.deactivate" = "無効化";
+
+/* Placeholder for the General Feedback step in the Privacy Pro feedback form */
+"ppro.feedback-form.general-feedback.placeholder" = "フィードバックをお寄せください...";
+
+/* Title for the General Feedback step in the Privacy Pro feedback form */
+"ppro.feedback-form.general-feedback.title" = "一般的なフィードバック";
+
+/* Title for the ITR category in the Privacy Pro feedback form */
+"ppro.feedback-form.report-itr-problem.title" = "Identity Theft Restoration";
+
+/* Title for the PIR category in the Privacy Pro feedback form */
+"ppro.feedback-form.report-pir-problem.title" = "Personal Information Removal";
+
+/* Title for the Subscriptions and Payments category in the Privacy Pro feedback form */
+"ppro.feedback-form.report-ppro-problem.title" = "サブスクリプションと支払い";
+
+/* Placeholder for the Report a Problem step in the Privacy Pro feedback form */
+"ppro.feedback-form.report-problem.placeholder" = "何が起こっているのか教えてください…";
+
+/* Title for the Report a Problem step in the Privacy Pro feedback form */
+"ppro.feedback-form.report-problem.title" = "問題を報告する";
+
+/* Title for the VPN category in the Privacy Pro feedback form */
+"ppro.feedback-form.report-vpn-problem.title" = "VPN";
+
+/* Placeholder for the Feature Request step in the Privacy Pro feedback form */
+"ppro.feedback-form.request-feature.placeholder" = "どのような機能が欲しいですか？";
+
+/* Title for the Feature Request step in the Privacy Pro feedback form */
+"ppro.feedback-form.request-feature.title" = "機能リクエスト";
+
+/* Title for the category selection section in the Privacy Pro feedback form */
+"ppro.feedback-form.select-category.title" = "カテゴリーを選択";
+
+/* Support link text displayed beneath the feedback form description */
+"ppro.feedback-form.support.text" = "お困りですか？[サポートにお問い合わせください。](https://duckduckgo.com/subscription-support)";
+
+/* Intro text for the body of the PPro feedback form */
+"ppro.feedback-form.text-1" = "[ヘルプセンター](duck://)に記載されていない問題がありましたか？ぜひ詳細をお知らせください。\n\n状況をお聞かせください：";
+
+/* Text for the body of the PPro feedback form */
+"ppro.feedback-form.text-2" = "上記に入力された詳細に加えて、匿名化された情報もフィードバックとともに送信されます。";
+
+/* Bullet text for the body of the PPro feedback form */
+"ppro.feedback-form.text-3" = "• 一部のブラウザ機能が有効かどうか";
+
+/* Bullet text for the body of the PPro feedback form */
+"ppro.feedback-form.text-4" = "• アプリの診断情報を集計（例：エラーコード）";
+
+/* Text for the body of the PPro feedback form */
+"ppro.feedback-form.text-5" = "「送信」をタップすると、DuckDuckGoが送信された情報をアプリの改善に使用することに同意したことになります。";
+
+/* Title for the text box in the Privacy Pro feedback form */
+"ppro.feedback-form.text-box.title" = "フィードバック";
+
+/* Title for the Privacy Pro feedback form */
+"ppro.feedback-form.title" = "フィードバックを送信する";
+
+/* Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites) */
+"preferences.scam-blocker.title" = "詐欺ブロッカー";
+
+/* Caption explaining the risk of disabling scam blocker protection */
+"preferences.scam-blocker.toggle-caption" = "この機能を無効にすると、個人情報が危険にさらされる可能性があります。";
+
+/* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
+"preferences.scam-blocker.toggle-label" = "詐欺、フィッシング、マルウェアのフラグが付けられたサイトに警告を表示します。[詳細はこちら](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
+
+/* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
+"preferences.smarter-encryption.description" = "可能な限りリンクをHTTPSに自動的にアップグレードします。[詳細はこちら](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
+
+/* Title of the section of a setting page that shows Smarter Encryption preferences */
+"preferences.smarter-encryption.title" = "Smarter Encryption";
+
+/* Status indicator of a browser privacy protection feature. */
+"preferences.status-indicator.always-on" = "常にオン";
+
+/* Title of the option to show the Threat Protection preferences */
+"preferences.threat-protection" = "脅威対策";
+
+/* Caption of the option to show the Threat Protection preferences */
+"preferences.threat-protection.caption" = "DuckDuckGoの強化された保護機能は、接続を安全に保ちながら一般的な脅威を防ぎます。[詳細はこちら](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
+
+/* Description of incorrectly formatted bookmarks data error when syncing. */
+"prefrences.sync.bookmarks-bad-request.description" = "一部のブックマークは形式が誤っているか長すぎるため、同期されませんでした。";
+
+/* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
+"prefrences.sync.bookmarks-limit-exceeded-action" = "ブックマークを管理…";
+
+/* Description for sync bookmarks limits exceeded warning */
+"prefrences.sync.bookmarks-limit-exceeded-description" = "ブックマークの最大数に達しました。同期を再開するには、一部を削除してください。";
+
+/* Button title for sync credentials limits exceeded warning to go to manage passwords */
+"prefrences.sync.credentials-limit-exceeded-action" = "パスワードを管理...";
+
+/* Description for sync credentials limits exceeded warning */
+"prefrences.sync.credentials-limit-exceeded-description" = "パスワードの最大数に達しました。同期を再開するには、一部を削除してください。";
+
+/* Description of incorrectly formatted credit card data error when syncing. */
+"prefrences.sync.credit-cards-bad-request.description" = "一部のクレジットカードは形式が誤っているか長すぎるため、同期されませんでした。";
+
+/* Button title for sync credit cards limits exceeded warning to go to manage credit cards */
+"prefrences.sync.credit-cards-limit-exceeded-action" = "クレジットカードを管理...";
+
+/* Description for sync credit cards limits exceeded warning */
+"prefrences.sync.credit-cards-limit-exceeded-description" = "クレジットカードの上限に達しました。同期を再開するには、一部を削除してください。";
+
+/* Description invalid credentials error when syncing. */
+"prefrences.sync.invalid-login-description" = "同期でエラーが発生しました。このデバイスで同期を無効にしてから、別のデバイスまたはリカバリーコードを使用して再接続してみてください。";
+
+/* Title for sync limits exceeded warning */
+"prefrences.sync.limit-exceeded-title" = "同期が一時停止中";
+
+/* Description of incorrectly formatted password data error when syncing. */
+"prefrences.sync.passwords-bad-request.description" = "一部のパスワードは形式が誤っているか長すぎるため、同期されませんでした。";
+
+/* Description of too many requests error when syncing. */
+"prefrences.sync.too-many-requests.description" = "Sync & Backupは一時的に利用できません。";
+
+/* No comment provided by engineer. */
+"preserveLogins.domain.list.footer" = "ウェブサイトは、サインイン状態を維持するためにCookieに依存しています。サイトをFireproof設定しても、Cookieは消去されず、Fire Buttonを使用した後でもログインしたままになります。Fireproofウェブサイトで見つかったサードパーティトラッカーは引き続きブロックされます。";
+
+/* Section header above Fireproofed websites list */
+"preserveLogins.domain.list.title" = "Fireproofサイト";
+
+/* Alert message explaining to users that the benefit of fireproofing a site is that they will be kept signed in */
+"preserveLogins.fireproof.message" = "このサイトをFireproof設定すると、Fire Buttonを使用した後もサインイン状態が維持されます。";
+
+/* Parameter is a string - domain name. Alert title prompting user to fireproof a site so they can stay signed in */
+"preserveLogins.fireproof.title" = "%@をFireproofに設定してサインインを維持しますか？";
+
+/* Confirm fireproofing action */
+"preserveLogins.menu.confirm" = "Fireproof";
+
+/* Parameter is a website URL. Messege confirms that given website has been fireproofed. */
+"preserveLogins.menu.confirm.message" = "%@はFireproof になりました";
+
+/* Deny fireproofing action */
+"preserveLogins.menu.defer" = "後で";
+
+/* Disable fireproofing for site */
+"preserveLogins.menu.disable" = "Fireproofを削除";
+
+/* Enable fireproofing for site */
+"preserveLogins.menu.enable" = "このサイトをFireproof設定";
+
+/* Messege confirms that website is no longer fireproofed. */
+"preserveLogins.menu.removal.message" = "Fireproofが解除されました";
+
+/* Alert title */
+"preserveLogins.remove.all" = "すべて削除";
+
+/* Confirmation button in alert */
+"preserveLogins.remove.all.ok" = "OK";
+
+/* No comment provided by engineer. */
+"Primary / First Action" = "プライマリ／ファーストアクション";
+
+/* No comment provided by engineer. */
+"Priming Modal" = "プライミングモーダル";
+
+/* No comment provided by engineer. */
+"Privacy Protections" = "プライバシー保護";
+
+/* Privacy Icon accessibility title */
+"privacy.icon.dax" = "DuckDuckGoのロゴ";
+
+/* Privacy Icon accessibility hint */
+"privacy.icon.hint" = "タップしてPrivacy Dashboard画面を開く";
+
+/* Privacy Icon accessibility title */
+"privacy.icon.shield" = "プライバシーアイコン";
+
+/* No comment provided by engineer. */
+"Profile Information" = "プロフィール情報";
+
+/* Deny action */
+"prompt.custom.url.scheme.dontopen" = "キャンセル";
+
+/* Confirm action */
+"prompt.custom.url.scheme.open" = "オープン価格";
+
+/* No comment provided by engineer. */
+"prompt.custom.url.scheme.prompt" = "DuckDuckGoを離れてこのコンテンツを表示しますか？";
+
+/* Alert title */
+"prompt.custom.url.scheme.title" = "別のアプリで開きますか？";
+
+/* No comment provided by engineer. */
+"Recent Processing Logs" = "最近の処理ログ";
+
+/* No comment provided by engineer. */
+"Relatives: %@" = "親族：%@";
+
+/* No comment provided by engineer. */
+"Reset" = "リセット";
+
+/* No comment provided by engineer. */
+"Reset Pill Dismiss Count" = "ピルの却下回数をリセット";
+
+/* No comment provided by engineer. */
+"Reset Priming Modal State" = "プライミングモーダル状態をリセット";
+
+/* No comment provided by engineer. */
+"Results" = "検索結果";
+
+/* No comment provided by engineer. */
+"search.hint.duckduckgo" = "検索またはアドレスを入力";
+
+/* Search input toggle button title for asking AI Chat */
+"search.input.toggle.aichat.button.title" = "Duck.ai";
+
+/* Search input toggle button title for searching on the web */
+"search.input.toggle.search.button.title" = "検索";
+
+/* No comment provided by engineer. */
+"Secondary / Second Action" = "セカンダリー/セカンドアクション";
+
+/* No comment provided by engineer. */
+"section.title.bookmarks" = "ブックマーク";
+
+/* No comment provided by engineer. */
+"section.title.favorites" = "お気に入り";
+
+/* Name of the option the user can chose to give general browser feedback */
+"send.browser.feedback.general-feedback" = "一般的なフィードバック";
+
+/* Name of the option the user can chose to give browser feedback about a problem they enountered */
+"send.browser.feedback.report-problem" = "問題を報告";
+
+/* Name of the option the user can chose to give browser feedback about a feature they would like */
+"send.browser.feedback.request-feature" = "機能をリクエスト";
+
+/* Title of the picker where the user can chose the category of the feedback they want ot send. */
+"send.browser.feedback.select-category" = "カテゴリーを選択";
+
+/* No comment provided by engineer. */
+"Set Custom AI Chat URL" = "カスタムAIチャットURLを設定する";
+
+/* Settings cell for About DDG */
+"settings.about.ddg" = "DuckDuckGoとは？";
+
+/* Settings section title for About DuckDuckGo */
+"settings.about.section" = "DuckDuckGoについて";
+
+/* About page subscription sentence: rebranding + AI chat */
+"settings.about.subscription.sentence.rebranding.ai" = "さらに、ブラウザに統合された[DuckDuckGoサブスクリプション](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)も提供しています。登録者は、オンラインアクティビティを保護する高速でシンプルな[VPN](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/)、プライベートAIチャットサービスDuck.aiの高度なAIモデルへのアクセス、人物検索サイトから個人情報を見つけて削除するサービス、盗難の場合に個人情報を復元するサービスにより、さらにプライバシー保護を得られます。";
+
+/* about tagline */
+"settings.about.tagline" = "プライバシー。保護。安心感を。";
+
+/* About page template with placeholder for subscription sentence */
+"settings.about.text.template" = "DuckDuckGoは、個人情報の管理を取り戻したい人のための独立系オンライン保護企業です。\n\n私たちは、ハッカーや詐欺師、プライバシーを侵害する企業から個人情報を守る最良の方法は、そもそも情報が収集されないようにすることだと考えています。そのため、何百万人ものユーザーがオンラインでの検索や閲覧に[Chromeや他のブラウザではなくDuckDuckGoを選択](ddgQuickLink://duckduckgo.com/compare-privacy)しています。DuckDuckGoの組み込み検索エンジンはGoogleに似ていますが、検索を追跡することはありません。また、広告トラッカーのブロックやCookieのブロックなどのブラウジング保護により、他社によるデータの収集を阻止できます。また、当社のブラウザは無料です。私たちはお客様のデータを悪用することによってではなく、[プライバシーを尊重する検索広告](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/company/how-duckduckgo-makes-money/)から収益を得ています。\n\n%@ \n\nデータ収集ではなくデータ保護のために設計されたブラウザを使用してプライバシーを取り戻しましょう。";
+
+/* Settings screen accessibility section title */
+"settings.accessibility" = "アクセシビリティ";
+
+/* Settings screen cell text for adding the app to the dock */
+"settings.add.to.dock" = "Dockにアプリを追加する";
+
+/* Settings screen cell text for add widget to the home screen */
+"settings.add.widget" = "ホーム画面にウィジェットを追加";
+
+/* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
+"settings.add.widget.vpn" = "DuckDuckGo VPNウィジェットをホーム画面に追加";
+
+/* Name of the settings subsection related to the address bar */
+"settings.address.bar" = "アドレスバー";
+
+/* Settings screen cell title for toggling full URL visibility in address bar */
+"settings.address.full.url" = "完全なサイトアドレスを表示";
+
+/* Title for the 'Search & Duck.ai' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_and_duckai" = "検索とDuck.ai";
+
+/* Title for the 'Search Only' option in the AI experimental picker */
+"settings.ai.experimental.picker.search_only" = "検索のみ表示";
+
+/* Footer under the AI picker, descriptive sentence without link */
+"settings.ai.new.picker.footer" = "アドレスバーで検索とDuck.aiを切り替える新しいオプションを試してください。";
+
+/* Top level settings for managing AI Chat shortcuts */
+"settings.aichat.manage.shortcuts" = "Duck.aiショートカットを管理する";
+
+/* Settings screen text for showing AI Chat in various places in the app */
+"settings.aichat.shortcuts" = "Duck.aiショートカット";
+
+/* Settings screen text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input" = "実験的なアドレスバー";
+
+/* Settings screen footer text for showing AI Chat in the input box */
+"settings.aichat.shortcuts.input.footer" = "アドレスバーからウェブを検索するか、Duck.aiに直接質問できます";
+
+/* Title of search assist settings link */
+"settings.aifeatures.assist" = "Search Assist設定";
+
+/* Settings screen cell subtitle for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.subtitle" = "ブラウザのタブとして新しいDuck.aiチャットを表示する";
+
+/* Settings screen cell title for enabling Duck.ai as tabs */
+"settings.aifeatures.full.mode.title" = "Duck.aiタブズモード";
+
+/* Title of hide AI-generated images settings link */
+"settings.aifeatures.hide.ai.generated.images" = "AI生成画像を非表示にする";
+
+/* Description of what the hide AI-generated images feature does */
+"settings.aifeatures.hide.ai.generated.images.subtitle" = "画像検索結果からAI生成画像を除外";
+
+/* Label describing a feature which is turned on always */
+"settings.always.on" = "常にオン";
+
+/* Settings screen appearance section title */
+"settings.appearance" = "外観";
+
+/* Settings screen cell text for addess bar position */
+"settings.appearance.address.bar" = "アドレスバーの位置";
+
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "実験的なブラウザメニュー";
+
+/* Settings screen cell for opening links in associated apps */
+"settings.associated.apps" = "関連付けられたアプリでリンクを開く";
+
+/* Description for associated apps description */
+"settings.associated.apps.description" = "無効にすると、リンクが他のインストール済みアプリで自動的に開かれなくなります。";
+
+/* Subtitle explaining what the cookies option does in auto clear settings */
+"settings.autoclear.cookies.subtitle" = "すべてのサイトデータ（訪問済みサイトを含む）を削除します。アカウントからサインアウトされる場合があります。";
+
+/* Title for the cookies and site data option in auto clear settings */
+"settings.autoclear.cookies.title" = "Cookieとサイトデータ";
+
+/* Subtitle explaining what the Duck.ai chats option does in auto clear settings */
+"settings.autoclear.duckai.chats.subtitle" = "ピン留めされたチャットを含むすべてのチャットを削除します";
+
+/* Title for the Duck.ai chats option in auto clear settings */
+"settings.autoclear.duckai.chats.title" = "Duck.aiチャット";
+
+/* Section header for the auto clear options */
+"settings.autoclear.section.header" = "クリア";
+
+/* Autoclear action option to clear tabs and data */
+"settings.autoclear.tabs.and.data" = "タブとデータをクリア";
+
+/* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
+"settings.autoclear.tabs.and.data.with.aichat" = "タブ、データ、Duck.aiチャットを消去する";
+
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "開いているすべてのタブを閉じます";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "タブ";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "アプリ終了、1時間非アクティブ";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "アプリ終了、5分間非アクティブ";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "アプリ終了、15分間非アクティブ";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "アプリ終了、30分間非アクティブ";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "アプリ終了のみ";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "アプリの終了は、アプリをスワイプして閉じることと定義されます。非アクティブとは、アプリがバックグラウンドにある状態のことです。";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "希望するタイミング";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "アプリを再起動するとデータが削除されます。";
+
+/* Settings screen cell for autocomplete */
+"settings.autocomplete" = "検索候補";
+
+/* Settings label for enabling or disabling recently visited sites */
+"settings.autocomplete.recentlyvisited" = "最近訪問したサイト";
+
+/* Settings label for enabling or disabling recently visited sites */
+"settings.autocomplete.recentlyvisited.subtitle" = "最近アクセスしたサイトを検索候補に表示します。最近アクセスしたサイトは非公開で、デバイスにのみ保存され、Fire Buttonでクリアできます。";
+
+/* Subtitle for Search Suggestions setting */
+"settings.autocomplete.subtitle" = "入力に応じて検索候補を表示し、ブックマークも含めます。すべての検索は非公開です。";
+
+/* Settings screen cell text for Application Lock */
+"settings.autolock" = "アプリケーションロック";
+
+/* Section footer Autolock description */
+"settings.autolock.description" = "Touch ID、Face ID、またはシステムパスコードが有効になっている場合、アプリを開く際にロック解除を求められます。";
+
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "自動データ消去";
+
+/* Settings cell for Browser Feedback */
+"settings.browser.feedback" = "ブラウザのフィードバック";
+
+/* Settings screen footer text explaining that Fire Button also clears AI chat history */
+"settings.clear.aichat.history.footer" = "Fire Buttonを使用すると、ピン留めされたチャットを含む Duck.ai の履歴も削除します。";
+
+/* Settings screen cell text for clearing AI chat history */
+"settings.clear.aichat.history.title" = "Duck.aiチャットを消去する";
+
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "閲覧データを消去";
+
+/* Settings screen cell text for Automatically Clearing Data */
+"settings.clear.data" = "データを自動的にクリア";
+
+/* The name of the settings section containing options to set up the app */
+"settings.complete.setup" = "セットアップを完了";
+
+/* The name of Settings category in Privacy Features related to configuration of the privacy feature related to cookie pop-ups */
+"settings.cookie.pop-up-protection.protection" = "Cookieポップアップ保護";
+
+/* Explanation in Settings how the cookie pop up protection feature works */
+"settings.cookie.pop.up.protection.explanation" = "DuckDuckGoは、利用可能な最もプライベートな設定を選択し、これらのポップアップを表示しないようにします。[詳細はこちら](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/#cookie-pop-up-management)";
+
+/* Settings screen cell text for Cookie popups */
+"settings.cookie.popups" = "Cookieポップアップを管理";
+
+/* Settings title for the customize section */
+"settings.customize" = "カスタマイズ";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.duck.ai.footnote" = "すべてのタブ、Duck.aiチャット、ならびにfireproof（保護）されていないサイトのデータを消去します。";
+
+/* Clear data button explanation */
+"settings.data.clear.forget.all.footnote" = "fireproofされていないサイトのすべてのタブとデータを消去します。";
+
+/* The name of a settings subsection related to the data clearing */
+"settings.data.clearing" = "データクリアリング";
+
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "データを削除することで、オンラインでのプライバシー保護に役立ちます。Fire Buttonでデータを手動削除、または自動削除を設定します。";
+
+/* The name of Settings category in Privacy Features related to configuration of the default browser */
+"settings.default.browser" = "デフォルトのブラウザ";
+
+/* Label of a button disabling email protection */
+"settings.disable.email.protection.autofill" = "Email Protectionの自動入力を無効にする";
+
+/* Settings cell to link users to other products by DuckDuckGo */
+"settings.duckduckgo.on.other.platforms" = "他のプラットフォームでのDuckDuckGo";
+
+/* Subscription expired tittle message */
+"settings.duckduckgo.subscription.expired.title" = "DuckDuckGoサブスクリプションの有効期限が切れました";
+
+/* Explanation in Settings how the email protection feature works */
+"settings.email.protection.explanation" = "メールプロバイダを変更せずにメールトラッカーをブロックし、アドレスを非表示にします。[もっと詳しく](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/)";
+
+/* Alert presented to user after clicking on 'Sign out' in Email Protection Settings */
+"settings.email.protection.signing.out.alert" = "Email Protectionアカウントからサインアウトすると、このブラウザでDuck Addressの自動入力が無効になります。これらのアドレスは引き続き使用でき、転送されたメールを通常どおり受信できます。";
+
+/* Settings cell for Email Protection */
+"settings.emailProtection.description" = "メールトラッカーをブロックし、アドレスを非表示に";
+
+/* Settings screen cell text for enabling AI chat */
+"settings.enable.aichat" = "Duck.ai";
+
+/* A description of what the AI Chat toggle does */
+"settings.enable.aichat.subtitle" = "人気のサードパーティAIモデルとプライベートにチャット";
+
+/* Label of a button enabling the email protection feature */
+"settings.enable.email.protection" = "Email Protectionを有効にする";
+
+/* Settings screen cell text for enabling voice search */
+"settings.enable.voice.search" = "音声検索を有効にする";
+
+/* A description of what the AI Chat toggle does */
+"settings.features.assist.subtitle" = "AI支援による回答を検索に表示する頻度を選択します";
+
+/* Settings cell for Feedback */
+"settings.feedback" = "フィードバックを共有する";
+
+/* Settings screen cell text for fire button animation */
+"settings.firebutton" = "Fire Buttonアニメーション";
+
+/* Settings screen cell text for Fireproof Sites */
+"settings.fireproof.sites" = "Fireproofサイト";
+
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Fireproof化されたサイト";
+
+/* The name of the settings subsection containing general settings */
+"settings.general" = "一般";
+
+/* Settings screen cell text for setting the app as default browser */
+"settings.general.default.browser" = "デフォルトブラウザとして設定";
+
+/* Settings screen cell text for GPC */
+"settings.gpc" = "Global Privacy Control (GPC)";
+
+/* Settings screen cell text for app icon selection */
+"settings.icon" = "アプリアイコン";
+
+/* The name of Settings category in Complete Your Setup related to importing  passdwords */
+"settings.import.passwords" = "パスワードをインポート";
+
+/* Copy for badge on settings item to show an item is new */
+"settings.item.badge.new" = "新規";
+
+/* Copy for badge on settings item to show an item is experimental */
+"settings.item.badge.preview" = "プレビュー";
+
+/* Settings screen cell for Keyboard */
+"settings.keyboard" = "キーボード";
+
+/* Link text for learning more about a feature */
+"settings.learn.more" = "詳細情報";
+
+/* Switch button label. */
+"settings.let.duckduckgo.manage.cookie.consent.popups" = "DuckDuckGoにCookieの同意ポップアップを管理させる";
+
+/* Settings screen cell text for passwords */
+"settings.logins" = "パスワードと自動入力";
+
+/* The name of the settings section containing main settings */
+"settings.main.settings" = "メイン設定";
+
+/* Label of a button managing email protection account */
+"settings.manage.account" = "アカウントを管理する";
+
+/* Settings title for the 'More' section */
+"settings.more" = "DuckDuckGoからのその他のご案内";
+
+/* Button navigating to other settings related to search */
+"settings.more.search.settings" = "その他の検索設定";
+
+/* Subtitle of the 'More Search Settings' button */
+"settings.more.search.settings.explanation" = "言語や地域などをカスタマイズ";
+
+/* The name of a settings category listing next steps */
+"settings.next.steps" = "次のステップ";
+
+/* Label describing a feature which is turned off */
+"settings.off" = "無効";
+
+/* Label describing a feature which is turned on */
+"settings.on" = "有効";
+
+/* Title for Link in the Footer of Privacy Pro section */
+"settings.ppro.footer" = "プライバシーポリシーおよび利用規約";
+
+/* Settings screen cell for long press previews */
+"settings.previews" = "長押しでプレビュー";
+
+/* Settings title for the privacy section */
+"settings.privacy" = "プライバシー";
+
+/* The name of Settings category in Privacy Features related to configuration of the search */
+"settings.private.search" = "Private Search";
+
+/* Explanation in Settings how the private search feature works */
+"settings.private.search.explanation" = "DuckDuckGo Private Searchがデフォルトの検索エンジンなので、追跡されることなくウェブを検索できます。";
+
+/* Settings screen option to set refresh button in the address bar */
+"settings.refreshButton.position.addressBar" = "アドレスバー";
+
+/* Settings screen option to set refresh button in the menu */
+"settings.refreshButton.position.menu" = "メニュー";
+
+/* Settings screen cell text for setting the refresh button position. */
+"settings.refreshButton.position.title" = "リロードボタンの位置";
+
+/* Header of settings related to search */
+"settings.search.settings" = "検索設定";
+
+/* Settings cell for Send Crash Reports */
+"settings.send.crash.reports" = "クラッシュレポートを送信";
+
+/* Explanation of Send Crash Reports settings option */
+"settings.send.crash.reports.description" = "クラッシュレポートをDuckDuckGoに自動的に送信します。";
+
+/* The name of Settings category in Complete Your Setup related to configuration of the default browser */
+"settings.set.default.browser" = "デフォルトブラウザとして設定";
+
+/* Settings screen cell text for setting address bar position */
+"settings.set.your.address.bar.position" = "アドレスバーの位置を設定";
+
+/* Privacy pro description subtitle in settings when the is activating */
+"settings.subscription.activating" = "アクティベート中";
+
+/* Subscription activation pending description */
+"settings.subscription.activation.pending.description" = "通常より時間がかかっていますので、後でご確認ください。";
+
+/* Paid AIChat protection cell title for subscription */
+"settings.subscription.AIChat.title" = "Duck.ai";
+
+/* Data Broker protection cell subtitle for privacy pro */
+"settings.subscription.DBP.subtitle" = "情報を販売するサイトから情報を削除";
+
+/* Data Broker protection cell title for privacy pro */
+"settings.subscription.DBP.title" = "Personal Information Removal";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.no.duck.ai.row" = "登録者は、VPNとIdentity Theft Restorationを利用できます。";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.no.duck.ai.us" = "登録者は、VPN、Personal Information Removal、Identity Theft Restorationを利用できます。";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.row" = "登録者は、VPN、Duck.aiの高度なAIモデル、Identity Theft Restorationを利用できます。";
+
+/* Privacy pro description subtitle in settings */
+"settings.subscription.description.us" = "登録者は、VPN、Duck.aiの高度なAIモデル、Personal Information Removal、Identity Theft Restorationを利用できます。";
+
+/* I have a Subscription button text for privacy pro */
+"settings.subscription.existing.subscription" = "サブスクリプション登録済み";
+
+/* Settings cell for Subscription Feedback */
+"settings.subscription.feedback" = "DuckDuckGoサブスクリプション";
+
+/* Identity theft restoration cell subtitle for privacy pro */
+"settings.subscription.ITR.subtitle" = "個人情報が盗まれた場合、当社が修復をサポートします";
+
+/* Identity theft restoration cell title for privacy pro */
+"settings.subscription.ITR.title" = "Identity Theft Restoration";
+
+/* Subscription Settings button text for privacy pro */
+"settings.subscription.manage" = "サブスクリプション設定";
+
+/* Product name for the subscription bundle */
+"settings.subscription.Section" = "DuckDuckGoサブスクリプション";
+
+/* Subscribe to DuckDuckGo button text */
+"settings.subscription.subscribe.button" = "DuckDuckGoに登録する";
+
+/* Call to action title for Privacy Pro settings */
+"settings.subscription.subscribe.title" = "Wi-Fiを保護して高度なAIモデルでプライベートにチャット";
+
+/* Call to action title for Privacy Pro settings */
+"settings.subscription.subscribe.title.no.ai.chat" = "Wi-Fiを保護して個人情報を安全に";
+
+/* Try DuckDuckGo Subscription Free button text */
+"settings.subscription.try.free.button" = "無料で試す";
+
+/* VPN cell title for privacy pro */
+"settings.subscription.VPN.title" = "VPN";
+
+/* Label of a button navigating to the Support page */
+"settings.support" = "サポート";
+
+/* Settings screen cell text for sync and backup */
+"settings.sync" = "Sync & Backup";
+
+/* Settings screen cell text for text size */
+"settings.text.size" = "デフォルトのテキストズーム";
+
+/* Settings screen cell text for theme */
+"settings.theme" = "テーマ";
+
+/* Title for the Settings View */
+"settings.title" = "設定";
+
+/* Description for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.description" = "DNSを使用してウェブサイト内で偽装を試みるサードパーティのトラッカーをブロックするのに役立ちます。";
+
+/* Title for CNAME cloaking protection feature */
+"settings.tracking.protection.cname.cloaking.title" = "DNS CNAMEクローキングから保護";
+
+/* Description for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.description" = "Facebook以外のサイトのFacebookコメントウィジェットのようなFacebookコンテンツの追跡を無効にします。";
+
+/* Title for Facebook tracking protection feature */
+"settings.tracking.protection.facebook.title" = "Facebookトラッキングからの保護";
+
+/* Description for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.description" = "トラッキング業者がブラウザやデバイスに関する一意の識別子を取得し、ウェブ上でユーザーを追跡するために使用するのを防ぐのに役立ちます。";
+
+/* Title for fingerprinting protection feature */
+"settings.tracking.protection.fingerprinting.title" = "指紋トラッキングを防止";
+
+/* Description for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.description" = "ファーストパーティのCookieは30日後に自動的に期限切れにして、ログアウト後にサイトがユーザーをずっと追跡できないようにします。";
+
+/* Title for third-party cookie blocking feature */
+"settings.tracking.protection.first.party.cookies.title" = "ファーストパーティクッキーの有効期限";
+
+/* Description for Google AMP protection feature */
+"settings.tracking.protection.google.amp.description" = "Google AMPリンクを元の発行者のサイトに置き換えます。";
+
+/* Title for Google AMP protection feature */
+"settings.tracking.protection.google.amp.title" = "GoogleのAMPトラッキングをブロック";
+
+/* Description for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.description" = "GoogleサインインのポップアップをGoogleが所有していないサイトでブロックします。";
+
+/* Title for Google Sign-in pop-up blocking feature */
+"settings.tracking.protection.google.signin.title" = "Googleのサインインポップアップをブロック";
+
+/* Description for link tracking removal feature */
+"settings.tracking.protection.link.tracking.description" = "リンク内のトラッキングパラメータを削除して、第三者がサイト間でユーザーの行動をトラッキングできないようにします。";
+
+/* Title for link tracking removal feature */
+"settings.tracking.protection.link.tracking.title" = "リンクトラッキングをブロック";
+
+/* Description for Referer tracking protection feature */
+"settings.tracking.protection.referrer.description" = "ユーザーが最後に訪問したウェブサイトが企業によって特定されるのをブロックするのに役立ちます。";
+
+/* Title for referrer tracking protection feature */
+"settings.tracking.protection.referrer.title" = "リファラーの追跡から保護";
+
+/* Description for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.description" = "侵入型トラッカーを読み込む前にブロックし、トラッキングを利用する広告を効果的に取り除きます。";
+
+/* Title for targeted ads blocking feature */
+"settings.tracking.protection.targeted.ads.title" = "ターゲティング広告をブロック";
+
+/* Description for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.description" = "サードパーティのトラッカーが最初から読み込まれないようにすることで、サイト間でユーザーを追跡するサードパーティのCookieをブロックするのに役立ちます。";
+
+/* Title for third-party tracker blocking feature */
+"settings.tracking.protection.third.party.trackers.title" = "サードパーティトラッカーをブロック";
+
+/* Settings screen cell text for Unprotected Sites */
+"settings.unprotected.sites" = "保護されていないサイト";
+
+/* Settings cell for Version */
+"settings.version" = "バージョン";
+
+/* Settings screen cell for voice search */
+"settings.voice.search" = "プライベート音声検索";
+
+/* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
+"settings.web.tracking.protection" = "ウェブのトラッキング防止";
+
+/* Header text explaining that web tracking protections are always enabled */
+"settings.web.tracking.protection.always.on" = "Web Tracking Protectionsは常にオンです";
+
+/* Explanation in Settings how the web tracking protection feature works */
+"settings.web.tracking.protection.explanation" = "DuckDuckGoはウェブを閲覧する際に非表示のトラッカーを自動的にブロックします。\n[詳細はこちら](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
+
+/* The title of the web tracking protection grid section */
+"settings.web.tracking.protection.subtitle" = "お客様を保護する方法";
+
+/* Updated description for web tracking protection settings */
+"settings.web.tracking.protection.updated.description" = "DuckDuckGoブラウザは追跡防止機能を提供し、常に有効です。[詳細はこちら](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
+
+/* No comment provided by engineer. */
+"Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "直近1分間のログを表示し、リフレッシュ後の問題を即座に診断するために役立ちます。";
+
+/* Description on a report broken site page. */
+"site.not.working.description" = "発生した問題を最もよく表すオプションを選択します。";
+
+/* Dismiss button */
+"site.not.working.dismiss" = "無視する";
+
+/* Button that triggers flow to report broken site */
+"site.not.working.report.broken.site" = "問題のあるサイトを報告";
+
+/* Prompt asking user to send report to us if we suspect site may be broken */
+"site.not.working.subtitle" = "これはブラウザの改善に役立ちます。";
+
+/* Prompt asking user to send report to us if we suspect site may be broken */
+"site.not.working.title" = "サイトが機能していませんか？DuckDuckGoにお知らせください。";
+
+/* Report a Broken Site screen confirmation button */
+"siteFeedback.buttonText" = "レポートを送信";
+
+/* Domain is an URL address */
+"siteFeedback.domainInfo" = "問題のあるサイトのドメイン：";
+
+/* No comment provided by engineer. */
+"siteFeedback.messagePlaceholder" = "どのコンテンツまたは機能が動作していませんか？";
+
+/* No comment provided by engineer. */
+"siteFeedback.subtitle" = "問題のあるサイトの報告は完全に匿名であり、アプリの改善に役立ちます。";
+
+/* This is a form title */
+"siteFeedback.title" = "問題のあるサイトを報告";
+
+/* No comment provided by engineer. */
+"siteFeedback.urlPlaceholder" = "問題のあるウェブサイトはどれですか？";
+
+/* No comment provided by engineer. */
+"Status" = "状態";
+
+/* No comment provided by engineer. */
+"Status: Invalidated" = "ステータス：無効化されました";
+
+/* No comment provided by engineer. */
+"Stored Hostname: %@" = "格納されたホスト名：%@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "サブ機能：%@";
+
+/* Button for adding this subscription to another device */
+"subscription.activate.add.to.device.button" = "デバイスに追加";
+
+/* Button for editing email address added to subscription */
+"subscription.activate.edit.email.button" = "メールを編集";
+
+/* View Title for editing your email account */
+"subscription.activate.edit.email.title" = "メールを編集";
+
+/* Button title for cancelling email deletion */
+"subscription.activate.manage.email.cancel" = "キャンセル";
+
+/* Button title for confirming email deletion */
+"subscription.activate.manage.email.OK" = "OK";
+
+/* Button title for starting the process of adding subscription via Apple Account */
+"subscription.activate.via.apple.account.button" = "購入を復元";
+
+/* Description for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.description" = "Appleデバイスでサブスクリプションを復元するには、Appleアカウントを使用してください。";
+
+/* Title for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.title" = "Appleアカウントで追加";
+
+/* Button title for starting the process of adding subscription via email address */
+"subscription.activate.via.email.button" = "開始";
+
+/* Title for adding subscription via email address */
+"subscription.activate.via.email.title" = "メールアドレスで追加";
+
+/* View title for activating subscription */
+"subscription.activate.view.title" = "サブスクリプション登録済み";
+
+/* Add email to an existing subscription */
+"subscription.add.email" = "メールアドレスを追加して、他のデバイスでサブスクリプションを有効にしましょう。このアドレスはサブスクリプションの確認のみに使用されます。";
+
+/* View title for adding email to subscription */
+"subscription.add.email.title" = "メールアドレスを追加";
+
+/* Text for the manage billing page */
+"subscription.billing.google.text" = "ご利用中のサブスクリプションはGoogle Playストアを通じて購入されています。サブスクリプションを更新するには、最初にサブスクリプションを購入したときと同じGoogleアカウントにログインしたデバイスで、Google Playストアのサブスクリプション設定を開いてください。";
+
+/* Title for the manage billing page */
+"subscription.billing.google.title" = "サブスクリプションプラン";
+
+/* Subscription Removal confirmation message */
+"subscription.cancel.message" = "このデバイスからサブスクリプションが削除されました。";
+
+/* Change plan or cancel title */
+"subscription.change.plan" = "プランを更新するかキャンセル";
+
+/* Navigation Button for closing subscription view */
+"subscription.close" = "閉じる";
+
+/* Title for Confirm messages */
+"subscription.confirm.title" = "よろしいですか？";
+
+/* Caption of the Duck.ai settings (do not modify link) */
+"subscription.duck.ai.caption" = "加入者専用のAIモデルとプライベートにチャットする。[詳細](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/)";
+
+/* Instruction to configure ai settings in AI Features settings */
+"subscription.duck.ai.configure.duck.ai.footer" = "AI機能設定でDuck.aiを構成します。";
+
+/* Title of the setting page action to open AI features settings */
+"subscription.duck.ai.enable.ai.features" = "AI機能設定で有効にする";
+
+/* Title of the setting page action to open Duck.ai */
+"subscription.duck.ai.open" = "Duck.aiを開く";
+
+/* Title of the setting item action to open AI Features Settings */
+"subscription.duck.ai.open.ai.features.settings" = "AI機能設定で管理";
+
+/* Title of the setting page of Duck.ai */
+"subscription.duck.ai.title" = "Duck.ai";
+
+/* Alert content for not found subscription */
+"subscription.email.inactive.alert.message" = "このメールに関連付けられているサブスクリプションはアクティブではなくなりました。";
+
+/* Alert title for not found subscription */
+"subscription.email.inactive.alert.title" = "サブスクリプションが見つかりません";
+
+/* Alert content for not found subscription */
+"subscription.expired.alert.message" = "このAppleアカウントに関連付けられたサブスクリプションはもうアクティブではありません。";
+
+/* FAQ Button */
+"subscription.faq" = "よくある質問とサポート";
+
+/* Share Feedback Button */
+"subscription.feedback" = "フィードバックを共有する";
+
+/* Cancel action for the existing subscription dialog */
+"subscription.found.cancel" = "キャンセル";
+
+/* Restore action for the existing subscription dialog */
+"subscription.found.restore" = "復元";
+
+/* Message for the existing subscription dialog */
+"subscription.found.text" = "このAppleアカウントに関連付けられているサブスクリプションが見つかりました。";
+
+/* Title for the existing subscription dialog */
+"subscription.found.title" = "サブスクリプションが見つかりました";
+
+/* Help and support Section header */
+"subscription.help" = "ヘルプとサポート";
+
+/* Manage Plan header */
+"subscription.manage.plan" = "プランを管理する";
+
+/* Header for the subscription section */
+"subscription.manage.title" = "定額制";
+
+/* Alert content for not found subscription */
+"subscription.notFound.alert.message" = "このAppleアカウントに関連付けられたサブスクリプションはありません。";
+
+/* Alert title for not found subscription */
+"subscription.notFound.alert.title" = "サブスクリプションが見つかりません";
+
+/* View plans button text */
+"subscription.notFound.view.plans" = "プランを表示";
+
+/* Description on how to use Personal information removal in desktop. The first placeholder references a location in the Desktop application. <i.e: Settings > Subscribe to DuckDuckGo>, and the second, the menu entry. i.e. <I have a Subscription> */
+"subscription.pir.heroText" = "デスクトップ用のDuckDuckGoブラウザで、%1$@に移動し、%2$@をクリックして開始します。";
+
+/* Settings references a menu in the Desktop app, Subscribe to DuckDuckGo, references our product name */
+"subscription.pir.heroTextLocation" = "「設定」>「DuckDuckGoに登録する」";
+
+/* Menu item for enabling Personal Information Removal on Desktop */
+"subscription.pir.heroTextMenyEntry" = "サブスクリプション登録済み";
+
+/* Text for the 'macOS' button */
+"subscription.pir.macos" = "Mac";
+
+/* Text for the 'Windows' button */
+"subscription.pir.windows" = "Windows";
+
+/* Progress view title when completing the purchase */
+"subscription.progress.view.completing.purchase" = "購入を完了しています...";
+
+/* Progress view title when starting the purchase */
+"subscription.progress.view.purchasing.subscription" = "購入が進行中です...";
+
+/* Progress view title when restoring past subscription purchase */
+"subscription.progress.view.restoring.subscription" = "サブスクリプションを復元しています...";
+
+/* Message warning the user that the Privacy Pro subscription has been rebranded to the DuckDuckGo subscription */
+"subscription.rebranding.message" = "Privacy Proは「DuckDuckGoサブスクリプション」に名称変更されました";
+
+/* Remove from this device button */
+"subscription.remove.from.device.button" = "このデバイスから削除";
+
+/* Remove from device confirmation dialog title */
+"subscription.remove.from.device.title" = "このデバイスから削除しますか？";
+
+/* Remove subscription button text */
+"subscription.remove.subscription" = "サブスクリプションを削除";
+
+/* Remove subscription cancel button text */
+"subscription.remove.subscription.cancel" = "キャンセル";
+
+/* Button text for general error message */
+"subscription.restore.backend.error.button" = "設定に戻る";
+
+/* Alert for general error message */
+"subscription.restore.backend.error.message" = "接続に問題が発生しています。時間を置いてもう一度お試しください。";
+
+/* Alert for general error title */
+"subscription.restore.backend.error.title" = "問題が発生しました";
+
+/* Alert for general error message */
+"subscription.restore.general.error.message" = "App Storeで購入を処理できませんでした。時間を置いてもう一度お試しください。";
+
+/* Alert for general error title */
+"subscription.restore.general.error.title" = "問題が発生しました";
+
+/* Alert button text for restored purchase alert */
+"subscription.restore.success.alert.button" = "OK";
+
+/* Alert message for restored purchase */
+"subscription.restore.success.alert.message" = "購入が復元されました。";
+
+/* Alert title for restored purchase */
+"subscription.restore.success.alert.title" = "これで準備は完了です。";
+
+/* Navigation bar Title for subscriptions */
+"subscription.settings.title" = "DuckDuckGoサブスクリプション";
+
+/* Subtitle in header when subscribed */
+"subscription.subscribed" = "登録済み";
+
+/* Subscription Expired Data. This reads as 'Your subscription expired on (date)' */
+"subscription.subscription.expired.caption" = "サブスクリプションは%@に期限切れになりました";
+
+/* Monthly subscription expiration info where parameter is expiration date. This reads as 'Your monthly subscription expires on (date)' */
+"subscription.subscription.expiring.monthly.caption" = "月間サブスクリプションの有効期限は%@です。";
+
+/* Trial subscription expiration info where parameter is expiration date. This reads as 'Your free trial ends on (date) & will not convert to a paid subscription.' */
+"subscription.subscription.expiring.trial.monthly.caption" = "無料トライアルは%@に終了し、有料サブスクリプションには切り替わりません。";
+
+/* Unknown period subscription expiration info where parameter is expiration date. This reads as 'Your subscription expires on (date)' */
+"subscription.subscription.expiring.unknown.caption" = "サブスクリプションは%@に期限切れになります。";
+
+/* Annual subscription expiration info where parameter is expiration date. This reads as 'Your annual subscription expires on (date)' */
+"subscription.subscription.expiring.yearly.caption" = "年間サブスクリプションの有効期限は%@です。";
+
+/* Monthly subscription renewal info where parameter is renewal date. This reads as 'Your monthly subscription renews on (date)' */
+"subscription.subscription.renewing.monthly.caption" = "月間サブスクリプションは%@に更新されます。";
+
+/* Monthly trial subscription renewal info where parameter is renewal date. This reads as 'Your free trial ends on (date) & automatically converts to a monthly paid subscription on that day.' */
+"subscription.subscription.renewing.trial.monthly.caption" = "無料トライアルは%@に終了し、その日に自動的に月額有料サブスクリプションに移行します。";
+
+/* Annual trial subscription renewal info where parameter is renewal date. This reads as 'Your free trial ends on (date) & automatically converts to an annual paid subscription on that day.' */
+"subscription.subscription.renewing.trial.yearly.caption" = "無料トライアルは%@に終了し、その日に自動的に有料年間サブスクリプションに移行します。";
+
+/* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
+"subscription.subscription.renewing.unknown.caption" = "サブスクリプションは%@に更新されます。";
+
+/* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
+"subscription.subscription.renewing.unknown.trial.caption" = "サブスクリプションは%@に更新されます。";
+
+/* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
+"subscription.subscription.renewing.yearly.caption" = "年間サブスクリプションは%@に更新されます。";
+
+/* Subtitle in header when on a free trial subscription */
+"subscription.trial" = "無料トライアルが有効です";
+
+/* No comment provided by engineer. */
+"SwiftUI Alert" = "SwiftUIアラート";
+
+/* Message confirming that recovery code was copied to clipboard */
+"sync.code.copied" = "リカバリーコードがクリップボードにコピーされました";
+
+/* Caption for a button to delete Sync server data */
+"sync.delete.all.confirm.action" = "サーバーデータを削除";
+
+/* Message for the dialog to confirm deleting Sync server data */
+"sync.delete.all.confirm.message" = "すべてのデバイスが切断され、同期されたデータがサーバーから削除されます。";
+
+/* Title of the dialog to confirm deleting Sync server data */
+"sync.delete.all.confirm.title" = "サーバーデータを削除しますか？";
+
+/* Message for the Sync Promotion banner when user has bookmarks that can be synced */
+"sync.promo.bookmarks.message" = "アカウントは必要ありません。エンドツーエンドの暗号化により、お客様以外は誰もブックマークを見ることができません。当社ですらアクセスできません。";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.bookmarks.title" = "ブックマークを同期してバックアップ";
+
+/* Title for a button in the Sync Promotion banner to set up Sync */
+"sync.promo.confirm.action" = "同期を設定";
+
+/* Title for a button in the Sync Promotion banner to dismiss Sync promotion banner */
+"sync.promo.dismiss.action" = "いいえ、結構です";
+
+/* Message for the Sync Promotion banner when user has passwords that can be synced */
+"sync.promo.passwords.message" = "アカウントは必要ありません。エンドツーエンドの暗号化により、お客様以外は誰もパスワードを見ることができません。当社ですらアクセスできません。";
+
+/* Title for the Sync Promotion banner */
+"sync.promo.passwords.title" = "パスワードの同期とバックアップ";
+
+/* Button title to start backup */
+"sync.recovery.alternative.prompt.backup.button" = "このデバイスの同期とバックアップ";
+
+/* Footer for the sync recovery prompt */
+"sync.recovery.alternative.prompt.footer" = "リカバリーコードを保存しておくと、将来パスワードを簡単に復元できるようになります。";
+
+/* Message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message" = "同期されたパスワードは、別のデバイスにアクセスできる場合、またはSync & Backupのセットアップの一部として提供されたリカバリーコードを使用する場合にのみ復元できます。";
+
+/* Learn more link after the message for the sync recovery alternative prompt */
+"sync.recovery.alternative.prompt.message.link" = "[詳細はこちら](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/recovery-codes-and-troubleshooting)";
+
+/* Button title to start sync QR scan */
+"sync.recovery.alternative.prompt.sync.button" = "リカバリーコードをスキャンする";
+
+/* Title for the sync recovery prompt describing how to use Sync recovery code to restore passwords */
+"sync.recovery.alternative.prompt.title" = "他のデバイスが利用できませんか？リカバリーコードをスキャンしてください。";
+
+/* Button title to show alternatives */
+"sync.recovery.prompt.continue.button" = "別のデバイスをお持ちではありませんか？";
+
+/* Message for the sync recovery prompt */
+"sync.recovery.prompt.message" = "DuckDuckGoのパスワードはデバイス上で暗号化されているため、iCloudでは転送されません。他のすべてはすでにここにあります。";
+
+/* Button title to sync with another device */
+"sync.recovery.prompt.sync.button" = "別のデバイスと同期";
+
+/* Title for the sync recovery prompt, replacing %@ with the device type (e.g. iPhone, iPad) */
+"sync.recovery.prompt.title" = "新しい%@ですか？パスワードを同期しましょう。";
+
+/* Caption for a button to remove device from Sync */
+"sync.remove-device.action" = "削除";
+
+/* No comment provided by engineer. */
+"sync.remove-device.message" = "「%@」は同期されたデータにアクセスできなくなります。";
+
+/* Title of the dialog to remove device from Sync */
+"sync.remove-device.title" = "デバイスを削除しますか？";
+
+/* Caption for a button to remove current device from Sync */
+"sync.turn.off.confirm.action" = "削除";
+
+/* Message for the dialog to confirm turning off Sync */
+"sync.turn.off.confirm.message" = "このデバイスは、同期されたデータにアクセスできなくなります。";
+
+/* Title of the dialog to confirm turning off Sync */
+"sync.turn.off.confirm.title" = "同期を無効にしますか？";
+
+/* Reason for auth when setting up Sync */
+"sync.user.auth.reason" = "デバイスのロックを解除してSync & Backupを設定します";
+
+/* Data syncing unavailable warning message */
+"sync.warning.data.syncing.disabled" = "申し訳ありませんが、Sync & Backupは現在利用できません。時間を置いてもう一度お試しください。";
+
+/* Data syncing unavailable warning message */
+"sync.warning.data.syncing.disabled.upgrade.required" = "申し訳ありませんが、Sync & Backupはこのアプリバージョンでは利用できなくなりました。続行するには、DuckDuckGoを最新バージョンに更新してください。";
+
+/* Accessibility label on remove button */
+"tab.close.home" = "ホームタブを閉じる";
+
+/* Accesibility label: first string is website title, second is address */
+"tab.close.with.title.and.address" = "%2$@で「%1$@」を閉じる";
+
+/* Accessibility label on tab cell */
+"tab.open.home" = "ホームタブを開く";
+
+/* Accesibility label: first string is website title, second is address */
+"tab.open.with.title.and.address" = "%2$@で「%1$@」を開く";
+
+/* Select all tabs */
+"tab.select.all" = "すべてを選択";
+
+/* Deselect all tabs */
+"tab.select.none" = "すべてを解除";
+
+/* Tab Switcher Accessibility Label */
+"tab.switcher.accessibility.label" = "タブスイッチャー";
+
+/* Bookmark all tabs menu item */
+"tab.switcher.bookmarkAll" = "すべてのタブをブックマーク";
+
+/* Description text for the text size adjustment setting */
+"textSize.description" = "すべてのサイトでテキストサイズを増減します。";
+
+/* Replacement string is a current percent value e.g. '120%' */
+"textSize.footer" = "テキストサイズ - %@";
+
+/* Dark Theme entry */
+"theme.acc.dark" = "ダーク";
+
+/* Short entry for Default System theme */
+"theme.acc.default" = "システム";
+
+/* Light Theme entry */
+"theme.acc.light" = "ライト";
+
+/* Dark Theme entry */
+"theme.name.dark" = "ダーク";
+
+/* Entry for Default System theme */
+"theme.name.default" = "システムデフォルト";
+
+/* Light Theme entry */
+"theme.name.light" = "ライト";
+
+/* No comment provided by engineer. */
+"This list contains messages that have been shown plus at most 1 message that is scheduled for showing. There may be more messages in the config that will be presented, but they haven't been processed yet." = "このリストには、表示済みのメッセージと、表示予定のメッセージが最大1つ含まれます。設定にはさらに多くのメッセージが表示される可能性がありますが、まだ処理されていません。";
+
+/* No comment provided by engineer. */
+"Title" = "タイトル";
+
+/* Confirmation of an action - populated with a domain name */
+"toast.protection.disabled" = "%@のプライバシー保護が無効になっています";
+
+/* Confirmation of an action - populated with a domain name */
+"toast.protection.disabled.and.toggle.report.sent" = "%@のプライバシー保護が無効になり、レポートが送信されました。";
+
+/* Confirmation of an action - populated with a domain name */
+"toast.protection.enabled" = "%@のプライバシー保護が有効になっています";
+
+/* No comment provided by engineer. */
+"UIAlert" = "UIAlert";
+
+/* No comment provided by engineer. */
+"Version: %@" = "バージョン：%@";
+
+/* Voice search toggle option for searching on the web */
+"voice-search-toggle-serp-option" = "検索";
+
+/* Autocomplete selected suggestion into the Address Bar button accessibility label */
+"voiceover.action.suggestion.autocomplete" = "オートコンプリート候補";
+
+/* Voice-over title for a Bookmark suggestion. Noun */
+"voiceover.suggestion.type.bookmark" = "ブックマーク";
+
+/* Search for suggestion action accessibility title */
+"voiceover.suggestion.type.search" = "DuckDuckGoで検索";
+
+/* Open suggested website action accessibility title */
+"voiceover.suggestion.type.website" = "ウェブサイトを開く";
+
+/* No microphone permission alert action button to open the settings app */
+"voiceSearch.alert.no-permission.action.settings" = "設定";
+
+/* Message for alert warning the user about missing microphone permission */
+"voiceSearch.alert.no-permission.message" = "DuckDuckGoが音声機能を使用できるように、iOSシステム設定でマイクへのアクセスを許可してください。";
+
+/* OK button alert warning the user about missing microphone permission */
+"voiceSearch.alert.no-permission.ok" = "OK";
+
+/* Title for alert warning the user about missing microphone permission */
+"voiceSearch.alert.no-permission.title" = "マイクへのアクセスが必要です";
+
+/* Cancel button for voice search */
+"voiceSearch.cancel" = "キャンセル";
+
+/* Voice-search footer note with on-device privacy warning */
+"voiceSearch.footer.note" = "プライベート音声検索オプションをアドレスバーに追加します。音声は、DuckDuckGoを含む誰とも保存または共有されません。";
+
+/* Voice-search footer note with on-device privacy warning */
+"voiceSearch.footer.note.old" = "音声はデバイス上で処理されます。DuckDuckGoを含め、誰とも保存または共有されません。";
+
+/* Cancel action for the alert when the subscription expires */
+"vpn.access-revoked.alert.action.cancel" = "無視する";
+
+/* Primary action for the alert when the subscription expires */
+"vpn.access-revoked.alert.action.subscribe" = "登録";
+
+/* Alert message for the alert when the Privacy Pro subscription expiress */
+"vpn.access-revoked.alert.message" = "DuckDuckGoに登録してVPNを再接続します。";
+
+/* Alert title for the alert when the Privacy Pro subscription expires */
+"vpn.access-revoked.alert.title" = "サブスクリプションの期限切れによりVPNが切断されました";
+
+/* Title for the VPN widget onboarding screen */
+"vpn.addWidget.settings.title" = "**DuckDuckGo**を見つけて選択し、**VPN**までスワイプして**ウィジェットを追加**を選択します";
+
+/* Message for success when running the intent to disable the DuckDuckGo VPN */
+"vpn.control-widget.disable.vpn.intent.success" = "DuckDuckGo VPNが切断されている";
+
+/* No comment provided by engineer. */
+"vpn.control-widget.education.screen.description" = "Siriショートカットを使用すると、「Siri、DuckDuckGo VPNをオンにして」などの簡単な音声コマンドでVPNに接続できます。VPNを手軽に高速で利用できる方法です。";
+
+/* Siri commands education screen: example 1 */
+"vpn.control-widget.education.screen.example1" = "Siri、DuckDuckGo VPNを起動して。";
+
+/* Siri commands education screen: example 2 */
+"vpn.control-widget.education.screen.example2" = "Siri、DuckDuckGo VPNを有効にして。";
+
+/* Siri commands education screen: example 3 */
+"vpn.control-widget.education.screen.example3" = "Siri、DuckDuckGoで私のデバイスを保護して。";
+
+/* Title for the VPN Control Widget education screen title */
+"vpn.control-widget.education.screen.title" = "SiriでDuckDuckGo VPNを操作しましょう！";
+
+/* Message for success when running the intent to enable the DuckDuckGo VPN */
+"vpn.control-widget.enable.vpn.intent.success" = "DuckDuckGo VPNが接続されています";
+
+/* Title for the Cancel button of the VPN feedback form */
+"vpn.feedback-form.button.cancel" = "キャンセル";
+
+/* Title for the Done button of the VPN feedback form */
+"vpn.feedback-form.button.done" = "完了";
+
+/* Title for the Submit button of the VPN feedback form */
+"vpn.feedback-form.button.submit" = "送信";
+
+/* Title for the Submitting state of the VPN feedback form */
+"vpn.feedback-form.button.submitting" = "送信中…";
+
+/* Title for the browser crash/freeze category of the VPN feedback form */
+"vpn.feedback-form.category.browser-crash-or-freeze" = "VPNがブラウザをクラッシュまたはフリーズさせる";
+
+/* Title for the 'VPN fails to connect' category of the VPN feedback form */
+"vpn.feedback-form.category.fails-to-connect" = "VPN接続に失敗しました";
+
+/* Title for the 'VPN feature request' category of the VPN feedback form */
+"vpn.feedback-form.category.feature-request" = "VPN機能のリクエスト";
+
+/* Title for the category 'VPN causes issues with other apps or websites' category of the VPN feedback form */
+"vpn.feedback-form.category.issues-with-apps" = "VPNが他のアプリやウェブサイトで問題を引き起こす";
+
+/* Title for the local device connectivity category of the VPN feedback form */
+"vpn.feedback-form.category.local-device-connectivity" = "VPNでローカルデバイスに接続できない";
+
+/* Title for the 'other VPN feedback' category of the VPN feedback form */
+"vpn.feedback-form.category.other" = "その他のVPNフィードバック";
+
+/* Title for the category selection state of the VPN feedback form */
+"vpn.feedback-form.category.select-category" = "カテゴリーを選択";
+
+/* Title for the 'VPN is too slow' category of the VPN feedback form */
+"vpn.feedback-form.category.too-slow" = "VPN接続が遅すぎる";
+
+/* Title for the 'unable to install' category of the VPN feedback form */
+"vpn.feedback-form.category.unable-to-install" = "VPNをインストールできない";
+
+/* Title for the feedback sent view description of the VPN feedback form */
+"vpn.feedback-form.sending-confirmation.description" = "皆様からのフィードバックはDuckDuckGo VPNの改善に役立ちます。";
+
+/* Title for the feedback sending error text of the VPN feedback form */
+"vpn.feedback-form.sending-confirmation.error" = "現在、フィードバックを送信できません。もう一度お試しください。";
+
+/* Title for the feedback sent view title of the VPN feedback form */
+"vpn.feedback-form.sending-confirmation.title" = "ありがとうございます。";
+
+/* Toast message when the VPN feedback form is submitted successfully */
+"vpn.feedback-form.submitted.message" = "ありがとうございます！フィードバックが送信されました。";
+
+/* Text for the body of the VPN feedback form */
+"vpn.feedback-form.text-1" = "何が起こっているか、期待していた動作、そして問題に至るまでの手順を説明してください。";
+
+/* Text for the body of the VPN feedback form */
+"vpn.feedback-form.text-2" = "このフォームに入力された詳細に加えて、アプリの問題レポートには以下が含まれます：";
+
+/* Bullet text for the body of the VPN feedback form */
+"vpn.feedback-form.text-3" = "• 特定のDuckDuckGo機能が有効になっているかどうか";
+
+/* Bullet text for the body of the VPN feedback form */
+"vpn.feedback-form.text-4" = "• DuckDuckGoアプリの診断情報を集計";
+
+/* Text for the body of the VPN feedback form */
+"vpn.feedback-form.text-5" = "「送信」をタップすると、DuckDuckGoがこのレポートの情報をアプリの機能向上の目的で使用することに同意したことになります。";
+
+/* Title for each screen of the VPN feedback form */
+"vpn.feedback-form.title" = "DuckDuckGo VPNの改善にご協力ください";
+
+/* VPN settings screen cell text for adding the VPN widget to the control center */
+"vpn.settings.add.control-center.widget" = "コントロールセンターにVPNを追加する";
+
+/* VPN settings screen cell text for adding the VPN widget to the home screen */
+"vpn.settings.add.widget" = "ホーム画面にVPNウィジェットを追加する";
+
+/* VPN settings screen cell text to learn how to control the VPN with Siri */
+"vpn.settings.control.with.siri" = "SiriでVPNを操作する";
+
+/* Disclaimer for the DNS Server section on the DNS Server screen */
+"vpn.settings.dns.section-disclaimer" = "カスタムDNSサーバーを使用すると、サーバーが安全でない場合や信頼できない場合、ブラウジング速度に影響を与え、アクティビティが第三者に公開される可能性があります。";
+
+/* Header text for the DNS section on the VPN Settings screen */
+"vpn.settings.dns.section-header" = "DNS";
+
+/* Title for the Apply button on the DNS Server setting screen */
+"vpn.settings.dns.server.apply.button.title" = "適用する";
+
+/* Explanation in Settings how the vpn blocks risky sites (do not remove the link) */
+"vpn.settings.dns.server.content.blocking.explanation" = "DNSレベルのブロックリストを使用して、マルウェア、フィッシング攻撃、オンライン詐欺をホストしているとフラグが付けられた150,000以上のドメインをブロックします。[詳細](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
+
+/* Header of the vpn blocks risky sites feature settings */
+"vpn.settings.dns.server.content.blocking.header" = "悪意のあるコンテンツのブロック";
+
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "詐欺ブロッカー";
+
+/* Default value for the DNS Server row on the VPN Settings screen */
+"vpn.settings.dns.server.default.value" = "DuckDuckGo";
+
+/* Title for the IPv4 Address setting */
+"vpn.settings.dns.server.ipv4.title" = "IPv4アドレス";
+
+/* Custom option for the DNS Server setting */
+"vpn.settings.dns.server.option.custom" = "カスタム";
+
+/* Recommended option for the DNS Server setting */
+"vpn.settings.dns.server.option.default" = "DuckDuckGo（推奨）";
+
+/* Title for the DNS Server setting screen */
+"vpn.settings.dns.server.screen.title" = "DNSサーバー";
+
+/* Title for the DNS Server row on the VPN Settings screen */
+"vpn.settings.dns.server.title" = "DNSサーバー";
+
+/* Title for the button to enable push notifications in system settings */
+"waitlist.allow-notifications" = "通知を許可する";
+
+/* Body text for the waitlist notification */
+"waitlist.available.notification.body" = "招待を開く";
+
+/* Title for the copy action */
+"waitlist.copy" = "コピー";
+
+/* Label text for the invite code */
+"waitlist.invite-code" = "招待コード";
+
+/* Step title on the invite screen */
+"waitlist.invite-screen.step.title" = "ステップ%d";
+
+/* Title for the invite code screen */
+"waitlist.invite-screen.youre-invited" = "ご招待します！";
+
+/* Title for the Join Waitlist screen */
+"waitlist.join-waitlist-screen.join" = "プライベートウェイティングリストに参加";
+
+/* Temporary status text for the Join Waitlist screen */
+"waitlist.join-waitlist-screen.joining" = "ウェイティングリストに参加中...";
+
+/* Title for the Share Link button */
+"waitlist.join-waitlist-screen.share-link" = "リンクを共有";
+
+/* Notification text for the waitlist */
+"waitlist.joined.no-notification.get-notification" = "通知を受け取る";
+
+/* Title for the alert to confirm enabling notifications */
+"waitlist.joined.no-notification.get-notification-confirmation-title" = "順番が来たときに通知を受け取りますか？";
+
+/* Cancel button in the alert to confirm enabling notifications */
+"waitlist.joined.no-notification.no-thanks" = "いいえ、結構です";
+
+/* Text used for the Notifications Disabled state */
+"waitlist.notification.disabled" = "順番が来たら通知を受け取ることができますが、現在DuckDuckGoの通知は無効になっています。";
+
+/* Privacy disclaimer for the Waitlist feature */
+"waitlist.privacy-disclaimer" = "ウェイティングリストに参加するために個人情報を共有する必要はありません。デバイス上にのみ存在するタイムスタンプに従って場所を確保し、順番が来たときに通知できるようにします。";
+
+/* Title for the queue screen */
+"waitlist.queue-screen.on-the-list" = "あなたはリストに載っています！";
+
+/* Title for the settings subtitle */
+"waitlist.settings.download-available" = "ダウンロード可能";
+
+/* Title for the share sheet entry */
+"waitlist.share-sheet.title" = "ご招待します！";
+
+/* Confirmation message */
+"web.url.remove.favorite.done" = "お気に入りが削除されました";
+
+/* Confirmation message */
+"web.url.save.bookmark.done" = "ブックマークが追加されました";
+
+/* Floating Info message */
+"web.url.save.bookmark.exists" = "ブックマークはすでに保存されています";
+
+/* Floating message indicating failure */
+"web.url.save.bookmark.none" = "ブックマークするウェブページがありません";
+
+/* Confirmation message */
+"web.url.save.favorite.done" = "お気に入りに追加されました";
+
+/* Cancel button for JavaScript alerts */
+"webJSAlert.cancel.button" = "キャンセル";
+
+/* OK button for JavaScript alerts */
+"webJSAlert.OK.button" = "OK";
+
+/* Alert title explaining the message is shown by a website */
+"webJSAlert.website-message.format" = "%@からのメッセージ：";
+
+/* No comment provided by engineer. */
+"Will attach to EXISTING account" = "既存のアカウントに接続されます";
+
+/* No comment provided by engineer. */
+"Will create NEW account" = "新しいアカウントが作成されます";
+
+/* Text for the badge displayed on the Subscription menu item during the win-back campaign */
+"win-back.campaign.menu.badge.text" = "25％節約";
+
+/* CTA of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.cta" = "オファーを確認";
+
+/* Dismiss of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.dismiss" = "後で";
+
+/* Message of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.message" = "当社のVPN、プライベートAIなどで保護された状態を維持します。今すぐ再登録すると25％割引になります。";
+
+/* Subtitle of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.subtitle" = "期間限定";
+
+/* Title of the modal dialog promoting the win-back campaign */
+"win-back.campaign.modal.title" = "利用を再開しましょう！\n25%オフで再開できます。";
+
+/* CTA of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.cta" = "オファーを確認";
+
+/* Button for using existing subscription during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.existing.subscription.button" = "サブスクリプション登録済み";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.logged-out.subtitle" = "期間限定！";
+
+/* Subtitle of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.subtitle" = "当社のVPN、プライベートAIなどで保護された状態を維持します。今すぐ再登録すると25％割引になります。\n期間限定オファー。";
+
+/* Title of the Subscription settings menu item during the win-back campaign */
+"win-back.campaign.subscription.settings.menu.title" = "再登録で25％お得に";
+
+/* CTA of the message displayed for logged in users to resubscribe during the win-back campaign */
+"win-back.campaign.subscription.settings.page.resubscribe.cta" = "再度登録する";
+
+/* Subtitle for resubscribe CTA for users eligible for the win-back offer. */
+"win-back.campaign.subscription.settings.page.resubscribe.subtitle" = "当社のVPN、プライベートAIなどで保護された状態を維持します。\n期間限定オファー。";
+
+/* Title for the Windows waitlist button redirecting to Mac waitlist */
+"windows-waitlist.join-waitlist-screen.mac-waitlist" = "Mac版をお探しですか？";
+
+/* Title for the settings subtitle */
+"windows-waitlist.settings.browse-privately" = "Windows用アプリでプライベートにブラウジング";
+
+/* Message used when sharing to iMessage */
+"windows-waitlist.share-sheet.message" = "Windows でプライベートにブラウジングを始める準備はできましたか？\n\nダウンロードするには、コンピューターでこのURLにアクセスしてください：\nhttps://duckduckgo.com/windows";
+
+/* Summary text for the Windows browser waitlist */
+"windows-waitlist.summary" = "DuckDuckGo for Windowsには、プライベート検索、トラッカーブロック、強制暗号化、Cookieポップアップブロックなど、プライバシーを強化したブラウジングに必要な機能が備わっています。さらに、クラス最高の保護機能も今後追加される予定です。";
+
+/* Title for the Windows Waitlist feature */
+"windows-waitlist.title" = "DuckDuckGo Windowsアプリ";
+
+/* Title for the Windows browser download link page */
+"windows-waitlist.waitlist-download-screen.try-duckduckgo-for-windows" = "DuckDuckGo for Windowsを入手！";
+
+/* Option to select to import bookmarks */
+"zip.content.import.type.bookmarks" = "ブックマーク";
+
+/* Title of button to continue after selecting what data to import */
+"zip.content.import.type.button.title.continue" = "続ける";
+
+/* Option to select to import credit cards */
+"zip.content.import.type.creditCards" = "クレジットカード";
+
+/* Option to select to import passwords */
+"zip.content.import.type.passwords" = "パスワード";
+
+/* Title for screen to screen confirming what data to import from a zip file (bookmarks and /or passwords) */
+"zip.content.import.types.title" = "何をインポートしますか？";
+

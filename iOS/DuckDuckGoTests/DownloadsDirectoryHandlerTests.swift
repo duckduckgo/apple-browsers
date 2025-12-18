@@ -124,4 +124,22 @@ class DownloadsDirectoryHandlerTests: XCTestCase {
         // Then
         XCTAssertFalse(handler.downloadsDirectoryExists(), "Directory with only subdirectories should be deleted")
     }
+
+    func testDeleteDownloadsDirectoryIfEmptyWhenReadingDirectoryThrowsThenDirectoryNotDeleted() throws {
+        // Given
+        handler.createDownloadsDirectory()
+        XCTAssertTrue(handler.downloadsDirectoryExists())
+        
+        // Remove read permissions to force contentsOfDirectory to throw
+        try FileManager.default.setAttributes([.posixPermissions: 0o000], ofItemAtPath: handler.downloadsDirectory.path)
+        
+        // When
+        handler.deleteDownloadsDirectoryIfEmpty()
+        
+        // Restore permissions so we can check existence and tearDown can clean up
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: handler.downloadsDirectory.path)
+        
+        // Then
+        XCTAssertTrue(handler.downloadsDirectoryExists(), "Directory should not be deleted when reading throws")
+    }
 }

@@ -44,7 +44,7 @@ enum UserChurnPixel: PixelKitEvent {
     var standardParameters: [PixelKitStandardParameter]? {
         switch self {
         case .unsetAsDefault:
-            return [.pixelSource]
+            return nil
         }
     }
 

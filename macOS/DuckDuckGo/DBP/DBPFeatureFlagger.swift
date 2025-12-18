@@ -43,6 +43,10 @@ final class DBPFeatureFlagger: DBPFeatureFlagging {
         return false
     }
 
+    var isClickActionDelayReductionOptimizationOn: Bool {
+        featureFlagger.isFeatureOn(.dbpClickActionDelayReductionOptimization)
+    }
+
     init(featureFlagger: FeatureFlagger) {
         self.featureFlagger = featureFlagger
     }

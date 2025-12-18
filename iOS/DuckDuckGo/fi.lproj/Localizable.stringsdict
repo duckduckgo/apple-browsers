@@ -596,5 +596,21 @@
 			<string>%1$d valittua välilehteä</string>
 		</dict>
 	</dict>
+	<key>settings.fireproofed.sites.subtitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d kohde jätettiin poiston ulkopuolelle</string>
+			<key>other</key>
+			<string>%1$d kohdetta jätettiin poiston ulkopuolelle</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

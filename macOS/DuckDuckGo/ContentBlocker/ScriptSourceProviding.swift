@@ -66,6 +66,7 @@ protocol ScriptSourceProviding {
         featureFlagger: Application.appDelegate.featureFlagger,
         onboardingNavigationDelegate: Application.appDelegate.windowControllersManager,
         appearancePreferences: Application.appDelegate.appearancePreferences,
+        themeManager: Application.appDelegate.themeManager,
         startupPreferences: Application.appDelegate.startupPreferences,
         windowControllersManager: Application.appDelegate.windowControllersManager,
         bookmarkManager: Application.appDelegate.bookmarkManager,
@@ -116,6 +117,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          featureFlagger: FeatureFlagger,
          onboardingNavigationDelegate: OnboardingNavigating,
          appearancePreferences: AppearancePreferences,
+         themeManager: ThemeManaging,
          startupPreferences: StartupPreferences,
          windowControllersManager: WindowControllersManagerProtocol,
          bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
@@ -152,6 +154,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
             historyCoordinator: historyCoordinator,
             bookmarksHandler: bookmarkManager,
             featureFlagger: featureFlagger,
+            themeManager: themeManager,
             fireproofStatusProvider: fireproofDomains,
             tld: tld,
             fire: { @MainActor in fireCoordinator.fireViewModel.fire }

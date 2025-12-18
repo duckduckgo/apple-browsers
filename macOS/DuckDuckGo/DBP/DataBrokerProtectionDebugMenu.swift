@@ -411,7 +411,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
     @objc private func testFireWeeklyPixels() {
         Task { @MainActor in
-            eventPixels.fireWeeklyReportPixels()
+            eventPixels.fireWeeklyReportPixels(isAuthenticated: true)
         }
     }
 

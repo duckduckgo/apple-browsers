@@ -145,7 +145,6 @@ final class JobQueueManagerTests: XCTestCase {
         // Then
         await fulfillment(of: [expectation], timeout: 5)
         XCTAssert(errorCollection.operationErrors?.count == 1)
-        XCTAssertNil(mockOperationsCreator.priorityDate)
         XCTAssertEqual(mockQueue.maxConcurrentOperationCount, expectedConcurrentOperations)
     }
 

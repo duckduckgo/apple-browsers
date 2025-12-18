@@ -30,23 +30,6 @@ import WebKit
 import BackgroundTasks
 import SwiftUI
 
-public class DefaultOperationEventsHandler: EventMapping<JobEvent> {
-
-    public init() {
-        super.init { event, _, _, _ in
-            switch event {
-            default:
-                print("event happened")
-            }
-        }
-    }
-
-    @available(*, unavailable)
-    override init(mapping: @escaping EventMapping<JobEvent>.Mapping) {
-        fatalError("Use init()")
-    }
-}
-
 extension DataBrokerProtectionSettings: @retroactive AppRunTypeProviding {
 
     public var runType: AppVersion.AppRunType {
@@ -65,13 +48,12 @@ public class DataBrokerProtectionIOSManagerProvider {
                                   wideEvent: WideEventManaging,
                                   subscriptionManager: DataBrokerProtectionSubscriptionManaging,
                                   quickLinkOpenURLHandler: @escaping (URL) -> Void,
-                                  feedbackViewCreator: @escaping () -> (any View)) -> DataBrokerProtectionIOSManager? {
+                                  feedbackViewCreator: @escaping () -> (any View),
+                                  eventsHandler: EventMapping<JobEvent>) -> DataBrokerProtectionIOSManager? {
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
         let iOSPixelsHandler = IOSPixelsHandler(pixelKit: pixelKit)
 
         let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
-
-        let eventsHandler = DefaultOperationEventsHandler()
 
         let features = ContentScopeFeatureToggles(emailProtection: false,
                                                   emailProtectionIncontextSignup: false,
@@ -170,7 +152,8 @@ public class DataBrokerProtectionIOSManagerProvider {
             featureFlagger: featureFlagger,
             settings: dbpSettings,
             subscriptionManager: subscriptionManager,
-            wideEvent: wideEvent
+            wideEvent: wideEvent,
+            eventsHandler: eventsHandler
         )
     }
 }

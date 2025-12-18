@@ -34,9 +34,10 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(path: "../DesignResourcesKit"),
-        .package(path: "../DesignResourcesKitIcons"),
-        .package(path: "../BrowserServicesKit")
+        .package(path: "../Infrastructure/DesignResourcesKit"),
+        .package(path: "../Infrastructure/DesignResourcesKitIcons"),
+        .package(path: "../BrowserServicesKit"),
+        .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.7.0")
     ],
     targets: [
         .target(
@@ -46,7 +47,9 @@ let package = Package(
                 "DesignResourcesKitIcons",
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "Common", package: "BrowserServicesKit"),
-                .product(name: "UserScript", package: "BrowserServicesKit")
+                .product(name: "DDGSync", package: "BrowserServicesKit"),
+                .product(name: "UserScript", package: "BrowserServicesKit"),
+                .product(name: "DDGSyncCrypto", package: "sync_crypto")
             ],
             resources: [
                 .process("Resources")

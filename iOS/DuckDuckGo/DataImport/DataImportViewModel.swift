@@ -319,8 +319,9 @@ final class DataImportViewModel: ObservableObject {
                 var hadAnySuccess = false
                 var isAllSuccessful = true
                 var failedImports: [(BrowserServicesKit.DataImport.DataType, Error)] = []
+                let checkedDataTypes = [BrowserServicesKit.DataImport.DataType.passwords, .bookmarks]
 
-                for dataType in [BrowserServicesKit.DataImport.DataType.passwords, .bookmarks] {
+                for dataType in checkedDataTypes {
                     if let result = summary[dataType] {
                         switch result {
                         case .success(let typeSummary):
@@ -354,7 +355,7 @@ final class DataImportViewModel: ObservableObject {
                     }
                     delegate?.dataImportViewModelDidRequestPresentSummary(self, summary: summary)
                 } else {
-                    let error = dataImportWideEventError.failedToImportData([.passwords, .bookmarks])
+                    let error = dataImportWideEventError.failedToImportData(checkedDataTypes)
                     completeAndCleanupWideEvent(with: .failure, error: error, description: error.description)
                 }
             } catch {

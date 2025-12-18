@@ -1243,11 +1243,11 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Yesterday";
 
-/* Button to reset the search icon to the default Dax logo */
-"dax.easter.egg.reset.to.default" = "Reset to default icon";
+/* Button to reset the search logo to the default Dax logo */
+"dax.easter.egg.reset.to.default" = "Reset to default logo";
 
-/* Button to set the current Easter egg logo as the permanent search icon */
-"dax.easter.egg.set.as.search.icon" = "Set as Search icon";
+/* Button to set the current Easter egg logo as the permanent search logo */
+"dax.easter.egg.set.as.search.logo" = "Set as search logo";
 
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Heads up! I can’t stop %1$@ from seeing your activity on %2$@.\n\nBut browse with me, and I can reduce what %1$@ knows about you overall by blocking their trackers on lots of other sites.";

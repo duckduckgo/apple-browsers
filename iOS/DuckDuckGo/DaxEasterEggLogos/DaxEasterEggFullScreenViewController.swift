@@ -156,13 +156,18 @@ class DaxEasterEggFullScreenViewController: UIViewController {
         setAsLogoButton.addTarget(self, action: #selector(setAsLogoButtonTapped), for: .touchUpInside)
     }
 
+    private var isCurrentLogoStored: Bool {
+        guard let currentURL = imageURL?.absoluteString else { return false }
+        return logoStore.logoURL == currentURL
+    }
+
     private func updateSetAsLogoButtonTitle() {
-        let title = logoStore.hasLogo ? UserText.daxEasterEggResetToDefault : UserText.daxEasterEggSetAsSearchIcon
+        let title = isCurrentLogoStored ? UserText.daxEasterEggResetToDefault : UserText.daxEasterEggSetAsSearchIcon
         setAsLogoButton.setTitle(title, for: .normal)
     }
 
     @objc private func setAsLogoButtonTapped() {
-        if logoStore.hasLogo {
+        if isCurrentLogoStored {
             logoStore.clearLogo()
             Pixel.fire(pixel: .daxEasterEggLogoResetToDefault)
         } else if let urlString = imageURL?.absoluteString {

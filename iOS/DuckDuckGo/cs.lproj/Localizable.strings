@@ -2407,6 +2407,9 @@
 /* Title for the VPN Location screen. */
 "network.protection.vpn.location.title" = "Umístění VPN";
 
+/* A test string used to verify localization checks are working */
+"new.test.string" = "This is a new test string";
+
 /* Title for the VPN Notifications management screen. */
 "network.protection.vpn.notifications.title" = "Oznámení sítě VPN";
 

@@ -24,7 +24,7 @@ struct UserText {
 
     static let newTestString = NSLocalizedString("new.test.string", value: "This is a new test string", comment: "A test string used to verify localization checks are working")
 
-    static let duckDuckGo = NSLocalizedString("about.app_name", value: "DuckDuckGo App", comment: "Application name to be displayed in the About dialog")
+    static let duckDuckGo = NSLocalizedString("about.app_name", value: "DuckDuckGo", comment: "Application name to be displayed in the About dialog")
     static let duckDuckGoForMacAppStore = NSLocalizedString("about.app_name_app_store", value: "DuckDuckGo for Mac App Store", comment: "Application name to be displayed in the About dialog in App Store app")
 
     // MARK: - Generic

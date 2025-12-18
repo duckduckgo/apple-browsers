@@ -2512,6 +2512,9 @@
 /* The title of the CTA to progress to the next onboarding screen. */
 "onboarding.highlights.addressBarPosition.cta" = "Næste";
 
+/* A test string used to verify localization checks are working */
+"new.test.string" = "This is a new test string";
+
 /* Indicates what address bar option (Top/Bottom) is the default one. E.g. Top (Default) */
 "onboarding.highlights.addressBarPosition.default" = "(standard)";
 

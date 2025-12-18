@@ -2452,6 +2452,9 @@
 /* Title for the new address bar picker modal */
 "new.address.bar.picker.title" = "Опция за адресната лента";
 
+/* A test string used to verify localization checks are working */
+"new.test.string" = "This is a new test string";
+
 /* No comment provided by engineer. */
 "No active subscriptions" = "Няма активни абонаменти";
 

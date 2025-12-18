@@ -50,7 +50,7 @@ final class CreateWebViewCallbackGater {
                 DispatchQueue.main.async(execute: pendingCallbacks[index].callback)
             }
         }
-        pendingCallbacks.remove(atOffsets: indicesToRemove)
+        indicesToRemove.reversed().forEach { pendingCallbacks.remove(at: $0) }
     }
 
     func dispatchCreateWebView(_ callback: @escaping @MainActor @Sendable () -> Void) {

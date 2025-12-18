@@ -9913,7 +9913,7 @@
 				0A991F5B239418D100AA1F64 /* Prevent Version Override */,
 				98B0CE69251C937D003FB601 /* Update Localizable.strings */,
 				84E3418E1E2F7EFB00BDBA6F /* Sources */,
-				B6409DC62BC7D9BF00D66F9E /* Run swiftlint */,
+				B6409DC62BC7D9BF00D66F9E /* SwiftLint */,
 				84E3418F1E2F7EFB00BDBA6F /* Frameworks */,
 				84E341901E2F7EFB00BDBA6F /* Resources */,
 				F143C2F01E4A4CD400CFDE3A /* Embed Frameworks */,
@@ -10757,7 +10757,7 @@
 			shellPath = /bin/sh;
 			shellScript = "if [ $ENABLE_PREVIEWS == \"YES\" ]\nthen\n  exit 0\nelse\n  \"$SOURCE_ROOT/scripts/loc_update.sh\"\nfi\n";
 		};
-		B6409DC62BC7D9BF00D66F9E /* Run swiftlint */ = {
+		B6409DC62BC7D9BF00D66F9E /* SwiftLint */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -10767,14 +10767,14 @@
 			);
 			inputPaths = (
 			);
-			name = "Run swiftlint";
+			name = SwiftLint;
 			outputFileListPaths = (
 			);
 			outputPaths = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "echo \"Running SwiftLint...\"\nMINT=\"/opt/homebrew/bin/mint\"\n\nif [ ! -x \"$MINT\" ]; then\n  echo \"warning: Mint not found at $MINT — skipping SwiftLint (opt-in).\"\n  exit 0\nfi\n\n# cd into root directory where Mintfile\ncd \"${SRCROOT}/..\" || exit 0\n\nSWIFTLINT_VERSION=$(\"$MINT\" run swiftlint --version 2>/dev/null)\n\nif [ -n \"$SWIFTLINT_VERSION\" ]; then\n  echo \"SwiftLint: $SWIFTLINT_VERSION\"\n  # Run lint, but don't fail the build if it exits non-zero\n  \"$MINT\" run swiftlint lint --strict --quiet || \\\n    echo \"warning: SwiftLint - Linting failed.\"\nelse\n  echo \"warning: SwiftLint not available — skipping lint (opt-in).\"\nfi\n";
+			shellScript = "\"${SRCROOT}/../scripts/swiftlint.sh\"\n";
 		};
 		CBCCF59B29940C3800C02DFE /* Assert Xcode version */ = {
 			isa = PBXShellScriptBuildPhase;

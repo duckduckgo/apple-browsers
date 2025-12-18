@@ -85,22 +85,17 @@ final class AIChatTranslator: AIChatTranslating {
                                                           targetLanguage: targetTranslationLanguage())
         pixelFiring?.fire(AIChatPixel.aiChatTranslateText, frequency: .dailyAndStandard)
 
-        if aiChatMenuConfig.shouldOpenAIChatInSidebar {
-            if !aiChatSidebarPresenter.isSidebarOpenForCurrentTab() {
-                pixelFiring?.fire(
-                    AIChatPixel.aiChatSidebarOpened(
-                        source: .translation,
-                        shouldAutomaticallySendPageContext: aiChatMenuConfig.shouldAutomaticallySendPageContextTelemetryValue,
-                        minutesSinceSidebarHidden: aiChatSidebarPresenter.sidebarHiddenAtForCurrentTab()?.minutesSinceNow()
-                    ),
-                    frequency: .dailyAndStandard
-                )
-            }
-            aiChatSidebarPresenter.presentSidebar(for: prompt)
-        } else {
-            AIChatPromptHandler.shared.setData(prompt)
-            aiChatTabOpener.openNewAIChat(in: .newTab(selected: true))
+        if !aiChatSidebarPresenter.isSidebarOpenForCurrentTab() {
+            pixelFiring?.fire(
+                AIChatPixel.aiChatSidebarOpened(
+                    source: .translation,
+                    shouldAutomaticallySendPageContext: aiChatMenuConfig.shouldAutomaticallySendPageContextTelemetryValue,
+                    minutesSinceSidebarHidden: aiChatSidebarPresenter.sidebarHiddenAtForCurrentTab()?.minutesSinceNow()
+                ),
+                frequency: .dailyAndStandard
+            )
         }
+        aiChatSidebarPresenter.presentSidebar(for: prompt)
     }
 
     /// Return target translation language as BCP 47 code

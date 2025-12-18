@@ -1541,6 +1541,8 @@ extension Pixel {
         // MARK: - Dax Easter Egg
         case daxEasterEggLogoDisplayed
         case daxEasterEggLogoTapped
+        case daxEasterEggLogoSetAsPermanent
+        case daxEasterEggLogoResetToDefault
 
         // MARK: - Product surface telemetery
         case productTelemeterySurfaceUsageMenu
@@ -3032,6 +3034,8 @@ extension Pixel.Event {
         // MARK: - Dax Easter Egg
         case .daxEasterEggLogoDisplayed: return "m_dax_easter_egg_logo_displayed"
         case .daxEasterEggLogoTapped: return "m_dax_easter_egg_logo_tapped"
+        case .daxEasterEggLogoSetAsPermanent: return "m_dax_easter_egg_logo_set_as_permanent"
+        case .daxEasterEggLogoResetToDefault: return "m_dax_easter_egg_logo_reset_to_default"
 
         // MARK: - Product surface telemetery
         case .productTelemeterySurfaceUsageMenu: return "m_product_telemetry_surface_usage_menu"

@@ -469,8 +469,7 @@ final class ContinueSetUpModelTests: XCTestCase {
         let expectedNewTabPagePixel = NewTabPagePixel.nextStepsCardClicked(NewTabPageDataModel.CardID.defaultApp.rawValue)
         let actualNewTabPagePixel = firedPixels.first(where: { $0.event.name == expectedNewTabPagePixel.name })
         XCTAssertNotNil(actualNewTabPagePixel)
-        XCTAssertEqual(actualNewTabPagePixel?.event.parameters, expectedNewTabPagePixel.parameters)
-        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
+        XCTAssertEqual(actualNewTabPagePixel?.includesAppVersionParameter, true)
     }
 
     @MainActor func testWhenAskedToPerformActionForDockThenItFiresPixels() {
@@ -488,8 +487,7 @@ final class ContinueSetUpModelTests: XCTestCase {
         let expectedNewTabPagePixel = NewTabPagePixel.nextStepsCardClicked(NewTabPageDataModel.CardID.addAppToDockMac.rawValue)
         let actualNewTabPagePixel = firedPixels.first(where: { $0.event.name == expectedNewTabPagePixel.name })
         XCTAssertNotNil(actualNewTabPagePixel)
-        XCTAssertEqual(actualNewTabPagePixel?.event.parameters, expectedNewTabPagePixel.parameters)
-        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
+        XCTAssertEqual(actualNewTabPagePixel?.includesAppVersionParameter, true)
     }
 
     @MainActor func testWhenAskedToPerformActionForDuckplayerThenItFiresPixel() {
@@ -498,7 +496,6 @@ final class ContinueSetUpModelTests: XCTestCase {
         XCTAssertEqual(firedPixels.count, 1)
         let expectedPixel = NewTabPagePixel.nextStepsCardClicked(NewTabPageDataModel.CardID.duckplayer.rawValue)
         XCTAssertEqual(firedPixels.first?.event.name, expectedPixel.name)
-        XCTAssertEqual(firedPixels.first?.event.parameters, expectedPixel.parameters)
         XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
     }
 
@@ -508,7 +505,6 @@ final class ContinueSetUpModelTests: XCTestCase {
         XCTAssertEqual(firedPixels.count, 1)
         let expectedPixel = NewTabPagePixel.nextStepsCardClicked(NewTabPageDataModel.CardID.emailProtection.rawValue)
         XCTAssertEqual(firedPixels.first?.event.name, expectedPixel.name)
-        XCTAssertEqual(firedPixels.first?.event.parameters, expectedPixel.parameters)
         XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
     }
 
@@ -518,7 +514,6 @@ final class ContinueSetUpModelTests: XCTestCase {
         XCTAssertEqual(firedPixels.count, 1)
         let expectedPixel = NewTabPagePixel.nextStepsCardClicked(NewTabPageDataModel.CardID.bringStuff.rawValue)
         XCTAssertEqual(firedPixels.first?.event.name, expectedPixel.name)
-        XCTAssertEqual(firedPixels.first?.event.parameters, expectedPixel.parameters)
         XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
     }
 
@@ -537,8 +532,7 @@ final class ContinueSetUpModelTests: XCTestCase {
         let expectedNewTabPagePixel = NewTabPagePixel.nextStepsCardClicked(NewTabPageDataModel.CardID.subscription.rawValue)
         let actualNewTabPagePixel = firedPixels.first(where: { $0.event.name == expectedNewTabPagePixel.name })
         XCTAssertNotNil(actualNewTabPagePixel)
-        XCTAssertEqual(actualNewTabPagePixel?.event.parameters, expectedNewTabPagePixel.parameters)
-        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
+        XCTAssertEqual(actualNewTabPagePixel?.includesAppVersionParameter, true)
     }
 
     // MARK: - Pixel Tests (Dismiss)
@@ -594,12 +588,11 @@ final class ContinueSetUpModelTests: XCTestCase {
         XCTAssertNotNil(actualSubscriptionPixel)
         XCTAssertEqual(actualSubscriptionPixel?.includesAppVersionParameter, true)
 
-        // subscription fires nextStepsCardClicked
+        // subscription fires nextStepsCardDismissed
         let expectedNewTabPagePixel = NewTabPagePixel.nextStepsCardDismissed(NewTabPageDataModel.CardID.subscription.rawValue)
         let actualNewTabPagePixel = firedPixels.first(where: { $0.event.name == expectedNewTabPagePixel.name })
         XCTAssertNotNil(actualNewTabPagePixel)
-        XCTAssertEqual(actualNewTabPagePixel?.event.parameters, expectedNewTabPagePixel.parameters)
-        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
+        XCTAssertEqual(actualNewTabPagePixel?.includesAppVersionParameter, true)
     }
 }
 

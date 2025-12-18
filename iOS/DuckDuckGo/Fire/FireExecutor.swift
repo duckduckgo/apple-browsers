@@ -116,6 +116,9 @@ class FireExecutor {
             burnTabs()
             delegate?.didFinishBurningTabs()
         }
+
+        cancelOngoingDownloadsIfNeeded(options)
+        
         let shouldBurnData = options.contains(.data)
         
         // Skip clearing AI chats if on old UI and clearing ai chats is disabled by the user.
@@ -134,6 +137,15 @@ class FireExecutor {
         if shouldBurnAIChats { delegate?.didFinishBurningAIHistory() }
     }
     
+    // MARK: - Clearing Downloads
+    
+    private func cancelOngoingDownloadsIfNeeded(_ options: FireOptions) {
+        guard options.contains(.tabs), options.contains(.data) else {
+            return
+        }
+        downloadManager.cancelAllDownloads()
+    }
+    
     // MARK: Burn Tabs Helpers
     @MainActor
     private func prepareForBurningTabs() {
@@ -143,7 +155,6 @@ class FireExecutor {
     @MainActor
     private func burnTabs() {
         tabManager.prepareCurrentTabForDataClearing()
-        downloadManager.cancelAllDownloads()
         tabManager.removeAll()
         Favicons.shared.clearCache(.tabs)
     }

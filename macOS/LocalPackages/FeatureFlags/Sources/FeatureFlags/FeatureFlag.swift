@@ -107,7 +107,6 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615582950
     case aiChatPageContext
 
-
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866617328244
     case aiChatKeepSession
 

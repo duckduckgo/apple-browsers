@@ -101,7 +101,7 @@ private extension AIChatQuickActionChipView {
         backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
         layer.cornerRadius = Constants.cornerRadius
         layer.borderWidth = Constants.borderWidth
-        layer.borderColor = UIColor(designSystemColor: .decorationQuantinary).cgColor
+        layer.borderColor = UIColor(designSystemColor: .decorationQuaternary).cgColor
 
         addSubview(iconView)
         addSubview(label)
@@ -164,6 +164,14 @@ extension AIChatQuickActionChipView {
     public override func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesCancelled(touches, with: event)
         highlightOverlay.isHidden = true
+    }
+
+    public override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+
+        if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
+            layer.borderColor = UIColor(designSystemColor: .decorationQuaternary).cgColor
+        }
     }
 }
 #endif

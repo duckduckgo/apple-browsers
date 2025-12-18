@@ -125,7 +125,7 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
     }
 
     var shouldDisplaySummarizationMenuItem: Bool {
-        shouldDisplayAnyAIChatFeature && featureFlagger.isFeatureOn(.aiChatTextSummarization) && shouldDisplayApplicationMenuShortcut
+        shouldDisplayAnyAIChatFeature && shouldDisplayApplicationMenuShortcut
     }
 
     var shouldDisplayTranslationMenuItem: Bool {

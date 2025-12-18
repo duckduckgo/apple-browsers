@@ -258,9 +258,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Keep AI Chat session after the user closes it
     case keepSession
 
-    /// Adds context menu action for summarizing text selected on a website.
-    case textSummarization
-
     /// Adds capability to load AI Chat in a sidebar
     case sidebar
 

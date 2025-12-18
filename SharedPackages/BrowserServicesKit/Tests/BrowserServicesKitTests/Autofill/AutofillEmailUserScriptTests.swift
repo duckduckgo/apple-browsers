@@ -210,6 +210,7 @@ class MockWKScriptMessage: WKScriptMessage {
     let mockedName: String
     let mockedBody: Any
     let mockedWebView: WKWebView?
+    let mockedFrameInfo: WKFrameInfo
 
     override var name: String {
         return mockedName
@@ -223,10 +224,17 @@ class MockWKScriptMessage: WKScriptMessage {
         return mockedWebView
     }
 
-    init(name: String, body: Any, webView: WKWebView? = nil) {
+    override var frameInfo: WKFrameInfo {
+        return mockedFrameInfo
+    }
+
+
+    init(name: String, body: Any, host: URL = URL(string: "https://duckduckgo.com")!, webView: WKWebView? = nil) {
         self.mockedName = name
         self.mockedBody = body
         self.mockedWebView = webView
+        self.mockedFrameInfo = MockFrameInfo(isMainFrame: true)
+
         super.init()
     }
 }
@@ -380,6 +388,53 @@ struct MockEncrypter: UserScriptEncrypter {
 
     func encryptReply(_ reply: String, key: [UInt8], iv: [UInt8]) throws -> (ciphertext: Data, tag: Data) {
         return ("reply".data(using: .utf8)!, Data())
+    }
+
+}
+
+class MockFrameInfo: WKFrameInfo {
+    private let _isMainFrame: Bool
+    private let _request: URLRequest?
+
+    init(isMainFrame: Bool, request: URLRequest? = nil) {
+        self._isMainFrame = isMainFrame
+        self._request = request
+    }
+
+    override var isMainFrame: Bool {
+        return _isMainFrame
+    }
+
+    // swiftlint:disable identifier_name
+    override var request: URLRequest {
+        if let _request {
+            return _request
+        } else {
+            return super.request
+        }
+    }
+    // swiftlint:enable identifier_name
+
+}
+
+@objc final class WKSecurityOriginMock: WKSecurityOrigin {
+    var _protocol: String!
+    override var `protocol`: String { _protocol }
+    var _host: String!
+    override var host: String { _host }
+    var _port: Int!
+    override var port: Int { _port }
+
+    internal func setURL(_ url: URL) {
+        self._protocol = url.scheme!
+        self._host = url.host!
+        self._port = url.port ?? url.navigationalScheme?.defaultPort ?? 0
+    }
+
+    class func new(url: URL) -> WKSecurityOriginMock {
+        let mock = (self.perform(NSSelectorFromString("alloc")).takeUnretainedValue() as? WKSecurityOriginMock)!
+        mock.setURL(url)
+        return mock
     }
 
 }

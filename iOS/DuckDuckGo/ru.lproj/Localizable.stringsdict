@@ -756,5 +756,25 @@
 			<string>Выбранные вкладки (%1$d)</string>
 		</dict>
 	</dict>
+	<key>settings.fireproofed.sites.subtitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d сайт исключен из очистки</string>
+			<key>few</key>
+			<string>%1$d сайта исключено из очистки</string>
+			<key>many</key>
+			<string>%1$d сайтов исключено из очистки</string>
+			<key>other</key>
+			<string>Исключено из очистки: %1$d</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

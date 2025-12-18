@@ -237,6 +237,8 @@ class MainViewController: UIViewController {
     let keyValueStore: ThrowingKeyValueStoring
     let systemSettingsPiPTutorialManager: SystemSettingsPiPTutorialManaging
 
+    private let syncAIChatsCleaner: SyncAIChatsCleaning
+
     private var duckPlayerEntryPointVisible = false
     private var subscriptionManager = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
     
@@ -297,7 +299,8 @@ class MainViewController: UIViewController {
         productSurfaceTelemetry: ProductSurfaceTelemetry,
         fireExecutor: FireExecuting,
         remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
-        aiChatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature()
+        aiChatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature(),
+        syncAiChatsCleaner: SyncAIChatsCleaning
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -347,6 +350,7 @@ class MainViewController: UIViewController {
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.fireExecutor = fireExecutor
         self.aiChatContextualModeFeature = aiChatContextualModeFeature
+        self.syncAIChatsCleaner = syncAiChatsCleaner
 
         super.init(nibName: nil, bundle: nil)
         
@@ -720,6 +724,10 @@ class MainViewController: UIViewController {
                 segueToDuckDuckGoSubscription()
             }
         }
+    }
+
+    func presentDataBrokerProtectionDashboard() {
+        segueToDataBrokerProtection()
     }
 
     private func registerForKeyboardNotifications() {
@@ -1203,7 +1211,8 @@ class MainViewController: UIViewController {
         }
         
         Pixel.fire(pixel: .forgetAllPressedBrowsing)
-        
+        DailyPixel.fire(pixel: .forgetAllPressedBrowsingDaily)
+
         performActionIfAITab { DailyPixel.fireDailyAndCount(pixel: .aiChatFireButtonTapped) }
         
         hideNotificationBarIfBrokenSitePromptShown()
@@ -2721,14 +2730,23 @@ extension MainViewController: OmniBarDelegate {
             if browsingMenuSheetCapability.isEnabled {
                 Pixel.fire(pixel: .experimentalBrowsingMenuDisplayedNTP)
             }
-        case .aiChatTab, .website:
+        case .aiChatTab:
+            Pixel.fire(pixel: .browsingMenuOpened)
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuOpened)
+            if browsingMenuSheetCapability.isEnabled {
+                Pixel.fire(pixel: .experimentalBrowsingMenuDisplayedAIChat)
+            }
+        case .website:
             Pixel.fire(pixel: .browsingMenuOpened)
 
-            if browsingMenuSheetCapability.isEnabled {
+            if tab.isError {
+                Pixel.fire(pixel: .browsingMenuOpenedError)
+                if browsingMenuSheetCapability.isEnabled {
+                    Pixel.fire(pixel: .experimentalBrowsingMenuDisplayedError)
+                }
+            } else if browsingMenuSheetCapability.isEnabled {
                 Pixel.fire(pixel: .experimentalBrowsingMenuDisplayed)
             }
-
-            performActionIfAITab { DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuOpened) }
         }
     }
 
@@ -2757,8 +2775,11 @@ extension MainViewController: OmniBarDelegate {
                                                menuEntries: menuEntries,
                                                daxDialogsManager: daxDialogsManager,
                                                productSurfaceTelemetry: productSurfaceTelemetry)
-        browsingMenu.onDismiss = {
+        browsingMenu.onDismiss = { wasActionSelected in
             self.viewCoordinator.menuToolbarButton.isEnabled = true
+            if !wasActionSelected {
+                Pixel.fire(pixel: .browsingMenuDismissed)
+            }
         }
 
         let controller = browsingMenu
@@ -2793,8 +2814,11 @@ extension MainViewController: OmniBarDelegate {
         let controller = BrowsingMenuSheetViewController(
             rootView: BrowsingMenuSheetView(model: model,
                                             highlightRowWithTag: highlightTag,
-                                            onDismiss: {
+                                            onDismiss: { wasActionSelected in
                                                 self.viewCoordinator.menuToolbarButton.isEnabled = true
+                                                if !wasActionSelected {
+                                                    Pixel.fire(pixel: .experimentalBrowsingMenuDismissed)
+                                                }
                                             })
         )
 
@@ -3644,6 +3668,7 @@ extension MainViewController {
                                 showNextDaxDialog: Bool = false) {
         let spid = Instruments.shared.startTimedEvent(.clearingData)
         Pixel.fire(pixel: .forgetAllExecuted)
+        DailyPixel.fire(pixel: .forgetAllExecutedDaily)
         productSurfaceTelemetry.dataClearingUsed()
         
         fireExecutor.prepare(for: options)
@@ -3975,11 +4000,21 @@ extension MainViewController: AIChatViewControllerManagerDelegate {
             segueToSettingsAIChat()
         }
     }
+
+    func aiChatViewControllerManagerDidReceiveOpenSyncSettingsRequest(_ manager: AIChatViewControllerManager) {
+        if let controller = tabSwitcherController {
+            controller.dismiss(animated: true) {
+                self.segueToSettingsSync()
+            }
+        } else {
+            segueToSettingsSync()
+        }
+    }
 }
 
 // MARK: - AIChatContentHandlingDelegate
 extension MainViewController: AIChatContentHandlingDelegate {
-    
+
     func aiChatContentHandlerDidReceiveOpenSettingsRequest(_ handler:
                                                            AIChatContentHandling) {
         if let controller = tabSwitcherController {
@@ -3990,7 +4025,17 @@ extension MainViewController: AIChatContentHandlingDelegate {
             segueToSettingsAIChat()
         }
     }
-    
+
+    func aiChatContentHandlerDidReceiveOpenSyncSettingsRequest(_ handler: any AIChatContentHandling) {
+        if let controller = tabSwitcherController {
+            controller.dismiss(animated: true) {
+                self.segueToSettingsSync()
+            }
+        } else {
+            self.segueToSettingsSync()
+        }
+    }
+
     func aiChatContentHandlerDidReceiveCloseChatRequest(_ handler:
                                                         AIChatContentHandling) {
         guard let tab = self.currentTab?.tabModel else { return }

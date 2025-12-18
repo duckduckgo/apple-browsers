@@ -2977,12 +2977,55 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Dezactivează pentru a preveni deschiderea automată a linkurilor în alte aplicații instalate.";
 
+/* Subtitle explaining what the cookies option does in auto clear settings */
+"settings.autoclear.cookies.subtitle" = "Șterge toate datele privind site-urile, inclusiv site-urile vizitate. S-ar putea să fii deconectat de la conturi.";
+
+/* Title for the cookies and site data option in auto clear settings */
+"settings.autoclear.cookies.title" = "Date privind modulele cookie și site-ul";
+
+/* Subtitle explaining what the Duck.ai chats option does in auto clear settings */
+"settings.autoclear.duckai.chats.subtitle" = "Șterge toate chaturile, inclusiv pe cele fixate";
+
+/* Title for the Duck.ai chats option in auto clear settings */
+"settings.autoclear.duckai.chats.title" = "Chaturi Duck.ai";
+
+/* Section header for the auto clear options */
+"settings.autoclear.section.header" = "Şterge";
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Șterge filele și datele";
 
 /* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
 "settings.autoclear.tabs.and.data.with.aichat" = "Șterge filele, datele și chaturile Duck.ai";
 
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "Închide toate filele deschise";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "File";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Ieșire din aplicație, inactiv timp de 15 minute";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "Ieșire din aplicație, inactiv timp de 1 oră";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Ieșire din aplicație, inactiv timp de 30 de minute";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "Ieșire din aplicație, inactiv timp de 5 minute";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "Doar ieșire din aplicație";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "Ieșirea aplicației este definită prin glisarea aplicației pentru a o închide în timp ce inactivitatea este atunci când aplicația este în fundal.";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "Calendarul dorit";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "Datele vor fi șterse la repornirea aplicației.";
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Sugestii de căutare";
 
@@ -3001,6 +3044,8 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Dacă identificatorul tactil, identificatorul facial sau parola de sistem sunt activate, ți se va solicita să deblochezi aplicația la deschidere.";
 
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "Ștergerea automată a datelor";
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Feedback browser";
 
@@ -3010,6 +3055,8 @@
 /* Settings screen cell text for clearing AI chat history */
 "settings.clear.aichat.history.title" = "Șterge chaturile Duck.ai";
 
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "Șterge datele de navigare";
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Șterge automat datele";
 
@@ -3037,6 +3084,8 @@
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Ștergerea datelor";
 
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "Ștergerea datelor poate ajuta la protejarea confidențialității online. Folosește Fire Button pentru a șterge datele manual sau configurează ștergerea automată.";
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Browser implicit";
 
@@ -3082,6 +3131,8 @@
 /* Settings screen cell text for Fireproof Sites */
 "settings.fireproof.sites" = "Site-uri cu ștergerea activității și istoricului din browser la ieșire";
 
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Site-uri protejate cu Fireproof";
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Generale";
 

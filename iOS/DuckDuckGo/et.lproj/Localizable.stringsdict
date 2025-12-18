@@ -596,5 +596,21 @@ Blokeerisin nad!
 			<string>%1$d valitud vahekaarti</string>
 		</dict>
 	</dict>
+	<key>settings.fireproofed.sites.subtitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d sait välistati kustutamisest</string>
+			<key>other</key>
+			<string>%1$d saiti välistati kustutamisest</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

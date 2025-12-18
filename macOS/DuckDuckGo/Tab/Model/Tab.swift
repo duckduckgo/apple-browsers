@@ -81,6 +81,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     private let internalUserDecider: InternalUserDecider?
     private let pageRefreshMonitor: PageRefreshMonitoring
     let featureFlagger: FeatureFlagger
+    private let privacyFeatures: AnyPrivacyFeatures
     private let fireproofDomains: FireproofDomains
     let crashIndicatorModel = TabCrashIndicatorModel()
     let pinnedTabsManagerProvider: PinnedTabsManagerProviding
@@ -122,6 +123,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                      downloadsPreferences: DownloadsPreferences? = nil,
                      permissionManager: PermissionManagerProtocol? = nil,
                      geolocationService: GeolocationServiceProtocol = GeolocationService.shared,
+                     notificationService: UserNotificationAuthorizationServicing? = nil,
                      cbaTimeReporter: ContentBlockingAssetsCompilationTimeReporter? = ContentBlockingAssetsCompilationTimeReporter.shared,
                      statisticsLoader: StatisticsLoader? = nil,
                      extensionsBuilder: TabExtensionsBuilderProtocol = TabExtensionsBuilder.default,
@@ -186,6 +188,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
                   downloadsPreferences: downloadsPreferences ?? NSApp.delegateTyped.downloadsPreferences,
                   permissionManager: permissionManager ?? NSApp.delegateTyped.permissionManager,
                   geolocationService: geolocationService,
+                  notificationService: notificationService ?? NSApp.delegateTyped.notificationService,
                   extensionsBuilder: extensionsBuilder,
                   featureFlagger: featureFlagger ?? NSApp.delegateTyped.featureFlagger,
                   contentScopeExperimentsManager: contentScopeExperimentsManager ?? NSApp.delegateTyped.contentScopeExperimentsManager,
@@ -237,6 +240,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
          downloadsPreferences: DownloadsPreferences,
          permissionManager: PermissionManagerProtocol,
          geolocationService: GeolocationServiceProtocol,
+         notificationService: UserNotificationAuthorizationServicing,
          extensionsBuilder: TabExtensionsBuilderProtocol,
          featureFlagger: FeatureFlagger,
          contentScopeExperimentsManager: ContentScopeExperimentsManaging,
@@ -278,6 +282,7 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
         self.navigationDelegate = DistributedNavigationDelegate(isPerformanceReportingEnabled: featureFlagger.isFeatureOn(.webKitPerformanceReporting))
         self.statisticsLoader = statisticsLoader
         self.internalUserDecider = internalUserDecider
+        self.privacyFeatures = privacyFeatures
         self.title = title
         self.favicon = favicon
         self.parentTab = parentTab
@@ -497,6 +502,15 @@ protocol TabDelegate: ContentOverlayUserScriptDelegate {
     func disableLongDecisionMakingChecks() {}
     func enableLongDecisionMakingChecks() {}
 #endif
+
+    /// Ensures `WKUIDelegate` createWebView callbacks are ordered behind any in-flight `decidePolicyForNavigationAction` evaluation.
+    @MainActor
+    func dispatchCreateWebView(_ callback: @Sendable @escaping @MainActor () -> Void) { navigationDelegate.dispatchCreateWebView(callback) }
+    var isCreateWebViewGatingFailsafeEnabled: Bool {
+        privacyFeatures.contentBlocking.privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(
+            PopupBlockingSubfeature.createWebViewGatingFailsafe,
+            defaultValue: true)
+    }
 
     // MARK: - Event Publishers
 

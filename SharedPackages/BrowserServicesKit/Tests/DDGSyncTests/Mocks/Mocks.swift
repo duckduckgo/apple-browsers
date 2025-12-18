@@ -269,6 +269,17 @@ final class MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSup
     }
 
     func updateServerEnvironment(_ serverEnvironment: ServerEnvironment) {}
+
+    var createTokenRescopeStub: TokenRescoping?
+    func createTokenRescope() -> any TokenRescoping {
+        createTokenRescopeStub ?? MockTokenRescoping()
+    }
+
+    var createAIChatsStub: AIChatsHandling?
+    func createAIChats() -> any AIChatsHandling {
+        createAIChatsStub ?? MockAIChatsHandling()
+    }
+
 }
 
 final class MockRemoteConnecting: RemoteConnecting {
@@ -348,6 +359,34 @@ final class MockExchangeRecoveryKeyTransmitting: ExchangeRecoveryKeyTransmitting
     func send() async throws {
         guard sendError == nil else { throw sendError! }
         sendCalled += 1
+    }
+}
+
+final class MockTokenRescoping: TokenRescoping {
+
+    private(set) var rescopeCalls: [(scope: String, token: String)] = []
+    var rescopeResult: String?
+    var rescopeError: Error?
+
+    func rescope(scope: String, token: String) async throws -> String? {
+        rescopeCalls.append((scope: scope, token: token))
+        if let rescopeError {
+            throw rescopeError
+        }
+        return rescopeResult
+    }
+}
+
+final class MockAIChatsHandling: AIChatsHandling {
+
+    private(set) var deleteCalls: [(until: Date, token: String)] = []
+    var deleteError: Error?
+
+    func delete(until: Date, token: String) async throws {
+        deleteCalls.append((until: until, token: token))
+        if let deleteError {
+            throw deleteError
+        }
     }
 }
 
@@ -455,6 +494,30 @@ struct CryptingMock: CryptingInternal {
         .init()
     }
 
+    func encrypt(_ value: Data, using secretKey: Data) throws -> Data {
+        // Test helper: treat input as UTF-8 if possible, otherwise pass through.
+        if let string = String(data: value, encoding: .utf8) {
+            return try encrypt(string, using: secretKey)
+        }
+        return value
+    }
+
+    func decryptData(_ value: Data, using secretKey: Data) throws -> Data {
+        // Test helper: decrypt to UTF-8 string and return UTF-8 bytes.
+        Data(try decrypt(value, using: secretKey).utf8)
+    }
+
+    func encrypt(_ value: String, using secretKey: Data) throws -> Data {
+        Data(try _encryptAndBase64Encode(value).utf8)
+    }
+
+    func decrypt(_ value: Data, using secretKey: Data) throws -> String {
+        guard let string = String(data: value, encoding: .utf8) else {
+            throw SyncError.failedToDecryptValue("bytes could not be converted to string")
+        }
+        return try _base64DecodeAndDecrypt(string)
+    }
+
     func encryptAndBase64Encode(_ value: String) throws -> String {
         try _encryptAndBase64Encode(value)
     }
@@ -477,6 +540,14 @@ struct CryptingMock: CryptingInternal {
 
     func unseal(encryptedData: Data, publicKey: Data, secretKey: Data) throws -> Data {
         encryptedData
+    }
+
+    func jwtSeal(_ data: Data, secretKey key: Data) throws -> Data {
+        data
+    }
+
+    func jwtUnseal(_ data: Data, secretKey key: Data) throws -> Data {
+        data
     }
 
     func createAccountCreationKeys(userId: String, password: String) throws -> AccountCreationKeys {

@@ -676,5 +676,23 @@ I-am blocat!
 			<string>%1$d de file selectate</string>
 		</dict>
 	</dict>
+	<key>settings.fireproofed.sites.subtitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d site exclus de la ștergere</string>
+			<key>few</key>
+			<string>%1$d site-uri excluse de la ștergere</string>
+			<key>other</key>
+			<string>%1$d site-uri excluse de la ștergere</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

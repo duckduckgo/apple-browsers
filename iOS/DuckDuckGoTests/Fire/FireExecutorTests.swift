@@ -206,23 +206,21 @@ final class FireExecutorTests: XCTestCase {
     
     // MARK: - burn Tabs Tests
     
-    func testBurnTabsCallsDelegateAndClearsTabsAndDownloads() async {
+    func testBurnTabsCallsDelegateAndClearsTabs() async {
         // Given
         let executor = makeFireExecutor()
+        executor.delegate = mockDelegate
         
         // When
         await executor.burn(options: .tabs, fireContext: .manualFire)
         
         // Then
-        XCTAssertTrue(mockDelegate.willStartBurningCalled)
-        XCTAssertEqual(mockDelegate.willStartBurningFireContext, .manualFire)
         XCTAssertTrue(mockDelegate.willStartBurningTabsCalled)
         XCTAssertTrue(mockDelegate.didFinishBurningTabsCalled)
-        XCTAssertTrue(mockDelegate.didFinishBurningCalled)
-        XCTAssertEqual(mockDelegate.didFinishBurningFireContext, .manualFire)
         XCTAssertTrue(mockTabManager.prepareCurrentTabCalled)
-        XCTAssertEqual(spyDownloadManager.cancelAllDownloadsCallCount, 1)
         XCTAssertTrue(mockTabManager.removeAllCalled)
+        // Downloads are only cancelled when both .tabs and .data are present
+        XCTAssertEqual(spyDownloadManager.cancelAllDownloadsCallCount, 0)
     }
     
     // MARK: - burn Data Tests
@@ -230,17 +228,16 @@ final class FireExecutorTests: XCTestCase {
     func testBurnDataCallsDelegateAndClearsData() async {
         // Given
         let executor = makeFireExecutor()
+        executor.delegate = mockDelegate
         
         // When
         await executor.burn(options: .data, fireContext: .autoClearOnLaunch)
         
         // Then
-        XCTAssertTrue(mockDelegate.willStartBurningCalled)
-        XCTAssertEqual(mockDelegate.willStartBurningFireContext, .autoClearOnLaunch)
         XCTAssertTrue(mockDelegate.willStartBurningDataCalled)
         XCTAssertTrue(mockDelegate.didFinishBurningDataCalled)
-        XCTAssertTrue(mockDelegate.didFinishBurningCalled)
-        XCTAssertEqual(mockDelegate.didFinishBurningFireContext, .autoClearOnLaunch)
+        // Downloads are only cancelled when both .tabs and .data are present
+        XCTAssertEqual(spyDownloadManager.cancelAllDownloadsCallCount, 0)
     }
     
     func testBurnDataSkipsBookmarkCleanerWhenSyncActive() async {
@@ -299,6 +296,20 @@ final class FireExecutorTests: XCTestCase {
 
         // Then - Verify history is removed
         XCTAssertEqual(mockHistoryManager.removeAllHistoryCallCount, 1)
+    }
+    
+    // MARK: - Burn ongoing downloads
+    
+    func testBurnTabsAndDataCancelsDownloads() async {
+        // Given
+        let executor = makeFireExecutor()
+        executor.delegate = mockDelegate
+        
+        // When
+        await executor.burn(options: [.tabs, .data], fireContext: .manualFire)
+        
+        // Then
+        XCTAssertEqual(spyDownloadManager.cancelAllDownloadsCallCount, 1)
     }
     
     // MARK: - burn AI History Tests

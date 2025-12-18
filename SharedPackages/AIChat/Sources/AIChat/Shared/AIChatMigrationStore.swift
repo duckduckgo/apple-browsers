@@ -37,6 +37,29 @@ public struct AIChatOKResponse: Codable, Equatable {
     public let ok: Bool
     public init(ok: Bool = true) { self.ok = ok }
 }
+// Cannot automatically synthesize 'Encodable' because 'Encodable' does not conform to 'Encodable'
+/// Simple OK response payload used by user-script handlers.
+public struct AIChatPayloadResponse: Encodable {
+
+    private enum CodingKeys: String, CodingKey {
+        case ok, payload, reason
+    }
+
+    public let ok: Bool
+    public let payload: Encodable
+
+    public init(ok: Bool = true,
+                payload: Encodable) {
+        self.ok = ok
+        self.payload = payload
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(self.ok, forKey: .ok)
+        try container.encode(self.payload, forKey: .payload)
+    }
+}
 
 /// Count response payload used to return number of stored migration items.
 public struct AIChatCountResponse: Codable, Equatable {

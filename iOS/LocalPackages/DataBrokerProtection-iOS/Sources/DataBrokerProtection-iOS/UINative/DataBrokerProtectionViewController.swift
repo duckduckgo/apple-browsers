@@ -25,6 +25,7 @@ import PixelKit
 import WebKit
 import Combine
 import DataBrokerProtectionCore
+import os.log
 
 final public class DataBrokerProtectionViewController: UIViewController {
 
@@ -40,6 +41,7 @@ final public class DataBrokerProtectionViewController: UIViewController {
     private let feedbackViewCreator: () -> (any View)
     private let openURLHandler: (URL) -> Void
     private var reloadObserver: NSObjectProtocol?
+    private var cancellables = Set<AnyCancellable>()
 
     private lazy var webUIViewModel: DBPUIViewModel = {
         guard let pixelKit = PixelKit.shared else {
@@ -121,6 +123,12 @@ final public class DataBrokerProtectionViewController: UIViewController {
             webView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             webView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
+
+        #if DEBUG
+        if #available(iOS 16.4, *) {
+            webView.isInspectable = true
+        }
+        #endif
     }
 
     private func setupLoadingView() {
@@ -137,11 +145,34 @@ final public class DataBrokerProtectionViewController: UIViewController {
     override public func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         webUIViewModel.viewDidAppear()
+        subscribeToBackgroundRefreshNotifications()
     }
 
     override public func viewDidDisappear(_ animated: Bool) {
+        cancellables.removeAll()
         webUIViewModel.viewDidDisappear()
         super.viewDidDisappear(animated)
+    }
+
+    private func subscribeToBackgroundRefreshNotifications() {
+        cancellables.removeAll()
+
+        Publishers.MergeMany(
+            NotificationCenter.default.publisher(for: UIApplication.backgroundRefreshStatusDidChangeNotification),
+            NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange),
+            NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)
+        )
+        .sink { [weak self] notification in
+            Logger.dataBrokerProtection.debug("Background refresh state may have changed: \(notification.name.rawValue)")
+            self?.notifyBackgroundAppRefreshChange()
+        }
+        .store(in: &cancellables)
+    }
+
+    private func notifyBackgroundAppRefreshChange() {
+        Task { @MainActor in
+            await webUIViewModel.sendBackgroundAppRefreshDidChange(into: webView)
+        }
     }
 }
 

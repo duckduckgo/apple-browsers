@@ -165,7 +165,8 @@ final class DataClearingSettingsViewModel: ObservableObject {
     }
     
     func presentFireConfirmation() {
-        Pixel.fire(pixel: .forgetAllPressedSettings)
+        DailyPixel.fireDailyAndCount(pixel: .forgetAllPressedSettings,
+                                     pixelNameSuffixes: DailyPixel.Constant.dailyAndStandardSuffixes)
         delegate?.presentFireConfirmation()
     }
     

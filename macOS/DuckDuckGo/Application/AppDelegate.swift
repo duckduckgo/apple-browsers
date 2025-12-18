@@ -113,6 +113,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private(set) var syncDataProviders: SyncDataProvidersSource?
     private(set) var syncService: DDGSyncing?
+    private(set) var syncAIChatsCleaner: SyncAIChatsCleaning?
     private var isSyncInProgressCancellable: AnyCancellable?
     private var syncFeatureFlagsCancellable: AnyCancellable?
     private var screenLockedCancellable: AnyCancellable?
@@ -148,6 +149,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let brokenSitePromptLimiter: BrokenSitePromptLimiter
     let fireCoordinator: FireCoordinator
     let permissionManager: PermissionManager
+    let notificationService: UserNotificationAuthorizationServicing
     let recentlyClosedCoordinator: RecentlyClosedCoordinating
     let downloadManager: FileDownloadManagerProtocol
     let downloadListCoordinator: DownloadListCoordinator
@@ -745,6 +747,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains)
         permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db), featureFlagger: featureFlagger)
 #endif
+        notificationService = UserNotificationAuthorizationService()
 
         webCacheManager = WebCacheManager(fireproofDomains: fireproofDomains)
 
@@ -789,7 +792,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                           fireproofDomains: fireproofDomains,
                                           faviconManagement: faviconManager,
                                           windowControllersManager: windowControllersManager,
-                                          pixelFiring: PixelKit.shared)
+                                          pixelFiring: PixelKit.shared,
+                                          syncAIChatsCleaner: { Application.appDelegate.syncAIChatsCleaner })
 
         var appContentBlocking: AppContentBlocking?
 #if DEBUG
@@ -1561,6 +1565,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             keyValueStore: keyValueStore,
             environment: environment
         )
+        let syncAIChatsCleaner = SyncAIChatsCleaner(sync: syncService,
+                                                    keyValueStore: keyValueStore,
+                                                    featureFlagger: featureFlagger)
+        syncService.setCustomOperations([AIChatDeleteOperation(cleaner: syncAIChatsCleaner)])
+
         syncService.initializeIfNeeded()
         syncDataProviders.setUpDatabaseCleaners(syncService: syncService)
 
@@ -1573,6 +1582,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         self.syncDataProviders = syncDataProviders
         self.syncService = syncService
+        self.syncAIChatsCleaner = syncAIChatsCleaner
 
         isSyncInProgressCancellable = syncService.isSyncInProgressPublisher
             .filter { $0 }
@@ -1709,7 +1719,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let autoClearHandler = AutoClearHandler(dataClearingPreferences: dataClearingPreferences,
                                                 startupPreferences: startupPreferences,
                                                 fireViewModel: fireCoordinator.fireViewModel,
-                                                stateRestorationManager: self.stateRestorationManager)
+                                                stateRestorationManager: self.stateRestorationManager,
+                                                syncAIChatsCleaner: syncAIChatsCleaner)
         self.autoClearHandler = autoClearHandler
         DispatchQueue.main.async {
             autoClearHandler.handleAppLaunch()

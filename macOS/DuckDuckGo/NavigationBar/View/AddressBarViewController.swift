@@ -791,7 +791,11 @@ final class AddressBarViewController: NSViewController {
             addressBarTextField.hideSuggestionWindow()
             return
         }
+
         guard AppVersion.runType != .unitTests else { return }
+
+        addressBarTextField.refreshStyle()
+
         let navigationBarBackgroundColor = theme.colorsProvider.navigationBackgroundColor
 
         NSAppearance.withAppAppearance {

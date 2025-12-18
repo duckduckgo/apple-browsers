@@ -146,6 +146,9 @@ class FireExecutor: FireExecuting {
             burnTabs()
             delegate?.didFinishBurningTabs()
         }
+        
+        cancelOngoingDownloadsIfNeeded(options)
+
         let shouldBurnData = options.contains(.data)
         
         // When granularFireButtonOptions FF is OFF, we use legacy behavior:
@@ -170,6 +173,15 @@ class FireExecutor: FireExecuting {
         isPrepared = false
     }
     
+    // MARK: - Clearing Downloads
+    
+    private func cancelOngoingDownloadsIfNeeded(_ options: FireOptions) {
+        guard options.contains(.tabs), options.contains(.data) else {
+            return
+        }
+        downloadManager.cancelAllDownloads()
+    }
+    
     // MARK: Burn Tabs Helpers
     @MainActor
     private func prepareForBurningTabs() {
@@ -179,7 +191,6 @@ class FireExecutor: FireExecuting {
     @MainActor
     private func burnTabs() {
         tabManager.prepareCurrentTabForDataClearing()
-        downloadManager.cancelAllDownloads()
         tabManager.removeAll()
         Favicons.shared.clearCache(.tabs)
     }

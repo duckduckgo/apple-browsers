@@ -1,0 +1,35 @@
+name: 'Shared - Sync Asana PR task'
+on:
+  pull_request_review:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - closed
+      - reopened
+      - synchronize
+      - assigned
+      - ready_for_review
+      - labeled
+      - review_requested
+      - review_request_removed
+
+concurrency:
+  group: ${{ github.ref }}
+
+jobs:
+  sync:
+    name: Sync Asana PR task
+    runs-on: ubuntu-latest
+    if: github.actor != 'dependabot[bot]' && github.actor != 'cursor[bot]' && github.actor != 'Copilot'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: ./.github/actions/pr-asana-sync
+        with:
+          GITHUB_TOKEN: ${{ secrets.GH_RO_PAT }}
+          ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          ASANA_WORKSPACE_ID: ${{ vars.ASANA_WORKSPACE_ID }}
+          ASANA_PROJECT_ID: ${{ vars.ASANA_CODE_REVIEWS_PROJECT_ID }}
+          ASANA_IN_PROGRESS_SECTION_ID: ${{ vars.ASANA_CODE_REVIEWS_IN_PROGRESS_SECTION_ID }}
+          USER_MAP: ${{ vars.USER_MAP }}

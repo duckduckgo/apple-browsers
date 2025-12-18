@@ -2725,14 +2725,23 @@ extension MainViewController: OmniBarDelegate {
             if browsingMenuSheetCapability.isEnabled {
                 Pixel.fire(pixel: .experimentalBrowsingMenuDisplayedNTP)
             }
-        case .aiChatTab, .website:
+        case .aiChatTab:
+            Pixel.fire(pixel: .browsingMenuOpened)
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuOpened)
+            if browsingMenuSheetCapability.isEnabled {
+                Pixel.fire(pixel: .experimentalBrowsingMenuDisplayedAIChat)
+            }
+        case .website:
             Pixel.fire(pixel: .browsingMenuOpened)
 
-            if browsingMenuSheetCapability.isEnabled {
+            if tab.isError {
+                Pixel.fire(pixel: .browsingMenuOpenedError)
+                if browsingMenuSheetCapability.isEnabled {
+                    Pixel.fire(pixel: .experimentalBrowsingMenuDisplayedError)
+                }
+            } else if browsingMenuSheetCapability.isEnabled {
                 Pixel.fire(pixel: .experimentalBrowsingMenuDisplayed)
             }
-
-            performActionIfAITab { DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsMenuOpened) }
         }
     }
 
@@ -2761,8 +2770,11 @@ extension MainViewController: OmniBarDelegate {
                                                menuEntries: menuEntries,
                                                daxDialogsManager: daxDialogsManager,
                                                productSurfaceTelemetry: productSurfaceTelemetry)
-        browsingMenu.onDismiss = {
+        browsingMenu.onDismiss = { wasActionSelected in
             self.viewCoordinator.menuToolbarButton.isEnabled = true
+            if !wasActionSelected {
+                Pixel.fire(pixel: .browsingMenuDismissed)
+            }
         }
 
         let controller = browsingMenu
@@ -2797,8 +2809,11 @@ extension MainViewController: OmniBarDelegate {
         let controller = BrowsingMenuSheetViewController(
             rootView: BrowsingMenuSheetView(model: model,
                                             highlightRowWithTag: highlightTag,
-                                            onDismiss: {
+                                            onDismiss: { wasActionSelected in
                                                 self.viewCoordinator.menuToolbarButton.isEnabled = true
+                                                if !wasActionSelected {
+                                                    Pixel.fire(pixel: .experimentalBrowsingMenuDismissed)
+                                                }
                                             })
         )
 

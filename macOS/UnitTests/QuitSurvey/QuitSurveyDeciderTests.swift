@@ -25,6 +25,7 @@ import SharedTestUtilities
 // MARK: - Mocks
 
 final class MockQuitSurveyPersistor: QuitSurveyPersistor {
+    var alwaysShowQuitSurvey: Bool = false
     var pendingReturnUserReasons: String?
     var hasQuitAppBefore: Bool = false
 }

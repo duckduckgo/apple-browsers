@@ -145,6 +145,10 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866479296718
     case tabProgressIndicator
 
+    /// Feature Flag for the First Time Quit Survey
+    /// https://app.asana.com/1/137249556945/inbox/1203972458584425/item/1212200919350194/story/1212483080081687
+    case firstTimeQuitSurvey
+
     /// Web Notifications API polyfill - allows websites to show notifications via native macOS Notification Center
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1211395954816928?focus=true
     case webNotifications
@@ -258,9 +262,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     /// Keep AI Chat session after the user closes it
     case keepSession
 
-    /// Adds context menu action for summarizing text selected on a website.
-    case textSummarization
-
     /// Adds capability to load AI Chat in a sidebar
     case sidebar
 
@@ -281,9 +282,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Show AI Chat address bar choice screen
     case showAIChatAddressBarChoiceScreen
-
-    /// Adds context menu action for translating text selected on a website.
-    case textTranslation
 
     /// Adds toggle for controlling  'Ask Follow-Up Questions' setting.
     case serpSettingsFollowUpQuestions

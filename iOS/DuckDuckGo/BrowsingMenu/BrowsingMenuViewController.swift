@@ -62,8 +62,9 @@ final class BrowsingMenuViewController: UIViewController {
     private let daxDialogsManager: DaxDialogsManaging
     private let appSettings: AppSettings
     private let productSurfaceTelemetry: ProductSurfaceTelemetry
+    private var wasActionSelected: Bool = false
 
-    var onDismiss: (() -> Void)?
+    var onDismiss: ((_ wasActionSelected: Bool) -> Void)?
 
     class func instantiate(headerEntries: [BrowsingMenuEntry], menuEntries: [BrowsingMenuEntry], daxDialogsManager: DaxDialogsManaging, appSettings: AppSettings = AppDependencyProvider.shared.appSettings, productSurfaceTelemetry: ProductSurfaceTelemetry) -> BrowsingMenuViewController {
         UIStoryboard(name: "BrowsingMenuViewController", bundle: nil).instantiateInitialViewController { coder in
@@ -101,7 +102,7 @@ final class BrowsingMenuViewController: UIViewController {
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         if isBeingDismissed {
-            onDismiss?()
+            onDismiss?(wasActionSelected)
         }
     }
 
@@ -112,6 +113,7 @@ final class BrowsingMenuViewController: UIViewController {
         for entry in headerEntries {
             let button = BrowsingMenuButton.loadFromXib()
             button.configure(with: entry) { [weak self] completion in
+                self?.wasActionSelected = true
                 self?.dismiss(animated: true, completion: completion)
             }
 
@@ -273,6 +275,7 @@ extension BrowsingMenuViewController: UITableViewDelegate {
         
         switch menuEntries[indexPath.row] {
         case .regular(_, _, _, _, _, let action):
+            wasActionSelected = true
             dismiss(animated: true) {
                 action()
             }

@@ -160,7 +160,7 @@ final class FireExecutorTests: XCTestCase {
         bookmarksDatabaseCleaner: (any BookmarkDatabaseCleaning)? = nil,
         fireproofing: Fireproofing? = nil
     ) -> FireExecutor {
-        return FireExecutor(
+        let executor = FireExecutor(
             tabManager: mockTabManager,
             downloadManager: spyDownloadManager,
             websiteDataManager: mockWebsiteDataManager,
@@ -176,6 +176,8 @@ final class FireExecutorTests: XCTestCase {
             aiChatHistoryCleaner: mockHistoryCleaner,
             appSettings: mockAppSettings
         )
+        executor.delegate = mockDelegate
+        return executor
     }
     
     // MARK: - prepare Tests
@@ -207,7 +209,6 @@ final class FireExecutorTests: XCTestCase {
     func testBurnTabsCallsDelegateAndClearsTabsAndDownloads() async {
         // Given
         let executor = makeFireExecutor()
-        executor.delegate = mockDelegate
         
         // When
         await executor.burn(options: .tabs, fireContext: .manualFire)
@@ -229,7 +230,6 @@ final class FireExecutorTests: XCTestCase {
     func testBurnDataCallsDelegateAndClearsData() async {
         // Given
         let executor = makeFireExecutor()
-        executor.delegate = mockDelegate
         
         // When
         await executor.burn(options: .data, fireContext: .autoClearOnLaunch)
@@ -279,7 +279,6 @@ final class FireExecutorTests: XCTestCase {
         let fireproofedDomains = ["example.com", "test.org"]
         let fireproofing = MockFireproofing(domains: fireproofedDomains)
         let executor = makeFireExecutor(fireproofing: fireproofing)
-        executor.delegate = mockDelegate
 
         // When
         await executor.burn(options: .data, fireContext: .manualFire)
@@ -307,7 +306,6 @@ final class FireExecutorTests: XCTestCase {
     func testBurnAIHistoryCallsDelegateOnSuccess() async {
         // Given
         let executor = makeFireExecutor()
-        executor.delegate = mockDelegate
         mockHistoryCleaner.cleanAIChatHistoryResult = .success(())
         
         // When
@@ -322,7 +320,6 @@ final class FireExecutorTests: XCTestCase {
     func testBurnAIHistoryCallsDelegateOnFailure() async {
         // Given
         let executor = makeFireExecutor()
-        executor.delegate = mockDelegate
         mockHistoryCleaner.cleanAIChatHistoryResult = .failure(NSError(domain: "test", code: 1))
         
         // When
@@ -339,7 +336,6 @@ final class FireExecutorTests: XCTestCase {
     func testBurnAllOptionsBurnsEverything() async {
         // Given
         let executor = makeFireExecutor()
-        executor.delegate = mockDelegate
         
         // When
         await executor.burn(options: .all, fireContext: .manualFire)
@@ -362,7 +358,6 @@ final class FireExecutorTests: XCTestCase {
     func testBurnMultipleOptionsIndividually() async {
         // Given
         let executor = makeFireExecutor()
-        executor.delegate = mockDelegate
         
         // When - Burn tabs and data separately
         await executor.burn(options: [.tabs, .data], fireContext: .manualFire)
@@ -383,7 +378,6 @@ final class FireExecutorTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = [] // granularFireButtonOptions disabled
         mockAppSettings.autoClearAIChatHistory = false
         let executor = makeFireExecutor()
-        executor.delegate = mockDelegate
         
         // When
         await executor.burn(options: .aiChats, fireContext: .manualFire)

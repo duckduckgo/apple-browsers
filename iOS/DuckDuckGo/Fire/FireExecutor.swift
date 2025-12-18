@@ -135,9 +135,9 @@ class FireExecutor: FireExecuting {
             assertionFailure("Delegate should be not be nil. This leads to unexpected behavior.")
         }
         
-        // Ensure prepare() was called for tabs if needed
-        if options.contains(.tabs) && !isPrepared {
-            prepareForBurningTabs()
+        // Ensure prepare() was called
+        if !isPrepared {
+            prepare(for: options)
         }
         
         delegate?.willStartBurning(fireContext: fireContext)

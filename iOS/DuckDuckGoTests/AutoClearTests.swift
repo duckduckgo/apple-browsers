@@ -27,8 +27,6 @@ class AutoClearTests: XCTestCase {
     
     class MockFireExecutor: FireExecuting {
         
-        var prepareCallCount = 0
-        var prepareOptions: FireOptions?
         var burnCallCount = 0
         var burnOptions: FireOptions?
         var burnApplicationState: DataStoreWarmup.ApplicationState?
@@ -36,10 +34,7 @@ class AutoClearTests: XCTestCase {
         
         weak var delegate: FireExecutorDelegate?
         
-        func prepare(for options: FireOptions) {
-            prepareCallCount += 1
-            prepareOptions = options
-        }
+        func prepare(for options: FireOptions) { }
         
         func burn(options: FireOptions,
                   applicationState: DataStoreWarmup.ApplicationState,
@@ -118,7 +113,6 @@ class AutoClearTests: XCTestCase {
         await logic.clearDataIfEnabled(launching: false, applicationState: .active)
 
         // Then
-        XCTAssertEqual(mockFireExecutor.prepareCallCount, 1)
         XCTAssertEqual(mockFireExecutor.burnCallCount, 1)
         XCTAssertEqual(mockFireExecutor.burnApplicationState, .active)
         XCTAssertEqual(mockFireExecutor.burnFireContext, .autoClearWhileActive)
@@ -146,7 +140,6 @@ class AutoClearTests: XCTestCase {
         await logic.clearDataIfEnabled(launching: false, applicationState: .active)
 
         // Then
-        XCTAssertEqual(mockFireExecutor.prepareCallCount, 0)
         XCTAssertEqual(mockFireExecutor.burnCallCount, 0)
     }
 
@@ -162,7 +155,6 @@ class AutoClearTests: XCTestCase {
         await logic.clearDataDueToTimeExpired(applicationState: .active)
 
         // Then
-        XCTAssertEqual(mockFireExecutor.prepareCallCount, 1)
         XCTAssertEqual(mockFireExecutor.burnCallCount, 1)
         XCTAssertEqual(mockFireExecutor.burnFireContext, .autoClearWhileActive)
     }

@@ -495,7 +495,8 @@ async function handleReviewRequestRemoved(
 }
 
 /**
- * Handle PR opened - create tasks for all requested reviewers
+ * Handle PR opened - only create tasks if reviewers are already assigned
+ * If no reviewers, assign a random one (which triggers review_requested event)
  */
 async function handlePROpened(
   payload: PullRequestEvent,
@@ -513,9 +514,6 @@ async function handlePROpened(
     return []
   }
 
-  const body = payload.pull_request.body || ''
-  const {parentTaskId} = await findParentTaskId(body)
-
   // Get all requested reviewers
   const requestedReviewers = (payload.pull_request.requested_reviewers as User[])
     .filter((user: User) => user !== undefined && user.login !== githubAuthor)
@@ -531,50 +529,56 @@ async function handlePROpened(
     allReviewers.set(reviewer.login, reviewer.login)
   }
 
-  // If no reviewers yet and author is in RANDOMIZED_REVIEWERS_LIST, assign a random reviewer
-  if (
-    allReviewers.size === 0 &&
-    !automatedPR &&
-    RANDOMIZED_REVIEWERS_LIST.includes(githubAuthor)
-  ) {
-    const possibleReviewers = RANDOMIZED_REVIEWERS_LIST.filter(
-      (reviewer: string) => reviewer !== githubAuthor
-    )
-    if (possibleReviewers.length > 0) {
-      const randomReviewer =
-        possibleReviewers[Math.floor(Math.random() * possibleReviewers.length)]
+  // If no reviewers yet, try to assign a random reviewer
+  // The random reviewer assignment triggers a review_requested event which will create the task
+  if (allReviewers.size === 0) {
+    if (!automatedPR && RANDOMIZED_REVIEWERS_LIST.includes(githubAuthor)) {
+      const possibleReviewers = RANDOMIZED_REVIEWERS_LIST.filter(
+        (reviewer: string) => reviewer !== githubAuthor
+      )
+      if (possibleReviewers.length > 0) {
+        const randomReviewer =
+          possibleReviewers[Math.floor(Math.random() * possibleReviewers.length)]
 
-      const octokit = getOctokit(getInput('GITHUB_TOKEN'))
-      try {
-        const reviewerResponse = await octokit.rest.pulls.requestReviewers({
-          owner: context.repo.owner,
-          repo: context.repo.repo,
-          // eslint-disable-next-line camelcase
-          pull_number: payload.pull_request.number,
-          reviewers: [randomReviewer]
-        })
+        const octokit = getOctokit(getInput('GITHUB_TOKEN'))
+        try {
+          const reviewerResponse = await octokit.rest.pulls.requestReviewers({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            // eslint-disable-next-line camelcase
+            pull_number: payload.pull_request.number,
+            reviewers: [randomReviewer]
+          })
 
-        const assigneeResponse = await octokit.rest.issues.addAssignees({
-          owner: context.repo.owner,
-          repo: context.repo.repo,
-          // eslint-disable-next-line camelcase
-          issue_number: payload.pull_request.number,
-          assignees: [randomReviewer]
-        })
+          const assigneeResponse = await octokit.rest.issues.addAssignees({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            // eslint-disable-next-line camelcase
+            issue_number: payload.pull_request.number,
+            assignees: [randomReviewer]
+          })
 
-        if (
-          reviewerResponse.status === 201 &&
-          assigneeResponse.status === 201
-        ) {
-          allReviewers.set(randomReviewer, randomReviewer)
-          info(`PR is assigned to a random reviewer: ${randomReviewer}.`)
+          if (
+            reviewerResponse.status === 201 &&
+            assigneeResponse.status === 201
+          ) {
+            info(`PR assigned to random reviewer: ${randomReviewer}. Task will be created via review_requested event.`)
+          }
+        } catch (e) {
+          info(`Could not assign to a random reviewer: ${e}`)
         }
-      } catch (e) {
-        info(`Could not assign to a random reviewer: ${e}`)
       }
     }
+
+    // No reviewers assigned - don't create any tasks
+    // Tasks will be created when reviewers are assigned via review_requested events
+    info('No reviewers assigned to PR. Skipping task creation.')
+    return []
   }
 
+  // Create tasks for reviewers that were assigned when the PR was opened
+  const body = payload.pull_request.body || ''
+  const {parentTaskId} = await findParentTaskId(body)
   const createdTasks: asana.resources.Tasks.Type[] = []
 
   for (const reviewerLogin of allReviewers.keys()) {

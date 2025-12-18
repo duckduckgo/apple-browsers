@@ -117,11 +117,11 @@ final class AIChatMenuConfiguration: AIChatMenuVisibilityConfigurable {
     }
 
     var shouldDisplaySummarizationMenuItem: Bool {
-        shouldDisplayAnyAIChatFeature && shouldDisplayApplicationMenuShortcut
+        shouldDisplayAnyAIChatFeature
     }
 
     var shouldDisplayTranslationMenuItem: Bool {
-        shouldDisplayAnyAIChatFeature && shouldDisplayApplicationMenuShortcut
+        shouldDisplayAnyAIChatFeature
     }
 
     var shouldDisplayApplicationMenuShortcut: Bool {

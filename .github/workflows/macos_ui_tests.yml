@@ -297,6 +297,7 @@ jobs:
         mv -f "DuckDuckGo Review.app" "../DerivedData/Build/Products/Review/DuckDuckGo Review.app"
 
     - name: Run UI Tests
+      id: run-ui-tests
       working-directory: macOS
       run: |
         defaults write com.duckduckgo.macos.browser.review moveToApplicationsFolderAlertSuppress 1
@@ -307,6 +308,7 @@ jobs:
           -skipMacroValidation \
           -test-iterations 2 \
           -retry-tests-on-failure \
+          -test-repetition-relaunch-enabled YES \
           '-only-testing:UI Tests/${{ matrix.test }}' \
         | tee -a xcodebuild.log \
         | tee ui-tests.log
@@ -353,22 +355,22 @@ jobs:
         path: "macOS/${{ steps.prepare-test-report.outputs.file }}"
         retention-days: 1
 
-    - name: Upload xcresult files
+    - name: Upload xcresult files (passed on retry)
       uses: actions/upload-artifact@v4
-      if: always() && steps.check-failures.outputs.had_failures == 'true'
+      if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
       with:
         name: "xcresult-${{ matrix.test }}-macos${{ matrix.os-version }}"
         path: "macOS/DerivedData/Logs/Test/*.xcresult"
-        retention-days: 7
+        retention-days: 1
 
-    - name: Upload app console log
+    - name: Upload app console log (passed on retry)
       uses: actions/upload-artifact@v4
-      if: always() && steps.check-failures.outputs.had_failures == 'true'
+      if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
       with:
         name: "app-console-${{ matrix.test }}-macos${{ matrix.os-version }}"
         path: "macOS/app-console.log"
         if-no-files-found: warn
-        retention-days: 7
+        retention-days: 1
 
     - name: Organize logs for upload
       if: failure() || cancelled()

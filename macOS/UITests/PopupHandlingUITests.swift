@@ -795,6 +795,20 @@ final class PopupHandlingUITests: UITestCase {
     /// Tests ServiceNow-like scenario where Cmd+click on a link that also triggers window.open() calls
     /// Verifies that only one tab opens (event consumption prevents extra tabs) and extra window.open() calls are blocked
     func testServiceNowCommandClickOnlyOpensOneTab() throws {
+        // TEMPORARY: Test CI retry upload logic - fail on first run, pass on second
+        let markerFile = FileManager.default.temporaryDirectory.appendingPathComponent("testServiceNowCommandClickOnlyOpensOneTab.marker").path
+        Logger.log("Using marker file: \(markerFile)")
+        
+        if !FileManager.default.fileExists(atPath: markerFile) {
+            FileManager.default.createFile(atPath: markerFile, contents: nil)
+            Logger.log("First run - created marker file, forcing failure")
+            XCTFail("First run - forcing failure to test CI retry upload logic")
+            return
+        } else {
+            Logger.log("Second run - found marker file, test will pass")
+            try? FileManager.default.removeItem(atPath: markerFile)
+        }
+        
         addressBarTextField.pasteURL(serviceNowURL, pressingEnter: true)
         let webView = app.webViews["Simulate ServiceNow Cmd+Click Bug"]
 

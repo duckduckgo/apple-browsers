@@ -197,6 +197,7 @@ jobs:
           -skipMacroValidation \
           -test-iterations 2 \
           -retry-tests-on-failure \
+          -test-repetition-relaunch-enabled YES \
         | tee -a xcodebuild.log \
         | tee ui-tests.log
 
@@ -244,22 +245,22 @@ jobs:
         report_paths: macOS/ui-tests.xml
         check_retries: true
 
-    - name: Upload xcresult files
+    - name: Upload xcresult files (passed on retry)
       uses: actions/upload-artifact@v4
-      if: always() && steps.check-failures.outputs.had_failures == 'true'
+      if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
       with:
         name: "xcresult-${{ matrix.runner }}"
         path: "macOS/DerivedData/Logs/Test/*.xcresult"
-        retention-days: 7
+        retention-days: 1
 
-    - name: Upload app console log
+    - name: Upload app console log (passed on retry)
       uses: actions/upload-artifact@v4
-      if: always() && steps.check-failures.outputs.had_failures == 'true'
+      if: always() && steps.check-failures.outputs.had_failures == 'true' && steps.run-ui-tests.outcome == 'success'
       with:
         name: "app-console-${{ matrix.runner }}-macos${{ matrix.os-version }}"
         path: "macOS/app-console.log"
         if-no-files-found: warn
-        retention-days: 7
+        retention-days: 1
 
     - name: Organize logs for upload
       if: failure() || cancelled()

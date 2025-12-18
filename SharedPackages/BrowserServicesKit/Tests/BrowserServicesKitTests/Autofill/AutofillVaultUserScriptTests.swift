@@ -20,7 +20,6 @@ import Foundation
 
 import XCTest
 import WebKit
-import ObjectiveC.runtime
 import UserScript
 import Common
 @testable import BrowserServicesKit
@@ -1142,21 +1141,4 @@ struct MockHostProvider: UserScriptHostProvider {
     func hostForMessage(_ message: UserScriptMessage) -> String {
         return host
     }
-}
-
-// Hack for avoiding test crashes on Xcode 26 - this will be removed later:
-extension WKFrameInfo {
-
-    private static var isSwizzled = false
-    private static let originalDealloc = { class_getInstanceMethod(WKFrameInfo.self, NSSelectorFromString("dealloc"))! }()
-    private static let swizzledDealloc = { class_getInstanceMethod(WKFrameInfo.self, #selector(swizzled_dealloc))! }()
-
-    static func swizzleDealloc() {
-        guard !self.isSwizzled else { return }
-        self.isSwizzled = true
-        method_exchangeImplementations(originalDealloc, swizzledDealloc)
-    }
-
-    @objc
-    func swizzled_dealloc() { }
 }

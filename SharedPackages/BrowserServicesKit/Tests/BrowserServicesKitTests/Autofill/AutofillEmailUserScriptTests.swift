@@ -46,6 +46,11 @@ class AutofillEmailUserScriptTests: XCTestCase {
     }()
     let userContentController = WKUserContentController()
 
+    override class func setUp() {
+        super.setUp()
+        WKFrameInfo.swizzleDealloc()
+    }
+
     var encryptedMessagingParams: [String: Any] {
         return [
             "messageHandling": [

@@ -130,4 +130,90 @@ final class AIChatSidebarTests: XCTestCase {
         XCTAssertFalse(sidebar.isPresented)
         XCTAssertNotNil(sidebar.hiddenAt)
     }
+
+    // MARK: - Reset Tests
+
+    func testWhenResetCalledThenCurrentAIChatURLFallsBackToInitialURL() {
+        // Given - Create sidebar with base URL (no chatID)
+        let aiChatRemoteSettings = AIChatRemoteSettings()
+        let baseURL = aiChatRemoteSettings.aiChatURL.forAIChatSidebar()
+        let sidebar = AIChatSidebar(initialAIChatURL: baseURL, burnerMode: .regular)
+
+        // Simulate that the sidebar was used and URL with chatID was saved
+        let urlWithChatID = baseURL.appendingParameter(name: "chatID", value: "test-chat-id")
+        let viewController = AIChatSidebarViewController(currentAIChatURL: urlWithChatID, burnerMode: .regular)
+        sidebar.sidebarViewController = viewController
+        sidebar.unloadViewController(persistingState: true)
+
+        // Verify URL with chatID was saved
+        XCTAssertTrue(sidebar.currentAIChatURL.absoluteString.contains("chatID"))
+
+        // When
+        sidebar.reset()
+
+        // Then - currentAIChatURL should fall back to baseURL (no chatID)
+        XCTAssertEqual(sidebar.currentAIChatURL, baseURL)
+        XCTAssertFalse(sidebar.currentAIChatURL.absoluteString.contains("chatID"))
+    }
+
+    func testWhenResetCalledThenRestorationDataIsCleared() {
+        // Given
+        sidebar.updateRestorationData("test-restoration-data")
+        XCTAssertNotNil(sidebar.restorationData)
+
+        // When
+        sidebar.reset()
+
+        // Then
+        XCTAssertNil(sidebar.restorationData)
+    }
+
+    func testWhenResetCalledThenBothURLAndRestorationDataAreCleared() {
+        // Given - Create sidebar with base URL (no chatID)
+        let aiChatRemoteSettings = AIChatRemoteSettings()
+        let baseURL = aiChatRemoteSettings.aiChatURL.forAIChatSidebar()
+        let sidebar = AIChatSidebar(initialAIChatURL: baseURL, burnerMode: .regular)
+
+        // Simulate sidebar usage with chatID URL and restoration data
+        let urlWithChatID = baseURL.appendingParameter(name: "chatID", value: "test-chat-id")
+        let viewController = AIChatSidebarViewController(currentAIChatURL: urlWithChatID, burnerMode: .regular)
+        sidebar.sidebarViewController = viewController
+        sidebar.unloadViewController(persistingState: true)
+        sidebar.updateRestorationData("test-restoration-data")
+
+        XCTAssertTrue(sidebar.currentAIChatURL.absoluteString.contains("chatID"))
+        XCTAssertNotNil(sidebar.restorationData)
+
+        // When
+        sidebar.reset()
+
+        // Then
+        XCTAssertEqual(sidebar.currentAIChatURL, baseURL)
+        XCTAssertFalse(sidebar.currentAIChatURL.absoluteString.contains("chatID"))
+        XCTAssertNil(sidebar.restorationData)
+    }
+
+    func testWhenResetCalledThenPresentedStateIsNotAffected() {
+        // Given
+        sidebar.setRevealed()
+        XCTAssertTrue(sidebar.isPresented)
+
+        // When
+        sidebar.reset()
+
+        // Then - isPresented should not be affected
+        XCTAssertTrue(sidebar.isPresented)
+    }
+
+    func testWhenResetCalledThenHiddenAtIsNotAffected() {
+        // Given
+        sidebar.setHidden()
+        XCTAssertNotNil(sidebar.hiddenAt)
+
+        // When
+        sidebar.reset()
+
+        // Then - hiddenAt should not be affected
+        XCTAssertNotNil(sidebar.hiddenAt)
+    }
 }

@@ -596,5 +596,21 @@
 			<string>%1$d pestañas seleccionadas</string>
 		</dict>
 	</dict>
+	<key>settings.fireproofed.sites.subtitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d sitio excluido de la limpieza</string>
+			<key>other</key>
+			<string>%1$d sitios excluidos de la limpieza</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

@@ -756,5 +756,25 @@ Zablokowałem ich!
 			<string>%1$d wybranej karty</string>
 		</dict>
 	</dict>
+	<key>settings.fireproofed.sites.subtitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d witryna wyłączona z czyszczenia</string>
+			<key>few</key>
+			<string>%1$d witryny wyłączone z czyszczenia</string>
+			<key>many</key>
+			<string>%1$d witryn wyłączonych z czyszczenia</string>
+			<key>other</key>
+			<string>%1$d witryny wyłączonej z czyszczenia</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

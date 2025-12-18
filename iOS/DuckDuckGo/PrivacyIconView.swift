@@ -27,8 +27,8 @@ import Kingfisher
 // MARK: - Dax Easter Egg Logo Constants
 
 private extension PrivacyIconView {
-    /// Scale factor for dynamic Dax Easter Egg logos to match PDF default logo visual size
-    static let daxLogoScaleFactor: CGFloat = 0.6
+    /// Scale factor for dynamic Dax Easter Egg logos to match PDF default logo visual size (24/47 ≈ 0.51)
+    static let daxLogoScaleFactor: CGFloat = 0.51
 }
 
 enum PrivacyIcon {

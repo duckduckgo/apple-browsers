@@ -176,9 +176,17 @@ class DaxEasterEggFullScreenViewController: UIViewController {
     }
     
     private func setupGestures() {
-        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(dismissViewController))
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(backgroundTapped(_:)))
         tapGesture.cancelsTouchesInView = false
         view.addGestureRecognizer(tapGesture)
+    }
+
+    @objc private func backgroundTapped(_ gesture: UITapGestureRecognizer) {
+        let location = gesture.location(in: view)
+        let hitView = view.hitTest(location, with: nil)
+        if hitView == view || hitView == imageView {
+            dismissViewController()
+        }
     }
     
     @objc private func dismissViewController() {

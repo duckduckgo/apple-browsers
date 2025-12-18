@@ -17,7 +17,8 @@
 //
 
 import XCTest
-@testable import BrowserServicesKit
+import PrivacyConfigTestsUtils
+@testable import PrivacyConfig
 
 final class PopupBlockingConfigurationTests: XCTestCase {
 

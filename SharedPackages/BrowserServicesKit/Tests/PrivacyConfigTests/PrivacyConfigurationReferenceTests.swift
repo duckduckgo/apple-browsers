@@ -18,7 +18,8 @@
 
 import XCTest
 import os.log
-import BrowserServicesKit
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 
 final class PrivacyConfigurationReferenceTests: XCTestCase {
 

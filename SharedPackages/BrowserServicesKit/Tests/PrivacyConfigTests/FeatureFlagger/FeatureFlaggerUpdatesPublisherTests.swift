@@ -19,7 +19,8 @@
 import XCTest
 import Combine
 import PersistenceTestingUtils
-@testable import FeatureFlags
+import PrivacyConfigTestsUtils
+@testable import PrivacyConfig
 
 final class FeatureFlaggerUpdatesPublisherTests: XCTestCase {
 

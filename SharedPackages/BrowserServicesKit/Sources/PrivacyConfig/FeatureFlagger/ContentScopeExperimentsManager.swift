@@ -17,7 +17,6 @@
 //
 
 import Foundation
-import PrivacyConfig
 
 public protocol ContentScopeExperimentsManaging {
     /// Retrieves all active experiments, that live under the "ContentScopeExperiments" parent feature, currently assigned to the user.

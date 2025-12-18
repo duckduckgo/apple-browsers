@@ -17,6 +17,7 @@
 //
 
 import PrivacyConfig
+import PrivacyConfigTestsUtils
 import WebKit
 import XCTest
 @testable import BrowserServicesKit

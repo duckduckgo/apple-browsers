@@ -17,8 +17,7 @@
 //
 
 import XCTest
-
-@testable import FeatureFlags
+@testable import PrivacyConfig
 
 class DefaultInternalUserDeciderTests: XCTestCase {
 

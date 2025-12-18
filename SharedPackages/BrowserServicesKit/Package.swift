@@ -360,6 +360,7 @@ let package = Package(
         .target(
             name: "RemoteMessaging",
             dependencies: [
+                "BrowserServicesKit",
                 "Common",
                 "Configuration",
                 "Networking",
@@ -469,6 +470,7 @@ let package = Package(
             dependencies: [
                 "Common",
                 "ContentBlocking",
+                "PrivacyConfig",
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
@@ -710,6 +712,9 @@ let package = Package(
                 "PersistenceTestingUtils",
                 "PrivacyConfig",
                 "PrivacyConfigTestsUtils"
+            ],
+            resources: [
+                .copy("Resources")
             ]
         ),
         .testTarget(

@@ -16,7 +16,8 @@
 //  limitations under the License.
 //
 
-import FeatureFlags
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import PersistenceTestingUtils
 import XCTest
 

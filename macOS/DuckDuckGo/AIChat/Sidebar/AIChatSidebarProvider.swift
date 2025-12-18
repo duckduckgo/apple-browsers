@@ -55,10 +55,10 @@ protocol AIChatSidebarProviding: AnyObject {
     /// - Parameter currentTabIDs: Array of tab IDs that are currently open
     func cleanUp(for currentTabIDs: [TabIdentifier])
 
-    /// Resets the sidebar state for the specified tab to prepare for a new chat session.
+    /// Resets the sidebar state for the specified tab
     /// This clears any saved URL (with chatID) and restoration data.
     /// - Parameter tabID: The unique identifier of the tab
-    func resetSidebarForNewChat(for tabID: TabIdentifier)
+    func resetSidebar(for tabID: TabIdentifier)
 
     /// The underlying model containing all active chat sidebars mapped by their tab identifiers.
     /// This dictionary maintains the state of all chat sidebars across different browser tabs.
@@ -169,7 +169,7 @@ final class AIChatSidebarProvider: AIChatSidebarProviding {
         self.sidebarsByTab = sidebarsByTab
     }
 
-    func resetSidebarForNewChat(for tabID: TabIdentifier) {
-        sidebarsByTab[tabID]?.resetForNewChat()
+    func resetSidebar(for tabID: TabIdentifier) {
+        sidebarsByTab[tabID]?.reset()
     }
 }

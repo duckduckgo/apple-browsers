@@ -756,5 +756,25 @@ Boli zablokovaní!
 			<string>%1$d vybraných kariet</string>
 		</dict>
 	</dict>
+	<key>settings.fireproofed.sites.subtitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d lokalita bola vylúčená z vymazania</string>
+			<key>few</key>
+			<string>%1$d lokality boli vylúčené z vymazania</string>
+			<key>many</key>
+			<string>%1$d lokality bolo vylúčených z vymazania</string>
+			<key>other</key>
+			<string>%1$d lokalít bolo vylúčených z vymazania</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

@@ -29,7 +29,14 @@ import os.log
 import AIChat
 import Combine
 
-class TabManager {
+protocol TabManaging {
+    var count: Int { get }
+    @MainActor func prepareAllTabsExceptCurrentForDataClearing()
+    @MainActor func prepareCurrentTabForDataClearing()
+    func removeAll()
+}
+
+class TabManager: TabManaging {
 
     private(set) var model: TabsModel
     private(set) var persistence: TabsModelPersisting

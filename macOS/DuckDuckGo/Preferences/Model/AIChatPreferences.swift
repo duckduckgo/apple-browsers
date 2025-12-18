@@ -116,10 +116,6 @@ final class AIChatPreferences: ObservableObject {
         featureFlagger.isFeatureOn(.newTabPageOmnibar)
     }
 
-    var shouldShowUpdatedSettings: Bool {
-        aiChatMenuConfiguration.shouldShowSettingsImprovements
-    }
-
     var shouldShowHideAIGeneratedImagesSection: Bool {
         featureFlagger.isFeatureOn(.showHideAIGeneratedImagesSection)
     }

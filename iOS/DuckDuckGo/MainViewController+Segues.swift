@@ -251,6 +251,14 @@ extension MainViewController {
         }, deepLinkTarget: .netP)
     }
 
+    func segueToDataBrokerProtection() {
+        Logger.lifecycle.debug(#function)
+        hideAllHighlightsIfNeeded()
+        launchSettings(completion: {
+            $0.triggerDeepLinkNavigation(to: .dbp)
+        }, deepLinkTarget: .dbp)
+    }
+
     func segueToDebugSettings() {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()

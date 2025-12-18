@@ -57,6 +57,34 @@ extension Tab: WKUIDelegate, PrintingUserScriptDelegate {
     }
 
     @MainActor
+    @objc(_webView:createWebViewWithConfiguration:forNavigationAction:windowFeatures:completionHandler:)
+    func webView(_ webView: WKWebView,
+                 createWebViewWithConfiguration configuration: WKWebViewConfiguration,
+                 for navigationAction: WKNavigationAction,
+                 windowFeatures: WKWindowFeatures,
+                 completionHandler: @escaping (WKWebView?) -> Void) {
+
+        guard isCreateWebViewGatingFailsafeEnabled else {
+            completionHandler(self.popupHandling?.createWebView(from: webView,
+                                                                with: configuration,
+                                                                for: navigationAction,
+                                                                windowFeatures: windowFeatures))
+            return
+        }
+
+        // Defer createWebView handling until any in-flight `decidePolicyForNavigationAction` responder-chain work completes.
+        // This prevents a race condition where the createWebView callback for a pop-up is called before a PopupHandlingTabExtension decision
+        // to open a pop-up is made.
+        // https://app.asana.com/1/137249556945/project/1202406491309510/task/1212353379833164?focus=true
+        dispatchCreateWebView { [weak self] in
+            completionHandler(self?.popupHandling?.createWebView(from: webView,
+                                                                 with: configuration,
+                                                                 for: navigationAction,
+                                                                 windowFeatures: windowFeatures))
+        }
+    }
+
+    @MainActor
     func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration, for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
         self.popupHandling?.createWebView(from: webView, with: configuration, for: navigationAction, windowFeatures: windowFeatures)
     }

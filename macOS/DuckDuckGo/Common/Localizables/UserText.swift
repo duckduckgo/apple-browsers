@@ -928,7 +928,7 @@ struct UserText {
     static let quitSurveySubmitting = NSLocalizedString("quit-survey.submitting", value: "Submitting...", comment: "Button text shown while feedback is being submitted")
 
     // Quit survey feedback options
-    static let quitSurveyOptionAskedToDisableAdBlocker = NSLocalizedString("quit-survey.option.asked-to-disable-ad-blocker", value: "Asked to disable Ad Blocker", comment: "Quit survey feedback option - site breakage")
+    static let quitSurveyOptionAskedToDisableAdBlocker = NSLocalizedString("quit-survey.option.asked-to-disable-ad-blocker", value: "Asked to disable ad blocker", comment: "Quit survey feedback option - site breakage")
     static let quitSurveyOptionPagesFroze = NSLocalizedString("quit-survey.option.pages-froze", value: "Pages froze", comment: "Quit survey feedback option - site breakage")
     static let quitSurveyOptionPagesLoadedSlowly = NSLocalizedString("quit-survey.option.pages-loaded-slowly", value: "Pages loaded slowly", comment: "Quit survey feedback option - site breakage")
     static let quitSurveyOptionMoreCaptchas = NSLocalizedString("quit-survey.option.more-captchas", value: "More CAPTCHAs", comment: "Quit survey feedback option - site breakage")
@@ -941,14 +941,14 @@ struct UserText {
     static let quitSurveyOptionSlowToOpen = NSLocalizedString("quit-survey.option.slow-to-open", value: "Slow to open", comment: "Quit survey feedback option - performance")
     static let quitSurveyOptionCouldntDisableAI = NSLocalizedString("quit-survey.option.couldnt-disable-ai", value: "Couldn't disable AI", comment: "Quit survey feedback option - AI")
     static let quitSurveyOptionBadAIResponses = NSLocalizedString("quit-survey.option.bad-ai-responses", value: "Bad AI responses", comment: "Quit survey feedback option - AI")
-    static let quitSurveyOptionHardToFindSettings = NSLocalizedString("quit-survey.option.hard-to-find-settings", value: "Hard to find Settings", comment: "Quit survey feedback option - UI")
+    static let quitSurveyOptionHardToFindSettings = NSLocalizedString("quit-survey.option.hard-to-find-settings", value: "Hard to find settings", comment: "Quit survey feedback option - UI")
     static let quitSurveyOptionHardToManageDownloads = NSLocalizedString("quit-survey.option.hard-to-manage-downloads", value: "Hard to manage downloads", comment: "Quit survey feedback option - UI")
     static let quitSurveyOptionShortcutsDidntWork = NSLocalizedString("quit-survey.option.shortcuts-didnt-work", value: "Shortcuts didn't work", comment: "Quit survey feedback option - UI")
     static let quitSurveyOptionNavigationUnfamiliar = NSLocalizedString("quit-survey.option.navigation-unfamiliar", value: "Navigation unfamiliar", comment: "Quit survey feedback option - UI")
-    static let quitSurveyOptionFireButtonRemovedTooMuch = NSLocalizedString("quit-survey.option.fire-button-removed-too-much", value: "Fire Button removed too much", comment: "Quit survey feedback option - Fire Button")
-    static let quitSurveyOptionCouldntFindIncognito = NSLocalizedString("quit-survey.option.couldnt-find-incognito", value: "Couldn't find incognito", comment: "Quit survey feedback option - features")
+    static let quitSurveyOptionFireButtonRemovedTooMuch = NSLocalizedString("quit-survey.option.fire-button-removed-too-much", value: "Fire Button deleted too much", comment: "Quit survey feedback option - Fire Button")
+    static let quitSurveyOptionCouldntFindIncognito = NSLocalizedString("quit-survey.option.couldnt-find-incognito", value: "Couldn't find Incognito mode", comment: "Quit survey feedback option - features")
     static let quitSurveyOptionPasswordManagerUnavailable = NSLocalizedString("quit-survey.option.password-manager-unavailable", value: "Password manager unavailable", comment: "Quit survey feedback option - features/extensions")
-    static let quitSurveyOptionAdBlockerDidntWork = NSLocalizedString("quit-survey.option.ad-blocker-didnt-work", value: "Ad Blocker didn't work", comment: "Quit survey feedback option - features/extensions")
+    static let quitSurveyOptionAdBlockerDidntWork = NSLocalizedString("quit-survey.option.ad-blocker-didnt-work", value: "Ad blocker didn't work", comment: "Quit survey feedback option - features/extensions")
     static let quitSurveyOptionCouldntSkipOnboarding = NSLocalizedString("quit-survey.option.couldnt-skip-onboarding", value: "Couldn't skip onboarding", comment: "Quit survey feedback option - onboarding")
     static let quitSurveyOptionOnboardingWasntHelpful = NSLocalizedString("quit-survey.option.onboarding-wasnt-helpful", value: "Onboarding wasn't helpful", comment: "Quit survey feedback option - onboarding")
     static let quitSurveyOptionCouldntImportBookmarks = NSLocalizedString("quit-survey.option.couldnt-import-bookmarks", value: "Couldn't import bookmarks", comment: "Quit survey feedback option - onboarding")
@@ -997,6 +997,9 @@ struct UserText {
     static let devicePermissionAuthorizationFormat = NSLocalizedString("permission.authorization.format",
                                                                        value: "Allow “%@“ to use your %@ once?",
                                                                        comment: "Popover asking for domain %@ to use camera/mic (%@)")
+    static let notificationPermissionAuthorizationFormat = NSLocalizedString("permission.authorization.notifications.format",
+                                                                             value: "Allow “%@“ to send you notifications?",
+                                                                             comment: "Popover asking for domain %@ to send notifications")
     static let permissionMenuHeaderDeviceFormat = NSLocalizedString("permission.menu-header.device.format",
                                                                     value: "Allow “%@” to use your %@?",
                                                                     comment: "Menu header for permission settings for domain %@ to use camera/mic/location (%@)")
@@ -1066,6 +1069,9 @@ struct UserText {
     static let permissionSystemLocationEnabled = NSLocalizedString("permission.system.location.enabled", value: "System location enabled!", comment: "Text shown after system location permission has been granted")
     static let permissionSystemLocationDisabled = NSLocalizedString("permission.system.location.disabled", value: "System location disabled. Turn it on in ", comment: "Text shown when system location was previously denied. Followed by a link to System Settings")
     static let permissionSystemSettingsLocation = NSLocalizedString("permission.system.settings.location", value: "System Settings → Privacy", comment: "Link text to open System Settings Privacy section for location")
+    static let permissionSystemNotificationEnable = NSLocalizedString("permission.system.notification.enable", value: "Enable System Notifications", comment: "Button to enable system notifications")
+    static let permissionSystemNotificationWaiting = NSLocalizedString("permission.system.notification.waiting", value: "Waiting for system permission…", comment: "Text shown while waiting for user to respond to system notification permission dialog")
+    static let permissionSystemNotificationEnabled = NSLocalizedString("permission.system.notification.enabled", value: "System notifications enabled!", comment: "Text shown after system notification permission has been granted")
     static let permissionRestartApp = NSLocalizedString("permission.restart.app", value: "Restart the DuckDuckGo application", comment: "Text shown when app restart is required for permission changes to take effect")
     static let permissionGeolocationPromptFormat = NSLocalizedString("permission.geolocation.prompt.format", value: "Allow “%@“ to use your current location once?", comment: "Prompt asking if domain %@ can use location once")
     static let permissionPopupNeverAllowButton = NSLocalizedString("permission.popup.never.allow.button", value: "Never Allow", comment: "Button that denies permission and remembers the decision for future requests")
@@ -1078,6 +1084,12 @@ struct UserText {
     static let permissionCenterExternalSchemeDescription = NSLocalizedString("permission.center.external.scheme.description", value: "%@ to open “%@” links", comment: "Description for external scheme permission, first %@ is domain, second %@ is scheme name")
     static let permissionCenterExternalApps = NSLocalizedString("permission.center.external.apps", value: "External apps", comment: "Permission center header for external app permissions")
     static let permissionCenterExternalSchemeFormat = NSLocalizedString("permission.center.external.scheme.format", value: "Open “%@” links", comment: "Format for external scheme row, %@ is scheme name like mailto or sms")
+    static let permissionCenterSystemNotificationDisabled = NSLocalizedString("permission.center.system.notification.disabled", value: "System notifications disabled. Turn them on in", comment: "Warning shown when system notifications are disabled but user has allowed the site")
+    static let permissionCenterSystemNotificationNotDetermined = NSLocalizedString("permission.center.system.notification.not.determined", value: "System notifications disabled.", comment: "Warning shown when system notification permission has not been requested yet")
+    static let permissionCenterTurnOnNotifications = NSLocalizedString("permission.center.turn.on.notifications", value: "Turn them on", comment: "Link text to request system notification permission")
+    static let permissionCenterSystemSettingsNotifications = NSLocalizedString("permission.center.system.settings.notifications", value: "System Settings → Notifications", comment: "Link text to open System Settings Notifications panel")
+    static let permissionPopoverSystemNotificationDisabled = NSLocalizedString("permission.popover.system.notification.disabled", value: "System notifications are disabled. First, turn them on in", comment: "Warning shown in permission popover when system notifications are disabled")
+    static let permissionPopoverSystemNotificationDisabledStandalone = NSLocalizedString("permission.popover.system.notification.disabled.standalone", value: "System notifications disabled.\nTurn them on in", comment: "Warning shown in standalone system-disabled permission view")
     static let permissionCenterResetTooltip = NSLocalizedString("permission.center.reset.tooltip", value: "Remove permission", comment: "Tooltip for the remove permission button in permission center")
     static let permissionCenterReloadMessage = NSLocalizedString("permission.center.reload.message", value: "Reload for changes to take effect", comment: "Message shown in permission center when permissions have been changed and reload is needed")
     static let permissionCenterReloadButton = NSLocalizedString("permission.center.reload.button", value: "Reload", comment: "Button to reload the page to apply permission changes")

@@ -36,14 +36,14 @@ public enum HistoryViewEvent: Equatable {
 public final class DataClient: HistoryViewUserScriptClient {
 
     private let dataProvider: DataProviding
-    private let styleProvider: StyleProviding
+    private let styleProvider: ScriptStyleProviding
     private let actionsHandler: ActionsHandling
     private let contextMenuPresenterProvider: ContextMenuPresenterProvider
     private let errorHandler: EventMapping<HistoryViewEvent>?
 
     public init(
         dataProvider: DataProviding,
-        styleProvider: StyleProviding,
+        styleProvider: ScriptStyleProviding,
         actionsHandler: ActionsHandling,
         contextMenuPresenterProvider: @escaping ContextMenuPresenterProvider = DefaultContextMenuPresenterProvider(),
         errorHandler: EventMapping<HistoryViewEvent>?

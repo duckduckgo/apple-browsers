@@ -109,6 +109,14 @@ struct ProductionDependencies: SyncDependencies {
         return ExchangeRecoveryKeyTransmitter(endpoints: endpoints, api: api, crypter: crypter, storage: secureStore, exchangeMessage: exchangeMessage)
     }
 
+    func createTokenRescope() -> TokenRescoping {
+        return TokenRescope(api: api, endpoints: endpoints)
+    }
+
+    func createAIChats() -> AIChatsHandling {
+        AIChats(api: api, endpoints: endpoints)
+    }
+
     func updateServerEnvironment(_ serverEnvironment: ServerEnvironment) {
         endpoints.updateBaseURL(for: serverEnvironment)
     }

@@ -35,7 +35,7 @@ final class SuggestionTableCellView: NSTableCellView {
 
     private enum Constants {
         static let textColor: NSColor = .suggestionText
-        static let suffixColor: NSColor = .addressBarSuffix
+        static let suffixColor: NSColor = NSColor(designSystemColor: .accentTextPrimary)
         static let burnerSuffixColor: NSColor = .burnerAccent
         static let iconColor: NSColor = .suggestionIcon
         static let selectedTintColor: NSColor = .selectedSuggestionTint

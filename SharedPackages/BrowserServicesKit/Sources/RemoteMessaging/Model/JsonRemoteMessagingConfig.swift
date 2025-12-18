@@ -150,8 +150,12 @@ public enum RemoteMessageResponse {
         case visualDesignUpdate = "VisualDesignUpdate"
         case imageAI = "ImageAI"
         case radar = "Radar"
+        case radarCheckGreen = "RadarCheckGreen"
+        case radarCheckPurple = "RadarCheckPurple"
         case keyImport = "KeyImport"
         case mobileCustomization = "MobileCustomization"
+        case pir = "PIR"
+        case subscription = "Subscription"
     }
 
     public enum StatusError: Error {

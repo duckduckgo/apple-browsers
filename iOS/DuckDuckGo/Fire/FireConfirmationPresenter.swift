@@ -38,7 +38,7 @@ struct FireConfirmationPresenter {
     @MainActor
     func presentFireConfirmation(on viewController: UIViewController,
                                  attachPopoverTo source: AnyObject,
-                                 onConfirm: @escaping () -> Void,
+                                 onConfirm: @escaping (FireOptions) -> Void,
                                  onCancel: @escaping () -> Void) {
         guard featureFlagger.isFeatureOn(.granularFireButtonOptions) else {
             presentLegacyConfirmationAlert(on: viewController, from: source, onConfirm: onConfirm, onCancel: onCancel)
@@ -60,7 +60,7 @@ struct FireConfirmationPresenter {
     
     @MainActor
     private func makeViewModel(dismissing viewController: UIViewController,
-                               onConfirm: @escaping () -> Void,
+                               onConfirm: @escaping (FireOptions) -> Void,
                                onCancel: @escaping () -> Void) -> FireConfirmationViewModel {
         FireConfirmationViewModel(
             tabsModel: tabsModel,
@@ -68,9 +68,9 @@ struct FireConfirmationPresenter {
             fireproofing: fireproofing,
             aiChatSettings: aiChatSettings,
             keyValueFilesStore: keyValueFilesStore,
-            onConfirm: { [weak viewController] in
+            onConfirm: { [weak viewController] fireOptions in
                 viewController?.dismiss(animated: true) {
-                    onConfirm()
+                    onConfirm(fireOptions)
                 }
             },
             onCancel: { [weak viewController] in
@@ -161,13 +161,13 @@ struct FireConfirmationPresenter {
     
     private func presentLegacyConfirmationAlert(on viewController: UIViewController,
                                                 from source: AnyObject,
-                                                onConfirm: @escaping () -> Void,
+                                                onConfirm: @escaping (FireOptions) -> Void,
                                                 onCancel: @escaping () -> Void) {
         
         let alert = ForgetDataAlert.buildAlert(cancelHandler: {
             onCancel()
         }, forgetTabsAndDataHandler: {
-            onConfirm()
+            onConfirm(.all)
         })
         if let view = source as? UIView {
             viewController.present(controller: alert, fromView: view)

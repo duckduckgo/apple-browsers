@@ -26,11 +26,11 @@ public struct BrokerJobExecutionConfig {
 
         /// Maximum time allowed for a scan/opt-out job to complete
         #if os(iOS)
-        public static let defaultScanJobTimeout: TimeInterval = .minutes(5)
+        public static let defaultScanJobTimeout: TimeInterval = .minutes(3)
         public static let defaultOptOutJobTimeout: TimeInterval = .minutes(5)
         #else
-        public static let defaultScanJobTimeout: TimeInterval = .minutes(30)
-        public static let defaultOptOutJobTimeout: TimeInterval = .minutes(30)
+        public static let defaultScanJobTimeout: TimeInterval = .minutes(5)
+        public static let defaultOptOutJobTimeout: TimeInterval = .minutes(10)
         #endif
 
         /// Maximum time allowed for a CSS action to complete before timing out

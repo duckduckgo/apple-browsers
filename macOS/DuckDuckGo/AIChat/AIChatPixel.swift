@@ -168,6 +168,11 @@ enum AIChatPixel: PixelKitEvent {
     /// Event Trigger: User clicks the settings button in the toggle popover
     case aiChatTogglePopoverCustomizeButtonClicked
 
+    case aiChatSyncScopedSyncTokenError(reason: String)
+    case aiChatSyncEncryptionError(reason: String)
+    case aiChatSyncDecryptionError(reason: String)
+    case aiChatSyncHistoryEnabledError(reason: String)
+
     // MARK: -
 
     var name: String {
@@ -258,6 +263,14 @@ enum AIChatPixel: PixelKitEvent {
             return "aichat_toggle_popover_dismiss_button_clicked"
         case .aiChatTogglePopoverCustomizeButtonClicked:
             return "aichat_toggle_popover_customize_button_clicked"
+        case .aiChatSyncScopedSyncTokenError:
+            return "aichat_sync_internal_scoped-sync-token-error"
+        case .aiChatSyncEncryptionError:
+            return "aichat_sync_internal_encryption-error"
+        case .aiChatSyncDecryptionError:
+            return "aichat_sync_internal_decryption-error"
+        case .aiChatSyncHistoryEnabledError:
+            return "aichat_sync_internal_history_enabled-error"
         }
     }
 
@@ -316,6 +329,11 @@ enum AIChatPixel: PixelKitEvent {
             return ["source": source.rawValue]
         case .aiChatPageContextAdded(let automaticEnabled), .aiChatPageContextRemoved(let automaticEnabled):
             return ["automaticEnabled": String(automaticEnabled)]
+        case .aiChatSyncScopedSyncTokenError(let reason),
+                .aiChatSyncEncryptionError(let reason),
+                .aiChatSyncDecryptionError(let reason),
+                .aiChatSyncHistoryEnabledError(let reason):
+            return ["reason": reason]
         }
     }
 
@@ -361,7 +379,11 @@ enum AIChatPixel: PixelKitEvent {
                 .aiChatSuggestionAIChatSubmittedKeyboard,
                 .aiChatTogglePopoverShown,
                 .aiChatTogglePopoverDismissButtonClicked,
-                .aiChatTogglePopoverCustomizeButtonClicked:
+                .aiChatTogglePopoverCustomizeButtonClicked,
+                .aiChatSyncScopedSyncTokenError,
+                .aiChatSyncEncryptionError,
+                .aiChatSyncDecryptionError,
+                .aiChatSyncHistoryEnabledError:
             return [.pixelSource]
         }
     }

@@ -2977,12 +2977,55 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Uitschakelen om te voorkomen dat links automatisch geopend worden in andere geïnstalleerde apps.";
 
+/* Subtitle explaining what the cookies option does in auto clear settings */
+"settings.autoclear.cookies.subtitle" = "Verwijder alle sitegegevens, inclusief bezochte sites. Mogelijk word je uitgelegd bij accounts.";
+
+/* Title for the cookies and site data option in auto clear settings */
+"settings.autoclear.cookies.title" = "Cookies en sitegegevens";
+
+/* Subtitle explaining what the Duck.ai chats option does in auto clear settings */
+"settings.autoclear.duckai.chats.subtitle" = "Alle chats verwijderen, inclusief vastgezette chats";
+
+/* Title for the Duck.ai chats option in auto clear settings */
+"settings.autoclear.duckai.chats.title" = "Duck.ai chats";
+
+/* Section header for the auto clear options */
+"settings.autoclear.section.header" = "Wissen";
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Tabbladen en gegevens wissen";
 
 /* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
 "settings.autoclear.tabs.and.data.with.aichat" = "Tabbladen, gegevens en Duck.ai-chats wissen";
 
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "Alle open tabbladen sluiten";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "Tabbladen";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "App afsluiten, 15 minuten inactief";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "App afsluiten, 1 uur inactief";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "App afsluiten, 30 minuten inactief";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "App afsluiten, 5 minuten inactief";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "Alleen app afsluiten";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "App afsluiten gebeurt door de app te swipen om deze te sluiten. Inactiviteit betekent dat de app op de achtergrond blijft.";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "Gewenste timing";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "De gegevens worden verwijderd wanneer de app opnieuw wordt gestart.";
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Zoeksuggesties";
 
@@ -3001,6 +3044,8 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Als Touch ID, Face ID of een systeemwachtwoord is ingeschakeld, word je gevraagd om de app te ontgrendelen als je deze opent.";
 
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "Automatische gegevensverwijdering";
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Browserfeedback";
 
@@ -3010,6 +3055,8 @@
 /* Settings screen cell text for clearing AI chat history */
 "settings.clear.aichat.history.title" = "Duck.ai chats wissen";
 
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "Browsegegevens verwijderen";
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Gegevens automatisch wissen";
 
@@ -3037,6 +3084,8 @@
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Gegevens wissen";
 
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "Het verwijderen van je gegevens kan helpen om je privacy online te beschermen. Gebruik de Fire Button om gegevens handmatig te verwijderen of stel in dat gegevens automatisch worden verwijderd.";
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Standaardbrowser";
 
@@ -3082,6 +3131,8 @@
 /* Settings screen cell text for Fireproof Sites */
 "settings.fireproof.sites" = "Brandveilige websites";
 
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Brandveilige websites";
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Algemeen";
 

@@ -1403,7 +1403,13 @@ final class DataImportViewModelTests: XCTestCase {
     func testPerformActionSubmit_callsDismiss() {
         // GIVEN
         let dismissCalled = expectation(description: "dismiss called")
-        model = DataImportViewModel(importSource: .chrome, syncFeatureVisibility: .hide)
+        model = DataImportViewModel(
+            importSource: .chrome,
+            syncFeatureVisibility: .hide,
+            reportSenderFactory: {
+                { _ in } // Prevent real reports being sent
+            }
+        )
 
         // WHEN
         model.performAction(for: .submit, dismiss: { dismissCalled.fulfill() })

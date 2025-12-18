@@ -32,6 +32,11 @@ final class FeedbackSender: FeedbackSenderImplementing {
     static let feedbackURL = URL(string: "https://duckduckgo.com/feedback.js")!
 
     func sendFeedback(_ feedback: Feedback) {
+#if DEBUG || REVIEW
+        Logger.general.debug("FeedbackSender: Skipping feedback submission in DEBUG / REVIEW build")
+        return
+#else
+
 #if APPSTORE
         let appVersion = "\(feedback.appVersion) AppStore"
 #else
@@ -57,6 +62,7 @@ final class FeedbackSender: FeedbackSenderImplementing {
                 PixelKit.fire(DebugEvent(GeneralPixel.feedbackReportingFailed, error: error))
             }
         }
+#endif
     }
 
     func sendDataImportReport(_ report: DataImportReportModel) {

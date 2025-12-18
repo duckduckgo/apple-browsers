@@ -504,7 +504,7 @@ jobs:
     - name: Verify string changes
       run: |
         git update-index --refresh
-        changed_files=$(git diff-index --name-only HEAD -- '*.xcstrings' '*.strings' '*.stringsdict')
+        changed_files=$(git diff-index --name-only HEAD -- ':(glob)**/*.xcstrings' ':(glob)**/*.strings' ':(glob)**/*.stringsdict')
         if [[ -n "$changed_files" ]]; then
           echo "⚠️ Uncommitted string changes detected after build. Please commit these files:"
           echo "$changed_files"

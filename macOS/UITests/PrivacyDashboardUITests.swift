@@ -235,12 +235,12 @@ class PrivacyDashboardUITests: UITestCase {
 
     func testPrivacyDashboard_HTTPSUpgrade_ShowsUpgradeStatus() throws {
         // Navigate to HTTP URL that should be upgraded (tested from UI perspective)
-        let upgradedURL = URL(string: "http://example.com")!
+        let upgradedURL = URL(string: "http://github.com")!
         addressBarTextField.pasteURL(upgradedURL, pressingEnter: true)
 
         // Wait for example.com content
-        let pageContent = webView.staticTexts.containing(\.value, containing: "Example Domain").firstMatch
-        XCTAssertTrue(pageContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "Example.com should load")
+        let pageContent = webView.staticTexts.containing(\.value, containing: "GitHub").firstMatch
+        XCTAssertTrue(pageContent.waitForExistence(timeout: UITests.Timeouts.localTestServer), "github.com should load")
 
         // Access privacy dashboard
         XCTAssertTrue(privacyButton.waitForExistence(timeout: UITests.Timeouts.elementExistence), "Privacy button should be available for example.com")
@@ -260,7 +260,7 @@ class PrivacyDashboardUITests: UITestCase {
         XCTAssertTrue(privacyDashboard.staticTexts["Security Certificate Detail"].exists, "Privacy dashboard should show HTTPS connection information")
         XCTAssertTrue(privacyDashboard.staticTexts["Common Name"].exists, "Privacy dashboard should show Certificate Common Name")
         XCTAssertTrue(privacyDashboard.staticTexts["Summary"].exists, "Privacy dashboard should show Certificate summary")
-        XCTAssertTrue(privacyDashboard.staticTexts["*.example.com"].exists, "Privacy dashboard should show Certificate domain name")
+        XCTAssertTrue(privacyDashboard.staticTexts["Certificate for github.com"].exists, "Privacy dashboard should show Certificate domain name")
 
         // Close the dashboard
         app.typeKey(.escape, modifierFlags: [])

@@ -197,7 +197,8 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
                                    dataBrokerVersion: dataBrokerVersion,
                                    tries: tries,
                                    parent: parentURL ?? "",
-                                   actionId: actionID ?? ""))
+                                   actionId: actionID ?? "",
+                                   clickActionDelayReductionOptimization: featureFlagger.isClickActionDelayReductionOptimizationOn))
     }
 
     func fireOptOutEmailReceive() {

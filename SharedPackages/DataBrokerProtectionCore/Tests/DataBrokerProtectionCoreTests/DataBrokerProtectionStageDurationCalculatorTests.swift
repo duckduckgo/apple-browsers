@@ -321,4 +321,52 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
             XCTFail("Expected optOutFailure pixel")
         }
     }
+
+    func testWhenClickActionDelayReductionOptimizationFeatureFlagIsOn_thenOptOutSubmitPixelIncludesClickDelayOptimizationTrue() {
+        let featureFlagger = MockDBPFeatureFlagger(isClickActionDelayReductionOptimizationOn: true)
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
+                                                              dataBrokerVersion: "1.0",
+                                                              handler: handler,
+                                                              vpnConnectionState: "disconnected",
+                                                              vpnBypassStatus: "no",
+                                                              featureFlagger: featureFlagger)
+
+        sut.fireOptOutSubmit()
+
+        guard let pixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last else {
+            XCTFail("A pixel should be fired")
+            return
+        }
+
+        switch pixel {
+        case .optOutSubmit(_, _, _, _, _, _, _, let clickDelayOptimization):
+            XCTAssertTrue(clickDelayOptimization, "clickActionDelayReductionOptimization should be true when feature flag is ON")
+        default:
+            XCTFail("Expected optOutSubmit pixel")
+        }
+    }
+
+    func testWhenClickActionDelayReductionOptimizationFeatureFlagIsOff_thenOptOutSubmitPixelIncludesClickDelayOptimizationFalse() {
+        let featureFlagger = MockDBPFeatureFlagger(isClickActionDelayReductionOptimizationOn: false)
+        let sut = DataBrokerProtectionStageDurationCalculator(dataBrokerURL: "broker.com",
+                                                              dataBrokerVersion: "1.0",
+                                                              handler: handler,
+                                                              vpnConnectionState: "disconnected",
+                                                              vpnBypassStatus: "no",
+                                                              featureFlagger: featureFlagger)
+
+        sut.fireOptOutSubmit()
+
+        guard let pixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last else {
+            XCTFail("A pixel should be fired")
+            return
+        }
+
+        switch pixel {
+        case .optOutSubmit(_, _, _, _, _, _, _, let clickDelayOptimization):
+            XCTAssertFalse(clickDelayOptimization, "clickActionDelayReductionOptimization should be false when feature flag is OFF")
+        default:
+            XCTFail("Expected optOutSubmit pixel")
+        }
+    }
 }

@@ -115,7 +115,12 @@
             "dbpAttemptId",
             "dbpStageDuration",
             "dbpStageTries",
-            "dbpActionId"
+            "dbpActionId",
+            {
+                "key": "click_action_delay_reduction_optimization",
+                "description": "Whether the click action delay reduction optimization feature flag is enabled",
+                "type": "boolean"
+            }
         ]
     },
     "m_mac_dbp_optout_stage_email-receive": {

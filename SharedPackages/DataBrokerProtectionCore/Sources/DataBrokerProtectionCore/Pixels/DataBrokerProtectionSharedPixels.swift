@@ -132,7 +132,7 @@ public enum DataBrokerProtectionSharedPixels {
     case optOutCaptchaParse(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
     case optOutCaptchaSend(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
     case optOutCaptchaSolve(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
-    case optOutSubmit(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
+    case optOutSubmit(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String, clickActionDelayReductionOptimization: Bool)
     case optOutEmailReceive(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
     case optOutEmailConfirm(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
     case optOutValidate(dataBroker: String, attemptId: UUID, duration: Double, dataBrokerVersion: String, tries: Int, parent: String, actionId: String)
@@ -336,7 +336,6 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
              .optOutCaptchaParse(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
              .optOutCaptchaSend(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
              .optOutCaptchaSolve(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
-             .optOutSubmit(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
              .optOutEmailReceive(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
              .optOutEmailConfirm(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
              .optOutValidate(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId),
@@ -350,6 +349,15 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                     Consts.triesKey: String(tries),
                     Consts.parentKey: parent,
                     Consts.actionIDKey: actionId]
+        case .optOutSubmit(let dataBroker, let attemptId, let duration, let dataBrokerVersion, let tries, let parent, let actionId, let clickActionDelayReductionOptimization):
+            return [Consts.dataBrokerParamKey: dataBroker,
+                    Consts.attemptIdParamKey: attemptId.uuidString,
+                    Consts.durationParamKey: String(duration),
+                    Consts.dataBrokerVersionKey: dataBrokerVersion,
+                    Consts.triesKey: String(tries),
+                    Consts.parentKey: parent,
+                    Consts.actionIDKey: actionId,
+                    Consts.clickActionDelayReductionOptimizationKey: String(clickActionDelayReductionOptimization)]
         case .optOutFinish(let dataBroker, let attemptId, let duration, let parent):
             return [Consts.dataBrokerParamKey: dataBroker,
                     Consts.attemptIdParamKey: attemptId.uuidString,

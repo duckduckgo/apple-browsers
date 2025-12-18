@@ -269,6 +269,7 @@ jobs:
         echo $! > log_stream.pid
 
     - name: Build for testing
+      working-directory: macOS
       run: |
         set -o pipefail && xcodebuild build-for-testing \
           -scheme "macOS UI Tests CI" \
@@ -279,6 +280,7 @@ jobs:
         | xcbeautify
 
     - name: Extract and Copy app to /DerivedData
+      working-directory: macOS
       run: |
         cd DuckDuckGo-review-*.app.tar.xz && tar -xf DuckDuckGo-*.app.tar.xz
 
@@ -295,6 +297,7 @@ jobs:
         mv -f "DuckDuckGo Review.app" "../DerivedData/Build/Products/Review/DuckDuckGo Review.app"
 
     - name: Run UI Tests
+      working-directory: macOS
       run: |
         defaults write com.duckduckgo.macos.browser.review moveToApplicationsFolderAlertSuppress 1
         set -o pipefail && xcodebuild test-without-building \
@@ -310,6 +313,7 @@ jobs:
 
     - name: Stop log stream
       if: always()
+      working-directory: macOS
       run: |
         if [ -f log_stream.pid ]; then
           kill $(cat log_stream.pid) || true
@@ -318,8 +322,9 @@ jobs:
     - name: Check for test failures
       id: check-failures
       if: always()
+      working-directory: macOS
       run: |
-        if grep -q "XCTAssert.*failed\|Test Case.*failed\|Testing failed:" ui-tests.log; then
+        if grep -Eq 'XCTAssert.*failed|Test Case.*failed|Testing failed:' ui-tests.log; then
           echo "had_failures=true" >> $GITHUB_OUTPUT
           echo "⚠️ Detected test failures in the log (may have passed on retry)"
         else
@@ -329,6 +334,7 @@ jobs:
     - name: Prepare test report
       id: prepare-test-report
       if: always()
+      working-directory: macOS
       run: |
         test_id="${{ matrix.test }} (macOS ${{ matrix.os-version }})"
         file="${test_id}.xml"
@@ -366,6 +372,7 @@ jobs:
 
     - name: Organize logs for upload
       if: failure() || cancelled()
+      working-directory: macOS
       run: |
         echo "Current working directory: $(pwd)"
 

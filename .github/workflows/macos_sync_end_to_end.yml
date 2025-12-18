@@ -144,6 +144,7 @@ jobs:
         debug: true
 
     - name: Build Sync e2e tests
+      working-directory: macOS
       run: |
         set -o pipefail && xcodebuild build-for-testing \
           -scheme "macOS Sync End-to-End UI Tests CI" \
@@ -154,6 +155,7 @@ jobs:
         | xcbeautify
 
     - name: Extract and Copy app to /DerivedData
+      working-directory: macOS
       run: |
         cd DuckDuckGo-review-*.app.tar.xz && tar -xf DuckDuckGo-*.app.tar.xz
 
@@ -171,6 +173,7 @@ jobs:
 
     - name: Run UI Tests
       id: run-ui-tests
+      working-directory: macOS
       env:
         CODE: ${{ steps.sync-recovery-code.outputs.recovery-code }}
       run: |
@@ -199,6 +202,7 @@ jobs:
 
     - name: Stop log stream
       if: always()
+      working-directory: macOS
       run: |
         if [ -f log_stream.pid ]; then
           kill $(cat log_stream.pid) || true
@@ -207,8 +211,9 @@ jobs:
     - name: Check for test failures
       id: check-failures
       if: always()
+      working-directory: macOS
       run: |
-        if grep -q "XCTAssert.*failed\|Test Case.*failed\|Testing failed:" ui-tests.log; then
+        if grep -Eq 'XCTAssert.*failed|Test Case.*failed|Testing failed:' ui-tests.log; then
           echo "had_failures=true" >> $GITHUB_OUTPUT
           echo "⚠️ Detected test failures in the log (may have passed on retry)"
         else
@@ -227,6 +232,7 @@ jobs:
 
     - name: Prepare test report
       if: always()
+      working-directory: macOS
       run: |
         xcbeautify --report junit --report-path . --junit-report-filename ui-tests.xml < ui-tests.log
 

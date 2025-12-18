@@ -26,6 +26,18 @@ type PRFields = {
   url: asana.resources.CustomField
   status: asana.resources.CustomField
 }
+
+// Extended event types for review request actions
+type ReviewRequestedEvent = PullRequestEvent & {
+  action: 'review_requested'
+  requested_reviewer?: User
+}
+
+type ReviewRequestRemovedEvent = PullRequestEvent & {
+  action: 'review_request_removed'
+  requested_reviewer?: User
+}
+
 const client = Client.create({
   defaultHeaders: {
     'asana-enable':
@@ -81,69 +93,136 @@ function getApprovalStatus(
   return undefined
 }
 
-async function findPRTask(
-  customFields: PRFields
+/**
+ * Find a PR task assigned to a specific reviewer
+ */
+async function findPRTaskForReviewer(
+  customFields: PRFields,
+  prURL: string,
+  reviewerAsanaId: string
 ): Promise<asana.resources.Tasks.Type | null> {
-  // Let's first try to search using PR URL
-  const payload = context.payload as PullRequestEvent
-  const prURL = payload.pull_request.html_url
+  // Search for tasks with the PR URL assigned to the specific reviewer
+  try {
+    const prTasks = await client.tasks.searchInWorkspace(ASANA_WORKSPACE_ID, {
+      [`custom_fields.${customFields.url.gid}.value`]: prURL,
+      'assignee.any': reviewerAsanaId,
+      // eslint-disable-next-line camelcase
+      opt_fields: 'name,parent,completed,assignee'
+    })
+    if (prTasks.data.length > 0) {
+      info(
+        `Found PR task for reviewer ${reviewerAsanaId} using searchInWorkspace: ${prTasks.data[0].gid}`
+      )
+      return prTasks.data[0]
+    }
+  } catch (e) {
+    info(`searchInWorkspace failed: ${e}`)
+  }
 
-  const prTasks = await client.tasks.searchInWorkspace(ASANA_WORKSPACE_ID, {
-    [`custom_fields.${customFields.url.gid}.value`]: prURL,
+  // Fallback to searching recent project tasks
+  const projectTasks = await client.tasks.findByProject(PROJECT_ID, {
     // eslint-disable-next-line camelcase
-    opt_fields: 'name,parent,completed'
+    opt_fields: 'custom_fields,assignee,completed',
+    limit: 100
   })
-  if (prTasks.data.length > 0) {
-    info(`Found PR task using searchInWorkspace: ${prTasks.data[0].gid}`)
-    return prTasks.data[0]
-  } else {
-    // searchInWorkspace can fail for recently created Asana tasks. Let's look
-    // at 100 most recent tasks in destination project
-    // https://developers.asana.com/reference/searchtasksforworkspace#eventual-consistency
+
+  for (const task of projectTasks.data) {
+    if (task.assignee?.gid !== reviewerAsanaId) continue
+
+    for (const field of task.custom_fields) {
+      if (
+        field.gid === customFields.url.gid &&
+        field.display_value === prURL
+      ) {
+        info(
+          `Found existing task ID ${task.gid} for PR ${prURL} and reviewer ${reviewerAsanaId}`
+        )
+        return task
+      }
+    }
+  }
+
+  info(
+    `No matching Asana task found for PR ${prURL} and reviewer ${reviewerAsanaId}`
+  )
+  return null
+}
+
+/**
+ * Find all PR tasks for a given PR URL (any reviewer)
+ */
+async function findAllPRTasks(
+  customFields: PRFields,
+  prURL: string
+): Promise<asana.resources.Tasks.Type[]> {
+  const tasks: asana.resources.Tasks.Type[] = []
+
+  try {
+    const prTasks = await client.tasks.searchInWorkspace(ASANA_WORKSPACE_ID, {
+      [`custom_fields.${customFields.url.gid}.value`]: prURL,
+      // eslint-disable-next-line camelcase
+      opt_fields: 'name,parent,completed,assignee'
+    })
+    tasks.push(...prTasks.data)
+  } catch (e) {
+    info(`searchInWorkspace failed: ${e}`)
+  }
+
+  // Also check recent project tasks for eventual consistency
+  if (tasks.length === 0) {
     const projectTasks = await client.tasks.findByProject(PROJECT_ID, {
       // eslint-disable-next-line camelcase
-      opt_fields: 'custom_fields',
+      opt_fields: 'custom_fields,assignee,completed',
       limit: 100
     })
 
     for (const task of projectTasks.data) {
-      info(`Checking task ${task.gid} for PR link`)
       for (const field of task.custom_fields) {
         if (
           field.gid === customFields.url.gid &&
           field.display_value === prURL
         ) {
-          info(`Found existing task ID ${task.gid} for PR ${prURL}`)
-          return task
+          tasks.push(task)
+          break
         }
       }
     }
   }
-  info(`No matching Asana task found for PR ${prURL}`)
-  return null
+
+  info(`Found ${tasks.length} existing tasks for PR ${prURL}`)
+  return tasks
 }
 
-async function createPRTask(
+/**
+ * Create a PR review task for a specific reviewer
+ */
+async function createPRTaskForReviewer(
   parentTaskId: string | null,
-  followers: string[] | undefined,
-  title: string,
+  reviewerGithubLogin: string,
+  reviewerAsanaId: string,
+  prNumber: number,
+  prTitle: string,
+  prURL: string,
   prStatus: string,
   customFields: PRFields,
-  automatedPR: boolean
+  automatedPR: boolean,
+  followers: string[] | undefined
 ): Promise<asana.resources.Tasks.Type> {
-  info('Creating new PR task')
-  const payload = context.payload as PullRequestEvent
+  const title = `Code review for PR #${prNumber} (@${reviewerGithubLogin}): ${prTitle}`
+  info(`Creating new PR task for reviewer ${reviewerGithubLogin}`)
+
   const data: asana.resources.Tasks.CreateParams & {workspace: string} = {
     workspace: ASANA_WORKSPACE_ID,
     // eslint-disable-next-line camelcase
     resource_subtype: 'approval',
     // eslint-disable-next-line camelcase
     custom_fields: {
-      [customFields.url.gid]: payload.pull_request.html_url,
+      [customFields.url.gid]: prURL,
       [customFields.status.gid]: prStatus
     },
     name: title,
     projects: [PROJECT_ID],
+    assignee: reviewerAsanaId,
     followers
   }
 
@@ -157,6 +236,40 @@ async function createPRTask(
   }
 
   return client.tasks.create(data)
+}
+
+/**
+ * Reopen a closed task
+ */
+async function reopenTask(
+  task: asana.resources.Tasks.Type,
+  prStatus: string,
+  customFields: PRFields
+): Promise<void> {
+  info(`Reopening task ${task.gid}`)
+  await client.tasks.updateTask(task.gid, {
+    completed: false,
+    // eslint-disable-next-line camelcase
+    approval_status: 'pending',
+    // eslint-disable-next-line camelcase
+    due_on: getDueOn(1),
+    // eslint-disable-next-line camelcase
+    custom_fields: {
+      [customFields.status.gid]: prStatus
+    }
+  })
+}
+
+/**
+ * Close a task (mark as rejected since review request was removed)
+ */
+async function closeTask(task: asana.resources.Tasks.Type): Promise<void> {
+  info(`Closing task ${task.gid}`)
+  await client.tasks.updateTask(task.gid, {
+    completed: true,
+    // eslint-disable-next-line camelcase
+    approval_status: 'rejected'
+  })
 }
 
 function isImportantAutomatedPR(payload: PullRequestEvent): boolean {
@@ -185,106 +298,32 @@ function getFollowers(
   return undefined
 }
 
-async function getAssignee(
-  payload: PullRequestEvent,
-  allowRandomReviewer: boolean
-): Promise<string | undefined> {
-  const githubAuthor = payload.pull_request.user.login
-  let githubAssignee: string | undefined =
-    payload.pull_request.assignees.find(user => user.login !== githubAuthor)
-      ?.login ??
-    payload.pull_request.requested_reviewers
-      .map(user => user as User)
-      .filter(user => user !== undefined)
-      .find(user => user.login !== githubAuthor)?.login
-
-  if (allowRandomReviewer && !githubAssignee) {
-    info('Setting up random reviewer as noone is assigned to this PR')
-    const possibleReviewers = RANDOMIZED_REVIEWERS_LIST.filter(
-      reviewer => reviewer !== githubAuthor
-    )
-    if (possibleReviewers.length > 0) {
-      const randomReviewer =
-        possibleReviewers[Math.floor(Math.random() * possibleReviewers.length)]
-
-      const octokit = getOctokit(getInput('GITHUB_TOKEN'))
-      const reviewerResponse = await octokit.rest.pulls.requestReviewers({
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        // eslint-disable-next-line camelcase
-        pull_number: payload.pull_request.number,
-        reviewers: [randomReviewer]
-      })
-
-      const assigneeResponse = await octokit.rest.issues.addAssignees({
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        // eslint-disable-next-line camelcase
-        issue_number: payload.pull_request.number,
-        assignees: [randomReviewer]
-      })
-
-      if (reviewerResponse.status !== 201 || assigneeResponse.status !== 201) {
-        info(`Could not assign to a random reviewer.`)
-      } else {
-        githubAssignee = randomReviewer
-        info(`PR is assigned to a random reviewer: ${randomReviewer}.`)
-      }
-    } else {
-      info(
-        `PR won't be assigned to random reviewer as RANDOMIZED_REVIEWERS list is empty.`
-      )
-    }
-  }
-
-  return githubAssignee
-}
-
-async function createOrFindPRTask(
-  payload: PullRequestEvent,
-  title: string,
-  prStatus: string,
-  customFields: PRFields
-): Promise<asana.resources.Tasks.Type | undefined> {
-  const body = payload.pull_request.body || ''
+/**
+ * Find the parent task ID from the PR description
+ */
+async function findParentTaskId(
+  body: string
+): Promise<{parentTaskId: string | null; openShipReviewTask: asana.resources.Tasks.Type | null}> {
   const asanaTaskMatch = body.match(
     /Task\/Issue URL:.*https:\/\/app.asana.*\/([0-9]+).*/
   )
   let parentTaskId = asanaTaskMatch && asanaTaskMatch[1]
-  let openShipReviewTask: asana.resources.Tasks.Type | undefined
-  let shipReviewPRTask: asana.resources.Tasks.Type | undefined
+  let openShipReviewTask: asana.resources.Tasks.Type | null = null
+
   if (parentTaskId) {
     info(`Found Asana task mention with parent ID: ${parentTaskId}`)
 
     try {
-      let subTasks = await client.tasks.subtasks(parentTaskId, {
+      const subTasks = await client.tasks.subtasks(parentTaskId, {
         // eslint-disable-next-line camelcase
         opt_fields: 'name,completed',
         limit: 100
       })
-      openShipReviewTask = subTasks.data.find(
-        t => t.name.startsWith('Ship Review') && !t.completed
-      )
-      if (openShipReviewTask) {
-        subTasks = await client.tasks.subtasks(openShipReviewTask.gid, {
-          // eslint-disable-next-line camelcase
-          opt_fields: 'name,completed,assignee,custom_fields',
-          limit: 100
-        })
-        shipReviewPRTask = subTasks.data.find(
-          t =>
-            t.name.includes('Pull Request') &&
-            ((t.custom_fields.every(
-              customField => customField.gid !== customFields.url.gid
-            ) &&
-              !t.completed) ||
-              t.custom_fields.some(
-                customField =>
-                  customField.gid === customFields.url.gid &&
-                  customField.display_value === payload.pull_request.html_url
-              ))
-        )
-      }
+      openShipReviewTask =
+        subTasks.data.find(
+          (t: asana.resources.Tasks.Type) =>
+            t.name.startsWith('Ship Review') && !t.completed
+        ) || null
     } catch (e) {
       info(`Can't access parent task: ${parentTaskId}: ${e}`)
       info(`Add 'dax' user to respective projects to enable this feature`)
@@ -292,120 +331,440 @@ async function createOrFindPRTask(
     }
   }
 
+  return {
+    parentTaskId,
+    openShipReviewTask
+  }
+}
+
+/**
+ * Get or create a task for a specific reviewer
+ */
+async function getOrCreateTaskForReviewer(
+  payload: PullRequestEvent,
+  reviewerLogin: string,
+  customFields: PRFields,
+  prStatus: string,
+  parentTaskId: string | null,
+  automatedPR: boolean
+): Promise<asana.resources.Tasks.Type | null> {
+  const prURL = payload.pull_request.html_url
+  const reviewerAsanaId = getUserIdFromLogin(reviewerLogin)
+
+  if (!reviewerAsanaId) {
+    info(
+      `Skipping task creation for reviewer ${reviewerLogin} - not in USER_MAP`
+    )
+    return null
+  }
+
+  // Check if a task already exists for this reviewer
+  const existingTask = await findPRTaskForReviewer(
+    customFields,
+    prURL,
+    reviewerAsanaId
+  )
+
+  if (existingTask) {
+    if (existingTask.completed) {
+      // Reopen the existing task
+      await reopenTask(existingTask, prStatus, customFields)
+      info(`Reopened existing task ${existingTask.gid} for reviewer ${reviewerLogin}`)
+    } else {
+      info(`Task ${existingTask.gid} already exists and is open for reviewer ${reviewerLogin}`)
+    }
+    return existingTask
+  }
+
+  // Create a new task
+  const githubAuthor = payload.pull_request.user.login
+  const followers = getFollowers(githubAuthor, automatedPR)
+
+  const task = await createPRTaskForReviewer(
+    parentTaskId,
+    reviewerLogin,
+    reviewerAsanaId,
+    payload.pull_request.number,
+    payload.pull_request.title,
+    prURL,
+    prStatus,
+    customFields,
+    automatedPR,
+    followers
+  )
+
+  info(`Created new task ${task.gid} for reviewer ${reviewerLogin}`)
+  return task
+}
+
+/**
+ * Handle review_requested action - create or reopen task for the new reviewer
+ */
+async function handleReviewRequested(
+  payload: ReviewRequestedEvent,
+  customFields: PRFields,
+  prStatus: string
+): Promise<asana.resources.Tasks.Type | null> {
+  const requestedReviewer = payload.requested_reviewer
+  if (!requestedReviewer) {
+    info('No requested_reviewer in payload')
+    return null
+  }
+
+  info(`Handling review request for reviewer: ${requestedReviewer.login}`)
+
   const githubAuthor = payload.pull_request.user.login
   const automatedPR = isImportantAutomatedPR(payload)
-  const followers = getFollowers(githubAuthor, automatedPR)
-  if (!followers) {
+  const authorAsanaId = getUserIdFromLogin(githubAuthor)
+
+  if (!authorAsanaId && !automatedPR) {
     info(
       `Skipping Asana sync for PR created by ${githubAuthor} as they are not in USER_MAP`
+    )
+    return null
+  }
+
+  const body = payload.pull_request.body || ''
+  const {parentTaskId} = await findParentTaskId(body)
+
+  const task = await getOrCreateTaskForReviewer(
+    payload,
+    requestedReviewer.login,
+    customFields,
+    prStatus,
+    parentTaskId,
+    automatedPR
+  )
+
+  if (task) {
+    setOutput('result', 'created_or_reopened')
+    setOutput('task_url', task.permalink_url)
+  }
+
+  return task
+}
+
+/**
+ * Handle review_request_removed action - close the task for the removed reviewer
+ */
+async function handleReviewRequestRemoved(
+  payload: ReviewRequestRemovedEvent,
+  customFields: PRFields
+): Promise<void> {
+  const removedReviewer = payload.requested_reviewer
+  if (!removedReviewer) {
+    info('No requested_reviewer in payload')
+    return
+  }
+
+  info(`Handling review request removal for reviewer: ${removedReviewer.login}`)
+
+  const reviewerAsanaId = getUserIdFromLogin(removedReviewer.login)
+  if (!reviewerAsanaId) {
+    info(
+      `Skipping task close for reviewer ${removedReviewer.login} - not in USER_MAP`
     )
     return
   }
 
-  let task
-  // PR is opened
-  if (['opened'].includes(payload.action)) {
-    // the parent task has a Ship Review ...
-    if (openShipReviewTask) {
-      // ... and an approriate PR review task
-      if (shipReviewPRTask) {
-        await client.tasks.addProject(shipReviewPRTask.gid, {
-          project: PROJECT_ID
-        })
-        client.tasks.updateTask(shipReviewPRTask.gid, {
-          // eslint-disable-next-line camelcase
-          custom_fields: {
-            [customFields.url.gid]: payload.pull_request.html_url,
-            [customFields.status.gid]: prStatus
-          }
-        })
-        task = shipReviewPRTask
-        setOutput('result', 'updated')
-        // ... otherwise create a new code review task under the ship review task
-      } else {
-        task = await createPRTask(
-          openShipReviewTask.gid,
-          followers,
-          title,
-          prStatus,
-          customFields,
-          automatedPR
-        )
-        setOutput('result', 'created')
-      }
-      // if parent doesn't have a Ship Review just create a new Code Review task
-    } else {
-      task = await createPRTask(
-        parentTaskId,
-        followers,
-        title,
-        prStatus,
-        customFields,
-        automatedPR
-      )
-      setOutput('result', 'created')
-    }
+  const prURL = payload.pull_request.html_url
+  const existingTask = await findPRTaskForReviewer(
+    customFields,
+    prURL,
+    reviewerAsanaId
+  )
+
+  if (existingTask && !existingTask.completed) {
+    await closeTask(existingTask)
+    setOutput('result', 'closed')
+    setOutput('task_url', existingTask.permalink_url)
+    info(`Closed task ${existingTask.gid} for removed reviewer ${removedReviewer.login}`)
+  } else if (existingTask) {
+    info(`Task ${existingTask.gid} for reviewer ${removedReviewer.login} is already closed`)
   } else {
-    const maxRetries = 5
-    let retries = 0
+    info(`No task found for reviewer ${removedReviewer.login}`)
+  }
+}
 
-    while (retries < maxRetries) {
-      // Wait for PR to appear
-      task = await findPRTask(customFields)
-      if (task) {
-        setOutput('result', 'updated')
-        break
-      }
-      info(`PR task not found yet. Sleeping...`)
-      await new Promise(resolve => setTimeout(resolve, 20000))
-      retries++
-    }
+/**
+ * Handle PR opened - create tasks for all requested reviewers
+ */
+async function handlePROpened(
+  payload: PullRequestEvent,
+  customFields: PRFields,
+  prStatus: string
+): Promise<asana.resources.Tasks.Type[]> {
+  const githubAuthor = payload.pull_request.user.login
+  const automatedPR = isImportantAutomatedPR(payload)
+  const authorAsanaId = getUserIdFromLogin(githubAuthor)
 
-    // if PR task cannot be found although this is an ongoing PR
-    if (!task) {
-      // the parent task has a Ship Review ...
-      if (openShipReviewTask) {
-        // ... and an PR review task that's not completed without any PR link
-        if (shipReviewPRTask) {
-          // add the Ship Review PR task to the code review project and assign the PR link to it
-          await client.tasks.addProject(shipReviewPRTask.gid, {
-            project: PROJECT_ID
-          })
-          client.tasks.updateTask(shipReviewPRTask.gid, {
-            // eslint-disable-next-line camelcase
-            custom_fields: {
-              [customFields.url.gid]: payload.pull_request.html_url,
-              [customFields.status.gid]: prStatus
-            }
-          })
-          task = shipReviewPRTask
-          setOutput('result', 'updated')
-          // ... otherwise abort sync as this action cannot open a new Ship Review PR task
-        } else {
-          info(
-            `Skipping code review task creation for PR because the linked Asana task already has a pending '${openShipReviewTask.name}' task but no open PR review subtask`
-          )
-          return
+  if (!authorAsanaId && !automatedPR) {
+    info(
+      `Skipping Asana sync for PR created by ${githubAuthor} as they are not in USER_MAP`
+    )
+    return []
+  }
+
+  const body = payload.pull_request.body || ''
+  const {parentTaskId} = await findParentTaskId(body)
+
+  // Get all requested reviewers
+  const requestedReviewers = (payload.pull_request.requested_reviewers as User[])
+    .filter((user: User) => user !== undefined && user.login !== githubAuthor)
+
+  // Also include assignees as potential reviewers
+  const assignees = payload.pull_request.assignees.filter(
+    (user: User) => user.login !== githubAuthor
+  )
+
+  // Combine and deduplicate
+  const allReviewers = new Map<string, string>()
+  for (const reviewer of [...requestedReviewers, ...assignees]) {
+    allReviewers.set(reviewer.login, reviewer.login)
+  }
+
+  // If no reviewers yet and author is in RANDOMIZED_REVIEWERS_LIST, assign a random reviewer
+  if (
+    allReviewers.size === 0 &&
+    !automatedPR &&
+    RANDOMIZED_REVIEWERS_LIST.includes(githubAuthor)
+  ) {
+    const possibleReviewers = RANDOMIZED_REVIEWERS_LIST.filter(
+      (reviewer: string) => reviewer !== githubAuthor
+    )
+    if (possibleReviewers.length > 0) {
+      const randomReviewer =
+        possibleReviewers[Math.floor(Math.random() * possibleReviewers.length)]
+
+      const octokit = getOctokit(getInput('GITHUB_TOKEN'))
+      try {
+        const reviewerResponse = await octokit.rest.pulls.requestReviewers({
+          owner: context.repo.owner,
+          repo: context.repo.repo,
+          // eslint-disable-next-line camelcase
+          pull_number: payload.pull_request.number,
+          reviewers: [randomReviewer]
+        })
+
+        const assigneeResponse = await octokit.rest.issues.addAssignees({
+          owner: context.repo.owner,
+          repo: context.repo.repo,
+          // eslint-disable-next-line camelcase
+          issue_number: payload.pull_request.number,
+          assignees: [randomReviewer]
+        })
+
+        if (
+          reviewerResponse.status === 201 &&
+          assigneeResponse.status === 201
+        ) {
+          allReviewers.set(randomReviewer, randomReviewer)
+          info(`PR is assigned to a random reviewer: ${randomReviewer}.`)
         }
-        // if parent doesn't have a Ship Review just create a new Code Review task
-      } else {
-        info(
-          `Waited a long time and no task appeared. Assuming old PR and creating a new task.`
-        )
-        task = await createPRTask(
-          parentTaskId,
-          followers,
-          title,
-          prStatus,
-          customFields,
-          automatedPR
-        )
-        setOutput('result', 'created')
+      } catch (e) {
+        info(`Could not assign to a random reviewer: ${e}`)
       }
     }
   }
 
-  return task
+  const createdTasks: asana.resources.Tasks.Type[] = []
+
+  for (const reviewerLogin of allReviewers.keys()) {
+    const task = await getOrCreateTaskForReviewer(
+      payload,
+      reviewerLogin,
+      customFields,
+      prStatus,
+      parentTaskId,
+      automatedPR
+    )
+    if (task) {
+      createdTasks.push(task)
+    }
+  }
+
+  if (createdTasks.length > 0) {
+    setOutput('result', 'created')
+    setOutput(
+      'task_url',
+      createdTasks.map(t => t.permalink_url).join(', ')
+    )
+  }
+
+  // Update PR description with Asana task link if it's an automated PR
+  if (automatedPR && createdTasks.length > 0) {
+    const prBody = payload.pull_request.body || ''
+    if (!prBody.includes('Issue URL:')) {
+      const octokit = getOctokit(getInput('GITHUB_TOKEN'))
+      const newBody = `Task/Issue URL: ${createdTasks[0].permalink_url}
+Copy for release note: N/A
+CC:
+
+**Description**:
+${prBody}
+`
+      await octokit.rest.pulls.update({
+        owner: context.repo.owner,
+        repo: context.repo.repo,
+        // eslint-disable-next-line camelcase
+        pull_number: payload.pull_request.number,
+        body: newBody
+      })
+    }
+  }
+
+  return createdTasks
+}
+
+/**
+ * Handle pull request review event - update the reviewer's task
+ */
+async function handlePullRequestReview(
+  payload: PullRequestReviewEvent,
+  customFields: PRFields,
+  prStatus: string,
+  approvalStatus:
+    | 'pending'
+    | 'commented'
+    | 'changes_requested'
+    | 'approved'
+    | 'rejected'
+    | undefined
+): Promise<void> {
+  const reviewerLogin = payload.review.user.login
+  const reviewerAsanaId = getUserIdFromLogin(reviewerLogin)
+
+  if (!reviewerAsanaId) {
+    info(`Reviewer ${reviewerLogin} is not in USER_MAP, skipping update`)
+    return
+  }
+
+  const prURL = payload.pull_request.html_url
+  const task = await findPRTaskForReviewer(customFields, prURL, reviewerAsanaId)
+
+  if (!task) {
+    info(`No task found for reviewer ${reviewerLogin}`)
+    return
+  }
+
+  const updateParams: asana.resources.Tasks.UpdateParams = {
+    // eslint-disable-next-line camelcase
+    custom_fields: {
+      [customFields.status.gid]: prStatus
+    }
+  }
+
+  if (approvalStatus && approvalStatus !== 'commented') {
+    // eslint-disable-next-line camelcase
+    updateParams.approval_status = approvalStatus
+  }
+
+  // Close task if approved
+  if (approvalStatus === 'approved') {
+    updateParams.completed = true
+  }
+
+  // Move to in-progress if changes requested or commented
+  if (approvalStatus === 'commented' || approvalStatus === 'changes_requested') {
+    const sectionId = getInput('ASANA_IN_PROGRESS_SECTION_ID')
+    if (sectionId) {
+      await client.sections.addTask(sectionId, {task: task.gid})
+    }
+  }
+
+  await client.tasks.updateTask(task.gid, updateParams)
+  info(`Updated task ${task.gid} for reviewer ${reviewerLogin}`)
+  setOutput('result', 'updated')
+  setOutput('task_url', task.permalink_url)
+}
+
+/**
+ * Handle other PR events (synchronize, edited, etc.) - update all existing tasks
+ */
+async function handlePRUpdate(
+  payload: PullRequestEvent,
+  customFields: PRFields,
+  prStatus: string
+): Promise<void> {
+  const prURL = payload.pull_request.html_url
+  const tasks = await findAllPRTasks(customFields, prURL)
+
+  if (tasks.length === 0) {
+    info(`No existing tasks found for PR ${prURL}`)
+    return
+  }
+
+  let body = payload.pull_request.body || 'Empty description'
+  const htmlUrl = payload.pull_request.html_url
+  const preamble = `**Note:** This description is automatically updated from Github. **Changes will be LOST**.
+
+PR: ${htmlUrl}`
+
+  // Asana has limits on size of notes. Let's be very conservative and trim the text
+  const truncatedBody = (
+    body.length > 5000 ? `${body.slice(0, 5000)}…` : body
+  ).replace(/^---$[\s\S]*/gm, '')
+
+  // Unformatted plaintext notes for fallback
+  const notes = `
+${preamble}
+
+${truncatedBody}`
+
+  // Rich-text notes with some custom "fixes" for Asana to render things
+  const htmlNotes = `<body>${renderMD(notes)}</body>`
+
+  // Close tasks if PR is closed/merged
+  const shouldClose =
+    ['closed'].includes(payload.pull_request.state) ||
+    payload.pull_request.merged
+
+  for (const task of tasks) {
+    const updateParams: asana.resources.Tasks.UpdateParams = {
+      // eslint-disable-next-line camelcase
+      custom_fields: {
+        [customFields.status.gid]: prStatus
+      }
+    }
+
+    if (payload.action === 'ready_for_review') {
+      // eslint-disable-next-line camelcase
+      updateParams.due_on = getDueOn(1)
+    }
+
+    if (shouldClose && !task.completed) {
+      updateParams.completed = true
+      // eslint-disable-next-line camelcase
+      updateParams.approval_status = payload.pull_request.merged
+        ? 'approved'
+        : 'rejected'
+    }
+
+    try {
+      // Update description only for non-Ship Review tasks
+      if (task.name !== 'Ship Review: Pull Request(s)') {
+        // eslint-disable-next-line camelcase
+        updateParams.html_notes = htmlNotes
+      }
+      await client.tasks.updateTask(task.gid, updateParams)
+      info(`Updated task ${task.gid}`)
+    } catch (err) {
+      if (updateParams.html_notes) {
+        delete updateParams.html_notes
+        updateParams.notes = notes
+        info(`Updating task with HTML notes failed. Retrying with plaintext`)
+        await client.tasks.updateTask(task.gid, updateParams)
+      } else {
+        throw err
+      }
+    }
+  }
+
+  setOutput('result', 'updated')
+  setOutput(
+    'task_url',
+    tasks.map(t => t.permalink_url).join(', ')
+  )
 }
 
 async function run(): Promise<void> {
@@ -423,139 +782,54 @@ async function run(): Promise<void> {
     info(`Event JSON: \n${JSON.stringify(context, null, 2)}`)
     const payload = context.payload as PullRequestEvent
     const githubAuthor = payload.pull_request.user.login
-    const automatedPR = isImportantAutomatedPR(payload)
-    const title = automatedPR
-      ? payload.pull_request.title
-      : `Code review for PR #${payload.pull_request.number}: ${payload.pull_request.title}`
+
     // PR metadata
     const customFields = await findCustomFields(ASANA_WORKSPACE_ID)
     const prState = getPRState(payload.pull_request)
     const prStatus =
-      customFields.status.enum_options?.find(f => f.name === prState)?.gid || ''
+      customFields.status.enum_options?.find(
+        (f: {name: string; gid: string}) => f.name === prState
+      )?.gid || ''
     const approvalStatus = getApprovalStatus(prState, githubAuthor)
 
-    const task = await createOrFindPRTask(
-      payload,
-      title,
-      prStatus,
-      customFields
-    )
-    if (!task) {
+    // Route to appropriate handler based on action
+    if (context.eventName === 'pull_request_review') {
+      const reviewPayload = context.payload as PullRequestReviewEvent
+      await handlePullRequestReview(
+        reviewPayload,
+        customFields,
+        prStatus,
+        approvalStatus
+      )
       return
     }
 
-    let body = payload.pull_request.body || 'Empty description'
-    // Update description of automated PR with the created Asana task url
-    if (automatedPR && !body.includes('Issue URL:')) {
-      const octokit = getOctokit(getInput('GITHUB_TOKEN'))
-      body = `Task/Issue URL: ${task.permalink_url}
-Copy for release note: N/A
-CC:
+    const action = payload.action
 
-**Description**:
-${payload.pull_request.body}
-`
-      await octokit.rest.pulls.update({
-        owner: context.repo.owner,
-        repo: context.repo.repo,
-        // eslint-disable-next-line camelcase
-        pull_number: payload.pull_request.number,
-        body
-      })
-    }
-
-    const htmlUrl = payload.pull_request.html_url
-    const preamble = `**Note:** This description is automatically updated from Github. **Changes will be LOST**.
-
-PR: ${htmlUrl}`
-
-    // Asana has limits on size of notes. Let's be very conservative and trim the text
-    const truncatedBody = (
-      body.length > 5000 ? `${body.slice(0, 5000)}…` : body
-    ).replace(/^---$[\s\S]*/gm, '')
-
-    // Unformatted plaintext notes for fallback
-    const notes = `
-${preamble}
-
-${truncatedBody}`
-
-    // Rich-text notes with some custom "fixes" for Asana to render things
-    const htmlNotes = `<body>${renderMD(notes)}</body>`
-
-    setOutput('task_url', task.permalink_url)
-    const taskId = task.gid
-
-    const allowRandomReviewer =
-      !automatedPR &&
-      prState === 'Open' &&
-      payload.pull_request.assignee?.login !== githubAuthor &&
-      RANDOMIZED_REVIEWERS_LIST.includes(githubAuthor)
-    const githubAssignee = await getAssignee(payload, allowRandomReviewer)
-
-    // Close task if already closed or if PR is closed
-    const closeTask =
-      task.completed ||
-      ['closed'].includes(payload.pull_request.state) ||
-      approvalStatus === 'approved'
-
-    if (
-      !closeTask &&
-      (approvalStatus === 'commented' || approvalStatus === 'changes_requested')
-    ) {
-      const sectionId = getInput('ASANA_IN_PROGRESS_SECTION_ID')
-      if (sectionId) {
-        await client.sections.addTask(sectionId, {task: task.gid})
-      }
-    }
-
-    const updateParams: asana.resources.Tasks.UpdateParams = {
-      // eslint-disable-next-line camelcase
-      custom_fields: {
-        [customFields.status.gid]: prStatus
-      }
-    }
-
-    if (payload.action === 'ready_for_review') {
-      // eslint-disable-next-line camelcase
-      updateParams.due_on = getDueOn(1)
-    }
-
-    if (approvalStatus && approvalStatus !== 'commented') {
-      // eslint-disable-next-line camelcase
-      updateParams.approval_status = approvalStatus
-    }
-
-    if (!closeTask && githubAssignee) {
-      updateParams.assignee = getUserIdFromLogin(githubAssignee)
-    }
-
-    try {
-      // do not update title and description of Ship Review PR tasks
-      if (task.name !== 'Ship Review: Pull Request(s)') {
-        updateParams.name = title
-        // eslint-disable-next-line camelcase
-        updateParams.html_notes = htmlNotes
-      }
-      info(
-        `Update task with html update params ${JSON.stringify(updateParams)}`
+    if (action === 'review_requested') {
+      await handleReviewRequested(
+        payload as ReviewRequestedEvent,
+        customFields,
+        prStatus
       )
-      // Try using html notes first and fall back to unformatted if this fails
-      await client.tasks.updateTask(taskId, updateParams)
-    } catch (err) {
-      if (updateParams.html_notes) {
-        delete updateParams.html_notes
-        updateParams.notes = notes
-        info(
-          `Updating task with HTML notes failed. Retrying with plaintext ${JSON.stringify(
-            updateParams
-          )}`
-        )
-        await client.tasks.updateTask(taskId, updateParams)
-      } else if (err instanceof Error) {
-        setFailed(`${err.message}\nStacktrace:\n${err.stack}`)
-      }
+      return
     }
+
+    if (action === 'review_request_removed') {
+      await handleReviewRequestRemoved(
+        payload as ReviewRequestRemovedEvent,
+        customFields
+      )
+      return
+    }
+
+    if (action === 'opened') {
+      await handlePROpened(payload, customFields, prStatus)
+      return
+    }
+
+    // Handle other actions (synchronize, edited, ready_for_review, closed, reopened, etc.)
+    await handlePRUpdate(payload, customFields, prStatus)
   } catch (error) {
     if (error instanceof Error) {
       setFailed(`${error.message}\nStacktrace:\n${error.stack}`)
@@ -570,7 +844,7 @@ async function findCustomFields(workspaceGid: string): Promise<PRFields> {
   // pull all fields from the API with the streaming
   const stream = apiResponse.stream()
   const customFields: asana.resources.CustomFields.Type[] = []
-  stream.on('data', field => {
+  stream.on('data', (field: asana.resources.CustomFields.Type) => {
     customFields.push(field)
   })
   await new Promise<void>(resolve => stream.on('end', resolve))

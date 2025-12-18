@@ -101,19 +101,26 @@ async function findPRTaskForReviewer(
   prURL: string,
   reviewerAsanaId: string
 ): Promise<asana.resources.Tasks.Type | null> {
-  // Search for tasks with the PR URL assigned to the specific reviewer
+  // Search for tasks with the PR URL, then filter by assignee locally
+  // (Asana's assignee.any filter may not work reliably with searchInWorkspace)
   try {
     const prTasks = await client.tasks.searchInWorkspace(ASANA_WORKSPACE_ID, {
       [`custom_fields.${customFields.url.gid}.value`]: prURL,
-      'assignee.any': reviewerAsanaId,
       // eslint-disable-next-line camelcase
       opt_fields: 'name,parent,completed,assignee'
     })
-    if (prTasks.data.length > 0) {
+
+    // Filter locally by assignee to ensure we get the right task
+    const matchingTask = prTasks.data.find(
+      (task: asana.resources.Tasks.Type) =>
+        task.assignee?.gid === reviewerAsanaId
+    )
+
+    if (matchingTask) {
       info(
-        `Found PR task for reviewer ${reviewerAsanaId} using searchInWorkspace: ${prTasks.data[0].gid}`
+        `Found PR task for reviewer ${reviewerAsanaId} using searchInWorkspace: ${matchingTask.gid}`
       )
-      return prTasks.data[0]
+      return matchingTask
     }
   } catch (e) {
     info(`searchInWorkspace failed: ${e}`)
@@ -127,6 +134,7 @@ async function findPRTaskForReviewer(
   })
 
   for (const task of projectTasks.data) {
+    // Must match the specific reviewer
     if (task.assignee?.gid !== reviewerAsanaId) continue
 
     for (const field of task.custom_fields) {

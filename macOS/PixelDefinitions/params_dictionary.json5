@@ -44,7 +44,7 @@
     },
     "themeName": {
         "key": "themeName",
-        "type": "string",
+        "enum": ["default", "coolGray", "desert", "green", "orange", "rose", "slateBlue", "violet"]
         "description": "The name of the active Theme"
     },
     "underlyingErrorCode": {

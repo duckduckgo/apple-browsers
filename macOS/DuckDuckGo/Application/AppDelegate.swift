@@ -735,16 +735,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {
             fireproofDomains = FireproofDomains(store: FireproofDomainsStore(database: database.db, tableName: "FireproofDomains"), tld: tld)
-            faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains)
+            faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager)
             permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db), featureFlagger: featureFlagger)
         } else {
             fireproofDomains = FireproofDomains(store: FireproofDomainsStore(context: nil), tld: tld)
-            faviconManager = FaviconManager(cacheType: .inMemory, bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains)
+            faviconManager = FaviconManager(cacheType: .inMemory, bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager)
             permissionManager = PermissionManager(store: LocalPermissionStore(database: nil), featureFlagger: featureFlagger)
         }
 #else
         fireproofDomains = FireproofDomains(store: FireproofDomainsStore(database: database.db, tableName: "FireproofDomains"), tld: tld)
-        faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains)
+        faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains, privacyConfigurationManager: privacyConfigurationManager)
         permissionManager = PermissionManager(store: LocalPermissionStore(database: database.db), featureFlagger: featureFlagger)
 #endif
         notificationService = UserNotificationAuthorizationService()

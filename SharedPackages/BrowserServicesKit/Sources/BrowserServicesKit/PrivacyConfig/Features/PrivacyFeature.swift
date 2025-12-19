@@ -125,6 +125,9 @@ public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
     // Controls visibility of the "Manage individual sites" link in the Fire dialog
     case fireDialogIndividualSitesLink
 
+    /// Use WKDownload for favicon fetching to bypass App Transport Security restrictions on HTTP URLs
+    case faviconWKDownload
+    
     /// New App Store Update flow feature flag
     /// https://app.asana.com/1/137249556945/project/1199230911884351/task/1211563301906360?focus=true
     case appStoreUpdateFlow

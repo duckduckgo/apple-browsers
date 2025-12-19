@@ -2412,6 +2412,8 @@
 		84A37DF02DAFB68A009E0A68 /* URLDragPreviewProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A37DEC2DAFB68A009E0A68 /* URLDragPreviewProviderTests.swift */; };
 		84A72AA72DB276A20092A4B4 /* LinkOpenBehavior.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A72AA52DB276A20092A4B4 /* LinkOpenBehavior.swift */; };
 		84A72AA82DB276A20092A4B4 /* LinkOpenBehavior.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A72AA52DB276A20092A4B4 /* LinkOpenBehavior.swift */; };
+		84A74E1D2EF5383B006A5B61 /* FaviconDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A74E1C2EF5383B006A5B61 /* FaviconDownloader.swift */; };
+		84A74E1E2EF5383B006A5B61 /* FaviconDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A74E1C2EF5383B006A5B61 /* FaviconDownloader.swift */; };
 		84AA551A2E3256BA009FCC70 /* Common in Frameworks */ = {isa = PBXBuildFile; productRef = 84AA55192E3256BA009FCC70 /* Common */; };
 		84AECC512DFBFADC00438ACC /* AutoClearHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84AECC502DFBFADC00438ACC /* AutoClearHandlerTests.swift */; };
 		84AECC522DFBFADC00438ACC /* AutoClearHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84AECC502DFBFADC00438ACC /* AutoClearHandlerTests.swift */; };
@@ -5364,6 +5366,7 @@
 		84A37DDD2DAFB635009E0A68 /* URLDragPreviewProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLDragPreviewProvider.swift; sourceTree = "<group>"; };
 		84A37DEC2DAFB68A009E0A68 /* URLDragPreviewProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLDragPreviewProviderTests.swift; sourceTree = "<group>"; };
 		84A72AA52DB276A20092A4B4 /* LinkOpenBehavior.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkOpenBehavior.swift; sourceTree = "<group>"; };
+		84A74E1C2EF5383B006A5B61 /* FaviconDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconDownloader.swift; sourceTree = "<group>"; };
 		84AECC4E2DFBF75700438ACC /* CommonObjCExtensions */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = CommonObjCExtensions; sourceTree = "<group>"; };
 		84AECC4F2DFBF76400438ACC /* LetsMove */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = LetsMove; sourceTree = "<group>"; };
 		84AECC502DFBFADC00438ACC /* AutoClearHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoClearHandlerTests.swift; sourceTree = "<group>"; };
@@ -10139,15 +10142,16 @@
 		AA5FA698275F90CD00DCE9C9 /* Model */ = {
 			isa = PBXGroup;
 			children = (
-				AAA0CC562539EBC90079BC96 /* FaviconUserScript.swift */,
+				AA5FA699275F91C700DCE9C9 /* Favicon.swift */,
+				84A74E1C2EF5383B006A5B61 /* FaviconDownloader.swift */,
+				AA6197C5276B3168008396F0 /* FaviconHostReference.swift */,
+				AA5FA696275F90C400DCE9C9 /* FaviconImageCache.swift */,
 				AA512D1324D99D9800230283 /* FaviconManager.swift */,
 				37F09AD22DDE433000643A1B /* FaviconManagerMock.swift */,
-				AAEF6BC7276A081C0024DCF4 /* FaviconSelector.swift */,
-				AA5FA696275F90C400DCE9C9 /* FaviconImageCache.swift */,
 				AA222CB82760F74E00321475 /* FaviconReferenceCache.swift */,
-				AA6197C5276B3168008396F0 /* FaviconHostReference.swift */,
+				AAEF6BC7276A081C0024DCF4 /* FaviconSelector.swift */,
 				AA6197C3276B314D008396F0 /* FaviconUrlReference.swift */,
-				AA5FA699275F91C700DCE9C9 /* Favicon.swift */,
+				AAA0CC562539EBC90079BC96 /* FaviconUserScript.swift */,
 			);
 			path = Model;
 			sourceTree = "<group>";
@@ -14586,6 +14590,7 @@
 				3706FBEE293F65D500E42796 /* MainView.swift in Sources */,
 				3706FBEF293F65D500E42796 /* EmailUrlExtensions.swift in Sources */,
 				3706FBF0293F65D500E42796 /* PasswordManagementItemModel.swift in Sources */,
+				84A74E1E2EF5383B006A5B61 /* FaviconDownloader.swift in Sources */,
 				37AA00AC2E1D3D4200844427 /* AIChatSummarizer.swift in Sources */,
 				3706FBF2293F65D500E42796 /* FindInPageModel.swift in Sources */,
 				1D9A4E5B2B43213B00F449E2 /* TabSnapshotExtension.swift in Sources */,
@@ -16762,6 +16767,7 @@
 				B693955426F04BEC0015B914 /* ColorView.swift in Sources */,
 				AA5C1DD3285A217F0089850C /* RecentlyClosedCacheItem.swift in Sources */,
 				B6BBF17427475B15004F850E /* PopupBlockedPopover.swift in Sources */,
+				84A74E1D2EF5383B006A5B61 /* FaviconDownloader.swift in Sources */,
 				EE28685D2EAFC3E000AB597F /* LegacyDataImportSummaryViewModel.swift in Sources */,
 				EE28685E2EAFC3E000AB597F /* LegacyDataImportViewModel.swift in Sources */,
 				8589063A267BCD8E00D23B0D /* SaveCredentialsPopover.swift in Sources */,

@@ -23,6 +23,7 @@ import Common
 import DDGSync
 import Foundation
 import Persistence
+import PrivacyConfig
 import SecureStorage
 import SyncDataProviders
 import os.log

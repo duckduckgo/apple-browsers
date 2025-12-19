@@ -24,14 +24,20 @@ import Common
 
 public protocol DataBrokerProtectionEventPixelsRepository {
     func markWeeklyPixelSent()
-
     func getLatestWeeklyPixel() -> Date?
+
+    func markInitialScansTotalDurationPixelSent()
+    func markInitialScansStarted()
+    func hasInitialScansTotalDurationPixelBeenSent() -> Bool
+    func initialScansStartDate() -> Date?
 }
 
 public final class DataBrokerProtectionEventPixelsUserDefaults: DataBrokerProtectionEventPixelsRepository {
 
     enum Consts {
         static let weeklyPixelKey = "macos.browser.data-broker-protection.eventsWeeklyPixelKey"
+        static let initialScansTotalDurationPixelKey = "dbp.eventsInitialScansTotalDurationPixelKey"
+        static let initialScansStartDateKey = "dbp.eventsInitialScansStartDateKey"
     }
 
     private let userDefaults: UserDefaults
@@ -46,6 +52,23 @@ public final class DataBrokerProtectionEventPixelsUserDefaults: DataBrokerProtec
 
     public func getLatestWeeklyPixel() -> Date? {
         userDefaults.object(forKey: Consts.weeklyPixelKey) as? Date
+    }
+
+    public func markInitialScansTotalDurationPixelSent() {
+        userDefaults.set(true, forKey: Consts.initialScansTotalDurationPixelKey)
+    }
+
+    public func markInitialScansStarted() {
+        userDefaults.set(Date(), forKey: Consts.initialScansStartDateKey)
+        userDefaults.set(false, forKey: Consts.initialScansTotalDurationPixelKey)
+    }
+
+    public func hasInitialScansTotalDurationPixelBeenSent() -> Bool {
+        userDefaults.object(forKey: Consts.initialScansTotalDurationPixelKey) as? Bool ?? false
+    }
+
+    public func initialScansStartDate() -> Date? {
+        userDefaults.object(forKey: Consts.initialScansStartDateKey) as? Date
     }
 }
 
@@ -87,6 +110,24 @@ public final class DataBrokerProtectionEventPixels {
 
     func fireReappeareanceEventPixel() {
         handler.fire(.scanningEventReAppearance)
+    }
+
+    public func hasInitialScansTotalDurationPixelBeenSent() -> Bool {
+        return repository.hasInitialScansTotalDurationPixelBeenSent()
+    }
+
+    public func markInitialScansStarted() {
+        repository.markInitialScansStarted()
+    }
+
+    public func fireInitialScansTotalDurationPixel(numberOfProfileQueries: Int) {
+        guard let startDate = repository.initialScansStartDate() else {
+            Logger.dataBrokerProtection.error("Tried to fire initial scans duration pixel but no start date found")
+            return
+        }
+        let timeIntervalSinceStart = Date().timeIntervalSince(startDate) * 1000
+        handler.fire(.initialScanTotalDuration(duration: timeIntervalSinceStart.rounded(.towardZero), profileQueries: numberOfProfileQueries))
+        repository.markInitialScansTotalDurationPixelSent()
     }
 
     private func shouldWeFireWeeklyPixel() -> Bool {

@@ -22,6 +22,7 @@ import WebKit
 import Combine
 import Core
 import BrowserServicesKit
+import PrivacyConfig
 import PrivacyDashboard
 import Common
 import os.log

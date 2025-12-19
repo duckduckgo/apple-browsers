@@ -18,7 +18,7 @@
 //
 
 import XCTest
-import BrowserServicesKit
+import PrivacyConfig
 import Subscription
 import SubscriptionTestingUtilities
 import AIChat

@@ -21,7 +21,7 @@ import Foundation
 import SERPSettings
 import UserScript
 import AIChat
-import BrowserServicesKit
+import PrivacyConfig
 import Persistence
 import Common
 

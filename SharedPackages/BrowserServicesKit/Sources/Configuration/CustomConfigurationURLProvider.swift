@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 
 public protocol ConfigurationURLProviding {
     func url(for configuration: Configuration) -> URL

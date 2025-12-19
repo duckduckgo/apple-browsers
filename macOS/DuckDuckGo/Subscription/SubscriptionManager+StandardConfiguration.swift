@@ -20,7 +20,7 @@ import Foundation
 import Subscription
 import Common
 import PixelKit
-import BrowserServicesKit
+import PrivacyConfig
 import FeatureFlags
 import Networking
 import os.log

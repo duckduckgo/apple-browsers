@@ -25,6 +25,7 @@ import Combine
 import os.log
 import FeatureFlags
 import PixelKit
+import PrivacyConfig
 import enum UserScript.UserScriptError
 
 struct ExtractedAddress: Codable {

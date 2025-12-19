@@ -34,6 +34,7 @@ class FaviconManagerTests: XCTestCase {
             cacheType: .inMemory,
             bookmarkManager: MockBookmarkManager(),
             fireproofDomains: MockFireproofDomains(domains: []),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
             imageCache: { _ in self.imageCache },
             referenceCache: { _ in self.referenceCache }
         )
@@ -50,7 +51,8 @@ class FaviconManagerTests: XCTestCase {
         let faviconManager = FaviconManager(
             cacheType: .inMemory,
             bookmarkManager: MockBookmarkManager(),
-            fireproofDomains: MockFireproofDomains(domains: [])
+            fireproofDomains: MockFireproofDomains(domains: []),
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
         XCTAssertNotNil(faviconManager.store as? FaviconNullStore)
     }

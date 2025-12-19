@@ -17,11 +17,11 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import CommonObjCExtensions
 import DesignResourcesKitIcons
 import FeatureFlags
 import Foundation
+import PrivacyConfig
 import WebKit
 
 enum PermissionType: Hashable {

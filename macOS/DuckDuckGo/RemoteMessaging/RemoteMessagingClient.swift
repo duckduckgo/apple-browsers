@@ -24,6 +24,7 @@ import Foundation
 import BrowserServicesKit
 import Persistence
 import PixelKit
+import PrivacyConfig
 import RemoteMessaging
 import Subscription
 

@@ -17,7 +17,7 @@
 //  limitations under the License.
 //
 
-import UIKit
+import UIKitExtensions
 import WebKit
 import WidgetKit
 import Combine
@@ -47,6 +47,7 @@ import PixelKit
 import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
 import UserScript
+import PrivacyConfig
 
 class MainViewController: UIViewController {
 
@@ -99,6 +100,7 @@ class MainViewController: UIViewController {
 
     let homePageConfiguration: HomePageConfiguration
     let remoteMessagingActionHandler: RemoteMessagingActionHandling
+    let whatsNewRepository: WhatsNewMessageRepository
     let tabManager: TabManager
     let previewsSource: TabPreviewsSource
     let appSettings: AppSettings
@@ -301,7 +303,8 @@ class MainViewController: UIViewController {
         fireExecutor: FireExecutor,
         remoteMessagingDebugHandler: RemoteMessagingDebugHandling,
         aiChatContextualModeFeature: AIChatContextualModeFeatureProviding = AIChatContextualModeFeature(),
-        syncAiChatsCleaner: SyncAIChatsCleaning
+        syncAiChatsCleaner: SyncAIChatsCleaning,
+        whatsNewRepository: WhatsNewMessageRepository
     ) {
         self.remoteMessagingActionHandler = remoteMessagingActionHandler
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -352,6 +355,7 @@ class MainViewController: UIViewController {
         self.fireExecutor = fireExecutor
         self.aiChatContextualModeFeature = aiChatContextualModeFeature
         self.syncAIChatsCleaner = syncAiChatsCleaner
+        self.whatsNewRepository = whatsNewRepository
 
         super.init(nibName: nil, bundle: nil)
         
@@ -3797,12 +3801,20 @@ extension MainViewController: FireExecutorDelegate {
     }
 
     func willStartBurningAIHistory() {
-        // no op
+        if autoClearInProgress {
+            syncAIChatsCleaner.recordLocalClearFromAutoClearBackgroundTimestampIfPresent()
+        } else {
+            syncAIChatsCleaner.recordLocalClear(date: Date())
+        }
     }
 
     func didFinishBurningAIHistory() {
         Task {
             await aiChatViewControllerManager.killSessionAndResetTimer()
+        }
+
+        if syncService.authState != .inactive {
+            syncService.scheduler.requestSyncImmediately()
         }
     }
 }
@@ -4122,7 +4134,7 @@ extension MainViewController: MessageNavigationDelegate {
             assertionFailure("Not implemented yet.")
         case .withinCurrentContext:
             let dataImportVC = makeDataImportViewController(source: .whatsNew)
-            guard let viewController = presentedViewController else {
+            guard let viewController = topMostPresentedViewController() else {
                 assertionFailure("No ViewController presented.")
                 return
             }

@@ -32,6 +32,11 @@ final class FeedbackSender: FeedbackSenderImplementing {
     static let feedbackURL = URL(string: "https://duckduckgo.com/feedback.js")!
 
     func sendFeedback(_ feedback: Feedback, completionHandler: (() -> Void)? = nil) {
+#if DEBUG || REVIEW
+        Logger.general.debug("FeedbackSender: Skipping feedback submission in DEBUG / REVIEW build")
+        completionHandler?()
+#else
+
 #if APPSTORE
         let appVersion = "\(feedback.appVersion) AppStore"
 #else
@@ -59,6 +64,7 @@ final class FeedbackSender: FeedbackSenderImplementing {
 
             completionHandler?()
         }
+#endif
     }
 
     func sendDataImportReport(_ report: DataImportReportModel) {

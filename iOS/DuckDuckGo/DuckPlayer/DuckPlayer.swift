@@ -18,15 +18,16 @@
 //
 
 import BrowserServicesKit
-import Common
-import UIKit
 import Combine
-import Foundation
-import WebKit
-import UserScript
-import Core
+import Common
 import ContentScopeScripts
+import Core
+import Foundation
+import PrivacyConfig
 import SwiftUI
+import WebKit
+import UIKit
+import UserScript
 
 /// Values that the frontend can use to determine the current state.
 struct InitialPlayerSettings: Codable {

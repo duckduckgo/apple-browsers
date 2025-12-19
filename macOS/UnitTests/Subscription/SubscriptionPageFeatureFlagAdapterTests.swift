@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
-import Testing
 import BrowserServicesKit
 import FeatureFlags
+import PrivacyConfig
+import Testing
 @testable import DuckDuckGo_Privacy_Browser
 
 @Suite("SubscriptionPageFeatureFlagAdapter Tests")

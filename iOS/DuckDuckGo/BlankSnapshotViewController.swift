@@ -20,7 +20,7 @@
 import UIKit
 import Core
 import Suggestions
-import BrowserServicesKit
+import PrivacyConfig
 import DesignResourcesKitIcons
 
 protocol BlankSnapshotViewRecoveringDelegate: AnyObject {

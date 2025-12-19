@@ -17,8 +17,9 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import FeatureFlags
+import PrivacyConfig
+
 final class FeatureFlagOverridesMenu: NSMenu {
     let featureFlagger: FeatureFlagger
     let setInternalUserStateItem: NSMenuItem = {

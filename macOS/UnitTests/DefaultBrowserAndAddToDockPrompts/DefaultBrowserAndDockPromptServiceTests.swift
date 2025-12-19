@@ -18,6 +18,8 @@
 
 import XCTest
 import PersistenceTestingUtils
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 @testable import DuckDuckGo_Privacy_Browser
 
 final class DefaultBrowserAndDockPromptServiceTests: XCTestCase {

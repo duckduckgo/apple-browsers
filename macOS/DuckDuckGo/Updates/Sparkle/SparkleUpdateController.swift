@@ -22,10 +22,10 @@ import Foundation
 import Common
 import Combine
 import Sparkle
-import BrowserServicesKit
 import Persistence
 import SwiftUIExtensions
 import PixelKit
+import PrivacyConfig
 import SwiftUI
 import os.log
 

@@ -23,6 +23,7 @@ import Combine
 import Common
 import DDGSync
 import Persistence
+import PrivacyConfig
 import SecureStorage
 import SyncDataProviders
 

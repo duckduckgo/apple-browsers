@@ -16,11 +16,11 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Combine
 import Common
 import History
 import HistoryView
+import PrivacyConfig
 import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser

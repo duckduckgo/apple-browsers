@@ -17,11 +17,11 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import Combine
 import Common
 import FeatureFlags
 import Foundation
+import PrivacyConfig
 
 @objc(Application)
 final class Application: NSApplication {

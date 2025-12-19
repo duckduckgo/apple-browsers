@@ -20,7 +20,7 @@
 import Foundation
 import SwiftUI
 import UIKit
-import BrowserServicesKit
+import PrivacyConfig
 import Combine
 import Core
 import Configuration

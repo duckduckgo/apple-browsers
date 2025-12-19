@@ -1244,10 +1244,13 @@
 "date.range.yesterday" = "Yesterday";
 
 /* Button to reset the search logo to the default Dax logo */
-"dax.easter.egg.reset.to.default" = "Reset to default logo";
+"dax.easter.egg.reset.to.default" = "Reset Search Logo";
+
+/* Button to set the current Easter egg logo with the search query name, e.g. 'Keep Formula 1 Logo' */
+"dax.easter.egg.set.as.named.logo" = "Keep %@ Logo";
 
 /* Button to set the current Easter egg logo as the permanent search logo */
-"dax.easter.egg.set.as.search.logo" = "Set as search logo";
+"dax.easter.egg.set.as.search.logo" = "Keep Logo";
 
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Heads up! I can’t stop %1$@ from seeing your activity on %2$@.\n\nBut browse with me, and I can reduce what %1$@ knows about you overall by blocking their trackers on lots of other sites.";

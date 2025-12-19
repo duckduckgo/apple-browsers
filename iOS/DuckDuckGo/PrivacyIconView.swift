@@ -46,7 +46,7 @@ enum PrivacyIcon {
 /// Delegate for handling privacy icon interactions.
 protocol PrivacyIconViewDelegate: AnyObject {
     /// Called when user taps a Dax Easter Egg logo for full-screen presentation.
-    func privacyIconViewDidTapDaxLogo(_ view: PrivacyIconView, logoURL: URL?, currentImage: UIImage?, sourceFrame: CGRect)
+    func privacyIconViewDidTapDaxLogo(_ view: PrivacyIconView, logoURL: URL?, currentImage: UIImage?, sourceFrame: CGRect, searchQuery: String?)
 }
 
 class PrivacyIconView: UIView {
@@ -54,9 +54,11 @@ class PrivacyIconView: UIView {
     private(set) var staticImageView: UIImageView!
     private(set) var shieldAnimationView: LottieAnimationView!
     private(set) var shieldDotAnimationView: LottieAnimationView!
+    private var transitionPlaceholderView: UIView!
 
     private(set) var icon: PrivacyIcon = .shield
     private(set) var daxLogoURL: URL?
+    private(set) var daxLogoSearchQuery: String?
     weak var delegate: PrivacyIconViewDelegate?
 
     override init(frame: CGRect) {
@@ -118,6 +120,20 @@ class PrivacyIconView: UIView {
             shieldDotAnimationView.centerYAnchor.constraint(equalTo: centerYAnchor)
         ])
 
+        transitionPlaceholderView = UIView()
+        transitionPlaceholderView.translatesAutoresizingMaskIntoConstraints = false
+        transitionPlaceholderView.backgroundColor = UIColor(designSystemColor: .surface)
+        transitionPlaceholderView.layer.cornerRadius = 12
+        transitionPlaceholderView.isHidden = true
+        addSubview(transitionPlaceholderView)
+
+        NSLayoutConstraint.activate([
+            transitionPlaceholderView.widthAnchor.constraint(equalToConstant: 24),
+            transitionPlaceholderView.heightAnchor.constraint(equalToConstant: 24),
+            transitionPlaceholderView.centerXAnchor.constraint(equalTo: centerXAnchor),
+            transitionPlaceholderView.centerYAnchor.constraint(equalTo: centerYAnchor)
+        ])
+
         // Add pointer interaction
         addInteraction(UIPointerInteraction(delegate: self))
 
@@ -155,13 +171,14 @@ class PrivacyIconView: UIView {
         updateAccessibilityLabels(for: newIcon)
     }
     
-    func setDaxEasterEggLogoURL(_ url: URL?, completion: (() -> Void)? = nil) {
+    func setDaxEasterEggLogoURL(_ url: URL?, searchQuery: String? = nil, completion: (() -> Void)? = nil) {
         let oldURL = daxLogoURL
 
         // Exit early if URL hasn't changed
         guard oldURL != url else { return }
 
         daxLogoURL = url
+        daxLogoSearchQuery = searchQuery
 
         if icon == .daxLogo {
             // Only animate when switching logo types (dynamic ↔ default)
@@ -214,11 +231,13 @@ class PrivacyIconView: UIView {
         if icon == .daxLogo && !staticImageView.isHidden && daxLogoURL != nil {
             let currentImage = staticImageView.image
             let sourceFrame = staticImageView.convert(staticImageView.bounds, to: nil)
-            delegate?.privacyIconViewDidTapDaxLogo(self, logoURL: daxLogoURL, currentImage: currentImage, sourceFrame: sourceFrame)
+            delegate?.privacyIconViewDidTapDaxLogo(self, logoURL: daxLogoURL, currentImage: currentImage, sourceFrame: sourceFrame, searchQuery: daxLogoSearchQuery)
         }
     }
 
     private func updateShieldImageView(for icon: PrivacyIcon, animateCustomLogo: Bool = false) {
+        transitionPlaceholderView.isHidden = true
+
         switch icon {
         case .daxLogo:
             staticImageView.isHidden = false
@@ -308,6 +327,20 @@ class PrivacyIconView: UIView {
         updateShieldImageView(for: icon)
         updateAccessibilityLabels(for: icon)
         // Keep animated views visible at frame 1 - do NOT hide them
+    }
+
+    /// Hides the static image view during full-screen transition to avoid duplicate logos.
+    func hideLogoForTransition() {
+        staticImageView.isHidden = true
+        transitionPlaceholderView.isHidden = false
+    }
+
+    /// Shows the static image view after full-screen transition completes.
+    func showLogoAfterTransition() {
+        transitionPlaceholderView.isHidden = true
+        if icon == .daxLogo || icon == .alert {
+            staticImageView.isHidden = false
+        }
     }
     
     func prepareForAnimation(for icon: PrivacyIcon) {

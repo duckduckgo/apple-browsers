@@ -28,7 +28,7 @@ protocol DaxEasterEggLogoStoring {
     var hasLogo: Bool { get }
     /// Saves the logo URL.
     func setLogo(url: String)
-    /// Removes the stored logo URL.
+    /// Removes the stored logo.
     func clearLogo()
 }
 

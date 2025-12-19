@@ -2240,6 +2240,7 @@ public struct UserText {
 
     // MARK: - Dax Easter Egg
 
-    public static let daxEasterEggSetAsSearchIcon = NSLocalizedString("dax.easter.egg.set.as.search.logo", value: "Set as search logo", comment: "Button to set the current Easter egg logo as the permanent search logo")
-    public static let daxEasterEggResetToDefault = NSLocalizedString("dax.easter.egg.reset.to.default", value: "Reset to default logo", comment: "Button to reset the search logo to the default Dax logo")
+    public static let daxEasterEggSetAsSearchIcon = NSLocalizedString("dax.easter.egg.set.as.search.logo", value: "Keep Logo", comment: "Button to set the current Easter egg logo as the permanent search logo")
+    public static let daxEasterEggSetAsNamedLogo = NSLocalizedString("dax.easter.egg.set.as.named.logo", value: "Keep %@ Logo", comment: "Button to set the current Easter egg logo with the search query name, e.g. 'Keep Formula 1 Logo'")
+    public static let daxEasterEggResetToDefault = NSLocalizedString("dax.easter.egg.reset.to.default", value: "Reset Search Logo", comment: "Button to reset the search logo to the default Dax logo")
 }

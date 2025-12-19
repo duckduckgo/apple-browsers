@@ -74,8 +74,10 @@ protocol OmniBar: AnyObject {
     /// When a URL is provided, the privacy icon will load and display the dynamic logo image.
     /// When nil is provided, the privacy icon resets to the default static Dax logo.
     ///
-    /// - Parameter logoURL: Absolute URL string of the dynamic logo to display, or nil to reset to default
-    func setDaxEasterEggLogoURL(_ logoURL: String?)
+    /// - Parameters:
+    ///   - logoURL: Absolute URL string of the dynamic logo to display, or nil to reset to default
+    ///   - searchQuery: The search query that triggered this logo, used for button text
+    func setDaxEasterEggLogoURL(_ logoURL: String?, searchQuery: String?)
 
     func cancelAllAnimations()
     func completeAnimationForDaxDialog()

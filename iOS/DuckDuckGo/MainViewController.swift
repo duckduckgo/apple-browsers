@@ -1511,7 +1511,7 @@ class MainViewController: UIViewController {
         guard let tab = currentTab, tab.link != nil else {
             viewCoordinator.omniBar.stopBrowsing()
             // Clear Dax Easter Egg logo when no tab is active
-            viewCoordinator.omniBar.setDaxEasterEggLogoURL(nil)
+            viewCoordinator.omniBar.setDaxEasterEggLogoURL(nil, searchQuery: nil)
             return
         }
 
@@ -1526,7 +1526,8 @@ class MainViewController: UIViewController {
         }
 
         let logoURL = logoURLForCurrentPage(tab: tab)
-        viewCoordinator.omniBar.setDaxEasterEggLogoURL(logoURL)
+        let searchQuery = tab.url?.searchQuery
+        viewCoordinator.omniBar.setDaxEasterEggLogoURL(logoURL, searchQuery: searchQuery)
 
         if aichatFullModeFeature.isAvailable && tab.isAITab {
             viewCoordinator.omniBar.enterAIChatMode()
@@ -3285,13 +3286,15 @@ extension MainViewController: TabDelegate {
             tab.tabModel.daxEasterEggLogoURL = logoURL
             if self.currentTab == tab {
                 let finalLogoURL = self.logoURLForCurrentPage(tab: tab)
-                self.viewCoordinator.omniBar.setDaxEasterEggLogoURL(finalLogoURL)
+                let searchQuery = tab.url?.searchQuery
+                self.viewCoordinator.omniBar.setDaxEasterEggLogoURL(finalLogoURL, searchQuery: searchQuery)
             }
         }
     }
 
     private func logoURLForCurrentPage(tab: TabViewController) -> String? {
         guard let url = tab.url, url.isDuckDuckGoSearch else { return nil }
+        guard featureFlagger.isFeatureOn(.daxEasterEggLogos) else { return nil }
         if featureFlagger.isFeatureOn(.daxEasterEggPermanentLogo) {
             return daxEasterEggLogoStore.logoURL ?? tab.tabModel.daxEasterEggLogoURL
         }

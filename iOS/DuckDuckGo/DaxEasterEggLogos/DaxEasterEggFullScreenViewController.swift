@@ -76,6 +76,8 @@ class DaxEasterEggFullScreenViewController: UIViewController {
     private weak var sourceViewController: OmniBarViewController?
     private let logoStore: DaxEasterEggLogoStoring
     private let featureFlagger: FeatureFlagger
+    private let searchQuery: String?
+    private var actualImageSize: CGSize?
 
     init(imageURL: URL?,
          placeholderImage: UIImage? = nil,
@@ -83,13 +85,15 @@ class DaxEasterEggFullScreenViewController: UIViewController {
          sourceImage: UIImage? = nil,
          sourceViewController: OmniBarViewController? = nil,
          logoStore: DaxEasterEggLogoStoring,
-         featureFlagger: FeatureFlagger) {
+         featureFlagger: FeatureFlagger,
+         searchQuery: String? = nil) {
         self.imageURL = imageURL
         self.sourceFrame = sourceFrame
         self.sourceImage = sourceImage ?? placeholderImage
         self.sourceViewController = sourceViewController
         self.logoStore = logoStore
         self.featureFlagger = featureFlagger
+        self.searchQuery = searchQuery
         super.init(nibName: nil, bundle: nil)
         modalPresentationStyle = .overFullScreen
         transitioningDelegate = self
@@ -143,7 +147,7 @@ class DaxEasterEggFullScreenViewController: UIViewController {
     }
 
     private func setupSetAsLogoButton() {
-        guard featureFlagger.isFeatureOn(.daxEasterEggPermanentLogo) else {
+        guard featureFlagger.isFeatureOn(.daxEasterEggPermanentLogo), imageURL != nil else {
             setAsLogoButton.isHidden = true
             return
         }
@@ -162,7 +166,14 @@ class DaxEasterEggFullScreenViewController: UIViewController {
     }
 
     private func updateSetAsLogoButtonTitle() {
-        let title = isCurrentLogoStored ? UserText.daxEasterEggResetToDefault : UserText.daxEasterEggSetAsSearchIcon
+        let title: String
+        if isCurrentLogoStored {
+            title = UserText.daxEasterEggResetToDefault
+        } else if let query = searchQuery, !query.isEmpty {
+            title = String(format: UserText.daxEasterEggSetAsNamedLogo, query.capitalized)
+        } else {
+            title = UserText.daxEasterEggSetAsSearchIcon
+        }
         setAsLogoButton.setTitle(title, for: .normal)
     }
 
@@ -179,9 +190,10 @@ class DaxEasterEggFullScreenViewController: UIViewController {
     
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        
+
+        let imageSize = actualImageSize ?? sourceImage?.size ?? CGSize(width: 100, height: 100)
         let frame = DaxEasterEggLayout.calculateLogoFrame(
-            for: sourceImage?.size ?? CGSize(width: 100, height: 100),
+            for: imageSize,
             in: view.bounds,
             safeAreaInsets: view.safeAreaInsets
         )
@@ -223,10 +235,21 @@ class DaxEasterEggFullScreenViewController: UIViewController {
         imageView.image
     }
 
+    /// Hides the source logo during transition to avoid duplicate logos.
+    func hideSourceLogo() {
+        sourceViewController?.hideLogoForTransition()
+    }
+
+    /// Shows the source logo after transition completes.
+    func showSourceLogo() {
+        sourceViewController?.showLogoAfterTransition()
+    }
+
     /// Adjusts the layout to use the actual downloaded image size.
-    private func adjustLayoutForActualImageSize(_ actualImageSize: CGSize) {
+    private func adjustLayoutForActualImageSize(_ imageSize: CGSize) {
+        actualImageSize = imageSize
         let newFrame = DaxEasterEggLayout.calculateLogoFrame(
-            for: actualImageSize,
+            for: imageSize,
             in: view.bounds,
             safeAreaInsets: view.safeAreaInsets
         )

@@ -459,17 +459,10 @@ final class ContinueSetUpModelTests: XCTestCase {
 
         XCTAssertEqual(firedPixels.count, 2)
 
-        // defaultBrowser fires defaultRequestedFromHomepageSetupView
         let expectedGeneralPixel = GeneralPixel.defaultRequestedFromHomepageSetupView
-        let actualGeneralPixel = firedPixels.first(where: { $0.event.name == expectedGeneralPixel.name })
-        XCTAssertNotNil(actualGeneralPixel)
-        XCTAssertEqual(actualGeneralPixel?.includesAppVersionParameter, true)
-
-        // defaultBrowser fires nextStepsCardClicked
         let expectedNewTabPagePixel = NewTabPagePixel.nextStepsCardClicked(NewTabPageDataModel.CardID.defaultApp.rawValue)
-        let actualNewTabPagePixel = firedPixels.first(where: { $0.event.name == expectedNewTabPagePixel.name })
-        XCTAssertNotNil(actualNewTabPagePixel)
-        XCTAssertEqual(actualNewTabPagePixel?.includesAppVersionParameter, true)
+        XCTAssertTrue(firedPixels.contains(where: { $0.event.name == expectedGeneralPixel.name && $0.includesAppVersionParameter == true }))
+        XCTAssertTrue(firedPixels.contains(where: { $0.event.name == expectedNewTabPagePixel.name && $0.includesAppVersionParameter == true }))
     }
 
     @MainActor func testWhenAskedToPerformActionForDockThenItFiresPixels() {
@@ -477,17 +470,10 @@ final class ContinueSetUpModelTests: XCTestCase {
 
         XCTAssertEqual(firedPixels.count, 2)
 
-        // dock fires userAddedToDockFromNewTabPageCard
         let expectedGeneralPixel = GeneralPixel.userAddedToDockFromNewTabPageCard
-        let actualGeneralPixel = firedPixels.first(where: { $0.event.name == expectedGeneralPixel.name })
-        XCTAssertNotNil(actualGeneralPixel)
-        XCTAssertEqual(actualGeneralPixel?.includesAppVersionParameter, false)
-
-        // dock fires nextStepsCardClicked
         let expectedNewTabPagePixel = NewTabPagePixel.nextStepsCardClicked(NewTabPageDataModel.CardID.addAppToDockMac.rawValue)
-        let actualNewTabPagePixel = firedPixels.first(where: { $0.event.name == expectedNewTabPagePixel.name })
-        XCTAssertNotNil(actualNewTabPagePixel)
-        XCTAssertEqual(actualNewTabPagePixel?.includesAppVersionParameter, true)
+        XCTAssertTrue(firedPixels.contains(where: { $0.event.name == expectedGeneralPixel.name && $0.includesAppVersionParameter == false }))
+        XCTAssertTrue(firedPixels.contains(where: { $0.event.name == expectedNewTabPagePixel.name && $0.includesAppVersionParameter == true }))
     }
 
     @MainActor func testWhenAskedToPerformActionForDuckplayerThenItFiresPixel() {
@@ -522,17 +508,10 @@ final class ContinueSetUpModelTests: XCTestCase {
 
         XCTAssertEqual(firedPixels.count, 2)
 
-        // subscription fires subscriptionNewTabPageNextStepsCardClicked
         let expectedSubscriptionPixel = SubscriptionPixel.subscriptionNewTabPageNextStepsCardClicked
-        let actualSubscriptionPixel = firedPixels.first(where: { $0.event.name == expectedSubscriptionPixel.name })
-        XCTAssertNotNil(actualSubscriptionPixel)
-        XCTAssertEqual(actualSubscriptionPixel?.includesAppVersionParameter, true)
-
-        // subscription fires nextStepsCardClicked
         let expectedNewTabPagePixel = NewTabPagePixel.nextStepsCardClicked(NewTabPageDataModel.CardID.subscription.rawValue)
-        let actualNewTabPagePixel = firedPixels.first(where: { $0.event.name == expectedNewTabPagePixel.name })
-        XCTAssertNotNil(actualNewTabPagePixel)
-        XCTAssertEqual(actualNewTabPagePixel?.includesAppVersionParameter, true)
+        XCTAssertTrue(firedPixels.contains(where: { $0.event.name == expectedSubscriptionPixel.name && $0.includesAppVersionParameter == true }))
+        XCTAssertTrue(firedPixels.contains(where: { $0.event.name == expectedNewTabPagePixel.name && $0.includesAppVersionParameter == true }))
     }
 
     // MARK: - Pixel Tests (Dismiss)
@@ -582,17 +561,10 @@ final class ContinueSetUpModelTests: XCTestCase {
 
         XCTAssertEqual(firedPixels.count, 2)
 
-        // subscription fires subscriptionNewTabPageNextStepsCardDismissed
         let expectedSubscriptionPixel = SubscriptionPixel.subscriptionNewTabPageNextStepsCardDismissed
-        let actualSubscriptionPixel = firedPixels.first(where: { $0.event.name == expectedSubscriptionPixel.name })
-        XCTAssertNotNil(actualSubscriptionPixel)
-        XCTAssertEqual(actualSubscriptionPixel?.includesAppVersionParameter, true)
-
-        // subscription fires nextStepsCardDismissed
         let expectedNewTabPagePixel = NewTabPagePixel.nextStepsCardDismissed(NewTabPageDataModel.CardID.subscription.rawValue)
-        let actualNewTabPagePixel = firedPixels.first(where: { $0.event.name == expectedNewTabPagePixel.name })
-        XCTAssertNotNil(actualNewTabPagePixel)
-        XCTAssertEqual(actualNewTabPagePixel?.includesAppVersionParameter, true)
+        XCTAssertTrue(firedPixels.contains(where: { $0.event.name == expectedSubscriptionPixel.name && $0.includesAppVersionParameter == true }))
+        XCTAssertTrue(firedPixels.contains(where: { $0.event.name == expectedNewTabPagePixel.name && $0.includesAppVersionParameter == true }))
     }
 }
 

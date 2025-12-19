@@ -66,6 +66,7 @@ final class AutoconsentUserScript: NSObject, WKScriptMessageHandlerWithReply, Us
     // Reload loop detection state (per-tab)
     private var lastHandledCMPName: String?
     private var reloadLoopDetected: Bool = false
+    private var consentHeuristicEnabled: Bool?
 
     init(config: PrivacyConfiguration,
          management: AutoconsentManagement,
@@ -287,7 +288,6 @@ extension AutoconsentUserScript {
             Logger.autoconsent.debug("heuristic action cohort: \(String(describing: cohort))")
             return cohort == .treatment
         } else {
-            // default if not enrolled
             Logger.autoconsent.debug("heuristic action not enrolled")
             return nil
         }
@@ -315,6 +315,8 @@ extension AutoconsentUserScript {
             return
         }
 
+        self.consentHeuristicEnabled = isHeuristicActionEnabled()
+
         // do the navigation check before checking if the domain is allowlisted
         checkMainFrameNavigation(message: message, url: url)
 
@@ -328,9 +330,6 @@ extension AutoconsentUserScript {
             return
         }
 
-        // Resolve the cohort for the heuristic experiment
-        let enableHeuristicAction = isHeuristicActionEnabled() ?? false // default to false if not enrolled
-
         if message.frameInfo.isMainFrame {
             // reset dashboard state
             refreshDashboardState(
@@ -341,7 +340,7 @@ extension AutoconsentUserScript {
                 selftestFailed: nil,
                 consentReloadLoop: reloadLoopDetected,
                 consentRule: lastHandledCMPName, // this will be non-null in case of a reload loop
-                consentHeuristicEnabled: enableHeuristicAction
+                consentHeuristicEnabled: consentHeuristicEnabled
             )
             firePixel(pixel: .acInit)
         }
@@ -389,7 +388,7 @@ extension AutoconsentUserScript {
                 "isMainWorld": false,
                 "enableFilterList": enableFilterList,
                 "enableHeuristicDetection": true,
-                "enableHeuristicAction": enableHeuristicAction
+                "enableHeuristicAction": consentHeuristicEnabled ?? false // default to false if not enrolled
             ] as [String: Any?]
         ] as [String: Any?]
 
@@ -464,7 +463,7 @@ extension AutoconsentUserScript {
                 selftestFailed: nil,
                 consentReloadLoop: reloadLoopDetected,
                 consentRule: messageData.cmp,
-                consentHeuristicEnabled: isHeuristicActionEnabled()
+                consentHeuristicEnabled: consentHeuristicEnabled
             )
             // trigger animation
             Logger.autoconsent.debug("Starting animation for cosmetic filters")
@@ -495,7 +494,7 @@ extension AutoconsentUserScript {
                 selftestFailed: nil,
                 consentReloadLoop: reloadLoopDetected,
                 consentRule: messageData.cmp,
-                consentHeuristicEnabled: isHeuristicActionEnabled()
+                consentHeuristicEnabled: consentHeuristicEnabled
             )
             firePixel(pixel: .errorOptoutFailed)
         } else if messageData.scheduleSelfTest {
@@ -533,7 +532,7 @@ extension AutoconsentUserScript {
             selftestFailed: nil,
             consentReloadLoop: reloadLoopDetected,
             consentRule: messageData.cmp,
-            consentHeuristicEnabled: isHeuristicActionEnabled()
+            consentHeuristicEnabled: consentHeuristicEnabled
         )
         firePixel(pixel: messageData.isCosmetic ? .doneCosmetic : .done)
 
@@ -593,7 +592,7 @@ extension AutoconsentUserScript {
             selftestFailed: messageData.result,
             consentReloadLoop: reloadLoopDetected,
             consentRule: messageData.cmp,
-            consentHeuristicEnabled: isHeuristicActionEnabled()
+            consentHeuristicEnabled: consentHeuristicEnabled
         )
         firePixel(pixel: messageData.result ? .selfTestOk : .selfTestFail)
         replyHandler([ "type": "ok" ], nil) // this is just to prevent a Promise rejection

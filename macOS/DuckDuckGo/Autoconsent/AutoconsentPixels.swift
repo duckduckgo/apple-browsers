@@ -112,7 +112,6 @@ enum AutoconsentPixel: PixelKitEvent {
                 if cohort == .treatment {
                     params["consentHeuristicEnabled"] = "1"
                 } else {
-                    // default if not enrolled
                     params["consentHeuristicEnabled"] = "0"
                 }
             }
@@ -131,7 +130,6 @@ enum AutoconsentPixel: PixelKitEvent {
                 if cohort == .treatment {
                     params["consentHeuristicEnabled"] = "1"
                 } else {
-                    // default if not enrolled
                     params["consentHeuristicEnabled"] = "0"
                 }
             }

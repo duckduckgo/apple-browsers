@@ -73,8 +73,10 @@ final class FaviconDownloader: NSObject {
         self.pendingDownloads.removeAll()
 
         for (download, task) in pendingDownloads {
-            DispatchQueue.main.asyncOrNow {
-                download.cancel()
+            DispatchQueue.main.asyncOrNow { [destinationURL=task.destinationURL] in
+                download.cancel { _ in
+                    try? destinationURL.map(FileManager.default.removeItem(at:))
+                }
             }
             task.continuation.resume(with: .failure(URLError(.cancelled)))
         }

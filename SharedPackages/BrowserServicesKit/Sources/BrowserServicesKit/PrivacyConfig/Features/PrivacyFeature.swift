@@ -412,7 +412,6 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case privacyProOnboardingPromotion
     case paidAIChat
     case supportsAlternateStripePaymentFlow
-    case vpnConnectionWidePixelMeasurement
     case winBackOffer
     case vpnMenuItem
     case blackFridayCampaign

@@ -59,18 +59,15 @@ final class TabSwitcherTrackerCountViewModel: ObservableObject {
         refreshTask = Task { [weak self] in
             guard let self else { return }
             let count = await privacyStats.fetchPrivacyStatsTotalCount()
-            print("[PrivacyStats] Fetched tracker count: \(count)")
 
             guard !Task.isCancelled else { return }
 
             guard count > 0 else {
-                print("[PrivacyStats] Count is 0, hiding banner")
                 self.state = .hidden
                 return
             }
 
             let title = String(format: UserText.tabSwitcherTrackerCountTitle, count)
-            print("[PrivacyStats] Showing banner with title: \(title)")
             self.state = State(isVisible: true,
                                title: title,
                                subtitle: UserText.tabSwitcherTrackerCountSubtitle)

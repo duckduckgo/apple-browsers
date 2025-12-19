@@ -76,7 +76,8 @@ struct InfoPanelView: View {
             RoundedRectangle(cornerRadius: Constants.cornerRadius, style: .continuous)
                 .fill(model.backgroundColor)
         )
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(Text(model.title + " " + model.subtitle))
     }
 }
 

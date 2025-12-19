@@ -301,7 +301,7 @@ class TabSwitcherViewController: UIViewController {
         let viewModel = TabSwitcherTrackerCountViewModel(
             settings: tabSwitcherSettings,
             privacyStats: privacyStats,
-            featureFlagger: AppDependencyProvider.shared.featureFlagger
+            featureFlagger: featureFlagger
         )
         trackerCountViewModel = viewModel
         trackerCountCancellable = viewModel.$state

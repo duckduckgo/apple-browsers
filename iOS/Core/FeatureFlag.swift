@@ -114,6 +114,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212258549430659
     case dbpForegroundRunningWhenDashboardOpen
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212397941080401
+    case dbpClickActionDelayReductionOptimization
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866711635701
     case crashReportOptInStatusResetting
 
@@ -283,9 +286,15 @@ public enum FeatureFlag: String {
 
     // https://app.asana.com/1/137249556945/project/414709148257752/task/1212395110448661?focus=true
     case appRatingPrompt
-    
+
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1211652685709102?focus=true
     case contextualDuckAIMode
+
+    /// https://app.asana.com/1/137249556945/project/1201462886803403/task/1211837879355661?focus=true
+    case aiChatSync
+
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212388316840466?focus=true
+    case showWhatsNewPromptOnDemand
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -309,7 +318,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .browsingMenuSheetPresentation,
              .ampBackgroundTaskSupport,
              .appRatingPrompt,
-             .autofillPasswordSearchPrioritizeDomain:
+             .autofillPasswordSearchPrioritizeDomain,
+             .showWhatsNewPromptOnDemand:
             true
         default:
             false
@@ -348,6 +358,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .dbpRemoteBrokerDelivery,
              .dbpForegroundRunningOnAppActive,
              .dbpForegroundRunningWhenDashboardOpen,
+             .dbpClickActionDelayReductionOptimization,
              .showAIChatAddressBarChoiceScreen,
              .winBackOffer,
              .syncCreditCards,
@@ -377,7 +388,9 @@ extension FeatureFlag: FeatureFlagDescribing {
              .dataImportWideEventMeasurement,
              .ampBackgroundTaskSupport,
              .appRatingPrompt,
-             .contextualDuckAIMode:
+             .contextualDuckAIMode,
+             .aiChatSync,
+             .showWhatsNewPromptOnDemand:
             return true
         case .showSettingsCompleteSetupSection:
             if #available(iOS 18.2, *) {
@@ -490,6 +503,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DBPSubfeature.foregroundRunningOnAppActive))
         case .dbpForegroundRunningWhenDashboardOpen:
             return .remoteReleasable(.subfeature(DBPSubfeature.foregroundRunningWhenDashboardOpen))
+        case .dbpClickActionDelayReductionOptimization:
+            return .remoteReleasable(.subfeature(DBPSubfeature.clickActionDelayReductionOptimization))
         case .crashReportOptInStatusResetting:
             return .internalOnly()
         case .syncSeamlessAccountSwitching:
@@ -600,6 +615,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.appRatingPrompt))
         case .contextualDuckAIMode:
             return .remoteReleasable(.subfeature(AIChatSubfeature.contextualDuckAIMode))
+        case .aiChatSync:
+            return .disabled
+        case .showWhatsNewPromptOnDemand:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.showWhatsNewPromptOnDemand))
         }
     }
 }

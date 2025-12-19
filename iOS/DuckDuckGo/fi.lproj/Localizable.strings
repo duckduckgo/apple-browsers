@@ -2977,12 +2977,55 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Ota pois käytöstä estääksesi linkkejä avautumasta automaattisesti muissa asennetuissa sovelluksissa.";
 
+/* Subtitle explaining what the cookies option does in auto clear settings */
+"settings.autoclear.cookies.subtitle" = "Poista kaikki sivuston tiedot, mukaan lukien vieraillut sivustot. Saattaa kirjata sinut ulos tileiltä.";
+
+/* Title for the cookies and site data option in auto clear settings */
+"settings.autoclear.cookies.title" = "Evästeet ja sivuston tiedot";
+
+/* Subtitle explaining what the Duck.ai chats option does in auto clear settings */
+"settings.autoclear.duckai.chats.subtitle" = "Poista kaikki keskustelut, myös kiinnitetyt keskustelut";
+
+/* Title for the Duck.ai chats option in auto clear settings */
+"settings.autoclear.duckai.chats.title" = "Duck.ai-keskustelut";
+
+/* Section header for the auto clear options */
+"settings.autoclear.section.header" = "Tyhjennä";
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Tyhjennä välilehdet ja tiedot";
 
 /* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
 "settings.autoclear.tabs.and.data.with.aichat" = "Tyhjennä välilehdet, tiedot ja Duck.ai-keskustelut";
 
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "Sulje kaikki avoimet välilehdet";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "Välilehdet";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Sovelluksesta poistuttaessa, 15 minuutin toimettomuuden jälkeen";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "Sovelluksesta poistuttaessa, 1 tunnin toimettomuuden jälkeen";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Sovelluksesta poistuttaessa, 30 minuutin toimettomuuden jälkeen";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "Sovelluksesta poistuttaessa, 5 minuutin toimettomuuden jälkeen";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "Vain sovelluksesta poistuttaessa";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "Sovelluksesta poistuminen tarkoittaa, että sovellus suljetaan pyyhkäisemällä, kun taas toimettomuus tarkoittaa, että sovellus on käynnissä taustalla.";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "Haluttu aika";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "Tiedot poistetaan, kun sovellus käynnistetään uudelleen.";
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Hakuehdotukset";
 
@@ -3001,6 +3044,8 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Jos käytössä on Touch ID, Face ID tai järjestelmän salasana, sinua pyydetään poistamaan lukitus, kun avaat sovelluksen.";
 
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "Automaattinen tietojen tyhjennys";
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Selainpalaute";
 
@@ -3010,6 +3055,8 @@
 /* Settings screen cell text for clearing AI chat history */
 "settings.clear.aichat.history.title" = "Tyhjennä Duck.ai-keskustelut";
 
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "Poista selaustiedot";
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Tyhjennä tiedot automaattisesti";
 
@@ -3037,6 +3084,8 @@
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Datan tyhjentäminen";
 
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "Tietojesi poistaminen voi auttaa suojaamaan yksityisyyttäsi verkossa. Tyhjennä tiedot manuaalisesti Fire Buttonilla tai määritä automaattinen tyhjennys.";
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Oletusselain";
 
@@ -3082,6 +3131,8 @@
 /* Settings screen cell text for Fireproof Sites */
 "settings.fireproof.sites" = "Tee sivustoista palonkestäviä";
 
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Fireproof-sivustot";
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Yleiset";
 
@@ -3336,6 +3387,9 @@
 
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "DuckDuckGo-selain tarjoaa aina käytössä olevan seurantasuojauksen. [Lue lisää](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
+
+/* Settings cell title to show users the What’s New prompt */
+"settings.whats.new" = "Uutuudet";
 
 /* No comment provided by engineer. */
 "Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Näyttää lokit viimeisen minuutin ajalta, jotta ongelmat voidaan diagnosoida heti päivityksen jälkeen.";

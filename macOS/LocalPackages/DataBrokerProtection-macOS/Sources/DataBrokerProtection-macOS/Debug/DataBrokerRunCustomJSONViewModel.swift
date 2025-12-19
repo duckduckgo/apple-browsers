@@ -184,6 +184,10 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
             return false
         }
 
+        var isClickActionDelayReductionOptimizationOn: Bool {
+            featureFlagger.isFeatureOn(.dbpClickActionDelayReductionOptimization)
+        }
+
         init(privacyConfigManager: PrivacyConfigurationManaging) {
             self.featureFlagger = DefaultFeatureFlagger(
                 internalUserDecider: privacyConfigManager.internalUserDecider,

@@ -82,7 +82,6 @@ extension RemoteMessagingUI {
 
     struct CardView: View {
         let displayModel: CardsListDisplayModel.Item
-        let background: AnyView
 
         var body: some View {
             HStack(alignment: .top, spacing: Metrics.Card.contentHorizontalSpacing) {
@@ -112,7 +111,7 @@ extension RemoteMessagingUI {
             }
             .padding([.bottom, .top], Metrics.Card.contentVerticalPadding)
             .padding([.trailing, .leading], Metrics.Card.contentHorizontalPadding)
-            .background(background)
+            .background(Color(designSystemColor: .surface))
             .cornerRadius(Metrics.Card.contentCornerRadius)
             .overlay {
                 RoundedRectangle(cornerRadius: Metrics.Card.contentCornerRadius)
@@ -167,20 +166,12 @@ private extension RemoteMessagingUI.CardsListView {
             ScrollView(showsIndicators: false) {
                 LazyVStack(spacing: Metrics.CardsList.cardsVerticalSpacing) {
                     ForEach(items.indices, id: \.self) { index in
-                        RemoteMessagingUI.CardView(displayModel: items[index], background: AnyView(backgroundView(forItemAt: index)))
+                        RemoteMessagingUI.CardView(displayModel: items[index])
                     }
                 }
             }
         }
 
-        @ViewBuilder
-        private func backgroundView(forItemAt index: Int) -> some View {
-            if index == 0 {
-                CardGradient()
-            } else {
-                Color(designSystemColor: .surface)
-            }
-        }
     }
 
     struct Footer: View {

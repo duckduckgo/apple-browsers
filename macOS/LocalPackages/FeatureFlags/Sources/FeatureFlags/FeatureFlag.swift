@@ -89,6 +89,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866616923544
     case dbpEmailConfirmationDecoupling
 
+    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1212397941080401
+    case dbpClickActionDelayReductionOptimization
+
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866717382557
     case syncSetupBarcodeIsUrlBased
 
@@ -106,9 +109,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866615582950
     case aiChatPageContext
-
-    /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866617720317
-    case aiChatImprovements
 
     /// https://app.asana.com/1/137249556945/project/1211834678943996/task/1211866617328244
     case aiChatKeepSession
@@ -273,6 +273,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/1201899738287924/task/1212437820560561?focus=true
     case memoryUsageMonitor
 
+    /// https://app.asana.com/1/137249556945/project/1201462886803403/task/1211837879355661?focus=true
+    case aiChatSync
+
     /// Autoconsent heuristic action experiment
     case autoconsentHeuristicAction
 }
@@ -347,7 +350,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .hangReporting,
 				.aiChatSidebar,
                 .aiChatPageContext,
-                .aiChatImprovements,
                 .aiChatKeepSession,
                 .aiChatOmnibarToggle,
                 .aiChatOmnibarCluster,
@@ -360,6 +362,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .newSyncEntryPoints,
                 .dbpEmailConfirmationDecoupling,
                 .dbpRemoteBrokerDelivery,
+                .dbpClickActionDelayReductionOptimization,
                 .syncFeatureLevel3,
                 .themes,
                 .appStoreUpdateFlow,
@@ -394,6 +397,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .autofillPasswordSearchPrioritizeDomain,
                 .dataImportWideEventMeasurement,
                 .memoryUsageMonitor,
+                .aiChatSync,
                 .autoconsentHeuristicAction:
             return true
         case .sslCertificatesBypass,
@@ -457,6 +461,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DBPSubfeature.remoteBrokerDelivery))
         case .dbpEmailConfirmationDecoupling:
             return .remoteReleasable(.subfeature(DBPSubfeature.emailConfirmationDecoupling))
+        case .dbpClickActionDelayReductionOptimization:
+            return .remoteReleasable(.subfeature(DBPSubfeature.clickActionDelayReductionOptimization))
         case .syncSetupBarcodeIsUrlBased:
             return .remoteReleasable(.subfeature(SyncSubfeature.syncSetupBarcodeIsUrlBased))
         case .exchangeKeysToSyncWithAnotherDevice:
@@ -469,8 +475,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AIChatSubfeature.sidebar))
         case .aiChatPageContext:
             return .remoteReleasable(.subfeature(AIChatSubfeature.pageContext))
-        case .aiChatImprovements:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.improvements))
         case .aiChatKeepSession:
             return .remoteReleasable(.subfeature(AIChatSubfeature.keepSession))
         case .aiChatOmnibarToggle:
@@ -568,6 +572,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .dataImportWideEventMeasurement:
             return .remoteReleasable(.subfeature(DataImportSubfeature.dataImportWideEventMeasurement))
         case .memoryUsageMonitor:
+            return .disabled
+        case .aiChatSync:
             return .disabled
         case .autoconsentHeuristicAction:
             return .remoteReleasable(.subfeature(AutoconsentSubfeature.heuristicAction))

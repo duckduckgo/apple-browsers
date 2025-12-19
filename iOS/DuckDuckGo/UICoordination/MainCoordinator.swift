@@ -84,7 +84,8 @@ final class MainCoordinator {
          modalPromptCoordinationService: ModalPromptCoordinationService,
          mobileCustomization: MobileCustomization,
          productSurfaceTelemetry: ProductSurfaceTelemetry,
-         sharedSecureVault: (any AutofillSecureVault)? = nil
+         whatsNewRepository: WhatsNewMessageRepository,
+         sharedSecureVault: (any AutofillSecureVault)? = nil,
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
@@ -188,7 +189,9 @@ final class MainCoordinator {
                                         remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler,
                                         productSurfaceTelemetry: productSurfaceTelemetry,
                                         fireExecutor: fireExecutor,
-                                        remoteMessagingDebugHandler: remoteMessagingService)
+                                        remoteMessagingDebugHandler: remoteMessagingService,
+                                        syncAiChatsCleaner: syncService.aiChatsCleaner,
+                                        whatsNewRepository: whatsNewRepository)
     }
 
     func start() {
@@ -247,6 +250,10 @@ final class MainCoordinator {
 
     func presentNetworkProtectionStatusSettingsModal() {
         controller.presentNetworkProtectionStatusSettingsModal()
+    }
+
+    func presentDataBrokerProtectionDashboard() {
+        controller.presentDataBrokerProtectionDashboard()
     }
 
     func presentModalPromptIfNeeded() {

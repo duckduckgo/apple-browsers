@@ -21,12 +21,14 @@ import Foundation
 import Core
 import Combine
 import BrowserServicesKit
+import DDGSync
 import enum UserScript.UserScriptError
 
 public protocol ScriptSourceProviding {
 
     var loginDetectionEnabled: Bool { get }
     var sendDoNotSell: Bool { get }
+    var sync: DDGSyncing { get }
     var contentBlockerRulesConfig: ContentBlockerUserScriptConfig { get }
     var surrogatesConfig: SurrogatesUserScriptConfig { get }
     var privacyConfigurationManager: PrivacyConfigurationManaging { get }
@@ -42,6 +44,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
 
     struct Dependencies {
         let appSettings: AppSettings
+        let sync: DDGSyncing
         let privacyConfigurationManager: PrivacyConfigurationManaging
         let contentBlockingManager: ContentBlockerRulesManagerProtocol
         let fireproofing: Fireproofing
@@ -50,7 +53,9 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
 
     var loginDetectionEnabled: Bool { fireproofing.loginDetectionEnabled }
     let sendDoNotSell: Bool
-    
+
+    var sync: DDGSyncing
+
     let contentBlockerRulesConfig: ContentBlockerUserScriptConfig
     let surrogatesConfig: SurrogatesUserScriptConfig
     let autofillSourceProvider: AutofillUserScriptSourceProvider
@@ -68,6 +73,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
 
         sendDoNotSell = dependencies.appSettings.sendDoNotSell
 
+        self.sync = dependencies.sync
         self.privacyConfigurationManager = dependencies.privacyConfigurationManager
         self.contentBlockingManager = dependencies.contentBlockingManager
         self.fireproofing = dependencies.fireproofing

@@ -1245,6 +1245,7 @@ extension Pixel {
         case settingsMoreSearchSettings
         case settingsRefreshButtonPositionAddressBar
         case settingsRefreshButtonPositionMenu
+        case settingsWhatsNewOpen
 
         /// [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210619010364082)
         case settingsOpenAssistSettings
@@ -1405,7 +1406,14 @@ extension Pixel {
         
         case aiChatTabSwitcherOpened
         case aiChatFireButtonTapped
-        
+
+        // MARK: AI Chat Sync
+
+        case aiChatSyncScopedSyncTokenError
+        case aiChatSyncEncryptionError
+        case aiChatSyncDecryptionError
+        case aiChatSyncHistoryEnabledError
+
         // MARK: New Address Bar Picker
         case aiChatNewAddressBarPickerDisplayed
         case aiChatNewAddressBarPickerConfirmed
@@ -1508,7 +1516,14 @@ extension Pixel {
         // MARK: - Push Notifications
         case inactiveUserProvisionalPushNotificationTapped
         case userNotificationAuthorizationStatusDaily
-        
+
+        // MARK: - Data Broker Protection Notifications
+        case dbpNotificationOpenedFirstScanComplete
+        case dbpNotificationOpenedFirstFreemiumScanComplete
+        case dbpNotificationOpenedFirstRemoval
+        case dbpNotificationOpenedAllRecordsRemoved
+        case dbpNotificationOpened1WeekCheckIn
+
         // MARK: - App Intent
         case appIntentPerformed
 
@@ -1635,7 +1650,8 @@ extension Pixel.Event {
         case .settingsOpenAssistSettings: return "m_settings_open_assist_settings"
         case .settingsRefreshButtonPositionAddressBar: return "m_settings_refresh_button_position_address_bar"
         case .settingsRefreshButtonPositionMenu: return "m_settings_refresh_button_position_menu"
-            
+        case .settingsWhatsNewOpen: return "m_settings_whats-new_open"
+
         case .experimentalBrowsingMenuEnabled: return "m_experimental-browsing-menu_enabled"
         case .experimentalBrowsingMenuDisabled: return "m_experimental-browsing-menu_disabled"
         case .experimentalBrowsingMenuUsed: return "m_experimental-browsing-menu_used"
@@ -2859,6 +2875,13 @@ extension Pixel.Event {
         case .aiChatHistoryDeleteSuccessful: return "m_aichat_history_delete_successful"
         case .aiChatHistoryDeleteFailed: return "m_aichat_history_delete_failed"
 
+        // MARK: AI Chat Sync
+
+        case .aiChatSyncScopedSyncTokenError: return "m_aichat_sync_internal_scoped-sync-token-error"
+        case .aiChatSyncEncryptionError: return "m_aichat_sync_internal_encryption-error"
+        case .aiChatSyncDecryptionError: return "m_aichat_sync_internal_decryption-error"
+        case .aiChatSyncHistoryEnabledError: return "m_aichat_sync_internal_history_enabled-error"
+
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"
 
@@ -2973,7 +2996,14 @@ extension Pixel.Event {
         // MARK: Push Notification
         case .inactiveUserProvisionalPushNotificationTapped: return "m_push-notification_local-provisional_inactive-user-tap"
         case .userNotificationAuthorizationStatusDaily: return "m_push-notification_user-notification-authorization-status"
-            
+
+        // MARK: Data Broker Protection Notifications
+        case .dbpNotificationOpenedFirstScanComplete: return "m_ios_dbp_notification_opened_first_scan_complete"
+        case .dbpNotificationOpenedFirstFreemiumScanComplete: return "m_ios_dbp_freemium_notification_opened_first_scan_complete"
+        case .dbpNotificationOpenedFirstRemoval: return "m_ios_dbp_notification_opened_first_removal"
+        case .dbpNotificationOpenedAllRecordsRemoved: return "m_ios_dbp_notification_opened_all_records_removed"
+        case .dbpNotificationOpened1WeekCheckIn: return "m_ios_dbp_notification_opened_1_week_check_in"
+
         // MARK: App Intent
         case .appIntentPerformed: return "m_app-intent_intent-performed"
 

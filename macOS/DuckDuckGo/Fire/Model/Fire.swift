@@ -509,6 +509,9 @@ final class Fire: FireProtocol {
     @MainActor
     func burnChatHistory() async {
         await aiChatHistoryCleaner.cleanAIChatHistory()
+        if syncService?.authState != .inactive {
+            syncService?.scheduler.requestSyncImmediately()
+        }
     }
 
     // MARK: - Fire animation

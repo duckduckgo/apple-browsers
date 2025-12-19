@@ -239,5 +239,6 @@ extension DataImportViewController: UIDocumentPickerDelegate {
 
     func documentPickerWasCancelled(_ controller: UIDocumentPickerViewController) {
         viewModel.isLoading = false
+        viewModel.documentPickerCancelled()
     }
 }

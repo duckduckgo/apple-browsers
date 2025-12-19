@@ -30,6 +30,65 @@ class DistributedNavigationDelegateTests: DistributedNavigationDelegateTestsBase
 
     // MARK: - Basic Responder Chain
 
+    @MainActor
+    func testWhenDispatchCreateWebViewIsCalledDuringDecidePolicyFor_thenCallbackIsDeferredUntilAfterDecisionHandler() {
+        dispatchPrecondition(condition: .onQueue(.main))
+
+        navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
+
+        let decisionStarted = expectation(description: "decidePolicy started")
+        let createWebViewCallbackFired = expectation(description: "dispatchCreateWebView callback fired")
+        let navigationDidFail = expectation(description: "navigation did fail")
+
+        let lock = NSLock()
+        var didFireCallback = false
+        var allowContinuation: CheckedContinuation<Void, Never>?
+
+        func setAllowContinuation(_ continuation: CheckedContinuation<Void, Never>) {
+            lock.withLock { allowContinuation = continuation }
+        }
+
+        func resumeAllowContinuation() {
+            let continuation: CheckedContinuation<Void, Never>? = lock.withLock {
+                defer { allowContinuation = nil }
+                return allowContinuation
+            }
+            continuation?.resume()
+        }
+
+        responder(at: 0).onNavigationAction = { [weak self] _, _ in
+            decisionStarted.fulfill()
+            self?.navigationDelegate.dispatchCreateWebView {
+                lock.withLock { didFireCallback = true }
+                createWebViewCallbackFired.fulfill()
+            }
+            await withCheckedContinuation { continuation in
+                setAllowContinuation(continuation)
+            }
+            return .allow
+        }
+        responder(at: 0).onDidFail = { _, _ in
+            navigationDidFail.fulfill()
+        }
+
+        let schemeHandler = TestNavigationSchemeHandler(onRequest: { task in
+            task.didFailWithError(WKError(.unknown))
+        })
+
+        withWebView(testURLSchemeHandler: schemeHandler) { webView in
+            _ = webView.load(req(urls.testScheme))
+        }
+
+        wait(for: [decisionStarted], timeout: standardTimeout)
+
+        // The callback must not fire while the decision is still blocked.
+        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+        XCTAssertFalse(lock.withLock { didFireCallback })
+
+        resumeAllowContinuation()
+        wait(for: [createWebViewCallbackFired, navigationDidFail], timeout: standardTimeout)
+    }
+
 #if _WEBPAGE_PREFS_CUSTOM_HEADERS_ENABLED
     func testWhenCustomHeadersAreSet_headersAreSent() throws {
         var _shouldAddHeaders = true

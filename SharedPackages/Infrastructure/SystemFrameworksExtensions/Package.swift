@@ -31,11 +31,32 @@ let package = Package(
             name: "FoundationExtensions",
             targets: ["FoundationExtensions"]
         ),
+        .library(
+            name: "UIKitExtensions",
+            targets: ["UIKitExtensionsProxy"]
+        ),
     ],
     targets: [
+        // MARK: - Shared Targets
         .target(
             name: "FoundationExtensions"
         ),
+
+        // MARK: - Platform Specific Targets
+        .target(
+            name: "UIKitExtensions",
+        ),
+        .target(
+            name: "UIKitExtensionsProxy",
+            dependencies: [
+                .target(
+                  name: "UIKitExtensions",
+                  condition: .when(platforms: [.iOS])
+                )
+            ]
+        ),
+
+        // MARK: - Test Targets
         .testTarget(
             name: "FoundationExtensionsTests",
             dependencies: ["FoundationExtensions"]

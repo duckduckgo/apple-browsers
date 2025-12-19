@@ -158,7 +158,6 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
         let expectedShownEvent = NewTabPagePixel.nextStepsCardShown(NewTabPageDataModel.CardID.addAppToDockMac.rawValue)
         let actualShownEvent = firedPixels.first(where: { $0.event.name == expectedShownEvent.name })
         XCTAssertNotNil(actualShownEvent)
-        XCTAssertEqual(actualShownEvent?.event.parameters, expectedShownEvent.parameters)
         XCTAssertEqual(actualShownEvent?.frequency, .uniqueByNameAndParameters)
         XCTAssertEqual(actualShownEvent?.includesAppVersionParameter, false)
     }
@@ -170,7 +169,6 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
         XCTAssertEqual(firedPixels.count, 1)
         let expectedEvent = NewTabPagePixel.nextStepsCardShown(NewTabPageDataModel.CardID.duckplayer.rawValue)
         XCTAssertEqual(firedPixels.first?.event.name, expectedEvent.name)
-        XCTAssertEqual(firedPixels.first?.event.parameters, expectedEvent.parameters)
         XCTAssertEqual(firedPixels.first?.frequency, .uniqueByNameAndParameters)
         XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, false)
     }
@@ -182,7 +180,8 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
         XCTAssertEqual(firedPixels.count, 1)
         let expectedEvent = NewTabPagePixel.nextStepsCardShown(NewTabPageDataModel.CardID.subscription.rawValue)
         XCTAssertEqual(firedPixels.first?.event.name, expectedEvent.name)
-        XCTAssertEqual(firedPixels.first?.event.parameters, expectedEvent.parameters)
+        XCTAssertEqual(firedPixels.first?.frequency, .uniqueByNameAndParameters)
+        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, false)
     }
 
     @MainActor
@@ -192,7 +191,8 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
         XCTAssertEqual(firedPixels.count, 1)
         let expectedEvent = NewTabPagePixel.nextStepsCardShown(NewTabPageDataModel.CardID.defaultApp.rawValue)
         XCTAssertEqual(firedPixels.first?.event.name, expectedEvent.name)
-        XCTAssertEqual(firedPixels.first?.event.parameters, expectedEvent.parameters)
+        XCTAssertEqual(firedPixels.first?.frequency, .uniqueByNameAndParameters)
+        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, false)
     }
 
     @MainActor
@@ -202,7 +202,8 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
         XCTAssertEqual(firedPixels.count, 1)
         let expectedEvent = NewTabPagePixel.nextStepsCardShown(NewTabPageDataModel.CardID.bringStuff.rawValue)
         XCTAssertEqual(firedPixels.first?.event.name, expectedEvent.name)
-        XCTAssertEqual(firedPixels.first?.event.parameters, expectedEvent.parameters)
+        XCTAssertEqual(firedPixels.first?.frequency, .uniqueByNameAndParameters)
+        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, false)
     }
 
     @MainActor
@@ -212,7 +213,8 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
         XCTAssertEqual(firedPixels.count, 1)
         let expectedEvent = NewTabPagePixel.nextStepsCardShown(NewTabPageDataModel.CardID.emailProtection.rawValue)
         XCTAssertEqual(firedPixels.first?.event.name, expectedEvent.name)
-        XCTAssertEqual(firedPixels.first?.event.parameters, expectedEvent.parameters)
+        XCTAssertEqual(firedPixels.first?.frequency, .uniqueByNameAndParameters)
+        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, false)
     }
 
     @MainActor
@@ -221,9 +223,15 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
 
         XCTAssertEqual(firedPixels.count, 3)
 
-        XCTAssertTrue(firedPixels.allSatisfy { $0.event.name == NewTabPagePixel.nextStepsCardShown("").name })
-        XCTAssertTrue(firedPixels.contains(where: { $0.event.parameters?["key"] == NewTabPageDataModel.CardID.duckplayer.rawValue }))
-        XCTAssertTrue(firedPixels.contains(where: { $0.event.parameters?["key"] == NewTabPageDataModel.CardID.emailProtection.rawValue }))
-        XCTAssertTrue(firedPixels.contains(where: { $0.event.parameters?["key"] == NewTabPageDataModel.CardID.bringStuff.rawValue }))
+        let duckplayerPixel = NewTabPagePixel.nextStepsCardShown(NewTabPageDataModel.CardID.duckplayer.rawValue)
+        let emailProtectionPixel = NewTabPagePixel.nextStepsCardShown(NewTabPageDataModel.CardID.emailProtection.rawValue)
+        let bringStuffPixel = NewTabPagePixel.nextStepsCardShown(NewTabPageDataModel.CardID.bringStuff.rawValue)
+
+        XCTAssertTrue(firedPixels.contains(where: { $0.event.name == duckplayerPixel.name }))
+        XCTAssertTrue(firedPixels.contains(where: { $0.event.name == emailProtectionPixel.name }))
+        XCTAssertTrue(firedPixels.contains(where: { $0.event.name == bringStuffPixel.name }))
+
+        XCTAssertTrue(firedPixels.allSatisfy { $0.frequency == .uniqueByNameAndParameters })
+        XCTAssertTrue(firedPixels.allSatisfy { $0.includesAppVersionParameter == false })
     }
 }

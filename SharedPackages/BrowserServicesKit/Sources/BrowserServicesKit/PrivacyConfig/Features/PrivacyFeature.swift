@@ -191,6 +191,9 @@ public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
 
     ///  https://app.asana.com/1/137249556945/project/414709148257752/task/1212395110448661?focus=true
     case appRatingPrompt
+
+    /// https://app.asana.com/1/137249556945/project/1206329551987282/task/1212238464901412?focus=true
+    case showWhatsNewPromptOnDemand
 }
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
@@ -243,6 +246,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case emailConfirmationDecoupling
     case foregroundRunningOnAppActive
     case foregroundRunningWhenDashboardOpen
+    case clickActionDelayReductionOptimization
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -387,6 +391,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case newDeviceSyncPrompt
     case syncCreditCards
     case syncIdentities
+    case aiChatSync
 }
 
 public enum AutoconsentSubfeature: String, PrivacySubfeature {
@@ -556,6 +561,8 @@ public enum PopupBlockingSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature {
         .popupBlocking
     }
+
+    case createWebViewGatingFailsafe
 
     /// Use extended user-initiated popup timeout (extends from 1s to 6s)
     case extendedUserInitiatedPopupTimeout

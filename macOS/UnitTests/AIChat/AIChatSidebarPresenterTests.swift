@@ -32,7 +32,6 @@ final class AIChatSidebarPresenterTests: XCTestCase {
     private var mockSidebarProvider: MockAIChatSidebarProvider!
     private var mockAIChatMenuConfig: DummyAIChatConfig!
     private var mockAIChatTabOpener: MockAIChatTabOpener!
-    private var mockFeatureFlagger: MockFeatureFlagger!
     private var mockWindowControllersManager: WindowControllersManagerMock!
     private var mockPixelFiring: PixelKitMock!
     private var cancellables: Set<AnyCancellable>!
@@ -43,7 +42,6 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         mockSidebarProvider = MockAIChatSidebarProvider()
         mockAIChatMenuConfig = DummyAIChatConfig()
         mockAIChatTabOpener = MockAIChatTabOpener()
-        mockFeatureFlagger = MockFeatureFlagger()
         mockWindowControllersManager = WindowControllersManagerMock()
         mockPixelFiring = PixelKitMock()
         cancellables = Set<AnyCancellable>()
@@ -63,7 +61,6 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         presenter = nil
         mockPixelFiring = nil
         mockWindowControllersManager = nil
-        mockFeatureFlagger = nil
         mockAIChatTabOpener = nil
         mockAIChatMenuConfig = nil
         mockSidebarProvider = nil
@@ -87,7 +84,6 @@ final class AIChatSidebarPresenterTests: XCTestCase {
             sidebarProvider: mockSidebarProvider,
             aiChatMenuConfig: mockAIChatMenuConfig,
             aiChatTabOpener: mockAIChatTabOpener,
-            featureFlagger: mockFeatureFlagger,
             windowControllersManager: mockWindowControllersManager,
             pixelFiring: mockPixelFiring
         )
@@ -97,19 +93,6 @@ final class AIChatSidebarPresenterTests: XCTestCase {
     }
 
     // MARK: - Toggle Sidebar Tests
-
-    func testToggleSidebar_withFeatureDisabled_doesNothing() {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags = []
-        let initialCount = mockSidebarProvider.sidebarsByTab.count
-
-        // When
-        presenter.toggleSidebar()
-
-        // Then
-        XCTAssertEqual(mockSidebarProvider.sidebarsByTab.count, initialCount)
-        XCTAssertNil(mockSidebarHost.embeddedViewController)
-    }
 
     func testToggleSidebar_withNoCurrentTab_doesNothing() {
         // Given
@@ -219,19 +202,6 @@ final class AIChatSidebarPresenterTests: XCTestCase {
 
     // MARK: - Is Sidebar Open Tests
 
-    func testIsSidebarOpen_withFeatureDisabled_returnsFalse() {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags = []
-        let tabID = "test-tab"
-        _ = mockSidebarProvider.makeSidebarViewController(for: tabID, burnerMode: .regular)
-
-        // When
-        let isOpen = presenter.isSidebarOpen(for: tabID)
-
-        // Then
-        XCTAssertFalse(isOpen)
-    }
-
     func testIsSidebarOpen_withExistingSidebar_returnsTrue() {
         // Given
         let tabID = "test-tab"
@@ -280,19 +250,6 @@ final class AIChatSidebarPresenterTests: XCTestCase {
     }
 
     // MARK: - Present Sidebar Tests
-
-    func testPresentSidebar_withFeatureDisabled_doesNothing() {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags = []
-        let prompt = AIChatNativePrompt.queryPrompt("What is the best pizza recipe?", autoSubmit: true)
-        let initialCount = mockSidebarProvider.sidebarsByTab.count
-
-        // When
-        presenter.presentSidebar(for: prompt)
-
-        // Then
-        XCTAssertEqual(mockSidebarProvider.sidebarsByTab.count, initialCount)
-    }
 
     func testPresentSidebar_withNoCurrentTab_doesNothing() {
         // Given
@@ -479,22 +436,6 @@ final class AIChatSidebarPresenterTests: XCTestCase {
 
     // MARK: - AI Chat Handoff Tests
 
-    func testHandleAIChatHandoff_withFeatureDisabled_doesNothing() {
-        // Given
-        mockFeatureFlagger.enabledFeatureFlags = []
-        let payload = AIChatPayload()
-
-        // When
-        let notification = Notification(
-            name: .aiChatNativeHandoffData,
-            object: payload
-        )
-        NotificationCenter.default.post(notification)
-
-        // Then
-        XCTAssertFalse(mockAIChatTabOpener.openAIChatTabCalled)
-    }
-
     func testHandleAIChatHandoff_notInKeyWindow_doesNothing() {
         // Given
         mockSidebarHost.isInKeyWindow = false
@@ -652,29 +593,6 @@ final class AIChatSidebarPresenterTests: XCTestCase {
 
         // Then - Only one sidebar operation should have occurred
         XCTAssertTrue(presenter.isSidebarOpen(for: tabID))
-    }
-
-    func testFeatureFlagChanges() {
-        // Given
-        let tabID = "feature-tab"
-        mockSidebarHost.currentTabID = tabID
-
-        // When - Create sidebar with feature enabled
-        presenter.toggleSidebar()
-        XCTAssertTrue(presenter.isSidebarOpen(for: tabID))
-
-        // When - Disable feature and try to check status
-        mockFeatureFlagger.enabledFeatureFlags = []
-        let isOpen = presenter.isSidebarOpen(for: tabID)
-
-        // Then - Should return false even though sidebar exists
-        XCTAssertFalse(isOpen)
-
-        // When - Try to toggle with feature disabled
-        presenter.toggleSidebar()
-
-        // Then - Should not create new sidebar
-        XCTAssertEqual(mockSidebarProvider.sidebarsByTab.count, 1) // Still just the original one
     }
 
 }

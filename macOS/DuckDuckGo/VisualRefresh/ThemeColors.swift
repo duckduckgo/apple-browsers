@@ -20,7 +20,7 @@ import Foundation
 import AppKit
 import DesignResourcesKit
 
-struct ThemeColors: ColorPalette {
+struct ThemeColors {
     let accentAltContentPrimary: NSColor
     let accentAltContentSecondary: NSColor
     let accentAltContentTertiary: NSColor

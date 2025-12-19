@@ -48,15 +48,11 @@ final class AIChatSidebarPresenterTests: XCTestCase {
         mockPixelFiring = PixelKitMock()
         cancellables = Set<AnyCancellable>()
 
-        // Enable AI Chat sidebar feature by default
-        mockFeatureFlagger.enabledFeatureFlags = [.aiChatSidebar]
-
         presenter = AIChatSidebarPresenter(
             sidebarHost: mockSidebarHost,
             sidebarProvider: mockSidebarProvider,
             aiChatMenuConfig: mockAIChatMenuConfig,
             aiChatTabOpener: mockAIChatTabOpener,
-            featureFlagger: mockFeatureFlagger,
             windowControllersManager: mockWindowControllersManager,
             pixelFiring: mockPixelFiring
         )

@@ -83,7 +83,7 @@ struct DuckPlayerWebView: UIViewRepresentable {
            self.contentScopeUserScripts = try contentScopeUserScripts ??
            ContentScopeUserScript(scriptSourceProvider.privacyConfigurationManager,
                                   properties: scriptSourceProvider.contentScopeProperties,
-                                  isIsolated: true,
+                                  scriptContext: .contentScopeIsolated,
                                   privacyConfigurationJSONGenerator: jsonGenerator
            )
        } catch {

@@ -28,6 +28,7 @@ protocol AIChatNativeInputViewControllerDelegate: AnyObject {
     func nativeInputViewControllerDidTapVoice(_ viewController: AIChatNativeInputViewController)
     func nativeInputViewControllerDidTapClear(_ viewController: AIChatNativeInputViewController)
     func nativeInputViewControllerDidTapAttach(_ viewController: AIChatNativeInputViewController)
+    func nativeInputViewControllerDidRemoveContextChip(_ viewController: AIChatNativeInputViewController)
     func nativeInputViewController(_ viewController: AIChatNativeInputViewController, didChangeText text: String)
 }
 
@@ -35,6 +36,7 @@ protocol AIChatNativeInputViewControllerDelegate: AnyObject {
 
 extension AIChatNativeInputViewControllerDelegate {
     func nativeInputViewControllerDidTapClear(_ viewController: AIChatNativeInputViewController) {}
+    func nativeInputViewControllerDidRemoveContextChip(_ viewController: AIChatNativeInputViewController) {}
     func nativeInputViewController(_ viewController: AIChatNativeInputViewController, didChangeText text: String) {}
 }
 
@@ -65,6 +67,9 @@ final class AIChatNativeInputViewController: UIViewController {
         set { nativeInputView.isAttachButtonHidden = newValue }
     }
 
+    var isContextChipVisible: Bool {
+        nativeInputView.isContextChipVisible
+    }
     // MARK: - Initialization
 
     init(voiceSearchHelper: VoiceSearchHelperProtocol) {
@@ -99,6 +104,14 @@ final class AIChatNativeInputViewController: UIViewController {
     @discardableResult
     override func resignFirstResponder() -> Bool {
         return nativeInputView.resignFirstResponder()
+    }
+
+    func showContextChip(_ chipView: UIView, animated: Bool = true) {
+        nativeInputView.showContextChip(chipView, animated: animated)
+    }
+
+    func hideContextChip(animated: Bool = true) {
+        nativeInputView.hideContextChip(animated: animated)
     }
 }
 
@@ -148,5 +161,7 @@ extension AIChatNativeInputViewController: AIChatNativeInputViewDelegate {
 
     func nativeInputViewDidTapAttach(_ view: AIChatNativeInputView) {
         delegate?.nativeInputViewControllerDidTapAttach(self)
+    func nativeInputViewDidRemoveContextChip(_ view: AIChatNativeInputView) {
+        delegate?.nativeInputViewControllerDidRemoveContextChip(self)
     }
 }

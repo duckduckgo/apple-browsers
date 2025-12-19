@@ -28,6 +28,7 @@ protocol AIChatContextualInputViewControllerDelegate: AnyObject {
     func contextualInputViewController(_ viewController: AIChatContextualInputViewController, didSelectQuickAction action: AIChatContextualQuickAction)
     func contextualInputViewControllerDidTapVoice(_ viewController: AIChatContextualInputViewController)
     func contextualInputViewControllerDidTapAttach(_ viewController: AIChatContextualInputViewController)
+    func contextualInputViewControllerDidRemoveContextChip(_ viewController: AIChatContextualInputViewController)
 }
 
 // MARK: - View Controller
@@ -103,6 +104,17 @@ final class AIChatContextualInputViewController: UIViewController {
     @discardableResult
     override func resignFirstResponder() -> Bool {
         return nativeInputViewController.resignFirstResponder()
+    }
+
+    var isContextChipVisible: Bool {
+        nativeInputViewController.isContextChipVisible
+    }
+    func showContextChip(_ chipView: UIView, animated: Bool = true) {
+        nativeInputViewController.showContextChip(chipView, animated: animated)
+    }
+
+    func hideContextChip(animated: Bool = true) {
+        nativeInputViewController.hideContextChip(animated: animated)
     }
 }
 
@@ -224,6 +236,8 @@ extension AIChatContextualInputViewController: AIChatNativeInputViewControllerDe
 
     func nativeInputViewControllerDidTapAttach(_ viewController: AIChatNativeInputViewController) {
         delegate?.contextualInputViewControllerDidTapAttach(self)
+    func nativeInputViewControllerDidRemoveContextChip(_ viewController: AIChatNativeInputViewController) {
+        delegate?.contextualInputViewControllerDidRemoveContextChip(self)
     }
 
     func nativeInputViewController(_ viewController: AIChatNativeInputViewController, didChangeText text: String) {

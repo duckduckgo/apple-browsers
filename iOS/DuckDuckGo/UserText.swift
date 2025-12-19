@@ -1917,6 +1917,9 @@ public struct UserText {
     // MARK: - AI Chat Quick Actions
     public static let aiChatQuickActionSummarize = NSLocalizedString("duckai.quick.action.summarize", value: "Summarize this Page", comment: "Title for the summarize quick action chip in Duck.ai contextual sheet")
 
+    public static let aiChatContextChipSubtitle = NSLocalizedString("duckai.context.chip.subtitle", value: "Page Content", comment: "Subtitle shown on the context chip indicating page content is attached")
+    public static let aiChatContextChipInfoFooter = NSLocalizedString("duckai.context.chip.info", value: "Sent with your message to Duck.ai", comment: "Info text shown below the context chip explaining that content will be sent with the message")
+
     // MARK: - AI Features Picker Footer
     public static let settingsAIPickerFooterDescription = NSLocalizedString(
         "settings.ai.new.picker.footer",

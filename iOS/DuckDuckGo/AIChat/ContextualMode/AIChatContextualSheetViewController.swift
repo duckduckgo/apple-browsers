@@ -234,6 +234,8 @@ extension AIChatContextualSheetViewController: AIChatContextualInputViewControll
     }
 
     func contextualInputViewControllerDidTapVoice(_ viewController: AIChatContextualInputViewController) {
+    func contextualInputViewControllerDidRemoveContextChip(_ viewController: AIChatContextualInputViewController) {
+        // Handle any cleanup when context chip is removed
     }
 
     func contextualInputViewControllerDidTapAttach(_ viewController: AIChatContextualInputViewController) {

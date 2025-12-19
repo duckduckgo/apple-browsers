@@ -30,6 +30,7 @@ public protocol AIChatNativeInputViewDelegate: AnyObject {
     func nativeInputViewDidTapVoice(_ view: AIChatNativeInputView)
     func nativeInputViewDidTapClear(_ view: AIChatNativeInputView)
     func nativeInputViewDidTapAttach(_ view: AIChatNativeInputView)
+    func nativeInputViewDidRemoveContextChip(_ view: AIChatNativeInputView)
 }
 
 // MARK: - View
@@ -51,6 +52,9 @@ public final class AIChatNativeInputView: UIView {
         static let cornerRadius: CGFloat = 12
         static let textViewMinHeight: CGFloat = 48
         static let textViewMaxHeight: CGFloat = 200
+        static let chipContainerPadding: CGFloat = 12
+        static let chipFadeDuration: TimeInterval = 0.1
+        static let chipHeightDuration: TimeInterval = 0.15
     }
 
     // MARK: - Properties
@@ -79,6 +83,8 @@ public final class AIChatNativeInputView: UIView {
         didSet { attachButton.isHidden = isAttachButtonHidden }
     }
 
+    /// Whether a context chip is currently visible.
+    public private(set) var isContextChipVisible = false
     // MARK: - UI Components
 
     private lazy var mainContainer: UIView = {
@@ -131,10 +137,12 @@ public final class AIChatNativeInputView: UIView {
 
     private lazy var chipContainer: UIView = {
         let view = UIView()
-        view.isHidden = true
         view.translatesAutoresizingMaskIntoConstraints = false
+        view.clipsToBounds = true
         return view
     }()
+
+    private var currentChipView: UIView?
 
     private lazy var bottomBar: UIView = {
         let view = UIView()
@@ -173,6 +181,7 @@ public final class AIChatNativeInputView: UIView {
 
     private var isShowingClearButton = false
     private var textViewHeightConstraint: NSLayoutConstraint?
+    private var chipHeightConstraint: NSLayoutConstraint?
 
     // MARK: - Initialization
 
@@ -205,6 +214,88 @@ public final class AIChatNativeInputView: UIView {
         super.layoutSubviews()
         updateTextViewHeight()
     }
+
+    /// Shows the context chip with the given view.
+    ///
+    /// - Parameters:
+    ///   - chipView: The chip view to display.
+    ///   - animated: Whether to animate the appearance.
+    public func showContextChip(_ chipView: UIView, animated: Bool = true) {
+        guard !isContextChipVisible else { return }
+
+        chipContainer.layer.removeAllAnimations()
+        currentChipView?.layer.removeAllAnimations()
+        currentChipView?.removeFromSuperview()
+        currentChipView = chipView
+
+        chipView.translatesAutoresizingMaskIntoConstraints = false
+        chipContainer.addSubview(chipView)
+
+        NSLayoutConstraint.activate([
+            chipView.topAnchor.constraint(equalTo: chipContainer.topAnchor, constant: Constants.chipContainerPadding),
+            chipView.leadingAnchor.constraint(equalTo: chipContainer.leadingAnchor, constant: Constants.chipContainerPadding),
+            chipView.trailingAnchor.constraint(equalTo: chipContainer.trailingAnchor, constant: -Constants.chipContainerPadding),
+            chipView.bottomAnchor.constraint(equalTo: chipContainer.bottomAnchor, constant: -Constants.chipContainerPadding),
+        ])
+
+        isContextChipVisible = true
+        attachButton.isHidden = true
+
+        chipContainer.layoutIfNeeded()
+        let targetHeight = chipView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize).height + (Constants.chipContainerPadding * 2)
+
+        if animated {
+            chipView.alpha = 0
+            UIView.animate(withDuration: Constants.chipHeightDuration, delay: 0, options: .curveEaseOut) {
+                self.chipHeightConstraint?.constant = targetHeight
+                self.layoutIfNeeded()
+            } completion: { _ in
+                guard self.isContextChipVisible else { return }
+                UIView.animate(withDuration: Constants.chipFadeDuration) {
+                    chipView.alpha = 1
+                }
+            }
+        } else {
+            chipHeightConstraint?.constant = targetHeight
+            layoutIfNeeded()
+        }
+    }
+
+    /// Hides the context chip.
+    ///
+    /// - Parameter animated: Whether to animate the disappearance.
+    public func hideContextChip(animated: Bool = true) {
+        guard isContextChipVisible else { return }
+
+        isContextChipVisible = false
+        let chipToRemove = currentChipView
+
+        let cleanup = {
+            guard self.currentChipView === chipToRemove else { return }
+            chipToRemove?.removeFromSuperview()
+            self.currentChipView = nil
+            self.attachButton.isHidden = self.isAttachButtonHidden
+            self.delegate?.nativeInputViewDidRemoveContextChip(self)
+        }
+
+        if animated {
+            UIView.animate(withDuration: Constants.chipFadeDuration) {
+                chipToRemove?.alpha = 0
+            } completion: { _ in
+                guard self.currentChipView === chipToRemove else { return }
+                UIView.animate(withDuration: Constants.chipHeightDuration, delay: 0, options: .curveEaseIn) {
+                    self.chipHeightConstraint?.constant = 0
+                    self.layoutIfNeeded()
+                } completion: { _ in
+                    cleanup()
+                }
+            }
+        } else {
+            chipHeightConstraint?.constant = 0
+            layoutIfNeeded()
+            cleanup()
+        }
+    }
 }
 
 // MARK: - Private Setup
@@ -228,6 +319,7 @@ private extension AIChatNativeInputView {
 
     func setupConstraints() {
         textViewHeightConstraint = textView.heightAnchor.constraint(equalToConstant: Constants.textViewMinHeight)
+        chipHeightConstraint = chipContainer.heightAnchor.constraint(equalToConstant: 0)
 
         NSLayoutConstraint.activate([
             mainContainer.topAnchor.constraint(equalTo: topAnchor),
@@ -252,7 +344,7 @@ private extension AIChatNativeInputView {
             chipContainer.topAnchor.constraint(equalTo: textView.bottomAnchor),
             chipContainer.leadingAnchor.constraint(equalTo: mainContainer.leadingAnchor),
             chipContainer.trailingAnchor.constraint(equalTo: mainContainer.trailingAnchor),
-            chipContainer.heightAnchor.constraint(equalToConstant: 0),
+            chipHeightConstraint!,
 
             bottomBar.topAnchor.constraint(equalTo: chipContainer.bottomAnchor),
             bottomBar.leadingAnchor.constraint(equalTo: mainContainer.leadingAnchor),

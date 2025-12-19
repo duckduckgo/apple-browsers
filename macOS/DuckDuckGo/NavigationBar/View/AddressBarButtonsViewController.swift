@@ -1010,12 +1010,11 @@ final class AddressBarButtonsViewController: NSViewController {
 
         let behavior = createAIChatLinkOpenBehavior(for: tab)
 
-        if featureFlagger.isFeatureOn(.aiChatSidebar),
-           aiChatMenuConfig.shouldOpenAIChatInSidebar,
+        if aiChatMenuConfig.shouldOpenAIChatInSidebar,
            !isTextFieldEditorFirstResponder,
            case .url = tab.content,
            behavior == .currentTab {
-            // Toggle (open or close) the sidebar only when feature flag and setting option are enabled and:
+            // Toggle (open or close) the sidebar only when setting option is enabled and:
             // - address bar text field is not in focus
             // - the current tab is displaying a standard web page (not a special page),
             // - intended link open behavior is to use the current tab
@@ -1199,7 +1198,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updateAIChatButtonState() {
-        guard let tab = tabViewModel?.tab, featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
+        guard let tab = tabViewModel?.tab else { return }
         let isShowingSidebar = aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid)
         updateAIChatButtonStateForSidebar(isShowingSidebar)
     }
@@ -1267,7 +1266,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private func shouldSkipShowingAnyAIChatButton() -> Bool {
         let isDuckAIURL = tabViewModel?.tab.url?.isDuckAIURL ?? false
-        return isInPopUpWindow || isDuckAIURL || !featureFlagger.isFeatureOn(.aiChatSidebar)
+        return isInPopUpWindow || isDuckAIURL
     }
 
     private func shouldShowAIChatButton() -> Bool {
@@ -1428,11 +1427,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
         leadingAIChatDivider.isHidden = aiChatButton.isHidden || bookmarkButton.isHidden
 
-        if featureFlagger.isFeatureOn(.aiChatSidebar) {
-            trailingAIChatDivider.isHidden = askAIChatButton.isHidden || cancelButton.isHidden
-        } else {
-            trailingAIChatDivider.isHidden = aiChatButton.isHidden || cancelButton.isHidden
-        }
+        trailingAIChatDivider.isHidden = askAIChatButton.isHidden || cancelButton.isHidden
     }
 
     private func configureAIChatButton() {
@@ -1449,7 +1444,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func configureAIChatButtonTooltip(isSidebarOpen: Bool? = nil) {
-        if let tab = tabViewModel?.tab, featureFlagger.isFeatureOn(.aiChatSidebar) {
+        if let tab = tabViewModel?.tab {
             let isSidebarOpen: Bool = isSidebarOpen ?? {
                 guard let tabID = tabViewModel?.tab.uuid else { return false }
                 return aiChatSidebarPresenter.isSidebarOpen(for: tabID)
@@ -1558,17 +1553,6 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func configureContextMenuForAIChatButtons(isSidebarOpen: Bool? = nil) {
-        guard featureFlagger.isFeatureOn(.aiChatSidebar) else {
-
-            aiChatButton.menu = NSMenu {
-                NSMenuItem(title: UserText.aiChatAddressBarHideButton,
-                           action: #selector(hideAIChatButtonAction(_:)),
-                           keyEquivalent: "")
-            }
-
-            return
-        }
-
         aiChatButton.menu = createAIChatContextMenu(hideButtonAction: #selector(hideAIChatButtonAction(_:)), isSidebarOpen: isSidebarOpen)
         askAIChatButton.menu = createAIChatContextMenu(hideButtonAction: #selector(hideAskAIChatButtonAction(_:)), isSidebarOpen: isSidebarOpen)
     }
@@ -1579,12 +1563,7 @@ final class AddressBarButtonsViewController: NSViewController {
         cancelButton.position = .right
         askAIChatButton.position = .center
 
-        if featureFlagger.isFeatureOn(.aiChatSidebar) {
-            aiChatButton.position = .right
-        } else {
-            aiChatButton.position = cancelButton.isShown ? .center : .right
-        }
-
+        aiChatButton.position = .right
         bookmarkButton.position = aiChatButton.isShown ? .center : .right
     }
 
@@ -1736,11 +1715,7 @@ final class AddressBarButtonsViewController: NSViewController {
             aiChatButton.isHidden = true
             cancelButton.isShown = false
         } else {
-            if featureFlagger.isFeatureOn(.aiChatSidebar) {
-                cancelButton.isShown = isTextFieldEditorFirstResponder
-            } else {
-                cancelButton.isShown = isTextFieldEditorFirstResponder && !textFieldValue.isEmpty
-            }
+            cancelButton.isShown = isTextFieldEditorFirstResponder
         }
 
         updateImageButton()

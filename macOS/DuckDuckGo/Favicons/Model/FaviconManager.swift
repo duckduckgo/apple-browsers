@@ -25,6 +25,7 @@ import CoreImage
 import History
 import os.log
 import Persistence
+import PrivacyConfig
 import WebKit
 
 protocol FaviconManagement: AnyObject {

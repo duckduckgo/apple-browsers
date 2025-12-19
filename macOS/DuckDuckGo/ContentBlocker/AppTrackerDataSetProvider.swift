@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 
 struct AppTrackerDataSetProvider: EmbeddedDataProvider {
 

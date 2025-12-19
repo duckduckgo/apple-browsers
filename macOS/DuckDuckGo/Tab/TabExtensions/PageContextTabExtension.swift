@@ -17,10 +17,10 @@
 //
 
 import AIChat
-import BrowserServicesKit
 import Combine
 import Foundation
 import Navigation
+import PrivacyConfig
 import WebKit
 
 protocol PageContextUserScriptProvider {

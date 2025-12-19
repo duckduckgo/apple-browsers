@@ -16,9 +16,9 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import HistoryView
 import PixelKit
+import PrivacyConfig
 import SwiftUIExtensions
 
 protocol HistoryViewBookmarksHandling: AnyObject {

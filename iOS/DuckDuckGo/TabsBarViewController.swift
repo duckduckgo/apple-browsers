@@ -22,6 +22,8 @@ import Core
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import BrowserServicesKit
+import AIChat
+import Persistence
 
 protocol TabsBarDelegate: NSObjectProtocol {
     
@@ -29,7 +31,7 @@ protocol TabsBarDelegate: NSObjectProtocol {
     func tabsBar(_ controller: TabsBarViewController, didRemoveTabAtIndex index: Int)
     func tabsBar(_ controller: TabsBarViewController, didRequestMoveTabFromIndex fromIndex: Int, toIndex: Int)
     func tabsBarDidRequestNewTab(_ controller: TabsBarViewController)
-    func tabsBarDidRequestForgetAll(_ controller: TabsBarViewController)
+    func tabsBarDidRequestForgetAll(_ controller: TabsBarViewController, fireOptions: FireOptions)
     func tabsBarDidRequestFireEducationDialog(_ controller: TabsBarViewController)
     func tabsBarDidRequestTabSwitcher(_ controller: TabsBarViewController)
 
@@ -59,6 +61,10 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     }()
 
     weak var delegate: TabsBarDelegate?
+    var historyManager: HistoryManaging?
+    var fireproofing: Fireproofing?
+    var aiChatSettings: AIChatSettingsProvider?
+    var keyValueStore: ThrowingKeyValueStoring?
     private weak var tabsModel: TabsModel?
 
     private lazy var tabSwitcherButton: TabSwitcherButton = TabSwitcherStaticButton()
@@ -131,11 +137,27 @@ class TabsBarViewController: UIViewController, UIGestureRecognizerDelegate {
     @IBAction func onFireButtonPressed() {
         
         func showClearDataAlert() {
-            let alert = ForgetDataAlert.buildAlert(forgetTabsAndDataHandler: { [weak self] in
-                guard let self = self else { return }
-                self.delegate?.tabsBarDidRequestForgetAll(self)
-            })
-            self.present(controller: alert, fromView: fireButton)
+            guard let aiChatSettings, let tabsModel, let historyManager, let fireproofing, let keyValueStore else {
+                assertionFailure("TabsBarViewController is not configured properly. Check MainViewController.loadTabsBarIfNeeded()")
+                return
+            }
+            let presenter = FireConfirmationPresenter(tabsModel: tabsModel,
+                                                      featureFlagger: AppDependencyProvider.shared.featureFlagger,
+                                                      historyManager: historyManager,
+                                                      fireproofing: fireproofing,
+                                                      aiChatSettings: aiChatSettings,
+                                                      keyValueFilesStore: keyValueStore)
+            presenter.presentFireConfirmation(
+                on: self,
+                attachPopoverTo: fireButton,
+                onConfirm: { [weak self] fireOptions in
+                    guard let self = self else { return }
+                    self.delegate?.tabsBarDidRequestForgetAll(self, fireOptions: fireOptions)
+                },
+                onCancel: {
+                    // TODO: - Maybe add pixel
+                }
+            )
         }
 
         delegate?.tabsBarDidRequestFireEducationDialog(self)
@@ -365,8 +387,8 @@ extension MainViewController: TabsBarDelegate {
         newTab()
     }
     
-    func tabsBarDidRequestForgetAll(_ controller: TabsBarViewController) {
-        forgetAllWithAnimation()
+    func tabsBarDidRequestForgetAll(_ controller: TabsBarViewController, fireOptions: FireOptions) {
+        forgetAllWithAnimation(options: fireOptions)
     }
     
     func tabsBarDidRequestFireEducationDialog(_ controller: TabsBarViewController) {

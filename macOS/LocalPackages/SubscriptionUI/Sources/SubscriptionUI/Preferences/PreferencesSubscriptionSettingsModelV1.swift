@@ -22,6 +22,7 @@ import struct Combine.AnyPublisher
 import enum Combine.Publishers
 import class Combine.AnyCancellable
 import BrowserServicesKit
+import PrivacyConfig
 import os.log
 
 public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {

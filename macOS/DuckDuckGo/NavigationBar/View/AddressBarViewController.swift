@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Cocoa
 import Combine
 import Lottie
@@ -24,6 +23,7 @@ import Common
 import AIChat
 import UIComponents
 import PixelKit
+import PrivacyConfig
 
 protocol AddressBarViewControllerDelegate: AnyObject {
     func resizeAddressBarForHomePage(_ addressBarViewController: AddressBarViewController)
@@ -791,7 +791,11 @@ final class AddressBarViewController: NSViewController {
             addressBarTextField.hideSuggestionWindow()
             return
         }
+
         guard AppVersion.runType != .unitTests else { return }
+
+        addressBarTextField.refreshStyle()
+
         let navigationBarBackgroundColor = theme.colorsProvider.navigationBackgroundColor
 
         NSAppearance.withAppAppearance {

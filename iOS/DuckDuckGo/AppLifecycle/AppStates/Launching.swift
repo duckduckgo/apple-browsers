@@ -78,7 +78,15 @@ struct Launching: LaunchingHandling {
         // This approach aims to optimize performance and ensure critical functionalities are ready ASAP
         let autofillService = AutofillService(keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
 
+        let contentBlocking = ContentBlocking.shared
+
+        let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
+                                      privacyConfigurationManager: contentBlocking.privacyConfigurationManager,
+                                      keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
+
         let contentBlockingService = ContentBlockingService(appSettings: appSettings,
+                                                            contentBlocking: contentBlocking,
+                                                            sync: syncService.sync,
                                                             fireproofing: fireproofing,
                                                             contentScopeExperimentsManager: contentScopeExperimentsManager)
 
@@ -95,9 +103,7 @@ struct Launching: LaunchingHandling {
                                                 appDependencies: AppDependencyProvider.shared,
                                                 privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
                                                 productSurfaceTelemetry: productSurfaceTelemetry)
-        let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
-                                      privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
-                                      keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
+
         reportingService.syncService = syncService
         autofillService.syncService = syncService
 
@@ -138,6 +144,12 @@ struct Launching: LaunchingHandling {
         // Has to be initialised after configuration.start in case values need to be migrated
         aiChatSettings = AIChatSettings()
 
+        // Create What's New repository for use in modal prompts and settings
+        let whatsNewRepository = DefaultWhatsNewMessageRepository(
+            remoteMessageStore: remoteMessagingService.remoteMessagingClient.store,
+            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore
+        )
+
         // Initialise modal prompts coordination
         let modalPromptCoordinationService = ModalPromptCoordinationFactory.makeService(
             dependency: .init(
@@ -146,7 +158,7 @@ struct Launching: LaunchingHandling {
                 keyValueFileStoreService: appKeyValueFileStoreService.keyValueFilesStore,
                 privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
                 featureFlagger: featureFlagger,
-                remoteMessagingStore: remoteMessagingService.remoteMessagingClient.store,
+                whatsNewRepository: whatsNewRepository,
                 remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler,
                 remoteMessagingPixelReporter: remoteMessagingService.pixelReporter,
                 appSettings: appSettings,
@@ -192,6 +204,7 @@ struct Launching: LaunchingHandling {
                                               modalPromptCoordinationService: modalPromptCoordinationService,
                                               mobileCustomization: mobileCustomization,
                                               productSurfaceTelemetry: productSurfaceTelemetry,
+                                              whatsNewRepository: whatsNewRepository,
                                               sharedSecureVault: configuration.persistentStoresConfiguration.sharedSecureVault)
 
         // MARK: - UI-Dependent Services Setup

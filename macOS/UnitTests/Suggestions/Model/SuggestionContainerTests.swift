@@ -22,6 +22,8 @@ import History
 import InlineSnapshotTesting
 import NetworkingTestingUtils
 import os.log
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import SharedTestUtilities
 import Suggestions
 import WebKit
@@ -382,7 +384,7 @@ extension SuggestionContainerTests {
         let contentBlockingMock = ContentBlockingMock()
         let privacyFeaturesMock = AppPrivacyFeatures(contentBlocking: contentBlockingMock, httpsUpgradeStore: HTTPSUpgradeStoreMock())
         // disable waiting for CBR compilation on navigation
-        (contentBlockingMock.privacyConfigurationManager.privacyConfig as! MockPrivacyConfiguration).isFeatureKeyEnabled = { _, _ in
+        (contentBlockingMock.privacyConfigurationManager.privacyConfig as! MockPrivacyConfiguration).isFeatureEnabledCheck = { _, _ in
             return false
         }
         let tabs = openTabs.map {

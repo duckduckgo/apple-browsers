@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
+import PrivacyConfig
 import Combine
 import Common
 import LoginItems
@@ -45,6 +45,7 @@ final class DBPEndToEndTests: XCTestCase {
 
         // Store the integration test run type so that the agent can reliably access it:
         let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
+        dbpSettings.isAuthV2Enabled = true
         dbpSettings.updateStoredRunType()
 
         pirProtectionManager = DataBrokerProtectionManager.shared
@@ -534,7 +535,7 @@ private extension DBPEndToEndTests {
 
         var updatesPublisher: AnyPublisher<Void, Never> = .init(Just(()))
 
-        var privacyConfig: BrowserServicesKit.PrivacyConfiguration = PrivacyConfigurationMock()
+        var privacyConfig: PrivacyConfiguration = PrivacyConfigurationMock()
 
         var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: InternalUserDeciderStoreMock())
 
@@ -551,29 +552,29 @@ private extension DBPEndToEndTests {
 
         var tempUnprotectedDomains = [String]()
 
-        var trackerAllowlist = BrowserServicesKit.PrivacyConfigurationData.TrackerAllowlist(entries: [String: [PrivacyConfigurationData.TrackerAllowlist.Entry]](), state: "mock")
+        var trackerAllowlist = PrivacyConfigurationData.TrackerAllowlist(entries: [String: [PrivacyConfigurationData.TrackerAllowlist.Entry]](), state: "mock")
 
-        func isEnabled(featureKey: BrowserServicesKit.PrivacyFeature, versionProvider: BrowserServicesKit.AppVersionProvider, defaultValue: Bool) -> Bool {
+        func isEnabled(featureKey: PrivacyFeature, versionProvider: AppVersionProvider, defaultValue: Bool) -> Bool {
             false
         }
 
-        func stateFor(featureKey: BrowserServicesKit.PrivacyFeature, versionProvider: BrowserServicesKit.AppVersionProvider) -> BrowserServicesKit.PrivacyConfigurationFeatureState {
+        func stateFor(featureKey: PrivacyFeature, versionProvider: AppVersionProvider) -> PrivacyConfigurationFeatureState {
             .disabled(.disabledInConfig)
         }
 
-        func isSubfeatureEnabled(_ subfeature: any BrowserServicesKit.PrivacySubfeature, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double, defaultValue: Bool) -> Bool {
+        func isSubfeatureEnabled(_ subfeature: any PrivacySubfeature, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double, defaultValue: Bool) -> Bool {
             false
         }
 
-        func stateFor(_ subfeature: any PrivacySubfeature, versionProvider: BrowserServicesKit.AppVersionProvider, randomizer: (Range<Double>) -> Double) -> BrowserServicesKit.PrivacyConfigurationFeatureState {
+        func stateFor(_ subfeature: any PrivacySubfeature, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double) -> PrivacyConfigurationFeatureState {
             .disabled(.disabledInConfig)
         }
 
-        func exceptionsList(forFeature featureKey: BrowserServicesKit.PrivacyFeature) -> [String] {
+        func exceptionsList(forFeature featureKey: PrivacyFeature) -> [String] {
             [String]()
         }
 
-        func isFeature(_ feature: BrowserServicesKit.PrivacyFeature, enabledForDomain: String?) -> Bool {
+        func isFeature(_ feature: PrivacyFeature, enabledForDomain: String?) -> Bool {
             false
         }
 
@@ -589,15 +590,15 @@ private extension DBPEndToEndTests {
             false
         }
 
-        func isInExceptionList(domain: String?, forFeature featureKey: BrowserServicesKit.PrivacyFeature) -> Bool {
+        func isInExceptionList(domain: String?, forFeature featureKey: PrivacyFeature) -> Bool {
             false
         }
 
-        func settings(for feature: BrowserServicesKit.PrivacyFeature) -> BrowserServicesKit.PrivacyConfigurationData.PrivacyFeature.FeatureSettings {
+        func settings(for feature: PrivacyFeature) -> PrivacyConfigurationData.PrivacyFeature.FeatureSettings {
             [String: Any]()
         }
 
-        func settings(for subfeature: any BrowserServicesKit.PrivacySubfeature) -> PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings? {
+        func settings(for subfeature: any PrivacySubfeature) -> PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings? {
             nil
         }
 

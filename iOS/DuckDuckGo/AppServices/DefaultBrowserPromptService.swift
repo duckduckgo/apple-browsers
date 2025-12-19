@@ -18,7 +18,7 @@
 //
 
 import UIKit
-import BrowserServicesKit
+import PrivacyConfig
 import Persistence
 import Core
 import SetDefaultBrowserCore

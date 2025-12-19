@@ -1,0 +1,104 @@
+// Permission management pixels
+// These pixels are fired when the newPermissionView feature flag is enabled
+{
+    "m_mac_permission_authorization": {
+        "description": "Fired when user selects an option (Allow/Deny) in the permission authorization dialog",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": [
+            {
+                "description": "Permission type being requested",
+                "enum": ["camera", "microphone", "geolocation", "popups", "notification"]
+            },
+            {
+                "description": "User's decision",
+                "enum": ["allow", "deny"]
+            }
+        ],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_permission_center_changed": {
+        "description": "Fired when user changes a permission decision in the Permission Center dropdown. For standard permissions.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": [
+            {
+                "description": "Permission type being changed",
+                "enum": ["camera", "microphone", "geolocation", "popups", "notification"]
+            },
+            {
+                "description": "Literal 'to' separator",
+                "enum": ["to"]
+            },
+            {
+                "description": "New decision value",
+                "enum": ["ask", "allow", "deny"]
+            }
+        ],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "from",
+                "type": "string",
+                "enum": ["ask", "allow", "deny"],
+                "description": "Previous decision value before the change"
+            }
+        ]
+    },
+    "m_mac_permission_center_changed_external_scheme": {
+        "description": "Fired when user changes an external app scheme permission decision in the Permission Center dropdown",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": [
+            {
+                "description": "Literal 'to' separator",
+                "enum": ["to"]
+            },
+            {
+                "description": "New decision value",
+                "enum": ["ask", "allow", "deny"]
+            }
+        ],
+        "parameters": [
+            "appVersion",
+            "pixelSource",
+            {
+                "key": "from",
+                "type": "string",
+                "enum": ["ask", "allow", "deny"],
+                "description": "Previous decision value before the change"
+            }
+        ]
+    },
+    "m_mac_permission_center_reset": {
+        "description": "Fired when user clicks the remove (X) button to reset a permission in the Permission Center. For standard permissions.",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": [
+            {
+                "description": "Permission type being reset",
+                "enum": ["camera", "microphone", "geolocation", "popups", "notification"]
+            }
+        ],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_permission_center_reset_external_scheme": {
+        "description": "Fired when user clicks the remove (X) button to reset an external app scheme permission in the Permission Center",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "parameters": ["appVersion", "pixelSource"]
+    },
+    "m_mac_permission_system_preferences": {
+        "description": "Fired when user clicks the link to open System Preferences/Settings for a permission",
+        "owners": ["tomasstrba"],
+        "triggers": ["other"],
+        "suffixes": [
+            {
+                "description": "Permission type for which System Preferences is opened",
+                "enum": ["camera", "microphone", "geolocation"]
+            }
+        ],
+        "parameters": ["appVersion", "pixelSource"]
+    }
+}

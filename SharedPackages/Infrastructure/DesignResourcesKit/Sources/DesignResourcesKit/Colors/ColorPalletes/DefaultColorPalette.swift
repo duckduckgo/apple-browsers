@@ -87,6 +87,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let decorationPrimary = DynamicColor(lightColor: x1F1F1F.opacity(0.3), darkColor: xF9F9F9.opacity(0.36))
     private static let decorationSecondary = DynamicColor(lightColor: x1F1F1F.opacity(0.48), darkColor: xF9F9F9.opacity(0.64))
     private static let decorationTertiary = DynamicColor(lightColor: x1F1F1F.opacity(0.60), darkColor: xF9F9F9.opacity(0.74))
+    private static let decorationQuaternary = DynamicColor(lightColor: x1F1F1F.opacity(0.03), darkColor: xF9F9F9.opacity(0.03))
 
     // Highlight
     private static let highlightDecoration = DynamicColor(lightColor: .tint(0.24), darkColor: xF9F9F9.opacity(0.12))
@@ -110,6 +111,9 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     // Alert
     private static let alertGreen = DynamicColor(lightColor: .alertGreen, darkColor: .alertGreen)
     private static let alertYellow = DynamicColor(lightColor: .alertYellow, darkColor: .alertYellow)
+
+    // Destructive
+    private static let destructivePrimary = DynamicColor(lightColor: .alertRed, darkColor: .alertRed20)
 
     // Buttons/Primary
     private static let buttonsPrimaryDefault = DynamicColor(lightColor: .blue50, darkColor: .blue30)
@@ -148,6 +152,9 @@ struct DefaultColorPalette: ColorPaletteDefinition {
     private static let buttonsDeleteGhostText = DynamicColor(lightColor: .alertRedOnLight, darkColor: .alertRedOnDark)
     private static let buttonsDeleteGhostTextDisabled = DynamicColor(lightColor: .shade(0.36), darkColor: .tint(0.36))
 
+    // Buttons/DestructivePrimary
+    private static let buttonsDestructivePrimaryPressed = DynamicColor(lightColor: .alertRed80, darkColor: .alertRed40)
+
     static func dynamicColor(for designSystemColor: DesignSystemColor) -> DynamicColor {
         switch designSystemColor {
 
@@ -171,6 +178,7 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .decorationPrimary: return decorationPrimary
         case .decorationSecondary: return decorationSecondary
         case .decorationTertiary: return decorationTertiary
+        case .decorationQuaternary: return decorationQuaternary
         case .highlightDecoration: return highlightDecoration
         case .accentContentPrimary: return accentContentPrimary
         case .accentTertiary: return accentTertiary
@@ -188,6 +196,9 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .textPlaceholder: return textPlaceholder
         case .textSecondary: return textSecondary
         case .textSelectionFill: return textSelectionFill
+
+        // Destructive
+        case .destructivePrimary: return destructivePrimary
 
             // Buttons/SecondaryFill
         case .buttonsSecondaryFillDefault: return buttonsSecondaryFillDefault
@@ -225,6 +236,9 @@ struct DefaultColorPalette: ColorPaletteDefinition {
         case .buttonsDeleteGhostText: return buttonsDeleteGhostText
         case .buttonsDeleteGhostTextPressed: return buttonsDeleteGhostTextPressed
         case .buttonsDeleteGhostTextDisabled: return buttonsDeleteGhostTextDisabled
+
+            // Buttons/DestructivePrimary
+        case .buttonsDestructivePrimaryPressed: return buttonsDestructivePrimaryPressed
         }
     }
 

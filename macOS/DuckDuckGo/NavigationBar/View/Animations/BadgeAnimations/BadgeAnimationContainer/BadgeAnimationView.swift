@@ -20,6 +20,7 @@ import SwiftUI
 import DesignResourcesKit
 
 struct BadgeAnimationView: View {
+    @ObservedObject private var themeManager: ThemeManager
     var animationModel: BadgeNotificationAnimationModel
     let iconView: AnyView
     @State var text: String
@@ -27,11 +28,13 @@ struct BadgeAnimationView: View {
     let textGenerator: ((Int) -> String)?
     @State var textOffset: CGFloat = 0
 
-    init(animationModel: BadgeNotificationAnimationModel,
+    init(themeManager: ThemeManager? = nil,
+         animationModel: BadgeNotificationAnimationModel,
          iconView: AnyView,
          text: String,
          eventCount: Int = 0,
          textGenerator: ((Int) -> String)? = nil) {
+        self.themeManager = themeManager ?? NSApp.delegateTyped.themeManager
         self.animationModel = animationModel
         self.iconView = iconView
         self.eventCount = eventCount
@@ -50,7 +53,7 @@ struct BadgeAnimationView: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack {
-                ExpandableRectangle(animationModel: animationModel)
+                ExpandableRectangle(animationModel: animationModel, backgroundColor: bannerBackgroundColor)
                 .frame(width: geometry.size.width, height: geometry.size.height)
 
                 HStack {
@@ -88,7 +91,7 @@ struct BadgeAnimationView: View {
                 // Opaque view - only round left corners to match main background
                 HStack {
                     Rectangle()
-                        .foregroundColor(Consts.Colors.badgeBackgroundColor)
+                        .foregroundColor(bannerBackgroundColor)
                         .clipShape(LeftRoundedRectangle(radius: Consts.View.cornerRadius))
                         .frame(width: geometry.size.height - Consts.View.opaqueViewOffset, height: geometry.size.height)
                     Spacer()
@@ -133,6 +136,10 @@ struct BadgeAnimationView: View {
         let trailingMargin: CGFloat = 8
 
         return finalTextWidth + iconSize + leadingPadding + trailingMargin
+    }
+
+    private var bannerBackgroundColor: Color {
+        Color(designSystemColor: .surfacePrimary, palette: themeManager.designColorPalette)
     }
 
     // MARK: - Counting Animation
@@ -192,13 +199,14 @@ private enum AnimationParameters {
 struct ExpandableRectangle: View {
     @ObservedObject var animationModel: BadgeNotificationAnimationModel
     @State var width: CGFloat = 0
+    let backgroundColor: Color
 
     private let minimumWidthOffset: CGFloat = 2
 
     var body: some View {
         GeometryReader { geometry in
             Rectangle()
-                .fill(Consts.Colors.badgeBackgroundColor)
+                .fill(backgroundColor)
                 .clipShape(RoundedRectangle(cornerRadius: Consts.View.cornerRadius))
                 .frame(width: geometry.size.height + minimumWidthOffset + width, height: geometry.size.height)
                 .onReceive(animationModel.$state, perform: { state in
@@ -278,10 +286,6 @@ private enum Consts {
         static let cornerRadius: CGFloat = 10
         static let opaqueViewOffset: CGFloat = 8
         static let textOffsetMargin: CGFloat = 10
-    }
-
-    enum Colors {
-        static let badgeBackgroundColor = Color(designSystemColor: .surfacePrimary)
     }
 }
 

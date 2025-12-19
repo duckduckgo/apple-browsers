@@ -21,8 +21,8 @@ import Persistence
 import AppKit
 import DDGSync
 import FeatureFlags
-import BrowserServicesKit
 import PixelKit
+import PrivacyConfig
 
 @MainActor
 public final class DismissableSyncDeviceButtonModel: ObservableObject {

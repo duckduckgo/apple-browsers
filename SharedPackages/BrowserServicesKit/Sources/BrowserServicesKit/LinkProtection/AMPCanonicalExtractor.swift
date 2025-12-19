@@ -19,6 +19,7 @@
 import Foundation
 import WebKit
 import Common
+import PrivacyConfig
 
 #if canImport(UIKit)
 import UIKit

@@ -19,7 +19,7 @@
 import Cocoa
 import WebKit
 import Combine
-import BrowserServicesKit
+import PrivacyConfig
 import PrivacyDashboard
 import Common
 import PixelKit
@@ -43,6 +43,9 @@ final class PrivacyDashboardViewController: NSViewController {
     private let privacyDashboardController: PrivacyDashboardController
     private var privacyDashboardDidTriggerDismiss: Bool = false
     private let contentBlocking: ContentBlockingProtocol
+
+    private let themeManager: ThemeManaging
+    private var cancellables = Set<AnyCancellable>()
 
     public let rulesUpdateObserver: ContentBlockingRulesUpdateObserver
 
@@ -84,6 +87,7 @@ final class PrivacyDashboardViewController: NSViewController {
          entryPoint: PrivacyDashboardEntryPoint = .dashboard,
          contentBlocking: ContentBlockingProtocol,
          permissionManager: PermissionManagerProtocol,
+         themeManager: ThemeManaging = NSApp.delegateTyped.themeManager,
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences
     ) {
         let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: contentBlocking.privacyConfigurationManager)
@@ -95,6 +99,8 @@ final class PrivacyDashboardViewController: NSViewController {
                                                                      entryPoint: entryPoint,
                                                                      toggleReportingManager: toggleReportingManager,
                                                                      eventMapping: privacyDashboardEvents)
+
+        self.themeManager = themeManager
         self.contentBlocking = contentBlocking
         // swiftlint:disable:next force_cast
         self.rulesUpdateObserver = ContentBlockingRulesUpdateObserver(userContentUpdating: (contentBlocking as! AppContentBlocking).userContentUpdating)
@@ -151,6 +157,9 @@ final class PrivacyDashboardViewController: NSViewController {
         privacyDashboardController.setup(for: webView)
         privacyDashboardController.delegate = self
         privacyDashboardController.preferredLocale = Bundle.main.preferredLocalizations.first
+
+        subscribeToThemeChanges()
+        refreshDashboardStyle()
     }
 
     override func viewWillDisappear() {
@@ -224,6 +233,34 @@ final class PrivacyDashboardViewController: NSViewController {
 
         let completionToken = contentBlocking.contentBlockingManager.scheduleCompilation()
         rulesUpdateObserver.startCompilation(for: domain, token: completionToken)
+    }
+}
+
+private extension PrivacyDashboardViewController {
+
+    private func subscribeToThemeChanges() {
+        themeManager.themePublisher
+            .removeDuplicates { old, new in
+                old.name == new.name
+            }
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshDashboardStyle()
+            }
+            .store(in: &cancellables)
+
+        themeManager.effectiveAppearancePublisher
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.refreshDashboardStyle()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func refreshDashboardStyle() {
+        let style = PrivacyDashboardStyle(themeName: themeManager.theme.name, appearance: themeManager.effectiveAppearance)
+        privacyDashboardController.style = style
     }
 }
 

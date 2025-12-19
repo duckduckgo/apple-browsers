@@ -21,7 +21,7 @@ import WebKit
 @testable import DataBrokerProtection_macOS
 import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
-import BrowserServicesKit
+import PrivacyConfig
 
 final class DBPUICommunicationLayerTests: XCTestCase {
 

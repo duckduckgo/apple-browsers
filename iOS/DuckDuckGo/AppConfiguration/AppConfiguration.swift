@@ -29,9 +29,9 @@ struct AppConfiguration {
 
     private let featureFlagger = AppDependencyProvider.shared.featureFlagger
 
+    let atbAndVariantConfiguration = ATBAndVariantConfiguration()
     let persistentStoresConfiguration = PersistentStoresConfiguration()
     let onboardingConfiguration = OnboardingConfiguration()
-    let atbAndVariantConfiguration = ATBAndVariantConfiguration()
     private let appKeyValueStore: ThrowingKeyValueStoring
 
     init(appKeyValueStore: ThrowingKeyValueStoring) {

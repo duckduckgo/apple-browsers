@@ -2941,12 +2941,55 @@
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Inaktivera för att förhindra att länkar automatiskt öppnas i andra installerade appar.";
 
+/* Subtitle explaining what the cookies option does in auto clear settings */
+"settings.autoclear.cookies.subtitle" = "Radera all webbplatsdata, inklusive besökta webbplatser. Kan logga ut dig från konton.";
+
+/* Title for the cookies and site data option in auto clear settings */
+"settings.autoclear.cookies.title" = "Cookies och webbplatsdata";
+
+/* Subtitle explaining what the Duck.ai chats option does in auto clear settings */
+"settings.autoclear.duckai.chats.subtitle" = "Ta bort alla chattar, inklusive fästa chattar";
+
+/* Title for the Duck.ai chats option in auto clear settings */
+"settings.autoclear.duckai.chats.title" = "Duck.ai-chattar";
+
+/* Section header for the auto clear options */
+"settings.autoclear.section.header" = "Klart";
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Rensa flikar och data";
 
 /* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
 "settings.autoclear.tabs.and.data.with.aichat" = "Rensa flikar, data och Duck.ai-chattar";
 
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "Stäng alla öppna flikar";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "Flikar";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Avsluta app, inaktiv i 15 minuter";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "Avsluta app, inaktiv i 1 timme";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Avsluta app, inaktiv i 30 minuter";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "Avsluta app, inaktiv i 5 minuter";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "Lämna endast appen";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "Avslutning av app är då appen sveps för att stängas. Inaktivitet är då appen körs i bakgrunden.";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "Önskad tidpunkt";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "Data kommer att raderas när appen startas om.";
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Sökförslag";
 
@@ -2965,6 +3008,8 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Om Touch ID, Face ID eller ett systemlösenord har aktiverats blir du ombedd att låsa upp appen när du öppnar den.";
 
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "Automatisk datarensning";
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Webbläsarfeedback";
 
@@ -2974,6 +3019,8 @@
 /* Settings screen cell text for clearing AI chat history */
 "settings.clear.aichat.history.title" = "Rensa Duck.ai-chattar";
 
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "Rensa webbläsardata";
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Rensa data automatiskt";
 
@@ -3001,6 +3048,8 @@
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Datarensning";
 
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "Att radera dina data kan bidra till att skydda din integritet online. Använd Fire Button för att rensa data manuellt eller ställa in automatisk rensning.";
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Standardwebbläsare";
 
@@ -3046,6 +3095,8 @@
 /* Settings screen cell text for Fireproof Sites */
 "settings.fireproof.sites" = "Brandsäkra webbplatser";
 
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Fireproof-webbplatser";
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Allmänt";
 
@@ -3300,6 +3351,9 @@
 
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "DuckDuckGo-webbläsaren erbjuder spårningsskydd som alltid är aktiva. [Läs mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
+
+/* Settings cell title to show users the What’s New prompt */
+"settings.whats.new" = "Vad är nytt?";
 
 /* No comment provided by engineer. */
 "Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Visar loggar från den senaste minuten för att hjälpa till att diagnostisera problem direkt efter en uppdatering.";

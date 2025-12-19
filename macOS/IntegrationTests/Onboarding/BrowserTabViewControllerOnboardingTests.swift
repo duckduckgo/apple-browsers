@@ -17,13 +17,14 @@
 //
 
 import AIChat
-import BrowserServicesKit
 import Combine
 import Common
 import FeatureFlags
 import History
 import HistoryView
 import Onboarding
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import PrivacyDashboard
 import SharedTestUtilities
 import struct SwiftUI.AnyView
@@ -122,7 +123,6 @@ final class MockAIChatConfig: AIChatMenuVisibilityConfigurable {
     var shouldDisplayTranslationMenuItem = false
     var shouldAutomaticallySendPageContext = false
     var shouldDisplayAddressBarShortcutWhenTyping: Bool = false
-    var shouldShowSettingsImprovements: Bool = false
     var shouldAutomaticallySendPageContextTelemetryValue: Bool?
     let valuesChangedPublisher = PassthroughSubject<Void, Never>()
 }

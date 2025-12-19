@@ -18,7 +18,8 @@
 
 import XCTest
 import Combine
-import BrowserServicesKit
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 
 @testable import DuckDuckGo_Privacy_Browser
 

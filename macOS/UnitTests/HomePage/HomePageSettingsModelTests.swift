@@ -20,6 +20,8 @@ import Combine
 @testable import DuckDuckGo_Privacy_Browser
 import Foundation
 import PixelKit
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import SwiftUI
 import XCTest
 

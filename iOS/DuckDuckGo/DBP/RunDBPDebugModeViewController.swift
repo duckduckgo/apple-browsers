@@ -28,6 +28,7 @@ import Common
 import Combine
 import os.log
 import PixelKit
+import PrivacyConfig
 import Core
 import enum UserScript.UserScriptError
 

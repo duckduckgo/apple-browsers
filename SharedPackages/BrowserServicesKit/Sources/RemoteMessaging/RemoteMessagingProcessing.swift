@@ -17,7 +17,6 @@
 //
 
 import Foundation
-import BrowserServicesKit
 import Common
 import Configuration
 import os.log

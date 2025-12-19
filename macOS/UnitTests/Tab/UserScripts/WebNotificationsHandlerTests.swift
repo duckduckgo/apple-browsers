@@ -16,7 +16,8 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
+import Combine
+import PrivacyConfig
 import UserNotifications
 import WebKit
 import XCTest
@@ -73,6 +74,55 @@ final class MockNotificationIconFetcher: NotificationIconFetching {
     }
 }
 
+/// Mock permission model for isolated testing of permission flows.
+final class MockWebNotificationPermissionModel: WebNotificationPermissionProviding {
+
+    var isPermissionGrantedResult = true
+    var requestPermissionResult = true
+
+    private(set) var isPermissionGrantedCalled = false
+    private(set) var requestCalled = false
+    private(set) var lastRequestedDomain: String?
+
+    func isPermissionGranted(_ permission: PermissionType, forDomain domain: String) -> Bool {
+        isPermissionGrantedCalled = true
+        lastRequestedDomain = domain
+        return isPermissionGrantedResult
+    }
+
+    func request(_ permissions: [PermissionType], forDomain domain: String, url: URL?) -> Future<Bool, Never> {
+        requestCalled = true
+        lastRequestedDomain = domain
+        return Future { [weak self] fulfill in
+            fulfill(.success(self?.requestPermissionResult ?? false))
+        }
+    }
+}
+
+/// Mock WKWebView that returns a specific URL for testing permission checks.
+private final class WebNotificationMockURLWebView: WKWebView {
+    private let mockedURL: URL
+
+    init(url: URL, configuration: WKWebViewConfiguration = WKWebViewConfiguration()) {
+        self.mockedURL = url
+        super.init(frame: .zero, configuration: configuration)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override var url: URL? { mockedURL }
+
+    /// Creates a mock webView simulating a Fire Window (non-persistent data store)
+    static func fireWindow(url: URL = URL(string: "https://example.com")!) -> WebNotificationMockURLWebView {
+        let config = WKWebViewConfiguration()
+        config.websiteDataStore = .nonPersistent()
+        return WebNotificationMockURLWebView(url: url, configuration: config)
+    }
+}
+
 /// Mock WKScriptMessage for testing message handlers without a real WebView.
 private class WebNotificationMockScriptMessage: WKScriptMessage {
 
@@ -87,11 +137,12 @@ private class WebNotificationMockScriptMessage: WKScriptMessage {
     override var frameInfo: WKFrameInfo { mockedFrameInfo }
 
     init(name: String, body: Any, webView: WKWebView? = nil, frameInfo: WKFrameInfo? = nil, isMainFrame: Bool = true) {
+        let effectiveWebView = webView ?? WebNotificationMockURLWebView(url: URL(string: "https://example.com")!)
         self.mockedName = name
         self.mockedBody = body
-        self.mockedWebView = webView
+        self.mockedWebView = effectiveWebView
         self.mockedFrameInfo = frameInfo ?? WKFrameInfoMock(
-            webView: webView ?? WKWebView(frame: .zero),
+            webView: effectiveWebView,
             securityOrigin: WKSecurityOriginMock.new(url: URL(string: "https://example.com")!),
             request: URLRequest(url: URL(string: "https://example.com")!),
             isMainFrame: isMainFrame
@@ -109,7 +160,7 @@ final class WebNotificationsHandlerTests: XCTestCase {
     var mockNotificationService: MockWebNotificationService!
     var mockIconFetcher: MockNotificationIconFetcher!
     var mockFeatureFlagger: MockFeatureFlagger!
-    var mockPermissionManager: PermissionManagerMock!
+    var mockPermissionModel: MockWebNotificationPermissionModel!
     var handler: WebNotificationsHandler!
     let testTabUUID = "test-tab-uuid-123"
 
@@ -117,23 +168,23 @@ final class WebNotificationsHandlerTests: XCTestCase {
         super.setUp()
         mockNotificationService = MockWebNotificationService()
         mockIconFetcher = MockNotificationIconFetcher()
+        mockPermissionModel = MockWebNotificationPermissionModel()
         mockFeatureFlagger = MockFeatureFlagger()
-        mockPermissionManager = PermissionManagerMock()
-        mockFeatureFlagger.enableFeatures([.webNotifications])
+        mockFeatureFlagger.enableFeatures([.webNotifications, .newPermissionView])
         handler = WebNotificationsHandler(
             tabUUID: testTabUUID,
             notificationService: mockNotificationService,
             iconFetcher: mockIconFetcher,
-            featureFlagger: mockFeatureFlagger,
-            permissionManager: mockPermissionManager)
+            featureFlagger: mockFeatureFlagger)
+        handler.permissionModel = mockPermissionModel
     }
 
     override func tearDown() {
         handler = nil
         mockIconFetcher = nil
         mockNotificationService = nil
+        mockPermissionModel = nil
         mockFeatureFlagger = nil
-        mockPermissionManager = nil
         super.tearDown()
     }
 
@@ -257,13 +308,7 @@ final class WebNotificationsHandlerTests: XCTestCase {
         mockNotificationService.authorizationStatusToReturn = .authorized
         let params: [String: Any] = [:]
 
-        let config = await WKWebViewConfiguration()
-
-        await MainActor.run {
-            config.websiteDataStore = .nonPersistent()
-        }
-
-        let fireWindowWebView = await WKWebView(frame: .zero, configuration: config)
+        let fireWindowWebView = await WebNotificationMockURLWebView.fireWindow()
         let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params, webView: fireWindowWebView)
 
         let handlerFunc = handler.handler(forMethodNamed: "requestPermission")
@@ -281,13 +326,7 @@ final class WebNotificationsHandlerTests: XCTestCase {
         mockNotificationService.authorizationStatusToReturn = .denied
         let params: [String: Any] = [:]
 
-        let config = await WKWebViewConfiguration()
-
-        await MainActor.run {
-            config.websiteDataStore = .nonPersistent()
-        }
-
-        let fireWindowWebView = await WKWebView(frame: .zero, configuration: config)
+        let fireWindowWebView = await WebNotificationMockURLWebView.fireWindow()
         let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params, webView: fireWindowWebView)
 
         let handlerFunc = handler.handler(forMethodNamed: "requestPermission")
@@ -392,9 +431,7 @@ final class WebNotificationsHandlerTests: XCTestCase {
             "title": "Fire Window Test"
         ]
 
-        let config = WKWebViewConfiguration()
-        config.websiteDataStore = .nonPersistent()
-        let fireWindowWebView = WKWebView(frame: .zero, configuration: config)
+        let fireWindowWebView = WebNotificationMockURLWebView.fireWindow()
         let mockMessage = WebNotificationMockScriptMessage(name: "webCompat", body: params, webView: fireWindowWebView)
 
         let handlerFunc = handler.handler(forMethodNamed: "showNotification")
@@ -411,13 +448,7 @@ final class WebNotificationsHandlerTests: XCTestCase {
             "title": "Fire Window Test"
         ]
 
-        let config = await WKWebViewConfiguration()
-
-        await MainActor.run {
-            config.websiteDataStore = .nonPersistent()
-        }
-
-        let fireWindowWebView = await WKWebView(frame: .zero, configuration: config)
+        let fireWindowWebView = await WebNotificationMockURLWebView.fireWindow()
         let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params, webView: fireWindowWebView)
 
         let handlerFunc = handler.handler(forMethodNamed: "showNotification")
@@ -449,6 +480,24 @@ final class WebNotificationsHandlerTests: XCTestCase {
         let handlerFunc = handler.handler(forMethodNamed: "showNotification")
         _ = try? await handlerFunc?(params, mockMessage)
 
+        XCTAssertTrue(mockNotificationService.addedRequests.isEmpty)
+    }
+
+    /// When permission model returns false for isPermissionGranted, notification should be blocked.
+    func testWhenPermissionModelDeniesPermissionThenShowNotificationDoesNotPost() async {
+        mockNotificationService.authorizationStatusToReturn = .authorized
+        mockPermissionModel.isPermissionGrantedResult = false
+
+        let params: [String: Any] = [
+            "id": "test-permission-blocked",
+            "title": "Permission Blocked Test"
+        ]
+        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params)
+
+        let handlerFunc = handler.handler(forMethodNamed: "showNotification")
+        _ = try? await handlerFunc?(params, mockMessage)
+
+        XCTAssertTrue(mockPermissionModel.isPermissionGrantedCalled)
         XCTAssertTrue(mockNotificationService.addedRequests.isEmpty)
     }
 
@@ -602,8 +651,7 @@ final class WebNotificationsHandlerTests: XCTestCase {
             "id": "test-userinfo",
             "title": "UserInfo Test"
         ]
-        let webView = await WKWebView(frame: .zero)
-        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params, webView: webView)
+        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params)
 
         let handlerFunc = handler.handler(forMethodNamed: "showNotification")
         _ = try? await handlerFunc?(params, mockMessage)
@@ -618,8 +666,7 @@ final class WebNotificationsHandlerTests: XCTestCase {
             "id": "test-tab-uuid",
             "title": "Tab UUID Test"
         ]
-        let webView = await WKWebView(frame: .zero)
-        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params, webView: webView)
+        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params)
 
         let handlerFunc = handler.handler(forMethodNamed: "showNotification")
         _ = try? await handlerFunc?(params, mockMessage)
@@ -651,76 +698,4 @@ final class WebNotificationsHandlerTests: XCTestCase {
         XCTAssertNil(handler.webView)
     }
 
-    // MARK: - Permission Storage Tests
-
-    /// Tests that requestPermission stores 'allow' for the domain when system auth succeeds.
-    func testWhenRequestPermissionSucceedsThenStoresAllowForDomain() async {
-        mockNotificationService.authorizationStatusToReturn = .authorized
-        let testURL = URL(string: "https://example.com/page")!
-
-        let webView = await WKWebView(frame: .zero)
-        await webView.load(URLRequest(url: testURL))
-        // Wait a moment for the URL to be set
-        try? await Task.sleep(nanoseconds: 100_000_000)
-
-        let params: [String: Any] = [:]
-        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params, webView: webView)
-
-        let handlerFunc = handler.handler(forMethodNamed: "requestPermission")
-        _ = try? await handlerFunc?(params, mockMessage)
-
-        // Verify permission was stored
-        let calls = mockPermissionManager.setPermissionCalls.filter { $0.permissionType == .notification }
-        XCTAssertFalse(calls.isEmpty, "Expected permission to be stored")
-        if let lastCall = calls.last {
-            XCTAssertEqual(lastCall.decision, .allow)
-            XCTAssertEqual(lastCall.permissionType, .notification)
-        }
-    }
-
-    /// Tests that requestPermission returns denied when stored permission is deny.
-    func testWhenStoredPermissionIsDenyThenRequestPermissionReturnsDenied() async {
-        mockNotificationService.authorizationStatusToReturn = .authorized
-        mockPermissionManager.savedPermissions["example.com"] = [.notification: false] // deny
-
-        let testURL = URL(string: "https://example.com/page")!
-        let webView = await WKWebView(frame: .zero)
-        await webView.load(URLRequest(url: testURL))
-        try? await Task.sleep(nanoseconds: 100_000_000)
-
-        let params: [String: Any] = [:]
-        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params, webView: webView)
-
-        let handlerFunc = handler.handler(forMethodNamed: "requestPermission")
-        let result = try? await handlerFunc?(params, mockMessage)
-
-        guard let response = result as? WebNotificationsHandler.RequestPermissionResponse else {
-            XCTFail("Expected RequestPermissionResponse")
-            return
-        }
-        XCTAssertEqual(response.permission, "denied")
-    }
-
-    /// Tests that showNotification blocks when stored permission is deny.
-    func testWhenStoredPermissionIsDenyThenShowNotificationBlocks() async {
-        mockNotificationService.authorizationStatusToReturn = .authorized
-        mockPermissionManager.savedPermissions["example.com"] = [.notification: false] // deny
-
-        let testURL = URL(string: "https://example.com/page")!
-        let webView = await WKWebView(frame: .zero)
-        await webView.load(URLRequest(url: testURL))
-        try? await Task.sleep(nanoseconds: 100_000_000)
-
-        let params: [String: Any] = [
-            "id": "test-denied-notif",
-            "title": "Should be blocked"
-        ]
-        let mockMessage = await WebNotificationMockScriptMessage(name: "webCompat", body: params, webView: webView)
-
-        let handlerFunc = handler.handler(forMethodNamed: "showNotification")
-        _ = try? await handlerFunc?(params, mockMessage)
-
-        // Notification should not be posted due to stored deny
-        XCTAssertTrue(mockNotificationService.addedRequests.isEmpty)
-    }
 }

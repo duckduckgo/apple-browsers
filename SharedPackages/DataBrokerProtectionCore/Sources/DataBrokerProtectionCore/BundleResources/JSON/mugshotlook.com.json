@@ -1,9 +1,9 @@
 {
   "name": "MugshotLook",
   "url": "mugshotlook.com",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "parent": "privatereports.com",
-  "optOutUrl": "https://www.mugshotlook.com/optOut/name/landing",
+  "optOutUrl": "https://www.mugshotlook.com/optOut/name/landingPage",
   "steps": [
     {
       "stepType": "scan",
@@ -11,56 +11,48 @@
       "actions": [
         {
           "actionType": "navigate",
-          "url": "https://www.mugshotlook.com/name/search-result",
-          "id": "07ecaca8-e573-4d74-b6d8-7a3073d8e9e6"
+          "url": "https://www.mugshotlook.com/optOut/name/landingPage",
+          "id": "88ee28d0-e747-46bd-a4c4-493603935126"
         },
         {
           "actionType": "expectation",
           "expectations": [
             {
               "type": "element",
-              "selector": "#email-form-2"
+              "selector": ".search-wrapper"
             }
           ],
-          "id": "8d9ea63e-1d47-45e9-a1f3-c1780b29cd1f"
+          "id": "df7a2baa-5cd9-4b5d-a4d7-b461d6e8aa00"
         },
         {
           "actionType": "fillForm",
           "dataSource": "userProfile",
-          "selector": "#email-form-2",
+          "selector": ".search-wrapper",
           "elements": [
             {
               "type": "firstName",
-              "selector": "#First-Name-2"
-            },
-            {
-              "type": "middleName",
-              "selector": "#Middle-Name-3"
+              "selector": "#firstName"
             },
             {
               "type": "lastName",
-              "selector": "#Last-Name-3"
-            },
-            {
-              "type": "city",
-              "selector": "#City-3"
+              "selector": "#lastName"
             },
             {
               "type": "state",
-              "selector": "#State"
+              "selector": "#state"
             }
           ],
-          "id": "9f138d30-5b98-4903-8f1b-0f895c9cd90c"
+          "id": "7104601c-7817-4ce0-9ced-290739c65aa4"
         },
         {
           "actionType": "click",
           "elements": [
             {
               "type": "button",
-              "selector": ".refine-search-button"
+              "selector": "button[type='submit']"
             }
           ],
-          "id": "b60ba41a-3d7b-42ff-ba44-46a84570eb79"
+          "id": "4184678b-52b3-46cf-bc21-1f890a06f7f2"
         },
         {
           "actionType": "expectation",
@@ -160,37 +152,38 @@
           "elements": [
             {
               "type": "button",
-              "selector": ".srp-view-more",
+              "selector": ".result .more",
               "multiple": true,
               "failSilently": true
             }
           ],
-          "id": "d658a323-124c-4008-8ccf-df0f4c6a702f"
+          "id": "f03efbd4-e0b8-4732-9ba9-e0fdbd1af55e"
         },
         {
           "actionType": "extract",
-          "selector": ".srp-table-item",
+          "selector": "//li[contains(@class, 'searchedPerson')]",
           "noResultsSelector": "//div[contains(text(), 'unable to find')]|//h2[contains(text(), 'too many results')]",
           "profile": {
             "name": {
-              "selector": ".srp-name"
+              "selector": ".//a/div[1]//h3"
             },
             "age": {
-              "selector": ".srp-item-age"
-            },
-            "addressCityStateList": {
-              "selector": ".srp-item-locations .srp-item-location",
-              "findElements": true
+              "selector": ".//a/div[1]//h4",
+              "afterText": "Age:"
             },
             "relativesList": {
-              "selector": ".srp-item-relatives .srp-item-relative",
+              "selector": ".//strong[contains(text(), 'relative')]/following-sibling::text()",
+              "findElements": true
+            },
+            "addressCityState": {
+              "selector": ".//strong[contains(text(), 'Locations:')]/following-sibling::text()",
               "findElements": true
             },
             "profileUrl": {
               "identifierType": "hash"
             }
           },
-          "id": "fdd3bae5-3c5d-4d0b-8911-e239ea46942b"
+          "id": "1f22c974-afc3-4656-be65-000322243064"
         }
       ]
     },

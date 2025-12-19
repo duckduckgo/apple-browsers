@@ -2968,18 +2968,64 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Položaj naslovne vrstice";
 
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Eksperimentalni meni brskalnika";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Odpri povezave v povezanih aplikacijah";
 
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Onemogoči, da preprečiš samodejno odpiranje povezav v drugih nameščenih aplikacijah.";
 
+/* Subtitle explaining what the cookies option does in auto clear settings */
+"settings.autoclear.cookies.subtitle" = "Izbrišite vse podatke o straneh, vključno z obiskanimi stranmi. Morda boste odjavljeni iz računov.";
+
+/* Title for the cookies and site data option in auto clear settings */
+"settings.autoclear.cookies.title" = "Piškotki in podatki spletnega mesta";
+
+/* Subtitle explaining what the Duck.ai chats option does in auto clear settings */
+"settings.autoclear.duckai.chats.subtitle" = "Izbrišite vse klepete, vključno s pripetimi klepeti";
+
+/* Title for the Duck.ai chats option in auto clear settings */
+"settings.autoclear.duckai.chats.title" = "Klepeti Duck.ai";
+
+/* Section header for the auto clear options */
+"settings.autoclear.section.header" = "Počisti";
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Počisti zavihke in podatke";
 
 /* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
 "settings.autoclear.tabs.and.data.with.aichat" = "Počisti zavihke, podatke in klepete Duck.ai";
 
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "Zaprite vse odprte zavihke";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "Zavihki";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Izhod iz aplikacije, neaktivnost 15 minut";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "Izhod iz aplikacije, neaktivnost 1 ura";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Izhod iz aplikacije, neaktivnost 30 minut";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "Izhod iz aplikacije, neaktivnost 5 minut";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "Samo izhod iz aplikacije";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "Izhod iz aplikacije je določen s tem, da povlečeš aplikacijo, da jo med nedejavnostjo zapreš, ko se aplikacija izvaja v ozadju.";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "Želen čas";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "Podatki bodo izbrisani ob ponovnem zagonu aplikacije.";
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Predlogi za iskanje";
 
@@ -2998,6 +3044,8 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Če je omogočena identifikacija s prepoznavanjem prstnega odtisa ali obraza ali s sistemsko kodo za dostop, boste pri odpiranju aplikacije pozvani, da jo odklenete.";
 
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "Samodejno čiščenje podatkov";
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Povratne informacije o brskalniku";
 
@@ -3007,6 +3055,8 @@
 /* Settings screen cell text for clearing AI chat history */
 "settings.clear.aichat.history.title" = "Počisti klepete Duck.ai";
 
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "Čiščenje podatkov o brskanju";
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Samodejno počisti podatke";
 
@@ -3034,6 +3084,8 @@
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Počiščenje podatkov";
 
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "Brisanje podatkov lahko pomaga zaščititi vašo zasebnost na spletu. Uporabite gumb Fire Button za ročno brisanje podatkov ali nastavite samodejno brisanje.";
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Privzet brskalnik";
 
@@ -3079,6 +3131,8 @@
 /* Settings screen cell text for Fireproof Sites */
 "settings.fireproof.sites" = "Spletne strani s požarno zaščito";
 
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Požarno zaščitena mesta";
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Splošno";
 
@@ -3333,6 +3387,9 @@
 
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "Brskalnik DuckDuckGo nudi zaščito pred sledenjem, ki je vedno aktivna. [Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
+
+/* Settings cell title to show users the What’s New prompt */
+"settings.whats.new" = "Kaj je novega";
 
 /* No comment provided by engineer. */
 "Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Prikaže dnevnike iz zadnje minute, da pomaga diagnosticirati težave takoj po osvežitvi.";

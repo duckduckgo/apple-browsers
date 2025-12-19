@@ -20,6 +20,7 @@ import Cocoa
 import Common
 import WebKit
 import BrowserServicesKit
+import PrivacyConfig
 
 @MainActor
 public final class ContentOverlayPopover: NSObject {

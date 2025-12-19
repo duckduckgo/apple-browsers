@@ -16,9 +16,11 @@
 //  limitations under the License.
 //
 
-import XCTest
 import BrowserServicesKit
 import Configuration
+import PrivacyConfig
+import PrivacyConfigTestsUtils
+import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 fileprivate extension AppConfigurationURLProvider {

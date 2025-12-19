@@ -1970,9 +1970,6 @@
     }, [search]);
     return null;
   }
-  function useEnv() {
-    return x2(EnvironmentContext);
-  }
 
   // pages/history/app/components/App.jsx
   var import_classnames5 = __toESM(require_classnames(), 1);
@@ -5128,14 +5125,27 @@
 
   // pages/history/app/global/Providers/ThemeProvider.js
   var ThemeContext = Q({
-    /** @type {BrowserTheme} */
+    /** @type {'light' | 'dark'} */
     theme: "light",
     /** @type {ThemeVariant} */
     themeVariant: "default"
   });
+  var darkModeMediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  function useSystemTheme() {
+    const [systemTheme, setSystemTheme] = d2(
+      /** @type {'light' | 'dark'} */
+      darkModeMediaQuery.matches ? "dark" : "light"
+    );
+    y2(() => {
+      const listener = (e4) => setSystemTheme(e4.matches ? "dark" : "light");
+      darkModeMediaQuery.addEventListener("change", listener);
+      return () => darkModeMediaQuery.removeEventListener("change", listener);
+    }, []);
+    return systemTheme;
+  }
   function ThemeProvider({ children, initialTheme, initialThemeVariant }) {
-    const { isDarkMode } = useEnv();
     const history = useMessaging();
+    const systemTheme = useSystemTheme();
     const [explicitTheme, setExplicitTheme] = d2(
       /** @type {BrowserTheme | undefined} */
       void 0
@@ -5151,8 +5161,15 @@
       });
       return unsubscribe;
     }, [history]);
-    const theme = explicitTheme ?? initialTheme ?? (isDarkMode ? "dark" : "light");
+    const browserTheme = explicitTheme ?? initialTheme ?? "system";
     const themeVariant = explicitThemeVariant ?? initialThemeVariant ?? "default";
+    const theme = browserTheme === "system" ? systemTheme : browserTheme;
+    _2(() => {
+      document.body.dataset.theme = theme;
+    }, [theme]);
+    _2(() => {
+      document.body.dataset.themeVariant = themeVariant;
+    }, [themeVariant]);
     return /* @__PURE__ */ _(ThemeContext.Provider, { value: { theme, themeVariant } }, children);
   }
   function useTheme() {
@@ -5190,20 +5207,7 @@
         unsubscribe();
       };
     }, [onKeyDown, query]);
-    return /* @__PURE__ */ _(
-      "div",
-      {
-        class: App_default.layout,
-        "data-theme": theme,
-        "data-theme-variant": themeVariant,
-        "data-platform": platformName,
-        "data-layout-mode": mode,
-        onClick: clickAnywhere
-      },
-      /* @__PURE__ */ _("aside", { class: App_default.aside }, /* @__PURE__ */ _(Sidebar, { ranges })),
-      /* @__PURE__ */ _("header", { class: App_default.header }, /* @__PURE__ */ _(Header, null)),
-      /* @__PURE__ */ _("main", { class: (0, import_classnames5.default)(App_default.main, App_default.customScroller), ref: mainRef, onClick }, /* @__PURE__ */ _(ResultsContainer, null))
-    );
+    return /* @__PURE__ */ _("div", { class: App_default.layout, "data-platform": platformName, "data-layout-mode": mode, onClick: clickAnywhere }, /* @__PURE__ */ _("aside", { class: App_default.aside }, /* @__PURE__ */ _(Sidebar, { ranges })), /* @__PURE__ */ _("header", { class: App_default.header }, /* @__PURE__ */ _(Header, null)), /* @__PURE__ */ _("main", { class: (0, import_classnames5.default)(App_default.main, App_default.customScroller), ref: mainRef, onClick }, /* @__PURE__ */ _(ResultsContainer, null)));
   }
   function AppLevelErrorBoundaryFallback({ children }) {
     return /* @__PURE__ */ _("div", { class: App_default.paddedError }, /* @__PURE__ */ _("p", null, children), /* @__PURE__ */ _("div", { class: App_default.paddedErrorRecovery }, "You can try to", " ", /* @__PURE__ */ _(

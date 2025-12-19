@@ -24,6 +24,12 @@ import History
 import Navigation
 import WebKit
 import BrowserServicesKit
+import HistoryView
+
+protocol HistoryUserScriptProvider {
+    var historyViewUserScript: HistoryViewUserScript { get }
+}
+extension UserScripts: HistoryUserScriptProvider {}
 
 final class HistoryTabExtension: NSObject {
 
@@ -61,6 +67,14 @@ final class HistoryTabExtension: NSObject {
         }
     }
 
+    private weak var historyViewUserScript: HistoryViewUserScript?
+
+    private weak var webView: WKWebView? {
+        didSet {
+            historyViewUserScript?.webView = webView
+        }
+    }
+
     private enum VisitState {
         case expected
         case added
@@ -72,7 +86,9 @@ final class HistoryTabExtension: NSObject {
          trackersPublisher: some Publisher<DetectedTracker, Never>,
          urlPublisher: some Publisher<URL?, Never>,
          titlePublisher: some Publisher<String?, Never>,
-         popupManagedPublisher: AnyPublisher<AutoconsentUserScript.AutoconsentDoneMessage, Never>) {
+         popupManagedPublisher: AnyPublisher<AutoconsentUserScript.AutoconsentDoneMessage, Never>,
+         scriptsPublisher: some Publisher<some HistoryUserScriptProvider, Never>,
+         webViewPublisher: some Publisher<WKWebView, Never>) {
 
         self.historyCoordinating = historyCoordinating
         self.isCapturingHistory = isCapturingHistory
@@ -113,6 +129,17 @@ final class HistoryTabExtension: NSObject {
             MainActor.assumeMainThread {
                 self.handlePopupManaged(event)
             }
+        }.store(in: &cancellables)
+
+        scriptsPublisher.sink { [weak self] scripts in
+            Task { @MainActor in
+                self?.historyViewUserScript = scripts.historyViewUserScript
+                self?.historyViewUserScript?.webView = self?.webView
+            }
+        }.store(in: &cancellables)
+
+        webViewPublisher.sink { [weak self] webView in
+            self?.webView = webView
         }.store(in: &cancellables)
 
         NotificationCenter.default.addObserver(self,

@@ -54,6 +54,17 @@ struct CryptingMock: Crypting {
         .init()
     }
 
+    func encrypt(_ value: String, using secretKey: Data) throws -> Data {
+        Data(try _encryptAndBase64Encode(value).utf8)
+    }
+
+    func decrypt(_ value: Data, using secretKey: Data) throws -> String {
+        guard let string = String(data: value, encoding: .utf8) else {
+            throw SyncError.failedToDecryptValue("bytes could not be converted to string")
+        }
+        return try _base64DecodeAndDecrypt(string)
+    }
+
     func encryptAndBase64Encode(_ value: String) throws -> String {
         try _encryptAndBase64Encode(value)
     }

@@ -17,7 +17,6 @@
 //
 
 import BrokenSitePrompt
-import BrowserServicesKit
 import Cocoa
 import Carbon.HIToolbox
 import Combine
@@ -28,6 +27,7 @@ import NetworkQualityMonitor
 import os.log
 import PerformanceTest
 import PixelKit
+import PrivacyConfig
 import SwiftUI
 import VPN
 
@@ -131,7 +131,8 @@ final class MainViewController: NSViewController {
          visualizeFireAnimationDecider: VisualizeFireSettingsDecider = NSApp.delegateTyped.visualizeFireSettingsDecider,
          vpnUpsellPopoverPresenter: VPNUpsellPopoverPresenter = NSApp.delegateTyped.vpnUpsellPopoverPresenter,
          sessionRestorePromptCoordinator: SessionRestorePromptCoordinating = NSApp.delegateTyped.sessionRestorePromptCoordinator,
-         winBackOfferPromptPresenting: WinBackOfferPromptPresenting = NSApp.delegateTyped.winBackOfferPromptPresenter
+         winBackOfferPromptPresenting: WinBackOfferPromptPresenting = NSApp.delegateTyped.winBackOfferPromptPresenter,
+         memoryUsageMonitor: MemoryUsageMonitor = NSApp.delegateTyped.memoryUsageMonitor
     ) {
 
         self.aiChatMenuConfig = aiChatMenuConfig
@@ -221,7 +222,6 @@ final class MainViewController: NSViewController {
             sidebarProvider: aiChatSidebarProvider,
             aiChatMenuConfig: aiChatMenuConfig,
             aiChatTabOpener: aiChatTabOpener,
-            featureFlagger: featureFlagger,
             windowControllersManager: windowControllersManager,
             pixelFiring: pixelFiring
         )
@@ -261,7 +261,8 @@ final class MainViewController: NSViewController {
                                                                          defaultBrowserPreferences: defaultBrowserPreferences,
                                                                          downloadsPreferences: downloadsPreferences,
                                                                          tabsPreferences: tabsPreferences,
-                                                                         accessibilityPreferences: accessibilityPreferences)
+                                                                         accessibilityPreferences: accessibilityPreferences,
+                                                                         memoryUsageMonitor: memoryUsageMonitor)
 
         findInPageViewController = FindInPageViewController.create()
         fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel, visualizeFireAnimationDecider: visualizeFireAnimationDecider)
@@ -1009,7 +1010,8 @@ extension MainViewController {
             let isSwitchingToAIChatMode = buttonsViewController.searchModeToggleControl?.selectedSegment == 0
             buttonsViewController.toggleSearchMode()
             if isSwitchingToAIChatMode {
-                self.aiChatOmnibarTextContainerViewController.insertNewline()
+                let currentText = navigationBarViewController.addressBarViewController?.addressBarTextField.stringValueWithoutSuffix ?? ""
+                self.aiChatOmnibarTextContainerViewController.insertNewlineIfHasContent(addressBarText: currentText)
             }
             return true
         } else if flags.contains(.control),

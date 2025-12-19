@@ -351,7 +351,7 @@ jobs:
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_BSK_POST_MERGE_SECTION_ID }}
           commit-author: ${{ needs.unit-tests.outputs.commit_author }}
           pr-reviewers: ${{ needs.unit-tests.outputs.pr_reviewers }}
-          github-token: ${{ secrets.GH_RO_PAT }}
+          github-token: ${{ secrets.APPLE_GH_RO_PAT }}
 
   close-asana-task:
     name: Close Asana Task
@@ -370,4 +370,4 @@ jobs:
           action: close-task
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_BSK_POST_MERGE_SECTION_ID }}
-          github-token: ${{ secrets.GH_RO_PAT }}
+          github-token: ${{ secrets.APPLE_GH_RO_PAT }}

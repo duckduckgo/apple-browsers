@@ -69,147 +69,75 @@ extension Preferences {
                 PreferencePaneSection(UserText.aiChatShortcutsSectionTitle,
                                       spacing: 6) {
 
-                    if model.shouldShowUpdatedSettings {
-                        ToggleMenuItem(UserText.aiChatShowOnNewTabPageSearchBoxToggle,
-                                       isOn: $model.showShortcutOnNewTabPage)
-                        .accessibilityIdentifier("Preferences.AIChat.showOnNewTabPageToggle")
-                        .onChange(of: model.showShortcutOnNewTabPage) { newValue in
-                            if newValue {
-                                PixelKit.fire(AIChatPixel.aiChatSettingsNewTabPageShortcutTurnedOn,
-                                              frequency: .dailyAndCount,
-                                              includeAppVersionParameter: true)
-                            } else {
-                                PixelKit.fire(AIChatPixel.aiChatSettingsNewTabPageShortcutTurnedOff,
-                                              frequency: .dailyAndCount,
-                                              includeAppVersionParameter: true)
-                            }
-                        }
-                        .visibility(model.shouldShowNewTabPageToggle ? .visible : .gone)
-
-                        if model.shouldShowSearchAndDuckAIToggleOption {
-                            ToggleMenuItem(UserText.aiChatShowSearchAndDuckAIToggleLabel,
-                                           isOn: $model.showSearchAndDuckAIToggle)
-                            .accessibilityIdentifier("Preferences.AIChat.showSearchAndDuckAIToggleToggle")
+                    ToggleMenuItem(UserText.aiChatShowOnNewTabPageSearchBoxToggle,
+                                   isOn: $model.showShortcutOnNewTabPage)
+                    .accessibilityIdentifier("Preferences.AIChat.showOnNewTabPageToggle")
+                    .onChange(of: model.showShortcutOnNewTabPage) { newValue in
+                        if newValue {
+                            PixelKit.fire(AIChatPixel.aiChatSettingsNewTabPageShortcutTurnedOn,
+                                          frequency: .dailyAndCount,
+                                          includeAppVersionParameter: true)
                         } else {
-                            ToggleMenuItem(UserText.aiChatShowInAddressBarWhenTypingLabel,
-                                           isOn: $model.showShortcutInAddressBarWhenTyping)
-                            .accessibilityIdentifier("Preferences.AIChat.showInAddressBarWhenTypingToggle")
-                            .onChange(of: model.showShortcutInAddressBarWhenTyping) { newValue in
-                                if newValue {
-                                    PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarTypingShortcutTurnedOn,
-                                                  frequency: .dailyAndCount,
-                                                  includeAppVersionParameter: true)
-                                } else {
-                                    PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarTypingShortcutTurnedOff,
-                                                  frequency: .dailyAndCount,
-                                                  includeAppVersionParameter: true)
-                                }
-                            }
+                            PixelKit.fire(AIChatPixel.aiChatSettingsNewTabPageShortcutTurnedOff,
+                                          frequency: .dailyAndCount,
+                                          includeAppVersionParameter: true)
                         }
+                    }
+                    .visibility(model.shouldShowNewTabPageToggle ? .visible : .gone)
 
-                        ToggleMenuItem(UserText.aiChatShowShortcutInAddressBarLabel,
-                                       isOn: $model.showShortcutInAddressBar)
-                        .accessibilityIdentifier("Preferences.AIChat.showInAddressBarToggle")
-                        .onChange(of: model.showShortcutInAddressBar) { newValue in
-                            if newValue {
-                                PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarShortcutTurnedOn,
-                                              frequency: .dailyAndCount,
-                                              includeAppVersionParameter: true)
-                            } else {
-                                PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarShortcutTurnedOff,
-                                              frequency: .dailyAndCount,
-                                              includeAppVersionParameter: true)
-                            }
-                        }
-
-                        if model.shouldShowOpenAIChatInSidebarToggle {
-                            ToggleMenuItem(UserText.aiChatOpenSidebarWhenViewingWebsitesToggle,
-                                           isOn: $model.openAIChatInSidebar)
-                            .accessibilityIdentifier("Preferences.AIChat.openInSidebarToggle")
-                            .onChange(of: model.openAIChatInSidebar) { _ in
-                                PixelKit.fire(AIChatPixel.aiChatSidebarSettingChanged,
-                                              frequency: .uniqueByName,
-                                              includeAppVersionParameter: true)
-                            }
-                            .disabled(!model.showShortcutInAddressBar)
-                            .padding(.leading, 19)
-
-                            if model.shouldShowPageContextToggle {
-                                ToggleMenuItem("Automatically send page context to the sidebar",
-                                               isOn: $model.shouldAutomaticallySendPageContext)
-                                .accessibilityIdentifier("Preferences.AIChat.shouldAutomaticallySendPageContextToggle")
-                                .disabled(!model.showShortcutInAddressBar || !model.openAIChatInSidebar)
-                                .padding(.leading, 19)
-                            }
-                        }
-
+                    if model.shouldShowSearchAndDuckAIToggleOption {
+                        ToggleMenuItem(UserText.aiChatShowSearchAndDuckAIToggleLabel,
+                                       isOn: $model.showSearchAndDuckAIToggle)
+                        .accessibilityIdentifier("Preferences.AIChat.showSearchAndDuckAIToggleToggle")
                     } else {
-                        ToggleMenuItem(UserText.aiChatShowInSearchBoxOnNewTabPageBarToggle,
-                                       isOn: $model.showShortcutOnNewTabPage)
-                        .accessibilityIdentifier("Preferences.AIChat.showOnNewTabPageToggle")
-                        .onChange(of: model.showShortcutOnNewTabPage) { newValue in
+                        ToggleMenuItem(UserText.aiChatShowInAddressBarWhenTypingLabel,
+                                       isOn: $model.showShortcutInAddressBarWhenTyping)
+                        .accessibilityIdentifier("Preferences.AIChat.showInAddressBarWhenTypingToggle")
+                        .onChange(of: model.showShortcutInAddressBarWhenTyping) { newValue in
                             if newValue {
-                                PixelKit.fire(AIChatPixel.aiChatSettingsNewTabPageShortcutTurnedOn,
+                                PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarTypingShortcutTurnedOn,
                                               frequency: .dailyAndCount,
                                               includeAppVersionParameter: true)
                             } else {
-                                PixelKit.fire(AIChatPixel.aiChatSettingsNewTabPageShortcutTurnedOff,
+                                PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarTypingShortcutTurnedOff,
                                               frequency: .dailyAndCount,
                                               includeAppVersionParameter: true)
                             }
                         }
-                        .visibility(model.shouldShowNewTabPageToggle ? .visible : .gone)
+                    }
 
-                        ToggleMenuItem(UserText.aiChatShowInBrowserMenusToggle,
-                                       isOn: $model.showShortcutInApplicationMenu)
-                        .accessibilityIdentifier("Preferences.AIChat.showInApplicationMenuToggle")
-                        .onChange(of: model.showShortcutInApplicationMenu) { newValue in
-                            if newValue {
-                                PixelKit.fire(AIChatPixel.aiChatSettingsApplicationMenuShortcutTurnedOn,
-                                              frequency: .dailyAndCount,
-                                              includeAppVersionParameter: true)
-                            } else {
-                                PixelKit.fire(AIChatPixel.aiChatSettingsApplicationMenuShortcutTurnedOff,
-                                              frequency: .dailyAndCount,
-                                              includeAppVersionParameter: true)
-                            }
+                    ToggleMenuItem(UserText.aiChatShowShortcutInAddressBarLabel,
+                                   isOn: $model.showShortcutInAddressBar)
+                    .accessibilityIdentifier("Preferences.AIChat.showInAddressBarToggle")
+                    .onChange(of: model.showShortcutInAddressBar) { newValue in
+                        if newValue {
+                            PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarShortcutTurnedOn,
+                                          frequency: .dailyAndCount,
+                                          includeAppVersionParameter: true)
+                        } else {
+                            PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarShortcutTurnedOff,
+                                          frequency: .dailyAndCount,
+                                          includeAppVersionParameter: true)
                         }
+                    }
 
-                        ToggleMenuItem(UserText.aiChatShowInAddressBarLabel,
-                                       isOn: $model.showShortcutInAddressBar)
-                        .accessibilityIdentifier("Preferences.AIChat.showInAddressBarToggle")
-                        .onChange(of: model.showShortcutInAddressBar) { newValue in
-                            if newValue {
-                                PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarShortcutTurnedOn,
-                                              frequency: .dailyAndCount,
-                                              includeAppVersionParameter: true)
-                            } else {
-                                PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarShortcutTurnedOff,
-                                              frequency: .dailyAndCount,
-                                              includeAppVersionParameter: true)
-                            }
-                        }
+                    ToggleMenuItem(UserText.aiChatOpenSidebarWhenViewingWebsitesToggle,
+                                   isOn: $model.openAIChatInSidebar)
+                    .accessibilityIdentifier("Preferences.AIChat.openInSidebarToggle")
+                    .onChange(of: model.openAIChatInSidebar) { _ in
+                        PixelKit.fire(AIChatPixel.aiChatSidebarSettingChanged,
+                                      frequency: .uniqueByName,
+                                      includeAppVersionParameter: true)
+                    }
+                    .disabled(!model.showShortcutInAddressBar)
+                    .padding(.leading, 19)
 
-                        if model.shouldShowOpenAIChatInSidebarToggle {
-                            ToggleMenuItem(UserText.aiChatOpenInSidebarToggle,
-                                           isOn: $model.openAIChatInSidebar)
-                            .accessibilityIdentifier("Preferences.AIChat.openInSidebarToggle")
-                            .onChange(of: model.openAIChatInSidebar) { _ in
-                                PixelKit.fire(AIChatPixel.aiChatSidebarSettingChanged,
-                                              frequency: .uniqueByName,
-                                              includeAppVersionParameter: true)
-                            }
-                            .disabled(!model.showShortcutInAddressBar)
-                            .padding(.leading, 19)
-
-                            if model.shouldShowPageContextToggle {
-                                ToggleMenuItem("Automatically send page context to the sidebar",
-                                               isOn: $model.shouldAutomaticallySendPageContext)
-                                .accessibilityIdentifier("Preferences.AIChat.shouldAutomaticallySendPageContextToggle")
-                                .disabled(!model.showShortcutInAddressBar || !model.openAIChatInSidebar)
-                                .padding(.leading, 19)
-                            }
-                        }
+                    if model.shouldShowPageContextToggle {
+                        ToggleMenuItem("Automatically send page context to the sidebar",
+                                       isOn: $model.shouldAutomaticallySendPageContext)
+                        .accessibilityIdentifier("Preferences.AIChat.shouldAutomaticallySendPageContextToggle")
+                        .disabled(!model.showShortcutInAddressBar || !model.openAIChatInSidebar)
+                        .padding(.leading, 19)
                     }
                 }
                                       .visibility(model.shouldShowAIFeatures ? .visible : .gone)

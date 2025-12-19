@@ -27,7 +27,7 @@ import PDFKit
 import Navigation
 import PixelKit
 import os.log
-import BrowserServicesKit
+import PrivacyConfig
 
 final class LegacySyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel {
 

@@ -48,7 +48,7 @@ final class FeedbackViewController: NSViewController {
             switch self {
             case .feedback(let feedbackCategory):
                 switch feedbackCategory {
-                case .bug: return 1
+                case .bug, .firstTimeQuitSurvey: return 1
                 case .featureRequest: return 2
                 case .other: return 3
                 case .generalFeedback, .designFeedback, .usability, .dataImport:
@@ -264,7 +264,7 @@ final class FeedbackViewController: NSViewController {
 
     private func updateBrowserFeedbackDescriptionLabel(for category: Feedback.Category) {
         switch category {
-        case .bug:
+        case .bug, .firstTimeQuitSurvey:
             browserFeedbackDescriptionLabel.stringValue = UserText.feedbackBugDescription
         case .featureRequest:
             browserFeedbackDescriptionLabel.stringValue = UserText.feedbackFeatureRequestDescription

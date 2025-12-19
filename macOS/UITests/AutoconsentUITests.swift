@@ -71,7 +71,7 @@ class AutoconsentUITests: UITestCase {
         app.typeKey(.escape, modifierFlags: [])
     }
 
-    // TODO: Re-enable when experiment is shipped to 100%
+    // Re-enable when experiment is shipped to 100%
     func disabled_testAutoconsent_PrivacyTestPages_HeuristicModeWorks() throws {
         // Navigate to DuckDuckGo's privacy test pages for autoconsent
         let testURL = URL(string: "http://privacy-test-pages.site/features/autoconsent/heuristic.html")!

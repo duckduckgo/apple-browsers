@@ -30,7 +30,7 @@ final class FocusRingView: NSView {
 
     var strokedBackgroundColor: NSColor?
     var unstrokedBackgroundColor: NSColor?
-    var shadownColor: NSColor?
+    var shadowColor: NSColor?
     var strokeColor: NSColor?
 
     private let shadowLayer = CALayer()
@@ -102,7 +102,7 @@ final class FocusRingView: NSView {
 
         NSAppearance.withAppAppearance {
             backgroundLayer.backgroundColor = stroke ? strokedBackgroundColor?.cgColor : unstrokedBackgroundColor?.cgColor
-            shadowLayer.backgroundColor = shadownColor?.cgColor
+            shadowLayer.backgroundColor = shadowColor?.cgColor
             strokeLayer.backgroundColor = strokeColor?.cgColor
         }
     }
@@ -115,7 +115,7 @@ extension FocusRingView {
         strokedBackgroundColor = palette.surfaceTertiary
         unstrokedBackgroundColor = palette.surfaceTertiary
         strokeColor = palette.accentPrimary
-        shadownColor = palette.accentSecondary
+        shadowColor = palette.accentSecondary
 
         refreshLayerColors()
     }

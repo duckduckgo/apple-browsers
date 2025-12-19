@@ -125,11 +125,12 @@ extension FaviconDownloader: WKDownloadDelegate {
         // Read the downloaded file
         do {
             guard let destinationURL = task.destinationURL else { throw CocoaError(.fileNoSuchFile) }
+            defer {
+                // Clean up the temporary file
+                try? FileManager.default.removeItem(at: destinationURL)
+            }
             let data = try Data(contentsOf: destinationURL)
             result = .success(data)
-
-            // Clean up the temporary file
-            try? FileManager.default.removeItem(at: destinationURL)
         } catch {
             Logger.favicons.error("FaviconDownloader: Failed to read downloaded file: \(error.localizedDescription)")
             result = .failure(error)

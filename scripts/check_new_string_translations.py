@@ -14,13 +14,23 @@ Licensed under the Apache License, Version 2.0
 """
 
 import argparse
-import json
 import os
-import plistlib
 import re
 import subprocess
 import sys
 from typing import Dict, List, Optional, Set, Tuple
+
+# Import shared utilities
+from localization_utils import (
+    get_base_branch,
+    get_changed_files,
+    get_files_content_at_base,
+    get_search_paths,
+    parse_strings_file,
+    parse_stringsdict_file,
+    parse_stringsdict_file_full,
+    parse_xcstrings,
+)
 
 ISSUE_TYPE_MISSING = "missing"
 ISSUE_TYPE_NEEDS_REVIEW = "needs_review"
@@ -79,79 +89,8 @@ def get_required_locales(platform: str) -> Set[str]:
         return set()
 
 # =============================================================================
-# Git Utilities
-# =============================================================================
-
-_base_branch_cache: Optional[str] = None
-
-def get_base_branch() -> str:
-    """Get the base branch for comparison (usually main or the PR base)."""
-    global _base_branch_cache
-    if _base_branch_cache is not None:
-        return _base_branch_cache
-
-    base_ref = os.environ.get('GITHUB_BASE_REF')
-    if base_ref:
-        _base_branch_cache = f"origin/{base_ref}"
-    else:
-        _base_branch_cache = "origin/main"
-
-    return _base_branch_cache
-
-def get_changed_files(extensions: List[str], paths: List[str]) -> List[str]:
-    """Get list of changed files with given extensions in the specified paths."""
-    base = get_base_branch()
-    cmd = ['git', 'diff', '--name-only', '--diff-filter=ACMR', base, '--']
-
-    for path in paths:
-        for ext in extensions:
-            cmd.append(f':(glob){path}/**/*{ext}')
-
-    try:
-        result = subprocess.run(
-            cmd, capture_output=True, text=True, check=False
-        )
-    except Exception:
-        return []
-
-    return [f for f in result.stdout.strip().split('\n') if f]
-
-def get_files_content_at_base(file_paths: List[str]) -> Dict[str, str]:
-    """
-    Get content of multiple files at the base branch.
-
-    Returns a dict mapping file_path -> content (empty string if file doesn't exist).
-    """
-    if not file_paths:
-        return {}
-
-    base = get_base_branch()
-    contents: Dict[str, str] = {}
-
-    for file_path in file_paths:
-        try:
-            result = subprocess.run(
-                ['git', 'show', f'{base}:{file_path}'],
-                capture_output=True, text=True, check=False
-            )
-            contents[file_path] = result.stdout if result.returncode == 0 else ""
-        except Exception:
-            contents[file_path] = ""
-
-    return contents
-
-# =============================================================================
 # .xcstrings (String Catalog) Handling
 # =============================================================================
-
-def parse_xcstrings(content: str) -> Dict:
-    """Parse .xcstrings JSON content."""
-    if not content:
-        return {"strings": {}}
-    try:
-        return json.loads(content)
-    except json.JSONDecodeError:
-        return {"strings": {}}
 
 def get_string_unit_value(string_entry: Dict) -> str:
     """Extract source string value from a .xcstrings string entry."""
@@ -320,22 +259,6 @@ def check_xcstrings_needs_review(
 # .strings (Legacy) File Handling
 # =============================================================================
 
-def parse_strings_file(content: str) -> Dict[str, str]:
-    """Parse .strings file content to dictionary."""
-    if not content:
-        return {}
-
-    result = {}
-    # Match "key" = "value"; pattern, handling escaped quotes
-    pattern = r'"((?:[^"\\]|\\.)*)"\s*=\s*"((?:[^"\\]|\\.)*)"\s*;'
-
-    for match in re.finditer(pattern, content):
-        key = match.group(1)
-        value = match.group(2)
-        result[key] = value
-
-    return result
-
 def find_strings_file_locations(paths: List[str]) -> Set[Tuple[str, str]]:
     """
     Find .strings files in locale directories.
@@ -432,32 +355,6 @@ def check_strings_translations(
 # =============================================================================
 # .stringsdict (Pluralization) File Handling
 # =============================================================================
-
-def parse_stringsdict_file(content: str) -> Set[str]:
-    """Parse .stringsdict file content and return the set of string keys."""
-    if not content:
-        return set()
-
-    try:
-        data = plistlib.loads(content.encode('utf-8'))
-        if isinstance(data, dict):
-            return set(data.keys())
-    except (plistlib.InvalidFileException, ValueError, TypeError):
-        pass
-    return set()
-
-def parse_stringsdict_file_full(content: str) -> Dict:
-    """Parse .stringsdict file content and return the full dictionary."""
-    if not content:
-        return {}
-
-    try:
-        data = plistlib.loads(content.encode('utf-8'))
-        if isinstance(data, dict):
-            return data
-    except (plistlib.InvalidFileException, ValueError, TypeError):
-        pass
-    return {}
 
 def find_stringsdict_file_locations(paths: List[str]) -> Set[Tuple[str, str]]:
     """
@@ -597,15 +494,6 @@ def check_locale_based_files(
         all_issues.extend(issues)
 
     return all_issues
-
-def get_search_paths(platform: str) -> List[str]:
-    """Get the paths to search for localization files."""
-    if platform == "iOS":
-        return ["iOS", "SharedPackages"]
-    elif platform == "macOS":
-        return ["macOS", "SharedPackages"]
-    else:
-        return [platform]
 
 def check_xcstrings_files(required_locales: Set[str], changed_files_cache: List[str]) -> List[TranslationIssue]:
     """Check all changed .xcstrings files for translation issues."""

@@ -1011,7 +1011,8 @@ extension MainViewController {
             let isSwitchingToAIChatMode = buttonsViewController.searchModeToggleControl?.selectedSegment == 0
             buttonsViewController.toggleSearchMode()
             if isSwitchingToAIChatMode {
-                self.aiChatOmnibarTextContainerViewController.insertNewline()
+                let currentText = navigationBarViewController.addressBarViewController?.addressBarTextField.stringValueWithoutSuffix ?? ""
+                self.aiChatOmnibarTextContainerViewController.insertNewlineIfHasContent(addressBarText: currentText)
             }
             return true
         } else if flags.contains(.control),

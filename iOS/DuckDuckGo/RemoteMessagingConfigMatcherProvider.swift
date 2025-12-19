@@ -21,6 +21,7 @@ import Common
 import Core
 import Foundation
 import BrowserServicesKit
+import PrivacyConfig
 import Persistence
 import Bookmarks
 import RemoteMessaging

@@ -20,7 +20,7 @@ import AppKit
 import DesignResourcesKitIcons
 import FeatureFlags
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 
 protocol AddressBarStyleProviding {
     func navigationBarHeight(for type: AddressBarSizeClass, focused: Bool) -> CGFloat

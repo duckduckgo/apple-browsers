@@ -22,6 +22,7 @@ import CommonObjCExtensions
 import FeatureFlags
 import Foundation
 import OSLog
+import PrivacyConfig
 import SharedTestUtilities
 import WebKit
 import XCTest

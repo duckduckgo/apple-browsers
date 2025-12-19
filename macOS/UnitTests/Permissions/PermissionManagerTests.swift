@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import PrivacyConfig
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 

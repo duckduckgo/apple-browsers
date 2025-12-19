@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import BrowserServicesKit
+import PrivacyConfig
 
 /// macOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015252281641
 /// iOS: https://app.asana.com/1/137249556945/project/1211834678943996/task/1212015250423471
@@ -64,7 +64,7 @@ extension AttributedMetricFeatureFlag: FeatureFlagDescribing {
         }
     }
 
-    public var source: BrowserServicesKit.FeatureFlagSource {
+    public var source: FeatureFlagSource {
         switch self {
         case .attributedMetrics:
             return .remoteReleasable(.feature(.attributedMetrics))
@@ -101,5 +101,5 @@ extension AttributedMetricFeatureFlag: FeatureFlagDescribing {
         }
     }
 
-    public var cohortType: (any BrowserServicesKit.FeatureFlagCohortDescribing.Type)? { nil }
+    public var cohortType: (any FeatureFlagCohortDescribing.Type)? { nil }
 }

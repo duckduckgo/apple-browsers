@@ -23,6 +23,7 @@ import Common
 import History
 import HistoryView
 import PixelKit
+import PrivacyConfig
 
 // MARK: - Fire Dialog Presentation Abstractions (for testability)
 

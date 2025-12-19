@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import PrivacyConfig
 import Subscription
 
 public enum SubscriptionPageFeatureFlag {

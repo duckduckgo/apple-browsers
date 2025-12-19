@@ -20,6 +20,7 @@
 import Combine
 import Common
 import PixelKitTestingUtilities
+import PrivacyConfig
 import SharedTestUtilities
 import Testing
 import UserScript

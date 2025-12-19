@@ -145,6 +145,12 @@ struct Launching: LaunchingHandling {
         // Has to be initialised after configuration.start in case values need to be migrated
         aiChatSettings = AIChatSettings()
 
+        // Create What's New repository for use in modal prompts and settings
+        let whatsNewRepository = DefaultWhatsNewMessageRepository(
+            remoteMessageStore: remoteMessagingService.remoteMessagingClient.store,
+            keyValueStore: appKeyValueFileStoreService.keyValueFilesStore
+        )
+
         // Initialise modal prompts coordination
         let modalPromptCoordinationService = ModalPromptCoordinationFactory.makeService(
             dependency: .init(
@@ -153,7 +159,7 @@ struct Launching: LaunchingHandling {
                 keyValueFileStoreService: appKeyValueFileStoreService.keyValueFilesStore,
                 privacyConfigurationManager: contentBlockingService.common.privacyConfigurationManager,
                 featureFlagger: featureFlagger,
-                remoteMessagingStore: remoteMessagingService.remoteMessagingClient.store,
+                whatsNewRepository: whatsNewRepository,
                 remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler,
                 remoteMessagingPixelReporter: remoteMessagingService.pixelReporter,
                 appSettings: appSettings,
@@ -199,6 +205,7 @@ struct Launching: LaunchingHandling {
                                               modalPromptCoordinationService: modalPromptCoordinationService,
                                               mobileCustomization: mobileCustomization,
                                               productSurfaceTelemetry: productSurfaceTelemetry,
+                                              whatsNewRepository: whatsNewRepository,
                                               sharedSecureVault: configuration.persistentStoresConfiguration.sharedSecureVault)
 
         // MARK: - UI-Dependent Services Setup

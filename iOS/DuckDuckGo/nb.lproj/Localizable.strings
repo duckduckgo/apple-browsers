@@ -3388,6 +3388,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "DuckDuckGo-nettleseren gir deg sporingsbeskyttelser, som alltid er aktive. [Finn ut mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* Settings cell title to show users the What’s New prompt */
+"settings.whats.new" = "Dette er nytt";
+
 /* No comment provided by engineer. */
 "Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Viser logger fra det siste minuttet for å prøve å diagnostisere problemer umiddelbart etter en oppdatering.";
 

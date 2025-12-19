@@ -23,6 +23,7 @@ import Combine
 import Common
 import Foundation
 import OSLog
+import PrivacyConfig
 import WebKitExtensions
 
 @MainActor

@@ -18,7 +18,7 @@
 //
 
 import Core
-import BrowserServicesKit
+import PrivacyConfig
 import Suggestions
 import History
 import Persistence

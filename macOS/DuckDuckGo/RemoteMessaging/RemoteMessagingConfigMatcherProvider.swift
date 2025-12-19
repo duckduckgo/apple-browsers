@@ -19,6 +19,7 @@
 import Foundation
 import BrowserServicesKit
 import Persistence
+import PrivacyConfig
 import Bookmarks
 import RemoteMessaging
 import VPN

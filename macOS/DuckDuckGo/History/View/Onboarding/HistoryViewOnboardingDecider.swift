@@ -17,7 +17,7 @@
 //
 
 import AppKit
-import BrowserServicesKit
+import PrivacyConfig
 
 protocol HistoryViewOnboardingDeciding {
     var shouldPresentOnboarding: Bool { get }

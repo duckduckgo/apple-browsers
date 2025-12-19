@@ -19,6 +19,7 @@
 import AppKit
 import PixelKit
 import BrowserServicesKit
+import ContentBlocking
 import DDGSync
 import Configuration
 import Suggestions

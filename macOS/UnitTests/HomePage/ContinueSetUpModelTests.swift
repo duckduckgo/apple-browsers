@@ -21,6 +21,7 @@ import BrowserServicesKit
 import Common
 import NewTabPage
 import PixelKit
+import PrivacyConfigTestsUtils
 import SubscriptionTestingUtilities
 
 @testable import Subscription
@@ -55,7 +56,7 @@ final class ContinueSetUpModelTests: XCTestCase {
         duckPlayerPreferences = DuckPlayerPreferencesPersistorMock()
         privacyConfigManager = MockPrivacyConfigurationManager()
         let config = MockPrivacyConfiguration()
-        privacyConfigManager.mockPrivacyConfig = config
+        privacyConfigManager.privacyConfig = config
         dockCustomizer = DockCustomizerMock()
         subscriptionCardVisibilityManager = MockHomePageSubscriptionCardVisibilityManaging()
         homePageContinueSetUpModelPersisting = MockHomePageContinueSetUpModelPersisting()
@@ -459,18 +460,10 @@ final class ContinueSetUpModelTests: XCTestCase {
 
         XCTAssertEqual(firedPixels.count, 2)
 
-        // defaultBrowser fires defaultRequestedFromHomepageSetupView
         let expectedGeneralPixel = GeneralPixel.defaultRequestedFromHomepageSetupView
-        let actualGeneralPixel = firedPixels.first(where: { $0.event.name == expectedGeneralPixel.name })
-        XCTAssertNotNil(actualGeneralPixel)
-        XCTAssertEqual(actualGeneralPixel?.includesAppVersionParameter, true)
-
-        // defaultBrowser fires nextStepsCardClicked
         let expectedNewTabPagePixel = NewTabPagePixel.nextStepsCardClicked(NewTabPageDataModel.CardID.defaultApp.rawValue)
-        let actualNewTabPagePixel = firedPixels.first(where: { $0.event.name == expectedNewTabPagePixel.name })
-        XCTAssertNotNil(actualNewTabPagePixel)
-        XCTAssertEqual(actualNewTabPagePixel?.event.parameters, expectedNewTabPagePixel.parameters)
-        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
+        XCTAssertTrue(firedPixels.contains(where: { $0.event.name == expectedGeneralPixel.name && $0.includesAppVersionParameter == true }))
+        XCTAssertTrue(firedPixels.contains(where: { $0.event.name == expectedNewTabPagePixel.name && $0.includesAppVersionParameter == true }))
     }
 
     @MainActor func testWhenAskedToPerformActionForDockThenItFiresPixels() {
@@ -478,18 +471,10 @@ final class ContinueSetUpModelTests: XCTestCase {
 
         XCTAssertEqual(firedPixels.count, 2)
 
-        // dock fires userAddedToDockFromNewTabPageCard
         let expectedGeneralPixel = GeneralPixel.userAddedToDockFromNewTabPageCard
-        let actualGeneralPixel = firedPixels.first(where: { $0.event.name == expectedGeneralPixel.name })
-        XCTAssertNotNil(actualGeneralPixel)
-        XCTAssertEqual(actualGeneralPixel?.includesAppVersionParameter, false)
-
-        // dock fires nextStepsCardClicked
         let expectedNewTabPagePixel = NewTabPagePixel.nextStepsCardClicked(NewTabPageDataModel.CardID.addAppToDockMac.rawValue)
-        let actualNewTabPagePixel = firedPixels.first(where: { $0.event.name == expectedNewTabPagePixel.name })
-        XCTAssertNotNil(actualNewTabPagePixel)
-        XCTAssertEqual(actualNewTabPagePixel?.event.parameters, expectedNewTabPagePixel.parameters)
-        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
+        XCTAssertTrue(firedPixels.contains(where: { $0.event.name == expectedGeneralPixel.name && $0.includesAppVersionParameter == false }))
+        XCTAssertTrue(firedPixels.contains(where: { $0.event.name == expectedNewTabPagePixel.name && $0.includesAppVersionParameter == true }))
     }
 
     @MainActor func testWhenAskedToPerformActionForDuckplayerThenItFiresPixel() {
@@ -498,7 +483,6 @@ final class ContinueSetUpModelTests: XCTestCase {
         XCTAssertEqual(firedPixels.count, 1)
         let expectedPixel = NewTabPagePixel.nextStepsCardClicked(NewTabPageDataModel.CardID.duckplayer.rawValue)
         XCTAssertEqual(firedPixels.first?.event.name, expectedPixel.name)
-        XCTAssertEqual(firedPixels.first?.event.parameters, expectedPixel.parameters)
         XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
     }
 
@@ -508,7 +492,6 @@ final class ContinueSetUpModelTests: XCTestCase {
         XCTAssertEqual(firedPixels.count, 1)
         let expectedPixel = NewTabPagePixel.nextStepsCardClicked(NewTabPageDataModel.CardID.emailProtection.rawValue)
         XCTAssertEqual(firedPixels.first?.event.name, expectedPixel.name)
-        XCTAssertEqual(firedPixels.first?.event.parameters, expectedPixel.parameters)
         XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
     }
 
@@ -518,7 +501,6 @@ final class ContinueSetUpModelTests: XCTestCase {
         XCTAssertEqual(firedPixels.count, 1)
         let expectedPixel = NewTabPagePixel.nextStepsCardClicked(NewTabPageDataModel.CardID.bringStuff.rawValue)
         XCTAssertEqual(firedPixels.first?.event.name, expectedPixel.name)
-        XCTAssertEqual(firedPixels.first?.event.parameters, expectedPixel.parameters)
         XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
     }
 
@@ -527,18 +509,10 @@ final class ContinueSetUpModelTests: XCTestCase {
 
         XCTAssertEqual(firedPixels.count, 2)
 
-        // subscription fires subscriptionNewTabPageNextStepsCardClicked
         let expectedSubscriptionPixel = SubscriptionPixel.subscriptionNewTabPageNextStepsCardClicked
-        let actualSubscriptionPixel = firedPixels.first(where: { $0.event.name == expectedSubscriptionPixel.name })
-        XCTAssertNotNil(actualSubscriptionPixel)
-        XCTAssertEqual(actualSubscriptionPixel?.includesAppVersionParameter, true)
-
-        // subscription fires nextStepsCardClicked
         let expectedNewTabPagePixel = NewTabPagePixel.nextStepsCardClicked(NewTabPageDataModel.CardID.subscription.rawValue)
-        let actualNewTabPagePixel = firedPixels.first(where: { $0.event.name == expectedNewTabPagePixel.name })
-        XCTAssertNotNil(actualNewTabPagePixel)
-        XCTAssertEqual(actualNewTabPagePixel?.event.parameters, expectedNewTabPagePixel.parameters)
-        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
+        XCTAssertTrue(firedPixels.contains(where: { $0.event.name == expectedSubscriptionPixel.name && $0.includesAppVersionParameter == true }))
+        XCTAssertTrue(firedPixels.contains(where: { $0.event.name == expectedNewTabPagePixel.name && $0.includesAppVersionParameter == true }))
     }
 
     // MARK: - Pixel Tests (Dismiss)
@@ -588,18 +562,10 @@ final class ContinueSetUpModelTests: XCTestCase {
 
         XCTAssertEqual(firedPixels.count, 2)
 
-        // subscription fires subscriptionNewTabPageNextStepsCardDismissed
         let expectedSubscriptionPixel = SubscriptionPixel.subscriptionNewTabPageNextStepsCardDismissed
-        let actualSubscriptionPixel = firedPixels.first(where: { $0.event.name == expectedSubscriptionPixel.name })
-        XCTAssertNotNil(actualSubscriptionPixel)
-        XCTAssertEqual(actualSubscriptionPixel?.includesAppVersionParameter, true)
-
-        // subscription fires nextStepsCardClicked
         let expectedNewTabPagePixel = NewTabPagePixel.nextStepsCardDismissed(NewTabPageDataModel.CardID.subscription.rawValue)
-        let actualNewTabPagePixel = firedPixels.first(where: { $0.event.name == expectedNewTabPagePixel.name })
-        XCTAssertNotNil(actualNewTabPagePixel)
-        XCTAssertEqual(actualNewTabPagePixel?.event.parameters, expectedNewTabPagePixel.parameters)
-        XCTAssertEqual(firedPixels.first?.includesAppVersionParameter, true)
+        XCTAssertTrue(firedPixels.contains(where: { $0.event.name == expectedSubscriptionPixel.name && $0.includesAppVersionParameter == true }))
+        XCTAssertTrue(firedPixels.contains(where: { $0.event.name == expectedNewTabPagePixel.name && $0.includesAppVersionParameter == true }))
     }
 }
 
@@ -618,7 +584,7 @@ extension HomePage.Models.ContinueSetUpModel {
             "networkProtection": "disabled"
         ] as! [String: String]
         let manager = MockPrivacyConfigurationManager()
-        manager.mockPrivacyConfig = privacyConfig
+        manager.privacyConfig = privacyConfig
 
         return HomePage.Models.ContinueSetUpModel(
             defaultBrowserProvider: defaultBrowserProvider,

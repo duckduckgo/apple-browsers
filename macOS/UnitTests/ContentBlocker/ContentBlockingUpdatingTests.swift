@@ -21,6 +21,8 @@ import Common
 import History
 import HistoryView
 import PersistenceTestingUtils
+import PrivacyConfig
+import PrivacyConfigTestsUtils
 import TrackerRadarKit
 import SharedTestUtilities
 import WebKit

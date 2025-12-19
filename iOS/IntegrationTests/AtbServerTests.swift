@@ -17,11 +17,13 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
+import Combine
+import PrivacyConfig
+import PrivacyConfigTestsUtils
+import PixelKit
 import XCTest
 @testable import Core
-@testable import BrowserServicesKit
-import Combine
-import PixelKit
 
 class AtbServerTests: XCTestCase {
     
@@ -116,14 +118,4 @@ class AtbServerTests: XCTestCase {
         XCTAssertEqual(store.atb, "v117-1")
     }
 
-}
-
-class MockInteranlUserDecider: InternalUserDecider {
-    var isInternalUser: Bool = false
-
-    var isInternalUserPublisher: AnyPublisher<Bool, Never> = Just(false).eraseToAnyPublisher()
-
-    func markUserAsInternalIfNeeded(forUrl url: URL?, response: HTTPURLResponse?) -> Bool {
-        return false
-    }
 }

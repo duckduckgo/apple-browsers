@@ -17,9 +17,9 @@
 //
 
 import AppKit
-import BrowserServicesKit
 import Foundation
 import FeatureFlags
+import PrivacyConfig
 
 enum OSSupportWarning {
     case unsupported(_ minVersion: String)

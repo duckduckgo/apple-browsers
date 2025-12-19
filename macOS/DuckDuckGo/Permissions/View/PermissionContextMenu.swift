@@ -18,7 +18,7 @@
 
 import Cocoa
 import WebKit
-import BrowserServicesKit
+import PrivacyConfig
 
 protocol PermissionContextMenuDelegate: AnyObject {
     func permissionContextMenu(_ menu: PermissionContextMenu, mutePermissions: [PermissionType])

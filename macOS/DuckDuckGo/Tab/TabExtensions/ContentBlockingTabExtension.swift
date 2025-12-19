@@ -22,6 +22,7 @@ import Common
 import ContentBlocking
 import Foundation
 import Navigation
+import PrivacyConfig
 import Subscription
 import os.log
 

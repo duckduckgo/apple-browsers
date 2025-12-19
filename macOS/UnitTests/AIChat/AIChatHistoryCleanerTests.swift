@@ -16,9 +16,11 @@
 //  limitations under the License.
 //
 
-import XCTest
 import BrowserServicesKit
 import BrowserServicesKitTestsUtils
+import PrivacyConfig
+import PrivacyConfigTestsUtils
+import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 final class AIChatHistoryCleanerTests: XCTestCase {

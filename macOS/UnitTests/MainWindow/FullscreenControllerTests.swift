@@ -20,6 +20,7 @@ import Combine
 import Common
 import History
 import HistoryView
+import PrivacyConfig
 import SharedTestUtilities
 import XCTest
 

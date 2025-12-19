@@ -20,6 +20,7 @@ import AppKit
 import SwiftUI
 import BrowserServicesKit
 import PixelKit
+import PrivacyConfig
 import DesignResourcesKitIcons
 import UniformTypeIdentifiers
 import SwiftUIExtensions

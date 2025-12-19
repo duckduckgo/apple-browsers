@@ -21,6 +21,8 @@ import Foundation
 import BrowserServicesKit
 import Combine
 import Common
+import ContentBlocking
+import PrivacyConfig
 import PixelExperimentKit
 
 public final class ContentBlocking {

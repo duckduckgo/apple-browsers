@@ -21,6 +21,7 @@ import UserScript
 import AIChat
 import Foundation
 import BrowserServicesKit
+import PrivacyConfig
 import WebKit
 import Core
 import SwiftUI

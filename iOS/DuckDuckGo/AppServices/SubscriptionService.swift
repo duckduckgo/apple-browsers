@@ -20,6 +20,7 @@
 import Subscription
 import Combine
 import BrowserServicesKit
+import PrivacyConfig
 import WebKit
 import Core
 import WKAbstractions

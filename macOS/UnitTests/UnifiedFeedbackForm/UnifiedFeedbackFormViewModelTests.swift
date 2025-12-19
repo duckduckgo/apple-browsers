@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
-import XCTest
+import PrivacyConfig
 import Subscription
 import SubscriptionTestingUtilities
+import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 final class UnifiedFeedbackFormViewModelTests: XCTestCase {

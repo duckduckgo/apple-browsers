@@ -217,6 +217,9 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
         let isShowingSidebar = sidebarProvider.isShowingSidebar(for: currentTabID)
 
         if !isShowingSidebar {
+            /// https://app.asana.com/1/137249556945/project/276630244458377/task/1211982069731816
+            sidebarProvider.resetSidebar(for: currentTabID)
+
             // If not showing the sidebar open it with the payload received
             let sidebarViewController = sidebarProvider.makeSidebarViewController(for: currentTabID, burnerMode: sidebarHost.burnerMode)
             sidebarViewController.aiChatPayload = payload

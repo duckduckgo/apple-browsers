@@ -3388,6 +3388,9 @@
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "Preglednik DuckDuckGo pruža zaštite od praćenja koje su uvijek aktivne. [Saznaj više](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
 
+/* Settings cell title to show users the What’s New prompt */
+"settings.whats.new" = "Što je novo";
+
 /* No comment provided by engineer. */
 "Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Prikazuje zapisnike iz posljednje minute kako bi se problemi mogli dijagnosticirati odmah nakon osvježavanja.";
 

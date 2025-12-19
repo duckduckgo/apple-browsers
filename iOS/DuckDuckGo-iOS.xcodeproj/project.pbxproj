@@ -1301,6 +1301,11 @@
 		9F387E102EA9A30B006861F8 /* MockNewAddressBarPickerStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F387E0C2EA9A309006861F8 /* MockNewAddressBarPickerStorage.swift */; };
 		9F38A28C2D09BDE500EB100E /* SpecialErrorPageThreatProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F38A28B2D09BDE500EB100E /* SpecialErrorPageThreatProvider.swift */; };
 		9F3C7FE02D7990740061FA72 /* DefaultBrowserInfoStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3C7FDF2D7990710061FA72 /* DefaultBrowserInfoStore.swift */; };
+		9F434CAD2EE8FA2A009027AE /* WhatsNewRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F434CAC2EE8FA22009027AE /* WhatsNewRepository.swift */; };
+		9F434CAF2EE933D5009027AE /* MockWhatsNewMessageRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F434CAE2EE933C9009027AE /* MockWhatsNewMessageRepository.swift */; };
+		9F434CB02EE933D5009027AE /* MockWhatsNewMessageRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F434CAE2EE933C9009027AE /* MockWhatsNewMessageRepository.swift */; };
+		9F434CB12EE933D5009027AE /* MockWhatsNewMessageRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F434CAE2EE933C9009027AE /* MockWhatsNewMessageRepository.swift */; };
+		9F434CB22EE933D5009027AE /* MockWhatsNewMessageRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F434CAE2EE933C9009027AE /* MockWhatsNewMessageRepository.swift */; };
 		9F44A7CC2E973F8D008B3D5A /* RemoteMessagingActionHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F44A7CB2E973F82008B3D5A /* RemoteMessagingActionHandling.swift */; };
 		9F454D1A2E051CC800B8CC5A /* DefaultBrowserPromptFeatureFlagAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F454D192E051CBE00B8CC5A /* DefaultBrowserPromptFeatureFlagAdapter.swift */; };
 		9F454D242E05489200B8CC5A /* SetDefaultBrowserCore in Frameworks */ = {isa = PBXBuildFile; productRef = 9F454D232E05489200B8CC5A /* SetDefaultBrowserCore */; };
@@ -1361,6 +1366,7 @@
 		9F8E0F382CCFAA8A001EA7C5 /* AddToDockPromoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F8E0F372CCFAA8A001EA7C5 /* AddToDockPromoView.swift */; };
 		9F8E0F3D2CCFD072001EA7C5 /* AddToDockPromoViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F8E0F3C2CCFD071001EA7C5 /* AddToDockPromoViewModel.swift */; };
 		9F8FE9492BAE50E50071E372 /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = 9F8FE9482BAE50E50071E372 /* Lottie */; };
+		9F909E392EEA6BD00057F518 /* UIKitExtensions in Frameworks */ = {isa = PBXBuildFile; productRef = 9F909E382EEA6BD00057F518 /* UIKitExtensions */; };
 		9F94BBAF2EAB395800185F78 /* WhatsNewModalPromptProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F94BBAE2EAB395800185F78 /* WhatsNewModalPromptProviderTests.swift */; };
 		9F94BBB12EAB4AC200185F78 /* WhatsNewDisplayModelMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F94BBB02EAB4AC200185F78 /* WhatsNewDisplayModelMapper.swift */; };
 		9F94BBB42EAB4D9100185F78 /* WhatsNewDisplayModelMapperTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F94BBB22EAB4D9100185F78 /* WhatsNewDisplayModelMapperTests.swift */; };
@@ -1404,6 +1410,7 @@
 		9FB027142C252E0C009EA190 /* OnboardingView+BrowsersComparisonContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FB027132C252E0C009EA190 /* OnboardingView+BrowsersComparisonContent.swift */; };
 		9FB0271B2C2927D0009EA190 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FB0271A2C2927D0009EA190 /* OnboardingView.swift */; };
 		9FB0271D2C293619009EA190 /* OnboardingIntroViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FB0271C2C293619009EA190 /* OnboardingIntroViewModel.swift */; };
+		9FB099162EEA3F6C00CB7394 /* WhatsNewRepositoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FB099152EEA3F6C00CB7394 /* WhatsNewRepositoryTests.swift */; };
 		9FB19C7E2E94A28700B651B1 /* RemoteMessagingTestsUtils in Frameworks */ = {isa = PBXBuildFile; productRef = 9FB19C7D2E94A28700B651B1 /* RemoteMessagingTestsUtils */; };
 		9FB19C802E94BE8600B651B1 /* DefaultRemoteMessagingSurfacesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FB19C7F2E94BE8000B651B1 /* DefaultRemoteMessagingSurfacesProvider.swift */; };
 		9FB19C892E94CF4100B651B1 /* RemoteMessagingSurfacesProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FB19C882E94CF4100B651B1 /* RemoteMessagingSurfacesProviderTests.swift */; };
@@ -3676,6 +3683,8 @@
 		9F387E0C2EA9A309006861F8 /* MockNewAddressBarPickerStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockNewAddressBarPickerStorage.swift; sourceTree = "<group>"; };
 		9F38A28B2D09BDE500EB100E /* SpecialErrorPageThreatProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpecialErrorPageThreatProvider.swift; sourceTree = "<group>"; };
 		9F3C7FDF2D7990710061FA72 /* DefaultBrowserInfoStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserInfoStore.swift; sourceTree = "<group>"; };
+		9F434CAC2EE8FA22009027AE /* WhatsNewRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatsNewRepository.swift; sourceTree = "<group>"; };
+		9F434CAE2EE933C9009027AE /* MockWhatsNewMessageRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockWhatsNewMessageRepository.swift; sourceTree = "<group>"; };
 		9F44A7CB2E973F82008B3D5A /* RemoteMessagingActionHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteMessagingActionHandling.swift; sourceTree = "<group>"; };
 		9F454D162E050B8B00B8CC5A /* MetricBuilder */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = MetricBuilder; sourceTree = "<group>"; };
 		9F454D192E051CBE00B8CC5A /* DefaultBrowserPromptFeatureFlagAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserPromptFeatureFlagAdapter.swift; sourceTree = "<group>"; };
@@ -3754,6 +3763,7 @@
 		9FB027132C252E0C009EA190 /* OnboardingView+BrowsersComparisonContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "OnboardingView+BrowsersComparisonContent.swift"; sourceTree = "<group>"; };
 		9FB0271A2C2927D0009EA190 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		9FB0271C2C293619009EA190 /* OnboardingIntroViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingIntroViewModel.swift; sourceTree = "<group>"; };
+		9FB099152EEA3F6C00CB7394 /* WhatsNewRepositoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatsNewRepositoryTests.swift; sourceTree = "<group>"; };
 		9FB19C7F2E94BE8000B651B1 /* DefaultRemoteMessagingSurfacesProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultRemoteMessagingSurfacesProvider.swift; sourceTree = "<group>"; };
 		9FB19C882E94CF4100B651B1 /* RemoteMessagingSurfacesProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteMessagingSurfacesProviderTests.swift; sourceTree = "<group>"; };
 		9FB54AF32EB1E2FD00924A52 /* WhatsNewDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatsNewDebugMenu.swift; sourceTree = "<group>"; };
@@ -4518,6 +4528,7 @@
 				315C77822CFA41A400699683 /* AIChat in Frameworks */,
 				4BF557F02DF79393008E16A8 /* WebKit.framework in Frameworks */,
 				9F8FE9492BAE50E50071E372 /* Lottie in Frameworks */,
+				9F909E392EEA6BD00057F518 /* UIKitExtensions in Frameworks */,
 				9F0727882E2F2967005894C8 /* SystemSettingsPiPTutorial in Frameworks */,
 				7BC26CA02DFC0CAC00E52480 /* VPN in Frameworks */,
 				316AC7872DC28DD1003D9770 /* UIComponents in Frameworks */,
@@ -7465,6 +7476,7 @@
 		9F94BBB32EAB4D9100185F78 /* WhatsNew */ = {
 			isa = PBXGroup;
 			children = (
+				9FB099152EEA3F6C00CB7394 /* WhatsNewRepositoryTests.swift */,
 				9F94BBB22EAB4D9100185F78 /* WhatsNewDisplayModelMapperTests.swift */,
 			);
 			path = WhatsNew;
@@ -7543,6 +7555,7 @@
 		9FA0AF1F2EB8355E00713387 /* WhatsNew */ = {
 			isa = PBXGroup;
 			children = (
+				9F434CAE2EE933C9009027AE /* MockWhatsNewMessageRepository.swift */,
 				9FA0AF202EB8358100713387 /* MockWhatsNewDisplayModelMapper.swift */,
 			);
 			path = WhatsNew;
@@ -7749,6 +7762,7 @@
 		9FE7E7A22EAAF7B700AEAD83 /* WhatsNew */ = {
 			isa = PBXGroup;
 			children = (
+				9F434CAC2EE8FA22009027AE /* WhatsNewRepository.swift */,
 				9FB54AF22EB1E2EF00924A52 /* DebugMenu */,
 				9F94BBB02EAB4AC200185F78 /* WhatsNewDisplayModelMapper.swift */,
 				9FE7E7A32EAAF7DA00AEAD83 /* WhatsNewViewController.swift */,
@@ -10025,6 +10039,7 @@
 				9F5003262E8D1B61002F98D1 /* FoundationExtensions */,
 				F19B98662EAFA799000FF209 /* AttributedMetric */,
 				BBD9C3962E9D73610060A6E8 /* SERPSettings */,
+				9F909E382EEA6BD00057F518 /* UIKitExtensions */,
 			);
 			productName = DuckDuckGo;
 			productReference = 84E341921E2F7EFB00BDBA6F /* DuckDuckGo.app */;
@@ -11172,6 +11187,7 @@
 				C1AD332F2DBAD1BD003B80A4 /* CreditCardRowViewModel.swift in Sources */,
 				369809BF2E5635E7007FE895 /* AppShortcuts.swift in Sources */,
 				1EEF123F2850A68A003DDE57 /* PrivacyInfoContainerView.swift in Sources */,
+				9F434CAD2EE8FA2A009027AE /* WhatsNewRepository.swift in Sources */,
 				C17A8E5D2E26C7D900CAE1B9 /* ImportPasswordsPromptView.swift in Sources */,
 				C17A8E5E2E26C7D900CAE1B9 /* ImportPasswordsPromptViewController.swift in Sources */,
 				C17A8E5F2E26C7D900CAE1B9 /* ImportPasswordsPromptViewModel.swift in Sources */,
@@ -11909,6 +11925,7 @@
 				56A625252ED62AEF00803E31 /* SubscriptionPageFeatureFlagAdapterTests.swift in Sources */,
 				9876DF2D2DEEE21700E30713 /* MockThemeManager.swift in Sources */,
 				84EFBCC92D81796000706739 /* AutocompleteSuggestionsDataSourceTests.swift in Sources */,
+				9F434CB22EE933D5009027AE /* MockWhatsNewMessageRepository.swift in Sources */,
 				802A826E2ED3AD7900C90637 /* DownloadsListDataSourceTests.swift in Sources */,
 				802A826F2ED3AD7900C90637 /* DownloadsDeleteHelperTests.swift in Sources */,
 				9F80A98A2EA9E4CF0079C5AD /* PromptCooldownMigratorTests.swift in Sources */,
@@ -12075,6 +12092,7 @@
 				56A3CDE52DF2F37F00DDE757 /* SubscriptionPagesUseSubscriptionFeatureV2Tests.swift in Sources */,
 				98E563FF2DE8B32D00E6E75F /* DuckPlayerMocks.swift in Sources */,
 				98E564002DE8B32D00E6E75F /* MockTimer.swift in Sources */,
+				9FB099162EEA3F6C00CB7394 /* WhatsNewRepositoryTests.swift in Sources */,
 				98E564012DE8B32D00E6E75F /* MockBookmarksCoreDataStorage.swift in Sources */,
 				98E564032DE8B32D00E6E75F /* MockAIChatSettingsProvider.swift in Sources */,
 				98E564042DE8B32D00E6E75F /* MockDDGSyncing.swift in Sources */,
@@ -12329,6 +12347,7 @@
 				98E564282DE8B32D00E6E75F /* MockTimer.swift in Sources */,
 				98E564292DE8B32D00E6E75F /* MockBookmarksCoreDataStorage.swift in Sources */,
 				9F387DEE2EA895DD006861F8 /* MockModalPromptPresenter.swift in Sources */,
+				9F434CB02EE933D5009027AE /* MockWhatsNewMessageRepository.swift in Sources */,
 				562BE5652E1C270A0064F305 /* AIChatViewControllerManagerTests.swift in Sources */,
 				80CDFA1E2EF0AEB600375E73 /* MockTabManager.swift in Sources */,
 				98E5642B2DE8B32D00E6E75F /* MockAIChatSettingsProvider.swift in Sources */,
@@ -12483,6 +12502,7 @@
 				9F3668782EAF0A7600AA8670 /* MockContextualOnboardingStatusProvider.swift in Sources */,
 				98E563E02DE8B32D00E6E75F /* OnboardingPixelReporterMock.swift in Sources */,
 				9FAB4B792E98C98300D8298A /* MockRemoteMessagingActionHandler.swift in Sources */,
+				9F434CAF2EE933D5009027AE /* MockWhatsNewMessageRepository.swift in Sources */,
 				98E563E12DE8B32D00E6E75F /* ContextualOnboardingPresenterMock.swift in Sources */,
 				98E564A52DE8EDE200E6E75F /* CapturingAlertPresenter.swift in Sources */,
 				98E564352DE8B64300E6E75F /* HistoryMocks.swift in Sources */,
@@ -12594,6 +12614,7 @@
 				9F3668772EAF0A7600AA8670 /* MockContextualOnboardingStatusProvider.swift in Sources */,
 				98E5646D2DE8DDDC00E6E75F /* ContextualOnboardingPresenterMock.swift in Sources */,
 				9FAB4B7A2E98C98300D8298A /* MockRemoteMessagingActionHandler.swift in Sources */,
+				9F434CB12EE933D5009027AE /* MockWhatsNewMessageRepository.swift in Sources */,
 				98E5646E2DE8DDDC00E6E75F /* OnboardingManagerMock.swift in Sources */,
 				98E564A12DE8EDCE00E6E75F /* CapturingSyncPausedStateManager.swift in Sources */,
 				98E564702DE8DDDC00E6E75F /* HistoryMocks.swift in Sources */,
@@ -16149,6 +16170,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 9F8FE9472BAE50E50071E372 /* XCRemoteSwiftPackageReference "lottie-spm" */;
 			productName = Lottie;
+		};
+		9F909E382EEA6BD00057F518 /* UIKitExtensions */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = UIKitExtensions;
 		};
 		9FB19C7D2E94A28700B651B1 /* RemoteMessagingTestsUtils */ = {
 			isa = XCSwiftPackageProductDependency;

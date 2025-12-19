@@ -121,6 +121,7 @@ public extension DesignSystemImages {
             public static var aiChat: DesignSystemImage { .init(resource: .aiChatColor24) }
             public static var aiChatGradient: DesignSystemImage { .init(resource: .aiChatGradientColor24) }
             public static var aiGeneral: DesignSystemImage { .init(resource: .aiGeneralColor24) }
+            public static var announce: DesignSystemImage { .init(resource: .announceColor24) }
             public static var appTP: DesignSystemImage { .init(resource: .appTPColor24) }
             public static var appearance: DesignSystemImage { .init(resource: .appearanceColor24) }
             public static var askSiri: DesignSystemImage { .init(resource: .askSiriColor24) }

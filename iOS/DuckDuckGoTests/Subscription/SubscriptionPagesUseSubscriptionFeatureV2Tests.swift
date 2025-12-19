@@ -20,8 +20,8 @@
 import XCTest
 import WebKit
 import PixelKit
+import PrivacyConfig
 @testable import DuckDuckGo
-@testable import BrowserServicesKit
 @testable import Common
 @testable import UserScript
 @testable import Subscription

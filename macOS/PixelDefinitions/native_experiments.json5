@@ -12,6 +12,10 @@
                 "breakageReportSent": {
                     "description": "Breakage report is sent within the conversion window",
                     "enum": ["true"]
+                },
+                "privacyToggleUsed": {
+                    "description": "Privacy toggle is used to manage cookie consent",
+                    "enum": ["true"]
                 }
             }
         }

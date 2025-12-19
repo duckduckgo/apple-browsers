@@ -154,7 +154,6 @@ final class FaviconManager: FaviconManagement {
         faviconsLoaded = true
     }
 
-
     @MainActor
     private func awaitFaviconsLoaded() async {
         if faviconsLoaded { return }
@@ -359,7 +358,7 @@ final class FaviconManager: FaviconManagement {
                 group.addTask {
                     do {
                         try Task.checkCancellation()
-                        
+
                         let data = try await faviconDownloader.download(from: faviconUrl, using: webView)
 
                         try Task.checkCancellation()

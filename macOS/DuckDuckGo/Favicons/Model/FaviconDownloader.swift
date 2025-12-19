@@ -47,7 +47,7 @@ final class FaviconDownloader: NSObject {
     /// Downloads a favicon from the given URL using the provided webView (if available)
     func download(from url: URL, using webView: WKWebView?) async throws -> Data {
         try Task.checkCancellation()
-        
+
         guard privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(MacOSBrowserConfigSubfeature.faviconWKDownload, defaultValue: true) else {
             return try await faviconURLSession.data(from: url).0
         }
@@ -59,7 +59,7 @@ final class FaviconDownloader: NSObject {
         let targetWebView = webView ?? createTemporaryWebView()
 
         let download = await targetWebView.startDownload(using: URLRequest(url: url))
-        
+
         // Observe progress to cancel if download exceeds size limit
         let progressObserver = download.progress.observe(\.completedUnitCount) { [weak self, weak download] progress, _ in
             if progress.completedUnitCount > Self.maxFaviconSize, let self, let download {
@@ -68,7 +68,7 @@ final class FaviconDownloader: NSObject {
             }
         }
         defer { withExtendedLifetime(progressObserver) {} }
-        
+
         return try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
                 let task = FaviconDownloadTask(url: url, continuation: continuation)
@@ -146,10 +146,9 @@ extension FaviconDownloader: WKDownloadDelegate {
         let destinationURL = tempDirectory.appendingPathComponent(fileName)
 
         // Store the destination URL so we can read the file later
-        if var task = pendingDownloads[download] {
-            task.destinationURL = destinationURL
-            pendingDownloads[download] = task
-        }
+        guard var task = pendingDownloads[download] else { return nil }
+        task.destinationURL = destinationURL
+        pendingDownloads[download] = task
 
         return destinationURL
     }

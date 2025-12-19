@@ -1560,9 +1560,6 @@ final class AddressBarButtonsViewController: NSViewController {
         askAIChatButton.position = .center
 
         aiChatButton.position = .right
-            aiChatButton.position = cancelButton.isShown ? .center : .right
-        }
-
         bookmarkButton.position = aiChatButton.isShown ? .center : .right
     }
 

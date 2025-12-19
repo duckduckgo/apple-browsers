@@ -756,5 +756,25 @@ Užblokavau juos!
 			<string>%1$d pasirinkti skirtukai</string>
 		</dict>
 	</dict>
+	<key>settings.fireproofed.sites.subtitle</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@items@</string>
+		<key>items</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d vieta, kuriai netaikomas valymas</string>
+			<key>few</key>
+			<string>%1$d vietos, kurioms netaikomas valymas</string>
+			<key>many</key>
+			<string>%1$d vietos, kuriai netaikomas valymas</string>
+			<key>other</key>
+			<string>%1$d vietų, kurioms netaikomas valymas</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

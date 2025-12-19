@@ -32,17 +32,6 @@ final class NewTabPageCustomizationModel: ObservableObject {
         static let defaultColorPickerColor = NSColor.white
     }
 
-    struct DefaultBackgroundColorStyle {
-        let lightBackgroundColor: String
-        let darkBackgroundColor: String
-
-        init(theme: ThemeStyleProviding) {
-            let colors = theme.colorsProvider
-            lightBackgroundColor = colors.ntpLightBackgroundColor
-            darkBackgroundColor = colors.ntpDarkBackgroundColor
-        }
-    }
-
     let appearancePreferences: AppearancePreferences
     let customImagesManager: UserBackgroundImagesManaging?
     let sendPixel: (PixelKitEvent) -> Void
@@ -50,17 +39,13 @@ final class NewTabPageCustomizationModel: ObservableObject {
     let showAddImageFailedAlert: () -> Void
     let customizerOpener = NewTabPageCustomizerOpener()
 
-    @Published private(set) var backgroundColors: DefaultBackgroundColorStyle
     @Published private(set) var availableUserBackgroundImages: [UserBackgroundImage] = []
 
     private var availableCustomImagesCancellable: AnyCancellable?
     private var customBackgroundPixelCancellable: AnyCancellable?
 
-    let themeManager: ThemeManaging
-    var themeUpdateCancellable: AnyCancellable?
-
     @MainActor
-    convenience init(themeManager: ThemeManaging, appearancePreferences: AppearancePreferences) {
+    convenience init(appearancePreferences: AppearancePreferences) {
         self.init(
             appearancePreferences: appearancePreferences,
             userBackgroundImagesManager: UserBackgroundImagesManager(
@@ -80,8 +65,7 @@ final class NewTabPageCustomizationModel: ObservableObject {
             showAddImageFailedAlert: {
                 let alert = NSAlert.cannotReadImageAlert()
                 alert.runModal()
-            },
-            themeManager: themeManager
+            }
         )
     }
 
@@ -91,8 +75,7 @@ final class NewTabPageCustomizationModel: ObservableObject {
         userBackgroundImagesManager: UserBackgroundImagesManaging?,
         sendPixel: @escaping (PixelKitEvent) -> Void,
         openFilePanel: @escaping () -> URL?,
-        showAddImageFailedAlert: @escaping () -> Void,
-        themeManager: ThemeManaging
+        showAddImageFailedAlert: @escaping () -> Void
     ) {
         self.appearancePreferences = appearancePreferences
         self.customImagesManager = userBackgroundImagesManager
@@ -106,12 +89,9 @@ final class NewTabPageCustomizationModel: ObservableObject {
         self.sendPixel = sendPixel
         self.openFilePanel = openFilePanel
         self.showAddImageFailedAlert = showAddImageFailedAlert
-        self.backgroundColors = DefaultBackgroundColorStyle(theme: themeManager.theme)
-        self.themeManager = themeManager
 
         subscribeToUserBackgroundImages()
         subscribeToCustomBackground()
-        subscribeToThemeChanges()
 
         if let lastPickedCustomColorHexValue, let customColor = NSColor(hex: lastPickedCustomColorHexValue) {
             lastPickedCustomColor = customColor
@@ -217,12 +197,5 @@ final class NewTabPageCustomizationModel: ObservableObject {
         customImagesManager?.availableImages.forEach { image in
             customImagesManager?.deleteImage(image)
         }
-    }
-}
-
-extension NewTabPageCustomizationModel: ThemeUpdateListening {
-
-    func applyThemeStyle(theme: ThemeStyleProviding) {
-        backgroundColors = DefaultBackgroundColorStyle(theme: theme)
     }
 }

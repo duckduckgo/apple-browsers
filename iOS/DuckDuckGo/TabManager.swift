@@ -29,7 +29,14 @@ import os.log
 import AIChat
 import Combine
 
-class TabManager {
+protocol TabManaging {
+    var count: Int { get }
+    @MainActor func prepareAllTabsExceptCurrentForDataClearing()
+    @MainActor func prepareCurrentTabForDataClearing()
+    func removeAll()
+}
+
+class TabManager: TabManaging {
 
     private(set) var model: TabsModel
     private(set) var persistence: TabsModelPersisting
@@ -63,6 +70,7 @@ class TabManager {
     private let productSurfaceTelemetry: ProductSurfaceTelemetry
     private let sharedSecureVault: (any AutofillSecureVault)?
     private let privacyStats: PrivacyStatsProviding
+    private let voiceSearchHelper: VoiceSearchHelperProtocol
 
     weak var delegate: TabDelegate?
     weak var aiChatContentDelegate: AIChatContentHandlingDelegate?
@@ -99,7 +107,8 @@ class TabManager {
          aiChatSettings: AIChatSettingsProvider,
          productSurfaceTelemetry: ProductSurfaceTelemetry,
          sharedSecureVault: (any AutofillSecureVault)? = nil,
-         privacyStats: PrivacyStatsProviding
+         privacyStats: PrivacyStatsProviding,
+         voiceSearchHelper: VoiceSearchHelperProtocol
     ) {
         self.model = model
         self.persistence = persistence
@@ -130,6 +139,7 @@ class TabManager {
         self.productSurfaceTelemetry = productSurfaceTelemetry
         self.sharedSecureVault = sharedSecureVault
         self.privacyStats = privacyStats
+        self.voiceSearchHelper = voiceSearchHelper
         registerForNotifications()
     }
 
@@ -176,7 +186,8 @@ class TabManager {
                                                               aiChatSettings: aiChatSettings,
                                                               productSurfaceTelemetry: productSurfaceTelemetry,
                                                               sharedSecureVault: sharedSecureVault,
-                                                              privacyStats: privacyStats)
+                                                              privacyStats: privacyStats,
+                                                              voiceSearchHelper: voiceSearchHelper)
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
                                  interactionStateData: interactionState,
@@ -277,7 +288,8 @@ class TabManager {
                                                               aiChatSettings: aiChatSettings,
                                                               productSurfaceTelemetry: productSurfaceTelemetry,
                                                               sharedSecureVault: sharedSecureVault,
-                                                              privacyStats: privacyStats)
+                                                              privacyStats: privacyStats,
+                                                              voiceSearchHelper: voiceSearchHelper)
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
                                  consumeCookies: !model.hasActiveTabs,

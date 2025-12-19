@@ -27,11 +27,13 @@ public struct DBPUIFeatureConfigurationResponse: Encodable {
     public let useUnifiedFeedback: Bool
     public let excludeVpnTraffic: Bool
     public let brokerRemovalEnabled: Bool
+    public let needBackgroundAppRefresh: Bool
 
-    public init(useUnifiedFeedback: Bool, excludeVpnTraffic: Bool, brokerRemovalEnabled: Bool) {
+    public init(useUnifiedFeedback: Bool, excludeVpnTraffic: Bool, brokerRemovalEnabled: Bool, needBackgroundAppRefresh: Bool) {
         self.useUnifiedFeedback = useUnifiedFeedback
         self.excludeVpnTraffic = excludeVpnTraffic
         self.brokerRemovalEnabled = brokerRemovalEnabled
+        self.needBackgroundAppRefresh = needBackgroundAppRefresh
     }
 }
 
@@ -55,6 +57,8 @@ public protocol DBPUICommunicationDelegate: AnyObject {
     func openSendFeedbackModal() async
     func applyVPNBypassSetting(_ bypass: Bool) async
     func removeOptOutFromDashboard(_ id: Int64) async
+    func needBackgroundAppRefresh() async -> Bool
+    func enableBackgroundAppRefresh() async
 }
 
 public enum DBPUIReceivedMethodName: String {
@@ -79,10 +83,12 @@ public enum DBPUIReceivedMethodName: String {
     case getVPNBypassSetting = "getVpnExclusionSetting"
     case setVPNBypassSetting = "setVpnExclusionSetting"
     case removeOptOutFromDashboard
+    case enableBackgroundAppRefresh
 }
 
 public enum DBPUISendableMethodName: String {
     case setState
+    case backgroundAppRefreshDidChange
 }
 
 public struct DBPUICommunicationLayer: Subfeature {
@@ -94,10 +100,12 @@ public struct DBPUICommunicationLayer: Subfeature {
     public var featureName: String = "dbpuiCommunication"
     weak public var broker: UserScriptMessageBroker?
 
+    private let outboundBroker: UserScriptMessageBroker = UserScriptMessageBroker(context: "dbpui", requiresRunInPageContentWorld: true)
+
     weak public var delegate: DBPUICommunicationDelegate?
 
     private enum Constants {
-        static let version = 11
+        static let version = 12
     }
 
     public init(webURLSettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
@@ -139,6 +147,7 @@ public struct DBPUICommunicationLayer: Subfeature {
         case .getVPNBypassSetting: return getVPNBypassSetting
         case .setVPNBypassSetting: return setVPNBypassSetting
         case .removeOptOutFromDashboard: return removeOptOutFromDashboard
+        case .enableBackgroundAppRefresh: return enableBackgroundAppRefresh
         }
 
     }
@@ -327,12 +336,21 @@ public struct DBPUICommunicationLayer: Subfeature {
         broker?.push(method: method.rawValue, params: params, for: self, into: webView)
     }
 
+    public func sendBackgroundAppRefreshDidChange(needBackgroundAppRefresh: Bool, into webView: WKWebView) {
+        Logger.dataBrokerProtection.log("needBackgroundAppRefresh changed to \(needBackgroundAppRefresh)")
+
+        let params = DBPUIBackgroundAppRefreshDidChange(needBackgroundAppRefresh: needBackgroundAppRefresh)
+        outboundBroker.push(method: DBPUISendableMethodName.backgroundAppRefreshDidChange.rawValue,
+                            params: params, for: self, into: webView)
+    }
+
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         // brokerRemovalEnabled is hardcoded to true, given it's an "inaugural" flag for Data Broker Removal
         return DBPUIFeatureConfigurationResponse(
             useUnifiedFeedback: privacyConfig.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.useUnifiedFeedback),
             excludeVpnTraffic: vpnBypassService?.isSupported ?? false,
-            brokerRemovalEnabled: true
+            brokerRemovalEnabled: true,
+            needBackgroundAppRefresh: await delegate?.needBackgroundAppRefresh() ?? false
         )
     }
 
@@ -374,5 +392,10 @@ public struct DBPUICommunicationLayer: Subfeature {
         await delegate?.removeOptOutFromDashboard(result.recordId)
 
         return DBPUIRemoveOptOutFromDashboardResult(success: true)
+    }
+
+    func enableBackgroundAppRefresh(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        await delegate?.enableBackgroundAppRefresh()
+        return nil
     }
 }

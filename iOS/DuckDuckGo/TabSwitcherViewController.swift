@@ -122,8 +122,11 @@ class TabSwitcherViewController: UIViewController {
 
     let featureFlagger: FeatureFlagger
     let tabManager: TabManager
+    let historyManager: HistoryManaging
+    let fireproofing: Fireproofing
     let aiChatSettings: AIChatSettingsProvider
     let privacyStats: PrivacyStatsProviding
+    let keyValueStore: ThrowingKeyValueStoring
     var tabsModel: TabsModel {
         tabManager.model
     }
@@ -152,10 +155,14 @@ class TabSwitcherViewController: UIViewController {
                    aichatFullModeFeature: AIChatFullModeFeatureProviding = AIChatFullModeFeature(),
                    privacyStats: PrivacyStatsProviding,
                    productSurfaceTelemetry: ProductSurfaceTelemetry,
+                   historyManager: HistoryManaging,
+                   fireproofing: Fireproofing,
+                   keyValueStore: ThrowingKeyValueStoring,
                    tabSwitcherSettings: TabSwitcherSettings = DefaultTabSwitcherSettings()) {
         self.bookmarksDatabase = bookmarksDatabase
         self.syncService = syncService
         self.featureFlagger = featureFlagger
+        self.keyValueStore = keyValueStore
         self.favicons = favicons
         self.tabManager = tabManager
         self.aiChatSettings = aiChatSettings
@@ -163,6 +170,8 @@ class TabSwitcherViewController: UIViewController {
         self.aichatFullModeFeature = aichatFullModeFeature
         self.privacyStats = privacyStats
         self.productSurfaceTelemetry = productSurfaceTelemetry
+        self.historyManager = historyManager
+        self.fireproofing = fireproofing
         self.tabSwitcherSettings = tabSwitcherSettings
         super.init(coder: coder)
     }
@@ -486,8 +495,8 @@ class TabSwitcherViewController: UIViewController {
         burn(sender: sender)
     }
 
-    func forgetAll() {
-        self.delegate.tabSwitcherDidRequestForgetAll(tabSwitcher: self)
+    func forgetAll(_ options: FireOptions) {
+        self.delegate.tabSwitcherDidRequestForgetAll(tabSwitcher: self, fireOptions: options)
     }
 
     func dismiss() {

@@ -1,7 +1,7 @@
 {
   "name": "TruthRecord",
   "url": "truthrecord.org",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "parent": "privatereports.com",
   "optOutUrl": "https://www.truthrecord.org/opt_out/name/landing_page",
   "steps": [
@@ -11,56 +11,48 @@
       "actions": [
         {
           "actionType": "navigate",
-          "url": "https://www.truthrecord.org/name_search/search_result",
-          "id": "56990ae9-8483-40d8-8d92-6639726a1b8c"
+          "url": "https://www.truthrecord.org/opt_out/name/landing_page",
+          "id": "07693f63-db90-42c7-b9aa-5cdaab2f6fff"
         },
         {
           "actionType": "expectation",
           "expectations": [
             {
               "type": "element",
-              "selector": "#bottomModifySearch"
+              "selector": ".search-wrapper"
             }
           ],
-          "id": "ea155fb5-b6de-4a86-9387-bc16db9baf96"
+          "id": "eb503687-d056-4913-9260-480b9256c999"
         },
         {
           "actionType": "fillForm",
           "dataSource": "userProfile",
-          "selector": "#bottomModifySearch",
+          "selector": ".search-wrapper",
           "elements": [
             {
               "type": "firstName",
-              "selector": "#firstName-bottom"
-            },
-            {
-              "type": "middleName",
-              "selector": "#middleName-bottom"
+              "selector": "#firstName"
             },
             {
               "type": "lastName",
-              "selector": "#lastName-bottom"
-            },
-            {
-              "type": "city",
-              "selector": "#city-bottom"
+              "selector": "#lastName"
             },
             {
               "type": "state",
-              "selector": "#state-bottom"
+              "selector": "#state"
             }
           ],
-          "id": "f62d1a8f-d0ae-4eb6-806e-e25c30406814"
+          "id": "cddf7e50-75be-4374-885f-3a1e310be2c8"
         },
         {
           "actionType": "click",
           "elements": [
             {
               "type": "button",
-              "selector": "#ux-2"
+              "selector": "button[type='submit']"
             }
           ],
-          "id": "6d1f764c-9e6e-44f9-81f3-c9dbee462a75"
+          "id": "df6d3ee8-43d9-47ac-96cd-2081140b9acd"
         },
         {
           "actionType": "expectation",

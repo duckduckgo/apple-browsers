@@ -2968,18 +2968,64 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Adres Çubuğu Konumu";
 
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Deneysel Tarayıcı Menüsü";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Bağlantıları İlişkili Uygulamalarda Aç";
 
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Bağlantıların yüklenmiş olan diğer uygulamalarda otomatik olarak açılmasını önlemek için devre dışı bırakın.";
 
+/* Subtitle explaining what the cookies option does in auto clear settings */
+"settings.autoclear.cookies.subtitle" = "Ziyaret edilen siteler dahil olmak üzere tüm site verilerini siler. Hesaplarınızdan çıkış yapılabilir.";
+
+/* Title for the cookies and site data option in auto clear settings */
+"settings.autoclear.cookies.title" = "Çerezler ve Site Verileri";
+
+/* Subtitle explaining what the Duck.ai chats option does in auto clear settings */
+"settings.autoclear.duckai.chats.subtitle" = "Sabitlenmiş sohbetler dahil tüm sohbetleri siler";
+
+/* Title for the Duck.ai chats option in auto clear settings */
+"settings.autoclear.duckai.chats.title" = "Duck.ai Sohbetleri";
+
+/* Section header for the auto clear options */
+"settings.autoclear.section.header" = "Temizle";
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Sekmeleri ve Verileri Temizle";
 
 /* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
 "settings.autoclear.tabs.and.data.with.aichat" = "Sekmeleri, Verileri ve Duck.ai Sohbetlerini Temizle";
 
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "Tüm açık sekmeleri kapatır";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "Sekmeler";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Uygulamadan Çık, 15 Dakika Boyunca İnaktif";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "1 Saat Boyunca Hareket Yoksa Uygulamadan Çık";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Uygulamadan Çık, 30 Dakika Boyunca İnaktif";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "Uygulamadan Çık, 5 Dakika Boyunca İnaktif";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "Yalnızca Uygulamadan Çıkma";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "Uygulama çıkışı, uygulama arka plandayken uzun süre etkin olmaması durumunda uygulamayı kapatmak için ekranı kaydırmak şeklinde tanımlanır.";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "İstenen zamanlama";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "Uygulama yeniden başlatıldığında veriler silinecektir.";
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Arama Önerileri";
 
@@ -2998,6 +3044,8 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Touch ID, Face ID veya sistem parolası etkinleştirilmişse, uygulamayı açtığınızda kilidi açmanız istenir.";
 
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "Otomatik Veri Temizleme";
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Tarayıcı Geri Bildirimi";
 
@@ -3007,6 +3055,8 @@
 /* Settings screen cell text for clearing AI chat history */
 "settings.clear.aichat.history.title" = "Duck.ai Sohbetlerini Temizle";
 
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "Tarama Verilerini Temizle";
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Verileri Otomatik Olarak Temizle";
 
@@ -3034,6 +3084,8 @@
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Veri Temizleme";
 
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "Kişisel verilerini silmek, çevrimiçi gizliliğini korumana yardımcı olabilir. Verileri manuel olarak silmek için Fire Button'ı kullan veya otomatik silme işlemini ayarla.";
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Varsayılan Tarayıcı";
 
@@ -3079,6 +3131,8 @@
 /* Settings screen cell text for Fireproof Sites */
 "settings.fireproof.sites" = "Korumalı Siteler";
 
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Fireproof Uygulanan Siteler";
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Genel";
 
@@ -3333,6 +3387,9 @@
 
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "DuckDuckGo tarayıcısı, her zaman etkin olan izleme korumaları sunar. [Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
+
+/* Settings cell title to show users the What’s New prompt */
+"settings.whats.new" = "Yenilikler";
 
 /* No comment provided by engineer. */
 "Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Yenilemeden hemen sonra sorunları teşhis etmeye yardımcı olmak için son bir dakikanın günlüklerini gösterir.";

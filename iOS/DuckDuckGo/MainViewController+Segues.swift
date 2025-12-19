@@ -203,7 +203,10 @@ extension MainViewController {
                                       aiChatSettings: self.aiChatSettings,
                                       appSettings: self.appSettings,
                                       privacyStats: self.privacyStats,
-                                      productSurfaceTelemetry: self.productSurfaceTelemetry)
+                                      productSurfaceTelemetry: self.productSurfaceTelemetry,
+                                      historyManager: self.historyManager,
+                                      fireproofing: self.fireproofing,
+                                      keyValueStore: self.keyValueStore)
         }) else {
             assertionFailure()
             return
@@ -247,6 +250,14 @@ extension MainViewController {
         launchSettings(completion: {
             $0.triggerDeepLinkNavigation(to: .netP)
         }, deepLinkTarget: .netP)
+    }
+
+    func segueToDataBrokerProtection() {
+        Logger.lifecycle.debug(#function)
+        hideAllHighlightsIfNeeded()
+        launchSettings(completion: {
+            $0.triggerDeepLinkNavigation(to: .dbp)
+        }, deepLinkTarget: .dbp)
     }
 
     func segueToDebugSettings() {
@@ -350,6 +361,13 @@ extension MainViewController {
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
         let serpSettingsProvider = SERPSettingsProvider(aiChatProvider: aiChatSettings,
                                                         featureFlagger: featureFlagger)
+        let whatsNewCoordinator = WhatsNewCoordinator(
+            displayContext: .onDemand,
+            repository: whatsNewRepository,
+            remoteMessageActionHandler: remoteMessagingActionHandler,
+            isIPad: UIDevice.current.userInterfaceIdiom == .pad,
+            pixelReporter: nil,
+            userScriptsDependencies: userScriptsDependencies)
 
         let settingsViewModel = SettingsViewModel(legacyViewProvider: legacyViewProvider,
                                                   isAuthV2Enabled: isAuthV2Enabled,
@@ -376,7 +394,8 @@ extension MainViewController {
                                                   winBackOfferVisibilityManager: winBackOfferVisibilityManager,
                                                   mobileCustomization: mobileCustomization,
                                                   userScriptsDependencies: userScriptsDependencies,
-                                                  browsingMenuSheetCapability: BrowsingMenuSheetCapability.create(using: featureFlagger, keyValueStore: keyValueStore))
+                                                  browsingMenuSheetCapability: BrowsingMenuSheetCapability.create(using: featureFlagger, keyValueStore: keyValueStore),
+                                                  whatsNewCoordinator: whatsNewCoordinator)
 
         settingsViewModel.autoClearActionDelegate = self
         Pixel.fire(pixel: .settingsPresented)

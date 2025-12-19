@@ -6165,6 +6165,9 @@
       }
     });
     useSignalEffect(() => {
+      document.body.dataset.theme = browser.value;
+    });
+    useSignalEffect(() => {
       document.body.dataset.themeVariant = variant.value;
     });
     switch (background.kind) {
@@ -9153,7 +9156,14 @@
         d: "M9.20362 6.3927L0.510957 13.8636C-0.183621 14.4619 -0.16344 15.5367 0.531137 16.1351L9.20362 23.606C10.9677 25.1256 11.9819 27.3368 11.9819 29.6632L11.9819 30.0003L11.9819 -0.000488281V0.335449C11.9819 2.66185 10.9677 4.87302 9.20362 6.3927Z",
         fill: "currentColor"
       }
-    )), /* @__PURE__ */ _("div", { class: Popover_default.content }, /* @__PURE__ */ _("button", { class: Popover_default.closeButton, onClick: onClose, "aria-label": t4("ntp_popover_close_button") }, /* @__PURE__ */ _(Cross, null)), /* @__PURE__ */ _("h3", { id: titleId, class: Popover_default.heading }, badge && /* @__PURE__ */ _("span", { class: Popover_default.badge }, badge), /* @__PURE__ */ _("span", { class: Popover_default.title }, title)), /* @__PURE__ */ _("p", { id: descriptionId, class: Popover_default.description }, children)));
+    )), /* @__PURE__ */ _("div", { class: Popover_default.content }, /* @__PURE__ */ _(
+      DismissButton,
+      {
+        className: Popover_default.closeButton,
+        onClick: onClose,
+        buttonProps: { "aria-label": t4("ntp_popover_close_button") }
+      }
+    ), /* @__PURE__ */ _("h3", { id: titleId, class: Popover_default.heading }, badge && /* @__PURE__ */ _("span", { class: Popover_default.badge }, badge), /* @__PURE__ */ _("span", { class: Popover_default.title }, title)), /* @__PURE__ */ _("p", { id: descriptionId, class: Popover_default.description }, children)));
   }
   var init_Popover2 = __esm({
     "pages/new-tab/app/components/Popover.js"() {
@@ -9161,7 +9171,7 @@
       init_preact_module();
       init_hooks_module();
       init_types();
-      init_Icons2();
+      init_DismissButton2();
       init_Popover();
     }
   });
@@ -9417,7 +9427,7 @@
     useCustomizer({
       title: t4("omnibar_toggleDuckAi"),
       id: `_${id}-toggleAi`,
-      icon: /* @__PURE__ */ _(ArrowIndentCenteredIcon, { style: { color: "var(--ntp-icons-tertiary)" } }),
+      icon: /* @__PURE__ */ _(ArrowIndentCenteredIcon, { style: { color: "var(--ds-color-theme-icons-tertiary)" } }),
       toggle: () => setEnableAi(!enableAi),
       /**
        * Duck.ai is only ever shown as 'visible' (eg: switch is checked) if the omnibar is also visible.
@@ -10050,7 +10060,8 @@
     blockedCountSignal,
     onToggle,
     buttonAttrs = {},
-    totalCookiePopUpsBlockedSignal
+    totalCookiePopUpsBlockedSignal,
+    showProtectionsReportNewLabel
   }) {
     const { t: t4 } = useTypedTranslationWith(
       /** @type {Strings} */
@@ -10091,7 +10102,7 @@
         onClick: onToggle,
         label: expansion === "expanded" ? t4("stats_hideLabel") : t4("stats_toggleLabel")
       }
-    ))), /* @__PURE__ */ _("div", { class: PrivacyStats_default.counterContainer, ref: counterContainerRef }, /* @__PURE__ */ _("div", { class: PrivacyStats_default.counter }, animatedTrackersBlocked === 0 && /* @__PURE__ */ _("h3", { class: PrivacyStats_default.noRecentTitle }, t4("protections_noRecent")), animatedTrackersBlocked > 0 && /* @__PURE__ */ _("h3", { class: PrivacyStats_default.title }, formatter.format(animatedTrackersBlocked), " ", /* @__PURE__ */ _("span", null, trackersBlockedHeading))), isCpmEnabled && animatedTrackersBlocked > 0 && totalCookiePopUpsBlocked > 0 && /* @__PURE__ */ _("div", { class: (0, import_classnames9.default)(PrivacyStats_default.counter, PrivacyStats_default.cookiePopUpsCounter) }, /* @__PURE__ */ _("h3", { class: PrivacyStats_default.title }, formatter.format(animatedCookiePopUpsBlocked), " ", /* @__PURE__ */ _("span", null, cookiePopUpsBlockedHeading)), /* @__PURE__ */ _(NewBadge, { text: t4("protections_newBadge") }))));
+    ))), /* @__PURE__ */ _("div", { class: PrivacyStats_default.counterContainer, ref: counterContainerRef }, /* @__PURE__ */ _("div", { class: PrivacyStats_default.counter }, animatedTrackersBlocked === 0 && /* @__PURE__ */ _("h3", { class: PrivacyStats_default.noRecentTitle }, t4("protections_noRecent")), animatedTrackersBlocked > 0 && /* @__PURE__ */ _("h3", { class: PrivacyStats_default.title }, formatter.format(animatedTrackersBlocked), " ", /* @__PURE__ */ _("span", null, trackersBlockedHeading))), isCpmEnabled && animatedTrackersBlocked > 0 && totalCookiePopUpsBlocked > 0 && /* @__PURE__ */ _("div", { class: (0, import_classnames9.default)(PrivacyStats_default.counter, PrivacyStats_default.cookiePopUpsCounter) }, /* @__PURE__ */ _("h3", { class: PrivacyStats_default.title }, formatter.format(animatedCookiePopUpsBlocked), " ", /* @__PURE__ */ _("span", null, cookiePopUpsBlockedHeading)), showProtectionsReportNewLabel && /* @__PURE__ */ _(NewBadge, { text: t4("protections_newBadge") }))));
   }
   var import_classnames9;
   var init_ProtectionsHeading = __esm({
@@ -10197,7 +10208,8 @@
     feed,
     toggle,
     setFeed,
-    totalCookiePopUpsBlockedSignal
+    totalCookiePopUpsBlockedSignal,
+    showProtectionsReportNewLabel
   }) {
     const WIDGET_ID = g2();
     const TOGGLE_ID = g2();
@@ -10226,7 +10238,8 @@
         expansion,
         canExpand: true,
         buttonAttrs: attrs,
-        totalCookiePopUpsBlockedSignal
+        totalCookiePopUpsBlockedSignal,
+        showProtectionsReportNewLabel
       }
     ), /* @__PURE__ */ _(ProtectionsBodyComponent, { feed, setFeed, id: WIDGET_ID, expansion }, children));
   }
@@ -28534,7 +28547,8 @@
         toggle,
         feed: config.feed,
         setFeed,
-        totalCookiePopUpsBlockedSignal
+        totalCookiePopUpsBlockedSignal,
+        showProtectionsReportNewLabel: config.showProtectionsReportNewLabel
       },
       config.feed === "activity" && /* @__PURE__ */ _(ActivityProvider, null, /* @__PURE__ */ _(
         ActivityConsumer,
@@ -31896,7 +31910,7 @@
         id: "id-big-two",
         titleText: "Personal Information Removal Scan Complete",
         descriptionText: "Your free personal information scan found 19 records about you on 3 different sites",
-        icon: "RadarCheck",
+        icon: "RadarCheckGreen",
         primaryActionText: "View Results",
         secondaryActionText: "Remind me later"
       }
@@ -31957,8 +31971,18 @@
         messageType: "big_single_action",
         id: "id-big-single-alt",
         titleText: "Personal Information Removal",
-        descriptionText: "Your free personal information scan found 19 records about you on 3 different sites",
+        descriptionText: "Scrub your data from broker websites like PeopleFinder",
         icon: "Radar",
+        primaryActionText: "View Results"
+      }
+    },
+    big_single_action_radar_check_purple: {
+      content: {
+        messageType: "big_single_action",
+        id: "id-big-single-alt",
+        titleText: "Personal Information Removal",
+        descriptionText: "Your free personal information scan found 19 records about you on 3 different sites",
+        icon: "RadarCheckPurple",
         primaryActionText: "View Results"
       }
     },
@@ -32061,6 +32085,16 @@
         RemoteMessagingFramework,
         {
           message: rmfDataExamples.big_single_action_radar.content,
+          primaryAction: noop("rmf_primaryAction"),
+          dismiss: noop("rmf_dismiss")
+        }
+      )
+    },
+    "rmf.big-single-action-radar-check-purple": {
+      factory: () => /* @__PURE__ */ _(
+        RemoteMessagingFramework,
+        {
+          message: rmfDataExamples.big_single_action_radar_check_purple.content,
           primaryAction: noop("rmf_primaryAction"),
           dismiss: noop("rmf_dismiss")
         }
@@ -33643,7 +33677,13 @@
   init_signals_module();
   init_BackgroundProvider();
   init_CustomizerProvider();
+
+  // pages/new-tab/app/customizer/mocks.js
+  init_values();
   var url2 = new URL(window.location.href);
+
+  // pages/new-tab/app/components/Components.jsx
+  var url3 = new URL(window.location.href);
   var list = {
     ...mainExamples,
     ...otherExamples
@@ -34079,10 +34119,6 @@
 
   // pages/new-tab/app/mock-transport.js
   init_nextsteps_data();
-
-  // pages/new-tab/app/customizer/mocks.js
-  init_values();
-  var url3 = new URL(window.location.href);
 
   // pages/new-tab/app/protections/mocks/protections.mock-transport.js
   init_animateCount();

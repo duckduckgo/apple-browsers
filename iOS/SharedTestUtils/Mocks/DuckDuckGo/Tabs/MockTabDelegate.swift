@@ -170,7 +170,8 @@ extension TabViewController {
             daxDialogsManager: DummyDaxDialogsManager(),
             aiChatSettings: MockAIChatSettingsProvider(),
             productSurfaceTelemetry: MockProductSurfaceTelemetry(),
-            privacyStats: MockPrivacyStats()
+            privacyStats: MockPrivacyStats(),
+            voiceSearchHelper: MockVoiceSearchHelper()
         )
         tab.attachWebView(configuration: WKWebViewConfiguration.nonPersistent(), andLoadRequest: nil as URLRequest?, consumeCookies: false, customWebView: customWebView)
         return tab

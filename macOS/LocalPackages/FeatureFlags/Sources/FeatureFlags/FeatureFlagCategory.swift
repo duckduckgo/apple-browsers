@@ -50,11 +50,8 @@ extension FeatureFlag: FeatureFlagCategorization {
     public var category: FeatureFlagCategory {
         switch self {
         case .aiChatSidebar,
-                .aiChatTextSummarization,
-                .aiChatTextTranslation,
                 .aiChatPageContext,
                 .duckAISearchParameter,
-                .aiChatImprovements,
                 .aiChatKeepSession,
                 .aiChatDataClearing,
                 .aiChatOmnibarToggle,
@@ -79,12 +76,11 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .winBackOffer:
             return .vpn
         case .dbpEmailConfirmationDecoupling,
-                .dbpRemoteBrokerDelivery:
+                .dbpRemoteBrokerDelivery,
+                .dbpClickActionDelayReductionOptimization:
             return .dbp
-        case .privacyProAuthV2,
-                .paidAIChat,
+        case .paidAIChat,
                 .supportsAlternateStripePaymentFlow,
-                .vpnConnectionWidePixelMeasurement,
                 .blackFridayCampaign,
                 .tierMessagingEnabled,
                 .allowProTierPurchase:

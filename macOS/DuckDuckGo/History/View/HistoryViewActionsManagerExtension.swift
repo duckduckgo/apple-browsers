@@ -20,6 +20,7 @@ import BrowserServicesKit
 import Common
 import History
 import HistoryView
+import Foundation
 
 extension HistoryViewActionsManager {
 
@@ -27,22 +28,29 @@ extension HistoryViewActionsManager {
         historyCoordinator: HistoryDataSource,
         bookmarksHandler: HistoryViewBookmarksHandling,
         featureFlagger: FeatureFlagger,
+        themeManager: ThemeManaging,
         fireproofStatusProvider: DomainFireproofStatusProviding,
         tld: TLD,
         fire: @escaping () async -> FireProtocol
     ) {
         let dataProvider = HistoryViewDataProvider(
             historyDataSource: historyCoordinator,
-            historyBurner: FireHistoryBurner(fireproofDomains: fireproofStatusProvider, fire: fire),
+            historyBurner: FireHistoryBurner(fireproofDomains: fireproofStatusProvider,
+                                             fire: fire,
+                                             recordAIChatHistoryClearForSync: { Application.appDelegate.syncAIChatsCleaner?.recordLocalClear(date: Date()) }),
             featureFlagger: featureFlagger,
             tld: tld
         )
+        let styleProvider = ScriptStyleProvider(themeManager: themeManager)
+
         self.init(scriptClients: [
             DataClient(
                 dataProvider: dataProvider,
+                styleProvider: styleProvider,
                 actionsHandler: HistoryViewActionsHandler(dataProvider: dataProvider, bookmarksHandler: bookmarksHandler),
                 errorHandler: HistoryViewErrorHandler()
-            )
+            ),
+            StyleClient(styleProviding: styleProvider)
         ])
     }
 }

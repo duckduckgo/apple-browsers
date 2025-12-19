@@ -83,6 +83,7 @@ public struct AIChatNativeConfigValues: Codable {
     public let appVersion: String
     public let supportsHomePageEntryPoint: Bool
     public let supportsOpenAIChatLink: Bool
+    public let supportsAIChatSync: Bool
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
@@ -98,7 +99,8 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsAIChatFullMode: false,
                                         appVersion: "",
                                         supportsHomePageEntryPoint: true,
-                                        supportsOpenAIChatLink: true)
+                                        supportsOpenAIChatLink: true,
+                                        supportsAIChatSync: false)
 #endif
 
 #if os(macOS)
@@ -114,7 +116,8 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsAIChatFullMode: false,
                                         appVersion: "",
                                         supportsHomePageEntryPoint: true,
-                                        supportsOpenAIChatLink: true)
+                                        supportsOpenAIChatLink: true,
+                                        supportsAIChatSync: false)
 #endif
     }
 
@@ -130,7 +133,8 @@ public struct AIChatNativeConfigValues: Codable {
                 supportsAIChatFullMode: Bool,
                 appVersion: String,
                 supportsHomePageEntryPoint: Bool = true,
-                supportsOpenAIChatLink: Bool = true) {
+                supportsOpenAIChatLink: Bool = true,
+                supportsAIChatSync: Bool) {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = Platform.name
         self.supportsClosingAIChat = supportsClosingAIChat
@@ -145,6 +149,7 @@ public struct AIChatNativeConfigValues: Codable {
         self.appVersion = appVersion
         self.supportsHomePageEntryPoint = supportsHomePageEntryPoint
         self.supportsOpenAIChatLink = supportsOpenAIChatLink
+        self.supportsAIChatSync = supportsAIChatSync
     }
 }
 

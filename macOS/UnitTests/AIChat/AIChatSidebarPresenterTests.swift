@@ -767,6 +767,10 @@ class MockAIChatSidebarProvider: AIChatSidebarProviding {
         cleanUp(for: [])
         self.sidebarsByTab = sidebarsByTab
     }
+
+    func resetSidebar(for tabID: TabIdentifier) {
+        sidebarsByTab.removeValue(forKey: tabID)
+    }
 }
 
 class MockAIChatTabOpener: AIChatTabOpening {

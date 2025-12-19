@@ -57,7 +57,7 @@ let package = Package(
         .package(url: "https://github.com/duckduckgo/TrackerRadarKit.git", exact: "3.0.1"),
         .package(url: "https://github.com/duckduckgo/sync_crypto", exact: "0.7.0"),
         .package(url: "https://github.com/gumob/PunycodeSwift.git", exact: "3.0.0"),
-        .package(url: "https://github.com/duckduckgo/privacy-dashboard", exact: "9.5.0"),
+        .package(url: "https://github.com/duckduckgo/privacy-dashboard", exact: "9.7.0"),
         .package(url: "https://github.com/httpswift/swifter.git", exact: "1.5.0"),
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.4"),
@@ -171,6 +171,14 @@ let package = Package(
             ],
             path: "Sources/BookmarksTestDBBuilder"
         ),
+        .executableTarget(
+            name: "HistoryTestDBBuilder",
+            dependencies: [
+                "History",
+                "Persistence",
+            ],
+            path: "Sources/HistoryTestDBBuilder"
+        ),
         .target(
             name: "BookmarksTestsUtils",
             dependencies: [
@@ -239,6 +247,7 @@ let package = Package(
             resources: [
                 .process("Resources/contentScope.js"),
                 .process("Resources/contentScopeIsolated.js"),
+                .process("Resources/duckAiDataClearing.js"),
                 .copy("Resources/pages"),
             ],
             swiftSettings: [
@@ -534,6 +543,12 @@ let package = Package(
             dependencies: [
                 "SharedObjCTestsUtils",
                 "History",
+                "BookmarksTestsUtils",
+            ],
+            resources: [
+                .copy("Resources/BrowsingHistory_V1.sqlite"),
+                .copy("Resources/BrowsingHistory_V1.sqlite-shm"),
+                .copy("Resources/BrowsingHistory_V1.sqlite-wal"),
             ]
         ),
         .testTarget(

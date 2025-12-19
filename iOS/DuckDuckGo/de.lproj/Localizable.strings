@@ -2968,18 +2968,64 @@
 /* Settings screen cell text for addess bar position */
 "settings.appearance.address.bar" = "Position der Adressleiste";
 
+/* Settings screen cell text for experimental menu */
+"settings.appearance.experimental.menu" = "Experimentelles Browser-Menü";
+
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Links in den dazugehörigen Apps öffnen";
 
 /* Description for associated apps description */
 "settings.associated.apps.description" = "Aktivieren, damit sich Links nicht automatisch in anderen installierten Apps öffnen.";
 
+/* Subtitle explaining what the cookies option does in auto clear settings */
+"settings.autoclear.cookies.subtitle" = "Löschen aller Websitedaten, einschließlich der besuchten Seiten; du wirst möglicherweise von Konten abgemeldet.";
+
+/* Title for the cookies and site data option in auto clear settings */
+"settings.autoclear.cookies.title" = "Cookies und Website-Daten";
+
+/* Subtitle explaining what the Duck.ai chats option does in auto clear settings */
+"settings.autoclear.duckai.chats.subtitle" = "Löschen aller Chats, einschließlich angehefteter Chats";
+
+/* Title for the Duck.ai chats option in auto clear settings */
+"settings.autoclear.duckai.chats.title" = "Duck.ai-Chats";
+
+/* Section header for the auto clear options */
+"settings.autoclear.section.header" = "Löschen";
 /* Autoclear action option to clear tabs and data */
 "settings.autoclear.tabs.and.data" = "Tabs und Daten löschen";
 
 /* Autoclear action option to clear tabs, data and AI chat when AI chat clearing is enabled */
 "settings.autoclear.tabs.and.data.with.aichat" = "Tabs, Daten und Duck.ai-Chats löschen";
 
+/* Subtitle explaining what the tabs option does in auto clear settings */
+"settings.autoclear.tabs.subtitle" = "Alle offenen Tabs schließen";
+
+/* Title for the tabs option in auto clear settings */
+"settings.autoclear.tabs.title" = "Tabs";
+
+/* Timing option to clear data on app exit or after 15 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.15min" = "Beim Verlassen der App, 15 Minuten lang inaktiv";
+
+/* Timing option to clear data on app exit or after 1 hour of inactivity */
+"settings.autoclear.timing.app.exit.inactive.1hour" = "Beim Verlassen der App, 1 Stunde lang inaktiv";
+
+/* Timing option to clear data on app exit or after 30 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.30min" = "Beim Verlassen der App, 30 Minuten lang inaktiv";
+
+/* Timing option to clear data on app exit or after 5 minutes of inactivity */
+"settings.autoclear.timing.app.exit.inactive.5min" = "Beim Verlassen der App, 5 Minuten lang inaktiv";
+
+/* Timing option to clear data only on app exit */
+"settings.autoclear.timing.app.exit.only" = "Nur beim Verlassen der App";
+
+/* Footer text explaining what app exit and inactivity mean for auto clear timing */
+"settings.autoclear.timing.footer" = "Die App wird verlassen, wenn sie durch Wegwischen geschlossen wird. Die App ist inaktiv, wenn sie im Hintergrund läuft.";
+
+/* Section header for the timing options in auto clear settings */
+"settings.autoclear.timing.section.header" = "Gewünschter Zeitpunkt";
+
+/* Footer text explaining when data will be cleared when auto clear is enabled */
+"settings.autoclear.toggle.footer" = "Die Daten werden beim Neustart der App gelöscht.";
 /* Settings screen cell for autocomplete */
 "settings.autocomplete" = "Vorschläge für die Suche";
 
@@ -2998,6 +3044,8 @@
 /* Section footer Autolock description */
 "settings.autolock.description" = "Wenn Touch ID, Face ID oder ein Systempasswort aktiviert ist, wirst du aufgefordert, die App beim Öffnen zu entsperren.";
 
+/* Settings row title for automatic data clearing */
+"settings.automatic.data.clearing.title" = "Automatische Datenlöschung";
 /* Settings cell for Browser Feedback */
 "settings.browser.feedback" = "Browser-Feedback";
 
@@ -3007,6 +3055,8 @@
 /* Settings screen cell text for clearing AI chat history */
 "settings.clear.aichat.history.title" = "Duck.ai-Chats löschen";
 
+/* Button to clear browsing data */
+"settings.clear.browsing.data" = "Browserdaten löschen";
 /* Settings screen cell text for Automatically Clearing Data */
 "settings.clear.data" = "Daten automatisch löschen";
 
@@ -3034,6 +3084,8 @@
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Datenlöschung";
 
+/* Data Clearing settings header description */
+"settings.data.clearing.description" = "Das Löschen deiner Daten kann dazu beitragen, deinen Online-Datenschutz zu verbessern. Verwende den Fire Button, um Daten manuell zu löschen, oder richte eine automatische Datenlöschung ein.";
 /* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Standard-Browser";
 
@@ -3079,6 +3131,8 @@
 /* Settings screen cell text for Fireproof Sites */
 "settings.fireproof.sites" = "Feuerfeste Seiten";
 
+/* Settings screen cell text for Fireproofed Sites */
+"settings.fireproofed.sites" = "Fireproof-Websites";
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Allgemein";
 
@@ -3333,6 +3387,9 @@
 
 /* Updated description for web tracking protection settings */
 "settings.web.tracking.protection.updated.description" = "Der DuckDuckGo-Browser bietet Tracking-Schutz, der immer aktiv ist. [Mehr erfahren](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/web-tracking-protections/)";
+
+/* Settings cell title to show users the What’s New prompt */
+"settings.whats.new" = "Was gibt's Neues?";
 
 /* No comment provided by engineer. */
 "Shows logs from the last minute, to help diagnose issues immediately after a refresh." = "Zeigt die Protokolle der letzten Minute an, um Probleme direkt nach einer Aktualisierung zu diagnostizieren.";

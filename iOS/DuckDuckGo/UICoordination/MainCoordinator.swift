@@ -86,7 +86,8 @@ final class MainCoordinator {
          modalPromptCoordinationService: ModalPromptCoordinationService,
          mobileCustomization: MobileCustomization,
          productSurfaceTelemetry: ProductSurfaceTelemetry,
-         sharedSecureVault: (any AutofillSecureVault)? = nil
+         whatsNewRepository: WhatsNewMessageRepository,
+         sharedSecureVault: (any AutofillSecureVault)? = nil,
     ) throws {
         self.subscriptionManager = subscriptionManager
         self.featureFlagger = featureFlagger
@@ -142,10 +143,21 @@ final class MainCoordinator {
                                 aiChatSettings: aiChatSettings,
                                 productSurfaceTelemetry: productSurfaceTelemetry,
                                 sharedSecureVault: sharedSecureVault,
-                                privacyStats: privacyStats)
+                                privacyStats: privacyStats,
+                                voiceSearchHelper: voiceSearchHelper)
+        let fireExecutor = FireExecutor(tabManager: tabManager,
+                                        websiteDataManager: websiteDataManager,
+                                        daxDialogsManager: daxDialogsManager,
+                                        syncService: syncService.sync,
+                                        bookmarksDatabaseCleaner: syncService.syncDataProviders.bookmarksAdapter.databaseCleaner,
+                                        fireproofing: fireproofing,
+                                        textZoomCoordinator: textZoomCoordinator,
+                                        historyManager: historyManager,
+                                        featureFlagger: featureFlagger,
+                                        privacyConfigurationManager: privacyConfigurationManager,
+                                        appSettings: AppDependencyProvider.shared.appSettings)
         controller = MainViewController(privacyConfigurationManager: privacyConfigurationManager,
                                         bookmarksDatabase: bookmarksDatabase,
-                                        bookmarksDatabaseCleaner: syncService.syncDataProviders.bookmarksAdapter.databaseCleaner,
                                         historyManager: historyManager,
                                         homePageConfiguration: homePageConfiguration,
                                         syncService: syncService.sync,
@@ -179,9 +191,12 @@ final class MainCoordinator {
                                         winBackOfferVisibilityManager: winBackOfferService.visibilityManager,
                                         mobileCustomization: mobileCustomization,
                                         remoteMessagingActionHandler: remoteMessagingService.remoteMessagingActionHandler,
-                                        remoteMessagingDebugHandler: remoteMessagingService,
                                         productSurfaceTelemetry: productSurfaceTelemetry,
-                                        privacyStats: privacyStats)
+                                        fireExecutor: fireExecutor,
+                                        remoteMessagingDebugHandler: remoteMessagingService,
+                                        privacyStats: privacyStats,
+                                        syncAiChatsCleaner: syncService.aiChatsCleaner,
+                                        whatsNewRepository: whatsNewRepository)
     }
 
     func start() {
@@ -240,6 +255,10 @@ final class MainCoordinator {
 
     func presentNetworkProtectionStatusSettingsModal() {
         controller.presentNetworkProtectionStatusSettingsModal()
+    }
+
+    func presentDataBrokerProtectionDashboard() {
+        controller.presentDataBrokerProtectionDashboard()
     }
 
     func presentModalPromptIfNeeded() {
@@ -305,7 +324,7 @@ extension MainCoordinator: URLHandling {
         case .addFavorite:
             controller.startAddFavoriteFlow()
         case .fireButton:
-            controller.forgetAllWithAnimation()
+            controller.forgetAllWithAnimation(options: .all)
         case .voiceSearch:
             controller.onVoiceSearchPressed()
         case .newEmail:

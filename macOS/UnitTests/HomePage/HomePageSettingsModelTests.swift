@@ -28,7 +28,6 @@ final class NewTabPageCustomizationModelTests: XCTestCase {
     fileprivate var model: NewTabPageCustomizationModel!
     var storageLocation: URL!
     var appearancePreferences: AppearancePreferences!
-    var themeManager: ThemeManaging!
     var userBackgroundImagesManager: CapturingUserBackgroundImagesManager!
     var sendPixelEvents: [PixelKitEvent] = []
     var openFilePanel: () -> URL? = { return "file:///sample.jpg".url! }
@@ -42,7 +41,6 @@ final class NewTabPageCustomizationModelTests: XCTestCase {
 
         storageLocation = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         appearancePreferences = .init(persistor: AppearancePreferencesPersistorMock(), privacyConfigurationManager: MockPrivacyConfigurationManager(), featureFlagger: MockFeatureFlagger())
-        themeManager = MockThemeManager()
         userBackgroundImagesManager = CapturingUserBackgroundImagesManager(storageLocation: storageLocation, maximumNumberOfImages: 4)
 
         UserDefaultsWrapper<Any>.sharedDefaults.removeObject(forKey: UserDefaultsWrapper<Any>.Key.homePageLastPickedCustomColor.rawValue)
@@ -55,8 +53,7 @@ final class NewTabPageCustomizationModelTests: XCTestCase {
                 self?.openFilePanelCallCount += 1
                 return self?.openFilePanel()
             },
-            showAddImageFailedAlert: { [weak self] in self?.showImageFailedAlertCallCount += 1 },
-            themeManager: themeManager
+            showAddImageFailedAlert: { [weak self] in self?.showImageFailedAlertCallCount += 1 }
         )
     }
 
@@ -65,7 +62,6 @@ final class NewTabPageCustomizationModelTests: XCTestCase {
         appearancePreferences = nil
         model = nil
         sendPixelEvents = []
-        themeManager = nil
         userBackgroundImagesManager = nil
     }
 

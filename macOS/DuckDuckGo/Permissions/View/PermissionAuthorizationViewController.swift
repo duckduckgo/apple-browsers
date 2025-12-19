@@ -17,6 +17,7 @@
 //
 
 import Cocoa
+import PixelKit
 import SwiftUI
 
 extension PermissionType {
@@ -149,9 +150,8 @@ final class PermissionAuthorizationViewController: NSViewController {
                                                   query.domain,
                                                   query.permissions.localizedDescription.lowercased())
         case .notification:
-            descriptionLabel.stringValue = String(format: UserText.devicePermissionAuthorizationFormat,
-                                                  query.domain,
-                                                  query.permissions.localizedDescription.lowercased())
+            descriptionLabel.stringValue = String(format: UserText.notificationPermissionAuthorizationFormat,
+                                                  query.domain)
         case .externalScheme where query.domain.isEmpty:
             descriptionLabel.stringValue = String(format: UserText.externalSchemePermissionAuthorizationNoDomainFormat,
                                                   query.permissions.localizedDescription)
@@ -209,15 +209,28 @@ final class PermissionAuthorizationViewController: NSViewController {
         swiftUIHostingView = nil
 
         let permissionType = PermissionAuthorizationType(from: query.permissions)
+        let showsTwoStepUI = permissionType.requiresSystemPermission
+            && systemPermissionManager.isAuthorizationRequired(for: permissionType.asPermissionType)
+
         let swiftUIView = PermissionAuthorizationSwiftUIView(
             domain: query.domain,
             permissionType: permissionType,
+            showsTwoStepUI: showsTwoStepUI,
+            isSystemPermissionDisabled: query.isSystemPermissionDisabled,
             onDeny: { [weak self] in
                 self?.handleDeny()
             },
             onAllow: { [weak self] in
                 self?.handleAllow()
             },
+            onDismiss: { [weak self] in
+                self?.handleDismiss()
+            },
+            onLearnMore: permissionType.learnMoreURL != nil ? {
+                if let url = permissionType.learnMoreURL {
+                    Application.appDelegate.windowControllersManager.show(url: url, source: .ui, newTab: true)
+                }
+            } : nil,
             systemPermissionManager: systemPermissionManager
         )
 
@@ -238,13 +251,29 @@ final class PermissionAuthorizationViewController: NSViewController {
 
     private func handleDeny() {
         isAuthorizationInProgress = false
+        fireAuthorizationPixel(decision: .deny)
         dismiss()
         query?.handleDecision(grant: false, remember: nil)
     }
 
     private func handleAllow() {
         isAuthorizationInProgress = false
+        fireAuthorizationPixel(decision: .allow)
         dismiss()
         query?.handleDecision(grant: true, remember: nil)
+    }
+
+    private func handleDismiss() {
+        isAuthorizationInProgress = false
+        query?.cancel()
+        dismiss()
+    }
+
+    private func fireAuthorizationPixel(decision: PermissionPixel.AuthorizationDecision) {
+        guard newPermissionView, let query = query else { return }
+        // Fire pixel for each permission type in the query
+        for permissionType in query.permissions {
+            PixelKit.fire(PermissionPixel.authorizationDecision(permissionType: permissionType, decision: decision))
+        }
     }
 }

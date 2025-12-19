@@ -69,7 +69,8 @@ class AutoClearHandlerTests: XCTestCase {
         handler = AutoClearHandler(dataClearingPreferences: dataClearingPreferences,
                                    startupPreferences: startupPreferences,
                                    fireViewModel: fireViewModel,
-                                   stateRestorationManager: appStateRestorationManager)
+                                   stateRestorationManager: appStateRestorationManager,
+                                   syncAIChatsCleaner: nil)
     }
 
     override func tearDown() {

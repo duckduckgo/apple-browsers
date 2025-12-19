@@ -18,6 +18,7 @@
 
 import Foundation
 import PixelKit
+import FeatureFlags
 
 /// Tracks user navigation journey outcomes to measure site loading success rates and rendering performance.
 /// Complements GeneralPixel.navigation (attempt tracking) with outcome-specific data.
@@ -31,6 +32,7 @@ enum SiteLoadingPixel: PixelKitEvent {
         static let documentComplete = "document_complete_ms"
         static let allResourcesComplete = "all_resources_complete_ms"
         static let navigationType = "navigation_type"
+        static let consentHeuristicEnabled = "consentHeuristicEnabled"
     }
 
     /// Navigation completed successfully from user perspective
@@ -84,6 +86,13 @@ enum SiteLoadingPixel: PixelKitEvent {
             }
             if let allResourcesCompleteMs = allResourcesCompleteMs {
                 params[ParameterNames.allResourcesComplete] = String(allResourcesCompleteMs)
+            }
+            if let consentHeuristicEnabled = Application.appDelegate.featureFlagger.resolveCohort(for: FeatureFlag.autoconsentHeuristicAction) as? FeatureFlag.AutoconsentHeuristicActionCohort {
+                if consentHeuristicEnabled == .treatment {
+                    params[ParameterNames.consentHeuristicEnabled] = "1"
+                } else {
+                    params[ParameterNames.consentHeuristicEnabled] = "0"
+                }
             }
 
             return params

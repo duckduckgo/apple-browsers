@@ -25,6 +25,7 @@ import Core
 import Persistence
 import Bookmarks
 import DDGSync
+import PrivacyConfig
 
 protocol DataImportViewControllerDelegate: AnyObject {
     func dataImportViewControllerDidFinish(_ controller: DataImportViewController)

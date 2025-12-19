@@ -22,7 +22,7 @@ import Configuration
 import Foundation
 import Core
 import BackgroundTasks
-import BrowserServicesKit
+import PrivacyConfig
 import Persistence
 import Bookmarks
 import RemoteMessaging

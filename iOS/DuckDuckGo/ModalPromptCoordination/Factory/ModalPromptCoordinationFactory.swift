@@ -20,7 +20,7 @@
 import Foundation
 import Persistence
 import SetDefaultBrowserUI
-import BrowserServicesKit
+import PrivacyConfig
 import enum Common.DevicePlatform
 import AIChat
 import RemoteMessaging

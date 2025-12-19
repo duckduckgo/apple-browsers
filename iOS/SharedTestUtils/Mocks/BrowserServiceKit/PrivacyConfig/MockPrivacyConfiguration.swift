@@ -91,11 +91,11 @@ class MockPrivacyConfiguration: PrivacyConfiguration {
 @objc(MockPrivacyConfigurationManager)
 class MockPrivacyConfigurationManager: NSObject, PrivacyConfigurationManaging {
 
-    var embeddedConfigData: BrowserServicesKit.PrivacyConfigurationManager.ConfigurationData {
+    var embeddedConfigData: PrivacyConfigurationManager.ConfigurationData {
         fatalError("not implemented")
     }
 
-    var fetchedConfigData: BrowserServicesKit.PrivacyConfigurationManager.ConfigurationData? {
+    var fetchedConfigData: PrivacyConfigurationManager.ConfigurationData? {
         fatalError("not implemented")
     }
 
@@ -103,7 +103,7 @@ class MockPrivacyConfigurationManager: NSObject, PrivacyConfigurationManaging {
         Data()
     }
 
-    func reload(etag: String?, data: Data?) -> BrowserServicesKit.PrivacyConfigurationManager.ReloadResult {
+    func reload(etag: String?, data: Data?) -> PrivacyConfigurationManager.ReloadResult {
         fatalError("not implemented")
     }
 

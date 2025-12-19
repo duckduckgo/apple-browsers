@@ -214,7 +214,7 @@ final class MockDuckPlayerSettings: DuckPlayerSettings {
     var nativeUIWasUsed: Bool = false
     var nativeUISettingsMapped: Bool = false
     
-    init(appSettings: any DuckDuckGo.AppSettings, privacyConfigManager: any BrowserServicesKit.PrivacyConfigurationManaging, featureFlagger: any BrowserServicesKit.FeatureFlagger, internalUserDecider: any BrowserServicesKit.InternalUserDecider) {
+    init(appSettings: any DuckDuckGo.AppSettings, privacyConfigManager: any PrivacyConfigurationManaging, featureFlagger: any FeatureFlagger, internalUserDecider: any BrowserServicesKit.InternalUserDecider) {
       // NOOP
     }
 

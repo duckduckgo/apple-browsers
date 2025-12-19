@@ -20,6 +20,7 @@
 import Core
 import BrowserServicesKit
 import Persistence
+import PrivacyConfig
 import SwiftUI
 import Common
 import Combine

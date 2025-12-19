@@ -26,6 +26,7 @@ import WebKit
 import Combine
 import DataBrokerProtectionCore
 import os.log
+import PrivacyConfig
 
 final public class DataBrokerProtectionViewController: UIViewController {
 

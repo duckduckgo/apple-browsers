@@ -47,6 +47,7 @@ import PixelKit
 import SystemSettingsPiPTutorial
 import DataBrokerProtection_iOS
 import UserScript
+import PrivacyConfig
 
 class MainViewController: UIViewController {
 

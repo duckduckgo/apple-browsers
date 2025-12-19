@@ -22,6 +22,7 @@ import AuthenticationServices
 import BrowserServicesKit
 import Core
 import Persistence
+import PrivacyConfig
 
 enum ExtensionPromotionPlacement: CaseIterable {
     case passwords

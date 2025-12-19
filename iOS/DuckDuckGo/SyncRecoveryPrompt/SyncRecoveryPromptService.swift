@@ -22,6 +22,7 @@ import UIKit
 import Core
 import BrowserServicesKit
 import Persistence
+import PrivacyConfig
 import DDGSync
 
 @MainActor

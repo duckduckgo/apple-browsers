@@ -21,6 +21,7 @@ import Foundation
 import Core
 import Combine
 import BrowserServicesKit
+import PrivacyConfig
 import DDGSync
 import enum UserScript.UserScriptError
 

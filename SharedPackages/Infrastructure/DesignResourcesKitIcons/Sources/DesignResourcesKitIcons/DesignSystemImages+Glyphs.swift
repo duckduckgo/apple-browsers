@@ -405,6 +405,7 @@ public extension DesignSystemImages {
             public static var findSearchSmall: DesignSystemImage { .init(resource: .findSearchSmall24) }
             public static var fire: DesignSystemImage { .init(resource: .fire24) }
             public static var fireSolid: DesignSystemImage { .init(resource: .fireSolid24) }
+            public static var fireproof: DesignSystemImage { .init(resource: .fireproof24) }
             public static var fireproofSolid: DesignSystemImage { .init(resource: .fireproofSolid24) }
             public static var folder: DesignSystemImage { .init(resource: .folder24) }
             public static var folderAdd: DesignSystemImage { .init(resource: .folderAdd24) }
